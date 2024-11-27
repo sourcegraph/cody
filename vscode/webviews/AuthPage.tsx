@@ -28,11 +28,11 @@ export const AuthPage: React.FunctionComponent<React.PropsWithoutRef<LoginProps>
     return (
         <div className="tw-flex tw-flex-col tw-w-full tw-h-full tw-p-10 tw-items-center">
             <div className="tw-w-full tw-max-w-md tw-flex-1 tw-px-6 tw-flex-col tw-items-center tw-gap-8">
-                <div className="tw-w-full tw-flex tw-justify-start tw-mt-8 tw-mb-10">
-                    <LogInIcon className="tw-border tw-w-auto tw-h-auto tw-p-4 tw-border-muted-foreground tw-rounded-md" />
+                <div className="tw-w-full tw-flex tw-justify-start tw-mt-8 tw-mb-[10%]">
+                    <LogInIcon className="tw-w-auto tw-h-auto tw-p-4 tw-border tw-text-keybinding-foreground tw-border-muted-foreground tw-bg-keybinding-background tw-rounded-md" />
                     <div className="tw-ml-4">
                         <div className="tw-font-semibold tw-text-lg">Sign in to Sourcegraph</div>
-                        <div className="tw-text-muted-foreground tw-text-sm">Let's get started</div>
+                        <div className="tw-text-muted-foreground tw-text-sm">Let's get you started</div>
                     </div>
                 </div>
                 {isEnterpriseSignin ? (
@@ -57,12 +57,12 @@ export const AuthPage: React.FunctionComponent<React.PropsWithoutRef<LoginProps>
                     <div>
                         <section className="tw-bg-sidebar-background tw-text-sidebar-foreground tw-w-full tw-max-w-md tw-mt-8">
                             <div className="tw-font-semibold tw-text-md tw-my-4 tw-text-muted-foreground">
-                                Teams <span className="tw-font-normal">or</span> Enterprise
+                                Enterprise
                             </div>
                             <div className="tw-flex tw-flex-col tw-gap-6 tw-w-full">
                                 <Button
                                     onClick={() => setIsEnterpriseSignin(true)}
-                                    className="tw-flex tw-justify-between"
+                                    className="tw-flex tw-justify-between !tw-p-4"
                                     variant="secondary"
                                 >
                                     <div className="tw-w-full tw-max-w-md tw-flex">
@@ -71,8 +71,9 @@ export const AuthPage: React.FunctionComponent<React.PropsWithoutRef<LoginProps>
                                             alt="Sourcegraph logo"
                                             className="tw-w-[16px] tw-mr-3"
                                         />
-                                        <span>Continue with </span>
-                                        <span className="tw-font-semibold">a URL</span>
+                                        <span>
+                                            Continue with <span className="tw-font-semibold">a URL</span>
+                                        </span>
                                     </div>
                                     <ArrowRightIcon size={16} />
                                 </Button>
@@ -100,6 +101,7 @@ export const AuthPage: React.FunctionComponent<React.PropsWithoutRef<LoginProps>
                                                 )
                                                 simplifiedLoginRedirect('github')
                                             }}
+                                            className="tw-flex tw-justify-between !tw-p-4"
                                         >
                                             <div className="tw-w-full tw-max-w-md tw-flex">
                                                 <img
@@ -123,6 +125,7 @@ export const AuthPage: React.FunctionComponent<React.PropsWithoutRef<LoginProps>
                                                 )
                                                 simplifiedLoginRedirect('gitlab')
                                             }}
+                                            className="tw-flex tw-justify-between !tw-p-4"
                                         >
                                             <div className="tw-w-full tw-max-w-md tw-flex">
                                                 <img
@@ -146,6 +149,7 @@ export const AuthPage: React.FunctionComponent<React.PropsWithoutRef<LoginProps>
                                                 )
                                                 simplifiedLoginRedirect('google')
                                             }}
+                                            className="tw-flex tw-justify-between !tw-p-4"
                                         >
                                             <div className="tw-w-full tw-max-w-md tw-flex">
                                                 <img
@@ -244,14 +248,12 @@ interface ClientSignInFormProps {
 }
 
 /**
- * A temporary sign-in form for clients that do not support sign-in through quickpick.
- *
- * The form allows the user to enter the Sourcegraph instance URL and an access token.
- * It validates the input and sends the authentication information to the VSCode extension
- * when the user clicks the "Sign In with Access Token" button.
+ * The form allows users to input their Sourcegraph instance URL and access token manually.
  */
 const ClientSignInForm: React.FC<ClientSignInFormProps> = ({ className, authStatus, vscodeAPI }) => {
     const [showAccessTokenField, setShowAccessTokenField] = useState(false)
+    const [isSubmitting, setIsSubmitting] = useState(false)
+    const [showAuthError, setShowAuthError] = useState(false)
 
     const [formData, setFormData] = useState({
         endpoint: authStatus?.endpoint ?? '',
@@ -264,82 +266,106 @@ const ClientSignInForm: React.FC<ClientSignInFormProps> = ({ className, authStat
     }, [])
 
     const onSubmit = useCallback(() => {
-        if (!formData.endpoint) {
+        if (isSubmitting || !formData.endpoint) {
             return
         }
-        if (showAccessTokenField && formData.accessToken) {
-            vscodeAPI?.postMessage({
-                command: 'auth',
-                authKind: 'signin',
-                endpoint: formData.endpoint,
-                value: formData.accessToken,
-            })
-        } else {
-            vscodeAPI?.postMessage({
-                command: 'auth',
-                authKind: 'callback',
-                endpoint: formData.endpoint,
-            })
+
+        setIsSubmitting(true)
+        setShowAuthError(false)
+
+        try {
+            if (showAccessTokenField && formData.accessToken) {
+                vscodeAPI?.postMessage({
+                    command: 'auth',
+                    authKind: 'signin',
+                    endpoint: formData.endpoint,
+                    value: formData.accessToken,
+                })
+            } else {
+                vscodeAPI?.postMessage({
+                    command: 'auth',
+                    authKind: 'callback',
+                    endpoint: formData.endpoint,
+                })
+            }
+        } finally {
+            // Reset submitting state after a short delay
+            setTimeout(() => {
+                setIsSubmitting(false)
+                setShowAuthError(!!authStatus?.authenticated)
+            }, 2000)
         }
-    }, [showAccessTokenField, formData, vscodeAPI])
+    }, [vscodeAPI, authStatus, isSubmitting, showAccessTokenField, formData])
 
     return (
-        <Form className={className} onSubmit={onSubmit}>
-            <FormField name="endpoint" className="tw-m-2">
-                <FormLabel title="Workspace or Instance URL" />
-                <FormControl
-                    type="url"
-                    name="endpoint"
-                    placeholder="https://instance.sourcegraphcloud.com"
-                    value={formData.endpoint}
-                    className="tw-w-full tw-my-2"
-                    required
-                    onChange={handleInputChange}
-                />
-                <FormMessage match="typeMismatch">Invalid URL.</FormMessage>
-                <FormMessage match="valueMissing">URL is required.</FormMessage>
-            </FormField>
-            <FormField
-                name="accessToken"
-                serverInvalid={authStatus && !authStatus.authenticated && authStatus.showNetworkError}
-                className="tw-m-2"
+        <div className={className}>
+            {!isSubmitting && showAuthError && formData.endpoint && (
+                <div className="tw-w-full tw-font-normal tw-items-center tw-py-10 tw-mt-5 tw-mb-10 tw-bg-rose-300 tw-border-rose-400 tw-text-gray-800 tw-rounded-md tw-text-center">
+                    Something went wrong while trying to log you in to {formData.endpoint}. Please try
+                    again.
+                </div>
+            )}
+            <Form
+                onSubmit={e => {
+                    e.preventDefault() // Prevent form submission
+                    onSubmit()
+                }}
             >
-                <FormLabel>
-                    <div className="tw-flex tw-w-full tw-justify-between tw-align-middle">
-                        <div>Access Token (Optional)</div>
-                        <ChevronsUpDownIcon
-                            size={14}
-                            className="tw-cursor-pointer"
-                            onClick={() => setShowAccessTokenField(!showAccessTokenField)}
-                        />
-                    </div>
-                </FormLabel>
-                {showAccessTokenField && (
-                    <div className="tw-w-full">
-                        <FormControl
-                            type="password"
-                            name="accessToken"
-                            placeholder="Example: sgp_xxx_xxx"
-                            className="tw-w-full tw-my-2"
-                            value={formData.accessToken}
-                            onChange={handleInputChange}
-                            autoComplete="current-password"
-                            required
-                        />
-                        <FormMessage match={() => !isSourcegraphToken(formData.accessToken)}>
-                            Invalid access token.
-                        </FormMessage>
-                        <FormMessage match="valueMissing">Access token is required.</FormMessage>
-                    </div>
-                )}
-            </FormField>
-            <Button
-                type="submit"
-                className="tw-m-4 tw-w-full"
-                disabled={showAccessTokenField && !formData.accessToken}
-            >
-                Sign In
-            </Button>
-        </Form>
+                <FormField name="endpoint" className="tw-m-2">
+                    <FormLabel title="Sourcegraph Instance URL" />
+                    <FormControl
+                        type="url"
+                        name="endpoint"
+                        placeholder="Example: https://instance.sourcegraph.com"
+                        value={formData.endpoint}
+                        className="tw-w-full tw-my-2 !tw-p-4"
+                        required
+                        onChange={handleInputChange}
+                    />
+                    <FormMessage match="typeMismatch">Invalid URL.</FormMessage>
+                    <FormMessage match="valueMissing">URL is required.</FormMessage>
+                </FormField>
+                <FormField
+                    name="accessToken"
+                    serverInvalid={
+                        authStatus && !authStatus.authenticated && authStatus.showNetworkError
+                    }
+                    className="tw-m-2"
+                >
+                    <FormLabel
+                        className="tw-cursor-pointer tw-flex tw-w-full tw-justify-between tw-align-middle tw-opacity-70"
+                        onClick={() => setShowAccessTokenField(!showAccessTokenField)}
+                    >
+                        <div title="Enter your access token manually">Access Token (Optional)</div>
+                        <ChevronsUpDownIcon size={14} />
+                    </FormLabel>
+                    {showAccessTokenField && (
+                        <div className="tw-w-full">
+                            <FormControl
+                                type="password"
+                                name="accessToken"
+                                placeholder="Access token..."
+                                className="tw-w-full tw-my-2 !tw-p-4"
+                                value={formData.accessToken}
+                                onChange={handleInputChange}
+                                autoComplete="current-password"
+                                required
+                            />
+                            <FormMessage match={() => !isSourcegraphToken(formData.accessToken)}>
+                                Invalid access token.
+                            </FormMessage>
+                            <FormMessage match="valueMissing">Access token is required.</FormMessage>
+                        </div>
+                    )}
+                </FormField>
+                <Button
+                    type="submit"
+                    className="tw-m-4 tw-w-full !tw-p-4"
+                    disabled={isSubmitting || (showAccessTokenField && !formData.accessToken)}
+                >
+                    {isSubmitting ? 'Signing In...' : 'Sign In'}
+                </Button>
+            </Form>{' '}
+        </div>
     )
 }

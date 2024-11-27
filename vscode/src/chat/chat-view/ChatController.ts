@@ -11,6 +11,7 @@ import {
     distinctUntilChanged,
     firstResultFromOperation,
     forceHydration,
+    isAbortError,
     pendingOperation,
     ps,
     resolvedConfig,
@@ -57,7 +58,6 @@ import {
     graphqlClient,
     hydrateAfterPostMessage,
     inputTextWithoutContextChipsFromPromptEditorState,
-    isAbortError,
     isAbortErrorOrSocketHangUp,
     isContextWindowLimitError,
     isDefined,
@@ -459,16 +459,12 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                         credentials.tokenSource = await secretStorage.getTokenSource(serverEndpoint)
                     }
                     if (credentials.accessToken) {
-                        const { authStatus } = await authProvider.validateAndStoreCredentials(
-                            credentials,
-                            'always-store'
-                        )
-                        if (authStatus.authenticated) {
-                            await this.setWebviewToChat()
-                        }
-                    } else {
-                        redirectToEndpointLogin(message.endpoint)
+                        authProvider.setAuthPendingToEndpoint(serverEndpoint)
+                        authProvider.validateAndStoreCredentials(credentials, 'always-store')
+                        return
                     }
+                    redirectToEndpointLogin(message.endpoint)
+
                     break
                 }
                 if (message.authKind === 'signout') {
