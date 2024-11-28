@@ -82,27 +82,25 @@ export async function showSignInMenu(
             const selectedEndpoint = item.uri
             const token = await secretStorage.getToken(selectedEndpoint)
             const tokenSource = await secretStorage.getTokenSource(selectedEndpoint)
-            let { authStatus } = token
+            let authStatus = token
                 ? await authProvider.validateAndStoreCredentials(
                       { serverEndpoint: selectedEndpoint, accessToken: token, tokenSource },
                       'store-if-valid'
                   )
-                : { authStatus: undefined }
+                : undefined
             if (!authStatus?.authenticated) {
                 const newToken = await showAccessTokenInputBox(selectedEndpoint)
                 if (!newToken) {
                     return
                 }
-                authStatus = (
-                    await authProvider.validateAndStoreCredentials(
-                        {
-                            serverEndpoint: selectedEndpoint,
-                            accessToken: newToken,
-                            tokenSource: 'paste',
-                        },
-                        'store-if-valid'
-                    )
-                ).authStatus
+                authStatus = await authProvider.validateAndStoreCredentials(
+                    {
+                        serverEndpoint: selectedEndpoint,
+                        accessToken: newToken,
+                        tokenSource: 'paste',
+                    },
+                    'store-if-valid'
+                )
             }
             await showAuthResultMessage(selectedEndpoint, authStatus)
             logDebug('AuthProvider:signinMenu', mode, selectedEndpoint)
@@ -229,7 +227,7 @@ async function signinMenuForInstanceUrl(instanceUrl: string): Promise<void> {
     if (!accessToken) {
         return
     }
-    const { authStatus } = await authProvider.validateAndStoreCredentials(
+    const authStatus = await authProvider.validateAndStoreCredentials(
         { serverEndpoint: instanceUrl, accessToken: accessToken, tokenSource: 'paste' },
         'store-if-valid'
     )
@@ -307,7 +305,7 @@ export async function tokenCallbackHandler(uri: vscode.Uri): Promise<void> {
         return
     }
 
-    const { authStatus } = await authProvider.validateAndStoreCredentials(
+    const authStatus = await authProvider.validateAndStoreCredentials(
         { serverEndpoint: endpoint, accessToken: token, tokenSource: 'redirect' },
         'store-if-valid'
     )

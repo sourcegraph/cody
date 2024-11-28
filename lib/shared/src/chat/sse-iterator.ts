@@ -5,7 +5,7 @@ interface SSEMessage {
 
 const SSE_TERMINATOR = '\n\n'
 export async function* createSSEIterator(
-    iterator: NodeJS.ReadableStream,
+    iterator: ReadableStream,
     options: {
         // This is an optimizations to avoid unnecessary work when a streaming chunk contains more
         // than one completion event. Only use it when the completion repeats all generated tokens
@@ -14,32 +14,40 @@ export async function* createSSEIterator(
     } = {}
 ): AsyncGenerator<SSEMessage> {
     let buffer = ''
-    for await (const event of iterator) {
-        const messages: SSEMessage[] = []
+    const reader = iterator.getReader()
 
-        buffer += event.toString()
+    try {
+        while (true) {
+            const { done, value } = await reader.read()
+            if (done) break
 
-        let index: number
-        // biome-ignore lint/suspicious/noAssignInExpressions: useful
-        while ((index = buffer.indexOf(SSE_TERMINATOR)) >= 0) {
-            const message = buffer.slice(0, index)
-            buffer = buffer.slice(index + SSE_TERMINATOR.length)
-            messages.push(parseSSEEvent(message))
-        }
+            const messages: SSEMessage[] = []
+            buffer += new TextDecoder().decode(value)
 
-        for (let i = 0; i < messages.length; i++) {
-            if (options.aggregatedCompletionEvent) {
-                if (
-                    i + 1 < messages.length &&
-                    messages[i].event === 'completion' &&
-                    messages[i + 1].event === 'completion'
-                ) {
-                    continue
-                }
+            let index: number
+            // biome-ignore lint/suspicious/noAssignInExpressions: useful
+            while ((index = buffer.indexOf(SSE_TERMINATOR)) >= 0) {
+                const message = buffer.slice(0, index)
+                buffer = buffer.slice(index + SSE_TERMINATOR.length)
+                messages.push(parseSSEEvent(message))
             }
 
-            yield messages[i]
+            for (let i = 0; i < messages.length; i++) {
+                if (options.aggregatedCompletionEvent) {
+                    if (
+                        i + 1 < messages.length &&
+                        messages[i].event === 'completion' &&
+                        messages[i + 1].event === 'completion'
+                    ) {
+                        continue
+                    }
+                }
+
+                yield messages[i]
+            }
         }
+    } finally {
+        reader.releaseLock()
     }
 }
 

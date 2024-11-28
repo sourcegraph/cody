@@ -1,5 +1,4 @@
 import {
-    type BrowserOrNodeResponse,
     addCodyClientIdentificationHeaders,
     addTraceparent,
     currentResolvedConfig,
@@ -165,7 +164,7 @@ export const upstreamHealthProvider = new UpstreamHealthProvider()
 async function measureLatencyToUri(
     headers: Headers,
     uri: string
-): Promise<{ latency: number; response: BrowserOrNodeResponse } | { error: Error }> {
+): Promise<{ latency: number; response: Response } | { error: Error }> {
     try {
         const start = performance.now()
         // We use a GET request even though we do not want to consume the

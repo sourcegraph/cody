@@ -1,17 +1,26 @@
-import { Readable } from 'node:stream'
-
 import { describe, expect, it } from 'vitest'
 import { createSSEIterator } from './sse-iterator'
 
+function createTestStream(chunks: string[]): ReadableStream {
+    return new ReadableStream({
+        async start(controller) {
+            for (const chunk of chunks) {
+                controller.enqueue(new TextEncoder().encode(chunk))
+            }
+            controller.close()
+        },
+    })
+}
+
 describe('createSSEIterator', () => {
     it('yields SSE messages from the iterator', async () => {
-        async function* createIterator() {
-            yield Buffer.from('event: completion\ndata: {"foo":"bar"}\n\n')
-            yield Buffer.from('event: completion\ndata: {"baz":"qux"}\n\n')
-        }
+        const stream = createTestStream([
+            'event: completion\ndata: {"foo":"bar"}\n\n',
+            'event: completion\ndata: {"baz":"qux"}\n\n',
+        ])
 
         const messages = []
-        const iterator = createSSEIterator(Readable.from(createIterator()))
+        const iterator = createSSEIterator(stream)
 
         for await (const message of iterator) {
             messages.push(message)
@@ -23,15 +32,15 @@ describe('createSSEIterator', () => {
     })
 
     it('buffers partial responses', async () => {
-        async function* createIterator() {
-            yield Buffer.from('event: comple')
-            yield Buffer.from('tion\ndata: {"foo":"bar"}\n')
-            yield Buffer.from('\nevent: comple')
-            yield Buffer.from('tion\ndata: {"baz":"qux"}\n\n')
-        }
+        const stream = createTestStream([
+            'event: comple',
+            'tion\ndata: {"foo":"bar"}\n',
+            '\nevent: comple',
+            'tion\ndata: {"baz":"qux"}\n\n',
+        ])
 
         const messages = []
-        const iterator = createSSEIterator(Readable.from(createIterator()))
+        const iterator = createSSEIterator(stream)
 
         for await (const message of iterator) {
             messages.push(message)
@@ -43,14 +52,12 @@ describe('createSSEIterator', () => {
     })
 
     it('skips intermediate completion events', async () => {
-        async function* createIterator() {
-            yield Buffer.from(
-                'event: completion\ndata: {"foo":"bar"}\n\nevent: completion\ndata: {"baz":"qux"}\n\n'
-            )
-        }
+        const stream = createTestStream([
+            'event: completion\ndata: {"foo":"bar"}\n\nevent: completion\ndata: {"baz":"qux"}\n\n',
+        ])
 
         const messages = []
-        const iterator = createSSEIterator(Readable.from(createIterator()), {
+        const iterator = createSSEIterator(stream, {
             aggregatedCompletionEvent: true,
         })
 
@@ -61,12 +68,10 @@ describe('createSSEIterator', () => {
     })
 
     it('handles `: ` in the event name', async () => {
-        async function* createIterator() {
-            yield Buffer.from('event: foo: bar\ndata: {"baz":"qux"}\n\n')
-        }
+        const stream = createTestStream(['event: foo: bar\ndata: {"baz":"qux"}\n\n'])
 
         const messages = []
-        const iterator = createSSEIterator(Readable.from(createIterator()))
+        const iterator = createSSEIterator(stream)
 
         for await (const message of iterator) {
             messages.push(message)

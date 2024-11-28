@@ -1,25 +1,20 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
 exports[`Custom Commands > commands/custom, chat command, open tabs context 1`] = `
-"Certainly! Here's a bulleted list of the filenames you've shared with me so far:
+"Here are all the files shared:
 
-• example3.ts
-• example2.ts
-• example1.ts
-
-These are the raw filenames without any additional formatting, as requested."
+• src/example1.ts
+• src/example2.ts
+• src/example3.ts"
 `;
 
 exports[`Custom Commands > commands/custom, edit command, edit mode 1`] = `
-"/* SELECTION_START */
-export interface Animal {
+"export interface Animal {
     name: string
     makeAnimalSound(): string
     isMammal: boolean
     logName(): void
-}
-/* SELECTION_END */
-"
+}"
 `;
 
 exports[`Custom Commands > commands/custom, edit command, insert mode 1`] = `

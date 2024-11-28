@@ -1,7 +1,6 @@
 import { SpanStatusCode } from '@opentelemetry/api'
 
 import {
-    type BrowserOrNodeResponse,
     type CodeCompletionProviderOptions,
     type CodeCompletionsClient,
     type CodeCompletionsParams,
@@ -23,7 +22,6 @@ import {
     getActiveTraceAndSpanId,
     getClientInfoParams,
     isAbortError,
-    isNodeResponse,
     isRateLimitError,
     logResponseHeadersToSpan,
     recordErrorToSpan,
@@ -159,7 +157,7 @@ class DefaultCodeCompletionsClient implements CodeCompletionsClient {
                 }
 
                 try {
-                    if (isStreamingResponse && isNodeResponse(response)) {
+                    if (isStreamingResponse) {
                         const iterator = createSSEIterator(response.body, {
                             aggregatedCompletionEvent: true,
                         })
@@ -262,7 +260,7 @@ export const defaultCodeCompletionsClient = singletonNotYetSet<DefaultCodeComple
 setSingleton(defaultCodeCompletionsClient, new DefaultCodeCompletionsClient())
 
 export async function createRateLimitErrorFromResponse(
-    response: BrowserOrNodeResponse,
+    response: Response,
     upgradeIsAvailable: boolean
 ): Promise<RateLimitError> {
     const retryAfter = response.headers.get('retry-after')

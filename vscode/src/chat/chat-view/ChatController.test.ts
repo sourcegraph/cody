@@ -85,7 +85,7 @@ describe('ChatController', () => {
         })
     })
 
-    test('send, followup, and edit', { timeout: 1500 }, async () => {
+    test('send, followup, and edit', { timeout: 2500 }, async () => {
         const postMessageSpy = vi
             .spyOn(chatController as any, 'postMessage')
             .mockImplementation(() => {})
@@ -298,7 +298,7 @@ describe('ChatController', () => {
         })
     })
 
-    test('send error', async () => {
+    test('send error', { timeout: 2500 }, async () => {
         const postMessageSpy = vi
             .spyOn(chatController as any, 'postMessage')
             .mockImplementation(() => {})

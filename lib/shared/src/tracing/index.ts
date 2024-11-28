@@ -1,5 +1,4 @@
 import opentelemetry, { SpanStatusCode, context, propagation, type Span } from '@opentelemetry/api'
-import type { BrowserOrNodeResponse } from '../sourcegraph-api/graphql/client'
 
 const INSTRUMENTATION_SCOPE_NAME = 'cody'
 const INSTRUMENTATION_SCOPE_VERSION = '0.1'
@@ -61,7 +60,7 @@ export function addTraceparent(headers: Headers): void {
     })
 }
 
-export function logResponseHeadersToSpan(span: Span, response: BrowserOrNodeResponse) {
+export function logResponseHeadersToSpan(span: Span, response: Response) {
     const responseHeaders: Record<string, string> = {}
     response.headers.forEach((value, key) => {
         responseHeaders[key] = value
