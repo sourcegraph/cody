@@ -1394,6 +1394,7 @@
     "@opentelemetry/sdk-trace-base": "^1.18.1",
     "@opentelemetry/sdk-trace-node": "^1.18.1",
     "@opentelemetry/semantic-conventions": "^1.18.1",
+    "@pollyjs/adapter-fetch": "^6.0.6",
     "@radix-ui/react-accordion": "^1.2.0",
     "@radix-ui/react-collapsible": "^1.1.0",
     "@radix-ui/react-dialog": "^1.0.5",
@@ -1425,6 +1426,7 @@
     "crypto-js": "^4.2.0",
     "detect-indent": "7.0.0",
     "diff": "^5.2.0",
+    "fast-myers-diff": "^3.2.0",
     "fast-xml-parser": "^4.3.2",
     "fzf": "^0.5.2",
     "glob": "^7.2.3",
@@ -1463,8 +1465,7 @@
     "uuid": "^9.0.0",
     "vscode-languageserver-textdocument": "^1.0.8",
     "vscode-uri": "^3.0.8",
-    "wink-nlp-utils": "^2.1.0",
-    "fast-myers-diff": "^3.2.0"
+    "wink-nlp-utils": "^2.1.0"
   },
   "devDependencies": {
     "7zip-min": "^1.4.5",

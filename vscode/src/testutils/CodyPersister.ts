@@ -65,6 +65,8 @@ export class CodyPersister extends FSPersister {
     }
 
     public async onFindRecording(recordingId: string): Promise<Har | null> {
+        console.error("[CodyPersister]: onFindRecording : ", recordingId)
+
         const har = await super.onFindRecording(recordingId)
         if (har === null) {
             return har
@@ -85,6 +87,8 @@ export class CodyPersister extends FSPersister {
     }
 
     public onSaveRecording(recordingId: string, recording: Har): Promise<void> {
+        console.error("[CodyPersister]: onSaveRecording : ", recordingId, recording.log.entries)
+
         const entries = recording.log.entries
         recording.log.entries.sort((a, b) => a.request.url.localeCompare(b.request.url))
         for (const entry of entries) {

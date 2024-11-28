@@ -77,10 +77,7 @@ import { AgentWorkspaceConfiguration } from './AgentWorkspaceConfiguration'
 import { AgentWorkspaceDocuments } from './AgentWorkspaceDocuments'
 import { registerNativeWebviewHandlers, resolveWebviewView } from './NativeWebview'
 import type { PollyRequestError } from './cli/command-jsonrpc-stdio'
-import {
-    currentProtocolAuthStatus,
-    currentProtocolAuthStatusOrNotReadyYet,
-} from './currentProtocolAuthStatus'
+import { toProtocolAuthStatus } from './currentProtocolAuthStatus'
 import { AgentGlobalState } from './global-state/AgentGlobalState'
 import {
     MessageHandler,
@@ -358,7 +355,11 @@ export class Agent extends MessageHandler implements ExtensionClient {
     public webviewViewProviders = new Map<string, vscode.WebviewViewProvider>()
 
     public authenticationHandler: AgentAuthHandler | null = null
-    private authenticationPromise: Promise<void> = Promise.resolve()
+    private authenticationPromise: Promise<AuthStatus> = Promise.resolve({
+        authenticated: false,
+        endpoint: '',
+        pendingValidation: false,
+    })
 
     private clientInfo: ClientInfo | null = null
 
@@ -461,8 +462,11 @@ export class Agent extends MessageHandler implements ExtensionClient {
                         ? this.handleConfigChanges(clientInfo.extensionConfiguration, {
                               forceAuthentication: true,
                           })
-                        : Promise.resolve()
-                await this.authenticationPromise
+                        : Promise.resolve({
+                              authenticated: false,
+                              endpoint: clientInfo.extensionConfiguration?.serverEndpoint ?? '',
+                              pendingValidation: false,
+                          })
 
                 const webviewKind = clientInfo.capabilities?.webview || 'agentic'
                 const nativeWebviewConfig = clientInfo.capabilities?.webviewNativeConfig
@@ -481,11 +485,11 @@ export class Agent extends MessageHandler implements ExtensionClient {
                     this.registerWebviewHandlers()
                 }
 
-                const authStatus = currentProtocolAuthStatusOrNotReadyYet()
+                const authStatus = await this.authenticationPromise
                 return {
                     name: 'cody-agent',
                     authenticated: authStatus?.authenticated ?? false,
-                    authStatus,
+                    authStatus: toProtocolAuthStatus(authStatus),
                 }
             } catch (error) {
                 console.error(
@@ -499,7 +503,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
         this.registerRequest('shutdown', async () => {
             if (this?.params?.polly) {
-                this.params.polly.disconnectFrom('node-http')
+                this.params.polly.disconnectFrom('fetch')
                 await this.params.polly.stop()
             }
             return null
@@ -583,13 +587,12 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
         this.registerRequest('extensionConfiguration/change', async config => {
             this.authenticationPromise = this.handleConfigChanges(config)
-            await this.authenticationPromise
-            return currentProtocolAuthStatus()
+            return this.authenticationPromise.then(toProtocolAuthStatus)
         })
 
         this.registerRequest('extensionConfiguration/status', async () => {
             await this.authenticationPromise
-            return currentProtocolAuthStatus()
+            return this.authenticationPromise.then(toProtocolAuthStatus)
         })
 
         this.registerRequest('extensionConfiguration/getSettingsSchema', async () => {
@@ -1501,14 +1504,14 @@ export class Agent extends MessageHandler implements ExtensionClient {
     private async handleConfigChanges(
         config: ExtensionConfiguration,
         params?: { forceAuthentication: boolean }
-    ): Promise<void> {
+    ): Promise<AuthStatus> {
         const isAuthChange = vscode_shim.isAuthenticationChange(config)
         vscode_shim.setExtensionConfiguration(config)
         // If this is an authentication change we need to reauthenticate prior to firing events
         // that update the clients
         if (isAuthChange || params?.forceAuthentication) {
             try {
-                await authProvider.validateAndStoreCredentials(
+                const status = await authProvider.validateAndStoreCredentials(
                     {
                         configuration: {
                             customHeaders: config.customHeaders,
@@ -1534,10 +1537,15 @@ export class Agent extends MessageHandler implements ExtensionClient {
                         // functionality), we return true to always triggger the callback.
                         true,
                 })
+
+                return status.authStatus
             } catch (error) {
                 console.log('Authentication failed', error)
+                return { authenticated: false, endpoint: '', pendingValidation: true }
             }
         }
+
+        return this.authenticationPromise
     }
 
     private async handleDocumentChange(document: ProtocolTextDocument) {
