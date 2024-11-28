@@ -20,8 +20,6 @@ data class DeprecatedCodyAccount(
     @Attribute("id") var id: String = generateId(),
 ) {
 
-  fun isDotcomAccount(): Boolean = server.url.lowercase().startsWith(ConfigUtil.DOTCOM_URL)
-
   fun credentialAttributes(): CredentialAttributes =
       CredentialAttributes(generateServiceName("Sourcegraph", id))
 

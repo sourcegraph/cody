@@ -182,7 +182,7 @@ class SettingsMigrationTest : BasePlatformTestCase() {
                   ChatState("chat4"))
         }
     val project = myFixture.project
-    project.registerServiceInstance(HistoryService::class.java, HistoryService(project))
+    project.registerServiceInstance(HistoryService::class.java, HistoryService())
     HistoryService.getInstance(project)
         .loadState(HistoryState().also { it.copyFrom(originalHistory) })
 
