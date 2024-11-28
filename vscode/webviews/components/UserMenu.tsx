@@ -76,22 +76,14 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
                         <CommandGroup>
                             <CommandItem
                                 onSelect={() => {
-                                    if (username) {
-                                        const uri = URI.parse(ACCOUNT_USAGE_URL.toString()).with({
-                                            query: `cody_client_user=${encodeURIComponent(username)}`,
-                                        })
-                                        getVSCodeAPI().postMessage({
-                                            command: 'links',
-                                            value: uri.toString(),
-                                        })
-                                    }
+                                    setView(View.Account)
                                     close()
                                 }}
                             >
                                 <div className="tw-flex tw-w-full tw-justify-start tw-gap-4">
                                     <UserAvatar
                                         user={authStatus}
-                                        size={20}
+                                        size={16}
                                         sourcegraphGradientBorder={!!isProUser}
                                         className="tw-flex tw-justify-center"
                                     />
@@ -105,8 +97,8 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
                                     </div>
                                 </div>
                                 <Badge
-                                    variant={isProUser ? 'cody' : 'ghost'}
-                                    className="tw-p-0 tw-opacity-75 tw-text-sm"
+                                    variant={isProUser ? 'cody' : 'secondary'}
+                                    className="tw-p-0 tw-opacity-85 tw-text-sm"
                                 >
                                     {isDotComUser ? (isProUser ? 'Pro' : 'Free') : 'Enterprise'}
                                 </Badge>

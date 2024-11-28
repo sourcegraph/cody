@@ -48,6 +48,11 @@
     }
 }
 
+.sub-tabs > button,
+.sub-tabs > a {
+    padding: 8px;
+}
+
 .tab-action-label {
     display: inline;
 }

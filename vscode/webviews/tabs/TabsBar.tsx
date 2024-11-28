@@ -322,16 +322,21 @@ const TabButton = forwardRef<HTMLButtonElement, TabButtonProps>((props, ref) => 
                     rel="noopener noreferrer"
                     ref={ref as any}
                     className={clsx(
-                        'tw-flex tw-gap-3 tw-items-center !tw-font-normal !tw-text-inherit tw-leading-none tw-py-3 tw-px-2 tw-opacity-80 hover:tw-opacity-100 tw-border-b-[1px] tw-border-transparent tw-transition tw-translate-y-[1px]',
+                        'tw-flex tw-gap-2 tw-items-center !tw-font-normal !tw-text-inherit tw-leading-none tw-p-2 tw-opacity-80 hover:tw-opacity-100 tw-border-transparent tw-transition tw-translate-y-[1px] tw-text-sm',
                         {
-                            '!tw-opacity-100 !tw-border-[var(--vscode-tab-activeBorderTop)]': isActive,
+                            '!tw-opacity-100 !tw-border-[var(--vscode-tab-activeBorderTop)] tw-border-b-[1px]':
+                                isActive,
                             '!tw-opacity-100': prominent,
                         }
                     )}
                     data-testid={dataTestId}
                 >
                     <Icon size={16} strokeWidth={1.25} className="tw-w-8 tw-h-8" />
-                    <span className={alwaysShowTitle ? '' : styles.tabActionLabel}>{title}</span>
+                    {alwaysShowTitle ? (
+                        <span>{title}</span>
+                    ) : (
+                        <span className={styles.tabActionLabel}>{title}</span>
+                    )}
                 </Component>
             </TooltipTrigger>
             <TooltipContent portal={IDE === CodyIDE.Web}>
