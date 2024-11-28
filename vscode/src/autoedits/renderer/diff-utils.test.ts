@@ -19,7 +19,8 @@ describe('getDecorationInfo', () => {
                     modifiedLines: [
                         {
                             type: 'modified',
-                            lineNumber: 1,
+                            originalLineNumber: 1,
+                            modifiedLineNumber: 1,
                             oldText: 'line2',
                             newText: 'modified2',
                             changes: [
@@ -37,8 +38,18 @@ describe('getDecorationInfo', () => {
                         },
                     ],
                     unchangedLines: [
-                        { type: 'unchanged', lineNumber: 0, text: 'line1' },
-                        { type: 'unchanged', lineNumber: 2, text: 'line3' },
+                        {
+                            type: 'unchanged',
+                            originalLineNumber: 0,
+                            modifiedLineNumber: 0,
+                            text: 'line1',
+                        },
+                        {
+                            type: 'unchanged',
+                            originalLineNumber: 2,
+                            modifiedLineNumber: 2,
+                            text: 'line3',
+                        },
                     ],
                 }
 
@@ -52,12 +63,22 @@ describe('getDecorationInfo', () => {
                 const decorationInfo = getDecorationInfo(originalText, modifiedText)
 
                 const expected: DecorationInfo = {
-                    addedLines: [{ type: 'added', lineNumber: 2, text: 'line3' }],
+                    addedLines: [{ type: 'added', modifiedLineNumber: 2, text: 'line3' }],
                     removedLines: [],
                     modifiedLines: [],
                     unchangedLines: [
-                        { type: 'unchanged', lineNumber: 0, text: 'line1' },
-                        { type: 'unchanged', lineNumber: 1, text: 'line2' },
+                        {
+                            type: 'unchanged',
+                            originalLineNumber: 0,
+                            modifiedLineNumber: 0,
+                            text: 'line1',
+                        },
+                        {
+                            type: 'unchanged',
+                            originalLineNumber: 1,
+                            modifiedLineNumber: 1,
+                            text: 'line2',
+                        },
                     ],
                 }
 
@@ -72,11 +93,21 @@ describe('getDecorationInfo', () => {
 
                 const expected: DecorationInfo = {
                     addedLines: [],
-                    removedLines: [{ type: 'removed', lineNumber: 1, text: 'line2' }],
+                    removedLines: [{ type: 'removed', originalLineNumber: 1, text: 'line2' }],
                     modifiedLines: [],
                     unchangedLines: [
-                        { type: 'unchanged', lineNumber: 0, text: 'line1' },
-                        { type: 'unchanged', lineNumber: 1, text: 'line3' },
+                        {
+                            type: 'unchanged',
+                            originalLineNumber: 0,
+                            modifiedLineNumber: 0,
+                            text: 'line1',
+                        },
+                        {
+                            type: 'unchanged',
+                            originalLineNumber: 1,
+                            modifiedLineNumber: 1,
+                            text: 'line3',
+                        },
                     ],
                 }
 
@@ -95,7 +126,8 @@ describe('getDecorationInfo', () => {
                     modifiedLines: [
                         {
                             type: 'modified',
-                            lineNumber: 1,
+                            originalLineNumber: 1,
+                            modifiedLineNumber: 1,
                             oldText: 'line2',
                             newText: 'modified2',
                             changes: [
@@ -113,7 +145,8 @@ describe('getDecorationInfo', () => {
                         },
                         {
                             type: 'modified',
-                            lineNumber: 2,
+                            originalLineNumber: 2,
+                            modifiedLineNumber: 2,
                             oldText: 'line3',
                             newText: 'newline',
                             changes: [
@@ -131,8 +164,18 @@ describe('getDecorationInfo', () => {
                         },
                     ],
                     unchangedLines: [
-                        { type: 'unchanged', lineNumber: 0, text: 'line1' },
-                        { type: 'unchanged', lineNumber: 3, text: 'line4' },
+                        {
+                            type: 'unchanged',
+                            originalLineNumber: 0,
+                            modifiedLineNumber: 0,
+                            text: 'line1',
+                        },
+                        {
+                            type: 'unchanged',
+                            originalLineNumber: 3,
+                            modifiedLineNumber: 3,
+                            text: 'line4',
+                        },
                     ],
                 }
 
@@ -151,7 +194,8 @@ describe('getDecorationInfo', () => {
                     modifiedLines: [],
                     unchangedLines: [
                         {
-                            lineNumber: 0,
+                            originalLineNumber: 0,
+                            modifiedLineNumber: 0,
                             text: '',
                             type: 'unchanged',
                         },
@@ -168,10 +212,10 @@ describe('getDecorationInfo', () => {
                 const decorationInfo = getDecorationInfo(originalText, modifiedText)
 
                 const expected: DecorationInfo = {
-                    addedLines: [{ type: 'added', lineNumber: 5, text: 'add2' }],
+                    addedLines: [{ type: 'added', modifiedLineNumber: 5, text: 'add2' }],
                     removedLines: [
                         {
-                            lineNumber: 2,
+                            originalLineNumber: 2,
                             text: 'removeLine1',
                             type: 'removed',
                         },
@@ -179,7 +223,8 @@ describe('getDecorationInfo', () => {
                     modifiedLines: [
                         {
                             type: 'modified',
-                            lineNumber: 1,
+                            originalLineNumber: 1,
+                            modifiedLineNumber: 1,
                             oldText: 'remove1',
                             newText: 'modified1',
                             changes: [
@@ -197,7 +242,8 @@ describe('getDecorationInfo', () => {
                         },
                         {
                             type: 'modified',
-                            lineNumber: 3,
+                            originalLineNumber: 3,
+                            modifiedLineNumber: 3,
                             oldText: 'remove2',
                             newText: 'add1',
                             changes: [
@@ -215,7 +261,8 @@ describe('getDecorationInfo', () => {
                         },
                         {
                             type: 'modified',
-                            lineNumber: 4,
+                            originalLineNumber: 4,
+                            modifiedLineNumber: 4,
                             oldText: 'modify2',
                             newText: 'modified2',
                             changes: [
@@ -233,9 +280,24 @@ describe('getDecorationInfo', () => {
                         },
                     ],
                     unchangedLines: [
-                        { type: 'unchanged', lineNumber: 0, text: 'keep1' },
-                        { type: 'unchanged', lineNumber: 2, text: 'keep2' },
-                        { type: 'unchanged', lineNumber: 6, text: 'keep3' },
+                        {
+                            type: 'unchanged',
+                            originalLineNumber: 0,
+                            modifiedLineNumber: 0,
+                            text: 'keep1',
+                        },
+                        {
+                            type: 'unchanged',
+                            originalLineNumber: 2,
+                            modifiedLineNumber: 0,
+                            text: 'keep2',
+                        },
+                        {
+                            type: 'unchanged',
+                            originalLineNumber: 6,
+                            modifiedLineNumber: 0,
+                            text: 'keep3',
+                        },
                     ],
                 }
 
@@ -254,7 +316,8 @@ describe('getDecorationInfo', () => {
                     modifiedLines: [
                         {
                             type: 'modified',
-                            lineNumber: 0,
+                            originalLineNumber: 0,
+                            modifiedLineNumber: 0,
                             oldText: 'line1',
                             newText: 'different1',
                             changes: [
@@ -272,7 +335,8 @@ describe('getDecorationInfo', () => {
                         },
                         {
                             type: 'modified',
-                            lineNumber: 1,
+                            originalLineNumber: 1,
+                            modifiedLineNumber: 0,
                             oldText: 'line2',
                             newText: 'different2',
                             changes: [
@@ -290,7 +354,8 @@ describe('getDecorationInfo', () => {
                         },
                         {
                             type: 'modified',
-                            lineNumber: 2,
+                            originalLineNumber: 2,
+                            modifiedLineNumber: 0,
                             oldText: 'line3',
                             newText: 'different3',
                             changes: [
@@ -321,13 +386,14 @@ describe('getDecorationInfo', () => {
 
                 const expected: DecorationInfo = {
                     addedLines: [
-                        { type: 'added', lineNumber: 1, text: 'line2' },
-                        { type: 'added', lineNumber: 2, text: 'line3' },
+                        { type: 'added', modifiedLineNumber: 0, text: 'line2' },
+                        { type: 'added', modifiedLineNumber: 0, text: 'line3' },
                     ],
                     modifiedLines: [
                         {
                             type: 'modified',
-                            lineNumber: 0,
+                            originalLineNumber: 0,
+                            modifiedLineNumber: 0,
                             oldText: '',
                             newText: 'line1',
                             changes: [
@@ -355,13 +421,14 @@ describe('getDecorationInfo', () => {
                 const expected: DecorationInfo = {
                     addedLines: [],
                     removedLines: [
-                        { type: 'removed', lineNumber: 1, text: 'line2' },
-                        { type: 'removed', lineNumber: 2, text: 'line3' },
+                        { type: 'removed', originalLineNumber: 1, text: 'line2' },
+                        { type: 'removed', originalLineNumber: 2, text: 'line3' },
                     ],
                     modifiedLines: [
                         {
                             type: 'modified',
-                            lineNumber: 0,
+                            originalLineNumber: 0,
+                            modifiedLineNumber: 0,
                             oldText: 'line1',
                             newText: '',
                             changes: [
@@ -391,7 +458,8 @@ describe('getDecorationInfo', () => {
                     modifiedLines: [
                         {
                             type: 'modified',
-                            lineNumber: 0,
+                            originalLineNumber: 0,
+                            modifiedLineNumber: 0,
                             oldText: '  line1',
                             newText: 'line1',
                             changes: [
@@ -404,7 +472,8 @@ describe('getDecorationInfo', () => {
                         },
                         {
                             type: 'modified',
-                            lineNumber: 1,
+                            originalLineNumber: 1,
+                            modifiedLineNumber: 0,
                             oldText: 'line2  ',
                             newText: 'line2',
                             changes: [
@@ -417,7 +486,8 @@ describe('getDecorationInfo', () => {
                         },
                         {
                             type: 'modified',
-                            lineNumber: 2,
+                            originalLineNumber: 2,
+                            modifiedLineNumber: 0,
                             oldText: ' line3 ',
                             newText: 'line3',
                             changes: [
@@ -452,7 +522,8 @@ describe('getDecorationInfo', () => {
                     modifiedLines: [
                         {
                             type: 'modified',
-                            lineNumber: 0,
+                            originalLineNumber: 0,
+                            modifiedLineNumber: 0,
                             oldText: 'const value = 123',
                             newText: 'const span = trace.getActiveTrace()',
                             changes: [
