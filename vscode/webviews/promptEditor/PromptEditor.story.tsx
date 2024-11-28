@@ -4,7 +4,7 @@ import {
     type SerializedPromptEditorState,
     serializedPromptEditorStateFromText,
 } from '@sourcegraph/cody-shared'
-import { PromptEditor } from '@sourcegraph/prompt-editor'
+import { PromptEditorV2 as PromptEditor } from '@sourcegraph/prompt-editor'
 import type { Meta, StoryObj } from '@storybook/react'
 import { type FunctionComponent, useState } from 'react'
 import { VSCodeStandaloneComponent } from '../storybook/VSCodeStoryDecorator'

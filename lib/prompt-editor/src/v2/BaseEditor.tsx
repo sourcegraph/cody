@@ -3,24 +3,21 @@ import { history, undo, redo } from "prosemirror-history"
 import { EditorState, Plugin, TextSelection } from "prosemirror-state"
 import { Node, Schema } from "prosemirror-model"
 import { baseKeymap } from "prosemirror-commands"
-import { InputRule, inputRules, textblockTypeInputRule } from "prosemirror-inputrules"
+import { InputRule, inputRules } from "prosemirror-inputrules"
 import { keymap } from "prosemirror-keymap"
-import { MouseEventHandler, useCallback, useContext, useEffect, useRef, useState } from "react"
+import { MouseEventHandler, useCallback, useEffect, useRef } from "react"
 import { ActorRefFrom, assign, setup, enqueueActions, fromPromise } from 'xstate'
 import { useActorRef, useSelector } from '@xstate/react'
 import styles from './BaseEditor.module.css'
 import { useDefaultContextForChat } from "../useInitialContext"
-import { ContextItem, ContextMentionProviderMetadata, displayPathBasename, FILE_CONTEXT_MENTION_PROVIDER, MentionMenuData, MentionQuery, NO_SYMBOL_MATCHES_HELP_LABEL, REMOTE_REPOSITORY_PROVIDER_URI, SYMBOL_CONTEXT_MENTION_PROVIDER } from "@sourcegraph/cody-shared"
-import { useExtensionAPI } from "../useExtensionAPI"
+import { ContextItem, ContextMentionProviderMetadata, displayPathBasename, FILE_CONTEXT_MENTION_PROVIDER, REMOTE_REPOSITORY_PROVIDER_URI, SYMBOL_CONTEXT_MENTION_PROVIDER } from "@sourcegraph/cody-shared"
 import clsx from "clsx"
 import { iconForProvider } from "../mentions/mentionMenu/MentionMenuItem"
 import { AtSignIcon } from "lucide-react"
 import { createRoot, Root } from 'react-dom/client'
-import { ChatMentionContext } from "../plugins/atMentions/useChatContextItems"
-import { CodeBlockView} from './CodeMirrorView'
 import "prosemirror-view/style/prosemirror.css"
 
-const schema = new Schema({
+export const schema = new Schema({
     nodes: {
         doc: {
             content: 'block+',
@@ -31,16 +28,6 @@ const schema = new Schema({
             parseDOM: [{tag: 'p'}],
             toDOM() {
                 return ['p', 0]
-            },
-        },
-        code_block: {
-            content: 'text*',
-            marks: "",
-            group: 'block',
-            defining: true,
-            parseDOM: [{tag: 'code_block', preserveWhitespace: true}],
-            toDOM() {
-                return ['pre', ['code', 0]]
             },
         },
         text: {
@@ -75,15 +62,26 @@ const schema = new Schema({
     },
 })
 
+export interface Item<T> {
+    data: T
+    onSelected: (editor: EditorView, range: {from: number, to: number}, data: T) => true | { replace: Node, appendSpaceIfNecessary?: boolean }
+    render: (item: T) => React.ReactNode
+}
+
+interface Position {
+    top: number
+    bottom: number
+    left: number
+    right: number
+}
+
 interface SuggestionsMachineContext {
     filter?: string,
     selectedIndex: number,
-    selectedProvider?: ContextMentionProviderMetadata
-    filteredItems: Item[]
-    fetchMenuData: (args: {query: string, providerID: string|null}) => Promise<Item[]>
+    filteredItems: Item<unknown>[]
+    position: Position
+    fetchMenuData: (args: {query: string}) => Promise<Item<unknown>[]>
 }
-
-type Item = ContextItem | { type: 'provider', provider: ContextMentionProviderMetadata }
 
 /**
  * This state machine is responsible for managing the suggestions menu. It
@@ -92,26 +90,24 @@ type Item = ContextItem | { type: 'provider', provider: ContextMentionProviderMe
 const suggestionsMachine = setup({
     types: {
         events: {} as
-            | { type: 'open' }
+            | { type: 'open', position: Position }
             | { type: 'close' }
             | { type: 'arrow-down' }
             | { type: 'arrow-up' }
             | { type: 'enter' }
             | { type: 'select', index: number }
-            | { type: 'filter.update', filter: string }
-            | { type: 'provider.set', provider: ContextMentionProviderMetadata, filter: string }
+            | { type: 'filter.update', filter: string, position: Position }
         ,
         context: {} as SuggestionsMachineContext,
         input: {} as Pick<SuggestionsMachineContext, 'fetchMenuData'>,
         emitted: {} as
-            | { type: 'select' }
+            | { type: 'select', item: Item<unknown> }
         ,
     },
     actors: {
-        menuDataLoader: fromPromise<Item[], SuggestionsMachineContext>(({ input }) => {
+        menuDataLoader: fromPromise<Item<unknown>[], SuggestionsMachineContext>(({ input }) => {
             return input.fetchMenuData({
                 query: input.filter ?? '',
-                providerID: input.selectedProvider?.id ?? null,
             })
         })
     },
@@ -119,7 +115,7 @@ const suggestionsMachine = setup({
         select: enqueueActions(({context, enqueue}) => {
             const selectedItem = context.filteredItems[context.selectedIndex]
             if (selectedItem) {
-                enqueue.emit({ type: 'select' })
+                enqueue.emit({ type: 'select', item: selectedItem })
             }
         }),
     },
@@ -129,13 +125,17 @@ const suggestionsMachine = setup({
         return {
             selectedIndex: 0,
             filteredItems: [],
+            position: { top: 0, left: 0, bottom: 0, right: 0 },
             ...input,
         }
     },
     states: {
         closed: {
             on: {
-                open: 'open',
+                open: {
+                    actions: assign({ position: ({event}) => event.position }),
+                    target: 'open',
+                },
             },
         },
         open: {
@@ -144,7 +144,6 @@ const suggestionsMachine = setup({
                 assign({
                     filter: undefined,
                     selectedIndex: 0,
-                    selectedProvider: undefined,
                     filteredItems: [],
                 })
             ],
@@ -181,17 +180,11 @@ const suggestionsMachine = setup({
                 close: 'closed',
                 "filter.update": {
                     guard: ({event, context}) => event.filter !== context.filter,
-                    actions: assign({filter: ({event}) => event.filter}),
-                    target: '.debounce',
-                },
-                'provider.set': {
                     actions: assign({
-                        selectedProvider: ({event}) => event.provider,
                         filter: ({event}) => event.filter,
-                        filteredItems: [],
-                        selectedIndex: 0,
+                        position: ({event}) => event.position,
                     }),
-                    target: ".loading",
+                    target: '.debounce',
                 },
                 "arrow-down": {
                     actions: assign({ selectedIndex: ({ context }) => (context.selectedIndex + 1) % context.filteredItems.length })
@@ -213,52 +206,68 @@ const suggestionsMachine = setup({
     },
 })
 
-interface SuggestionsPluginState {
-    open: boolean
-    start: number
-    decoration: DecorationSet
-}
+type SuggestionsPluginState =
+  | { type: 'closed', decoration: DecorationSet }
+  | { type: 'open', start: number, decoration: DecorationSet }
+
+type SuggestionsPluginEvent =
+  | { type: 'open', position: number }
+  | { type: 'close' }
 
 interface SuggestionsPluginConfig {
     actor: ActorRefFrom<typeof suggestionsMachine>
-    updatePosition: (position: {top: number, bottom: number, left: number, right: number}) => void,
 }
 
 const emptyState: SuggestionsPluginState = {
-    open: false,
-    start: 0,
-    decoration: DecorationSet.empty
+    type: 'closed',
+    decoration: DecorationSet.empty,
 }
 
-function createSuggestionsPlugin({actor, updatePosition }: SuggestionsPluginConfig): Plugin[] {
+function createSuggestionsPlugin({actor }: SuggestionsPluginConfig): Plugin[] {
     const plugin = new Plugin<SuggestionsPluginState>({
         state: {
             init(config, instance) {
                 return emptyState
             },
             apply(tr, value, oldState, newState) {
-                let nextValue = value
-                const meta = tr.getMeta(plugin)
-                if (meta?.type === 'open') {
-                    return {
-                        open: true,
-                        start: meta.position,
-                        decoration: DecorationSet.create(newState.doc, [
-                            Decoration.inline(
-                                meta.position,
-                                meta.position + 1,
-                                { class: styles.active },
-                                // This is necessary so that mapping changes will 'grow' the decoration, which
-                                // also acts as markers for the filter text
-                                { inclusiveEnd: true }
-                            )
-                        ]),
+                const event = tr.getMeta(plugin) as SuggestionsPluginEvent | undefined
+
+                // Handle internal/explicit events first
+                switch (event?.type) {
+                    case 'open': {
+                        switch (value.type) {
+                            case 'closed': {
+                                return {
+                                    type: 'open',
+                                    start: event.position,
+                                    decoration: DecorationSet.create(newState.doc, [
+                                        Decoration.inline(
+                                            event.position,
+                                            event.position + 1,
+                                            { class: styles.active },
+                                            // This is necessary so that mapping changes will 'grow' the decoration, which
+                                            // also acts as markers for the filter text
+                                            { inclusiveEnd: true }
+                                        )
+                                    ]),
+                                }
+                            }
+                            default: {
+                                return value
+                            }
+                        }
                     }
-                } else if (meta?.type === 'close') {
-                    return emptyState
+                    case 'close': {
+                        return emptyState
+                    }
                 }
 
-                if (nextValue.open && nextValue.decoration) {
+                // Handle other changes, e.g. selection or input changes. In particular we have to
+                // update the decoration that tracks the current filter text
+                let nextValue = value
+
+                if (nextValue.type === 'open') {
+                    // Expand decoration to cover the filter text, if necessary
                     const decorationSet = nextValue.decoration.map(tr.mapping, tr.doc)
                     if (decorationSet !== nextValue.decoration) {
                         const decoration = decorationSet.find()[0]
@@ -272,8 +281,9 @@ function createSuggestionsPlugin({actor, updatePosition }: SuggestionsPluginConf
                             decoration: decorationSet,
                         }
                     }
-                    const pos = tr.selection.$from.pos
+
                     // Check whether selection moved outside of decoration
+                    const pos = tr.selection.$from.pos
                     if (nextValue.decoration.find(pos, pos).length === 0) {
                         return emptyState
                     }
@@ -284,33 +294,31 @@ function createSuggestionsPlugin({actor, updatePosition }: SuggestionsPluginConf
         view(view) {
             const sub = actor.on('*', event => {
                 const state = plugin.getState(view.state)
-                const decoration = state?.decoration.find()[0]
-                if (decoration) {
+                if (state?.type === 'open') {
+                    const decoration = state.decoration.find()[0]
                     switch (event.type) {
                         case 'select': {
-                            const snapshot = actor.getSnapshot()
-                            const item = snapshot.context.filteredItems[snapshot.context.selectedIndex]
-                            if (item.type ===  'provider') {
-                                actor.send({type: 'provider.set', provider: item.provider, filter: ''})
-                                view.dispatch(
-                                    view.state.tr.delete(decoration.from + 1, decoration.to)
-                                )
-                            } else {
-                                const newNode = schema.node('mention', { item }, schema.text(getItemTitle(item)))
-                                const tr = view.state.tr.replaceWith(decoration.from, decoration.to, newNode)
-                                const end = decoration.from + newNode.nodeSize
-
-                                // Append a space after the node if necessary
-                                if (!/\s/.test(tr.doc.textBetween(end, end + 1))) {
-                                    tr.insertText(' ', end)
-                                }
-                                view.dispatch(tr
-                                    // Move selection after the space after the node
-                                    // (automatically closes menu)
-                                    .setSelection(TextSelection.create(tr.doc, end+1))
-                                    .scrollIntoView()
-                                )
+                            const item = event.item
+                            // todo: handle item.onSelected
+                            const result = item.onSelected(view, decoration, item.data)
+                            if (result === true) {
+                                // handled by item.onSelected
+                                return
                             }
+                            const newNode = result.replace // schema.node('mention', { item }, schema.text(getItemTitle(item)))
+                            const tr = view.state.tr.replaceWith(decoration.from, decoration.to, newNode)
+                            const end = decoration.from + newNode.nodeSize
+
+                            // Append a space after the node if necessary
+                            if (result.appendSpaceIfNecessary && !/\s/.test(tr.doc.textBetween(end, end + 1))) {
+                                tr.insertText(' ', end)
+                            }
+                            view.dispatch(tr
+                                // Move selection after the space after the node
+                                // (automatically closes menu)
+                                .setSelection(TextSelection.create(tr.doc, end+1))
+                                .scrollIntoView()
+                            )
                             break;
                         }
                     }
@@ -318,24 +326,29 @@ function createSuggestionsPlugin({actor, updatePosition }: SuggestionsPluginConf
             })
             return {
                 update(view, prevState) {
+                    // Synchronize state with state machine
                     const next = plugin.getState(view.state)
                     const prev = plugin.getState(prevState)
-                    if (next?.open && !prev?.open) {
-                        actor.send({ type: 'open' })
-                    } else if (next && !next.open) {
+
+                    if (next?.type === 'open' && next.type !== prev?.type) {
+                        const decoration = next.decoration.find()[0]
+                        actor.send({ type: 'open', position: view.coordsAtPos(decoration.from) })
+                    } else if (next?.type === 'closed' && next.type !== prev?.type) {
                         actor.send({ type: 'close' })
                     }
-                    if (next?.open && next.decoration && next.decoration !== prev?.decoration) {
+
+                    if (next?.type === 'open' && next.decoration !== prev?.decoration) {
                         const decoration = next.decoration.find()[0]
                         if (decoration) {
                             actor.send({
                                 type: 'filter.update',
                                 // +1 to remove leading '@' character
-                                filter: view.state.doc.textBetween(decoration.from + 1, decoration.to)
+                                filter: view.state.doc.textBetween(decoration.from + 1, decoration.to),
+                                position: view.coordsAtPos(decoration.from)
                             })
                         }
-                        updatePosition(view.coordsAtPos(decoration.from))
                     }
+
                 },
                 destroy() {
                     sub.unsubscribe()
@@ -358,7 +371,7 @@ function createSuggestionsPlugin({actor, updatePosition }: SuggestionsPluginConf
                             actor.send({ type: 'enter' })
                             return true;
                         case 'Escape':
-                            view.dispatch(view.state.tr.setMeta(plugin, {type: 'close'}))
+                            view.dispatch(view.state.tr.setMeta(plugin, {type: 'close'} as SuggestionsPluginEvent))
                             return true;
                     }
                 }
@@ -380,7 +393,7 @@ function createSuggestionsPlugin({actor, updatePosition }: SuggestionsPluginConf
                     (state, match, start, end) => {
                         return state.tr
                             .insertText(match[0], start, end)
-                            .setMeta(plugin, {type: 'open',  position: start + (match[0][1] ? 1 : 0) })
+                            .setMeta(plugin, {type: 'open',  position: start + (match[0][1] ? 1 : 0) } as SuggestionsPluginEvent)
                     },
                 )
 
@@ -407,76 +420,61 @@ function placeholder(text: string) {
     });
 }
 
-interface BaseEditorProps {
+type BaseEditorProps<T> = {
+    className?: string
     placeholder?: string
     onEnterKey?: (event: Event) => void
     onChange?: (state: EditorState) => void
-}
+    fetchMenuData: (args: {query: string}) => Promise<Item<T>[]>
+    onSuggestionsMenuClose?: () => void
+} & Pick<SuggestionsProps, 'getEmptyLabel' | 'getHeader'>
 
-export const BaseEditor: React.FC = (props: BaseEditorProps) => {
+export const BaseEditor = <T,>(props: BaseEditorProps<T>) => {
     // TODO: Track token count/budget available
+    const mentionMenuDataRef = useRef<BaseEditorProps<T>['fetchMenuData']>(() => Promise.resolve([]))
     // TODO: Handle initial context
-    const mentionMenuDataRef = useRef<SuggestionsMachineContext['fetchMenuData']>(() => Promise.resolve([]))
-    const [menuPosition, setMenuPosition] = useState({ left: 0, bottom: 0 })
-    // TODO: Move this out of component
-    const mentionMenuData = useExtensionAPI().mentionMenuData
-    // TODO: Move this out of component
-    const mentionSettings = useContext(ChatMentionContext)
 
 
     const actor = useActorRef(suggestionsMachine, { input: {
         fetchMenuData(args) {
-            return mentionMenuDataRef.current(args)
+            return mentionMenuDataRef.current(args) as Promise<Item<unknown>[]>
         },
     } })
     const view = useRef<EditorView | null>(null)
 
     // Update data fetch function as necessary
     useEffect(() => {
-        mentionMenuDataRef.current = ({query, providerID: provider}) => new Promise((resolve, reject) => {
-            let result: MentionMenuData
-            return mentionMenuData({text: query, provider}).subscribe(
-                next => {
-                    result = next
-                },
-                error => reject(error),
-                () => {
-                    resolve([
-                        ...result.providers.map(provider => ({type: 'provider' as const, provider})),
-                        ...result.items ?? [],
-                    ])
-                }
-            )
-        })
-    }, [mentionMenuData, mentionSettings])
+        mentionMenuDataRef.current = props.fetchMenuData
+    }, [props.fetchMenuData])
 
     const isSuggestionsMenuOpen = useSelector(actor, state => state.matches('open'))
+
+    useEffect(() => {
+        if (view.current && !isSuggestionsMenuOpen) {
+            props.onSuggestionsMenuClose?.()
+        }
+    }, [view, isSuggestionsMenuOpen])
 
     const createView = useCallback((node: HTMLDivElement) => {
         if (node) {
             const editor = new EditorView(node, {
                 state: EditorState.create({
+                    doc: props.initialEditorState ? schema.nodeFromJSON(props.initialEditorState) : undefined,
                     schema,
                     plugins: [
                         history(),
                         keymap({ 'Mod-z': undo, 'Mod-y': redo }),
                         // TODO: Align menu with right edge of input if necessary
                         // (maybe use floating-ui to also resize it to available space
-                        ...createSuggestionsPlugin({actor, updatePosition: setMenuPosition}),
+                        ...createSuggestionsPlugin({actor}),
                         keymap(baseKeymap),
                         placeholder(props.placeholder ?? ''),
-                        inputRules({
-                            rules: [textblockTypeInputRule(/^```$/, schema.nodes.code_block)],
-                        })
                     ],
                 }),
                 nodeViews: {
                     mention(node) {
                         return new MentionView(node)
                     },
-                    code_block(node, view, getPos) {
-                        return new CodeBlockView(node, view, getPos)
-                    }
                 },
                 dispatchTransaction(tr) {
                     const newstate = editor.state.apply(tr)
@@ -491,24 +489,31 @@ export const BaseEditor: React.FC = (props: BaseEditorProps) => {
     }, [props.placeholder, props.onEnterKey, actor])
 
     return <>
-        <div ref={createView} className={styles.editor} />
+        <div ref={createView} className={clsx(styles.editor, props.className)} />
         {isSuggestionsMenuOpen &&
             <Suggestions
                 actor={actor}
-                style={{ top: menuPosition.bottom, left: menuPosition.left }}
+                getEmptyLabel={props.getEmptyLabel}
+                getHeader={props.getHeader}
             />
         }
         </>
 }
 
-const Suggestions: React.FC<{ actor: ActorRefFrom<typeof suggestionsMachine>, style: Record<string, number> }> = props => {
+interface SuggestionsProps {
+    actor: ActorRefFrom<typeof suggestionsMachine>
+    getHeader: () => React.ReactNode
+    getEmptyLabel: (args: {filter: string}) => React.ReactNode
+}
+
+const Suggestions: React.FC<SuggestionsProps> = props => {
     const defaultContext = useDefaultContextForChat()
     const container = useRef<HTMLDivElement | null>(null)
     const items = useSelector(props.actor, state => state.context.filteredItems)
     const selectedIndex = useSelector(props.actor, state => state.context.selectedIndex)
-    const selectedProvider = useSelector(props.actor, state => state.context.selectedProvider ?? null)
-    const filter = useSelector(props.actor, state => state.context.filter)
+    const filter = useSelector(props.actor, state => state.context.filter) ?? ''
     const loading = useSelector(props.actor, state => state.matches({ open: 'loading' }))
+    const menuPosition = useSelector(props.actor, state => state.context.position)
 
     useEffect(() => {
         container.current?.querySelector('[aria-selected="true"]')?.scrollIntoView({ block: 'nearest' })
@@ -531,23 +536,25 @@ const Suggestions: React.FC<{ actor: ActorRefFrom<typeof suggestionsMachine>, st
         }
     }, [])
 
+    const header = props.getHeader()
+
     return <div
         ref={container}
         className={clsx(styles.suggestions, menuClass, { [styles.loading]: loading })}
         onMouseDown={handleMouseDown}
         onClick={handleClick}
-        style={props.style}>
+        style={{ top: menuPosition.bottom, left: menuPosition.left }}>
         <ul>
-            {selectedProvider &&
-                <li className={headerClass} aria-disabled="true">{selectedProvider.title}</li>
+            {header &&
+                <li className={headerClass} aria-disabled="true">{header}</li>
             }
         {items.map((item, index) =>
-            <li role="option" className={itemClass} aria-selected={index === selectedIndex}>
-                {getItemTitle(item)}
-                </li>
+            <li key={index} role="option" className={itemClass} aria-selected={index === selectedIndex}>
+                {item.render(item.data)}
+            </li>
         )}
             {loading && items.length === 0 && <li aria-disabled="true">Loading...</li>}
-            {!loading && items.length === 0 && <li aria-disabled="true">{getEmptyLabel(selectedProvider, { text: filter ?? '', provider: selectedProvider?.id ?? null })}</li>}
+            {!loading && items.length === 0 && <li aria-disabled="true">{props.getEmptyLabel({filter})}</li>}
         </ul>
     </div>
 }
@@ -560,34 +567,17 @@ const itemClass = (
     'tw-relative tw-flex tw-cursor-pointer tw-select-none tw-items-center tw-py-3 tw-px-2 tw-text-md tw-outline-none aria-selected:tw-bg-accent aria-selected:tw-text-accent-foreground hover:tw-bg-accent hover:tw-text-accent-foreground data-[disabled=true]:tw-pointer-events-none data-[disabled=true]:tw-opacity-50 !tw-p-3 !tw-text-md !tw-leading-[1.2] !tw-h-[30px] !tw-rounded-none'
 )
 
-function getItemTitle(item: Item): string {
+function getItemTitle(item: ContextItem|ContextMentionProviderMetadata): string {
+    if ('id' in item) {
+        return item.title
+    }
     switch (item.type) {
-        case 'provider':
-            return item.provider.title
         case 'symbol':
             return item.title ?? item.symbolName
         default:
             return item.title ?? displayPathBasename(item.uri)
 
     }
-}
-
-function getEmptyLabel(
-    parentItem: ContextMentionProviderMetadata | null,
-    mentionQuery: MentionQuery
-): string {
-    if (!mentionQuery.text) {
-        return parentItem?.queryLabel ?? 'Search...'
-    }
-
-    if (!parentItem) {
-        return FILE_CONTEXT_MENTION_PROVIDER.emptyLabel!
-    }
-    if (parentItem.id === SYMBOL_CONTEXT_MENTION_PROVIDER.id && mentionQuery.text.length < 3) {
-        return SYMBOL_CONTEXT_MENTION_PROVIDER.emptyLabel! + NO_SYMBOL_MATCHES_HELP_LABEL
-    }
-
-    return parentItem.emptyLabel ?? 'No results'
 }
 
 class MentionView {
