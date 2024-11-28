@@ -32,6 +32,7 @@ vi.mock('./remoteRepos', () => {
 
 describe('publicRepoMetadataIfAllWorkspaceReposArePublic', () => {
     beforeAll(() => {
+        vi.useFakeTimers()
         mockLocalStorage()
     })
 
@@ -46,7 +47,11 @@ describe('publicRepoMetadataIfAllWorkspaceReposArePublic', () => {
         const mockGetRepoMetadataUsingRepoName = vi
             .spyOn(GitHubDotComRepoMetadata.getInstance(), 'getRepoMetadataUsingRepoName')
             .mockImplementation(repoName =>
-                Promise.resolve<RepoRevMetaData>({ isPublic: false, repoName })
+                Promise.resolve<RepoRevMetaData>({
+                    isPublic: false,
+                    repoName,
+                    timestamp: Date.now(),
+                })
             )
 
         const result = await firstResultFromOperation(publicRepoMetadataIfAllWorkspaceReposArePublic)
@@ -67,15 +72,20 @@ describe('publicRepoMetadataIfAllWorkspaceReposArePublic', () => {
         const mockGetRepoMetadataUsingRepoName = vi
             .spyOn(GitHubDotComRepoMetadata.getInstance(), 'getRepoMetadataUsingRepoName')
             .mockImplementation(repoName =>
-                Promise.resolve<RepoRevMetaData>({ isPublic: true, repoName, commit: 'aaa' })
+                Promise.resolve<RepoRevMetaData>({
+                    isPublic: true,
+                    repoName,
+                    commit: 'aaa',
+                    timestamp: Date.now(),
+                })
             )
 
         const result = await firstResultFromOperation(publicRepoMetadataIfAllWorkspaceReposArePublic)
         expect(result).toEqual({
             isPublic: true,
             repoMetadata: [
-                { isPublic: true, repoName: 'repo0', commit: 'aaa' },
-                { isPublic: true, repoName: 'repo1', commit: 'aaa' },
+                { isPublic: true, repoName: 'repo0', commit: 'aaa', timestamp: Date.now() },
+                { isPublic: true, repoName: 'repo1', commit: 'aaa', timestamp: Date.now() },
             ],
         })
         expect(
@@ -126,7 +136,14 @@ describe('publicRepoMetadataIfAllWorkspaceReposArePublic', () => {
             .spyOn(GitHubDotComRepoMetadata.getInstance(), 'getRepoMetadataUsingRepoName')
             .mockImplementation(repoName =>
                 Promise.resolve<RepoRevMetaData | undefined>(
-                    repoName === 'repo0' ? undefined : { isPublic: true, repoName, commit: 'aaa' }
+                    repoName === 'repo0'
+                        ? undefined
+                        : {
+                              isPublic: true,
+                              repoName,
+                              commit: 'aaa',
+                              timestamp: Date.now(),
+                          }
                 )
             )
 
@@ -151,6 +168,7 @@ describe('publicRepoMetadataIfAllWorkspaceReposArePublic', () => {
                           isPublic: true,
                           repoName,
                           commit: 'aaa',
+                          timestamp: Date.now(),
                       })
                     : Promise.reject(new Error('x'))
             )
