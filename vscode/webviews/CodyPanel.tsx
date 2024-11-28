@@ -115,7 +115,7 @@ export const CodyPanel: FunctionComponent<CodyPanelProps> = ({
                 )}
                 {errorMessages && <ErrorBanner errors={errorMessages} setErrors={setErrorMessages} />}
                 <Notices />
-                <TabContainer value={view} ref={tabContainerRef}>
+                <TabContainer value={view} ref={tabContainerRef} className="tw-z-0">
                     {view === View.Chat && (
                         <Chat
                             chatEnabled={chatEnabled}

@@ -10,7 +10,8 @@
 .tabs-root {
     container-type: inline-size;
     container-name: tabs-container;
-    isolation: isolate;
+    position: relative;
+    z-index: 10;
 }
 
 .tabs-container {
@@ -19,7 +20,6 @@
     padding: 0;
     flex-direction: column;
     justify-content: space-between;
-    position: sticky;
     border-bottom: 1px solid var(--vscode-dropdown-border);
     background-color: var(--vscode-sideBar-background);
 }
@@ -92,7 +92,9 @@
         padding: 25px;
         border-radius: 6px;
         background-color: var(--vscode-modal-background);
-        box-shadow: hsl(206deg 22% 7% / 35%) 0 10px 38px -10px, hsl(206deg 22% 7% / 20%) 0 10px 20px -15px;
+        box-shadow:
+            hsl(206deg 22% 7% / 35%) 0 10px 38px -10px,
+            hsl(206deg 22% 7% / 20%) 0 10px 20px -15px;
 
         &:focus {
             outline: none;

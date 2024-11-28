@@ -63,14 +63,15 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
 
     return (
         <ToolbarPopoverItem
-            role="menu"
+            role="combobox"
+            data-testid="user-dropdown-menu"
             iconEnd={null}
-            className={cn('tw-justify-between tw-bg-inherit tw-z-50', className)}
+            className={cn('tw-justify-between tw-bg-inherit', className)}
             __storybook__open={__storybook__open}
             tooltip="Account"
             aria-label="Account Menu Button"
             popoverContent={close => (
-                <Command className="focus:tw-outline-none tw-z-50">
+                <Command className="tw-shadow-lg tw-shadow-border-500/50 focus:tw-outline-none">
                     <CommandList>
                         <CommandGroup>
                             <CommandItem
@@ -105,7 +106,7 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
                                 </div>
                                 <Badge
                                     variant={isProUser ? 'cody' : 'ghost'}
-                                    className="tw-px-4 tw-py-0 tw-opacity-75 tw-text-sm"
+                                    className="tw-p-0 tw-opacity-75 tw-text-sm"
                                 >
                                     {isDotComUser ? (isProUser ? 'Pro' : 'Free') : 'Enterprise'}
                                 </Badge>
@@ -113,24 +114,28 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
                         </CommandGroup>
 
                         <CommandGroup>
-                            <CommandItem
-                                onSelect={() => {
-                                    if (username) {
-                                        const uri = URI.parse(ACCOUNT_USAGE_URL.toString()).with({
-                                            query: `cody_client_user=${encodeURIComponent(username)}`,
-                                        })
-                                        getVSCodeAPI().postMessage({
-                                            command: 'links',
-                                            value: uri.toString(),
-                                        })
-                                    }
-                                    close()
-                                }}
-                            >
-                                <UserCircleIcon size={16} strokeWidth={1.25} className="tw-mr-2" />
-                                <span className="tw-flex-grow">Manage Account</span>
-                                <ExternalLinkIcon size={16} strokeWidth={1.25} />
-                            </CommandItem>
+                            {isDotComUser && (
+                                <CommandItem
+                                    onSelect={() => {
+                                        if (username) {
+                                            const uri = URI.parse(ACCOUNT_USAGE_URL.toString()).with({
+                                                query: `cody_client_user=${encodeURIComponent(
+                                                    username
+                                                )}`,
+                                            })
+                                            getVSCodeAPI().postMessage({
+                                                command: 'links',
+                                                value: uri.toString(),
+                                            })
+                                        }
+                                        close()
+                                    }}
+                                >
+                                    <UserCircleIcon size={16} strokeWidth={1.25} className="tw-mr-2" />
+                                    <span className="tw-flex-grow">Manage Account</span>
+                                    <ExternalLinkIcon size={16} strokeWidth={1.25} />
+                                </CommandItem>
+                            )}
                             <CommandItem
                                 onSelect={() => {
                                     getVSCodeAPI().postMessage({
@@ -182,15 +187,11 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
                 onKeyDown: onKeyDown,
                 onCloseAutoFocus: event => {
                     event.preventDefault()
+                    event.stopPropagation()
                 },
             }}
         >
-            <UserAvatar
-                user={authStatus}
-                size={12}
-                sourcegraphGradientBorder={!!isProUser}
-                className="!tw-opacity-100"
-            />
+            <UserAvatar user={authStatus} size={12} sourcegraphGradientBorder={!!isProUser} />
         </ToolbarPopoverItem>
     )
 }
