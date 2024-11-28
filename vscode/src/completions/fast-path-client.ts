@@ -19,7 +19,6 @@ import {
     fetch,
     getActiveTraceAndSpanId,
     isAbortError,
-    isNodeResponse,
     isRateLimitError,
     logResponseHeadersToSpan,
     recordErrorToSpan,
@@ -144,7 +143,7 @@ export function createFastPathClient(
         }
 
         const isStreamingResponse = response.headers.get('content-type')?.startsWith('text/event-stream')
-        if (!isStreamingResponse || !isNodeResponse(response)) {
+        if (!isStreamingResponse) {
             throw recordErrorToSpan(span, new TracedError('No streaming response given', traceId))
         }
 

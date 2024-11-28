@@ -480,6 +480,9 @@ importers:
       '@opentelemetry/semantic-conventions':
         specifier: ^1.18.1
         version: 1.18.1
+      '@pollyjs/adapter-fetch':
+        specifier: ^6.0.6
+        version: 6.0.6
       '@radix-ui/react-accordion':
         specifier: ^1.2.0
         version: 1.2.0(@types/react-dom@18.2.25)(@types/react@18.2.79)(react-dom@18.2.0)(react@18.2.0)
@@ -3853,6 +3856,15 @@ packages:
       playwright: 1.47.2
     dev: true
 
+  /@pollyjs/adapter-fetch@6.0.6:
+    resolution: {integrity: sha512-euWzM5TnA2jptdJgjIkEd/Q2hNFB652XivPKerWpLMFB13IKlrERX9wn2Dw3pquDAP0LvXH1qVBZt5DK0Xhzyg==}
+    dependencies:
+      '@pollyjs/adapter': 6.0.6
+      '@pollyjs/utils': 6.0.6
+      detect-node: 2.1.0
+      to-arraybuffer: 1.0.1
+    dev: false
+
   /@pollyjs/adapter-node-http@6.0.6:
     resolution: {integrity: sha512-jdJG7oncmSHZAtVMmRgOxh5A56b7G8H9ULlk/ZaVJ+jNrlFXhLmPpx8OQoSF4Cuq2ugdiWmwmAjFXHStcpY3Mw==}
     dependencies:
@@ -3868,7 +3880,6 @@ packages:
     resolution: {integrity: sha512-szhys0NiFQqCJDMC0kpDyjhLqSI7aWc6m6iATCRKgcMcN/7QN85pb3GmRzvnNV8+/Bi2AUSCwxZljcsKhbYVWQ==}
     dependencies:
       '@pollyjs/utils': 6.0.6
-    dev: true
 
   /@pollyjs/core@6.0.6:
     resolution: {integrity: sha512-1ZZcmojW8iSFmvHGeLlvuudM3WiDV842FsVvtPAo3HoAYE6jCNveLHJ+X4qvonL4enj1SyTF3hXA107UkQFQrA==}
@@ -8979,6 +8990,10 @@ packages:
 
   /detect-node-es@1.1.0:
     resolution: {integrity: sha512-ypdmJU/TbBby2Dxibuv7ZLW3Bs1QEmM7nHjEANfohJLvE0XVujisn1qPJcZxg+qDucsr+bP6fLD1rPS3AhJ7EQ==}
+    dev: false
+
+  /detect-node@2.1.0:
+    resolution: {integrity: sha512-T0NIuQpnTvFDATNuHN5roPwSBG83rFsuO+MXXH9/3N1eFbn4wcPjttvjMLEPWJ0RGUYgQE7cGgS3tNxbqCGM7g==}
     dev: false
 
   /detect-package-manager@2.0.1:
@@ -15982,6 +15997,10 @@ packages:
     resolution: {integrity: sha512-nZD7m9iCPC5g0pYmcaxogYKggSfLsdxl8of3Q/oIbqCqLLIO9IAF0GWjX1z9NZRHPiXv8Wex4yDCaZsgEw0Y8w==}
     engines: {node: '>=14.14'}
     dev: true
+
+  /to-arraybuffer@1.0.1:
+    resolution: {integrity: sha512-okFlQcoGTi4LQBG/PgSYblw9VOyptsz2KJZqc6qtgGdes8VktzUQkj4BI2blit072iS8VODNcMA+tvnS9dnuMA==}
+    dev: false
 
   /to-fast-properties@2.0.0:
     resolution: {integrity: sha512-/OaKK0xYrs3DmxRYqL/yDc+FxFUVYhDlXMhRmv3z915w2HF1tnN1omB354j8VUGO/hbRzyD6Y3sA7v7GS/ceog==}

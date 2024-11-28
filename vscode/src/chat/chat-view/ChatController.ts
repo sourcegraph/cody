@@ -10,7 +10,6 @@ import {
     distinctUntilChanged,
     firstResultFromOperation,
     forceHydration,
-    isAbortError,
     pendingOperation,
     ps,
     resolvedConfig,
@@ -58,6 +57,7 @@ import {
     graphqlClient,
     hydrateAfterPostMessage,
     inputTextWithoutContextChipsFromPromptEditorState,
+    isAbortError,
     isAbortErrorOrSocketHangUp,
     isContextWindowLimitError,
     isDefined,
@@ -417,19 +417,20 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     startAuthProgressIndicator()
                     tokenReceiverUrl = await this.startTokenReceiver?.(endpoint, async credentials => {
                         closeAuthProgressIndicator()
-                        const {
-                            authStatus: { authenticated },
-                        } = await authProvider.validateAndStoreCredentials(credentials, 'store-if-valid')
+                        const authStatus = await authProvider.validateAndStoreCredentials(
+                            credentials,
+                            'store-if-valid'
+                        )
                         telemetryRecorder.recordEvent('cody.auth.fromTokenReceiver.web', 'succeeded', {
                             metadata: {
-                                success: authenticated ? 1 : 0,
+                                success: authStatus.authenticated ? 1 : 0,
                             },
                             billingMetadata: {
                                 product: 'cody',
                                 category: 'billable',
                             },
                         })
-                        if (!authenticated) {
+                        if (!authStatus.authenticated) {
                             void vscode.window.showErrorMessage(
                                 'Authentication failed. Please check your token and try again.'
                             )
@@ -492,16 +493,14 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                             if (!token) {
                                 return
                             }
-                            const {
-                                authStatus: { authenticated },
-                            } = await authProvider.validateAndStoreCredentials(
+                            const authStatus = await authProvider.validateAndStoreCredentials(
                                 {
                                     serverEndpoint: DOTCOM_URL.href,
                                     accessToken: token,
                                 },
                                 'store-if-valid'
                             )
-                            if (!authenticated) {
+                            if (!authStatus.authenticated) {
                                 void vscode.window.showErrorMessage(
                                     'Authentication failed. Please check your token and try again.'
                                 )

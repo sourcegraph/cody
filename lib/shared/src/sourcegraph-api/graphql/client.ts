@@ -1,4 +1,3 @@
-import type { Response as NodeResponse } from 'node-fetch'
 import { URI } from 'vscode-uri'
 import { fetch } from '../../fetch'
 
@@ -64,12 +63,6 @@ import {
     VIEWER_SETTINGS_QUERY,
 } from './queries'
 import { buildGraphQLUrl } from './url'
-
-export type BrowserOrNodeResponse = Response | NodeResponse
-
-export function isNodeResponse(response: BrowserOrNodeResponse): response is NodeResponse {
-    return Boolean(response.body && !('getReader' in response.body))
-}
 
 interface APIResponse<T> {
     data?: T
@@ -1572,9 +1565,7 @@ function catchHTTPError(
  */
 export const graphqlClient = SourcegraphGraphQLAPIClient.withGlobalConfig()
 
-export async function verifyResponseCode(
-    response: BrowserOrNodeResponse
-): Promise<BrowserOrNodeResponse> {
+export async function verifyResponseCode(response: Response): Promise<Response> {
     if (!response.ok) {
         const body = await response.text()
         throw new Error(`HTTP status code ${response.status}${body ? `: ${body}` : ''}`)

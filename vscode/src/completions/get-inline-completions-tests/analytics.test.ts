@@ -1,6 +1,5 @@
 import omit from 'lodash/omit'
 import pick from 'lodash/pick'
-import { Response } from 'node-fetch'
 import * as uuid from 'uuid'
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 

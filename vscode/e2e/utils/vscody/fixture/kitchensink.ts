@@ -1,9 +1,7 @@
 import fs from 'node:fs/promises'
+import path from 'node:path'
 import { test as _test } from '@playwright/test'
 import { copy as copyExt } from 'fs-extra'
-import 'node:http'
-import 'node:https'
-import path from 'node:path'
 import type { TestContext, WorkerContext } from '.'
 import { CODY_VSCODE_ROOT_DIR, retry } from '../../helpers'
 

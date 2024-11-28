@@ -2,7 +2,6 @@ import { type Position, Range, type TextDocument } from 'vscode'
 import type { Tree } from 'web-tree-sitter'
 
 import {
-    type BrowserOrNodeResponse,
     type CompletionResponseWithMetaData,
     type DocumentContext,
     dedupeWith,
@@ -148,7 +147,7 @@ type ResponseHeaderName = (typeof RESPONSE_HEADERS_TO_SAVE)[number]
 export type InlineCompletionResponseHeaders = Partial<Record<ResponseHeaderName, string>>
 
 function extractRelevantResponseHeaders(
-    response?: BrowserOrNodeResponse
+    response?: Response
 ): InlineCompletionResponseHeaders | undefined {
     if (!response) {
         return undefined

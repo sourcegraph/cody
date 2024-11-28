@@ -7,7 +7,7 @@ export const TestLogger = {
         // Do some stuff
 
         /**
-         * Records a log message.
+         * Logs a message to the console indicating that the log is being recorded.
          */
         function recordLog() {
             console.log(/* CURSOR */ 'Recording the log')
@@ -21,52 +21,14 @@ export const TestLogger = {
 
 exports[`Document Code > commands/document (Kotlin class name) 1`] = `
 "/**
- * Represents a greeting class that can be used to retrieve a greeting message.
+ * Provides a greeting message.
+ * @return the greeting message "Hello, world!"
  */
 class He/* CURSOR */llo {
     fun greeting(): String {
         return "Hello, world!"
     }
 }
-"
-`;
-
-exports[`Document Code > commands/document (Method as part of a class) 1`] = `
-"const foo = 42
-// Should be present in the LLM prompt
-const longPrefix = \`
-    longPrefix content
-    longPrefix content
-    longPrefix content
-    longPrefix content
-    longPrefix content
-    longPrefix content
-    longPrefix content
-\`
-
-export class TestClass {
-    constructor(private shouldGreet: boolean) {}
-
-    /**
-     * Logs the message "Hello World!" to the console if the \`shouldGreet\` property is \`true\`.
-     */
-    public functionName() {
-        if (this.shouldGreet) {
-            console.log(/* CURSOR */ 'Hello World!')
-        }
-    }
-}
-
-// Should be present in the LLM prompt
-const longSuffix = \`
-    longSuffix content
-    longSuffix content
-    longSuffix content
-    longSuffix content
-    longSuffix content
-    longSuffix content
-    longSuffix content
-\`
 "
 `;
 
@@ -87,8 +49,7 @@ describe('test block', () => {
     it('does something else', () => {
         // This line will error due to incorrect usage of \`performance.now\`
         /**
-         * Captures the current time in milliseconds using the \`performance.now()\` function.
-         * This can be used to measure the duration of an operation.
+         * Captures the current time using \`performance.now()\` for performance measurement purposes.
          */
         const startTime = performance.now(/* CURSOR */)
     })
@@ -98,11 +59,11 @@ describe('test block', () => {
 
 exports[`Document Code > editCommands/document (basic function) 1`] = `
 "/**
- * Calculates the sum of two numbers.
+ * Adds two numbers together and returns the result.
  *
  * @param a - The first number to add.
  * @param b - The second number to add.
- * @returns The sum of \`a\` and \`b\`.
+ * @returns The sum of the two input numbers.
  */
 export function sum(a: number, b: number): number {
     /* CURSOR */
