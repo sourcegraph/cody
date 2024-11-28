@@ -16,6 +16,7 @@ import {
 import { Observable } from 'observable-fns'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { URI } from 'vscode-uri'
+import { mockLocalStorage } from '../../services/LocalStorageProvider'
 import { ChatBuilder } from '../chat-view/ChatBuilder'
 import type { ContextRetriever } from '../chat-view/ContextRetriever'
 import * as initialContext from '../initialContext'
@@ -36,11 +37,19 @@ describe('DeepCody', () => {
     let mockSpan: any
     let mockCurrentContext: ContextItem[]
     let mockCodyTools: CodyTool[]
+    let localStorageData: { [key: string]: unknown } = {}
+    mockLocalStorage({
+        get: (key: string) => localStorageData[key],
+        update: (key: string, value: unknown) => {
+            localStorageData[key] = value
+        },
+    } as any)
 
     beforeEach(async () => {
         mockResolvedConfig({ configuration: {} })
         mockClientCapabilities(CLIENT_CAPABILITIES_FIXTURE)
         mockAuthStatus(codyProAuthStatus)
+        localStorageData = {}
         mockChatBuilder = {
             selectedModel: 'anthropic::2023-06-01::claude-3.5-sonnet',
             changes: {
