@@ -113,6 +113,7 @@ import { openCodyIssueReporter } from './services/utils/issue-reporter'
 import { SupercompletionProvider } from './supercompletions/supercompletion-provider'
 import { parseAllVisibleDocuments, updateParseTreeOnEdit } from './tree-sitter/parse-tree-cache'
 import { version } from './version'
+import { ThreadOccupancyMonitor } from './services/thread-occupancy-monitor'
 
 /**
  * Start the extension, watching all relevant configuration and secrets for changes.
@@ -122,6 +123,13 @@ export async function start(
     platform: PlatformContext
 ): Promise<vscode.Disposable> {
     const disposables: vscode.Disposable[] = []
+
+    // Initialize thread monitoring
+    const threadMonitor = new ThreadOccupancyMonitor()
+    threadMonitor.start()
+
+    // Add to disposables to clean up on extension deactivation
+    disposables.push(new vscode.Disposable(() => threadMonitor.stop()))
 
     //TODO: Add override flag
     const isExtensionModeDevOrTest =
