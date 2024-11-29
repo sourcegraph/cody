@@ -1,47 +1,10 @@
-import type { AutoEditsTokenLimit, ChatClient, Message } from '@sourcegraph/cody-shared'
-import type {
-    AutocompleteContextSnippet,
-    DocumentContext,
-} from '@sourcegraph/cody-shared/src/completions/types'
-import type * as vscode from 'vscode'
+import type { ChatClient, Message } from '@sourcegraph/cody-shared'
 import { autoeditsLogger } from '../logger'
-import type { AutoeditsModelAdapter, ChatPrompt, PromptResponseData } from '../prompt-provider'
+import type { AutoeditsModelAdapter, ChatPrompt } from '../prompt-provider'
 import type { AutoeditModelOptions } from '../prompt-provider'
-import { type CodeToReplaceData, SYSTEM_PROMPT, getBaseUserPrompt } from '../prompt-utils'
 
 export class SourcegraphChatAdapter implements AutoeditsModelAdapter {
     constructor(private readonly chatClient: ChatClient) {}
-
-    getPrompt(
-        docContext: DocumentContext,
-        document: vscode.TextDocument,
-        position: vscode.Position,
-        context: AutocompleteContextSnippet[],
-        tokenBudget: AutoEditsTokenLimit
-    ): PromptResponseData {
-        const { codeToReplace, prompt: userPrompt } = getBaseUserPrompt(
-            docContext,
-            document,
-            position,
-            context,
-            tokenBudget
-        )
-        const promptResponse: ChatPrompt = [
-            {
-                role: 'system',
-                content: SYSTEM_PROMPT,
-            },
-            {
-                role: 'user',
-                content: userPrompt,
-            },
-        ]
-        return { codeToReplace, promptResponse }
-    }
-
-    postProcessResponse(codeToReplace: CodeToReplaceData, response: string): string {
-        return response
-    }
 
     async getModelResponse(option: AutoeditModelOptions): Promise<string> {
         try {

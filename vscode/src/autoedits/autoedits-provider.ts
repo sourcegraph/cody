@@ -11,6 +11,7 @@ import {
 import { type DebouncedFunc, debounce } from 'lodash'
 import { Observable } from 'observable-fns'
 import * as vscode from 'vscode'
+import type { AutocompleteContextSnippet } from '../../../lib/shared/src/completions/types'
 import { ContextRankingStrategy } from '../completions/context/completions-context-ranker'
 import { ContextMixer } from '../completions/context/context-mixer'
 import { DefaultContextStrategyFactory } from '../completions/context/context-strategy'
@@ -23,8 +24,8 @@ import { FireworksAdapter } from './adapters/fireworks'
 import { OpenAIAdapter } from './adapters/openai'
 import { SourcegraphChatAdapter } from './adapters/sourcegraph-chat'
 import { autoeditsLogger } from './logger'
-import type { AutoeditsModelAdapter } from './prompt-provider'
-import type { CodeToReplaceData } from './prompt-utils'
+import type { AutoeditsModelAdapter, ChatPrompt, PromptResponseData } from './prompt-provider'
+import { type CodeToReplaceData, SYSTEM_PROMPT, getBaseUserPrompt } from './prompt-utils'
 import { DefaultDecorator } from './renderer/decorators/default-decorator'
 import { AutoEditsRendererManager } from './renderer/manager'
 import {
@@ -253,7 +254,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             maxChars: 32_000,
         })
 
-        const { codeToReplace, promptResponse: prompt } = this.config.provider.getPrompt(
+        const { codeToReplace, promptResponse: prompt } = this.getPrompt(
             options.docContext,
             options.document,
             options.position,
@@ -269,16 +270,15 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             codeToRewrite: codeToReplace.codeToRewrite,
             userId: (await currentResolvedConfig()).clientState.anonymousUserID,
         })
-        const postProcessedResponse = this.config.provider.postProcessResponse(codeToReplace, response)
 
-        if (options.abortSignal?.aborted || !postProcessedResponse) {
+        if (options.abortSignal?.aborted || !response) {
             return null
         }
 
         autoeditsLogger.logDebug(
             'Autoedits',
             '========================== Response:\n',
-            postProcessedResponse,
+            response,
             '\n',
             '========================== Time Taken For LLM (Msec): ',
             (Date.now() - start).toString(),
@@ -287,7 +287,37 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
 
         return {
             codeToReplaceData: codeToReplace,
-            prediction: postProcessedResponse,
+            prediction: response,
+        }
+    }
+
+    private getPrompt(
+        docContext: DocumentContext,
+        document: vscode.TextDocument,
+        position: vscode.Position,
+        context: AutocompleteContextSnippet[],
+        tokenBudget: AutoEditsTokenLimit
+    ): PromptResponseData {
+        const { codeToReplace, prompt: userPrompt } = getBaseUserPrompt(
+            docContext,
+            document,
+            position,
+            context,
+            tokenBudget
+        )
+        const prompt: ChatPrompt = [
+            {
+                role: 'system',
+                content: SYSTEM_PROMPT,
+            },
+            {
+                role: 'user',
+                content: userPrompt,
+            },
+        ]
+        return {
+            codeToReplace,
+            promptResponse: prompt,
         }
     }
 
