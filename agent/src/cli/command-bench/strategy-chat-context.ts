@@ -140,7 +140,7 @@ async function runContextCommand(
         const results = resultsResp ?? []
         // Determine the format from the first essentialContext item to have same format in actualContext
         const isUrlFormat = essentialContext.length > 0 && essentialContext[0].format === 'url'
-        const formatValue: 'url' | 'old' = isUrlFormat ? 'url' : 'old'
+        const formatValue: 'url' | 'plain' = isUrlFormat ? 'url' : 'plain'
         const actualContext: EvalContextItem[] = []
         for (const contextList of results) {
             actualContext.push(
