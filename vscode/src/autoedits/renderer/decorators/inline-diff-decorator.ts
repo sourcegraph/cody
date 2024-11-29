@@ -22,11 +22,11 @@ export class InlineDiffDecorator implements vscode.Disposable, AutoEditsDecorato
         const addedRanges: vscode.DecorationOptions[] = []
 
         for (const line of modifiedLines) {
+            // TODO(valery): verify that we still need to merge consecutive insertions.
             let currentInsertPosition: vscode.Position | null = null
             let currentInsertText = ''
 
             for (const change of line.changes) {
-                // Handle insertions
                 if (change.type === 'insert') {
                     const position = change.range.end
                     if (currentInsertPosition && position.isEqual(currentInsertPosition)) {
