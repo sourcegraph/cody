@@ -23,7 +23,7 @@
     "check:build": "pnpm run -s check:typehacks && pnpm run -s check:manifest",
     "check:typehacks": "ts-node-transpile-only ./scripts/enable-typehacks.ts && tsc -p tsconfig.typehacks.json",
     "check:manifest": "ts-node-transpile-only ./scripts/validate-package-json.ts",
-    "_build:desktop": "pnpm run -s _build:esbuild:desktop && pnpm run -s _build:webviews --mode production",
+    "_build:desktop": "pnpm run -s _build:esbuild:desktop && pnpm run -s _build:webviews --mode production && pnpm run measure-bundle-size",
     "_build:web": "pnpm run -s _build:esbuild:web && pnpm run -s _build:webviews --mode production",
     "build:dev:desktop": "concurrently \"pnpm run -s _build:esbuild:desktop\" \"pnpm run -s _build:webviews --mode development\"",
     "build:dev:web": "concurrently \"pnpm run -s _build:esbuild:web\" \"pnpm run -s _build:webviews --mode development\"",
@@ -55,7 +55,8 @@
     "github-changelog": "ts-node-transpile-only ./scripts/github-changelog.ts",
     "version-bump:minor": "RELEASE_TYPE=minor ts-node-transpile-only ./scripts/version-bump.ts",
     "version-bump:patch": "RELEASE_TYPE=patch ts-node-transpile-only ./scripts/version-bump.ts",
-    "version-bump:dry-run": "RELEASE_TYPE=prerelease ts-node-transpile-only ./scripts/version-bump.ts"
+    "version-bump:dry-run": "RELEASE_TYPE=prerelease ts-node-transpile-only ./scripts/version-bump.ts",
+    "measure-bundle-size": "ts-node-transpile-only ./scripts/measure-bundle-size.ts"
   },
   "categories": ["AI", "Chat", "Programming Languages", "Machine Learning", "Snippets", "Education"],
   "keywords": [
