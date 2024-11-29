@@ -1,4 +1,3 @@
-import { $insertFirst } from '@lexical/utils'
 import {
     type ContextItem,
     ContextMentionProviderMetadata,
@@ -11,34 +10,28 @@ import {
     type SerializedPromptEditorState,
     type SerializedPromptEditorValue,
     displayPathBasename,
-    getMentionOperations,
     serializeContextItem,
 } from '@sourcegraph/cody-shared'
 import { clsx } from 'clsx'
-import {
-    $createParagraphNode,
-    $createTextNode,
-    $getRoot,
-    $insertNodes,
-    $setSelection,
-} from 'lexical'
 import type { SerializedEditorState, SerializedLexicalNode } from 'lexical'
 import isEqual from 'lodash/isEqual'
 import { type FunctionComponent, useCallback, useContext, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react'
 import { BaseEditor, Item } from './BaseEditor'
 import styles from '../PromptEditor.module.css'
 import { useSetGlobalPromptEditorConfig } from '../config'
-import { isEditorContentOnlyInitialContext, lexicalNodesForContextItems } from '../initialContext'
-import { $selectEnd, getContextItemsForEditor, visitContextItemsForEditor } from '../lexicalUtils'
-import { $createContextItemMentionNode } from '../nodes/ContextItemMentionNode'
 import type { KeyboardEventPluginProps } from '../plugins/keyboardEvent'
 import { EditorView } from 'prosemirror-view'
-import { EditorState, Selection } from 'prosemirror-state'
-import { Node } from 'prosemirror-model'
+import { EditorState, Transaction, Plugin } from 'prosemirror-state'
 import { fromSerializedPromptEditorState, toSerializedPromptEditorValue } from './lexical-interop'
 import { replaceDocument } from './prosemirror-utils'
 import { useExtensionAPI } from '../useExtensionAPI'
 import { ChatMentionContext } from '../plugins/atMentions/useChatContextItems'
+import { getAtMentionPosition, getAtMentionValue, hasAtMention, replaceAtMention, setMentionValue } from './atMention'
+import { useActorRef } from '@xstate/react'
+import { createMentionNode, editorMachine, schema } from './editor'
+import { MentionView } from './mentionNode'
+import { createSuggestionsMachine, SuggestionsMachineContext } from './suggestions'
+import "prosemirror-view/style/prosemirror.css"
 
 interface Props extends KeyboardEventPluginProps {
     editorClassName?: string
@@ -68,6 +61,10 @@ export interface PromptEditorRefAPI {
     setEditorState(state: SerializedPromptEditorState): void
 }
 
+type ExtendedContextItem = (ContextItem | ContextMentionProviderMetadata) & { isFromInitialContext: boolean }
+
+const suggestionsMachine = createSuggestionsMachine<ExtendedContextItem>()
+
 /**
  * The component for composing and editing prompts.
  */
@@ -84,204 +81,121 @@ export const PromptEditor: FunctionComponent<Props> = ({
     editorRef: ref,
     onEnterKey,
 }) => {
-    const editorRef = useRef<EditorView>(null)
+    const mentionMenuDataRef = useRef<SuggestionsMachineContext<ExtendedContextItem>['fetchMenuData']>(() => Promise.resolve([]))
+
+    const suggestions = useActorRef(suggestionsMachine, { input: {
+        fetchMenuData(args) {
+            return mentionMenuDataRef.current(args)
+        },
+    }})
+    const convertedInitialEditorState = useMemo(() => {
+        return initialEditorState ? schema.nodeFromJSON(fromSerializedPromptEditorState(initialEditorState)) : undefined
+    }, [initialEditorState])
+
+
+    const editor = useActorRef(editorMachine, { input: {
+        placeholder: placeholder,
+        initialDocument: convertedInitialEditorState,
+        nodeViews: {
+            mention(node) {
+                return new MentionView(node)
+            },
+        },
+        additionalPlugins: [
+            // Plugin connects the at-mention plugin with suggestions
+            new Plugin({
+                view() {
+                    return {
+                        update(view: EditorView, prevState: EditorState) {
+                            if (hasAtMention(view.state) && !hasAtMention(prevState)) {
+                                suggestions.send({ type: 'suggestions.open', position: view.coordsAtPos(getAtMentionPosition(view.state)) })
+                            } else if (!hasAtMention(view.state) && hasAtMention(prevState)) {
+                                suggestions.send({type: 'suggestions.close'})
+                            }
+
+                            const mentionValue = getAtMentionValue(view.state)
+                            if (mentionValue !== undefined && mentionValue !== getAtMentionValue(prevState)) {
+                                suggestions.send({ type: 'suggestions.filter.update', filter: mentionValue.slice(1), position: view.coordsAtPos(getAtMentionPosition(view.state)) })
+                            }
+                            if (view.state.doc !== prevState.doc) {
+                                onChange?.(toSerializedPromptEditorValue(view.state.doc))
+                            }
+                        }
+                    }
+                },
+                props: {
+                    handleKeyDown(view, event) {
+                        if (hasAtMention(view.state)) {
+                            switch (event.key) {
+                                case 'ArrowDown': {
+                                    suggestions.send({ type: 'suggestions.key.arrow-down' })
+                                    return true
+                                }
+                                case 'ArrowUp': {
+                                    suggestions.send({ type: 'suggestions.key.arrow-up' })
+                                    return true
+                                }
+                                case 'Enter':
+                                    const state = suggestions.getSnapshot().context
+                                    const selectedItem = state.filteredItems[state.selectedIndex]
+                                    if (selectedItem) {
+                                        selectedItem.select(view.state, view.dispatch, selectedItem.data)
+                                    }
+                                    return true;
+                                case 'Escape':
+                                    // todo: remove at mention
+                                    return true;
+                            }
+                        }
+                        return false
+                    },
+                },
+            })
+        ],
+    }})
+
+    const dispatch = useCallback((tr: Transaction) => {
+        editor.send({ type: 'editor.state.dispatch', transaction: tr })
+    }, [editor])
+
+    const getEditorState = useCallback(() => {
+        return editor.getSnapshot().context.editorState
+    }, [editor])
+
 
     const hasSetInitialContext = useRef(false)
-
-    const convertedInitialEditorState = useMemo(() => {
-        return initialEditorState ? fromSerializedPromptEditorState(initialEditorState) : null
-    }, [initialEditorState])
 
     useImperativeHandle(
         ref,
         (): PromptEditorRefAPI => ({
             setEditorState(state: SerializedPromptEditorState): void {
-                const editor = editorRef.current
-                if (editor) {
-                    const doc = editor.state.schema.nodeFromJSON(fromSerializedPromptEditorState(state))
-                    replaceDocument(editor, doc)
-                }
+                dispatch(replaceDocument(getEditorState(), schema.nodeFromJSON(fromSerializedPromptEditorState(state))))
             },
             getSerializedValue(): SerializedPromptEditorValue {
-                if (!editorRef.current) {
-                    throw new Error('PromptEditor has no Lexical editor ref')
+                return toSerializedPromptEditorValue(getEditorState().doc)
+            },
+            async setFocus(focus, { moveCursorToEnd } = {}): Promise<void> {
+                if (focus) {
+                    editor.send({type: 'focus', moveCursorToEnd})
+                } else {
+                    editor.send({type: 'blur'})
                 }
-                return toSerializedPromptEditorValue(editorRef.current.state)
             },
-            setFocus(focus, { moveCursorToEnd } = {}): Promise<void> {
-                return new Promise(resolve => {
-                    const editor = editorRef.current
-
-                    if (editor) {
-                        if (focus) {
-                            if (moveCursorToEnd) {
-                                editor.dispatch(
-                                    editor.state.tr.setSelection(Selection.atEnd(editor.state.doc))
-                                )
-                            }
-
-                            // Ensure element is focused in case the editor is empty. Copied
-                            // from LexicalAutoFocusPlugin.
-                            const doFocus = () =>
-                                editor.focus()
-                                editor.dispatch(
-                                    editor.state.tr.scrollIntoView()
-                                )
-                            doFocus()
-
-                            // HACK(sqs): Needed in VS Code webviews to actually get it to focus
-                            // on initial load, for some reason.
-                            setTimeout(doFocus)
-                        } else {
-                            editor.dom.blur()
-                        }
-                    }
-                    resolve()
-                })
+            async appendText(text: string): Promise<void> {
+                editor.send({type: 'text.append', text})
             },
-            appendText(text: string): Promise<void> {
-                return new Promise(resolve => {
-                    const editor = editorRef.current
-                    if (editor) {
-                        const tr = editor.state.tr.insertText(`${getWhitespace(editor.state.doc)}${text}`, editor.state.selection.from)
-                        tr.setSelection(Selection.atEnd(tr.doc))
-                        editor.dispatch(tr)
-                    }
-                    resolve()
-                })
-            },
-            filterMentions(filter: (item: SerializedContextItem) => boolean): Promise<void> {
-                return new Promise(resolve => {
-                    const editor = editorRef.current
-                    if (editor) {
-                        const mentions: Node[] = []
-                        editor.state.doc.descendants(node => {
-                            if (node.type.name === 'mention') {
-                                mentions.push(node)
-                            }
-                        })
-
-                        const tr = editor.state.tr
-                        // todo: figure out how to remove mention nodes
-                    }
-                    resolve()
-                })
+            async filterMentions(filter: (item: SerializedContextItem) => boolean): Promise<void> {
+                editor.send({type: 'mentions.filter', filter})
             },
             async addMentions(
                 items: ContextItem[],
                 position: 'before' | 'after' = 'after',
                 sep = ' '
             ): Promise<void> {
-                const editor = editorRef.current
-                if (!editor) {
-                    return
-                }
-                // todo: figure out how to add mention nodes
-                return
-
-                const newContextItems = items.map(serializeContextItem)
-                const existingMentions = getContextItemsForEditor(editor)
-                const ops = getMentionOperations(existingMentions, newContextItems)
-
-                if (ops.modify.size + ops.delete.size > 0) {
-                    await visitContextItemsForEditor(editor, existing => {
-                        const update = ops.modify.get(existing.contextItem)
-                        if (update) {
-                            // replace the existing mention inline with the new one
-                            existing.replace($createContextItemMentionNode(update))
-                        }
-                        if (ops.delete.has(existing.contextItem)) {
-                            existing.remove()
-                        }
-                    })
-                }
-
-                if (ops.create.length === 0) {
-                    return
-                }
-
-                return new Promise(resolve =>
-                    editorRef.current?.update(
-                        () => {
-                            switch (position) {
-                                case 'before': {
-                                    const nodesToInsert = lexicalNodesForContextItems(
-                                        ops.create,
-                                        {
-                                            isFromInitialContext: false,
-                                        },
-                                        sep
-                                    )
-                                    const pNode = $createParagraphNode()
-                                    pNode.append(...nodesToInsert)
-                                    $insertFirst($getRoot(), pNode)
-                                    $selectEnd()
-                                    break
-                                }
-                                case 'after': {
-                                    const lexicalNodes = lexicalNodesForContextItems(
-                                        ops.create,
-                                        {
-                                            isFromInitialContext: false,
-                                        },
-                                        sep
-                                    )
-                                    const pNode = $createParagraphNode()
-                                    pNode.append(
-                                        $createTextNode(getWhitespace($getRoot())),
-                                        ...lexicalNodes,
-                                        $createTextNode(sep)
-                                    )
-                                    $insertNodes([pNode])
-                                    $selectEnd()
-                                    break
-                                }
-                            }
-                        },
-                        { onUpdate: resolve }
-                    )
-                )
+                editor.send({type: 'mentions.add', items: items.map(serializeContextItem), position, separator: sep})
             },
-            setInitialContextMentions(items: ContextItem[]): Promise<void> {
-                return new Promise(resolve => {
-                    const editor = editorRef.current
-                    if (!editor) {
-                        return resolve()
-                    }
-
-                    // todo: figure out how to set initial context mentions
-
-                    return resolve()
-
-                    editor.update(
-                        () => {
-                            if (
-                                !hasSetInitialContext.current ||
-                                isEditorContentOnlyInitialContext(editor)
-                            ) {
-                                if (isEditorContentOnlyInitialContext(editor)) {
-                                    // Only clear in this case so that we don't clobber any text that was
-                                    // inserted before initial context was received.
-                                    $getRoot().clear()
-                                }
-                                const nodesToInsert = lexicalNodesForContextItems(items, {
-                                    isFromInitialContext: true,
-                                })
-
-                                // Add whitespace after initial context items chips
-                                if (items.length > 0) {
-                                    nodesToInsert.push($createTextNode(' '))
-                                }
-
-                                $setSelection($getRoot().selectStart()) // insert at start
-                                $insertNodes(nodesToInsert)
-                                $selectEnd()
-                                hasSetInitialContext.current = true
-                            }
-                        },
-                        { onUpdate: resolve }
-                    )
-                })
+            async setInitialContextMentions(items: ContextItem[]): Promise<void> {
+                // todo: implement
             },
         }),
         []
@@ -290,48 +204,37 @@ export const PromptEditor: FunctionComponent<Props> = ({
     // todo: do we need this?
     useSetGlobalPromptEditorConfig()
 
-    const onBaseEditorChange = useCallback(
-        (state: EditorState): void => {
-            if (onChange) {
-                onChange(toSerializedPromptEditorValue(state))
-            }
-        },
-        [onChange]
-    )
-
     useEffect(() => {
         if (initialEditorState) {
-            const editor = editorRef.current
-            if (editor) {
-                const currentEditorState = normalizeEditorStateJSON(editor.state.doc.toJSON())
-                const newEditorState = fromSerializedPromptEditorState(initialEditorState)
-                if (!isEqual(currentEditorState, newEditorState)) {
-                    replaceDocument(editor, editor.state.schema.nodeFromJSON(newEditorState))
-                }
+            const currentEditorState = normalizeEditorStateJSON(getEditorState().doc.toJSON())
+            const newEditorState = fromSerializedPromptEditorState(initialEditorState)
+            if (!isEqual(currentEditorState, newEditorState)) {
+                dispatch(replaceDocument(getEditorState(), schema.nodeFromJSON(newEditorState)))
             }
         }
-    }, [initialEditorState])
+    }, [initialEditorState, dispatch, getEditorState])
 
     // Hook into providers
     const mentionMenuData = useExtensionAPI().mentionMenuData
     const mentionSettings = useContext(ChatMentionContext)
     const [selectedProvider, setSelectedProvider] = useState<ContextMentionProviderMetadata | null>(null)
 
-    function onSelection(view: EditorView, range: {from: number, to: number}, item: ContextItem|ContextMentionProviderMetadata) {
+    function onSelection(state: EditorState, dispatch: (tr: Transaction) => void, item: ContextItem|ContextMentionProviderMetadata) {
         if ('id' in item) {
             setSelectedProvider(item)
             queueMicrotask(() => {
-                view.dispatch(
-                    view.state.tr.delete(range.from + 1, range.to)
+                dispatch(
+                    setMentionValue(state, '')
                 )
             })
-            return true
         } else {
-            return {
-                // todo: serialize item?
-                replace: view.state.schema.node('mention', {item}, view.state.schema.text(getItemTitle(item))),
-                appendSpaceIfNecessary: true,
-            }
+            dispatch(
+                replaceAtMention(
+                    state,
+                    createMentionNode(serializeContextItem(item)),
+                    true
+                )
+            )
         }
     }
 
@@ -346,12 +249,12 @@ export const PromptEditor: FunctionComponent<Props> = ({
                     resolve([
                         ...result.providers.map(provider => ({
                             data: provider,
-                            onSelected: onSelection,
+                            select: onSelection,
                             render: renderItem,
                         })),
                         ...result.items?.map(item => ({
                             data: item,
-                            onSelected: onSelection,
+                            select: onSelection,
                             render: renderItem,
                         })) ?? [],
                     ])
@@ -359,28 +262,21 @@ export const PromptEditor: FunctionComponent<Props> = ({
             )
     }), [mentionMenuData, mentionSettings, selectedProvider])
 
-    return (
-        <BaseEditor
+    const initView = useCallback((node: HTMLDivElement) => {
+        if (node) {
+            editor.send({ type: 'setup', parent: node})
+        } else {
+            editor.send({type: 'teardown'})
+        }
+    }, [placeholder, onEnterKey, editor])
+
+    return <div
+            ref={initView}
             className={clsx(styles.editor, editorClassName, {
                 [styles.disabled]: disabled,
                 [styles.seamless]: seamless,
             })}
-            //contentEditableClassName={contentEditableClassName}
-            initialEditorState={convertedInitialEditorState}
-            onChange={onBaseEditorChange}
-            //onFocusChange={onFocusChange}
-            //contextWindowSizeInTokens={contextWindowSizeInTokens}
-            //editorRef={editorRef}
-            placeholder={placeholder}
-            //disabled={disabled}
-            //aria-label="Chat message"
-            onEnterKey={onEnterKey}
-            fetchMenuData={fetchMenuData}
-            onSuggestionsMenuClose={() => setSelectedProvider(null)}
-            getEmptyLabel={({filter}) => getEmptyLabelComponent({provider: selectedProvider, filter})}
-            getHeader={() => selectedProvider?.title ?? ''}
         />
-    )
 }
 
 function renderItem(item: ContextItem|ContextMentionProviderMetadata): string {
@@ -419,11 +315,6 @@ function normalizeEditorStateJSON(
     value: SerializedEditorState<SerializedLexicalNode>
 ): SerializedEditorState<SerializedLexicalNode> {
     return JSON.parse(JSON.stringify(value))
-}
-
-function getWhitespace(node: Node): string {
-    const needsWhitespaceBefore = !/(^|\s)$/.test(node.textBetween(0, node.nodeSize))
-    return needsWhitespaceBefore ? ' ' : ''
 }
 
 function getItemTitle(item: ContextItem): string {
