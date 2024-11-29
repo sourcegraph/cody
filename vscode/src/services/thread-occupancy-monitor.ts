@@ -46,7 +46,6 @@ export class ThreadOccupancyMonitor {
             this.measurements.shift()
         }
 
-        // Emit telemetry with the current measurement
         this.emitTelemetry(occupancy)
     }
 
@@ -56,8 +55,8 @@ export class ThreadOccupancyMonitor {
                 occupancyPercent: Math.round(occupancy),
                 rollingAveragePercent: Math.round(
                     this.measurements.reduce((a, b) => a + b, 0) / this.measurements.length
-                )
-            }
+                ),
+            },
         })
     }
 }
