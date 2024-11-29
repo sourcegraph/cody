@@ -103,24 +103,24 @@ jobs:
               echo "Posted to slack."
             fi
           done
-      - name: Check if branch or label exists
+      - name: Check if the next release branch and backport label exist
         id: check-exists
         run: |
           # Check if branch exists
           if git ls-remote --heads origin ${{ env.NEXT_RELEASE_BRANCH }} | grep -q "${{ env.NEXT_RELEASE_BRANCH }}"; then
             echo "Branch ${{ env.NEXT_RELEASE_BRANCH }} already exists"
-            echo "SKIP_CREATION=true" >> $GITHUB_ENV
+            echo "SKIP_BRANCH_CREATION=true" >> $GITHUB_ENV
             exit 0
           fi
           
           # Check if label exists
           if gh label list | grep -q "backport ${{ env.NEXT_RELEASE_BRANCH }}"; then
             echo "Label backport ${{ env.NEXT_RELEASE_BRANCH }} already exists"
-            echo "SKIP_CREATION=true" >> $GITHUB_ENV
+            echo "SKIP_LABEL_CREATION=true" >> $GITHUB_ENV
             exit 0
           fi
       - name: Create backport label
-        if: ${{ !env.SKIP_CREATION }}
+        if: ${{ !env.SKIP_LABEL_CREATION }}
         uses: actions/github-script@v6
         with:
           script: |
@@ -133,8 +133,9 @@ jobs:
               description: `Backport to ${nextReleaseBranch} branch`
             })      
       - name: Create and push next release branch
-        if: ${{ !env.SKIP_CREATION }}
+        if: ${{ !env.SKIP_BRANCH_CREATION }}
         run: |
+          git checkout main
           git checkout -b ${{ env.NEXT_RELEASE_BRANCH }}
 
           if ! git push origin ${{ env.NEXT_RELEASE_BRANCH }}; then
