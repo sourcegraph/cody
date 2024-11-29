@@ -7,110 +7,20 @@ import { autoeditsLogger } from '../logger'
 import type { CodeToReplaceData } from '../prompt-utils'
 import { adjustPredictionIfInlineCompletionPossible } from '../utils'
 
-import type { AutoEditsDecorator, DecorationInfo, ModifiedLineInfo } from './decorators/base'
-import type { AutoEditsManagerOptions, AutoEditsRendererManager, ProposedChange } from './manager'
+import type { DecorationInfo, ModifiedLineInfo } from './decorators/base'
+import { AutoEditsDefaultRendererManager, type AutoEditsRendererManager } from './manager'
 
-export class AutoEditsInlineRendererManager implements AutoEditsRendererManager {
-    // Keeps track of the current active edit (there can only be one active edit at a time)
-    private activeEdit: ProposedChange | null = null
-    private disposables: vscode.Disposable[] = []
-
-    constructor(private createDecorator: (editor: vscode.TextEditor) => AutoEditsDecorator) {
-        this.disposables.push(
-            vscode.commands.registerCommand('cody.supersuggest.accept', () => this.acceptEdit()),
-            vscode.commands.registerCommand('cody.supersuggest.dismiss', () => this.dismissEdit()),
-            vscode.workspace.onDidChangeTextDocument(event => this.onDidChangeTextDocument(event)),
-            vscode.window.onDidChangeTextEditorSelection(event =>
-                this.onDidChangeTextEditorSelection(event)
-            ),
-            vscode.window.onDidChangeActiveTextEditor(editor =>
-                this.onDidChangeActiveTextEditor(editor)
-            ),
-            vscode.workspace.onDidCloseTextDocument(document => this.onDidCloseTextDocument(document))
-        )
-    }
-
-    public hasActiveEdit(): boolean {
-        return this.activeEdit !== null
-    }
-
-    async showEdit({
-        document,
-        range,
-        prediction,
-        decorationInfo,
-    }: AutoEditsManagerOptions): Promise<void> {
-        await this.dismissEdit()
-        const editor = vscode.window.activeTextEditor
-        if (!editor || document !== editor.document) {
-            return
-        }
-        this.activeEdit = {
-            uri: document.uri.toString(),
-            range: range,
-            prediction: prediction,
-            decorator: this.createDecorator(editor),
-        }
-        this.activeEdit.decorator.setDecorations(decorationInfo)
-        await vscode.commands.executeCommand('setContext', 'cody.supersuggest.active', true)
-    }
-
-    private async dismissEdit(): Promise<void> {
-        const decorator = this.activeEdit?.decorator
-        if (decorator) {
-            decorator.dispose()
-        }
-        this.activeEdit = null
-        await vscode.commands.executeCommand('setContext', 'cody.supersuggest.active', false)
-    }
-
-    private async acceptEdit(): Promise<void> {
-        const editor = vscode.window.activeTextEditor
-        if (!this.activeEdit || !editor || editor.document.uri.toString() !== this.activeEdit.uri) {
-            await this.dismissEdit()
-            return
-        }
-        // TODO: granularly handle acceptance for inline renreder, where part of the suggestion
-        // might be inserted by the inline completion item provider.
-        await editor.edit(editBuilder => {
-            editBuilder.replace(this.activeEdit!.range, this.activeEdit!.prediction)
-        })
-        await this.dismissEdit()
-    }
-
-    private async onDidChangeTextDocument(event: vscode.TextDocumentChangeEvent): Promise<void> {
-        // Only dismiss if we have an active suggestion and the changed document matches
-        // else, we will falsely discard the suggestion on unrelated changes such as changes in output panel.
-        if (event.document.uri.toString() !== this.activeEdit?.uri) {
-            return
-        }
-        await this.dismissEdit()
-    }
-
-    private async onDidChangeActiveTextEditor(editor: vscode.TextEditor | undefined): Promise<void> {
-        if (!editor || editor.document.uri.toString() !== this.activeEdit?.uri) {
-            await this.dismissEdit()
-        }
-    }
-
-    private async onDidCloseTextDocument(document: vscode.TextDocument): Promise<void> {
-        if (document.uri.toString() === this.activeEdit?.uri) {
-            await this.dismissEdit()
-        }
-    }
-
-    private async onDidChangeTextEditorSelection(
-        event: vscode.TextEditorSelectionChangeEvent
-    ): Promise<void> {
-        if (event.textEditor.document.uri.toString() !== this.activeEdit?.uri) {
-            return
-        }
-        const currentSelectionRange = event.selections.at(-1)
-        if (!currentSelectionRange?.intersection(this.activeEdit.range)) {
-            await this.dismissEdit()
-        }
-    }
-
+/**
+ * For now AutoEditsInlineRendererManager is the same as AutoEditsDefaultRendererManager and the
+ * only major difference is in `maybeRenderDecorationsAndTryMakeInlineCompletionResponse` implementation.
+ *
+ * This extra manager will be removed once we won't have a need to maintain two diff renderers.
+ * Currently, it is used to enable the experimental usage of the `InlineDiffDecorator`.
+ */
+export class AutoEditsInlineRendererManager
+    extends AutoEditsDefaultRendererManager
+    implements AutoEditsRendererManager
+{
     async maybeRenderDecorationsAndTryMakeInlineCompletionResponse(
         originalPrediction: string,
         codeToReplaceData: CodeToReplaceData,
@@ -133,7 +43,6 @@ export class AutoEditsInlineRendererManager implements AutoEditsRendererManager 
         )
 
         const allTextAfterCursor = getChangedTextAfterCursor(position, decorationInfo)
-        // console.log('completion: ', allTextAfterCursor)
 
         const isSuffixMatch =
             // The current line suffix should not require any char removals to render the completion.
@@ -184,13 +93,6 @@ export class AutoEditsInlineRendererManager implements AutoEditsRendererManager 
         })
 
         return { inlineCompletions, updatedDecorationInfo: decorationInfo }
-    }
-
-    public dispose(): void {
-        this.dismissEdit()
-        for (const disposable of this.disposables) {
-            disposable.dispose()
-        }
     }
 }
 

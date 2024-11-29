@@ -80,10 +80,10 @@ export interface AutoEditsRendererManager extends vscode.Disposable {
 
 export class AutoEditsDefaultRendererManager implements AutoEditsRendererManager {
     // Keeps track of the current active edit (there can only be one active edit at a time)
-    private activeEdit: ProposedChange | null = null
-    private disposables: vscode.Disposable[] = []
+    protected activeEdit: ProposedChange | null = null
+    protected disposables: vscode.Disposable[] = []
 
-    constructor(private createDecorator: (editor: vscode.TextEditor) => AutoEditsDecorator) {
+    constructor(protected createDecorator: (editor: vscode.TextEditor) => AutoEditsDecorator) {
         this.disposables.push(
             vscode.commands.registerCommand('cody.supersuggest.accept', () => this.acceptEdit()),
             vscode.commands.registerCommand('cody.supersuggest.dismiss', () => this.dismissEdit()),
@@ -123,7 +123,7 @@ export class AutoEditsDefaultRendererManager implements AutoEditsRendererManager
         await vscode.commands.executeCommand('setContext', 'cody.supersuggest.active', true)
     }
 
-    private async dismissEdit(): Promise<void> {
+    protected async dismissEdit(): Promise<void> {
         const decorator = this.activeEdit?.decorator
         if (decorator) {
             decorator.dispose()
@@ -132,7 +132,7 @@ export class AutoEditsDefaultRendererManager implements AutoEditsRendererManager
         await vscode.commands.executeCommand('setContext', 'cody.supersuggest.active', false)
     }
 
-    private async acceptEdit(): Promise<void> {
+    protected async acceptEdit(): Promise<void> {
         const editor = vscode.window.activeTextEditor
         if (!this.activeEdit || !editor || editor.document.uri.toString() !== this.activeEdit.uri) {
             await this.dismissEdit()
@@ -146,7 +146,7 @@ export class AutoEditsDefaultRendererManager implements AutoEditsRendererManager
         await this.dismissEdit()
     }
 
-    private async onDidChangeTextDocument(event: vscode.TextDocumentChangeEvent): Promise<void> {
+    protected async onDidChangeTextDocument(event: vscode.TextDocumentChangeEvent): Promise<void> {
         // Only dismiss if we have an active suggestion and the changed document matches
         // else, we will falsely discard the suggestion on unrelated changes such as changes in output panel.
         if (event.document.uri.toString() !== this.activeEdit?.uri) {
@@ -155,19 +155,19 @@ export class AutoEditsDefaultRendererManager implements AutoEditsRendererManager
         await this.dismissEdit()
     }
 
-    private async onDidChangeActiveTextEditor(editor: vscode.TextEditor | undefined): Promise<void> {
+    protected async onDidChangeActiveTextEditor(editor: vscode.TextEditor | undefined): Promise<void> {
         if (!editor || editor.document.uri.toString() !== this.activeEdit?.uri) {
             await this.dismissEdit()
         }
     }
 
-    private async onDidCloseTextDocument(document: vscode.TextDocument): Promise<void> {
+    protected async onDidCloseTextDocument(document: vscode.TextDocument): Promise<void> {
         if (document.uri.toString() === this.activeEdit?.uri) {
             await this.dismissEdit()
         }
     }
 
-    private async onDidChangeTextEditorSelection(
+    protected async onDidChangeTextEditorSelection(
         event: vscode.TextEditorSelectionChangeEvent
     ): Promise<void> {
         if (event.textEditor.document.uri.toString() !== this.activeEdit?.uri) {
