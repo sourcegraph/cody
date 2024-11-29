@@ -66,7 +66,7 @@ export async function createAgentClient({
 
     // Initialize
     const serverInfo: ServerInfo = await rpc.sendRequest('initialize', {
-        name: process.env.CODY_WEB_DEMO ? 'standalone-web' : 'web',
+        name: process.env.CODY_WEB_DEMO_STANDALONE_MODE === 'true' ? 'standalone-web' : 'web',
         version: '0.0.1',
         // Empty root URI leads to openctx configuration resolution failure, any non-empty
         // mock value (Cody Web doesn't really use any workspace related features)
@@ -82,7 +82,9 @@ export async function createAgentClient({
             accessToken,
             serverEndpoint,
             telemetryClientName,
-            customHeaders: customHeaders ?? {},
+            customHeaders: {
+                ...(customHeaders ?? {}),
+            },
             customConfiguration: {
                 'cody.autocomplete.enabled': false,
                 'cody.experimental.urlContext': true,
