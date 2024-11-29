@@ -1,14 +1,17 @@
 import {
     type AutoEditsModelConfig,
     type AutoEditsTokenLimit,
+    type ChatClient,
     type DocumentContext,
     currentResolvedConfig,
     dotcomTokenToGatewayToken,
+    isDotComAuthed,
     tokensToChars,
 } from '@sourcegraph/cody-shared'
 import { type DebouncedFunc, debounce } from 'lodash'
 import { Observable } from 'observable-fns'
 import * as vscode from 'vscode'
+import type { AutocompleteContextSnippet } from '../../../lib/shared/src/completions/types'
 import { ContextRankingStrategy } from '../completions/context/completions-context-ranker'
 import { ContextMixer } from '../completions/context/context-mixer'
 import { DefaultContextStrategyFactory } from '../completions/context/context-strategy'
@@ -19,9 +22,10 @@ import { getConfiguration } from '../configuration'
 import { CodyGatewayAdapter } from './adapters/cody-gateway'
 import { FireworksAdapter } from './adapters/fireworks'
 import { OpenAIAdapter } from './adapters/openai'
+import { SourcegraphChatAdapter } from './adapters/sourcegraph-chat'
 import { autoeditsLogger } from './logger'
-import type { AutoeditsModelAdapter } from './prompt-provider'
-import type { CodeToReplaceData } from './prompt-utils'
+import type { AutoeditsModelAdapter, ChatPrompt, PromptResponseData } from './prompt-provider'
+import { type CodeToReplaceData, SYSTEM_PROMPT, getBaseUserPrompt } from './prompt-utils'
 import { DefaultDecorator } from './renderer/decorators/default-decorator'
 import { AutoEditsRendererManager } from './renderer/manager'
 import {
@@ -68,7 +72,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
     // Keeps track of the last time the text was changed in the editor.
     private lastTextChangeTimeStamp: number | undefined
 
-    constructor() {
+    constructor(private readonly chatClient: ChatClient) {
         this.contextMixer = new ContextMixer({
             strategyFactory: new DefaultContextStrategyFactory(
                 Observable.of(AUTOEDITS_CONTEXT_STRATEGY)
@@ -117,6 +121,8 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 return new FireworksAdapter()
             case 'cody-gateway-fastpath-chat':
                 return new CodyGatewayAdapter()
+            case 'sourcegraph-chat':
+                return new SourcegraphChatAdapter(this.chatClient)
             default:
                 autoeditsLogger.logDebug('Config', `Provider ${providerName} not supported`)
                 throw new Error(`Provider ${providerName} not supported`)
@@ -248,7 +254,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             maxChars: 32_000,
         })
 
-        const { codeToReplace, promptResponse: prompt } = this.config.provider.getPrompt(
+        const { codeToReplace, promptResponse: prompt } = this.getPrompt(
             options.docContext,
             options.document,
             options.position,
@@ -264,16 +270,15 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             codeToRewrite: codeToReplace.codeToRewrite,
             userId: (await currentResolvedConfig()).clientState.anonymousUserID,
         })
-        const postProcessedResponse = this.config.provider.postProcessResponse(codeToReplace, response)
 
-        if (options.abortSignal?.aborted || !postProcessedResponse) {
+        if (options.abortSignal?.aborted || !response) {
             return null
         }
 
         autoeditsLogger.logDebug(
             'Autoedits',
             '========================== Response:\n',
-            postProcessedResponse,
+            response,
             '\n',
             '========================== Time Taken For LLM (Msec): ',
             (Date.now() - start).toString(),
@@ -282,7 +287,37 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
 
         return {
             codeToReplaceData: codeToReplace,
-            prediction: postProcessedResponse,
+            prediction: response,
+        }
+    }
+
+    private getPrompt(
+        docContext: DocumentContext,
+        document: vscode.TextDocument,
+        position: vscode.Position,
+        context: AutocompleteContextSnippet[],
+        tokenBudget: AutoEditsTokenLimit
+    ): PromptResponseData {
+        const { codeToReplace, prompt: userPrompt } = getBaseUserPrompt(
+            docContext,
+            document,
+            position,
+            context,
+            tokenBudget
+        )
+        const prompt: ChatPrompt = [
+            {
+                role: 'system',
+                content: SYSTEM_PROMPT,
+            },
+            {
+                role: 'user',
+                content: userPrompt,
+            },
+        ]
+        return {
+            codeToReplace,
+            promptResponse: prompt,
         }
     }
 
@@ -341,11 +376,21 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 [RetrieverIdentifier.RecentViewPortRetriever]: 2500,
             },
         }
+        // Use fast-path for dotcom
+        if (isDotComAuthed()) {
+            return {
+                provider: 'cody-gateway-fastpath-chat',
+                model: 'cody-model-auto-edits-fireworks-default',
+                url: 'https://cody-gateway.sourcegraph.com/v1/completions/fireworks',
+                tokenLimit: defaultTokenLimit,
+            }
+        }
         return {
-            provider: 'cody-gateway-fastpath-chat',
-            model: 'cody-model-auto-edits-fireworks-default',
-            url: 'https://cody-gateway.sourcegraph.com/v1/completions/fireworks',
+            provider: 'sourcegraph-chat',
+            model: 'fireworks::v1::autoedits-default',
             tokenLimit: defaultTokenLimit,
+            // We use chat completions client for sourcegraph-chat, so we don't need to specify url.
+            url: '',
         }
     }
 
@@ -358,6 +403,10 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 throw new Error('FastPath access token is not available')
             }
             return fastPathAccessToken
+        }
+        if (this.config.providerName === 'sourcegraph-chat') {
+            // We use chat completions client for sourcegraph-chat, so we don't need to specify api key.
+            return ''
         }
         if (this.config.experimentalAutoeditsConfigOverride?.apiKey) {
             return this.config.experimentalAutoeditsConfigOverride.apiKey
