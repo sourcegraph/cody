@@ -1,0 +1,60 @@
+name: Bundle Size Tracker
+
+on:
+  workflow_dispatch:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  id-token: write
+  contents: read
+
+
+jobs:
+  release:
+    if: github.repository == 'sourcegraph/cody'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@fe02b34f77f8bc703788d5817da081398fad5dd2 # SECURITY: pin third-party action hashes
+        with:
+          run_install: true
+
+      - name: Authenticate to Google Cloud
+        id: auth
+        uses: 'google-github-actions/auth@v2'
+        with:
+          project_id: 'cody-core-dev'
+          workload_identity_provider: 'projects/39257127245/locations/global/workloadIdentityPools/github/providers/cody'
+          service_account: 'bundle-size-tracker@cody-core-dev.iam.gserviceaccount.com'
+          create_credentials_file: true
+          export_environment_variables: true
+
+      - name: Set up Cloud SDK
+        uses: 'google-github-actions/setup-gcloud@v2'
+
+      - id: create_release
+        run: echo "::set-output name=version_tag::v13.0.0"
+      
+      - name: Insert data into BigQuery
+        run: |
+          # Verify authentication
+          gcloud auth list
+          # Compute the current date
+          current_date=$(date +'%Y-%m-%d')
+          
+          # Now create the JSON and insert into BigQuery
+          echo "{\"release_version\": \"1.0.0\", \"extension_bundle_size_mb\": 100, \"webview_bundle_size_mb\": 100, \"date\": \"$current_date\"}" > data.json
+          
+          bq load \
+            --project_id='cody-core-dev' \
+            --source_format=NEWLINE_DELIMITED_JSON \
+            cody_release.bundle_sizes \
+            data.json
+        env:
+          EXTENSION_BUNDLE_SIZE_MB: ${{ env.EXTENSION_BUNDLE_SIZE_MB }}
+          WEBVIEW_BUNDLE_SIZE_MB: ${{ env.WEBVIEW_BUNDLE_SIZE_MB }}
