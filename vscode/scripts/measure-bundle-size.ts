@@ -2,9 +2,9 @@ import { promises as fs } from 'node:fs'
 
 // Define size limits in bytes
 const SIZE_LIMITS = {
-    extension: 15 * 1024 * 1024, // 15MB for example
-    webview: 10 * 1024 * 1024, // 10MB for example
-    vsix: 18 * 1024 * 1024, // 25MB for example
+    extension: 15 * 1024 * 1024, // 15MB
+    webview: 10 * 1024 * 1024, // 10MB
+    vsix: 25 * 1024 * 1024, // 25MB
 }
 
 function prettyPrintBytes(bytes: number): string {
