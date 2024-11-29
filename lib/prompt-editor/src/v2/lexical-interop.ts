@@ -1,6 +1,5 @@
 import { SerializedContextItem, SerializedContextItemMentionNode, SerializedPromptEditorState, SerializedPromptEditorValue } from "@sourcegraph/cody-shared"
 import { SerializedLexicalNode, SerializedParagraphNode, SerializedRootNode, SerializedTextNode } from "lexical"
-import { EditorState } from "prosemirror-state"
 import { Node } from "prosemirror-model"
 
 export function fromSerializedPromptEditorState(
@@ -48,12 +47,12 @@ export function fromSerializedPromptEditorState(
 }
 
 export function toSerializedPromptEditorValue(
-    state: EditorState
+    doc: Node
 ): SerializedPromptEditorValue {
     const contextItems: SerializedContextItem[] = []
     const direction = typeof window !== 'undefined' ? window.getComputedStyle(window.document.body).direction : null
 
-    state.doc.descendants(node => {
+    doc.descendants(node => {
         if (node.type.name === 'mention') {
             contextItems.push(node.attrs.item)
             return false
@@ -127,13 +126,13 @@ export function toSerializedPromptEditorValue(
 
 
     return {
-        text: state.doc.textContent,
+        text: doc.textContent,
         contextItems,
         editorState: {
             v: 'lexical-v1',
             minReaderV: 'lexical-v1',
             lexicalEditorState: {
-                root: serializeRoot(state.doc),
+                root: serializeRoot(doc),
             }
         },
     }
