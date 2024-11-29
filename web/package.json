@@ -14,6 +14,7 @@
   "files": ["dist/*"],
   "scripts": {
     "dev": "vite --mode development",
+    "dev:standalone": "CODY_WEB_DEMO_STANDALONE_MODE=true vite --mode development",
     "build": "vite build --mode production && tsc --build",
     "test": "vitest",
     "build-ts": "tsc --build"
