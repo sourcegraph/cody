@@ -141,37 +141,40 @@ export class AutoEditsInlineRendererManager implements AutoEditsRendererManager 
             // The new lines suggested after the current line must be equal to the prediction.
             prediction.endsWith(codeToRewriteAfterCurrentLine)
 
+        let inlineCompletions: vscode.InlineCompletionItem[] | null = null
+
         if (isSuffixMatch) {
             const autocompleteResponse = docContext.currentLinePrefix + allTextAfterCursor
-            const inlineCompletionItem = new vscode.InlineCompletionItem(
-                autocompleteResponse,
-                new vscode.Range(
-                    document.lineAt(position).range.start,
-                    document.lineAt(position).range.end
-                )
-            )
+            inlineCompletions = [
+                new vscode.InlineCompletionItem(
+                    autocompleteResponse,
+                    new vscode.Range(
+                        document.lineAt(position).range.start,
+                        document.lineAt(position).range.end
+                    )
+                ),
+            ]
             autoeditsLogger.logDebug('Autocomplete Inline Response: ', autocompleteResponse)
-            return { inlineCompletions: [inlineCompletionItem], updatedDecorationInfo: decorationInfo }
+
+            // TODO: create a new object instead of modifying in place
+            decorationInfo.modifiedLines = decorationInfo.modifiedLines.map(line => {
+                if (line.originalLineNumber === position.line) {
+                    // Keep all removals changes
+                    // Keep insertions only before the current cursor position
+                    // because others will be handled by the inline completion item.
+                    // TODO: handle insertions on the boundary of the cursor position.
+                    // TODO: ignore empty space removals at the start of the current line
+                    // example: code-matching-eval/edits_experiments/examples/renderer-testing-examples/working-okay/copilot-nes-question-autoedits.py:64:0
+                    line.changes = line.changes.filter(
+                        change =>
+                            change.type === 'delete' ||
+                            (change.type === 'insert' && change.range.end.character < position.character)
+                    )
+                }
+
+                return line
+            })
         }
-
-        // TODO: create a new object instead of modifying in place
-        decorationInfo.modifiedLines = decorationInfo.modifiedLines.map(line => {
-            if (line.originalLineNumber === position.line) {
-                // Keep all removals changes
-                // Keep insertions only before the current cursor position
-                // because others will be handled by the inline completion item.
-                // TODO: handle insertions on the boundary of the cursor position.
-                // TODO: ignore empty space removals at the start of the current line
-                // example: code-matching-eval/edits_experiments/examples/renderer-testing-examples/working-okay/copilot-nes-question-autoedits.py:64:0
-                line.changes = line.changes.filter(
-                    change =>
-                        change.type === 'delete' ||
-                        (change.type === 'insert' && change.range.end.character < position.character)
-                )
-            }
-
-            return line
-        })
 
         await this.showEdit({
             document,
@@ -180,7 +183,7 @@ export class AutoEditsInlineRendererManager implements AutoEditsRendererManager 
             decorationInfo,
         })
 
-        return { inlineCompletions: null, updatedDecorationInfo: decorationInfo }
+        return { inlineCompletions, updatedDecorationInfo: decorationInfo }
     }
 
     public dispose(): void {
