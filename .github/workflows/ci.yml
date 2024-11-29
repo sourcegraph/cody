@@ -218,5 +218,8 @@ jobs:
       - run: pnpm run build
       - run: pnpm -C vscode run build
       - name: Check bundle sizes
-        run: pnpm -C vscode ts-node ./scripts/measure-bundle-size.ts
+        run: |
+          cd vscode
+          pnpm ts-node ./scripts/measure-bundle-size.ts
+          cd ..
       - run: CODY_RELEASE_TYPE=stable pnpm -C vscode run release:dry-run
