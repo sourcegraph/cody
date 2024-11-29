@@ -4,7 +4,7 @@ import { promises as fs } from 'node:fs'
 const SIZE_LIMITS = {
     extension: 15 * 1024 * 1024, // 15MB
     webview: 10 * 1024 * 1024, // 10MB
-    vsix: 15 * 1024 * 1024, // 25MB
+    vsix: 25 * 1024 * 1024, // 25MB
 }
 
 function prettyPrintBytes(bytes: number): string {
