@@ -1,9 +1,11 @@
 import {
     type AutoEditsModelConfig,
     type AutoEditsTokenLimit,
+    type ChatClient,
     type DocumentContext,
     currentResolvedConfig,
     dotcomTokenToGatewayToken,
+    isDotComAuthed,
     tokensToChars,
 } from '@sourcegraph/cody-shared'
 import { type DebouncedFunc, debounce } from 'lodash'
@@ -19,6 +21,7 @@ import { getConfiguration } from '../configuration'
 import { CodyGatewayAdapter } from './adapters/cody-gateway'
 import { FireworksAdapter } from './adapters/fireworks'
 import { OpenAIAdapter } from './adapters/openai'
+import { SourcegraphChatAdapter } from './adapters/sourcegraph-chat'
 import { autoeditsLogger } from './logger'
 import type { AutoeditsModelAdapter } from './prompt-provider'
 import type { CodeToReplaceData } from './prompt-utils'
@@ -68,7 +71,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
     // Keeps track of the last time the text was changed in the editor.
     private lastTextChangeTimeStamp: number | undefined
 
-    constructor() {
+    constructor(private readonly chatClient: ChatClient) {
         this.contextMixer = new ContextMixer({
             strategyFactory: new DefaultContextStrategyFactory(
                 Observable.of(AUTOEDITS_CONTEXT_STRATEGY)
@@ -117,6 +120,8 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 return new FireworksAdapter()
             case 'cody-gateway-fastpath-chat':
                 return new CodyGatewayAdapter()
+            case 'sourcegraph-chat':
+                return new SourcegraphChatAdapter(this.chatClient)
             default:
                 autoeditsLogger.logDebug('Config', `Provider ${providerName} not supported`)
                 throw new Error(`Provider ${providerName} not supported`)
@@ -341,11 +346,21 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 [RetrieverIdentifier.RecentViewPortRetriever]: 2500,
             },
         }
+        // Use fast-path for dotcom
+        if (isDotComAuthed()) {
+            return {
+                provider: 'cody-gateway-fastpath-chat',
+                model: 'cody-model-auto-edits-fireworks-default',
+                url: 'https://cody-gateway.sourcegraph.com/v1/completions/fireworks',
+                tokenLimit: defaultTokenLimit,
+            }
+        }
         return {
-            provider: 'cody-gateway-fastpath-chat',
-            model: 'cody-model-auto-edits-fireworks-default',
-            url: 'https://cody-gateway.sourcegraph.com/v1/completions/fireworks',
+            provider: 'sourcegraph-chat',
+            model: 'fireworks::v1::autoedits-default',
             tokenLimit: defaultTokenLimit,
+            // We use chat completions client for sourcegraph-chat, so we don't need to specify url.
+            url: '',
         }
     }
 
@@ -358,6 +373,10 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 throw new Error('FastPath access token is not available')
             }
             return fastPathAccessToken
+        }
+        if (this.config.providerName === 'sourcegraph-chat') {
+            // We use chat completions client for sourcegraph-chat, so we don't need to specify api key.
+            return ''
         }
         if (this.config.experimentalAutoeditsConfigOverride?.apiKey) {
             return this.config.experimentalAutoeditsConfigOverride.apiKey
