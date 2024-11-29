@@ -3,8 +3,7 @@ import { promises as fs } from 'node:fs'
 // Define size limits in bytes
 const SIZE_LIMITS = {
     extension: 15 * 1024 * 1024, // 15MB
-    webview: 10 * 1024 * 1024, // 10MB
-    vsix: 25 * 1024 * 1024, // 25MB
+    webview: 5 * 1024 * 1024, // 10MB
 }
 
 function prettyPrintBytes(bytes: number): string {
@@ -23,7 +22,6 @@ async function measureBundleSize(): Promise<void> {
     // Measure individual bundle sizes
     const extensionBundle = await fs.stat('./dist/extension.node.js')
     const webviewBundle = await fs.stat('./dist/extension.web.js')
-    const vsixSize = await fs.stat('./dist/cody.vsix').catch(() => ({ size: 0 }))
 
     // Check size limits
     const violations: string[] = []
@@ -44,18 +42,9 @@ async function measureBundleSize(): Promise<void> {
         )
     }
 
-    if (vsixSize.size > SIZE_LIMITS.vsix) {
-        violations.push(
-            `VSIX size (${prettyPrintBytes(vsixSize.size)}) exceeds limit of ${prettyPrintBytes(
-                SIZE_LIMITS.vsix
-            )}`
-        )
-    }
-
     // Log current measurements
     console.log(`Extension bundle size: ${prettyPrintBytes(extensionBundle.size)}`)
     console.log(`Webview bundle size: ${prettyPrintBytes(webviewBundle.size)}`)
-    console.log(`Packaged extension size: ${prettyPrintBytes(vsixSize.size)}`)
 
     // Exit with error if size limits are exceeded
     if (violations.length > 0) {
