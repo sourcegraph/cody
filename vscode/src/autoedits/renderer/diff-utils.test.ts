@@ -104,7 +104,7 @@ describe('getDecorationInfo', () => {
                         },
                         {
                             type: 'unchanged',
-                            originalLineNumber: 1,
+                            originalLineNumber: 2,
                             modifiedLineNumber: 1,
                             text: 'line3',
                         },
@@ -242,7 +242,7 @@ describe('getDecorationInfo', () => {
                         },
                         {
                             type: 'modified',
-                            originalLineNumber: 3,
+                            originalLineNumber: 4,
                             modifiedLineNumber: 3,
                             oldText: 'remove2',
                             newText: 'add1',
@@ -261,7 +261,7 @@ describe('getDecorationInfo', () => {
                         },
                         {
                             type: 'modified',
-                            originalLineNumber: 4,
+                            originalLineNumber: 5,
                             modifiedLineNumber: 4,
                             oldText: 'modify2',
                             newText: 'modified2',
@@ -288,14 +288,14 @@ describe('getDecorationInfo', () => {
                         },
                         {
                             type: 'unchanged',
-                            originalLineNumber: 2,
-                            modifiedLineNumber: 0,
+                            originalLineNumber: 3,
+                            modifiedLineNumber: 2,
                             text: 'keep2',
                         },
                         {
                             type: 'unchanged',
                             originalLineNumber: 6,
-                            modifiedLineNumber: 0,
+                            modifiedLineNumber: 6,
                             text: 'keep3',
                         },
                     ],
@@ -336,7 +336,7 @@ describe('getDecorationInfo', () => {
                         {
                             type: 'modified',
                             originalLineNumber: 1,
-                            modifiedLineNumber: 0,
+                            modifiedLineNumber: 1,
                             oldText: 'line2',
                             newText: 'different2',
                             changes: [
@@ -355,7 +355,7 @@ describe('getDecorationInfo', () => {
                         {
                             type: 'modified',
                             originalLineNumber: 2,
-                            modifiedLineNumber: 0,
+                            modifiedLineNumber: 2,
                             oldText: 'line3',
                             newText: 'different3',
                             changes: [
@@ -386,8 +386,8 @@ describe('getDecorationInfo', () => {
 
                 const expected: DecorationInfo = {
                     addedLines: [
-                        { type: 'added', modifiedLineNumber: 0, text: 'line2' },
-                        { type: 'added', modifiedLineNumber: 0, text: 'line3' },
+                        { type: 'added', modifiedLineNumber: 1, text: 'line2' },
+                        { type: 'added', modifiedLineNumber: 2, text: 'line3' },
                     ],
                     modifiedLines: [
                         {
@@ -468,15 +468,25 @@ describe('getDecorationInfo', () => {
                                     range: expect.anything(),
                                     text: '  ',
                                 },
+                                {
+                                    type: 'unchanged',
+                                    range: expect.anything(),
+                                    text: 'line1',
+                                },
                             ],
                         },
                         {
                             type: 'modified',
                             originalLineNumber: 1,
-                            modifiedLineNumber: 0,
+                            modifiedLineNumber: 1,
                             oldText: 'line2  ',
                             newText: 'line2',
                             changes: [
+                                {
+                                    type: 'unchanged',
+                                    range: expect.anything(),
+                                    text: 'line2',
+                                },
                                 {
                                     type: 'delete',
                                     range: expect.anything(),
@@ -487,7 +497,7 @@ describe('getDecorationInfo', () => {
                         {
                             type: 'modified',
                             originalLineNumber: 2,
-                            modifiedLineNumber: 0,
+                            modifiedLineNumber: 2,
                             oldText: ' line3 ',
                             newText: 'line3',
                             changes: [
@@ -495,6 +505,11 @@ describe('getDecorationInfo', () => {
                                     type: 'delete',
                                     range: expect.anything(),
                                     text: ' ',
+                                },
+                                {
+                                    type: 'unchanged',
+                                    range: expect.anything(),
+                                    text: 'line3',
                                 },
                                 {
                                     type: 'delete',
@@ -528,6 +543,16 @@ describe('getDecorationInfo', () => {
                             newText: 'const span = trace.getActiveTrace()',
                             changes: [
                                 {
+                                    type: 'unchanged',
+                                    range: expect.anything(),
+                                    text: 'const',
+                                },
+                                {
+                                    type: 'unchanged',
+                                    range: expect.anything(),
+                                    text: ' ',
+                                },
+                                {
                                     type: 'delete',
                                     range: expect.anything(),
                                     text: 'value',
@@ -536,6 +561,21 @@ describe('getDecorationInfo', () => {
                                     type: 'insert',
                                     range: expect.anything(),
                                     text: 'span',
+                                },
+                                {
+                                    type: 'unchanged',
+                                    range: expect.anything(),
+                                    text: ' ',
+                                },
+                                {
+                                    type: 'unchanged',
+                                    range: expect.anything(),
+                                    text: '=',
+                                },
+                                {
+                                    type: 'unchanged',
+                                    range: expect.anything(),
+                                    text: ' ',
                                 },
                                 {
                                     type: 'delete',

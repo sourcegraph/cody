@@ -212,54 +212,53 @@ function computeLineChanges({
             newIndex++
         }
 
-        // Process deletions from oldChunks
+        // Process deletions from oldChunks (merge adjacent deletions)
         if (oldStart < oldEnd) {
             let deletionText = ''
-            let prevOldOffset = oldOffset
+            const deletionStartOffset = oldOffset
             for (let i = oldStart; i < oldEnd; i++) {
-                deletionText = oldChunks[i]
-                prevOldOffset = oldOffset
+                deletionText += oldChunks[i]
                 oldOffset += oldChunks[i].length
                 oldIndex++
+            }
 
-                if (deletionText) {
-                    const deleteRange = new vscode.Range(
-                        lineNumber,
-                        prevOldOffset,
-                        lineNumber,
-                        oldOffset
-                    )
-                    changes.push({
-                        type: 'delete',
-                        range: deleteRange,
-                        text: deletionText,
-                    })
-                }
+            if (deletionText) {
+                const deleteRange = new vscode.Range(
+                    lineNumber,
+                    deletionStartOffset,
+                    lineNumber,
+                    oldOffset
+                )
+                changes.push({
+                    type: 'delete',
+                    range: deleteRange,
+                    text: deletionText,
+                })
             }
         }
 
-        // Process insertions from newChunks (insertions happen at oldOffset)
+        // Process insertions from newChunks (merge adjacent insertions)
         if (newStart < newEnd) {
             let insertionText = ''
+            const insertionStartOffset = oldOffset
             for (let i = newStart; i < newEnd; i++) {
-                insertionText = newChunks[i]
+                insertionText += newChunks[i]
                 newIndex++
+            }
 
-                if (insertionText) {
-                    const insertionStartOffset = oldOffset
-                    const insertRange = new vscode.Range(
-                        lineNumber,
-                        insertionStartOffset,
-                        lineNumber,
-                        insertionStartOffset // Zero-width range
-                    )
+            if (insertionText) {
+                const insertRange = new vscode.Range(
+                    lineNumber,
+                    insertionStartOffset,
+                    lineNumber,
+                    insertionStartOffset // Zero-width range
+                )
 
-                    changes.push({
-                        type: 'insert',
-                        range: insertRange,
-                        text: insertionText,
-                    })
-                }
+                changes.push({
+                    type: 'insert',
+                    range: insertRange,
+                    text: insertionText,
+                })
             }
         }
     }
