@@ -17,13 +17,13 @@ import { useClientActionDispatcher } from './client/clientState'
 import { ExtensionAPIProviderFromVSCodeAPI } from '@sourcegraph/prompt-editor'
 import { CodyPanel } from './CodyPanel'
 import { ConnectivityStatusBanner } from './components/ConnectivityStatusBanner'
+import { useSuppressKeys } from './components/hooks'
 import { View } from './tabs'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 import { ComposedWrappers, type Wrapper } from './utils/composeWrappers'
 import { updateDisplayPathEnvInfoForWebview } from './utils/displayPathEnvInfo'
 import { TelemetryRecorderContext, createWebviewTelemetryRecorder } from './utils/telemetry'
 import { type Config, ConfigProvider } from './utils/useConfig'
-import { useSuppressKeys } from './components/hooks'
 
 export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vscodeAPI }) => {
     const [config, setConfig] = useState<Config | null>(null)

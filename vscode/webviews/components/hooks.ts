@@ -53,4 +53,5 @@ export const useSuppressKeys = () => {
         return () => {
             window.removeEventListener('keydown', handleKeyDown)
         }
-    }, [])}
+    }, [])
+}
