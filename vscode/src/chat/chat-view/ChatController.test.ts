@@ -100,7 +100,7 @@ describe('ChatController', () => {
         mockContextRetriever.retrieveContext.mockResolvedValue([])
 
         // Send the first message in a new chat.
-        await chatController.handleUserMessageSubmission({
+        await chatController.handleUserMessage({
             requestID: '1',
             inputText: PromptString.unsafe_fromUserQuery('Test input'),
             mentions: [],
@@ -176,7 +176,7 @@ describe('ChatController', () => {
                 yield { type: 'complete', text: 'Test reply 2' }
             })() satisfies AsyncGenerator<CompletionGeneratorValue>
         )
-        await chatController.handleUserMessageSubmission({
+        await chatController.handleUserMessage({
             requestID: '2',
             inputText: PromptString.unsafe_fromUserQuery('Test followup'),
             mentions: [],
@@ -313,7 +313,7 @@ describe('ChatController', () => {
         mockContextRetriever.retrieveContext.mockResolvedValue([])
 
         // Send the first message in a new chat.
-        await chatController.handleUserMessageSubmission({
+        await chatController.handleUserMessage({
             requestID: '1',
             inputText: PromptString.unsafe_fromUserQuery('Test input'),
             mentions: [],
