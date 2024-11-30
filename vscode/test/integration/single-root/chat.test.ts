@@ -32,7 +32,7 @@ suite('Chat', function () {
     test('sends and receives a message', async () => {
         await vscode.commands.executeCommand('cody.chat.newEditorPanel')
         const chatView = await getChatViewProvider()
-        await chatView.handleUserMessageSubmission({
+        await chatView.handleUserMessage({
             requestID: 'test',
             inputText: getPs()`hello from the human`,
             mentions: [],
@@ -51,7 +51,7 @@ suite('Chat', function () {
         await getTextEditorWithSelection()
         await vscode.commands.executeCommand('cody.chat.newEditorPanel')
         const chatView = await getChatViewProvider()
-        await chatView.handleUserMessageSubmission({
+        await chatView.handleUserMessage({
             requestID: 'test',
             inputText: getPs()`hello from the human`,
             mentions: [],

@@ -100,7 +100,7 @@ import { resolveContextItems } from '../../editor/utils/editor-context'
 import type { VSCodeEditor } from '../../editor/vscode-editor'
 import type { ExtensionClient } from '../../extension-client'
 import { migrateAndNotifyForOutdatedModels } from '../../models/modelMigrator'
-import { logDebug } from '../../output-channel-logger'
+import { logDebug, outputChannelLogger } from '../../output-channel-logger'
 import { getCategorizedMentions } from '../../prompt-builder/utils'
 import { hydratePromptText } from '../../prompts/prompt-hydration'
 import { mergedPromptsAndLegacyCommands } from '../../prompts/prompts'
@@ -284,7 +284,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 this.setWebviewToChat()
                 break
             case 'submit': {
-                await this.handleUserMessageSubmission({
+                await this.handleUserMessage({
                     requestID: uuid.v4(),
                     inputText: PromptString.unsafe_fromUserQuery(message.text),
                     mentions: message.contextItems ?? [],
@@ -629,7 +629,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     /**
      * Handles user input text for both new and edit submissions
      */
-    public async handleUserMessageSubmission({
+    public async handleUserMessage({
         requestID,
         inputText,
         mentions,
@@ -652,7 +652,12 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         intentScores?: { intent: string; score: number }[] | undefined | null
         manuallySelectedIntent?: boolean | undefined | null
     }): Promise<void> {
-        return tracer.startActiveSpan('chat.submit', async (span): Promise<void> => {
+        return tracer.startActiveSpan('chat.handleUserMessage', async (span): Promise<void> => {
+            outputChannelLogger.logDebug(
+                'ChatController',
+                'handleUserMessageSubmission',
+                `traceId: ${span.spanContext().traceId}`
+            )
             span.setAttribute('sampled', true)
 
             if (inputText.toString().match(/^\/reset$/)) {
@@ -701,7 +706,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             intent: detectedIntent,
             intentScores: detectedIntentScores,
             manuallySelectedIntent,
-        }: Parameters<typeof this.handleUserMessageSubmission>[0],
+        }: Parameters<typeof this.handleUserMessage>[0],
         span: Span
     ): Promise<void> {
         span.addEvent('ChatController.sendChat')
@@ -1167,7 +1172,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 return
             }
             this.chatBuilder.removeMessagesFromIndex(humanMessage, 'human')
-            return await this.handleUserMessageSubmission({
+            return await this.handleUserMessage({
                 requestID,
                 inputText: text,
                 mentions: contextFiles,
