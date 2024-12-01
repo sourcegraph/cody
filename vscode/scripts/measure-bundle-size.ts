@@ -18,7 +18,6 @@ function prettyPrintBytes(bytes: number): string {
 }
 
 async function measureBundleSize(): Promise<void> {
-    // Measure individual bundle sizes
     const extensionBundle = await fs.stat('./dist/extension.node.js')
     const webviewBundle = await fs.stat('./dist/extension.web.js')
 
