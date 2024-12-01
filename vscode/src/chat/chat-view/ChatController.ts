@@ -755,13 +755,16 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         // forgot to set the source, assume it's from the user.
         mentions = mentions.map(m => (m.source ? m : { ...m, source: ContextItemSource.User }))
 
-        const contextAlternatives = await this.computeContext(
-            { text: inputText, mentions },
-            requestID,
-            editorState,
-            span,
-            signal
-        )
+        const contextAlternatives = await wrapInActiveSpan('chat.computeContext', () => {
+            return this.computeContext(
+                { text: inputText, mentions },
+                requestID,
+                editorState,
+                span,
+                signal
+            )
+        })
+
         signal.throwIfAborted()
         const corpusContext = contextAlternatives[0].items
 
