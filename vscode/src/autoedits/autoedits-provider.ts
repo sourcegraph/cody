@@ -29,6 +29,10 @@ import { InlineDiffDecorator } from './renderer/decorators/inline-diff-decorator
 import { getDecorationInfo } from './renderer/diff-utils'
 import { AutoEditsInlineRendererManager } from './renderer/inline-manager'
 import { AutoEditsDefaultRendererManager, type AutoEditsRendererManager } from './renderer/manager'
+import {
+    extractAutoEditResponseFromCurrentDocumentCommentTemplate,
+    shrinkReplacerTextToCodeToReplaceRange,
+} from './renderer/renderer-testing'
 import { isPredictedTextAlreadyInSuffix } from './utils'
 
 const AUTOEDITS_CONTEXT_STRATEGY = 'auto-edits'
@@ -66,8 +70,12 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
     private readonly rendererManager: AutoEditsRendererManager
     private readonly config: ProviderConfig
     private readonly onSelectionChangeDebounced: DebouncedFunc<typeof this.autoeditOnSelectionChange>
-    // Keeps track of the last time the text was changed in the editor.
+    /** Keeps track of the last time the text was changed in the editor. */
     private lastTextChangeTimeStamp: number | undefined
+
+    private isMockResponseFromCurrentDocumentTemplateEnabled = vscode.workspace
+        .getConfiguration()
+        .get<boolean>('cody.experimental.autoedits.use-mock-responses', false)
 
     constructor() {
         this.contextMixer = new ContextMixer({
@@ -249,14 +257,27 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             this.config.tokenLimit
         )
         const apiKey = await this.getApiKey()
-        const response = await this.config.provider.getModelResponse({
-            url: this.config.url,
-            model: this.config.model,
-            apiKey,
-            prompt,
-            codeToRewrite: codeToReplace.codeToRewrite,
-            userId: (await currentResolvedConfig()).clientState.anonymousUserID,
-        })
+
+        let response: string | undefined = undefined
+        if (this.isMockResponseFromCurrentDocumentTemplateEnabled) {
+            const responseMetadata = extractAutoEditResponseFromCurrentDocumentCommentTemplate()
+
+            if (responseMetadata) {
+                response = shrinkReplacerTextToCodeToReplaceRange(responseMetadata, codeToReplace)
+            }
+        }
+
+        if (response === undefined) {
+            response = await this.config.provider.getModelResponse({
+                url: this.config.url,
+                model: this.config.model,
+                apiKey,
+                prompt,
+                codeToRewrite: codeToReplace.codeToRewrite,
+                userId: (await currentResolvedConfig()).clientState.anonymousUserID,
+            })
+        }
+
         const postProcessedResponse = this.config.provider.postProcessResponse(codeToReplace, response)
 
         if (options.abortSignal?.aborted || !postProcessedResponse) {
