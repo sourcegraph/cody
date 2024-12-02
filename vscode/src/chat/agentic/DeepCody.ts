@@ -6,6 +6,7 @@ import {
     logDebug,
     ps,
     telemetryRecorder,
+    wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
 import { CodyChatAgent } from './CodyChatAgent'
 import { CODYAGENT_PROMPTS } from './prompts'
@@ -40,6 +41,16 @@ export class DeepCodyAgent extends CodyChatAgent {
      * @returns The context items retrieved for the current chat.
      */
     public async getContext(
+        span: Span,
+        chatAbortSignal: AbortSignal,
+        maxLoops = 2
+    ): Promise<ContextItem[]> {
+        return wrapInActiveSpan('DeepCody.getContext', () =>
+            this._getContext(span, chatAbortSignal, maxLoops)
+        )
+    }
+
+    private async _getContext(
         span: Span,
         chatAbortSignal: AbortSignal,
         maxLoops = 2

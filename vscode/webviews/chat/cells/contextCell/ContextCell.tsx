@@ -161,7 +161,7 @@ export const ContextCell: FunctionComponent<{
             main: isContextLoading ? 'Fetching context' : 'Context',
             sub: isContextLoading
                 ? isDeepCodyEnabled
-                    ? 'Retrieving context…'
+                    ? 'Thinking…'
                     : 'Retrieving codebase files…'
                 : contextItems === undefined
                   ? 'none requested'

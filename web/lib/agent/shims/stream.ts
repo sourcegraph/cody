@@ -5,3 +5,7 @@ export function Readable(): unknown {
 export function Writable(): unknown {
     return null
 }
+
+export default {
+    Readable: { prototype: {} },
+}

@@ -239,18 +239,10 @@ export function syncModels({
                                                         createModelFromServerModel
                                                     )
                                                 )
-                                                // Update model preferences for chat to DEEP CODY once on first sync.
+                                                // Update site preferences for chat to DEEP CODY on first sync.
                                                 data.preferences!.defaults.edit =
                                                     data.preferences!.defaults.chat
                                                 data.preferences!.defaults.chat = DEEPCODY_MODEL.modelRef
-                                                return userModelPreferences.pipe(
-                                                    take(1),
-                                                    tap(preferences => {
-                                                        preferences.selected[ModelUsage.Chat] =
-                                                            DEEPCODY_MODEL.modelRef
-                                                    }),
-                                                    map(() => data)
-                                                )
                                             }
 
                                             return Observable.of(data)

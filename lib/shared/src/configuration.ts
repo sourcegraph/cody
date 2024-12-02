@@ -32,7 +32,7 @@ export interface AutoEditsTokenLimit {
 }
 
 export interface AutoEditsModelConfig {
-    provider: 'openai' | 'fireworks' | 'cody-gateway-fastpath-chat'
+    provider: 'openai' | 'fireworks' | 'cody-gateway-fastpath-chat' | 'sourcegraph-chat'
     model: string
     url: string
     apiKey: string

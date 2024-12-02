@@ -1,3 +1,6 @@
+## 0.15.0
+- Fixes problem with not working prompts when chat has some sent messages 
+
 ## 0.14.0
 - Add prompts analytics over built-in prompts
 

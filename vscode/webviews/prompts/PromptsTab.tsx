@@ -84,6 +84,10 @@ export function useActionSelect() {
                 )
                 break
             }
+
+            // Deprecated commands handler, starting with sg 5.10 and vscode 1.46 we
+            // should never reach this case branch (since commands were replaces with prompts)
+            // TODO (vk): Remove this when backward compatible commands support is sunset
             case 'command': {
                 if (action.slashCommand) {
                     getVSCodeAPI().postMessage({

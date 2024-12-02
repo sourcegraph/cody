@@ -76,6 +76,8 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
     }, [smartApply])
 
     useClientActionListener(
+        // Always subscribe but listen only smart apply result events
+        { isActive: true, selector: event => !!event.smartApplyResult },
         useCallback<ClientActionListener>(({ smartApplyResult }) => {
             if (smartApplyResult) {
                 setSmartApplyStates(prev => ({

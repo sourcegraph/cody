@@ -13,7 +13,7 @@ const HEDGES_PREVENTION = ps`Answer positively without apologizing. `
 /**
  * Answer guidelines for the Deep Cody model.
  */
-const DEEP_CODY = ps`Give step-by-step guide for how-to and debug questions, with the updated code changes if any. Else, keep answer for general questions concise and informative. `
+const DEEP_CODY = ps`Explain your reasoning in detail for coding questions. `
 
 /**
  * Prompt mixins elaborate every prompt presented to the LLM.
@@ -46,7 +46,7 @@ export class PromptMixin {
         // Handle Deep Cody specific prompts
         const isDeepCodyEnabled = modelID?.includes('deep-cody')
         if (isDeepCodyEnabled && !newMixins.length) {
-            mixins.push(new PromptMixin(DEEP_CODY))
+            mixins.push(new PromptMixin(HEDGES_PREVENTION.concat(DEEP_CODY)))
         }
 
         // Add new mixins to the list of mixins to be prepended to the next human message.

@@ -2,6 +2,9 @@
 
 # kalan's poor man changelog generator (h/t unknwon), this will be replaced by the release team's changelog automation
 
+# this script will gather all the changes between 2 versions and add them to the uncategorized section of the changelog.
+# to use this script, you will need to run `vscode/scripts/changelog.sh <from-commit> <to-commit>`
+
 # you can find the commits at each release branch using:
 # git ls-remote https://github.com/sourcegraph/cody | grep "refs/heads/vscode-v1\.[0-9]\+\.x" | sort -r | head -n 5
 

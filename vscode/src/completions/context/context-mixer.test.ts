@@ -7,6 +7,7 @@ import {
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type * as vscode from 'vscode'
+import { mockLocalStorage } from '../../services/LocalStorageProvider'
 import { getCurrentDocContext } from '../get-current-doc-context'
 import { documentAndPosition } from '../test-helpers'
 import type { ContextRetriever } from '../types'
@@ -61,6 +62,10 @@ const defaultOptions = {
 }
 
 describe('ContextMixer', () => {
+    beforeAll(() => {
+        mockLocalStorage()
+    })
+
     beforeEach(() => {
         vi.spyOn(contextFiltersProvider, 'isUriIgnored').mockResolvedValue(false)
     })

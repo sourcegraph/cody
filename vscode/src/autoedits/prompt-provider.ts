@@ -1,9 +1,4 @@
-import type { AutoEditsTokenLimit, PromptString } from '@sourcegraph/cody-shared'
-import type * as vscode from 'vscode'
-import type {
-    AutocompleteContextSnippet,
-    DocumentContext,
-} from '../../../lib/shared/src/completions/types'
+import type { PromptString } from '@sourcegraph/cody-shared'
 import type * as utils from './prompt-utils'
 
 export type ChatPrompt = {
@@ -26,15 +21,7 @@ export interface PromptResponseData {
 }
 
 export interface AutoeditsModelAdapter {
-    getPrompt(
-        docContext: DocumentContext,
-        document: vscode.TextDocument,
-        position: vscode.Position,
-        context: AutocompleteContextSnippet[],
-        tokenBudget: AutoEditsTokenLimit
-    ): PromptResponseData
     getModelResponse(args: AutoeditModelOptions): Promise<string>
-    postProcessResponse(codeToReplace: utils.CodeToReplaceData, completion: string | null): string
 }
 
 export async function getModelResponse(

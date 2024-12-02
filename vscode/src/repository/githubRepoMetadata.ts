@@ -10,12 +10,15 @@ import {
 } from '@sourcegraph/cody-shared'
 import { Observable, map } from 'observable-fns'
 import { logDebug } from '../output-channel-logger'
+import { localStorage } from '../services/LocalStorageProvider'
 import { remoteReposForAllWorkspaceFolders } from './remoteRepos'
 
-interface GitHubDotComRepoMetaData {
+export interface GitHubDotComRepoMetaData {
     // The full uniquely identifying name on github.com, e.g., "github.com/sourcegraph/cody"
     repoName: string
     isPublic: boolean
+    // The timestamp when the metadata was fetched from the github API.
+    timestamp: number
 }
 
 export class GitHubDotComRepoMetadata {
@@ -23,7 +26,13 @@ export class GitHubDotComRepoMetadata {
     private static instance: GitHubDotComRepoMetadata | null = null
     private cache = new Map<string /* repoName */, GitHubDotComRepoMetaData | undefined>()
 
-    private constructor() {}
+    private constructor() {
+        this.cache.clear()
+        const localStorageData = localStorage.getGitHubRepoAccessibility()
+        for (const data of localStorageData) {
+            this.cache.set(data.repoName, data)
+        }
+    }
 
     public static getInstance(): GitHubDotComRepoMetadata {
         if (!GitHubDotComRepoMetadata.instance) {
@@ -50,7 +59,7 @@ export class GitHubDotComRepoMetadata {
         }
         const repoMetaData = await this.ghMetadataFromGit(repoBaseName, signal)
         if (repoMetaData) {
-            this.cache.set(repoMetaData.repoName, repoMetaData)
+            this.updateCachedDataToLocalStorageIfNeeded(repoMetaData)
         }
         return repoMetaData
     }
@@ -78,7 +87,7 @@ export class GitHubDotComRepoMetadata {
     ): Promise<GitHubDotComRepoMetaData | undefined> {
         const apiUrl = `https://api.github.com/repos/${owner}/${repoName}`
         const normalizedRepoName = this.getNormalizedRepoNameFromOwnerAndRepoName(owner, repoName)
-        const metadata = { repoName: normalizedRepoName, isPublic: false }
+        const metadata = { repoName: normalizedRepoName, isPublic: false, timestamp: Date.now() }
         try {
             const response = await fetch(apiUrl, { method: 'HEAD', signal })
             metadata.isPublic = response.ok
@@ -119,6 +128,15 @@ export class GitHubDotComRepoMetadata {
         }
         const [, owner, repoName] = match
         return { owner, repoName: repoName }
+    }
+
+    private updateCachedDataToLocalStorageIfNeeded(repoMetaData: GitHubDotComRepoMetaData): void {
+        if (this.cache.get(repoMetaData.repoName)?.isPublic === repoMetaData.isPublic) {
+            return
+        }
+        this.cache.set(repoMetaData.repoName, repoMetaData)
+        const repoAccessibilityData = Array.from(this.cache.values()).filter(isDefined)
+        localStorage.setGitHubRepoAccessibility(repoAccessibilityData)
     }
 }
 
