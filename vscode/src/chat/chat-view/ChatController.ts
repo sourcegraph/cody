@@ -19,9 +19,6 @@ import {
     skipPendingOperation,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
-import * as uuid from 'uuid'
-import * as vscode from 'vscode'
-
 import {
     type BillingCategory,
     type BillingProduct,
@@ -79,6 +76,8 @@ import {
     truncatePromptString,
     userProductSubscription,
 } from '@sourcegraph/cody-shared'
+import * as uuid from 'uuid'
+import * as vscode from 'vscode'
 
 import type { Span } from '@opentelemetry/api'
 import { captureException } from '@sentry/core'
@@ -109,6 +108,7 @@ import { authProvider } from '../../services/AuthProvider'
 import { AuthProviderSimplified } from '../../services/AuthProviderSimplified'
 import { localStorage } from '../../services/LocalStorageProvider'
 import { secretStorage } from '../../services/SecretStorageProvider'
+import { TraceSender } from '../../services/open-telemetry/trace-sender'
 import { recordExposedExperimentsToSpan } from '../../services/open-telemetry/utils'
 import {
     handleCodeFromInsertAtCursor,
@@ -327,6 +327,9 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     message.instruction,
                     message.fileName
                 )
+                break
+            case 'trace-export':
+                TraceSender.send(message.traceSpanEncodedJson)
                 break
             case 'smartApplyAccept':
                 await vscode.commands.executeCommand('cody.fixup.codelens.accept', message.id)
