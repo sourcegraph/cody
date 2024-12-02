@@ -12,8 +12,6 @@ log:
         bodySize: 886
         cookies: []
         headers:
-          - name: content-type
-            value: application/json
           - name: accept-encoding
             value: gzip;q=0
           - name: authorization
@@ -21,9 +19,15 @@ log:
               REDACTED_3dd704711f82a44ff6aba261b53b61a03fb8edba658774639148630d838c2d1d
           - name: connection
             value: keep-alive
+          - name: content-type
+            value: application/json
+          - name: user-agent
+            value: / (Node.js v20.4.0)
+          - name: x-requested-with
+            value: ""
           - name: host
             value: sourcegraph.com
-        headersSize: 255
+        headersSize: 308
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -54,14 +58,14 @@ log:
         queryString: []
         url: https://sourcegraph.com/.api/completions/stream
       response:
-        bodySize: 20215
+        bodySize: 3475
         content:
           mimeType: text/event-stream
-          size: 20215
+          size: 3475
           text: >+
             event: completion
 
-            data: {"completion":"<keywords>\n<keyword><value>zoekt</value><variants>zoekt zoekt.go zoekt_struct zoekt_type</variants><weight>1.0</weight></keyword>\n<keyword><value>struct</value><variants>struct structure type</variants><weight>0.9</weight></keyword>\n<keyword><value>type</value><variants>type typedef</variants><weight>0.8</weight></keyword>\n<keyword><value>definition</value><variants>def define defined declaration</variants><weight>0.7</weight></keyword>\n</keywords>","stopReason":"end_turn"}
+            data: {"completion":"<keywords>\n<keyword>\n<value>zoekt</value>\n<variants>search search_engine indexer</variants>\n<weight>1.0</weight>\n</keyword>\n<keyword>\n<value>struct</value>\n<variants>type class object</variants>\n<weight>0.8</weight>\n</keyword>\n</keywords>","stopReason":"end_turn"}
 
 
             event: done
@@ -71,7 +75,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 25 Sep 2024 19:33:06 GMT
+            value: Mon, 02 Dec 2024 20:15:38 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -84,6 +88,10 @@ log:
             value: ""
           - name: cache-control
             value: no-cache
+          - name: observed-calculated-ip-from-forwarded-for
+            value: 73.70.50.172
+          - name: observed-x-forwarded-for
+            value: 73.70.50.172
           - name: vary
             value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
               X-Requested-With,Cookie
@@ -95,12 +103,12 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1284
+        headersSize: 1396
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-25T19:33:05.009Z
+      startedDateTime: 2024-12-02T20:15:37.225Z
       time: 0
       timings:
         blocked: -1
@@ -117,8 +125,6 @@ log:
         bodySize: 1047
         cookies: []
         headers:
-          - name: content-type
-            value: application/json
           - name: accept-encoding
             value: gzip;q=0
           - name: authorization
@@ -126,9 +132,15 @@ log:
               REDACTED_3dd704711f82a44ff6aba261b53b61a03fb8edba658774639148630d838c2d1d
           - name: connection
             value: keep-alive
+          - name: content-type
+            value: application/json
+          - name: user-agent
+            value: / (Node.js v20.4.0)
+          - name: x-requested-with
+            value: ""
           - name: host
             value: sourcegraph.com
-        headersSize: 255
+        headersSize: 308
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -168,14 +180,14 @@ log:
         queryString: []
         url: https://sourcegraph.com/.api/completions/stream
       response:
-        bodySize: 33227
+        bodySize: 9579
         content:
           mimeType: text/event-stream
-          size: 33227
+          size: 9579
           text: >+
             event: completion
 
-            data: {"completion":"<keywords>\n<keyword><value>zoekt</value><variants>zoekt zoekt.go zoekt.searcher zoekt.client</variants><weight>1.0</weight></keyword>\n<keyword><value>struct</value><variants>struct definition struct type</variants><weight>0.9</weight></keyword>\n<keyword><value>client</value><variants>client zoekt.client</variants><weight>0.8</weight></keyword>\n<keyword><value>cache</value><variants>cache caching disable.cache</variants><weight>0.7</weight></keyword>\n<keyword><value>mutex</value><variants>mutex mu sync.mutex sync.rwmutex</variants><weight>0.6</weight></keyword>\n</keywords>","stopReason":"end_turn"}
+            data: {"completion":"<keywords>\n<keyword>\n<value>zoekt</value>\n<variants>search search_engine indexer</variants>\n<weight>1.0</weight>\n</keyword>\n<keyword>\n<value>client</value>\n<variants>client connection api</variants>\n<weight>0.8</weight>\n</keyword>\n<keyword>\n<value>cache</value>\n<variants>cache caching</variants>\n<weight>0.9</weight>\n</keyword>\n<keyword>\n<value>sync</value>\n<variants>synchronization concurrency locking</variants>\n<weight>0.7</weight>\n</keyword>\n</keywords>","stopReason":"end_turn"}
 
 
             event: done
@@ -185,7 +197,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 25 Sep 2024 19:33:09 GMT
+            value: Mon, 02 Dec 2024 20:15:38 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -198,6 +210,10 @@ log:
             value: ""
           - name: cache-control
             value: no-cache
+          - name: observed-calculated-ip-from-forwarded-for
+            value: 73.70.50.172
+          - name: observed-x-forwarded-for
+            value: 73.70.50.172
           - name: vary
             value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
               X-Requested-With,Cookie
@@ -209,12 +225,12 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1284
+        headersSize: 1396
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-25T19:33:07.942Z
+      startedDateTime: 2024-12-02T20:15:37.722Z
       time: 0
       timings:
         blocked: -1
@@ -231,8 +247,6 @@ log:
         bodySize: 914
         cookies: []
         headers:
-          - name: content-type
-            value: application/json
           - name: accept-encoding
             value: gzip;q=0
           - name: authorization
@@ -240,9 +254,15 @@ log:
               REDACTED_3dd704711f82a44ff6aba261b53b61a03fb8edba658774639148630d838c2d1d
           - name: connection
             value: keep-alive
+          - name: content-type
+            value: application/json
+          - name: user-agent
+            value: / (Node.js v20.4.0)
+          - name: x-requested-with
+            value: ""
           - name: host
             value: sourcegraph.com
-        headersSize: 255
+        headersSize: 308
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -274,14 +294,14 @@ log:
         queryString: []
         url: https://sourcegraph.com/.api/completions/stream
       response:
-        bodySize: 19489
+        bodySize: 4996
         content:
           mimeType: text/event-stream
-          size: 19489
+          size: 4996
           text: >+
             event: completion
 
-            data: {"completion":"<keywords>\n<keyword><value>clone</value><variants>git clone repo repository</variants><weight>0.9</weight></keyword>\n<keyword><value>repo</value><variants>repository repositories repos</variants><weight>0.8</weight></keyword>\n<keyword><value>git</value><variants>vcs version control</variants><weight>0.7</weight></keyword>\n<keyword><value>logic</value><variants>code implementation function method</variants><weight>0.6</weight></keyword>\n</keywords>","stopReason":"end_turn"}
+            data: {"completion":"<keywords><keyword><value>clone</value><variants>reclone replication repository</variants><weight>0.8</weight></keyword><keyword><value>logic</value><variants>logic reasoning algorithm</variants><weight>0.7</weight></keyword><keyword><value>repository</value><variants>repo git</variants><weight>0.8</weight></keyword></keywords>","stopReason":"end_turn"}
 
 
             event: done
@@ -291,7 +311,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 25 Sep 2024 19:33:12 GMT
+            value: Mon, 02 Dec 2024 20:15:39 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -304,6 +324,10 @@ log:
             value: ""
           - name: cache-control
             value: no-cache
+          - name: observed-calculated-ip-from-forwarded-for
+            value: 73.70.50.172
+          - name: observed-x-forwarded-for
+            value: 73.70.50.172
           - name: vary
             value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
               X-Requested-With,Cookie
@@ -315,12 +339,12 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1284
+        headersSize: 1396
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-25T19:33:11.325Z
+      startedDateTime: 2024-12-02T20:15:38.223Z
       time: 0
       timings:
         blocked: -1
@@ -337,8 +361,6 @@ log:
         bodySize: 920
         cookies: []
         headers:
-          - name: content-type
-            value: application/json
           - name: accept-encoding
             value: gzip;q=0
           - name: authorization
@@ -346,9 +368,15 @@ log:
               REDACTED_3dd704711f82a44ff6aba261b53b61a03fb8edba658774639148630d838c2d1d
           - name: connection
             value: keep-alive
+          - name: content-type
+            value: application/json
+          - name: user-agent
+            value: / (Node.js v20.4.0)
+          - name: x-requested-with
+            value: ""
           - name: host
             value: sourcegraph.com
-        headersSize: 255
+        headersSize: 308
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -380,14 +408,14 @@ log:
         queryString: []
         url: https://sourcegraph.com/.api/completions/stream
       response:
-        bodySize: 10724
+        bodySize: 3116
         content:
           mimeType: text/event-stream
-          size: 10724
+          size: 3116
           text: >+
             event: completion
 
-            data: {"completion":"<keywords>\n<keyword><value>migration</value><variants>migrate db database schema</variants><weight>1.0</weight></keyword>\n<keyword><value>define</value><variants>create new add</variants><weight>0.8</weight></keyword>\n<keyword><value>database</value><variants>db</variants><weight>0.9</weight></keyword>\n</keywords>","stopReason":"end_turn"}
+            data: {"completion":"<keywords>\n<keyword>\n<value>database migration</value>\n<variants>db migration database migration schema migration</variants>\n<weight>1.0</weight>\n</keyword>\n<keyword>\n<value>define</value>\n<variants>create new configure setup</variants>\n<weight>0.9</weight>\n</keyword>\n</keywords>","stopReason":"end_turn"}
 
 
             event: done
@@ -397,7 +425,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 25 Sep 2024 19:33:15 GMT
+            value: Mon, 02 Dec 2024 20:15:39 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -410,6 +438,10 @@ log:
             value: ""
           - name: cache-control
             value: no-cache
+          - name: observed-calculated-ip-from-forwarded-for
+            value: 73.70.50.172
+          - name: observed-x-forwarded-for
+            value: 73.70.50.172
           - name: vary
             value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
               X-Requested-With,Cookie
@@ -421,12 +453,12 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1284
+        headersSize: 1396
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-25T19:33:13.776Z
+      startedDateTime: 2024-12-02T20:15:38.724Z
       time: 0
       timings:
         blocked: -1
@@ -443,8 +475,6 @@ log:
         bodySize: 977
         cookies: []
         headers:
-          - name: content-type
-            value: application/json
           - name: accept-encoding
             value: gzip;q=0
           - name: authorization
@@ -452,9 +482,15 @@ log:
               REDACTED_3dd704711f82a44ff6aba261b53b61a03fb8edba658774639148630d838c2d1d
           - name: connection
             value: keep-alive
+          - name: content-type
+            value: application/json
+          - name: user-agent
+            value: / (Node.js v20.4.0)
+          - name: x-requested-with
+            value: ""
           - name: host
             value: sourcegraph.com
-        headersSize: 255
+        headersSize: 308
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -487,14 +523,14 @@ log:
         queryString: []
         url: https://sourcegraph.com/.api/completions/stream
       response:
-        bodySize: 43631
+        bodySize: 11824
         content:
           mimeType: text/event-stream
-          size: 43631
+          size: 11824
           text: >+
             event: completion
 
-            data: {"completion":"<keywords>\n<keyword><value>context</value><variants>ctx window limit budget scope</variants><weight>0.9</weight></keyword>\n<keyword><value>mention</value><variants>@-mention at-mention notification</variants><weight>0.7</weight></keyword>\n<keyword><value>search</value><variants>query lookup find</variants><weight>0.6</weight></keyword>\n<keyword><value>calculate</value><variants>compute determine evaluate</variants><weight>0.8</weight></keyword>\n<keyword><value>limit</value><variants>bound threshold max maximum constraint</variants><weight>0.7</weight></keyword>\n<keyword><value>budget</value><variants>allocation allowance quota</variants><weight>0.6</weight></keyword>\n</keywords>","stopReason":"end_turn"}
+            data: {"completion":"<keywords>\n<keyword>\n<value>context window</value>\n<variants>context window limit context-window context_window</variants>\n<weight>0.8</weight>\n</keyword>\n<keyword>\n<value>budget</value>\n<variants>budget allocation resource allocation resource budget</variants>\n<weight>0.7</weight>\n</keyword>\n<keyword>\n<value>mentions</value>\n<variants>@-mentions mentions</variants>\n<weight>0.6</weight>\n</keyword>\n<keyword>\n<value>search context</value>\n<variants>search context search-context search_context</variants>\n<weight>0.8</weight>\n</keyword>\n</keywords>","stopReason":"end_turn"}
 
 
             event: done
@@ -504,7 +540,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 25 Sep 2024 19:33:17 GMT
+            value: Mon, 02 Dec 2024 20:15:40 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -517,6 +553,10 @@ log:
             value: ""
           - name: cache-control
             value: no-cache
+          - name: observed-calculated-ip-from-forwarded-for
+            value: 73.70.50.172
+          - name: observed-x-forwarded-for
+            value: 73.70.50.172
           - name: vary
             value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
               X-Requested-With,Cookie
@@ -528,12 +568,12 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1284
+        headersSize: 1396
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-25T19:33:15.931Z
+      startedDateTime: 2024-12-02T20:15:39.225Z
       time: 0
       timings:
         blocked: -1
@@ -550,8 +590,6 @@ log:
         bodySize: 972
         cookies: []
         headers:
-          - name: content-type
-            value: application/json
           - name: accept-encoding
             value: gzip;q=0
           - name: authorization
@@ -559,9 +597,15 @@ log:
               REDACTED_3dd704711f82a44ff6aba261b53b61a03fb8edba658774639148630d838c2d1d
           - name: connection
             value: keep-alive
+          - name: content-type
+            value: application/json
+          - name: user-agent
+            value: / (Node.js v20.4.0)
+          - name: x-requested-with
+            value: ""
           - name: host
             value: sourcegraph.com
-        headersSize: 255
+        headersSize: 308
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -598,14 +642,14 @@ log:
         queryString: []
         url: https://sourcegraph.com/.api/completions/stream
       response:
-        bodySize: 50665
+        bodySize: 16518
         content:
           mimeType: text/event-stream
-          size: 50665
+          size: 16518
           text: >+
             event: completion
 
-            data: {"completion":"<keywords>\n<keyword><value>parser</value><variants>parse parse_tree parsing tree-sitter</variants><weight>1.0</weight></keyword>\n<keyword><value>tree-sitter</value><variants>treesitter tree_sitter</variants><weight>1.0</weight></keyword>\n<keyword><value>go</value><variants>golang</variants><weight>0.9</weight></keyword>\n<keyword><value>style</value><variants>styleguide coding_style</variants><weight>0.8</weight></keyword>\n<keyword><value>google</value><variants></variants><weight>0.8</weight></keyword>\n<keyword><value>panic</value><variants>error_handling</variants><weight>0.7</weight></keyword>\n<keyword><value>rules</value><variants>guidelines</variants><weight>0.6</weight></keyword>\n</keywords>","stopReason":"end_turn"}
+            data: {"completion":"<keywords>\n<keyword>\n<value>tree-sitter</value>\n<variants>tree sitter treesitter tree-parser</variants>\n<weight>1.0</weight>\n</keyword>\n<keyword>\n<value>parsing</value>\n<variants>parse parse-file parse_file parser</variants>\n<weight>1.0</weight>\n</keyword>\n<keyword>\n<value>go</value>\n<variants>golang google-go google_go</variants>\n<weight>0.8</weight>\n</keyword>\n<keyword>\n<value>style guide</value>\n<variants>styleguide style-guide coding-style</variants>\n<weight>0.7</weight>\n</keyword>\n<keyword>\n<value>panic</value>\n<variants>error-handling error_handling exception-handling</variants>\n<weight>0.9</weight>\n</keyword>\n</keywords>","stopReason":"end_turn"}
 
 
             event: done
@@ -615,7 +659,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 25 Sep 2024 19:33:20 GMT
+            value: Mon, 02 Dec 2024 20:15:40 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -628,6 +672,10 @@ log:
             value: ""
           - name: cache-control
             value: no-cache
+          - name: observed-calculated-ip-from-forwarded-for
+            value: 73.70.50.172
+          - name: observed-x-forwarded-for
+            value: 73.70.50.172
           - name: vary
             value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
               X-Requested-With,Cookie
@@ -639,12 +687,12 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1284
+        headersSize: 1396
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-25T19:33:19.512Z
+      startedDateTime: 2024-12-02T20:15:39.726Z
       time: 0
       timings:
         blocked: -1
