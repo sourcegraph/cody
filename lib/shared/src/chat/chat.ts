@@ -45,9 +45,10 @@ export class ChatClient {
         const useApiV1 = versions.codyAPIVersion >= 1 && params.model?.includes('claude-3')
         const isLastMessageFromHuman = messages.length > 0 && messages.at(-1)!.speaker === 'human'
 
-        const isFireworks = params?.model?.startsWith('fireworks/')
+        const isFireworks =
+            params?.model?.startsWith('fireworks/') || params?.model?.startsWith('fireworks::')
         const augmentedMessages =
-            params?.model?.startsWith('fireworks/') || useApiV1
+            isFireworks || useApiV1
                 ? sanitizeMessages(messages)
                 : isLastMessageFromHuman
                   ? messages.concat([{ speaker: 'assistant' }])
