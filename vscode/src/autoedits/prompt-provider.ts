@@ -1,23 +1,24 @@
 import type { PromptString } from '@sourcegraph/cody-shared'
 import type * as utils from './prompt-utils'
 
-export type ChatPrompt = {
-    role: 'system' | 'user' | 'assistant'
-    content: PromptString
-}[]
+export type AutoeditsPrompt = {
+    systemMessage: PromptString
+    userMessage: PromptString
+}
 
 export interface AutoeditModelOptions {
     url: string
     model: string
     apiKey: string
-    prompt: ChatPrompt
+    prompt: AutoeditsPrompt
     codeToRewrite: string
     userId: string | null
+    isChatModel: boolean
 }
 
 export interface PromptResponseData {
     codeToReplace: utils.CodeToReplaceData
-    promptResponse: ChatPrompt
+    promptResponse: AutoeditsPrompt
 }
 
 export interface AutoeditsModelAdapter {
