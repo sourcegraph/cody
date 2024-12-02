@@ -36,6 +36,8 @@ interface UserMenuProps {
     __storybook__open?: boolean
 }
 
+type MenuView = 'main' | 'switch' | 'add' | 'remove'
+
 export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
     isProUser,
     authStatus,
@@ -49,7 +51,6 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
     const { displayName, username, primaryEmail, endpoint } = authStatus
     const isDotComUser = isDotCom(endpoint)
 
-    type MenuView = 'main' | 'switch' | 'add' | 'remove'
     const [userMenuView, setUserMenuView] = useState<MenuView>('main')
 
     const [endpointToRemove, setEndpointToRemove] = useState<string | null>(null)
@@ -64,20 +65,30 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
         setAddFormData(prev => ({ ...prev, [name]: value }))
     }, [])
 
-    function addAndSwitchAccount() {
-        getVSCodeAPI().postMessage({
-            command: 'auth',
-            authKind: 'signin',
-            endpoint: addFormData.endpoint,
-            value: addFormData.accessToken,
-        })
-        onOpenChange(false)
-    }
+    const onAddAndSwitchAccountSubmit = useCallback(
+        (e?: React.FormEvent) => {
+            e?.preventDefault()
+            e?.stopPropagation()
+
+            try {
+                getVSCodeAPI().postMessage({
+                    command: 'auth',
+                    authKind: 'signin',
+                    endpoint: addFormData.endpoint,
+                    value: addFormData.accessToken,
+                })
+                onOpenChange(false)
+            } finally {
+                setUserMenuView('main')
+                setEndpointToRemove(null)
+                setAddFormData({ endpoint: '', accessToken: '' })
+            }
+        },
+        [addFormData]
+    )
 
     const onOpenChange = useCallback(
         (open: boolean): void => {
-            setUserMenuView('main')
-            setEndpointToRemove(null)
             if (open) {
                 telemetryRecorder.recordEvent('cody.userMenu', 'open', {})
             }
@@ -96,9 +107,8 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
 
     const onMenuViewChange = useCallback((view: MenuView): void => {
         setUserMenuView(view)
-        if (view !== 'remove') {
-            setEndpointToRemove(null)
-        }
+        setEndpointToRemove(null)
+        setAddFormData({ endpoint: '', accessToken: '' })
     }, [])
 
     const onRemoveEndpointClick = useCallback(
@@ -112,6 +122,7 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
             }
             setEndpointToRemove(null)
             setUserMenuView('main')
+            setAddFormData({ endpoint: '', accessToken: '' })
         },
         [endpointHistory]
     )
@@ -133,7 +144,13 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
                                 <CommandItem className="tw-cursor-default">
                                     <span className="tw-font-semibold">Account Details</span>
                                 </CommandItem>
-                                <Form onSubmit={addAndSwitchAccount} className="tw-flex-grow">
+                                <Form
+                                    onSubmit={e => {
+                                        onAddAndSwitchAccountSubmit(e)
+                                        close()
+                                    }}
+                                    className="tw-flex-grow"
+                                >
                                     <CommandItem className="tw-cursor-default">
                                         <FormField name="endpoint">
                                             <FormLabel title="Instance URL" />
@@ -187,16 +204,20 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
                                     <CommandItem>
                                         <FormSubmit asChild>
                                             <Button
-                                                key={'add-account-confirmation-button'}
+                                                key="add-account-confirmation-button"
                                                 type="submit"
                                                 className="tw-flex-grow tw-rounded-md tw-text-center"
-                                                onClick={addAndSwitchAccount}
                                             >
                                                 Add and Switch
                                             </Button>
                                         </FormSubmit>
                                     </CommandItem>
                                 </Form>
+                                <CommandItem onSelect={() => onMenuViewChange('switch')}>
+                                    <span className="tw-flex-grow tw-rounded-md tw-text-center">
+                                        Cancel
+                                    </span>
+                                </CommandItem>
                             </CommandGroup>
                         </CommandList>
                     ) : userMenuView === 'remove' && endpointToRemove ? (
