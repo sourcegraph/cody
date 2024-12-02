@@ -68,10 +68,7 @@ export function createOrUpdateTelemetryRecorderProvider(
                         clientState,
                     })
                 )
-            } else if (isExtensionModeDevOrTest) {
-                logDebug(debugLogLabel, 'using no-op exports')
-                updateGlobalTelemetryInstances(defaultNoOpProvider)
-            } else {
+            }  else {
                 updateGlobalTelemetryInstances(
                     new TelemetryRecorderProvider(
                         { configuration, auth, clientState },

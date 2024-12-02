@@ -5,6 +5,98 @@ import { logDebug, logError } from '../../logger'
 import { isError } from '../../utils'
 import { type LogEventMode, graphqlClient } from '../graphql/client'
 
+interface TelemetrySubmitter {
+    /**
+     * Submits the event for export.
+     */
+    submit(event: TelemetryEventInput): void;
+    /**
+     * Finish any ongoing work and release any resources held, including flushing
+     * buffers if one is configured.
+     */
+    unsubscribe(): void;
+}
+
+type TelemetryRecordingOptions = {
+    /**
+     * Time to buffer events for, in ms. Set to 0 to disable buffering (default).
+     */
+    bufferTimeMs: number;
+    /**
+     * Maximum number of events to buffer at once.
+     */
+    bufferMaxSize: number;
+    /**
+     * Handle processing/export errors.
+     */
+    errorHandler: (error: any) => void;
+  };
+
+  interface TelemetryBatchExporter {
+    /**
+     * Processes a batch of telemetry events.
+     * @param events - An array of telemetry events to process.
+     */
+    processBatch(events: TelemetryEventInput[]): Promise<void>;
+}
+  
+
+class BatchSubmitter implements TelemetrySubmitter {
+    private events: TelemetryEventInput[] = [];
+    private timer: ReturnType<typeof setTimeout> | null = null;
+  
+
+    constructor(
+        private exporter: TelemetryBatchExporter,
+        private options: TelemetryRecordingOptions
+    ) {
+        this.startTimer();
+    }
+
+  
+    private startTimer() {
+      this.timer = setInterval(() => {
+        this.flushEvents();
+      }, this.options.bufferTimeMs);
+    }
+  
+    private flushEvents() {
+      if (this.events.length > 0) {
+        const eventsToExport = this.events.splice(0, this.options.bufferMaxSize);
+        console.log('BatchSubmitter flushEvents length', eventsToExport.length);
+        console.log('BatchSubmitter flushEvents the events are ', eventsToExport);
+        this.exporter.processBatch(eventsToExport)
+          .catch((error: any) => {
+            this.options.errorHandler(error);
+          });
+      }
+    }
+  
+    submit(event: TelemetryEventInput) {
+      if (this.timer !== null) {
+        this.events.push(event);
+        if (this.events.length >= this.options.bufferMaxSize) {
+          this.flushEvents();
+        }
+      } else {
+        this.exporter
+          .processBatch([event])
+          .catch((err) => this.options.errorHandler(err))
+          .then(() =>
+            this.options.errorHandler("submitted event after complete")
+          );
+      }
+    }
+  
+    unsubscribe(): void {
+      this.flushEvents();
+      if (this.timer !== null) {
+        clearInterval(this.timer);
+        this.timer = null;
+      }
+    }
+  }
+
 /**
  * GraphQLTelemetryExporter exports events via the new Sourcegraph telemetry
  * framework: https://sourcegraph.com/docs/dev/background-information/telemetry
@@ -22,12 +114,17 @@ export class GraphQLTelemetryExporter implements TelemetryExporter {
         | null
         | undefined
 
+    private submitter: BatchSubmitter;
     constructor(
         /**
          * logEvent mode to use if exporter needs to use a legacy export mode.
          */
-        private legacyBackcompatLogEventMode: LogEventMode
-    ) {}
+        private legacyBackcompatLogEventMode: LogEventMode,
+        private options: TelemetryRecordingOptions
+    ) {
+        console.log('GraphQLTelemetryExporter constructor', this.options);
+        this.submitter = new BatchSubmitter(this, options);
+    }
 
     /**
      * Checks if the connected server supports the new GraphQL mutations
@@ -88,12 +185,14 @@ export class GraphQLTelemetryExporter implements TelemetryExporter {
      * instead.
      */
     public async exportEvents(events: TelemetryEventInput[]): Promise<void> {
-        await this.setLegacyEventsStateOnce()
+        events.forEach(event => this.submitter.submit(event));
+    }
 
-        /**
-         * Use the legacy logEvent mutation with the configured legacyBackcompatLogEventMode
-         * if setLegacyEventsStateOnce determines we need to do so.
-         */
+    public async processBatch(events: TelemetryEventInput[]): Promise<void> {
+        console.log('GraphQLTelemetryExporter processBatch', events.length);
+        console.log('GraphQLTelemetryExporter processBatch the events are ', events);
+        await this.setLegacyEventsStateOnce();
+
         if (this.exportMode === 'legacy') {
             const { clientState } = await currentResolvedConfig()
             const resultOrError = await Promise.all(
@@ -130,22 +229,16 @@ export class GraphQLTelemetryExporter implements TelemetryExporter {
                 )
             }
 
-            return
+            return;
         }
 
-        /**
-         * Manipulate events as needed based on version of target instance
-         */
         if (this.exportMode) {
-            handleExportModeTransforms(this.exportMode, events)
+            handleExportModeTransforms(this.exportMode, events);
         }
 
-        /**
-         * Record events with the new mutations.
-         */
-        const resultOrError = await graphqlClient.recordTelemetryEvents(events)
+        const resultOrError = await graphqlClient.recordTelemetryEvents(events);
         if (isError(resultOrError)) {
-            logError('GraphQLTelemetryExporter', 'Error exporting telemetry events:', resultOrError)
+            logError('GraphQLTelemetryExporter', 'Error exporting telemetry events:', resultOrError);
         }
     }
 }

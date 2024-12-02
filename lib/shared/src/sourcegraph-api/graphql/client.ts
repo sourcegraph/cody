@@ -1339,6 +1339,8 @@ export class SourcegraphGraphQLAPIClient {
      * TelemetryRecorder from '@sourcegraph/telemetry' instead.
      */
     public async recordTelemetryEvents(events: TelemetryEventInput[]): Promise<unknown | Error> {
+        console.log("events length: ", events.length)
+        console.log("all the events are", events)
         for (const event of events) {
             this.anonymizeTelemetryEventInput(event)
         }

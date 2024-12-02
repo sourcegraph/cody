@@ -15,7 +15,12 @@
     "resolveJsonModule": true,
     "composite": true,
     "outDir": "dist",
-    "rootDir": "."
+    "rootDir": ".",
+    "baseUrl": ".",
+    "paths": {
+      "@sourcegraph/telemetry": ["node_modules/@sourcegraph/telemetry"]
+    },
+    "typeRoots": ["node_modules/@types", "node_modules/@sourcegraph/telemetry"]
   },
   "include": [".config/*.ts"],
   "exclude": ["dist", "node_modules", "typehacks", ".test"],

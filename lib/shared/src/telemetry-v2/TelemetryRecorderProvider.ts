@@ -24,6 +24,7 @@ import {
     cachedUserProductSubscription,
 } from '../sourcegraph-api/userProductSubscription'
 import { getTier } from './cody-tier'
+import { logError } from '../logger'
 
 export interface ExtensionDetails {
     ide: CodyIDE
@@ -81,7 +82,13 @@ export class TelemetryRecorderProvider extends BaseTelemetryRecorderProvider<
             },
             process.env.CODY_TELEMETRY_EXPORTER === 'testing'
                 ? TESTING_TELEMETRY_EXPORTER.withAnonymousUserID(config.clientState.anonymousUserID)
-                : new GraphQLTelemetryExporter(legacyBackcompatLogEventMode),
+                : new GraphQLTelemetryExporter(legacyBackcompatLogEventMode, {
+                      bufferTimeMs: 50000, // disable buffering for now. If this is enabled tests might need to be updated to be able to handle the delay between an action and the telemetry being fired.
+                      bufferMaxSize: 13,
+                      errorHandler: (error) => {
+                        logError('Error exporting telemetry events', error.toString())
+                      },
+                  }),
             [
                 new ConfigurationMetadataProcessor(),
                 // Generate timestamps when recording events, instead of serverside
