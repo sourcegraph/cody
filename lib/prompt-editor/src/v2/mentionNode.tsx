@@ -1,20 +1,21 @@
 import { createRoot, type Root } from 'react-dom/client'
 import type { Node } from 'prosemirror-model'
-import { displayPathBasename, FILE_CONTEXT_MENTION_PROVIDER, REMOTE_REPOSITORY_PROVIDER_URI, SYMBOL_CONTEXT_MENTION_PROVIDER, type ContextItem, type ContextMentionProviderMetadata } from '@sourcegraph/cody-shared'
+import { FILE_CONTEXT_MENTION_PROVIDER, REMOTE_REPOSITORY_PROVIDER_URI, SerializedContextItem, SYMBOL_CONTEXT_MENTION_PROVIDER } from '@sourcegraph/cody-shared'
 import { iconForProvider } from '../mentions/mentionMenu/MentionMenuItem'
 import { AtSignIcon } from 'lucide-react'
 import styles from './BaseEditor.module.css'
+import { NodeView } from 'prosemirror-view'
 
-export class MentionView {
+export class MentionView implements NodeView {
     public dom: HTMLElement
     private root: Root
 
     constructor(node: Node) {
-        const item = node.attrs.item as ContextItem
+        const item = node.attrs.item as SerializedContextItem
         this.dom = document.createElement('span')
         this.dom.className = styles.mention
         this.root = createRoot(this.dom)
-        this.root.render(<MentionChip item={item} />)
+        this.root.render(<MentionChip item={item}>{node.content.firstChild?.text ?? ''}</MentionChip>)
     }
 
     stopEvents() {
@@ -34,20 +35,7 @@ export class MentionView {
     }
 }
 
-function getItemTitle(item: ContextItem|ContextMentionProviderMetadata): string {
-    if ('id' in item) {
-        return item.title
-    }
-    switch (item.type) {
-        case 'symbol':
-            return item.title ?? item.symbolName
-        default:
-            return item.title ?? displayPathBasename(item.uri)
-
-    }
-}
-
-function iconForContextItem(item: ContextItem): React.ComponentType {
+function iconForContextItem(item: SerializedContextItem): React.ComponentType {
     let providerURI = 'unknown'
     switch (item.type) {
         case 'file':
@@ -69,13 +57,14 @@ function iconForContextItem(item: ContextItem): React.ComponentType {
 }
 
 interface MentionChipProps {
-    item: ContextItem
+    item: SerializedContextItem
+    children: string
 }
 
 const MentionChip: React.FC<MentionChipProps> = props => {
     const Icon = iconForContextItem(props.item)
     return <>
         {Icon && <Icon />}
-        <span>{getItemTitle(props.item)}</span>
+        <span>{props.children}</span>
     </>
 }

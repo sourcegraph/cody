@@ -84,6 +84,18 @@ export function enableAtMention(tr: Transaction): Transaction {
     return tr.setMeta(atMentionPluginKey, {type: 'enable'} as SuggestionsPluginEvent)
 }
 
+/**
+ * Disables at mention.
+ */
+export function disableAtMention(tr: Transaction): Transaction {
+    return tr.setMeta(atMentionPluginKey, {type: 'disable'} as SuggestionsPluginEvent)
+}
+
+/**
+ * Returns the start document position of the current at-mention.
+ * @param state The current editor state
+ * @returns The start position of the at-mention
+ */
 export function getAtMentionPosition(state: EditorState): number {
     const decoration = atMentionPluginKey.getState(state)?.decoration.find()[0]
     if (!decoration) {
@@ -92,13 +104,22 @@ export function getAtMentionPosition(state: EditorState): number {
     return decoration.from
 }
 
+/**
+ * Sets the text value of the current at-mention. Leading '@' character is trimmed if present.
+ * @param state The current editor state
+ * @param value The new value of the at-mention
+ */
 export function setMentionValue(state: EditorState, value: string): Transaction {
     const decoration = atMentionPluginKey.getState(state)?.decoration.find()[0]
     if (!decoration) {
         throw new Error('setMentionValue called when at-mention is not active')
     }
     if (value.length === 0) {
+        // Special case that requires a deletion operation
         return state.tr.delete(decoration.from + 1, decoration.to)
+    }
+    if (value.startsWith('@')) {
+        value = value.slice(1)
     }
     return state.tr.replaceWith(decoration.from + 1, decoration.to, state.schema.text(value))
 }
@@ -160,7 +181,7 @@ export function createAtMentionPlugin(): Plugin[] {
                         const decoration = decorationSet.find()[0]
                         // Check whether the change has removed the decoration or introduced a space.
                         // If yes to either we close the menu
-                        if (!decoration || /[\s\0]/.test(tr.doc.textBetween(decoration.from, decoration.to))) {
+                        if (!decoration || /\s/.test(tr.doc.textBetween(decoration.from, decoration.to))) {
                             return emptyState
                         }
                         nextValue = {

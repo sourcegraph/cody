@@ -15,23 +15,19 @@ import {
 import { clsx } from 'clsx'
 import type { SerializedEditorState, SerializedLexicalNode } from 'lexical'
 import isEqual from 'lodash/isEqual'
-import { type FunctionComponent, useCallback, useContext, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react'
-import { BaseEditor, Item } from './BaseEditor'
+import { type FunctionComponent, useCallback, useContext, useEffect, useImperativeHandle, useMemo, useState } from 'react'
 import styles from '../PromptEditor.module.css'
 import { useSetGlobalPromptEditorConfig } from '../config'
 import type { KeyboardEventPluginProps } from '../plugins/keyboardEvent'
-import { EditorView } from 'prosemirror-view'
-import { EditorState, Transaction, Plugin } from 'prosemirror-state'
+import { EditorState, Transaction } from 'prosemirror-state'
 import { fromSerializedPromptEditorState, toSerializedPromptEditorValue } from './lexical-interop'
-import { replaceDocument } from './prosemirror-utils'
 import { useExtensionAPI } from '../useExtensionAPI'
 import { ChatMentionContext } from '../plugins/atMentions/useChatContextItems'
-import { getAtMentionPosition, getAtMentionValue, hasAtMention, replaceAtMention, setMentionValue } from './atMention'
-import { useActorRef } from '@xstate/react'
-import { createMentionNode, editorMachine, schema } from './editor'
-import { MentionView } from './mentionNode'
-import { createSuggestionsMachine, SuggestionsMachineContext } from './suggestions'
+import { replaceAtMention, setMentionValue } from './atMention'
+import { createMentionNode, schema } from './promptInput'
 import "prosemirror-view/style/prosemirror.css"
+import { type Item, Suggestions } from './Suggestions'
+import { useEditor, useSuggestions } from './promptInput-react'
 
 interface Props extends KeyboardEventPluginProps {
     editorClassName?: string
@@ -61,10 +57,6 @@ export interface PromptEditorRefAPI {
     setEditorState(state: SerializedPromptEditorState): void
 }
 
-type ExtendedContextItem = (ContextItem | ContextMentionProviderMetadata) & { isFromInitialContext: boolean }
-
-const suggestionsMachine = createSuggestionsMachine<ExtendedContextItem>()
-
 /**
  * The component for composing and editing prompts.
  */
@@ -81,138 +73,9 @@ export const PromptEditor: FunctionComponent<Props> = ({
     editorRef: ref,
     onEnterKey,
 }) => {
-    const mentionMenuDataRef = useRef<SuggestionsMachineContext<ExtendedContextItem>['fetchMenuData']>(() => Promise.resolve([]))
-
-    const suggestions = useActorRef(suggestionsMachine, { input: {
-        fetchMenuData(args) {
-            return mentionMenuDataRef.current(args)
-        },
-    }})
     const convertedInitialEditorState = useMemo(() => {
         return initialEditorState ? schema.nodeFromJSON(fromSerializedPromptEditorState(initialEditorState)) : undefined
     }, [initialEditorState])
-
-
-    const editor = useActorRef(editorMachine, { input: {
-        placeholder: placeholder,
-        initialDocument: convertedInitialEditorState,
-        nodeViews: {
-            mention(node) {
-                return new MentionView(node)
-            },
-        },
-        additionalPlugins: [
-            // Plugin connects the at-mention plugin with suggestions
-            new Plugin({
-                view() {
-                    return {
-                        update(view: EditorView, prevState: EditorState) {
-                            if (hasAtMention(view.state) && !hasAtMention(prevState)) {
-                                suggestions.send({ type: 'suggestions.open', position: view.coordsAtPos(getAtMentionPosition(view.state)) })
-                            } else if (!hasAtMention(view.state) && hasAtMention(prevState)) {
-                                suggestions.send({type: 'suggestions.close'})
-                            }
-
-                            const mentionValue = getAtMentionValue(view.state)
-                            if (mentionValue !== undefined && mentionValue !== getAtMentionValue(prevState)) {
-                                suggestions.send({ type: 'suggestions.filter.update', filter: mentionValue.slice(1), position: view.coordsAtPos(getAtMentionPosition(view.state)) })
-                            }
-                            if (view.state.doc !== prevState.doc) {
-                                onChange?.(toSerializedPromptEditorValue(view.state.doc))
-                            }
-                        }
-                    }
-                },
-                props: {
-                    handleKeyDown(view, event) {
-                        if (hasAtMention(view.state)) {
-                            switch (event.key) {
-                                case 'ArrowDown': {
-                                    suggestions.send({ type: 'suggestions.key.arrow-down' })
-                                    return true
-                                }
-                                case 'ArrowUp': {
-                                    suggestions.send({ type: 'suggestions.key.arrow-up' })
-                                    return true
-                                }
-                                case 'Enter':
-                                    const state = suggestions.getSnapshot().context
-                                    const selectedItem = state.filteredItems[state.selectedIndex]
-                                    if (selectedItem) {
-                                        selectedItem.select(view.state, view.dispatch, selectedItem.data)
-                                    }
-                                    return true;
-                                case 'Escape':
-                                    // todo: remove at mention
-                                    return true;
-                            }
-                        }
-                        return false
-                    },
-                },
-            })
-        ],
-    }})
-
-    const dispatch = useCallback((tr: Transaction) => {
-        editor.send({ type: 'editor.state.dispatch', transaction: tr })
-    }, [editor])
-
-    const getEditorState = useCallback(() => {
-        return editor.getSnapshot().context.editorState
-    }, [editor])
-
-
-    const hasSetInitialContext = useRef(false)
-
-    useImperativeHandle(
-        ref,
-        (): PromptEditorRefAPI => ({
-            setEditorState(state: SerializedPromptEditorState): void {
-                dispatch(replaceDocument(getEditorState(), schema.nodeFromJSON(fromSerializedPromptEditorState(state))))
-            },
-            getSerializedValue(): SerializedPromptEditorValue {
-                return toSerializedPromptEditorValue(getEditorState().doc)
-            },
-            async setFocus(focus, { moveCursorToEnd } = {}): Promise<void> {
-                if (focus) {
-                    editor.send({type: 'focus', moveCursorToEnd})
-                } else {
-                    editor.send({type: 'blur'})
-                }
-            },
-            async appendText(text: string): Promise<void> {
-                editor.send({type: 'text.append', text})
-            },
-            async filterMentions(filter: (item: SerializedContextItem) => boolean): Promise<void> {
-                editor.send({type: 'mentions.filter', filter})
-            },
-            async addMentions(
-                items: ContextItem[],
-                position: 'before' | 'after' = 'after',
-                sep = ' '
-            ): Promise<void> {
-                editor.send({type: 'mentions.add', items: items.map(serializeContextItem), position, separator: sep})
-            },
-            async setInitialContextMentions(items: ContextItem[]): Promise<void> {
-                // todo: implement
-            },
-        }),
-        []
-    )
-
-    // todo: do we need this?
-    useSetGlobalPromptEditorConfig()
-
-    useEffect(() => {
-        if (initialEditorState) {
-            const currentEditorState = normalizeEditorStateJSON(getEditorState().doc.toJSON())
-            const newEditorState = fromSerializedPromptEditorState(initialEditorState)
-            if (!isEqual(currentEditorState, newEditorState)) {
-                dispatch(replaceDocument(getEditorState(), schema.nodeFromJSON(newEditorState)))
-            }
-        }
-    }, [initialEditorState, dispatch, getEditorState])
 
     // Hook into providers
     const mentionMenuData = useExtensionAPI().mentionMenuData
@@ -231,7 +94,7 @@ export const PromptEditor: FunctionComponent<Props> = ({
             dispatch(
                 replaceAtMention(
                     state,
-                    createMentionNode(serializeContextItem(item)),
+                    createMentionNode({item: serializeContextItem(item)}),
                     true
                 )
             )
@@ -262,21 +125,86 @@ export const PromptEditor: FunctionComponent<Props> = ({
             )
     }), [mentionMenuData, mentionSettings, selectedProvider])
 
-    const initView = useCallback((node: HTMLDivElement) => {
-        if (node) {
-            editor.send({ type: 'setup', parent: node})
-        } else {
-            editor.send({type: 'teardown'})
+    const [input, api] = useEditor({
+        placeholder,
+        initialDocument: convertedInitialEditorState,
+        onChange: doc => {
+            onChange?.(toSerializedPromptEditorValue(doc))
+        },
+        fetchMenuData,
+    })
+
+    const {
+        show,
+        items,
+        selectedIndex,
+        query,
+        isLoading,
+        position,
+    } = useSuggestions(input)
+
+    useImperativeHandle(
+        ref,
+        (): PromptEditorRefAPI => ({
+            setEditorState(state: SerializedPromptEditorState): void {
+                api.setDocument(schema.nodeFromJSON(fromSerializedPromptEditorState(state)))
+            },
+            getSerializedValue(): SerializedPromptEditorValue {
+                return toSerializedPromptEditorValue(api.getEditorState().doc)
+            },
+            async setFocus(focus, { moveCursorToEnd } = {}): Promise<void> {
+                api.setFocus(focus, { moveCursorToEnd })
+            },
+            async appendText(text: string): Promise<void> {
+                api.appendText(text)
+            },
+            async filterMentions(filter: (item: SerializedContextItem) => boolean): Promise<void> {
+                api.filterMentions(filter)
+            },
+            async addMentions(
+                items: ContextItem[],
+                position: 'before' | 'after' = 'after',
+                sep = ' '
+            ): Promise<void> {
+                api.addMentions(items, position, sep)
+            },
+            async setInitialContextMentions(items: ContextItem[]): Promise<void> {
+                api.setInitialContextMentions(items)
+            },
+        }),
+        []
+    )
+
+    // todo: do we need this?
+    useSetGlobalPromptEditorConfig()
+
+    useEffect(() => {
+        if (initialEditorState) {
+            const currentEditorState = normalizeEditorStateJSON(api.getEditorState().doc.toJSON())
+            const newEditorState = fromSerializedPromptEditorState(initialEditorState)
+            if (!isEqual(currentEditorState, newEditorState)) {
+                api.setDocument(schema.nodeFromJSON(newEditorState))
+            }
         }
-    }, [placeholder, onEnterKey, editor])
+    }, [initialEditorState, api])
 
     return <div
-            ref={initView}
             className={clsx(styles.editor, editorClassName, {
                 [styles.disabled]: disabled,
                 [styles.seamless]: seamless,
-            })}
-        />
+            })}>
+            <div ref={api.ref} />
+            {show && <Suggestions
+                items={items}
+                selectedIndex={selectedIndex}
+                loading={isLoading}
+                filter={query}
+                menuPosition={position}
+                getHeader={() => selectedProvider?.title ?? ''}
+                getEmptyLabel={() => getEmptyLabelComponent({provider: selectedProvider, filter: query})}
+                onSelect={index => api.applySuggestion(index)}
+            />}
+        </div>
 }
 
 function renderItem(item: ContextItem|ContextMentionProviderMetadata): string {
