@@ -19,8 +19,7 @@ import {
 } from '../misc/observableOperation'
 import { isError } from '../utils'
 import { isAbortError } from './errors'
-import { type CodyConfigFeatures, graphqlClient } from './graphql/client'
-
+import { type CodyConfigFeatures, type GraphQLAPIClientConfig, graphqlClient } from './graphql/client'
 // The client configuration describing all of the features that are currently available.
 //
 // This is fetched from the Sourcegraph instance and is specific to the current user.
@@ -46,6 +45,9 @@ export interface CodyClientConfig {
     // Whether the new Sourcegraph backend LLM models API endpoint should be used to query which
     // models are available.
     modelsAPIEnabled: boolean
+
+    // Whether the user should sign in to an enterprise instance.
+    userShouldUseEnterprise: boolean
 }
 
 /**
@@ -198,6 +200,7 @@ export class ClientConfigSingleton {
 
             // Things that did not exist before logically default to disabled.
             modelsAPIEnabled: false,
+            userShouldUseEnterprise: false,
         }
     }
 
@@ -214,5 +217,27 @@ export class ClientConfigSingleton {
             return defaultErrorValue
         }
         return features
+    }
+
+    // Fetches the config with token, this method is used for fetching config before the user is logged in.
+    public async fetchConfigWithToken(
+        config: GraphQLAPIClientConfig,
+        signal?: AbortSignal
+    ): Promise<CodyClientConfig | undefined> {
+        return graphqlClient
+            .fetchHTTP<CodyClientConfig>(
+                'client-config',
+                'GET',
+                '/.api/client-config',
+                undefined,
+                signal,
+                config
+            )
+            .then(clientConfig => {
+                if (isError(clientConfig)) {
+                    throw clientConfig
+                }
+                return clientConfig
+            })
     }
 }

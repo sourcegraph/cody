@@ -2,9 +2,12 @@ import * as vscode from 'vscode'
 
 import {
     type AuthStatus,
+    ClientConfigSingleton,
     DOTCOM_URL,
+    type GraphQLAPIClientConfig,
     type PickResolvedConfiguration,
     SourcegraphGraphQLAPIClient,
+    type UnauthenticatedAuthStatus,
     cenv,
     clientCapabilities,
     currentAuthStatus,
@@ -282,17 +285,27 @@ async function showAuthResultMessage(
         const authority = vscode.Uri.parse(endpoint).authority
         await vscode.window.showInformationMessage(`Signed in to ${authority || endpoint}`)
     } else {
-        await showAuthFailureMessage(endpoint)
+        await showAuthFailureMessage(endpoint, authStatus)
     }
 }
 
-async function showAuthFailureMessage(endpoint: string): Promise<void> {
+export async function showAuthFailureMessage(
+    endpoint: string,
+    authStatus: UnauthenticatedAuthStatus | undefined
+): Promise<void> {
     const authority = vscode.Uri.parse(endpoint).authority
-    await vscode.window.showErrorMessage(
-        `Authentication failed. Please ensure Cody is enabled for ${authority} and verify your email address if required.`
-    )
+    if (authStatus?.userEnterprise) {
+        await vscode.window.showErrorMessage(
+            `Based on your email address we think you may be an employee of ${authStatus?.userEnterprise}.
+            To get access to all your features please sign in through your organization\'s enterprise instance instead.
+            If you need assistance please contact your Sourcegraph admin.`
+        )
+    } else {
+        await vscode.window.showErrorMessage(
+            `Authentication failed. Please ensure Cody is enabled for ${authority} and verify your email address if required.`
+        )
+    }
 }
-
 /**
  * Register URI Handler (vscode://sourcegraph.cody-ai) for resolving token sending back from
  * sourcegraph.com.
@@ -323,7 +336,7 @@ export async function tokenCallbackHandler(uri: vscode.Uri): Promise<void> {
     if (authStatus?.authenticated) {
         await vscode.window.showInformationMessage(`Signed in to ${endpoint}`)
     } else {
-        await showAuthFailureMessage(endpoint)
+        await showAuthFailureMessage(endpoint, authStatus)
     }
 }
 
@@ -411,15 +424,16 @@ export async function validateCredentials(
 
     logDebug('auth', `Authenticating to ${config.auth.serverEndpoint}...`)
 
-    // Check if credentials are valid and if Cody is enabled for the credentials and endpoint.
-    const client = SourcegraphGraphQLAPIClient.withStaticConfig({
+    const apiClientConfig: GraphQLAPIClientConfig = {
         configuration: {
             customHeaders: config.configuration.customHeaders,
             telemetryLevel: 'off',
         },
         auth: config.auth,
         clientState: config.clientState,
-    })
+    }
+    // Check if credentials are valid and if Cody is enabled for the credentials and endpoint.
+    const client = SourcegraphGraphQLAPIClient.withStaticConfig(apiClientConfig)
 
     const userInfo = await client.getCurrentUserInfo(signal)
     signal?.throwIfAborted()
@@ -451,6 +465,20 @@ export async function validateCredentials(
         }
     }
 
+    const clientConfig = await ClientConfigSingleton.getInstance().fetchConfigWithToken(
+        apiClientConfig,
+        signal
+    )
+
+    if (clientConfig?.userShouldUseEnterprise && isDotCom(config.auth.serverEndpoint)) {
+        return {
+            authenticated: false,
+            endpoint: config.auth.serverEndpoint,
+            pendingValidation: false,
+            userEnterprise: getEnterpriseName(userInfo.primaryEmail?.email || ''),
+        }
+    }
+
     logDebug('auth', `Authentication succeed to endpoint ${config.auth.serverEndpoint}`)
     return newAuthStatus({
         ...userInfo,
@@ -458,4 +486,10 @@ export async function validateCredentials(
         authenticated: true,
         hasVerifiedEmail: false,
     })
+}
+
+function getEnterpriseName(email: string): string {
+    const domain = email.split('@')[1]
+    const name = domain.split('.')[0]
+    return name.charAt(0).toUpperCase() + name.slice(1)
 }

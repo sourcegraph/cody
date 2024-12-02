@@ -266,6 +266,7 @@ export {
     type SuggestionsRepo,
     type RepoSuggestionsSearchResponse,
     type ChatIntentResult,
+    type GraphQLAPIClientConfig,
 } from './sourcegraph-api/graphql/client'
 export type {
     CodyLLMSiteConfiguration,
