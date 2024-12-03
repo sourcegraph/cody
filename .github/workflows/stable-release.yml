@@ -25,10 +25,9 @@ jobs:
         uses: gradle/wrapper-validation-action@v3
       - run: yarn global add pnpm@8.6.7
       - run: |
-          echo "RELEASE_VERSION=$(./scripts/version-from-git-tag.sh)" >> $GITHUB_ENV
+          echo "RELEASE_VERSION=$(./jetbrains/scripts/version-from-git-tag.sh)" >> $GITHUB_ENV
       - run: |
           pushd jetbrains
-          echo "PUBLISH_TOKEN=$PUBLISH_TOKEN"
           ./gradlew "-PpluginVersion=$RELEASE_VERSION" publishPlugin
           popd > /dev/null
         env:
