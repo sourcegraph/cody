@@ -80,7 +80,7 @@ import {
 import * as uuid from 'uuid'
 import * as vscode from 'vscode'
 
-import type { Span } from '@opentelemetry/api'
+import { type Span, context } from '@opentelemetry/api'
 import { captureException } from '@sentry/core'
 import { getTokenCounterUtils } from '@sourcegraph/cody-shared/src/token/counter'
 import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
@@ -143,7 +143,6 @@ import { getChatPanelTitle } from './chat-helpers'
 import { type HumanInput, getPriorityContext } from './context'
 import { DefaultPrompter, type PromptInfo } from './prompt'
 import { getPromptsMigrationInfo, startPromptsMigration } from './prompts-migration'
-const { context, propagation, ROOT_CONTEXT } = require('@opentelemetry/api')
 
 export interface ChatControllerOptions {
     extensionUri: vscode.Uri

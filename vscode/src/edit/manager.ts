@@ -3,8 +3,10 @@ import * as vscode from 'vscode'
 import {
     type ChatClient,
     ClientConfigSingleton,
+    DEFAULT_EVENT_SOURCE,
     PromptString,
     currentSiteVersion,
+    extractContextFromTraceparent,
     firstResultFromOperation,
     modelsService,
     ps,
@@ -19,8 +21,6 @@ import { FixupController } from '../non-stop/FixupController'
 import type { FixupTask } from '../non-stop/FixupTask'
 
 import { context } from '@opentelemetry/api'
-import { DEFAULT_EVENT_SOURCE } from '@sourcegraph/cody-shared'
-import { extractContextFromTraceparent } from '@sourcegraph/cody-shared'
 import { isUriIgnoredByContextFilterWithNotification } from '../cody-ignore/context-filter'
 import type { ExtensionClient } from '../extension-client'
 import { ACTIVE_TASK_STATES } from '../non-stop/codelenses/constants'
