@@ -28,7 +28,7 @@ export function dotcomCredentials(): TestingCredentials {
 export const DOTCOM_TESTING_CREDENTIALS = {
     dotcom: {
         token: process.env.SRC_DOTCOM_PRO_ACCESS_TOKEN,
-        redactedToken: 'REDACTED_3dd704711f82a44ff6aba261b53b61a03fb8edba658774639148630d838c2d1d',
+        redactedToken: 'REDACTED_fc324d3667e841181b0779375f26dedc911d26b303d23b29b1a2d7ee63dc77eb',
         serverEndpoint: DOTCOM_URL.toString(),
     } satisfies TestingCredentials,
     dotcomProUserRateLimited: {
