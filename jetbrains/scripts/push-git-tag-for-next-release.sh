@@ -57,6 +57,6 @@ else
 fi
 
 bash "$SCRIPT_DIR/verify-release.sh"
-TAG="v$NEXT_VERSION-$CHANNEL"
+TAG="jb-v$NEXT_VERSION-$CHANNEL"
 echo "$TAG"
 git tag -a "$TAG" -m "$TAG" && git push origin "$TAG"
