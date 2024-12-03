@@ -28,6 +28,7 @@ jobs:
           echo "RELEASE_VERSION=$(./scripts/version-from-git-tag.sh)" >> $GITHUB_ENV
       - run: |
           pushd jetbrains
+          echo "PUBLISH_TOKEN=$PUBLISH_TOKEN"
           ./gradlew "-PpluginVersion=$RELEASE_VERSION" publishPlugin
           popd > /dev/null
         env:
