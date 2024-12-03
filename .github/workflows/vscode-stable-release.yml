@@ -100,3 +100,26 @@ jobs:
             --title "VS Code: Release v$EXT_VERSION" \
             --body "Automated release and changelog for VS code Cody" \
             --base main --head release/vscode-v$EXT_VERSION
+      - name: Register on Releaseregistry
+        env:
+          EXT_VERSION: ${{ env.EXT_VERSION }}
+          RELEASE_REGISTRY_TOKEN: ${{ secrets.RELEASE_REGISTRY_TOKEN }}
+        run: |
+          echo "Registering internal cody-vscode $EXT_VERSION release on release registry"
+          body=$(wget --content-on-error -O- --header="Content-Type: application/json" --header="Authorization: ${RELEASE_REGISTRY_TOKEN}" --post-data '{
+              "name": "cody-vscode",
+              "version": "'${EXT_VERSION}'",
+              "git_sha": "'${GITHUB_SHA}'"
+            }' "https://releaseregistry.sourcegraph.com/v1/releases")
+          exit_code=$?
+
+          if [ $exit_code != 0 ]; then
+            echo "❌ Failed to create release in release registry, got:"
+            echo "--- raw body ---"
+            echo $body
+            echo "--- raw body ---"
+            exit $exit_code
+          else
+            echo "Release created, see:"
+            echo $body
+          fi
