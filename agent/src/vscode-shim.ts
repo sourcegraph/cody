@@ -129,6 +129,7 @@ export function setClientInfo(newClientInfo: ClientInfo): void {
     if (newClientInfo.extensionConfiguration) {
         setExtensionConfiguration(newClientInfo.extensionConfiguration)
     }
+    setClientEnv(newClientInfo)
 }
 
 export let extensionConfiguration: ExtensionConfiguration | undefined
@@ -1075,8 +1076,8 @@ export const commands = _commands as typeof vscode.commands
 
 const _env: Partial<typeof vscode.env> = {
     uriScheme: 'file',
-    appName: clientInfo?.name,
-    shell: clientInfo?.capabilities?.shell === 'enabled' ? 'agent' : undefined,
+    appName: undefined,
+    shell: undefined,
     appRoot: process.cwd?.(),
     uiKind: UIKind.Desktop,
     language: process.env.language,
@@ -1099,7 +1100,14 @@ const _env: Partial<typeof vscode.env> = {
         }
     },
 }
-export const env = _env as typeof vscode.env
+export let env = _env as typeof vscode.env
+export function setClientEnv(clientInfo: ClientInfo): void {
+    env = {
+        ...env,
+        appName: clientInfo.name,
+        shell: clientInfo.capabilities?.shell === 'enabled' ? 'agent' : undefined,
+    } as typeof vscode.env
+}
 
 const newCodeActionProvider = new EventEmitter<vscode.CodeActionProvider>()
 const removeCodeActionProvider = new EventEmitter<vscode.CodeActionProvider>()
