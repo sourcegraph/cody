@@ -53,13 +53,13 @@ export const Notices: React.FC<NoticesProps> = ({ user, isTeamsUpgradeCtaEnabled
                         id="TeamsUpgrade"
                         variant="default"
                         title="Sourcegraph Teams is here"
-                        message="You now are eligible for a upgrade to teams for free"
+                        message="You now are eligible for an upgrade to teams for free"
                         onDismiss={() => dismissNotice('TeamsUpgrade')}
                         actions={[
                             {
                                 // TODO: Update to live link https://linear.app/sourcegraph/issue/CORE-535/cody-clients-migrate-ctas-to-live-links
                                 label: 'Upgrade to Teams',
-                                href: 'https://sourcegraph.com',
+                                href: 'https://sourcegraph.com/cody/manage',
                                 variant: 'default',
                                 icon: <Users2Icon size={14} />,
                                 iconPosition: 'start',
