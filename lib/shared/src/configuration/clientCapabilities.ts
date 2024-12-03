@@ -92,6 +92,7 @@ export interface ClientCapabilities {
     accountSwitchingInWebview?: 'none' | 'enabled' | undefined | null
 
     /**
+     * 🚨 SECURITY: Please tag the Security Team for PR review when enabling shell context.
      * When enabled, the client must be running with node integration enabled that supports
      * child_process.spawn. This is needed for the agent to spawn a shell process to run commands.
      */
