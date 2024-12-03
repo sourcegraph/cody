@@ -6,6 +6,7 @@ import SourcegraphIcon from '../../resources/sourcegraph-mark.svg'
 import { CodyLogo } from '../icons/CodyLogo'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
 import { useUserAccountInfo } from '../utils/useConfig'
+import { useSourcegraphTeamsUpgradeCtaFlag } from '../utils/useExperimentalFeature'
 import { Button } from './shadcn/ui/button'
 
 interface Notice {
@@ -20,8 +21,11 @@ type NoticeIDs = 'DogfoodS2' | 'TeamsUpgrade'
 export const Notices: FunctionComponent = () => {
     const user = useUserAccountInfo()
     const isDotComUser = isDotCom(user.user.endpoint)
-    const isSourcegraphTeamMember = user.user.organizations?.some(org => org.name === 'sourcegraph')
+    const isSourcegraphOrgMember = user.user.organizations?.some(org => org.name === 'sourcegraph')
     const isCodyWeb = user.IDE === CodyIDE.Web
+
+    // Whether to show the Sourcegraph Teams upgrade CTA or not.
+    const isTeamsUpgradeCtaEnabled = useSourcegraphTeamsUpgradeCtaFlag()
 
     const [dismissedNotices, setDismissedNotices] = useState<Set<string>>(new Set())
 
@@ -36,7 +40,7 @@ export const Notices: FunctionComponent = () => {
              */
             {
                 id: 'TeamsUpgrade',
-                isVisible: true,
+                isVisible: isDotComUser && isTeamsUpgradeCtaEnabled && !isCodyWeb,
                 content: (
                     <NoticeContent
                         id="TeamsUpgrade"
@@ -64,7 +68,7 @@ export const Notices: FunctionComponent = () => {
              */
             {
                 id: 'DogfoodS2',
-                isVisible: isDotComUser && isSourcegraphTeamMember && !isCodyWeb,
+                isVisible: isDotComUser && isSourcegraphOrgMember && !isCodyWeb,
                 content: (
                     <NoticeContent
                         id="DogfoodS2"
@@ -93,7 +97,7 @@ export const Notices: FunctionComponent = () => {
                 ),
             },
         ],
-        [dismissNotice, isDotComUser, isSourcegraphTeamMember, isCodyWeb]
+        [dismissNotice, isDotComUser, isSourcegraphOrgMember, isCodyWeb, isTeamsUpgradeCtaEnabled]
     )
 
     const activeNotice = useMemo(
