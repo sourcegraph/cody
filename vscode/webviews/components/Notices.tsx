@@ -1,7 +1,16 @@
 import { CodyIDE, isDotCom } from '@sourcegraph/cody-shared'
 import { S2_URL } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
-import { ArrowRightIcon, BuildingIcon, EyeIcon, HeartIcon, XIcon } from 'lucide-react'
-import { type FunctionComponent, useCallback, useMemo, useState } from 'react'
+import {
+    ArrowLeftRightIcon,
+    ArrowRightIcon,
+    BuildingIcon,
+    ExternalLinkIcon,
+    EyeIcon,
+    HeartIcon,
+    Users2Icon,
+    XIcon,
+} from 'lucide-react'
+import { type FunctionComponent, type ReactNode, useCallback, useMemo, useState } from 'react'
 import SourcegraphIcon from '../../resources/sourcegraph-mark.svg'
 import { CodyLogo } from '../icons/CodyLogo'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
@@ -55,12 +64,16 @@ export const Notices: FunctionComponent = () => {
                                 label: 'Upgrade to Teams',
                                 href: 'https://sourcegraph.com',
                                 variant: 'default',
+                                icon: <Users2Icon size={14} />,
+                                iconPosition: 'start',
                             },
                             {
                                 // TODO: Update to live link https://linear.app/sourcegraph/issue/CORE-535/cody-clients-migrate-ctas-to-live-links
                                 label: 'Learn More',
                                 href: 'https://sourcegraph.com/docs',
                                 variant: 'ghost',
+                                icon: <ExternalLinkIcon size={14} />,
+                                iconPosition: 'end',
                             },
                         ]}
                     />
@@ -89,6 +102,8 @@ export const Notices: FunctionComponent = () => {
                                         endpoint: S2_URL.href,
                                     }),
                                 variant: 'default',
+                                icon: <ArrowLeftRightIcon size={14} />,
+                                iconPosition: 'end',
                             },
                             {
                                 label: 'Dismiss',
@@ -127,6 +142,8 @@ interface NoticeContentProps {
         onClick?: () => void
         href?: string
         variant: 'default' | 'ghost' | 'secondary'
+        icon?: ReactNode
+        iconPosition?: 'start' | 'end'
     }>
     onDismiss: () => void
 }
@@ -155,7 +172,7 @@ const NoticeContent: FunctionComponent<NoticeContentProps> = ({
         TeamsUpgrade: (
             <>
                 <CodyLogo size={16} />
-                <ArrowRightIcon className="tw-h-[16px]" />
+                <ArrowRightIcon size={16} />
                 <img src={SourcegraphIcon} alt="Sourcegraph Logo" className="tw-h-[16px]" />
             </>
         ),
@@ -173,7 +190,9 @@ const NoticeContent: FunctionComponent<NoticeContentProps> = ({
                         variant={action.variant}
                         size="sm"
                         onClick={action.onClick}
+                        className="tw-flex tw-gap-1"
                     >
+                        {action.iconPosition === 'start' && action.icon}
                         {action.href ? (
                             <a
                                 href={action.href}
@@ -186,6 +205,7 @@ const NoticeContent: FunctionComponent<NoticeContentProps> = ({
                         ) : (
                             <span>{action.label}</span>
                         )}
+                        {action.iconPosition === 'end' && action.icon}
                     </Button>
                 ))}
             </div>
