@@ -8,6 +8,7 @@ import {
     clientCapabilities,
     currentSiteVersion,
     distinctUntilChanged,
+    extractContextFromTraceparent,
     firstResultFromOperation,
     forceHydration,
     isAbortError,
@@ -660,21 +661,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         manuallySelectedIntent?: boolean | undefined | null
         traceparent?: string | undefined | null
     }): Promise<void> {
-        const carrier = {
-            traceparent: traceparent,
-        } as Record<string, any>
-        const getter = {
-            get(carrier: Record<string, any>, key: string) {
-                return carrier[key]
-            },
-            keys(carrier: Record<string, any>) {
-                return Object.keys(carrier)
-            },
-        }
-
-        const extractedContext = propagation.extract(ROOT_CONTEXT, carrier, getter)
-
-        return context.with(extractedContext, () => {
+        return context.with(extractContextFromTraceparent(traceparent), () => {
             return tracer.startActiveSpan('chat.handleUserMessage', async (span): Promise<void> => {
                 span.setAttribute('sampled', true)
                 span.setAttribute('continued', true)
@@ -684,7 +671,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     `traceId: ${span.spanContext().traceId}`
                 )
 
-                if (inputText.toString().match(/^\/reset$/)) {
+                if (inputText.match(/^\/reset$/)) {
                     span.addEvent('clearAndRestartSession')
                     span.end()
                     return this.clearAndRestartSession()

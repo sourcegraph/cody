@@ -18,9 +18,9 @@ import type { VSCodeEditor } from '../editor/vscode-editor'
 import { FixupController } from '../non-stop/FixupController'
 import type { FixupTask } from '../non-stop/FixupTask'
 
-import { ROOT_CONTEXT, context } from '@opentelemetry/api'
-import { propagation } from '@opentelemetry/api'
+import { context } from '@opentelemetry/api'
 import { DEFAULT_EVENT_SOURCE } from '@sourcegraph/cody-shared'
+import { extractContextFromTraceparent } from '@sourcegraph/cody-shared'
 import { isUriIgnoredByContextFilterWithNotification } from '../cody-ignore/context-filter'
 import type { ExtensionClient } from '../extension-client'
 import { ACTIVE_TASK_STATES } from '../non-stop/codelenses/constants'
@@ -240,21 +240,7 @@ export class EditManager implements vscode.Disposable {
     }
 
     public async smartApplyEdit(args: SmartApplyArguments = {}): Promise<void> {
-        const carrier = {
-            traceparent: args.configuration?.traceparent,
-        } as Record<string, any>
-        const getter = {
-            get(carrier: Record<string, any>, key: string) {
-                return carrier[key]
-            },
-            keys(carrier: Record<string, any>) {
-                return Object.keys(carrier)
-            },
-        }
-
-        const extractedContext = propagation.extract(ROOT_CONTEXT, carrier, getter)
-
-        return context.with(extractedContext, async () => {
+        return context.with(extractContextFromTraceparent(args.configuration?.traceparent), async () => {
             await wrapInActiveSpan('edit.smart-apply', async span => {
                 span.setAttribute('sampled', true)
                 span.setAttribute('continued', true)

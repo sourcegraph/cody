@@ -140,10 +140,8 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                 const span = spanManager.startSpan('smartApplySubmit', {
                     attributes: {
                         sampled: true,
+                        'smartApply.id': id,
                     },
-                })
-                span.setAttributes({
-                    'smartApply.id': id,
                 })
                 const traceparent = getTraceparentFromSpanContext(span.spanContext())
 

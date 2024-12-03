@@ -57,7 +57,7 @@ export class EditProvider {
     public async startEdit(): Promise<void> {
         return wrapInActiveSpan('command.edit.start', async span => {
             span.setAttribute('sampled', true)
-            const mySpan = tracer.startSpan('cody.edit.provider.startTask')
+            const editTimeToFirstTokenSpan = tracer.startSpan('cody.edit.provider.timeToFirstToken')
             this.config.controller.startTask(this.config.task)
             const model = this.config.task.model
             const contextWindow = modelsService.getContextWindowByID(model)
@@ -157,19 +157,16 @@ export class EditProvider {
             )
 
             let textConsumed = 0
-            let someTextConsumed = 0
+            let firstTokenReceived = false
             for await (const message of stream) {
                 switch (message.type) {
                     case 'change': {
-                        mySpan.addEvent('change')
-
                         if (textConsumed === 0 && responsePrefix) {
                             void multiplexer.publish(responsePrefix)
                         }
-                        if (someTextConsumed === 0 && message.text.length > 1) {
-                            mySpan.addEvent('complete')
-                            mySpan.end()
-                            someTextConsumed++
+                        if (!firstTokenReceived && message.text.length > 1) {
+                            editTimeToFirstTokenSpan.end()
+                            firstTokenReceived = true
                         }
                         const text = message.text.slice(textConsumed)
                         textConsumed += text.length
@@ -177,10 +174,7 @@ export class EditProvider {
                         break
                     }
                     case 'complete': {
-                        wrapInActiveSpan('cody.edit.provider.complete', async span => {
-                            span.setAttribute('sampled', true)
-                            await multiplexer.notifyTurnComplete()
-                        })
+                        await multiplexer.notifyTurnComplete()
                         break
                     }
                     case 'error': {

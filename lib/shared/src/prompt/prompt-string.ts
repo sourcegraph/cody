@@ -413,6 +413,10 @@ export class PromptString {
                 : undefined,
         }
     }
+
+    public match(regexp: RegExp): RegExpMatchArray | null {
+        return internal_toString(this).match(regexp)
+    }
 }
 
 type TemplateArgs = readonly (PromptString | '' | number)[]
