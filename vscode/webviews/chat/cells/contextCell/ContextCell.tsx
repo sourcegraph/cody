@@ -208,7 +208,17 @@ export const ContextCell: FunctionComponent<{
                             data-testid="context"
                         >
                             {isContextLoading ? (
-                                <LoadingDots />
+                                isDeepCodyEnabled ? (
+                                    <div className="tw-flex tw-items-center tw-rounded-md tw-bg-muted-transparent tw-p-4">
+                                        <LoadingDots />
+                                        <div className="tw-ml-4 tw-text-sm">
+                                            May take a few seconds to fetch relevant context to improve
+                                            response quality
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <LoadingDots />
+                                )
                             ) : (
                                 <>
                                     <AccordionContent overflow={showSnippets}>

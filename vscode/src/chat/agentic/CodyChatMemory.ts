@@ -48,9 +48,9 @@ export class CodyChatMemory {
             ? {
                   type: 'file',
                   content: Array.from(CodyChatMemory.Store).join('\n'),
-                  uri: URI.file('MEMORY'),
+                  uri: URI.file('Cody Memory'),
                   source: ContextItemSource.Agentic,
-                  title: 'Chat Memory',
+                  title: 'Cody Chat Memory',
               }
             : undefined
     }
