@@ -36,7 +36,8 @@ export const Notices: FunctionComponent = () => {
     const notices: Notice[] = useMemo(
         () => [
             /**
-             * TODO: update this to be based on user's subscription status once we have that information.
+             * Notifies users that they are eligible for a free upgrade to Sourcegraph Teams.
+             * TODO: Update to live link https://linear.app/sourcegraph/issue/CORE-535/cody-clients-migrate-ctas-to-live-links
              */
             {
                 id: 'TeamsUpgrade',
@@ -49,12 +50,14 @@ export const Notices: FunctionComponent = () => {
                         message="You now are eligible for a upgrade to teams for free"
                         onDismiss={() => dismissNotice('TeamsUpgrade')}
                         actions={[
-                            { // TODO: Update to live link https://linear.app/sourcegraph/issue/CORE-535/cody-clients-migrate-ctas-to-live-links
+                            {
+                                // TODO: Update to live link https://linear.app/sourcegraph/issue/CORE-535/cody-clients-migrate-ctas-to-live-links
                                 label: 'Upgrade to Teams',
                                 href: 'https://sourcegraph.com',
                                 variant: 'default',
                             },
-                            { // TODO: Update to live link https://linear.app/sourcegraph/issue/CORE-535/cody-clients-migrate-ctas-to-live-links
+                            {
+                                // TODO: Update to live link https://linear.app/sourcegraph/issue/CORE-535/cody-clients-migrate-ctas-to-live-links
                                 label: 'Learn More',
                                 href: 'https://sourcegraph.com/docs',
                                 variant: 'ghost',
