@@ -23,7 +23,7 @@ Terminal output from the \`{command}\` command enclosed between <OUTPUT0412> tag
 
 export async function getContextFileFromShell(command: string): Promise<ContextItem[]> {
     return wrapInActiveSpan('commands.context.command', async () => {
-        if (vscode.env.shell === undefined || isDisabled) {
+        if (!vscode.env.shell || isDisabled) {
             void vscode.window.showErrorMessage(
                 'Shell command is not supported in your current workspace.'
             )
@@ -48,8 +48,6 @@ export async function getContextFileFromShell(command: string): Promise<ContextI
 
             const content = OUTPUT_WRAPPER.replace('{command}', command).replace('{output}', output)
             const size = await TokenCounterUtils.countTokens(content)
-
-            console.error(content, 'content')
 
             return [
                 {

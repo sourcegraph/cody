@@ -6,8 +6,6 @@ This is a log of all notable changes to Cody for VS Code.
 
 ### Added
 
-Agent: Add shell capability to enable agent shell process spawning.
-
 ### Fixed
 
 ### Changed
