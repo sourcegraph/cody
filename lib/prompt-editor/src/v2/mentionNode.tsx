@@ -31,7 +31,8 @@ export class MentionView implements NodeView {
     }
 
     destroy() {
-        this.root.unmount()
+        window.queueMicrotask(() => this.root.unmount())
+
     }
 }
 
