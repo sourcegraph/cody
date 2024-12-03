@@ -3,16 +3,18 @@
  * except for what prosemirror provides.
  */
 
-import { setup, assign, fromCallback, ActorRefFrom, enqueueActions, sendTo, fromPromise, PromiseActorLogic } from 'xstate'
+import { setup, assign, fromCallback, ActorRefFrom, enqueueActions, sendTo, AnyEventObject, ActorLike, stopChild, spawnChild} from 'xstate'
 import { Node, Schema } from 'prosemirror-model'
-import { ContextItem, contextItemMentionNodeDisplayText, ContextMentionProviderMetadata, getMentionOperations, type SerializedContextItem } from '@sourcegraph/cody-shared'
+import { ContextItem, contextItemMentionNodeDisplayText, ContextMentionProviderMetadata, getMentionOperations, REMOTE_DIRECTORY_PROVIDER_URI, REMOTE_FILE_PROVIDER_URI, serializeContextItem, type SerializedContextItem } from '@sourcegraph/cody-shared'
 import { EditorView, NodeViewConstructor } from 'prosemirror-view'
 import { EditorState, Plugin, Selection, Transaction } from 'prosemirror-state'
 import { history, undo, redo } from "prosemirror-history"
 import { keymap } from 'prosemirror-keymap'
 import { baseKeymap } from 'prosemirror-commands'
-import { createAtMentionPlugin, disableAtMention, getAtMentionPosition, getAtMentionValue, hasAtMention, Position } from './atMention'
+import { createAtMentionPlugin, disableAtMention, getAtMentionPosition, getAtMentionValue, hasAtMention, Position, replaceAtMention, setMentionValue } from './atMention'
 import type { Item } from './Suggestions'
+
+type MenuItem = Item<ContextItem|ContextMentionProviderMetadata>
 
 export const schema = new Schema({
     nodes: {
@@ -72,17 +74,19 @@ type ProseMirrorMachineEvent =
 /**
  * An actor that manages a ProseMirror editor.
  */
-const prosemirrorActor = fromCallback<ProseMirrorMachineEvent, ProseMirrorMachineInput>(({receive, input, system}) => {
-    const editor = new EditorView(input.container, {
+const prosemirrorActor = fromCallback<ProseMirrorMachineEvent, ProseMirrorMachineInput>(({receive, input}) => {
+    const editor = new EditorView(input.container ? {mount: input.container} : null, {
         state: input.initialState,
         nodeViews: input.nodeViews,
         dispatchTransaction(transaction) {
             input.parent.send({type: 'dispatch', transaction})
         },
+
     })
 
     const subscription = input.parent.subscribe(state => {
         if (state.context.editorState !== editor.state) {
+            console.log(state.context.editorState.toJSON())
             editor.updateState(state.context.editorState)
         }
     })
@@ -91,15 +95,15 @@ const prosemirrorActor = fromCallback<ProseMirrorMachineEvent, ProseMirrorMachin
         editor.focus()
         editor.dispatch(editor.state.tr.scrollIntoView())
 
-        // HACK(sqs): Needed in VS Code webviews to actually get it to focus
-        // on initial load, for some reason.
-        setTimeout(doFocus)
     }
 
     receive((event) => {
         switch (event.type) {
             case 'focus':
                 doFocus()
+                // HACK(sqs): Needed in VS Code webviews to actually get it to focus
+                // on initial load, for some reason.
+                setTimeout(doFocus)
                 break
             case 'blur':
                 editor.dom.blur()
@@ -111,6 +115,16 @@ const prosemirrorActor = fromCallback<ProseMirrorMachineEvent, ProseMirrorMachin
         subscription.unsubscribe()
         editor.destroy()
     }
+})
+
+export interface DataLoaderInput {
+    query: string
+    context?: ContextMentionProviderMetadata
+    parent: ActorLike<any, {type: 'suggestions.results.set', data: MenuItem[]}>
+}
+
+const dataLoaderMachine = fromCallback<AnyEventObject, DataLoaderInput>(({input}) => {
+
 })
 
 type EditorEvents =
@@ -131,6 +145,8 @@ type SuggestionsEvents =
     | { type: 'suggestions.select.previous' }
     | { type: 'suggestions.filter.update', filter: string, position: Position }
     | { type: 'suggestions.apply', index?: number }
+    | { type: 'suggestions.results.set', data: MenuItem[] }
+    | { type: 'suggestions.provider.set', provider: ContextMentionProviderMetadata }
 
 interface PromptInputContext {
     parent: HTMLElement|null,
@@ -138,9 +154,10 @@ interface PromptInputContext {
     nodeViews?: Record<string, NodeViewConstructor>
     hasSetInitialContext: boolean
     suggestions: {
+        parent?: ContextMentionProviderMetadata,
         filter: string,
         selectedIndex: number,
-        items: Item<ContextItem|ContextMentionProviderMetadata>[],
+        items: MenuItem[],
         position: Position,
     },
 }
@@ -161,18 +178,9 @@ export const promptInput = setup({
         /**
          * To be provided by the caller
          */
-        fetchMenuData: fromPromise<Item<ContextItem|ContextMentionProviderMetadata>[], {query: string}>(async ({}) => {
-            return []
-        })
+        fetchMenuData: dataLoaderMachine,
     },
     actions: {
-        applySelection: ({context, self}) => {
-            const selectedItem = context.suggestions.items[context.suggestions.selectedIndex]
-            if (!selectedItem) {
-                return
-            }
-            selectedItem.select(context.editorState, tr => self.send({type: 'dispatch', transaction: tr}), selectedItem.data)
-        },
         updateEditorState: assign(({context}, params: Transaction) => ({
             editorState: context.editorState.apply(params),
         })),
@@ -185,6 +193,14 @@ export const promptInput = setup({
                 ...params,
             },
         })),
+        fetchMenuData: spawnChild('fetchMenuData', {
+            id: 'fetchMenuData',
+            input: ({context, self}) => (console.log('child spawned'), {
+                context: context.suggestions.parent,
+                query: context.suggestions.filter,
+                parent: self,
+            }),
+        }),
     },
     guards: {
         isFilterEmpty: ({ context }) => !context.suggestions.filter || context.suggestions.filter.length === 0,
@@ -203,12 +219,14 @@ export const promptInput = setup({
         editorState: EditorState.create({
             // TODO: Make schema configurable
             doc: input.initialDocument,
+            selection: input.initialDocument ? Selection.atEnd(input.initialDocument) : undefined,
             schema,
             plugins: [
                 // Enable undo/redo
                 history(),
                 keymap({ 'Mod-z': undo, 'Mod-y': redo }),
                 ...createAtMentionPlugin(),
+                // @ts-expect-error
                 atMentionSuggestions(self),
                 // Enables basic keybindings for handling cursor movement
                 keymap(baseKeymap),
@@ -303,10 +321,10 @@ export const promptInput = setup({
                             params: ({context, event}) => {
                                 const tr = context.editorState.tr
                                 if (isEditorContentOnlyInitialContext(context.editorState)) {
-                                    tr.delete(0, tr.doc.content.size)
+                                    tr.delete(Selection.atStart(tr.doc).from, tr.doc.content.size)
                                 }
                                 if (event.items.length > 0) {
-                                    tr.insert(0, event.items.flatMap(item => [createMentionNode({item, isFromInitialContext: true}), schema.text(' ')]))
+                                    tr.insert(Selection.atStart(tr.doc).from, event.items.flatMap(item => [createMentionNode({item, isFromInitialContext: true}), schema.text(' ')]))
                                 }
                                 tr.setSelection(Selection.atEnd(tr.doc))
                                 return tr
@@ -327,6 +345,7 @@ export const promptInput = setup({
                             actions: {
                                 type: 'assignSuggestions',
                                 params: ({event}) => ({
+                                    parent: undefined,
                                     filter: '',
                                     selectedIndex: 0,
                                     items: [],
@@ -341,7 +360,15 @@ export const promptInput = setup({
                     initial: 'idle',
                     states: {
                         idle: {
+                            exit: stopChild('fetchMenuData'),
                             on: {
+                                "suggestions.results.set": {
+                                    actions: {type: 'assignSuggestions', params: ({event}) => ({items: event.data})},
+                                },
+                                "suggestions.provider.set": {
+                                    actions: {type: 'assignSuggestions', params: ({event}) => ({parent: event.provider, selectedIndex: 0})},
+                                    target: 'loading',
+                                },
                                 "suggestions.select.next": {
                                     actions: {
                                         type: 'assignSuggestions',
@@ -360,12 +387,63 @@ export const promptInput = setup({
                                 },
                                 'suggestions.apply': {
                                     actions: [
+                                        // Update selected index if necessary
                                         enqueueActions(({enqueue, event}) => {
                                             if(event.index !== undefined) {
                                                 enqueue({type: 'assignSuggestions', params: {selectedIndex: event.index}})
                                             }
                                         }),
-                                        'applySelection',
+                                        // Handle menu item selection
+                                        // TODO: This should probably be handled differently since it is very item specific
+                                        enqueueActions(({context, enqueue}) => {
+                                            const item = context.suggestions.items[context.suggestions.selectedIndex]?.data
+                                            // I wish this wouldn't have to be inlined but typing enqueueActions is a pain
+                                            if (!item) {
+                                                return
+                                            }
+                                            console.log(item)
+
+                                            // ContextMentionProviderMetadata
+                                            if ('id' in item) {
+                                                // Remove current mentions value
+                                                enqueue({type: 'updateEditorState', params: setMentionValue(context.editorState, '')})
+                                                // This is an event so that we can retrigger data fetching
+                                                enqueue.raise({type: 'suggestions.provider.set', provider: item})
+                                                return
+                                            }
+
+                                            // ContextItem
+                                            // HACK: The OpenCtx interface do not support building multi-step selection for mentions.
+                                            // For the remote file search provider, we first need the user to search for the repo from the list and then
+                                            // put in the query to search for files. Below we are doing a hack to not set the repo item as a mention
+                                            // but instead keep the same provider selected and put the full repo name in the query. The provider will then
+                                            // return files instead of repos if the repo name is in the query.
+                                            if (item.provider === 'openctx' && 'providerUri' in item) {
+                                                if (
+                                                    (item.providerUri === REMOTE_FILE_PROVIDER_URI && item.mention?.data?.repoName && !item.mention.data.filePath) ||
+                                                    (item.providerUri === REMOTE_DIRECTORY_PROVIDER_URI) && item.mention?.data?.repoName && !item.mention.data.directoryPath) {
+                                                    // Do not set the selected item as mention if it is repo item from the remote file search provider.
+                                                    // Rather keep the provider in place and update the query with repo name so that the provider can
+                                                    // start showing the files instead.
+                                                    enqueue({type: 'updateEditorState', params: setMentionValue(context.editorState, item.mention.data.repoName + ':')})
+                                                    enqueue({type: 'assignSuggestions', params: {selectedIndex: 0}})
+                                                    return
+                                                }
+                                            }
+
+                                            // When selecting a large file without range, add the selected option as text node with : at the end.
+                                            // This allows users to autocomplete the file path, and provide them with the options to add range.
+                                            if (item.isTooLarge && !item.range) {
+                                                enqueue({type: 'updateEditorState', params: setMentionValue(context.editorState, contextItemMentionNodeDisplayText(serializeContextItem(item)) + ':')})
+                                                return
+                                            }
+
+                                            // Insert mention node
+                                            enqueue({
+                                                type: 'updateEditorState',
+                                                params: replaceAtMention(context.editorState, createMentionNode({item: serializeContextItem(item)}), true),
+                                            })
+                                        }),
                                     ],
                                 },
                             },
@@ -393,37 +471,25 @@ export const promptInput = setup({
                             },
                         },
                         loading: {
-                            tags: 'fetch suggestions',
-                            invoke: {
-                                src: 'fetchMenuData',
-                                input: ({ context }) => ({query: context.suggestions.filter}),
-                                onDone: {
-                                    actions: {
-                                        type: 'assignSuggestions',
-                                        params: ({event}) => ({
-                                            items: event.output,
-                                            selectedIndex: 0,
-                                        }),
-                                    },
-                                    target: 'idle',
-                                },
-                                onError: {
-                                    // TODO: Implement error handling
-                                },
-                            },
+                            entry: 'fetchMenuData',
+                            // This isn't great but we don't know when data loading is done
+                            always: 'idle',
                         },
                     },
                     on: {
                         "suggestions.close": 'closed',
                         "suggestions.filter.update": {
                             guard: { type: 'hasFilterChanged', params: ({event}) => event},
-                            actions: {
-                                type: 'assignSuggestions',
-                                params: ({event}) => ({
-                                    filter: event.filter,
-                                    position: event.position,
-                                }),
-                            },
+                            actions: [
+                                stopChild('fetchMenuData'),
+                                {
+                                    type: 'assignSuggestions',
+                                    params: ({event}) => ({
+                                        filter: event.filter,
+                                        position: event.position,
+                                    }),
+                                },
+                            ],
                             target: '.debounce',
                         },
                     },
@@ -432,10 +498,6 @@ export const promptInput = setup({
         },
     },
 })
-
-export function createMenuDataProvider(fetchMenuData: (args: {query: string}) => Promise<Item<ContextItem|ContextMentionProviderMetadata>[]>): PromiseActorLogic<Item<ContextItem|ContextMentionProviderMetadata>[], {query: string}> {
-    return fromPromise(({input}) => fetchMenuData(input))
-}
 
 /**
  * A plugin that adds a placeholder to the editor
@@ -599,13 +661,12 @@ function addMentions(state: EditorState, items: SerializedContextItem[], positio
             mentionNodes.push(createMentionNode({item}))
             mentionNodes.push(separatorNode)
         }
-        const paragraph = state.schema.nodes.paragraph.create({}, mentionNodes)
 
         if (position === 'before') {
-            tr.insert(Selection.atStart(tr.doc).from, paragraph)
+            tr.insert(Selection.atStart(tr.doc).from, mentionNodes)
         } else {
             insertWhitespaceIfNeeded(tr, Selection.atEnd(tr.doc).from)
-            tr.insert(Selection.atEnd(tr.doc).from, paragraph)
+            tr.insert(Selection.atEnd(tr.doc).from, mentionNodes)
         }
     }
 

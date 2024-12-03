@@ -2,32 +2,31 @@ import {
     type ContextItem,
     ContextMentionProviderMetadata,
     FILE_CONTEXT_MENTION_PROVIDER,
-    MentionMenuData,
-    MentionQuery,
+    FILE_RANGE_TOOLTIP_LABEL,
     NO_SYMBOL_MATCHES_HELP_LABEL,
+    REMOTE_DIRECTORY_PROVIDER_URI,
     SYMBOL_CONTEXT_MENTION_PROVIDER,
     type SerializedContextItem,
     type SerializedPromptEditorState,
     type SerializedPromptEditorValue,
-    displayPathBasename,
-    serializeContextItem,
+    parseMentionQuery,
 } from '@sourcegraph/cody-shared'
 import { clsx } from 'clsx'
 import type { SerializedEditorState, SerializedLexicalNode } from 'lexical'
 import isEqual from 'lodash/isEqual'
-import { type FunctionComponent, useCallback, useContext, useEffect, useImperativeHandle, useMemo, useState } from 'react'
-import styles from '../PromptEditor.module.css'
-import { useSetGlobalPromptEditorConfig } from '../config'
+import { type FunctionComponent, useCallback, useContext, useEffect, useImperativeHandle, useMemo } from 'react'
+import styles from './PromptEditor.module.css'
 import type { KeyboardEventPluginProps } from '../plugins/keyboardEvent'
-import { EditorState, Transaction } from 'prosemirror-state'
 import { fromSerializedPromptEditorState, toSerializedPromptEditorValue } from './lexical-interop'
 import { useExtensionAPI } from '../useExtensionAPI'
 import { ChatMentionContext } from '../plugins/atMentions/useChatContextItems'
-import { replaceAtMention, setMentionValue } from './atMention'
-import { createMentionNode, schema } from './promptInput'
+import { schema } from './promptInput'
 import "prosemirror-view/style/prosemirror.css"
-import { type Item, Suggestions } from './Suggestions'
+import { Suggestions } from './Suggestions'
 import { useEditor, useSuggestions } from './promptInput-react'
+import { MentionMenuContextItemContent, MentionMenuProviderItemContent } from '../mentions/mentionMenu/MentionMenuItem'
+import { useDefaultContextForChat } from '../useInitialContext'
+import { Observable,  } from 'observable-fns'
 
 interface Props extends KeyboardEventPluginProps {
     editorClassName?: string
@@ -78,52 +77,39 @@ export const PromptEditor: FunctionComponent<Props> = ({
     }, [initialEditorState])
 
     // Hook into providers
+    const defaultContext = useDefaultContextForChat()
     const mentionMenuData = useExtensionAPI().mentionMenuData
     const mentionSettings = useContext(ChatMentionContext)
-    const [selectedProvider, setSelectedProvider] = useState<ContextMentionProviderMetadata | null>(null)
 
-    function onSelection(state: EditorState, dispatch: (tr: Transaction) => void, item: ContextItem|ContextMentionProviderMetadata) {
-        if ('id' in item) {
-            setSelectedProvider(item)
-            queueMicrotask(() => {
-                dispatch(
-                    setMentionValue(state, '')
-                )
-            })
-        } else {
-            dispatch(
-                replaceAtMention(
-                    state,
-                    createMentionNode({item: serializeContextItem(item)}),
-                    true
-                )
-            )
-        }
-    }
+    // TODO: This needs to be done differently because mentionMenuData never completes
+    const fetchMenuData = useCallback(({query, parent}: {query: string, parent?: ContextMentionProviderMetadata}) => {
 
-    const fetchMenuData = useCallback(({query}: {query: string}) => new Promise<Item<ContextItem|ContextMentionProviderMetadata>[]>((resolve, reject) => {
-            let result: MentionMenuData
-            return mentionMenuData({text: query, provider: selectedProvider?.id ?? null}).subscribe(
-                next => {
-                    result = next
-                },
-                error => reject(error),
-                () => {
-                    resolve([
-                        ...result.providers.map(provider => ({
-                            data: provider,
-                            select: onSelection,
-                            render: renderItem,
-                        })),
-                        ...result.items?.map(item => ({
-                            data: item,
-                            select: onSelection,
-                            render: renderItem,
-                        })) ?? [],
-                    ])
-                }
+        const initialContext = [...defaultContext.initialContext, ...defaultContext.corpusContext]
+        const queryLower = query.toLowerCase().trim()
+        const filteredInitialContextItems = parent
+            ? []
+            : initialContext.filter(item =>
+                queryLower
+                    ? item.title?.toLowerCase().includes(queryLower) ||
+                        item.uri.toString().toLowerCase().includes(queryLower) ||
+                        item.description?.toString().toLowerCase().includes(queryLower)
+                    : true
             )
-    }), [mentionMenuData, mentionSettings, selectedProvider])
+
+        const filteredInitialItems = filteredInitialContextItems.map(item => ({data: item}))
+
+        return Observable.of(filteredInitialItems).concat(
+        mentionMenuData(parseMentionQuery(query, parent ?? null)).map(
+            result => [
+                    ...result.providers.map(provider => ({
+                        data: provider,
+                    })),
+                    ...filteredInitialItems,
+                    ...result.items
+                        ?.filter(item => !filteredInitialContextItems.some(initialItem => areContextItemsEqual(item, initialItem)))
+                        .map(item => ({data: item})) ?? [],
+            ]))
+    }, [mentionMenuData, mentionSettings, defaultContext])
 
     const [input, api] = useEditor({
         placeholder,
@@ -141,6 +127,7 @@ export const PromptEditor: FunctionComponent<Props> = ({
         query,
         isLoading,
         position,
+        parent,
     } = useSuggestions(input)
 
     useImperativeHandle(
@@ -176,7 +163,7 @@ export const PromptEditor: FunctionComponent<Props> = ({
     )
 
     // todo: do we need this?
-    useSetGlobalPromptEditorConfig()
+    // useSetGlobalPromptEditorConfig()
 
     useEffect(() => {
         if (initialEditorState) {
@@ -188,40 +175,84 @@ export const PromptEditor: FunctionComponent<Props> = ({
         }
     }, [initialEditorState, api])
 
+    const renderItem = useCallback((data: ContextItem|ContextMentionProviderMetadata) => {
+        if ('id' in data) {
+            return <MentionMenuProviderItemContent provider={data} />
+        }
+        return <MentionMenuContextItemContent item={data} query={parseMentionQuery(query, parent)} />
+    }, [query, parent])
+
     return <div
             className={clsx(styles.editor, editorClassName, {
                 [styles.disabled]: disabled,
                 [styles.seamless]: seamless,
             })}>
-            <div ref={api.ref} />
+            <div className={contentEditableClassName} ref={api.ref} />
             {show && <Suggestions
                 items={items}
                 selectedIndex={selectedIndex}
                 loading={isLoading}
                 filter={query}
                 menuPosition={position}
-                getHeader={() => selectedProvider?.title ?? ''}
-                getEmptyLabel={() => getEmptyLabelComponent({provider: selectedProvider, filter: query})}
+                getHeader={() => getItemsHeading(parent, query)}
+                getEmptyLabel={() => getEmptyLabel(parent, query)}
                 onSelect={index => api.applySuggestion(index)}
+                renderItem={renderItem}
             />}
         </div>
 }
 
-function renderItem(item: ContextItem|ContextMentionProviderMetadata): string {
-    if ('id' in item) {
-        return item.title
-    }
-    return getItemTitle(item)
-}
+function getItemsHeading(
+    parentItem: ContextMentionProviderMetadata | null,
+    query: string
+): React.ReactNode {
+    const mentionQuery = parseMentionQuery(query, parentItem)
 
-function getEmptyLabelComponent(props: {provider: ContextMentionProviderMetadata|null, filter: string}): React.ReactNode {
-    return getEmptyLabel(props.provider, { text: props.filter ?? '', provider: props.provider?.id ?? null })
+    if (
+        (!parentItem || parentItem.id === FILE_CONTEXT_MENTION_PROVIDER.id) &&
+        mentionQuery.maybeHasRangeSuffix
+    ) {
+        return FILE_RANGE_TOOLTIP_LABEL
+    }
+    if (!parentItem) {
+        return ''
+    }
+    if (
+        parentItem.id === SYMBOL_CONTEXT_MENTION_PROVIDER.id ||
+        parentItem.id === FILE_CONTEXT_MENTION_PROVIDER.id
+    ) {
+        // Don't show heading for these common types because it's just noisy.
+        return ''
+    }
+
+    if (parentItem.id === REMOTE_DIRECTORY_PROVIDER_URI) {
+        return (
+            <div className="tw-flex tw-flex-gap-2 tw-items-center tw-justify-between">
+                <div>
+                    {mentionQuery.text.includes(':')
+                        ? 'Directory - Select or search for a directory*'
+                        : 'Directory - Select a repository*'}
+                </div>
+                <div
+                    className={clsx(
+                        'tw-text-xs tw-rounded tw-px-2 tw-text-foreground',
+                        styles.experimental
+                    )}
+                >
+                    Experimental
+                </div>
+            </div>
+        )
+    }
+
+    return parentItem.title ?? parentItem.id
 }
 
 function getEmptyLabel(
     parentItem: ContextMentionProviderMetadata | null,
-    mentionQuery: MentionQuery
+    query: string
 ): string {
+    const mentionQuery = parseMentionQuery(query, parentItem)
     if (!mentionQuery.text) {
         return parentItem?.queryLabel ?? 'Search...'
     }
@@ -245,12 +276,6 @@ function normalizeEditorStateJSON(
     return JSON.parse(JSON.stringify(value))
 }
 
-function getItemTitle(item: ContextItem): string {
-    switch (item.type) {
-        case 'symbol':
-            return item.title ?? item.symbolName
-        default:
-            return item.title ?? displayPathBasename(item.uri)
-
-    }
+function areContextItemsEqual(a: ContextItem, b: ContextItem): boolean {
+    return a.type === b.type && a.uri.toString() === b.uri.toString()
 }

@@ -1,23 +1,26 @@
 import { useActorRef, useSelector } from "@xstate/react"
-import { promptInput } from "./promptInput"
+import { DataLoaderInput, promptInput } from "./promptInput"
 import { ContextItem, ContextMentionProviderMetadata, serializeContextItem, SerializedContextItem } from "@sourcegraph/cody-shared"
 import { Item } from "./Suggestions"
-import { ActorRefFrom, fromPromise } from "xstate"
+import { ActorRefFrom, fromCallback } from "xstate"
 import { useEffect, useMemo } from "react"
 import { Node } from "prosemirror-model"
 import { MentionView } from "./mentionNode"
 import { replaceDocument } from "./prosemirror-utils"
 import { EditorState } from "prosemirror-state"
 import { Position } from "./atMention"
+import type {AnyEventObject, EventFrom } from 'xstate'
+import type { Observable } from "observable-fns"
 
 type MenuItem = Item<ContextItem|ContextMentionProviderMetadata>
-type PromptInput = ActorRefFrom<typeof promptInput>
+type PromptInputLogic = typeof promptInput
+type PromptInputActor = ActorRefFrom<PromptInputLogic>
 
 interface PromptEditorOptions {
     placeholder?: string
     initialDocument?: Node
     onChange?: (doc: Node) => void
-    fetchMenuData: (args: {query: string}) => Promise<MenuItem[]>
+    fetchMenuData: (args: {query: string, parent?: ContextMentionProviderMetadata}) => Observable<MenuItem[]>
 }
 
 interface PromptEditorAPI {
@@ -36,8 +39,16 @@ function getCurrentEditorState(input: ActorRefFrom<typeof promptInput>): EditorS
     return input.getSnapshot().context.editorState
 }
 
-export const useEditor = (options: PromptEditorOptions): [PromptInput, PromptEditorAPI] => {
-    const fetchMenuData = useMemo(() => fromPromise<MenuItem[], {query: string}>(({input}) => options.fetchMenuData(input)), [options.fetchMenuData])
+export const useEditor = (options: PromptEditorOptions): [PromptInputActor, PromptEditorAPI] => {
+    const fetchMenuData = useMemo(() => fromCallback<AnyEventObject, DataLoaderInput>(({input}) => {
+        console.log('fetchMenuData', input.query, input.context)
+        const subscription = options.fetchMenuData({query: input.query, parent: input.context}).subscribe(
+            next => {
+                input.parent.send({type: 'suggestions.results.set', data: next})
+            },
+        )
+        return () => subscription.unsubscribe()
+    }), [options.fetchMenuData])
 
     const editor = useActorRef(promptInput.provide({
         actors: {
@@ -114,14 +125,16 @@ interface Suggestions {
     query: string
     isLoading: boolean
     position: Position
+    parent: ContextMentionProviderMetadata | null
 }
 
-export function useSuggestions(input: PromptInput): Suggestions {
+export function useSuggestions(input: PromptInputActor): Suggestions {
     const showSuggestions = useSelector(input, state => state.hasTag('show suggestions'))
     const suggestions = useSelector(input, state => state.context.suggestions)
     const isLoading = useSelector(input, state => state.hasTag('loading suggestions'))
 
     return {
+        parent: suggestions.parent ?? null,
         show: showSuggestions,
         items: suggestions.items,
         selectedIndex: suggestions.selectedIndex,
