@@ -2,6 +2,7 @@ name: Experimental Release
 on:
   push:
     tags: [ "jb-*-experimental" ]
+    workflow_dispatch:
 jobs:
   publish:
     runs-on: ubuntu-latest
