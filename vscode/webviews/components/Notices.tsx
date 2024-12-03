@@ -1,56 +1,191 @@
 import { CodyIDE, isDotCom } from '@sourcegraph/cody-shared'
-import { BuildingIcon, EyeIcon, HeartIcon } from 'lucide-react'
-import { type FunctionComponent, useState } from 'react'
+import { S2_URL } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
+import { ArrowRightIcon, BuildingIcon, EyeIcon, HeartIcon, XIcon } from 'lucide-react'
+import { type FunctionComponent, useCallback, useMemo, useState } from 'react'
+import SourcegraphIcon from '../../resources/sourcegraph-mark.svg'
+import { CodyLogo } from '../icons/CodyLogo'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
 import { useUserAccountInfo } from '../utils/useConfig'
 import { Button } from './shadcn/ui/button'
 
-/**
- * Right now, the only notice this displays is one for Sourcegraph team members who are using
- * Sourcegraph.com to remind them that we want to be dogfooding S2.
- */
-export const Notices: FunctionComponent<Record<string, never>> = () => {
+interface Notice {
+    id: string
+    isVisible?: boolean
+    content: JSX.Element
+}
+
+type NoticeVariants = 'default' | 'warning'
+type NoticeIDs = 'DogfoodS2' | 'TeamsUpgrade'
+
+export const Notices: FunctionComponent = () => {
     const user = useUserAccountInfo()
+    const isDotComUser = isDotCom(user.user.endpoint)
+    const isSourcegraphTeamMember = user.user.organizations?.some(org => org.name === 'sourcegraph')
+    const isCodyWeb = user.IDE === CodyIDE.Web
 
-    /**
-     * Make this dismissible per-session so it doesn't get in the way of screenshots but is a strong
-     * reminder to use S2 not dotcom.
-     */
-    const [dismissedShowDogfoodS2Notice, setDismissedShowDogfoodS2Notice] = useState(false)
+    const [dismissedNotices, setDismissedNotices] = useState<Set<string>>(new Set())
 
-    const showDogfoodS2Notice =
-        isDotCom(user.user.endpoint) &&
-        user.user.organizations?.some(org => org.name === 'sourcegraph') &&
-        !dismissedShowDogfoodS2Notice &&
-        user.IDE !== CodyIDE.Web
+    const dismissNotice = useCallback((noticeId: string) => {
+        setDismissedNotices(prev => new Set([...prev, noticeId]))
+    }, [])
 
-    return showDogfoodS2Notice ? (
-        <aside className="tw-p-4 tw-bg-red-800 tw-text-white tw-text-sm">
-            <div className="tw-flex tw-gap-3 tw-mb-2">
+    const notices: Notice[] = useMemo(
+        () => [
+            /**
+             * TODO: update this to be based on user's subscription status once we have that information.
+             */
+            {
+                id: 'TeamsUpgrade',
+                isVisible: true,
+                content: (
+                    <NoticeContent
+                        id="TeamsUpgrade"
+                        variant="default"
+                        title="Sourcegraph Teams is here"
+                        message="You now are eligible for a upgrade to teams for free"
+                        onDismiss={() => dismissNotice('TeamsUpgrade')}
+                        actions={[
+                            {
+                                label: 'Upgrade to Teams',
+                                href: 'https://sourcegraph.com',
+                                variant: 'default',
+                            },
+                            {
+                                label: 'Learn More',
+                                href: 'https://sourcegraph.com/docs',
+                                variant: 'ghost',
+                            },
+                        ]}
+                    />
+                ),
+            },
+            /**
+             * For Sourcegraph team members who are using Sourcegraph.com to remind them that we want to be dogfooding S2.
+             */
+            {
+                id: 'DogfoodS2',
+                isVisible: isDotComUser && isSourcegraphTeamMember && !isCodyWeb,
+                content: (
+                    <NoticeContent
+                        id="DogfoodS2"
+                        variant="warning"
+                        title=""
+                        message="Sourcegraph team members should use S2 not dotcom (except when testing dotcom-specific behavior) so that we dogfood our enterprise customer experience."
+                        onDismiss={() => dismissNotice('DogfoodS2')}
+                        actions={[
+                            {
+                                label: 'Switch to S2',
+                                onClick: () =>
+                                    getVSCodeAPI().postMessage({
+                                        command: 'auth',
+                                        authKind: 'switch',
+                                        endpoint: S2_URL.href,
+                                    }),
+                                variant: 'default',
+                            },
+                            {
+                                label: 'Dismiss',
+                                onClick: () => dismissNotice('DogfoodS2'),
+                                variant: 'secondary',
+                            },
+                        ]}
+                    />
+                ),
+            },
+        ],
+        [dismissNotice, isDotComUser, isSourcegraphTeamMember, isCodyWeb]
+    )
+
+    const activeNotice = useMemo(
+        () => notices.find(notice => notice.isVisible && !dismissedNotices.has(notice.id)),
+        [dismissedNotices, notices]
+    )
+
+    if (!activeNotice) {
+        return null
+    }
+
+    return (
+        <div className="tw-flex tw-flex-col tw-mx-4 tw-my-2 tw-p-4 tw-gap-2">{activeNotice.content}</div>
+    )
+}
+
+interface NoticeContentProps {
+    variant: NoticeVariants
+    id: NoticeIDs
+    title: string
+    message: string
+    actions: Array<{
+        label: string
+        onClick?: () => void
+        href?: string
+        variant: 'default' | 'ghost' | 'secondary'
+    }>
+    onDismiss: () => void
+}
+
+const NoticeContent: FunctionComponent<NoticeContentProps> = ({
+    variant,
+    title,
+    message,
+    actions,
+    id,
+    onDismiss,
+}) => {
+    const bgColor = {
+        default: 'tw-bg-accent tw-bg-opacity-50',
+        warning: 'tw-bg-red-700 tw-text-white',
+    }[variant]
+
+    const header = {
+        DogfoodS2: (
+            <>
                 <EyeIcon />
                 <HeartIcon />
                 <BuildingIcon />
-            </div>
-            <p>
-                Sourcegraph team members should use S2 not dotcom (except when testing dotcom-specific
-                behavior) so that we dogfood our enterprise customer experience.
-            </p>
+            </>
+        ),
+        TeamsUpgrade: (
+            <>
+                <CodyLogo size={16} />
+                <ArrowRightIcon className="tw-h-[16px]" />
+                <img src={SourcegraphIcon} alt="Sourcegraph Logo" className="tw-h-[16px]" />
+            </>
+        ),
+    }[id]
+
+    return (
+        <aside className={`tw-relative tw-rounded-md tw-flex tw-flex-col tw-gap-2 tw-p-4 ${bgColor}`}>
+            <div className="tw-flex tw-gap-3 tw-mb-2">{header}</div>
+            {title && <h1 className="tw-text-lg tw-font-semibold">{title}</h1>}
+            <p>{message}</p>
             <div className="tw-mt-3 tw-flex tw-gap-3">
-                <Button
-                    variant="default"
-                    size="sm"
-                    onClick={() => getVSCodeAPI().postMessage({ command: 'auth', authKind: 'switch' })}
-                >
-                    Switch to S2
-                </Button>
-                <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => setDismissedShowDogfoodS2Notice(true)}
-                >
-                    Dismiss
-                </Button>
+                {actions.map((action, _index) => (
+                    <Button
+                        key={action.label + '-button'}
+                        variant={action.variant}
+                        size="sm"
+                        onClick={action.onClick}
+                    >
+                        {action.href ? (
+                            <a
+                                href={action.href}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="tw-text-button-foreground hover:tw-text-button-foreground"
+                            >
+                                {action.label}
+                            </a>
+                        ) : (
+                            <span>{action.label}</span>
+                        )}
+                    </Button>
+                ))}
             </div>
+            {/* Dismiss button. */}
+            <Button variant="ghost" onClick={onDismiss} className="tw-absolute tw-top-2 tw-right-2">
+                <XIcon size="14" />
+            </Button>
         </aside>
-    ) : null
+    )
 }

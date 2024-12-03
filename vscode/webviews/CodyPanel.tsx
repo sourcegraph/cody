@@ -102,12 +102,12 @@ export const CodyPanel: FunctionComponent<CodyPanelProps> = ({
                 orientation="vertical"
                 className={styles.outerContainer}
             >
+                <Notices />
                 {/* Hide tab bar in editor chat panels. */}
                 {(clientCapabilities.agentIDE === CodyIDE.Web || config.webviewType !== 'editor') && (
                     <TabsBar currentView={view} setView={setView} IDE={clientCapabilities.agentIDE} />
                 )}
                 {errorMessages && <ErrorBanner errors={errorMessages} setErrors={setErrorMessages} />}
-                <Notices />
                 <TabContainer value={view} ref={tabContainerRef}>
                     {view === View.Chat && (
                         <Chat
