@@ -60,6 +60,7 @@ export class CodyTraceExporter extends OTLPTraceExporter {
                     isContinued(effectiveRootSpan)
                 ) {
                     spansToExport.push(span)
+                    // Since we pushed the spans, we don't need to queue them
                     continue
                 }
 
@@ -71,7 +72,7 @@ export class CodyTraceExporter extends OTLPTraceExporter {
                     this.queuedSpans.set(spanId, { span, enqueuedAt: now })
                 }
             } else {
-                if (isRootSampled(rootSpan)) {
+                if (isSampled(rootSpan)) {
                     spansToExport.push(span)
                 }
                 // else: The span is dropped
@@ -114,6 +115,8 @@ function isSampled(span: ReadableSpan): boolean {
     return span.attributes.sampled === true
 }
 
+// This function finds the root span of a given span so that we can check eventually check if it is sampled.
+// This is useful to put all the spans that are part of the same trace together.
 function getRootSpan(spanMap: Map<string, ReadableSpan>, span: ReadableSpan): ReadableSpan | null {
     if (span.parentSpanId) {
         const parentSpan = spanMap.get(span.parentSpanId)
@@ -123,8 +126,4 @@ function getRootSpan(spanMap: Map<string, ReadableSpan>, span: ReadableSpan): Re
         return getRootSpan(spanMap, parentSpan)
     }
     return span
-}
-
-function isRootSampled(rootSpan: ReadableSpan): boolean {
-    return rootSpan.attributes.sampled === true
 }
