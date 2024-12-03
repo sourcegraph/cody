@@ -56,9 +56,7 @@ describe('rewrite-query', () => {
         expect(expanded).toMatchInlineSnapshot(`"parse file with tree-sitter"`)
     )
 
-    check(ps`type Zoekt struct {`, expanded =>
-        expect(expanded).toMatchInlineSnapshot(`"type Zoekt struct {"`)
-    )
+    check(ps`type Zoekt struct {`, expanded => expect(expanded).toMatchInlineSnapshot(`"struct zoekt"`))
 
     check(
         ps`type Zoekt struct {
@@ -70,44 +68,25 @@ describe('rewrite-query', () => {
 
 \tmu       sync.RWMute
 `,
-        expanded =>
-            expect(expanded).toMatchInlineSnapshot(`
-          "type Zoekt struct {
-          	Client zoekt.Searcher
-
-          	// DisableCache when true prevents caching of Client.List. Useful in
-          	// tests.
-          	DisableCache bool
-
-          	mu       sync.RWMute
-          "
-        `)
+        expanded => expect(expanded).toMatchInlineSnapshot(`"cache sync test zoekt"`)
     )
 
     check(ps`C'est ou la logique pour recloner les dépôts?`, expanded =>
-        expect(expanded).toMatchInlineSnapshot(`"C'est ou la logique pour recloner les dépôts?"`)
+        expect(expanded).toMatchInlineSnapshot(`"clone logic repository"`)
     )
 
     check(ps`Wie kann ich eine neue Datenbankmigration definieren?`, expanded =>
-        expect(expanded).toMatchInlineSnapshot(`"Wie kann ich eine neue Datenbankmigration definieren?"`)
+        expect(expanded).toMatchInlineSnapshot(`"database definition migration new"`)
     )
 
     check(
         ps`Explain how the context window limit is calculated. how much budget is given to @-mentions vs. search context?`,
-        expanded =>
-            expect(expanded).toMatchInlineSnapshot(
-                `"Explain how the context window limit is calculated. how much budget is given to @-mentions vs. search context?"`
-            )
+        expanded => expect(expanded).toMatchInlineSnapshot(`"budget context mentions search window"`)
     )
 
     check(
         ps`parse file with tree-sitter. follow these rules:\n*use the Google Go style guide\n*panic if parsing fails`,
-        expanded =>
-            expect(expanded).toMatchInlineSnapshot(`
-              "parse file with tree-sitter. follow these rules:
-              *use the Google Go style guide
-              *panic if parsing fails"
-            `)
+        expanded => expect(expanded).toMatchInlineSnapshot(`"go google panic parse tree-sitter"`)
     )
 
     afterAll(async () => {
