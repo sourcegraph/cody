@@ -181,7 +181,11 @@ export class PromptBuilder {
             this.contextItems = getUniqueContextItems(this.contextItems)
         }
 
-        result.added = this.contextItems.filter(c => result.added.includes(c))
+        // Remove the Cody Chat Memory from showing up in the context list.
+        // TODO: Remove this once the Cody Chat Memory is out of experimental.
+        result.added = this.contextItems.filter(
+            c => result.added.includes(c) && c.title !== 'Cody Chat Memory'
+        )
         return result
     }
 }
