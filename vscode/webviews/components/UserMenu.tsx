@@ -14,7 +14,7 @@ import {
 import { useCallback, useState } from 'react'
 import { URI } from 'vscode-uri'
 import { ACCOUNT_USAGE_URL, isSourcegraphToken } from '../../src/chat/protocol'
-import { View } from '../tabs'
+import type { View } from '../tabs'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
 import { useTelemetryRecorder } from '../utils/telemetry'
 import { UserAvatar } from './UserAvatar'
@@ -261,7 +261,7 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
                                 {[...endpointHistory].reverse().map(storedEndpoint => (
                                     <CommandItem
                                         key={`${storedEndpoint}-account`}
-                                        title={`Remove ${storedEndpoint}`}
+                                        title={`Sign Out & Remove ${storedEndpoint}`}
                                         onSelect={() => {
                                             if (storedEndpoint !== endpoint) {
                                                 getVSCodeAPI().postMessage({
@@ -301,12 +301,7 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
                     ) : (
                         <CommandList>
                             <CommandGroup title="Main Account Menu">
-                                <CommandItem
-                                    onSelect={() => {
-                                        setView(View.Account)
-                                        close()
-                                    }}
-                                >
+                                <CommandItem>
                                     <div className="tw-flex tw-w-full tw-justify-start tw-gap-4">
                                         <UserAvatar
                                             user={authStatus}
