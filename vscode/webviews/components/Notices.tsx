@@ -49,12 +49,12 @@ export const Notices: FunctionComponent = () => {
                         message="You now are eligible for a upgrade to teams for free"
                         onDismiss={() => dismissNotice('TeamsUpgrade')}
                         actions={[
-                            {
+                            { // TODO: Update to live link https://linear.app/sourcegraph/issue/CORE-535/cody-clients-migrate-ctas-to-live-links
                                 label: 'Upgrade to Teams',
                                 href: 'https://sourcegraph.com',
                                 variant: 'default',
                             },
-                            {
+                            { // TODO: Update to live link https://linear.app/sourcegraph/issue/CORE-535/cody-clients-migrate-ctas-to-live-links
                                 label: 'Learn More',
                                 href: 'https://sourcegraph.com/docs',
                                 variant: 'ghost',
