@@ -4,9 +4,10 @@
 
 import crypto from 'node:crypto'
 
-import type { Har } from '@pollyjs/persister'
+import type { Har, HarEntry } from '@pollyjs/persister'
 import FSPersister from '@pollyjs/persister-fs'
-import { postProcessHarEntryResponse } from './CodyPersister'
+import { type CompletionData, isError, parseEvents } from '@sourcegraph/cody-shared'
+import { CompletionsResponseBuilder } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/CompletionsResponseBuilder'
 import { PollyYamlWriter } from './PollyYamlWriter'
 import { decodeCompressedBase64 } from './base64'
 
@@ -110,7 +111,7 @@ export class CodyPersister extends FSPersister {
             entry.response.content.text
             entry.request.cookies.length = 0
             entry.response.cookies.length = 0
-            entry.response.content.text = postProcessHarEntryResponse(entry)
+            entry.response.content.text = this.postProcessHarEntryResponse(entry)
 
             // Compared to V1 we don't nullify time fields as instead they can be configured on
             // playback with adjustable speed. This makes it much easier to play
@@ -143,6 +144,20 @@ export class CodyPersister extends FSPersister {
         return super.onSaveRecording(recordingId, recording)
     }
 
+    private postProcessHarEntryResponse(entry: HarEntry): string | undefined {
+        const { text } = entry.response.content
+        if (text === undefined) {
+            return undefined
+        }
+        if (
+            !entry.request.url.includes('/.api/completions/stream') &&
+            !entry.request.url.includes('/completions/code')
+        ) {
+            return text
+        }
+        return postProcessCompletionsStreamText(entry.request.url, text)
+    }
+
     private filterHeaders(
         headers: { name: string; value: string }[]
     ): { name: string; value: string }[] {
@@ -162,4 +177,47 @@ export class CodyPersister extends FSPersister {
                 removeHeaderPrefixes.every(prefix => !header.name.startsWith(prefix))
         )
     }
+}
+
+export function postProcessCompletionsStreamText(url: string, text: string): string | undefined {
+    const builder = CompletionsResponseBuilder.fromUrl(url)
+    const parseResult = parseEvents(builder, text)
+    if (isError(parseResult)) {
+        return text
+    }
+    const hasError = parseResult.events.some(event => event.type === 'error')
+    if (hasError) {
+        return text
+    }
+
+    const [completionEvent, doneEvent] = parseResult.events.slice(-2)
+    if (completionEvent?.type !== 'completion' || doneEvent?.type !== 'done') {
+        return text
+    }
+
+    const data: CompletionData =
+        builder.apiVersion >= 2
+            ? {
+                  deltaText: completionEvent.completion,
+                  stopReason: completionEvent.stopReason,
+              }
+            : {
+                  completion: builder.totalCompletion,
+                  stopReason: completionEvent.stopReason,
+              }
+
+    // NOTE(olafurpg) after api-version=2, we send delta text on SSE events
+    // instead of the full completion including prefix. This was a huge performance
+    // win but it's impractical for the HTTP record/replay format where we want
+    // to generate as few lines as possible. For this reason, we post-process
+    // the api-version=2 output to make it look like api-version=1 where the
+    // full completion is included via `.completion`.
+    const result = `event: completion
+data: ${JSON.stringify(data)}
+
+event: done
+data: {}
+
+`
+    return result
 }
