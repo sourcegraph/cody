@@ -1,8 +1,7 @@
-import type { ContextItem, Model } from '@sourcegraph/cody-shared'
-import { pluralize } from '@sourcegraph/cody-shared'
+import { type ContextItem, type Model, pluralize } from '@sourcegraph/cody-shared'
 import type { RankedContext } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { clsx } from 'clsx'
-import { BrainIcon, FilePenLine, MessagesSquareIcon } from 'lucide-react'
+import { BrainIcon, CircleIcon, FilePenLine, MessagesSquareIcon } from 'lucide-react'
 import {
     type FunctionComponent,
     createContext,
@@ -42,6 +41,8 @@ export const ContextCell: FunctionComponent<{
     contextAlternatives?: RankedContext[]
     resubmitWithRepoContext?: () => Promise<void>
 
+    contextTools?: Record<string, { queries: string; status?: string }>
+
     isForFirstMessage: boolean
 
     model?: Model['id']
@@ -65,6 +66,8 @@ export const ContextCell: FunctionComponent<{
         contextItems,
         contextAlternatives,
         resubmitWithRepoContext,
+
+        contextTools,
 
         model,
         isForFirstMessage,
@@ -161,13 +164,59 @@ export const ContextCell: FunctionComponent<{
             main: isContextLoading ? 'Fetching context' : 'Context',
             sub: isContextLoading
                 ? isDeepCodyEnabled
-                    ? 'Thinking…'
+                    ? contextTools
+                        ? 'Fetching…'
+                        : 'Thinking…'
                     : 'Retrieving codebase files…'
                 : contextItems === undefined
                   ? 'none requested'
                   : contextItems.length === 0
                     ? 'none fetched'
                     : itemCountLabel,
+        }
+
+        // If contextTools is provided
+        if (contextTools && Object.entries(contextTools)?.length) {
+            return (
+                <div className="tw-flex tw-flex-col tw-flex-grow">
+                    <div className="tw-flex tw-items-center tw-gap-4">
+                        <SourcegraphLogo
+                            width={NON_HUMAN_CELL_AVATAR_SIZE}
+                            height={NON_HUMAN_CELL_AVATAR_SIZE}
+                        />
+                        <span className="tw-flex tw-items-baseline">
+                            <span>Fetching context</span>
+                            <span className="tw-opacity-60 tw-text-sm tw-ml-2">&mdash; Thinking</span>
+                        </span>
+                    </div>
+                    <div className="tw-flex tw-flex-col tw-gap-4 tw-max-w-full tw-mt-4">
+                        <ul className="tw-list-none tw-flex tw-flex-col tw-gap-2 tw-pt-2 tw-mx-8">
+                            {Object.entries(contextTools).map(([toolName, { queries, status }]) => (
+                                <li key={toolName} data-testid="deep-context-item">
+                                    {status && queries && (
+                                        <div className="tw-flex tw-gap-4 tw-p-4 tw-rounded-md tw-bg-muted-transparent">
+                                            <div className="tw-flex tw-items-center">
+                                                <CircleIcon size={14} />
+                                            </div>
+                                            <div className="tw-flex tw-flex-col tw-gap-2">
+                                                <div className="tw-font-semibold">{status}</div>
+                                                <div className="tw-font-thin tw-text-sm">{queries}</div>
+                                            </div>
+                                        </div>
+                                    )}
+                                </li>
+                            ))}
+                        </ul>
+                        <div className="tw-flex tw-justify-center tw-align-middle">
+                            <LoadingDots />
+                            <div className="tw-ml-4">
+                                May take a few seconds to fetch relevannt context to improve response
+                                quality
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )
         }
 
         return (

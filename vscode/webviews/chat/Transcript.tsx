@@ -160,6 +160,7 @@ export const Transcript: FC<TranscriptProps> = props => {
                     smartApplyEnabled={smartApplyEnabled}
                     editorRef={i === interactions.length - 1 ? lastHumanEditorRef : undefined}
                     onAddToFollowupChat={onAddToFollowupChat}
+                    messageInProgress={messageInProgress}
                 />
             ))}
         </div>
@@ -225,8 +226,7 @@ export function transcriptToInteractionPairs(
     return pairs
 }
 
-interface TranscriptInteractionProps
-    extends Omit<TranscriptProps, 'transcript' | 'messageInProgress' | 'chatID'> {
+interface TranscriptInteractionProps extends Omit<TranscriptProps, 'transcript' | 'chatID'> {
     activeChatContext: Context | undefined
     setActiveChatContext: (context: Context | undefined) => void
     interaction: Interaction
@@ -246,6 +246,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
     const {
         interaction: { humanMessage, assistantMessage },
         models,
+        messageInProgress,
         isFirstInteraction,
         isLastInteraction,
         isLastSentInteraction,
@@ -633,6 +634,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                             ? EditContextButtonSearch
                             : EditContextButtonChat
                     }
+                    contextTools={messageInProgress?.tools}
                 />
             )}
             {(!experimentalOneBoxEnabled || humanMessage.intent !== 'search') &&

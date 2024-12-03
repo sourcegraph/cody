@@ -1,6 +1,7 @@
 import {
     BotResponseMultiplexer,
     type ChatClient,
+    type ChatMessage,
     type ContextItem,
     type Message,
     type PromptMixin,
@@ -18,6 +19,7 @@ export abstract class CodyChatAgent {
     protected readonly toolHandlers: Map<string, CodyTool>
 
     constructor(
+        protected readonly postMessageToWebview: (message?: ChatMessage) => void,
         protected readonly chatBuilder: ChatBuilder,
         protected readonly chatClient: Pick<ChatClient, 'chat'>,
         protected readonly tools: CodyTool[],
@@ -68,6 +70,21 @@ export abstract class CodyChatAgent {
         }
 
         return accumulated
+    }
+
+    public getParsedQueries(): { [toolName: string]: { queries: string; status: string } } {
+        const toolMap = new Map<string, { queries: string; status: string }>()
+        for (const tool of this.tools) {
+            const queriesArray = tool.parseQuery()
+            if (queriesArray.length) {
+                const queries = queriesArray.join(', ')
+                toolMap.set(tool.config.tags.tag.toString(), {
+                    queries,
+                    status: tool.config.status?.fetching ?? 'fetching',
+                })
+            }
+        }
+        return Object.fromEntries(toolMap)
     }
 
     protected getPrompter(items: ContextItem[]): DefaultPrompter {

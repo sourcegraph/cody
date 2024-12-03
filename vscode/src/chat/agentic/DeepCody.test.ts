@@ -3,6 +3,7 @@ import {
     type AuthenticatedAuthStatus,
     CLIENT_CAPABILITIES_FIXTURE,
     type ChatClient,
+    type ChatMessage,
     type ContextItem,
     ContextItemSource,
     DOTCOM_URL,
@@ -35,6 +36,7 @@ describe('DeepCody', () => {
     let mockChatClient: ChatClient
     let mockContextRetriever: ContextRetriever
     let mockSpan: any
+    let mockPostMessageToWebview: (msg?: ChatMessage) => void
     let mockCurrentContext: ContextItem[]
     let mockCodyTools: CodyTool[]
     let localStorageData: { [key: string]: unknown } = {}
@@ -77,6 +79,8 @@ describe('DeepCody', () => {
 
         mockCodyTools = await CodyToolProvider.instance(mockContextRetriever).getTools()
 
+        mockPostMessageToWebview = vi.fn()
+
         mockSpan = {}
 
         mockCurrentContext = [
@@ -106,6 +110,7 @@ describe('DeepCody', () => {
 
     it('initializes correctly when invoked', async () => {
         const agent = new DeepCodyAgent(
+            mockPostMessageToWebview,
             mockChatBuilder,
             mockChatClient,
             mockCodyTools,
@@ -146,13 +151,16 @@ describe('DeepCody', () => {
         )
 
         const agent = new DeepCodyAgent(
+            mockPostMessageToWebview,
             mockChatBuilder,
             mockChatClient,
             mockCodyTools,
             mockCurrentContext
         )
 
-        const result = await agent.getContext(mockSpan, { aborted: false } as AbortSignal)
+        const result = await agent.getContext(mockSpan, {
+            aborted: false,
+        } as AbortSignal)
 
         expect(mockChatClient.chat).toHaveBeenCalled()
         expect(mockCodyTools).toHaveLength(3)

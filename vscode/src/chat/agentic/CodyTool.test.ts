@@ -5,7 +5,7 @@ import { ToolFactory } from './CodyToolProvider'
 
 class TestTool extends CodyTool {
     public async execute(): Promise<any[]> {
-        return this.parse()
+        return this.getParsed()
     }
 }
 

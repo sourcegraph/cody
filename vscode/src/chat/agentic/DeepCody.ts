@@ -113,6 +113,7 @@ export class DeepCodyAgent extends CodyChatAgent {
                 }
                 return []
             }
+            this.postMessageToWebview({ speaker: 'assistant', tools: this.getParsedQueries() })
             const results = await Promise.all(
                 Array.from(this.toolHandlers.values()).map(tool => tool.execute(span))
             )
@@ -122,6 +123,9 @@ export class DeepCodyAgent extends CodyChatAgent {
             logDebug('Deep Cody', `context review failed: ${error}`, {
                 verbose: { prompt: promptData.prompt, error },
             })
+
+            this.postMessageToWebview({ speaker: 'assistant', tools: undefined })
+
             return []
         }
     }

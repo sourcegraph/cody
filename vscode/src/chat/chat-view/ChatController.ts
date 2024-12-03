@@ -850,7 +850,11 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
         // Experimental Feature: Deep Cody
         if (model?.includes('deep-cody')) {
+            const postMessageToWebview = (message?: ChatMessage) => {
+                this.postViewTranscript(message)
+            }
             const agenticContext = await new DeepCodyAgent(
+                postMessageToWebview,
                 this.chatBuilder,
                 this.chatClient,
                 await this.toolProvider.getTools(!!this.featureDeepCodyShellContext.value.last),
@@ -1186,8 +1190,9 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 intentScores,
                 manuallySelectedIntent,
             })
-        } catch {
+        } catch (error) {
             this.postError(new Error('Failed to edit prompt'), 'transcript')
+            console.error(error)
         }
     }
 

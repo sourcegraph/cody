@@ -36,6 +36,13 @@ export interface ChatMessage extends Message {
 
     /* The detected intent of the message */
     intent?: 'search' | 'chat' | 'edit' | 'insert' | undefined | null
+
+    tools?: {
+        [toolName: string]: {
+            queries: string
+            status?: string
+        }
+    }
 }
 
 // An unsafe version of the {@link ChatMessage} that has the PromptString
@@ -51,6 +58,12 @@ export interface SerializedChatMessage {
     text?: string // Changed from PromptString
     model?: string
     intent?: ChatMessage['intent']
+    tools?: {
+        [toolName: string]: {
+            queries: string
+            status?: string
+        }
+    }
 }
 
 export interface ChatError {

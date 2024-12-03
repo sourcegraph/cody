@@ -34,6 +34,9 @@ export interface CodyToolConfig {
         placeholder: PromptString
         example: PromptString
     }
+    status?: {
+        fetching?: string
+    }
 }
 
 /**
@@ -52,12 +55,16 @@ export abstract class CodyTool {
     /**
      * Parses the raw text input and extracts relevant content.
      */
-    protected parse(): string[] {
+    public parseQuery(): string[] {
         const { subTag } = this.config.tags
         const regex = new RegExp(`<${subTag}>(.+?)</?${subTag}>`, 's')
-        const parsed = (this.unprocessedText.match(new RegExp(regex, 'g')) || [])
+        return (this.unprocessedText.match(new RegExp(regex, 'g')) || [])
             .map(match => regex.exec(match)?.[1].trim())
             .filter(Boolean) as string[]
+    }
+
+    protected getParsed(): string[] {
+        const parsed = this.parseQuery()
         this.reset()
         return parsed
     }
@@ -104,11 +111,12 @@ class CliTool extends CodyTool {
                 placeholder: ps`SHELL_COMMAND`,
                 example: ps`Get output for git diff: \`<TOOLCLI><cmd>git diff</cmd></TOOLCLI>\``,
             },
+            status: { fetching: 'Running a Command...' },
         })
     }
 
     public async execute(): Promise<ContextItem[]> {
-        const commands = this.parse()
+        const commands = this.getParsed()
         if (commands.length === 0) return []
         logDebug('CodyTool', `executing ${commands.length} commands...`)
         return Promise.all(commands.map(getContextFileFromShell)).then(results => results.flat())
@@ -130,11 +138,12 @@ class FileTool extends CodyTool {
                 placeholder: ps`FILENAME`,
                 example: ps`See the content of different files: \`<TOOLFILE><name>path/foo.ts</name><name>path/bar.ts</name></TOOLFILE>\``,
             },
+            status: { fetching: 'Fetching a File...' },
         })
     }
 
     public async execute(): Promise<ContextItem[]> {
-        const filePaths = this.parse()
+        const filePaths = this.getParsed()
         if (filePaths.length === 0) return []
         logDebug('CodyTool', `requesting ${filePaths.length} files`)
         return Promise.all(filePaths.map(getContextFromRelativePath)).then(results =>
@@ -160,11 +169,12 @@ class SearchTool extends CodyTool {
                 placeholder: ps`SEARCH_QUERY`,
                 example: ps`Locate the "getController" function found in an error log: \`<TOOLSEARCH><query>getController</query></TOOLSEARCH>\``,
             },
+            status: { fetching: 'Running a Code Search...' },
         })
     }
 
     public async execute(span: Span): Promise<ContextItem[]> {
-        const queries = this.parse()
+        const queries = this.getParsed()
         const query = queries.find(q => !this.performedSearch.has(q))
         if (!this.contextRetriever || !query) {
             return []
@@ -214,7 +224,7 @@ export class OpenCtxTool extends CodyTool {
     }
 
     async execute(): Promise<ContextItem[]> {
-        const queries = this.parse()
+        const queries = this.getParsed()
         if (!queries?.length) {
             return []
         }
@@ -261,6 +271,7 @@ class MemoryTool extends CodyTool {
                 placeholder: ps`SUMMARIZED_TEXT`,
                 example: ps`To add an item to memory: \`<TOOLMEMORY><store>item</store></TOOLMEMORY>\`\nTo see memory: \`<TOOLMEMORY><store>GET</store></TOOLMEMORY>\``,
             },
+            status: { fetching: 'Fetching Stored Memory...' },
         })
     }
 
@@ -275,7 +286,7 @@ class MemoryTool extends CodyTool {
     }
 
     public processResponse(): void {
-        const newMemories = this.parse()
+        const newMemories = this.getParsed()
         for (const memory of newMemories) {
             if (memory === 'FORGET') {
                 CodyChatMemory.unload()
