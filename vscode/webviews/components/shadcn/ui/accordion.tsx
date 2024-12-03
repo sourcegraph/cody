@@ -28,9 +28,14 @@ const AccordionTrigger = React.forwardRef<
             {...props}
         >
             {children}
-            <ChevronRight
-                className={cn('tw-h-8 tw-w-8 tw-text-muted-foreground', styles.accordionTriggerChevron)}
-            />
+            {!props.disabled && (
+                <ChevronRight
+                    className={cn(
+                        'tw-h-8 tw-w-8 tw-text-muted-foreground',
+                        styles.accordionTriggerChevron
+                    )}
+                />
+            )}
         </AccordionPrimitive.Trigger>
     </AccordionPrimitive.Header>
 ))

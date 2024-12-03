@@ -1,4 +1,4 @@
-import { type Dispatch, type SetStateAction, useCallback, useState } from 'react'
+import { type Dispatch, type SetStateAction, useCallback, useEffect, useState } from 'react'
 
 export function useLocalStorage<T>(
     key: string,
@@ -19,4 +19,39 @@ export function useLocalStorage<T>(
         [key]
     )
     return [value, persistValue]
+}
+
+export const useSuppressKeys = () => {
+    useEffect(() => {
+        let isCtrlXActive = false
+
+        // For users with Emacs keybindings, suppress the 'k' key when Ctrl+X is active (this closes the current buffer)
+        const handleKeyDown = (event: KeyboardEvent) => {
+            let shouldSuppress = false
+
+            if (isCtrlXActive && (event.code === 'KeyK' || event.code === 'KeyO')) {
+                shouldSuppress = true
+            }
+            if (event.key === 'x' && event.ctrlKey && !event.shiftKey && !event.metaKey) {
+                isCtrlXActive = true
+            } else {
+                isCtrlXActive = false
+            }
+
+            // On macOS, suppress the '¬' character emitted by default for alt+L
+            const suppressedKeys = ['¬', 'Ò', '¿', '÷']
+            if (event.altKey && suppressedKeys.includes(event.key)) {
+                shouldSuppress = true
+            }
+
+            if (shouldSuppress) {
+                event.preventDefault()
+            }
+        }
+
+        window.addEventListener('keydown', handleKeyDown)
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown)
+        }
+    }, [])
 }

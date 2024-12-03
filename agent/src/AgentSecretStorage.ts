@@ -33,18 +33,27 @@ export class AgentStatelessSecretStorage implements vscode.SecretStorage {
 }
 
 export class AgentClientManagedSecretStorage implements vscode.SecretStorage {
+    onDidChange: vscode.Event<vscode.SecretStorageChangeEvent>
+
     constructor(
         private readonly agent: MessageHandler,
-        public readonly onDidChange: vscode.Event<vscode.SecretStorageChangeEvent>
-    ) {}
+        public readonly onDidChangeEvent: vscode.EventEmitter<vscode.SecretStorageChangeEvent>
+    ) {
+        this.onDidChange = onDidChangeEvent.event
+    }
+
     public async get(key: string): Promise<string | undefined> {
         const result = await this.agent.request('secrets/get', { key })
         return result ?? undefined
     }
+
     public async store(key: string, value: string): Promise<void> {
         await this.agent.request('secrets/store', { key, value })
+        this.onDidChangeEvent.fire({ key })
     }
+
     public async delete(key: string): Promise<void> {
         await this.agent.request('secrets/delete', { key })
+        this.onDidChangeEvent.fire({ key })
     }
 }
