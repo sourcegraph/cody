@@ -7,7 +7,7 @@ const {execSync} = require("child_process");
 console.log(`
 This script checks whether a given JetBrains release contains a specific Cody commit.
 To fetch version git tags from origin, run:
-  git fetch origin 'refs/tags/v*:refs/tags/v*'
+  git fetch origin 'refs/tags/jb-v*:refs/tags/jb-v*'
 `);
 
 // Check if CODY_DIR is set
@@ -29,7 +29,7 @@ if (!targetCommit) {
 // Enumerate matching tags and sort them in reverse order
 let tags: string[];
 try {
-    tags = execSync('git tag -l "v[0-9]*.[0-9]*.[0-9]*"')
+    tags = execSync('git tag -l "jb-v[0-9]*.[0-9]*.[0-9]*"')
         .toString()
         .trim()
         .split('\n')

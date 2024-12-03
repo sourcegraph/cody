@@ -1,12 +1,14 @@
-name: Build, test and verify
+name: Measure stability of integration tests
 on:
-  pull_request:
-  push:
-    branches:
-      - main
+  workflow_dispatch:
+    inputs:
+      repetitions:
+        description: 'How many times to repeat each test'
+        type: number
+        default: 10
 jobs:
   test:
-    name: JetBrains tests
+    name: Build and run tests
     runs-on: ubuntu-latest
     steps:
       - name: Fetch Sources
@@ -44,54 +46,24 @@ jobs:
           cache: gradle
       # Skip Code Search build in CI because it's slow, and we don't use it anyway for testing purposes.
       - run: echo "SKIP_CODE_SEARCH_BUILD=true" >> $GITHUB_ENV
-      - run: ./gradlew spotlessCheck
-      - run: ./gradlew check
+      - name: Build integration tests
+        run: |
+          pushd jetbrains
+          ./gradlew integrationTestClasses
+          popd > /dev/null
+      - name: Run integration tests
+        run: |
+          pushd jetbrains
+          ./gradlew integrationTest -PrepeatTests=${{ github.event.inputs.repetitions }}
+          popd > /dev/null
       - name: Upload the test report
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: test-report
-          path: build/reports/tests/
+          path: jetbrains/build/reports/tests/
           compression-level: 9
-      - run: ./gradlew buildPlugin
-      - run: ./gradlew --stop
-      - name: Upload the plugin package
-        uses: actions/upload-artifact@v4
-        with:
-          name: plugin
-          path: './build/distributions/Sourcegraph-*.zip'
-          compression-level: 0
-          retention-days: 7
-  plugin-verifier:
-    name: IntelliJ Plugin Verifier
-    runs-on: ubuntu-latest
-    needs:
-      - test
-    steps:
-      - uses: actions/download-artifact@v4
-        with:
-          name: plugin
-      - name: Verify Plugin on IntelliJ Platforms
-        id: verify
-        uses: ChrisCarini/intellij-platform-plugin-verifier-action@v2.0.1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          plugin-location: '*.zip'
-          ide-versions: |
-            ideaIC:2023.2
-            ideaIC:2024.2.4
-          failure-levels: |
-            INVALID_PLUGIN
-            MISSING_DEPENDENCIES
-            NON_EXTENDABLE_API_USAGES
-            OVERRIDE_ONLY_API_USAGES
-            PLUGIN_STRUCTURE_WARNINGS
-      - name: Upload the verification reports
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: plugin-verifier-reports
-          path: 'verification-*'
-          compression-level: 9
-        
+      - run: |
+          pushd jetbrains
+          ./gradlew --stop
+          popd > /dev/null
