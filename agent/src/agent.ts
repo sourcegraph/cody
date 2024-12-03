@@ -9,6 +9,7 @@ import {
     type CodyCommand,
     CodyIDE,
     ModelUsage,
+    authStatus,
     currentAuthStatus,
     currentAuthStatusAuthed,
     firstResultFromOperation,
@@ -355,11 +356,6 @@ export class Agent extends MessageHandler implements ExtensionClient {
     public webviewViewProviders = new Map<string, vscode.WebviewViewProvider>()
 
     public authenticationHandler: AgentAuthHandler | null = null
-    private authenticationPromise: Promise<AuthStatus> = Promise.resolve({
-        authenticated: false,
-        endpoint: '',
-        pendingValidation: true,
-    })
 
     private clientInfo: ClientInfo | null = null
 
@@ -460,14 +456,8 @@ export class Agent extends MessageHandler implements ExtensionClient {
                     clientInfo.extensionConfiguration &&
                     (clientInfo.extensionConfiguration?.accessToken || ideType === CodyIDE.Web)
                 ) {
-                    this.handleConfigChanges(clientInfo.extensionConfiguration, {
+                    await this.handleConfigChanges(clientInfo.extensionConfiguration, {
                         forceAuthentication: true,
-                    })
-                } else {
-                    this.authenticationPromise = Promise.resolve({
-                        authenticated: false,
-                        endpoint: clientInfo.extensionConfiguration?.serverEndpoint ?? '',
-                        pendingValidation: false,
                     })
                 }
 
@@ -488,11 +478,11 @@ export class Agent extends MessageHandler implements ExtensionClient {
                     this.registerWebviewHandlers()
                 }
 
-                const authStatus = await this.authenticationPromise
+                const status = await firstResultFromOperation(authStatus)
                 return {
                     name: 'cody-agent',
-                    authenticated: authStatus?.authenticated ?? false,
-                    authStatus: toProtocolAuthStatus(authStatus),
+                    authenticated: status.authenticated,
+                    authStatus: toProtocolAuthStatus(status),
                 }
             } catch (error) {
                 console.error(
@@ -589,12 +579,12 @@ export class Agent extends MessageHandler implements ExtensionClient {
         })
 
         this.registerRequest('extensionConfiguration/change', async config => {
-            return this.handleConfigChanges(config).then(toProtocolAuthStatus)
+            await this.handleConfigChanges(config)
+            return firstResultFromOperation(authStatus).then(toProtocolAuthStatus)
         })
 
         this.registerRequest('extensionConfiguration/status', async () => {
-            await this.authenticationPromise
-            return this.authenticationPromise.then(toProtocolAuthStatus)
+            return firstResultFromOperation(authStatus).then(toProtocolAuthStatus)
         })
 
         this.registerRequest('extensionConfiguration/getSettingsSchema', async () => {
@@ -1492,14 +1482,14 @@ export class Agent extends MessageHandler implements ExtensionClient {
     private async handleConfigChanges(
         config: ExtensionConfiguration,
         params?: { forceAuthentication: boolean }
-    ): Promise<AuthStatus> {
+    ): Promise<void> {
         const isAuthChange = vscode_shim.isAuthenticationChange(config)
         vscode_shim.setExtensionConfiguration(config)
         // If this is an authentication change we need to reauthenticate prior to firing events
         // that update the clients
         if (isAuthChange || params?.forceAuthentication) {
             try {
-                this.authenticationPromise = authProvider.validateAndStoreCredentials(
+                await authProvider.validateAndStoreCredentials(
                     {
                         configuration: {
                             customHeaders: config.customHeaders,
@@ -1515,7 +1505,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
                     'always-store'
                 )
 
-                await this.authenticationPromise
+                await firstResultFromOperation(authStatus)
 
                 // Critical: we need to await for the handling of `onDidChangeConfiguration` to
                 // let the new credentials propagate. If we remove the statement below, then
@@ -1529,11 +1519,9 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 })
             } catch (error) {
                 console.log('Authentication failed', error)
-                return { authenticated: false, endpoint: '', pendingValidation: true }
+                authProvider.setAuthPendingToEndpoint(config.serverEndpoint)
             }
         }
-
-        return this.authenticationPromise
     }
 
     private async handleDocumentChange(document: ProtocolTextDocument) {
@@ -1715,7 +1703,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
         callback: RequestCallback<M>
     ): void {
         this.registerRequest(method, async (params, token) => {
-            await this.authenticationPromise
+            await firstResultFromOperation(authStatus)
             if (vscode_shim.isTesting) {
                 await Promise.all(this.pendingPromises.values())
             }
