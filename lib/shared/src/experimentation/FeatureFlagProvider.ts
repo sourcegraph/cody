@@ -102,6 +102,11 @@ export enum FeatureFlag {
 
     /** Enable Shell Context for Deep Cody */
     DeepCodyShellContext = 'deep-cody-shell-context',
+
+    /**
+     * Whether the user will see the CTA about upgrading to Sourcegraph Teams
+     */
+    SourcegraphTeamsUpgradeCTA = 'teams-upgrade-available-cta',
 }
 
 const ONE_HOUR = 60 * 60 * 1000
