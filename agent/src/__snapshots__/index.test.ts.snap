@@ -6,10 +6,6 @@ exports[`Agent > Chat > chat/submitMessage (long message) 1`] = `
 \`\`\`java:src/HelloWorld.java
 public class HelloWorld {
     public static void main(String[] args) {
-        sayHello();
-    }
-
-    public static void sayHello() {
         System.out.println("Hello, World!");
     }
 }
@@ -25,7 +21,7 @@ javac src/HelloWorld.java
 java -cp src HelloWorld
 \`\`\`
 
-This code creates a clean and simple Hello World program with a dedicated function called \`sayHello()\`. The program will print "Hello, World!" when executed. The structure is organized and follows Java conventions."
+This will output "Hello, World!" to the console. The code follows standard Java conventions with a main method inside a public class. It's clean, straightforward, and ready to use."
 `;
 
 exports[`Agent > Chat > chat/submitMessage (short message) 1`] = `
@@ -54,39 +50,92 @@ export class Dog implements Animal {
 `;
 
 exports[`Agent > Commands > commands/explain 1`] = `
-"The code you've shared is an interface definition for an \`Animal\` type in TypeScript. An interface is a blueprint for an object that defines what properties and methods an object should have.
+"The code you've shared is an interface definition for a type called "Animal" in TypeScript. An interface is a blueprint for an object, describing what properties and methods it should have.
 
-1. The purpose of this code is to define the structure of an \`Animal\` object, including the properties it should have and the methods it should be able to execute.
-2. This code does not take any inputs. It is a static definition of the \`Animal\` type.
-3. This code does not produce any outputs. Instead, it serves as a contract that other parts of the codebase can use to ensure that objects they work with conform to the expected structure.
-4. The \`Animal\` interface defines three properties: \`name\` of type \`string\`, \`makeAnimalSound\` of type \`function\`, and \`isMammal\` of type \`boolean\`. By defining this interface, other parts of the codebase can create objects that implement this interface and be confident that they will have these properties.
-5. The \`makeAnimalSound\` method is defined with no implementation, indicating that it should be implemented by any object that conforms to this interface. This allows for polymorphism, where different objects that implement the \`Animal\` interface can have their own unique implementation of the \`makeAnimalSound\` method.
+The Animal interface has three properties:
 
-In summary, this code defines the structure of an \`Animal\` object, including its properties and methods. It does not take any inputs or produce any outputs, but instead serves as a contract for other parts of the codebase to ensure that objects they work with conform to the expected structure. The \`makeAnimalSound\` method allows for polymorphism, where different objects that implement the \`Animal\` interface can have their own unique implementation of the method."
+1. \`name\`: a string representing the name of the animal.
+2. \`makeAnimalSound\`: a method that returns a string representing the sound the animal makes.
+3. \`isMammal\`: a boolean indicating whether the animal is a mammal or not.
+
+The purpose of this code is to define a contract for any object that wants to be treated as an Animal. Any object that implements this interface must have a \`name\` property, a \`makeAnimalSound\` method, and an \`isMammal\` property.
+
+The input to the \`makeAnimalSound\` method is not explicitly defined in the code you've shared, but it's likely that the method would use some internal state or property of the object to generate the sound.
+
+The output of the \`makeAnimalSound\` method is a string representing the sound the animal makes.
+
+The \`isMammal\` property is a boolean, so it can either be \`true\` or \`false\`.
+
+To achieve its purpose, this code uses the TypeScript syntax for defining interfaces. The \`export\` keyword in front of the \`interface\` keyword makes the Animal interface available for use in other modules.
+
+The logic and algorithm of this code are quite simple. It defines a contract for an object to be treated as an Animal, and specifies the properties and methods that the object must have.
+
+The important logic flow in this code is the definition of the \`makeAnimalSound\` method. This method is likely to be implemented differently for each animal, depending on the specific sound that the animal makes.
+
+In summary, the Animal interface defines a contract for an object to be treated as an animal, specifying the properties and methods that the object must have. The \`makeAnimalSound\` method is a key part of this contract, allowing each animal to make its own unique sound."
 `;
 
 exports[`Agent > Commands > commands/smell 1`] = `
-"Based on the provided code from \`src/animal.ts\`, here are some suggestions for improvement:
+"Based on the provided code, here are some suggestions for improvement:
 
-1. Add a type to the \`makeAnimalSound()\` method return value.
+1. Add type annotations to the \`makeAnimalSound\` method to improve type safety and make it clear that it returns a string.
 
-Currently, the return type of the \`makeAnimalSound()\` method is not explicitly defined. Adding a type, such as \`string\`, can help improve code readability and maintainability.
+Potential benefit: Improved type safety and readability.
 
-2. Add a type to the \`name\` property.
+\`\`\`typescript
+makeAnimalSound(): string {
+    // ...
+}
+\`\`\`
 
-Similar to the \`makeAnimalSound()\` method, the type of the \`name\` property is not explicitly defined. Adding a type, such as \`string\`, can help improve code readability and maintainability.
+2. Consider adding a constructor function to initialize the \`Animal\` interface properties. This would make it clearer how instances of \`Animal\` should be created and what properties they should have.
 
-3. Add a type to the \`isMammal\` property.
+Potential benefit: Improved readability and maintainability.
 
-The type of the \`isMammal\` property is not explicitly defined. Adding a type, such as \`boolean\`, can help improve code readability and maintainability.
+\`\`\`typescript
+export interface Animal {
+    constructor(name: string, isMammal: boolean)
+    name: string
+    makeAnimalSound(): string
+    isMammal: boolean
+}
+\`\`\`
 
-4. Consider adding a constructor to the \`Animal\` interface.
+3. Add a \`readonly\` modifier to the \`name\` and \`isMammal\` properties to make it clear that they should not be modified after an \`Animal\` instance is created.
 
-Adding a constructor to the \`Animal\` interface can help ensure that instances of the interface are created with the required properties.
+Potential benefit: Improved code readability and maintainability.
 
-5. Consider adding a comment to the \`Animal\` interface.
+\`\`\`typescript
+export interface Animal {
+    constructor(name: string, isMammal: boolean)
+    readonly name: string
+    makeAnimalSound(): string
+    readonly isMammal: boolean
+}
+\`\`\`
 
-Adding a comment to the \`Animal\` interface can help improve code readability and maintainability by providing context and information about the interface.
+4. Consider adding a docstring to the \`Animal\` interface to provide more context and usage examples for developers who are using this code.
 
-Overall, the provided code appears to follow sound design principles. However, implementing the above suggestions can help improve code readability, maintainability, and type safety."
+Potential benefit: Improved code readability and maintainability.
+
+\`\`\`typescript
+/**
+ * An interface representing an animal.
+ */
+export interface Animal {
+    // ...
+}
+\`\`\`
+
+5. Consider adding a type constraint to the \`Animal\` interface to ensure that it can only be implemented by classes that extend a specific base class or implement a specific interface.
+
+Potential benefit: Improved code readability and maintainability.
+
+\`\`\`typescript
+export interface Animal extends LivingBeing {
+    // ...
+}
+\`\`\`
+
+Overall, the code appears to be well-written and follows good design principles. However, implementing the above suggestions could make it even more robust, efficient, and aligned with best practices."
 `;

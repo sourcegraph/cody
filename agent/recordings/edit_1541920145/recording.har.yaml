@@ -5,7 +5,7 @@ log:
     name: Polly.JS
     version: 6.0.6
   entries:
-    - _id: 4639cede1d1b8af7aafd2d4f4e5060d6
+    - _id: 897d3731ab8e15a1549f29445eafd1e1
       _order: 0
       cache: {}
       request:
@@ -14,7 +14,7 @@ log:
         headers:
           - name: authorization
             value: token
-              REDACTED_3dd704711f82a44ff6aba261b53b61a03fb8edba658774639148630d838c2d1d
+              REDACTED_fc324d3667e841181b0779375f26dedc911d26b303d23b29b1a2d7ee63dc77eb
           - name: content-type
             value: application/json; charset=utf-8
           - name: user-agent
@@ -57,13 +57,11 @@ log:
           - name: content-type
             value: text/plain; charset=utf-8
           - name: date
-            value: Fri, 29 Nov 2024 14:59:39 GMT
+            value: Tue, 03 Dec 2024 13:50:31 GMT
           - name: observed-calculated-ip-from-forwarded-for
             value: 80.82.18.146
           - name: observed-x-forwarded-for
             value: 80.82.18.146
-          - name: retry-after
-            value: "113"
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
           - name: transfer-encoding
@@ -77,13 +75,13 @@ log:
             value: DENY
           - name: x-xss-protection
             value: 1; mode=block
-        headersSize: 1153
+        headersSize: 1046
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-11-29T14:59:38.925Z
-      time: 0
+      startedDateTime: 2024-12-03T13:50:30.797Z
+      time: 790
       timings:
         blocked: -1
         connect: -1
@@ -91,8 +89,8 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 0
-    - _id: 2c8196572b200fa1526dcddc0f6777c1
+        wait: 790
+    - _id: 16fe543ce844236f39224744c188c8c5
       _order: 0
       cache: {}
       request:
@@ -103,13 +101,13 @@ log:
             value: gzip;q=0
           - name: authorization
             value: token
-              REDACTED_3dd704711f82a44ff6aba261b53b61a03fb8edba658774639148630d838c2d1d
+              REDACTED_fc324d3667e841181b0779375f26dedc911d26b303d23b29b1a2d7ee63dc77eb
           - name: connection
             value: keep-alive
           - name: content-type
             value: application/json
           - name: traceparent
-            value: 00-df1886bbc21367632a6ae46e1f9dffef-33c9220c98fa3569-01
+            value: 00-0340f5bb11b3ba6449bb2cb6b55f7dda-5271a15d4155d34c-01
           - name: user-agent
             value: edit/v1 (Node.js v20.10.0)
           - name: x-requested-with
@@ -185,10 +183,10 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=edit&client-version=v1
       response:
-        bodySize: 320
+        bodySize: 278
         content:
           mimeType: text/event-stream
-          size: 320
+          size: 278
           text: >+
             event: completion
 
@@ -212,7 +210,7 @@ log:
           - name: content-type
             value: text/event-stream
           - name: date
-            value: Tue, 03 Dec 2024 10:31:01 GMT
+            value: Tue, 03 Dec 2024 13:50:35 GMT
           - name: observed-calculated-ip-from-forwarded-for
             value: 80.82.18.146
           - name: observed-x-forwarded-for
@@ -235,8 +233,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-12-03T10:30:57.552Z
-      time: 0
+      startedDateTime: 2024-12-03T13:50:31.926Z
+      time: 3164
       timings:
         blocked: -1
         connect: -1
@@ -244,8 +242,8 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 0
-    - _id: 1dc01297b7f0b2006e74a8e42925a0a5
+        wait: 3164
+    - _id: 34b8ec6ea3929d933ac02d67779f5ca5
       _order: 0
       cache: {}
       request:
@@ -256,13 +254,13 @@ log:
             value: gzip;q=0
           - name: authorization
             value: token
-              REDACTED_3dd704711f82a44ff6aba261b53b61a03fb8edba658774639148630d838c2d1d
+              REDACTED_fc324d3667e841181b0779375f26dedc911d26b303d23b29b1a2d7ee63dc77eb
           - name: connection
             value: keep-alive
           - name: content-type
             value: application/json
           - name: traceparent
-            value: 00-54cc9baeed09fc2717f03d5c161d67d9-7dfab6f86575761d-01
+            value: 00-1139c17482172967cb7c9eb0122460b6-233339f4340b0e0a-01
           - name: user-agent
             value: edit/v1 (Node.js v20.10.0)
           - name: x-requested-with
@@ -400,11 +398,13 @@ log:
           - name: content-type
             value: text/event-stream
           - name: date
-            value: Tue, 03 Dec 2024 10:31:05 GMT
+            value: Tue, 03 Dec 2024 13:50:38 GMT
           - name: observed-calculated-ip-from-forwarded-for
             value: 80.82.18.146
           - name: observed-x-forwarded-for
             value: 80.82.18.146
+          - name: retry-after
+            value: "600"
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
           - name: transfer-encoding
@@ -418,13 +418,13 @@ log:
             value: DENY
           - name: x-xss-protection
             value: 1; mode=block
-        headersSize: 1005
+        headersSize: 1112
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-12-03T10:31:01.166Z
-      time: 0
+      startedDateTime: 2024-12-03T13:50:35.169Z
+      time: 3167
       timings:
         blocked: -1
         connect: -1
@@ -432,8 +432,8 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 0
-    - _id: 388aaebd399302ae307630b76ed28a85
+        wait: 3167
+    - _id: 957d1a0c7f9e877506d61a086738ed83
       _order: 0
       cache: {}
       request:
@@ -444,13 +444,13 @@ log:
             value: gzip;q=0
           - name: authorization
             value: token
-              REDACTED_3dd704711f82a44ff6aba261b53b61a03fb8edba658774639148630d838c2d1d
+              REDACTED_fc324d3667e841181b0779375f26dedc911d26b303d23b29b1a2d7ee63dc77eb
           - name: connection
             value: keep-alive
           - name: content-type
             value: application/json
           - name: traceparent
-            value: 00-dfb27724107ee22e0d37f9854178cab8-46429a147b0cd8f8-01
+            value: 00-c22a36cea2ea148ac637cb4d9278e5ed-b645e1c4f4c0c1a1-01
           - name: user-agent
             value: edit/v1 (Node.js v20.10.0)
           - name: x-requested-with
@@ -537,10 +537,10 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=edit&client-version=v1
       response:
-        bodySize: 1016
+        bodySize: 722
         content:
           mimeType: text/event-stream
-          size: 1016
+          size: 722
           text: >+
             event: completion
 
@@ -564,11 +564,13 @@ log:
           - name: content-type
             value: text/event-stream
           - name: date
-            value: Tue, 03 Dec 2024 10:31:10 GMT
+            value: Tue, 03 Dec 2024 13:50:42 GMT
           - name: observed-calculated-ip-from-forwarded-for
             value: 80.82.18.146
           - name: observed-x-forwarded-for
             value: 80.82.18.146
+          - name: retry-after
+            value: "596"
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
           - name: transfer-encoding
@@ -582,13 +584,13 @@ log:
             value: DENY
           - name: x-xss-protection
             value: 1; mode=block
-        headersSize: 1005
+        headersSize: 1112
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-12-03T10:31:05.197Z
-      time: 0
+      startedDateTime: 2024-12-03T13:50:38.367Z
+      time: 4384
       timings:
         blocked: -1
         connect: -1
@@ -596,8 +598,8 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 0
-    - _id: e91b84ea768b5eed28380699acd05fc6
+        wait: 4384
+    - _id: a376faab1c8a1993bb48c745757f0a4a
       _order: 0
       cache: {}
       request:
@@ -606,7 +608,7 @@ log:
         headers:
           - name: authorization
             value: token
-              REDACTED_3dd704711f82a44ff6aba261b53b61a03fb8edba658774639148630d838c2d1d
+              REDACTED_fc324d3667e841181b0779375f26dedc911d26b303d23b29b1a2d7ee63dc77eb
           - name: content-type
             value: application/json; charset=utf-8
           - name: user-agent
@@ -664,13 +666,11 @@ log:
           - name: content-type
             value: application/json
           - name: date
-            value: Fri, 29 Nov 2024 14:59:38 GMT
+            value: Tue, 03 Dec 2024 13:50:30 GMT
           - name: observed-calculated-ip-from-forwarded-for
             value: 80.82.18.146
           - name: observed-x-forwarded-for
             value: 80.82.18.146
-          - name: retry-after
-            value: "113"
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
           - name: transfer-encoding
@@ -684,13 +684,13 @@ log:
             value: DENY
           - name: x-xss-protection
             value: 1; mode=block
-        headersSize: 1144
+        headersSize: 1037
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-11-29T14:59:38.712Z
-      time: 0
+      startedDateTime: 2024-12-03T13:50:30.400Z
+      time: 171
       timings:
         blocked: -1
         connect: -1
@@ -698,8 +698,8 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 0
-    - _id: d0a9ba8f1dcebcf03586956633e53ce8
+        wait: 171
+    - _id: 0484c4d780805faf3dd3ddabae814640
       _order: 0
       cache: {}
       request:
@@ -708,7 +708,7 @@ log:
         headers:
           - name: authorization
             value: token
-              REDACTED_3dd704711f82a44ff6aba261b53b61a03fb8edba658774639148630d838c2d1d
+              REDACTED_fc324d3667e841181b0779375f26dedc911d26b303d23b29b1a2d7ee63dc77eb
           - name: content-type
             value: application/json; charset=utf-8
           - name: user-agent
@@ -758,13 +758,11 @@ log:
           - name: content-type
             value: application/json
           - name: date
-            value: Fri, 29 Nov 2024 14:59:39 GMT
+            value: Tue, 03 Dec 2024 13:50:30 GMT
           - name: observed-calculated-ip-from-forwarded-for
             value: 80.82.18.146
           - name: observed-x-forwarded-for
             value: 80.82.18.146
-          - name: retry-after
-            value: "113"
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
           - name: transfer-encoding
@@ -778,13 +776,13 @@ log:
             value: DENY
           - name: x-xss-protection
             value: 1; mode=block
-        headersSize: 1144
+        headersSize: 1037
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-11-29T14:59:38.712Z
-      time: 0
+      startedDateTime: 2024-12-03T13:50:30.400Z
+      time: 315
       timings:
         blocked: -1
         connect: -1
@@ -792,8 +790,8 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 0
-    - _id: 94049b00a1d0bb35daab2f7a3b6eb687
+        wait: 315
+    - _id: e141c56e63809042300db9bf8551d492
       _order: 0
       cache: {}
       request:
@@ -802,7 +800,7 @@ log:
         headers:
           - name: authorization
             value: token
-              REDACTED_3dd704711f82a44ff6aba261b53b61a03fb8edba658774639148630d838c2d1d
+              REDACTED_fc324d3667e841181b0779375f26dedc911d26b303d23b29b1a2d7ee63dc77eb
           - name: content-type
             value: application/json; charset=utf-8
           - name: user-agent
@@ -852,13 +850,11 @@ log:
           - name: content-type
             value: application/json
           - name: date
-            value: Fri, 29 Nov 2024 14:59:38 GMT
+            value: Tue, 03 Dec 2024 13:50:30 GMT
           - name: observed-calculated-ip-from-forwarded-for
             value: 80.82.18.146
           - name: observed-x-forwarded-for
             value: 80.82.18.146
-          - name: retry-after
-            value: "113"
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
           - name: transfer-encoding
@@ -872,13 +868,13 @@ log:
             value: DENY
           - name: x-xss-protection
             value: 1; mode=block
-        headersSize: 1144
+        headersSize: 1037
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-11-29T14:59:38.712Z
-      time: 0
+      startedDateTime: 2024-12-03T13:50:30.400Z
+      time: 337
       timings:
         blocked: -1
         connect: -1
@@ -886,8 +882,8 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 0
-    - _id: 48b3a6bf0b107e0d034aa592bc6e86b2
+        wait: 337
+    - _id: 5b9030a4e18d1e000c71d6000a7cef6f
       _order: 0
       cache: {}
       request:
@@ -896,7 +892,7 @@ log:
         headers:
           - name: authorization
             value: token
-              REDACTED_3dd704711f82a44ff6aba261b53b61a03fb8edba658774639148630d838c2d1d
+              REDACTED_fc324d3667e841181b0779375f26dedc911d26b303d23b29b1a2d7ee63dc77eb
           - name: content-type
             value: application/json; charset=utf-8
           - name: user-agent
@@ -961,13 +957,11 @@ log:
           - name: content-type
             value: application/json
           - name: date
-            value: Fri, 29 Nov 2024 14:59:38 GMT
+            value: Tue, 03 Dec 2024 13:50:30 GMT
           - name: observed-calculated-ip-from-forwarded-for
             value: 80.82.18.146
           - name: observed-x-forwarded-for
             value: 80.82.18.146
-          - name: retry-after
-            value: "113"
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
           - name: transfer-encoding
@@ -981,13 +975,13 @@ log:
             value: DENY
           - name: x-xss-protection
             value: 1; mode=block
-        headersSize: 1144
+        headersSize: 1037
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-11-29T14:59:38.463Z
-      time: 0
+      startedDateTime: 2024-12-03T13:50:29.692Z
+      time: 701
       timings:
         blocked: -1
         connect: -1
@@ -995,8 +989,8 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 0
-    - _id: 1348ade04b900b76ba7f31905b57b14e
+        wait: 701
+    - _id: aef0c9fe7483280d9c05ac8e97e37571
       _order: 0
       cache: {}
       request:
@@ -1005,7 +999,7 @@ log:
         headers:
           - name: authorization
             value: token
-              REDACTED_3dd704711f82a44ff6aba261b53b61a03fb8edba658774639148630d838c2d1d
+              REDACTED_fc324d3667e841181b0779375f26dedc911d26b303d23b29b1a2d7ee63dc77eb
           - name: content-type
             value: application/json; charset=utf-8
           - name: user-agent
@@ -1061,13 +1055,11 @@ log:
           - name: content-type
             value: application/json
           - name: date
-            value: Fri, 29 Nov 2024 14:59:39 GMT
+            value: Tue, 03 Dec 2024 13:50:30 GMT
           - name: observed-calculated-ip-from-forwarded-for
             value: 80.82.18.146
           - name: observed-x-forwarded-for
             value: 80.82.18.146
-          - name: retry-after
-            value: "113"
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
           - name: transfer-encoding
@@ -1081,13 +1073,13 @@ log:
             value: DENY
           - name: x-xss-protection
             value: 1; mode=block
-        headersSize: 1144
+        headersSize: 1037
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-11-29T14:59:38.727Z
-      time: 0
+      startedDateTime: 2024-12-03T13:50:30.408Z
+      time: 383
       timings:
         blocked: -1
         connect: -1
@@ -1095,8 +1087,8 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 0
-    - _id: a8e7304a01b3588668cd733bbf3a3381
+        wait: 383
+    - _id: 4504fab53d7cb602861f73dc2aa883d2
       _order: 0
       cache: {}
       request:
@@ -1105,7 +1097,7 @@ log:
         headers:
           - name: authorization
             value: token
-              REDACTED_3dd704711f82a44ff6aba261b53b61a03fb8edba658774639148630d838c2d1d
+              REDACTED_fc324d3667e841181b0779375f26dedc911d26b303d23b29b1a2d7ee63dc77eb
           - name: content-type
             value: application/json; charset=utf-8
           - name: user-agent
@@ -1136,8 +1128,8 @@ log:
         content:
           mimeType: application/json
           size: 74
-          text: "{\"data\":{\"site\":{\"productVersion\":\"301943_2024-11-28_5.10-451be16\
-            6611e\"}}}"
+          text: "{\"data\":{\"site\":{\"productVersion\":\"302290_2024-12-03_5.10-546eea5\
+            9483c\"}}}"
         cookies: []
         headers:
           - name: access-control-allow-credentials
@@ -1153,13 +1145,11 @@ log:
           - name: content-type
             value: application/json
           - name: date
-            value: Fri, 29 Nov 2024 14:59:38 GMT
+            value: Tue, 03 Dec 2024 13:50:30 GMT
           - name: observed-calculated-ip-from-forwarded-for
             value: 80.82.18.146
           - name: observed-x-forwarded-for
             value: 80.82.18.146
-          - name: retry-after
-            value: "113"
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
           - name: transfer-encoding
@@ -1173,13 +1163,13 @@ log:
             value: DENY
           - name: x-xss-protection
             value: 1; mode=block
-        headersSize: 1144
+        headersSize: 1037
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-11-29T14:59:38.726Z
-      time: 0
+      startedDateTime: 2024-12-03T13:50:30.400Z
+      time: 304
       timings:
         blocked: -1
         connect: -1
@@ -1187,8 +1177,8 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 0
-    - _id: a1889526ab4ac60a56dc11d08e0510f9
+        wait: 304
+    - _id: fbb23499ae0eec5c2e188687b429531b
       _order: 0
       cache: {}
       request:
@@ -1197,7 +1187,7 @@ log:
         headers:
           - name: authorization
             value: token
-              REDACTED_3dd704711f82a44ff6aba261b53b61a03fb8edba658774639148630d838c2d1d
+              REDACTED_fc324d3667e841181b0779375f26dedc911d26b303d23b29b1a2d7ee63dc77eb
           - name: user-agent
             value: edit/v1 (Node.js v20.10.0)
           - name: x-requested-with
@@ -1764,13 +1754,11 @@ log:
           - name: content-type
             value: text/plain; charset=utf-8
           - name: date
-            value: Fri, 29 Nov 2024 14:59:39 GMT
+            value: Tue, 03 Dec 2024 13:50:31 GMT
           - name: observed-calculated-ip-from-forwarded-for
             value: 80.82.18.146
           - name: observed-x-forwarded-for
             value: 80.82.18.146
-          - name: retry-after
-            value: "113"
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
           - name: transfer-encoding
@@ -1784,13 +1772,13 @@ log:
             value: DENY
           - name: x-xss-protection
             value: 1; mode=block
-        headersSize: 1155
+        headersSize: 1048
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-11-29T14:59:39.099Z
-      time: 0
+      startedDateTime: 2024-12-03T13:50:31.589Z
+      time: 171
       timings:
         blocked: -1
         connect: -1
@@ -1798,6 +1786,6 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 0
+        wait: 171
   pages: []
   version: "1.2"

@@ -5,7 +5,7 @@ log:
     name: Polly.JS
     version: 6.0.6
   entries:
-    - _id: 48b3a6bf0b107e0d034aa592bc6e86b2
+    - _id: 5b9030a4e18d1e000c71d6000a7cef6f
       _order: 0
       cache: {}
       request:
@@ -14,7 +14,7 @@ log:
         headers:
           - name: authorization
             value: token
-              REDACTED_3dd704711f82a44ff6aba261b53b61a03fb8edba658774639148630d838c2d1d
+              REDACTED_fc324d3667e841181b0779375f26dedc911d26b303d23b29b1a2d7ee63dc77eb
           - name: content-type
             value: application/json; charset=utf-8
           - name: user-agent
@@ -79,11 +79,13 @@ log:
           - name: content-type
             value: application/json
           - name: date
-            value: Fri, 29 Nov 2024 16:50:52 GMT
+            value: Tue, 03 Dec 2024 13:50:50 GMT
           - name: observed-calculated-ip-from-forwarded-for
             value: 80.82.18.146
           - name: observed-x-forwarded-for
             value: 80.82.18.146
+          - name: retry-after
+            value: "598"
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
           - name: transfer-encoding
@@ -97,13 +99,13 @@ log:
             value: DENY
           - name: x-xss-protection
             value: 1; mode=block
-        headersSize: 1037
+        headersSize: 1144
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-11-29T16:50:52.432Z
-      time: 0
+      startedDateTime: 2024-12-03T13:50:49.841Z
+      time: 251
       timings:
         blocked: -1
         connect: -1
@@ -111,8 +113,8 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 0
-    - _id: acb297efb26f22ddc0ac8eb9afc73388
+        wait: 251
+    - _id: 773f06f412e7171a41a163edff09aae3
       _order: 0
       cache: {}
       request:
@@ -121,7 +123,7 @@ log:
         headers:
           - name: authorization
             value: token
-              REDACTED_4229eb42e0efa2f15f3e6f8843764c7f92ab8051020cc4e90802f4fc0cc91bfa
+              REDACTED_1858aad0e1ff07ae26d4042086acb9da455866ad617afd2cb9ab9419e1be1104
           - name: content-type
             value: application/json; charset=utf-8
           - name: user-agent
@@ -164,11 +166,11 @@ log:
           - name: content-type
             value: text/plain; charset=utf-8
           - name: date
-            value: Fri, 29 Nov 2024 16:51:05 GMT
+            value: Tue, 03 Dec 2024 14:43:36 GMT
           - name: observed-calculated-ip-from-forwarded-for
             value: 34.117.155.115
           - name: observed-x-forwarded-for
-            value: 80.82.18.146, 172.69.155.133, 34.117.155.115
+            value: 80.82.18.146, 162.158.103.173, 34.117.155.115
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
           - name: transfer-encoding
@@ -182,13 +184,13 @@ log:
             value: DENY
           - name: x-xss-protection
             value: 1; mode=block
-        headersSize: 1103
+        headersSize: 1104
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-11-29T16:51:05.291Z
-      time: 0
+      startedDateTime: 2024-12-03T14:43:36.043Z
+      time: 304
       timings:
         blocked: -1
         connect: -1
@@ -196,8 +198,8 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 0
-    - _id: 4e7919316b7b7a4774cfc8a9796315cf
+        wait: 304
+    - _id: 58da5ef844152e12a476118b9211dca4
       _order: 0
       cache: {}
       request:
@@ -206,7 +208,7 @@ log:
         headers:
           - name: authorization
             value: token
-              REDACTED_4229eb42e0efa2f15f3e6f8843764c7f92ab8051020cc4e90802f4fc0cc91bfa
+              REDACTED_1858aad0e1ff07ae26d4042086acb9da455866ad617afd2cb9ab9419e1be1104
           - name: content-type
             value: application/json; charset=utf-8
           - name: user-agent
@@ -264,11 +266,11 @@ log:
           - name: content-type
             value: application/json
           - name: date
-            value: Fri, 29 Nov 2024 16:50:53 GMT
+            value: Tue, 03 Dec 2024 13:50:50 GMT
           - name: observed-calculated-ip-from-forwarded-for
             value: 34.117.155.115
           - name: observed-x-forwarded-for
-            value: 80.82.18.146, 162.158.103.117, 34.117.155.115
+            value: 80.82.18.146, 162.158.103.74, 34.117.155.115
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
           - name: transfer-encoding
@@ -282,13 +284,13 @@ log:
             value: DENY
           - name: x-xss-protection
             value: 1; mode=block
-        headersSize: 1095
+        headersSize: 1094
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-11-29T16:50:52.939Z
-      time: 0
+      startedDateTime: 2024-12-03T13:50:50.477Z
+      time: 302
       timings:
         blocked: -1
         connect: -1
@@ -296,8 +298,8 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 0
-    - _id: b1b053b85f958c321d93f8137fc09e57
+        wait: 302
+    - _id: be6903eacbfb1c4d597835d9a7e88367
       _order: 0
       cache: {}
       request:
@@ -306,7 +308,7 @@ log:
         headers:
           - name: authorization
             value: token
-              REDACTED_4229eb42e0efa2f15f3e6f8843764c7f92ab8051020cc4e90802f4fc0cc91bfa
+              REDACTED_1858aad0e1ff07ae26d4042086acb9da455866ad617afd2cb9ab9419e1be1104
           - name: content-type
             value: application/json; charset=utf-8
           - name: user-agent
@@ -356,11 +358,11 @@ log:
           - name: content-type
             value: application/json
           - name: date
-            value: Fri, 29 Nov 2024 16:50:53 GMT
+            value: Tue, 03 Dec 2024 13:50:50 GMT
           - name: observed-calculated-ip-from-forwarded-for
             value: 34.117.155.115
           - name: observed-x-forwarded-for
-            value: 80.82.18.146, 162.158.103.67, 34.117.155.115
+            value: 80.82.18.146, 162.158.172.154, 34.117.155.115
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
           - name: transfer-encoding
@@ -374,13 +376,13 @@ log:
             value: DENY
           - name: x-xss-protection
             value: 1; mode=block
-        headersSize: 1094
+        headersSize: 1095
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-11-29T16:50:52.939Z
-      time: 0
+      startedDateTime: 2024-12-03T13:50:50.477Z
+      time: 305
       timings:
         blocked: -1
         connect: -1
@@ -388,8 +390,8 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 0
-    - _id: 75147ffcb74877fc7d34e8ca089d7a36
+        wait: 305
+    - _id: 81ba454ac92cd2681c8368b6be845186
       _order: 0
       cache: {}
       request:
@@ -398,7 +400,7 @@ log:
         headers:
           - name: authorization
             value: token
-              REDACTED_4229eb42e0efa2f15f3e6f8843764c7f92ab8051020cc4e90802f4fc0cc91bfa
+              REDACTED_1858aad0e1ff07ae26d4042086acb9da455866ad617afd2cb9ab9419e1be1104
           - name: content-type
             value: application/json; charset=utf-8
           - name: user-agent
@@ -448,11 +450,11 @@ log:
           - name: content-type
             value: application/json
           - name: date
-            value: Fri, 29 Nov 2024 16:50:53 GMT
+            value: Tue, 03 Dec 2024 13:50:50 GMT
           - name: observed-calculated-ip-from-forwarded-for
             value: 34.117.155.115
           - name: observed-x-forwarded-for
-            value: 80.82.18.146, 162.158.102.121, 34.117.155.115
+            value: 80.82.18.146, 162.158.103.118, 34.117.155.115
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
           - name: transfer-encoding
@@ -471,8 +473,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-11-29T16:50:52.939Z
-      time: 0
+      startedDateTime: 2024-12-03T13:50:50.477Z
+      time: 303
       timings:
         blocked: -1
         connect: -1
@@ -480,8 +482,8 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 0
-    - _id: d802d2d3152f0320a55674a0dcc7f82b
+        wait: 303
+    - _id: d073147da6f716938816120f32876189
       _order: 0
       cache: {}
       request:
@@ -490,7 +492,7 @@ log:
         headers:
           - name: authorization
             value: token
-              REDACTED_4229eb42e0efa2f15f3e6f8843764c7f92ab8051020cc4e90802f4fc0cc91bfa
+              REDACTED_1858aad0e1ff07ae26d4042086acb9da455866ad617afd2cb9ab9419e1be1104
           - name: content-type
             value: application/json; charset=utf-8
           - name: user-agent
@@ -552,11 +554,11 @@ log:
           - name: content-type
             value: application/json
           - name: date
-            value: Fri, 29 Nov 2024 16:50:52 GMT
+            value: Tue, 03 Dec 2024 13:50:50 GMT
           - name: observed-calculated-ip-from-forwarded-for
             value: 34.117.155.115
           - name: observed-x-forwarded-for
-            value: 80.82.18.146, 162.158.103.117, 34.117.155.115
+            value: 80.82.18.146, 162.158.103.74, 34.117.155.115
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
           - name: transfer-encoding
@@ -570,13 +572,13 @@ log:
             value: DENY
           - name: x-xss-protection
             value: 1; mode=block
-        headersSize: 1095
+        headersSize: 1094
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-11-29T16:50:52.714Z
-      time: 0
+      startedDateTime: 2024-12-03T13:50:50.122Z
+      time: 345
       timings:
         blocked: -1
         connect: -1
@@ -584,8 +586,8 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 0
-    - _id: 47ec2f29040f54726609b236e3af6298
+        wait: 345
+    - _id: 7a3c4ac24a98ecb58b4610a5ba34a76c
       _order: 0
       cache: {}
       request:
@@ -594,7 +596,7 @@ log:
         headers:
           - name: authorization
             value: token
-              REDACTED_4229eb42e0efa2f15f3e6f8843764c7f92ab8051020cc4e90802f4fc0cc91bfa
+              REDACTED_1858aad0e1ff07ae26d4042086acb9da455866ad617afd2cb9ab9419e1be1104
           - name: content-type
             value: application/json; charset=utf-8
           - name: user-agent
@@ -625,8 +627,8 @@ log:
         content:
           mimeType: application/json
           size: 74
-          text: "{\"data\":{\"site\":{\"productVersion\":\"302029_2024-11-29_5.10-f9cba11\
-            dc936\"}}}"
+          text: "{\"data\":{\"site\":{\"productVersion\":\"302395_2024-12-03_5.10-aa0bcc1\
+            dcc62\"}}}"
         cookies: []
         headers:
           - name: access-control-allow-credentials
@@ -642,11 +644,11 @@ log:
           - name: content-type
             value: application/json
           - name: date
-            value: Fri, 29 Nov 2024 16:50:53 GMT
+            value: Tue, 03 Dec 2024 13:50:50 GMT
           - name: observed-calculated-ip-from-forwarded-for
             value: 34.117.155.115
           - name: observed-x-forwarded-for
-            value: 80.82.18.146, 162.158.172.25, 34.117.155.115
+            value: 80.82.18.146, 162.158.102.9, 34.117.155.115
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
           - name: transfer-encoding
@@ -660,13 +662,13 @@ log:
             value: DENY
           - name: x-xss-protection
             value: 1; mode=block
-        headersSize: 1094
+        headersSize: 1093
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-11-29T16:50:52.944Z
-      time: 0
+      startedDateTime: 2024-12-03T13:50:50.477Z
+      time: 302
       timings:
         blocked: -1
         connect: -1
@@ -674,554 +676,6 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 0
-    - _id: b67fa467a48dcabba8c60bd47c398d1a
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 0
-        cookies: []
-        headers:
-          - name: authorization
-            value: token
-              REDACTED_4229eb42e0efa2f15f3e6f8843764c7f92ab8051020cc4e90802f4fc0cc91bfa
-          - name: user-agent
-            value: unauthed/v1 (Node.js v20.10.0)
-          - name: x-requested-with
-            value: unauthed v1
-        headersSize: 250
-        httpVersion: HTTP/1.1
-        method: GET
-        queryString: []
-        url: https://sourcegraph.sourcegraph.com/.api/modelconfig/supported-models.json
-      response:
-        bodySize: 1222
-        content:
-          mimeType: text/plain; charset=utf-8
-          size: 1222
-          text: >
-            {
-                "schemaVersion": "1.0",
-                "revision": "0.0.0+dev",
-                "providers": [
-                    {
-                        "id": "anthropic",
-                        "displayName": "Anthropic"
-                    },
-                    {
-                        "id": "fireworks",
-                        "displayName": "Fireworks"
-                    },
-                    {
-                        "id": "google",
-                        "displayName": "Google"
-                    },
-                    {
-                        "id": "openai",
-                        "displayName": "OpenAI"
-                    },
-                    {
-                        "id": "mistral",
-                        "displayName": "Mistral"
-                    }
-                ],
-                "models": [
-                    {
-                        "modelRef": "anthropic::2024-10-22::claude-3-5-sonnet-latest",
-                        "displayName": "Claude 3.5 Sonnet (New)",
-                        "modelName": "claude-3-5-sonnet-latest",
-                        "capabilities": [
-                            "edit",
-                            "chat",
-                            "vision"
-                        ],
-                        "category": "accuracy",
-                        "status": "stable",
-                        "tier": "free",
-                        "contextWindow": {
-                            "maxInputTokens": 45000,
-                            "maxOutputTokens": 4000
-                        },
-                        "estimatedModelCost": {
-                            "unit": "mtok",
-                            "inputTokenPennies": 300,
-                            "outputTokenPennies": 1500
-                        }
-                    },
-                    {
-                        "modelRef": "anthropic::2023-06-01::claude-3-opus",
-                        "displayName": "Claude 3 Opus",
-                        "modelName": "claude-3-opus-20240229",
-                        "capabilities": [
-                            "edit",
-                            "chat"
-                        ],
-                        "category": "other",
-                        "status": "stable",
-                        "tier": "pro",
-                        "contextWindow": {
-                            "maxInputTokens": 45000,
-                            "maxOutputTokens": 4000
-                        },
-                        "estimatedModelCost": {
-                            "unit": "mtok",
-                            "inputTokenPennies": 1500,
-                            "outputTokenPennies": 7500
-                        }
-                    },
-                    {
-                        "modelRef": "anthropic::2024-10-22::claude-3-5-haiku-latest",
-                        "displayName": "Claude 3.5 Haiku",
-                        "modelName": "claude-3-5-haiku-latest",
-                        "capabilities": [
-                            "edit",
-                            "chat"
-                        ],
-                        "category": "speed",
-                        "status": "stable",
-                        "tier": "free",
-                        "contextWindow": {
-                            "maxInputTokens": 45000,
-                            "maxOutputTokens": 4000
-                        },
-                        "estimatedModelCost": {
-                            "unit": "mtok",
-                            "inputTokenPennies": 100,
-                            "outputTokenPennies": 500
-                        }
-                    },
-                    {
-                        "modelRef": "anthropic::2023-06-01::claude-3-haiku",
-                        "displayName": "Claude 3 Haiku",
-                        "modelName": "claude-3-haiku-20240307",
-                        "capabilities": [
-                            "edit",
-                            "chat"
-                        ],
-                        "category": "speed",
-                        "status": "stable",
-                        "tier": "free",
-                        "contextWindow": {
-                            "maxInputTokens": 7000,
-                            "maxOutputTokens": 4000
-                        },
-                        "estimatedModelCost": {
-                            "unit": "mtok",
-                            "inputTokenPennies": 25,
-                            "outputTokenPennies": 125
-                        }
-                    },
-                    {
-                        "modelRef": "anthropic::2023-06-01::claude-3.5-sonnet",
-                        "displayName": "Claude 3.5 Sonnet",
-                        "modelName": "claude-3-5-sonnet-latest",
-                        "capabilities": [
-                            "edit",
-                            "chat",
-                            "vision"
-                        ],
-                        "category": "accuracy",
-                        "status": "deprecated",
-                        "tier": "free",
-                        "contextWindow": {
-                            "maxInputTokens": 45000,
-                            "maxOutputTokens": 4000
-                        },
-                        "estimatedModelCost": {
-                            "unit": "mtok",
-                            "inputTokenPennies": 300,
-                            "outputTokenPennies": 1500
-                        }
-                    },
-                    {
-                        "modelRef": "anthropic::2023-06-01::claude-3-5-sonnet-20240620",
-                        "displayName": "Claude 3.5 Sonnet",
-                        "modelName": "claude-3-5-sonnet-20240620",
-                        "capabilities": [
-                            "edit",
-                            "chat",
-                            "vision"
-                        ],
-                        "category": "accuracy",
-                        "status": "deprecated",
-                        "tier": "free",
-                        "contextWindow": {
-                            "maxInputTokens": 45000,
-                            "maxOutputTokens": 4000
-                        },
-                        "estimatedModelCost": {
-                            "unit": "mtok",
-                            "inputTokenPennies": 300,
-                            "outputTokenPennies": 1500
-                        }
-                    },
-                    {
-                        "modelRef": "anthropic::2023-06-01::claude-3-sonnet",
-                        "displayName": "Claude 3 Sonnet",
-                        "modelName": "claude-3-sonnet-20240229",
-                        "capabilities": [
-                            "edit",
-                            "chat"
-                        ],
-                        "category": "other",
-                        "status": "deprecated",
-                        "tier": "free",
-                        "contextWindow": {
-                            "maxInputTokens": 45000,
-                            "maxOutputTokens": 4000
-                        },
-                        "estimatedModelCost": {
-                            "unit": "mtok",
-                            "inputTokenPennies": 300,
-                            "outputTokenPennies": 1500
-                        }
-                    },
-                    {
-                        "modelRef": "anthropic::2023-01-01::claude-2.1",
-                        "displayName": "Claude 2.1",
-                        "modelName": "claude-2.1",
-                        "capabilities": [
-                            "edit",
-                            "chat"
-                        ],
-                        "category": "other",
-                        "status": "deprecated",
-                        "tier": "free",
-                        "contextWindow": {
-                            "maxInputTokens": 7000,
-                            "maxOutputTokens": 4000
-                        },
-                        "estimatedModelCost": {
-                            "unit": "mtok",
-                            "inputTokenPennies": 800,
-                            "outputTokenPennies": 2400
-                        }
-                    },
-                    {
-                        "modelRef": "anthropic::2023-01-01::claude-2.0",
-                        "displayName": "Claude 2.0",
-                        "modelName": "claude-2.0",
-                        "capabilities": [
-                            "edit",
-                            "chat"
-                        ],
-                        "category": "other",
-                        "status": "deprecated",
-                        "tier": "free",
-                        "contextWindow": {
-                            "maxInputTokens": 7000,
-                            "maxOutputTokens": 4000
-                        },
-                        "estimatedModelCost": {
-                            "unit": "mtok",
-                            "inputTokenPennies": 800,
-                            "outputTokenPennies": 2400
-                        }
-                    },
-                    {
-                        "modelRef": "anthropic::2023-01-01::claude-instant-1.2",
-                        "displayName": "Claude Instant",
-                        "modelName": "claude-instant-1.2",
-                        "capabilities": [
-                            "autocomplete",
-                            "edit",
-                            "chat"
-                        ],
-                        "category": "other",
-                        "status": "deprecated",
-                        "tier": "free",
-                        "contextWindow": {
-                            "maxInputTokens": 7000,
-                            "maxOutputTokens": 4000
-                        },
-                        "estimatedModelCost": {
-                            "unit": "mtok",
-                            "inputTokenPennies": 80,
-                            "outputTokenPennies": 240
-                        }
-                    },
-                    {
-                        "modelRef": "fireworks::v1::starcoder",
-                        "displayName": "StarCoder",
-                        "modelName": "starcoder",
-                        "capabilities": [
-                            "autocomplete"
-                        ],
-                        "category": "speed",
-                        "status": "stable",
-                        "tier": "free",
-                        "contextWindow": {
-                            "maxInputTokens": 2048,
-                            "maxOutputTokens": 256
-                        },
-                        "estimatedModelCost": {
-                            "unit": "mtok",
-                            "inputTokenPennies": 20,
-                            "outputTokenPennies": 20
-                        }
-                    },
-                    {
-                        "modelRef": "fireworks::v1::deepseek-coder-v2-lite-base",
-                        "displayName": "DeepSeek V2 Lite Base",
-                        "modelName": "accounts/sourcegraph/models/deepseek-coder-v2-lite-base",
-                        "capabilities": [
-                            "autocomplete"
-                        ],
-                        "category": "speed",
-                        "status": "stable",
-                        "tier": "free",
-                        "contextWindow": {
-                            "maxInputTokens": 2048,
-                            "maxOutputTokens": 256
-                        },
-                        "estimatedModelCost": {
-                            "unit": "",
-                            "inputTokenPennies": 0,
-                            "outputTokenPennies": 0
-                        }
-                    },
-                    {
-                        "modelRef": "fireworks::v1::autoedits-default",
-                        "displayName": "AutoEdits Fireworks Default",
-                        "modelName": "cody-model-auto-edits-fireworks-default",
-                        "capabilities": [
-                            "autocomplete"
-                        ],
-                        "category": "speed",
-                        "status": "experimental",
-                        "tier": "free",
-                        "contextWindow": {
-                            "maxInputTokens": 12000,
-                            "maxOutputTokens": 4000
-                        },
-                        "estimatedModelCost": {
-                            "unit": "",
-                            "inputTokenPennies": 0,
-                            "outputTokenPennies": 0
-                        }
-                    },
-                    {
-                        "modelRef": "google::v1::gemini-1.5-pro",
-                        "displayName": "Gemini 1.5 Pro",
-                        "modelName": "gemini-1.5-pro",
-                        "capabilities": [
-                            "edit",
-                            "chat"
-                        ],
-                        "category": "balanced",
-                        "status": "stable",
-                        "tier": "free",
-                        "contextWindow": {
-                            "maxInputTokens": 45000,
-                            "maxOutputTokens": 4000
-                        },
-                        "estimatedModelCost": {
-                            "unit": "mtok",
-                            "inputTokenPennies": 125,
-                            "outputTokenPennies": 500
-                        }
-                    },
-                    {
-                        "modelRef": "google::v1::gemini-1.5-flash",
-                        "displayName": "Gemini 1.5 Flash",
-                        "modelName": "gemini-1.5-flash",
-                        "capabilities": [
-                            "edit",
-                            "chat"
-                        ],
-                        "category": "speed",
-                        "status": "stable",
-                        "tier": "free",
-                        "contextWindow": {
-                            "maxInputTokens": 45000,
-                            "maxOutputTokens": 4000
-                        },
-                        "estimatedModelCost": {
-                            "unit": "btok",
-                            "inputTokenPennies": 75000,
-                            "outputTokenPennies": 30000
-                        }
-                    },
-                    {
-                        "modelRef": "openai::2024-02-01::gpt-4o",
-                        "displayName": "GPT-4o",
-                        "modelName": "gpt-4o",
-                        "capabilities": [
-                            "edit",
-                            "chat",
-                            "vision"
-                        ],
-                        "category": "accuracy",
-                        "status": "stable",
-                        "tier": "pro",
-                        "contextWindow": {
-                            "maxInputTokens": 45000,
-                            "maxOutputTokens": 4000
-                        },
-                        "estimatedModelCost": {
-                            "unit": "mtok",
-                            "inputTokenPennies": 250,
-                            "outputTokenPennies": 1000
-                        }
-                    },
-                    {
-                        "modelRef": "openai::2024-02-01::gpt-4o-mini",
-                        "displayName": "GPT-4o-mini",
-                        "modelName": "gpt-4o-mini",
-                        "capabilities": [
-                            "edit",
-                            "chat",
-                            "vision"
-                        ],
-                        "category": "speed",
-                        "status": "stable",
-                        "tier": "free",
-                        "contextWindow": {
-                            "maxInputTokens": 45000,
-                            "maxOutputTokens": 4000
-                        },
-                        "estimatedModelCost": {
-                            "unit": "mtok",
-                            "inputTokenPennies": 15,
-                            "outputTokenPennies": 60
-                        }
-                    },
-                    {
-                        "modelRef": "openai::2024-02-01::cody-chat-preview-001",
-                        "displayName": "OpenAI o1-preview",
-                        "modelName": "cody-chat-preview-001",
-                        "capabilities": [
-                            "chat"
-                        ],
-                        "category": "accuracy",
-                        "status": "waitlist",
-                        "tier": "pro",
-                        "contextWindow": {
-                            "maxInputTokens": 45000,
-                            "maxOutputTokens": 4000
-                        },
-                        "estimatedModelCost": {
-                            "unit": "mtok",
-                            "inputTokenPennies": 1500,
-                            "outputTokenPennies": 6000
-                        }
-                    },
-                    {
-                        "modelRef": "openai::2024-02-01::cody-chat-preview-002",
-                        "displayName": "OpenAI o1-mini",
-                        "modelName": "cody-chat-preview-002",
-                        "capabilities": [
-                            "chat"
-                        ],
-                        "category": "accuracy",
-                        "status": "waitlist",
-                        "tier": "pro",
-                        "contextWindow": {
-                            "maxInputTokens": 45000,
-                            "maxOutputTokens": 4000
-                        },
-                        "estimatedModelCost": {
-                            "unit": "mtok",
-                            "inputTokenPennies": 300,
-                            "outputTokenPennies": 1200
-                        }
-                    },
-                    {
-                        "modelRef": "openai::2024-02-01::gpt-4-turbo",
-                        "displayName": "GPT-4 Turbo",
-                        "modelName": "gpt-4-turbo",
-                        "capabilities": [
-                            "edit",
-                            "chat"
-                        ],
-                        "category": "other",
-                        "status": "deprecated",
-                        "tier": "pro",
-                        "contextWindow": {
-                            "maxInputTokens": 7000,
-                            "maxOutputTokens": 4000
-                        },
-                        "estimatedModelCost": {
-                            "unit": "mtok",
-                            "inputTokenPennies": 1000,
-                            "outputTokenPennies": 3000
-                        }
-                    },
-                    {
-                        "modelRef": "openai::2024-02-01::gpt-3.5-turbo",
-                        "displayName": "GPT-3.5 Turbo",
-                        "modelName": "gpt-3.5-turbo",
-                        "capabilities": [
-                            "edit",
-                            "chat"
-                        ],
-                        "category": "speed",
-                        "status": "deprecated",
-                        "tier": "pro",
-                        "contextWindow": {
-                            "maxInputTokens": 7000,
-                            "maxOutputTokens": 4000
-                        },
-                        "estimatedModelCost": {
-                            "unit": "mtok",
-                            "inputTokenPennies": 300,
-                            "outputTokenPennies": 400
-                        }
-                    }
-                ],
-                "defaultModels": {
-                    "chat": "anthropic::2023-06-01::claude-3.5-sonnet",
-                    "fastChat": "anthropic::2023-06-01::claude-3-haiku",
-                    "codeCompletion": "fireworks::v1::deepseek-coder-v2-lite-base"
-                }
-            }
-        cookies: []
-        headers:
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache, max-age=0
-          - name: connection
-            value: keep-alive
-          - name: content-encoding
-            value: gzip
-          - name: content-length
-            value: "1222"
-          - name: content-type
-            value: text/plain; charset=utf-8
-          - name: date
-            value: Fri, 29 Nov 2024 16:52:55 GMT
-          - name: observed-calculated-ip-from-forwarded-for
-            value: 34.117.155.115
-          - name: observed-x-forwarded-for
-            value: 80.82.18.146, 162.158.102.60, 34.117.155.115
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-          - name: vary
-            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
-              Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-        headersSize: 1097
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-11-29T16:52:55.667Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
+        wait: 302
   pages: []
   version: "1.2"
