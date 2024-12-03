@@ -1,18 +1,14 @@
 import { useEffect, useRef, MouseEventHandler, useCallback } from "react"
 import { Position } from "./atMention"
-import { EditorState, Transaction } from "prosemirror-state"
 import styles from "./BaseEditor.module.css"
 import clsx from "clsx"
 
 export interface Item<T> {
     data: T
-    select(state: EditorState, dispatch: (tr: Transaction) => void, data: T): void
-    // TODO: THis shouldn't be defined here
-    render(data: T): JSX.Element|string
 }
 
-interface SuggestionsProps {
-    items: Item<unknown>[]
+interface SuggestionsProps<T> {
+    items: Item<T>[]
     selectedIndex: number
     filter: string
     loading: boolean
@@ -20,9 +16,10 @@ interface SuggestionsProps {
     getHeader: () => React.ReactNode
     getEmptyLabel: (args: {filter: string}) => React.ReactNode
     onSelect?: (index: number) => void
+    renderItem: (data: T) => React.ReactNode
 }
 
-export const Suggestions: React.FC<SuggestionsProps> = ({items, selectedIndex, filter, loading, menuPosition, getHeader, getEmptyLabel, onSelect}) => {
+export const Suggestions = <T,>({items, selectedIndex, filter, loading, menuPosition, getHeader, getEmptyLabel, onSelect, renderItem}: SuggestionsProps<T>) => {
     const container = useRef<HTMLDivElement | null>(null)
 
     useEffect(() => {
@@ -35,9 +32,11 @@ export const Suggestions: React.FC<SuggestionsProps> = ({items, selectedIndex, f
     }, [])
 
     const handleClick: MouseEventHandler = useCallback(event => {
-        const listNode = event.target?.closest('li') as HTMLLIElement | null
+        const target = event.target as HTMLElement|null
+        const listNode = target?.closest('li') as HTMLLIElement | null
         if (listNode?.parentNode) {
             const options = listNode.parentNode.querySelectorAll('[role="option"]')
+            // @ts-expect-error
             const index = [].indexOf.call(options, listNode)
             if (index !== -1) {
                 onSelect?.(index)
@@ -57,11 +56,11 @@ export const Suggestions: React.FC<SuggestionsProps> = ({items, selectedIndex, f
             {header &&
                 <li className={headerClass} aria-disabled="true">{header}</li>
             }
-        {items.map((item, index) =>
-            <li key={index} role="option" className={itemClass} aria-selected={index === selectedIndex}>
-                {item.render(item.data)}
-            </li>
-        )}
+            {items.map((item, index) =>
+                <li key={index} role="option" className={itemClass} aria-selected={index === selectedIndex}>
+                    {renderItem(item.data)}
+                </li>
+            )}
             {loading && items.length === 0 && <li aria-disabled="true">Loading...</li>}
             {!loading && items.length === 0 && <li aria-disabled="true">{getEmptyLabel({filter})}</li>}
         </ul>

@@ -2,47 +2,51 @@ import { SerializedContextItem, SerializedContextItemMentionNode, SerializedProm
 import { SerializedLexicalNode, SerializedParagraphNode, SerializedRootNode, SerializedTextNode } from "lexical"
 import { Node } from "prosemirror-model"
 
-export function fromSerializedPromptEditorState(
-    state: SerializedPromptEditorState
-): unknown {
-    function fromSerializedLexicalNode(node: SerializedLexicalNode): unknown {
-        switch (node.type) {
-            case 'root': {
-                return {
-                    type: 'doc',
-                    content: (node as SerializedRootNode).children.map(fromSerializedLexicalNode),
-                }
+function fromSerializedLexicalNode(node: SerializedLexicalNode): unknown {
+    switch (node.type) {
+        case 'root': {
+            return {
+                type: 'doc',
+                content: (node as SerializedRootNode).children.map(fromSerializedLexicalNode).filter(Boolean),
             }
-            case 'paragraph': {
-                return {
-                    type: 'paragraph',
-                    content: (node as SerializedParagraphNode).children.map(fromSerializedLexicalNode),
-                }
+        }
+        case 'paragraph': {
+            return {
+                type: 'paragraph',
+                content: (node as SerializedParagraphNode).children.map(fromSerializedLexicalNode).filter(Boolean),
             }
-            case 'text': {
+        }
+        case 'text': {
+            if ((node as SerializedTextNode).text) {
                 return {
                     type: 'text',
                     text: (node as SerializedTextNode).text,
                 }
             }
-            case 'contextItemMention': {
-                return {
-                    type: 'mention',
-                    attrs: {
-                        item: (node as SerializedContextItemMentionNode).contextItem,
+            break;
+        }
+        case 'contextItemMention': {
+            return {
+                type: 'mention',
+                attrs: {
+                    item: (node as SerializedContextItemMentionNode).contextItem,
+                },
+                content: [
+                    {
+                        type: 'text',
+                        text: (node as SerializedContextItemMentionNode).text,
                     },
-                    content: [
-                        {
-                            type: 'text',
-                            text: (node as SerializedContextItemMentionNode).text,
-                        },
 
-                    ],
-                }
+                ],
             }
         }
-        return undefined
     }
+    return undefined
+}
+
+export function fromSerializedPromptEditorState(
+    state: SerializedPromptEditorState
+): unknown {
     return fromSerializedLexicalNode(state.lexicalEditorState.root)
 }
 
