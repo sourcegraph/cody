@@ -34,4 +34,4 @@ jobs:
           ./gradlew "-PpluginVersion=${RELEASE_VERSION}" publishPlugin
           popd > /dev/null
         env:
-          PUBLISH_TOKEN: ${{ secrets.PUBLISH_TOKEN }}
+          PUBLISH_TOKEN: ${{ secrets.JETBRAINS_MARKETPLACE_PUBLISH_TOKEN }}
