@@ -20,6 +20,7 @@ import { StateDebugOverlay } from './components/StateDebugOverlay'
 import { TabContainer, TabRoot } from './components/shadcn/ui/tabs'
 import { AccountTab, HistoryTab, PromptsTab, SettingsTab, TabsBar, View } from './tabs'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
+import { useUserAccountInfo } from './utils/useConfig'
 import { useFeatureFlag } from './utils/useFeatureFlags'
 import { TabViewContext } from './utils/useTabView'
 
@@ -69,10 +70,12 @@ export const CodyPanel: FunctionComponent<CodyPanelProps> = ({
 }) => {
     const tabContainerRef = useRef<HTMLDivElement>(null)
 
+    const user = useUserAccountInfo()
     const externalAPI = useExternalAPI()
     const api = useExtensionAPI()
     const { value: chatModels } = useObservable(useMemo(() => api.chatModels(), [api.chatModels]))
     const isPromptsV2Enabled = useFeatureFlag(FeatureFlag.CodyPromptsV2)
+    const isTeamsUpgradeCtaEnabled = useFeatureFlag(FeatureFlag.SourcegraphTeamsUpgradeCTA)
 
     useEffect(() => {
         onExternalApiReady?.(externalAPI)
@@ -102,7 +105,7 @@ export const CodyPanel: FunctionComponent<CodyPanelProps> = ({
                 orientation="vertical"
                 className={styles.outerContainer}
             >
-                <Notices />
+                <Notices user={user} isTeamsUpgradeCtaEnabled={isTeamsUpgradeCtaEnabled} />
                 {/* Hide tab bar in editor chat panels. */}
                 {(clientCapabilities.agentIDE === CodyIDE.Web || config.webviewType !== 'editor') && (
                     <TabsBar currentView={view} setView={setView} IDE={clientCapabilities.agentIDE} />

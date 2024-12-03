@@ -1,4 +1,4 @@
-import { CodyIDE, isDotCom } from '@sourcegraph/cody-shared'
+import { CodyIDE } from '@sourcegraph/cody-shared'
 import { S2_URL } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 import {
     ArrowLeftRightIcon,
@@ -12,10 +12,9 @@ import {
 } from 'lucide-react'
 import { type FunctionComponent, type ReactNode, useCallback, useMemo, useState } from 'react'
 import SourcegraphIcon from '../../resources/sourcegraph-mark.svg'
+import type { UserAccountInfo } from '../Chat'
 import { CodyLogo } from '../icons/CodyLogo'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
-import { useUserAccountInfo } from '../utils/useConfig'
-import { useSourcegraphTeamsUpgradeCtaFlag } from '../utils/useExperimentalFeature'
 import { Button } from './shadcn/ui/button'
 
 interface Notice {
@@ -27,15 +26,13 @@ interface Notice {
 type NoticeVariants = 'default' | 'warning'
 type NoticeIDs = 'DogfoodS2' | 'TeamsUpgrade'
 
-export const Notices: FunctionComponent = () => {
-    const user = useUserAccountInfo()
-    const isDotComUser = isDotCom(user.user.endpoint)
-    const isSourcegraphOrgMember = user.user.organizations?.some(org => org.name === 'sourcegraph')
-    const isCodyWeb = user.IDE === CodyIDE.Web
-
+interface NoticesProps {
+    user: UserAccountInfo
     // Whether to show the Sourcegraph Teams upgrade CTA or not.
-    const isTeamsUpgradeCtaEnabled = useSourcegraphTeamsUpgradeCtaFlag()
+    isTeamsUpgradeCtaEnabled?: boolean
+}
 
+export const Notices: React.FC<NoticesProps> = ({ user, isTeamsUpgradeCtaEnabled }) => {
     const [dismissedNotices, setDismissedNotices] = useState<Set<string>>(new Set())
 
     const dismissNotice = useCallback((noticeId: string) => {
@@ -50,7 +47,7 @@ export const Notices: FunctionComponent = () => {
              */
             {
                 id: 'TeamsUpgrade',
-                isVisible: isDotComUser && isTeamsUpgradeCtaEnabled && !isCodyWeb,
+                isVisible: user.isDotComUser && isTeamsUpgradeCtaEnabled && user.IDE !== CodyIDE.Web,
                 content: (
                     <NoticeContent
                         id="TeamsUpgrade"
@@ -84,7 +81,10 @@ export const Notices: FunctionComponent = () => {
              */
             {
                 id: 'DogfoodS2',
-                isVisible: isDotComUser && isSourcegraphOrgMember && !isCodyWeb,
+                isVisible:
+                    user.isDotComUser &&
+                    user.user.organizations?.some(org => org.name === 'sourcegraph') &&
+                    user.IDE !== CodyIDE.Web,
                 content: (
                     <NoticeContent
                         id="DogfoodS2"
@@ -115,7 +115,7 @@ export const Notices: FunctionComponent = () => {
                 ),
             },
         ],
-        [dismissNotice, isDotComUser, isSourcegraphOrgMember, isCodyWeb, isTeamsUpgradeCtaEnabled]
+        [user, dismissNotice, isTeamsUpgradeCtaEnabled]
     )
 
     const activeNotice = useMemo(
@@ -179,7 +179,9 @@ const NoticeContent: FunctionComponent<NoticeContentProps> = ({
     }[id]
 
     return (
-        <aside className={`tw-relative tw-rounded-md tw-flex tw-flex-col tw-gap-2 tw-p-4 ${bgColor}`}>
+        <aside
+            className={`tw-w-full tw-relative tw-rounded-md tw-flex tw-flex-col tw-gap-2 tw-p-4 ${bgColor}`}
+        >
             <div className="tw-flex tw-gap-3 tw-mb-2">{header}</div>
             {title && <h1 className="tw-text-lg tw-font-semibold">{title}</h1>}
             <p>{message}</p>
