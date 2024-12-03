@@ -212,7 +212,7 @@ export const ContextCell: FunctionComponent<{
                                     <div className="tw-flex tw-items-center tw-rounded-md tw-bg-muted-transparent tw-p-4">
                                         <LoadingDots />
                                         <div className="tw-ml-4">
-                                            May take a few seconds to fetch relevannt context to improve
+                                            May take a few seconds to fetch relevant context to improve
                                             response quality
                                         </div>
                                     </div>
