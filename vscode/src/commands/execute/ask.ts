@@ -14,6 +14,7 @@ export interface ExecuteChatArguments extends Omit<WebviewSubmitMessage, 'text' 
     source?: EventSource
     command?: DefaultChatCommands
     text: PromptString
+    submitType?: 'new-chat' | 'continue-chat'
 }
 
 /**
