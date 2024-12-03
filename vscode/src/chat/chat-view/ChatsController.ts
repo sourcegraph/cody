@@ -375,7 +375,7 @@ export class ChatsController implements vscode.Disposable {
         }
         const abortSignal = provider.startNewSubmitOrEditOperation()
         const editorState = editorStateFromPromptString(text)
-        await provider.handleUserMessageSubmission({
+        await provider.handleUserMessage({
             requestID: uuid.v4(),
             inputText: text,
             mentions: contextItems ?? [],

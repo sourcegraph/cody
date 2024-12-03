@@ -102,7 +102,7 @@ class CliTool extends CodyTool {
             prompt: {
                 instruction: ps`To see the output of shell commands - NEVER execute unsafe commands`,
                 placeholder: ps`SHELL_COMMAND`,
-                example: ps`Details about GitHub issue#1234: \`<TOOLCLI><cmd>gh issue view 1234</cmd></TOOLCLI>\``,
+                example: ps`Get output for git diff: \`<TOOLCLI><cmd>git diff</cmd></TOOLCLI>\``,
             },
         })
     }
@@ -250,6 +250,7 @@ export class OpenCtxTool extends CodyTool {
  */
 class MemoryTool extends CodyTool {
     constructor() {
+        CodyChatMemory.initialize()
         super({
             tags: {
                 tag: ps`TOOLMEMORY`,
@@ -298,10 +299,12 @@ const TOOL_CONFIGS = {
 } as const
 
 export function getDefaultCodyTools(
+    isShellContextEnabled: boolean,
     contextRetriever: Pick<ContextRetriever, 'retrieveContext'>,
     factory: ToolFactory
 ): CodyTool[] {
     return Object.entries(TOOL_CONFIGS)
+        .filter(([name]) => name !== 'CliTool' || isShellContextEnabled)
         .map(([name]) => factory.createTool(name, contextRetriever))
         .filter(Boolean) as CodyTool[]
 }

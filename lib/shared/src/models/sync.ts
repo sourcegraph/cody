@@ -220,10 +220,16 @@ export function syncModels({
 
                                             // DEEP CODY - available to users with feature flag enabled only.
                                             // TODO(bee): remove once deepCody is enabled for all users.
+                                            // Replace user's current sonnet model with deep-cody model.
                                             const sonnetModel = data.primaryModels.find(m =>
                                                 m.id.includes('sonnet')
                                             )
-                                            if (deepCodyEnabled && sonnetModel) {
+                                            if (
+                                                deepCodyEnabled &&
+                                                sonnetModel &&
+                                                // Ensure the deep-cody model is only added once.
+                                                !data.primaryModels.some(m => m.id.includes('deep-cody'))
+                                            ) {
                                                 const DEEPCODY_MODEL =
                                                     getExperimentalClientModelByFeatureFlag(
                                                         FeatureFlag.DeepCody
@@ -233,18 +239,10 @@ export function syncModels({
                                                         createModelFromServerModel
                                                     )
                                                 )
-                                                // Update model preferences for chat to DEEP CODY once on first sync.
+                                                // Update site preferences for chat to DEEP CODY on first sync.
                                                 data.preferences!.defaults.edit =
                                                     data.preferences!.defaults.chat
                                                 data.preferences!.defaults.chat = DEEPCODY_MODEL.modelRef
-                                                return userModelPreferences.pipe(
-                                                    take(1),
-                                                    tap(preferences => {
-                                                        preferences.selected[ModelUsage.Chat] =
-                                                            DEEPCODY_MODEL.modelRef
-                                                    }),
-                                                    map(() => data)
-                                                )
                                             }
 
                                             return Observable.of(data)

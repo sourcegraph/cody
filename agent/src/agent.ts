@@ -439,7 +439,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
             try {
                 const secrets =
                     clientInfo.capabilities?.secrets === 'client-managed'
-                        ? new AgentClientManagedSecretStorage(this, this.secretsDidChange.event)
+                        ? new AgentClientManagedSecretStorage(this, this.secretsDidChange)
                         : new AgentStatelessSecretStorage({
                               [formatURL(clientInfo.extensionConfiguration?.serverEndpoint ?? '') ?? '']:
                                   clientInfo.extensionConfiguration?.accessToken ?? undefined,

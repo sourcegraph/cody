@@ -24,9 +24,8 @@ test.extend<ExpectedV2Events>({
     expectedV2Events: [
         'cody.extension:installed',
         'cody.auth.login:clicked',
-        'cody.auth.signin.menu:clicked',
         'cody.auth.login:firstEver',
-        'cody.auth.signin.token:clicked',
+        'cody.auth.login.token:clicked',
         'cody.auth:connected',
         'cody.chat-question:submitted',
         'cody.chat-question:executed',
@@ -205,9 +204,8 @@ test.extend<ExpectedV2Events>({
     expectedV2Events: [
         'cody.extension:installed',
         'cody.auth.login:clicked',
-        'cody.auth.signin.menu:clicked',
         'cody.auth.login:firstEver',
-        'cody.auth.signin.token:clicked',
+        'cody.auth.login.token:clicked',
         'cody.auth:connected',
         'cody.auth:connected',
         'cody.chat-question:submitted',
@@ -250,9 +248,8 @@ test.extend<ExpectedV2Events>({
     expectedV2Events: [
         'cody.extension:installed',
         'cody.auth.login:clicked',
-        'cody.auth.signin.menu:clicked',
         'cody.auth.login:firstEver',
-        'cody.auth.signin.token:clicked',
+        'cody.auth.login.token:clicked',
         'cody.auth:connected',
         'cody.chat-question:submitted',
         'cody.chat-question:executed',
@@ -290,9 +287,8 @@ test.extend<ExpectedV2Events>({
     expectedV2Events: [
         'cody.extension:installed',
         'cody.auth.login:clicked',
-        'cody.auth.signin.menu:clicked',
         'cody.auth.login:firstEver',
-        'cody.auth.signin.token:clicked',
+        'cody.auth.login.token:clicked',
         'cody.auth:connected',
         'cody.chat-question:submitted',
         'cody.chat-question:executed',

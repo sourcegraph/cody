@@ -98,6 +98,11 @@ export type WebviewMessage =
           fileName?: string | undefined | null
       }
     | {
+          command: 'trace-export'
+          // The traceSpan is a JSON-encoded string representing the trace data.
+          traceSpanEncodedJson: string
+      }
+    | {
           command: 'smartApplyAccept'
           id: FixupTaskID
       }
@@ -236,6 +241,7 @@ export interface ConfigurationSubsetForWebview
     webviewType?: WebviewType | undefined | null
     // Whether support running multiple webviews (e.g. sidebar w/ multiple editor panels).
     multipleWebviewsEnabled?: boolean | undefined | null
+    endpointHistory?: string[] | undefined | null
 }
 
 /**

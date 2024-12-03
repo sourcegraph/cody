@@ -158,10 +158,10 @@ export const ContextCell: FunctionComponent<{
 
         // Text for top header text
         const headerText: { main: string; sub?: string } = {
-            main: isContextLoading ? (isDeepCodyEnabled ? 'Thinking' : 'Fetching context') : 'Context',
+            main: isContextLoading ? 'Fetching context' : 'Context',
             sub: isContextLoading
                 ? isDeepCodyEnabled
-                    ? 'Retrieving context…'
+                    ? 'Thinking…'
                     : 'Retrieving codebase files…'
                 : contextItems === undefined
                   ? 'none requested'
@@ -208,7 +208,17 @@ export const ContextCell: FunctionComponent<{
                             data-testid="context"
                         >
                             {isContextLoading ? (
-                                <LoadingDots />
+                                isDeepCodyEnabled ? (
+                                    <div className="tw-flex tw-items-center tw-rounded-md tw-bg-muted-transparent tw-p-4">
+                                        <LoadingDots />
+                                        <div className="tw-ml-4 tw-text-sm">
+                                            May take a few seconds to fetch relevant context to improve
+                                            response quality
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <LoadingDots />
+                                )
                             ) : (
                                 <>
                                     <AccordionContent overflow={showSnippets}>

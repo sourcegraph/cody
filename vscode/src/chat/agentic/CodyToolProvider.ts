@@ -38,8 +38,12 @@ export class CodyToolProvider {
         registerDefaultTools(this.toolFactory.registry)
     }
 
-    public async getTools(): Promise<CodyTool[]> {
-        const defaultTools = getDefaultCodyTools(this.contextRetriever, this.toolFactory)
+    public async getTools(isShellContextEnabled = false): Promise<CodyTool[]> {
+        const defaultTools = getDefaultCodyTools(
+            isShellContextEnabled,
+            this.contextRetriever,
+            this.toolFactory
+        )
         return [...defaultTools, ...this.openCtxTools]
     }
 

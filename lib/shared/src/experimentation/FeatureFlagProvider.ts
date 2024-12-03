@@ -99,6 +99,9 @@ export enum FeatureFlag {
      * Whether the current repo context chip is shown in the chat input by default
      */
     NoDefaultRepoChip = 'no-default-repo-chip',
+
+    /** Enable Shell Context for Deep Cody */
+    DeepCodyShellContext = 'deep-cody-shell-context',
 }
 
 const ONE_HOUR = 60 * 60 * 1000
