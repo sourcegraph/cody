@@ -8,7 +8,7 @@ on:
       - '.github/workflows/scip-java.yml'
 jobs:
   scip-java:
-    if: github.repository == 'sourcegraph/jetbrains'
+    if: github.repository == 'sourcegraph/cody'
     runs-on: ubuntu-latest
     name: "Upload SCIP"
     steps:
@@ -36,19 +36,28 @@ jobs:
           jvm: 'zulu:17'
           apps: scip-java
       - name: Generate SCIP File
-        run: scip-java index --build-tool=gradle
+        run: |
+          pushd jetbrains
+          scip-java index --build-tool=gradle
+          popd > /dev/null
 
       - name: Install src
         run: yarn global add @sourcegraph/src
 
       - name: Upload SCIP to Cloud
-        run: src code-intel upload -github-token='${{ secrets.GITHUB_TOKEN }}' -no-progress
+        run: |
+          pushd jetbrains
+          src code-intel upload -github-token='${{ secrets.GITHUB_TOKEN }}' -no-progress
+          popd > /dev/null
         env:
           SRC_ENDPOINT: https://sourcegraph.com/
           SRC_ACCESS_TOKEN: ${{ secrets.SRC_ACCESS_TOKEN_DOTCOM }}
 
       - name: Upload SCIP to S2
-        run: src code-intel upload -github-token='${{ secrets.GITHUB_TOKEN }}' -no-progress
+        run: |
+          pushd jetbrains
+          src code-intel upload -github-token='${{ secrets.GITHUB_TOKEN }}' -no-progress
+          popd > /dev/null
         env:
           SRC_ENDPOINT: https://sourcegraph.sourcegraph.com/
           SRC_ACCESS_TOKEN: ${{ secrets.SRC_ACCESS_TOKEN_S2 }}

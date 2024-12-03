@@ -1,7 +1,6 @@
-name: Experimental Release
+name: Stable Release
 on:
-  push:
-    tags: [ "*-experimental" ]
+  workflow_dispatch
 jobs:
   publish:
     runs-on: ubuntu-latest
@@ -26,10 +25,10 @@ jobs:
         uses: gradle/wrapper-validation-action@v3
       - run: yarn global add pnpm@8.6.7
       - run: |
-          echo "RELEASE_VERSION=$(./scripts/version-from-git-tag.sh)-experimental" >> $GITHUB_ENV
-      - name: Publish experimental version
-        run: |
-          echo "Publishing experimental version ${RELEASE_VERSION}"
-          ./gradlew "-PpluginVersion=${RELEASE_VERSION}" publishPlugin
+          echo "RELEASE_VERSION=$(./scripts/version-from-git-tag.sh)" >> $GITHUB_ENV
+      - run: |
+          pushd jetbrains
+          ./gradlew "-PpluginVersion=$RELEASE_VERSION" publishPlugin
+          popd > /dev/null
         env:
           PUBLISH_TOKEN: ${{ secrets.PUBLISH_TOKEN }}
