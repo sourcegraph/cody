@@ -11,4 +11,8 @@ export class CodyNodeFetchAdapter extends FetchAdapter {
 
         return super.onRequest(request)
     }
+
+    public async onRequestFailed(request: Request): Promise<void> {
+        return super.onRequestFailed(request)
+    }
 }
