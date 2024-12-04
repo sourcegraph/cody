@@ -14,7 +14,8 @@ export async function* createSSEIterator(
     } = {}
 ): AsyncGenerator<SSEMessage> {
     let buffer = ''
-    const reader = iterator.getReader()
+    const textStream = iterator.pipeThrough(new TextDecoderStream())
+    const reader = textStream.getReader()
 
     try {
         while (true) {
@@ -22,7 +23,7 @@ export async function* createSSEIterator(
             if (done) break
 
             const messages: SSEMessage[] = []
-            buffer += new TextDecoder().decode(value)
+            buffer += value
 
             let index: number
             // biome-ignore lint/suspicious/noAssignInExpressions: useful
