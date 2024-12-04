@@ -318,7 +318,7 @@ private constructor(
       return "node-" + os + "-" + arch + binarySuffix()
     }
 
-    private fun agentDirectory(): Path? {
+    fun agentDirectory(): Path? {
       return pluginDirectory()?.resolve("agent")
     }
 
