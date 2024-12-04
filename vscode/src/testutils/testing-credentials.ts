@@ -17,7 +17,7 @@ function loadSecret(name: string): string {
 
 export function dotcomCredentials(): TestingCredentials {
     return {
-        redactedToken: 'REDACTED_3dd704711f82a44ff6aba261b53b61a03fb8edba658774639148630d838c2d1d',
+        redactedToken: DOTCOM_TESTING_CREDENTIALS.dotcom.redactedToken,
         serverEndpoint: 'https://sourcegraph.com/',
         token: loadSecret('CODY_PRO_ACCESS_TOKEN'),
     }
@@ -33,7 +33,7 @@ export const DOTCOM_TESTING_CREDENTIALS = {
     } satisfies TestingCredentials,
     dotcomProUserRateLimited: {
         token: process.env.SRC_DOTCOM_PRO_RATE_LIMIT_ACCESS_TOKEN,
-        redactedToken: 'REDACTED_e2ef220aa0a2f84113dc065a7fd9c7a620f17455d0aca3690d312676518dc48f',
+        redactedToken: 'REDACTED_c31e1e5cbed2b06911f09e4e9766c7df227fb23b80cb364c1fe289a845667b4e',
         serverEndpoint: DOTCOM_URL.toString(),
     } satisfies TestingCredentials,
     dotcomUnauthed: {
@@ -46,12 +46,12 @@ export const DOTCOM_TESTING_CREDENTIALS = {
 export const ENTERPRISE_TESTING_CREDENTIALS = {
     enterprise: {
         token: process.env.SRC_ENTERPRISE_ACCESS_TOKEN,
-        redactedToken: 'REDACTED_b20717265e7ab1d132874d8ff0be053ab9c1dacccec8dce0bbba76888b6a0a69',
+        redactedToken: 'REDACTED_69e9f79ce29352d014eeb80b56510341844eb82ad9abac7cab3631c7e873e4ce',
         serverEndpoint: 'https://demo.sourcegraph.com/',
     } satisfies TestingCredentials,
     s2: {
         token: process.env.SRC_S2_ACCESS_TOKEN,
-        redactedToken: 'REDACTED_4229eb42e0efa2f15f3e6f8843764c7f92ab8051020cc4e90802f4fc0cc91bfa',
+        redactedToken: 'REDACTED_1858aad0e1ff07ae26d4042086acb9da455866ad617afd2cb9ab9419e1be1104',
         serverEndpoint: 'https://sourcegraph.sourcegraph.com/',
     } satisfies TestingCredentials,
     s2Unauthed: {
