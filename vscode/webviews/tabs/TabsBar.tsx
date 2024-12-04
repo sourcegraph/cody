@@ -16,14 +16,7 @@ import {
 import { getVSCodeAPI } from '../utils/VSCodeApi'
 import { View } from './types'
 
-import {
-    type AuthStatus,
-    type AuthenticatedAuthStatus,
-    CodyIDE,
-    type UserProductSubscription,
-    isCodyProUser,
-    isDefined,
-} from '@sourcegraph/cody-shared'
+import { type AuthenticatedAuthStatus, CodyIDE, isDefined } from '@sourcegraph/cody-shared'
 import { type FC, Fragment, forwardRef, memo, useCallback, useMemo, useState } from 'react'
 import { Kbd } from '../components/Kbd'
 import { Tooltip, TooltipContent, TooltipTrigger } from '../components/shadcn/ui/tooltip'
@@ -31,6 +24,7 @@ import { useConfig } from '../utils/useConfig'
 
 import { useExtensionAPI } from '@sourcegraph/prompt-editor'
 import { isEqual } from 'lodash'
+import type { UserAccountInfo } from '../Chat'
 import { downloadChatHistory } from '../chat/downloadChatHistory'
 import { UserMenu } from '../components/UserMenu'
 import { Button } from '../components/shadcn/ui/button'
@@ -38,11 +32,9 @@ import styles from './TabsBar.module.css'
 import { getCreateNewChatCommand } from './utils'
 
 interface TabsBarProps {
-    authStatus: AuthStatus
-    IDE: CodyIDE
+    user: UserAccountInfo
     currentView: View
     setView: (view: View) => void
-    userProductSubscription: UserProductSubscription | null | undefined
     endpointHistory: string[]
 }
 
@@ -78,9 +70,9 @@ interface TabConfig {
 }
 
 export const TabsBar = memo<TabsBarProps>(props => {
-    const { currentView, setView, IDE, authStatus, userProductSubscription, endpointHistory } = props
-    const isProUser = userProductSubscription && isCodyProUser(authStatus, userProductSubscription)
-    const tabItems = useTabs({ IDE })
+    const { currentView, setView, user, endpointHistory } = props
+    const { isCodyProUser, IDE } = user
+    const tabItems = useTabs({ user })
     const {
         config: { webviewType, multipleWebviewsEnabled },
     } = useConfig()
@@ -160,13 +152,15 @@ export const TabsBar = memo<TabsBarProps>(props => {
                                 })
                             }
                         />
-                        <UserMenu
-                            authStatus={authStatus as AuthenticatedAuthStatus}
-                            isProUser={!!isProUser}
-                            endpointHistory={endpointHistory}
-                            setView={setView}
-                            className="!tw-opacity-100"
-                        />
+                        {IDE !== CodyIDE.Web && (
+                            <UserMenu
+                                authStatus={user.user as AuthenticatedAuthStatus}
+                                isProUser={isCodyProUser}
+                                endpointHistory={endpointHistory}
+                                setView={setView}
+                                className="!tw-opacity-100"
+                            />
+                        )}
                     </div>
                 </div>
                 <div className={styles.subTabs}>
@@ -352,8 +346,8 @@ TabButton.displayName = 'TabButton'
  * Returns list of tabs and its sub-action buttons, used later as configuration for
  * tabs rendering in chat header.
  */
-function useTabs(input: Pick<TabsBarProps, 'IDE'>): TabConfig[] {
-    const { IDE } = input
+function useTabs(input: Pick<TabsBarProps, 'user'>): TabConfig[] {
+    const IDE = input.user.IDE
     const {
         config: { serverEndpoint },
     } = useConfig()

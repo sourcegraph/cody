@@ -109,11 +109,9 @@ export const CodyPanel: FunctionComponent<CodyPanelProps> = ({
                 {/* Hide tab bar in editor chat panels. */}
                 {(clientCapabilities.agentIDE === CodyIDE.Web || config.webviewType !== 'editor') && (
                     <TabsBar
-                        authStatus={authStatus}
+                        user={user}
                         currentView={view}
                         setView={setView}
-                        IDE={clientCapabilities.agentIDE}
-                        userProductSubscription={userProductSubscription}
                         endpointHistory={config.endpointHistory ?? []}
                     />
                 )}

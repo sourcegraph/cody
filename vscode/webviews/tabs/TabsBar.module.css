@@ -10,7 +10,7 @@
 .tabs-root {
     container-type: inline-size;
     container-name: tabs-container;
-    position: relative;
+    isolation: isolate;
     z-index: 10;
 }
 
