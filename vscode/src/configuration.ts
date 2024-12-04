@@ -11,6 +11,7 @@ import {
 } from '@sourcegraph/cody-shared'
 
 import type { ChatModelProviderConfig } from '@sourcegraph/cody-shared/src/models/sync'
+import { DefaultShellContextConfig } from './commands/context/config'
 import { CONFIG_KEY, type ConfigKeys } from './configuration-keys'
 import { localStorage } from './services/LocalStorageProvider'
 
@@ -95,37 +96,7 @@ export function getConfiguration(
          * Instance must have feature flag enabled to use this feature.
          * Allows AI Agent to run shell commands automatically.
          */
-        agenticContext: config.get(CONFIG_KEY.agenticContext, {
-            shell: {
-                allow: ['*'],
-                block: [
-                    'rm',
-                    'chmod',
-                    'shutdown',
-                    'history',
-                    'user',
-                    'sudo',
-                    'su',
-                    'passwd',
-                    'chown',
-                    'chgrp',
-                    'kill',
-                    'reboot',
-                    'poweroff',
-                    'init',
-                    'systemctl',
-                    'journalctl',
-                    'dmesg',
-                    'lsblk',
-                    'lsmod',
-                    'modprobe',
-                    'insmod',
-                    'rmmod',
-                    'lsusb',
-                    'lspci',
-                ],
-            },
-        }),
+        agenticContext: config.get(CONFIG_KEY.agenticContext, { shell: DefaultShellContextConfig }),
 
         /**
          * Hidden settings for internal use only.
