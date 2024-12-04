@@ -78,4 +78,31 @@ describe('createSSEIterator', () => {
         }
         expect(messages).toEqual([{ event: 'foo: bar', data: '{"baz":"qux"}' }])
     })
+
+    it('handles chunks split at unicode character', async () => {
+        const text = 'event: completion\ndata: {"foo":"☺"}\n\nevent: completion\ndata: {"baz":"qux"}\n\n'
+        const encodedText = new TextEncoder().encode(text)
+        const splitPoint = text.search('☺') + 1
+        const chunks = [encodedText.slice(0, splitPoint), encodedText.slice(splitPoint)]
+
+        const stream = new ReadableStream({
+            async start(controller) {
+                for (const chunk of chunks) {
+                    controller.enqueue(chunk)
+                }
+                controller.close()
+            },
+        })
+
+        const messages = []
+        const iterator = createSSEIterator(stream)
+
+        for await (const message of iterator) {
+            messages.push(message)
+        }
+        expect(messages).toEqual([
+            { event: 'completion', data: '{"foo":"☺"}' },
+            { event: 'completion', data: '{"baz":"qux"}' },
+        ])
+    })
 })
