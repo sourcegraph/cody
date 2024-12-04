@@ -11,7 +11,7 @@ jobs:
     steps:
       - name: Fetch Sources
         uses: actions/checkout@v4
-      - run: yarn global add pnpm@8.6.7
+      - uses: pnpm/action-setup@fe02b34f77f8bc703788d5817da081398fad5dd2 # SECURITY: pin third-party action hashes
       - run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
         shell: bash
         id: pnpm-cache
@@ -48,7 +48,7 @@ jobs:
           pushd jetbrains
           ./gradlew spotlessCheck
           ./gradlew check
-          popd > /dev/unll
+          popd > /dev/null
       - name: Upload the test report
         if: always()
         uses: actions/upload-artifact@v4

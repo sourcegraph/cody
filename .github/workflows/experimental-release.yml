@@ -25,7 +25,7 @@ jobs:
           platforms: all
       - name: Gradle Wrapper Validation
         uses: gradle/wrapper-validation-action@v3
-      - run: yarn global add pnpm@8.6.7
+      - uses: pnpm/action-setup@fe02b34f77f8bc703788d5817da081398fad5dd2 # SECURITY: pin third-party action hashes
       - run: |
           echo "RELEASE_VERSION=$(./jetbrains/scripts/version-from-git-tag.sh)-experimental" >> $GITHUB_ENV
       - name: Publish experimental version
