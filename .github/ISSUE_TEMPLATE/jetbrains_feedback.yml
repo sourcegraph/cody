@@ -1,0 +1,38 @@
+name: JetBrains Feedback ፨
+description: "File feedback for any of the JetBrains IDEs: IntelliJ, Goland, WebStorm, etc."
+title: "feedback: "
+labels:
+  - team/jetbrains
+projects:
+  - sourcegraph/381
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to share your feedback with us! If you'd like to report a bug, please use the [JetBrains Bug report template](https://github.com/sourcegraph/jetbrains/issues/new/choose) instead.
+        
+        Tip: You can attach images or videos by dragging it into the text box.
+  - type: textarea
+    attributes:
+      label: Installation Information
+      description: Trigger the action "About", click on "Copy and close" and paste the output here
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Share your feedback
+      description: Let us know how we can keep improving Cody for JetBrains. If relevant, please include steps on how to reproduce behaviour.
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Additional context (logs, images, etc)
+      description: |
+        Please add any links, images, or references that can give us more context around your feedback.
+
+        For logs - Trigger the action "Show Log", open the file, search for exceptions related to Cody/Sourcegraph and copy relevant lines here
+        Alternatively, feel free to upload idea.log as an attachment but please make sure it doesn't contain sensitive information (it normally doesn't)
+
+        Tip: You can attach images or videos by dragging it into the text box.
+    validations:
+      required: false
