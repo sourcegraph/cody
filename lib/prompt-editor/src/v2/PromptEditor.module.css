@@ -11,6 +11,10 @@
 
     /* Don't allow the input box to become larger than the webview to avoid submit buttons going off the screen */
     max-height: 60vh;
+
+    p + p {
+        margin-top: 0.5rem;
+    }
 }
 
 .editor :global(.ProseMirror) {

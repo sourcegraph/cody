@@ -1,6 +1,7 @@
-import { useEffect, useRef, MouseEventHandler, useCallback } from "react"
+import { useEffect, useRef, MouseEventHandler, useCallback, useLayoutEffect } from "react"
+import { shift, size, useFloating } from "@floating-ui/react"
 import { Position } from "./atMention"
-import styles from "./BaseEditor.module.css"
+import styles from "./MentionsMenu.module.css"
 import clsx from "clsx"
 
 export interface Item<T> {
@@ -20,6 +21,39 @@ interface SuggestionsProps<T> {
 
 export const Suggestions = <T,>({items, selectedIndex, filter, menuPosition, getHeader, getEmptyLabel, onSelect, renderItem}: SuggestionsProps<T>) => {
     const container = useRef<HTMLDivElement | null>(null)
+
+    const {refs, floatingStyles} = useFloating({
+        open: true,
+        placement: 'bottom-start',
+        middleware: [
+            shift(),
+            size({
+                apply({availableWidth, availableHeight, elements}) {
+                    Object.assign(elements.floating.style, {
+                        maxWidth: `${availableWidth}px`,
+                        maxHeight: `${availableHeight}px`,
+                    })
+                }
+            }),
+        ],
+    })
+
+    useLayoutEffect(() => {
+        refs.setPositionReference({
+            getBoundingClientRect() {
+                return {
+                    width: 0,
+                    height: 0,
+                    y: menuPosition.bottom,
+                    x: menuPosition.left,
+                    top: menuPosition.bottom,
+                    left: menuPosition.left,
+                    right: menuPosition.left,
+                    bottom: menuPosition.bottom,
+                }
+            },
+        })
+    }, [menuPosition, refs])
 
     useEffect(() => {
         container.current?.querySelector('[aria-selected="true"]')?.scrollIntoView({ block: 'nearest' })
@@ -46,11 +80,14 @@ export const Suggestions = <T,>({items, selectedIndex, filter, menuPosition, get
     const header = getHeader()
 
     return <div
-        ref={container}
-        className={clsx(styles.suggestions, menuClass)}
+        ref={node => {
+            container.current = node
+            refs.setFloating(node)
+        }}
+        className={clsx(styles.menu, styles.popoverDimensions, menuClass)}
         onMouseDown={handleMouseDown}
         onClick={handleClick}
-        style={{ top: menuPosition.bottom, left: menuPosition.left }}>
+        style={floatingStyles}>
         <ul>
             {header &&
                 <li className={headerClass} aria-disabled="true">{header}</li>
