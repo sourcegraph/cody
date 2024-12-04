@@ -204,7 +204,7 @@ Wait for the `Release to Marketplace` GitHub workflow to complete.
 
 ### 2. Publish a stable release 
 
-Go to [Stable Release workflow](https://github.com/sourcegraph/jetbrains/actions/workflows/stable-release.yml),
+Go to [Stable Release workflow](https://github.com/sourcegraph/cody/actions/workflows/stable-release.yml),
 click `Run workflow` and select the tag that has been pushed before (and tested by QA team), run it.
 
 It can take up to 48hr for stable releases to get approved by the JetBrains Marketplace team.
@@ -215,7 +215,7 @@ the [JetBrains Slack workspace](https://plugins.jetbrains.com/slack/).
 
 For every stable release, create a GitHub release summarizing the changes.
 
-Visit [releases page](https://github.com/sourcegraph/jetbrains/releases) and click `Draft a new release`, choose your
+Visit [releases page](https://github.com/sourcegraph/cody/releases) and click `Draft a new release`, choose your
 tag and use `Generate release notes`. Release notes should appear automatically. Be aware that the automatic release are
 based on the history of commits, so sometimes the titles are not properly formatted, capitalized or grammatically
 correct. **This may sometimes require manual tweaks.**
@@ -275,12 +275,9 @@ Configurations.
 
 For both debugging setups (Cody-spawns and JB-spawned), you will need:
 
-- `github.com/sourcegraph/cody` cloned in the same directory where
-  you cloned `sourcegraph/jetbrains`, so that they are sibling dirs.
-    - likely not strictly necessary, but it seems to be the convention
 - `sourcegraph/cody` (TypeScript) opened in one IDEA project window
     - this is a Node project _(requires Ultimate Edition)_
-- `sourcegraph/jetbrains` opened in a second IDEA project window
+- `sourcegraph/cody jetbrains` opened in a second IDEA project window
     - this is a Gradle project
 
 You'll always have at least 2 IntelliJ project windows open: One for
@@ -314,7 +311,7 @@ project window.
 
 ### Extension Run Config
 
-Create this configuration in the `sourcegraph/jetbrains` project window.
+Create this configuration in the `sourcegraph/cody jetbrains` project window.
 Choose Edit Configurations and `+` to add a new one:
 
 - Type: Gradle
@@ -328,6 +325,8 @@ Choose Edit Configurations and `+` to add a new one:
 - env vars:
     - `CODY_AGENT_DEBUG_INSPECT=true`
         - this tells the plugin to spawn agent with `--inspect`
+
+Use `CODY_AGENT_DEBUG_INSPECT=wait` to make the agent wait for the debugger to attach.
 
 ### Agent Run Config
 
@@ -349,7 +348,7 @@ configurations.
 
 ### Extension Run Config
 
-Create this configuration in the `sourcegraph/jetbrains` project window:
+Create this configuration in the `sourcegraph/cody jetbrains` project window:
 
 - Type: Gradle
 - Name: whatever, e.g., `Connect to IDEA-spawned Agent`

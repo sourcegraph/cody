@@ -23,6 +23,7 @@ import java.net.URI
 import java.nio.file.*
 import java.util.*
 import java.util.concurrent.*
+import kotlin.collections.flatten
 import org.eclipse.lsp4j.jsonrpc.Launcher
 
 /**
@@ -99,7 +100,18 @@ private constructor(
 
     @JvmField val executorService: ExecutorService = Executors.newCachedThreadPool()
 
-    private fun shouldSpawnDebuggableAgent() = System.getenv("CODY_AGENT_DEBUG_INSPECT") == "true"
+    enum class Debuggability {
+      NotDebuggable,
+      Debuggable,
+      DebuggableWaitForAttach,
+    }
+
+    private fun shouldSpawnDebuggableAgent(): Debuggability =
+        when (System.getenv("CODY_AGENT_DEBUG_INSPECT")) {
+          "true" -> Debuggability.Debuggable
+          "wait" -> Debuggability.DebuggableWaitForAttach
+          else -> Debuggability.NotDebuggable
+        }
 
     fun create(project: Project): CompletableFuture<CodyAgent> {
       try {
@@ -166,21 +178,23 @@ private constructor(
       val token = CancellationToken()
 
       val binaryPath = nodeBinary(token).absolutePath
-      val jsonRpcArgs = arrayOf("api", "jsonrpc-stdio")
+      val jsonRpcArgs = listOf("api", "jsonrpc-stdio")
       val script =
           agentDirectory()?.resolve("index.js")
               ?: throw CodyAgentException("Sourcegraph Cody + Code Search plugin path not found")
-      val command: List<String> =
-          if (shouldSpawnDebuggableAgent()) {
-            listOf(
-                binaryPath,
-                "--inspect",
-                "--enable-source-maps",
-                script.toFile().absolutePath,
-                *jsonRpcArgs)
-          } else {
-            listOf(binaryPath, script.toFile().absolutePath, *jsonRpcArgs)
+      val debuggerArgs =
+          when (shouldSpawnDebuggableAgent()) {
+            Debuggability.NotDebuggable -> emptyList()
+            Debuggability.Debuggable -> listOf("--enable-source-maps", "--inspect")
+            Debuggability.DebuggableWaitForAttach -> listOf("--enable-source-maps", "--inspect-brk")
           }
+      val command: List<String> =
+          listOf(
+                  listOf(binaryPath),
+                  debuggerArgs,
+                  listOf(script.toFile().absolutePath),
+                  jsonRpcArgs)
+              .flatten()
 
       val processBuilder = ProcessBuilder(command)
       if (java.lang.Boolean.getBoolean("cody.accept-non-trusted-certificates-automatically") ||
