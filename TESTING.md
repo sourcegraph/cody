@@ -314,3 +314,62 @@ Primary languages to test: Javascript, Typescript, TypescriptReact, Python, Go
 - [ ] Open the Autocomplete Trace View (cmd+shift+p “trace view”)
 - [ ] In another editor tab, trigger an autocomplete request.
 - [ ] Expect the number of shown/accepted completions to update accordingly.
+
+## Deep Cody UI Test Plan
+
+### Prerequisites
+
+- VS Code with Cody extension installed
+- Access to a Sourcegraph instance with Deep Cody model enabled
+- Valid authentication credentials
+- Workspace with at least one repository
+
+## 1. Model Selection and Availability
+
+#### Test Cases
+
+1.1. Verify Deep Cody model appears in model selector
+
+- Navigate to chat view
+- Click model selector dropdown
+- Verify "Deep Cody" model is available
+- Expected: Model should be visible if user has access
+
+### 2. Chat Interface
+
+Everything should work the same as other models, but with the Deep Cody model selected, additional context will be fetched when the Deep Cody agent requires it.
+
+#### Test Cases
+
+2.1. Basic Chat Functionality
+
+- Start new chat with "Deep Cody" model selected
+- Ask Deep Cody a question about your codebase without at mention any context: "does this codebase have GitHub Actions configured?"
+- Expected: Codebase context will be fetched before the LLM responds
+
+  2.2. Context Display
+
+- Send a message that triggers context retrieval
+- Expected: Retrieved context should be visible in UI
+- Verify context items are properly categorized and displayed
+
+### 3. Terminal Integration
+
+Verify the Sourcegraph instance to have the `deep-cody-shell-context` feature flag enabled for your account.
+
+#### Test Cases
+
+3.1. Terminal Command Configuration
+
+- Navigate to your VS Code User Settings
+- Test your user setting `cody.agentic.context.shell` configuration with:
+
+  - `"allow": "*"`
+  - `"allow": ["git", "gh", ls]`
+  - `"allow": []` (disabled)
+
+- Ask Deep Cody a question that requires terminal context: "how many files are there in the root of this codebase?"
+- Expected:
+
+  - If `deep-cody-shell-context` feature flag is enabled, your `cody.agentic.context.shell` configuration should be applied correctly
+  - If `deep-cody-shell-context` feature flag is NOT enabled, the terminal context should not be included as part of the response
