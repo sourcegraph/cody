@@ -5,7 +5,7 @@ import { afterAll, beforeAll, expect, it } from 'vitest'
 import YAML from 'yaml'
 import { startPollyRecording } from '../../../vscode/src/testutils/polly'
 import { TESTING_CREDENTIALS } from '../../../vscode/src/testutils/testing-credentials'
-import { buildAgentBinary, getAgentDir } from '../TestClient'
+import { TestClient, getAgentDir } from '../TestClient'
 import { TestWorkspace } from '../TestWorkspace'
 import { Streams, StringBufferStream } from './Streams'
 import { isWindows } from './command-bench/isWindows'
@@ -82,7 +82,7 @@ describe('cody chat', () => {
 
     beforeAll(() => {
         tmp.beforeAll()
-        buildAgentBinary()
+        TestClient.buildAgentBinary()
         polly = startPollyRecording({
             recordingName: 'cody-chat',
             keepUnusedRecordings: process.env.CODY_KEEP_UNUSED_RECORDINGS === 'true',
