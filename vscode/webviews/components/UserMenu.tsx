@@ -69,20 +69,16 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
         (e?: React.FormEvent) => {
             e?.preventDefault()
             e?.stopPropagation()
-
-            try {
-                getVSCodeAPI().postMessage({
-                    command: 'auth',
-                    authKind: 'signin',
-                    endpoint: addFormData.endpoint,
-                    value: addFormData.accessToken,
-                })
-                onOpenChange(false)
-            } finally {
-                setUserMenuView('main')
-                setEndpointToRemove(null)
-                setAddFormData({ endpoint: '', accessToken: '' })
-            }
+            getVSCodeAPI().postMessage({
+                command: 'auth',
+                authKind: 'signin',
+                endpoint: addFormData.endpoint,
+                value: addFormData.accessToken,
+            })
+            onOpenChange(false)
+            setUserMenuView('main')
+            setEndpointToRemove(null)
+            setAddFormData({ endpoint: '', accessToken: '' })
         },
         [addFormData]
     )
