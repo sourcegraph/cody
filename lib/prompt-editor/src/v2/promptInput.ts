@@ -257,6 +257,11 @@ export const promptInput = setup({
         menuDataLoader: fromCallback<AnyEventObject, DataLoaderInput>(() => {})
     },
     actions: {
+        /**
+         * This action is called for every desired change to the editor state, including
+         * changes that originate from the ProseMirror view itself. This allows us to
+         * keep the state of the overall machine in sync with any changes to the editor state.
+         */
         updateEditorState: enqueueActions(({context, enqueue}, params: Transaction) => {
             const prevState = context.editorState
             const nextState = prevState.apply(params)
@@ -283,6 +288,7 @@ export const promptInput = setup({
                     }
                 }
 
+                // Notify the machine of any changes to the at-mention state
                 const atMentionPresent = hasAtMention(nextState)
                 if (atMentionPresent !== hasAtMention(prevState)) {
                     enqueue.raise(atMentionPresent ?
@@ -290,6 +296,7 @@ export const promptInput = setup({
                     )
                 }
 
+                // Notify the machine of any changes to the at-mention value
                 const mentionValue = getAtMentionValue(nextState)
                 if (mentionValue !== undefined && mentionValue !== getAtMentionValue(prevState)) {
                     enqueue.raise({type: 'atMention.updated', query: mentionValue.slice(1)})
@@ -363,11 +370,15 @@ export const promptInput = setup({
             plugins: [
                 // Enable undo/redo
                 history(),
-                keymap({ 'Mod-z': undo, 'Mod-y': redo }),
                 ...createAtMentionPlugin(),
-                // Enables basic keybindings for handling cursor movement
-                keymap(baseKeymap),
-                // Adds a placholder text
+                // Enables basic keybindings for handling cursor movement and text insertion
+                keymap({
+                    ...baseKeymap,
+                    'Mod-z': undo,
+                    'Mod-y': redo,
+                    'Shift-Enter': baseKeymap['Enter'],
+                }),
+                // Adds a placeholder text
                 placeholderPlugin(input.placeholder ?? ''),
                 // Controls whether the editor is read-only
                 readonlyPlugin(input.disabled),
@@ -497,11 +508,18 @@ export const promptInput = setup({
                         },
                     ],
                 },
+                // This event is raised when a mention item is supposed to be 'applied to the editor'. This can mean
+                // different things depending on the item:
+                // - If the item is a ContextItem, it will be inserted as a mention node.
+                // - If the item is a ContextMentionProviderMetadata, we'll update the mentions menu to show the provider's
+                //   items.
+                // - There are some hardcoded behaviors for specific items, e.g. large files without a range.
                 'atMention.apply': {
                     actions: enqueueActions(({context, enqueue, event}) => {
                         const item = event.item
 
                         // ContextMentionProviderMetadata
+                        // When selecting a provider, we'll update the mentions menu to show the provider's items.
                         if ('id' in item) {
                             // Remove current mentions value
                             enqueue({type: 'updateEditorState', params: setMentionValue(context.editorState, '')})
@@ -511,6 +529,7 @@ export const promptInput = setup({
                         }
 
                         // ContextItem
+
                         // HACK: The OpenCtx interface do not support building multi-step selection for mentions.
                         // For the remote file search provider, we first need the user to search for the repo from the list and then
                         // put in the query to search for files. Below we are doing a hack to not set the repo item as a mention
@@ -536,13 +555,14 @@ export const promptInput = setup({
                             return
                         }
 
-                        // Insert mention node
+                        // In all other cases we'll insert the selected item as a mention node.
                         enqueue({
                             type: 'updateEditorState',
                             params: replaceAtMention(context.editorState, createMentionNode({item: serializeContextItem(item)}), true),
                         })
                     }),
                 },
+                // The primary purpose of this event is to handle mentions menu item selection via the mouse.
                 'mentionsMenu.apply': {
                     actions: [
                         // Update selected index if necessary
@@ -594,6 +614,8 @@ export const promptInput = setup({
                         },
                     },
                 },
+                // This is an odd state. We need a way to trigger a new fetch when the filter changes, but we also don't
+                // know when the data loading is done. So we just always transition to idle and handle results there.
                 loading: {
                     entry: 'fetchMenuData',
 
@@ -602,18 +624,22 @@ export const promptInput = setup({
                 },
             },
             on: {
+                // When an @mention is added, we'll start fetching new data immediately.
                 "atMention.added": ".loading",
+                // When an @mention is removed, we'll stop listening for new data and reset any related state.
                 "atMention.removed": {
                     actions: [
                         stopChild('fetchMenuData'),
-                        {type: 'assignMentionsMenu', params: {parent: undefined, items: [], selectedIndex: 0}},
+                        {type: 'assignMentionsMenu', params: {parent: undefined, items: []}},
                     ],
                     target: '.idle',
                 },
+                // When selecting a provider, we'll start fetching new data for that provider.
                 "mentionsMenu.provider.set": {
-                    actions: {type: 'assignMentionsMenu', params: ({event}) => ({parent: event.provider, selectedIndex: 0})},
+                    actions: {type: 'assignMentionsMenu', params: ({event}) => ({parent: event.provider})},
                     target: '.loading',
                 },
+                // When the query changes, we'll debounce fetching new data.
                 "atMention.updated": {
                     guard: { type: 'hasFilterChanged', params: ({event}) => event},
                     actions: [
@@ -640,8 +666,11 @@ export const promptInput = setup({
                     },
                 },
                 open: {
+                    // When opening the menu, we'll reset the selected index to the first item.
+                    entry: {type: 'assignMentionsMenu', params: {selectedIndex: 0}},
                     tags: 'show mentions menu',
                     on: {
+                        // When the @mention is removed, we'll close the menu.
                         'atMention.removed': 'closed',
                         "mentionsMenu.select.next": {
                             actions: {
@@ -667,6 +696,11 @@ export const promptInput = setup({
                                 }),
                             },
                         },
+
+                        // When a provider is selected we'll reset the selected index to the first item.
+                        "mentionsMenu.provider.set": {
+                            actions: {type: 'assignMentionsMenu', params: {selectedIndex: 0}},
+                        },
                     },
                 },
             },
@@ -681,10 +715,10 @@ const placeholderPluginKey = new PluginKey('placeholder')
  */
 function placeholderPlugin(text: string): Plugin {
     const update = (view: EditorView) => {
-        if (view.state.doc.textContent) {
-            view.dom.removeAttribute('data-placeholder');
-        } else {
+        if (view.state.doc.childCount === 1 && view.state.doc.firstChild?.textContent === '') {
             view.dom.setAttribute('data-placeholder', placeholderPluginKey.getState(view.state));
+        } else {
+            view.dom.removeAttribute('data-placeholder');
         }
     };
 

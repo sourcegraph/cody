@@ -318,6 +318,9 @@ importers:
       '@codemirror/view':
         specifier: ^6.34.2
         version: 6.34.2
+      '@floating-ui/react':
+        specifier: ^0.26.28
+        version: 0.26.28(react-dom@18.2.0)(react@18.2.0)
       '@lexical/react':
         specifier: https://storage.googleapis.com/sourcegraph-assets/npm/lexical-react-sourcegraph-fork-31065486.tgz
         version: '@storage.googleapis.com/sourcegraph-assets/npm/lexical-react-sourcegraph-fork-31065486.tgz(react-dom@18.2.0)(react@18.2.0)(yjs@13.6.19)'
@@ -3075,14 +3078,14 @@ packages:
   /@floating-ui/core@1.6.1:
     resolution: {integrity: sha512-42UH54oPZHPdRHdw6BgoBD6cg/eVTmVrFcgeRDM3jbO7uxSoipVcmcIGFcA5jmOHO5apcyvBhkSKES3fQJnu7A==}
     dependencies:
-      '@floating-ui/utils': 0.2.2
+      '@floating-ui/utils': 0.2.8
     dev: false
 
   /@floating-ui/dom@1.6.4:
     resolution: {integrity: sha512-0G8R+zOvQsAG1pg2Q99P21jiqxqGBW1iRe/iXHsBRBxnpXKFI8QwbB4x5KmYLggNO5m34IQgOIu9SCRfR/WWiQ==}
     dependencies:
       '@floating-ui/core': 1.6.1
-      '@floating-ui/utils': 0.2.2
+      '@floating-ui/utils': 0.2.8
     dev: false
 
   /@floating-ui/react-dom@2.0.9(react-dom@18.2.0)(react@18.2.0):
@@ -3096,8 +3099,32 @@ packages:
       react-dom: 18.2.0(react@18.2.0)
     dev: false
 
-  /@floating-ui/utils@0.2.2:
-    resolution: {integrity: sha512-J4yDIIthosAsRZ5CPYP/jQvUAQtlZTTD/4suA08/FEnlxqW3sKS9iAhgsa9VYLZ6vDHn/ixJgIqRQPotoBjxIw==}
+  /@floating-ui/react-dom@2.1.2(react-dom@18.2.0)(react@18.2.0):
+    resolution: {integrity: sha512-06okr5cgPzMNBy+Ycse2A6udMi4bqwW/zgBF/rwjcNqWkyr82Mcg8b0vjX8OJpZFy/FKjJmw6wV7t44kK6kW7A==}
+    peerDependencies:
+      react: '>=16.8.0'
+      react-dom: '>=16.8.0'
+    dependencies:
+      '@floating-ui/dom': 1.6.4
+      react: 18.2.0
+      react-dom: 18.2.0(react@18.2.0)
+    dev: false
+
+  /@floating-ui/react@0.26.28(react-dom@18.2.0)(react@18.2.0):
+    resolution: {integrity: sha512-yORQuuAtVpiRjpMhdc0wJj06b9JFjrYF4qp96j++v2NBpbi6SEGF7donUJ3TMieerQ6qVkAv1tgr7L4r5roTqw==}
+    peerDependencies:
+      react: '>=16.8.0'
+      react-dom: '>=16.8.0'
+    dependencies:
+      '@floating-ui/react-dom': 2.1.2(react-dom@18.2.0)(react@18.2.0)
+      '@floating-ui/utils': 0.2.8
+      react: 18.2.0
+      react-dom: 18.2.0(react@18.2.0)
+      tabbable: 6.2.0
+    dev: false
+
+  /@floating-ui/utils@0.2.8:
+    resolution: {integrity: sha512-kym7SodPp8/wloecOpcmSnWJsK7M0E5Wg8UcFA+uO4B9s5d0ywXOEro/8HM9x0rW+TljRzul/14UYz3TleT3ig==}
     dev: false
 
   /@gar/promisify@1.1.3:
@@ -16110,6 +16137,10 @@ packages:
       better-path-resolve: 1.0.0
       rename-overwrite: 6.0.0
     dev: true
+
+  /tabbable@6.2.0:
+    resolution: {integrity: sha512-Cat63mxsVJlzYvN51JmVXIgNoUokrIaT2zLclCXjRd8boZ0004U4KCs/sToJ75C6sdlByWxpYnb5Boif1VSFew==}
+    dev: false
 
   /table@6.8.2:
     resolution: {integrity: sha512-w2sfv80nrAh2VCbqR5AK27wswXhqcck2AhfnNW76beQXskGZ1V12GwS//yYVa3d3fcvAip2OUnbDAjW2k3v9fA==}

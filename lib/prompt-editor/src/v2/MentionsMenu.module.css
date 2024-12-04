@@ -1,0 +1,31 @@
+.popover-dimensions {
+    margin-top: 0.5rem;
+    width: clamp(300px, 65vw, 440px);
+
+    /*
+    --max-items: 12;
+    --mention-item-height: 30px;
+    height: min(calc(var(--max-items)*var(--mention-item-height) + 2px), 90vh);
+    */
+}
+
+.menu {
+    border: 1px solid #EFF2F5;
+    border-radius: 0.25rem;
+    box-shadow: 0px 20px 25px -5px var(--color-shadow-10, rgba(15, 17, 26, 0.10)), 0px 8px 10px -6px var(--color-shadow-10, rgba(15, 17, 26, 0.10));
+    max-height: 300px;
+    overflow: auto;
+    z-index: 1;
+
+    &.loading {
+        li {
+            pointer-events: none;
+            opacity: 50%;
+        }
+    }
+
+    li {
+        padding: 0.5rem 0.25rem;
+        cursor: pointer;
+    }
+}
