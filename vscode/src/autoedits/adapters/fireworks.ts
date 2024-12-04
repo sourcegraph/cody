@@ -36,7 +36,7 @@ export class FireworksAdapter implements AutoeditsModelAdapter {
                 option.prompt.userMessage
             )
         } else {
-            body.prompt = `${option.prompt.systemMessage}\n\nUser: ${option.prompt.userMessage}\n\nAssistant:`
+            body.prompt = option.prompt.userMessage
         }
         return JSON.stringify(body)
     }
