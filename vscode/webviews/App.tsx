@@ -164,31 +164,26 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     )
 
     useEffect(() => {
-        const longTaskObserver = new PerformanceObserver((list) => {
-            list.getEntries().forEach((entry) => {
-                console.log('Long Task detected:', entry)
-                telemetryRecorder.recordEvent('cody.webview.longTask', 'longTask')
-                console.log("recorded long task")
+        const observePerformance = (entryType: string, eventName: string) => {
+            const observer = new PerformanceObserver(list => {
+                for (const entry of list.getEntries()) {
+                    telemetryRecorder.recordEvent(`cody.webview.${eventName}`, 'performance', {
+                        metadata: { duration: entry.duration },
+                    })
+                }
             })
-        })
+            observer.observe({ entryTypes: [entryType] })
+            return observer
+        }
 
-        longTaskObserver.observe({ entryTypes: ['longtask'] });
-
-        const loafObserver = new PerformanceObserver((list) => {
-            list.getEntries().forEach((entry) => {
-                console.log('Long Animation Frame detected:', entry)
-                telemetryRecorder.recordEvent('cody.webview.longAnimationFrame', 'longAnimationFrame')
-                console.log(("recorded long animation frame")
-            })
-        })
-
-        loafObserver.observe({ entryTypes: ['frame'] });
+        const longTaskObserver = observePerformance('longtask', 'longTask')
+        const loafObserver = observePerformance('frame', 'longAnimationFrame')
 
         return () => {
-            longTaskObserver.disconnect();
-            loafObserver.disconnect();
-        };
-    }, []);
+            longTaskObserver.disconnect()
+            loafObserver.disconnect()
+        }
+    }, [telemetryRecorder])
 
     // Wait for all the data to be loaded before rendering Chat View
     if (!view || !config) {
