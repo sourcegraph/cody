@@ -1,5 +1,6 @@
 import {
     type ContextItem,
+    ContextItemSource,
     ContextMentionProviderMetadata,
     FILE_CONTEXT_MENTION_PROVIDER,
     FILE_RANGE_TOOLTIP_LABEL,
@@ -23,7 +24,7 @@ import { ChatMentionContext } from '../plugins/atMentions/useChatContextItems'
 import { schema } from './promptInput'
 import "prosemirror-view/style/prosemirror.css"
 import { Suggestions } from './Suggestions'
-import { useEditor, useSuggestions } from './promptInput-react'
+import { useEditor, useMentionsMenu } from './promptInput-react'
 import { MentionMenuContextItemContent, MentionMenuProviderItemContent } from '../mentions/mentionMenu/MentionMenuItem'
 import { useDefaultContextForChat } from '../useInitialContext'
 import { Observable,  } from 'observable-fns'
@@ -56,6 +57,8 @@ export interface PromptEditorRefAPI {
     setEditorState(state: SerializedPromptEditorState): void
 }
 
+const SUGGESTION_LIST_LENGTH_LIMIT = 20
+
 /**
  * The component for composing and editing prompts.
  */
@@ -81,7 +84,6 @@ export const PromptEditor: FunctionComponent<Props> = ({
     const mentionMenuData = useExtensionAPI().mentionMenuData
     const mentionSettings = useContext(ChatMentionContext)
 
-    // TODO: This needs to be done differently because mentionMenuData never completes
     const fetchMenuData = useCallback(({query, parent}: {query: string, parent?: ContextMentionProviderMetadata}) => {
 
         const initialContext = [...defaultContext.initialContext, ...defaultContext.corpusContext]
@@ -107,16 +109,21 @@ export const PromptEditor: FunctionComponent<Props> = ({
                     ...filteredInitialItems,
                     ...result.items
                         ?.filter(item => !filteredInitialContextItems.some(initialItem => areContextItemsEqual(item, initialItem)))
-                        .map(item => ({data: item})) ?? [],
+                        .slice(0, SUGGESTION_LIST_LENGTH_LIMIT)
+                        .map(item => ({data: {...item, source: ContextItemSource.User}})) ?? [],
             ]))
     }, [mentionMenuData, mentionSettings, defaultContext])
 
     const [input, api] = useEditor({
         placeholder,
         initialDocument: convertedInitialEditorState,
+        disabled,
+        contextWindowSizeInTokens,
         onChange: doc => {
             onChange?.(toSerializedPromptEditorValue(doc))
         },
+        onFocusChange,
+        onEnterKey,
         fetchMenuData,
     })
 
@@ -125,10 +132,9 @@ export const PromptEditor: FunctionComponent<Props> = ({
         items,
         selectedIndex,
         query,
-        isLoading,
         position,
         parent,
-    } = useSuggestions(input)
+    } = useMentionsMenu(input)
 
     useImperativeHandle(
         ref,
@@ -191,7 +197,6 @@ export const PromptEditor: FunctionComponent<Props> = ({
             {show && <Suggestions
                 items={items}
                 selectedIndex={selectedIndex}
-                loading={isLoading}
                 filter={query}
                 menuPosition={position}
                 getHeader={() => getItemsHeading(parent, query)}
