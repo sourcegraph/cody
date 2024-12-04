@@ -95,17 +95,30 @@ export function buildAgentBinary(): void {
     if (isBuilt) {
         return
     }
-    isBuilt = true
     // Bundle the agent. When running `pnpm run test`, vitest doesn't re-run this step.
     //
     // ! If this line fails when running unit tests, chances are that the error is being swallowed.
     // To see the full error, run this file in isolation:
     //
     //   pnpm test agent/src/index.test.ts
-    execSync('pnpm run build:for-tests ', {
+    try {
+        // Clean up dist directory first
+        execSync('rm -rf dist', {
+            cwd: getAgentDir(),
+            stdio: 'inherit',
+        })
+    } catch (error) {
+        // Ignore cleanup errors
+    }
+
+    // Add small delay to ensure cleanup is complete
+    execSync(process.platform === 'win32' ? 'timeout /t 1' : 'sleep 1')
+
+    execSync('pnpm run build:for-tests', {
         cwd: getAgentDir(),
         stdio: 'inherit',
     })
+    isBuilt = true
 
     const mayRecord =
         process.env.CODY_RECORDING_MODE === 'record' || process.env.CODY_RECORD_IF_MISSING === 'true'
