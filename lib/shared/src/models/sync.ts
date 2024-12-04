@@ -198,7 +198,7 @@ export function syncModels({
                                         ),
                                         featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.DeepCody)
                                     ).pipe(
-                                        switchMap(([hasEarlyAccess, deepCodyEnabled]) => {
+                                        switchMap(([hasEarlyAccess, hasDeepCodyFlag]) => {
                                             // TODO(sqs): remove waitlist from localStorage when user has access
                                             const isOnWaitlist = config.clientState.waitlist_o1
                                             if (isDotComUser && (hasEarlyAccess || isOnWaitlist)) {
@@ -218,14 +218,15 @@ export function syncModels({
                                                 })
                                             }
 
-                                            // DEEP CODY - available to users with feature flag enabled only.
-                                            // TODO(bee): remove once deepCody is enabled for all users.
                                             // Replace user's current sonnet model with deep-cody model.
                                             const sonnetModel = data.primaryModels.find(m =>
                                                 m.id.includes('sonnet')
                                             )
+                                            // DEEP CODY is enabled for all PLG users.
+                                            // Enterprise users need to have the feature flag enabled.
+                                            const isDeepCodyEnabled = isDotComUser || hasDeepCodyFlag
                                             if (
-                                                deepCodyEnabled &&
+                                                isDeepCodyEnabled &&
                                                 sonnetModel &&
                                                 // Ensure the deep-cody model is only added once.
                                                 !data.primaryModels.some(m => m.id.includes('deep-cody'))
@@ -239,10 +240,6 @@ export function syncModels({
                                                         createModelFromServerModel
                                                     )
                                                 )
-                                                // Update site preferences for chat to DEEP CODY on first sync.
-                                                data.preferences!.defaults.edit =
-                                                    data.preferences!.defaults.chat
-                                                data.preferences!.defaults.chat = DEEPCODY_MODEL.modelRef
                                             }
 
                                             return Observable.of(data)

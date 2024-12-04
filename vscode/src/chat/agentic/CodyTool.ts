@@ -107,7 +107,8 @@ class CliTool extends CodyTool {
         })
     }
 
-    public async execute(): Promise<ContextItem[]> {
+    public async execute(span: Span): Promise<ContextItem[]> {
+        span.addEvent('executeCliTool')
         const commands = this.parse()
         if (commands.length === 0) return []
         logDebug('CodyTool', `executing ${commands.length} commands...`)
@@ -133,7 +134,8 @@ class FileTool extends CodyTool {
         })
     }
 
-    public async execute(): Promise<ContextItem[]> {
+    public async execute(span: Span): Promise<ContextItem[]> {
+        span.addEvent('executeFileTool')
         const filePaths = this.parse()
         if (filePaths.length === 0) return []
         logDebug('CodyTool', `requesting ${filePaths.length} files`)
@@ -158,12 +160,13 @@ class SearchTool extends CodyTool {
             prompt: {
                 instruction: ps`To search for context in the codebase`,
                 placeholder: ps`SEARCH_QUERY`,
-                example: ps`Locate the "getController" function found in an error log: \`<TOOLSEARCH><query>getController</query></TOOLSEARCH>\``,
+                example: ps`Locate the "getController" function found in an error log: \`<TOOLSEARCH><query>getController</query></TOOLSEARCH>\`\nSearch for a function in a file: \`<TOOLSEARCH><query>getController file:controller.py</query></TOOLSEARCH>\``,
             },
         })
     }
 
     public async execute(span: Span): Promise<ContextItem[]> {
+        span.addEvent('executeSearchTool')
         const queries = this.parse()
         const query = queries.find(q => !this.performedSearch.has(q))
         if (!this.contextRetriever || !query) {
@@ -179,7 +182,7 @@ class SearchTool extends CodyTool {
         if (!repo) {
             return []
         }
-        logDebug('CodyTool', `searching codebase for ${query}`)
+        logDebug('SearchTool', `searching codebase for ${query}`)
         const context = await this.contextRetriever.retrieveContext(
             toStructuredMentions([repo]),
             PromptString.unsafe_fromLLMResponse(query),
@@ -213,12 +216,13 @@ export class OpenCtxTool extends CodyTool {
         super(config)
     }
 
-    async execute(): Promise<ContextItem[]> {
+    async execute(span: Span): Promise<ContextItem[]> {
+        span.addEvent('executeOpenCtxTool')
         const queries = this.parse()
         if (!queries?.length) {
             return []
         }
-        logDebug('CodyTool', `searching ${this.provider.providerUri} for "${queries}"`)
+        logDebug('OpenCtxTool', `searching ${this.provider.providerUri} for "${queries}"`)
         const results: ContextItem[] = []
         const idObject: Pick<ContextMentionProviderMetadata, 'id'> = { id: this.provider.providerUri }
         try {
@@ -257,16 +261,17 @@ class MemoryTool extends CodyTool {
                 subTag: ps`store`,
             },
             prompt: {
-                instruction: ps`To persist information across conversations. Write whatever information about the user from the question, or whenever you are asked`,
+                instruction: ps`Add any information about the user's preferences (e.g. their preferred tool or language) based on the question, or when asked`,
                 placeholder: ps`SUMMARIZED_TEXT`,
-                example: ps`To add an item to memory: \`<TOOLMEMORY><store>item</store></TOOLMEMORY>\`\nTo see memory: \`<TOOLMEMORY><store>GET</store></TOOLMEMORY>\``,
+                example: ps`To add an item to memory: \`<TOOLMEMORY><store>item</store></TOOLMEMORY>\`\nTo see memory: \`<TOOLMEMORY><store>GET</store></TOOLMEMORY>\`\nTo clear memory: \`<TOOLMEMORY><store>FORGET</store></TOOLMEMORY>\``,
             },
         })
     }
 
     private memoryOnStart = CodyChatMemory.retrieve()
 
-    public async execute(): Promise<ContextItem[]> {
+    public async execute(span: Span): Promise<ContextItem[]> {
+        span.addEvent('executeMemoryTool')
         const storedMemory = this.memoryOnStart
         this.processResponse()
         // Reset the memory after first retrieval to avoid duplication during loop.

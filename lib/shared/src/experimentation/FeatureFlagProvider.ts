@@ -92,16 +92,18 @@ export enum FeatureFlag {
      */
     CodyPromptsV2 = 'prompt-creation-v2',
 
-    /** Whether user has access to the experimental Cody Reflection / Deep Cody feature. */
-    DeepCody = 'cody-deep-reflection',
+    /** Whether user has access to the experimental Deep Cody feature.
+     * This replaces the old 'cody-deep-reflection' that was used for internal testing.
+     */
+    DeepCody = 'deep-cody',
+
+    /** Enable Shell Context for Deep Cody */
+    DeepCodyShellContext = 'deep-cody-shell-context',
 
     /**
      * Whether the current repo context chip is shown in the chat input by default
      */
     NoDefaultRepoChip = 'no-default-repo-chip',
-
-    /** Enable Shell Context for Deep Cody */
-    DeepCodyShellContext = 'deep-cody-shell-context',
 
     /**
      * Whether the user will see the CTA about upgrading to Sourcegraph Teams

@@ -47,7 +47,7 @@ export class CodyChatMemory {
         return CodyChatMemory.Store.size > 0
             ? {
                   type: 'file',
-                  content: Array.from(CodyChatMemory.Store).join('\n'),
+                  content: '# Chat Memory\n' + Array.from(CodyChatMemory.Store).reverse().join('\n- '),
                   uri: URI.file('Cody Memory'),
                   source: ContextItemSource.Agentic,
                   title: 'Cody Chat Memory',

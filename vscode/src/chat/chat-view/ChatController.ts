@@ -531,10 +531,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyExperimentalOneBox)
     )
 
-    private featureDeepCodyShellContext = storeLastValue(
-        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.DeepCodyShellContext)
-    )
-
     private async getConfigForWebview(): Promise<ConfigurationSubsetForWebview & LocalEnv> {
         const { configuration, auth } = await currentResolvedConfig()
         const sidebarViewOnly = this.extensionClient.capabilities?.webviewNativeConfig?.view === 'single'
@@ -723,6 +719,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             throw new Error('No model selected, and no default chat model is available')
         }
         this.chatBuilder.setSelectedModel(model)
+        const isDeepCodyModel = model?.includes('deep-cody')
         const { isPublic: repoIsPublic, repoMetadata } = await wrapInActiveSpan(
             'chat.getRepoMetadata',
             () => firstResultFromOperation(publicRepoMetadataIfAllWorkspaceReposArePublic)
@@ -797,7 +794,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
         const finalIntentDetectionResponse = detectedIntent
             ? { intent: detectedIntent, allScores: detectedIntentScores }
-            : this.featureCodyExperimentalOneBox && repositoryMentioned
+            : this.featureCodyExperimentalOneBox && repositoryMentioned && !isDeepCodyModel
               ? await this.detectChatIntent({
                     requestID,
                     text: inputTextWithoutContextChips.toString(),
@@ -849,13 +846,13 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         }
 
         // Experimental Feature: Deep Cody
-        if (model?.includes('deep-cody')) {
+        if (isDeepCodyModel) {
             const agenticContext = await new DeepCodyAgent(
                 this.chatBuilder,
                 this.chatClient,
-                await this.toolProvider.getTools(!!this.featureDeepCodyShellContext.value.last),
+                this.toolProvider.getTools(),
                 corpusContext
-            ).getContext(span, signal)
+            ).getContext(signal)
             corpusContext.push(...agenticContext)
         }
 

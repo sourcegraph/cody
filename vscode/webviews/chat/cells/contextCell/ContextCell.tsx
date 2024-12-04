@@ -236,7 +236,7 @@ export const ContextCell: FunctionComponent<{
                                                     {editContextNode}
                                                 </Button>
                                             )}
-                                            {resubmitWithRepoContext && (
+                                            {resubmitWithRepoContext && !isDeepCodyEnabled && (
                                                 <Button
                                                     size="sm"
                                                     variant="outline"
@@ -349,11 +349,18 @@ export const ContextCell: FunctionComponent<{
                                                         </span>
                                                     </TooltipTrigger>
                                                     <TooltipContent side="bottom">
-                                                        <span>
-                                                            Information and general reasoning
-                                                            capabilities trained into the model{' '}
-                                                            {model && <code>{model}</code>}
-                                                        </span>
+                                                        {isDeepCodyEnabled ? (
+                                                            <span>
+                                                                Deep Cody fetches additional context to
+                                                                improve response quality when needed
+                                                            </span>
+                                                        ) : (
+                                                            <span>
+                                                                Information and general reasoning
+                                                                capabilities trained into the model{' '}
+                                                                {model && <code>{model}</code>}
+                                                            </span>
+                                                        )}
                                                     </TooltipContent>
                                                 </Tooltip>
                                             </li>
