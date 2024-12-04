@@ -163,6 +163,33 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
         [vscodeAPI, telemetryRecorder, config]
     )
 
+    useEffect(() => {
+        const longTaskObserver = new PerformanceObserver((list) => {
+            list.getEntries().forEach((entry) => {
+                console.log('Long Task detected:', entry)
+                telemetryRecorder.recordEvent('cody.webview.longTask', 'longTask')
+                console.log("recorded long task")
+            })
+        })
+
+        longTaskObserver.observe({ entryTypes: ['longtask'] });
+
+        const loafObserver = new PerformanceObserver((list) => {
+            list.getEntries().forEach((entry) => {
+                console.log('Long Animation Frame detected:', entry)
+                telemetryRecorder.recordEvent('cody.webview.longAnimationFrame', 'longAnimationFrame')
+                console.log(("recorded long animation frame")
+            })
+        })
+
+        loafObserver.observe({ entryTypes: ['frame'] });
+
+        return () => {
+            longTaskObserver.disconnect();
+            loafObserver.disconnect();
+        };
+    }, []);
+
     // Wait for all the data to be loaded before rendering Chat View
     if (!view || !config) {
         return <LoadingPage />
