@@ -2,22 +2,17 @@ import type { ChatClient, Message } from '@sourcegraph/cody-shared'
 import { autoeditsLogger } from '../logger'
 import type { AutoeditsModelAdapter } from '../prompt-provider'
 import type { AutoeditModelOptions } from '../prompt-provider'
+import { getSourcegraphCompatibleChatPrompt } from './utils'
 
 export class SourcegraphChatAdapter implements AutoeditsModelAdapter {
     constructor(private readonly chatClient: ChatClient) {}
 
     async getModelResponse(option: AutoeditModelOptions): Promise<string> {
         try {
-            const messages: Message[] = [
-                {
-                    speaker: 'system',
-                    text: option.prompt.systemMessage,
-                },
-                {
-                    speaker: 'human',
-                    text: option.prompt.userMessage,
-                },
-            ]
+            const messages: Message[] = getSourcegraphCompatibleChatPrompt(
+                option.prompt.systemMessage,
+                option.prompt.userMessage
+            )
             const stream = await this.chatClient.chat(
                 messages,
                 {

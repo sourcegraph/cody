@@ -1,4 +1,4 @@
-import { type CodeCompletionsClient, type Message, ps } from '@sourcegraph/cody-shared'
+import type { CodeCompletionsClient, Message } from '@sourcegraph/cody-shared'
 import { defaultCodeCompletionsClient } from '../../completions/default-client'
 import { autoeditsLogger } from '../logger'
 import type { AutoeditsModelAdapter } from '../prompt-provider'
@@ -16,7 +16,7 @@ export class SourcegraphCompletionsAdapter implements AutoeditsModelAdapter {
             const messages: Message[] = [
                 {
                     speaker: 'human',
-                    text: ps`${option.prompt.systemMessage}\n\nUser: ${option.prompt.userMessage}`,
+                    text: option.prompt.userMessage,
                 },
             ]
             const requestParam = {
