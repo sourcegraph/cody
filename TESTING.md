@@ -326,28 +326,38 @@ Primary languages to test: Javascript, Typescript, TypescriptReact, Python, Go
 
 ## 1. Model Selection and Availability
 
-#### Test Cases
+#### 1.1. Verify Deep Cody model appears in model selector for PLG users
 
-1.1. Verify Deep Cody model appears in model selector
+Log in to Sourcegraph instance as a PLG user - Cody Pro
 
 - Navigate to chat view
 - Click model selector dropdown
-- Verify "Deep Cody" model is available
+- Verify "Deep Cody" model is available for selection
 - Expected: Model should be visible if user has access
+
+Log in to Sourcegraph instance as a PLG user - Cody Free
+
+- Navigate to chat view
+- Click model selector dropdown
+- Expected: Model should be visible but marked as Pro only
+
+Log in to Sourcegraph instance as Enterprise user
+
+- Navigate to chat view
+- Click model selector dropdown
+- Expected: Model should be visible if instance has the feature flag `deep-cody` set up
 
 ### 2. Chat Interface
 
 Everything should work the same as other models, but with the Deep Cody model selected, additional context will be fetched when the Deep Cody agent requires it.
 
-#### Test Cases
-
-2.1. Basic Chat Functionality
+### 2.1. Basic Chat Functionality
 
 - Start new chat with "Deep Cody" model selected
 - Ask Deep Cody a question about your codebase without at mention any context: "does this codebase have GitHub Actions configured?"
 - Expected: Codebase context will be fetched before the LLM responds
 
-  2.2. Context Display
+### 2.2. Context Display
 
 - Send a message that triggers context retrieval
 - Expected: Retrieved context should be visible in UI
@@ -357,9 +367,7 @@ Everything should work the same as other models, but with the Deep Cody model se
 
 Verify the Sourcegraph instance to have the `deep-cody-shell-context` feature flag enabled for your account.
 
-#### Test Cases
-
-3.1. Terminal Command Configuration
+#### 3.1. Terminal Command Configuration
 
 - Navigate to your VS Code User Settings
 - Test your user setting `cody.agentic.context.shell` configuration with:
