@@ -3,8 +3,9 @@ import type { Node } from 'prosemirror-model'
 import { FILE_CONTEXT_MENTION_PROVIDER, REMOTE_REPOSITORY_PROVIDER_URI, SerializedContextItem, SYMBOL_CONTEXT_MENTION_PROVIDER } from '@sourcegraph/cody-shared'
 import { iconForProvider } from '../mentions/mentionMenu/MentionMenuItem'
 import { AtSignIcon } from 'lucide-react'
-import styles from './BaseEditor.module.css'
+import styles from './MentionView.module.css'
 import { NodeView } from 'prosemirror-view'
+import clsx from 'clsx'
 
 export class MentionView implements NodeView {
     public dom: HTMLElement
@@ -13,7 +14,10 @@ export class MentionView implements NodeView {
     constructor(node: Node) {
         const item = node.attrs.item as SerializedContextItem
         this.dom = document.createElement('span')
-        this.dom.className = styles.mention
+        this.dom.className = clsx(
+            styles.mention,
+            {[styles.isTooLargeOrIngore]: item.isTooLarge || item.isIgnored}
+        )
         this.root = createRoot(this.dom)
         this.root.render(<MentionChip item={item}>{node.content.firstChild?.text ?? ''}</MentionChip>)
     }
@@ -63,6 +67,7 @@ interface MentionChipProps {
 }
 
 const MentionChip: React.FC<MentionChipProps> = props => {
+    // TODO: Implement tooltip
     const Icon = iconForContextItem(props.item)
     return <>
         {Icon && <Icon />}
