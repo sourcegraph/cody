@@ -26,7 +26,6 @@ import java.nio.channels.CompletionHandler
 import java.nio.charset.StandardCharsets
 import java.nio.file.StandardOpenOption
 import javax.swing.JComponent
-import kotlin.io.path.Path
 import kotlin.math.min
 import org.cef.browser.CefBrowser
 import org.cef.browser.CefFrame

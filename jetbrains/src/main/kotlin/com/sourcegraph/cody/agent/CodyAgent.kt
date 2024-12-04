@@ -169,20 +169,18 @@ private constructor(
       val jsonRpcArgs = arrayOf("api", "jsonrpc-stdio")
       val script =
           agentDirectory()?.resolve("index.js")
-                ?: throw CodyAgentException(
-                    "Sourcegraph Cody + Code Search plugin path not found"
-                )
+              ?: throw CodyAgentException("Sourcegraph Cody + Code Search plugin path not found")
       val command: List<String> =
-        if (shouldSpawnDebuggableAgent()) {
-          listOf(
-              binaryPath,
-              "--inspect",
-              "--enable-source-maps",
-              script.toFile().absolutePath,
-              *jsonRpcArgs)
-        } else {
-          listOf(binaryPath, script.toFile().absolutePath, *jsonRpcArgs)
-        }
+          if (shouldSpawnDebuggableAgent()) {
+            listOf(
+                binaryPath,
+                "--inspect",
+                "--enable-source-maps",
+                script.toFile().absolutePath,
+                *jsonRpcArgs)
+          } else {
+            listOf(binaryPath, script.toFile().absolutePath, *jsonRpcArgs)
+          }
 
       val processBuilder = ProcessBuilder(command)
       if (java.lang.Boolean.getBoolean("cody.accept-non-trusted-certificates-automatically") ||
