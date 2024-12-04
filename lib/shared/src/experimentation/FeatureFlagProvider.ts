@@ -92,8 +92,10 @@ export enum FeatureFlag {
      */
     CodyPromptsV2 = 'prompt-creation-v2',
 
-    /** Whether user has access to the experimental Cody Reflection / Deep Cody feature. */
-    DeepCody = 'cody-deep-reflection',
+    /** Whether user has access to the experimental Deep Cody feature.
+     * This replaces the old Deep Cody flag 'cody-deep-reflection'.
+     */
+    DeepCody = 'deep-cody',
 
     /**
      * Whether the current repo context chip is shown in the chat input by default
