@@ -1300,7 +1300,7 @@
           },
           "default": {
             "shell": {
-              "allow": "*",
+              "allow": ["*"],
               "block": [
                 "rm",
                 "chmod",
@@ -1331,11 +1331,11 @@
           },
           "examples": {
             "shell": {
-              "allow": "git,gh",
-              "block": "history,sudo,rm"
+              "allow": ["git", "gh"],
+              "block": ["history", "sudo", "rm"]
             }
           },
-          "markdownDescription": "Configures shell command execution for Cody agents when terminal context is enabled on your Sourcegraph instance. Specify commands that Cody can automatically run in the local terminal to gather additional context. Requires a feature flag on the Sourcegraph instance. Use `*` to allow all commands, or specify a comma-separated list of allowed commands. Use `disabled` to disable all shell command execution."
+          "markdownDescription": "Configures shell command execution for Cody Agent when terminal context is enabled (feature flag required). The 'allow' property can be either ['*'] for all commands or an array of allowed command prefixes. The 'block' property is an array of blocked commands that will be combined with built-in safety blocklist. Commands in the blocklist take precedence over allowed commands. When a command is executed, its output will be used as context. If no 'allow' list is specified, the feature will be disabled."
         },
         "cody.net.proxy.cacert": {
           "markdownDescription": "Either the PEM-encoded CA certificate the proxy uses (replace newlines with `\\n`), or the path (absolute or tilde) to the file containing that certificate.\n\nExamples:\n- `~/.mitmproxy/mitmproxy-ca-cert.pem`\n- `-----BEGIN CERTIFICATE-----\\n...\\n-----END CERTIFICATE-----`",
