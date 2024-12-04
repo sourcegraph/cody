@@ -38,10 +38,12 @@ export async function getContextFileFromShell(command: string): Promise<ContextI
         const filteredCommand = command.replaceAll(/(\s~\/)/g, ` ${HOME_DIR}${path.sep}`)
 
         // Process allow list once
-        const allowList =
-            agenticShellCommands === '*' || !agenticShellCommands
-                ? null
-                : new Set(agenticShellCommands.split(',').map(cmd => cmd.trim()))
+        const commandConfig = new Set(agenticShellCommands?.split(',').map(cmd => cmd.trim()) || [])
+        const allowList = new Set([...commandConfig].filter(cmd => !cmd.startsWith('!')))
+        const blockList = new Set([
+            ...BASE_DISALLOWED_COMMANDS,
+            ...[...commandConfig].filter(cmd => cmd.startsWith('!')).map(cmd => cmd.slice(1)),
+        ])
 
         try {
             // Command validation
@@ -49,7 +51,7 @@ export async function getContextFileFromShell(command: string): Promise<ContextI
             if (
                 (allowList?.size &&
                     !Array.from(allowList).some(cmd => filteredCommand.startsWith(cmd))) ||
-                DISALLOWED_COMMANDS.has(commandStart)
+                blockList.has(commandStart)
             ) {
                 void vscode.window.showErrorMessage('Cody cannot execute this command')
                 throw new Error('Cody cannot execute this command')
@@ -79,14 +81,14 @@ export async function getContextFileFromShell(command: string): Promise<ContextI
             ]
         } catch (error) {
             logError('getContextFileFromShell', 'failed', { verbose: error })
-            const errorContent = `${error}`
+            const errorContent = `Failed to run ${command} in terminal:\n${error}`
             const size = await TokenCounterUtils.countTokens(errorContent)
 
             return [
                 {
                     type: 'file',
                     content: errorContent,
-                    title: 'Terminal Output',
+                    title: 'Terminal Output Error',
                     uri: vscode.Uri.file(command),
                     source: ContextItemSource.Terminal,
                     size,
@@ -96,8 +98,8 @@ export async function getContextFileFromShell(command: string): Promise<ContextI
     })
 }
 
-// Set of disallowed commands for O(1) lookup
-const DISALLOWED_COMMANDS = new Set([
+// Pre-defined base disallowed commands
+const BASE_DISALLOWED_COMMANDS = [
     'rm',
     'chmod',
     'shutdown',
@@ -122,4 +124,4 @@ const DISALLOWED_COMMANDS = new Set([
     'rmmod',
     'lsusb',
     'lspci',
-])
+]

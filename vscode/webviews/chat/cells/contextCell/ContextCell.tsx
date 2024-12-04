@@ -351,8 +351,8 @@ export const ContextCell: FunctionComponent<{
                                                     <TooltipContent side="bottom">
                                                         {isDeepCodyEnabled ? (
                                                             <span>
-                                                                Deep Cody would fetch additional context
-                                                                to improve response quality when needed
+                                                                Deep Cody fetches additional context to
+                                                                improve response quality when needed
                                                             </span>
                                                         ) : (
                                                             <span>
