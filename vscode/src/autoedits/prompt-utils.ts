@@ -77,6 +77,13 @@ interface CurrentFileContext {
     range: vscode.Range
 }
 
+export function getCompletionsPromptWithSystemPrompt(
+    systemPrompt: PromptString,
+    userPrompt: PromptString
+): PromptString {
+    return ps`${systemPrompt}\n\nUser: ${userPrompt}\n\nAssistant:`
+}
+
 // Helper function to get prompt in some format
 export function getBaseUserPrompt(
     docContext: DocumentContext,

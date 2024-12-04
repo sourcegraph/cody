@@ -26,7 +26,12 @@ import { SourcegraphChatAdapter } from './adapters/sourcegraph-chat'
 import { SourcegraphCompletionsAdapter } from './adapters/sourcegraph-completions'
 import { autoeditsLogger } from './logger'
 import type { AutoeditsModelAdapter, AutoeditsPrompt, PromptResponseData } from './prompt-provider'
-import { type CodeToReplaceData, SYSTEM_PROMPT, getBaseUserPrompt } from './prompt-utils'
+import {
+    type CodeToReplaceData,
+    SYSTEM_PROMPT,
+    getBaseUserPrompt,
+    getCompletionsPromptWithSystemPrompt,
+} from './prompt-utils'
 import { DefaultDecorator } from './renderer/decorators/default-decorator'
 import { AutoEditsRendererManager } from './renderer/manager'
 import {
@@ -315,9 +320,16 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             context,
             tokenBudget
         )
-        const prompt: AutoeditsPrompt = {
-            systemMessage: SYSTEM_PROMPT,
-            userMessage: userPrompt,
+        let prompt: AutoeditsPrompt
+        if (this.config.isChatModel) {
+            prompt = {
+                systemMessage: SYSTEM_PROMPT,
+                userMessage: userPrompt,
+            }
+        } else {
+            prompt = {
+                userMessage: getCompletionsPromptWithSystemPrompt(SYSTEM_PROMPT, userPrompt),
+            }
         }
         return {
             codeToReplace,

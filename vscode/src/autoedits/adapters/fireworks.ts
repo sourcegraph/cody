@@ -2,6 +2,7 @@ import { autoeditsLogger } from '../logger'
 import type { AutoeditsModelAdapter } from '../prompt-provider'
 import { getModelResponse } from '../prompt-provider'
 import type { AutoeditModelOptions } from '../prompt-provider'
+import { getOpenaiCompatibleChatPrompt } from './utils'
 
 export class FireworksAdapter implements AutoeditsModelAdapter {
     async getModelResponse(option: AutoeditModelOptions): Promise<string> {
@@ -30,18 +31,12 @@ export class FireworksAdapter implements AutoeditsModelAdapter {
             user: option.userId,
         }
         if (option.isChatModel) {
-            body.messages = [
-                {
-                    role: 'system',
-                    content: option.prompt.systemMessage,
-                },
-                {
-                    role: 'user',
-                    content: option.prompt.userMessage,
-                },
-            ]
+            body.messages = getOpenaiCompatibleChatPrompt(
+                option.prompt.systemMessage,
+                option.prompt.userMessage
+            )
         } else {
-            body.prompt = `${option.prompt.systemMessage}\n\nUser: ${option.prompt.userMessage}`
+            body.prompt = `${option.prompt.systemMessage}\n\nUser: ${option.prompt.userMessage}\n\nAssistant:`
         }
         return JSON.stringify(body)
     }

@@ -2,7 +2,7 @@ import type { PromptString } from '@sourcegraph/cody-shared'
 import type * as utils from './prompt-utils'
 
 export type AutoeditsPrompt = {
-    systemMessage: PromptString
+    systemMessage?: PromptString
     userMessage: PromptString
 }
 
