@@ -301,13 +301,15 @@ function reportAuthTelemetryEvent(authStatus: AuthStatus): void {
         eventValue = 'disconnected'
     }
     telemetryRecorder.recordEvent('cody.auth', eventValue, {
-        billingMetadata: {
-            product: 'cody',
-            category: 'billable',
-        },
+        billingMetadata:
+            eventValue === 'connected'
+                ? {
+                      product: 'cody',
+                      category: 'billable',
+                  }
+                : undefined,
     })
 }
-
 function toCredentialsOnlyNormalized(
     config: ResolvedConfiguration | ResolvedConfigurationCredentialsOnly
 ): ResolvedConfigurationCredentialsOnly {

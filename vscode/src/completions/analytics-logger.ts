@@ -504,14 +504,20 @@ function writeCompletionEvent<SubFeature extends string, Action extends string, 
         telemetryRecorder.recordEvent(`cody.completion.${subfeature}`, action, params)
     } else {
         // Add billing metadata to completion event params.
-        params = {
-            ...params,
-            billingMetadata: {
-                product: 'cody',
-                // Only acceptance events qualify as "core" usage.
-                category: action === 'partiallyAccepted' || action === 'accepted' ? 'core' : 'billable',
-            },
-        }
+        params =
+            action === 'error'
+                ? params
+                : {
+                      ...params,
+                      billingMetadata: {
+                          product: 'cody',
+                          // Only acceptance events qualify as "core" usage.
+                          category:
+                              action === 'partiallyAccepted' || action === 'accepted'
+                                  ? 'core'
+                                  : 'billable',
+                      },
+                  }
 
         telemetryRecorder.recordEvent('cody.completion', action, params)
     }
