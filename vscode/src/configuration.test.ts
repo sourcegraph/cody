@@ -131,6 +131,8 @@ describe('getConfiguration', () => {
                         return undefined
                     case 'http':
                         return undefined
+                    case 'cody.agentic.shellCommands':
+                        return '*'
                     default:
                         assert(false, `unexpected key: ${key}`)
                 }
