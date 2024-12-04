@@ -912,6 +912,7 @@ export const DEFAULT_VSCODE_SETTINGS = {
     internalUnstable: false,
     internalDebugContext: false,
     internalDebugState: false,
+    agenticShellCommands: '*',
     autocompleteAdvancedProvider: 'default',
     autocompleteAdvancedModel: null,
     autocompleteCompleteSuggestWidgetSelection: true,

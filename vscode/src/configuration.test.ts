@@ -159,6 +159,7 @@ describe('getConfiguration', () => {
                 '*': true,
             },
             commandCodeLenses: true,
+            agenticShellCommands: '*',
             experimentalSupercompletions: false,
             experimentalAutoeditsEnabled: undefined,
             experimentalAutoeditsConfigOverride: undefined,

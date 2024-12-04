@@ -92,6 +92,12 @@ export function getConfiguration(
         commandHints: config.get(CONFIG_KEY.commandHintsEnabled, false),
 
         /**
+         * Instance must have feature flag enabled to use this feature.
+         * Allows AI Agent to run shell commands automatically.
+         */
+        agenticShellCommands: config.get(CONFIG_KEY.agenticShellCommands, '*'),
+
+        /**
          * Hidden settings for internal use only.
          */
 

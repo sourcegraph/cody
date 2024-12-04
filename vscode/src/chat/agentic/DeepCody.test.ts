@@ -34,7 +34,6 @@ describe('DeepCody', () => {
     let mockChatBuilder: ChatBuilder
     let mockChatClient: ChatClient
     let mockContextRetriever: ContextRetriever
-    let mockSpan: any
     let mockCurrentContext: ContextItem[]
     let mockCodyTools: CodyTool[]
     let localStorageData: { [key: string]: unknown } = {}
@@ -76,8 +75,6 @@ describe('DeepCody', () => {
         } as unknown as ContextRetriever
 
         mockCodyTools = await CodyToolProvider.instance(mockContextRetriever).getTools()
-
-        mockSpan = {}
 
         mockCurrentContext = [
             {
@@ -152,7 +149,7 @@ describe('DeepCody', () => {
             mockCurrentContext
         )
 
-        const result = await agent.getContext(mockSpan, { aborted: false } as AbortSignal)
+        const result = await agent.getContext({ aborted: false } as AbortSignal)
 
         expect(mockChatClient.chat).toHaveBeenCalled()
         expect(mockCodyTools).toHaveLength(3)

@@ -1290,6 +1290,12 @@
           "type": "boolean",
           "default": false
         },
+        "cody.agentic.shellCommands": {
+          "type": "string",
+          "default": "*",
+          "markdownDescription": "Configures shell command execution for Cody agents when terminal context is enabled on your Sourcegraph instance. Specify commands that Cody can automatically run in the local terminal to gather additional context. Requires a feature flag on the Sourcegraph instance. Use `*` to allow all commands, or specify a comma-separated list of allowed commands. Use `disabled` to disable all shell command execution.",
+          "examples": ["disabled", "*", "cat,rm,echo"]
+        },
         "cody.net.proxy.cacert": {
           "markdownDescription": "Either the PEM-encoded CA certificate the proxy uses (replace newlines with `\\n`), or the path (absolute or tilde) to the file containing that certificate.\n\nExamples:\n- `~/.mitmproxy/mitmproxy-ca-cert.pem`\n- `-----BEGIN CERTIFICATE-----\\n...\\n-----END CERTIFICATE-----`",
           "type": "string",

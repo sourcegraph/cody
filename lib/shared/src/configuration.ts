@@ -64,6 +64,9 @@ interface RawClientConfiguration {
     commandHints: boolean
     commandCodeLenses: boolean
 
+    // Deep Cody
+    agenticShellCommands?: string
+
     //#region Autocomplete
     autocomplete: boolean
     autocompleteLanguages: Record<string, boolean>
