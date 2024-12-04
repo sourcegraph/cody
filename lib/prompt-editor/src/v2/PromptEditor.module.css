@@ -41,3 +41,9 @@
     color: var(--vscode-input-foreground);
     opacity: 0.5;
 }
+
+.editor :global(.ProseMirror)[data-placeholder]::before {
+  position: absolute;
+  content: attr(data-placeholder);
+  pointer-events: none;
+}

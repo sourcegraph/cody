@@ -34,7 +34,7 @@ const atMentionPluginKey = new PluginKey<AtMentionPluginState>('suggestions')
  * @returns The transaction that replaces the at-mention
  */
 export function replaceAtMention(state: EditorState, replacement: Node, appendSpaceIfNecessary: boolean): Transaction {
-    const decoration = atMentionPluginKey.getState(state)?.decoration.find()[0]
+    const decoration = getDecoration(state)
     if (decoration) {
         const tr = state.tr.replaceWith(decoration.from, decoration.to, replacement)
         const end = decoration.from + replacement.nodeSize
@@ -69,11 +69,18 @@ export function hasAtMention(state: EditorState): boolean {
  * @returns The at-mention input or undefined
  */
 export function getAtMentionValue(state: EditorState): string | undefined {
-    const decoration = atMentionPluginKey.getState(state)?.decoration.find()[0]
+    const decoration = getDecoration(state)
     if (decoration) {
         return state.doc.textBetween(decoration.from, decoration.to)
     }
     return undefined
+}
+
+/**
+ * Cheap way to check whether at mention has changed.
+ */
+export function hasAtMentionChanged(nextState: EditorState, prevState: EditorState): boolean {
+    return getDecoration(nextState) !== getDecoration(prevState)
 }
 
 /**
@@ -221,4 +228,8 @@ export function createAtMentionPlugin(): Plugin[] {
             ]
         })
     ]
+}
+
+function getDecoration(state: EditorState): Decoration|undefined {
+    return atMentionPluginKey.getState(state)?.decoration.find()[0]
 }

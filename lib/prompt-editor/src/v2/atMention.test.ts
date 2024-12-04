@@ -1,6 +1,6 @@
 import { EditorState, TextSelection } from 'prosemirror-state'
 import { test, beforeEach, expect } from 'vitest'
-import { schema } from './editor'
+import { schema } from './promptInput'
 import { createAtMentionPlugin, enableAtMention, getAtMentionValue, hasAtMention } from './atMention'
 
 let state: EditorState

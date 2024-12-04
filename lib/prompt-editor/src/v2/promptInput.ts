@@ -6,15 +6,15 @@
 import { setup, assign, fromCallback, ActorRefFrom, enqueueActions, sendTo, AnyEventObject, ActorLike, stopChild, spawnChild} from 'xstate'
 import { Node, Schema } from 'prosemirror-model'
 import { ContextItem, contextItemMentionNodeDisplayText, ContextMentionProviderMetadata, getMentionOperations, REMOTE_DIRECTORY_PROVIDER_URI, REMOTE_FILE_PROVIDER_URI, serializeContextItem, type SerializedContextItem } from '@sourcegraph/cody-shared'
-import { EditorView, NodeViewConstructor } from 'prosemirror-view'
-import { EditorState, Plugin, Selection, Transaction } from 'prosemirror-state'
+import { EditorProps, EditorView } from 'prosemirror-view'
+import { EditorState, Plugin, PluginKey, Selection, Transaction } from 'prosemirror-state'
 import { history, undo, redo } from "prosemirror-history"
 import { keymap } from 'prosemirror-keymap'
 import { baseKeymap } from 'prosemirror-commands'
-import { createAtMentionPlugin, disableAtMention, getAtMentionPosition, getAtMentionValue, hasAtMention, Position, replaceAtMention, setMentionValue } from './atMention'
+import { createAtMentionPlugin, disableAtMention, getAtMentionPosition, getAtMentionValue, hasAtMention, hasAtMentionChanged, Position, replaceAtMention, setMentionValue } from './atMention'
 import type { Item } from './Suggestions'
 
-type MenuItem = Item<ContextItem|ContextMentionProviderMetadata>
+export type MenuItem = Item<ContextItem|ContextMentionProviderMetadata>
 
 export const schema = new Schema({
     nodes: {
@@ -64,7 +64,8 @@ interface ProseMirrorMachineInput {
     parent: ActorRefFrom<typeof promptInput>
     initialState: EditorState
     container: HTMLElement|null
-    nodeViews?: Record<string, NodeViewConstructor>
+    disabled?: boolean
+    props?: EditorProps
 }
 
 type ProseMirrorMachineEvent =
@@ -77,24 +78,56 @@ type ProseMirrorMachineEvent =
 const prosemirrorActor = fromCallback<ProseMirrorMachineEvent, ProseMirrorMachineInput>(({receive, input}) => {
     const editor = new EditorView(input.container ? {mount: input.container} : null, {
         state: input.initialState,
-        nodeViews: input.nodeViews,
+        editable: state => readonlyPluginKey.getState(state) ? false : true,
         dispatchTransaction(transaction) {
             input.parent.send({type: 'dispatch', transaction})
         },
+        handleKeyDown(view, event) {
+            if (input.parent.getSnapshot().hasTag('show mentions menu')) {
+                switch (event.key) {
+                    case 'ArrowDown': {
+                        input.parent.send({ type: 'mentionsMenu.select.next' })
+                        return true
+                    }
+                    case 'ArrowUp': {
+                        input.parent.send({ type: 'mentionsMenu.select.previous' })
+                        return true
+                    }
+                    case 'Enter':
+                        input.parent.send({ type: 'mentionsMenu.apply' })
+                        return true;
+                }
 
+                if (hasAtMention(view.state)) {
+                    switch(event.key) {
+                        case 'Escape':
+                            view.dispatch(disableAtMention(view.state.tr))
+                            return true;
+                    }
+                }
+            }
+            return false
+        },
+        plugins: input.props ? [
+            new Plugin({props: input.props})
+        ] : undefined,
     })
 
     const subscription = input.parent.subscribe(state => {
-        if (state.context.editorState !== editor.state) {
-            console.log(state.context.editorState.toJSON())
-            editor.updateState(state.context.editorState)
+        const nextState = state.context.editorState
+        if (nextState !== editor.state) {
+            const prevState = editor.state
+            editor.updateState(nextState)
+
+            if (hasAtMention(nextState) && (!hasAtMention(prevState) || hasAtMentionChanged(nextState, prevState))) {
+                input.parent.send({ type: 'mentionsMenu.position.update', position: editor.coordsAtPos(getAtMentionPosition(editor.state))})
+            }
         }
     })
 
     function doFocus() {
         editor.focus()
         editor.dispatch(editor.state.tr.scrollIntoView())
-
     }
 
     receive((event) => {
@@ -120,40 +153,80 @@ const prosemirrorActor = fromCallback<ProseMirrorMachineEvent, ProseMirrorMachin
 export interface DataLoaderInput {
     query: string
     context?: ContextMentionProviderMetadata
-    parent: ActorLike<any, {type: 'suggestions.results.set', data: MenuItem[]}>
+    parent: ActorLike<any, {type: 'mentionsMenu.results.set', data: MenuItem[]}>
 }
 
-const dataLoaderMachine = fromCallback<AnyEventObject, DataLoaderInput>(({input}) => {
-
-})
-
 type EditorEvents =
+    // For attaching the editor to the DOM.
     | {type: 'setup', parent: HTMLElement, initialDocument?: Node}
+    // For detaching the editor from the DOM.
     | {type: 'teardown'}
+    // Focus the editor and optionally move the cursor to the end.
     | {type: 'focus', moveCursorToEnd?: boolean}
+    // Blur the editor.
     | {type: 'blur'}
+    | {type: 'update.placeholder', placeholder: string}
+    | {type: 'update.disabled', disabled: boolean}
+    | {type: 'update.contextWindowSizeInTokens', size: number|null}
+    // Append text to end of the input.
     | {type: 'text.append', text: string}
+    // Add additionals mentions to the input. Mentions that overlap with existing mentions will be updated.
     | {type: 'mentions.add', items: SerializedContextItem[], position: 'before' | 'after', separator: string}
+    // Remove the mentions from the input that do not fulfill the filter function.
     | {type: 'mentions.filter', filter: (item: SerializedContextItem) => boolean}
+    // Set the initial mentions of the input. Initial mentions are specifically marked. If the
+    // input only contains initial mentions, the new ones will replace the existing ones.
     | {type: 'mentions.setInitial', items: SerializedContextItem[]}
+    // Used internally to notify the machine that an @mention has been added to the input (typically by typing '@').
+    | {type: 'atMention.added'}
+    // Used internall to notify the machine that an @mention has been removed.
+    | {type: 'atMention.removed'}
+    // Used internall to notify the machine that the value of an @mention has changed.
+    | {type: 'atMention.updated', query: string}
+    // (Potentially) replace the current @mention with the provided context item. Not every item with cause
+    // the @mention to be replaced, some might cause other changes to the machine's state.
+    | {type: 'atMention.apply', item: ContextItem|ContextMentionProviderMetadata}
+    // Used to proxy ProseMirror transactions through the machine.
     | {type: 'dispatch', transaction: Transaction}
 
-type SuggestionsEvents =
-    | { type: 'suggestions.open', position: Position }
-    | { type: 'suggestions.close' }
-    | { type: 'suggestions.select.next' }
-    | { type: 'suggestions.select.previous' }
-    | { type: 'suggestions.filter.update', filter: string, position: Position }
-    | { type: 'suggestions.apply', index?: number }
-    | { type: 'suggestions.results.set', data: MenuItem[] }
-    | { type: 'suggestions.provider.set', provider: ContextMentionProviderMetadata }
+type MentionsMenuEvents =
+    | { type: 'mentionsMenu.select.next' }
+    | { type: 'mentionsMenu.select.previous' }
+    | { type: 'mentionsMenu.position.update', position: Position }
+    | { type: 'mentionsMenu.apply', index?: number }
+    | { type: 'mentionsMenu.results.set', data: MenuItem[] }
+    | { type: 'mentionsMenu.provider.set', provider: ContextMentionProviderMetadata }
 
 interface PromptInputContext {
+    /**
+     * The element that acts as the editor's container.
+     */
     parent: HTMLElement|null,
+    /**
+     * ProseMirror editor state. Kept in sync with the ProseMirror view.
+     */
     editorState: EditorState
-    nodeViews?: Record<string, NodeViewConstructor>
+    /**
+     * Additional props to set on the ProseMirror view.
+     */
+    editorViewProps?: EditorProps
+    /**
+     * Keeps track of whether the initial context has been set or not.
+     */
     hasSetInitialContext: boolean
-    suggestions: {
+    /**
+     * Keeps track of the total available context size. We use this mark whether mentions are
+     * potentially too large.
+     */
+    contextWindowSizeInTokens: number
+    /**
+     * The current size of all mentions in the editor.
+     */
+    currentContextSizeInTokens: number
+    /**
+     * Tracks state for the mentions menu.
+     */
+    mentionsMenu: {
         parent?: ContextMentionProviderMetadata,
         filter: string,
         selectedIndex: number,
@@ -162,15 +235,18 @@ interface PromptInputContext {
     },
 }
 
+export interface PromptInputOptions {
+    placeholder?: string
+    initialDocument?: Node
+    disabled?: boolean
+    contextWindowSizeInTokens?: number
+    editorViewProps?: EditorProps
+}
+
 export const promptInput = setup({
     types: {
-        events: {} as EditorEvents | SuggestionsEvents,
-        input: {} as {
-            placeholder?: string
-            nodeViews?: Record<string, NodeViewConstructor>
-            additionalPlugins?: Plugin[]
-            initialDocument?: Node
-        },
+        events: {} as EditorEvents | MentionsMenuEvents,
+        input: {} as PromptInputOptions,
         context: {} as PromptInputContext,
     },
     actors: {
@@ -178,44 +254,107 @@ export const promptInput = setup({
         /**
          * To be provided by the caller
          */
-        fetchMenuData: dataLoaderMachine,
+        menuDataLoader: fromCallback<AnyEventObject, DataLoaderInput>(() => {})
     },
     actions: {
-        updateEditorState: assign(({context}, params: Transaction) => ({
-            editorState: context.editorState.apply(params),
-        })),
+        updateEditorState: enqueueActions(({context, enqueue}, params: Transaction) => {
+            const prevState = context.editorState
+            const nextState = prevState.apply(params)
+
+            if (nextState !== prevState) {
+                enqueue.assign({editorState: nextState})
+
+                if (nextState.doc !== prevState.doc) {
+                    // Recompute the total size of all present mentions
+                    let newContextSize = 0
+                    nextState.doc.descendants(node => {
+                        if (node.type === schema.nodes.mention) {
+                            newContextSize += (node.attrs.item as SerializedContextItem).size ?? 0
+                            return false
+                        }
+                        return true
+                    })
+
+                    if (newContextSize !== context.currentContextSizeInTokens) {
+                        enqueue.assign({currentContextSizeInTokens: newContextSize})
+                        // Re-process menu items as needed
+                        // @ts-expect-error - type inference in named enqueueActions is a known problem
+                        enqueue({type: 'assignMenuItems', params: context.mentionsMenu.items})
+                    }
+                }
+
+                const atMentionPresent = hasAtMention(nextState)
+                if (atMentionPresent !== hasAtMention(prevState)) {
+                    enqueue.raise(atMentionPresent ?
+                        {type: 'atMention.added'} : {type: 'atMention.removed'}
+                    )
+                }
+
+                const mentionValue = getAtMentionValue(nextState)
+                if (mentionValue !== undefined && mentionValue !== getAtMentionValue(prevState)) {
+                    enqueue.raise({type: 'atMention.updated', query: mentionValue.slice(1)})
+                }
+            }
+        }),
         /**
-         *  Updates the nested suggestions context.
+         *  Updates the nested mentionsMenu context.
          */
-        assignSuggestions: assign(({context}, params: Partial<PromptInputContext['suggestions']>) => ({
-            suggestions: {
-                ...context.suggestions,
+        assignMentionsMenu: assign(({context}, params: Partial<PromptInputContext['mentionsMenu']>) => ({
+            mentionsMenu: {
+                ...context.mentionsMenu,
                 ...params,
             },
         })),
-        fetchMenuData: spawnChild('fetchMenuData', {
+        /**
+         * Assigns the provided menu items to the contest (and performs additional processing).
+         */
+        assignMenuItems: assign(({context}, items: MenuItem[]) => {
+            // Adjust items based on current editor state
+            let remainingTokenBudget = context.contextWindowSizeInTokens - context.currentContextSizeInTokens
+            for (const item of items) {
+                if (!('id' in item.data) && item.data.size !== undefined) {
+                    item.data = {
+                        ...item.data,
+                        isTooLarge: item.data.size > remainingTokenBudget,
+                    }
+                }
+            }
+
+            return {
+                mentionsMenu: {
+                    ...context.mentionsMenu,
+                    items,
+                }
+            }
+        }),
+        fetchMenuData: spawnChild('menuDataLoader', {
             id: 'fetchMenuData',
-            input: ({context, self}) => (console.log('child spawned'), {
-                context: context.suggestions.parent,
-                query: context.suggestions.filter,
+            input: ({context, self}) => ({
+                context: context.mentionsMenu.parent,
+                query: context.mentionsMenu.filter,
                 parent: self,
             }),
         }),
     },
     guards: {
-        isFilterEmpty: ({ context }) => !context.suggestions.filter || context.suggestions.filter.length === 0,
-        hasFilterChanged: ({ context }, params: { filter: string }) => {
-            return context.suggestions.filter !== params.filter
+        isFilterEmpty: ({ context }) => !context.mentionsMenu.filter || context.mentionsMenu.filter.length === 0,
+        hasFilterChanged: ({ context }, params: { query: string }) => {
+            return context.mentionsMenu.filter !== params.query
         },
         canSetInitialMentions: ({ context }) => {
             return !context.hasSetInitialContext ||  isEditorContentOnlyInitialContext(context.editorState)
         },
     },
+    delays: {
+        debounceAtMention: 300,
+    },
 }).createMachine({
-    context: ({input, self}): PromptInputContext => ({
+    context: ({input}): PromptInputContext => ({
         parent: null,
         hasSetInitialContext: false,
-        nodeViews: input.nodeViews,
+        currentContextSizeInTokens: 0,
+        contextWindowSizeInTokens: input.contextWindowSizeInTokens ?? Number.MAX_SAFE_INTEGER,
+        editorViewProps: input.editorViewProps,
         editorState: EditorState.create({
             // TODO: Make schema configurable
             doc: input.initialDocument,
@@ -226,15 +365,15 @@ export const promptInput = setup({
                 history(),
                 keymap({ 'Mod-z': undo, 'Mod-y': redo }),
                 ...createAtMentionPlugin(),
-                // @ts-expect-error
-                atMentionSuggestions(self),
                 // Enables basic keybindings for handling cursor movement
                 keymap(baseKeymap),
                 // Adds a placholder text
-                placeholder(input.placeholder ?? ''),
+                placeholderPlugin(input.placeholder ?? ''),
+                // Controls whether the editor is read-only
+                readonlyPlugin(input.disabled),
             ],
         }),
-        suggestions: {
+        mentionsMenu: {
             filter: '',
             selectedIndex: 0,
             items: [],
@@ -243,6 +382,8 @@ export const promptInput = setup({
     }),
     type: 'parallel',
     states: {
+
+        // This substate manages all interactions with the ProseMirror editor and state.
         editor: {
             initial: 'idle',
             states: {
@@ -264,7 +405,7 @@ export const promptInput = setup({
                             // @ts-expect-error
                             parent: self,
                             container: context.parent,
-                            nodeViews: context.nodeViews,
+                            props: context.editorViewProps,
                             initialState: context.editorState,
                         }),
                     },
@@ -290,6 +431,30 @@ export const promptInput = setup({
                         type: 'updateEditorState',
                         params: ({event}) => event.transaction,
                     },
+                },
+
+                'update.placeholder': {
+                    actions: {
+                        type: 'updateEditorState',
+                        params: ({context, event}) => context.editorState.tr.setMeta(placeholderPluginKey, event.placeholder)
+                    },
+                },
+                'update.disabled': {
+                    actions: {
+                        type: 'updateEditorState',
+                        params: ({context, event}) => context.editorState.tr.setMeta(readonlyPluginKey, event.disabled)
+                    },
+                },
+                'update.contextWindowSizeInTokens': {
+                    actions: enqueueActions(({context, enqueue, event}) => {
+                        let size = event.size ?? Number.MAX_SAFE_INTEGER
+                        if (size !== context.contextWindowSizeInTokens) {
+                            enqueue.assign({contextWindowSizeInTokens: size})
+                            // Update menu items with updated size
+                            enqueue({type: 'assignMenuItems', params: context.mentionsMenu.items})
+                        }
+
+                    })
                 },
 
                 'text.append': {
@@ -332,165 +497,175 @@ export const promptInput = setup({
                         },
                     ],
                 },
+                'atMention.apply': {
+                    actions: enqueueActions(({context, enqueue, event}) => {
+                        const item = event.item
+
+                        // ContextMentionProviderMetadata
+                        if ('id' in item) {
+                            // Remove current mentions value
+                            enqueue({type: 'updateEditorState', params: setMentionValue(context.editorState, '')})
+                            // This is an event so that we can retrigger data fetching
+                            enqueue.raise({type: 'mentionsMenu.provider.set', provider: item})
+                            return
+                        }
+
+                        // ContextItem
+                        // HACK: The OpenCtx interface do not support building multi-step selection for mentions.
+                        // For the remote file search provider, we first need the user to search for the repo from the list and then
+                        // put in the query to search for files. Below we are doing a hack to not set the repo item as a mention
+                        // but instead keep the same provider selected and put the full repo name in the query. The provider will then
+                        // return files instead of repos if the repo name is in the query.
+                        if (item.provider === 'openctx' && 'providerUri' in item) {
+                            if (
+                                (item.providerUri === REMOTE_FILE_PROVIDER_URI && item.mention?.data?.repoName && !item.mention.data.filePath) ||
+                                (item.providerUri === REMOTE_DIRECTORY_PROVIDER_URI) && item.mention?.data?.repoName && !item.mention.data.directoryPath) {
+                                // Do not set the selected item as mention if it is repo item from the remote file search provider.
+                                // Rather keep the provider in place and update the query with repo name so that the provider can
+                                // start showing the files instead.
+                                enqueue({type: 'updateEditorState', params: setMentionValue(context.editorState, item.mention.data.repoName + ':')})
+                                enqueue({type: 'assignMentionsMenu', params: {selectedIndex: 0}})
+                                return
+                            }
+                        }
+
+                        // When selecting a large file without range, add the selected option as text node with : at the end.
+                        // This allows users to autocomplete the file path, and provide them with the options to add range.
+                        if (item.isTooLarge && !item.range) {
+                            enqueue({type: 'updateEditorState', params: setMentionValue(context.editorState, contextItemMentionNodeDisplayText(serializeContextItem(item)) + ':')})
+                            return
+                        }
+
+                        // Insert mention node
+                        enqueue({
+                            type: 'updateEditorState',
+                            params: replaceAtMention(context.editorState, createMentionNode({item: serializeContextItem(item)}), true),
+                        })
+                    }),
+                },
+                'mentionsMenu.apply': {
+                    actions: [
+                        // Update selected index if necessary
+                        enqueueActions(({enqueue, event}) => {
+                            if(event.index !== undefined) {
+                                enqueue({type: 'assignMentionsMenu', params: {selectedIndex: event.index}})
+                            }
+                        }),
+                        // Handle menu item selection
+                        enqueueActions(({context, enqueue}) => {
+                            const item = context.mentionsMenu.items[context.mentionsMenu.selectedIndex]?.data
+                            if (item) {
+                                enqueue.raise({type: 'atMention.apply', item})
+                            }
+                        }),
+                    ],
+                },
             },
         },
 
-        suggestions: {
+        // This substate manages the fetching of menu data. It's main responsibility is to fetch new data as
+        // @mentions are typed, and debounce those requests.
+        dataLoader: {
+            initial: 'idle',
+            states: {
+                idle: {
+                    exit: [
+                        stopChild('fetchMenuData'),
+                    ],
+                    on: {
+                        "mentionsMenu.results.set": {
+                            actions: {type: 'assignMenuItems', params: ({event}) => event.data},
+                        },
+                    },
+                },
+                debounce: {
+                    after: {
+                        debounceAtMention: 'loading',
+                    },
+                    on: {
+                        "atMention.updated": {
+                            actions: {
+                                type: 'assignMentionsMenu',
+                                params: ({event}) => ({
+                                    filter: event.query,
+                                }),
+                            },
+                            reenter: true,
+                        },
+                    },
+                },
+                loading: {
+                    entry: 'fetchMenuData',
+
+                    // This isn't great but we don't know when data loading is done
+                    always: 'idle',
+                },
+            },
+            on: {
+                "atMention.added": ".loading",
+                "atMention.removed": {
+                    actions: [
+                        stopChild('fetchMenuData'),
+                        {type: 'assignMentionsMenu', params: {parent: undefined, items: [], selectedIndex: 0}},
+                    ],
+                    target: '.idle',
+                },
+                "mentionsMenu.provider.set": {
+                    actions: {type: 'assignMentionsMenu', params: ({event}) => ({parent: event.provider, selectedIndex: 0})},
+                    target: '.loading',
+                },
+                "atMention.updated": {
+                    guard: { type: 'hasFilterChanged', params: ({event}) => event},
+                    actions: [
+                        stopChild('fetchMenuData'),
+                        {
+                            type: 'assignMentionsMenu',
+                            params: ({event}) => ({
+                                filter: event.query,
+                            }),
+                        },
+                    ],
+                    target: '.debounce',
+                },
+            },
+        },
+
+        // This substate manages the visibility and selection state of the mentions menu.
+        mentionMenu: {
             initial: 'closed',
             states: {
                 closed: {
                     on: {
-                        'suggestions.open': {
-                            target: 'open.loading',
-                            actions: {
-                                type: 'assignSuggestions',
-                                params: ({event}) => ({
-                                    parent: undefined,
-                                    filter: '',
-                                    selectedIndex: 0,
-                                    items: [],
-                                    position: event.position,
-                                }),
-                            },
-                        },
+                        'atMention.added': 'open',
                     },
                 },
                 open: {
-                    tags: 'show suggestions',
-                    initial: 'idle',
-                    states: {
-                        idle: {
-                            exit: stopChild('fetchMenuData'),
-                            on: {
-                                "suggestions.results.set": {
-                                    actions: {type: 'assignSuggestions', params: ({event}) => ({items: event.data})},
-                                },
-                                "suggestions.provider.set": {
-                                    actions: {type: 'assignSuggestions', params: ({event}) => ({parent: event.provider, selectedIndex: 0})},
-                                    target: 'loading',
-                                },
-                                "suggestions.select.next": {
-                                    actions: {
-                                        type: 'assignSuggestions',
-                                        params: ({context}) => ({
-                                            selectedIndex: (context.suggestions.selectedIndex + 1) % context.suggestions.items.length,
-                                        }),
-                                    },
-                                },
-                                "suggestions.select.previous": {
-                                    actions: {
-                                        type: 'assignSuggestions',
-                                        params: ({context}) => ({
-                                            selectedIndex: context.suggestions.selectedIndex === 0 ? context.suggestions.items.length - 1 : context.suggestions.selectedIndex - 1,
-                                        }),
-                                    },
-                                },
-                                'suggestions.apply': {
-                                    actions: [
-                                        // Update selected index if necessary
-                                        enqueueActions(({enqueue, event}) => {
-                                            if(event.index !== undefined) {
-                                                enqueue({type: 'assignSuggestions', params: {selectedIndex: event.index}})
-                                            }
-                                        }),
-                                        // Handle menu item selection
-                                        // TODO: This should probably be handled differently since it is very item specific
-                                        enqueueActions(({context, enqueue}) => {
-                                            const item = context.suggestions.items[context.suggestions.selectedIndex]?.data
-                                            // I wish this wouldn't have to be inlined but typing enqueueActions is a pain
-                                            if (!item) {
-                                                return
-                                            }
-                                            console.log(item)
-
-                                            // ContextMentionProviderMetadata
-                                            if ('id' in item) {
-                                                // Remove current mentions value
-                                                enqueue({type: 'updateEditorState', params: setMentionValue(context.editorState, '')})
-                                                // This is an event so that we can retrigger data fetching
-                                                enqueue.raise({type: 'suggestions.provider.set', provider: item})
-                                                return
-                                            }
-
-                                            // ContextItem
-                                            // HACK: The OpenCtx interface do not support building multi-step selection for mentions.
-                                            // For the remote file search provider, we first need the user to search for the repo from the list and then
-                                            // put in the query to search for files. Below we are doing a hack to not set the repo item as a mention
-                                            // but instead keep the same provider selected and put the full repo name in the query. The provider will then
-                                            // return files instead of repos if the repo name is in the query.
-                                            if (item.provider === 'openctx' && 'providerUri' in item) {
-                                                if (
-                                                    (item.providerUri === REMOTE_FILE_PROVIDER_URI && item.mention?.data?.repoName && !item.mention.data.filePath) ||
-                                                    (item.providerUri === REMOTE_DIRECTORY_PROVIDER_URI) && item.mention?.data?.repoName && !item.mention.data.directoryPath) {
-                                                    // Do not set the selected item as mention if it is repo item from the remote file search provider.
-                                                    // Rather keep the provider in place and update the query with repo name so that the provider can
-                                                    // start showing the files instead.
-                                                    enqueue({type: 'updateEditorState', params: setMentionValue(context.editorState, item.mention.data.repoName + ':')})
-                                                    enqueue({type: 'assignSuggestions', params: {selectedIndex: 0}})
-                                                    return
-                                                }
-                                            }
-
-                                            // When selecting a large file without range, add the selected option as text node with : at the end.
-                                            // This allows users to autocomplete the file path, and provide them with the options to add range.
-                                            if (item.isTooLarge && !item.range) {
-                                                enqueue({type: 'updateEditorState', params: setMentionValue(context.editorState, contextItemMentionNodeDisplayText(serializeContextItem(item)) + ':')})
-                                                return
-                                            }
-
-                                            // Insert mention node
-                                            enqueue({
-                                                type: 'updateEditorState',
-                                                params: replaceAtMention(context.editorState, createMentionNode({item: serializeContextItem(item)}), true),
-                                            })
-                                        }),
-                                    ],
-                                },
-                            },
-                        },
-                        debounce: {
-                            tags: 'fetch suggestions',
-                            after: {
-                                300: 'loading',
-                            },
-                            always: {
-                                guard: {type: 'isFilterEmpty'},
-                                target: 'loading',
-                            },
-                            on: {
-                                "suggestions.filter.update": {
-                                    actions: {
-                                        type: 'assignSuggestions',
-                                        params: ({event}) => ({
-                                            filter: event.filter,
-                                            position: event.position,
-                                        }),
-                                    },
-                                    reenter: true,
-                                },
-                            },
-                        },
-                        loading: {
-                            entry: 'fetchMenuData',
-                            // This isn't great but we don't know when data loading is done
-                            always: 'idle',
-                        },
-                    },
+                    tags: 'show mentions menu',
                     on: {
-                        "suggestions.close": 'closed',
-                        "suggestions.filter.update": {
-                            guard: { type: 'hasFilterChanged', params: ({event}) => event},
-                            actions: [
-                                stopChild('fetchMenuData'),
-                                {
-                                    type: 'assignSuggestions',
-                                    params: ({event}) => ({
-                                        filter: event.filter,
-                                        position: event.position,
-                                    }),
-                                },
-                            ],
-                            target: '.debounce',
+                        'atMention.removed': 'closed',
+                        "mentionsMenu.select.next": {
+                            actions: {
+                                type: 'assignMentionsMenu',
+                                params: ({context}) => ({
+                                    selectedIndex: (context.mentionsMenu.selectedIndex + 1) % context.mentionsMenu.items.length,
+                                }),
+                            },
+                        },
+                        "mentionsMenu.select.previous": {
+                            actions: {
+                                type: 'assignMentionsMenu',
+                                params: ({context}) => ({
+                                    selectedIndex: context.mentionsMenu.selectedIndex === 0 ? context.mentionsMenu.items.length - 1 : context.mentionsMenu.selectedIndex - 1,
+                                }),
+                            },
+                        },
+                        "mentionsMenu.position.update": {
+                            actions: {
+                                type: 'assignMentionsMenu',
+                                params: ({event}) => ({
+                                    position: event.position,
+                                }),
+                            },
                         },
                     },
                 },
@@ -499,19 +674,34 @@ export const promptInput = setup({
     },
 })
 
+const placeholderPluginKey = new PluginKey('placeholder')
+
 /**
  * A plugin that adds a placeholder to the editor
  */
-function placeholder(text: string): Plugin {
+function placeholderPlugin(text: string): Plugin {
     const update = (view: EditorView) => {
         if (view.state.doc.textContent) {
             view.dom.removeAttribute('data-placeholder');
         } else {
-            view.dom.setAttribute('data-placeholder', text);
+            view.dom.setAttribute('data-placeholder', placeholderPluginKey.getState(view.state));
         }
     };
 
-    return new Plugin({
+    return new Plugin<string>({
+        key: placeholderPluginKey,
+        state: {
+            init() {
+                return text
+            },
+            apply(tr, value) {
+                if (tr.getMeta(placeholderPluginKey)) {
+                    return tr.getMeta(placeholderPluginKey)
+                }
+                return value
+            },
+
+        },
         view(view) {
             update(view);
 
@@ -520,48 +710,23 @@ function placeholder(text: string): Plugin {
     });
 }
 
-/**
- * A plugin that connects at-mentions with showing and handling suggestions.
- */
-function atMentionSuggestions(actor: ActorRefFrom<typeof promptInput>): Plugin {
-    return new Plugin({
-        view() {
-            return {
-                update(view: EditorView, prevState: EditorState) {
-                    if (hasAtMention(view.state) && !hasAtMention(prevState)) {
-                        actor.send({ type: 'suggestions.open', position: view.coordsAtPos(getAtMentionPosition(view.state)) })
-                    } else if (!hasAtMention(view.state) && hasAtMention(prevState)) {
-                        actor.send({type: 'suggestions.close'})
-                    }
+const readonlyPluginKey = new PluginKey('readonly')
 
-                    const mentionValue = getAtMentionValue(view.state)
-                    if (mentionValue !== undefined && mentionValue !== getAtMentionValue(prevState)) {
-                        actor.send({ type: 'suggestions.filter.update', filter: mentionValue.slice(1), position: view.coordsAtPos(getAtMentionPosition(view.state)) })
-                    }
+/**
+ * A plugin that disables the editor
+ */
+function readonlyPlugin(initial = false) {
+    return new Plugin<boolean>({
+        key: readonlyPluginKey,
+        state: {
+            init() {
+                return initial
+            },
+            apply(tr, value) {
+                if (tr.getMeta(readonlyPluginKey)) {
+                    return tr.getMeta(readonlyPluginKey)
                 }
-            }
-        },
-        props: {
-            handleKeyDown(view, event) {
-                if (actor.getSnapshot().hasTag('show suggestions')) {
-                    switch (event.key) {
-                        case 'ArrowDown': {
-                            actor.send({ type: 'suggestions.select.next' })
-                            return true
-                        }
-                        case 'ArrowUp': {
-                            actor.send({ type: 'suggestions.select.previous' })
-                            return true
-                        }
-                        case 'Enter':
-                            actor.send({ type: 'suggestions.apply' })
-                            return true;
-                        case 'Escape':
-                            view.dispatch(disableAtMention(view.state.tr))
-                            return true;
-                    }
-                }
-                return false
+                return value
             },
         },
     })
@@ -591,7 +756,7 @@ function insertWhitespaceIfNeeded(tr: Transaction, pos?: number): Transaction {
 function filterMentions(state: EditorState, filter: (item: SerializedContextItem) => boolean): Transaction {
     const tr = state.tr
     state.doc.descendants((node, pos) => {
-        if (node.type.name === 'mention') {
+        if (node.type === schema.nodes.mention) {
             const item = node.attrs.item as SerializedContextItem
             if (!filter(item)) {
                 tr.delete(tr.mapping.map(pos), tr.mapping.map(pos + node.nodeSize))
@@ -609,7 +774,7 @@ function filterMentions(state: EditorState, filter: (item: SerializedContextItem
 function getMentions(doc: Node): SerializedContextItem[] {
     const mentions: SerializedContextItem[] = []
     doc.descendants(node => {
-        if (node.type.name === 'mention') {
+        if (node.type === schema.nodes.mention) {
             mentions.push(node.attrs.item)
             return false
         }
@@ -634,7 +799,7 @@ function addMentions(state: EditorState, items: SerializedContextItem[], positio
 
     if ((operations.modify.size + operations.delete.size) > 0) {
         state.doc.descendants((node, pos) => {
-            if (node.type.name === 'mention') {
+            if (node.type === schema.nodes.mention) {
                 const item = node.attrs.item as SerializedContextItem
                 if (operations.delete.has(item)) {
                     tr.delete(tr.mapping.map(pos), tr.mapping.map(pos + node.nodeSize))
@@ -699,7 +864,7 @@ function isEditorContentOnlyInitialContext(state: EditorState): boolean {
             }
             case 'paragraph':
             case 'doc':
-                break
+                return onlyInitialContext
             default:
                 onlyInitialContext = false
         }
