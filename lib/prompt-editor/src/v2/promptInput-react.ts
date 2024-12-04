@@ -3,13 +3,13 @@ import { DataLoaderInput, promptInput } from "./promptInput"
 import { ContextItem, ContextMentionProviderMetadata, serializeContextItem, SerializedContextItem } from "@sourcegraph/cody-shared"
 import { Item } from "./Suggestions"
 import { ActorRefFrom, fromCallback } from "xstate"
-import { useEffect, useMemo } from "react"
+import { useEffect, useMemo, useRef } from "react"
 import { Node } from "prosemirror-model"
 import { MentionView } from "./mentionNode"
 import { replaceDocument } from "./prosemirror-utils"
 import { EditorState } from "prosemirror-state"
 import { Position } from "./atMention"
-import type {AnyEventObject, EventFrom } from 'xstate'
+import type {AnyEventObject} from 'xstate'
 import type { Observable } from "observable-fns"
 
 type MenuItem = Item<ContextItem|ContextMentionProviderMetadata>
@@ -19,7 +19,13 @@ type PromptInputActor = ActorRefFrom<PromptInputLogic>
 interface PromptEditorOptions {
     placeholder?: string
     initialDocument?: Node
+    disabled?: boolean
+    contextWindowSizeInTokens?: number
+
     onChange?: (doc: Node) => void
+    onFocusChange?: (focus: boolean) => void
+    onEnterKey?: (event: KeyboardEvent | null) => void
+
     fetchMenuData: (args: {query: string, parent?: ContextMentionProviderMetadata}) => Observable<MenuItem[]>
 }
 
@@ -41,27 +47,58 @@ function getCurrentEditorState(input: ActorRefFrom<typeof promptInput>): EditorS
 
 export const useEditor = (options: PromptEditorOptions): [PromptInputActor, PromptEditorAPI] => {
     const fetchMenuData = useMemo(() => fromCallback<AnyEventObject, DataLoaderInput>(({input}) => {
-        console.log('fetchMenuData', input.query, input.context)
         const subscription = options.fetchMenuData({query: input.query, parent: input.context}).subscribe(
             next => {
-                input.parent.send({type: 'suggestions.results.set', data: next})
+                input.parent.send({type: 'mentionsMenu.results.set', data: next})
             },
         )
         return () => subscription.unsubscribe()
     }), [options.fetchMenuData])
 
+    const focused = useRef(false)
+
+    const onFocusChangeRef = useRef(options.onFocusChange)
+    onFocusChangeRef.current = options.onFocusChange
+    const onEnterKeyRef = useRef(options.onEnterKey)
+    onEnterKeyRef.current = options.onEnterKey
+
     const editor = useActorRef(promptInput.provide({
         actors: {
-            fetchMenuData,
+            menuDataLoader: fetchMenuData,
         },
     }), { input: {
-        placeholder: options.placeholder,
-        initialDocument: options.initialDocument,
-        nodeViews: {
-            mention(node) {
-                return new MentionView(node)
+        editorViewProps: {
+            handleDOMEvents: {
+                focus: () => {
+                    if (!focused.current) {
+                        focused.current = true
+                        onFocusChangeRef.current?.(true)
+                    }
+                },
+                blur: () => {
+                    if (focused.current) {
+                        focused.current = false
+                        onFocusChangeRef.current?.(false)
+                    }
+                },
+            },
+            handleKeyDown: (_view, event) => {
+                if (event.key === 'Enter') {
+                    onEnterKeyRef.current?.(event)
+                    return event.defaultPrevented
+                }
+                return false
+            },
+            nodeViews: {
+                mention(node) {
+                    return new MentionView(node)
+                },
             },
         },
+        placeholder: options.placeholder,
+        initialDocument: options.initialDocument,
+        disabled: options.disabled,
+        contextWindowSizeInTokens: options.contextWindowSizeInTokens,
     }})
 
     const api: PromptEditorAPI  = useMemo(() => ({
@@ -92,7 +129,7 @@ export const useEditor = (options: PromptEditorOptions): [PromptInputActor, Prom
             editor.send({type: 'mentions.filter', filter})
         },
         applySuggestion(index) {
-            editor.send({type: 'suggestions.apply', index})
+            editor.send({type: 'mentionsMenu.apply', index})
         },
         getEditorState() {
             return getCurrentEditorState(editor)
@@ -104,16 +141,19 @@ export const useEditor = (options: PromptEditorOptions): [PromptInputActor, Prom
         }
     }), [editor])
 
+    const onChangeRef = useRef(options.onChange)
+    onChangeRef.current = options.onChange
+
     useEffect(() => {
         let previousDoc: Node|undefined
         const subscription = editor.subscribe(state => {
             if (state.context.editorState.doc !== previousDoc) {
                 previousDoc = state.context.editorState.doc
-                options.onChange?.(previousDoc)
+                onChangeRef.current?.(previousDoc)
             }
         })
         return () => subscription.unsubscribe()
-    }, [editor, options.onChange])
+    }, [editor])
 
     return [editor, api] as const
 }
@@ -123,23 +163,20 @@ interface Suggestions {
     items: MenuItem[]
     selectedIndex: number
     query: string
-    isLoading: boolean
     position: Position
     parent: ContextMentionProviderMetadata | null
 }
 
-export function useSuggestions(input: PromptInputActor): Suggestions {
-    const showSuggestions = useSelector(input, state => state.hasTag('show suggestions'))
-    const suggestions = useSelector(input, state => state.context.suggestions)
-    const isLoading = useSelector(input, state => state.hasTag('loading suggestions'))
+export function useMentionsMenu(input: PromptInputActor): Suggestions {
+    const showMenu = useSelector(input, state => state.hasTag('show mentions menu'))
+    const mentionsMenu = useSelector(input, state => state.context.mentionsMenu)
 
     return {
-        parent: suggestions.parent ?? null,
-        show: showSuggestions,
-        items: suggestions.items,
-        selectedIndex: suggestions.selectedIndex,
-        query: suggestions.filter,
-        isLoading,
-        position: suggestions.position,
+        parent: mentionsMenu.parent ?? null,
+        show: showMenu,
+        items: mentionsMenu.items,
+        selectedIndex: mentionsMenu.selectedIndex,
+        query: mentionsMenu.filter,
+        position: mentionsMenu.position,
     }
 }

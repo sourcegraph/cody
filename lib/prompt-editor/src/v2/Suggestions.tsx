@@ -11,7 +11,6 @@ interface SuggestionsProps<T> {
     items: Item<T>[]
     selectedIndex: number
     filter: string
-    loading: boolean
     menuPosition: Position
     getHeader: () => React.ReactNode
     getEmptyLabel: (args: {filter: string}) => React.ReactNode
@@ -19,7 +18,7 @@ interface SuggestionsProps<T> {
     renderItem: (data: T) => React.ReactNode
 }
 
-export const Suggestions = <T,>({items, selectedIndex, filter, loading, menuPosition, getHeader, getEmptyLabel, onSelect, renderItem}: SuggestionsProps<T>) => {
+export const Suggestions = <T,>({items, selectedIndex, filter, menuPosition, getHeader, getEmptyLabel, onSelect, renderItem}: SuggestionsProps<T>) => {
     const container = useRef<HTMLDivElement | null>(null)
 
     useEffect(() => {
@@ -48,7 +47,7 @@ export const Suggestions = <T,>({items, selectedIndex, filter, loading, menuPosi
 
     return <div
         ref={container}
-        className={clsx(styles.suggestions, menuClass, { [styles.loading]: loading })}
+        className={clsx(styles.suggestions, menuClass)}
         onMouseDown={handleMouseDown}
         onClick={handleClick}
         style={{ top: menuPosition.bottom, left: menuPosition.left }}>
@@ -61,8 +60,7 @@ export const Suggestions = <T,>({items, selectedIndex, filter, loading, menuPosi
                     {renderItem(item.data)}
                 </li>
             )}
-            {loading && items.length === 0 && <li aria-disabled="true">Loading...</li>}
-            {!loading && items.length === 0 && <li aria-disabled="true">{getEmptyLabel({filter})}</li>}
+            {items.length === 0 && <li aria-disabled="true">{getEmptyLabel({filter})}</li>}
         </ul>
     </div>
 }
