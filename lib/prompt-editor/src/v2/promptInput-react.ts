@@ -83,7 +83,9 @@ export const useEditor = (options: PromptEditorOptions): [PromptInputActor, Prom
                 },
             },
             handleKeyDown: (_view, event) => {
-                if (event.key === 'Enter') {
+                // For some reason we have to avoid calling onEnterKey when shift is pressed,
+                // otherwise the editor's Shift-Enter keybinding will not be triggered.
+                if (!event.shiftKey && event.key === 'Enter') {
                     onEnterKeyRef.current?.(event)
                     return event.defaultPrevented
                 }
