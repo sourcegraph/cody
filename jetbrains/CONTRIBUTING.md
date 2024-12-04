@@ -44,11 +44,11 @@ run `sdk use java 17-zulu`. Confirm that you have Java 17 installed with `java -
   
 **Set up the Cody agent dev environment:**
 
-- Clone `https://github.com/sourcegraph/cody` in a sibling directory.
+- Clone `https://github.com/sourcegraph/cody`
 - Install its dependencies. The easiest way
       is [with `asdf`](https://github.com/sourcegraph/cody/blob/main/doc/dev/index.md). If not using `asdf`, you just
       need to install the dependency versions listed in the `.tool-versions` file in that repository.
-- From the root directory of the repository, `cd ./agent && pnpm install && pnpm build`
+- From the root directory of the repository, `pnpm install && cd lib && pnpm build && cd ../agent && pnpm build`
 
 > 🤞 On Windows ARM64:
 > - There's no Chromium aarch64 binary (installed by Puppeteer)
@@ -70,7 +70,6 @@ run `sdk use java 17-zulu`. Confirm that you have Java 17 installed with `java -
 |----------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------|
 | Run the plugin locally                                                                                   | `./gradlew :customRunIde`                                                |
 | Run the plugin locally with fresh build of Cody                                                          | `./gradlew -PforceAgentBuild=true :customRunIde`                         |
-| Run the plugin locally with fresh build of a local clone of Cody (CODY_DIR needs to be an absolute path) | `CODY_DIR=<path_to_cody> ./gradlew -PforceAgentBuild=true :customRunIde` |
 | Run the plugin locally with fresh build of Code Search assets                                            | `./gradlew -PforceCodeSearchBuild=true :customRunIde`                    |
 | Run the plugin locally with different IntelliJ version                                                   | `./gradlew -PplatformRuntimeVersion=2024.2.0.2 :customRunIde`            |
 | Run the plugin locally in split mode (useful for Gateway testing)                                        | `./gradlew -PsplitMode=true :customRunIde`                               |
@@ -116,17 +115,6 @@ You should build everything in PowerShell. Git Bash, Ubuntu and MinGW all offer 
 $env:SKIP_CODE_SEARCH_BUILD="true"
 ```
 
-### Web UI Development
-
-The fastest way to develop the Web UI is to use Storybook. However for some tasks loading the webview in JetBrains is
-unavoidable. The process to do this is:
-
-1. Use the "Run the plugin locally with fresh build of a local clone of Cody" setup (see above.) Specifically, you must have `CODY_DIR` set.
-2. After changing the Web UI, in `$CODY_DIR` run `pnpm -C agent build:webviews`
-3. Start a new chat to load the new webview bundle.
-
-For changes in the TypeScript extension outside of the webview bundle, you must use one of the agent workflows described above.
-
 ## Using Nightly/Experimental channel releases
 
 - Open "Sourcegraph & Cody" settings
@@ -158,28 +146,6 @@ Take the steps below _before_ [running JetBrains plugin with agent](#developing-
       Note: After [#56254](https://github.com/sourcegraph/sourcegraph/issues/56254) is resolved this step is not needed
       anymore.
 
-## Updating Cody version
-
-To upgrade Cody to the newer version you need to update the `cody.commit` hash in `gradle.properties`.
-After doing that:
-
-1. Run on the `sourcegraph/cody` repo: `git diff --name-status OLD_HASH..NEW_HASH -- agent`  
-   It will print you a list of files changed between updates.  
-   Changes in tests or bindings might require adjustments in the jetbrains codebase, so please inspect those carefully.
-2. Check if the main features are working before sending it for the full QA.  
-   Please pay special attention to areas with potential changes indicated by point 1):
-    * autocomplete
-    * chat
-    * chat history
-    * context fixes in chat responses
-    * @-files in chat prompt
-    * enhanced remote context
-    * commands from context menu and commands tab
-    * login / account switch
-
-   You don't need to cover all corner cases and do a full QA, but make sure basic features still work.  
-   Cody version updates tends to break them completely or not at all, so it should allow us to catch most issues early.
-
 ## Publishing a New Release
 
 ### Historical context
@@ -205,8 +171,8 @@ graph TD;
     release_nightly --> available_to_end_users_nightly["Available for download"];
 ```
 
-We aim to cut a new Stable release every other week on Mondays.
-The release cadence is irregular for Nightly versions.
+We aim to cut a new release to "nightly" mid week, every week. If QA or dogfood find issues we backport fixes and
+do updated nightly releases. At the end of a week, we re-cut the best build as "stable".
 
 ### 1. Push a git tag & publish a nightly release
 
@@ -238,7 +204,7 @@ Wait for the `Release to Marketplace` GitHub workflow to complete.
 
 ### 2. Publish a stable release 
 
-Go to [Stable Release workflow](https://github.com/sourcegraph/jetbrains/actions/workflows/stable-release.yml),
+Go to [Stable Release workflow](https://github.com/sourcegraph/cody/actions/workflows/stable-release.yml),
 click `Run workflow` and select the tag that has been pushed before (and tested by QA team), run it.
 
 It can take up to 48hr for stable releases to get approved by the JetBrains Marketplace team.
@@ -249,7 +215,7 @@ the [JetBrains Slack workspace](https://plugins.jetbrains.com/slack/).
 
 For every stable release, create a GitHub release summarizing the changes.
 
-Visit [releases page](https://github.com/sourcegraph/jetbrains/releases) and click `Draft a new release`, choose your
+Visit [releases page](https://github.com/sourcegraph/cody/releases) and click `Draft a new release`, choose your
 tag and use `Generate release notes`. Release notes should appear automatically. Be aware that the automatic release are
 based on the history of commits, so sometimes the titles are not properly formatted, capitalized or grammatically
 correct. **This may sometimes require manual tweaks.**
@@ -309,12 +275,9 @@ Configurations.
 
 For both debugging setups (Cody-spawns and JB-spawned), you will need:
 
-- `github.com/sourcegraph/cody` cloned in the same directory where
-  you cloned `sourcegraph/jetbrains`, so that they are sibling dirs.
-    - likely not strictly necessary, but it seems to be the convention
 - `sourcegraph/cody` (TypeScript) opened in one IDEA project window
     - this is a Node project _(requires Ultimate Edition)_
-- `sourcegraph/jetbrains` opened in a second IDEA project window
+- `sourcegraph/cody jetbrains` opened in a second IDEA project window
     - this is a Gradle project
 
 You'll always have at least 2 IntelliJ project windows open: One for
@@ -348,7 +311,7 @@ project window.
 
 ### Extension Run Config
 
-Create this configuration in the `sourcegraph/jetbrains` project window.
+Create this configuration in the `sourcegraph/cody jetbrains` project window.
 Choose Edit Configurations and `+` to add a new one:
 
 - Type: Gradle
@@ -360,10 +323,10 @@ Choose Edit Configurations and `+` to add a new one:
     - choose the pnpm builder tool
 - Gradle project: `jetbrains` _(the default)_
 - env vars:
-    - `CODY_DIR`=_absolute path to your cody repo clone_
-        - mine was set to `/Users/stevey/src/sg/cody`
     - `CODY_AGENT_DEBUG_INSPECT=true`
         - this tells the plugin to spawn agent with `--inspect`
+
+Use `CODY_AGENT_DEBUG_INSPECT=wait` to make the agent wait for the debugger to attach.
 
 ### Agent Run Config
 
@@ -385,7 +348,7 @@ configurations.
 
 ### Extension Run Config
 
-Create this configuration in the `sourcegraph/jetbrains` project window:
+Create this configuration in the `sourcegraph/cody jetbrains` project window:
 
 - Type: Gradle
 - Name: whatever, e.g., `Connect to IDEA-spawned Agent`

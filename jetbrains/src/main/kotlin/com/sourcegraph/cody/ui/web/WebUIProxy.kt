@@ -26,7 +26,6 @@ import java.nio.channels.CompletionHandler
 import java.nio.charset.StandardCharsets
 import java.nio.file.StandardOpenOption
 import javax.swing.JComponent
-import kotlin.io.path.Path
 import kotlin.math.min
 import org.cef.browser.CefBrowser
 import org.cef.browser.CefFrame
@@ -534,13 +533,7 @@ class ExtensionResourceHandler : CefResourceHandler {
 
     ApplicationManager.getApplication().executeOnPooledThread {
       // Find the plugin resources.
-      val codyDirOverride = System.getenv("CODY_DIR")
-      val resourcesPath =
-          if (codyDirOverride != null) {
-            Path(codyDirOverride).resolve("agent/dist")
-          } else {
-            CodyAgent.pluginDirectory()?.resolve("agent")
-          }
+      val resourcesPath = CodyAgent.agentDirectory()
       if (resourcesPath == null) {
         logger.warn(
             "Aborting WebView request for ${requestPath}, extension resource directory not found")
