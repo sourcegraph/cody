@@ -90,57 +90,52 @@ interface TestClientParams {
     extraConfiguration?: Record<string, any>
 }
 
+let isBuilt = false
+export function buildAgentBinary(): void {
+    if (isBuilt) {
+        return
+    }
+    isBuilt = true
+    // Bundle the agent. When running `pnpm run test`, vitest doesn't re-run this step.
+    //
+    // ! If this line fails when running unit tests, chances are that the error is being swallowed.
+    // To see the full error, run this file in isolation:
+    //
+    //   pnpm test agent/src/index.test.ts
+    execSync('pnpm run build:for-tests ', {
+        cwd: getAgentDir(),
+        stdio: 'inherit',
+    })
+
+    const mayRecord =
+        process.env.CODY_RECORDING_MODE === 'record' || process.env.CODY_RECORD_IF_MISSING === 'true'
+    if (mayRecord) {
+        try {
+            // Fail fast if we're trying to record without being authenticated.
+            // Without this check, the error message can be cryptic if you try
+            // to record without being authenticated.
+            execSync('src login', {
+                stdio: 'inherit',
+                env: {
+                    ...process.env,
+                    SRC_ACCESS_TOKEN: TESTING_CREDENTIALS.dotcom.token,
+                    SERVER_ENDPOINT: TESTING_CREDENTIALS.dotcom.serverEndpoint,
+                },
+            })
+        } catch {
+            throw new Error(
+                "Can't record HTTP requests without being authenticated. " +
+                    'To fix this problem, run:\n  source agent/scripts/export-cody-http-recording-tokens.sh'
+            )
+        }
+    }
+}
+
 export class TestClient extends MessageHandler {
     private secrets = new AgentStatelessSecretStorage()
     private extensionConfigurationDuringInitialization: ExtensionConfiguration | undefined
-
-    private static isBuilt = false
-    public static buildAgentBinary(): void {
-        TestClient.cleanupAndBuild()
-    }
-    private static cleanupAndBuild(): void {
-        if (TestClient.isBuilt) {
-            return
-        }
-        // Force garbage collection to release file handles
-        if (global.gc) {
-            global.gc()
-        }
-        // Add small delay to ensure handles are released
-        setTimeout(() => {
-            execSync('pnpm run build:for-tests ', {
-                cwd: getAgentDir(),
-                stdio: 'inherit',
-            })
-            TestClient.isBuilt = true
-        }, 1000)
-
-        const mayRecord =
-            process.env.CODY_RECORDING_MODE === 'record' || process.env.CODY_RECORD_IF_MISSING === 'true'
-        if (mayRecord) {
-            try {
-                // Fail fast if we're trying to record without being authenticated.
-                // Without this check, the error message can be cryptic if you try
-                // to record without being authenticated.
-                execSync('src login', {
-                    stdio: 'inherit',
-                    env: {
-                        ...process.env,
-                        SRC_ACCESS_TOKEN: TESTING_CREDENTIALS.dotcom.token,
-                        SERVER_ENDPOINT: TESTING_CREDENTIALS.dotcom.serverEndpoint,
-                    },
-                })
-            } catch {
-                throw new Error(
-                    "Can't record HTTP requests without being authenticated. " +
-                        'To fix this problem, run:\n  source agent/scripts/export-cody-http-recording-tokens.sh'
-                )
-            }
-        }
-    }
-
     public static create({ bin = 'node', ...params }: TestClientParams): TestClient {
-        TestClient.cleanupAndBuild()
+        buildAgentBinary()
         const agentDir = getAgentDir()
         const recordingDirectory = path.join(agentDir, 'recordings')
         const agentScript = path.join(agentDir, 'dist', 'index.js')
