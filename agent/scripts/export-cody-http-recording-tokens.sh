@@ -13,7 +13,7 @@
 #  - Use 1Password to find account passwords
 #  - Use no expiration dates when creating access tokens
 #  - You need to update the REDACTED_ access token in agent/src/testing-credentials.ts.
-#     First you  you need to re-record with the new token.
+#    To obtain them you need to re-record tests with the new token first.
 #    Then you can find redacted tokens in the recording files or generate them using the following command:
 #
 #    env | grep '^SRC_' | while IFS='=' read -r name value; do echo "$name=REDACTED_$(echo -n "prefix$value" | sha256sum)"; done
