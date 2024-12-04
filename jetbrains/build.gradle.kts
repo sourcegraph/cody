@@ -21,6 +21,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
 
 fun properties(key: String) = project.findProperty(key)?.toString()
 
+val codyDir = layout.projectDirectory.asFile.parentFile
 val isForceAgentBuild = properties("forceAgentBuild") == "true"
 val isForceCodeSearchBuild = properties("forceCodeSearchBuild") == "true"
 
@@ -370,27 +371,6 @@ tasks {
     return destination.resolve(nodeVersion)
   }
 
-  fun downloadCody(): File {
-    val codyCommit = properties("cody.commit")
-    val fromEnvironmentVariable = System.getenv("CODY_DIR")
-    if (!fromEnvironmentVariable.isNullOrEmpty()) {
-      // "~" works fine from the terminal, however it breaks IntelliJ's run configurations
-      val pathString =
-          if (fromEnvironmentVariable.startsWith("~")) {
-            System.getProperty("user.home") + fromEnvironmentVariable.substring(1)
-          } else {
-            fromEnvironmentVariable
-          }
-      return Paths.get(pathString).toFile()
-    }
-    val url = "https://github.com/sourcegraph/cody/archive/$codyCommit.zip"
-    val zipFile = githubArchiveCache.resolve("$codyCommit.zip")
-    download(url, zipFile)
-    val destination = githubArchiveCache.resolve("cody").resolve("cody-$codyCommit")
-    unzip(zipFile, destination.parentFile)
-    return destination
-  }
-
   val buildCodyDir = layout.buildDirectory.asFile.get().resolve("sourcegraph").resolve("agent")
 
   fun buildCody(): File {
@@ -398,8 +378,6 @@ tasks {
       println("Cached $buildCodyDir")
       return buildCodyDir
     }
-    val codyDir = downloadCody()
-    println("Using cody from codyDir=$codyDir")
     exec {
       workingDir(codyDir)
       commandLine(*pnpmPath, "install", "--frozen-lockfile")
@@ -421,9 +399,7 @@ tasks {
 
     return buildCodyDir
   }
-
   fun copyProtocol() {
-    val codyDir = downloadCody()
     val sourceDir =
         codyDir.resolve(
             Paths.get(

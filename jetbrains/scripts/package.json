@@ -1,7 +1,4 @@
 {
-	"scripts": {
-		"canhaz": "ts-node canhaz.ts"
-	},
 	"type": "commonjs",
 	"devDependencies": {
 		"@types/node": "^22.7.2",

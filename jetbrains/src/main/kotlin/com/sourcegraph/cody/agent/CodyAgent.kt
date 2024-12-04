@@ -167,36 +167,22 @@ private constructor(
 
       val binaryPath = nodeBinary(token).absolutePath
       val jsonRpcArgs = arrayOf("api", "jsonrpc-stdio")
+      val script =
+          agentDirectory()?.resolve("index.js")
+                ?: throw CodyAgentException(
+                    "Sourcegraph Cody + Code Search plugin path not found"
+                )
       val command: List<String> =
-          if (System.getenv("CODY_DIR") != null) {
-            val script = File(System.getenv("CODY_DIR"), "agent/dist/index.js")
-            logger.info("using Cody agent script " + script.absolutePath)
-            if (shouldSpawnDebuggableAgent()) {
-              listOf(
-                  binaryPath,
-                  "--inspect-brk",
-                  "--enable-source-maps",
-                  script.absolutePath,
-                  *jsonRpcArgs)
-            } else {
-              listOf(binaryPath, "--enable-source-maps", script.absolutePath, *jsonRpcArgs)
-            }
-          } else {
-            val script =
-                agentDirectory()?.resolve("index.js")
-                    ?: throw CodyAgentException(
-                        "Sourcegraph Cody + Code Search plugin path not found")
-            if (shouldSpawnDebuggableAgent()) {
-              listOf(
-                  binaryPath,
-                  "--inspect",
-                  "--enable-source-maps",
-                  script.toFile().absolutePath,
-                  *jsonRpcArgs)
-            } else {
-              listOf(binaryPath, script.toFile().absolutePath, *jsonRpcArgs)
-            }
-          }
+        if (shouldSpawnDebuggableAgent()) {
+          listOf(
+              binaryPath,
+              "--inspect",
+              "--enable-source-maps",
+              script.toFile().absolutePath,
+              *jsonRpcArgs)
+        } else {
+          listOf(binaryPath, script.toFile().absolutePath, *jsonRpcArgs)
+        }
 
       val processBuilder = ProcessBuilder(command)
       if (java.lang.Boolean.getBoolean("cody.accept-non-trusted-certificates-automatically") ||
@@ -335,13 +321,12 @@ private constructor(
     }
 
     private fun agentDirectory(): Path? {
-      // N.B. this is the default/production setting. CODY_DIR overrides it locally.
       return pluginDirectory()?.resolve("agent")
     }
 
     /**
      * Gets the plugin path, or null if not found. Can be overridden with the cody-agent.directory
-     * system property. Does not consider CODY_DIR environment variable overrides.
+     * system property.
      */
     fun pluginDirectory(): Path? {
       val fromProperty = System.getProperty("cody-agent.directory", "")

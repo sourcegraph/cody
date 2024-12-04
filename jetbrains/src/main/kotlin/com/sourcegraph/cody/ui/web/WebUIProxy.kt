@@ -534,13 +534,7 @@ class ExtensionResourceHandler : CefResourceHandler {
 
     ApplicationManager.getApplication().executeOnPooledThread {
       // Find the plugin resources.
-      val codyDirOverride = System.getenv("CODY_DIR")
-      val resourcesPath =
-          if (codyDirOverride != null) {
-            Path(codyDirOverride).resolve("agent/dist")
-          } else {
-            CodyAgent.pluginDirectory()?.resolve("agent")
-          }
+      val resourcesPath = CodyAgent.pluginDirectory()?.resolve("agent")
       if (resourcesPath == null) {
         logger.warn(
             "Aborting WebView request for ${requestPath}, extension resource directory not found")
