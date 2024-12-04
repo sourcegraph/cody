@@ -1290,11 +1290,52 @@
           "type": "boolean",
           "default": false
         },
-        "cody.agentic.shellCommands": {
-          "type": "string",
-          "default": "*",
-          "markdownDescription": "Configures shell command execution for Cody agents when terminal context is enabled on your Sourcegraph instance. Specify commands that Cody can automatically run in the local terminal to gather additional context. Requires a feature flag on the Sourcegraph instance. Use `*` to allow all commands, or specify a comma-separated list of allowed commands. Use `disabled` to disable all shell command execution.",
-          "examples": ["disabled", "*", "cat,rm,echo"]
+        "cody.agentic.context": {
+          "type": "object",
+          "properties": {
+            "shell": {
+              "allow": "array",
+              "block": "array"
+            }
+          },
+          "default": {
+            "shell": {
+              "allow": "*",
+              "block": [
+                "rm",
+                "chmod",
+                "shutdown",
+                "history",
+                "user",
+                "sudo",
+                "su",
+                "passwd",
+                "chown",
+                "chgrp",
+                "kill",
+                "reboot",
+                "poweroff",
+                "init",
+                "systemctl",
+                "journalctl",
+                "dmesg",
+                "lsblk",
+                "lsmod",
+                "modprobe",
+                "insmod",
+                "rmmod",
+                "lsusb",
+                "lspci"
+              ]
+            }
+          },
+          "examples": {
+            "shell": {
+              "allow": "git,gh",
+              "block": "history,sudo,rm"
+            }
+          },
+          "markdownDescription": "Configures shell command execution for Cody agents when terminal context is enabled on your Sourcegraph instance. Specify commands that Cody can automatically run in the local terminal to gather additional context. Requires a feature flag on the Sourcegraph instance. Use `*` to allow all commands, or specify a comma-separated list of allowed commands. Use `disabled` to disable all shell command execution."
         },
         "cody.net.proxy.cacert": {
           "markdownDescription": "Either the PEM-encoded CA certificate the proxy uses (replace newlines with `\\n`), or the path (absolute or tilde) to the file containing that certificate.\n\nExamples:\n- `~/.mitmproxy/mitmproxy-ca-cert.pem`\n- `-----BEGIN CERTIFICATE-----\\n...\\n-----END CERTIFICATE-----`",

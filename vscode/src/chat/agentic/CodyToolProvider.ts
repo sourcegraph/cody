@@ -53,7 +53,7 @@ export class CodyToolProvider {
 
     private get isShellCommandEnabled(): boolean {
         const isEnabledByInstance = !!this.featureDeepCodyShellContext.value.last
-        const isEnabledByUser = getConfiguration()?.agenticShellCommands !== 'disabled'
+        const isEnabledByUser = getConfiguration()?.agenticContext?.shell?.allow
         return Boolean(isEnabledByInstance && isEnabledByUser)
     }
 

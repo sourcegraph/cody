@@ -131,8 +131,13 @@ describe('getConfiguration', () => {
                         return undefined
                     case 'http':
                         return undefined
-                    case 'cody.agentic.shellCommands':
-                        return '*'
+                    case 'cody.agentic.context':
+                        return {
+                            shell: {
+                                allow: ['*'],
+                                block: [],
+                            },
+                        }
                     default:
                         assert(false, `unexpected key: ${key}`)
                 }
@@ -161,7 +166,12 @@ describe('getConfiguration', () => {
                 '*': true,
             },
             commandCodeLenses: true,
-            agenticShellCommands: '*',
+            agenticContext: {
+                shell: {
+                    allow: ['*'],
+                    block: [],
+                },
+            },
             experimentalSupercompletions: false,
             experimentalAutoeditsEnabled: undefined,
             experimentalAutoeditsConfigOverride: undefined,

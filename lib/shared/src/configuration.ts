@@ -49,6 +49,13 @@ export interface NetConfiguration {
     vscode?: string | undefined | null
 }
 
+export interface AgenticContextConfiguration {
+    shell?: {
+        allow?: string[] | undefined | null
+        block?: string[] | undefined | null
+    }
+}
+
 interface RawClientConfiguration {
     net: NetConfiguration
     codebase?: string
@@ -65,7 +72,7 @@ interface RawClientConfiguration {
     commandCodeLenses: boolean
 
     // Deep Cody
-    agenticShellCommands?: string
+    agenticContext?: AgenticContextConfiguration
 
     //#region Autocomplete
     autocomplete: boolean
