@@ -58,17 +58,23 @@ jobs:
         with:
           version: 'latest'
           service_account_key: ${{ secrets.GCP_BQ_CREDENTIALS }}
+          project_id: 'cody-core-dev'
           export_default_credentials: true
 
       - name: Insert data into BigQuery
         run: |
+          # Ensure we're using the service account
+          gcloud auth activate-service-account --key-file=${{ github.workspace }}/gcloud-service-key.json
+          
+          # Now create the JSON and insert into BigQuery
           echo '{
             "release_version": "1.0.0",
-            "extension_bundle_size_mb": $(( $EXTENSION_BUNDLE_SIZE_MB )),
-            "webview_bundle_size_mb": $(( $WEBVIEW_BUNDLE_SIZE_MB ))
+            "extension_bundle_size_mb": '"$EXTENSION_BUNDLE_SIZE_MB"',
+            "webview_bundle_size_mb": '"$WEBVIEW_BUNDLE_SIZE_MB"'
           }' > data.json
+          
           bq load \
-          --project_id='cody-core-dev' \
-          --source_format=NEWLINE_DELIMITED_JSON \
-          cody_release.bundle_sizes \
-          data.json
+            --project_id='cody-core-dev' \
+            --source_format=NEWLINE_DELIMITED_JSON \
+            cody_release.bundle_sizes \
+            data.json
