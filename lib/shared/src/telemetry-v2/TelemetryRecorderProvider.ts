@@ -10,7 +10,6 @@ import {
 import { TimestampTelemetryProcessor } from '@sourcegraph/telemetry/dist/processors/timestamp'
 
 import type { CodyIDE } from '../configuration'
-import type { LogEventMode } from '../sourcegraph-api/graphql/client'
 import { GraphQLTelemetryExporter } from '../sourcegraph-api/telemetry/GraphQLTelemetryExporter'
 import { MockServerTelemetryExporter } from '../sourcegraph-api/telemetry/MockServerTelemetryExporter'
 
@@ -69,7 +68,6 @@ export class TelemetryRecorderProvider extends BaseTelemetryRecorderProvider<
             auth: true
             clientState: 'anonymousUserID'
         }>,
-        legacyBackcompatLogEventMode: LogEventMode
     ) {
         const cap = clientCapabilities()
         const clientName = cap.telemetryClientName || `${cap.agentIDE}.Cody`
@@ -81,7 +79,7 @@ export class TelemetryRecorderProvider extends BaseTelemetryRecorderProvider<
             },
             process.env.CODY_TELEMETRY_EXPORTER === 'testing'
                 ? TESTING_TELEMETRY_EXPORTER.withAnonymousUserID(config.clientState.anonymousUserID)
-                : new GraphQLTelemetryExporter(legacyBackcompatLogEventMode),
+                : new GraphQLTelemetryExporter(),
             [
                 new ConfigurationMetadataProcessor(),
                 // Generate timestamps when recording events, instead of serverside

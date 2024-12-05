@@ -1744,11 +1744,6 @@ export async function verifyResponseCode(
     return response
 }
 
-export type LogEventMode =
-    | 'dotcom-only' // only log to dotcom
-    | 'connected-instance-only' // only log to the connected instance
-    | 'all' // log to both dotcom AND the connected instance
-
 function hasOutdatedAPIErrorMessages(error: Error): boolean {
     // Sourcegraph 5.2.3 returns an empty string ("") instead of an error message
     // when querying non-existent codyContextFilters; this produces
