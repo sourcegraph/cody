@@ -63,8 +63,11 @@ jobs:
 
       - name: Insert data into BigQuery
         run: |
-          # Ensure we're using the service account
-          gcloud auth activate-service-account --key-file=${{ github.workspace }}/gcloud-service-key.json
+          # Write the service account key to a file
+          echo '${{ secrets.GCP_BQ_CREDENTIALS }}' > gcloud-service-key.json
+          
+          # Activate the service account
+          gcloud auth activate-service-account --key-file=gcloud-service-key.json
           
           # Now create the JSON and insert into BigQuery
           echo '{
@@ -78,3 +81,6 @@ jobs:
             --source_format=NEWLINE_DELIMITED_JSON \
             cody_release.bundle_sizes \
             data.json
+          
+          # Clean up the service account key file
+          rm gcloud-service-key.json
