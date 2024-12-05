@@ -23,13 +23,9 @@
     "prepublishOnly": "tsc --build --clean && pnpm run build"
   },
   "dependencies": {
-    "@codemirror/commands": "^6.7.1",
-    "@codemirror/state": "^6.4.1",
-    "@codemirror/view": "^6.34.2",
     "@floating-ui/react": "^0.26.28",
     "@lexical/react": "^0.17.0",
     "@lexical/utils": "^0.17.0",
-    "@quartzy/prosemirror-suggestions": "^0.1.1",
     "@sourcegraph/cody-shared": "workspace:*",
     "@xstate/react": "^5.0.0",
     "clsx": "^2.1.1",

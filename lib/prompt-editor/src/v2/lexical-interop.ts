@@ -30,6 +30,7 @@ function fromSerializedLexicalNode(node: SerializedLexicalNode): unknown {
                 type: 'mention',
                 attrs: {
                     item: (node as SerializedContextItemMentionNode).contextItem,
+                    isFromInitialContext: (node as SerializedContextItemMentionNode).isFromInitialContext,
                 },
                 content: [
                     {
