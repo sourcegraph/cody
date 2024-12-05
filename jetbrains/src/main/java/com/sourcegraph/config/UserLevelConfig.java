@@ -83,8 +83,4 @@ public class UserLevelConfig {
 
     return properties;
   }
-
-  public static boolean isVerboseLoggingEnabled() {
-    return Boolean.getBoolean("sourcegraph.verbose-logging");
-  }
 }
