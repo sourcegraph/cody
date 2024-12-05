@@ -1,36 +1,63 @@
 import { useActorRef, useSelector } from "@xstate/react"
-import { DataLoaderInput, promptInput } from "./promptInput"
+import { DataLoaderInput, promptInput, schema } from "./promptInput"
 import { ContextItem, ContextMentionProviderMetadata, serializeContextItem, SerializedContextItem } from "@sourcegraph/cody-shared"
-import { Item } from "./Suggestions"
+import { Item } from "./MentionsMenu"
 import { ActorRefFrom, fromCallback } from "xstate"
 import { useEffect, useMemo, useRef } from "react"
 import { Node } from "prosemirror-model"
 import { MentionView } from "./MentionView"
-import { replaceDocument } from "./prosemirror-utils"
 import { EditorState } from "prosemirror-state"
 import { Position } from "./atMention"
 import type {AnyEventObject} from 'xstate'
 import type { Observable } from "observable-fns"
+import { usePromptEditorConfig } from "../config"
 
 type MenuItem = Item<ContextItem|ContextMentionProviderMetadata>
 type PromptInputLogic = typeof promptInput
 type PromptInputActor = ActorRefFrom<PromptInputLogic>
 
 interface PromptEditorOptions {
+    /**
+     * The placeholder text to display when the input is empty.
+     */
     placeholder?: string
-    initialDocument?: Node
+    /**
+     * If true, the input is disabled and cannot be edited by the user.
+     * The document can still be changed programmatically.
+     */
     disabled?: boolean
+    /**
+     * The size of the context window in tokens. This is used to mark @mentions and
+     * mentions in the menu if they exceed the context window size.
+     */
     contextWindowSizeInTokens?: number
+    /**
+     * The initial (ProseMirror) document to display in the input.
+     */
+    initialDocument?: Node
 
+    /**
+     * Called when the document changes.
+     */
     onChange?: (doc: Node) => void
+    /**
+     * Called when the input gains or loses focus.
+     */
     onFocusChange?: (focus: boolean) => void
+    /**
+     * Called when the user presses the Enter key without modifiers.
+     */
     onEnterKey?: (event: KeyboardEvent | null) => void
 
-    fetchMenuData: (args: {query: string, parent?: ContextMentionProviderMetadata}) => Observable<MenuItem[]>
+    /**
+     * This function is called when an @mention is added or its value changes. The return value is used to
+     * populate the mentions menu. The function is passed the current query (@mention) and the currently
+     * selected provider (if any).
+     */
+    fetchMenuData: (args: {query: string, provider?: ContextMentionProviderMetadata}) => Observable<MenuItem[]>
 }
 
 interface PromptEditorAPI {
-    applySuggestion(index?: number): void
     setFocus(focus: boolean, options?: { moveCursorToEnd?: boolean }): void
     appendText(text: string): void
     addMentions(items: ContextItem[], position?: 'before' | 'after', sep?: string): void
@@ -38,6 +65,7 @@ interface PromptEditorAPI {
     setInitialContextMentions(items: ContextItem[]): void
     setDocument(doc: Node): void
     getEditorState(): EditorState
+    applySuggestion(index?: number): void
     ref(node: HTMLDivElement|null): void
 }
 
@@ -45,9 +73,14 @@ function getCurrentEditorState(input: ActorRefFrom<typeof promptInput>): EditorS
     return input.getSnapshot().context.editorState
 }
 
-export const useEditor = (options: PromptEditorOptions): [PromptInputActor, PromptEditorAPI] => {
+/**
+ * Provides access to the prompt input editor and its API from a React component.
+ */
+export const usePromptInput = (options: PromptEditorOptions): [PromptInputActor, PromptEditorAPI] => {
+    const {onContextItemMentionNodeMetaClick} = usePromptEditorConfig()
+
     const fetchMenuData = useMemo(() => fromCallback<AnyEventObject, DataLoaderInput>(({input}) => {
-        const subscription = options.fetchMenuData({query: input.query, parent: input.context}).subscribe(
+        const subscription = options.fetchMenuData({query: input.query, provider: input.context}).subscribe(
             next => {
                 input.parent.send({type: 'mentionsMenu.results.set', data: next})
             },
@@ -91,6 +124,13 @@ export const useEditor = (options: PromptEditorOptions): [PromptInputActor, Prom
                 }
                 return false
             },
+            handleClickOn(_view, _pos, node, _nodePos, _event, _direct) {
+                if (node.type === schema.nodes.mention) {
+                    onContextItemMentionNodeMetaClick?.(node.attrs.item)
+                    return true
+                }
+                return false
+            },
             nodeViews: {
                 mention(node) {
                     return new MentionView(node)
@@ -112,23 +152,23 @@ export const useEditor = (options: PromptEditorOptions): [PromptInputActor, Prom
             }
         },
         setDocument(doc: Node) {
-            editor.send({type: 'dispatch', transaction: replaceDocument(getCurrentEditorState(editor), doc)})
+            editor.send({type: 'document.set', doc})
         },
         setInitialContextMentions(items) {
-            editor.send({type: 'mentions.setInitial', items: items.map(serializeContextItem)})
+            editor.send({type: 'document.mentions.setInitial', items: items.map(serializeContextItem)})
         },
         appendText(text) {
-            editor.send({type: 'text.append', text})
+            editor.send({type: 'document.append', text})
         },
         addMentions(
             items: ContextItem[],
             position: 'before' | 'after' = 'after',
             sep = ' '
         ) {
-            editor.send({type: 'mentions.add', items: items.map(serializeContextItem), position, separator: sep})
+            editor.send({type: 'document.mentions.add', items: items.map(serializeContextItem), position, separator: sep})
         },
         filterMentions(filter: (item: SerializedContextItem) => boolean) {
-            editor.send({type: 'mentions.filter', filter})
+            editor.send({type: 'document.mentions.filter', filter})
         },
         applySuggestion(index) {
             editor.send({type: 'mentionsMenu.apply', index})
@@ -160,7 +200,7 @@ export const useEditor = (options: PromptEditorOptions): [PromptInputActor, Prom
     return [editor, api] as const
 }
 
-interface Suggestions {
+interface MentionsMenuData {
     show: boolean
     items: MenuItem[]
     selectedIndex: number
@@ -169,7 +209,11 @@ interface Suggestions {
     parent: ContextMentionProviderMetadata | null
 }
 
-export function useMentionsMenu(input: PromptInputActor): Suggestions {
+/**
+ * Provides access to the mentions menu state from a React component. Use this hook
+ * together with {@link usePromptInput} to get access to the input.
+ */
+export function useMentionsMenu(input: PromptInputActor): MentionsMenuData {
     const showMenu = useSelector(input, state => state.hasTag('show mentions menu'))
     const mentionsMenu = useSelector(input, state => state.context.mentionsMenu)
 
@@ -178,7 +222,7 @@ export function useMentionsMenu(input: PromptInputActor): Suggestions {
         show: showMenu,
         items: mentionsMenu.items,
         selectedIndex: mentionsMenu.selectedIndex,
-        query: mentionsMenu.filter,
+        query: mentionsMenu.query,
         position: mentionsMenu.position,
     }
 }

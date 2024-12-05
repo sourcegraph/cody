@@ -47,7 +47,16 @@
 }
 
 .editor :global(.ProseMirror)[data-placeholder]::before {
-  position: absolute;
-  content: attr(data-placeholder);
-  pointer-events: none;
+    content: attr(data-placeholder);
+    opacity: 0.6;
+    overflow: hidden;
+    position: absolute;
+    text-overflow: ellipsis;
+    top: 0;
+    left: 0;
+    right: 5px;
+    user-select: none;
+    white-space: nowrap;
+    display: inline-block;
+    pointer-events: none;
 }

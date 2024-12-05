@@ -12,7 +12,7 @@ import { history, undo, redo } from "prosemirror-history"
 import { keymap } from 'prosemirror-keymap'
 import { baseKeymap } from 'prosemirror-commands'
 import { createAtMentionPlugin, disableAtMention, getAtMentionPosition, getAtMentionValue, hasAtMention, hasAtMentionChanged, Position, replaceAtMention, setMentionValue } from './atMention'
-import type { Item } from './Suggestions'
+import type { Item } from './MentionsMenu'
 
 export type MenuItem = Item<ContextItem|ContextMentionProviderMetadata>
 
@@ -61,10 +61,21 @@ export const schema = new Schema({
 })
 
 interface ProseMirrorMachineInput {
+    /**
+     * Parent actor reference for sending events and subscribing to state changes.
+     */
     parent: ActorRefFrom<typeof promptInput>
+    /**
+     * The initial editor state.
+     */
     initialState: EditorState
+    /**
+     * The DOM element to mount the editor to. If null, the editor will not be mounted.
+     */
     container: HTMLElement|null
-    disabled?: boolean
+    /**
+     * Additional props to set on the ProseMirror view. This allows outside code to integrate with the editor.
+     */
     props?: EditorProps
 }
 
@@ -76,25 +87,26 @@ type ProseMirrorMachineEvent =
  * An actor that manages a ProseMirror editor.
  */
 const prosemirrorActor = fromCallback<ProseMirrorMachineEvent, ProseMirrorMachineInput>(({receive, input}) => {
+    const parent = input.parent
     const editor = new EditorView(input.container ? {mount: input.container} : null, {
         state: input.initialState,
         editable: state => readonlyPluginKey.getState(state) ? false : true,
         dispatchTransaction(transaction) {
-            input.parent.send({type: 'dispatch', transaction})
+            parent.send({type: 'dispatch', transaction})
         },
         handleKeyDown(view, event) {
-            if (input.parent.getSnapshot().hasTag('show mentions menu')) {
+            if (parent.getSnapshot().hasTag('show mentions menu')) {
                 switch (event.key) {
                     case 'ArrowDown': {
-                        input.parent.send({ type: 'mentionsMenu.select.next' })
+                        parent.send({ type: 'mentionsMenu.select.next' })
                         return true
                     }
                     case 'ArrowUp': {
-                        input.parent.send({ type: 'mentionsMenu.select.previous' })
+                        parent.send({ type: 'mentionsMenu.select.previous' })
                         return true
                     }
                     case 'Enter':
-                        input.parent.send({ type: 'mentionsMenu.apply' })
+                        parent.send({ type: 'mentionsMenu.apply' })
                         return true;
                 }
 
@@ -108,19 +120,28 @@ const prosemirrorActor = fromCallback<ProseMirrorMachineEvent, ProseMirrorMachin
             }
             return false
         },
+        handleDOMEvents: {
+            focus() {
+                parent.send({type: 'focus.change.focus'})
+            },
+            blur() {
+                parent.send({type: 'focus.change.blur'})
+            },
+
+        },
         plugins: input.props ? [
             new Plugin({props: input.props})
         ] : undefined,
     })
 
-    const subscription = input.parent.subscribe(state => {
+    const subscription = parent.subscribe(state => {
         const nextState = state.context.editorState
         if (nextState !== editor.state) {
             const prevState = editor.state
             editor.updateState(nextState)
 
             if (hasAtMention(nextState) && (!hasAtMention(prevState) || hasAtMentionChanged(nextState, prevState))) {
-                input.parent.send({ type: 'mentionsMenu.position.update', position: editor.coordsAtPos(getAtMentionPosition(editor.state))})
+                parent.send({ type: 'mentionsMenu.position.update', position: editor.coordsAtPos(getAtMentionPosition(editor.state))})
             }
         }
     })
@@ -161,22 +182,27 @@ type EditorEvents =
     | {type: 'setup', parent: HTMLElement, initialDocument?: Node}
     // For detaching the editor from the DOM.
     | {type: 'teardown'}
+
     // Focus the editor and optionally move the cursor to the end.
     | {type: 'focus', moveCursorToEnd?: boolean}
     // Blur the editor.
     | {type: 'blur'}
+
     | {type: 'update.placeholder', placeholder: string}
     | {type: 'update.disabled', disabled: boolean}
     | {type: 'update.contextWindowSizeInTokens', size: number|null}
+
     // Append text to end of the input.
-    | {type: 'text.append', text: string}
+    | {type: 'document.append', text: string}
+    // Replaces the current document with the provided one.
+    | {type: 'document.set', doc: Node}
     // Add additionals mentions to the input. Mentions that overlap with existing mentions will be updated.
-    | {type: 'mentions.add', items: SerializedContextItem[], position: 'before' | 'after', separator: string}
+    | {type: 'document.mentions.add', items: SerializedContextItem[], position: 'before' | 'after', separator: string}
     // Remove the mentions from the input that do not fulfill the filter function.
-    | {type: 'mentions.filter', filter: (item: SerializedContextItem) => boolean}
+    | {type: 'document.mentions.filter', filter: (item: SerializedContextItem) => boolean}
     // Set the initial mentions of the input. Initial mentions are specifically marked. If the
     // input only contains initial mentions, the new ones will replace the existing ones.
-    | {type: 'mentions.setInitial', items: SerializedContextItem[]}
+    | {type: 'document.mentions.setInitial', items: SerializedContextItem[]}
     // Used internally to notify the machine that an @mention has been added to the input (typically by typing '@').
     | {type: 'atMention.added'}
     // Used internall to notify the machine that an @mention has been removed.
@@ -186,8 +212,11 @@ type EditorEvents =
     // (Potentially) replace the current @mention with the provided context item. Not every item with cause
     // the @mention to be replaced, some might cause other changes to the machine's state.
     | {type: 'atMention.apply', item: ContextItem|ContextMentionProviderMetadata}
+
     // Used to proxy ProseMirror transactions through the machine.
     | {type: 'dispatch', transaction: Transaction}
+    | {type: 'focus.change.focus'}
+    | {type: 'focus.change.blur'}
 
 type MentionsMenuEvents =
     | { type: 'mentionsMenu.select.next' }
@@ -228,7 +257,7 @@ interface PromptInputContext {
      */
     mentionsMenu: {
         parent?: ContextMentionProviderMetadata,
-        filter: string,
+        query: string,
         selectedIndex: number,
         items: MenuItem[],
         position: Position,
@@ -236,13 +265,37 @@ interface PromptInputContext {
 }
 
 export interface PromptInputOptions {
+    /**
+     * The placeholder text to display in the input.
+     */
     placeholder?: string
-    initialDocument?: Node
+    /**
+     * If true, the input will be read-only. The value of the input can still be changed programmatically.
+     */
     disabled?: boolean
+    /**
+     * The size of the context window in tokens. This is used to mark @mentions and mentions in the menu
+     * if they exceed the context window size.
+     */
     contextWindowSizeInTokens?: number
+    /**
+     * Additional props to set on the ProseMirror view. This allows outside code to integrate with the editor.
+     */
     editorViewProps?: EditorProps
+    /**
+     * The initial value of the input.
+     */
+    initialDocument?: Node
 }
 
+/**
+ * This machine represents the prompt input. It handles three main concerns:
+ * - The ProseMirror editor and its state
+ * - The fetching of menu data for @mentions
+ * - The management of the mentions menu
+ *
+ * The machine handles all
+ */
 export const promptInput = setup({
     types: {
         events: {} as EditorEvents | MentionsMenuEvents,
@@ -288,18 +341,18 @@ export const promptInput = setup({
                     }
                 }
 
-                // Notify the machine of any changes to the at-mention state
-                const atMentionPresent = hasAtMention(nextState)
-                if (atMentionPresent !== hasAtMention(prevState)) {
-                    enqueue.raise(atMentionPresent ?
-                        {type: 'atMention.added'} : {type: 'atMention.removed'}
-                    )
-                }
-
                 // Notify the machine of any changes to the at-mention value
                 const mentionValue = getAtMentionValue(nextState)
                 if (mentionValue !== undefined && mentionValue !== getAtMentionValue(prevState)) {
                     enqueue.raise({type: 'atMention.updated', query: mentionValue.slice(1)})
+                }
+
+                // Notify the machine of any changes to the at-mention state
+                const atMentionPresent = hasAtMention(nextState)
+                if (atMentionPresent !== hasAtMention(prevState)) {
+                    enqueue.raise(
+                        atMentionPresent ? {type: 'atMention.added'} : {type: 'atMention.removed'}
+                    )
                 }
             }
         }),
@@ -338,19 +391,16 @@ export const promptInput = setup({
             id: 'fetchMenuData',
             input: ({context, self}) => ({
                 context: context.mentionsMenu.parent,
-                query: context.mentionsMenu.filter,
+                query: context.mentionsMenu.query,
                 parent: self,
             }),
         }),
     },
     guards: {
-        isFilterEmpty: ({ context }) => !context.mentionsMenu.filter || context.mentionsMenu.filter.length === 0,
-        hasFilterChanged: ({ context }, params: { query: string }) => {
-            return context.mentionsMenu.filter !== params.query
-        },
         canSetInitialMentions: ({ context }) => {
             return !context.hasSetInitialContext ||  isEditorContentOnlyInitialContext(context.editorState)
         },
+        hasAtMention: ({ context }) => hasAtMention(context.editorState),
     },
     delays: {
         debounceAtMention: 300,
@@ -385,7 +435,7 @@ export const promptInput = setup({
             ],
         }),
         mentionsMenu: {
-            filter: '',
+            query: '',
             selectedIndex: 0,
             items: [],
             position: {top: 0, left: 0, bottom: 0, right: 0},
@@ -468,7 +518,10 @@ export const promptInput = setup({
                     })
                 },
 
-                'text.append': {
+                'document.set': {
+                    actions: {type: 'updateEditorState', params: ({event, context}) => context.editorState.tr.replaceWith(0, context.editorState.doc.content.size, event.doc)}
+                },
+                'document.append': {
                     actions: {type: 'updateEditorState', params: (({context, event}) => {
                         const tr = context.editorState.tr
                         tr.setSelection(Selection.atEnd(tr.doc))
@@ -476,19 +529,19 @@ export const promptInput = setup({
                     })}
                 },
 
-                'mentions.filter': {
+                'document.mentions.filter': {
                     actions: {
                         type: 'updateEditorState',
                         params: ({context, event}) => filterMentions(context.editorState, event.filter),
                     }
                 },
-                'mentions.add': {
+                'document.mentions.add': {
                     actions: {
                         type: 'updateEditorState',
                         params: ({context, event}) => addMentions(context.editorState, event.items, event.position, event.separator),
                     },
                 },
-                'mentions.setInitial': {
+                'document.mentions.setInitial': {
                     guard: 'canSetInitialMentions',
                     actions: [
                         assign({hasSetInitialContext: true}),
@@ -497,6 +550,7 @@ export const promptInput = setup({
                             params: ({context, event}) => {
                                 const tr = context.editorState.tr
                                 if (isEditorContentOnlyInitialContext(context.editorState)) {
+                                    // Replace the current content with the new initial context if no other content is present
                                     tr.delete(Selection.atStart(tr.doc).from, tr.doc.content.size)
                                 }
                                 if (event.items.length > 0) {
@@ -508,6 +562,7 @@ export const promptInput = setup({
                         },
                     ],
                 },
+
                 // This event is raised when a mention item is supposed to be 'applied to the editor'. This can mean
                 // different things depending on the item:
                 // - If the item is a ContextItem, it will be inserted as a mention node.
@@ -607,14 +662,14 @@ export const promptInput = setup({
                             actions: {
                                 type: 'assignMentionsMenu',
                                 params: ({event}) => ({
-                                    filter: event.query,
+                                    query: event.query,
                                 }),
                             },
                             reenter: true,
                         },
                     },
                 },
-                // This is an odd state. We need a way to trigger a new fetch when the filter changes, but we also don't
+                // This is an odd state. We need a way to trigger a new fetch when the query changes, but we also don't
                 // know when the data loading is done. So we just always transition to idle and handle results there.
                 loading: {
                     entry: 'fetchMenuData',
@@ -641,13 +696,12 @@ export const promptInput = setup({
                 },
                 // When the query changes, we'll debounce fetching new data.
                 "atMention.updated": {
-                    guard: { type: 'hasFilterChanged', params: ({event}) => event},
                     actions: [
                         stopChild('fetchMenuData'),
                         {
                             type: 'assignMentionsMenu',
                             params: ({event}) => ({
-                                filter: event.query,
+                                query: event.query,
                             }),
                         },
                     ],
@@ -663,6 +717,10 @@ export const promptInput = setup({
                 closed: {
                     on: {
                         'atMention.added': 'open',
+                        'focus.change.focus': {
+                            guard: 'hasAtMention',
+                            target: 'open',
+                        },
                     },
                 },
                 open: {
@@ -670,8 +728,10 @@ export const promptInput = setup({
                     entry: {type: 'assignMentionsMenu', params: {selectedIndex: 0}},
                     tags: 'show mentions menu',
                     on: {
-                        // When the @mention is removed, we'll close the menu.
+                        // When the @mention is removed or the editor looses focus, we'll close the menu.
                         'atMention.removed': 'closed',
+                        'focus.change.blur': 'closed',
+
                         "mentionsMenu.select.next": {
                             actions: {
                                 type: 'assignMentionsMenu',
@@ -688,27 +748,27 @@ export const promptInput = setup({
                                 }),
                             },
                         },
-                        "mentionsMenu.position.update": {
-                            actions: {
-                                type: 'assignMentionsMenu',
-                                params: ({event}) => ({
-                                    position: event.position,
-                                }),
-                            },
-                        },
 
-                        // When a provider is selected we'll reset the selected index to the first item.
-                        "mentionsMenu.provider.set": {
-                            actions: {type: 'assignMentionsMenu', params: {selectedIndex: 0}},
-                        },
                     },
+                },
+            },
+            on: {
+                "mentionsMenu.position.update": {
+                    actions: {
+                        type: 'assignMentionsMenu',
+                        params: ({event}) => ({
+                            position: event.position,
+                        }),
+                    },
+                },
+                // When a provider is selected we'll reset the selected index to the first item.
+                "mentionsMenu.provider.set": {
+                    actions: {type: 'assignMentionsMenu', params: {selectedIndex: 0}},
                 },
             },
         },
     },
 })
-
-const placeholderPluginKey = new PluginKey('placeholder')
 
 /**
  * A plugin that adds a placeholder to the editor
@@ -743,8 +803,8 @@ function placeholderPlugin(text: string): Plugin {
         }
     });
 }
+const placeholderPluginKey = new PluginKey('placeholder')
 
-const readonlyPluginKey = new PluginKey('readonly')
 
 /**
  * A plugin that disables the editor
@@ -765,6 +825,8 @@ function readonlyPlugin(initial = false) {
         },
     })
 }
+const readonlyPluginKey = new PluginKey('readonly')
+
 
 /**
  * Inserts a whitespace character at the given position if needed. If the position is not provided
