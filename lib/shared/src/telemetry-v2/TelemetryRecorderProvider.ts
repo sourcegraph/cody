@@ -67,7 +67,7 @@ export class TelemetryRecorderProvider extends BaseTelemetryRecorderProvider<
             configuration: true
             auth: true
             clientState: 'anonymousUserID'
-        }>,
+        }>
     ) {
         const cap = clientCapabilities()
         const clientName = cap.telemetryClientName || `${cap.agentIDE}.Cody`

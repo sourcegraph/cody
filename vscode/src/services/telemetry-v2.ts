@@ -59,9 +59,7 @@ export function createOrUpdateTelemetryRecorderProvider(
                 updateGlobalTelemetryInstances(defaultNoOpProvider)
             } else {
                 updateGlobalTelemetryInstances(
-                    new TelemetryRecorderProvider(
-                        { configuration, auth, clientState },
-                    )
+                    new TelemetryRecorderProvider({ configuration, auth, clientState })
                 )
             }
 
