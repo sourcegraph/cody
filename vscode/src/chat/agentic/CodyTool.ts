@@ -289,10 +289,6 @@ class MemoryTool extends CodyTool {
             if (memory === 'GET') {
                 return
             }
-            if (memory.startsWith('REMOVE')) {
-                CodyChatMemory.reset()
-                return
-            }
             CodyChatMemory.load(memory)
             logDebug('Cody Memory', 'added', { verbose: memory })
         }

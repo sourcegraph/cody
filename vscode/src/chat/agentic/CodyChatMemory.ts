@@ -79,7 +79,7 @@ export class CodyChatMemory {
 }
 
 export const CHAT_MEMORY_CONTEXT_TEMPLATE = `# Chat Memory
-Here are the notes you made about the user (me) from previous chat:
+Here are the notes you made about me (user) from previous chat:
 {memoryItems}`
 
 function populateMemoryContent(memoryMap: Map<string, string>): string {
