@@ -413,7 +413,7 @@ export class PromptString {
                 : undefined,
         }
     }
-
+    // TODO: Lift the results of the matches so they're also PromptStrings.
     public match(regexp: RegExp): RegExpMatchArray | null {
         return internal_toString(this).match(regexp)
     }
