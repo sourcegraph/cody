@@ -5,6 +5,7 @@ on:
   pull_request:
     types: [opened, reopened, synchronize, ready_for_review]
 
+
 jobs:
   insert-data:
     runs-on: ubuntu-latest
@@ -23,6 +24,7 @@ jobs:
         run: |
           echo '[{"release_version": "1.0.0"}]' > data.json
           bq load \
+          --project_id='cody-core-dev' \
           --source_format=NEWLINE_DELIMITED_JSON \
-          cody-core-dev:cody_release.bundle_sizes \
+          cody_release.bundle_sizes \
           data.json
