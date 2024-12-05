@@ -53,6 +53,10 @@ jobs:
           cd vscode
           pnpm ts-node ./scripts/measure-bundle-size.ts
           cd ..
+          echo "Extension Bundle Size: $EXTENSION_BUNDLE_SIZE_MB MB"
+          echo "Webview Bundle Size: $WEBVIEW_BUNDLE_SIZE_MB MB"
+        env:
+          GITHUB_ENV: $GITHUB_ENV
       - name: Set up Google Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
         with:
@@ -79,3 +83,6 @@ jobs:
           
           # Clean up the service account key file
           rm gcloud-service-key.json
+        env:
+          EXTENSION_BUNDLE_SIZE_MB: ${{ env.EXTENSION_BUNDLE_SIZE_MB }}
+          WEBVIEW_BUNDLE_SIZE_MB: ${{ env.WEBVIEW_BUNDLE_SIZE_MB }}
