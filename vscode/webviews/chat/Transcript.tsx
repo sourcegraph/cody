@@ -35,7 +35,7 @@ import type { ApiPostMessage } from '../Chat'
 import { Button } from '../components/shadcn/ui/button'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
 import { SpanManager } from '../utils/spanManager'
-import { useTelemetryRecorder } from '../utils/telemetry'
+import { getTraceparentFromSpanContext, useTelemetryRecorder } from '../utils/telemetry'
 import { useExperimentalOneBox } from '../utils/useExperimentalOneBox'
 import type { CodeBlockActionsProps } from './ChatMessageContent/ChatMessageContent'
 import {
@@ -293,6 +293,9 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
 
         const spanContext = trace.setSpan(context.active(), span)
         setActiveChatContext(spanContext)
+        const currentSpanContext = span.spanContext()
+
+        const traceparent = getTraceparentFromSpanContext(currentSpanContext)
 
         // Serialize the editor value after starting the span
         const editorValue = humanEditorRef.current?.getSerializedValue()
@@ -306,6 +309,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
             intent: intentFromSubmit || intentResults.current?.intent,
             intentScores: intentFromSubmit ? undefined : intentResults.current?.allScores,
             manuallySelectedIntent: !!intentFromSubmit,
+            traceparent,
         }
 
         if (action === 'edit') {
@@ -433,6 +437,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                 })
                 renderSpan.current.end()
             }
+
             renderSpan.current = undefined
             hasRecordedFirstToken.current = false
 
@@ -714,11 +719,13 @@ function submitHumanMessage({
     intent,
     intentScores,
     manuallySelectedIntent,
+    traceparent,
 }: {
     editorValue: SerializedPromptEditorValue
     intent?: ChatMessage['intent']
     intentScores?: { intent: string; score: number }[]
     manuallySelectedIntent?: boolean
+    traceparent: string
 }): void {
     getVSCodeAPI().postMessage({
         command: 'submit',
@@ -728,6 +735,7 @@ function submitHumanMessage({
         intent,
         intentScores,
         manuallySelectedIntent,
+        traceparent,
     })
     focusLastHumanMessageEditor()
 }
