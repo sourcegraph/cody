@@ -39,7 +39,7 @@ export async function getContextFileFromShell(command: string): Promise<ContextI
         const filteredCommand = command.replaceAll(/(\s~\/)/g, ` ${HOME_DIR}${path.sep}`)
 
         // Process user config list
-        const allowList = new Set(userShellConfig?.allow ?? [])
+        const allowList = new Set(userShellConfig?.allow?.filter(cmd => cmd !== '*') ?? [])
         const blockList = new Set([...BASE_DISALLOWED_COMMANDS, ...(userShellConfig?.block ?? [])])
 
         try {
