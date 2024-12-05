@@ -22,6 +22,23 @@ jobs:
       - run: xvfb-run -a pnpm -C vscode run test:e2e
         env:
           NO_LOG_TESTING_TELEMETRY_CALLS: true
+      - run: node scripts/measure-bundle-size.js
+        id: measure_bundle_size
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v1
+        with:
+          credentials_json: '${{ secrets.GCP_BQ_CREDENTIALS }}'
+      - name: Insert data into BigQuery
+        run: |
+          bq insert \
+          --project_id='cody-core-dev' \
+          --dataset_id='bundle_sizes' \
+          --table_id='your_table' \
+          --json='[{
+            "date": "$(date +%Y-%m-%d)",
+            "bundle_size_kb": $(( $EXTENSION_BUNDLE_SIZE / 1024 )),
+            "webview_size_kb": $(( $WEBVIEW_BUNDLE_SIZE / 1024 ))
+          }]'
       - run: CODY_RELEASE_TYPE=insiders pnpm -C vscode run release
         id: create_release
         if: github.repository == 'sourcegraph/cody'

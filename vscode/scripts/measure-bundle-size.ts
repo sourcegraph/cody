@@ -1,4 +1,5 @@
 import { promises as fs } from 'node:fs'
+import { appendFileSync } from 'node:fs'
 
 const SIZE_LIMITS = {
     extension: 15 * 1024 * 1024, // 15MB
@@ -37,6 +38,13 @@ async function measureBundleSize(): Promise<void> {
                 webviewBundle.size
             )}) exceeds limit of ${prettyPrintBytes(SIZE_LIMITS.webview)}`
         )
+    }
+    // Write the bundle sizes to the GITHUB_ENV file
+    if (process.env.GITHUB_ENV) {
+        appendFileSync(process.env.GITHUB_ENV, `EXTENSION_BUNDLE_SIZE=${extensionBundle.size}\n`)
+        appendFileSync(process.env.GITHUB_ENV, `WEBVIEW_BUNDLE_SIZE=${webviewBundle.size}\n`)
+    } else {
+        console.error('GITHUB_ENV environment variable is not defined.')
     }
 
     // For local debugging, log the current measurements
