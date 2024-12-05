@@ -15,7 +15,7 @@ import {
 import { clsx } from 'clsx'
 import type { SerializedEditorState, SerializedLexicalNode } from 'lexical'
 import isEqual from 'lodash/isEqual'
-import { type FunctionComponent, useCallback, useContext, useEffect, useImperativeHandle, useMemo } from 'react'
+import { type FunctionComponent, useCallback, useContext, useEffect, useImperativeHandle, useLayoutEffect, useMemo, useRef } from 'react'
 import styles from './PromptEditor.module.css'
 import type { KeyboardEventPluginProps } from '../plugins/keyboardEvent'
 import { fromSerializedPromptEditorState, toSerializedPromptEditorValue } from './lexical-interop'
@@ -23,8 +23,8 @@ import { useExtensionAPI } from '../useExtensionAPI'
 import { ChatMentionContext } from '../plugins/atMentions/useChatContextItems'
 import { schema } from './promptInput'
 import "prosemirror-view/style/prosemirror.css"
-import { Suggestions } from './Suggestions'
-import { useEditor, useMentionsMenu } from './promptInput-react'
+import { MentionsMenu } from './MentionsMenu'
+import { usePromptInput, useMentionsMenu } from './promptInput-react'
 import { MentionMenuContextItemContent, MentionMenuProviderItemContent } from '../mentions/mentionMenu/MentionMenuItem'
 import { useDefaultContextForChat } from '../useInitialContext'
 import { Observable,  } from 'observable-fns'
@@ -75,11 +75,15 @@ export const PromptEditor: FunctionComponent<Props> = ({
     editorRef: ref,
     onEnterKey,
 }) => {
+    // We use the interaction ID to differentiate between different
+    // invocations of the mention-menu. That way upstream we don't trigger
+    // duplicate telemetry events for the same view
+    const interactionID = useRef(0)
+
     const convertedInitialEditorState = useMemo(() => {
         return initialEditorState ? schema.nodeFromJSON(fromSerializedPromptEditorState(initialEditorState)) : undefined
     }, [initialEditorState])
 
-    // Hook into providers
     const defaultContext = useDefaultContextForChat()
     const mentionMenuData = useExtensionAPI().mentionMenuData
     const mentionSettings = useContext(ChatMentionContext)
@@ -101,7 +105,7 @@ export const PromptEditor: FunctionComponent<Props> = ({
         const filteredInitialItems = filteredInitialContextItems.map(item => ({data: item}))
 
         return Observable.of(filteredInitialItems).concat(
-        mentionMenuData(parseMentionQuery(query, parent ?? null)).map(
+        mentionMenuData({...parseMentionQuery(query, parent ?? null), interactionID: interactionID.current}).map(
             result => [
                     ...result.providers.map(provider => ({
                         data: provider,
@@ -114,7 +118,7 @@ export const PromptEditor: FunctionComponent<Props> = ({
             ]))
     }, [mentionMenuData, mentionSettings, defaultContext])
 
-    const [input, api] = useEditor({
+    const [input, api] = usePromptInput({
         placeholder,
         initialDocument: convertedInitialEditorState,
         disabled,
@@ -135,6 +139,15 @@ export const PromptEditor: FunctionComponent<Props> = ({
         position,
         parent,
     } = useMentionsMenu(input)
+
+    useLayoutEffect(() => {
+        // We increment the interaction ID when the menu is hidden because `fetchMenuData` can be
+        // called before the menu is shown, which would result in a different interaction ID for the
+        // first fetch.
+        if (!show) {
+            interactionID.current++
+        }
+    }, [show])
 
     useImperativeHandle(
         ref,
@@ -168,9 +181,6 @@ export const PromptEditor: FunctionComponent<Props> = ({
         []
     )
 
-    // todo: do we need this?
-    // useSetGlobalPromptEditorConfig()
-
     useEffect(() => {
         if (initialEditorState) {
             const currentEditorState = normalizeEditorStateJSON(api.getEditorState().doc.toJSON())
@@ -194,7 +204,7 @@ export const PromptEditor: FunctionComponent<Props> = ({
                 [styles.seamless]: seamless,
             })}>
             <div className={contentEditableClassName} ref={api.ref} />
-            {show && <Suggestions
+            {show && <MentionsMenu
                 items={items}
                 selectedIndex={selectedIndex}
                 filter={query}
