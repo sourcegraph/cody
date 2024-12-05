@@ -203,8 +203,7 @@ export function contextItemFromString(item: string): EvalContextItem {
     const pathParts = url.pathname.split('/-/blob/')
     const repoName = pathParts[0].replace('/github.com/', '')
     const path = pathParts[1]
-    const lineRange = url.search.replace('?L', '').split('-')    
-        
+    const lineRange = url.search.replace('?L', '').split('-')
     if (!repoName || !path || !lineRange) {
         throw new Error(`Invalid context item: ${item}`)
     }
@@ -217,5 +216,5 @@ export function contextItemFromString(item: string): EvalContextItem {
 }
 
 export function contextItemToString(item: EvalContextItem): string {
-        return `${item.retriever}:https://sourcegraph.sourcegraph.com/github.com/${item.repoName}/-/blob/${item.path}?L${item.startLine}-${item.endLine}`
+    return `${item.retriever}:https://sourcegraph.sourcegraph.com/github.com/${item.repoName}/-/blob/${item.path}?L${item.startLine}-${item.endLine}`
 }
