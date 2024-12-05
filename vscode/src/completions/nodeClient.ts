@@ -19,7 +19,6 @@ import {
     isError,
     parseEvents,
     recordErrorToSpan,
-    toPartialUtf8String,
     tracer,
 } from '@sourcegraph/cody-shared'
 import { CompletionsResponseBuilder } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/CompletionsResponseBuilder'
@@ -90,37 +89,41 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                     )
                 }
 
-                const reader = response.body?.getReader()
-                if (!reader) {
-                    throw new Error('No response body reader available')
-                }
-
-                const builder = new CompletionsResponseBuilder(requestParams.apiVersion)
-                let bufferText = ''
-                let didReceiveAnyEvent = false
-
-                while (true) {
-                    const { done, value } = await reader.read()
-                    if (done) break
-
-                    const { str } = toPartialUtf8String(Buffer.from(value))
-                    bufferText += str
-
-                    const parseResult = parseEvents(builder, bufferText)
-                    if (isError(parseResult)) {
-                        throw parseResult
+                const textStream = response.body?.pipeThrough(new TextDecoderStream())
+                const reader = textStream?.getReader()
+                try {
+                    if (!reader) {
+                        throw new Error('No response body reader available')
                     }
 
-                    didReceiveAnyEvent = didReceiveAnyEvent || parseResult.events.length > 0
-                    log?.onEvents(parseResult.events)
-                    this.sendEvents(parseResult.events, cb, span)
-                    bufferText = parseResult.remainingBuffer
-                }
+                    let bufferText = ''
+                    let didReceiveAnyEvent = false
+                    const builder = new CompletionsResponseBuilder(requestParams.apiVersion)
 
-                if (!didReceiveAnyEvent) {
-                    throw new Error(
-                        'Connection closed without receiving any events (this may be due to an outage with the upstream LLM provider)'
-                    )
+                    while (true) {
+                        const { done, value } = await reader.read()
+                        if (done) break
+
+                        bufferText += value
+
+                        const parseResult = parseEvents(builder, bufferText)
+                        if (isError(parseResult)) {
+                            throw parseResult
+                        }
+
+                        didReceiveAnyEvent = didReceiveAnyEvent || parseResult.events.length > 0
+                        log?.onEvents(parseResult.events)
+                        this.sendEvents(parseResult.events, cb, span)
+                        bufferText = parseResult.remainingBuffer
+                    }
+
+                    if (!didReceiveAnyEvent) {
+                        throw new Error(
+                            'Connection closed without receiving any events (this may be due to an outage with the upstream LLM provider)'
+                        )
+                    }
+                } finally {
+                    reader?.releaseLock()
                 }
             } catch (error) {
                 const errorObject = error instanceof Error ? error : new Error(`${error}`)
