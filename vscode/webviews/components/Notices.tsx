@@ -15,6 +15,7 @@ import SourcegraphIcon from '../../resources/sourcegraph-mark.svg'
 import type { UserAccountInfo } from '../Chat'
 import { CodyLogo } from '../icons/CodyLogo'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
+import { useLocalStorage } from './hooks'
 import { Button } from './shadcn/ui/button'
 
 interface Notice {
@@ -32,12 +33,26 @@ interface NoticesProps {
     isTeamsUpgradeCtaEnabled?: boolean
 }
 
-export const Notices: React.FC<NoticesProps> = ({ user, isTeamsUpgradeCtaEnabled }) => {
-    const [dismissedNotices, setDismissedNotices] = useState<Set<string>>(new Set())
+const storageKey = 'DismissedWelcomeNotices'
 
-    const dismissNotice = useCallback((noticeId: string) => {
-        setDismissedNotices(prev => new Set([...prev, noticeId]))
-    }, [])
+export const Notices: React.FC<NoticesProps> = ({ user, isTeamsUpgradeCtaEnabled }) => {
+    // dismissed notices from local storage
+    const [dismissedNotices, setDismissedNotices] = useLocalStorage(storageKey, '')
+    // session-only dismissal - for notices we want to show if the user logs out and logs back in.
+    const [sessionDismissedNotices, setSessionDismissedNotices] = useState<string[]>([])
+
+    const dismissNotice = useCallback(
+        (noticeId: string, type: 'sessional' | 'permanent' = 'permanent') => {
+            if (type === 'permanent') {
+                // For notices we don't want to show again after it's been dismissed once
+                setDismissedNotices(prev => [...prev, noticeId].join(''))
+            } else {
+                // For notices we want to show if the user logs out and logs back in.
+                setSessionDismissedNotices(prev => [...prev, noticeId])
+            }
+        },
+        [setDismissedNotices]
+    )
 
     const notices: Notice[] = useMemo(
         () => [
@@ -91,7 +106,7 @@ export const Notices: React.FC<NoticesProps> = ({ user, isTeamsUpgradeCtaEnabled
                         variant="warning"
                         title=""
                         message="Sourcegraph team members should use S2 not dotcom (except when testing dotcom-specific behavior) so that we dogfood our enterprise customer experience."
-                        onDismiss={() => dismissNotice('DogfoodS2')}
+                        onDismiss={() => dismissNotice('DogfoodS2', 'sessional')}
                         actions={[
                             {
                                 label: 'Switch to S2',
@@ -107,7 +122,7 @@ export const Notices: React.FC<NoticesProps> = ({ user, isTeamsUpgradeCtaEnabled
                             },
                             {
                                 label: 'Dismiss',
-                                onClick: () => dismissNotice('DogfoodS2'),
+                                onClick: () => dismissNotice('DogfoodS2', 'sessional'),
                                 variant: 'secondary',
                             },
                         ]}
@@ -118,9 +133,16 @@ export const Notices: React.FC<NoticesProps> = ({ user, isTeamsUpgradeCtaEnabled
         [user, dismissNotice, isTeamsUpgradeCtaEnabled]
     )
 
+    // First, modify the activeNotice useMemo to add conditional logic for DogfoodS2
     const activeNotice = useMemo(
-        () => notices.find(notice => notice.isVisible && !dismissedNotices.has(notice.id)),
-        [dismissedNotices, notices]
+        () =>
+            notices.find(notice => {
+                if (notice.id === 'DogfoodS2') {
+                    return notice.isVisible && !sessionDismissedNotices.includes(notice.id)
+                }
+                return notice.isVisible && !dismissedNotices?.includes(notice.id)
+            }),
+        [dismissedNotices, sessionDismissedNotices, notices]
     )
 
     if (!activeNotice) {
