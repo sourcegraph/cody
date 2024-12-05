@@ -26,15 +26,21 @@ async function measureBundleSize(): Promise<void> {
 
     if (webviewBundle.size > SIZE_LIMITS.webview) {
         violations.push(
-            `Webview bundle size (${prettyPrintMB(
-                webviewBundle.size
-            )}) exceeds limit of ${prettyPrintMB(SIZE_LIMITS.webview)}`
+            `Webview bundle size (${prettyPrintMB(webviewBundle.size)}) exceeds limit of ${prettyPrintMB(
+                SIZE_LIMITS.webview
+            )}`
         )
     }
     // Write the bundle sizes to the GITHUB_ENV file
     if (process.env.GITHUB_ENV) {
-        appendFileSync(process.env.GITHUB_ENV, `EXTENSION_BUNDLE_SIZE_MB=${(extensionBundle.size / (1024 * 1024)).toFixed(2)}\n`)
-        appendFileSync(process.env.GITHUB_ENV, `WEBVIEW_BUNDLE_SIZE_MB=${(webviewBundle.size / (1024 * 1024)).toFixed(2)}\n`)
+        appendFileSync(
+            process.env.GITHUB_ENV,
+            `EXTENSION_BUNDLE_SIZE_MB=${(extensionBundle.size / (1024 * 1024)).toFixed(2)}\n`
+        )
+        appendFileSync(
+            process.env.GITHUB_ENV,
+            `WEBVIEW_BUNDLE_SIZE_MB=${(webviewBundle.size / (1024 * 1024)).toFixed(2)}\n`
+        )
     } else {
         console.error('GITHUB_ENV environment variable is not defined.')
     }
