@@ -6,16 +6,8 @@ const SIZE_LIMITS = {
     webview: 10 * 1024 * 1024, // 10MB
 }
 
-function prettyPrintBytes(bytes: number): string {
-    const units = ['B', 'KB', 'MB', 'GB', 'TB']
-    let unitIndex = 0
-
-    while (bytes >= 1024 && unitIndex < units.length - 1) {
-        bytes /= 1024
-        unitIndex++
-    }
-
-    return `${bytes.toFixed(2)} ${units[unitIndex]}`
+function prettyPrintMB(bytes: number): string {
+    return (bytes / (1024 * 1024)).toFixed(2) + ' MB'
 }
 
 async function measureBundleSize(): Promise<void> {
@@ -26,31 +18,25 @@ async function measureBundleSize(): Promise<void> {
 
     if (extensionBundle.size > SIZE_LIMITS.extension) {
         violations.push(
-            `Extension bundle size (${prettyPrintBytes(
+            `Extension bundle size (${prettyPrintMB(
                 extensionBundle.size
-            )}) exceeds limit of ${prettyPrintBytes(SIZE_LIMITS.extension)}`
+            )}) exceeds limit of ${prettyPrintMB(SIZE_LIMITS.extension)}`
         )
     }
 
     if (webviewBundle.size > SIZE_LIMITS.webview) {
         violations.push(
-            `Webview bundle size (${prettyPrintBytes(
+            `Webview bundle size (${prettyPrintMB(
                 webviewBundle.size
-            )}) exceeds limit of ${prettyPrintBytes(SIZE_LIMITS.webview)}`
+            )}) exceeds limit of ${prettyPrintMB(SIZE_LIMITS.webview)}`
         )
     }
     // Write the bundle sizes to the GITHUB_ENV file
     if (process.env.GITHUB_ENV) {
-        appendFileSync(process.env.GITHUB_ENV, `EXTENSION_BUNDLE_SIZE=${extensionBundle.size}\n`)
-        appendFileSync(process.env.GITHUB_ENV, `WEBVIEW_BUNDLE_SIZE=${webviewBundle.size}\n`)
+        appendFileSync(process.env.GITHUB_ENV, `EXTENSION_BUNDLE_SIZE_MB=${(extensionBundle.size / (1024 * 1024)).toFixed(2)}\n`)
+        appendFileSync(process.env.GITHUB_ENV, `WEBVIEW_BUNDLE_SIZE_MB=${(webviewBundle.size / (1024 * 1024)).toFixed(2)}\n`)
     } else {
         console.error('GITHUB_ENV environment variable is not defined.')
-    }
-
-    // For local debugging, log the current measurements
-    if (process.env.LOG_BUNDLE_SIZE === 'true') {
-        console.log(`Extension bundle size: ${prettyPrintBytes(extensionBundle.size)}`)
-        console.log(`Webview bundle size: ${prettyPrintBytes(webviewBundle.size)}`)
     }
 
     if (violations.length > 0) {
