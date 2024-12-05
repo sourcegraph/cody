@@ -56,75 +56,76 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
             addCodyClientIdentificationHeaders(headers)
 
             try {
-                const response = await fetch(url.toString(), {
+                fetch(url.toString(), {
                     method: 'POST',
                     headers: Object.fromEntries(headers.entries()),
                     body: JSON.stringify(serializedParams),
                     signal,
-                })
+                }).then(async response => {
+                    if (!response.ok) {
+                        const errorMessage = await response.text()
+                        if (response.status === 429) {
+                            const upgradeIsAvailable =
+                                response.headers.get('x-is-cody-pro-user') === 'false'
+                            const retryAfter = response.headers.get('retry-after')
+                            const limit = response.headers.get('x-ratelimit-limit')
 
-                if (!response.ok) {
-                    const errorMessage = await response.text()
-                    if (response.status === 429) {
-                        const upgradeIsAvailable = response.headers.get('x-is-cody-pro-user') === 'false'
-                        const retryAfter = response.headers.get('retry-after')
-                        const limit = response.headers.get('x-ratelimit-limit')
-
-                        throw new RateLimitError(
-                            'chat messages and commands',
+                            throw new RateLimitError(
+                                'chat messages and commands',
+                                errorMessage,
+                                upgradeIsAvailable,
+                                limit ? Number.parseInt(limit, 10) : undefined,
+                                retryAfter || undefined
+                            )
+                        }
+                        throw new NetworkError(
+                            {
+                                url: url.toString(),
+                                status: response.status,
+                                statusText: response.statusText,
+                            },
                             errorMessage,
-                            upgradeIsAvailable,
-                            limit ? Number.parseInt(limit, 10) : undefined,
-                            retryAfter || undefined
+                            getActiveTraceAndSpanId()?.traceId
                         )
                     }
-                    throw new NetworkError(
-                        {
-                            url: url.toString(),
-                            status: response.status,
-                            statusText: response.statusText,
-                        },
-                        errorMessage,
-                        getActiveTraceAndSpanId()?.traceId
-                    )
-                }
 
-                const textStream = response.body?.pipeThrough(new TextDecoderStream())
-                const reader = textStream?.getReader()
-                try {
-                    if (!reader) {
-                        throw new Error('No response body reader available')
-                    }
-
-                    let bufferText = ''
-                    let didReceiveAnyEvent = false
-                    const builder = new CompletionsResponseBuilder(requestParams.apiVersion)
-
-                    while (true) {
-                        const { done, value } = await reader.read()
-                        if (done) break
-
-                        bufferText += value
-
-                        const parseResult = parseEvents(builder, bufferText)
-                        if (isError(parseResult)) {
-                            throw parseResult
+                    const textStream = response.body?.pipeThrough(new TextDecoderStream())
+                    const reader = textStream?.getReader()
+                    try {
+                        if (!reader) {
+                            throw new Error('No response body reader available')
                         }
 
-                        didReceiveAnyEvent = didReceiveAnyEvent || parseResult.events.length > 0
-                        log?.onEvents(parseResult.events)
-                        this.sendEvents(parseResult.events, cb, span)
-                        bufferText = parseResult.remainingBuffer
-                    }
+                        let bufferText = ''
+                        let didReceiveAnyEvent = false
+                        const builder = new CompletionsResponseBuilder(requestParams.apiVersion)
 
-                    if (!didReceiveAnyEvent) {
-                        throw new Error(
-                            'Connection closed without receiving any events (this may be due to an outage with the upstream LLM provider)'
-                        )
+                        while (true) {
+                            const { done, value } = await reader.read()
+                            if (done) break
+
+                            bufferText += value
+
+                            const parseResult = parseEvents(builder, bufferText)
+                            if (isError(parseResult)) {
+                                throw parseResult
+                            }
+
+                            didReceiveAnyEvent = didReceiveAnyEvent || parseResult.events.length > 0
+                            log?.onEvents(parseResult.events)
+                            this.sendEvents(parseResult.events, cb, span)
+                            bufferText = parseResult.remainingBuffer
+                        }
+
+                        if (!didReceiveAnyEvent) {
+                            throw new Error(
+                                'Connection closed without receiving any events (this may be due to an outage with the upstream LLM provider)'
+                            )
+                        }
+                    } finally {
+                        reader?.releaseLock()
                     }
-                } finally {
-                    reader?.releaseLock()
-                }
+                })
             } catch (error) {
                 const errorObject = error instanceof Error ? error : new Error(`${error}`)
                 log?.onError(errorObject.message, error)

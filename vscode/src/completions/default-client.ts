@@ -109,148 +109,149 @@ class DefaultCodeCompletionsClient implements CodeCompletionsClient {
 
                 log.onFetch('defaultClient', serializedParams)
 
-                const response = await fetch(url, {
+                return fetch(url, {
                     method: 'POST',
                     body: JSON.stringify(serializedParams),
                     headers,
                     signal,
-                })
+                }).then(async response => {
+                    logResponseHeadersToSpan(span, response)
 
-                logResponseHeadersToSpan(span, response)
+                    const traceId = getActiveTraceAndSpanId()?.traceId
 
-                const traceId = getActiveTraceAndSpanId()?.traceId
+                    // When rate-limiting occurs, the response is an error message
+                    if (response.status === 429) {
+                        // Check for explicit false, because if the header is not set, there is no upgrade
+                        // available.
+                        //
+                        // Note: This header is added only via the Sourcegraph instance and thus not added by
+                        //       the helper function.
+                        const upgradeIsAvailable =
+                            response.headers.get('x-is-cody-pro-user') === 'false' &&
+                            typeof response.headers.get('x-is-cody-pro-user') !== 'undefined'
+                        throw recordErrorToSpan(
+                            span,
+                            await createRateLimitErrorFromResponse(response, upgradeIsAvailable)
+                        )
+                    }
 
-                // When rate-limiting occurs, the response is an error message
-                if (response.status === 429) {
-                    // Check for explicit false, because if the header is not set, there is no upgrade
-                    // available.
-                    //
-                    // Note: This header is added only via the Sourcegraph instance and thus not added by
-                    //       the helper function.
-                    const upgradeIsAvailable =
-                        response.headers.get('x-is-cody-pro-user') === 'false' &&
-                        typeof response.headers.get('x-is-cody-pro-user') !== 'undefined'
-                    throw recordErrorToSpan(
-                        span,
-                        await createRateLimitErrorFromResponse(response, upgradeIsAvailable)
-                    )
-                }
+                    if (!response.ok) {
+                        throw recordErrorToSpan(
+                            span,
+                            new NetworkError(response, await response.text(), traceId)
+                        )
+                    }
 
-                if (!response.ok) {
-                    throw recordErrorToSpan(
-                        span,
-                        new NetworkError(response, await response.text(), traceId)
-                    )
-                }
+                    if (response.body === null) {
+                        throw recordErrorToSpan(span, new TracedError('No response body', traceId))
+                    }
 
-                if (response.body === null) {
-                    throw recordErrorToSpan(span, new TracedError('No response body', traceId))
-                }
+                    // For backward compatibility, we have to check if the response is an SSE stream or a
+                    // regular JSON payload. This ensures that the request also works against older backends
+                    const isStreamingResponse =
+                        response.headers.get('content-type') === 'text/event-stream'
 
-                // For backward compatibility, we have to check if the response is an SSE stream or a
-                // regular JSON payload. This ensures that the request also works against older backends
-                const isStreamingResponse = response.headers.get('content-type') === 'text/event-stream'
+                    const result: CompletionResponseWithMetaData = {
+                        completionResponse: undefined,
+                        metadata: { response },
+                    }
 
-                const result: CompletionResponseWithMetaData = {
-                    completionResponse: undefined,
-                    metadata: { response },
-                }
+                    try {
+                        if (isStreamingResponse) {
+                            const iterator = createSSEIterator(response.body, {
+                                aggregatedCompletionEvent: true,
+                            })
+                            let chunkIndex = 0
 
-                try {
-                    if (isStreamingResponse) {
-                        const iterator = createSSEIterator(response.body, {
-                            aggregatedCompletionEvent: true,
-                        })
-                        let chunkIndex = 0
-
-                        for await (const { event, data } of iterator) {
-                            if (event === 'error') {
-                                throw new TracedError(data, traceId)
-                            }
-
-                            if (signal.aborted) {
-                                if (result.completionResponse) {
-                                    result.completionResponse.stopReason =
-                                        CompletionStopReason.RequestAborted
+                            for await (const { event, data } of iterator) {
+                                if (event === 'error') {
+                                    throw new TracedError(data, traceId)
                                 }
 
-                                break
-                            }
+                                if (signal.aborted) {
+                                    if (result.completionResponse) {
+                                        result.completionResponse.stopReason =
+                                            CompletionStopReason.RequestAborted
+                                    }
 
-                            if (event === 'completion') {
-                                const parsed = JSON.parse(data) as CompletionResponse
-                                result.completionResponse = {
-                                    completion: parsed.completion || '',
-                                    stopReason: parsed.stopReason || CompletionStopReason.StreamingChunk,
+                                    break
                                 }
 
-                                span.addEvent('yield', {
-                                    charCount: result.completionResponse.completion.length,
-                                    stopReason: result.completionResponse.stopReason,
-                                })
+                                if (event === 'completion') {
+                                    const parsed = JSON.parse(data) as CompletionResponse
+                                    result.completionResponse = {
+                                        completion: parsed.completion || '',
+                                        stopReason:
+                                            parsed.stopReason || CompletionStopReason.StreamingChunk,
+                                    }
 
-                                yield result
+                                    span.addEvent('yield', {
+                                        charCount: result.completionResponse.completion.length,
+                                        stopReason: result.completionResponse.stopReason,
+                                    })
+                                }
+
+                                chunkIndex += 1
                             }
 
-                            chunkIndex += 1
+                            if (result.completionResponse === undefined) {
+                                throw new TracedError('No completion response received', traceId)
+                            }
+
+                            if (!result.completionResponse.stopReason) {
+                                result.completionResponse.stopReason =
+                                    CompletionStopReason.RequestFinished
+                            }
+
+                            return result
                         }
 
-                        if (result.completionResponse === undefined) {
-                            throw new TracedError('No completion response received', traceId)
-                        }
+                        // Handle non-streaming response
+                        const text = await response.text()
+                        result.completionResponse = JSON.parse(text) as CompletionResponse
 
-                        if (!result.completionResponse.stopReason) {
-                            result.completionResponse.stopReason = CompletionStopReason.RequestFinished
+                        if (
+                            typeof result.completionResponse.completion !== 'string' ||
+                            typeof result.completionResponse.stopReason !== 'string'
+                        ) {
+                            const message = `response does not satisfy CodeCompletionResponse: ${text}`
+                            log?.onError(message)
+                            throw new TracedError(message, traceId)
                         }
 
                         return result
-                    }
+                    } catch (error) {
+                        // Shared error handling for both streaming and non-streaming requests.
 
-                    // Handle non-streaming response
-                    const text = await response.text()
-                    result.completionResponse = JSON.parse(text) as CompletionResponse
+                        // In case of the abort error and non-empty completion response, we can
+                        // consider the completion partially completed and want to log it to
+                        // the Cody output channel via `log.onComplete()` instead of erroring.
+                        if (isAbortError(error as Error) && result.completionResponse) {
+                            result.completionResponse.stopReason = CompletionStopReason.RequestAborted
+                            return result
+                        }
 
-                    if (
-                        typeof result.completionResponse.completion !== 'string' ||
-                        typeof result.completionResponse.stopReason !== 'string'
-                    ) {
-                        const message = `response does not satisfy CodeCompletionResponse: ${text}`
-                        log?.onError(message)
+                        recordErrorToSpan(span, error as Error)
+
+                        if (isRateLimitError(error as Error)) {
+                            throw error
+                        }
+
+                        const message = `error parsing CodeCompletionResponse: ${error}`
+                        log?.onError(message, error)
                         throw new TracedError(message, traceId)
+                    } finally {
+                        if (result.completionResponse) {
+                            span.addEvent('return', {
+                                charCount: result.completionResponse.completion.length,
+                                stopReason: result.completionResponse.stopReason,
+                            })
+                            span.setStatus({ code: SpanStatusCode.OK })
+                            span.end()
+                            log?.onComplete(result.completionResponse)
+                        }
                     }
-
-                    return result
-                } catch (error) {
-                    // Shared error handling for both streaming and non-streaming requests.
-
-                    // In case of the abort error and non-empty completion response, we can
-                    // consider the completion partially completed and want to log it to
-                    // the Cody output channel via `log.onComplete()` instead of erroring.
-                    if (isAbortError(error as Error) && result.completionResponse) {
-                        result.completionResponse.stopReason = CompletionStopReason.RequestAborted
-                        return result
-                    }
-
-                    recordErrorToSpan(span, error as Error)
-
-                    if (isRateLimitError(error as Error)) {
-                        throw error
-                    }
-
-                    const message = `error parsing CodeCompletionResponse: ${error}`
-                    log?.onError(message, error)
-                    throw new TracedError(message, traceId)
-                } finally {
-                    if (result.completionResponse) {
-                        span.addEvent('return', {
-                            charCount: result.completionResponse.completion.length,
-                            stopReason: result.completionResponse.stopReason,
-                        })
-                        span.setStatus({ code: SpanStatusCode.OK })
-                        span.end()
-                        log?.onComplete(result.completionResponse)
-                    }
-                }
+                })
             }
         )
     }
