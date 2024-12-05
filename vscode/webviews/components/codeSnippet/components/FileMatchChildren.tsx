@@ -2,18 +2,19 @@ import { type FC, type PropsWithChildren, useCallback } from 'react'
 
 import { clsx } from 'clsx'
 
-import type { ContentMatch, MatchGroup } from '../types'
+import type { MatchGroup } from '../types'
 import { SourcegraphURL } from '../url'
 import { getFileMatchUrl } from '../utils'
 
 import { CodeExcerpt } from './CodeExcerpt'
 
+import type { NLSSearchFileMatch } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 import { getVSCodeAPI } from '../../../utils/VSCodeApi'
 import resultStyles from '../CodeSnippet.module.css'
 import styles from './FileMatchChildren.module.css'
 
 interface FileMatchProps {
-    result: ContentMatch
+    result: NLSSearchFileMatch
     grouped: MatchGroup[]
     serverEndpoint: string
 }
@@ -67,8 +68,8 @@ export const FileMatchChildren: FC<PropsWithChildren<FileMatchProps>> = props =>
                         )}
                     >
                         <CodeExcerpt
-                            commitID={result.commit || ''}
-                            filePath={result.path}
+                            commitID={result.file.commit?.oid || ''}
+                            filePath={result.file.path}
                             startLine={group.startLine}
                             endLine={group.endLine}
                             highlightRanges={group.matches}

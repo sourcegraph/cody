@@ -53,6 +53,7 @@ import {
     LEGACY_PROMPTS_QUERY_5_8,
     LOG_EVENT_MUTATION,
     LOG_EVENT_MUTATION_DEPRECATED,
+    NLS_SEARCH_QUERY,
     PACKAGE_LIST_QUERY,
     PROMPTS_QUERY,
     PromptsOrderBy,
@@ -310,6 +311,48 @@ interface FileMatchSearchResponse {
                     }
                 }
             }[]
+        }
+    }
+}
+
+export interface NLSSearchFileMatch {
+    __typename: 'FileMatch'
+    repository: {
+        id: string
+        name: string
+    }
+    file: {
+        url: string
+        path: string
+        commit: {
+            oid: string
+        }
+    }
+    lineMatches?: {
+        preview: string
+        lineNumber: number
+        offsetAndLengths: number[][]
+    }[]
+    chunkMatches?: {
+        content: string
+        contentStart: Position
+        ranges: Range[]
+    }[]
+    pathMatches?: Range[]
+    symbols?: {
+        name: string
+        location: {
+            range: Range
+        }
+    }[]
+}
+
+export type NLSSearchResult = NLSSearchFileMatch | { __typename: 'unknown' }
+
+export interface NLSSearchResponse {
+    search: {
+        results: {
+            results: NLSSearchResult[]
         }
     }
 }
@@ -1265,6 +1308,26 @@ export class SourcegraphGraphQLAPIClient {
             signal
         )
         const result = extractDataOrError(response, data => data.prompts.nodes)
+        if (result instanceof Error) {
+            throw result
+        }
+        return result
+    }
+
+    public async nlsSearchQuery({
+        query,
+        signal,
+    }: {
+        query: string
+        signal?: AbortSignal
+    }): Promise<NLSSearchResponse['search']> {
+        const response = await this.fetchSourcegraphAPI<APIResponse<NLSSearchResponse>>(
+            NLS_SEARCH_QUERY,
+            { query },
+            signal
+        )
+
+        const result = extractDataOrError(response, data => data.search)
         if (result instanceof Error) {
             throw result
         }

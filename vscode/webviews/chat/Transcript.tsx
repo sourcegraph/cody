@@ -35,8 +35,8 @@ import type { ApiPostMessage } from '../Chat'
 import { Button } from '../components/shadcn/ui/button'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
 import { SpanManager } from '../utils/spanManager'
-import { getTraceparentFromSpanContext, useTelemetryRecorder } from '../utils/telemetry'
-import { useExperimentalOneBox } from '../utils/useExperimentalOneBox'
+import { useTelemetryRecorder } from '../utils/telemetry'
+import { useExperimentalOneBox, useExperimentalOneBoxDebug } from '../utils/useExperimentalOneBox'
 import type { CodeBlockActionsProps } from './ChatMessageContent/ChatMessageContent'
 import {
     ContextCell,
@@ -260,7 +260,6 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
         smartApply,
         smartApplyEnabled,
         editorRef: parentEditorRef,
-        onAddToFollowupChat,
     } = props
     const [intentResults, setIntentResults] = useMutatedValue<
         | {
@@ -275,54 +274,53 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
     const humanEditorRef = useRef<PromptEditorRefAPI | null>(null)
     useImperativeHandle(parentEditorRef, () => humanEditorRef.current)
 
-    const onUserAction = (action: 'edit' | 'submit', intentFromSubmit?: ChatMessage['intent']) => {
-        // Start the span as soon as the user initiates the action
-        const startMark = performance.mark('startSubmit')
-        const spanManager = new SpanManager('cody-webview')
-        const span = spanManager.startSpan('chat-interaction', {
-            attributes: {
-                sampled: true,
-                'render.state': 'started',
-                'startSubmit.mark': startMark.startTime,
-            },
-        })
-
-        if (!span) {
-            throw new Error('Failed to start span for chat interaction')
-        }
-
-        const spanContext = trace.setSpan(context.active(), span)
-        setActiveChatContext(spanContext)
-        const currentSpanContext = span.spanContext()
-
-        const traceparent = getTraceparentFromSpanContext(currentSpanContext)
-
-        // Serialize the editor value after starting the span
-        const editorValue = humanEditorRef.current?.getSerializedValue()
-        if (!editorValue) {
-            console.error('Failed to serialize editor value')
-            return
-        }
-
-        const commonProps = {
-            editorValue,
-            intent: intentFromSubmit || intentResults.current?.intent,
-            intentScores: intentFromSubmit ? undefined : intentResults.current?.allScores,
-            manuallySelectedIntent: !!intentFromSubmit,
-            traceparent,
-        }
-
-        if (action === 'edit') {
-            editHumanMessage({
-                messageIndexInTranscript: humanMessage.index,
-                ...commonProps,
+    const onUserAction = useCallback(
+        (action: 'edit' | 'submit', intentFromSubmit?: ChatMessage['intent']) => {
+            // Start the span as soon as the user initiates the action
+            const startMark = performance.mark('startSubmit')
+            const spanManager = new SpanManager('cody-webview')
+            const span = spanManager.startSpan('chat-interaction', {
+                attributes: {
+                    sampled: true,
+                    'render.state': 'started',
+                    'startSubmit.mark': startMark.startTime,
+                },
             })
-        } else {
-            submitHumanMessage({
-                ...commonProps,
-            })
-        }
-    }
+
+            if (!span) {
+                throw new Error('Failed to start span for chat interaction')
+            }
+
+            const spanContext = trace.setSpan(context.active(), span)
+            setActiveChatContext(spanContext)
+
+            // Serialize the editor value after starting the span
+            const editorValue = humanEditorRef.current?.getSerializedValue()
+            if (!editorValue) {
+                console.error('Failed to serialize editor value')
+                return
+            }
+
+            const commonProps = {
+                editorValue,
+                intent: intentFromSubmit || intentResults.current?.intent,
+                intentScores: intentFromSubmit ? undefined : intentResults.current?.allScores,
+                manuallySelectedIntent: !!intentFromSubmit,
+            }
+
+            if (action === 'edit') {
+                editHumanMessage({
+                    messageIndexInTranscript: humanMessage.index,
+                    ...commonProps,
+                })
+            } else {
+                submitHumanMessage({
+                    ...commonProps,
+                })
+            }
+        },
+        [humanMessage.index, intentResults, setActiveChatContext]
+    )
 
     const onEditSubmit = useCallback(
         (intentFromSubmit?: ChatMessage['intent']): void => {
@@ -340,6 +338,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
 
     const extensionAPI = useExtensionAPI()
     const experimentalOneBoxEnabled = useExperimentalOneBox()
+    const experimentalOneBoxDebug = useExperimentalOneBoxDebug()
     const onChange = useMemo(() => {
         return debounce(async (editorValue: SerializedPromptEditorValue) => {
             if (!experimentalOneBoxEnabled) {
@@ -556,6 +555,17 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
         ?.getSerializedValue()
         .contextItems.some(item => item.type === 'repository')
 
+    const onSubmit = useCallback(
+        (intent?: ChatMessage['intent']) => {
+            if (humanMessage.isUnsentFollowup) {
+                onFollowupSubmit(intent)
+            } else {
+                onEditSubmit(intent)
+            }
+        },
+        [humanMessage.isUnsentFollowup, onFollowupSubmit, onEditSubmit]
+    )
+
     return (
         <>
             <HumanMessageCell
@@ -568,9 +578,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                 isSent={!humanMessage.isUnsentFollowup}
                 isPendingPriorResponse={priorAssistantMessageIsLoading}
                 onChange={onChange}
-                onSubmit={
-                    humanMessage.isUnsentFollowup ? () => onFollowupSubmit() : () => onEditSubmit()
-                }
+                onSubmit={onSubmit}
                 onStop={onStop}
                 isFirstInteraction={isFirstInteraction}
                 isLastInteraction={isLastInteraction}
@@ -580,7 +588,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                 onEditorFocusChange={resetIntent}
             />
 
-            {experimentalOneBoxEnabled && humanMessage.intent && (
+            {experimentalOneBoxEnabled && experimentalOneBoxDebug && humanMessage.intent && (
                 <InfoMessage>
                     {humanMessage.intent === 'search' ? (
                         <div className="tw-flex tw-justify-between tw-gap-4 tw-items-center">
@@ -627,11 +635,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                     contextAlternatives={humanMessage.contextAlternatives}
                     model={assistantMessage?.model}
                     isForFirstMessage={humanMessage.index === 0}
-                    showSnippets={experimentalOneBoxEnabled && humanMessage.intent === 'search'}
-                    defaultOpen={experimentalOneBoxEnabled && humanMessage.intent === 'search'}
-                    reSubmitWithChatIntent={reSubmitWithChatIntent}
                     isContextLoading={isContextLoading}
-                    onAddToFollowupChat={onAddToFollowupChat}
                     onManuallyEditContext={manuallyEditContext}
                     editContextNode={
                         humanMessage.intent === 'search'
@@ -640,31 +644,27 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                     }
                 />
             )}
-            {(!experimentalOneBoxEnabled || humanMessage.intent !== 'search') &&
-                assistantMessage &&
-                !isContextLoading && (
-                    <AssistantMessageCell
-                        key={assistantMessage.index}
-                        userInfo={userInfo}
-                        models={models}
-                        chatEnabled={chatEnabled}
-                        message={assistantMessage}
-                        feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
-                        copyButtonOnSubmit={copyButtonOnSubmit}
-                        insertButtonOnSubmit={insertButtonOnSubmit}
-                        postMessage={postMessage}
-                        guardrails={guardrails}
-                        humanMessage={humanMessageInfo}
-                        isLoading={assistantMessage.isLoading}
-                        showFeedbackButtons={
-                            !assistantMessage.isLoading &&
-                            !assistantMessage.error &&
-                            isLastSentInteraction
-                        }
-                        smartApply={smartApply}
-                        smartApplyEnabled={smartApplyEnabled}
-                    />
-                )}
+            {assistantMessage && !isContextLoading && (
+                <AssistantMessageCell
+                    key={assistantMessage.index}
+                    userInfo={userInfo}
+                    models={models}
+                    chatEnabled={chatEnabled}
+                    message={assistantMessage}
+                    feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
+                    copyButtonOnSubmit={copyButtonOnSubmit}
+                    insertButtonOnSubmit={insertButtonOnSubmit}
+                    postMessage={postMessage}
+                    guardrails={guardrails}
+                    humanMessage={humanMessageInfo}
+                    isLoading={assistantMessage.isLoading}
+                    showFeedbackButtons={
+                        !assistantMessage.isLoading && !assistantMessage.error && isLastSentInteraction
+                    }
+                    smartApply={smartApply}
+                    smartApplyEnabled={smartApplyEnabled}
+                />
+            )}
         </>
     )
 }, isEqual)
@@ -719,13 +719,11 @@ function submitHumanMessage({
     intent,
     intentScores,
     manuallySelectedIntent,
-    traceparent,
 }: {
     editorValue: SerializedPromptEditorValue
     intent?: ChatMessage['intent']
     intentScores?: { intent: string; score: number }[]
     manuallySelectedIntent?: boolean
-    traceparent: string
 }): void {
     getVSCodeAPI().postMessage({
         command: 'submit',
@@ -735,7 +733,6 @@ function submitHumanMessage({
         intent,
         intentScores,
         manuallySelectedIntent,
-        traceparent,
     })
     focusLastHumanMessageEditor()
 }

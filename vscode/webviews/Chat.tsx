@@ -21,7 +21,7 @@ import { WelcomeMessage } from './chat/components/WelcomeMessage'
 import { ScrollDown } from './components/ScrollDown'
 import type { View } from './tabs'
 import { SpanManager } from './utils/spanManager'
-import { getTraceparentFromSpanContext, useTelemetryRecorder } from './utils/telemetry'
+import { useTelemetryRecorder } from './utils/telemetry'
 import { useUserAccountInfo } from './utils/useConfig'
 interface ChatboxProps {
     chatEnabled: boolean
@@ -143,7 +143,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                         'smartApply.id': id,
                     },
                 })
-                const traceparent = getTraceparentFromSpanContext(span.spanContext())
 
                 vscodeAPI.postMessage({
                     command: 'smartApplySubmit',
@@ -152,9 +151,8 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                     // remove the additional /n added by the text area at the end of the text
                     code: text.replace(/\n$/, ''),
                     fileName,
-                    traceparent,
                 })
-                span.end()
+                span?.end()
             },
             onAccept: (id: string) => {
                 vscodeAPI.postMessage({

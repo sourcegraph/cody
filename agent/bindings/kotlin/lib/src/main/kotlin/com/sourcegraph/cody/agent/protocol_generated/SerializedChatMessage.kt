@@ -11,6 +11,7 @@ data class SerializedChatMessage(
   val text: String? = null,
   val model: String? = null,
   val intent: IntentEnum? = null, // Oneof: search, chat, edit, insert
+  val search: SearchParams? = null,
 ) {
 
   enum class SpeakerEnum {

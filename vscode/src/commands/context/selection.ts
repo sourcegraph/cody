@@ -12,6 +12,7 @@ import { getSmartSelection } from '../../editor/utils'
 
 import { type Position, Selection } from 'vscode'
 import type { URI } from 'vscode-uri'
+import { getFirstRepoNameContainingUri } from '../../repository/repo-name-resolver'
 
 /**
  * Gets context file content from the cursor position in the active editor.
@@ -90,6 +91,7 @@ export async function getSelectionOrFileContext(): Promise<ContextItem[]> {
                 type: 'file',
                 uri: document.uri,
                 content,
+                repoName: await getFirstRepoNameContainingUri(document.uri),
                 source: ContextItemSource.Selection,
                 range: range && toRangeData(range),
                 size: await TokenCounterUtils.countTokens(content),
