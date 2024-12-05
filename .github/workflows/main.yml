@@ -1,0 +1,28 @@
+name: Test BigQuery Insert
+
+on:
+  workflow_dispatch:
+
+jobs:
+  insert-data:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@v0
+        with:
+          version: 'latest'
+          service_account_key: ${{ secrets.GCP_BQ_CREDENTIALS }}
+          export_default_credentials: true
+
+      - name: Insert data into BigQuery
+        run: |
+          echo '[{"release_version": "1.0.0"}]' > data.json
+          bq insert \
+          --project_id='cody-core-dev' \
+          --dataset_id='cody_release' \
+          --table_id='bundle_sizes' \
+          --source_format=NEWLINE_DELIMITED_JSON \
+          data.json
