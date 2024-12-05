@@ -48,8 +48,6 @@ jobs:
         shell: bash
       - run: pnpm run build
       - run: pnpm -C vscode run build
-      - name: Checkout code
-        uses: actions/checkout@v2
       - name: Check bundle sizes
         run: |
           cd vscode
