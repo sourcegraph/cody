@@ -8,18 +8,18 @@ export interface Item<T> {
     data: T
 }
 
-interface SuggestionsProps<T> {
+interface MentionsMenuProps<T> {
     items: Item<T>[]
     selectedIndex: number
     filter: string
     menuPosition: Position
     getHeader: () => React.ReactNode
-    getEmptyLabel: (args: {filter: string}) => React.ReactNode
+    getEmptyLabel: () => React.ReactNode
     onSelect?: (index: number) => void
     renderItem: (data: T) => React.ReactNode
 }
 
-export const Suggestions = <T,>({items, selectedIndex, filter, menuPosition, getHeader, getEmptyLabel, onSelect, renderItem}: SuggestionsProps<T>) => {
+export const MentionsMenu = <T,>({items, selectedIndex, filter, menuPosition, getHeader, getEmptyLabel, onSelect, renderItem}: MentionsMenuProps<T>) => {
     const container = useRef<HTMLDivElement | null>(null)
 
     const {refs, floatingStyles} = useFloating({
@@ -88,21 +88,19 @@ export const Suggestions = <T,>({items, selectedIndex, filter, menuPosition, get
         onMouseDown={handleMouseDown}
         onClick={handleClick}
         style={floatingStyles}>
+        {header && <div className={headerClass}>{header}</div>}
         <ul>
-            {header &&
-                <li className={headerClass} aria-disabled="true">{header}</li>
-            }
             {items.map((item, index) =>
                 <li key={index} role="option" className={itemClass} aria-selected={index === selectedIndex}>
                     {renderItem(item.data)}
                 </li>
             )}
-            {items.length === 0 && <li aria-disabled="true">{getEmptyLabel({filter})}</li>}
         </ul>
+        {items.length === 0 && <div className={itemClass} data-disabled="true">{getEmptyLabel()}</div>}
     </div>
 }
 
-const headerClass = '!tw-p-0 !tw-border-b-0 [&_[cmdk-group-heading]]:!tw-p-3 [&_[cmdk-group-heading]]:!tw-text-md [&_[cmdk-group-heading]]:!tw-leading-[1.2] [&_[cmdk-group-heading]]:!tw-h-[30px]'
+const headerClass = '!tw-p-0 !tw-border-b-0 !tw-p-3 !tw-text-md !tw-leading-[1.2] !tw-h-[30px] tw-opacity-50'
 
 const menuClass = ('tw-overflow-hidden tw-rounded-md tw-bg-popover tw-text-popover-foreground')
 
