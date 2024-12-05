@@ -121,6 +121,10 @@ export function isAbortErrorOrSocketHangUp(error: unknown): error is Error {
     )
 }
 
+export function isAbortedDueToTimeout(error: unknown): error is AbortError {
+    return Boolean(isAbortError(error) && error && (error as any).message === 'socket hang up')
+}
+
 export class TimeoutError extends Error {}
 
 export function isNetworkLikeError(error: Error): boolean {

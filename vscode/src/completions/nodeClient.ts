@@ -331,12 +331,22 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                     cb.onComplete()
                     return
                 }
+                if (signal?.aborted) {
+                    if (signal?.reason.includes('timeout')) {
+                        throw new Error('Request aborted due to timeout')
+                    }
+                    throw new Error('Request was aborted by the user')
+                }
                 throw new Error('Unexpected response format')
             } catch (error) {
                 const errorObject = error instanceof Error ? error : new Error(`${error}`)
                 log?.onError(errorObject.message, error)
                 recordErrorToSpan(span, errorObject)
-                cb.onError(errorObject)
+                if (error instanceof NetworkError && error.status === 408) {
+                    cb.onError(new Error('Request timeout. The model may be overloaded.'))
+                } else {
+                    cb.onError(errorObject)
+                }
             }
         })
     }
