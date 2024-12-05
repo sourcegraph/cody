@@ -22,9 +22,7 @@ jobs:
       - name: Insert data into BigQuery
         run: |
           echo '[{"release_version": "1.0.0"}]' > data.json
-          bq insert \
-          --project_id='cody-core-dev' \
-          --dataset_id='cody_release' \
-          --table_id='bundle_sizes' \
+          bq load \
           --source_format=NEWLINE_DELIMITED_JSON \
+          cody-core-dev:cody_release.bundle_sizes \
           data.json
