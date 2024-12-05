@@ -56,7 +56,7 @@ test
             },
         })
 
-        await sidebarSignin(page, sidebar, true)
+        await sidebarSignin(page, sidebar, { enableNotifications: true })
 
         server
             .onGraphQl('ResolveRepoName')

@@ -1,5 +1,4 @@
 import type { Socket } from "node:net";
-
 import { PubSub } from "@google-cloud/pubsub";
 import express from "express";
 import * as uuid from "uuid";
@@ -621,7 +620,7 @@ export async function logTestingData(data: string, type?: string, testName?: str
     };
 
     // Publishes the message as a string
-    const dataBuffer = Buffer.from(JSON.stringify(message));
+    const dataBuffer = new Uint8Array(Buffer.from(JSON.stringify(message)));
 
     await topicPublisher.publishMessage({ data: dataBuffer }).catch((error) => {
         console.error("Error publishing message:", error);

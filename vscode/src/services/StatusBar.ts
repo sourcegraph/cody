@@ -264,7 +264,10 @@ export class CodyStatusBar implements vscode.Disposable {
 
         if (authStatus.authenticated) {
             tags.add(InvisibleStatusBarTag.IsAuthenticated)
-        } else if (authStatus.showInvalidAccessTokenError || authStatus.showNetworkError) {
+        } else if (
+            authStatus.error?.type === 'invalid-access-token' ||
+            authStatus.error?.type === 'network-error'
+        ) {
             tags.add(InvisibleStatusBarTag.HasErrors)
         }
         if (errors.size > 0) {
@@ -285,11 +288,7 @@ export class CodyStatusBar implements vscode.Disposable {
                 interact: interactAuth,
             }
         }
-        if (
-            !authStatus.authenticated &&
-            !authStatus.showNetworkError &&
-            authStatus.showInvalidAccessTokenError
-        ) {
+        if (!authStatus.authenticated && authStatus.error?.type === 'invalid-access-token') {
             return {
                 icon: 'disabled',
                 tooltip: 'Your authentication has expired.\nSign in again to continue using Cody.',
@@ -327,7 +326,7 @@ export class CodyStatusBar implements vscode.Disposable {
             }
         }
 
-        if (!authStatus.authenticated && authStatus.showNetworkError) {
+        if (!authStatus.authenticated && authStatus.error?.type === 'network-error') {
             return {
                 icon: 'disabled',
                 tooltip: 'Network issues prevented Cody from signing in.',

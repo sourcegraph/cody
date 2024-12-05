@@ -56,6 +56,10 @@ export interface DotcomUrlOverride {
     dotcomUrl: string | undefined
 }
 
+export interface ClientConfigSingletonFetchIntervalOverride {
+    clientConfigSingletonFetchInterval: number | undefined
+}
+
 export interface TestConfiguration {
     preAuthenticate?: boolean
 }
@@ -113,6 +117,9 @@ export const test = base
     .extend<DotcomUrlOverride>({
         dotcomUrl: undefined,
     })
+    .extend<ClientConfigSingletonFetchIntervalOverride>({
+        clientConfigSingletonFetchInterval: undefined,
+    })
     .extend<EnterpriseTestOptions>({
         shouldUseEnterprise: [false, { option: true }],
     })
@@ -169,6 +176,7 @@ export const test = base
                 workspaceDirectory,
                 extraWorkspaceSettings,
                 dotcomUrl,
+                clientConfigSingletonFetchInterval,
                 preAuthenticate,
                 userDataDirectory,
                 extensionsDirectory,

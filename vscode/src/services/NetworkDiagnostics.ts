@@ -84,7 +84,7 @@ export class NetworkDiagnostics implements vscode.Disposable {
                             }
                             const isInitial = previousConfigVersion === undefined
                             previousConfigVersion = netConfigVersion
-                            if (isInitial || auth.authenticated || !auth.showNetworkError) {
+                            if (isInitial || auth.authenticated || !auth.error) {
                                 return NEVER
                             }
                             return Observable.of(void 0)

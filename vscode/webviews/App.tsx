@@ -16,8 +16,7 @@ import { useClientActionDispatcher } from './client/clientState'
 
 import { ExtensionAPIProviderFromVSCodeAPI } from '@sourcegraph/prompt-editor'
 import { CodyPanel } from './CodyPanel'
-import { ConnectivityStatusBanner } from './components/ConnectivityStatusBanner'
-import { UserShouldUseEnterpriseBanner } from './components/UserShouldUseEnterpriseBanner'
+import { AuthenticationErrorBanner } from './components/AuthenticationErrorBanner'
 import { View } from './tabs'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 import { ComposedWrappers, type Wrapper } from './utils/composeWrappers'
@@ -168,12 +167,11 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
         <ComposedWrappers wrappers={wrappers}>
             {view === View.Login || !config.authStatus.authenticated ? (
                 <div className={styles.outerContainer}>
-                    {!config.authStatus.authenticated && config.authStatus.showNetworkError && (
-                        <ConnectivityStatusBanner />
-                    )}
-                    {!config.authStatus.authenticated && config.authStatus.userEnterprise && (
-                        <UserShouldUseEnterpriseBanner />
-                    )}
+                    {!config.authStatus.authenticated &&
+                        (config.authStatus.error?.type === 'network-error' ||
+                            config.authStatus.error?.type === 'enterprise-user-logged-into-dotcom') && (
+                            <AuthenticationErrorBanner error={config.authStatus.error} />
+                        )}
                     <AuthPage
                         simplifiedLoginRedirect={loginRedirect}
                         uiKindIsWeb={config.config.uiKindIsWeb}

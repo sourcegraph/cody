@@ -57,7 +57,10 @@ export interface CodyClientConfig {
 export class ClientConfigSingleton {
     private static instance: ClientConfigSingleton
 
-    public static readonly REFETCH_INTERVAL = 60 * 1000
+    // REFETCH_INTERVAL is only updated via process.env during test execution, otherwise it is 60 seconds.
+    public static REFETCH_INTERVAL = process.env.CLIENT_CONFIG_SINGLETON_REFETCH_INTERVAL
+        ? Number.parseInt(process.env.CLIENT_CONFIG_SINGLETON_REFETCH_INTERVAL, 10)
+        : 60 * 1000
 
     // Default values for the legacy GraphQL features API, used when a Sourcegraph instance
     // does not support even the legacy GraphQL API.
@@ -155,20 +158,7 @@ export class ClientConfigSingleton {
                     return this.fetchClientConfigLegacy(signal)
                 }
 
-                return graphqlClient
-                    .fetchHTTP<CodyClientConfig>(
-                        'client-config',
-                        'GET',
-                        '/.api/client-config',
-                        undefined,
-                        signal
-                    )
-                    .then(clientConfig => {
-                        if (isError(clientConfig)) {
-                            throw clientConfig
-                        }
-                        return clientConfig
-                    })
+                return this.fetchConfigEndpoint(signal)
             })
             .then(clientConfig => {
                 signal?.throwIfAborted()
@@ -219,11 +209,10 @@ export class ClientConfigSingleton {
         return features
     }
 
-    // Fetches the config with token, this method is used for fetching config before the user is logged in.
-    public async fetchConfigWithToken(
-        config: GraphQLAPIClientConfig,
-        signal?: AbortSignal
-    ): Promise<CodyClientConfig | undefined> {
+    private async fetchConfigEndpoint(
+        signal?: AbortSignal,
+        config?: GraphQLAPIClientConfig
+    ): Promise<CodyClientConfig> {
         return graphqlClient
             .fetchHTTP<CodyClientConfig>(
                 'client-config',
@@ -239,5 +228,13 @@ export class ClientConfigSingleton {
                 }
                 return clientConfig
             })
+    }
+
+    // Fetches the config with token, this method is used for fetching config before the user is logged in.
+    public async fetchConfigWithToken(
+        config: GraphQLAPIClientConfig,
+        signal?: AbortSignal
+    ): Promise<CodyClientConfig | undefined> {
+        return this.fetchConfigEndpoint(signal, config)
     }
 }

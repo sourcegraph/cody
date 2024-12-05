@@ -294,9 +294,9 @@ export async function showAuthFailureMessage(
     authStatus: UnauthenticatedAuthStatus | undefined
 ): Promise<void> {
     const authority = vscode.Uri.parse(endpoint).authority
-    if (authStatus?.userEnterprise) {
+    if (authStatus?.error?.type === 'enterprise-user-logged-into-dotcom') {
         await vscode.window.showErrorMessage(
-            `Based on your email address we think you may be an employee of ${authStatus?.userEnterprise}.
+            `Based on your email address we think you may be an employee of ${authStatus?.error?.enterprise}.
             To get access to all your features please sign in through your organization\'s enterprise instance instead.
             If you need assistance please contact your Sourcegraph admin.`
         )
@@ -446,7 +446,7 @@ export async function validateCredentials(
         )
         return {
             authenticated: false,
-            showNetworkError: true,
+            error: { type: 'network-error' },
             endpoint: config.auth.serverEndpoint,
             pendingValidation: false,
         }
@@ -460,22 +460,26 @@ export async function validateCredentials(
         return {
             authenticated: false,
             endpoint: config.auth.serverEndpoint,
-            showInvalidAccessTokenError: true,
+            error: { type: 'invalid-access-token' },
             pendingValidation: false,
         }
     }
 
-    const clientConfig = await ClientConfigSingleton.getInstance().fetchConfigWithToken(
-        apiClientConfig,
-        signal
-    )
-
-    if (clientConfig?.userShouldUseEnterprise && isDotCom(config.auth.serverEndpoint)) {
-        return {
-            authenticated: false,
-            endpoint: config.auth.serverEndpoint,
-            pendingValidation: false,
-            userEnterprise: getEnterpriseName(userInfo.primaryEmail?.email || ''),
+    if (isDotCom(config.auth.serverEndpoint)) {
+        const clientConfig = await ClientConfigSingleton.getInstance().fetchConfigWithToken(
+            apiClientConfig,
+            signal
+        )
+        if (clientConfig?.userShouldUseEnterprise) {
+            return {
+                authenticated: false,
+                endpoint: config.auth.serverEndpoint,
+                pendingValidation: false,
+                error: {
+                    type: 'enterprise-user-logged-into-dotcom',
+                    enterprise: getEnterpriseName(userInfo.primaryEmail?.email || ''),
+                },
+            }
         }
     }
 
