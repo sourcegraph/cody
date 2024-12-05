@@ -74,7 +74,7 @@ jobs:
           gcloud auth activate-service-account --key-file=gcloud-service-key.json
           
           # Now create the JSON and insert into BigQuery
-          echo '{ "release_version": "1.0.0", "extension_bundle_size_mb": $EXTENSION_BUNDLE_SIZE_MB, "webview_bundle_size_mb": $WEBVIEW_BUNDLE_SIZE_MB }' > data.json
+          echo "{\"release_version\": \"1.0.0\", \"extension_bundle_size_mb\": $EXTENSION_BUNDLE_SIZE_MB, \"webview_bundle_size_mb\": $WEBVIEW_BUNDLE_SIZE_MB}" > data.json
           bq load \
             --project_id='cody-core-dev' \
             --source_format=NEWLINE_DELIMITED_JSON \
