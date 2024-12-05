@@ -91,7 +91,7 @@ async function runContextCommand(
     const exampleOutputs: ExampleOutput[] = []
 
     for (const example of examples) {
-        const { targetRepoRevs, query: origQuery, essentialContext } = example
+        const { targetRepoRevs, query: origQuery } = example
         const repoNames = targetRepoRevs.map(repoRev => repoRev.repoName)
         const repoIDNames = await graphqlClient.getRepoIds(repoNames, repoNames.length + 10)
         if (isError(repoIDNames)) {
@@ -138,9 +138,6 @@ async function runContextCommand(
         }
 
         const results = resultsResp ?? []
-        // Determine the format from the first essentialContext item to have same format in actualContext
-        const isUrlFormat = essentialContext.length > 0 && essentialContext[0].format === 'url'
-        const formatValue: 'url' | 'plain' = isUrlFormat ? 'url' : 'plain'
         const actualContext: EvalContextItem[] = []
         for (const contextList of results) {
             actualContext.push(
@@ -151,7 +148,6 @@ async function runContextCommand(
                     endLine: result.endLine,
                     content: result.content,
                     retriever: contextList.name,
-                    format: formatValue,
                 }))
             )
         }
