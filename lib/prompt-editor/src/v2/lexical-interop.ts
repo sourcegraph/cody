@@ -1,8 +1,9 @@
-import type {
-    SerializedContextItem,
-    SerializedContextItemMentionNode,
-    SerializedPromptEditorState,
-    SerializedPromptEditorValue,
+import {
+    type SerializedContextItem,
+    type SerializedContextItemMentionNode,
+    type SerializedPromptEditorState,
+    type SerializedPromptEditorValue,
+    contextItemMentionNodeDisplayText,
 } from '@sourcegraph/cody-shared'
 import type {
     SerializedLexicalNode,
@@ -40,17 +41,18 @@ function fromSerializedLexicalNode(node: SerializedLexicalNode): unknown {
             break
         }
         case 'contextItemMention': {
+            const item = (node as SerializedContextItemMentionNode).contextItem
             return {
                 type: 'mention',
                 attrs: {
-                    item: (node as SerializedContextItemMentionNode).contextItem,
+                    item,
                     isFromInitialContext: (node as SerializedContextItemMentionNode)
                         .isFromInitialContext,
                 },
                 content: [
                     {
                         type: 'text',
-                        text: (node as SerializedContextItemMentionNode).text,
+                        text: contextItemMentionNodeDisplayText(item),
                     },
                 ],
             }
@@ -59,10 +61,16 @@ function fromSerializedLexicalNode(node: SerializedLexicalNode): unknown {
     return undefined
 }
 
+/**
+ * Convert a {@link SerializedPromptEditorState} to a ProseMirror document.
+ */
 export function fromSerializedPromptEditorState(state: SerializedPromptEditorState): unknown {
     return fromSerializedLexicalNode(state.lexicalEditorState.root)
 }
 
+/**
+ * Convert a ProseMirror document to a {@link SerializedPromptEditorValue}.
+ */
 export function toSerializedPromptEditorValue(doc: Node): SerializedPromptEditorValue {
     const contextItems: SerializedContextItem[] = []
     const direction =
