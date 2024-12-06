@@ -61,7 +61,7 @@ export type AuthenticationError =
           enterprise: string
       }
 
-interface AuthenticationErrorMessage {
+export interface AuthenticationErrorMessage {
     title?: string
     message: string
 }
@@ -80,6 +80,7 @@ export function getAuthErrorMessage(error: AuthenticationError): AuthenticationE
             }
         case 'enterprise-user-logged-into-dotcom':
             return {
+                title: 'Enterprise User Authentication Error',
                 message:
                     'Based on your email address we think you may be an employee of ' +
                     `${error.enterprise}. To get access to all your features please sign ` +

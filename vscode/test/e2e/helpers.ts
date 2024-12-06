@@ -41,6 +41,16 @@ interface WorkspaceSettings {
     [key: string]: string | boolean | number
 }
 
+// Define an interface for the parameters
+interface PageFixtureParams {
+    page: Page
+    app: ElectronApplication
+    openDevTools: () => Promise<void>
+    assetsDirectory: string
+    expectedV2Events: string[]
+    preAuthenticate: boolean
+}
+
 export type EnterpriseTestOptions = {
     shouldUseEnterprise: boolean
 }
@@ -56,8 +66,8 @@ export interface DotcomUrlOverride {
     dotcomUrl: string | undefined
 }
 
-export interface ClientConfigSingletonFetchIntervalOverride {
-    clientConfigSingletonFetchInterval: number | undefined
+export interface ClientConfigSingletonRefetchIntervalOverride {
+    clientConfigSingletonRefetchInterval: number | undefined
 }
 
 export interface TestConfiguration {
@@ -117,8 +127,8 @@ export const test = base
     .extend<DotcomUrlOverride>({
         dotcomUrl: undefined,
     })
-    .extend<ClientConfigSingletonFetchIntervalOverride>({
-        clientConfigSingletonFetchInterval: undefined,
+    .extend<ClientConfigSingletonRefetchIntervalOverride>({
+        clientConfigSingletonRefetchInterval: undefined,
     })
     .extend<EnterpriseTestOptions>({
         shouldUseEnterprise: [false, { option: true }],
@@ -176,7 +186,7 @@ export const test = base
                 workspaceDirectory,
                 extraWorkspaceSettings,
                 dotcomUrl,
-                clientConfigSingletonFetchInterval,
+                clientConfigSingletonRefetchInterval,
                 preAuthenticate,
                 userDataDirectory,
                 extensionsDirectory,
@@ -247,15 +257,21 @@ export const test = base
 
                 args.push(workspaceDirectory)
 
+                const env = {
+                    ...process.env,
+                    ...dotcomUrlOverride,
+                    ...secretStorageState,
+                    CODY_TESTING: 'true',
+                    CODY_LOG_FILE: tmpLogFile,
+                }
+                if (clientConfigSingletonRefetchInterval) {
+                    // @ts-ignore
+                    env.CODY_CLIENT_CONFIG_SINGLETON_REFETCH_INTERVAL =
+                        clientConfigSingletonRefetchInterval.toString()
+                }
                 const app = await electron.launch({
                     executablePath: vscodeExecutablePath,
-                    env: {
-                        ...process.env,
-                        ...dotcomUrlOverride,
-                        ...secretStorageState,
-                        CODY_TESTING: 'true',
-                        CODY_LOG_FILE: tmpLogFile,
-                    },
+                    env,
                     args,
                     recordVideo: {
                         // All running tests will be recorded to a temp video file.
@@ -295,10 +311,18 @@ export const test = base
         },
     })
     .extend({
+        // @ts-ignore
         page: async (
-            { page: _page, app, openDevTools, assetsDirectory, expectedV2Events, preAuthenticate },
-            use,
-            testInfo
+            {
+                page: _page,
+                app,
+                openDevTools,
+                assetsDirectory,
+                expectedV2Events,
+                preAuthenticate,
+            }: PageFixtureParams,
+            use: (page: Page) => Promise<void>,
+            testInfo: TestInfo
         ) => {
             sendTestInfo(testInfo.title, testInfo.testId, uuid.v4())
 

@@ -8,6 +8,7 @@ import {
     GuardrailsPost,
     PromptString,
     type TelemetryRecorder,
+    getAuthErrorMessage,
 } from '@sourcegraph/cody-shared'
 import type { AuthMethod } from '../src/chat/protocol'
 import { AuthPage } from './AuthPage'
@@ -167,10 +168,11 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
         <ComposedWrappers wrappers={wrappers}>
             {view === View.Login || !config.authStatus.authenticated ? (
                 <div className={styles.outerContainer}>
-                    {!config.authStatus.authenticated &&
-                        (config.authStatus.error) && (
-                            <AuthenticationErrorBanner error={config.authStatus.error} />
-                        )}
+                    {!config.authStatus.authenticated && config.authStatus.error && (
+                        <AuthenticationErrorBanner
+                            errorMessage={getAuthErrorMessage(config.authStatus.error)}
+                        />
+                    )}
                     <AuthPage
                         simplifiedLoginRedirect={loginRedirect}
                         uiKindIsWeb={config.config.uiKindIsWeb}

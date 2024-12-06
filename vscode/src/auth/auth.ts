@@ -11,6 +11,7 @@ import {
     cenv,
     clientCapabilities,
     currentAuthStatus,
+    getAuthErrorMessage,
     getCodyAuthReferralCode,
     graphqlClient,
     isDotCom,
@@ -293,7 +294,6 @@ export async function showAuthFailureMessage(
     endpoint: string,
     authStatus: UnauthenticatedAuthStatus | undefined
 ): Promise<void> {
-    const authority = vscode.Uri.parse(endpoint).authority
     if (authStatus?.error) {
         await vscode.window.showErrorMessage(getAuthErrorMessage(authStatus.error).message)
     }

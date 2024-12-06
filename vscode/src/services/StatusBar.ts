@@ -264,10 +264,7 @@ export class CodyStatusBar implements vscode.Disposable {
 
         if (authStatus.authenticated) {
             tags.add(InvisibleStatusBarTag.IsAuthenticated)
-        } else if (
-            authStatus.error?.type === 'invalid-access-token' ||
-            authStatus.error?.type === 'network-error'
-        ) {
+        } else if (authStatus.error) {
             tags.add(InvisibleStatusBarTag.HasErrors)
         }
         if (errors.size > 0) {
@@ -348,11 +345,14 @@ export class CodyStatusBar implements vscode.Disposable {
 
         if (loaders.size > 0) {
             const isStarting = [...loaders.values()].some(loader => loader.kind === 'startup')
+            const firstLoader = loaders.values().next().value
             return {
                 icon: 'loading',
                 tooltip: isStarting
                     ? 'Cody is getting ready...'
-                    : `${loaders.values().next().value.title}`,
+                    : firstLoader
+                      ? firstLoader.title
+                      : 'Loading...',
                 style: 'normal',
                 tags,
                 interact: interactDefault({
@@ -364,9 +364,10 @@ export class CodyStatusBar implements vscode.Disposable {
         }
 
         if (ignoreStatus !== false) {
+            const reason = ignoreReason(ignoreStatus)
             return {
                 icon: 'disabled',
-                tooltip: ignoreReason(ignoreStatus)!,
+                tooltip: reason || 'Cody is disabled',
                 style: 'disabled',
                 tags,
                 interact: interactDefault({
@@ -386,7 +387,6 @@ export class CodyStatusBar implements vscode.Disposable {
             }),
         }
     }
-
     dispose() {
         this.errors.complete()
         this.loaders.complete()

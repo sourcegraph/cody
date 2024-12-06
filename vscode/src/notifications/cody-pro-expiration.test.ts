@@ -16,8 +16,9 @@ import { CodyProExpirationNotifications } from './cody-pro-expiration'
 vi.mock('../../../lib/shared/src/experimentation/FeatureFlagProvider')
 vi.mock('../services/AuthProvider')
 
+let notifier: CodyProExpirationNotifications | undefined
 describe('Cody Pro expiration notifications', () => {
-    let notifier: CodyProExpirationNotifications
+    // let notifier: CodyProExpirationNotifications
     let authStatus_: AuthStatus
     let authChangeListener = () => {}
     let codyPlan: string
@@ -45,6 +46,7 @@ describe('Cody Pro expiration notifications', () => {
         enabledFeatureFlags.clear()
         enabledFeatureFlags.add(FeatureFlag.UseSscForCodySubscription)
         enabledFeatureFlags.add(FeatureFlag.CodyProTrialEnded)
+        notifier = createNotifier()
         vi.spyOn(featureFlagProvider, 'evaluateFeatureFlagEphemerally').mockImplementation(
             (flag: FeatureFlag) => Promise.resolve(enabledFeatureFlags.has(flag))
         )

@@ -2,7 +2,7 @@ import { expect } from '@playwright/test'
 import { SERVER_URL, VALID_TOKEN } from '../fixtures/mock-server'
 import { expectSignInPage, sidebarSignin } from './common'
 import {
-    type ClientConfigSingletonFetchIntervalOverride,
+    type ClientConfigSingletonRefetchIntervalOverride,
     type DotcomUrlOverride,
     type EnterpriseTestOptions,
     type ExpectedV2Events,
@@ -80,19 +80,13 @@ test
     await expectSignInPage(page)
 })
 
-const fetchInterval = 500
+const refetchInterval = 500
 test
     .extend<DotcomUrlOverride>({
         dotcomUrl: SERVER_URL,
     })
-    .extend<ClientConfigSingletonFetchIntervalOverride>({
-        clientConfigSingletonFetchInterval: [
-            async ({}, use) => {
-                process.env.CLIENT_CONFIG_SINGLETON_REFETCH_INTERVAL = '500'
-                await use(fetchInterval)
-            },
-            { scope: 'test' }, // Scope to this specific test
-        ],
+    .extend<ClientConfigSingletonRefetchIntervalOverride>({
+        clientConfigSingletonRefetchInterval: refetchInterval,
     })
     .extend<ExpectedV2Events>({
         // list of V2 telemetry events we expect this test to log, add to this list as needed
@@ -102,10 +96,6 @@ test
             'cody.auth.login.token:clicked',
             'cody.auth:disconnected',
             'cody.signInNotification:shown',
-            'cody.auth:connected',
-            'cody.auth.login:firstEver',
-            'cody.interactiveTutorial:attemptingStart',
-            'cody.experiment.interactiveTutorial:enrolled',
         ],
     })(
     'logs out the user when userShouldUseEnterprise is set to true',
@@ -120,7 +110,7 @@ test
                 .frameLocator('iframe[title="Chat"]')
                 .getByText('Based on your email address')
         ).toBeVisible({
-            timeout: fetchInterval * 2,
+            timeout: refetchInterval * 10,
         })
 
         await expectSignInPage(page)

@@ -104,7 +104,7 @@ class AuthProvider implements vscode.Disposable {
         this.subscriptions.push(
             clientConfigChanges
                 .pipe(
-                    abortableOperation(async (_, signal) => 
+                    abortableOperation(async (_, signal) =>
                         this.validateAndUpdateAuthStatus(await currentResolvedConfig(), signal)
                     )
                 )

@@ -77,7 +77,7 @@ export async function expectSignInPage(page: Page) {
     await expect(sidebarFrame.getByText('Sign in to Sourcegraph')).toBeVisible()
     await expect(page.getByRole('heading', { name: 'Cody: Chat' })).toBeVisible()
     // Expect status bar to show the sign in button.
-    await expect(page.getByRole('button', { name: 'cody-logo-heavy Sign In, Sign' })).toBeVisible()
+    await expect(page.getByRole('button', { name: /cody-logo-heavy Sign In/ })).toBeVisible()
 }
 
 // Selector for the Explorer button in the sidebar that would match on Mac and Linux

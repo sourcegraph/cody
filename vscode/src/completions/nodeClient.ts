@@ -26,6 +26,7 @@ import {
     parseEvents,
     recordErrorToSpan,
     toPartialUtf8String,
+    toUint8Array,
     tracer,
 } from '@sourcegraph/cody-shared'
 import { CompletionsResponseBuilder } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/CompletionsResponseBuilder'
@@ -169,7 +170,9 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                             }
                             // Messages are expected to be UTF-8, but a chunk can terminate
                             // in the middle of a character
-                            const { str, buf } = toPartialUtf8String(Buffer.concat([bufferBin, chunk]))
+                            const { str, buf } = toPartialUtf8String(
+                                Buffer.concat([toUint8Array(bufferBin), toUint8Array(chunk)])
+                            )
                             errorMessage += str
                             bufferBin = buf
                         })
@@ -200,7 +203,9 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                         }
                         // text/event-stream messages are always UTF-8, but a chunk
                         // may terminate in the middle of a character
-                        const { str, buf } = toPartialUtf8String(Buffer.concat([bufferBin, chunk]))
+                        const { str, buf } = toPartialUtf8String(
+                            Buffer.concat([toUint8Array(bufferBin), toUint8Array(chunk)])
+                        )
                         bufferText += str
                         bufferBin = buf
 
@@ -220,7 +225,6 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                         this.sendEvents(parseResult.events, cb, span)
                         bufferText = parseResult.remainingBuffer
                     })
-
                     res.on('error', e => handleError(e))
                 }
             )

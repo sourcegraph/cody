@@ -58,8 +58,8 @@ export class ClientConfigSingleton {
     private static instance: ClientConfigSingleton
 
     // REFETCH_INTERVAL is only updated via process.env during test execution, otherwise it is 60 seconds.
-    public static REFETCH_INTERVAL = process.env.CLIENT_CONFIG_SINGLETON_REFETCH_INTERVAL
-        ? Number.parseInt(process.env.CLIENT_CONFIG_SINGLETON_REFETCH_INTERVAL, 10)
+    public static REFETCH_INTERVAL = process.env.CODY_CLIENT_CONFIG_SINGLETON_REFETCH_INTERVAL
+        ? Number.parseInt(process.env.CODY_CLIENT_CONFIG_SINGLETON_REFETCH_INTERVAL, 10)
         : 60 * 1000
 
     // Default values for the legacy GraphQL features API, used when a Sourcegraph instance
