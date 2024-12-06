@@ -78,7 +78,7 @@ jobs:
           EXT_VERSION: ${{ env.EXT_VERSION }}
         run: |
           # Get previous tag's commit
-          PREV_TAG=$( git tag --sort=-v:refname | grep '^vscode-v' |  head -n 2)
+          PREV_TAG=$( git tag --sort=-v:refname | grep '^vscode-v' |  head -n 2 | tail -n 1)
           export RELEASE_LATEST_RELEASE=$(git rev-parse $PREV_TAG)
 
           # Get current release commit
@@ -90,10 +90,13 @@ jobs:
           chmod +x changelog
 
           ./changelog write \
-          --output-file="CHANGELOG.md"
+          --output-file="raw-changelog.md" \
+          --releaseregistry.version=$EXT_VERSION
 
+          cat vscode/CHANGELOG.md >> raw-changelog.md
+          mv raw-changelog.md vscode/CHANGELOG.md
           git checkout -b release/vscode-v$EXT_VERSION
-          git add ./CHANGELOG.md
+          git add vscode/CHANGELOG.md
           git commit -m "Automated release and changelog for VS code Cody"
           git push -u origin release/vscode-v$EXT_VERSION
           gh pr create \
