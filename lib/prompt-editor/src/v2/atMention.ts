@@ -1,8 +1,8 @@
-import { PluginKey, Plugin, TextSelection, EditorState, Transaction } from "prosemirror-state"
-import { Decoration, DecorationSet } from "prosemirror-view"
+import { InputRule, inputRules } from 'prosemirror-inputrules'
+import type { Node } from 'prosemirror-model'
+import { type EditorState, Plugin, PluginKey, TextSelection, type Transaction } from 'prosemirror-state'
+import { Decoration, DecorationSet } from 'prosemirror-view'
 import styles from './BaseEditor.module.css'
-import { InputRule, inputRules } from "prosemirror-inputrules"
-import { Node } from "prosemirror-model"
 
 export interface Position {
     top: number
@@ -12,12 +12,10 @@ export interface Position {
 }
 
 type AtMentionPluginState =
-  | { type: 'inactive', decoration: DecorationSet }
-  | { type: 'active', decoration: DecorationSet }
+    | { type: 'inactive'; decoration: DecorationSet }
+    | { type: 'active'; decoration: DecorationSet }
 
-type SuggestionsPluginEvent =
-  | { type: 'enable' }
-  | { type: 'disable' }
+type SuggestionsPluginEvent = { type: 'enable' } | { type: 'disable' }
 
 const emptyState: AtMentionPluginState = {
     type: 'inactive',
@@ -33,7 +31,11 @@ const atMentionPluginKey = new PluginKey<AtMentionPluginState>('suggestions')
  * @param appendSpaceIfNecessary Whether to append a space after the node if necessary
  * @returns The transaction that replaces the at-mention
  */
-export function replaceAtMention(state: EditorState, replacement: Node, appendSpaceIfNecessary: boolean): Transaction {
+export function replaceAtMention(
+    state: EditorState,
+    replacement: Node,
+    appendSpaceIfNecessary: boolean
+): Transaction {
     const decoration = getDecoration(state)
     if (decoration) {
         const tr = state.tr.replaceWith(decoration.from, decoration.to, replacement)
@@ -43,11 +45,13 @@ export function replaceAtMention(state: EditorState, replacement: Node, appendSp
         if (appendSpaceIfNecessary && !/\s/.test(tr.doc.textBetween(end, end + 1))) {
             tr.insertText(' ', end)
         }
-        return tr
-            // Move selection after the space after the node
-            // (automatically closes menu)
-            .setSelection(TextSelection.create(tr.doc, end+1))
-            .scrollIntoView()
+        return (
+            tr
+                // Move selection after the space after the node
+                // (automatically closes menu)
+                .setSelection(TextSelection.create(tr.doc, end + 1))
+                .scrollIntoView()
+        )
     }
     return state.tr
 }
@@ -88,14 +92,14 @@ export function hasAtMentionChanged(nextState: EditorState, prevState: EditorSta
  * NOTE: This is only exported for testing purposes.
  */
 export function enableAtMention(tr: Transaction): Transaction {
-    return tr.setMeta(atMentionPluginKey, {type: 'enable'} as SuggestionsPluginEvent)
+    return tr.setMeta(atMentionPluginKey, { type: 'enable' } as SuggestionsPluginEvent)
 }
 
 /**
  * Disables at mention.
  */
 export function disableAtMention(tr: Transaction): Transaction {
-    return tr.setMeta(atMentionPluginKey, {type: 'disable'} as SuggestionsPluginEvent)
+    return tr.setMeta(atMentionPluginKey, { type: 'disable' } as SuggestionsPluginEvent)
 }
 
 /**
@@ -163,7 +167,7 @@ export function createAtMentionPlugin(): Plugin[] {
                                             // This is necessary so that mapping changes will 'grow' the decoration, which
                                             // also acts as marker for the mention value
                                             { inclusiveEnd: true }
-                                        )
+                                        ),
                                     ]),
                                 }
                             }
@@ -188,7 +192,10 @@ export function createAtMentionPlugin(): Plugin[] {
                         const decoration = decorationSet.find()[0]
                         // Check whether the change has removed the decoration or introduced a space.
                         // If yes to either we close the menu
-                        if (!decoration || /\s/.test(tr.doc.textBetween(decoration.from, decoration.to))) {
+                        if (
+                            !decoration ||
+                            /\s/.test(tr.doc.textBetween(decoration.from, decoration.to))
+                        ) {
                             return emptyState
                         }
                         nextValue = {
@@ -222,14 +229,13 @@ export function createAtMentionPlugin(): Plugin[] {
                     /(^|\s)@(?=\s|$)$/,
                     (state, match, start, end) => {
                         return enableAtMention(state.tr.insertText(match[0], start, end))
-                    },
-                )
-
-            ]
-        })
+                    }
+                ),
+            ],
+        }),
     ]
 }
 
-function getDecoration(state: EditorState): Decoration|undefined {
+function getDecoration(state: EditorState): Decoration | undefined {
     return atMentionPluginKey.getState(state)?.decoration.find()[0]
 }

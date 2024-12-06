@@ -1,19 +1,33 @@
-import { SerializedContextItem, SerializedContextItemMentionNode, SerializedPromptEditorState, SerializedPromptEditorValue } from "@sourcegraph/cody-shared"
-import { SerializedLexicalNode, SerializedParagraphNode, SerializedRootNode, SerializedTextNode } from "lexical"
-import { Node } from "prosemirror-model"
+import type {
+    SerializedContextItem,
+    SerializedContextItemMentionNode,
+    SerializedPromptEditorState,
+    SerializedPromptEditorValue,
+} from '@sourcegraph/cody-shared'
+import type {
+    SerializedLexicalNode,
+    SerializedParagraphNode,
+    SerializedRootNode,
+    SerializedTextNode,
+} from 'lexical'
+import type { Node } from 'prosemirror-model'
 
 function fromSerializedLexicalNode(node: SerializedLexicalNode): unknown {
     switch (node.type) {
         case 'root': {
             return {
                 type: 'doc',
-                content: (node as SerializedRootNode).children.map(fromSerializedLexicalNode).filter(Boolean),
+                content: (node as SerializedRootNode).children
+                    .map(fromSerializedLexicalNode)
+                    .filter(Boolean),
             }
         }
         case 'paragraph': {
             return {
                 type: 'paragraph',
-                content: (node as SerializedParagraphNode).children.map(fromSerializedLexicalNode).filter(Boolean),
+                content: (node as SerializedParagraphNode).children
+                    .map(fromSerializedLexicalNode)
+                    .filter(Boolean),
             }
         }
         case 'text': {
@@ -23,21 +37,21 @@ function fromSerializedLexicalNode(node: SerializedLexicalNode): unknown {
                     text: (node as SerializedTextNode).text,
                 }
             }
-            break;
+            break
         }
         case 'contextItemMention': {
             return {
                 type: 'mention',
                 attrs: {
                     item: (node as SerializedContextItemMentionNode).contextItem,
-                    isFromInitialContext: (node as SerializedContextItemMentionNode).isFromInitialContext,
+                    isFromInitialContext: (node as SerializedContextItemMentionNode)
+                        .isFromInitialContext,
                 },
                 content: [
                     {
                         type: 'text',
                         text: (node as SerializedContextItemMentionNode).text,
                     },
-
                 ],
             }
         }
@@ -45,17 +59,14 @@ function fromSerializedLexicalNode(node: SerializedLexicalNode): unknown {
     return undefined
 }
 
-export function fromSerializedPromptEditorState(
-    state: SerializedPromptEditorState
-): unknown {
+export function fromSerializedPromptEditorState(state: SerializedPromptEditorState): unknown {
     return fromSerializedLexicalNode(state.lexicalEditorState.root)
 }
 
-export function toSerializedPromptEditorValue(
-    doc: Node
-): SerializedPromptEditorValue {
+export function toSerializedPromptEditorValue(doc: Node): SerializedPromptEditorValue {
     const contextItems: SerializedContextItem[] = []
-    const direction = typeof window !== 'undefined' ? window.getComputedStyle(window.document.body).direction : null
+    const direction =
+        typeof window !== 'undefined' ? window.getComputedStyle(window.document.body).direction : null
 
     doc.descendants(node => {
         if (node.type.name === 'mention') {
@@ -65,10 +76,11 @@ export function toSerializedPromptEditorValue(
         return true
     })
 
-    function serializeNode(node: Node): SerializedLexicalNode|undefined {
+    function serializeNode(node: Node): SerializedLexicalNode | undefined {
         switch (node.type.name) {
             case 'paragraph': {
                 const children: SerializedLexicalNode[] = []
+                // biome-ignore lint/complexity/noForEach: `node` is not an array, it cannot be used with `for ... of`
                 node.forEach(child => {
                     const serializedChild = serializeNode(child)
                     if (serializedChild) {
@@ -112,6 +124,7 @@ export function toSerializedPromptEditorValue(
 
     function serializeRoot(root: Node): SerializedRootNode {
         const children: SerializedLexicalNode[] = []
+        // biome-ignore lint/complexity/noForEach: `root` is not an array, it cannot be used with `for ... of`
         root.forEach(child => {
             const serializedChild = serializeNode(child)
             if (serializedChild) {
@@ -129,7 +142,6 @@ export function toSerializedPromptEditorValue(
         }
     }
 
-
     return {
         text: doc.textContent,
         contextItems,
@@ -138,7 +150,7 @@ export function toSerializedPromptEditorValue(
             minReaderV: 'lexical-v1',
             lexicalEditorState: {
                 root: serializeRoot(doc),
-            }
+            },
         },
     }
 }

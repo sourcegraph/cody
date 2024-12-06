@@ -1,7 +1,7 @@
 import {
     type ContextItem,
     ContextItemSource,
-    ContextMentionProviderMetadata,
+    type ContextMentionProviderMetadata,
     FILE_CONTEXT_MENTION_PROVIDER,
     FILE_RANGE_TOOLTIP_LABEL,
     NO_SYMBOL_MATCHES_HELP_LABEL,
@@ -15,19 +15,31 @@ import {
 import { clsx } from 'clsx'
 import type { SerializedEditorState, SerializedLexicalNode } from 'lexical'
 import isEqual from 'lodash/isEqual'
-import { type FunctionComponent, useCallback, useContext, useEffect, useImperativeHandle, useLayoutEffect, useMemo, useRef } from 'react'
-import styles from './PromptEditor.module.css'
-import type { KeyboardEventPluginProps } from '../plugins/keyboardEvent'
-import { fromSerializedPromptEditorState, toSerializedPromptEditorValue } from './lexical-interop'
-import { useExtensionAPI } from '../useExtensionAPI'
+import {
+    type FunctionComponent,
+    useCallback,
+    useContext,
+    useEffect,
+    useImperativeHandle,
+    useLayoutEffect,
+    useMemo,
+    useRef,
+} from 'react'
 import { ChatMentionContext } from '../plugins/atMentions/useChatContextItems'
+import type { KeyboardEventPluginProps } from '../plugins/keyboardEvent'
+import { useExtensionAPI } from '../useExtensionAPI'
+import styles from './PromptEditor.module.css'
+import { fromSerializedPromptEditorState, toSerializedPromptEditorValue } from './lexical-interop'
 import { schema } from './promptInput'
-import "prosemirror-view/style/prosemirror.css"
-import { MentionsMenu } from './MentionsMenu'
-import { usePromptInput, useMentionsMenu } from './promptInput-react'
-import { MentionMenuContextItemContent, MentionMenuProviderItemContent } from '../mentions/mentionMenu/MentionMenuItem'
+import 'prosemirror-view/style/prosemirror.css'
+import { Observable } from 'observable-fns'
+import {
+    MentionMenuContextItemContent,
+    MentionMenuProviderItemContent,
+} from '../mentions/mentionMenu/MentionMenuItem'
 import { useDefaultContextForChat } from '../useInitialContext'
-import { Observable,  } from 'observable-fns'
+import { MentionsMenu } from './MentionsMenu'
+import { useMentionsMenu, usePromptInput } from './promptInput-react'
 
 interface Props extends KeyboardEventPluginProps {
     editorClassName?: string
@@ -81,42 +93,55 @@ export const PromptEditor: FunctionComponent<Props> = ({
     const interactionID = useRef(0)
 
     const convertedInitialEditorState = useMemo(() => {
-        return initialEditorState ? schema.nodeFromJSON(fromSerializedPromptEditorState(initialEditorState)) : undefined
+        return initialEditorState
+            ? schema.nodeFromJSON(fromSerializedPromptEditorState(initialEditorState))
+            : undefined
     }, [initialEditorState])
 
     const defaultContext = useDefaultContextForChat()
     const mentionMenuData = useExtensionAPI().mentionMenuData
     const mentionSettings = useContext(ChatMentionContext)
 
-    const fetchMenuData = useCallback(({query, parent}: {query: string, parent?: ContextMentionProviderMetadata}) => {
+    const fetchMenuData = useCallback(
+        ({ query, parent }: { query: string; parent?: ContextMentionProviderMetadata }) => {
+            const initialContext = [...defaultContext.initialContext, ...defaultContext.corpusContext]
+            const queryLower = query.toLowerCase().trim()
+            const filteredInitialContextItems = parent
+                ? []
+                : initialContext.filter(item =>
+                      queryLower
+                          ? item.title?.toLowerCase().includes(queryLower) ||
+                            item.uri.toString().toLowerCase().includes(queryLower) ||
+                            item.description?.toString().toLowerCase().includes(queryLower)
+                          : true
+                  )
 
-        const initialContext = [...defaultContext.initialContext, ...defaultContext.corpusContext]
-        const queryLower = query.toLowerCase().trim()
-        const filteredInitialContextItems = parent
-            ? []
-            : initialContext.filter(item =>
-                queryLower
-                    ? item.title?.toLowerCase().includes(queryLower) ||
-                        item.uri.toString().toLowerCase().includes(queryLower) ||
-                        item.description?.toString().toLowerCase().includes(queryLower)
-                    : true
-            )
+            const filteredInitialItems = filteredInitialContextItems.map(item => ({ data: item }))
 
-        const filteredInitialItems = filteredInitialContextItems.map(item => ({data: item}))
-
-        return Observable.of(filteredInitialItems).concat(
-        mentionMenuData({...parseMentionQuery(query, parent ?? null), interactionID: interactionID.current}).map(
-            result => [
+            return Observable.of(filteredInitialItems).concat(
+                mentionMenuData({
+                    ...parseMentionQuery(query, parent ?? null),
+                    interactionID: interactionID.current,
+                    contextRemoteRepositoriesNames: mentionSettings.remoteRepositoriesNames,
+                }).map(result => [
                     ...result.providers.map(provider => ({
                         data: provider,
                     })),
                     ...filteredInitialItems,
-                    ...result.items
-                        ?.filter(item => !filteredInitialContextItems.some(initialItem => areContextItemsEqual(item, initialItem)))
+                    ...(result.items
+                        ?.filter(
+                            item =>
+                                !filteredInitialContextItems.some(initialItem =>
+                                    areContextItemsEqual(item, initialItem)
+                                )
+                        )
                         .slice(0, SUGGESTION_LIST_LENGTH_LIMIT)
-                        .map(item => ({data: {...item, source: ContextItemSource.User}})) ?? [],
-            ]))
-    }, [mentionMenuData, mentionSettings, defaultContext])
+                        .map(item => ({ data: { ...item, source: ContextItemSource.User } })) ?? []),
+                ])
+            )
+        },
+        [mentionMenuData, mentionSettings, defaultContext]
+    )
 
     const [input, api] = usePromptInput({
         placeholder,
@@ -131,14 +156,7 @@ export const PromptEditor: FunctionComponent<Props> = ({
         fetchMenuData,
     })
 
-    const {
-        show,
-        items,
-        selectedIndex,
-        query,
-        position,
-        parent,
-    } = useMentionsMenu(input)
+    const { show, items, selectedIndex, query, position, parent } = useMentionsMenu(input)
 
     useLayoutEffect(() => {
         // We increment the interaction ID when the menu is hidden because `fetchMenuData` can be
@@ -178,7 +196,7 @@ export const PromptEditor: FunctionComponent<Props> = ({
                 api.setInitialContextMentions(items)
             },
         }),
-        []
+        [api]
     )
 
     useEffect(() => {
@@ -191,30 +209,37 @@ export const PromptEditor: FunctionComponent<Props> = ({
         }
     }, [initialEditorState, api])
 
-    const renderItem = useCallback((data: ContextItem|ContextMentionProviderMetadata) => {
-        if ('id' in data) {
-            return <MentionMenuProviderItemContent provider={data} />
-        }
-        return <MentionMenuContextItemContent item={data} query={parseMentionQuery(query, parent)} />
-    }, [query, parent])
+    const renderItem = useCallback(
+        (data: ContextItem | ContextMentionProviderMetadata) => {
+            if ('id' in data) {
+                return <MentionMenuProviderItemContent provider={data} />
+            }
+            return <MentionMenuContextItemContent item={data} query={parseMentionQuery(query, parent)} />
+        },
+        [query, parent]
+    )
 
-    return <div
+    return (
+        <div
             className={clsx(styles.editor, editorClassName, {
                 [styles.disabled]: disabled,
                 [styles.seamless]: seamless,
-            })}>
-            <div className={contentEditableClassName} ref={api.ref} />
-            {show && <MentionsMenu
-                items={items}
-                selectedIndex={selectedIndex}
-                filter={query}
-                menuPosition={position}
-                getHeader={() => getItemsHeading(parent, query)}
-                getEmptyLabel={() => getEmptyLabel(parent, query)}
-                onSelect={index => api.applySuggestion(index)}
-                renderItem={renderItem}
-            />}
+            })}
+        >
+            <div className={clsx(styles.input, contentEditableClassName)} ref={api.ref} />
+            {show && (
+                <MentionsMenu
+                    items={items}
+                    selectedIndex={selectedIndex}
+                    menuPosition={position}
+                    getHeader={() => getItemsHeading(parent, query)}
+                    getEmptyLabel={() => getEmptyLabel(parent, query)}
+                    onSelect={index => api.applySuggestion(index)}
+                    renderItem={renderItem}
+                />
+            )}
         </div>
+    )
 }
 
 function getItemsHeading(
@@ -263,10 +288,7 @@ function getItemsHeading(
     return parentItem.title ?? parentItem.id
 }
 
-function getEmptyLabel(
-    parentItem: ContextMentionProviderMetadata | null,
-    query: string
-): string {
+function getEmptyLabel(parentItem: ContextMentionProviderMetadata | null, query: string): string {
     const mentionQuery = parseMentionQuery(query, parentItem)
     if (!mentionQuery.text) {
         return parentItem?.queryLabel ?? 'Search...'
