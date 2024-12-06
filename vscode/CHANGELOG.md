@@ -10,6 +10,8 @@ This is a log of all notable changes to Cody for VS Code.
 
 ### Changed
 
+- Telemetry support for Sourcegraph versions older than [5.2.5 (released 12/2023)](https://github.com/sourcegraph/sourcegraph-public-snapshot/releases/tag/v5.2.5) has been removed  [pull/6265](https://github.com/sourcegraph/cody/pull/6265)
+
 ### Uncategorized
 
 ## 1.48.0

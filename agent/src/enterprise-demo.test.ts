@@ -12,7 +12,6 @@ describe('Enterprise', () => {
         workspaceRootUri: workspace.rootUri,
         name: 'enterpriseClient',
         credentials: TESTING_CREDENTIALS.enterprise,
-        logEventMode: 'connected-instance-only',
     })
     // Initialize inside beforeAll so that subsequent tests are skipped if initialization fails.
     beforeAll(async () => {

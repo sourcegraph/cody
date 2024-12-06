@@ -259,7 +259,6 @@ export {
     EXCLUDE_EVERYTHING_CONTEXT_FILTERS,
     PromptMode,
     type BrowserOrNodeResponse,
-    type LogEventMode,
     type ContextFilters,
     type CodyContextFilterItem,
     type RepoListResponse,

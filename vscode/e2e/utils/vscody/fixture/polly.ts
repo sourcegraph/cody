@@ -166,22 +166,6 @@ export const pollyFixture = _test.extend<TestContext, WorkerContext>({
                                 'sourcegraph'
                             ) &&
                             req.pathname.startsWith('/.api/graphql') &&
-                            'LogEventMutation' in req.query
-                        )
-                    })
-                    .intercept((req, res) => {
-                        //TODO: Implement this
-                        res.status(200).json({ data: { logEvent: null } })
-                    })
-
-                polly.server
-                    .any()
-                    .filter(req => {
-                        return (
-                            !!getFirstOrValue(req.getHeader(MITM_PROXY_SERVICE_NAME_HEADER))?.startsWith(
-                                'sourcegraph'
-                            ) &&
-                            req.pathname.startsWith('/.api/graphql') &&
                             'EvaluateFeatureFlag' in req.query
                         )
                     })

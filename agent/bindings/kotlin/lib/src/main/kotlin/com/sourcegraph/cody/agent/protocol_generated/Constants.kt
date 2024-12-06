@@ -7,7 +7,6 @@ object Constants {
   const val Automatic = "Automatic"
   const val Error = "Error"
   const val Finished = "Finished"
-  const val IDEEXTENSION = "IDEEXTENSION"
   const val Idle = "Idle"
   const val Inserting = "Inserting"
   const val Invoke = "Invoke"

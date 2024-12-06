@@ -1071,20 +1071,6 @@ export class Agent extends MessageHandler implements ExtensionClient {
             return Promise.resolve(null)
         })
 
-        /**
-         * @deprecated use 'telemetry/recordEvent' instead.
-         */
-        this.registerAuthenticatedRequest('graphql/logEvent', async event => {
-            if (typeof event.argument === 'object') {
-                event.argument = JSON.stringify(event.argument)
-            }
-            if (typeof event.publicArgument === 'object') {
-                event.publicArgument = JSON.stringify(event.publicArgument)
-            }
-            await graphqlClient.logEvent(event, 'connected-instance-only')
-            return null
-        })
-
         this.registerRequest('graphql/getRepoIdIfEmbeddingExists', () => {
             return Promise.resolve(null)
         })

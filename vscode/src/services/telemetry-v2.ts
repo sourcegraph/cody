@@ -1,5 +1,4 @@
 import {
-    type LogEventMode,
     MockServerTelemetryRecorderProvider,
     NoOpTelemetryRecorderProvider,
     TelemetryRecorderProvider,
@@ -15,19 +14,6 @@ import { TimestampTelemetryProcessor } from '@sourcegraph/telemetry/dist/process
 import type { Disposable } from 'vscode'
 import { logDebug } from '../output-channel-logger'
 import { localStorage } from './LocalStorageProvider'
-
-/**
- * For legacy events export, where we are connected to a pre-5.2.0 instance,
- * the current strategy is to manually instrument a callsite the legacy logEvent
- * clients as well, and that will report events directly to dotcom. To avoid
- * duplicating the data, when we are doing a legacy export, we only send events
- * to the connected instance.
- *
- * In the future, when we remove the legacy event-logging clients, we should
- * change this back to 'all' so that legacy instances report events to
- * dotcom as well through the new clients.
- */
-const legacyBackcompatLogEventMode: LogEventMode = 'connected-instance-only'
 
 const debugLogLabel = 'telemetry-v2'
 
@@ -73,10 +59,7 @@ export function createOrUpdateTelemetryRecorderProvider(
                 updateGlobalTelemetryInstances(defaultNoOpProvider)
             } else {
                 updateGlobalTelemetryInstances(
-                    new TelemetryRecorderProvider(
-                        { configuration, auth, clientState },
-                        legacyBackcompatLogEventMode
-                    )
+                    new TelemetryRecorderProvider({ configuration, auth, clientState })
                 )
             }
 
