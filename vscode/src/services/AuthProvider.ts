@@ -45,6 +45,7 @@ class AuthProvider implements vscode.Disposable {
      */
     private lastValidatedAndStoredCredentials =
         new Subject<ResolvedConfigurationCredentialsOnly | null>()
+    private lastEndpoint: string | undefined
 
     private hasAuthed = false
 
@@ -113,6 +114,7 @@ class AuthProvider implements vscode.Disposable {
         this.subscriptions.push(
             authStatus.subscribe(authStatus => {
                 try {
+                    this.lastEndpoint = authStatus.endpoint
                     vscode.commands.executeCommand(
                         'setContext',
                         'cody.activated',
@@ -167,7 +169,10 @@ class AuthProvider implements vscode.Disposable {
         this.refreshRequests.next()
     }
 
-    public signout(): void {
+    public signout(endpoint: String): void {
+        if (this.lastEndpoint !== endpoint) {
+            return
+        }
         this.lastValidatedAndStoredCredentials.next(null)
         this.status.next({
             authenticated: false,
