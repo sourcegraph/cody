@@ -55,18 +55,19 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
             })
             addCodyClientIdentificationHeaders(headers)
 
-            try {
-                fetch(url.toString(), {
-                    method: 'POST',
-                    headers: Object.fromEntries(headers.entries()),
-                    body: JSON.stringify(serializedParams),
-                    signal,
-                }).then(async response => {
+            fetch(url.toString(), {
+                method: 'POST',
+                headers: Object.fromEntries(headers.entries()),
+                body: JSON.stringify(serializedParams),
+                signal,
+            }).then(async response => {
+                try {
                     if (!response.ok) {
                         const errorMessage = await response.text()
                         if (response.status === 429) {
                             const upgradeIsAvailable =
-                                response.headers.get('x-is-cody-pro-user') === 'false'
+                                response.headers.get('x-is-cody-pro-user') === 'false' &&
+                                typeof response.headers.get('x-is-cody-pro-user') !== 'undefined'
                             const retryAfter = response.headers.get('retry-after')
                             const limit = response.headers.get('x-ratelimit-limit')
 
@@ -125,13 +126,13 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                     } finally {
                         reader?.releaseLock()
                     }
-                })
-            } catch (error) {
-                const errorObject = error instanceof Error ? error : new Error(`${error}`)
-                log?.onError(errorObject.message, error)
-                recordErrorToSpan(span, errorObject)
-                cb.onError(errorObject)
-            }
+                } catch (error) {
+                    const errorObject = error instanceof Error ? error : new Error(`${error}`)
+                    log?.onError(errorObject.message, error)
+                    recordErrorToSpan(span, errorObject)
+                    cb.onError(errorObject)
+                }
+            })
         })
     }
 
