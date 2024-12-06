@@ -4,14 +4,14 @@ import {
     type SerializedPromptEditorState,
     serializedPromptEditorStateFromText,
 } from '@sourcegraph/cody-shared'
-import { PromptEditor } from '@sourcegraph/prompt-editor'
+import { PromptEditorV2 as PromptEditor } from '@sourcegraph/prompt-editor'
 import type { Meta, StoryObj } from '@storybook/react'
 import { type FunctionComponent, useState } from 'react'
 import { VSCodeStandaloneComponent } from '../storybook/VSCodeStoryDecorator'
 import styles from './BaseEditor.story.module.css'
 
 const meta: Meta<typeof PromptEditor> = {
-    title: 'ui/PromptEditor',
+    title: 'ui/PromptEditorV2',
     component: PromptEditor,
 
     args: {
