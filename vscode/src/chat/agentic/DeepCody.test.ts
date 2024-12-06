@@ -16,6 +16,7 @@ import {
 import { Observable } from 'observable-fns'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { URI } from 'vscode-uri'
+import { mockLocalStorage } from '../../services/LocalStorageProvider'
 import { ChatBuilder } from '../chat-view/ChatBuilder'
 import type { ContextRetriever } from '../chat-view/ContextRetriever'
 import * as initialContext from '../initialContext'
@@ -33,14 +34,21 @@ describe('DeepCody', () => {
     let mockChatBuilder: ChatBuilder
     let mockChatClient: ChatClient
     let mockContextRetriever: ContextRetriever
-    let mockSpan: any
     let mockCurrentContext: ContextItem[]
     let mockCodyTools: CodyTool[]
+    let localStorageData: { [key: string]: unknown } = {}
+    mockLocalStorage({
+        get: (key: string) => localStorageData[key],
+        update: (key: string, value: unknown) => {
+            localStorageData[key] = value
+        },
+    } as any)
 
     beforeEach(async () => {
         mockResolvedConfig({ configuration: {} })
         mockClientCapabilities(CLIENT_CAPABILITIES_FIXTURE)
         mockAuthStatus(codyProAuthStatus)
+        localStorageData = {}
         mockChatBuilder = {
             selectedModel: 'anthropic::2023-06-01::claude-3.5-sonnet',
             changes: {
@@ -66,9 +74,7 @@ describe('DeepCody', () => {
             retrieveContext: vi.fn(),
         } as unknown as ContextRetriever
 
-        mockCodyTools = await CodyToolProvider.instance(mockContextRetriever).getTools()
-
-        mockSpan = {}
+        mockCodyTools = CodyToolProvider.instance(mockContextRetriever).getTools()
 
         mockCurrentContext = [
             {
@@ -143,10 +149,11 @@ describe('DeepCody', () => {
             mockCurrentContext
         )
 
-        const result = await agent.getContext(mockSpan, { aborted: false } as AbortSignal)
+        const result = await agent.getContext({ aborted: false } as AbortSignal)
 
         expect(mockChatClient.chat).toHaveBeenCalled()
-        expect(mockCodyTools).toHaveLength(4)
+        expect(mockCodyTools).toHaveLength(3)
+        expect(mockCodyTools.some(tool => tool.config.tags.tag === ps`TOOLCLI`)).toBeFalsy()
         expect(mockContextRetriever.retrieveContext).toHaveBeenCalled()
         expect(result).toHaveLength(2)
         expect(result[0].content).toBe('const example = "test";')

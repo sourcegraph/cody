@@ -14,9 +14,8 @@ test.extend<ExpectedV2Events>({
     expectedV2Events: [
         'cody.extension:installed',
         'cody.auth.login:clicked',
-        'cody.auth.signin.menu:clicked',
         'cody.auth.login:firstEver',
-        'cody.auth.signin.token:clicked',
+        'cody.auth.login.token:clicked',
         'cody.auth:connected',
         'cody.menu.command.default:clicked',
         'cody.chat-question:submitted',
@@ -183,9 +182,8 @@ test.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL }).extend<Expe
     expectedV2Events: [
         'cody.extension:installed',
         'cody.auth.login:clicked',
-        'cody.auth.signin.menu:clicked',
         'cody.auth.login:firstEver',
-        'cody.auth.signin.token:clicked',
+        'cody.auth.login.token:clicked',
         'cody.auth:connected',
         'cody.chat-question:submitted',
         'cody.chat-question:executed',
@@ -233,9 +231,8 @@ test.extend<ExpectedV2Events>({
     expectedV2Events: [
         'cody.extension:installed',
         'cody.auth.login:clicked',
-        'cody.auth.signin.menu:clicked',
         'cody.auth.login:firstEver',
-        'cody.auth.signin.token:clicked',
+        'cody.auth.login.token:clicked',
         'cody.auth:connected',
         'cody.auth:connected',
         'cody.chat-question:submitted',
@@ -253,31 +250,31 @@ test.extend<ExpectedV2Events>({
     await lastChatInput.fill('One')
     await lastChatInput.press('Enter')
     await page.waitForTimeout(1000)
-    await expect(chatFrame.getByText('One')).toBeVisible()
+    await expect(chatFrame.getByText(/One/)).toBeVisible()
     await lastChatInput.fill('Two')
     await lastChatInput.press('Enter')
     await page.waitForTimeout(1000)
-    await expect(chatFrame.getByText('Two')).toBeVisible()
+    await expect(chatFrame.getByText(/Two/)).toBeVisible()
     await lastChatInput.fill('Three')
     await lastChatInput.press('Enter')
     await page.waitForTimeout(1000)
-    await expect(chatFrame.getByText('Three')).toBeVisible()
+    await expect(chatFrame.getByText(/Three/)).toBeVisible()
 
     // Click on the first input to get into the editing mode
     // The text area should automatically get the focuse,
     // and contains the original message text,
     // The submit button will also be replaced with "Update Message" button
-    await chatFrame.getByText('One').hover()
+    await chatFrame.getByText(/One/).hover()
     await focusChatInputAtEnd(firstChatInput)
     await expect(firstChatInput).toBeFocused()
-    await expect(firstChatInput).toHaveText('One')
+    await expect(firstChatInput).toHaveText(/One/)
 
     // click on the second edit button to get into the editing mode again
     // edit the message from "Two" to "Four"
     const secondChatInput = chatInputs.nth(1)
     await chatFrame.getByText('Two').hover()
     // the original message text should shows up in the text box
-    await expect(secondChatInput).toHaveText('Two')
+    await expect(secondChatInput).toHaveText(/Two/)
     await secondChatInput.click()
     await secondChatInput.fill('Four')
     await expect(chatInputs.nth(2)).toHaveText('Three')
@@ -300,10 +297,10 @@ test.extend<ExpectedV2Events>({
     // Only two messages are left after the edit (e.g. "One", "Four"),
     // as all the messages after the edited message have be removed
     await expect(chatInputs).toHaveCount(3 /* 2 + the 1 for the next not-yet-sent message */)
-    await expect(chatFrame.getByText('One')).toBeVisible()
-    await expect(chatFrame.getByText('Two')).not.toBeVisible()
-    await expect(chatFrame.getByText('Three')).not.toBeVisible()
-    await expect(chatFrame.getByText('Five')).toBeVisible()
+    await expect(chatFrame.getByText(/One/)).toBeVisible()
+    await expect(chatFrame.getByText(/Two/)).not.toBeVisible()
+    await expect(chatFrame.getByText(/Three/)).not.toBeVisible()
+    await expect(chatFrame.getByText(/Five/)).toBeVisible()
 
     // Chat input should still have focus.
     await expect(chatInputs.nth(2)).toBeFocused()

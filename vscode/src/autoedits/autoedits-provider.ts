@@ -1,35 +1,48 @@
 import {
     type AutoEditsModelConfig,
     type AutoEditsTokenLimit,
+    type ChatClient,
+    type DocumentContext,
     currentResolvedConfig,
     dotcomTokenToGatewayToken,
+    isDotComAuthed,
     tokensToChars,
 } from '@sourcegraph/cody-shared'
 import { type DebouncedFunc, debounce } from 'lodash'
 import { Observable } from 'observable-fns'
 import * as vscode from 'vscode'
+import type { AutocompleteContextSnippet } from '../../../lib/shared/src/completions/types'
+import { ContextRankingStrategy } from '../completions/context/completions-context-ranker'
 import { ContextMixer } from '../completions/context/context-mixer'
 import { DefaultContextStrategyFactory } from '../completions/context/context-strategy'
 import { RetrieverIdentifier } from '../completions/context/utils'
 import { getCurrentDocContext } from '../completions/get-current-doc-context'
-import { lines } from '../completions/text-processing'
+import { completionMatchesSuffix } from '../completions/is-completion-visible'
 import { getConfiguration } from '../configuration'
 import { CodyGatewayAdapter } from './adapters/cody-gateway'
 import { FireworksAdapter } from './adapters/fireworks'
 import { OpenAIAdapter } from './adapters/openai'
-import { getLineLevelDiff } from './diff-utils'
+import { SourcegraphChatAdapter } from './adapters/sourcegraph-chat'
 import { autoeditsLogger } from './logger'
-import type { AutoeditsModelAdapter } from './prompt-provider'
-import type { CodeToReplaceData } from './prompt-utils'
-import { AutoEditsRendererManager } from './renderer'
+import type { AutoeditsModelAdapter, ChatPrompt, PromptResponseData } from './prompt-provider'
+import { type CodeToReplaceData, SYSTEM_PROMPT, getBaseUserPrompt } from './prompt-utils'
+import { DefaultDecorator } from './renderer/decorators/default-decorator'
+import { AutoEditsRendererManager } from './renderer/manager'
+import {
+    adjustPredictionIfInlineCompletionPossible,
+    extractInlineCompletionFromRewrittenCode,
+} from './utils'
+import { isPredictedTextAlreadyInSuffix } from './utils'
 
 const AUTOEDITS_CONTEXT_STRATEGY = 'auto-edits'
+const INLINE_COMPLETETION_DEFAULT_DEBOUNCE_INTERVAL_MS = 150
 const ONSELECTION_CHANGE_DEFAULT_DEBOUNCE_INTERVAL_MS = 150
 const RESET_SUGGESTION_ON_CURSOR_CHANGE_AFTER_INTERVAL_MS = 60 * 1000
 
 export interface AutoEditsProviderOptions {
     document: vscode.TextDocument
     position: vscode.Position
+    docContext: DocumentContext
     abortSignal?: AbortSignal
 }
 
@@ -50,7 +63,7 @@ interface ProviderConfig {
 /**
  * Provides inline completions and auto-edits functionality.
  */
-export class AutoeditsProvider implements vscode.Disposable {
+export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, vscode.Disposable {
     private readonly disposables: vscode.Disposable[] = []
     private readonly contextMixer: ContextMixer
     private readonly rendererManager: AutoEditsRendererManager
@@ -58,16 +71,18 @@ export class AutoeditsProvider implements vscode.Disposable {
     private readonly onSelectionChangeDebounced: DebouncedFunc<typeof this.autoeditOnSelectionChange>
     // Keeps track of the last time the text was changed in the editor.
     private lastTextChangeTimeStamp: number | undefined
-    private currentController: AbortController | null = null
 
-    constructor() {
+    constructor(private readonly chatClient: ChatClient) {
         this.contextMixer = new ContextMixer({
             strategyFactory: new DefaultContextStrategyFactory(
                 Observable.of(AUTOEDITS_CONTEXT_STRATEGY)
             ),
+            contextRankingStrategy: ContextRankingStrategy.TimeBased,
             dataCollectionEnabled: false,
         })
-        this.rendererManager = new AutoEditsRendererManager()
+        this.rendererManager = new AutoEditsRendererManager(
+            (editor: vscode.TextEditor) => new DefaultDecorator(editor)
+        )
         this.onSelectionChangeDebounced = debounce(
             (event: vscode.TextEditorSelectionChangeEvent) => this.autoeditOnSelectionChange(event),
             ONSELECTION_CHANGE_DEFAULT_DEBOUNCE_INTERVAL_MS
@@ -77,14 +92,6 @@ export class AutoeditsProvider implements vscode.Disposable {
         this.disposables.push(
             this.contextMixer,
             this.rendererManager,
-            // Command is used to manually debug the autoedits provider
-            vscode.commands.registerCommand('cody.experimental.suggest', () => {
-                const editor = vscode.window.activeTextEditor
-                if (!editor) {
-                    return
-                }
-                this.triggerAutoedits(editor.document, editor.selection.active)
-            }),
             vscode.window.onDidChangeTextEditorSelection(this.onSelectionChangeDebounced),
             vscode.workspace.onDidChangeTextDocument(event => {
                 this.onDidChangeTextDocument(event)
@@ -114,6 +121,8 @@ export class AutoeditsProvider implements vscode.Disposable {
                 return new FireworksAdapter()
             case 'cody-gateway-fastpath-chat':
                 return new CodyGatewayAdapter()
+            case 'sourcegraph-chat':
+                return new SourcegraphChatAdapter(this.chatClient)
             default:
                 autoeditsLogger.logDebug('Config', `Provider ${providerName} not supported`)
                 throw new Error(`Provider ${providerName} not supported`)
@@ -137,63 +146,116 @@ export class AutoeditsProvider implements vscode.Disposable {
             Date.now() - this.lastTextChangeTimeStamp <
                 RESET_SUGGESTION_ON_CURSOR_CHANGE_AFTER_INTERVAL_MS
         ) {
-            this.triggerAutoedits(document, lastSelection.active)
+            await vscode.commands.executeCommand('editor.action.inlineSuggest.trigger')
         }
     }
 
-    private async triggerAutoedits(
+    public async provideInlineCompletionItems(
         document: vscode.TextDocument,
-        position: vscode.Position
-    ): Promise<void> {
-        if (this.currentController) {
-            this.currentController.abort()
-        }
+        position: vscode.Position,
+        context: vscode.InlineCompletionContext,
+        token?: vscode.CancellationToken
+    ): Promise<vscode.InlineCompletionItem[] | vscode.InlineCompletionList | null> {
         const controller = new AbortController()
-        this.currentController = controller
-        await this.showAutoEdit(document, position, controller.signal)
-        if (this.currentController === controller) {
-            this.currentController = null
-        }
+        token?.onCancellationRequested(() => controller.abort())
+
+        await new Promise(resolve =>
+            setTimeout(resolve, INLINE_COMPLETETION_DEFAULT_DEBOUNCE_INTERVAL_MS)
+        )
+        return this.showAutoEdit(document, position, controller.signal)
     }
 
     private async showAutoEdit(
         document: vscode.TextDocument,
         position: vscode.Position,
         abortSignal: AbortSignal
-    ): Promise<void> {
+    ): Promise<vscode.InlineCompletionItem[] | vscode.InlineCompletionList | null> {
         if (abortSignal.aborted) {
-            return
+            return null
         }
+        const docContext = getCurrentDocContext({
+            document,
+            position,
+            maxPrefixLength: tokensToChars(this.config.tokenLimit.prefixTokens),
+            maxSuffixLength: tokensToChars(this.config.tokenLimit.suffixTokens),
+        })
         const autoeditResponse = await this.inferEdit({
             document,
             position,
+            docContext,
             abortSignal,
         })
         if (abortSignal.aborted || !autoeditResponse) {
-            return
+            return null
         }
         const { prediction, codeToReplaceData } = autoeditResponse
+        const inlineCompletionItems = this.tryMakeInlineCompletionResponse(
+            prediction,
+            codeToReplaceData,
+            document,
+            position,
+            docContext
+        )
+        if (inlineCompletionItems) {
+            return inlineCompletionItems
+        }
         await this.showEditAsDecorations(document, codeToReplaceData, prediction)
+        return null
+    }
+
+    private tryMakeInlineCompletionResponse(
+        originalPrediction: string,
+        codeToReplace: CodeToReplaceData,
+        document: vscode.TextDocument,
+        position: vscode.Position,
+        docContext: DocumentContext
+    ): vscode.InlineCompletionItem[] | null {
+        const prediction = adjustPredictionIfInlineCompletionPossible(
+            originalPrediction,
+            codeToReplace.codeToRewritePrefix,
+            codeToReplace.codeToRewriteSuffix
+        )
+        const codeToRewriteAfterCurrentLine = codeToReplace.codeToRewriteSuffix.slice(
+            docContext.currentLineSuffix.length + 1 // Additional char for newline
+        )
+        const isPrefixMatch = prediction.startsWith(codeToReplace.codeToRewritePrefix)
+        const isSuffixMatch =
+            // The current line suffix should not require any char removals to render the completion.
+            completionMatchesSuffix({ insertText: prediction }, docContext.currentLineSuffix) &&
+            // The new lines suggested after the current line must be equal to the prediction.
+            prediction.endsWith(codeToRewriteAfterCurrentLine)
+
+        if (isPrefixMatch && isSuffixMatch) {
+            const autocompleteInlineResponse = extractInlineCompletionFromRewrittenCode(
+                prediction,
+                codeToReplace.codeToRewritePrefix,
+                codeToReplace.codeToRewriteSuffix
+            )
+            const autocompleteResponse = docContext.currentLinePrefix + autocompleteInlineResponse
+            const inlineCompletionItem = new vscode.InlineCompletionItem(
+                autocompleteResponse,
+                new vscode.Range(
+                    document.lineAt(position).range.start,
+                    document.lineAt(position).range.end
+                )
+            )
+            autoeditsLogger.logDebug('Autocomplete Inline Response: ', autocompleteResponse)
+            return [inlineCompletionItem]
+        }
+        return null
     }
 
     private async inferEdit(options: AutoEditsProviderOptions): Promise<AutoeditsPrediction | null> {
         const start = Date.now()
-
-        const docContext = getCurrentDocContext({
-            document: options.document,
-            position: options.position,
-            maxPrefixLength: tokensToChars(this.config.tokenLimit.prefixTokens),
-            maxSuffixLength: tokensToChars(this.config.tokenLimit.suffixTokens),
-        })
         const { context } = await this.contextMixer.getContext({
             document: options.document,
             position: options.position,
-            docContext,
+            docContext: options.docContext,
             maxChars: 32_000,
         })
 
-        const { codeToReplace, promptResponse: prompt } = this.config.provider.getPrompt(
-            docContext,
+        const { codeToReplace, promptResponse: prompt } = this.getPrompt(
+            options.docContext,
             options.document,
             options.position,
             context,
@@ -208,16 +270,15 @@ export class AutoeditsProvider implements vscode.Disposable {
             codeToRewrite: codeToReplace.codeToRewrite,
             userId: (await currentResolvedConfig()).clientState.anonymousUserID,
         })
-        const postProcessedResponse = this.config.provider.postProcessResponse(codeToReplace, response)
 
-        if (options.abortSignal?.aborted || !postProcessedResponse) {
+        if (options.abortSignal?.aborted || !response) {
             return null
         }
 
         autoeditsLogger.logDebug(
             'Autoedits',
             '========================== Response:\n',
-            postProcessedResponse,
+            response,
             '\n',
             '========================== Time Taken For LLM (Msec): ',
             (Date.now() - start).toString(),
@@ -226,7 +287,37 @@ export class AutoeditsProvider implements vscode.Disposable {
 
         return {
             codeToReplaceData: codeToReplace,
-            prediction: postProcessedResponse,
+            prediction: response,
+        }
+    }
+
+    private getPrompt(
+        docContext: DocumentContext,
+        document: vscode.TextDocument,
+        position: vscode.Position,
+        context: AutocompleteContextSnippet[],
+        tokenBudget: AutoEditsTokenLimit
+    ): PromptResponseData {
+        const { codeToReplace, prompt: userPrompt } = getBaseUserPrompt(
+            docContext,
+            document,
+            position,
+            context,
+            tokenBudget
+        )
+        const prompt: ChatPrompt = [
+            {
+                role: 'system',
+                content: SYSTEM_PROMPT,
+            },
+            {
+                role: 'user',
+                content: userPrompt,
+            },
+        ]
+        return {
+            codeToReplace,
+            promptResponse: prompt,
         }
     }
 
@@ -240,7 +331,13 @@ export class AutoeditsProvider implements vscode.Disposable {
             currentFileText.slice(0, document.offsetAt(codeToReplaceData.range.start)) +
             prediction +
             currentFileText.slice(document.offsetAt(codeToReplaceData.range.end))
-        if (this.shouldNotShowEdit(currentFileText, predictedFileText, codeToReplaceData)) {
+        if (
+            isPredictedTextAlreadyInSuffix({
+                codeToRewrite: codeToReplaceData.codeToRewrite,
+                prediction,
+                suffix: codeToReplaceData.suffixInArea + codeToReplaceData.suffixAfterArea,
+            })
+        ) {
             autoeditsLogger.logDebug(
                 'Autoedits',
                 'Skipping autoedit - predicted text already exists in suffix'
@@ -254,30 +351,6 @@ export class AutoeditsProvider implements vscode.Disposable {
             currentFileText,
             predictedFileText,
         })
-    }
-
-    private shouldNotShowEdit(
-        currentFileText: string,
-        predictedFileText: string,
-        codeToReplaceData: CodeToReplaceData
-    ): boolean {
-        const currentFileLines = lines(currentFileText)
-        const predictedFileLines = lines(predictedFileText)
-        const { addedLines } = getLineLevelDiff(currentFileLines, predictedFileLines)
-        if (addedLines.length === 0) {
-            return false
-        }
-        addedLines.sort()
-        const minAddedLineIndex = addedLines[0]
-        const maxAddedLineIndex = addedLines[addedLines.length - 1]
-        const allAddedLines = predictedFileLines.slice(minAddedLineIndex, maxAddedLineIndex + 1)
-        const allAddedLinesText = allAddedLines.join('\n')
-
-        const immediateSuffix = codeToReplaceData.suffixInArea + codeToReplaceData.suffixAfterArea
-        if (immediateSuffix.startsWith(allAddedLinesText)) {
-            return true
-        }
-        return false
     }
 
     private onDidChangeTextDocument(event: vscode.TextDocumentChangeEvent): void {
@@ -303,11 +376,21 @@ export class AutoeditsProvider implements vscode.Disposable {
                 [RetrieverIdentifier.RecentViewPortRetriever]: 2500,
             },
         }
+        // Use fast-path for dotcom
+        if (isDotComAuthed()) {
+            return {
+                provider: 'cody-gateway-fastpath-chat',
+                model: 'cody-model-auto-edits-fireworks-default',
+                url: 'https://cody-gateway.sourcegraph.com/v1/completions/fireworks',
+                tokenLimit: defaultTokenLimit,
+            }
+        }
         return {
-            provider: 'cody-gateway-fastpath-chat',
-            model: 'cody-model-auto-edits-fireworks-default',
-            url: 'https://cody-gateway.sourcegraph.com/v1/completions/fireworks',
+            provider: 'sourcegraph-chat',
+            model: 'fireworks::v1::autoedits-default',
             tokenLimit: defaultTokenLimit,
+            // We use chat completions client for sourcegraph-chat, so we don't need to specify url.
+            url: '',
         }
     }
 
@@ -321,6 +404,10 @@ export class AutoeditsProvider implements vscode.Disposable {
             }
             return fastPathAccessToken
         }
+        if (this.config.providerName === 'sourcegraph-chat') {
+            // We use chat completions client for sourcegraph-chat, so we don't need to specify api key.
+            return ''
+        }
         if (this.config.experimentalAutoeditsConfigOverride?.apiKey) {
             return this.config.experimentalAutoeditsConfigOverride.apiKey
         }
@@ -330,10 +417,6 @@ export class AutoeditsProvider implements vscode.Disposable {
 
     public dispose(): void {
         this.onSelectionChangeDebounced.cancel()
-        if (this.currentController) {
-            this.currentController.abort()
-            this.currentController = null
-        }
         for (const disposable of this.disposables) {
             disposable.dispose()
         }

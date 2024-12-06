@@ -1,13 +1,35 @@
 import type * as vscode from 'vscode'
 import type { URI } from 'vscode-uri'
 
+export type AutocompleteContextSnippetMetadataFields = Record<string, number | string>
+
+interface AutocompleteContextSnippetMetadata {
+    /**
+     * This field is relevant for user action context sources such as `recent-edit`, `recent-copy` and `recent-viewport`.
+     * It indicates the time in milliseconds since the action was performed (eg: time Since the last edit).
+     */
+    timeSinceActionMs?: number
+    /**
+     * Additional metadata fields that can be used to store arbitrary key-value pairs.
+     * The values can be either numbers or strings.
+     */
+    retrieverMetadata?: AutocompleteContextSnippetMetadataFields
+}
+
 export interface AutocompleteFileContextSnippet {
     identifier: string
     uri: URI
     startLine: number
     endLine: number
     content: string
+    /**
+     * Metadata populated by the context retriever.
+     * The metadata can be specific to the context retriever and may not apply to other context retrievers.
+     * The metadata can be used by other components such as `auto-edits` to determine if the snippet is still relevant or logging for offline analysis.
+     */
+    metadata?: AutocompleteContextSnippetMetadata
 }
+
 export interface AutocompleteSymbolContextSnippet extends AutocompleteFileContextSnippet {
     symbol: string
 }

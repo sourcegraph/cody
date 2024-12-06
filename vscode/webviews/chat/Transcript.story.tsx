@@ -13,10 +13,12 @@ import {
     getMockedDotComClientModels,
     ps,
 } from '@sourcegraph/cody-shared'
+import { MockDefaultContext } from '@sourcegraph/prompt-editor/src/useInitialContext'
 import { useArgs, useCallback, useEffect, useRef, useState } from '@storybook/preview-api'
 import type { ComponentProps } from 'react'
 import { URI } from 'vscode-uri'
 import { VSCodeWebview } from '../storybook/VSCodeStoryDecorator'
+import { __ContextCellStorybookContext } from './cells/contextCell/ContextCell'
 
 const mockedModels = getMockedDotComClientModels()
 
@@ -42,6 +44,7 @@ const meta: Meta<typeof Transcript> = {
         postMessage: () => {},
         chatEnabled: true,
         models: mockedModels,
+        setActiveChatContext: () => {},
     } satisfies ComponentProps<typeof Transcript>,
 
     decorators: [
@@ -94,6 +97,29 @@ export const WithDifferentModels: StoryObj<typeof meta> = {
 export const WithContext: StoryObj<typeof meta> = {
     args: {
         transcript: FIXTURE_TRANSCRIPT.explainCode2,
+    },
+    render: () => {
+        const [args] = useArgs<Required<NonNullable<(typeof meta)['args']>>>()
+        return (
+            <__ContextCellStorybookContext.Provider value={{ initialOpen: true }}>
+                <MockDefaultContext.Provider
+                    value={{
+                        initialContext: [],
+                        corpusContext: [
+                            {
+                                uri: URI.file('https://github.com/sourcegraph/sourcegraph'),
+                                type: 'repository',
+                                repoName: 'sourcegraph/sourcegraph',
+                                repoID: 'asdf',
+                                content: null,
+                            },
+                        ],
+                    }}
+                >
+                    <Transcript {...args} />
+                </MockDefaultContext.Provider>
+            </__ContextCellStorybookContext.Provider>
+        )
     },
 }
 

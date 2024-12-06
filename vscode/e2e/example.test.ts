@@ -53,8 +53,6 @@ test.describe('Demonstrations', () => {
         await signInView.waitUntilReady()
         await expect(signInView.wrapper).toBeVisible()
 
-        await expect(
-            signInView.content.getByRole('button', { name: 'Sign In to Your Enterprise Instance' })
-        ).toBeVisible()
+        await expect(signInView.content.getByText('Sign in to Sourcegraph')).toBeVisible()
     })
 })

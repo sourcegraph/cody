@@ -39,7 +39,7 @@ import { ChatSkeleton } from './skeleton/ChatSkeleton'
 // the cody agent properly (completely mock data)
 setDisplayPathEnvInfo({
     isWindows: false,
-    workspaceFolders: [URI.file('/tmp/foo')],
+    workspaceFolders: [],
 })
 
 export interface CodyWebChatProps {

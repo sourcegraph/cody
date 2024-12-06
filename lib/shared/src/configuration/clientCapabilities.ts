@@ -9,7 +9,7 @@ import type { ContextMentionProviderID } from '../mentions/api'
  * {@link ClientCapabilitiesWithLegacyFields.agentIDE} that are inferred in an ad-hoc way from the
  * environment and aren't self-reported by the client.
  */
-export interface ClientCapabilitiesWithLegacyFields {
+export interface ClientCapabilitiesWithLegacyFields extends ClientCapabilities {
     /**
      * The `agentIDE` value, which is the editor that Cody is being used with. If not set, it
      * defaults to {@link CodyIDE.VSCode} to match the previous behavior.
@@ -89,6 +89,14 @@ export interface ClientCapabilities {
     ignore?: 'none' | 'enabled' | undefined | null
     codeActions?: 'none' | 'enabled' | undefined | null
     disabledMentionsProviders?: ContextMentionProviderID[] | undefined | null
+    accountSwitchingInWebview?: 'none' | 'enabled' | undefined | null
+
+    /**
+     * 🚨 SECURITY: Please tag the Security Team for PR review when enabling shell context.
+     * When enabled, the client must be running with node integration enabled that supports
+     * child_process.spawn. This is needed for the agent to spawn a shell process to run commands.
+     */
+    shell?: 'none' | 'enabled' | undefined | null
 
     /**
      * When 'object-encoded' (default), the server uses the `webview/postMessage` method to send

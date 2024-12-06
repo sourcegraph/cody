@@ -11,6 +11,7 @@ import { JaccardSimilarityRetriever } from './retrievers/jaccard-similarity/jacc
 import { LspLightRetriever } from './retrievers/lsp-light/lsp-light-retriever'
 import { DiagnosticsRetriever } from './retrievers/recent-user-actions/diagnostics-retriever'
 import { RecentCopyRetriever } from './retrievers/recent-user-actions/recent-copy'
+import { UnifiedDiffStrategy } from './retrievers/recent-user-actions/recent-edits-diff-helpers/unified-diff'
 import { RecentEditsRetriever } from './retrievers/recent-user-actions/recent-edits-retriever'
 import { RecentViewPortRetriever } from './retrievers/recent-user-actions/recent-view-port'
 import { loadTscRetriever } from './retrievers/tsc/load-tsc-retriever'
@@ -54,6 +55,9 @@ export class DefaultContextStrategyFactory implements ContextStrategyFactory {
                             this.allLocalRetrievers = [
                                 new RecentEditsRetriever({
                                     maxAgeMs: 60 * 1000,
+                                    diffStrategyList: [
+                                        new UnifiedDiffStrategy({ addLineNumbers: false }),
+                                    ],
                                 }),
                             ]
                             break
@@ -61,6 +65,9 @@ export class DefaultContextStrategyFactory implements ContextStrategyFactory {
                             this.allLocalRetrievers = [
                                 new RecentEditsRetriever({
                                     maxAgeMs: 60 * 1000,
+                                    diffStrategyList: [
+                                        new UnifiedDiffStrategy({ addLineNumbers: false }),
+                                    ],
                                 }),
                             ]
                             break
@@ -68,6 +75,9 @@ export class DefaultContextStrategyFactory implements ContextStrategyFactory {
                             this.allLocalRetrievers = [
                                 new RecentEditsRetriever({
                                     maxAgeMs: 60 * 5 * 1000,
+                                    diffStrategyList: [
+                                        new UnifiedDiffStrategy({ addLineNumbers: false }),
+                                    ],
                                 }),
                             ]
                             break
@@ -75,6 +85,9 @@ export class DefaultContextStrategyFactory implements ContextStrategyFactory {
                             this.allLocalRetrievers = [
                                 new RecentEditsRetriever({
                                     maxAgeMs: 60 * 1000,
+                                    diffStrategyList: [
+                                        new UnifiedDiffStrategy({ addLineNumbers: false }),
+                                    ],
                                 }),
                                 new JaccardSimilarityRetriever(),
                             ]
@@ -118,7 +131,9 @@ export class DefaultContextStrategyFactory implements ContextStrategyFactory {
                             this.allLocalRetrievers = [
                                 new RecentEditsRetriever({
                                     maxAgeMs: 10 * 60 * 1000,
-                                    addLineNumbersForDiff: true,
+                                    diffStrategyList: [
+                                        new UnifiedDiffStrategy({ addLineNumbers: true }),
+                                    ],
                                 }),
                                 new DiagnosticsRetriever({
                                     contextLines: 0,
@@ -129,11 +144,6 @@ export class DefaultContextStrategyFactory implements ContextStrategyFactory {
                                     maxTrackedViewPorts: 50,
                                     maxRetrievedViewPorts: 10,
                                 }),
-                                new RecentCopyRetriever({
-                                    maxAgeMs: 60 * 1000,
-                                    maxSelections: 100,
-                                }),
-                                new JaccardSimilarityRetriever(),
                             ]
                             break
                         case 'jaccard-similarity':

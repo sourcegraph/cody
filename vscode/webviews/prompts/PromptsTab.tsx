@@ -5,9 +5,8 @@ import { PromptList } from '../components/promptList/PromptList'
 import { View } from '../tabs/types'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
 
-import { CodyIDE, firstValueFrom } from '@sourcegraph/cody-shared'
+import { CodyIDE } from '@sourcegraph/cody-shared'
 import type { PromptMode } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
-import { useExtensionAPI } from '@sourcegraph/prompt-editor'
 import { PromptMigrationWidget } from '../components/promptsMigration/PromptsMigration'
 import styles from './PromptsTab.module.css'
 
@@ -39,7 +38,7 @@ export const PromptsTab: React.FC<{
     )
 }
 
-const promptModeToIntent = (mode?: PromptMode): ChatMessage['intent'] => {
+export const promptModeToIntent = (mode?: PromptMode | undefined | null): ChatMessage['intent'] => {
     switch (mode) {
         case 'CHAT':
             return 'chat'
@@ -54,7 +53,6 @@ const promptModeToIntent = (mode?: PromptMode): ChatMessage['intent'] => {
 
 export function useActionSelect() {
     const dispatchClientAction = useClientActionDispatcher()
-    const extensionAPI = useExtensionAPI()
     const [lastUsedActions = {}, persistValue] = useLocalStorage<Record<string, number>>(
         'last-used-actions-v2',
         {}
@@ -71,15 +69,14 @@ export function useActionSelect() {
         switch (action.actionType) {
             case 'prompt': {
                 setView(View.Chat)
-                const promptEditorState = await firstValueFrom(
-                    extensionAPI.hydratePromptMessage(action.definition.text)
-                )
 
                 dispatchClientAction(
                     {
-                        editorState: promptEditorState,
-                        setLastHumanInputIntent: promptModeToIntent(action.mode),
-                        submitHumanInput: action.autoSubmit,
+                        setPromptAsInput: {
+                            text: action.definition.text,
+                            mode: action.mode,
+                            autoSubmit: action.autoSubmit || false,
+                        },
                     },
                     // Buffer because PromptEditor is not guaranteed to be mounted after the `setView`
                     // call above, and it needs to be mounted to receive the action.
@@ -87,6 +84,10 @@ export function useActionSelect() {
                 )
                 break
             }
+
+            // Deprecated commands handler, starting with sg 5.10 and vscode 1.46 we
+            // should never reach this case branch (since commands were replaces with prompts)
+            // TODO (vk): Remove this when backward compatible commands support is sunset
             case 'command': {
                 if (action.slashCommand) {
                     getVSCodeAPI().postMessage({

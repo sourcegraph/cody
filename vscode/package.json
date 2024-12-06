@@ -3,7 +3,7 @@
   "name": "cody-ai",
   "private": true,
   "displayName": "Cody: AI Coding Assistant with Autocomplete & Chat",
-  "version": "1.42.0",
+  "version": "1.48.0",
   "publisher": "sourcegraph",
   "license": "Apache-2.0",
   "icon": "resources/cody.png",
@@ -31,7 +31,7 @@
     "watch:build:dev:web": "concurrently \"pnpm run -s _build:esbuild:web --watch\" \"pnpm run -s _build:webviews --mode development --watch\"",
     "watch:build:dev:desktop": "concurrently \"pnpm run -s _build:esbuild:desktop --watch\" \"pnpm run -s _build:webviews --mode development --watch\"",
     "_build:esbuild:desktop": "pnpm download-wasm && pnpm run -s _build:esbuild:uninstall && pnpm run -s _build:esbuild:node",
-    "_build:esbuild:node": "esbuild ./src/extension.node.ts --bundle --outfile=dist/extension.node.js --loader:.node=copy --external:vscode --external:typescript --alias:@sourcegraph/cody-shared=@sourcegraph/cody-shared/src/index --alias:@sourcegraph/cody-shared/src=@sourcegraph/cody-shared/src --alias:lexical=./build/lexical-package-fix --format=cjs --platform=node --sourcemap",
+    "_build:esbuild:node": "esbuild ./src/extension.node.ts --bundle --outfile=dist/extension.node.js --loader:.node=copy --external:vscode --external:typescript --alias:@sourcegraph/cody-shared=@sourcegraph/cody-shared/src/index --alias:@sourcegraph/cody-shared/src=@sourcegraph/cody-shared/src --alias:lexical=./build/lexical-package-fix --format=cjs --platform=node --sourcemap --target=es2022",
     "_build:esbuild:web": "esbuild ./src/extension.web.ts --platform=browser --bundle --outfile=dist/extension.web.js --alias:@sourcegraph/cody-shared=@sourcegraph/cody-shared/src/index --alias:@sourcegraph/cody-shared/src=@sourcegraph/cody-shared/src --alias:path=path-browserify --external:typescript --alias:node:path=path-browserify --alias:node:os=os-browserify --alias:os=os-browserify --external:vscode  --external:node:child_process  --external:node:util --external:node:fs --external:node:fs/promises --external:node:process --define:process='{\"env\":{}}' --define:window=self --format=cjs --sourcemap",
     "_build:esbuild:uninstall": "node ./uninstall/esbuild.mjs",
     "_build:webviews": "vite -c webviews/vite.config.mts build",
@@ -610,16 +610,6 @@
         "when": "!cody.activated"
       },
       {
-        "command": "cody.chat.new",
-        "key": "shift+ctrl+/",
-        "when": "cody.activated"
-      },
-      {
-        "command": "cody.chat.new",
-        "key": "shift+ctrl+l",
-        "when": "cody.activated"
-      },
-      {
         "command": "cody.chat.toggle",
         "key": "alt+l",
         "when": "cody.activated && editorTextFocus",
@@ -662,6 +652,16 @@
         "when": "cody.activated && editorTextFocus && editorHasSelection"
       },
       {
+        "command": "cody.chat.new",
+        "key": "shift+alt+l",
+        "when": "cody.activated && !editorTextFocus"
+      },
+      {
+        "command": "cody.chat.new",
+        "key": "shift+alt+/",
+        "when": "cody.activated && !editorTextFocus"
+      },
+      {
         "command": "cody.tutorial.chat",
         "key": "alt+l",
         "when": "cody.activated && cody.tutorialActive"
@@ -675,6 +675,11 @@
         "command": "cody.command.auto-edit",
         "key": "alt+tab",
         "when": "cody.activated && !editorReadonly && config.cody.internal.unstable"
+      },
+      {
+        "command": "cody.command.execute-prompt",
+        "key": "shift+alt+p",
+        "when": "cody.activated"
       },
       {
         "command": "cody.tutorial.edit",
@@ -756,12 +761,12 @@
       {
         "command": "cody.experimental.suggest",
         "key": "ctrl+shift+enter",
-        "when": "cody.activated"
+        "when": "cody.activated && config.cody.experimental.autoedits.enabled"
       },
       {
         "command": "cody.supersuggest.testExample",
         "key": "ctrl+alt+enter",
-        "when": "cody.activated"
+        "when": "cody.activated && config.cody.experimental.autoedits.enabled"
       }
     ],
     "submenus": [
@@ -803,10 +808,6 @@
         {
           "command": "cody.command.abort-commit",
           "when": "cody.activated && cody.isGeneratingCommit"
-        },
-        {
-          "command": "cody.menu.custom-commands",
-          "when": "cody.activated"
         },
         {
           "command": "cody.chat.signIn",
@@ -1288,6 +1289,53 @@
           "description": "Whether to skip proxy server CA cert validation. Useful if the proxy server uses a self-signed certificate.",
           "type": "boolean",
           "default": false
+        },
+        "cody.agentic.context": {
+          "type": "object",
+          "properties": {
+            "shell": {
+              "allow": "array",
+              "block": "array"
+            }
+          },
+          "default": {
+            "shell": {
+              "allow": ["*"],
+              "block": [
+                "rm",
+                "chmod",
+                "shutdown",
+                "history",
+                "user",
+                "sudo",
+                "su",
+                "passwd",
+                "chown",
+                "chgrp",
+                "kill",
+                "reboot",
+                "poweroff",
+                "init",
+                "systemctl",
+                "journalctl",
+                "dmesg",
+                "lsblk",
+                "lsmod",
+                "modprobe",
+                "insmod",
+                "rmmod",
+                "lsusb",
+                "lspci"
+              ]
+            }
+          },
+          "examples": {
+            "shell": {
+              "allow": ["git", "gh"],
+              "block": ["history", "sudo", "rm"]
+            }
+          },
+          "markdownDescription": "Configures shell command execution for Cody Agent when terminal context is enabled (feature flag required). The 'allow' property can be either ['*'] for all commands or an array of allowed command prefixes. The 'block' property is an array of blocked commands that will be combined with built-in safety blocklist. Commands in the blocklist take precedence over allowed commands. When a command is executed, its output will be used as context. If no 'allow' list is specified, the feature will be disabled."
         },
         "cody.net.proxy.cacert": {
           "markdownDescription": "Either the PEM-encoded CA certificate the proxy uses (replace newlines with `\\n`), or the path (absolute or tilde) to the file containing that certificate.\n\nExamples:\n- `~/.mitmproxy/mitmproxy-ca-cert.pem`\n- `-----BEGIN CERTIFICATE-----\\n...\\n-----END CERTIFICATE-----`",

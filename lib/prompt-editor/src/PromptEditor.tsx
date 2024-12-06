@@ -256,7 +256,12 @@ export const PromptEditor: FunctionComponent<Props> = ({
                                 const nodesToInsert = lexicalNodesForContextItems(items, {
                                     isFromInitialContext: true,
                                 })
-                                nodesToInsert.push($createTextNode(' '))
+
+                                // Add whitespace after initial context items chips
+                                if (items.length > 0) {
+                                    nodesToInsert.push($createTextNode(' '))
+                                }
+
                                 $setSelection($getRoot().selectStart()) // insert at start
                                 $insertNodes(nodesToInsert)
                                 $selectEnd()

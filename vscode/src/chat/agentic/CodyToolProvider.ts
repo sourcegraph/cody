@@ -1,4 +1,13 @@
-import { authStatus, firstValueFrom, isDefined, ps } from '@sourcegraph/cody-shared'
+import {
+    FeatureFlag,
+    authStatus,
+    featureFlagProvider,
+    firstValueFrom,
+    isDefined,
+    ps,
+    storeLastValue,
+} from '@sourcegraph/cody-shared'
+import { getConfiguration } from '../../configuration'
 import { getOpenCtxProviders } from '../../context/openctx'
 import type { ContextRetriever } from '../chat-view/ContextRetriever'
 import {
@@ -38,8 +47,22 @@ export class CodyToolProvider {
         registerDefaultTools(this.toolFactory.registry)
     }
 
-    public async getTools(): Promise<CodyTool[]> {
-        const defaultTools = getDefaultCodyTools(this.contextRetriever, this.toolFactory)
+    private featureDeepCodyShellContext = storeLastValue(
+        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.DeepCodyShellContext)
+    )
+
+    private get isShellCommandEnabled(): boolean {
+        const isEnabledByInstance = !!this.featureDeepCodyShellContext.value.last
+        const isEnabledByUser = getConfiguration()?.agenticContext?.shell?.allow
+        return Boolean(isEnabledByInstance && isEnabledByUser)
+    }
+
+    public getTools(): CodyTool[] {
+        const defaultTools = getDefaultCodyTools(
+            this.isShellCommandEnabled,
+            this.contextRetriever,
+            this.toolFactory
+        )
         return [...defaultTools, ...this.openCtxTools]
     }
 

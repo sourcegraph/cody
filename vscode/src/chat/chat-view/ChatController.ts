@@ -1,4 +1,5 @@
 import {
+    type AuthStatus,
     type ChatModel,
     type ClientActionBroadcast,
     type CodyClientConfig,
@@ -7,18 +8,18 @@ import {
     clientCapabilities,
     currentSiteVersion,
     distinctUntilChanged,
+    extractContextFromTraceparent,
     firstResultFromOperation,
     forceHydration,
+    isAbortError,
     pendingOperation,
     ps,
     resolvedConfig,
     shareReplay,
     skip,
     skipPendingOperation,
+    wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
-import * as uuid from 'uuid'
-import * as vscode from 'vscode'
-
 import {
     type BillingCategory,
     type BillingProduct,
@@ -55,7 +56,6 @@ import {
     graphqlClient,
     hydrateAfterPostMessage,
     inputTextWithoutContextChipsFromPromptEditorState,
-    isAbortError,
     isAbortErrorOrSocketHangUp,
     isContextWindowLimitError,
     isDefined,
@@ -77,15 +77,17 @@ import {
     truncatePromptString,
     userProductSubscription,
 } from '@sourcegraph/cody-shared'
+import * as uuid from 'uuid'
+import * as vscode from 'vscode'
 
-import type { Span } from '@opentelemetry/api'
+import { type Span, context } from '@opentelemetry/api'
 import { captureException } from '@sentry/core'
 import { getTokenCounterUtils } from '@sourcegraph/cody-shared/src/token/counter'
 import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
 import { Subject, map } from 'observable-fns'
 import type { URI } from 'vscode-uri'
 import { View } from '../../../webviews/tabs/types'
-import { redirectToEndpointLogin, showSignInMenu, showSignOutMenu } from '../../auth/auth'
+import { redirectToEndpointLogin, showSignInMenu, showSignOutMenu, signOut } from '../../auth/auth'
 import {
     closeAuthProgressIndicator,
     startAuthProgressIndicator,
@@ -98,7 +100,7 @@ import { resolveContextItems } from '../../editor/utils/editor-context'
 import type { VSCodeEditor } from '../../editor/vscode-editor'
 import type { ExtensionClient } from '../../extension-client'
 import { migrateAndNotifyForOutdatedModels } from '../../models/modelMigrator'
-import { logDebug } from '../../output-channel-logger'
+import { logDebug, outputChannelLogger } from '../../output-channel-logger'
 import { getCategorizedMentions } from '../../prompt-builder/utils'
 import { hydratePromptText } from '../../prompts/prompt-hydration'
 import { mergedPromptsAndLegacyCommands } from '../../prompts/prompts'
@@ -106,6 +108,8 @@ import { publicRepoMetadataIfAllWorkspaceReposArePublic } from '../../repository
 import { authProvider } from '../../services/AuthProvider'
 import { AuthProviderSimplified } from '../../services/AuthProviderSimplified'
 import { localStorage } from '../../services/LocalStorageProvider'
+import { secretStorage } from '../../services/SecretStorageProvider'
+import { TraceSender } from '../../services/open-telemetry/trace-sender'
 import { recordExposedExperimentsToSpan } from '../../services/open-telemetry/utils'
 import {
     handleCodeFromInsertAtCursor,
@@ -240,10 +244,10 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
         this.disposables.push(
             subscriptionDisposable(
-                authStatus.subscribe(() => {
+                authStatus.subscribe(authStatus => {
                     // Run this async because this method may be called during initialization
                     // and awaiting on this.postMessage may result in a deadlock
-                    void this.sendConfig()
+                    void this.sendConfig(authStatus)
                 })
             ),
 
@@ -281,7 +285,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 this.setWebviewToChat()
                 break
             case 'submit': {
-                await this.handleUserMessageSubmission({
+                await this.handleUserMessage({
                     requestID: uuid.v4(),
                     inputText: PromptString.unsafe_fromUserQuery(message.text),
                     mentions: message.contextItems ?? [],
@@ -291,6 +295,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     intent: message.intent,
                     intentScores: message.intentScores,
                     manuallySelectedIntent: message.manuallySelectedIntent,
+                    traceparent: message.traceparent,
                 })
                 break
             }
@@ -322,8 +327,12 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     message.code,
                     currentAuthStatus(),
                     message.instruction,
-                    message.fileName
+                    message.fileName,
+                    message.traceparent
                 )
+                break
+            case 'trace-export':
+                TraceSender.send(message.traceSpanEncodedJson)
                 break
             case 'smartApplyAccept':
                 await vscode.commands.executeCommand('cody.fixup.codelens.accept', message.id)
@@ -444,15 +453,30 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     }
                     break
                 }
-                if (message.authKind === 'signin' && message.endpoint && message.value) {
-                    await localStorage.saveEndpointAndToken({
-                        serverEndpoint: message.endpoint,
-                        accessToken: message.value,
-                    })
+                if (message.authKind === 'signin' && message.endpoint) {
+                    try {
+                        const { endpoint, value: token } = message
+                        const credentials = {
+                            serverEndpoint: endpoint,
+                            accessToken: token || (await secretStorage.getToken(endpoint)) || null,
+                            tokenSource: token ? 'paste' : await secretStorage.getTokenSource(endpoint),
+                        }
+                        if (!credentials.accessToken) {
+                            return redirectToEndpointLogin(credentials.serverEndpoint)
+                        }
+                        await authProvider.validateAndStoreCredentials(credentials, 'always-store')
+                    } catch (error) {
+                        this.postError(new Error(`Authentication failed: ${error}`))
+                    }
                     break
                 }
                 if (message.authKind === 'signout') {
-                    await showSignOutMenu()
+                    const serverEndpoint = message.endpoint
+                    if (serverEndpoint) {
+                        await signOut(serverEndpoint)
+                    } else {
+                        await showSignOutMenu()
+                    }
                     break
                 }
                 if (message.authKind === 'switch') {
@@ -516,9 +540,12 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         const isEditorViewType = this.webviewPanelOrView?.viewType === 'cody.editorPanel'
         const webviewType = isEditorViewType && !sidebarViewOnly ? 'editor' : 'sidebar'
         const uiKindIsWeb = (cenv.CODY_OVERRIDE_UI_KIND ?? vscode.env.uiKind) === vscode.UIKind.Web
+        const endpoints = localStorage.getEndpointHistory() ?? []
+
         return {
             uiKindIsWeb,
             serverEndpoint: auth.serverEndpoint,
+            endpointHistory: [...endpoints],
             experimentalNoodle: configuration.experimentalNoodle,
             smartApply: this.isSmartApplyEnabled(),
             hasEditCapability: this.hasEditCapability(),
@@ -534,12 +561,10 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
     // When the webview sends the 'ready' message, respond by posting the view config
     private async handleReady(): Promise<void> {
-        await this.sendConfig()
+        await this.sendConfig(currentAuthStatus())
     }
 
-    private async sendConfig(): Promise<void> {
-        const authStatus = currentAuthStatus()
-
+    private async sendConfig(authStatus: AuthStatus): Promise<void> {
         // Don't emit config if we're verifying auth status to avoid UI auth flashes on the client
         if (authStatus.pendingValidation) {
             return
@@ -599,14 +624,14 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             chatID: this.chatBuilder.sessionID,
         })
 
-        await this.saveSession()
+        void this.saveSession()
         this.initDoer.signalInitialized()
     }
 
     /**
      * Handles user input text for both new and edit submissions
      */
-    public async handleUserMessageSubmission({
+    public async handleUserMessage({
         requestID,
         inputText,
         mentions,
@@ -617,6 +642,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         intent: detectedIntent,
         intentScores: detectedIntentScores,
         manuallySelectedIntent,
+        traceparent,
     }: {
         requestID: string
         inputText: PromptString
@@ -628,41 +654,50 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         intent?: ChatMessage['intent'] | undefined | null
         intentScores?: { intent: string; score: number }[] | undefined | null
         manuallySelectedIntent?: boolean | undefined | null
+        traceparent?: string | undefined | null
     }): Promise<void> {
-        return tracer.startActiveSpan('chat.submit', async (span): Promise<void> => {
-            span.setAttribute('sampled', true)
+        return context.with(extractContextFromTraceparent(traceparent), () => {
+            return tracer.startActiveSpan('chat.handleUserMessage', async (span): Promise<void> => {
+                span.setAttribute('sampled', true)
+                span.setAttribute('continued', true)
+                outputChannelLogger.logDebug(
+                    'ChatController',
+                    'handleUserMessageSubmission',
+                    `traceId: ${span.spanContext().traceId}`
+                )
 
-            if (inputText.toString().match(/^\/reset$/)) {
-                span.addEvent('clearAndRestartSession')
-                span.end()
-                return this.clearAndRestartSession()
-            }
+                if (inputText.match(/^\/reset$/)) {
+                    span.addEvent('clearAndRestartSession')
+                    span.end()
+                    return this.clearAndRestartSession()
+                }
 
-            this.chatBuilder.addHumanMessage({
-                text: inputText,
-                editorState,
-                intent: detectedIntent,
-            })
-            this.postViewTranscript({ speaker: 'assistant' })
-
-            await this.saveSession()
-            signal.throwIfAborted()
-
-            return this.sendChat(
-                {
-                    requestID,
-                    inputText,
-                    mentions,
+                this.chatBuilder.addHumanMessage({
+                    text: inputText,
                     editorState,
-                    signal,
-                    source,
-                    command,
                     intent: detectedIntent,
-                    intentScores: detectedIntentScores,
-                    manuallySelectedIntent,
-                },
-                span
-            )
+                })
+                this.postViewTranscript({ speaker: 'assistant' })
+
+                await this.saveSession()
+                signal.throwIfAborted()
+
+                return this.sendChat(
+                    {
+                        requestID,
+                        inputText,
+                        mentions,
+                        editorState,
+                        signal,
+                        source,
+                        command,
+                        intent: detectedIntent,
+                        intentScores: detectedIntentScores,
+                        manuallySelectedIntent,
+                    },
+                    span
+                )
+            })
         })
     }
 
@@ -678,19 +713,24 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             intent: detectedIntent,
             intentScores: detectedIntentScores,
             manuallySelectedIntent,
-        }: Parameters<typeof this.handleUserMessageSubmission>[0],
+        }: Parameters<typeof this.handleUserMessage>[0],
         span: Span
     ): Promise<void> {
+        span.addEvent('ChatController.sendChat')
         const authStatus = currentAuthStatusAuthed()
 
         // Use default model if no model is selected.
-        const model = await firstResultFromOperation(ChatBuilder.resolvedModelForChat(this.chatBuilder))
+        const model = await wrapInActiveSpan('chat.resolveModel', () =>
+            firstResultFromOperation(ChatBuilder.resolvedModelForChat(this.chatBuilder))
+        )
         if (!model) {
             throw new Error('No model selected, and no default chat model is available')
         }
         this.chatBuilder.setSelectedModel(model)
-        const { isPublic: repoIsPublic, repoMetadata } = await firstResultFromOperation(
-            publicRepoMetadataIfAllWorkspaceReposArePublic
+        const isDeepCodyModel = model?.includes('deep-cody')
+        const { isPublic: repoIsPublic, repoMetadata } = await wrapInActiveSpan(
+            'chat.getRepoMetadata',
+            () => firstResultFromOperation(publicRepoMetadataIfAllWorkspaceReposArePublic)
         )
 
         const telemetryProperties = {
@@ -705,7 +745,9 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             traceId: span.spanContext().traceId,
             promptText: inputText,
         } as const
-        const tokenCounterUtils = await getTokenCounterUtils()
+        const tokenCounterUtils = await wrapInActiveSpan('chat.getTokenCounterUtils', () =>
+            getTokenCounterUtils()
+        )
 
         telemetryEvents['cody.chat-question/submitted'].record(
             {
@@ -715,169 +757,160 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             tokenCounterUtils
         )
 
-        await tracer.startActiveSpan('chat.submit.firstToken', async (firstTokenSpan): Promise<void> => {
-            this.postEmptyMessageInProgress(model)
+        this.postEmptyMessageInProgress(model)
 
-            // All mentions we receive are either source=initial or source=user. If the caller
-            // forgot to set the source, assume it's from the user.
-            mentions = mentions.map(m => (m.source ? m : { ...m, source: ContextItemSource.User }))
+        // All mentions we receive are either source=initial or source=user. If the caller
+        // forgot to set the source, assume it's from the user.
+        mentions = mentions.map(m => (m.source ? m : { ...m, source: ContextItemSource.User }))
 
-            const contextAlternatives = await this.computeContext(
-                { text: inputText, mentions },
-                requestID,
-                editorState,
-                span,
-                signal
-            )
-            signal.throwIfAborted()
-            const corpusContext = contextAlternatives[0].items
+        const contextAlternatives = await this.computeContext(
+            { text: inputText, mentions },
+            requestID,
+            editorState,
+            span,
+            signal
+        )
+        signal.throwIfAborted()
+        const corpusContext = contextAlternatives[0].items
 
-            const inputTextWithoutContextChips = editorState
-                ? PromptString.unsafe_fromUserQuery(
-                      inputTextWithoutContextChipsFromPromptEditorState(editorState)
-                  )
-                : inputText
+        const inputTextWithoutContextChips = editorState
+            ? PromptString.unsafe_fromUserQuery(
+                  inputTextWithoutContextChipsFromPromptEditorState(editorState)
+              )
+            : inputText
 
-            const repositoryMentioned = mentions.find(contextItem =>
-                ['repository', 'tree'].includes(contextItem.type)
-            )
+        const repositoryMentioned = mentions.find(contextItem =>
+            ['repository', 'tree'].includes(contextItem.type)
+        )
 
-            // We are checking the feature flag here to log non-undefined intent only if the feature flag is on
-            let intent: ChatMessage['intent'] | undefined = this.featureCodyExperimentalOneBox
+        // We are checking the feature flag here to log non-undefined intent only if the feature flag is on
+        let intent: ChatMessage['intent'] | undefined = this.featureCodyExperimentalOneBox
+            ? detectedIntent
+            : undefined
+
+        let intentScores: { intent: string; score: number }[] | undefined | null = this
+            .featureCodyExperimentalOneBox
+            ? detectedIntentScores
+            : undefined
+
+        const userSpecifiedIntent =
+            manuallySelectedIntent && detectedIntent
                 ? detectedIntent
-                : undefined
+                : this.featureCodyExperimentalOneBox
+                  ? 'auto'
+                  : 'chat'
 
-            let intentScores: { intent: string; score: number }[] | undefined | null = this
-                .featureCodyExperimentalOneBox
-                ? detectedIntentScores
-                : undefined
-
-            const userSpecifiedIntent =
-                manuallySelectedIntent && detectedIntent
-                    ? detectedIntent
-                    : this.featureCodyExperimentalOneBox
-                      ? 'auto'
-                      : 'chat'
-
-            const finalIntentDetectionResponse = detectedIntent
-                ? { intent: detectedIntent, allScores: detectedIntentScores }
-                : this.featureCodyExperimentalOneBox && repositoryMentioned
-                  ? await this.detectChatIntent({
-                        requestID,
-                        text: inputTextWithoutContextChips.toString(),
-                    })
-                        .then(async response => {
-                            signal.throwIfAborted()
-                            this.chatBuilder.setLastMessageIntent(response?.intent)
-                            this.postEmptyMessageInProgress(model)
-                            return response
-                        })
-                        .catch(() => undefined)
-                  : undefined
-
-            intent = finalIntentDetectionResponse?.intent
-            intentScores = finalIntentDetectionResponse?.allScores
-            signal.throwIfAborted()
-
-            if (['search', 'edit', 'insert'].includes(intent || '')) {
-                telemetryEvents['cody.chat-question/executed'].record(
-                    {
-                        ...telemetryProperties,
-                        context: corpusContext,
-                        userSpecifiedIntent,
-                        detectedIntent: intent,
-                        detectedIntentScores: intentScores,
-                    },
-                    { current: span, firstToken: firstTokenSpan, addMetadata: true },
-                    tokenCounterUtils
-                )
-            }
-
-            if (intent === 'edit' || intent === 'insert') {
-                return await this.handleEditMode({
+        const finalIntentDetectionResponse = detectedIntent
+            ? { intent: detectedIntent, allScores: detectedIntentScores }
+            : this.featureCodyExperimentalOneBox && repositoryMentioned && !isDeepCodyModel
+              ? await this.detectChatIntent({
                     requestID,
-                    mode: intent,
-                    instruction: inputTextWithoutContextChips,
-                    context: corpusContext,
-                    signal,
-                    contextAlternatives,
+                    text: inputTextWithoutContextChips.toString(),
                 })
-            }
+                    .then(async response => {
+                        signal.throwIfAborted()
+                        this.chatBuilder.setLastMessageIntent(response?.intent)
+                        this.postEmptyMessageInProgress(model)
+                        return response
+                    })
+                    .catch(() => undefined)
+              : undefined
 
-            if (intent === 'search') {
-                return await this.handleSearchIntent({
+        intent = finalIntentDetectionResponse?.intent
+        intentScores = finalIntentDetectionResponse?.allScores
+        signal.throwIfAborted()
+
+        if (['search', 'edit', 'insert'].includes(intent || '')) {
+            telemetryEvents['cody.chat-question/executed'].record(
+                {
+                    ...telemetryProperties,
                     context: corpusContext,
-                    signal,
-                    contextAlternatives,
-                })
+                    userSpecifiedIntent,
+                    detectedIntent: intent,
+                    detectedIntentScores: intentScores,
+                },
+                { current: span, addMetadata: true },
+                tokenCounterUtils
+            )
+        }
+
+        if (intent === 'edit' || intent === 'insert') {
+            return await this.handleEditMode({
+                requestID,
+                mode: intent,
+                instruction: inputTextWithoutContextChips,
+                context: corpusContext,
+                signal,
+                contextAlternatives,
+            })
+        }
+
+        if (intent === 'search') {
+            return await this.handleSearchIntent({
+                context: corpusContext,
+                signal,
+                contextAlternatives,
+            })
+        }
+
+        // Experimental Feature: Deep Cody
+        if (isDeepCodyModel) {
+            const agenticContext = await new DeepCodyAgent(
+                this.chatBuilder,
+                this.chatClient,
+                this.toolProvider.getTools(),
+                corpusContext
+            ).getContext(signal)
+            corpusContext.push(...agenticContext)
+        }
+
+        const { explicitMentions, implicitMentions } = getCategorizedMentions(corpusContext)
+
+        const prompter = new DefaultPrompter(explicitMentions, implicitMentions, command !== undefined)
+
+        try {
+            const versions = await currentSiteVersion()
+            if (!versions) {
+                throw new Error('unable to determine site version')
             }
-
-            // Experimental Feature: Deep Cody
-            if (model?.includes('deep-cody')) {
-                const agenticContext = await new DeepCodyAgent(
-                    this.chatBuilder,
-                    this.chatClient,
-                    await this.toolProvider.getTools(),
-                    corpusContext
-                ).getContext(span, signal)
-                corpusContext.push(...agenticContext)
-            }
-
-            const { explicitMentions, implicitMentions } = getCategorizedMentions(corpusContext)
-
-            const prompter = new DefaultPrompter(
-                explicitMentions,
-                implicitMentions,
-                command !== undefined
+            const { prompt, context } = await this.buildPrompt(
+                prompter,
+                signal,
+                requestID,
+                versions.codyAPIVersion,
+                contextAlternatives
             )
 
-            try {
-                const versions = await currentSiteVersion()
-                if (!versions) {
-                    throw new Error('unable to determine site version')
-                }
-                const { prompt, context } = await this.buildPrompt(
-                    prompter,
-                    signal,
-                    requestID,
-                    versions.codyAPIVersion,
-                    contextAlternatives
-                )
+            telemetryEvents['cody.chat-question/executed'].record(
+                {
+                    ...telemetryProperties,
+                    context,
+                    userSpecifiedIntent,
+                    detectedIntent: intent,
+                    detectedIntentScores: intentScores,
+                },
+                {
+                    addMetadata: true,
+                    current: span,
+                },
+                tokenCounterUtils
+            )
 
-                telemetryEvents['cody.chat-question/executed'].record(
-                    {
-                        ...telemetryProperties,
-                        context,
-                        userSpecifiedIntent,
-                        detectedIntent: intent,
-                        detectedIntentScores: intentScores,
-                    },
-                    {
-                        addMetadata: true,
-                        current: span,
-                        firstToken: firstTokenSpan,
-                    },
-                    tokenCounterUtils
-                )
-
-                signal.throwIfAborted()
-                this.streamAssistantResponse(requestID, prompt, model, span, firstTokenSpan, signal)
-            } catch (error) {
-                if (isAbortErrorOrSocketHangUp(error as Error)) {
-                    return
-                }
-                if (isRateLimitError(error) || isContextWindowLimitError(error)) {
-                    this.postError(error, 'transcript')
-                } else {
-                    this.postError(
-                        isError(error)
-                            ? error
-                            : new Error(`Error generating assistant response: ${error}`)
-                    )
-                }
-                recordErrorToSpan(span, error as Error)
+            signal.throwIfAborted()
+            this.streamAssistantResponse(requestID, prompt, model, span, signal)
+        } catch (error) {
+            if (isAbortErrorOrSocketHangUp(error as Error)) {
+                return
             }
-        })
+            if (isRateLimitError(error) || isContextWindowLimitError(error)) {
+                this.postError(error, 'transcript')
+            } else {
+                this.postError(
+                    isError(error) ? error : new Error(`Error generating assistant response: ${error}`)
+                )
+            }
+            recordErrorToSpan(span, error as Error)
+        }
     }
 
     private async detectChatIntent({
@@ -886,9 +919,9 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     }: { requestID?: string; text: string }): Promise<
         { intent: ChatMessage['intent']; allScores: { intent: string; score: number }[] } | undefined
     > {
-        const response = await this.chatIntentAPIClient
-            ?.detectChatIntent(requestID || '', text)
-            .catch(() => null)
+        const response = await wrapInActiveSpan('chat.detectChatIntent', () => {
+            return this.chatIntentAPIClient?.detectChatIntent(requestID || '', text).catch(() => null)
+        })
 
         if (response && !isError(response)) {
             return {
@@ -951,7 +984,9 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             configuration: {
                 instruction,
                 mode,
-                intent: mode === 'edit' ? 'edit' : 'add',
+                // Only document code uses non-edit (insert mode), set doc intent for Document code prompt
+                // to specialize cody command runner for document code case.
+                intent: mode === 'edit' ? 'edit' : 'doc',
             },
         })
 
@@ -963,6 +998,17 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         const task = result.task
 
         let responseMessage = `Here is the response for the ${task.intent} instruction:\n`
+
+        if (!task.diff && task.replacement) {
+            task.diff = [
+                {
+                    type: 'insertion',
+                    text: task.replacement,
+                    range: task.originalRange,
+                },
+            ]
+        }
+
         task.diff?.map(diff => {
             responseMessage += '\n```diff\n'
             if (diff.type === 'deletion') {
@@ -1010,7 +1056,9 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         signal?: AbortSignal
     ): Promise<RankedContext[]> {
         try {
-            return await this._computeContext({ text, mentions }, requestID, editorState, span, signal)
+            return wrapInActiveSpan('chat.computeContext', span => {
+                return this._computeContext({ text, mentions }, requestID, editorState, span, signal)
+            })
         } catch (e) {
             this.postError(new Error(`Unexpected error computing context, no context was used: ${e}`))
             return [
@@ -1086,7 +1134,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             this.submitOrEditOperation.abort()
             this.submitOrEditOperation = undefined
         }
-        this.saveSession()
+        void this.saveSession()
     }
 
     /**
@@ -1132,7 +1180,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 return
             }
             this.chatBuilder.removeMessagesFromIndex(humanMessage, 'human')
-            return await this.handleUserMessageSubmission({
+            return await this.handleUserMessage({
                 requestID,
                 inputText: text,
                 mentions: contextFiles,
@@ -1348,65 +1396,69 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         requestID: string,
         prompt: Message[],
         model: ChatModel,
-        span: Span,
-        firstTokenSpan: Span,
+        chatSpan: Span,
         abortSignal: AbortSignal
     ): void {
-        logDebug('ChatController', 'streamAssistantResponse', {
-            verbose: { requestID, prompt },
-        })
-        let firstTokenMeasured = false
-        function measureFirstToken() {
-            if (firstTokenMeasured) {
-                return
-            }
-            firstTokenMeasured = true
-            span.addEvent('firstToken')
-            firstTokenSpan.end()
-        }
-
         abortSignal.throwIfAborted()
         this.postEmptyMessageInProgress(model)
-        this.sendLLMRequest(
-            prompt,
-            model,
-            {
-                update: content => {
-                    measureFirstToken()
-                    span.addEvent('update')
-                    this.postViewTranscript({
-                        speaker: 'assistant',
-                        text: PromptString.unsafe_fromLLMResponse(content),
-                        model,
-                    })
-                },
-                close: content => {
-                    measureFirstToken()
-                    recordExposedExperimentsToSpan(span)
-                    span.end()
-                    this.addBotMessage(requestID, PromptString.unsafe_fromLLMResponse(content), model)
-                },
-                error: (partialResponse, error) => {
-                    this.postError(error, 'transcript')
-                    if (isAbortErrorOrSocketHangUp(error)) {
-                        abortSignal.throwIfAborted()
-                    }
-                    try {
-                        // We should still add the partial response if there was an error
-                        // This'd throw an error if one has already been added
+
+        tracer.startActiveSpan('chat.streamResponse', llmSpan => {
+            let firstTokenMeasured = false
+            function measureFirstToken() {
+                if (firstTokenMeasured) {
+                    return
+                }
+                firstTokenMeasured = true
+                llmSpan.addEvent('firstToken')
+            }
+
+            this.sendLLMRequest(
+                prompt,
+                model,
+                {
+                    update: content => {
+                        measureFirstToken()
+                        this.postViewTranscript({
+                            speaker: 'assistant',
+                            text: PromptString.unsafe_fromLLMResponse(content),
+                            model,
+                        })
+                    },
+                    close: content => {
+                        measureFirstToken()
+                        recordExposedExperimentsToSpan(chatSpan)
+                        llmSpan.end()
                         this.addBotMessage(
                             requestID,
-                            PromptString.unsafe_fromLLMResponse(partialResponse),
+                            PromptString.unsafe_fromLLMResponse(content),
                             model
-                        )
-                    } catch {
-                        console.error('Streaming Error', error)
-                    }
-                    recordErrorToSpan(span, error)
+                        ).finally(() => {
+                            chatSpan.end()
+                        })
+                    },
+                    error: (partialResponse, error) => {
+                        this.postError(error, 'transcript')
+                        if (isAbortErrorOrSocketHangUp(error)) {
+                            abortSignal.throwIfAborted()
+                        }
+                        try {
+                            // We should still add the partial response if there was an error
+                            // This'd throw an error if one has already been added
+                            this.addBotMessage(
+                                requestID,
+                                PromptString.unsafe_fromLLMResponse(partialResponse),
+                                model
+                            )
+                        } catch {
+                            console.error('Streaming Error', error)
+                        }
+                        recordErrorToSpan(llmSpan, error)
+                        chatSpan.end()
+                    },
                 },
-            },
-            abortSignal
-        )
+                abortSignal
+            )
+        })
     }
 
     /**
@@ -1550,6 +1602,12 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         this.postViewTranscript()
     }
 
+    /**
+     * This method will serialize the chat state synchronously and then save the serialized state to
+     * local storage. Usually, it can safely be called without `await`ing.
+     * This method should only be awaited if the caller wants to wait for the saved data to be synced
+     * to local storage before proceeding.
+     */
     private async saveSession(): Promise<void> {
         const authStatus = currentAuthStatus()
         if (authStatus.authenticated) {
@@ -1574,7 +1632,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             new Date(Date.now()).toUTCString()
         )
         this.postViewTranscript()
-        await this.saveSession()
         // Move the new session to the editor
         await vscode.commands.executeCommand('cody.chat.moveToEditor')
         // Restore the old session in the current window
@@ -1585,7 +1642,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
     public async clearAndRestartSession(chatMessages?: ChatMessage[]): Promise<void> {
         this.cancelSubmitOrEditOperation()
-        await this.saveSession()
+        void this.saveSession()
 
         this.chatBuilder = new ChatBuilder(this.chatBuilder.selectedModel, undefined, chatMessages)
         this.postViewTranscript()

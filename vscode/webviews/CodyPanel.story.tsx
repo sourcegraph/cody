@@ -26,6 +26,10 @@ const meta: Meta<typeof CodyPanel> = {
             config: {} as any,
             clientCapabilities: CLIENT_CAPABILITIES_FIXTURE,
             authStatus: AUTH_STATUS_FIXTURE_AUTHED,
+            isDotComUser: true,
+            userProductSubscription: {
+                userCanUpgrade: true,
+            },
         },
     },
     decorators: [VSCodeWebview],
@@ -41,6 +45,10 @@ export const NetworkError: StoryObj<typeof meta> = {
             authStatus: {
                 ...AUTH_STATUS_FIXTURE_UNAUTHED,
                 showNetworkError: true,
+            },
+            isDotComUser: true,
+            userProductSubscription: {
+                userCanUpgrade: true,
             },
         },
     },

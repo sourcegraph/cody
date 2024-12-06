@@ -16,9 +16,8 @@ test.extend<ExpectedV2Events>({
     expectedV2Events: [
         'cody.extension:installed',
         'cody.auth.login:clicked',
-        'cody.auth.signin.menu:clicked',
         'cody.auth.login:firstEver',
-        'cody.auth.signin.token:clicked',
+        'cody.auth.login.token:clicked',
         'cody.auth:connected',
         'cody.command.codelens:clicked',
         'cody.menu.command.default:clicked',
@@ -26,7 +25,11 @@ test.extend<ExpectedV2Events>({
         'cody.fixup.response:hasCode',
         'cody.fixup.apply:succeeded',
     ],
-})('Generate Unit Test Command (Edit)', async ({ page, sidebar }) => {
+})('Generate Unit Test Command (Edit)', async ({ page, sidebar, server }) => {
+    server.onGraphQl('SiteProductVersion').replyJson({
+        data: { site: { productVersion: '5.9.0' } },
+    })
+
     // Sign into Cody
     await sidebarSignin(page, sidebar)
 
@@ -53,15 +56,18 @@ test.extend<ExpectedV2Events>({
     expectedV2Events: [
         'cody.extension:installed',
         'cody.auth.login:clicked',
-        'cody.auth.signin.menu:clicked',
         'cody.auth.login:firstEver',
-        'cody.auth.signin.token:clicked',
+        'cody.auth.login.token:clicked',
         'cody.auth:connected',
         'cody.command.doc:executed',
         'cody.fixup.response:hasCode',
         'cody.fixup.apply:succeeded',
     ],
-})('Document Command (Edit)', async ({ page, sidebar }) => {
+})('Document Command (Edit)', async ({ page, sidebar, server }) => {
+    server.onGraphQl('SiteProductVersion').replyJson({
+        data: { site: { productVersion: '5.9.0' } },
+    })
+
     // Sign into Cody
     await sidebarSignin(page, sidebar)
 
@@ -97,13 +103,16 @@ test.extend<ExpectedV2Events>({
     expectedV2Events: [
         'cody.extension:installed',
         'cody.auth.login:clicked',
-        'cody.auth.signin.menu:clicked',
         'cody.auth.login:firstEver',
-        'cody.auth.signin.token:clicked',
+        'cody.auth.login.token:clicked',
         'cody.auth:connected',
         'cody.command.explain:executed',
     ],
-})('Explain Command from Prompts Tab', async ({ page, sidebar }) => {
+})('Explain Command from Prompts Tab', async ({ page, sidebar, server }) => {
+    server.onGraphQl('SiteProductVersion').replyJson({
+        data: { site: { productVersion: '5.9.0' } },
+    })
+
     // Sign into Cody
     await sidebarSignin(page, sidebar)
 

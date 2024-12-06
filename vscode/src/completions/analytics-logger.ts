@@ -767,13 +767,16 @@ function getInlineContextItemContext(
         suffix: docContext.completeSuffix.slice(0, MAX_PREFIX_SUFFIX_SIZE_BYTES),
         triggerLine: position.line,
         triggerCharacter: position.character,
-        context: inlineContextParams.context.map(({ identifier, content, startLine, endLine, uri }) => ({
-            identifier,
-            content,
-            startLine,
-            endLine,
-            filePath: displayPathWithoutWorkspaceFolderPrefix(uri),
-        })),
+        context: inlineContextParams.context.map(
+            ({ identifier, content, startLine, endLine, uri, metadata }) => ({
+                identifier,
+                content,
+                startLine,
+                endLine,
+                filePath: displayPathWithoutWorkspaceFolderPrefix(uri),
+                metadata,
+            })
+        ),
     }
 }
 
@@ -800,6 +803,7 @@ function suggestionDocumentDiffTracker(
     const documentText = document.getText(trackingRange)
 
     const persistenceTimeoutList = [
+        10 * 1000, // 10 seconds
         20 * 1000, // 20 seconds
         60 * 1000, // 60 seconds
         120 * 1000, // 120 seconds

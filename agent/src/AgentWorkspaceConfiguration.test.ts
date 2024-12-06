@@ -31,9 +31,6 @@ describe('AgentWorkspaceConfiguration', () => {
           "cody.telemetry": {
             "level": "agent"
           },
-          "editor": {
-            "insertSpaces": true
-          },
           "foo.bar": {
             "baz.qux": true,
             "baz": {
@@ -189,6 +186,11 @@ describe('AgentWorkspaceConfiguration', () => {
 
             const secondGet = config.get('test.object')
             expect(secondGet.key).toBe('value')
+        })
+
+        it('have some VSC defaults', () => {
+            expect(config.get('editor.insertSpaces')).toBe(true)
+            expect(config.get('search.useIgnoreFiles')).toBe(true)
         })
     })
 

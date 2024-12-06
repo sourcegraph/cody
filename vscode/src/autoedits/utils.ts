@@ -1,4 +1,6 @@
-import { lines } from '../completions/text-processing'
+import { getNewLineChar, lines } from '../completions/text-processing'
+
+import { getDecorationInfo } from './renderer/diff-utils'
 
 export function fixFirstLineIndentation(source: string, target: string): string {
     // Check the first line indentation of source string and replaces in target string.
@@ -7,7 +9,7 @@ export function fixFirstLineIndentation(source: string, target: string): string 
     const firstLineMatch = codeToRewriteLines[0].match(/^(\s*)/)
     const firstLineIndentation = firstLineMatch ? firstLineMatch[1] : ''
     completionLines[0] = firstLineIndentation + completionLines[0].trimStart()
-    const completion = completionLines.join('\n')
+    const completion = completionLines.join(getNewLineChar(source))
     return completion
 }
 
@@ -35,7 +37,7 @@ export function extractInlineCompletionFromRewrittenCode(
     const completion = predictionWithoutPrefix.slice(0, endIndex)
     const completionNumLines = lines(completion).length
     const completionWithSameLineSuffix = lines(predictionWithoutPrefix).slice(0, completionNumLines)
-    return completionWithSameLineSuffix.join('\n')
+    return completionWithSameLineSuffix.join(getNewLineChar(codeToRewritePrefix + codeToRewriteSuffix))
 }
 
 export function trimExtraNewLineCharsFromSuggestion(
@@ -54,6 +56,29 @@ export function trimExtraNewLineCharsFromSuggestion(
 function getNumberOfNewLineCharsAtSuffix(text: string): number {
     const match = text.match(/\n+$/)
     return match ? match[0].length : 0
+}
+
+export function isPredictedTextAlreadyInSuffix({
+    codeToRewrite,
+    prediction,
+    suffix,
+}: {
+    codeToRewrite: string
+    prediction: string
+    suffix: string
+}): boolean {
+    const { addedLines } = getDecorationInfo(codeToRewrite, prediction)
+
+    if (addedLines.length === 0) {
+        return false
+    }
+
+    const allAddedLinesText = addedLines
+        .sort((a, b) => a.lineNumber - b.lineNumber)
+        .map(line => line.text)
+        .join(getNewLineChar(codeToRewrite))
+
+    return suffix.startsWith(allAddedLinesText)
 }
 
 /**

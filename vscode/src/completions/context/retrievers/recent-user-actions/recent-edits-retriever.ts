@@ -1,21 +1,31 @@
-import { PromptString, contextFiltersProvider } from '@sourcegraph/cody-shared'
+import { type PromptString, contextFiltersProvider } from '@sourcegraph/cody-shared'
 import type { AutocompleteContextSnippet } from '@sourcegraph/cody-shared'
-import { structuredPatch } from 'diff'
+import type { AutocompleteContextSnippetMetadataFields } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
-import { displayPath } from '../../../../../../lib/shared/src/editor/displayPath'
+import { getPositionAfterTextInsertion } from '../../../text-processing/utils'
 import type { ContextRetriever, ContextRetrieverOptions } from '../../../types'
 import { RetrieverIdentifier, type ShouldUseContextParams, shouldBeUsedAsContext } from '../../utils'
+import type {
+    DiffHunk,
+    RecentEditsRetrieverDiffStrategy,
+    TextDocumentChange,
+} from './recent-edits-diff-helpers/recent-edits-diff-strategy'
+import { applyTextDocumentChanges } from './recent-edits-diff-helpers/utils'
 
 interface TrackedDocument {
     content: string
     languageId: string
     uri: vscode.Uri
-    changes: { timestamp: number; change: vscode.TextDocumentContentChangeEvent }[]
+    changes: TextDocumentChange[]
+}
+
+interface DiffHunkWithStrategy extends DiffHunk {
+    diffStrategyMetadata: AutocompleteContextSnippetMetadataFields
 }
 
 export interface RecentEditsRetrieverOptions {
     maxAgeMs: number
-    addLineNumbersForDiff?: boolean
+    diffStrategyList: RecentEditsRetrieverDiffStrategy[]
 }
 
 interface DiffAcrossDocuments {
@@ -23,6 +33,7 @@ interface DiffAcrossDocuments {
     uri: vscode.Uri
     languageId: string
     latestChangeTimestamp: number
+    diffStrategyMetadata: AutocompleteContextSnippetMetadataFields
 }
 
 export class RecentEditsRetriever implements vscode.Disposable, ContextRetriever {
@@ -32,7 +43,7 @@ export class RecentEditsRetriever implements vscode.Disposable, ContextRetriever
     public identifier = RetrieverIdentifier.RecentEditsRetriever
     private disposables: vscode.Disposable[] = []
     private readonly maxAgeMs: number
-    private readonly addLineNumbersForDiff: boolean
+    private readonly diffStrategyList: RecentEditsRetrieverDiffStrategy[]
 
     constructor(
         options: RecentEditsRetrieverOptions,
@@ -42,16 +53,18 @@ export class RecentEditsRetriever implements vscode.Disposable, ContextRetriever
         > = vscode.workspace
     ) {
         this.maxAgeMs = options.maxAgeMs
-        this.addLineNumbersForDiff = options.addLineNumbersForDiff ?? false
+        this.diffStrategyList = options.diffStrategyList
+
         // Track the already open documents when editor was opened
         for (const document of vscode.workspace.textDocuments) {
             this.trackDocument(document)
         }
-        // Set up event listeners for changes
-        this.disposables.push(workspace.onDidChangeTextDocument(this.onDidChangeTextDocument.bind(this)))
-        this.disposables.push(workspace.onDidRenameFiles(this.onDidRenameFiles.bind(this)))
-        this.disposables.push(workspace.onDidDeleteFiles(this.onDidDeleteFiles.bind(this)))
-        this.disposables.push(workspace.onDidOpenTextDocument(this.onDidOpenTextDocument.bind(this)))
+        this.disposables.push(
+            workspace.onDidChangeTextDocument(this.onDidChangeTextDocument.bind(this)),
+            workspace.onDidRenameFiles(this.onDidRenameFiles.bind(this)),
+            workspace.onDidDeleteFiles(this.onDidDeleteFiles.bind(this)),
+            workspace.onDidOpenTextDocument(this.onDidOpenTextDocument.bind(this))
+        )
     }
 
     public async retrieve(options: ContextRetrieverOptions): Promise<AutocompleteContextSnippet[]> {
@@ -61,16 +74,20 @@ export class RecentEditsRetriever implements vscode.Disposable, ContextRetriever
         diffs.sort((a, b) => b.latestChangeTimestamp - a.latestChangeTimestamp)
 
         const autocompleteContextSnippets = []
+        const retrievalTriggerTime = Date.now()
         for (const diff of diffs) {
             const content = diff.diff.toString()
             const autocompleteSnippet = {
                 uri: diff.uri,
                 identifier: this.identifier,
                 content,
+                metadata: {
+                    timeSinceActionMs: retrievalTriggerTime - diff.latestChangeTimestamp,
+                    retrieverMetadata: diff.diffStrategyMetadata,
+                },
             } satisfies Omit<AutocompleteContextSnippet, 'startLine' | 'endLine'>
             autocompleteContextSnippets.push(autocompleteSnippet)
         }
-        // TODO: add `startLine` and `endLine` to `responses` or explicitly add
         // remove the startLine and endLine from the response similar to how we did
         // it for BFG.
         // @ts-ignore
@@ -81,26 +98,30 @@ export class RecentEditsRetriever implements vscode.Disposable, ContextRetriever
         const diffs: DiffAcrossDocuments[] = []
         const diffPromises = Array.from(this.trackedDocuments.entries()).map(
             async ([uri, trackedDocument]) => {
-                const diff = await this.getDiff(vscode.Uri.parse(uri))
-                if (diff && trackedDocument.changes.length > 0) {
-                    return {
-                        diff,
+                if (trackedDocument.changes.length === 0) {
+                    return null
+                }
+                const diffHunks = await this.getDiff(vscode.Uri.parse(uri))
+                if (diffHunks) {
+                    return diffHunks.map(diffHunk => ({
+                        diff: diffHunk.diff,
                         uri: trackedDocument.uri,
                         languageId: trackedDocument.languageId,
-                        latestChangeTimestamp: Math.max(
-                            ...trackedDocument.changes.map(c => c.timestamp)
-                        ),
-                    }
+                        latestChangeTimestamp: diffHunk.latestEditTimestamp,
+                        diffStrategyMetadata: diffHunk.diffStrategyMetadata,
+                    }))
                 }
                 return null
             }
         )
         const results = await Promise.all(diffPromises)
-        diffs.push(...results.filter((result): result is DiffAcrossDocuments => result !== null))
+        diffs.push(
+            ...results.filter((result): result is DiffAcrossDocuments[] => result !== null).flat()
+        )
         return diffs
     }
 
-    public filterCandidateDiffs(
+    private filterCandidateDiffs(
         allDiffs: DiffAcrossDocuments[],
         document: vscode.TextDocument
     ): DiffAcrossDocuments[] {
@@ -118,11 +139,7 @@ export class RecentEditsRetriever implements vscode.Disposable, ContextRetriever
         return filterCandidateDiffs
     }
 
-    public isSupportedForLanguageId(): boolean {
-        return true
-    }
-
-    public async getDiff(uri: vscode.Uri): Promise<PromptString | null> {
+    public async getDiff(uri: vscode.Uri): Promise<DiffHunkWithStrategy[] | null> {
         if (await contextFiltersProvider.isUriIgnored(uri)) {
             return null
         }
@@ -131,55 +148,25 @@ export class RecentEditsRetriever implements vscode.Disposable, ContextRetriever
         if (!trackedDocument) {
             return null
         }
-
-        const oldContent = trackedDocument.content
-        const newContent = applyChanges(
-            oldContent,
-            trackedDocument.changes.map(c => c.change)
-        )
-        if (this.addLineNumbersForDiff) {
-            return this.computeDiffWithLineNumbers(uri, oldContent, newContent)
-        }
-        return PromptString.fromGitDiff(uri, oldContent, newContent)
-    }
-
-    private computeDiffWithLineNumbers(
-        uri: vscode.Uri,
-        originalContent: string,
-        modifiedContent: string
-    ): PromptString {
-        const hunkDiffs = []
-        const filename = displayPath(uri)
-        const patch = structuredPatch(`a/${filename}`, `b/${filename}`, originalContent, modifiedContent)
-        for (const hunk of patch.hunks) {
-            const diffString = this.getDiffStringForHunkWithLineNumbers(hunk)
-            hunkDiffs.push(diffString)
-        }
-        const gitDiff = PromptString.fromStructuredGitDiff(uri, hunkDiffs.join('\nthen\n'))
-        return gitDiff
-    }
-
-    private getDiffStringForHunkWithLineNumbers(hunk: Diff.Hunk): string {
-        const lines = []
-        let oldLineNumber = hunk.oldStart
-        let newLineNumber = hunk.newStart
-        for (const line of hunk.lines) {
-            if (line.length === 0) {
-                continue
-            }
-            if (line[0] === '-') {
-                lines.push(`${oldLineNumber}${line[0]}| ${line.slice(1)}`)
-                oldLineNumber++
-            } else if (line[0] === '+') {
-                lines.push(`${newLineNumber}${line[0]}| ${line.slice(1)}`)
-                newLineNumber++
-            } else if (line[0] === ' ') {
-                lines.push(`${newLineNumber}${line[0]}| ${line.slice(1)}`)
-                oldLineNumber++
-                newLineNumber++
+        const diffHunks: DiffHunkWithStrategy[] = []
+        for (const diffStrategy of this.diffStrategyList) {
+            const hunks = diffStrategy.getDiffHunks({
+                uri: trackedDocument.uri,
+                oldContent: trackedDocument.content,
+                changes: trackedDocument.changes,
+            })
+            for (const hunk of hunks) {
+                diffHunks.push({
+                    ...hunk,
+                    diffStrategyMetadata: diffStrategy.getDiffStrategyMetadata(),
+                })
             }
         }
-        return lines.join('\n')
+        return diffHunks
+    }
+
+    public isSupportedForLanguageId(): boolean {
+        return true
     }
 
     private onDidChangeTextDocument(event: vscode.TextDocumentChangeEvent): void {
@@ -190,13 +177,24 @@ export class RecentEditsRetriever implements vscode.Disposable, ContextRetriever
 
         const now = Date.now()
         for (const change of event.contentChanges) {
+            const insertedRange = new vscode.Range(
+                change.range.start,
+                getPositionAfterTextInsertion(change.range.start, change.text)
+            )
             trackedDocument.changes.push({
                 timestamp: now,
                 change,
+                insertedRange,
             })
         }
 
         this.reconcileOutdatedChanges()
+    }
+
+    private onDidOpenTextDocument(document: vscode.TextDocument): void {
+        if (!this.trackedDocuments.has(document.uri.toString())) {
+            this.trackDocument(document)
+        }
     }
 
     private onDidRenameFiles(event: vscode.FileRenameEvent): void {
@@ -212,13 +210,6 @@ export class RecentEditsRetriever implements vscode.Disposable, ContextRetriever
     private onDidDeleteFiles(event: vscode.FileDeleteEvent): void {
         for (const uri of event.files) {
             this.trackedDocuments.delete(uri.toString())
-        }
-    }
-
-    public dispose(): void {
-        this.trackedDocuments.clear()
-        for (const disposable of this.disposables) {
-            disposable.dispose()
         }
     }
 
@@ -243,7 +234,7 @@ export class RecentEditsRetriever implements vscode.Disposable, ContextRetriever
             )
 
             const outdatedChanges = trackedDocument.changes.slice(0, firstNonOutdatedChangeIndex)
-            trackedDocument.content = applyChanges(
+            trackedDocument.content = applyTextDocumentChanges(
                 trackedDocument.content,
                 outdatedChanges.map(c => c.change)
             )
@@ -251,19 +242,10 @@ export class RecentEditsRetriever implements vscode.Disposable, ContextRetriever
         }
     }
 
-    private onDidOpenTextDocument(document: vscode.TextDocument): void {
-        if (!this.trackedDocuments.has(document.uri.toString())) {
-            this.trackDocument(document)
+    public dispose(): void {
+        this.trackedDocuments.clear()
+        for (const disposable of this.disposables) {
+            disposable.dispose()
         }
     }
-}
-
-function applyChanges(content: string, changes: vscode.TextDocumentContentChangeEvent[]): string {
-    for (const change of changes) {
-        content =
-            content.slice(0, change.rangeOffset) +
-            change.text +
-            content.slice(change.rangeOffset + change.rangeLength)
-    }
-    return content
 }

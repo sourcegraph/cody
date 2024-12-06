@@ -40,12 +40,12 @@ export const WelcomeMessage: FunctionComponent<WelcomeMessageProps> = ({
                 <PromptList
                     showSearch={false}
                     showFirstNItems={4}
-                    appearanceMode="chips-list"
-                    telemetryLocation="PromptsTab"
+                    recommendedOnly={true}
                     showCommandOrigins={true}
                     showOnlyPromptInsertableCommands={false}
                     showPromptLibraryUnsupportedMessage={false}
-                    recommendedOnly={true}
+                    appearanceMode="chips-list"
+                    telemetryLocation="WelcomeAreaPrompts"
                     onSelect={item => runAction(item, setView)}
                 />
 

@@ -1,18 +1,28 @@
 import type { Meta, StoryObj } from '@storybook/react'
 
 import { ContextItemSource } from '@sourcegraph/cody-shared'
+import type { ComponentProps } from 'react'
 import { URI } from 'vscode-uri'
 import { VSCodeStandaloneComponent } from '../../../storybook/VSCodeStoryDecorator'
-import { ContextCell } from './ContextCell'
+import { ContextCell, EditContextButtonChat, __ContextCellStorybookContext } from './ContextCell'
+
+const renderWithInitialOpen = (args: ComponentProps<typeof ContextCell>) => {
+    return (
+        <__ContextCellStorybookContext.Provider value={{ initialOpen: true }}>
+            <ContextCell {...args} />
+        </__ContextCellStorybookContext.Provider>
+    )
+}
 
 const meta: Meta<typeof ContextCell> = {
     title: 'cody/ContextCell',
     component: ContextCell,
     decorators: [VSCodeStandaloneComponent],
     args: {
-        __storybook__initialOpen: true,
         isForFirstMessage: true,
+        editContextNode: EditContextButtonChat,
     },
+    render: renderWithInitialOpen,
 }
 
 export default meta
@@ -142,6 +152,20 @@ export const ExcludedContext: Story = {
             },
         ],
         isForFirstMessage: true,
-        __storybook__initialOpen: true,
+    },
+}
+
+export const NoContextRequested: Story = {
+    args: {
+        contextItems: undefined,
+        resubmitWithRepoContext: () => Promise.resolve(),
+        isForFirstMessage: true,
+    },
+}
+
+export const NoContextFound: Story = {
+    args: {
+        contextItems: [],
+        isForFirstMessage: true,
     },
 }

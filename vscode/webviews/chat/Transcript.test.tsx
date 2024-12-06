@@ -23,6 +23,7 @@ const PROPS: Omit<ComponentProps<typeof Transcript>, 'transcript'> = {
     chatEnabled: true,
     postMessage: () => {},
     models: MOCK_MODELS,
+    setActiveChatContext: () => {},
 }
 
 vi.mock('@vscode/webview-ui-toolkit/react', () => ({
@@ -85,7 +86,12 @@ describe('Transcript', () => {
                 ]}
             />
         )
-        expectCells([{ message: 'Hello' }, { message: 'Hi' }, { message: '' }])
+        expectCells([
+            { message: 'Hello' },
+            { context: { files: 0 } },
+            { message: 'Hi' },
+            { message: '' },
+        ])
     })
 
     test('interaction with context', () => {
@@ -119,8 +125,10 @@ describe('Transcript', () => {
         )
         expectCells([
             { message: 'Foo' },
+            { context: {} },
             { message: 'Bar' },
             { message: 'Baz' },
+            { context: {} },
             { message: 'Qux' },
             { message: '' },
         ])
@@ -185,6 +193,7 @@ describe('Transcript', () => {
         )
         expectCells([
             { message: 'Foo' },
+            { context: {} },
             { message: { loading: true } },
             { message: '', canSubmit: true },
         ])
@@ -226,7 +235,12 @@ describe('Transcript', () => {
                 messageInProgress={{ speaker: 'assistant', text: ps`Bar` }}
             />
         )
-        expectCells([{ message: 'Foo' }, { message: 'Bar' }, { message: '', canSubmit: true }])
+        expectCells([
+            { message: 'Foo' },
+            { context: {} },
+            { message: 'Bar' },
+            { message: '', canSubmit: true },
+        ])
     })
 
     test('assistant message with error', () => {
@@ -239,7 +253,11 @@ describe('Transcript', () => {
                 ]}
             />
         )
-        expectCells([{ message: 'Foo' }, { message: 'Model\n\nRequest Failed: some error' }])
+        expectCells([
+            { message: 'Foo' },
+            { context: {} },
+            { message: 'Model\n\nRequest Failed: some error' },
+        ])
         expect(screen.queryByText('Try again with different context')).toBeNull()
     })
 
@@ -253,7 +271,12 @@ describe('Transcript', () => {
             '[role="row"]:last-child [data-lexical-editor="true"]'
         )! as EditorHTMLElement
         await typeInEditor(editor, 'qux')
-        expectCells([{ message: 'Foo' }, { message: 'Bar' }, { message: 'qux', canSubmit: true }])
+        expectCells([
+            { message: 'Foo' },
+            { context: {} },
+            { message: 'Bar' },
+            { message: 'qux', canSubmit: true },
+        ])
 
         rerender(
             <Transcript
@@ -264,7 +287,12 @@ describe('Transcript', () => {
         )
         await typeInEditor(editor, 'yap')
         expectCells(
-            [{ message: 'Foo' }, { message: 'Bar' }, { message: 'qux', canSubmit: true }],
+            [
+                { message: 'Foo' },
+                { context: {} },
+                { message: 'Bar' },
+                { message: 'qux', canSubmit: true },
+            ],
             container
         )
     })
@@ -295,7 +323,12 @@ describe('Transcript', () => {
                 ]}
             />
         )
-        expectCells([{ message: 'Foo' }, { message: 'Bar' }, { message: 'xyz', canSubmit: true }])
+        expectCells([
+            { message: 'Foo' },
+            { context: {} },
+            { message: 'Bar' },
+            { message: 'xyz', canSubmit: true },
+        ])
     })
 })
 
@@ -345,7 +378,9 @@ function expectCells(expectedCells: CellMatcher[], containerElement?: HTMLElemen
             expect(cell).toHaveAttribute('data-testid', 'context')
             if (expectedCell.context.files !== undefined) {
                 expect(cell.querySelector('button')).toHaveAccessibleDescription(
-                    `${expectedCell.context.files} item`
+                    expectedCell.context.files === 1
+                        ? `${expectedCell.context.files} item`
+                        : `${expectedCell.context.files} items`
                 )
             } else if (expectedCell.context.loading) {
                 expect(cell.querySelector('[role="status"]')).toHaveAttribute('aria-busy')

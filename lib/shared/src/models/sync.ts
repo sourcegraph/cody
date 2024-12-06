@@ -198,7 +198,7 @@ export function syncModels({
                                         ),
                                         featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.DeepCody)
                                     ).pipe(
-                                        switchMap(([hasEarlyAccess, deepCodyEnabled]) => {
+                                        switchMap(([hasEarlyAccess, hasDeepCodyFlag]) => {
                                             // TODO(sqs): remove waitlist from localStorage when user has access
                                             const isOnWaitlist = config.clientState.waitlist_o1
                                             if (isDotComUser && (hasEarlyAccess || isOnWaitlist)) {
@@ -218,12 +218,19 @@ export function syncModels({
                                                 })
                                             }
 
-                                            // DEEP CODY - available to users with feature flag enabled only.
-                                            // TODO(bee): remove once deepCody is enabled for all users.
+                                            // Replace user's current sonnet model with deep-cody model.
                                             const sonnetModel = data.primaryModels.find(m =>
                                                 m.id.includes('sonnet')
                                             )
-                                            if (deepCodyEnabled && sonnetModel) {
+                                            // DEEP CODY is enabled for all PLG users.
+                                            // Enterprise users need to have the feature flag enabled.
+                                            const isDeepCodyEnabled = isDotComUser || hasDeepCodyFlag
+                                            if (
+                                                isDeepCodyEnabled &&
+                                                sonnetModel &&
+                                                // Ensure the deep-cody model is only added once.
+                                                !data.primaryModels.some(m => m.id.includes('deep-cody'))
+                                            ) {
                                                 const DEEPCODY_MODEL =
                                                     getExperimentalClientModelByFeatureFlag(
                                                         FeatureFlag.DeepCody
@@ -232,18 +239,6 @@ export function syncModels({
                                                     ...maybeAdjustContextWindows([DEEPCODY_MODEL]).map(
                                                         createModelFromServerModel
                                                     )
-                                                )
-                                                // Update model preferences for chat to DEEP CODY once on first sync.
-                                                data.preferences!.defaults.edit =
-                                                    data.preferences!.defaults.chat
-                                                data.preferences!.defaults.chat = DEEPCODY_MODEL.modelRef
-                                                return userModelPreferences.pipe(
-                                                    take(1),
-                                                    tap(preferences => {
-                                                        preferences.selected[ModelUsage.Chat] =
-                                                            DEEPCODY_MODEL.modelRef
-                                                    }),
-                                                    map(() => data)
                                                 )
                                             }
 

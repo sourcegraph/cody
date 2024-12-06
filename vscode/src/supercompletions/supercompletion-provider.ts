@@ -1,5 +1,6 @@
 import type { ChatClient } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
+import { UnifiedDiffStrategy } from '../completions/context/retrievers/recent-user-actions/recent-edits-diff-helpers/unified-diff'
 import { RecentEditsRetriever } from '../completions/context/retrievers/recent-user-actions/recent-edits-retriever'
 import type { CodyStatusBar } from '../services/StatusBar'
 import { type Supercompletion, getSupercompletions } from './get-supercompletion'
@@ -30,6 +31,7 @@ export class SupercompletionProvider implements vscode.Disposable {
         this.recentEditsRetriever = new RecentEditsRetriever(
             {
                 maxAgeMs: EDIT_HISTORY_TIMEOUT,
+                diffStrategyList: [new UnifiedDiffStrategy({ addLineNumbers: false })],
             },
             workspace
         )

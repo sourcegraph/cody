@@ -11,6 +11,7 @@ import {
 } from '@sourcegraph/cody-shared'
 
 import type { ChatModelProviderConfig } from '@sourcegraph/cody-shared/src/models/sync'
+import { DefaultShellContextConfig } from './commands/context/config'
 import { CONFIG_KEY, type ConfigKeys } from './configuration-keys'
 import { localStorage } from './services/LocalStorageProvider'
 
@@ -92,6 +93,12 @@ export function getConfiguration(
         commandHints: config.get(CONFIG_KEY.commandHintsEnabled, false),
 
         /**
+         * Instance must have feature flag enabled to use this feature.
+         * Allows AI Agent to run shell commands automatically.
+         */
+        agenticContext: config.get(CONFIG_KEY.agenticContext, { shell: DefaultShellContextConfig }),
+
+        /**
          * Hidden settings for internal use only.
          */
 
@@ -112,7 +119,7 @@ export function getConfiguration(
         experimentalTracing: getHiddenSetting('experimental.tracing', false),
 
         experimentalSupercompletions: getHiddenSetting('experimental.supercompletions', false),
-        experimentalAutoeditsEnabled: getHiddenSetting('experimental.autoedits.enabled', false),
+        experimentalAutoeditsEnabled: getHiddenSetting('experimental.autoedits.enabled', undefined),
         experimentalAutoeditsConfigOverride: getHiddenSetting(
             'experimental.autoedits.config.override',
             undefined

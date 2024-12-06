@@ -15,7 +15,6 @@ interface TrackedViewPort {
 interface RecentViewPortRetrieverOptions {
     maxTrackedViewPorts: number
     maxRetrievedViewPorts: number
-    window?: Pick<typeof vscode.window, 'onDidChangeTextEditorVisibleRanges'>
 }
 
 export class RecentViewPortRetriever implements vscode.Disposable, ContextRetriever {
@@ -24,23 +23,26 @@ export class RecentViewPortRetriever implements vscode.Disposable, ContextRetrie
     private viewportsByDocumentUri: LRUCache<string, TrackedViewPort>
     private readonly maxTrackedViewPorts: number
     private readonly maxRetrievedViewPorts: number
-    private window: Pick<typeof vscode.window, 'onDidChangeTextEditorVisibleRanges'>
+    private activeTextEditor: vscode.TextEditor | undefined
 
-    constructor({
-        maxTrackedViewPorts,
-        maxRetrievedViewPorts,
-        window = vscode.window,
-    }: RecentViewPortRetrieverOptions) {
-        this.maxTrackedViewPorts = maxTrackedViewPorts
-        this.maxRetrievedViewPorts = maxRetrievedViewPorts
-        this.window = window
+    constructor(
+        options: RecentViewPortRetrieverOptions,
+        readonly window: Pick<
+            typeof vscode.window,
+            'onDidChangeTextEditorVisibleRanges' | 'onDidChangeActiveTextEditor' | 'activeTextEditor'
+        > = vscode.window
+    ) {
+        this.maxTrackedViewPorts = options.maxTrackedViewPorts
+        this.maxRetrievedViewPorts = options.maxRetrievedViewPorts
         this.viewportsByDocumentUri = new LRUCache<string, TrackedViewPort>({
             max: this.maxTrackedViewPorts,
         })
+        this.activeTextEditor = window.activeTextEditor
         this.disposables.push(
-            this.window.onDidChangeTextEditorVisibleRanges(
+            window.onDidChangeTextEditorVisibleRanges(
                 debounce(this.onDidChangeTextEditorVisibleRanges.bind(this), 300)
-            )
+            ),
+            window.onDidChangeActiveTextEditor(this.onDidChangeActiveTextEditor.bind(this))
         )
     }
 
@@ -57,10 +59,14 @@ export class RecentViewPortRetriever implements vscode.Disposable, ContextRetrie
                 startLine: viewPort.visibleRange.start.line,
                 endLine: viewPort.visibleRange.end.line,
                 identifier: this.identifier,
+                metadata: {
+                    timeSinceActionMs: Date.now() - viewPort.lastAccessTimestamp,
+                },
             }
         })
         return Promise.all(snippetPromises)
     }
+
     private getValidViewPorts(document: vscode.TextDocument): TrackedViewPort[] {
         const currentFileUri = document.uri.toString()
         const currentLanguageId = document.languageId
@@ -82,8 +88,26 @@ export class RecentViewPortRetriever implements vscode.Disposable, ContextRetrie
 
         return sortedViewPorts
     }
+
     public isSupportedForLanguageId(): boolean {
         return true
+    }
+
+    private onDidChangeActiveTextEditor(editor: vscode.TextEditor | undefined): void {
+        if (this.activeTextEditor) {
+            // Update the previous editor which was active before this one
+            // Most of the property would remain same, but lastAccessTimestamp would be updated on the update
+            this.updateTrackedViewPort(
+                this.activeTextEditor.document,
+                this.activeTextEditor.visibleRanges[0],
+                this.activeTextEditor.document.languageId
+            )
+        }
+        this.activeTextEditor = editor
+        if (!editor?.visibleRanges?.[0]) {
+            return
+        }
+        this.updateTrackedViewPort(editor.document, editor.visibleRanges[0], editor.document.languageId)
     }
 
     private onDidChangeTextEditorVisibleRanges(event: vscode.TextEditorVisibleRangesChangeEvent): void {
@@ -91,22 +115,22 @@ export class RecentViewPortRetriever implements vscode.Disposable, ContextRetrie
         if (visibleRanges.length === 0) {
             return
         }
-        const uri = textEditor.document.uri
-        const visibleRange = visibleRanges[0]
-        const languageId = textEditor.document.languageId
-        this.updateTrackedViewPort(uri, visibleRange, languageId)
+        this.updateTrackedViewPort(textEditor.document, visibleRanges[0], textEditor.document.languageId)
     }
 
     private updateTrackedViewPort(
-        uri: vscode.Uri,
+        document: vscode.TextDocument,
         visibleRange: vscode.Range,
         languageId: string
     ): void {
+        if (document.uri.scheme !== 'file') {
+            return
+        }
         const now = Date.now()
-        const key = uri.toString()
+        const key = document.uri.toString()
 
         this.viewportsByDocumentUri.set(key, {
-            uri,
+            uri: document.uri,
             visibleRange,
             languageId,
             lastAccessTimestamp: now,

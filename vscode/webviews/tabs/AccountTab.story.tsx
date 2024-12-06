@@ -16,11 +16,7 @@ const meta: Meta<typeof AccountTab> = {
         story => <div style={{ maxWidth: '700px', margin: '2rem' }}>{story()}</div>,
         VSCodeStandaloneComponent,
     ],
-    args: {
-        setView: () => {
-            console.log('setView called')
-        },
-    },
+    args: {},
 }
 
 export default meta

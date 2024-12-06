@@ -13,13 +13,15 @@ import type { RetrievedContextResults } from './completions-context-ranker'
 import { JaccardSimilarityRetriever } from './retrievers/jaccard-similarity/jaccard-similarity-retriever'
 import { DiagnosticsRetriever } from './retrievers/recent-user-actions/diagnostics-retriever'
 import { RecentCopyRetriever } from './retrievers/recent-user-actions/recent-copy'
+import { LineLevelDiffStrategy } from './retrievers/recent-user-actions/recent-edits-diff-helpers/line-level-diff'
+import { TwoStageUnifiedDiffStrategy } from './retrievers/recent-user-actions/recent-edits-diff-helpers/two-stage-unified-diff'
 import { RecentEditsRetriever } from './retrievers/recent-user-actions/recent-edits-retriever'
 import { RecentViewPortRetriever } from './retrievers/recent-user-actions/recent-view-port'
 import { RetrieverIdentifier } from './utils'
 
 interface RetrieverConfig {
     identifier: RetrieverIdentifier
-    maxSnippets: number
+    maxSnippets?: number
 }
 
 export class ContextRetrieverDataCollection implements vscode.Disposable {
@@ -30,11 +32,11 @@ export class ContextRetrieverDataCollection implements vscode.Disposable {
     private gitMetadataInstance = GitHubDotComRepoMetadata.getInstance()
 
     private readonly retrieverConfigs: RetrieverConfig[] = [
-        { identifier: RetrieverIdentifier.RecentCopyRetriever, maxSnippets: 1 },
-        { identifier: RetrieverIdentifier.RecentEditsRetriever, maxSnippets: 15 },
+        // Recent edits can be very granual at line level, so the individual changes can be very small but there can lots of changes.
+        // So, we avoid the limit for recent edits, but the size is handled by the token limits.
+        { identifier: RetrieverIdentifier.RecentEditsRetriever },
         { identifier: RetrieverIdentifier.DiagnosticsRetriever, maxSnippets: 15 },
         { identifier: RetrieverIdentifier.RecentViewPortRetriever, maxSnippets: 10 },
-        { identifier: RetrieverIdentifier.JaccardSimilarityRetriever, maxSnippets: 15 },
     ]
 
     constructor() {
@@ -106,11 +108,49 @@ export class ContextRetrieverDataCollection implements vscode.Disposable {
             case RetrieverIdentifier.RecentEditsRetriever:
                 return new RecentEditsRetriever({
                     maxAgeMs: 10 * 60 * 1000,
+                    diffStrategyList: [
+                        // Only use the last event as a short term diff.
+                        new TwoStageUnifiedDiffStrategy({
+                            longTermContextLines: 3,
+                            shortTermContextLines: 3,
+                            minShortTermEvents: 1,
+                            minShortTermTimeMs: 0,
+                        }),
+                        // Use atleast last 30 seconds of edits as short term diff
+                        new TwoStageUnifiedDiffStrategy({
+                            longTermContextLines: 3,
+                            shortTermContextLines: 3,
+                            minShortTermEvents: 1,
+                            minShortTermTimeMs: 30 * 1000, // 30 seconds
+                        }),
+                        // Use non-overlapping lines combination for long term diffs.
+                        new LineLevelDiffStrategy({
+                            contextLines: 3,
+                            longTermDiffCombinationStrategy: 'lines-based',
+                            minShortTermEvents: 1,
+                            minShortTermTimeMs: 30 * 1000, // 30 seconds
+                        }),
+                        // Use unified diff for long term changes, and line based diff for short term changes.
+                        new LineLevelDiffStrategy({
+                            contextLines: 3,
+                            longTermDiffCombinationStrategy: 'unified-diff',
+                            minShortTermEvents: 1,
+                            minShortTermTimeMs: 2 * 60 * 1000, // 2 minutes
+                        }),
+                        // Use raw line based changes for all the diff calculation.
+                        new LineLevelDiffStrategy({
+                            contextLines: 3,
+                            longTermDiffCombinationStrategy: undefined,
+                            minShortTermEvents: 1,
+                            minShortTermTimeMs: 0,
+                        }),
+                    ],
                 })
             case RetrieverIdentifier.DiagnosticsRetriever:
                 return new DiagnosticsRetriever({
-                    contextLines: 3,
-                    useXMLForPromptRendering: true,
+                    contextLines: 0,
+                    useXMLForPromptRendering: false,
+                    useCaretToIndicateErrorLocation: false,
                 })
             case RetrieverIdentifier.RecentViewPortRetriever:
                 return new RecentViewPortRetriever({

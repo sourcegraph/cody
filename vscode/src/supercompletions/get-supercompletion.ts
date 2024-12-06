@@ -43,11 +43,11 @@ export async function* getSupercompletions({
         return null
     }
 
-    const diff = await recentEditsRetriever.getDiff(document.uri)
-    if (diff === null) {
+    const diffHunks = await recentEditsRetriever.getDiff(document.uri)
+    if (diffHunks === null || diffHunks.length === 0) {
         return null
     }
-
+    const diff = diffHunks[0].diff
     const messages = buildInteraction(document, diff)
 
     for await (const rawChange of generateRawChanges(chat, messages, abortSignal)) {

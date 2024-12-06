@@ -7,6 +7,7 @@ import type {
     CodyIDE,
     ContextItem,
     ContextItemSource,
+    PromptMode,
     RangeData,
     RequestMessage,
     ResponseMessage,
@@ -95,6 +96,12 @@ export type WebviewMessage =
           code: string
           instruction?: string | undefined | null
           fileName?: string | undefined | null
+          traceparent?: string | undefined | null
+      }
+    | {
+          command: 'trace-export'
+          // The traceSpan is a JSON-encoded string representing the trace data.
+          traceSpanEncodedJson: string
       }
     | {
           command: 'smartApplyAccept'
@@ -172,6 +179,10 @@ export type ExtensionMessage =
           setLastHumanInputIntent?: ChatMessage['intent'] | null | undefined
           smartApplyResult?: SmartApplyResult | undefined | null
           submitHumanInput?: boolean | undefined | null
+          setPromptAsInput?:
+              | { text: string; mode?: PromptMode | undefined | null; autoSubmit: boolean }
+              | undefined
+              | null
       }
     | ({ type: 'attribution' } & ExtensionAttributionMessage)
     | { type: 'rpc/response'; message: ResponseMessage }
@@ -196,6 +207,7 @@ export interface WebviewSubmitMessage extends WebviewContextMessage {
     intent?: ChatMessage['intent'] | undefined | null
     intentScores?: { intent: string; score: number }[] | undefined | null
     manuallySelectedIntent?: boolean | undefined | null
+    traceparent?: string | undefined | null
 }
 
 interface WebviewEditMessage extends WebviewContextMessage {
@@ -231,6 +243,7 @@ export interface ConfigurationSubsetForWebview
     webviewType?: WebviewType | undefined | null
     // Whether support running multiple webviews (e.g. sidebar w/ multiple editor panels).
     multipleWebviewsEnabled?: boolean | undefined | null
+    endpointHistory?: string[] | undefined | null
 }
 
 /**

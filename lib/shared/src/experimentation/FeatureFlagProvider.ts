@@ -54,6 +54,8 @@ export enum FeatureFlag {
     CodyAutocompleteContextExperimentVariant4 = 'cody-autocomplete-context-experiment-variant-4',
     CodyAutocompleteContextExperimentControl = 'cody-autocomplete-context-experiment-control',
 
+    CodyAutoeditExperimentEnabledFeatureFlag = 'cody-autoedit-experiment-enabled-flag',
+
     // Enables gpt-4o-mini as a default Edit model
     CodyEditDefaultToGpt4oMini = 'cody-edit-default-to-gpt-4o-mini',
 
@@ -90,13 +92,23 @@ export enum FeatureFlag {
      */
     CodyPromptsV2 = 'prompt-creation-v2',
 
-    /** Whether user has access to the experimental Cody Reflection / Deep Cody feature. */
-    DeepCody = 'cody-deep-reflection',
+    /** Whether user has access to the experimental Deep Cody feature.
+     * This replaces the old 'cody-deep-reflection' that was used for internal testing.
+     */
+    DeepCody = 'deep-cody',
+
+    /** Enable Shell Context for Deep Cody */
+    DeepCodyShellContext = 'deep-cody-shell-context',
 
     /**
      * Whether the current repo context chip is shown in the chat input by default
      */
     NoDefaultRepoChip = 'no-default-repo-chip',
+
+    /**
+     * Whether the user will see the CTA about upgrading to Sourcegraph Teams
+     */
+    SourcegraphTeamsUpgradeCTA = 'teams-upgrade-available-cta',
 }
 
 const ONE_HOUR = 60 * 60 * 1000

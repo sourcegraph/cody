@@ -19,6 +19,7 @@ import {
 } from '@sourcegraph/cody-shared'
 import { type Observable, map } from 'observable-fns'
 import { isSourcegraphToken } from '../chat/protocol'
+import type { GitHubDotComRepoMetaData } from '../repository/githubRepoMetadata'
 import { EventEmitter } from '../testutils/mocks'
 import { secretStorage } from './SecretStorageProvider'
 
@@ -32,6 +33,7 @@ class LocalStorage implements LocalStorageForModelPreferences {
     protected readonly CODY_ENDPOINT_HISTORY = 'SOURCEGRAPH_CODY_ENDPOINT_HISTORY'
     protected readonly CODY_ENROLLMENT_HISTORY = 'SOURCEGRAPH_CODY_ENROLLMENTS'
     protected readonly LAST_USED_CHAT_MODALITY = 'cody-last-used-chat-modality'
+    protected readonly GIT_REPO_ACCESSIBILITY_KEY = 'cody-github-repo-metadata'
     public readonly ANONYMOUS_USER_ID_KEY = 'sourcegraphAnonymousUid'
     public readonly LAST_USED_ENDPOINT = 'SOURCEGRAPH_CODY_ENDPOINT'
     private readonly MODEL_PREFERENCES_KEY = 'cody-model-preferences'
@@ -97,7 +99,7 @@ class LocalStorage implements LocalStorageForModelPreferences {
         const endpoint = this.storage.get<string | null>(this.LAST_USED_ENDPOINT, null)
         // Clear last used endpoint if it is a Sourcegraph token
         if (endpoint && isSourcegraphToken(endpoint)) {
-            this.deleteEndpoint()
+            this.deleteEndpoint(endpoint)
             return null
         }
         return endpoint
@@ -135,15 +137,27 @@ class LocalStorage implements LocalStorageForModelPreferences {
         this.onChange.fire()
     }
 
-    public async deleteEndpoint(): Promise<void> {
-        await this.set(this.LAST_USED_ENDPOINT, null)
+    public async deleteEndpoint(endpoint: string): Promise<void> {
+        await this.set(endpoint, null)
+        await this.deleteEndpointFromHistory(endpoint)
     }
 
     // Deletes and returns the endpoint history
     public async deleteEndpointHistory(): Promise<string[]> {
         const history = this.getEndpointHistory()
-        await Promise.all([this.deleteEndpoint(), this.set(this.CODY_ENDPOINT_HISTORY, null)])
+        await Promise.all([
+            this.deleteEndpoint(this.LAST_USED_ENDPOINT),
+            this.set(this.CODY_ENDPOINT_HISTORY, null),
+        ])
         return history || []
+    }
+
+    // Deletes and returns the endpoint history
+    public async deleteEndpointFromHistory(endpoint: string): Promise<void> {
+        const history = this.getEndpointHistory()
+        const historySet = new Set(history)
+        historySet.delete(endpoint)
+        await this.set(this.CODY_ENDPOINT_HISTORY, [...historySet])
     }
 
     public getEndpointHistory(): string[] | null {
@@ -232,6 +246,19 @@ class LocalStorage implements LocalStorageForModelPreferences {
     public getMinionHistory(authStatus: AuthStatus): string | null {
         // TODO(beyang): SECURITY - use authStatus
         return this.get<string | null>(this.KEY_LOCAL_MINION_HISTORY)
+    }
+
+    public async setGitHubRepoAccessibility(data: GitHubDotComRepoMetaData[]): Promise<void> {
+        await this.set(this.GIT_REPO_ACCESSIBILITY_KEY, data)
+    }
+
+    public getGitHubRepoAccessibility(): GitHubDotComRepoMetaData[] {
+        const ONE_DAY_IN_MS = 24 * 60 * 60 * 1000
+        const currentTime = Date.now()
+
+        return (this.get<GitHubDotComRepoMetaData[]>(this.GIT_REPO_ACCESSIBILITY_KEY) ?? []).filter(
+            ({ timestamp }) => currentTime - timestamp <= ONE_DAY_IN_MS
+        )
     }
 
     public async removeChatHistory(authStatus: AuthenticatedAuthStatus): Promise<void> {
