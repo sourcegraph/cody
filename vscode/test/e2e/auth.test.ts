@@ -2,7 +2,7 @@ import { expect } from '@playwright/test'
 import { SERVER_URL, VALID_TOKEN, VALID_TOKEN_PERSON2 } from '../fixtures/mock-server'
 
 import { focusSidebar, getChatSidebarPanel } from './common'
-import { type ExpectedV2Events, signOut, test } from './helpers'
+import { type ExpectedV2Events, test } from './helpers'
 
 test.extend<ExpectedV2Events>({
     // list of V2 telemetry events we expect this test to log, add to this list as needed
@@ -40,8 +40,14 @@ test.extend<ExpectedV2Events>({
     await expect(sidebar!.getByText('Sign in to Sourcegraph')).not.toBeVisible()
     await expect(sidebar!.getByLabel('Chat message')).toBeVisible()
 
-    // Sign out.
-    await signOut(page)
+    // Sign out from user dropdown menu
+    await expect(sidebar!.getByRole('button', { name: 'New Chat' })).toBeVisible()
+    await expect(sidebar!.getByTestId('user-dropdown-menu')).toBeVisible()
+    await sidebar!.getByTestId('user-dropdown-menu').click()
+    await expect(sidebar!.getByRole('option', { name: 'Switch Account' })).toBeVisible()
+    await sidebar!.getByRole('option', { name: 'Sign Out' }).click()
+
+    await page.waitForTimeout(2000)
     await focusSidebar(page)
 
     // Makes sure the sign in page is loaded in the sidebar view with Cody: Chat as the heading
@@ -100,6 +106,8 @@ test.extend<ExpectedV2Events>({
 
         // Make sure the options are visible
         await expect(sidebar!.getByRole('option', { name: 'Extension Settings' })).toBeVisible()
+        await expect(sidebar!.getByRole('option', { name: 'Switch Account' })).toBeVisible()
+        await expect(sidebar!.getByRole('option', { name: 'Sign Out' })).toBeVisible()
         await expect(sidebar!.getByRole('option', { name: 'Help' })).toBeVisible()
 
         await sidebar!.getByRole('option', { name: 'Switch Account' }).click()

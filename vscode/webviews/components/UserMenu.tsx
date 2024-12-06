@@ -7,6 +7,7 @@ import {
     CircleHelpIcon,
     CircleXIcon,
     ExternalLinkIcon,
+    LogOutIcon,
     PlusIcon,
     Settings2Icon,
     UserCircleIcon,
@@ -107,9 +108,15 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
         setAddFormData({ endpoint: '', accessToken: '' })
     }, [])
 
-    const onRemoveEndpointClick = useCallback(
+    const onSignOutClick = useCallback(
         (selectedEndpoint: string): void => {
             if (endpointHistory.some(e => e === selectedEndpoint)) {
+                telemetryRecorder.recordEvent('cody.auth.logout', 'clicked', {
+                    billingMetadata: {
+                        product: 'cody',
+                        category: 'billable',
+                    },
+                })
                 getVSCodeAPI().postMessage({
                     command: 'auth',
                     authKind: 'signout',
@@ -120,7 +127,7 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
             setUserMenuView('main')
             setAddFormData({ endpoint: '', accessToken: '' })
         },
-        [endpointHistory]
+        [telemetryRecorder, endpointHistory]
     )
 
     return (
@@ -229,7 +236,7 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
                             <CommandGroup>
                                 <CommandItem
                                     onSelect={() => {
-                                        onRemoveEndpointClick(endpointToRemove)
+                                        onSignOutClick(endpointToRemove)
                                         close()
                                     }}
                                 >
@@ -268,22 +275,28 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
                                             }
                                             close()
                                         }}
+                                        className="tw-flex tw-items-center tw-justify-between"
                                     >
                                         {storedEndpoint === endpoint && (
-                                            <Badge className="tw-mr-2 tw-opacity-85 tw-text-sm">
+                                            <Badge className="tw-mr-2 tw-opacity-85 tw-text-sm tw-shrink-0">
                                                 Active
                                             </Badge>
                                         )}
-                                        <span className="tw-flex-grow">{storedEndpoint}</span>
-                                        <CircleXIcon
-                                            size={16}
-                                            strokeWidth={1.25}
-                                            className="tw-justify-end"
+                                        <span className="tw-flex-grow tw-truncate">
+                                            {storedEndpoint}
+                                        </span>
+                                        <Button
+                                            size="sm"
+                                            variant="text"
+                                            className="tw-ml-auto tw-p-0 !tw-w-fit"
                                             onClick={e => {
                                                 e.stopPropagation()
                                                 setEndpointToRemove(storedEndpoint)
+                                                setUserMenuView('remove')
                                             }}
-                                        />
+                                        >
+                                            <CircleXIcon size={16} strokeWidth={1.25} />
+                                        </Button>
                                     </CommandItem>
                                 ))}
                             </CommandGroup>
@@ -376,8 +389,11 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
                                     <span className="tw-flex-grow">Switch Account</span>
                                     <ChevronRightIcon size={16} strokeWidth={1.25} />
                                 </CommandItem>
+                                <CommandItem onSelect={() => onSignOutClick(endpoint)}>
+                                    <LogOutIcon size={16} strokeWidth={1.25} className="tw-mr-2" />
+                                    <span className="tw-flex-grow">Sign Out</span>
+                                </CommandItem>
                             </CommandGroup>
-
                             <CommandGroup>
                                 <CommandLink
                                     href="https://community.sourcegraph.com/"
@@ -403,7 +419,7 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
             )}
             popoverRootProps={{ onOpenChange }}
             popoverContentProps={{
-                className: 'tw-min-w-[200px] !tw-p-0',
+                className: '!tw-p-2',
                 onKeyDown: onKeyDown,
                 onCloseAutoFocus: event => {
                     event.preventDefault()
