@@ -1,5 +1,5 @@
 import type React from 'react'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef } from 'react'
 
 import type {
     AuthenticatedAuthStatus,
@@ -12,7 +12,6 @@ import type {
 import { Transcript, focusLastHumanMessageEditor } from './chat/Transcript'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 
-import type { Context } from '@opentelemetry/api'
 import { truncateTextStart } from '@sourcegraph/cody-shared/src/prompt/truncation'
 import { CHAT_INPUT_TOKEN_BUDGET } from '@sourcegraph/cody-shared/src/token/constants'
 import styles from './Chat.module.css'
@@ -20,9 +19,9 @@ import WelcomeFooter from './chat/components/WelcomeFooter'
 import { WelcomeMessage } from './chat/components/WelcomeMessage'
 import { ScrollDown } from './components/ScrollDown'
 import type { View } from './tabs'
-import { SpanManager } from './utils/spanManager'
-import { getTraceparentFromSpanContext, useTelemetryRecorder } from './utils/telemetry'
+import { useTelemetryRecorder } from './utils/telemetry'
 import { useUserAccountInfo } from './utils/useConfig'
+
 interface ChatboxProps {
     chatEnabled: boolean
     messageInProgress: ChatMessage | null
@@ -65,7 +64,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                 thumbsUp = 1,
                 thumbsDown = 0,
             }
-
             telemetryRecorder.recordEvent('cody.feedback', 'submit', {
                 metadata: {
                     feedbackType: text === 'thumbsUp' ? FeedbackType.thumbsUp : FeedbackType.thumbsDown,
@@ -94,10 +92,8 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
         (text: string, eventType: 'Button' | 'Keydown' = 'Button') => {
             const op = 'copy'
             // remove the additional /n added by the text area at the end of the text
-
             const code = eventType === 'Button' ? text.replace(/\n$/, '') : text
             // Log the event type and text to telemetry in chat view
-
             vscodeAPI.postMessage({
                 command: op,
                 eventType,
@@ -112,7 +108,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             return (text: string, newFile = false) => {
                 const op = newFile ? 'newFile' : 'insert'
                 // Log the event type and text to telemetry in chat view
-
                 vscodeAPI.postMessage({
                     command: op,
                     // remove the additional /n added by the text area at the end of the text
@@ -136,15 +131,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                 instruction?: PromptString,
                 fileName?: string
             ): void => {
-                const spanManager = new SpanManager('cody-webview')
-                const span = spanManager.startSpan('smartApplySubmit', {
-                    attributes: {
-                        sampled: true,
-                        'smartApply.id': id,
-                    },
-                })
-                const traceparent = getTraceparentFromSpanContext(span.spanContext())
-
                 vscodeAPI.postMessage({
                     command: 'smartApplySubmit',
                     id,
@@ -152,9 +138,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                     // remove the additional /n added by the text area at the end of the text
                     code: text.replace(/\n$/, ''),
                     fileName,
-                    traceparent,
                 })
-                span.end()
             },
             onAccept: (id: string) => {
                 vscodeAPI.postMessage({
@@ -225,7 +209,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
 
         focusLastHumanMessageEditor()
     }, [transcript])
-    const [activeChatContext, setActiveChatContext] = useState<Context>()
 
     return (
         <>
@@ -235,8 +218,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                 </div>
             )}
             <Transcript
-                activeChatContext={activeChatContext}
-                setActiveChatContext={setActiveChatContext}
                 transcript={transcript}
                 models={models}
                 messageInProgress={messageInProgress}
