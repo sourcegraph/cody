@@ -171,13 +171,6 @@ shutdown: [null, null]
 ```ts
 'graphql/getCurrentUserCodySubscription': [null, CurrentUserCodySubscription | null]
 ```
-<h2 id="graphql_logEvent"><a href="#graphql_logEvent" name="graphql_logEvent"><code>graphql/logEvent</code> (<img class="emoji" title=":arrow_right:" alt=":arrow_right:" src="https://github.githubassets.com/images/icons/emoji/unicode/27a1.png" height="20" width="20">)</a></h2>
-<p>Request sent from the client to client server.</p>
-
-
-```ts
-'graphql/logEvent': [event, null]
-```
 <h2 id="telemetry_recordEvent"><a href="#telemetry_recordEvent" name="telemetry_recordEvent"><code>telemetry/recordEvent</code> (<img class="emoji" title=":arrow_right:" alt=":arrow_right:" src="https://github.githubassets.com/images/icons/emoji/unicode/27a1.png" height="20" width="20">)</a></h2>
 <p>Request sent from the client to client server.</p>
 <p>Description: Record telemetry events.</p>
