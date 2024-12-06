@@ -96,7 +96,6 @@ export type WebviewMessage =
           code: string
           instruction?: string | undefined | null
           fileName?: string | undefined | null
-          traceparent?: string | undefined | null
       }
     | {
           command: 'trace-export'
@@ -207,7 +206,6 @@ export interface WebviewSubmitMessage extends WebviewContextMessage {
     intent?: ChatMessage['intent'] | undefined | null
     intentScores?: { intent: string; score: number }[] | undefined | null
     manuallySelectedIntent?: boolean | undefined | null
-    traceparent?: string | undefined | null
 }
 
 interface WebviewEditMessage extends WebviewContextMessage {

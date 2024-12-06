@@ -3,15 +3,12 @@ import * as vscode from 'vscode'
 import {
     type ChatClient,
     ClientConfigSingleton,
-    DEFAULT_EVENT_SOURCE,
     PromptString,
     currentSiteVersion,
-    extractContextFromTraceparent,
     firstResultFromOperation,
     modelsService,
     ps,
     telemetryRecorder,
-    wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
 
 import type { GhostHintDecorator } from '../commands/GhostHintDecorator'
@@ -20,7 +17,7 @@ import type { VSCodeEditor } from '../editor/vscode-editor'
 import { FixupController } from '../non-stop/FixupController'
 import type { FixupTask } from '../non-stop/FixupTask'
 
-import { context } from '@opentelemetry/api'
+import { DEFAULT_EVENT_SOURCE } from '@sourcegraph/cody-shared'
 import { isUriIgnoredByContextFilterWithNotification } from '../cody-ignore/context-filter'
 import type { ExtensionClient } from '../extension-client'
 import { ACTIVE_TASK_STATES } from '../non-stop/codelenses/constants'
@@ -239,203 +236,196 @@ export class EditManager implements vscode.Disposable {
         return task
     }
 
-    public async smartApplyEdit(args: SmartApplyArguments = {}): Promise<void> {
-        return context.with(extractContextFromTraceparent(args.configuration?.traceparent), async () => {
-            await wrapInActiveSpan('edit.smart-apply', async span => {
-                span.setAttribute('sampled', true)
-                span.setAttribute('continued', true)
-                const { configuration, source = 'chat' } = args
-                if (!configuration) {
-                    return
-                }
+    public async smartApplyEdit(args: SmartApplyArguments = {}): Promise<FixupTask | undefined> {
+        const { configuration, source = 'chat' } = args
+        if (!configuration) {
+            return
+        }
 
-                const document = configuration.document
-                if (await isUriIgnoredByContextFilterWithNotification(document.uri, 'edit')) {
-                    return
-                }
+        const document = configuration.document
+        if (await isUriIgnoredByContextFilterWithNotification(document.uri, 'edit')) {
+            return
+        }
 
-                const model =
-                    configuration.model ||
-                    (await firstResultFromOperation(modelsService.getDefaultEditModel()))
-                if (!model) {
-                    throw new Error('No default edit model found. Please set one.')
-                }
+        const model =
+            configuration.model || (await firstResultFromOperation(modelsService.getDefaultEditModel()))
+        if (!model) {
+            throw new Error('No default edit model found. Please set one.')
+        }
 
-                telemetryRecorder.recordEvent('cody.command.smart-apply', 'executed', {
-                    billingMetadata: {
-                        product: 'cody',
-                        category: 'core',
+        telemetryRecorder.recordEvent('cody.command.smart-apply', 'executed', {
+            billingMetadata: {
+                product: 'cody',
+                category: 'core',
+            },
+        })
+
+        const editor = await vscode.window.showTextDocument(document.uri)
+
+        if (args.configuration?.isNewFile) {
+            // We are creating a new file, this means we are only _adding_ new code and _inserting_ it into the document.
+            // We do not need to re-prompt the LLM for this, let's just add the code directly.
+            const task = await this.controller.createTask(
+                document,
+                configuration.instruction,
+                [],
+                new vscode.Range(0, 0, 0, 0),
+                'add',
+                'insert',
+                model,
+                source,
+                configuration.document.uri,
+                undefined,
+                {},
+                configuration.id
+            )
+
+            const legacyMetadata = {
+                intent: task.intent,
+                mode: task.mode,
+                source: task.source,
+            }
+            const { metadata, privateMetadata } = splitSafeMetadata(legacyMetadata)
+            telemetryRecorder.recordEvent('cody.command.edit', 'executed', {
+                metadata,
+                privateMetadata: {
+                    ...privateMetadata,
+                    model: task.model,
+                },
+                billingMetadata: {
+                    product: 'cody',
+                    category: 'core',
+                },
+            })
+
+            const provider = this.getProviderForTask(task)
+            await provider.applyEdit(configuration.replacement)
+            return task
+        }
+
+        // Apply some decorations to the editor, this showcases that Cody is working on the full file range
+        // of the document. We will narrow it down to a selection soon.
+        const documentRange = new vscode.Range(0, 0, document.lineCount, 0)
+        editor.setDecorations(SMART_APPLY_FILE_DECORATION, [documentRange])
+
+        // We need to extract the proposed code, provided by the LLM, so we can use it in future
+        // queries to ask the LLM to generate a selection, and then ultimately apply the edit.
+        const replacementCode = PromptString.unsafe_fromLLMResponse(configuration.replacement)
+
+        const versions = await currentSiteVersion()
+        if (!versions) {
+            throw new Error('unable to determine site version')
+        }
+
+        const selection = await getSmartApplySelection(
+            configuration.id,
+            configuration.instruction,
+            replacementCode,
+            configuration.document,
+            model,
+            this.options.chat,
+            versions.codyAPIVersion
+        )
+
+        // We finished prompting the LLM for the selection, we can now remove the "progress" decoration
+        // that indicated we where working on the full file.
+        editor.setDecorations(SMART_APPLY_FILE_DECORATION, [])
+
+        if (!selection) {
+            // We couldn't figure out the selection, let's inform the user and return early.
+            // TODO: Should we add a "Copy" button to this error? Then the user can copy the code directly.
+            void vscode.window.showErrorMessage(
+                'Unable to apply this change to the file. Please try applying this code manually'
+            )
+            telemetryRecorder.recordEvent('cody.smart-apply.selection', 'not-found')
+            return
+        }
+
+        telemetryRecorder.recordEvent('cody.smart-apply', 'selected', {
+            metadata: {
+                [selection.type]: 1,
+            },
+        })
+
+        // Move focus to the determined selection
+        editor.revealRange(selection.range, vscode.TextEditorRevealType.InCenter)
+
+        if (selection.range.isEmpty) {
+            let insertionRange = selection.range
+
+            if (
+                selection.type === 'insert' &&
+                document.lineAt(document.lineCount - 1).text.trim().length !== 0
+            ) {
+                // Inserting to the bottom of the file, but the last line is not empty
+                // Inject an additional new line for us to use as the insertion range.
+                await editor.edit(
+                    editBuilder => {
+                        editBuilder.insert(selection.range.start, '\n')
                     },
-                })
-
-                const editor = await vscode.window.showTextDocument(document.uri)
-
-                if (args.configuration?.isNewFile) {
-                    // We are creating a new file, this means we are only _adding_ new code and _inserting_ it into the document.
-                    // We do not need to re-prompt the LLM for this, let's just add the code directly.
-                    const task = await this.controller.createTask(
-                        document,
-                        configuration.instruction,
-                        [],
-                        new vscode.Range(0, 0, 0, 0),
-                        'add',
-                        'insert',
-                        model,
-                        source,
-                        configuration.document.uri,
-                        undefined,
-                        {},
-                        configuration.id
-                    )
-
-                    const legacyMetadata = {
-                        intent: task.intent,
-                        mode: task.mode,
-                        source: task.source,
-                    }
-                    const { metadata, privateMetadata } = splitSafeMetadata(legacyMetadata)
-                    telemetryRecorder.recordEvent('cody.command.edit', 'executed', {
-                        metadata,
-                        privateMetadata: {
-                            ...privateMetadata,
-                            model: task.model,
-                        },
-                        billingMetadata: {
-                            product: 'cody',
-                            category: 'core',
-                        },
-                    })
-
-                    const provider = this.getProviderForTask(task)
-                    await provider.applyEdit(configuration.replacement)
-                    return task
-                }
-
-                // Apply some decorations to the editor, this showcases that Cody is working on the full file range
-                // of the document. We will narrow it down to a selection soon.
-                const documentRange = new vscode.Range(0, 0, document.lineCount, 0)
-                editor.setDecorations(SMART_APPLY_FILE_DECORATION, [documentRange])
-
-                // We need to extract the proposed code, provided by the LLM, so we can use it in future
-                // queries to ask the LLM to generate a selection, and then ultimately apply the edit.
-                const replacementCode = PromptString.unsafe_fromLLMResponse(configuration.replacement)
-
-                const versions = await currentSiteVersion()
-                if (!versions) {
-                    throw new Error('unable to determine site version')
-                }
-
-                const selection = await getSmartApplySelection(
-                    configuration.id,
-                    configuration.instruction,
-                    replacementCode,
-                    configuration.document,
-                    model,
-                    this.options.chat,
-                    versions.codyAPIVersion
+                    { undoStopAfter: false, undoStopBefore: false }
                 )
 
-                // We finished prompting the LLM for the selection, we can now remove the "progress" decoration
-                // that indicated we where working on the full file.
-                editor.setDecorations(SMART_APPLY_FILE_DECORATION, [])
+                // Update the range to reflect the new end of document
+                insertionRange = document.lineAt(document.lineCount - 1).range
+            }
 
-                if (!selection) {
-                    // We couldn't figure out the selection, let's inform the user and return early.
-                    // TODO: Should we add a "Copy" button to this error? Then the user can copy the code directly.
-                    void vscode.window.showErrorMessage(
-                        'Unable to apply this change to the file. Please try applying this code manually'
-                    )
-                    telemetryRecorder.recordEvent('cody.smart-apply.selection', 'not-found')
-                    return
-                }
+            // We determined a selection, but it was empty. This means that we will be _adding_ new code
+            // and _inserting_ it into the document. We do not need to re-prompt the LLM for this, let's just
+            // add the code directly.
+            const task = await this.controller.createTask(
+                document,
+                configuration.instruction,
+                [],
+                insertionRange,
+                'add',
+                'insert',
+                model,
+                source,
+                configuration.document.uri,
+                undefined,
+                {},
+                configuration.id
+            )
 
-                telemetryRecorder.recordEvent('cody.smart-apply', 'selected', {
-                    metadata: {
-                        [selection.type]: 1,
-                    },
-                })
-
-                // Move focus to the determined selection
-                editor.revealRange(selection.range, vscode.TextEditorRevealType.InCenter)
-
-                if (selection.range.isEmpty) {
-                    let insertionRange = selection.range
-
-                    if (
-                        selection.type === 'insert' &&
-                        document.lineAt(document.lineCount - 1).text.trim().length !== 0
-                    ) {
-                        // Inserting to the bottom of the file, but the last line is not empty
-                        // Inject an additional new line for us to use as the insertion range.
-                        await editor.edit(
-                            editBuilder => {
-                                editBuilder.insert(selection.range.start, '\n')
-                            },
-                            { undoStopAfter: false, undoStopBefore: false }
-                        )
-
-                        // Update the range to reflect the new end of document
-                        insertionRange = document.lineAt(document.lineCount - 1).range
-                    }
-
-                    // We determined a selection, but it was empty. This means that we will be _adding_ new code
-                    // and _inserting_ it into the document. We do not need to re-prompt the LLM for this, let's just
-                    // add the code directly.
-                    const task = await this.controller.createTask(
-                        document,
-                        configuration.instruction,
-                        [],
-                        insertionRange,
-                        'add',
-                        'insert',
-                        model,
-                        source,
-                        configuration.document.uri,
-                        undefined,
-                        {},
-                        configuration.id
-                    )
-
-                    const legacyMetadata = {
-                        intent: task.intent,
-                        mode: task.mode,
-                        source: task.source,
-                    }
-                    const { metadata, privateMetadata } = splitSafeMetadata(legacyMetadata)
-                    telemetryRecorder.recordEvent('cody.command.edit', 'executed', {
-                        metadata,
-                        privateMetadata: {
-                            ...privateMetadata,
-                            model: task.model,
-                        },
-                        billingMetadata: {
-                            product: 'cody',
-                            category: 'core',
-                        },
-                    })
-
-                    const provider = this.getProviderForTask(task)
-                    await provider.applyEdit('\n' + configuration.replacement)
-                    return task
-                }
-
-                // We have a selection to replace, we re-prompt the LLM to generate the changes to ensure that
-                // we can reliably apply this edit.
-                // Just using the replacement code from the response is not enough, as it may contain parts that are not suitable to apply,
-                // e.g. // ...
-                return this.executeEdit({
-                    configuration: {
-                        id: configuration.id,
-                        document: configuration.document,
-                        range: selection.range,
-                        mode: 'edit',
-                        instruction: ps`Ensuring that you do not duplicate code that it outside of the selection, apply the following change:\n${replacementCode}`,
-                        model,
-                        intent: 'edit',
-                    },
-                    source,
-                })
+            const legacyMetadata = {
+                intent: task.intent,
+                mode: task.mode,
+                source: task.source,
+            }
+            const { metadata, privateMetadata } = splitSafeMetadata(legacyMetadata)
+            telemetryRecorder.recordEvent('cody.command.edit', 'executed', {
+                metadata,
+                privateMetadata: {
+                    ...privateMetadata,
+                    model: task.model,
+                },
+                billingMetadata: {
+                    product: 'cody',
+                    category: 'core',
+                },
             })
+
+            const provider = this.getProviderForTask(task)
+            await provider.applyEdit('\n' + configuration.replacement)
+            return task
+        }
+
+        // We have a selection to replace, we re-prompt the LLM to generate the changes to ensure that
+        // we can reliably apply this edit.
+        // Just using the replacement code from the response is not enough, as it may contain parts that are not suitable to apply,
+        // e.g. // ...
+        return this.executeEdit({
+            configuration: {
+                id: configuration.id,
+                document: configuration.document,
+                range: selection.range,
+                mode: 'edit',
+                instruction: ps`Ensuring that you do not duplicate code that it outside of the selection, apply the following change:\n${replacementCode}`,
+                model,
+                intent: 'edit',
+            },
+            source,
         })
     }
 
