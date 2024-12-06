@@ -412,7 +412,7 @@ export async function validateCredentials(
     logDebug('auth', `Authenticating to ${config.auth.serverEndpoint}...`)
 
     // Check if credentials are valid and if Cody is enabled for the credentials and endpoint.
-    const client = SourcegraphGraphQLAPIClient.withStaticConfig({
+    using client = SourcegraphGraphQLAPIClient.withStaticConfig({
         configuration: {
             customHeaders: config.configuration.customHeaders,
             telemetryLevel: 'off',
