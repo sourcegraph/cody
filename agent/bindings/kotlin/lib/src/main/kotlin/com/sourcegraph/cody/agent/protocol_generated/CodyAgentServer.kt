@@ -74,8 +74,6 @@ interface CodyAgentServer {
   fun featureFlags_getFeatureFlag(params: FeatureFlags_GetFeatureFlagParams): CompletableFuture<Boolean?>
   @JsonRequest("graphql/getCurrentUserCodySubscription")
   fun graphql_getCurrentUserCodySubscription(params: Null?): CompletableFuture<CurrentUserCodySubscription?>
-  @JsonRequest("graphql/logEvent")
-  fun graphql_logEvent(params: Event): CompletableFuture<Null?>
   @JsonRequest("telemetry/recordEvent")
   fun telemetry_recordEvent(params: TelemetryEvent): CompletableFuture<Null?>
   @JsonRequest("graphql/getRepoIdIfEmbeddingExists")
