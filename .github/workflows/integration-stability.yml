@@ -1,28 +1,19 @@
-name: JetBrains FYI
-
+name: Measure stability of integration tests
 on:
-  push:
-    branches:
-      - main
-  pull_request:
-    types: [opened, reopened, synchronize, ready_for_review]
   workflow_dispatch:
-
+    inputs:
+      repetitions:
+        description: 'How many times to repeat each test'
+        type: number
+        default: 10
 jobs:
-  build:
-    name: Build JetBrains plugin
+  test:
+    name: Build and run tests
     runs-on: ubuntu-latest
     steps:
-      - name: Fetch JetBrains Source
+      - name: Fetch Sources
         uses: actions/checkout@v4
-        with:
-          repository: sourcegraph/jetbrains
-          ref: main
-      - name: Fetch Cody Source
-        uses: actions/checkout@v4
-        with:
-          path: sourcegraph-cody
-      - run: yarn global add pnpm@8.6.7
+      - uses: pnpm/action-setup@fe02b34f77f8bc703788d5817da081398fad5dd2 # SECURITY: pin third-party action hashes
       - run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
         shell: bash
         id: pnpm-cache
@@ -53,8 +44,26 @@ jobs:
           distribution: zulu
           java-version: 17
           cache: gradle
-      # Skip Code Search build in CI because it's slow
+      # Skip Code Search build in CI because it's slow, and we don't use it anyway for testing purposes.
       - run: echo "SKIP_CODE_SEARCH_BUILD=true" >> $GITHUB_ENV
-      - name: Build plugin
-        run: CODY_DIR=$PWD/sourcegraph-cody ./gradlew buildPlugin -PforceAgentBuild=true
-      - run: ./gradlew --stop
+      - name: Build integration tests
+        run: |
+          pushd jetbrains
+          ./gradlew integrationTestClasses
+          popd > /dev/null
+      - name: Run integration tests
+        run: |
+          pushd jetbrains
+          ./gradlew integrationTest -PrepeatTests=${{ github.event.inputs.repetitions }}
+          popd > /dev/null
+      - name: Upload the test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-report
+          path: jetbrains/build/reports/tests/
+          compression-level: 9
+      - run: |
+          pushd jetbrains
+          ./gradlew --stop
+          popd > /dev/null
