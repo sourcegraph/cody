@@ -103,10 +103,10 @@ export const PromptEditor: FunctionComponent<Props> = ({
     const mentionSettings = useContext(ChatMentionContext)
 
     const fetchMenuData = useCallback(
-        ({ query, parent }: { query: string; parent?: ContextMentionProviderMetadata }) => {
+        ({ query, provider }: { query: string; provider?: ContextMentionProviderMetadata }) => {
             const initialContext = [...defaultContext.initialContext, ...defaultContext.corpusContext]
             const queryLower = query.toLowerCase().trim()
-            const filteredInitialContextItems = parent
+            const filteredInitialContextItems = provider
                 ? []
                 : initialContext.filter(item =>
                       queryLower
@@ -118,7 +118,7 @@ export const PromptEditor: FunctionComponent<Props> = ({
 
             return Observable.of(filteredInitialContextItems).concat(
                 mentionMenuData({
-                    ...parseMentionQuery(query, parent ?? null),
+                    ...parseMentionQuery(query, provider ?? null),
                     interactionID: interactionID.current,
                     contextRemoteRepositoriesNames: mentionSettings.remoteRepositoriesNames,
                 }).map(result => [
@@ -222,6 +222,8 @@ export const PromptEditor: FunctionComponent<Props> = ({
                 [styles.disabled]: disabled,
                 [styles.seamless]: seamless,
             })}
+            //For compatibility with the CSS rules that target this attribute
+            data-lexical-editor="true"
         >
             <div className={clsx(styles.input, contentEditableClassName)} ref={api.ref} />
             {show && (

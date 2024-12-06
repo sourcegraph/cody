@@ -1,6 +1,7 @@
 import {
     type ContextItem,
     ContextItemSource,
+    type ContextMentionProviderMetadata,
     REMOTE_DIRECTORY_PROVIDER_URI,
     REMOTE_FILE_PROVIDER_URI,
     type SerializedContextItem,
@@ -107,10 +108,10 @@ function createAtMention(editor: PromptInputActor): { type: (value: string) => v
     }
 }
 
-function mockFetchMenuDataResult(items: MenuItem[]): void {
-    fetchMenuData.mockImplementation(({ input }) => {
+function mockFetchMenu(items: MenuItem[]): (args: { input: DataLoaderInput }) => void {
+    return ({ input }) => {
         input.parent.send({ type: 'mentionsMenu.results.set', items })
-    })
+    }
 }
 
 beforeEach(() => {
@@ -223,10 +224,12 @@ describe('mentions menu', () => {
     })
 
     test('calls fetch function and updates available items', () => {
-        mockFetchMenuDataResult([
-            { type: 'file', uri: URI.parse('file:///file1.txt') },
-            { type: 'file', uri: URI.parse('file:///file2.txt') },
-        ])
+        fetchMenuData.mockImplementation(
+            mockFetchMenu([
+                { type: 'file', uri: URI.parse('file:///file1.txt') },
+                { type: 'file', uri: URI.parse('file:///file2.txt') },
+            ])
+        )
 
         const editor = createInput(['test '])
         const mention = createAtMention(editor)
@@ -291,26 +294,39 @@ describe('mentions menu', () => {
     })
 
     test('apply provider', () => {
-        let receivedInput: string | undefined
-        let receivedProviderID: string | undefined
-
-        fetchMenuData.mockImplementation(({ input }) => {
-            receivedInput = input.query
-            receivedProviderID = input.context?.id
-        })
+        const provider: ContextMentionProviderMetadata = {
+            id: 'some-provider',
+            title: 'provider',
+            queryLabel: 'query',
+            emptyLabel: 'empty',
+        }
+        const item: ContextItem = { type: 'file', uri: URI.parse('file:///file.txt') }
+        fetchMenuData
+            .mockImplementationOnce(mockFetchMenu([provider]))
+            .mockImplementationOnce(mockFetchMenu([provider]))
+            .mockImplementationOnce(mockFetchMenu([item]))
         const editor = createInput(['test '])
-        createAtMention(editor)
+        createAtMention(editor).type('file')
+        clock.increment(DEBOUNCE_TIME)
 
         editor.send({
-            type: 'atMention.apply',
-            item: { id: 'some-provider', title: 'provider', queryLabel: 'query', emptyLabel: 'empty' },
+            type: 'mentionsMenu.apply',
+            index: 0,
         })
 
-        expect.soft(getText(editor), 'selection is cleared').toBe('test @')
+        expect(getText(editor), 'selection is cleared').toBe('test @')
 
-        expect.soft(receivedInput).toBe('')
-        expect.soft(receivedProviderID).toBe('some-provider')
+        expect(fetchMenuData).toHaveBeenNthCalledWith(
+            2,
+            expect.objectContaining({ input: expect.objectContaining({ query: 'file' }) })
+        )
+        expect(fetchMenuData).toHaveBeenNthCalledWith(
+            3,
+            expect.objectContaining({ input: expect.objectContaining({ query: '', context: provider }) })
+        )
+
         expect(hasAtMention(getEditorState(editor))).toBe(true)
+        expect(editor.getSnapshot().context.mentionsMenu.items).toEqual([item])
     })
 
     test('apply large file without range', () => {
@@ -347,20 +363,22 @@ describe('mentions menu', () => {
     })
 
     test('menu items are updated according to currently available context size', () => {
-        mockFetchMenuDataResult([
-            {
-                type: 'file',
-                uri: URI.parse('file:///file1.txt'),
-                size: 5,
-                source: ContextItemSource.User,
-            },
-            {
-                type: 'file',
-                uri: URI.parse('file:///file2.txt'),
-                size: 2,
-                source: ContextItemSource.User,
-            },
-        ])
+        fetchMenuData.mockImplementation(
+            mockFetchMenu([
+                {
+                    type: 'file',
+                    uri: URI.parse('file:///file1.txt'),
+                    size: 5,
+                    source: ContextItemSource.User,
+                },
+                {
+                    type: 'file',
+                    uri: URI.parse('file:///file2.txt'),
+                    size: 2,
+                    source: ContextItemSource.User,
+                },
+            ])
+        )
 
         const editor = createInput(
             [
