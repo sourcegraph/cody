@@ -2,6 +2,7 @@ import type { ContextItem } from '../../codebase-context/messages'
 import type { Message } from '../../sourcegraph-api'
 
 import type { SerializedChatTranscript } from '.'
+import type { NLSSearchResponse } from '../../sourcegraph-api/graphql/client'
 
 /**
  * The list of context items (most important first) along with
@@ -36,6 +37,13 @@ export interface ChatMessage extends Message {
 
     /* The detected intent of the message */
     intent?: 'search' | 'chat' | 'edit' | 'insert' | undefined | null
+    search?:
+        | {
+              query: string
+              response: NLSSearchResponse['search']
+          }
+        | undefined
+        | null
 }
 
 // An unsafe version of the {@link ChatMessage} that has the PromptString
@@ -51,6 +59,7 @@ export interface SerializedChatMessage {
     text?: string // Changed from PromptString
     model?: string
     intent?: ChatMessage['intent']
+    search?: ChatMessage['search']
 }
 
 export interface ChatError {

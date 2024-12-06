@@ -17,6 +17,7 @@ import {
     contextFiltersProvider,
     currentResolvedConfig,
     displayPath,
+    firstValueFrom,
     graphqlClient,
     isAbortError,
     isDefined,
@@ -30,6 +31,7 @@ import {
 import { URI } from 'vscode-uri'
 import { getOpenTabsUris } from '.'
 import { toVSCodeRange } from '../../common/range'
+import { RepoNameResolver } from '../../repository/repo-name-resolver'
 import { findWorkspaceFiles } from './findWorkspaceFiles'
 
 // Some matches we don't want to ignore because they might be valid code (for example `bin/` in Dart)
@@ -95,6 +97,7 @@ export async function getFileContextFiles(options: FileContextItemsOptions): Pro
             // since we don't have access to file content in this file resolver.
             size: range ? 100 : item.file.byteSize,
             source: ContextItemSource.User,
+            repoName: item.repository.name,
             remoteRepositoryName: item.repository.name,
             isIgnored: ignoredRepoNames.get(item.repository.name),
             uri: URI.file(`${item.repository.name}/${item.file.path}`),
@@ -213,6 +216,7 @@ export async function getSymbolContextFiles(
         return symbolsOrError.flatMap<ContextItemSymbol>(item =>
             item.symbols.map(symbol => ({
                 type: 'symbol',
+                repoName: item.repository.name,
                 remoteRepositoryName: item.repository.name,
                 uri: URI.file(`${item.repository.name}/${symbol.location.resource.path}`),
                 isIgnored: ignoredRepoNames.get(item.repository.name),
@@ -315,6 +319,10 @@ async function createContextFileFromUri(
     symbolName?: string
 ): Promise<ContextItem[]> {
     const range = toRangeData(selectionRange)
+    const repoNameResolver = new RepoNameResolver()
+    const repoNames = await firstValueFrom(repoNameResolver.getRepoNamesContainingUri(uri))
+    const repoName: string = Array.isArray(repoNames) ? repoNames[0] : repoNames.toString()
+
     return [
         type === 'file'
             ? {
@@ -322,6 +330,7 @@ async function createContextFileFromUri(
                   uri,
                   range,
                   source,
+                  repoName,
                   isIgnored: Boolean(await contextFiltersProvider.isUriIgnored(uri)),
               }
             : {
@@ -330,6 +339,7 @@ async function createContextFileFromUri(
                   uri,
                   range,
                   source,
+                  repoName,
                   kind: kind!,
               },
     ]

@@ -12,6 +12,7 @@ import {
     errorToChatError,
     modelsService,
     pendingOperation,
+    ps,
     serializeChatMessage,
     startWith,
     switchMap,
@@ -184,6 +185,25 @@ export class ChatBuilder {
             ...message,
             speaker: 'assistant',
             error,
+        })
+        this.changeNotifications.next()
+    }
+
+    public addSearchResultAsBotMessage(search: ChatMessage['search']): void {
+        const lastMessage = this.messages.at(-1)
+        let error: any
+        // If there is no text, it could be a placeholder message for an error
+        if (lastMessage?.speaker === 'assistant') {
+            if (lastMessage?.text) {
+                throw new Error('Cannot add a bot message after a bot message')
+            }
+            error = this.messages.pop()?.error
+        }
+        this.messages.push({
+            search,
+            speaker: 'assistant',
+            error,
+            text: ps`Search found ${search?.response?.results?.results?.length || 0} results`,
         })
         this.changeNotifications.next()
     }

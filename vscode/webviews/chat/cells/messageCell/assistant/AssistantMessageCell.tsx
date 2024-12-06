@@ -16,6 +16,11 @@ import isEqual from 'lodash/isEqual'
 import { type FunctionComponent, type RefObject, memo, useMemo } from 'react'
 import type { ApiPostMessage, UserAccountInfo } from '../../../../Chat'
 import { chatModelIconComponent } from '../../../../components/ChatModelIcon'
+import { NLSResultSnippet } from '../../../../components/NLSResultSnippet'
+import {
+    useExperimentalOneBox,
+    useExperimentalOneBoxDebug,
+} from '../../../../utils/useExperimentalOneBox'
 import {
     ChatMessageContent,
     type CodeBlockActionsProps,
@@ -23,6 +28,7 @@ import {
 import { ErrorItem, RequestErrorItem } from '../../../ErrorItem'
 import { type Interaction, editHumanMessage } from '../../../Transcript'
 import { FeedbackButtons } from '../../../components/FeedbackButtons'
+import { InfoMessage } from '../../../components/InfoMessage'
 import { LoadingDots } from '../../../components/LoadingDots'
 import { BaseMessageCell, MESSAGE_CELL_AVATAR_SIZE } from '../BaseMessageCell'
 import { ContextFocusActions } from './ContextFocusActions'
@@ -79,15 +85,20 @@ export const AssistantMessageCell: FunctionComponent<{
 
         const hasLongerResponseTime = chatModel?.tags?.includes(ModelTag.StreamDisabled)
 
+        const experimentalOneBoxEnabled = useExperimentalOneBox()
+        const experimentalOneBoxDebug = useExperimentalOneBoxDebug()
+
         return (
             <BaseMessageCell
                 speakerIcon={ModelIcon ? <ModelIcon size={NON_HUMAN_CELL_AVATAR_SIZE} /> : null}
                 speakerTitle={
-                    <span data-testid="chat-model">
-                        {chatModel
-                            ? chatModel.title ?? `Model ${chatModel.id} by ${chatModel.provider}`
-                            : 'Model'}
-                    </span>
+                    message.search ? undefined : (
+                        <span data-testid="chat-model">
+                            {chatModel
+                                ? chatModel.title ?? `Model ${chatModel.id} by ${chatModel.provider}`
+                                : 'Model'}
+                        </span>
+                    )
                 }
                 content={
                     <>
@@ -102,7 +113,27 @@ export const AssistantMessageCell: FunctionComponent<{
                                 />
                             )
                         ) : null}
-                        {displayMarkdown ? (
+                        {experimentalOneBoxEnabled && message.search && (
+                            <>
+                                {experimentalOneBoxDebug && (
+                                    <InfoMessage>Query: {message.search.query}</InfoMessage>
+                                )}
+                                {!!message.search.response?.results?.results?.length && (
+                                    <ul className="tw-list-none tw-flex tw-flex-col tw-gap-2 tw-pt-2">
+                                        {message.search.response.results.results.map((result, i) => (
+                                            <li
+                                                // biome-ignore lint/correctness/useJsxKeyInIterable:
+                                                // biome-ignore lint/suspicious/noArrayIndexKey: stable order
+                                                key={i}
+                                            >
+                                                <NLSResultSnippet result={result} />
+                                            </li>
+                                        ))}
+                                    </ul>
+                                )}
+                            </>
+                        )}
+                        {!(experimentalOneBoxEnabled && message.search) && displayMarkdown ? (
                             <ChatMessageContent
                                 displayMarkdown={displayMarkdown}
                                 isMessageLoading={isLoading}

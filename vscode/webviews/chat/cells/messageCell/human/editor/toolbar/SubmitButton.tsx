@@ -10,7 +10,10 @@ import { Command, CommandItem, CommandList } from '../../../../../../components/
 import { ToolbarPopoverItem } from '../../../../../../components/shadcn/ui/toolbar'
 import { Tooltip, TooltipContent, TooltipTrigger } from '../../../../../../components/shadcn/ui/tooltip'
 import { useConfig } from '../../../../../../utils/useConfig'
-import { useExperimentalOneBox } from '../../../../../../utils/useExperimentalOneBox'
+import {
+    useExperimentalOneBox,
+    useExperimentalOneBoxDebug,
+} from '../../../../../../utils/useExperimentalOneBox'
 import { CodyIcon } from '../../../../../components/CodyIcon'
 
 export type SubmitButtonState = 'submittable' | 'emptyEditorValue' | 'waitingResponseComplete'
@@ -21,7 +24,7 @@ interface IntentOption {
     intent: ChatMessage['intent']
 }
 
-function getIntentOptions(ide: CodyIDE): IntentOption[] {
+function getIntentOptions(ide: CodyIDE, debug?: boolean): IntentOption[] {
     const standardOneBoxIntents: IntentOption[] = [
         {
             title: 'Best for question',
@@ -40,7 +43,7 @@ function getIntentOptions(ide: CodyIDE): IntentOption[] {
         },
     ]
 
-    if (ide === CodyIDE.Web) {
+    if (ide === CodyIDE.Web || !debug) {
         return standardOneBoxIntents
     }
 
@@ -72,7 +75,11 @@ export const SubmitButton: FC<{
         clientCapabilities: { agentIDE },
     } = useConfig()
 
-    const intentOptions = useMemo(() => getIntentOptions(agentIDE), [agentIDE])
+    const experimentalOneBoxDebug = useExperimentalOneBoxDebug()
+    const intentOptions = useMemo(
+        () => getIntentOptions(agentIDE, experimentalOneBoxDebug),
+        [agentIDE, experimentalOneBoxDebug]
+    )
 
     if (state === 'waitingResponseComplete') {
         return (
