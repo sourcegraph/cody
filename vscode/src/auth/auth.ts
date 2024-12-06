@@ -294,16 +294,8 @@ export async function showAuthFailureMessage(
     authStatus: UnauthenticatedAuthStatus | undefined
 ): Promise<void> {
     const authority = vscode.Uri.parse(endpoint).authority
-    if (authStatus?.error?.type === 'enterprise-user-logged-into-dotcom') {
-        await vscode.window.showErrorMessage(
-            `Based on your email address we think you may be an employee of ${authStatus?.error?.enterprise}.
-            To get access to all your features please sign in through your organization\'s enterprise instance instead.
-            If you need assistance please contact your Sourcegraph admin.`
-        )
-    } else {
-        await vscode.window.showErrorMessage(
-            `Authentication failed. Please ensure Cody is enabled for ${authority} and verify your email address if required.`
-        )
+    if (authStatus?.error) {
+        await vscode.window.showErrorMessage(getAuthErrorMessage(authStatus.error).message)
     }
 }
 /**

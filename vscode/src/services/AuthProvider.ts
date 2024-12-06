@@ -104,22 +104,9 @@ class AuthProvider implements vscode.Disposable {
         this.subscriptions.push(
             clientConfigChanges
                 .pipe(
-                    abortableOperation(async (_, signal) => {
-                        const resolvedConfig = await currentResolvedConfig()
-                        const credentials: ResolvedConfigurationCredentialsOnly = {
-                            configuration: {
-                                customHeaders: resolvedConfig.configuration.customHeaders,
-                            },
-                            auth: {
-                                serverEndpoint: resolvedConfig.auth.serverEndpoint,
-                                accessToken: resolvedConfig.auth.accessToken,
-                            },
-                            clientState: {
-                                anonymousUserID: resolvedConfig.clientState.anonymousUserID,
-                            },
-                        }
-                        await this.validateAndUpdateAuthStatus(credentials, signal)
-                    })
+                    abortableOperation(async (_, signal) => 
+                        this.validateAndUpdateAuthStatus(await currentResolvedConfig(), signal)
+                    )
                 )
                 .subscribe({})
         )
