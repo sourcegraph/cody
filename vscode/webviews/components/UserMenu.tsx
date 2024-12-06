@@ -133,14 +133,15 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
     return (
         <ToolbarPopoverItem
             role="menu"
-            data-testid="user-dropdown-menu"
             iconEnd={null}
             className={cn('tw-justify-between tw-bg-inherit', className)}
             __storybook__open={__storybook__open}
-            tooltip="Account"
             aria-label="Account Menu Button"
             popoverContent={close => (
-                <Command className="tw-shadow-lg tw-shadow-border-500/50 focus:tw-outline-none">
+                <Command
+                    className="tw-shadow-lg tw-shadow-border-500/50 focus:tw-outline-none"
+                    data-testid="user-dropdown-menu"
+                >
                     {userMenuView === 'add' ? (
                         <CommandList>
                             <CommandGroup title="Add Account Menu">

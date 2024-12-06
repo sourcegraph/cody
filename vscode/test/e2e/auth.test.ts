@@ -39,12 +39,10 @@ test.extend<ExpectedV2Events>({
     await expect(sidebar!.getByText('Invalid access token.')).not.toBeVisible()
     await expect(sidebar!.getByText('Sign in to Sourcegraph')).not.toBeVisible()
     await expect(sidebar!.getByLabel('Chat message')).toBeVisible()
+    await expect(sidebar!.getByRole('button', { name: 'New Chat' })).toBeVisible()
 
     // Sign out from user dropdown menu
-    await expect(sidebar!.getByRole('button', { name: 'New Chat' })).toBeVisible()
-    await expect(sidebar!.getByTestId('user-dropdown-menu')).toBeVisible()
-    await sidebar!.getByTestId('user-dropdown-menu').click()
-    await expect(sidebar!.getByRole('option', { name: 'Switch Account' })).toBeVisible()
+    await sidebar!.getByLabel('Account Menu Button').click()
     await sidebar!.getByRole('option', { name: 'Sign Out' }).click()
 
     await page.waitForTimeout(2000)
@@ -94,8 +92,7 @@ test.extend<ExpectedV2Events>({
 
         // Open the User Dropdown menu
         await expect(sidebar!.getByRole('button', { name: 'New Chat' })).toBeVisible()
-        await expect(sidebar!.getByTestId('user-dropdown-menu')).toBeVisible()
-        await sidebar!.getByTestId('user-dropdown-menu').click()
+        await sidebar!.getByLabel('Account Menu Button').click({ delay: 2000 })
 
         const codeWebview = sidebar!.getByLabel('cody-webview')
 
@@ -132,7 +129,7 @@ test.extend<ExpectedV2Events>({
         await sidebar!.getByText('Person 2', { exact: true }).hover()
 
         // Open dropdown menu
-        await sidebar!.getByTestId('user-dropdown-menu').click({ delay: 2000 })
+        await sidebar!.getByLabel('Account Menu Button').click({ delay: 2000 })
 
         await expect(sidebar!.getByRole('option', { name: 'Help' })).toBeVisible()
         await expect(codeWebview.getByText('Person', { exact: true })).not.toBeVisible()
