@@ -168,8 +168,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
             {view === View.Login || !config.authStatus.authenticated ? (
                 <div className={styles.outerContainer}>
                     {!config.authStatus.authenticated &&
-                        (config.authStatus.error?.type === 'network-error' ||
-                            config.authStatus.error?.type === 'enterprise-user-logged-into-dotcom') && (
+                        (config.authStatus.error) && (
                             <AuthenticationErrorBanner error={config.authStatus.error} />
                         )}
                     <AuthPage
