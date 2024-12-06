@@ -98,11 +98,6 @@ export type WebviewMessage =
           fileName?: string | undefined | null
       }
     | {
-          command: 'trace-export'
-          // The traceSpan is a JSON-encoded string representing the trace data.
-          traceSpanEncodedJson: string
-      }
-    | {
           command: 'smartApplyAccept'
           id: FixupTaskID
       }
