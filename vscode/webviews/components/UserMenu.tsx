@@ -125,7 +125,7 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
 
     return (
         <ToolbarPopoverItem
-            role="combobox"
+            role="menu"
             data-testid="user-dropdown-menu"
             iconEnd={null}
             className={cn('tw-justify-between tw-bg-inherit', className)}
@@ -407,7 +407,6 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
                 onKeyDown: onKeyDown,
                 onCloseAutoFocus: event => {
                     event.preventDefault()
-                    event.stopPropagation()
                 },
             }}
         >
