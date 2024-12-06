@@ -14,6 +14,18 @@ This is a log of all notable changes to Cody for VS Code.
 
 ### Uncategorized
 
+## [1.48.1]
+
+### Added
+
+### Fixed
+
+- backport/vscode/1.48: chore(telemetry): remove legacy back-compat (#6265)  [pull/6275](https://github.com/sourcegraph/cody/pulls/6275)
+
+### Changed
+
+### Uncategorized
+
 ## 1.48.0
 
 ### Added
