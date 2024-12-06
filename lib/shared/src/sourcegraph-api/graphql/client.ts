@@ -10,11 +10,12 @@ import semver from 'semver'
 import { dependentAbortController, onAbort } from '../../common/abortController'
 import { type PickResolvedConfiguration, resolvedConfig } from '../../configuration/resolver'
 import { logError } from '../../logger'
-import { firstValueFrom } from '../../misc/observable'
+import { distinctUntilChanged, firstValueFrom } from '../../misc/observable'
 import { addTraceparent, wrapInActiveSpan } from '../../tracing'
 import { isError } from '../../utils'
 import { addCodyClientIdentificationHeaders } from '../client-name-version'
 import { isAbortError } from '../errors'
+import { type GraphQLResultCache, ObservableInvalidatedGraphQLResultCacheFactory } from './cache'
 import {
     BUILTIN_PROMPTS_QUERY,
     CHANGE_PROMPT_VISIBILITY,
@@ -631,8 +632,10 @@ type GraphQLAPIClientConfig = PickResolvedConfiguration<{
 
 const QUERY_TO_NAME_REGEXP = /^\s*(?:query|mutation)\s+(\w+)/m
 
-export class SourcegraphGraphQLAPIClient {
+export class SourcegraphGraphQLAPIClient implements Disposable {
     private isAgentTesting = process.env.CODY_SHIM_TESTING === 'true'
+    private readonly resultCacheFactory: ObservableInvalidatedGraphQLResultCacheFactory
+    private readonly siteVersionCache: GraphQLResultCache<string>
 
     public static withGlobalConfig(): SourcegraphGraphQLAPIClient {
         return new SourcegraphGraphQLAPIClient(resolvedConfig)
@@ -647,17 +650,33 @@ export class SourcegraphGraphQLAPIClient {
         return new SourcegraphGraphQLAPIClient(Observable.of(config))
     }
 
-    private constructor(private readonly config: Observable<GraphQLAPIClientConfig>) {}
+    private constructor(private readonly config: Observable<GraphQLAPIClientConfig>) {
+        this.resultCacheFactory = new ObservableInvalidatedGraphQLResultCacheFactory(
+            this.config.pipe(distinctUntilChanged()),
+            {
+                maxAgeMsec: 1000 * 60 * 10, // 10 minutes,
+                initialRetryDelayMsec: 10, // Don't cache errors for long
+                backoffFactor: 1.5, // Back off exponentially
+            }
+        )
+        this.siteVersionCache = this.resultCacheFactory.create<string>('SiteProductVersion')
+    }
+
+    [Symbol.dispose]() {
+        this.resultCacheFactory[Symbol.dispose]()
+    }
 
     public async getSiteVersion(signal?: AbortSignal): Promise<string | Error> {
-        return this.fetchSourcegraphAPI<APIResponse<SiteVersionResponse>>(
-            CURRENT_SITE_VERSION_QUERY,
-            {},
-            signal
-        ).then(response =>
-            extractDataOrError(
-                response,
-                data => data.site?.productVersion ?? new Error('site version not found')
+        return this.siteVersionCache.get(signal, signal =>
+            this.fetchSourcegraphAPI<APIResponse<SiteVersionResponse>>(
+                CURRENT_SITE_VERSION_QUERY,
+                {},
+                signal
+            ).then(response =>
+                extractDataOrError(
+                    response,
+                    data => data.site?.productVersion ?? new Error('site version not found')
+                )
             )
         )
     }
@@ -1062,7 +1081,9 @@ export class SourcegraphGraphQLAPIClient {
         signal?: AbortSignal
         filePatterns?: string[]
     }): Promise<ContextSearchResult[] | null | Error> {
-        const hasContextMatchingSupport = await this.isValidSiteVersion({ minimumVersion: '5.8.0' })
+        const hasContextMatchingSupport = await this.isValidSiteVersion({
+            minimumVersion: '5.8.0',
+        })
         const hasFilePathSupport =
             hasContextMatchingSupport || (await this.isValidSiteVersion({ minimumVersion: '5.7.0' }))
         const config = await firstValueFrom(this.config!)
@@ -1242,7 +1263,9 @@ export class SourcegraphGraphQLAPIClient {
         signal?: AbortSignal
         orderByMultiple?: PromptsOrderBy[]
     }): Promise<Prompt[]> {
-        const hasIncludeViewerDraftsArg = await this.isValidSiteVersion({ minimumVersion: '5.9.0' })
+        const hasIncludeViewerDraftsArg = await this.isValidSiteVersion({
+            minimumVersion: '5.9.0',
+        })
 
         const response = await this.fetchSourcegraphAPI<APIResponse<{ prompts: { nodes: Prompt[] } }>>(
             hasIncludeViewerDraftsArg ? PROMPTS_QUERY : LEGACY_PROMPTS_QUERY_5_8,
@@ -1518,7 +1541,9 @@ function dependentAbortControllerWithTimeout(signal?: AbortSignal): {
 
     const timeoutSignal = AbortSignal.timeout(DEFAULT_TIMEOUT_MSEC)
     onAbort(timeoutSignal, () =>
-        abortController.abort({ message: `timed out after ${DEFAULT_TIMEOUT_MSEC}ms` })
+        abortController.abort({
+            message: `timed out after ${DEFAULT_TIMEOUT_MSEC}ms`,
+        })
     )
     return { abortController, timeoutSignal }
 }

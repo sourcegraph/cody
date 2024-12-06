@@ -158,8 +158,7 @@ export async function handleSmartApply(
     code: string,
     authStatus: AuthStatus,
     instruction?: string | null,
-    fileUri?: string | null,
-    traceparent?: string | undefined | null
+    fileUri?: string | null
 ): Promise<void> {
     const activeEditor = getEditor()?.active
     const workspaceUri = vscode.workspace.workspaceFolders?.[0].uri
@@ -197,7 +196,6 @@ export async function handleSmartApply(
             model: getSmartApplyModel(authStatus),
             replacement: code,
             isNewFile,
-            traceparent,
         },
         source: 'chat',
     })

@@ -23,19 +23,16 @@ import {
     type MutableRefObject,
     memo,
     useCallback,
-    useEffect,
     useImperativeHandle,
     useMemo,
     useRef,
-    useState,
 } from 'react'
 import { URI } from 'vscode-uri'
 import type { UserAccountInfo } from '../Chat'
 import type { ApiPostMessage } from '../Chat'
 import { Button } from '../components/shadcn/ui/button'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
-import { SpanManager } from '../utils/spanManager'
-import { getTraceparentFromSpanContext, useTelemetryRecorder } from '../utils/telemetry'
+import { useTelemetryRecorder } from '../utils/telemetry'
 import { useExperimentalOneBox } from '../utils/useExperimentalOneBox'
 import type { CodeBlockActionsProps } from './ChatMessageContent/ChatMessageContent'
 import {
@@ -51,15 +48,13 @@ import { HumanMessageCell } from './cells/messageCell/human/HumanMessageCell'
 import { CodyIcon } from './components/CodyIcon'
 import { InfoMessage } from './components/InfoMessage'
 
-import { type Context, type Span, context, trace } from '@opentelemetry/api'
 interface TranscriptProps {
-    activeChatContext?: Context
-    setActiveChatContext: (context: Context | undefined) => void
     chatEnabled: boolean
     transcript: ChatMessage[]
     models: Model[]
     userInfo: UserAccountInfo
     messageInProgress: ChatMessage | null
+
     guardrails?: Guardrails
     postMessage?: ApiPostMessage
 
@@ -72,8 +67,6 @@ interface TranscriptProps {
 
 export const Transcript: FC<TranscriptProps> = props => {
     const {
-        activeChatContext,
-        setActiveChatContext,
         chatEnabled,
         transcript,
         models,
@@ -137,8 +130,6 @@ export const Transcript: FC<TranscriptProps> = props => {
             {interactions.map((interaction, i) => (
                 <TranscriptInteraction
                     key={interaction.humanMessage.index}
-                    activeChatContext={activeChatContext}
-                    setActiveChatContext={setActiveChatContext}
                     models={models}
                     chatEnabled={chatEnabled}
                     userInfo={userInfo}
@@ -227,8 +218,6 @@ export function transcriptToInteractionPairs(
 
 interface TranscriptInteractionProps
     extends Omit<TranscriptProps, 'transcript' | 'messageInProgress' | 'chatID'> {
-    activeChatContext: Context | undefined
-    setActiveChatContext: (context: Context | undefined) => void
     interaction: Interaction
     isFirstInteraction: boolean
     isLastInteraction: boolean
@@ -262,6 +251,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
         editorRef: parentEditorRef,
         onAddToFollowupChat,
     } = props
+
     const [intentResults, setIntentResults] = useMutatedValue<
         | {
               intent: ChatMessage['intent']
@@ -271,104 +261,58 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
         | null
     >()
 
-    const { activeChatContext, setActiveChatContext } = props
     const humanEditorRef = useRef<PromptEditorRefAPI | null>(null)
     useImperativeHandle(parentEditorRef, () => humanEditorRef.current)
 
-    const onUserAction = (action: 'edit' | 'submit', intentFromSubmit?: ChatMessage['intent']) => {
-        // Start the span as soon as the user initiates the action
-        const startMark = performance.mark('startSubmit')
-        const spanManager = new SpanManager('cody-webview')
-        const span = spanManager.startSpan('chat-interaction', {
-            attributes: {
-                sampled: true,
-                'render.state': 'started',
-                'startSubmit.mark': startMark.startTime,
-            },
-        })
-
-        if (!span) {
-            throw new Error('Failed to start span for chat interaction')
-        }
-
-        const spanContext = trace.setSpan(context.active(), span)
-        setActiveChatContext(spanContext)
-        const currentSpanContext = span.spanContext()
-
-        const traceparent = getTraceparentFromSpanContext(currentSpanContext)
-
-        // Serialize the editor value after starting the span
-        const editorValue = humanEditorRef.current?.getSerializedValue()
-        if (!editorValue) {
-            console.error('Failed to serialize editor value')
-            return
-        }
-
-        const commonProps = {
-            editorValue,
-            intent: intentFromSubmit || intentResults.current?.intent,
-            intentScores: intentFromSubmit ? undefined : intentResults.current?.allScores,
-            manuallySelectedIntent: !!intentFromSubmit,
-            traceparent,
-        }
-
-        if (action === 'edit') {
+    const onEditSubmit = useCallback(
+        (editorValue: SerializedPromptEditorValue, intentFromSubmit?: ChatMessage['intent']): void => {
             editHumanMessage({
                 messageIndexInTranscript: humanMessage.index,
-                ...commonProps,
+                editorValue,
+                intent: intentFromSubmit || intentResults.current?.intent,
+                intentScores: intentFromSubmit ? undefined : intentResults.current?.allScores,
+                manuallySelectedIntent: !!intentFromSubmit,
             })
-        } else {
-            submitHumanMessage({
-                ...commonProps,
-            })
-        }
-    }
-
-    const onEditSubmit = useCallback(
-        (intentFromSubmit?: ChatMessage['intent']): void => {
-            onUserAction('edit', intentFromSubmit)
         },
-        [onUserAction]
+        [humanMessage.index, intentResults]
     )
 
     const onFollowupSubmit = useCallback(
-        (intentFromSubmit?: ChatMessage['intent']): void => {
-            onUserAction('submit', intentFromSubmit)
+        (editorValue: SerializedPromptEditorValue, intentFromSubmit?: ChatMessage['intent']): void => {
+            submitHumanMessage({
+                editorValue,
+                intent: intentFromSubmit || intentResults.current?.intent,
+                intentScores: intentFromSubmit ? undefined : intentResults.current?.allScores,
+                manuallySelectedIntent: !!intentFromSubmit,
+            })
         },
-        [onUserAction]
+        [intentResults]
     )
 
     const extensionAPI = useExtensionAPI()
     const experimentalOneBoxEnabled = useExperimentalOneBox()
     const onChange = useMemo(() => {
         return debounce(async (editorValue: SerializedPromptEditorValue) => {
+            setIntentResults(undefined)
+
             if (!experimentalOneBoxEnabled) {
                 return
             }
 
+            // Only detect intent if a repository is mentioned
             if (
-                !editorValue.contextItems.find(contextItem =>
+                editorValue.contextItems.find(contextItem =>
                     ['repository', 'tree'].includes(contextItem.type)
                 )
             ) {
-                return
-            }
-
-            setIntentResults(undefined)
-
-            const subscription = extensionAPI
-                .detectIntent(inputTextWithoutContextChipsFromPromptEditorState(editorValue.editorState))
-                .subscribe({
-                    next: value => {
+                extensionAPI
+                    .detectIntent(
+                        inputTextWithoutContextChipsFromPromptEditorState(editorValue.editorState)
+                    )
+                    .subscribe(value => {
                         setIntentResults(value)
-                    },
-                    error: error => {
-                        console.error('Error detecting intent:', error)
-                    },
-                })
-
-            // Clean up subscription if component unmounts
-            return () => subscription.unsubscribe()
+                    })
+            }
         }, 300)
     }, [experimentalOneBoxEnabled, extensionAPI, setIntentResults])
 
@@ -383,113 +327,6 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
             isLastSentInteraction &&
             assistantMessage?.text === undefined
     )
-    const spanManager = new SpanManager('cody-webview')
-    const renderSpan = useRef<Span>()
-    const timeToFirstTokenSpan = useRef<Span>()
-    const hasRecordedFirstToken = useRef(false)
-
-    const [isLoading, setIsLoading] = useState(assistantMessage?.isLoading)
-
-    useEffect(() => {
-        setIsLoading(assistantMessage?.isLoading)
-    }, [assistantMessage])
-
-    useEffect(() => {
-        if (!assistantMessage) return
-
-        const startRenderSpan = () => {
-            // Reset the spans to their initial state
-            renderSpan.current = undefined
-            timeToFirstTokenSpan.current = undefined
-            hasRecordedFirstToken.current = false
-
-            const startRenderMark = performance.mark('startRender')
-            // Start a new span for rendering the assistant message
-            renderSpan.current = spanManager.startSpan('assistant-message-render', {
-                attributes: {
-                    sampled: true,
-                    'message.index': assistantMessage.index,
-                    'render.start_time': startRenderMark.startTime,
-                    'parent.span.id': activeChatContext
-                        ? trace.getSpan(activeChatContext)?.spanContext().spanId
-                        : undefined,
-                },
-                context: activeChatContext,
-            })
-            // Start a span to measure time to first token
-            timeToFirstTokenSpan.current = spanManager.startSpan('time-to-first-token', {
-                attributes: { 'message.index': assistantMessage.index },
-                context: activeChatContext,
-            })
-        }
-
-        const endRenderSpan = () => {
-            // Mark the end of rendering
-            performance.mark('endRender')
-            // Measure the duration of the render
-            const measure = performance.measure('renderDuration', 'startRender', 'endRender')
-            if (renderSpan.current && measure.duration > 0) {
-                // Set attributes and end the render span
-                renderSpan.current.setAttributes({
-                    'render.success': !assistantMessage?.error,
-                    'message.length': assistantMessage?.text?.length ?? 0,
-                    'render.total_time': measure.duration,
-                })
-                renderSpan.current.end()
-            }
-
-            renderSpan.current = undefined
-            hasRecordedFirstToken.current = false
-
-            if (activeChatContext) {
-                const rootSpan = trace.getSpan(activeChatContext)
-                if (rootSpan) {
-                    // Calculate and set the total chat time
-                    const chatTotalTime =
-                        performance.now() - performance.getEntriesByName('startSubmit')[0].startTime
-                    rootSpan.setAttributes({
-                        'chat.completed': true,
-                        'render.state': 'completed',
-                        'chat.total_time': chatTotalTime,
-                    })
-                    rootSpan.end()
-                }
-            }
-            // Clear the active chat context
-            setActiveChatContext(undefined)
-        }
-
-        const endFirstTokenSpan = () => {
-            if (renderSpan.current && timeToFirstTokenSpan.current) {
-                // Mark the first token
-                performance.mark('firstToken')
-                // Measure the time to first token
-                performance.measure('timeToFirstToken', 'startRender', 'firstToken')
-                const firstTokenMeasure = performance.getEntriesByName('timeToFirstToken')[0]
-                if (firstTokenMeasure.duration > 0) {
-                    // Set attributes and end the time-to-first-token span
-                    timeToFirstTokenSpan.current.setAttributes({
-                        'time.to.first.token': firstTokenMeasure.duration,
-                    })
-                    timeToFirstTokenSpan.current.end()
-                    timeToFirstTokenSpan.current = undefined
-                    hasRecordedFirstToken.current = true
-                }
-            }
-        }
-        // Case 3: End the time-to-first-token span when the first token appears
-        if (assistantMessage.text && !hasRecordedFirstToken.current && timeToFirstTokenSpan.current) {
-            endFirstTokenSpan()
-        }
-        // Case 1: Start rendering if the assistant message is loading and no render span exists
-        if (assistantMessage.isLoading && !renderSpan.current && activeChatContext) {
-            context.with(activeChatContext, startRenderSpan)
-        }
-        // Case 2: End rendering if loading is complete and a render span exists
-        else if (!isLoading && renderSpan.current) {
-            endRenderSpan()
-        }
-    }, [assistantMessage, activeChatContext, setActiveChatContext, spanManager, isLoading])
 
     const humanMessageInfo = useMemo(() => {
         // See SRCH-942: it's critical to memoize this value to avoid repeated
@@ -505,7 +342,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
         (intent: ChatMessage['intent']) => {
             const editorState = humanEditorRef.current?.getSerializedValue()
             if (editorState) {
-                onEditSubmit(intent)
+                onEditSubmit(editorState, intent)
                 telemetryRecorder.recordEvent('onebox.intentCorrection', 'clicked', {
                     metadata: {
                         recordsPrivateMetadataTranscript: 1,
@@ -530,7 +367,10 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                 return
             }
             await editor.addMentions(corpusContextItems, 'before', ' ')
-            onEditSubmit('chat')
+            const newEditorState = humanEditorRef.current?.getSerializedValue()
+            if (newEditorState) {
+                onEditSubmit(newEditorState, 'chat')
+            }
         }
     }, [corpusContextItems, onEditSubmit])
 
@@ -568,9 +408,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                 isSent={!humanMessage.isUnsentFollowup}
                 isPendingPriorResponse={priorAssistantMessageIsLoading}
                 onChange={onChange}
-                onSubmit={
-                    humanMessage.isUnsentFollowup ? () => onFollowupSubmit() : () => onEditSubmit()
-                }
+                onSubmit={humanMessage.isUnsentFollowup ? onFollowupSubmit : onEditSubmit}
                 onStop={onStop}
                 isFirstInteraction={isFirstInteraction}
                 isLastInteraction={isLastInteraction}
@@ -719,13 +557,11 @@ function submitHumanMessage({
     intent,
     intentScores,
     manuallySelectedIntent,
-    traceparent,
 }: {
     editorValue: SerializedPromptEditorValue
     intent?: ChatMessage['intent']
     intentScores?: { intent: string; score: number }[]
     manuallySelectedIntent?: boolean
-    traceparent: string
 }): void {
     getVSCodeAPI().postMessage({
         command: 'submit',
@@ -735,7 +571,6 @@ function submitHumanMessage({
         intent,
         intentScores,
         manuallySelectedIntent,
-        traceparent,
     })
     focusLastHumanMessageEditor()
 }
