@@ -57,8 +57,6 @@ export default defineProjectWithDefaults(__dirname, {
                 replacement: resolve(__dirname, 'node_modules/path-browserify'),
             },
             { find: 'node:stream', replacement: resolve(__dirname, 'node_modules/stream-browserify') },
-            { find: 'zlib', replacement: resolve(__dirname, 'lib/agent/shims/zlib.ts') },
-            { find: 'stream', replacement: resolve(__dirname, 'lib/agent/shims/stream.ts') },
             { find: /^(node:)?events$/, replacement: resolve(__dirname, 'node_modules/events') },
             { find: /^(node:)?util$/, replacement: resolve(__dirname, 'node_modules/util') },
             { find: /^(node:)?buffer$/, replacement: resolve(__dirname, 'node_modules/buffer') },
