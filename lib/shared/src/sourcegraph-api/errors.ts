@@ -2,8 +2,6 @@ import { differenceInDays, format, formatDistanceStrict, formatRelative } from '
 
 import { isError } from '../utils'
 
-import type { BrowserOrNodeResponse } from './graphql/client'
-
 function formatRetryAfterDate(retryAfterDate: Date): string {
     const now = new Date()
     if (differenceInDays(retryAfterDate, now) < 7) {
@@ -72,7 +70,7 @@ export class NetworkError extends Error {
     public readonly status: number
 
     constructor(
-        response: Pick<BrowserOrNodeResponse, 'url' | 'status' | 'statusText'>,
+        response: Pick<Response, 'url' | 'status' | 'statusText'>,
         content: string,
         public traceId: string | undefined
     ) {

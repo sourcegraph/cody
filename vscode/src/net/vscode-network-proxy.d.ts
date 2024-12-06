@@ -1,7 +1,5 @@
 /// <reference types="node" />
 
-import type * as http from 'node:http'
-import type * as https from 'node:https'
 import type * as net from 'node:net'
 import type * as tls from 'node:tls'
 import type * as nodeurl from 'node:url'

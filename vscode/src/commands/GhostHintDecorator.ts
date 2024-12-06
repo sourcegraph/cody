@@ -2,7 +2,6 @@ import {
     type AuthStatus,
     authStatus,
     contextFiltersProvider,
-    currentAuthStatus,
     getEditorInsertSpaces,
     getEditorTabSize,
     isMacOS,
@@ -207,7 +206,7 @@ export class GhostHintDecorator implements vscode.Disposable {
         this.permanentDisposables.push(
             vscode.workspace.onDidChangeConfiguration(e => {
                 if (e.affectsConfiguration('cody')) {
-                    this.updateEnablement(currentAuthStatus())
+                    authStatus.map(authStatus => this.updateEnablement(authStatus))
                 }
             }),
             vscode.workspace.onDidChangeTextDocument(event => {

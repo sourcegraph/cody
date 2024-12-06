@@ -5,10 +5,9 @@
 import isomorphicFetch from 'isomorphic-fetch'
 import { globalAgentRef } from './fetch.patch'
 import { addCodyClientIdentificationHeaders } from './sourcegraph-api/client-name-version'
-import type { BrowserOrNodeResponse } from './sourcegraph-api/graphql/client'
 export * from './fetch.patch'
 
-export function fetch(input: RequestInfo | URL, init?: RequestInit): Promise<BrowserOrNodeResponse> {
+export function fetch(input: URL | RequestInfo, init?: RequestInit): Promise<Response> {
     init = init ?? {}
     const headers = new Headers(init?.headers)
     addCodyClientIdentificationHeaders(headers)
@@ -18,5 +17,8 @@ export function fetch(input: RequestInfo | URL, init?: RequestInit): Promise<Bro
         ...init,
         agent: globalAgentRef.agent,
     }
-    return isomorphicFetch(input, initWithAgent)
+
+    const isNode = typeof process !== 'undefined'
+    const fetchImpl = isNode ? globalThis.fetch : isomorphicFetch
+    return fetchImpl(input, initWithAgent)
 }

@@ -12,10 +12,11 @@
 # Tips to update these secrets:
 #  - Use 1Password to find account passwords
 #  - Use no expiration dates when creating access tokens
-#  - You need to update the REDACTED_ access token in
-#    agent/src/testing-credentials.ts.  There's no automatic way to do this for now,
-#    you need to re-record with the new token, manually copy the updated REDACTED_
-#    token from the recording file and paste it into agent/src/testing-tokens.ts.
+#  - You need to update the REDACTED_ access token in agent/src/testing-credentials.ts.
+#    To obtain them you need to re-record tests with the new token first.
+#    Then you can find redacted tokens in the recording files or generate them using the following command:
+#
+#    env | grep '^SRC_' | while IFS='=' read -r name value; do echo "$name=REDACTED_$(echo -n "prefix$value" | sha256sum)"; done
 
 export SRC_DOTCOM_PRO_ACCESS_TOKEN="$(gcloud secrets versions access latest --secret CODY_PRO_ACCESS_TOKEN --project cody-agent-tokens --quiet)"
 

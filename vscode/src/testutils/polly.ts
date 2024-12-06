@@ -4,8 +4,8 @@ import jsonStableStringify from 'fast-json-stable-stringify'
 
 import { type EXPIRY_STRATEGY, type Headers, type MODE, Polly, type PollyConfig } from '@pollyjs/core'
 
-import { CodyNodeHttpAdapter } from './CodyNodeHttpAdapter'
-import { CodyPersister, redactAuthorizationHeader } from './CodyPersister'
+import { CodyNodeFetchAdapter } from './CodyNodeFetchAdapter'
+import { CodyPersister, redactAuthorizationHeader } from './CodyPersisterV2'
 
 interface PollyOptions {
     recordingName: string
@@ -19,14 +19,14 @@ interface PollyOptions {
 
 export function startPollyRecording(userOptions: PollyOptions): Polly {
     const options = defaultPollyOptions(userOptions)
-    Polly.register(CodyNodeHttpAdapter)
+    Polly.register(CodyNodeFetchAdapter)
     Polly.register(CodyPersister)
     return new Polly(options.recordingName ?? 'CodyAgent', {
         flushRequestsOnStop: true,
         recordIfMissing: options.recordIfMissing ?? options.recordingMode === 'record',
         mode: options.recordingMode,
-        adapters: ['node-http'],
-        persister: 'fs',
+        adapters: [CodyNodeFetchAdapter],
+        persister: CodyPersister,
         recordFailedRequests: true,
         expiryStrategy: options.recordingExpiryStrategy,
         expiresIn: options.expiresIn,
