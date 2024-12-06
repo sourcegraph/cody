@@ -19,11 +19,10 @@ This is a log of all notable changes to Cody for VS Code.
 ### Added
 
 ### Fixed
-- [Backport vscode-v1.48.x] chore/release: Update CHANGELOG for VSCode 1.48.0  [pull/6259](https://github.com/sourcegraph/cody/pulls/6259)
+
+- backport/vscode/1.48: chore(telemetry): remove legacy back-compat (#6265)  [pull/6275](https://github.com/sourcegraph/cody/pulls/6275)
 
 ### Changed
-
-- Telemetry support for Sourcegraph versions older than [5.2.5 (released 12/2023)](https://github.com/sourcegraph/sourcegraph-public-snapshot/releases/tag/v5.2.5) has been removed  [pull/6265](https://github.com/sourcegraph/cody/pull/6265)
 
 ### Uncategorized
 
