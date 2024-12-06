@@ -385,7 +385,7 @@ export async function signOut(endpoint: string): Promise<void> {
 
     await Promise.all([secretStorage.deleteToken(endpoint), localStorage.deleteEndpoint(endpoint)])
 
-    authProvider.signout()
+    authProvider.signout(endpoint)
 }
 
 /**
