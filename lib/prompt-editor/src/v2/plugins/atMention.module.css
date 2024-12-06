@@ -1,0 +1,20 @@
+.atMention {
+    position: relative;
+}
+
+.atMention::after {
+    content: "";
+    display: block;
+    position: absolute;
+    inset: -2px -6px -2px -4px;
+    border-radius: 4px;
+    background-color: rgba(0, 0, 0, 0.035);
+    border: 1px solid rgba(0, 0, 0, 0.02);
+}
+
+/* TODO dark */
+.atMention::after {
+    background-color: rgba(255, 255, 255, 0.035);
+    border: 1px solid rgba(255, 255, 255, 0.035);
+}
+

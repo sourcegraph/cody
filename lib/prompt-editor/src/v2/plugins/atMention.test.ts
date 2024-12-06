@@ -1,7 +1,7 @@
 import { EditorState, TextSelection } from 'prosemirror-state'
 import { beforeEach, expect, test } from 'vitest'
+import { schema } from '../promptInput'
 import { createAtMentionPlugin, enableAtMention, getAtMentionValue, hasAtMention } from './atMention'
-import { schema } from './promptInput'
 
 let state: EditorState
 
@@ -46,10 +46,13 @@ test('disable at mention when selection moves outside', () => {
     expect(hasAtMention(newState), 'removes at mention when selection moves outside').toBe(false)
 })
 
-test('disable at mention when space is entered', () => {
+test('disable at mention when two space are entered', () => {
     let newState = state.apply(enableAtMention(state.tr.insertText('abc @')))
 
     newState = newState.apply(newState.tr.insertText('foo'))
+    expect(hasAtMention(newState)).toBe(true)
+
+    newState = newState.apply(newState.tr.insertText(' '))
     expect(hasAtMention(newState)).toBe(true)
 
     newState = newState.apply(newState.tr.insertText(' '))

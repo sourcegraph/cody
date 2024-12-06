@@ -116,18 +116,14 @@ export const PromptEditor: FunctionComponent<Props> = ({
                           : true
                   )
 
-            const filteredInitialItems = filteredInitialContextItems.map(item => ({ data: item }))
-
-            return Observable.of(filteredInitialItems).concat(
+            return Observable.of(filteredInitialContextItems).concat(
                 mentionMenuData({
                     ...parseMentionQuery(query, parent ?? null),
                     interactionID: interactionID.current,
                     contextRemoteRepositoriesNames: mentionSettings.remoteRepositoriesNames,
                 }).map(result => [
-                    ...result.providers.map(provider => ({
-                        data: provider,
-                    })),
-                    ...filteredInitialItems,
+                    ...result.providers,
+                    ...filteredInitialContextItems,
                     ...(result.items
                         ?.filter(
                             item =>
@@ -136,7 +132,7 @@ export const PromptEditor: FunctionComponent<Props> = ({
                                 )
                         )
                         .slice(0, SUGGESTION_LIST_LENGTH_LIMIT)
-                        .map(item => ({ data: { ...item, source: ContextItemSource.User } })) ?? []),
+                        .map(item => ({ ...item, source: ContextItemSource.User })) ?? []),
                 ])
             )
         },
@@ -157,6 +153,7 @@ export const PromptEditor: FunctionComponent<Props> = ({
     })
 
     const { show, items, selectedIndex, query, position, parent } = useMentionsMenu(input)
+    const menuPosition = useMemo(() => ({ x: position.left, y: position.bottom }), [position])
 
     useLayoutEffect(() => {
         // We increment the interaction ID when the menu is hidden because `fetchMenuData` can be
@@ -210,11 +207,11 @@ export const PromptEditor: FunctionComponent<Props> = ({
     }, [initialEditorState, api])
 
     const renderItem = useCallback(
-        (data: ContextItem | ContextMentionProviderMetadata) => {
-            if ('id' in data) {
-                return <MentionMenuProviderItemContent provider={data} />
+        (item: ContextItem | ContextMentionProviderMetadata) => {
+            if ('id' in item) {
+                return <MentionMenuProviderItemContent provider={item} />
             }
-            return <MentionMenuContextItemContent item={data} query={parseMentionQuery(query, parent)} />
+            return <MentionMenuContextItemContent item={item} query={parseMentionQuery(query, parent)} />
         },
         [query, parent]
     )
@@ -231,7 +228,7 @@ export const PromptEditor: FunctionComponent<Props> = ({
                 <MentionsMenu
                     items={items}
                     selectedIndex={selectedIndex}
-                    menuPosition={position}
+                    menuPosition={menuPosition}
                     getHeader={() => getItemsHeading(parent, query)}
                     getEmptyLabel={() => getEmptyLabel(parent, query)}
                     onSelect={index => api.applySuggestion(index)}

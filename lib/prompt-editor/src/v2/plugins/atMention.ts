@@ -2,7 +2,7 @@ import { InputRule, inputRules } from 'prosemirror-inputrules'
 import type { Node } from 'prosemirror-model'
 import { type EditorState, Plugin, PluginKey, TextSelection, type Transaction } from 'prosemirror-state'
 import { Decoration, DecorationSet } from 'prosemirror-view'
-import styles from './BaseEditor.module.css'
+import styles from './atMention.module.css'
 
 export interface Position {
     top: number
@@ -38,7 +38,7 @@ export function replaceAtMention(
 ): Transaction {
     const decoration = getDecoration(state)
     if (decoration) {
-        const tr = state.tr.replaceWith(decoration.from, decoration.to, replacement)
+        const tr = disableAtMention(state.tr.replaceWith(decoration.from, decoration.to, replacement))
         const end = decoration.from + replacement.nodeSize
 
         // Append a space after the node if necessary
@@ -48,7 +48,6 @@ export function replaceAtMention(
         return (
             tr
                 // Move selection after the space after the node
-                // (automatically closes menu)
                 .setSelection(TextSelection.create(tr.doc, end + 1))
                 .scrollIntoView()
         )
@@ -194,7 +193,7 @@ export function createAtMentionPlugin(): Plugin[] {
                         // If yes to either we close the menu
                         if (
                             !decoration ||
-                            /\s/.test(tr.doc.textBetween(decoration.from, decoration.to))
+                            /\s{2,}/.test(tr.doc.textBetween(decoration.from, decoration.to))
                         ) {
                             return emptyState
                         }

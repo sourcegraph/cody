@@ -13,11 +13,9 @@ import { type ActorRefFrom, fromCallback } from 'xstate'
 import type { AnyEventObject } from 'xstate'
 import { usePromptEditorConfig } from '../config'
 import { MentionView } from './MentionView'
-import type { Item } from './MentionsMenu'
-import type { Position } from './atMention'
-import { type DataLoaderInput, promptInput, schema } from './promptInput'
+import type { Position } from './plugins/atMention'
+import { type DataLoaderInput, type MenuItem, promptInput, schema } from './promptInput'
 
-type MenuItem = Item<ContextItem | ContextMentionProviderMetadata>
 type PromptInputLogic = typeof promptInput
 type PromptInputActor = ActorRefFrom<PromptInputLogic>
 
@@ -92,7 +90,7 @@ export const usePromptInput = (options: PromptEditorOptions): [PromptInputActor,
                 const subscription = options
                     .fetchMenuData({ query: input.query, provider: input.context })
                     .subscribe(next => {
-                        input.parent.send({ type: 'mentionsMenu.results.set', data: next })
+                        input.parent.send({ type: 'mentionsMenu.results.set', items: next })
                     })
                 return () => subscription.unsubscribe()
             }),
@@ -198,7 +196,7 @@ export const usePromptInput = (options: PromptEditorOptions): [PromptInputActor,
                 return getCurrentEditorState(editor)
             },
             ref(node: HTMLDivElement | null) {
-                editor.send(node ? { type: 'setup', parent: node } : { type: 'teardown' })
+                editor.send(node ? { type: 'setup', container: node } : { type: 'teardown' })
             },
         }),
         [editor]
