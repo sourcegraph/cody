@@ -1,18 +1,23 @@
-import { useActorRef, useSelector } from "@xstate/react"
-import { DataLoaderInput, promptInput, schema } from "./promptInput"
-import { ContextItem, ContextMentionProviderMetadata, serializeContextItem, SerializedContextItem } from "@sourcegraph/cody-shared"
-import { Item } from "./MentionsMenu"
-import { ActorRefFrom, fromCallback } from "xstate"
-import { useEffect, useMemo, useRef } from "react"
-import { Node } from "prosemirror-model"
-import { MentionView } from "./MentionView"
-import { EditorState } from "prosemirror-state"
-import { Position } from "./atMention"
-import type {AnyEventObject} from 'xstate'
-import type { Observable } from "observable-fns"
-import { usePromptEditorConfig } from "../config"
+import {
+    type ContextItem,
+    type ContextMentionProviderMetadata,
+    type SerializedContextItem,
+    serializeContextItem,
+} from '@sourcegraph/cody-shared'
+import { useActorRef, useSelector } from '@xstate/react'
+import type { Observable } from 'observable-fns'
+import type { Node } from 'prosemirror-model'
+import type { EditorState } from 'prosemirror-state'
+import { useEffect, useMemo, useRef } from 'react'
+import { type ActorRefFrom, fromCallback } from 'xstate'
+import type { AnyEventObject } from 'xstate'
+import { usePromptEditorConfig } from '../config'
+import { MentionView } from './MentionView'
+import type { Item } from './MentionsMenu'
+import type { Position } from './atMention'
+import { type DataLoaderInput, promptInput, schema } from './promptInput'
 
-type MenuItem = Item<ContextItem|ContextMentionProviderMetadata>
+type MenuItem = Item<ContextItem | ContextMentionProviderMetadata>
 type PromptInputLogic = typeof promptInput
 type PromptInputActor = ActorRefFrom<PromptInputLogic>
 
@@ -54,7 +59,9 @@ interface PromptEditorOptions {
      * populate the mentions menu. The function is passed the current query (@mention) and the currently
      * selected provider (if any).
      */
-    fetchMenuData: (args: {query: string, provider?: ContextMentionProviderMetadata}) => Observable<MenuItem[]>
+    fetchMenuData: (args: { query: string; provider?: ContextMentionProviderMetadata }) => Observable<
+        MenuItem[]
+    >
 }
 
 interface PromptEditorAPI {
@@ -66,7 +73,7 @@ interface PromptEditorAPI {
     setDocument(doc: Node): void
     getEditorState(): EditorState
     applySuggestion(index?: number): void
-    ref(node: HTMLDivElement|null): void
+    ref(node: HTMLDivElement | null): void
 }
 
 function getCurrentEditorState(input: ActorRefFrom<typeof promptInput>): EditorState {
@@ -77,16 +84,20 @@ function getCurrentEditorState(input: ActorRefFrom<typeof promptInput>): EditorS
  * Provides access to the prompt input editor and its API from a React component.
  */
 export const usePromptInput = (options: PromptEditorOptions): [PromptInputActor, PromptEditorAPI] => {
-    const {onContextItemMentionNodeMetaClick} = usePromptEditorConfig()
+    const { onContextItemMentionNodeMetaClick } = usePromptEditorConfig()
 
-    const fetchMenuData = useMemo(() => fromCallback<AnyEventObject, DataLoaderInput>(({input}) => {
-        const subscription = options.fetchMenuData({query: input.query, provider: input.context}).subscribe(
-            next => {
-                input.parent.send({type: 'mentionsMenu.results.set', data: next})
-            },
-        )
-        return () => subscription.unsubscribe()
-    }), [options.fetchMenuData])
+    const fetchMenuData = useMemo(
+        () =>
+            fromCallback<AnyEventObject, DataLoaderInput>(({ input }) => {
+                const subscription = options
+                    .fetchMenuData({ query: input.query, provider: input.context })
+                    .subscribe(next => {
+                        input.parent.send({ type: 'mentionsMenu.results.set', data: next })
+                    })
+                return () => subscription.unsubscribe()
+            }),
+        [options.fetchMenuData]
+    )
 
     const focused = useRef(false)
 
@@ -95,99 +106,109 @@ export const usePromptInput = (options: PromptEditorOptions): [PromptInputActor,
     const onEnterKeyRef = useRef(options.onEnterKey)
     onEnterKeyRef.current = options.onEnterKey
 
-    const editor = useActorRef(promptInput.provide({
-        actors: {
-            menuDataLoader: fetchMenuData,
-        },
-    }), { input: {
-        editorViewProps: {
-            handleDOMEvents: {
-                focus: () => {
-                    if (!focused.current) {
-                        focused.current = true
-                        onFocusChangeRef.current?.(true)
-                    }
+    const editor = useActorRef(
+        promptInput.provide({
+            actors: {
+                menuDataLoader: fetchMenuData,
+            },
+        }),
+        {
+            input: {
+                editorViewProps: {
+                    handleDOMEvents: {
+                        focus: () => {
+                            if (!focused.current) {
+                                focused.current = true
+                                onFocusChangeRef.current?.(true)
+                            }
+                        },
+                        blur: () => {
+                            if (focused.current) {
+                                focused.current = false
+                                onFocusChangeRef.current?.(false)
+                            }
+                        },
+                    },
+                    handleKeyDown: (_view, event) => {
+                        // For some reason we have to avoid calling onEnterKey when shift is pressed,
+                        // otherwise the editor's Shift-Enter keybinding will not be triggered.
+                        if (!event.shiftKey && event.key === 'Enter') {
+                            onEnterKeyRef.current?.(event)
+                            return event.defaultPrevented
+                        }
+                        return false
+                    },
+                    handleClickOn(_view, _pos, node, _nodePos, _event, _direct) {
+                        if (node.type === schema.nodes.mention) {
+                            onContextItemMentionNodeMetaClick?.(node.attrs.item)
+                            return true
+                        }
+                        return false
+                    },
+                    nodeViews: {
+                        mention(node) {
+                            return new MentionView(node)
+                        },
+                    },
                 },
-                blur: () => {
-                    if (focused.current) {
-                        focused.current = false
-                        onFocusChangeRef.current?.(false)
-                    }
-                },
+                placeholder: options.placeholder,
+                initialDocument: options.initialDocument,
+                disabled: options.disabled,
+                contextWindowSizeInTokens: options.contextWindowSizeInTokens,
             },
-            handleKeyDown: (_view, event) => {
-                // For some reason we have to avoid calling onEnterKey when shift is pressed,
-                // otherwise the editor's Shift-Enter keybinding will not be triggered.
-                if (!event.shiftKey && event.key === 'Enter') {
-                    onEnterKeyRef.current?.(event)
-                    return event.defaultPrevented
-                }
-                return false
-            },
-            handleClickOn(_view, _pos, node, _nodePos, _event, _direct) {
-                if (node.type === schema.nodes.mention) {
-                    onContextItemMentionNodeMetaClick?.(node.attrs.item)
-                    return true
-                }
-                return false
-            },
-            nodeViews: {
-                mention(node) {
-                    return new MentionView(node)
-                },
-            },
-        },
-        placeholder: options.placeholder,
-        initialDocument: options.initialDocument,
-        disabled: options.disabled,
-        contextWindowSizeInTokens: options.contextWindowSizeInTokens,
-    }})
-
-    const api: PromptEditorAPI  = useMemo(() => ({
-        setFocus(focus, options) {
-            if (focus) {
-                editor.send({type: 'focus', moveCursorToEnd: options?.moveCursorToEnd})
-            } else {
-                editor.send({type: 'blur'})
-            }
-        },
-        setDocument(doc: Node) {
-            editor.send({type: 'document.set', doc})
-        },
-        setInitialContextMentions(items) {
-            editor.send({type: 'document.mentions.setInitial', items: items.map(serializeContextItem)})
-        },
-        appendText(text) {
-            editor.send({type: 'document.append', text})
-        },
-        addMentions(
-            items: ContextItem[],
-            position: 'before' | 'after' = 'after',
-            sep = ' '
-        ) {
-            editor.send({type: 'document.mentions.add', items: items.map(serializeContextItem), position, separator: sep})
-        },
-        filterMentions(filter: (item: SerializedContextItem) => boolean) {
-            editor.send({type: 'document.mentions.filter', filter})
-        },
-        applySuggestion(index) {
-            editor.send({type: 'mentionsMenu.apply', index})
-        },
-        getEditorState() {
-            return getCurrentEditorState(editor)
-        },
-        ref(node: HTMLDivElement|null) {
-            editor.send(
-                node ? {type: 'setup', parent: node} : {type: 'teardown'}
-            )
         }
-    }), [editor])
+    )
+
+    const api: PromptEditorAPI = useMemo(
+        () => ({
+            setFocus(focus, options) {
+                if (focus) {
+                    editor.send({ type: 'focus', moveCursorToEnd: options?.moveCursorToEnd })
+                } else {
+                    editor.send({ type: 'blur' })
+                }
+            },
+            setDocument(doc: Node) {
+                editor.send({ type: 'document.set', doc })
+            },
+            setInitialContextMentions(items) {
+                editor.send({
+                    type: 'document.mentions.setInitial',
+                    items: items.map(serializeContextItem),
+                })
+            },
+            appendText(text) {
+                editor.send({ type: 'document.append', text })
+            },
+            addMentions(items: ContextItem[], position: 'before' | 'after' = 'after', sep = ' ') {
+                editor.send({
+                    type: 'document.mentions.add',
+                    items: items.map(serializeContextItem),
+                    position,
+                    separator: sep,
+                })
+            },
+            filterMentions(filter: (item: SerializedContextItem) => boolean) {
+                editor.send({ type: 'document.mentions.filter', filter })
+            },
+            applySuggestion(index) {
+                editor.send({ type: 'mentionsMenu.apply', index })
+            },
+            getEditorState() {
+                return getCurrentEditorState(editor)
+            },
+            ref(node: HTMLDivElement | null) {
+                editor.send(node ? { type: 'setup', parent: node } : { type: 'teardown' })
+            },
+        }),
+        [editor]
+    )
 
     const onChangeRef = useRef(options.onChange)
     onChangeRef.current = options.onChange
 
     useEffect(() => {
-        let previousDoc: Node|undefined
+        let previousDoc: Node | undefined
         const subscription = editor.subscribe(state => {
             if (state.context.editorState.doc !== previousDoc) {
                 previousDoc = state.context.editorState.doc
