@@ -17,7 +17,7 @@ import { baseKeymap } from 'prosemirror-commands'
 import { history, redo, undo } from 'prosemirror-history'
 import { keymap } from 'prosemirror-keymap'
 import { type Node, Schema } from 'prosemirror-model'
-import { EditorState, Plugin, PluginKey, Selection, type Transaction } from 'prosemirror-state'
+import { EditorState, Plugin, Selection, type Transaction } from 'prosemirror-state'
 import { type EditorProps, EditorView } from 'prosemirror-view'
 import {
     type ActorLike,
@@ -31,7 +31,6 @@ import {
     spawnChild,
     stopChild,
 } from 'xstate'
-import type { Item } from './MentionsMenu'
 import {
     type Position,
     createAtMentionPlugin,
@@ -42,9 +41,11 @@ import {
     hasAtMentionChanged,
     replaceAtMention,
     setMentionValue,
-} from './atMention'
+} from './plugins/atMention'
+import { placeholderPlugin, setPlaceholder } from './plugins/placeholder'
+import { isReadOnly, readonlyPlugin, setReadOnly } from './plugins/readonly'
 
-export type MenuItem = Item<ContextItem | ContextMentionProviderMetadata>
+export type MenuItem = ContextItem | ContextMentionProviderMetadata
 
 export const schema = new Schema({
     nodes: {
@@ -119,10 +120,11 @@ const prosemirrorActor = fromCallback<ProseMirrorMachineEvent, ProseMirrorMachin
         const parent = input.parent
         const editor = new EditorView(input.container ? { mount: input.container } : null, {
             state: input.initialState,
-            editable: state => !readonlyPluginKey.getState(state),
+            editable: state => !isReadOnly(state),
             dispatchTransaction(transaction) {
                 parent.send({ type: 'dispatch', transaction })
             },
+            // Handle keyboard events relevant for the mentions menu
             handleKeyDown(view, event) {
                 if (parent.getSnapshot().hasTag('show mentions menu')) {
                     switch (event.key) {
@@ -160,6 +162,7 @@ const prosemirrorActor = fromCallback<ProseMirrorMachineEvent, ProseMirrorMachin
             plugins: input.props ? [new Plugin({ props: input.props })] : undefined,
         })
 
+        // Sync editor state with parent machine
         const subscription = parent.subscribe(state => {
             const nextState = state.context.editorState
             if (nextState !== editor.state) {
@@ -170,6 +173,8 @@ const prosemirrorActor = fromCallback<ProseMirrorMachineEvent, ProseMirrorMachin
                     hasAtMention(nextState) &&
                     (!hasAtMention(prevState) || hasAtMentionChanged(nextState, prevState))
                 ) {
+                    // Compute the new position of the mentions menu whenever the @mention value changes.
+                    // It's possible for the @mention to shift to the next line when the value is too long.
                     parent.send({
                         type: 'mentionsMenu.position.update',
                         position: editor.coordsAtPos(getAtMentionPosition(editor.state)),
@@ -207,12 +212,12 @@ const prosemirrorActor = fromCallback<ProseMirrorMachineEvent, ProseMirrorMachin
 export interface DataLoaderInput {
     query: string
     context?: ContextMentionProviderMetadata
-    parent: ActorLike<any, { type: 'mentionsMenu.results.set'; data: MenuItem[] }>
+    parent: ActorLike<any, { type: 'mentionsMenu.results.set'; items: MenuItem[] }>
 }
 
 type EditorEvents =
     // For attaching the editor to the DOM.
-    | { type: 'setup'; parent: HTMLElement; initialDocument?: Node }
+    | { type: 'setup'; container: HTMLElement }
     // For detaching the editor from the DOM.
     | { type: 'teardown' }
 
@@ -260,14 +265,14 @@ type MentionsMenuEvents =
     | { type: 'mentionsMenu.select.previous' }
     | { type: 'mentionsMenu.position.update'; position: Position }
     | { type: 'mentionsMenu.apply'; index?: number }
-    | { type: 'mentionsMenu.results.set'; data: MenuItem[] }
+    | { type: 'mentionsMenu.results.set'; items: MenuItem[] }
     | { type: 'mentionsMenu.provider.set'; provider: ContextMentionProviderMetadata }
 
 interface PromptInputContext {
     /**
      * The element that acts as the editor's container.
      */
-    parent: HTMLElement | null
+    container: HTMLElement | null
     /**
      * ProseMirror editor state. Kept in sync with the ProseMirror view.
      */
@@ -331,7 +336,17 @@ export interface PromptInputOptions {
  * - The fetching of menu data for @mentions
  * - The management of the mentions menu
  *
- * The machine handles all
+ * The machine handles all operations that can be performed on the editor, including:
+ * - Appending text
+ * - Replacing the document
+ * - Adding mentions
+ * - Filtering mentions
+ * - Setting initial mentions
+ * - Replacing @mentions with context items
+ *
+ * Some of these operations could be handled in the PromptEditor component directly, but
+ * co-location of the editor state and the operations that can be performed on it makes
+ * it easier to reason about and test.
  */
 export const promptInput = setup({
     types: {
@@ -373,8 +388,11 @@ export const promptInput = setup({
                     if (newContextSize !== context.currentContextSizeInTokens) {
                         enqueue.assign({ currentContextSizeInTokens: newContextSize })
                         // Re-process menu items as needed
-                        // @ts-expect-error - type inference in named enqueueActions is a known problem
-                        enqueue({ type: 'assignMenuItems', params: context.mentionsMenu.items })
+                        enqueue({
+                            // @ts-expect-error - type inference in named enqueueActions is a known problem
+                            type: 'assignAndUpdateMenuItems',
+                            params: [...context.mentionsMenu.items],
+                        })
                     }
                 }
 
@@ -405,18 +423,14 @@ export const promptInput = setup({
             })
         ),
         /**
-         * Assigns the provided menu items to the contest (and performs additional processing).
+         * Assigns the provided menu items to the context and computes whether they exceed the context window size.
          */
-        assignMenuItems: assign(({ context }, items: MenuItem[]) => {
-            // Adjust items based on current editor state
+        assignAndUpdateMenuItems: assign(({ context }, items: MenuItem[]) => {
             const remainingTokenBudget =
                 context.contextWindowSizeInTokens - context.currentContextSizeInTokens
             for (const item of items) {
-                if (!('id' in item.data) && item.data.size !== undefined) {
-                    item.data = {
-                        ...item.data,
-                        isTooLarge: item.data.size > remainingTokenBudget,
-                    }
+                if (!('id' in item) && item.size !== undefined) {
+                    item.isTooLarge = item.size > remainingTokenBudget
                 }
             }
 
@@ -427,6 +441,9 @@ export const promptInput = setup({
                 },
             }
         }),
+        /**
+         * Invokes the data loader actor to fetch new menu data.
+         */
         fetchMenuData: spawnChild('menuDataLoader', {
             id: 'fetchMenuData',
             input: ({ context, self }) => ({
@@ -449,13 +466,12 @@ export const promptInput = setup({
     },
 }).createMachine({
     context: ({ input }): PromptInputContext => ({
-        parent: null,
+        container: null,
         hasSetInitialContext: false,
         currentContextSizeInTokens: 0,
         contextWindowSizeInTokens: input.contextWindowSizeInTokens ?? Number.MAX_SAFE_INTEGER,
         editorViewProps: input.editorViewProps,
         editorState: EditorState.create({
-            // TODO: Make schema configurable
             doc: input.initialDocument,
             selection: input.initialDocument ? Selection.atEnd(input.initialDocument) : undefined,
             schema,
@@ -486,27 +502,29 @@ export const promptInput = setup({
     type: 'parallel',
     states: {
         // This substate manages all interactions with the ProseMirror editor and state.
+        // Most events only affect the editor state, so they will always be handled, regardless of whether
+        // the editor is mounted or not.
         editor: {
-            initial: 'idle',
+            initial: 'unmounted',
             states: {
-                idle: {
+                unmounted: {
                     on: {
                         setup: {
                             actions: assign(({ event }) => ({
-                                parent: event.parent,
+                                container: event.container,
                             })),
-                            target: 'ready',
+                            target: 'mounted',
                         },
                     },
                 },
-                ready: {
+                mounted: {
                     invoke: {
                         src: 'editor',
                         id: 'editor',
                         input: ({ context, self }): ProseMirrorMachineInput => ({
-                            // @ts-expect-error
+                            // @ts-expect-error -- for some reason TS doesn't like this. Mabye a self referencing inference issue?
                             parent: self,
-                            container: context.parent,
+                            container: context.container,
                             props: context.editorViewProps,
                             initialState: context.editorState,
                         }),
@@ -528,7 +546,7 @@ export const promptInput = setup({
                         blur: {
                             actions: sendTo('editor', { type: 'blur' }),
                         },
-                        teardown: 'idle',
+                        teardown: 'unmounted',
                     },
                 },
             },
@@ -544,14 +562,14 @@ export const promptInput = setup({
                     actions: {
                         type: 'updateEditorState',
                         params: ({ context, event }) =>
-                            context.editorState.tr.setMeta(placeholderPluginKey, event.placeholder),
+                            setPlaceholder(context.editorState.tr, event.placeholder),
                     },
                 },
                 'update.disabled': {
                     actions: {
                         type: 'updateEditorState',
                         params: ({ context, event }) =>
-                            context.editorState.tr.setMeta(readonlyPluginKey, event.disabled),
+                            setReadOnly(context.editorState.tr, event.disabled),
                     },
                 },
                 'update.contextWindowSizeInTokens': {
@@ -560,7 +578,10 @@ export const promptInput = setup({
                         if (size !== context.contextWindowSizeInTokens) {
                             enqueue.assign({ contextWindowSizeInTokens: size })
                             // Update menu items with updated size
-                            enqueue({ type: 'assignMenuItems', params: context.mentionsMenu.items })
+                            enqueue({
+                                type: 'assignAndUpdateMenuItems',
+                                params: [...context.mentionsMenu.items],
+                            })
                         }
                     }),
                 },
@@ -726,8 +747,7 @@ export const promptInput = setup({
                         }),
                         // Handle menu item selection
                         enqueueActions(({ context, enqueue }) => {
-                            const item =
-                                context.mentionsMenu.items[context.mentionsMenu.selectedIndex]?.data
+                            const item = context.mentionsMenu.items[context.mentionsMenu.selectedIndex]
                             if (item) {
                                 enqueue.raise({ type: 'atMention.apply', item })
                             }
@@ -746,7 +766,10 @@ export const promptInput = setup({
                     exit: [stopChild('fetchMenuData')],
                     on: {
                         'mentionsMenu.results.set': {
-                            actions: { type: 'assignMenuItems', params: ({ event }) => event.data },
+                            actions: {
+                                type: 'assignAndUpdateMenuItems',
+                                params: ({ event }) => event.items,
+                            },
                         },
                     },
                 },
@@ -816,7 +839,12 @@ export const promptInput = setup({
             states: {
                 closed: {
                     on: {
-                        'atMention.added': 'open',
+                        // Open the menu when an @mention is added or the editor gains focus and has an @mention.
+                        // When opening the menu via a new @mention, we'll reset the selected index to the first item.
+                        'atMention.added': {
+                            actions: { type: 'assignMentionsMenu', params: { selectedIndex: 0 } },
+                            target: 'open',
+                        },
                         'focus.change.focus': {
                             guard: 'hasAtMention',
                             target: 'open',
@@ -824,8 +852,6 @@ export const promptInput = setup({
                     },
                 },
                 open: {
-                    // When opening the menu, we'll reset the selected index to the first item.
-                    entry: { type: 'assignMentionsMenu', params: { selectedIndex: 0 } },
                     tags: 'show mentions menu',
                     on: {
                         // When the @mention is removed or the editor looses focus, we'll close the menu.
@@ -873,61 +899,6 @@ export const promptInput = setup({
         },
     },
 })
-
-/**
- * A plugin that adds a placeholder to the editor
- */
-function placeholderPlugin(text: string): Plugin {
-    const update = (view: EditorView) => {
-        if (view.state.doc.childCount === 1 && view.state.doc.firstChild?.textContent === '') {
-            view.dom.setAttribute('data-placeholder', placeholderPluginKey.getState(view.state))
-        } else {
-            view.dom.removeAttribute('data-placeholder')
-        }
-    }
-
-    return new Plugin<string>({
-        key: placeholderPluginKey,
-        state: {
-            init() {
-                return text
-            },
-            apply(tr, value) {
-                if (tr.getMeta(placeholderPluginKey)) {
-                    return tr.getMeta(placeholderPluginKey)
-                }
-                return value
-            },
-        },
-        view(view) {
-            update(view)
-
-            return { update }
-        },
-    })
-}
-const placeholderPluginKey = new PluginKey('placeholder')
-
-/**
- * A plugin that disables the editor
- */
-function readonlyPlugin(initial = false) {
-    return new Plugin<boolean>({
-        key: readonlyPluginKey,
-        state: {
-            init() {
-                return initial
-            },
-            apply(tr, value) {
-                if (tr.getMeta(readonlyPluginKey)) {
-                    return tr.getMeta(readonlyPluginKey)
-                }
-                return value
-            },
-        },
-    })
-}
-const readonlyPluginKey = new PluginKey('readonly')
 
 /**
  * Inserts a whitespace character at the given position if needed. If the position is not provided

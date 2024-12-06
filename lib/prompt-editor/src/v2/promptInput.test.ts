@@ -10,7 +10,7 @@ import { type EditorState, Selection } from 'prosemirror-state'
 import { beforeEach, describe, expect, test, vi } from 'vitest'
 import { URI } from 'vscode-uri'
 import { type ActorRefFrom, SimulatedClock, createActor, fromCallback } from 'xstate'
-import { enableAtMention, hasAtMention } from './atMention'
+import { enableAtMention, hasAtMention } from './plugins/atMention'
 import {
     type DataLoaderInput,
     type MenuItem,
@@ -109,7 +109,7 @@ function createAtMention(editor: PromptInputActor): { type: (value: string) => v
 
 function mockFetchMenuDataResult(items: MenuItem[]): void {
     fetchMenuData.mockImplementation(({ input }) => {
-        input.parent.send({ type: 'mentionsMenu.results.set', data: items })
+        input.parent.send({ type: 'mentionsMenu.results.set', items })
     })
 }
 
@@ -224,8 +224,8 @@ describe('mentions menu', () => {
 
     test('calls fetch function and updates available items', () => {
         mockFetchMenuDataResult([
-            { data: { type: 'file', uri: URI.parse('file:///file1.txt') } },
-            { data: { type: 'file', uri: URI.parse('file:///file2.txt') } },
+            { type: 'file', uri: URI.parse('file:///file1.txt') },
+            { type: 'file', uri: URI.parse('file:///file2.txt') },
         ])
 
         const editor = createInput(['test '])
@@ -349,20 +349,16 @@ describe('mentions menu', () => {
     test('menu items are updated according to currently available context size', () => {
         mockFetchMenuDataResult([
             {
-                data: {
-                    type: 'file',
-                    uri: URI.parse('file:///file1.txt'),
-                    size: 5,
-                    source: ContextItemSource.User,
-                },
+                type: 'file',
+                uri: URI.parse('file:///file1.txt'),
+                size: 5,
+                source: ContextItemSource.User,
             },
             {
-                data: {
-                    type: 'file',
-                    uri: URI.parse('file:///file2.txt'),
-                    size: 2,
-                    source: ContextItemSource.User,
-                },
+                type: 'file',
+                uri: URI.parse('file:///file2.txt'),
+                size: 2,
+                source: ContextItemSource.User,
             },
         ])
 
@@ -388,8 +384,8 @@ describe('mentions menu', () => {
 
         let state = editor.getSnapshot()
         expect(state.context.mentionsMenu.items).toEqual([
-            { data: expect.objectContaining({ isTooLarge: true }) },
-            { data: expect.objectContaining({ isTooLarge: false }) },
+            expect.objectContaining({ isTooLarge: true }),
+            expect.objectContaining({ isTooLarge: false }),
         ])
 
         // Add another item that increases the total size over the limit
@@ -402,16 +398,16 @@ describe('mentions menu', () => {
 
         state = editor.getSnapshot()
         expect(state.context.mentionsMenu.items).toEqual([
-            { data: expect.objectContaining({ isTooLarge: true }) },
-            { data: expect.objectContaining({ isTooLarge: true }) },
+            expect.objectContaining({ isTooLarge: true }),
+            expect.objectContaining({ isTooLarge: true }),
         ])
 
         // Updating the window size updates menu items too
         editor.send({ type: 'update.contextWindowSizeInTokens', size: 20 })
         state = editor.getSnapshot()
         expect(state.context.mentionsMenu.items).toEqual([
-            { data: expect.objectContaining({ isTooLarge: false }) },
-            { data: expect.objectContaining({ isTooLarge: false }) },
+            expect.objectContaining({ isTooLarge: false }),
+            expect.objectContaining({ isTooLarge: false }),
         ])
     })
     describe('special cases', () => {

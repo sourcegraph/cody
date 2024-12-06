@@ -2,20 +2,38 @@ import { shift, size, useFloating } from '@floating-ui/react'
 import clsx from 'clsx'
 import { type MouseEventHandler, useCallback, useEffect, useLayoutEffect, useRef } from 'react'
 import styles from './MentionsMenu.module.css'
-import type { Position } from './atMention'
-
-export interface Item<T> {
-    data: T
-}
 
 interface MentionsMenuProps<T> {
-    items: Item<T>[]
+    /**
+     * The items to display in the menu.
+     */
+    items: T[]
+    /**
+     * The index of the currently selected item.
+     */
     selectedIndex: number
-    menuPosition: Position
+    /**
+     * The reference position for the menu, in screen coordinates.
+     */
+    menuPosition: { x: number; y: number }
+    /**
+     * A render prop for the header of the menu (if any). The header is shown
+     * above the items.
+     */
     getHeader: () => React.ReactNode
+    /**
+     * A render prop that returns the label to display when there are no items.
+     */
     getEmptyLabel: () => React.ReactNode
+    /**
+     * A render prop for each item in the menu.
+     */
+    renderItem: (item: T) => React.ReactNode
+    /**
+     * A callback that is called when an item is selected. The callback is passed
+     * the index of the clicked item in the `items` array.
+     */
     onSelect?: (index: number) => void
-    renderItem: (data: T) => React.ReactNode
 }
 
 export const MentionsMenu = <T,>({
@@ -46,17 +64,18 @@ export const MentionsMenu = <T,>({
     })
 
     useLayoutEffect(() => {
+        // See https://floating-ui.com/docs/virtual-elements
         refs.setPositionReference({
             getBoundingClientRect() {
                 return {
                     width: 0,
                     height: 0,
-                    y: menuPosition.bottom,
-                    x: menuPosition.left,
-                    top: menuPosition.bottom,
-                    left: menuPosition.left,
-                    right: menuPosition.left,
-                    bottom: menuPosition.bottom,
+                    y: menuPosition.y,
+                    x: menuPosition.x,
+                    top: menuPosition.y,
+                    bottom: menuPosition.y,
+                    left: menuPosition.x,
+                    right: menuPosition.x,
                 }
             },
         })
@@ -69,7 +88,7 @@ export const MentionsMenu = <T,>({
         container.current?.querySelector('[aria-selected="true"]')?.scrollIntoView({ block: 'nearest' })
     }, [selectedIndex])
 
-    // Prevent input loosing focus
+    // This prevents the input from lossing focus when clicking on the menu.
     const handleMouseDown: MouseEventHandler = useCallback(event => {
         event.preventDefault()
     }, [])
@@ -114,7 +133,7 @@ export const MentionsMenu = <T,>({
                         className={itemClass}
                         aria-selected={index === selectedIndex}
                     >
-                        {renderItem(item.data)}
+                        {renderItem(item)}
                     </div>
                 ))}
             </div>
