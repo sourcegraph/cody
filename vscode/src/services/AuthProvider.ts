@@ -169,7 +169,7 @@ class AuthProvider implements vscode.Disposable {
         this.refreshRequests.next()
     }
 
-    public signout(endpoint: String): void {
+    public signout(endpoint: string): void {
         if (this.lastEndpoint !== endpoint) {
             return
         }
