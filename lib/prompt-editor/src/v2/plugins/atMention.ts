@@ -162,7 +162,7 @@ export function createAtMentionPlugin(): Plugin[] {
                                             // The current cursor position is after the '@' character
                                             position - 1,
                                             position,
-                                            { class: styles.active },
+                                            { class: styles.atMention },
                                             // This is necessary so that mapping changes will 'grow' the decoration, which
                                             // also acts as marker for the mention value
                                             { inclusiveEnd: true }

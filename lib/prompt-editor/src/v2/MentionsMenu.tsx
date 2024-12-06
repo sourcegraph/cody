@@ -1,4 +1,4 @@
-import { shift, size, useFloating } from '@floating-ui/react'
+import { offset, shift, size, useFloating } from '@floating-ui/react'
 import clsx from 'clsx'
 import { type MouseEventHandler, useCallback, useEffect, useLayoutEffect, useRef } from 'react'
 import styles from './MentionsMenu.module.css'
@@ -51,7 +51,10 @@ export const MentionsMenu = <T,>({
         open: true,
         placement: 'bottom-start',
         middleware: [
-            shift(),
+            shift({
+                padding: 8,
+            }),
+            offset({ mainAxis: 4 }),
             size({
                 apply({ availableWidth, availableHeight, elements }) {
                     Object.assign(elements.floating.style, {
@@ -59,6 +62,7 @@ export const MentionsMenu = <T,>({
                         maxHeight: `${availableHeight}px`,
                     })
                 },
+                padding: 8,
             }),
         ],
     })
@@ -96,7 +100,7 @@ export const MentionsMenu = <T,>({
     const handleClick: MouseEventHandler = useCallback(
         event => {
             const target = event.target as HTMLElement | null
-            const listNode = target?.closest('li') as HTMLLIElement | null
+            const listNode = target?.closest('[role=option]') as HTMLElement | null
             if (listNode?.parentNode) {
                 const options = listNode.parentNode.querySelectorAll('[role="option"]')
                 // @ts-expect-error - TS doesn't like this but it's OK
@@ -138,9 +142,7 @@ export const MentionsMenu = <T,>({
                 ))}
             </div>
             {items.length === 0 && (
-                <div className={itemClass} data-disabled="true">
-                    {getEmptyLabel()}
-                </div>
+                <div className="tw-py-3 tw-px-2 tw-text-md tw-opacity-50">{getEmptyLabel()}</div>
             )}
         </div>
     )
@@ -149,7 +151,8 @@ export const MentionsMenu = <T,>({
 const headerClass =
     '!tw-p-0 !tw-border-b-0 !tw-p-3 !tw-text-md !tw-leading-[1.2] !tw-h-[30px] tw-opacity-50'
 
-const menuClass = 'tw-overflow-hidden tw-rounded-md tw-bg-popover tw-text-popover-foreground'
+const menuClass =
+    'tw-overflow-hidden tw-overflow-y-auto tw-rounded-md tw-bg-popover tw-text-popover-foreground'
 
 const itemClass =
-    'tw-relative tw-flex tw-cursor-pointer tw-select-none tw-items-center tw-py-3 tw-px-2 tw-text-md tw-outline-none aria-selected:tw-bg-accent aria-selected:tw-text-accent-foreground hover:tw-bg-accent hover:tw-text-accent-foreground data-[disabled=true]:tw-pointer-events-none data-[disabled=true]:tw-opacity-50 !tw-p-3 !tw-text-md !tw-leading-[1.2] !tw-h-[30px] !tw-rounded-none'
+    'w-relative tw-cursor-pointer tw-select-none tw-items-center tw-py-3 tw-px-2 tw-text-md tw-outline-none aria-selected:tw-bg-accent aria-selected:tw-text-accent-foreground hover:tw-bg-accent hover:tw-text-accent-foreground data-[disabled=true]:tw-pointer-events-none data-[disabled=true]:tw-opacity-50 !tw-p-3 !tw-text-md !tw-leading-[1.2] !tw-h-[30px] !tw-rounded-none'
