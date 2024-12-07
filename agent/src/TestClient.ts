@@ -985,6 +985,9 @@ ${patch}`
                     // Symf is disabled for all agent integration tests because
                     // it makes the tests more stable.
                     'cody.experimental.symf.enabled': false,
+                    'cody.experimental.agentic.context': {
+                        shell: { enabled: true, allow: ['*'] },
+                    },
                     ...this.params.extraConfiguration,
                 },
                 debug: false,

@@ -38,7 +38,7 @@ export interface WorkspaceDirectory {
 }
 
 interface WorkspaceSettings {
-    [key: string]: string | boolean | number
+    [key: string]: string | boolean | number | object
 }
 
 // Playwright test extension: Extra VSCode settings to write to
