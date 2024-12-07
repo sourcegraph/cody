@@ -131,9 +131,9 @@ describe('getConfiguration', () => {
                         return undefined
                     case 'http':
                         return undefined
-                    case 'cody.experimental.agentic.context.shell':
+                    case 'cody.experimental.agenticContext.shell':
                         return false
-                    case 'cody.experimental.agentic.context.options':
+                    case 'cody.experimental.agenticContext.options':
                         return { shell: { allow: ['git'] } }
                     default:
                         assert(false, `unexpected key: ${key}`)

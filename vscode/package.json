@@ -1290,12 +1290,12 @@
           "type": "boolean",
           "default": false
         },
-        "cody.experimental.agentic.context.shell": {
+        "cody.experimental.agenticContext.shell": {
           "type": "boolean",
           "markdownDescription": "Enable Agents like Deep Cody to autonomously execute shell commands in your environment for context. Enable with caution as mistakes are possible.",
           "default": false
         },
-        "cody.experimental.agentic.context.options": {
+        "cody.experimental.agenticContext.options": {
           "type": "object",
           "properties": {
             "shell": {
