@@ -127,7 +127,7 @@ class FileTool extends CodyTool {
                 subTag: ps`name`,
             },
             prompt: {
-                instruction: ps`To retrieve full content of a codebase file`,
+                instruction: ps`To retrieve full content of a codebase file-DO NOT retrieve files that may contain secrets`,
                 placeholder: ps`FILENAME`,
                 example: ps`See the content of different files: \`<TOOLFILE><name>path/foo.ts</name><name>path/bar.ts</name></TOOLFILE>\``,
             },
