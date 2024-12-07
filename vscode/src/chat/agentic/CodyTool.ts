@@ -283,7 +283,7 @@ class MemoryTool extends CodyTool {
         const newMemories = this.parse()
         for (const memory of newMemories) {
             if (memory === 'FORGET') {
-                CodyChatMemory.unload()
+                CodyChatMemory.reset()
                 return
             }
             if (memory === 'GET') {
