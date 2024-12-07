@@ -1,4 +1,4 @@
-import { CodyIDE } from '@sourcegraph/cody-shared'
+import { CodyIDE, FeatureFlag } from '@sourcegraph/cody-shared'
 import { S2_URL } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 import {
     ArrowLeftRightIcon,
@@ -7,6 +7,7 @@ import {
     ExternalLinkIcon,
     EyeIcon,
     HeartIcon,
+    TerminalIcon,
     Users2Icon,
     XIcon,
 } from 'lucide-react'
@@ -16,6 +17,7 @@ import type { UserAccountInfo } from '../Chat'
 import { CodyLogo } from '../icons/CodyLogo'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
 import { useTelemetryRecorder } from '../utils/telemetry'
+import { useFeatureFlag } from '../utils/useFeatureFlags'
 import { useLocalStorage } from './hooks'
 import { Button } from './shadcn/ui/button'
 
@@ -26,7 +28,7 @@ interface Notice {
 }
 
 type NoticeVariants = 'default' | 'warning'
-type NoticeIDs = 'DogfoodS2' | 'TeamsUpgrade'
+type NoticeIDs = 'DogfoodS2' | 'TeamsUpgrade' | 'DeepCody'
 
 interface NoticesProps {
     user: UserAccountInfo
@@ -38,6 +40,10 @@ const storageKey = 'DismissedWelcomeNotices'
 
 export const Notices: React.FC<NoticesProps> = ({ user, isTeamsUpgradeCtaEnabled }) => {
     const telemetryRecorder = useTelemetryRecorder()
+
+    const isDeepCodyEnabled = useFeatureFlag(FeatureFlag.DeepCody)
+    const isDeepCodyShellContextSupported = useFeatureFlag(FeatureFlag.DeepCodyShellContext)
+
     // dismissed notices from local storage
     const [dismissedNotices, setDismissedNotices] = useLocalStorage(storageKey, '')
     // session-only dismissal - for notices we want to show if the user logs out and logs back in.
@@ -61,6 +67,36 @@ export const Notices: React.FC<NoticesProps> = ({ user, isTeamsUpgradeCtaEnabled
 
     const notices: Notice[] = useMemo(
         () => [
+            {
+                id: 'DeepCody',
+                isVisible: isDeepCodyEnabled && user.IDE !== CodyIDE.Web,
+                content: (
+                    <NoticeContent
+                        id="DeepCody"
+                        variant="default"
+                        title="Deep Cody (Experimental)"
+                        message="An AI agent that uses Claude 3.5 Sonnet (New) and other models with tool use capability to fetch any extra context needed for better responses. It could search your codebase, execute shell commands in your terminal (when enabled), or use any configured tool to fetch the required context."
+                        onDismiss={() => dismissNotice('DeepCody')}
+                        actions={
+                            isDeepCodyShellContextSupported
+                                ? [
+                                      {
+                                          label: 'Enable shell command execution in settings',
+                                          onClick: () =>
+                                              getVSCodeAPI().postMessage({
+                                                  command: 'command',
+                                                  id: 'cody.status-bar.interacted',
+                                              }),
+                                          variant: 'default',
+                                          icon: <TerminalIcon size={14} />,
+                                          iconPosition: 'start',
+                                      },
+                                  ]
+                                : []
+                        }
+                    />
+                ),
+            },
             /**
              * Notifies users that they are eligible for a free upgrade to Sourcegraph Teams.
              * TODO: Update to live link https://linear.app/sourcegraph/issue/CORE-535/cody-clients-migrate-ctas-to-live-links
@@ -135,7 +171,13 @@ export const Notices: React.FC<NoticesProps> = ({ user, isTeamsUpgradeCtaEnabled
                 ),
             },
         ],
-        [user, dismissNotice, isTeamsUpgradeCtaEnabled]
+        [
+            user,
+            dismissNotice,
+            isTeamsUpgradeCtaEnabled,
+            isDeepCodyEnabled,
+            isDeepCodyShellContextSupported,
+        ]
     )
 
     // First, modify the activeNotice useMemo to add conditional logic for DogfoodS2
@@ -191,6 +233,11 @@ const NoticeContent: FunctionComponent<NoticeContentProps> = ({
     }[variant]
 
     const header = {
+        DeepCody: (
+            <>
+                <CodyLogo size={16} />
+            </>
+        ),
         DogfoodS2: (
             <>
                 <EyeIcon />

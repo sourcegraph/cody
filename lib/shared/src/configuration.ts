@@ -51,6 +51,7 @@ export interface NetConfiguration {
 
 export interface AgenticContextConfiguration {
     shell?: {
+        enabled: boolean
         allow?: string[] | undefined | null
         block?: string[] | undefined | null
     }

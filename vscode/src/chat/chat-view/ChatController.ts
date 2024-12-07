@@ -531,6 +531,10 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyExperimentalOneBox)
     )
 
+    private featureDeepCodyShellContext = storeLastValue(
+        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.DeepCodyShellContext)
+    )
+
     private async getConfigForWebview(): Promise<ConfigurationSubsetForWebview & LocalEnv> {
         const { configuration, auth } = await currentResolvedConfig()
         const sidebarViewOnly = this.extensionClient.capabilities?.webviewNativeConfig?.view === 'single'
@@ -538,6 +542,11 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         const webviewType = isEditorViewType && !sidebarViewOnly ? 'editor' : 'sidebar'
         const uiKindIsWeb = (cenv.CODY_OVERRIDE_UI_KIND ?? vscode.env.uiKind) === vscode.UIKind.Web
         const endpoints = localStorage.getEndpointHistory() ?? []
+        this.toolProvider.setShellConfig({
+            instance: this.featureDeepCodyShellContext.value?.last,
+            user: Boolean(configuration.agenticContext?.shell?.enabled),
+            client: Boolean(vscode.env.shell),
+        })
 
         return {
             uiKindIsWeb,

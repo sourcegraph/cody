@@ -191,7 +191,7 @@ export const ModelSelectField: React.FunctionComponent<{
                         data-testid="chat-model-popover-option"
                     >
                         {optionsByGroup.map(({ group, options }) => (
-                            <CommandGroup heading={group} key={group}>
+                            <CommandGroup heading={group} key={group} className="tw-relative">
                                 {options.map(option => (
                                     <CommandItem
                                         data-testid="chat-model-popover-option"
@@ -306,7 +306,7 @@ function modelAvailability(
 
 function getTooltip(model: Model, availability: string): string {
     if (model.id.includes('deep-cody')) {
-        return 'Uses Claude 3.5 Sonnet (New) with other models to fetch any extra context needed for better responses'
+        return 'An AI agent that uses Claude 3.5 Sonnet (New) and other models with tool use capability to fetch any extra context needed for better responses. It can search your codebase, execute shell commands in your terminal (when enabled), or use any configured tool to fetch the required context'
     }
     if (model.tags.includes(ModelTag.Waitlist)) {
         return 'Request access to this new model'
@@ -351,6 +351,7 @@ const ModelTitleWithIcon: React.FC<{
     showIcon?: boolean
     showProvider?: boolean
     modelAvailability?: ModelAvailability
+    isCurrentlySelected?: boolean
 }> = ({ model, showIcon, modelAvailability }) => {
     const modelBadge = getBadgeText(model, modelAvailability)
     const isDisabled = modelAvailability !== 'available'
@@ -395,7 +396,7 @@ const ChatModelIcon: FunctionComponent<{ model: string; className?: string }> = 
 
 /** Common {@link ModelsService.uiGroup} values. */
 const ModelUIGroup: Record<string, string> = {
-    DeepCody: 'Mixed models, extended processing',
+    DeepCody: 'Agents (Mixed models with tools use)',
     Power: 'More powerful models',
     Balanced: 'Balanced for power and speed',
     Speed: 'Faster models',
