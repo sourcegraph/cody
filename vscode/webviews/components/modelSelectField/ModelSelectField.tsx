@@ -306,7 +306,7 @@ function modelAvailability(
 
 function getTooltip(model: Model, availability: string): string {
     if (model.id.includes('deep-cody')) {
-        return 'An AI agent that uses Claude 3.5 Sonnet (New) and other models with tool use capability to fetch any extra context needed for better responses. It can search your codebase, execute shell commands in your terminal (when enabled), or use any configured tool to fetch the required context'
+        return 'An AI agent powered by Claude 3.5 Sonnet (New) and other models with tool-use capabilities to gather contextual information for better responses. It can search your codebase, browse the web, execute shell commands in your terminal (when enabled), and utilize any configured tools to retrieve necessary context. To enable shell commands, set the "cody.experimental.agentic.context.shell" option to true in your settings.'
     }
     if (model.tags.includes(ModelTag.Waitlist)) {
         return 'Request access to this new model'
@@ -396,7 +396,7 @@ const ChatModelIcon: FunctionComponent<{ model: string; className?: string }> = 
 
 /** Common {@link ModelsService.uiGroup} values. */
 const ModelUIGroup: Record<string, string> = {
-    DeepCody: 'Agents (Mixed models with tool use)',
+    DeepCody: 'Agents (Mixed models with tool-use)',
     Power: 'More powerful models',
     Balanced: 'Balanced for power and speed',
     Speed: 'Faster models',

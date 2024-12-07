@@ -75,13 +75,13 @@ export const Notices: React.FC<NoticesProps> = ({ user, isTeamsUpgradeCtaEnabled
                         id="DeepCody"
                         variant="default"
                         title="Deep Cody (Experimental)"
-                        message="An AI agent that uses Claude 3.5 Sonnet (New) and other models with tool use capability to fetch any extra context needed for better responses. It could search your codebase, execute shell commands in your terminal (when enabled), or use any configured tool to fetch the required context."
+                        message="An AI agent powered by Claude 3.5 Sonnet (New) and other models with tool-use capabilities to gather contextual information for enhanced responses. It can search your codebase, browse the web, execute shell commands in your terminal (when enabled), and utilize any configured tools to retrieve necessary context."
                         onDismiss={() => dismissNotice('DeepCody')}
                         actions={
                             isDeepCodyShellContextSupported
                                 ? [
                                       {
-                                          label: 'Enable shell command execution in settings',
+                                          label: 'Enable Command Execution in Settings',
                                           onClick: () =>
                                               getVSCodeAPI().postMessage({
                                                   command: 'command',
@@ -92,7 +92,13 @@ export const Notices: React.FC<NoticesProps> = ({ user, isTeamsUpgradeCtaEnabled
                                           iconPosition: 'start',
                                       },
                                   ]
-                                : []
+                                : [
+                                      {
+                                          label: 'Contact admins to enable Command Execution',
+                                          onClick: () => {},
+                                          variant: 'secondary',
+                                      },
+                                  ]
                         }
                     />
                 ),
@@ -187,7 +193,7 @@ export const Notices: React.FC<NoticesProps> = ({ user, isTeamsUpgradeCtaEnabled
                 if (notice.id === 'DogfoodS2') {
                     return notice.isVisible && !sessionDismissedNotices.includes(notice.id)
                 }
-                return notice.isVisible && !dismissedNotices?.includes(notice.id)
+                return notice.isVisible && dismissedNotices?.includes(notice.id)
             }),
         [dismissedNotices, sessionDismissedNotices, notices]
     )

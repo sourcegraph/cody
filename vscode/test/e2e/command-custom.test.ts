@@ -12,7 +12,6 @@ import {
 import {
     type DotcomUrlOverride,
     type ExpectedV2Events,
-    type ExtraWorkspaceSettings,
     test as baseTest,
     executeCommandInPalette,
     openCodyCommandsQuickPick,
@@ -27,33 +26,23 @@ test.beforeEach(() => {
     mockServer.resetLoggedEvents()
 })
 
-testGitWorkspace
-    .extend<ExtraWorkspaceSettings>({
-        extraWorkspaceSettings: {
-            'cody.internal.unstable': true, // Needed for Cody Ignore
-            'cody.experimental.commitMessage': true,
-            'cody.experimental.agentic.context': {
-                shell: { enabled: true, allow: ['*'] },
-            },
-        },
-    })
-    .extend<ExpectedV2Events>({
-        // list of events we expect this test to log, add to this list as needed
-        expectedV2Events: [
-            'cody.extension:installed',
-            'cody.auth.login:clicked',
-            'cody.auth.login:firstEver',
-            'cody.auth.login.token:clicked',
-            'cody.auth:connected',
-            'cody.menu.command.custom:clicked',
-            'cody.menu.custom.build:clicked',
-            'cody.command.custom.build:executed',
-            'cody.command.custom:executed',
-            'cody.chat-question:submitted',
-            'cody.chat-question:executed',
-            'cody.chatResponse:noCode',
-        ],
-    })('create a new user command via the custom commands menu', async ({ page, sidebar }) => {
+test.extend<ExpectedV2Events>({
+    // list of events we expect this test to log, add to this list as needed
+    expectedV2Events: [
+        'cody.extension:installed',
+        'cody.auth.login:clicked',
+        'cody.auth.login:firstEver',
+        'cody.auth.login.token:clicked',
+        'cody.auth:connected',
+        'cody.menu.command.custom:clicked',
+        'cody.menu.custom.build:clicked',
+        'cody.command.custom.build:executed',
+        'cody.command.custom:executed',
+        'cody.chat-question:submitted',
+        'cody.chat-question:executed',
+        'cody.chatResponse:noCode',
+    ],
+})('create a new user command via the custom commands menu', async ({ page, sidebar }) => {
     await sidebarSignin(page, sidebar)
 
     // Open the File Explorer view from the sidebar

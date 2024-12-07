@@ -25,8 +25,8 @@ Terminal output from the \`{command}\` command enclosed between <OUTPUT0412> tag
 
 export async function getContextFileFromShell(command: string): Promise<ContextItem[]> {
     return wrapInActiveSpan('commands.context.command', async () => {
-        const userShellConfig = getConfiguration()?.experimentalAgenticContext?.shell
-        if (!vscode.env.shell || !userShellConfig?.enabled) {
+        const agenticShellConfig = getConfiguration()?.experimentalAgenticContextOptions?.shell
+        if (!vscode.env.shell) {
             void vscode.window.showErrorMessage(
                 'Shell command is not supported in your current workspace.'
             )
@@ -38,8 +38,8 @@ export async function getContextFileFromShell(command: string): Promise<ContextI
         const filteredCommand = command.replaceAll(/(\s~\/)/g, ` ${HOME_DIR}${path.sep}`)
 
         // Process user config list
-        const allowList = new Set(userShellConfig?.allow ?? [])
-        const blockList = new Set([...BASE_DISALLOWED_COMMANDS, ...(userShellConfig?.block ?? [])])
+        const allowList = new Set(agenticShellConfig?.allow ?? [])
+        const blockList = new Set([...BASE_DISALLOWED_COMMANDS, ...(agenticShellConfig?.block ?? [])])
 
         try {
             // Command validation

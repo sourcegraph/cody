@@ -1290,33 +1290,30 @@
           "type": "boolean",
           "default": false
         },
-        "cody.experimental.agentic.context": {
+        "cody.experimental.agentic.context.shell": {
+          "type": "boolean",
+          "markdownDescription": "Enable Agents like Deep Cody to autonomously execute shell commands in your environment for context. Enable with caution as mistakes are possible.",
+          "default": false
+        },
+        "cody.experimental.agentic.context.options": {
           "type": "object",
           "properties": {
             "shell": {
-              "enabled": "boolean",
               "allow": "array",
               "block": "array"
             }
           },
-          "default": { "shell": { "enabled": false } },
+          "default": {},
           "examples": [
             {},
             {
               "shell": {
-                "enabled": true,
-                "allow": ["*"]
-              }
-            },
-            {
-              "shell": {
-                "enabled": true,
                 "allow": ["git", "ls", "find"],
                 "block": ["history", "sudo", "rm"]
               }
             }
           ],
-          "markdownDescription": "Configure shell command execution for agents (like Deep Cody) when terminal context is enabled on your instance (requires feature flag). The 'shell' field has two properties:\n\n- 'allow': Accepts either [] or ['*'] to allow all commands or an array of specific command prefixes\n- 'block': An array of command prefixes to block, which combines with built-in safety blocklist\n\nBlocked commands take precedence over allowed commands. Command outputs are used as context. Remove the 'shell' field to disable this feature entirely."
+          "markdownDescription": "'shell' field is used to configure shell command execution for agents (like Deep Cody) when terminal context is enabled. The 'shell' field has two properties:\n\n- 'allow': Accepts either [] to allow all commands or an array of specific command prefixes\n- 'block': An array of command prefixes to block, which combines with built-in safety blocklist\n\nBlocked commands take precedence over allowed commands. Command outputs are used as context. Remove the 'shell' field to allow all commands."
         },
         "cody.net.proxy.cacert": {
           "markdownDescription": "Either the PEM-encoded CA certificate the proxy uses (replace newlines with `\\n`), or the path (absolute or tilde) to the file containing that certificate.\n\nExamples:\n- `~/.mitmproxy/mitmproxy-ca-cert.pem`\n- `-----BEGIN CERTIFICATE-----\\n...\\n-----END CERTIFICATE-----`",

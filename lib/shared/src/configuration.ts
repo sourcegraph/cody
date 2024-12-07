@@ -51,7 +51,6 @@ export interface NetConfiguration {
 
 export interface AgenticContextConfiguration {
     shell?: {
-        enabled: boolean
         allow?: string[] | undefined | null
         block?: string[] | undefined | null
     }
@@ -73,7 +72,8 @@ interface RawClientConfiguration {
     commandCodeLenses: boolean
 
     // Deep Cody
-    experimentalAgenticContext?: AgenticContextConfiguration
+    experimentalAgenticContextShell?: boolean | undefined | null
+    experimentalAgenticContextOptions?: AgenticContextConfiguration | undefined | null
 
     //#region Autocomplete
     autocomplete: boolean
