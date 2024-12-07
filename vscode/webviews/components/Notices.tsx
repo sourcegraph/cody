@@ -193,7 +193,7 @@ export const Notices: React.FC<NoticesProps> = ({ user, isTeamsUpgradeCtaEnabled
                 if (notice.id === 'DogfoodS2') {
                     return notice.isVisible && !sessionDismissedNotices.includes(notice.id)
                 }
-                return notice.isVisible && dismissedNotices?.includes(notice.id)
+                return notice.isVisible && !dismissedNotices?.includes(notice.id)
             }),
         [dismissedNotices, sessionDismissedNotices, notices]
     )
