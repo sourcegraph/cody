@@ -544,7 +544,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         const endpoints = localStorage.getEndpointHistory() ?? []
         this.toolProvider.setShellConfig({
             instance: this.featureDeepCodyShellContext.value?.last,
-            user: Boolean(configuration.agenticContext?.shell?.enabled),
+            user: Boolean(configuration.experimentalAgenticContext?.shell?.enabled),
             client: Boolean(vscode.env.shell),
         })
 

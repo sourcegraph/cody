@@ -912,7 +912,7 @@ export const DEFAULT_VSCODE_SETTINGS = {
     internalUnstable: false,
     internalDebugContext: false,
     internalDebugState: false,
-    agenticContext: { shell: { enabled: false } },
+    experimentalAgenticContext: { shell: { enabled: false } },
     autocompleteAdvancedProvider: 'default',
     autocompleteAdvancedModel: null,
     autocompleteCompleteSuggestWidgetSelection: true,

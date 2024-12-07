@@ -161,7 +161,7 @@ describe('getConfiguration', () => {
                 '*': true,
             },
             commandCodeLenses: true,
-            agenticContext: { shell: { enabled: true, allow: ['*'] } },
+            experimentalAgenticContext: { shell: { enabled: true, allow: ['*'] } },
             experimentalSupercompletions: false,
             experimentalAutoeditsEnabled: undefined,
             experimentalAutoeditsConfigOverride: undefined,
