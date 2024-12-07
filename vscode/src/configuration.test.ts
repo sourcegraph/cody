@@ -4,7 +4,6 @@ import type * as vscode from 'vscode'
 import { type ClientConfiguration, OLLAMA_DEFAULT_URL, ps } from '@sourcegraph/cody-shared'
 
 import type { ChatModelProviderConfig } from '@sourcegraph/cody-shared/src/models/sync'
-import { DefaultShellContextConfig } from './commands/context/config'
 import { getConfiguration } from './configuration'
 import { DEFAULT_VSCODE_SETTINGS } from './testutils/mocks'
 
@@ -132,8 +131,10 @@ describe('getConfiguration', () => {
                         return undefined
                     case 'http':
                         return undefined
-                    case 'cody.agentic.context':
-                        return { shell: DefaultShellContextConfig }
+                    case 'cody.experimental.agenticContext.shell':
+                        return false
+                    case 'cody.experimental.agenticContext.options':
+                        return { shell: { allow: ['git'] } }
                     default:
                         assert(false, `unexpected key: ${key}`)
                 }
@@ -162,7 +163,8 @@ describe('getConfiguration', () => {
                 '*': true,
             },
             commandCodeLenses: true,
-            agenticContext: { shell: DefaultShellContextConfig },
+            experimentalAgenticContextShell: false,
+            experimentalAgenticContextOptions: { shell: { allow: ['git'] } },
             experimentalSupercompletions: false,
             experimentalAutoeditsEnabled: undefined,
             experimentalAutoeditsConfigOverride: undefined,

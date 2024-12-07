@@ -37,7 +37,7 @@ export class CodyChatMemory {
         // If store exceeds the max, remove oldest items
         if (CodyChatMemory.Store.size > CodyChatMemory.MAX_MEMORY_ITEMS) {
             const storeArray = Array.from(CodyChatMemory.Store)
-            CodyChatMemory.Store = new Set(storeArray.slice(-5))
+            CodyChatMemory.Store = new Set(storeArray.slice(-CodyChatMemory.MAX_MEMORY_ITEMS))
         }
         // TODO - persist to local file system
         localStorage?.setChatMemory(Array.from(CodyChatMemory.Store))

@@ -1,5 +1,6 @@
 import dedent from 'dedent'
 import type * as vscode from 'vscode'
+import { CodyIDE } from '..'
 import type { ChatMessage, SerializedChatMessage } from '../chat/transcript/messages'
 import type { ContextItem } from '../codebase-context/messages'
 import type { ContextFiltersProvider } from '../cody-ignore/context-filters-provider'
@@ -218,6 +219,25 @@ export class PromptString {
         const raw = config.get(path, null)
         const value = raw === null || raw === '' ? defaultValue : internal_createPromptString(raw, [])
         return value
+    }
+
+    public static fromAgentClientIDE(client: CodyIDE) {
+        switch (client) {
+            case CodyIDE.Web:
+                return ps`Sourcegraph Web`
+            case CodyIDE.VisualStudio:
+                return ps`Visual Studio`
+            case CodyIDE.JetBrains:
+                return ps`JetBrains`
+            case CodyIDE.Eclipse:
+                return ps`Eclipse`
+            case CodyIDE.Emacs:
+                return ps`Emacs`
+            case CodyIDE.Neovim:
+                return ps`Neovim`
+            default:
+                return ps`VS Code`
+        }
     }
 
     public static fromEditorIndentString(

@@ -1,7 +1,9 @@
 import type { Span } from '@opentelemetry/api'
 import {
+    CodyIDE,
     type ContextItem,
     PromptString,
+    clientCapabilities,
     isDefined,
     logDebug,
     ps,
@@ -29,6 +31,10 @@ export class DeepCodyAgent extends CodyChatAgent {
         return CODYAGENT_PROMPTS.review
             .replace('{{CODY_TOOLS_PLACEHOLDER}}', join(toolInstructions))
             .replace('{{CODY_TOOLS_EXAMPLES_PLACEHOLDER}}', join(toolExamples))
+            .replace(
+                '{{CODY_IDE}}',
+                PromptString.fromAgentClientIDE(clientCapabilities().agentIDE || CodyIDE.VSCode)
+            )
     }
 
     /**

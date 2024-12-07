@@ -133,6 +133,13 @@ export type WebviewMessage =
           filterLabel: string
           message: string
       }
+    | {
+          command: 'settings'
+          setting: {
+              key: string
+              value: string | undefined | null
+          }
+      }
 
 export interface SmartApplyResult {
     taskId: FixupTaskID
