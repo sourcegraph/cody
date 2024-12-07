@@ -21,7 +21,8 @@
     "agent:debug": "pnpm run build && CODY_AGENT_TRACE_PATH=/tmp/agent.json CODY_AGENT_DEBUG_REMOTE=true node --enable-source-maps ./dist/index.js api jsonrpc-stdio",
     "build-ts": "tsc --build",
     "test-agent-binary": "esbuild ./scripts/test-agent-binary.ts --bundle --platform=node --alias:vscode=./src/vscode-shim.ts --outdir=dist && node ./dist/test-agent-binary.js",
-    "test": "vitest",
+    "test": "build:for-tests && vitest",
+    "test:only": "vitest",
     "prepublishOnly": "pnpm run build"
   },
   "bin": "dist/index.js",

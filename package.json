@@ -18,6 +18,7 @@
   "scripts": {
     "agent": "pnpm -C agent agent",
     "build": "tsc --build",
+    "build:for-tests": "pnpm run build && pnpm -C vscode build && pnpm -C agent run build:for-tests",
     "watch": "tsc --build --watch",
     "check": "pnpm run -s check:build && pnpm run -s biome && pnpm run -s check:css",
     "check:css": "stylelint --quiet --cache '**/*.css'",
