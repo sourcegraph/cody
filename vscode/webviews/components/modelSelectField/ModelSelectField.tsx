@@ -191,7 +191,7 @@ export const ModelSelectField: React.FunctionComponent<{
                         data-testid="chat-model-popover-option"
                     >
                         {optionsByGroup.map(({ group, options }) => (
-                            <CommandGroup heading={group} key={group} className="tw-relative">
+                            <CommandGroup heading={group} key={group}>
                                 {options.map(option => (
                                     <CommandItem
                                         data-testid="chat-model-popover-option"
@@ -396,7 +396,7 @@ const ChatModelIcon: FunctionComponent<{ model: string; className?: string }> = 
 
 /** Common {@link ModelsService.uiGroup} values. */
 const ModelUIGroup: Record<string, string> = {
-    DeepCody: 'Agents (Mixed models with tools use)',
+    DeepCody: 'Agents (Mixed models with tool use)',
     Power: 'More powerful models',
     Balanced: 'Balanced for power and speed',
     Speed: 'Faster models',
