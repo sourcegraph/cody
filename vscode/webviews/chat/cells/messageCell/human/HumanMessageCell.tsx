@@ -44,7 +44,6 @@ interface HumanMessageCellProps {
 
     className?: string
     editorRef?: React.RefObject<PromptEditorRefAPI | null>
-    index: number
 
     /** For use in storybooks only. */
     __storybook__focus?: boolean
@@ -81,7 +80,6 @@ const HumanMessageCellContent = memo<HumanMessageCellContent>(props => {
         userInfo,
         chatEnabled = true,
         isFirstMessage,
-        index,
         isSent,
         isPendingPriorResponse,
         onChange,
@@ -119,7 +117,6 @@ const HumanMessageCellContent = memo<HumanMessageCellContent>(props => {
                             : 'Ask a followup...'
                     }
                     isFirstMessage={isFirstMessage}
-                    index={index}
                     isSent={isSent}
                     isPendingPriorResponse={isPendingPriorResponse}
                     onChange={onChange}

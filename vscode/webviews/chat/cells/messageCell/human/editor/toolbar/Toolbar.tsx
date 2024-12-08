@@ -21,7 +21,6 @@ export const Toolbar: FunctionComponent<{
 
     isEditorFocused: boolean
 
-    index: number
     editorRef: React.RefObject<PromptEditorRefAPI | null>
 
     onMentionClick?: () => void
@@ -94,7 +93,6 @@ export const Toolbar: FunctionComponent<{
                 )}
                 <PromptSelectFieldToolbarItem
                     focusEditor={focusEditor}
-                    index={index}
                     editorRef={editorRef}
                     className="tw-ml-1 tw-mr-1"
                 />
@@ -120,15 +118,14 @@ export const Toolbar: FunctionComponent<{
 
 const PromptSelectFieldToolbarItem: FunctionComponent<{
     focusEditor?: () => void
-    index: number
     editorRef: React.RefObject<PromptEditorRefAPI | null>
     className?: string
-}> = ({ focusEditor, index, editorRef, className }) => {
+}> = ({ focusEditor, editorRef, className }) => {
     const runAction = useActionSelect()
 
     const onSelect = useCallback(
-        async (item: Action, index: number, editorRef: React.RefObject<PromptEditorRefAPI | null>) => {
-            await runAction(item, index, editorRef, () => {})
+        async (item: Action, editorRef: React.RefObject<PromptEditorRefAPI | null>) => {
+            await runAction(item, editorRef, () => {})
             focusEditor?.()
         },
         [focusEditor, runAction]
@@ -137,7 +134,6 @@ const PromptSelectFieldToolbarItem: FunctionComponent<{
     return (
         <PromptSelectField
             onSelect={onSelect}
-            index={index}
             editorRef={editorRef}
             onCloseByEscape={focusEditor}
             className={className}

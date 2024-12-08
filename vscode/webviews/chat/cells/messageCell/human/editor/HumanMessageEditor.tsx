@@ -48,8 +48,6 @@ export const HumanMessageEditor: FunctionComponent<{
     /** Whether this editor is for the first message (not a followup). */
     isFirstMessage: boolean
 
-    index: number
-
     /** Whether this editor is for a message that has been sent already. */
     isSent: boolean
 
@@ -80,7 +78,6 @@ export const HumanMessageEditor: FunctionComponent<{
     initialEditorState,
     placeholder,
     isFirstMessage,
-    index,
     isSent,
     isPendingPriorResponse,
     disabled = false,
@@ -351,7 +348,6 @@ export const HumanMessageEditor: FunctionComponent<{
                 if (setPromptAsInput) {
                     // set the intent
                     promptIntent = promptModeToIntent(setPromptAsInput.mode)
-                    // logDebug('promptIntent', JSON.stringify(promptIntent))
 
                     updates.push(
                         // biome-ignore lint/suspicious/noAsyncPromiseExecutor: <explanation>
@@ -464,7 +460,6 @@ export const HumanMessageEditor: FunctionComponent<{
                     models={models}
                     userInfo={userInfo}
                     isEditorFocused={focused}
-                    index={index}
                     editorRef={editorRef}
                     onMentionClick={onMentionClick}
                     onSubmitClick={onSubmitClick}

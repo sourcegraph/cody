@@ -42,11 +42,7 @@ interface PromptListProps {
     appearanceMode?: 'flat-list' | 'chips-list'
     lastUsedSorting?: boolean
     recommendedOnly?: boolean
-    onSelect: (
-        item: Action,
-        index: number,
-        editorRef: React.RefObject<PromptEditorRefAPI | null>
-    ) => void
+    onSelect: (item: Action, editorRef: React.RefObject<PromptEditorRefAPI | null>) => void
     index: number
     editorRef: React.RefObject<PromptEditorRefAPI | null>
 }
@@ -72,7 +68,6 @@ export const PromptList: FC<PromptListProps> = props => {
         lastUsedSorting,
         recommendedOnly,
         onSelect: parentOnSelect,
-        index: messageIndex,
         editorRef: parentEditorRef,
     } = props
 
@@ -101,7 +96,6 @@ export const PromptList: FC<PromptListProps> = props => {
     const onSelect = useCallback(
         (rowValue: string): void => {
             const action = result?.actions.find(p => commandRowValue(p) === rowValue)
-            const index = messageIndex
             const editorRef = parentEditorRef
 
             if (!action || !result) {
@@ -159,7 +153,6 @@ export const PromptList: FC<PromptListProps> = props => {
             telemetryPublicMetadata,
             debouncedQuery,
             error,
-            messageIndex,
             parentEditorRef,
         ]
     )

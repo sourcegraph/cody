@@ -15,7 +15,6 @@ export const PromptsTab: React.FC<{
     IDE: CodyIDE
     setView: (view: View) => void
     isPromptsV2Enabled?: boolean
-    index: number
     editorRef: React.RefObject<PromptEditorRefAPI | null>
 }> = ({ IDE, setView, isPromptsV2Enabled, index, editorRef }) => {
     const runAction = useActionSelect()
@@ -33,7 +32,7 @@ export const PromptsTab: React.FC<{
                 recommendedOnly={false}
                 showOnlyPromptInsertableCommands={false}
                 showPromptLibraryUnsupportedMessage={true}
-                onSelect={item => runAction(item, index, editorRef, setView)}
+                onSelect={item => runAction(item, editorRef, setView)}
                 index={index}
                 editorRef={editorRef}
                 className={styles.promptsContainer}

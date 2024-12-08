@@ -11,19 +11,14 @@ import { ToolbarPopoverItem } from '../shadcn/ui/toolbar'
 import { cn } from '../shadcn/utils'
 
 export const PromptSelectField: React.FunctionComponent<{
-    onSelect: (
-        item: Action,
-        index: number,
-        editorRef: React.RefObject<PromptEditorRefAPI | null>
-    ) => void
-    index: number
+    onSelect: (item: Action, editorRef: React.RefObject<PromptEditorRefAPI | null>) => void
     editorRef: React.RefObject<PromptEditorRefAPI | null>
     onCloseByEscape?: () => void
     className?: string
 
     /** For storybooks only. */
     __storybook__open?: boolean
-}> = ({ onSelect, index, editorRef, onCloseByEscape, className, __storybook__open }) => {
+}> = ({ onSelect, editorRef, onCloseByEscape, className, __storybook__open }) => {
     const telemetryRecorder = useTelemetryRecorder()
     const { setView } = useTabView()
 
@@ -56,11 +51,10 @@ export const PromptSelectField: React.FunctionComponent<{
             popoverContent={close => (
                 <div className="tw-flex tw-flex-col tw-max-h-[500px] tw-overflow-auto">
                     <PromptList
-                        onSelect={(item, index, editorRef) => {
-                            onSelect(item, index, editorRef)
+                        onSelect={(item, editorRef) => {
+                            onSelect(item, editorRef)
                             close()
                         }}
-                        index={index}
                         editorRef={editorRef}
                         showSearch={true}
                         paddingLevels="middle"
