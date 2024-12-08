@@ -351,6 +351,7 @@ export const HumanMessageEditor: FunctionComponent<{
                 if (setPromptAsInput) {
                     // set the intent
                     promptIntent = promptModeToIntent(setPromptAsInput.mode)
+                    // logDebug('promptIntent', JSON.stringify(promptIntent))
 
                     updates.push(
                         // biome-ignore lint/suspicious/noAsyncPromiseExecutor: <explanation>
@@ -364,12 +365,19 @@ export const HumanMessageEditor: FunctionComponent<{
                                 extensionAPI.hydratePromptMessage(setPromptAsInput.text, initialContext)
                             )
 
+                            let targetEditorRef: React.RefObject<PromptEditorRefAPI | null>
+                            if (setPromptAsInput.editorRef) {
+                                targetEditorRef = setPromptAsInput.editorRef
+                            } else {
+                                targetEditorRef = editorRef
+                            }
+
                             // update editor state
                             requestAnimationFrame(async () => {
-                                if (editorRef.current) {
+                                if (targetEditorRef.current) {
                                     await Promise.all([
-                                        editorRef.current.setEditorState(promptEditorState),
-                                        editorRef.current.setFocus(true),
+                                        targetEditorRef.current.setEditorState(promptEditorState),
+                                        targetEditorRef.current.setFocus(true),
                                     ])
                                 }
                                 resolve()
@@ -457,6 +465,7 @@ export const HumanMessageEditor: FunctionComponent<{
                     userInfo={userInfo}
                     isEditorFocused={focused}
                     index={index}
+                    editorRef={editorRef}
                     onMentionClick={onMentionClick}
                     onSubmitClick={onSubmitClick}
                     submitState={submitState}

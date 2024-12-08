@@ -7,6 +7,7 @@ import { getVSCodeAPI } from '../utils/VSCodeApi'
 
 import { CodyIDE } from '@sourcegraph/cody-shared'
 import type { PromptMode } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
+import type { PromptEditorRefAPI } from '@sourcegraph/prompt-editor'
 import { PromptMigrationWidget } from '../components/promptsMigration/PromptsMigration'
 import styles from './PromptsTab.module.css'
 
@@ -15,7 +16,8 @@ export const PromptsTab: React.FC<{
     setView: (view: View) => void
     isPromptsV2Enabled?: boolean
     index: number
-}> = ({ IDE, setView, isPromptsV2Enabled, index }) => {
+    editorRef: React.RefObject<PromptEditorRefAPI | null>
+}> = ({ IDE, setView, isPromptsV2Enabled, index, editorRef }) => {
     const runAction = useActionSelect()
 
     return (
@@ -31,8 +33,9 @@ export const PromptsTab: React.FC<{
                 recommendedOnly={false}
                 showOnlyPromptInsertableCommands={false}
                 showPromptLibraryUnsupportedMessage={true}
-                onSelect={item => runAction(item, index, setView)}
+                onSelect={item => runAction(item, index, editorRef, setView)}
                 index={index}
+                editorRef={editorRef}
                 className={styles.promptsContainer}
                 inputClassName={styles.promptsInput}
             />
@@ -60,7 +63,12 @@ export function useActionSelect() {
         {}
     )
 
-    return async (action: Action, index: number, setView: (view: View) => void) => {
+    return async (
+        action: Action,
+        index: number,
+        editorRef: React.RefObject<PromptEditorRefAPI | null>,
+        setView: (view: View) => void
+    ) => {
         try {
             const actionKey = action.actionType === 'prompt' ? action.id : action.key
             persistValue({ ...lastUsedActions, [actionKey]: Date.now() })
@@ -75,10 +83,17 @@ export function useActionSelect() {
                 dispatchClientAction(
                     {
                         setPromptAsInput: {
-                            text: 'test text 2 ' + index.toString() + ' ' + action.mode,
+                            text:
+                                'test text 2 ' +
+                                index.toString() +
+                                ' ' +
+                                action.mode +
+                                ' ' +
+                                editorRef.toString(),
                             mode: action.mode,
                             autoSubmit: action.autoSubmit || false,
                             index: index,
+                            editorRef: editorRef,
                         },
                     },
                     // Buffer because PromptEditor is not guaranteed to be mounted after the `setView`
