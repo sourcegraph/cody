@@ -50,10 +50,6 @@ interface TextDocumentChangeWithRange {
 export function groupOverlappingDocumentChanges(
     documentChanges: TextDocumentChange[]
 ): TextDocumentChangeGroup[] {
-    const textDocumentChangesWithRanges = documentChanges.map(change =>
-        getTextDocumentWithRanges(change)
-    )
-
     const mergePredicate = (
         lastItem: TextDocumentChangeWithRange,
         currentItem: TextDocumentChangeWithRange
@@ -67,18 +63,14 @@ export function groupOverlappingDocumentChanges(
     }
 
     return mergeDocumentChanges({
-        items: textDocumentChangesWithRanges,
+        items: documentChanges.map(change => ({
+            change,
+            insertedRange: change.insertedRange,
+            replacementRange: change.change.range,
+        })),
         mergePredicate,
         getChanges: item => [item.change],
     })
-}
-
-function getTextDocumentWithRanges(change: TextDocumentChange): TextDocumentChangeWithRange {
-    return {
-        change,
-        insertedRange: change.insertedRange,
-        replacementRange: change.change.range,
-    }
 }
 
 /**
