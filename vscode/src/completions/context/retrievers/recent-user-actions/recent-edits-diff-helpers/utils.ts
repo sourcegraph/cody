@@ -31,6 +31,12 @@ export interface TextDocumentChangeGroup {
     replacementRange?: vscode.Range
 }
 
+interface TextDocumentChangeWithRange {
+    change: TextDocumentChange
+    insertedRange: vscode.Range
+    replacementRange: vscode.Range
+}
+
 /**
  * Groups consecutive text document changes together based on line overlap.
  * This function helps create more meaningful diffs by combining related changes that occur on overlapping lines.
@@ -44,14 +50,26 @@ export interface TextDocumentChangeGroup {
 export function groupOverlappingDocumentChanges(
     documentChanges: TextDocumentChange[]
 ): TextDocumentChangeGroup[] {
+    const mergePredicate = (
+        lastItem: TextDocumentChangeWithRange,
+        currentItem: TextDocumentChangeWithRange
+    ) => {
+        const doLinesOverlap = doLineOverlapForRanges(
+            lastItem.insertedRange,
+            currentItem.replacementRange
+        )
+        const doTimeOverlap = lastItem.change.timestamp === currentItem.change.timestamp
+        return doLinesOverlap || doTimeOverlap
+    }
+
     return mergeDocumentChanges({
         items: documentChanges.map(change => ({
+            change,
             insertedRange: change.insertedRange,
             replacementRange: change.change.range,
-            originalChange: change,
         })),
-        mergePredicate: (a, b) => Boolean(a && b && doLineOverlapForRanges(a, b)),
-        getChanges: item => [item.originalChange],
+        mergePredicate,
+        getChanges: item => [item.change],
     })
 }
 
@@ -70,9 +88,16 @@ export function groupOverlappingDocumentChanges(
 export function groupNonOverlappingChangeGroups(
     groupedChanges: TextDocumentChangeGroup[]
 ): TextDocumentChangeGroup[] {
+    const mergePredicate = (lastItem: TextDocumentChangeGroup, currentItem: TextDocumentChangeGroup) => {
+        if (!lastItem.insertedRange || !currentItem.replacementRange) {
+            return false
+        }
+        return !doLineOverlapForRanges(lastItem.insertedRange, currentItem.replacementRange)
+    }
+
     return mergeDocumentChanges({
         items: groupedChanges,
-        mergePredicate: (a, b) => Boolean(a && b && !doLineOverlapForRanges(a, b)),
+        mergePredicate,
         getChanges: group => group.changes,
     })
 }
@@ -89,7 +114,7 @@ function mergeDocumentChanges<
     T extends { insertedRange?: vscode.Range; replacementRange?: vscode.Range },
 >(args: {
     items: T[]
-    mergePredicate: (a?: vscode.Range, b?: vscode.Range) => boolean
+    mergePredicate: (a: T, b: T) => boolean
     getChanges: (item: T) => TextDocumentChange[]
 }): TextDocumentChangeGroup[] {
     if (args.items.length === 0) {
@@ -97,7 +122,7 @@ function mergeDocumentChanges<
     }
 
     const mergedGroups = groupConsecutiveItemsByPredicate(args.items, (lastItem, currentItem) => {
-        return args.mergePredicate(lastItem.insertedRange, currentItem.replacementRange)
+        return args.mergePredicate(lastItem, currentItem)
     })
 
     return mergedGroups

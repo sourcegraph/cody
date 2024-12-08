@@ -13,8 +13,10 @@ const processComputedDiff = (text: string): string => {
 describe('TwoStageUnifiedDiffStrategy', () => {
     const getTextDocumentChanges = (text: string) => {
         const { originalText, changes } = getTextDocumentChangesForText(text)
-        // Advance the time to simulate Date.now() at a later time compared to when the changes were made
-        vi.advanceTimersByTime(1)
+        const changesMaxTimestamp =
+            changes.length === 0 ? Date.now() : Math.max(...changes.map(change => change.timestamp))
+        vi.setSystemTime(changesMaxTimestamp + 1)
+
         return {
             originalText,
             changes,
@@ -30,6 +32,7 @@ describe('TwoStageUnifiedDiffStrategy', () => {
 
     beforeEach(() => {
         vi.useFakeTimers()
+        vi.setSystemTime(Date.now())
     })
 
     it('handles multiple changes across different lines', () => {
