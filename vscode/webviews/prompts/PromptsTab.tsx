@@ -63,7 +63,6 @@ export function useActionSelect() {
 
     return async (
         action: Action,
-        index: number,
         editorRef: React.RefObject<PromptEditorRefAPI | null>,
         setView: (view: View) => void
     ) => {
