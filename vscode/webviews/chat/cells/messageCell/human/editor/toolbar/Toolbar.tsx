@@ -40,7 +40,6 @@ export const Toolbar: FunctionComponent<{
 }> = ({
     userInfo,
     isEditorFocused,
-    index,
     editorRef,
     onMentionClick,
     onSubmitClick,

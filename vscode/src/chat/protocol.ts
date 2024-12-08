@@ -179,7 +179,6 @@ export type ExtensionMessage =
                     text: string
                     mode?: PromptMode | undefined | null
                     autoSubmit: boolean
-                    index: number
                     editorRef: React.RefObject<PromptEditorRefAPI | null>
                 }
               | undefined
