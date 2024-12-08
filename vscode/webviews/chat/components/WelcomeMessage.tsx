@@ -1,5 +1,8 @@
 import { CodyIDE } from '@sourcegraph/cody-shared'
+import type { PromptEditorRefAPI } from '@sourcegraph/prompt-editor'
 import type { FunctionComponent } from 'react'
+import type { RefObject } from 'react'
+import { useRef } from 'react'
 import { Kbd } from '../../components/Kbd'
 import { PromptList } from '../../components/promptList/PromptList'
 import { Button } from '../../components/shadcn/ui/button'
@@ -30,6 +33,7 @@ export const WelcomeMessage: FunctionComponent<WelcomeMessageProps> = ({
     const handleRecentlyUsed = () => {
         document.querySelector<HTMLButtonElement>("button[aria-label='Insert prompt']")?.click()
     }
+    const ref: RefObject<PromptEditorRefAPI | null> = useRef(null)
 
     return (
         <div className="tw-flex-1 tw-flex tw-flex-col tw-items-start tw-w-full tw-px-8 tw-gap-6 tw-transition-all">
@@ -46,7 +50,8 @@ export const WelcomeMessage: FunctionComponent<WelcomeMessageProps> = ({
                     showPromptLibraryUnsupportedMessage={false}
                     appearanceMode="chips-list"
                     telemetryLocation="WelcomeAreaPrompts"
-                    onSelect={item => runAction(item, null, setView)}
+                    editorRef={ref}
+                    onSelect={item => runAction(item, ref, setView)}
                 />
 
                 <div className={clsx(styles.actions, 'tw-flex tw-py-2 tw-gap-8 tw-justify-center')}>
