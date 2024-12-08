@@ -43,7 +43,6 @@ interface PromptListProps {
     lastUsedSorting?: boolean
     recommendedOnly?: boolean
     onSelect: (item: Action, editorRef: React.RefObject<PromptEditorRefAPI | null>) => void
-    index: number
     editorRef: React.RefObject<PromptEditorRefAPI | null>
 }
 
@@ -144,7 +143,7 @@ export const PromptList: FC<PromptListProps> = props => {
                 },
             })
 
-            parentOnSelect(action, index, editorRef)
+            parentOnSelect(action, editorRef)
         },
         [
             result,

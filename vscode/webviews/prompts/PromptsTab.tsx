@@ -16,7 +16,7 @@ export const PromptsTab: React.FC<{
     setView: (view: View) => void
     isPromptsV2Enabled?: boolean
     editorRef: React.RefObject<PromptEditorRefAPI | null>
-}> = ({ IDE, setView, isPromptsV2Enabled, index, editorRef }) => {
+}> = ({ IDE, setView, isPromptsV2Enabled, editorRef }) => {
     const runAction = useActionSelect()
 
     return (
@@ -33,7 +33,6 @@ export const PromptsTab: React.FC<{
                 showOnlyPromptInsertableCommands={false}
                 showPromptLibraryUnsupportedMessage={true}
                 onSelect={item => runAction(item, editorRef, setView)}
-                index={index}
                 editorRef={editorRef}
                 className={styles.promptsContainer}
                 inputClassName={styles.promptsInput}
@@ -82,16 +81,9 @@ export function useActionSelect() {
                 dispatchClientAction(
                     {
                         setPromptAsInput: {
-                            text:
-                                'test text 2 ' +
-                                index.toString() +
-                                ' ' +
-                                action.mode +
-                                ' ' +
-                                editorRef.toString(),
+                            text: action.definition.text,
                             mode: action.mode,
                             autoSubmit: action.autoSubmit || false,
-                            index: index,
                             editorRef: editorRef,
                         },
                     },
