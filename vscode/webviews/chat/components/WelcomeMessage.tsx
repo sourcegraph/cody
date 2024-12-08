@@ -46,7 +46,7 @@ export const WelcomeMessage: FunctionComponent<WelcomeMessageProps> = ({
                     showPromptLibraryUnsupportedMessage={false}
                     appearanceMode="chips-list"
                     telemetryLocation="WelcomeAreaPrompts"
-                    onSelect={item => runAction(item, setView, null)}
+                    onSelect={item => runAction(item, null, setView)}
                 />
 
                 <div className={clsx(styles.actions, 'tw-flex tw-py-2 tw-gap-8 tw-justify-center')}>
