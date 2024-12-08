@@ -174,7 +174,12 @@ export type ExtensionMessage =
           smartApplyResult?: SmartApplyResult | undefined | null
           submitHumanInput?: boolean | undefined | null
           setPromptAsInput?:
-              | { text: string; mode?: PromptMode | undefined | null; autoSubmit: boolean }
+              | {
+                    text: string
+                    mode?: PromptMode | undefined | null
+                    autoSubmit: boolean
+                    index: number
+                }
               | undefined
               | null
       }

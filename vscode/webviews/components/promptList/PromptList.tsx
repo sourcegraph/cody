@@ -41,7 +41,8 @@ interface PromptListProps {
     appearanceMode?: 'flat-list' | 'chips-list'
     lastUsedSorting?: boolean
     recommendedOnly?: boolean
-    onSelect: (item: Action) => void
+    onSelect: (item: Action, index: number) => void
+    index: number
 }
 
 /**
@@ -65,6 +66,7 @@ export const PromptList: FC<PromptListProps> = props => {
         lastUsedSorting,
         recommendedOnly,
         onSelect: parentOnSelect,
+        index: messageIndex
     } = props
 
     const endpointURL = new URL(useConfig().authStatus.endpoint)
@@ -92,6 +94,7 @@ export const PromptList: FC<PromptListProps> = props => {
     const onSelect = useCallback(
         (rowValue: string): void => {
             const action = result?.actions.find(p => commandRowValue(p) === rowValue)
+            const index = messageIndex
 
             if (!action || !result) {
                 return
@@ -139,7 +142,7 @@ export const PromptList: FC<PromptListProps> = props => {
                 },
             })
 
-            parentOnSelect(action)
+            parentOnSelect(action, index)
         },
         [
             result,
@@ -148,6 +151,7 @@ export const PromptList: FC<PromptListProps> = props => {
             telemetryPublicMetadata,
             debouncedQuery,
             error,
+            messageIndex
         ]
     )
 

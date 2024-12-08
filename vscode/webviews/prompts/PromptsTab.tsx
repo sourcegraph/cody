@@ -14,7 +14,8 @@ export const PromptsTab: React.FC<{
     IDE: CodyIDE
     setView: (view: View) => void
     isPromptsV2Enabled?: boolean
-}> = ({ IDE, setView, isPromptsV2Enabled }) => {
+    index: number
+}> = ({ IDE, setView, isPromptsV2Enabled, index }) => {
     const runAction = useActionSelect()
 
     return (
@@ -30,7 +31,8 @@ export const PromptsTab: React.FC<{
                 recommendedOnly={false}
                 showOnlyPromptInsertableCommands={false}
                 showPromptLibraryUnsupportedMessage={true}
-                onSelect={item => runAction(item, setView)}
+                onSelect={item => runAction(item, index, setView)}
+                index={index}
                 className={styles.promptsContainer}
                 inputClassName={styles.promptsInput}
             />
@@ -58,7 +60,7 @@ export function useActionSelect() {
         {}
     )
 
-    return async (action: Action, setView: (view: View) => void) => {
+    return async (action: Action, index: number, setView: (view: View) => void) => {
         try {
             const actionKey = action.actionType === 'prompt' ? action.id : action.key
             persistValue({ ...lastUsedActions, [actionKey]: Date.now() })
@@ -73,9 +75,10 @@ export function useActionSelect() {
                 dispatchClientAction(
                     {
                         setPromptAsInput: {
-                            text: action.definition.text,
+                            text: 'test text 2 ' + index.toString() + ' ' + action.mode,
                             mode: action.mode,
                             autoSubmit: action.autoSubmit || false,
+                            index: index,
                         },
                     },
                     // Buffer because PromptEditor is not guaranteed to be mounted after the `setView`

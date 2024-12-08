@@ -20,6 +20,8 @@ export const Toolbar: FunctionComponent<{
 
     isEditorFocused: boolean
 
+    index: number
+
     onMentionClick?: () => void
 
     onSubmitClick: (intent?: ChatMessage['intent']) => void
@@ -37,6 +39,7 @@ export const Toolbar: FunctionComponent<{
 }> = ({
     userInfo,
     isEditorFocused,
+    index,
     onMentionClick,
     onSubmitClick,
     submitState,
@@ -86,7 +89,7 @@ export const Toolbar: FunctionComponent<{
                         className={`tw-opacity-60 focus-visible:tw-opacity-100 hover:tw-opacity-100 tw-mr-2 tw-gap-0.5 ${toolbarStyles.button} ${toolbarStyles.buttonSmallIcon}`}
                     />
                 )}
-                <PromptSelectFieldToolbarItem focusEditor={focusEditor} className="tw-ml-1 tw-mr-1" />
+                <PromptSelectFieldToolbarItem focusEditor={focusEditor} index={index} className="tw-ml-1 tw-mr-1" />
                 <ModelSelectFieldToolbarItem
                     models={models}
                     userInfo={userInfo}
@@ -109,19 +112,20 @@ export const Toolbar: FunctionComponent<{
 
 const PromptSelectFieldToolbarItem: FunctionComponent<{
     focusEditor?: () => void
+    index: number
     className?: string
-}> = ({ focusEditor, className }) => {
+}> = ({ focusEditor, index, className }) => {
     const runAction = useActionSelect()
 
     const onSelect = useCallback(
-        async (item: Action) => {
-            await runAction(item, () => {})
+        async (item: Action, index: number) => {
+            await runAction(item, index, () => {})
             focusEditor?.()
         },
         [focusEditor, runAction]
     )
 
-    return <PromptSelectField onSelect={onSelect} onCloseByEscape={focusEditor} className={className} />
+    return <PromptSelectField onSelect={onSelect} index={index} onCloseByEscape={focusEditor} className={className} />
 }
 
 const ModelSelectFieldToolbarItem: FunctionComponent<{

@@ -75,6 +75,7 @@ export const CodyPanel: FunctionComponent<CodyPanelProps> = ({
     const api = useExtensionAPI()
     const { value: chatModels } = useObservable(useMemo(() => api.chatModels(), [api.chatModels]))
     const isPromptsV2Enabled = useFeatureFlag(FeatureFlag.CodyPromptsV2)
+    const index = -1
     const isTeamsUpgradeCtaEnabled = useFeatureFlag(FeatureFlag.SourcegraphTeamsUpgradeCTA)
 
     useEffect(() => {
@@ -146,6 +147,7 @@ export const CodyPanel: FunctionComponent<CodyPanelProps> = ({
                             IDE={clientCapabilities.agentIDE}
                             setView={setView}
                             isPromptsV2Enabled={isPromptsV2Enabled}
+                            index={index}
                         />
                     )}
                     {view === View.Account && (

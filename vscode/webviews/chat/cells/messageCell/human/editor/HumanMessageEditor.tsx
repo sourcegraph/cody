@@ -48,6 +48,8 @@ export const HumanMessageEditor: FunctionComponent<{
     /** Whether this editor is for the first message (not a followup). */
     isFirstMessage: boolean
 
+    index: number
+
     /** Whether this editor is for a message that has been sent already. */
     isSent: boolean
 
@@ -78,6 +80,7 @@ export const HumanMessageEditor: FunctionComponent<{
     initialEditorState,
     placeholder,
     isFirstMessage,
+    index,
     isSent,
     isPendingPriorResponse,
     disabled = false,
@@ -453,6 +456,7 @@ export const HumanMessageEditor: FunctionComponent<{
                     models={models}
                     userInfo={userInfo}
                     isEditorFocused={focused}
+                    index={index}
                     onMentionClick={onMentionClick}
                     onSubmitClick={onSubmitClick}
                     submitState={submitState}

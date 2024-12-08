@@ -405,6 +405,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                 chatEnabled={chatEnabled}
                 message={humanMessage}
                 isFirstMessage={humanMessage.index === 0}
+                index={humanMessage.index}
                 isSent={!humanMessage.isUnsentFollowup}
                 isPendingPriorResponse={priorAssistantMessageIsLoading}
                 onChange={onChange}
