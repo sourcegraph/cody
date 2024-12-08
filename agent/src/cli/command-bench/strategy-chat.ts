@@ -65,7 +65,7 @@ export async function evaluateChatStrategy(
                 const concisenessScore = await llm.judge(concisenessPrompt({ response: llmResponse }))
                 const contextItems = query?.contextFiles?.map(i => ({
                     source: i.source,
-                    file: i.uri.path + `:${i.range?.start.line}-${i.range?.end.line}`,
+                    file: i.uri + `:${i.range?.start.line}-${i.range?.end.line}`,
                     content: i.content,
                 }))
 

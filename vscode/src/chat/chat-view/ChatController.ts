@@ -7,6 +7,7 @@ import {
     cenv,
     clientCapabilities,
     currentSiteVersion,
+    deserializeChatMessage,
     distinctUntilChanged,
     firstResultFromOperation,
     forceHydration,
@@ -1869,9 +1870,9 @@ function newChatModelFromSerializedChatTranscript(
         newSessionID ?? json.id,
         json.interactions.flatMap((interaction: SerializedChatInteraction): ChatMessage[] =>
             [
-                PromptString.unsafe_deserializeChatMessage(interaction.humanMessage),
+                deserializeChatMessage(interaction.humanMessage),
                 interaction.assistantMessage
-                    ? PromptString.unsafe_deserializeChatMessage(interaction.assistantMessage)
+                    ? deserializeChatMessage(interaction.assistantMessage)
                     : null,
             ].filter(isDefined)
         ),

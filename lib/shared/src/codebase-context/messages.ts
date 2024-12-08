@@ -162,7 +162,6 @@ export interface ContextItemTree extends ContextItemCommon {
  */
 export interface ContextItemOpenCtx extends ContextItemCommon {
     type: 'openctx'
-    provider: 'openctx'
     title: string
     uri: URI
     providerUri: string

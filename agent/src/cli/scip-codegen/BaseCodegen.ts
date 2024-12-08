@@ -107,13 +107,16 @@ export abstract class BaseCodegen {
         return JSON.stringify(msg.toObject(), null, 2)
     }
 
-    public isStringType(type: scip.Type): boolean {
+    public isStringType(
+        type: scip.Type,
+        options: TypecheckerOptions = { allowSubtyping: false }
+    ): boolean {
         if (type.has_constant_type) {
             return type.constant_type.constant.has_string_constant
         }
 
         if (type.has_union_type) {
-            return type.union_type.types.every(type => this.isStringType(type))
+            return type.union_type.types.every(type => this.isStringType(type, options))
         }
 
         if (type.has_intersection_type) {
@@ -125,6 +128,13 @@ export abstract class BaseCodegen {
         }
 
         if (type.has_type_ref) {
+            const sym = type.type_ref.symbol
+            if (
+                options.allowSubtyping &&
+                [typescriptKeyword('undefined'), typescriptKeyword('null')].includes(sym)
+            ) {
+                return true
+            }
             return (
                 type.type_ref.symbol === typescriptKeyword('string') ||
                 this.isStringTypeInfo(this.symtab.info(type.type_ref.symbol))
@@ -134,7 +144,7 @@ export abstract class BaseCodegen {
         return false
     }
 
-    public isBooleanTypeInfo(info: scip.SymbolInformation): boolean {
+    public isBooleanTypeInfo(info: scip.SymbolInformation, options?: TypecheckerOptions): boolean {
         if (info.signature.has_value_signature && info.signature.value_signature.tpe.has_constant_type) {
             return info.signature.value_signature.tpe.constant_type.constant.has_boolean_constant
         }
@@ -147,9 +157,9 @@ export abstract class BaseCodegen {
         return false
     }
 
-    public isStringTypeInfo(info: scip.SymbolInformation): boolean {
+    public isStringTypeInfo(info: scip.SymbolInformation, options?: TypecheckerOptions): boolean {
         if (info.signature.has_value_signature) {
-            return this.isStringType(info.signature.value_signature.tpe)
+            return this.isStringType(info.signature.value_signature.tpe, options)
         }
 
         if (
@@ -157,23 +167,27 @@ export abstract class BaseCodegen {
             info.signature.type_signature.type_parameters &&
             info.signature.type_signature.type_parameters.symlinks.length === 0
         ) {
-            return this.isStringType(info.signature.type_signature.lower_bound)
+            return this.isStringType(info.signature.type_signature.lower_bound, options)
         }
 
         if (info.signature.has_class_signature && info.kind === scip.SymbolInformation.Kind.Enum) {
             return info.signature.class_signature.declarations.symlinks.every(member =>
-                this.isStringTypeInfo(this.symtab.info(member))
+                this.isStringTypeInfo(this.symtab.info(member), options)
             )
         }
 
         return false
     }
 
-    public compatibleSignatures(a: scip.SymbolInformation, b: scip.SymbolInformation): boolean {
-        if (this.isStringTypeInfo(a) && this.isStringTypeInfo(b)) {
+    public compatibleSignatures(
+        a: scip.SymbolInformation,
+        b: scip.SymbolInformation,
+        options?: TypecheckerOptions
+    ): boolean {
+        if (this.isStringTypeInfo(a, options) && this.isStringTypeInfo(b, options)) {
             return true
         }
-        if (this.isBooleanTypeInfo(a) && this.isBooleanTypeInfo(b)) {
+        if (this.isBooleanTypeInfo(a, options) && this.isBooleanTypeInfo(b, options)) {
             return true
         }
         // TODO: more optimized comparison?
@@ -305,4 +319,8 @@ export abstract class BaseCodegen {
         // call stack.
         throw new TypeError(`type has no properties: ${this.debug(type)}`)
     }
+}
+
+export interface TypecheckerOptions {
+    allowSubtyping: boolean
 }

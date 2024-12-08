@@ -3,7 +3,13 @@ import ora, { type Ora, spinners } from 'ora'
 import path from 'node:path'
 
 import type { Polly } from '@pollyjs/core'
-import { type ContextItem, ModelUsage, TokenCounterUtils, isDotCom } from '@sourcegraph/cody-shared'
+import {
+    type ContextItem,
+    ModelUsage,
+    type SerializedContextItem,
+    TokenCounterUtils,
+    isDotCom,
+} from '@sourcegraph/cody-shared'
 import { Command } from 'commander'
 
 import Table from 'easy-table'
@@ -335,8 +341,8 @@ export async function chatAction(options: ChatOptions): Promise<number> {
     return 0
 }
 
-function uriDisplayText(item: ContextItem, endpoint: string): string {
-    const uri = vscode.Uri.from(item.uri as any)
+function uriDisplayText(item: SerializedContextItem, endpoint: string): string {
+    const uri = vscode.Uri.parse(item.uri)
     // Workaround for strange URI authority resopnse, reported in
     // https://sourcegraph.slack.com/archives/C05AGQYD528/p1721382757890889
     const remoteURL = new URL(uri.path, endpoint).toString()
