@@ -13,11 +13,13 @@ import com.sourcegraph.cody.util.CustomJunitClassRunner
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.startsWith
 import org.junit.Test
+import org.junit.jupiter.api.Disabled
 import org.junit.runner.RunWith
 
 @RunWith(CustomJunitClassRunner::class)
 class DocumentCodeTest : CodyIntegrationTextFixture() {
-
+  // TODO(CODY-2665): This test is flaky.
+  @Disabled
   @Test
   fun testGetsWorkingGroupLens() {
     val codeLenses = runAndWaitForLenses(DocumentCodeAction.ID, EditCancelAction.ID)
