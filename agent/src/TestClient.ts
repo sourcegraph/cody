@@ -21,6 +21,7 @@ import type { ExtensionMessage, ExtensionTranscriptMessage } from '../../vscode/
 import { doesFileExist } from '../../vscode/src/commands/utils/workspace-files'
 import { ProtocolTextDocumentWithUri } from '../../vscode/src/jsonrpc/TextDocumentWithUri'
 import { CodyTaskState } from '../../vscode/src/non-stop/state'
+import { mockLocalStorage } from '../../vscode/src/services/LocalStorageProvider'
 import {
     TESTING_CREDENTIALS,
     type TestingCredentials,
@@ -413,12 +414,14 @@ export class TestClient extends MessageHandler {
         // console.log(`${params.channel}: ${params.message}`)
     }
 
-    public openFile(uri: Uri, params?: TextDocumentEventParams): Promise<void> {
-        return this.textDocumentEvent(uri, 'textDocument/didOpen', params)
+    public async openFile(uri: Uri, params?: TextDocumentEventParams): Promise<null> {
+        await this.textDocumentEvent(uri, 'textDocument/didOpen', params)
+        return await this.request('testing/awaitPendingPromises', null)
     }
 
-    public changeFile(uri: Uri, params?: TextDocumentEventParams): Promise<void> {
-        return this.textDocumentEvent(uri, 'textDocument/didChange', params)
+    public async changeFile(uri: Uri, params?: TextDocumentEventParams): Promise<null> {
+        await this.textDocumentEvent(uri, 'textDocument/didChange', params)
+        return await this.request('testing/awaitPendingPromises', null)
     }
 
     public async textDocumentEvent(
@@ -880,6 +883,7 @@ ${patch}`
         additionalConfig?: Partial<ExtensionConfiguration>,
         { expectAuthenticated = true }: { expectAuthenticated?: boolean } = {}
     ) {
+        mockLocalStorage('inMemory')
         const info = await this.initialize(additionalConfig)
         if (expectAuthenticated && !info.authStatus?.authenticated) {
             throw new Error('Could not log in')

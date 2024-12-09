@@ -5,32 +5,31 @@ log:
     name: Polly.JS
     version: 6.0.6
   entries:
-    - _id: 4639cede1d1b8af7aafd2d4f4e5060d6
+    - _id: 897d3731ab8e15a1549f29445eafd1e1
       _order: 0
       cache: {}
       request:
         bodySize: 0
         cookies: []
         headers:
-          - _fromType: array
-            name: authorization
-            value: token
-              REDACTED_3dd704711f82a44ff6aba261b53b61a03fb8edba658774639148630d838c2d1d
-          - _fromType: array
-            name: content-type
-            value: application/json; charset=utf-8
-          - _fromType: array
-            name: user-agent
-            value: fix / v1
-          - _fromType: array
-            name: accept
+          - name: accept
             value: "*/*"
-          - _fromType: array
-            name: accept-encoding
+          - name: accept-encoding
             value: gzip,deflate
+          - name: authorization
+            value: token
+              REDACTED_fc324d3667e841181b0779375f26dedc911d26b303d23b29b1a2d7ee63dc77eb
+          - name: connection
+            value: close
+          - name: content-type
+            value: application/json; charset=utf-8
+          - name: user-agent
+            value: fix/v1 (Node.js v20.10.0)
+          - name: x-requested-with
+            value: fix v1
           - name: host
             value: sourcegraph.com
-        headersSize: 328
+        headersSize: 390
         httpVersion: HTTP/1.1
         method: GET
         queryString: []
@@ -41,28 +40,32 @@ log:
           encoding: base64
           mimeType: text/plain; charset=utf-8
           size: 224
-          text: "[\"H4sIAAAAAAAAA2yOsQrCMBRF935F6Ozk2K0Eh26Fgs6v5omBvLySd4OK+O8uFZfM59zDf\
+          text: "[\"H4sIAAAAAAAAA2yOsQrCMBRF935F6Ozq0q0Eh26Fgs6v5omBvLySd4OK+O8uFZfM59zDf\
             XfOOddfNbxOmdbEoR8cSuXDDu6EJqAK9SpbYnB7WQ0qXkUoB2s3gBLXiqj5z2+U7CeY\
             UIHXDH7iEnPQR7MjGjjZOE/tSiKwYanbpgUc9tdRsy0oTDLO05mLRc394I7dp/sCAAD\
-            //wMARx9M/RUBAAA=\"]"
+            //wMA/iebYBUBAAA=\"]"
         cookies: []
         headers:
           - name: date
-            value: Thu, 19 Sep 2024 04:39:02 GMT
+            value: Mon, 09 Dec 2024 14:48:00 GMT
           - name: content-type
             value: text/plain; charset=utf-8
           - name: transfer-encoding
             value: chunked
           - name: connection
-            value: keep-alive
+            value: close
           - name: retry-after
-            value: "596"
+            value: "594"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
             value: ""
           - name: cache-control
             value: no-cache, max-age=0
+          - name: observed-calculated-ip-from-forwarded-for
+            value: 80.82.18.146
+          - name: observed-x-forwarded-for
+            value: 80.82.18.146
           - name: vary
             value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
               X-Requested-With,Cookie
@@ -76,13 +79,13 @@ log:
             value: max-age=31536000; includeSubDomains; preload
           - name: content-encoding
             value: gzip
-        headersSize: 1449
+        headersSize: 1541
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-19T04:39:02.794Z
-      time: 0
+      startedDateTime: 2024-12-09T14:48:00.511Z
+      time: 211
       timings:
         blocked: -1
         connect: -1
@@ -90,30 +93,34 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 0
-    - _id: ac5b9c8e4fc7e11ef452589fd1817a36
+        wait: 211
+    - _id: 5a8c54daa690d504f5f9c594ce0d7a42
       _order: 0
       cache: {}
       request:
         bodySize: 2266
         cookies: []
         headers:
-          - name: content-type
-            value: application/json
           - name: accept-encoding
             value: gzip;q=0
           - name: authorization
             value: token
-              REDACTED_3dd704711f82a44ff6aba261b53b61a03fb8edba658774639148630d838c2d1d
-          - name: user-agent
-            value: fix / v1
-          - name: traceparent
-            value: 00-a4c716d8f37b1c0e8d8c19b4c4b40b74-f9e325617c781682-01
+              REDACTED_fc324d3667e841181b0779375f26dedc911d26b303d23b29b1a2d7ee63dc77eb
           - name: connection
             value: keep-alive
+          - name: content-type
+            value: application/json
+          - name: traceparent
+            value: 00-c673f8cb9791cd5d366780cf70a1d5a2-eb3ced2febb256c4-01
+          - name: transfer-encoding
+            value: chunked
+          - name: user-agent
+            value: fix/v1 (Node.js v20.10.0)
+          - name: x-requested-with
+            value: fix v1
           - name: host
             value: sourcegraph.com
-        headersSize: 395
+        headersSize: 466
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -193,10 +200,10 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=fix&client-version=v1
       response:
-        bodySize: 396
+        bodySize: 270
         content:
           mimeType: text/event-stream
-          size: 396
+          size: 270
           text: >+
             event: completion
 
@@ -210,7 +217,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 19 Sep 2024 04:39:05 GMT
+            value: Mon, 09 Dec 2024 14:48:03 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -218,13 +225,17 @@ log:
           - name: connection
             value: keep-alive
           - name: retry-after
-            value: "594"
+            value: "592"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
             value: ""
           - name: cache-control
             value: no-cache
+          - name: observed-calculated-ip-from-forwarded-for
+            value: 80.82.18.146
+          - name: observed-x-forwarded-for
+            value: 80.82.18.146
           - name: vary
             value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
               X-Requested-With,Cookie
@@ -236,13 +247,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1406
+        headersSize: 1503
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-19T04:39:03.736Z
-      time: 0
+      startedDateTime: 2024-12-09T14:48:01.906Z
+      time: 1956
       timings:
         blocked: -1
         connect: -1
@@ -250,36 +261,34 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 0
-    - _id: e91b84ea768b5eed28380699acd05fc6
+        wait: 1956
+    - _id: a376faab1c8a1993bb48c745757f0a4a
       _order: 0
       cache: {}
       request:
         bodySize: 318
         cookies: []
         headers:
-          - _fromType: array
-            name: authorization
-            value: token
-              REDACTED_3dd704711f82a44ff6aba261b53b61a03fb8edba658774639148630d838c2d1d
-          - _fromType: array
-            name: content-type
-            value: application/json; charset=utf-8
-          - _fromType: array
-            name: user-agent
-            value: fix / v1
-          - _fromType: array
-            name: accept
+          - name: accept
             value: "*/*"
-          - _fromType: array
-            name: content-length
-            value: "318"
-          - _fromType: array
-            name: accept-encoding
+          - name: accept-encoding
             value: gzip,deflate
+          - name: authorization
+            value: token
+              REDACTED_fc324d3667e841181b0779375f26dedc911d26b303d23b29b1a2d7ee63dc77eb
+          - name: connection
+            value: close
+          - name: content-length
+            value: "318"
+          - name: content-type
+            value: application/json; charset=utf-8
+          - name: user-agent
+            value: fix/v1 (Node.js v20.10.0)
+          - name: x-requested-with
+            value: fix v1
           - name: host
             value: sourcegraph.com
-        headersSize: 376
+        headersSize: 438
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -306,43 +315,47 @@ log:
             value: null
         url: https://sourcegraph.com/.api/graphql?CurrentSiteCodyLlmConfiguration
       response:
-        bodySize: 260
+        bodySize: 248
         content:
           encoding: base64
           mimeType: application/json
-          size: 260
-          text: "[\"H4sIAAAAAAAAA3zOTQrCMBCG4bvM2tAxFcRuu7U7LzAmUxtSMyVJ/UF6d1ERxYKrgQ/eh\
-            7mBpUxQ3SC5zI9rxF6326aW0LrDGCk7Cc+9o9yI5R4qoJC7KIMzhelptKxKlSQEzkqj\
-            XqHWG1h8goYuO/EcElRLjYgLaCnl+r/XkfPjiytxDT/NnDRyHHp+PPtGWxf5LNGnwjI\
-            PidkrI5ajOmnVu8xqT4lhVn7RG0Scpmm6AwAA//8DAFuWIPolAQAA\"]"
+          size: 248
+          text: "[\"H4sIAAAAAAAAA4TOTQ6CMBAF4LvMmmqDEA1btrLzAmM7QAN2SH+MhvTuBjYSNXH1ksmbL\
+            28GjQGhmsGbQEsq1s/zuanZtqaLDoNhu957DA1rGqECz9Ep6hxO/V6NGDWJw64Unq2l\
+            ANm72+DjwgNZD1VRSikzaNGH+g8lejRDhI/yxjqulOLbNNKy7xemiSZPNAjFmpy452I\
+            0gcQVPcHX78bOZXFKKaUXAAAA//8DADDh/dAaAQAA\"]"
           textDecoded:
             data:
               site:
                 codyLLMConfiguration:
-                  chatModel: anthropic/claude-3-sonnet-20240229
-                  chatModelMaxTokens: 12000
-                  completionModel: fireworks/deepseek-coder-v2-lite-base
-                  completionModelMaxTokens: 9000
-                  fastChatModel: anthropic/claude-3-haiku-20240307
-                  fastChatModelMaxTokens: 12000
+                  chatModel: sourcegraph/claude-3.5-sonnet
+                  chatModelMaxTokens: 45000
+                  completionModel: sourcegraph/deepseek-coder-v2-lite-base
+                  completionModelMaxTokens: 2048
+                  fastChatModel: sourcegraph/claude-3-haiku
+                  fastChatModelMaxTokens: 7000
         cookies: []
         headers:
           - name: date
-            value: Thu, 19 Sep 2024 04:39:02 GMT
+            value: Mon, 09 Dec 2024 14:48:00 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
             value: chunked
           - name: connection
-            value: keep-alive
+            value: close
           - name: retry-after
-            value: "596"
+            value: "594"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
             value: ""
           - name: cache-control
             value: no-cache, max-age=0
+          - name: observed-calculated-ip-from-forwarded-for
+            value: 80.82.18.146
+          - name: observed-x-forwarded-for
+            value: 80.82.18.146
           - name: vary
             value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
               X-Requested-With,Cookie
@@ -356,13 +369,13 @@ log:
             value: max-age=31536000; includeSubDomains; preload
           - name: content-encoding
             value: gzip
-        headersSize: 1580
+        headersSize: 1672
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-19T04:39:02.018Z
-      time: 0
+      startedDateTime: 2024-12-09T14:48:00.267Z
+      time: 314
       timings:
         blocked: -1
         connect: -1
@@ -370,36 +383,34 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 0
-    - _id: d0a9ba8f1dcebcf03586956633e53ce8
+        wait: 314
+    - _id: 0484c4d780805faf3dd3ddabae814640
       _order: 0
       cache: {}
       request:
         bodySize: 165
         cookies: []
         headers:
-          - _fromType: array
-            name: authorization
-            value: token
-              REDACTED_3dd704711f82a44ff6aba261b53b61a03fb8edba658774639148630d838c2d1d
-          - _fromType: array
-            name: content-type
-            value: application/json; charset=utf-8
-          - _fromType: array
-            name: user-agent
-            value: fix / v1
-          - _fromType: array
-            name: accept
+          - name: accept
             value: "*/*"
-          - _fromType: array
-            name: content-length
-            value: "165"
-          - _fromType: array
-            name: accept-encoding
+          - name: accept-encoding
             value: gzip,deflate
+          - name: authorization
+            value: token
+              REDACTED_fc324d3667e841181b0779375f26dedc911d26b303d23b29b1a2d7ee63dc77eb
+          - name: connection
+            value: close
+          - name: content-length
+            value: "165"
+          - name: content-type
+            value: application/json; charset=utf-8
+          - name: user-agent
+            value: fix/v1 (Node.js v20.10.0)
+          - name: x-requested-with
+            value: fix v1
           - name: host
             value: sourcegraph.com
-        headersSize: 376
+        headersSize: 438
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -421,32 +432,40 @@ log:
             value: null
         url: https://sourcegraph.com/.api/graphql?CurrentSiteCodyLlmConfiguration
       response:
-        bodySize: 139
+        bodySize: 136
         content:
           encoding: base64
           mimeType: application/json
-          size: 139
+          size: 136
           text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdHJ+SmVPj6+zvl5aZnppUWJJZn5eWD53MSiE\
-            uf8vJLUipLwzLyU/HIlK6XUvMSknNQUpdra2loAAAAA//8=\",\"AwDoCDSlSwAAAA==\
-            \"]"
+            uf8vJLUipLwzLyU/HIlK6WUzOLEpJzUFKXa2tpaAAAAAP//AwArMNn0TAAAAA==\"]"
+          textDecoded:
+            data:
+              site:
+                codyLLMConfiguration:
+                  smartContextWindow: disabled
         cookies: []
         headers:
           - name: date
-            value: Thu, 19 Sep 2024 04:39:02 GMT
+            value: Mon, 09 Dec 2024 14:48:00 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
             value: chunked
           - name: connection
-            value: keep-alive
+            value: close
           - name: retry-after
-            value: "596"
+            value: "594"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
             value: ""
           - name: cache-control
             value: no-cache, max-age=0
+          - name: observed-calculated-ip-from-forwarded-for
+            value: 80.82.18.146
+          - name: observed-x-forwarded-for
+            value: 80.82.18.146
           - name: vary
             value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
               X-Requested-With,Cookie
@@ -460,13 +479,13 @@ log:
             value: max-age=31536000; includeSubDomains; preload
           - name: content-encoding
             value: gzip
-        headersSize: 1580
+        headersSize: 1672
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-19T04:39:02.064Z
-      time: 0
+      startedDateTime: 2024-12-09T14:48:00.282Z
+      time: 216
       timings:
         blocked: -1
         connect: -1
@@ -474,36 +493,34 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 0
-    - _id: 94049b00a1d0bb35daab2f7a3b6eb687
+        wait: 216
+    - _id: e141c56e63809042300db9bf8551d492
       _order: 0
       cache: {}
       request:
         bodySize: 150
         cookies: []
         headers:
-          - _fromType: array
-            name: authorization
-            value: token
-              REDACTED_3dd704711f82a44ff6aba261b53b61a03fb8edba658774639148630d838c2d1d
-          - _fromType: array
-            name: content-type
-            value: application/json; charset=utf-8
-          - _fromType: array
-            name: user-agent
-            value: fix / v1
-          - _fromType: array
-            name: accept
+          - name: accept
             value: "*/*"
-          - _fromType: array
-            name: content-length
-            value: "150"
-          - _fromType: array
-            name: accept-encoding
+          - name: accept-encoding
             value: gzip,deflate
+          - name: authorization
+            value: token
+              REDACTED_fc324d3667e841181b0779375f26dedc911d26b303d23b29b1a2d7ee63dc77eb
+          - name: connection
+            value: close
+          - name: content-length
+            value: "150"
+          - name: content-type
+            value: application/json; charset=utf-8
+          - name: user-agent
+            value: fix/v1 (Node.js v20.10.0)
+          - name: x-requested-with
+            value: fix v1
           - name: host
             value: sourcegraph.com
-        headersSize: 371
+        headersSize: 433
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -540,21 +557,25 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 19 Sep 2024 04:39:02 GMT
+            value: Mon, 09 Dec 2024 14:48:01 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
             value: chunked
           - name: connection
-            value: keep-alive
+            value: close
           - name: retry-after
-            value: "596"
+            value: "594"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
             value: ""
           - name: cache-control
             value: no-cache, max-age=0
+          - name: observed-calculated-ip-from-forwarded-for
+            value: 80.82.18.146
+          - name: observed-x-forwarded-for
+            value: 80.82.18.146
           - name: vary
             value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
               X-Requested-With,Cookie
@@ -568,13 +589,13 @@ log:
             value: max-age=31536000; includeSubDomains; preload
           - name: content-encoding
             value: gzip
-        headersSize: 1580
+        headersSize: 1672
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-19T04:39:02.042Z
-      time: 0
+      startedDateTime: 2024-12-09T14:48:00.275Z
+      time: 812
       timings:
         blocked: -1
         connect: -1
@@ -582,36 +603,34 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 0
-    - _id: 48b3a6bf0b107e0d034aa592bc6e86b2
+        wait: 812
+    - _id: 5b9030a4e18d1e000c71d6000a7cef6f
       _order: 0
       cache: {}
       request:
         bodySize: 341
         cookies: []
         headers:
-          - _fromType: array
-            name: authorization
-            value: token
-              REDACTED_3dd704711f82a44ff6aba261b53b61a03fb8edba658774639148630d838c2d1d
-          - _fromType: array
-            name: content-type
-            value: application/json; charset=utf-8
-          - _fromType: array
-            name: user-agent
-            value: fix / v1
-          - _fromType: array
-            name: accept
+          - name: accept
             value: "*/*"
-          - _fromType: array
-            name: content-length
-            value: "341"
-          - _fromType: array
-            name: accept-encoding
+          - name: accept-encoding
             value: gzip,deflate
+          - name: authorization
+            value: token
+              REDACTED_fc324d3667e841181b0779375f26dedc911d26b303d23b29b1a2d7ee63dc77eb
+          - name: connection
+            value: close
+          - name: content-length
+            value: "341"
+          - name: content-type
+            value: application/json; charset=utf-8
+          - name: user-agent
+            value: fix/v1 (Node.js v20.10.0)
+          - name: x-requested-with
+            value: fix v1
           - name: host
             value: sourcegraph.com
-        headersSize: 356
+        headersSize: 418
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -670,21 +689,25 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 19 Sep 2024 04:39:02 GMT
+            value: Mon, 09 Dec 2024 14:48:00 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
             value: chunked
           - name: connection
-            value: keep-alive
+            value: close
           - name: retry-after
-            value: "596"
+            value: "594"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
             value: ""
           - name: cache-control
             value: no-cache, max-age=0
+          - name: observed-calculated-ip-from-forwarded-for
+            value: 80.82.18.146
+          - name: observed-x-forwarded-for
+            value: 80.82.18.146
           - name: vary
             value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
               X-Requested-With,Cookie
@@ -698,13 +721,13 @@ log:
             value: max-age=31536000; includeSubDomains; preload
           - name: content-encoding
             value: gzip
-        headersSize: 1580
+        headersSize: 1672
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-19T04:39:02.088Z
-      time: 0
+      startedDateTime: 2024-12-09T14:48:00.020Z
+      time: 226
       timings:
         blocked: -1
         connect: -1
@@ -712,36 +735,34 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 0
-    - _id: 1348ade04b900b76ba7f31905b57b14e
+        wait: 226
+    - _id: aef0c9fe7483280d9c05ac8e97e37571
       _order: 0
       cache: {}
       request:
         bodySize: 268
         cookies: []
         headers:
-          - _fromType: array
-            name: authorization
-            value: token
-              REDACTED_3dd704711f82a44ff6aba261b53b61a03fb8edba658774639148630d838c2d1d
-          - _fromType: array
-            name: content-type
-            value: application/json; charset=utf-8
-          - _fromType: array
-            name: user-agent
-            value: fix / v1
-          - _fromType: array
-            name: accept
+          - name: accept
             value: "*/*"
-          - _fromType: array
-            name: content-length
-            value: "268"
-          - _fromType: array
-            name: accept-encoding
+          - name: accept-encoding
             value: gzip,deflate
+          - name: authorization
+            value: token
+              REDACTED_fc324d3667e841181b0779375f26dedc911d26b303d23b29b1a2d7ee63dc77eb
+          - name: connection
+            value: close
+          - name: content-length
+            value: "268"
+          - name: content-type
+            value: application/json; charset=utf-8
+          - name: user-agent
+            value: fix/v1 (Node.js v20.10.0)
+          - name: x-requested-with
+            value: fix v1
           - name: host
             value: sourcegraph.com
-        headersSize: 372
+        headersSize: 434
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -767,42 +788,46 @@ log:
             value: null
         url: https://sourcegraph.com/.api/graphql?CurrentUserCodySubscription
       response:
-        bodySize: 228
+        bodySize: 224
         content:
           encoding: base64
           mimeType: application/json
-          size: 228
-          text: "[\"H4sIAAAAAAAAA1zMsQrCMBSF4Xc5cwtN7GK2Ih0EwdJWB7fYZAjUJNzcDqXk3UVBRMfz8\
-            3E2GM0aasO0EFnPl2TpPYNZh+WeJnKRXfCvlljzkqDQHMbjtUWBOGsPha4/o4COcV47\
-            Cr1me3IPxwmKabHF57uz5IIZWBM3DAVZybqs9qWoRymVEGonb/jTrTdfK6pfm3POTwA\
-            AAP//AwAV1OF3wgAAAA==\"]"
+          size: 224
+          text: "[\"H4sIAAAAAAAAA1zMsQrCMBSF4Xc5cwsmdspWpIMgWNrq4BabDIGahJuboZS8uygI6nh+P\
+            s4Go1lDbZgzkfV8SZbeM5h1zPc0k4vsgn+1xJpzgkJ7mI7XDhXioj0U+uGMCjrGZe0p\
+            DJrtyT0cJyimbKvPd2/JBTOyJm4ZCnInm1qIWjSTlEoItZc3/OnOmy8rf20ppTwBAAD\
+            //wMAUqNoZMIAAAA=\"]"
           textDecoded:
             data:
               currentUser:
                 codySubscription:
                   applyProRateLimits: true
-                  currentPeriodEndAt: 2024-10-14T22:11:32Z
-                  currentPeriodStartAt: 2024-09-14T22:11:32Z
+                  currentPeriodEndAt: 2024-12-14T22:11:32Z
+                  currentPeriodStartAt: 2024-11-14T22:11:32Z
                   plan: PRO
                   status: ACTIVE
         cookies: []
         headers:
           - name: date
-            value: Thu, 19 Sep 2024 04:39:02 GMT
+            value: Mon, 09 Dec 2024 14:48:00 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
             value: chunked
           - name: connection
-            value: keep-alive
+            value: close
           - name: retry-after
-            value: "596"
+            value: "594"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
             value: ""
           - name: cache-control
             value: no-cache, max-age=0
+          - name: observed-calculated-ip-from-forwarded-for
+            value: 80.82.18.146
+          - name: observed-x-forwarded-for
+            value: 80.82.18.146
           - name: vary
             value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
               X-Requested-With,Cookie
@@ -816,13 +841,13 @@ log:
             value: max-age=31536000; includeSubDomains; preload
           - name: content-encoding
             value: gzip
-        headersSize: 1580
+        headersSize: 1672
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-19T04:39:02.386Z
-      time: 0
+      startedDateTime: 2024-12-09T14:48:00.296Z
+      time: 361
       timings:
         blocked: -1
         connect: -1
@@ -830,36 +855,34 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 0
-    - _id: a8e7304a01b3588668cd733bbf3a3381
+        wait: 361
+    - _id: 4504fab53d7cb602861f73dc2aa883d2
       _order: 0
       cache: {}
       request:
         bodySize: 101
         cookies: []
         headers:
-          - _fromType: array
-            name: authorization
-            value: token
-              REDACTED_3dd704711f82a44ff6aba261b53b61a03fb8edba658774639148630d838c2d1d
-          - _fromType: array
-            name: content-type
-            value: application/json; charset=utf-8
-          - _fromType: array
-            name: user-agent
-            value: fix / v1
-          - _fromType: array
-            name: accept
+          - name: accept
             value: "*/*"
-          - _fromType: array
-            name: content-length
-            value: "101"
-          - _fromType: array
-            name: accept-encoding
+          - name: accept-encoding
             value: gzip,deflate
+          - name: authorization
+            value: token
+              REDACTED_fc324d3667e841181b0779375f26dedc911d26b303d23b29b1a2d7ee63dc77eb
+          - name: connection
+            value: close
+          - name: content-length
+            value: "101"
+          - name: content-type
+            value: application/json; charset=utf-8
+          - name: user-agent
+            value: fix/v1 (Node.js v20.10.0)
+          - name: x-requested-with
+            value: fix v1
           - name: host
             value: sourcegraph.com
-        headersSize: 363
+        headersSize: 425
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -884,30 +907,34 @@ log:
           encoding: base64
           mimeType: application/json
           size: 136
-          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdEFRfkppcklYalFxZn5eUpWSkaWhqYmxvFGB\
-            kYmugaWuoYW8aZ65rpJZikWRilplkap5hZKtbW1AAAAAP//AwAMQVH6SQAAAA==\"]"
+          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdEFRfkppcklYalFxZn5eUpWSsYGxgYGRvFGB\
+            kYmuoZGugZm8aZ6hga6BolJhkkmScmpiUmmSrW1tQAAAAD//wMAv/TrS0oAAAA=\"]"
           textDecoded:
             data:
               site:
-                productVersion: 291543_2024-09-18_5.7-b6d82df92e78
+                productVersion: 303002_2024-12-06_5.10-0ab1b4bceab5
         cookies: []
         headers:
           - name: date
-            value: Thu, 19 Sep 2024 04:39:02 GMT
+            value: Mon, 09 Dec 2024 14:48:00 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
             value: chunked
           - name: connection
-            value: keep-alive
+            value: close
           - name: retry-after
-            value: "596"
+            value: "594"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
             value: ""
           - name: cache-control
             value: no-cache, max-age=0
+          - name: observed-calculated-ip-from-forwarded-for
+            value: 80.82.18.146
+          - name: observed-x-forwarded-for
+            value: 80.82.18.146
           - name: vary
             value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
               X-Requested-With,Cookie
@@ -921,13 +948,13 @@ log:
             value: max-age=31536000; includeSubDomains; preload
           - name: content-encoding
             value: gzip
-        headersSize: 1580
+        headersSize: 1672
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-19T04:39:01.951Z
-      time: 0
+      startedDateTime: 2024-12-09T14:48:00.289Z
+      time: 214
       timings:
         blocked: -1
         connect: -1
@@ -935,67 +962,79 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 0
-    - _id: a1889526ab4ac60a56dc11d08e0510f9
+        wait: 214
+    - _id: fbb23499ae0eec5c2e188687b429531b
       _order: 0
       cache: {}
       request:
         bodySize: 0
         cookies: []
         headers:
-          - _fromType: array
-            name: authorization
-            value: token
-              REDACTED_3dd704711f82a44ff6aba261b53b61a03fb8edba658774639148630d838c2d1d
-          - _fromType: array
-            name: user-agent
-            value: fix / v1
-          - _fromType: array
-            name: accept
+          - name: accept
             value: "*/*"
-          - _fromType: array
-            name: accept-encoding
+          - name: accept-encoding
             value: gzip,deflate
+          - name: authorization
+            value: token
+              REDACTED_fc324d3667e841181b0779375f26dedc911d26b303d23b29b1a2d7ee63dc77eb
+          - name: connection
+            value: close
+          - name: user-agent
+            value: fix/v1 (Node.js v20.10.0)
+          - name: x-requested-with
+            value: fix v1
           - name: host
             value: sourcegraph.com
-        headersSize: 252
+        headersSize: 314
         httpVersion: HTTP/1.1
         method: GET
         queryString: []
         url: https://sourcegraph.com/.api/modelconfig/supported-models.json
       response:
-        bodySize: 1095
+        bodySize: 1755
         content:
           encoding: base64
           mimeType: text/plain; charset=utf-8
-          size: 1095
-          text: "[\"H4sIAAA=\",\"AAAAAP/smM9P4zgUx+/9K6xcFxc3bSmbG3TFLtIyoAExhxEH13ltrSax\
-            ZTv9IcT/PkrchEmTNimqimDoKU2+7+s4n2f72c8thBByNJtCSB9BaS4ix0NOp02cE/t\
-            MwZxnt0mbtMlfPsyzh1KJOfdBacdDP9Nbye85v0pF3E9iaWSmSkjO1rH5Y59rGdDVNx\
-            pCorvIdbns5WS39ZgrWAg10zXWV7musfVEiEkANb7/WlFjUyEhorzG9FZCdHHd3DTk2\
-            iga1LjerFWvtunV05pnKHwIdsJMFd9hXEDqeS5xu5icYdLxPBbQ2AfcbfexFlEEpuad\
-            hqkeddt9dF+pT9vM1Jk7ztyxS9weOXPJZhijko54wA2HYpdyBfh8szEbOaXGKdx+Knk\
-            bmAi1St5oRAMaMfA329eGmjhpObkalbPIcFBp+iooPWMiMrA0P3jki4XjbVCwX4Uury\
-            MZmwcxgyhpptcnhFT0JqTL29gUlISQgu6lQZrtQR4LGdcNxow6uq3QVhNPXC1t1/37v\
-            WgLMwX1VtRSiU9Gekr5LG6K+r8qcTXr1NfC7pLBe8HWEt5/XA+OBjtfSD1v3vE8bahi\
-            wi+n+wbfe0PVsEpXQLvVrR4mjY1gIpQBGDgSvAONVJf0zhuxc/tnh0TnA0gNMMPpF8d\
-            zFwfcAB5RXVfM/AMg7wFm6NFF/3MD6LIipgCWMibiyOhTLWLFYKKonJ7aSuJ0j/f4So\
-            MDpIGtV20OTCDkEceddh9XdGOzhk3FqNPuo7uyuMB7t+9X1ZULDz09b4E7DqieNsd7V\
-            SXfBrjS+49afY/Id72Fs4BDvkz+4PPlYIR5pI2KWd1O6sbGoPPl4LLZlJ0vG9mE3ajZ\
-            +gT4gKCPV2bZ/X9aUPcwcdOCeiIN7tVO0ncPFaLi2K30+SiT8sfbH1WxZMJf4eTDYal\
-            gzmGBCek0Ou5BopPF7N4mNWnh0KOUMhYrylbb4S4oNwHXpfni8+N1G+NNlta92Zbsv9\
-            juZNv6rb+OD2MaB+YmO9t8fQ37kd52kumMqTbDZvGlU5IEMgztVmZ9tr7HBq5l+/jS+\
-            hUAAP//hA2w578XAAA=\"]"
+          size: 1755
+          text: "[\"H4sIAAAAAAAA/+ybQW+jOBTH7/MpUE672nFqnNJ0uXU6O7sjbafVtuoeVnNw4CWxAhgZk\
+            6Ya9buvgEBKcIJpk0lQ6InC/z2/xL88+9nmxwfDMIxe5EzBp48gIsaDnm30zD7ufcye\
+            CZiz/Dbu4z7+zYV5/jAUfM5cEFHPNv5LbyV/P4qrVMTcxJYGcip4yJylbfHYZVHo0ed\
+            v1IdEd1XoCtnLx+2ux0zAExezqMb1l0Kn7XrC+cSDGr9/ZiJtpzyEgLIap7chBFdf9Z\
+            36LJKCejVeb5aqldv06vuyP33ugre1M1PFPzAudaltE0zOkYkRIbbteDR2AQ2QhSIeB\
+            CCRRyVEsia069TMGPQt4z41M375Bk+/rlulAeQ2uk05NKQj5jHJoPzpCgW4bN0qs5xS\
+            5f3lj6L04HulVQkTLp7T78pxYkGd5/XIIkllnMSUXI2qqEkGImVcQOWZwwMJC/kvC1z\
+            +1LPXuir7tujiaxDG8oHPIEiaObcwxorP49PFbSxLSoxxSfey1jxEkvlUgnuTdMk1j6\
+            Q6hjhgMiVU8pnqq2RFgHcQBFkPDZRB8lWEK6lprcep8ZvZjPEA4QuEzVcY8zCuyyw5u\
+            8atQqsmNvGKkp8NJuT3HfOqTSWXUxBvRTIU/ISITDDTRXK4WyRVmXVK2SxunFj/Sqx0\
+            M+q2Jn4WoFEI4HY5s/JcSag+oPtOmVMVZ5tyZgMoMyTTrDnAw5OGctgKJomlPYwTa59\
+            I9vMZYtNZ6MnMP10IBSQmFbRPNJ8e0xy04CvNfRcE7xnjTc10IHcgvwvkRkm4EbuvyT\
+            3ekqqD85jgNF/DSfqmHpcKoQpJhezkIGzHLPVSn0FyvmcGNUd2hVDN4K6H8I7B9jNYb\
+            JjY9ty07UhS4XC32ltr6N1LKq5VuhJ5G73Vg0djyR3uhx5IaFk5TvD5pRZkxLo4XDWu\
+            j9hOAXMBwghghlIu0Jwgj0lAIxrVba19BgjvAWbGIzH+ZhKMTwqbEn7UcXgcyOgs4rF\
+            wYCJoOD3L9rXOGsTRwboPWHVB1eZ0p5gmPZqMfRFyYUxjr65MuYol/yPRG8XOsvFZbV\
+            kem7n7jNI7KGkSZW0WwWxq/UBIwiIEwXwIZHV3eddgmuRgY/WRoZkdPMi4nIDPAobMv\
+            oUUe27rhxFSsWH2LeOuKi5xuN3vz5onjqhHA+fwSbEl9bKpv6T+3nJ5A4Njj0ZTfQq/\
+            qOSbOFT6Pql9nQNiOGqA4XBDmEoQB7gSakMUl6ebMhZ9tkj+QZeL4QixIJIidurG6pv\
+            MxrhcDD/pzR+L8TifPWo1W89qC5lsRwVtNdj+3geMhLyBRkLej+O2hrvVnkJ3TKya+q\
+            W4+c5avETrqsTJ8ZkT7Sonp/axYqJdga/aD2CCcGiSMXK4P2IBuFtC6kqfEyp9suPRy\
+            5NvmKTL45NQovPa0ufuQSEqTzWVftqwq92dxXx9qkg/e7535rmZRpRULVpIKpUKLpW6\
+            w8N5FHPQlqBpalfnF7vnMl1YTHodhQLmDJ4QxnV72tl7JgY3c5v6pcu6FnZdA9Unxyf\
+            KpMeq5+5OMz02Oap+sY/8qKI=\",\"pG6aueKwNllque8gbM+5HrKvMRrJWIy0po3Gg\
+            0pZHaPVHltTZe+IwZYU2Q2XKPfC4KBvaVM46FuaHG70eiRr5R2Jb02GW872pFf5q7rL\
+            TeKb/I3dVaRZT77tlYjemEbyWs++8pZPMjDDdbYIs3xjvMFBkA/ZZ3z58H8AAAD//4B\
+            ujKOVPgAA\"]"
         cookies: []
         headers:
           - name: date
-            value: Thu, 26 Sep 2024 19:19:28 GMT
+            value: Mon, 09 Dec 2024 14:48:00 GMT
           - name: content-type
             value: text/plain; charset=utf-8
           - name: transfer-encoding
             value: chunked
           - name: connection
-            value: keep-alive
+            value: close
+          - name: retry-after
+            value: "594"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -1004,6 +1043,10 @@ log:
             value: no-cache, max-age=0
           - name: content-encoding
             value: gzip
+          - name: observed-calculated-ip-from-forwarded-for
+            value: 80.82.18.146
+          - name: observed-x-forwarded-for
+            value: 80.82.18.146
           - name: vary
             value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
               X-Requested-With,Cookie
@@ -1015,13 +1058,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1342
+        headersSize: 1541
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-26T19:19:27.560Z
-      time: 0
+      startedDateTime: 2024-12-09T14:48:00.729Z
+      time: 216
       timings:
         blocked: -1
         connect: -1
@@ -1029,6 +1072,6 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 0
+        wait: 216
   pages: []
   version: "1.2"
