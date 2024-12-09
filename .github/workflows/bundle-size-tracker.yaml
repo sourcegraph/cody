@@ -40,7 +40,7 @@ jobs:
           project_id: 'cody-core-dev'
           export_default_credentials: true
       - id: create_release
-        run: echo "::set-output name=version_tag::v1.0.0"
+        run: echo "::set-output name=version_tag::v13.0.0"
       - name: Insert data into BigQuery
         run: |
           # Write the service account key to a file
