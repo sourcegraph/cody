@@ -44,8 +44,7 @@ export class WebviewOpenTelemetryService {
         this.agentIDE = agentIDE
         this.extensionAgentVersion = extensionAgentVersion
         const logLevel = debugVerbose ? DiagLogLevel.INFO : DiagLogLevel.ERROR
-        console.log('logLevel', logLevel)
-        diag.setLogger(new DiagConsoleLogger(), DiagLogLevel.NONE)
+        diag.setLogger(new DiagConsoleLogger(), logLevel)
 
         try {
             this.tracerProvider = new WebTracerProvider({

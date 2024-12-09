@@ -46,8 +46,7 @@ export class OpenTelemetryService {
                 this.lastTraceUrl = traceUrl
 
                 const logLevel = configuration.debugVerbose ? DiagLogLevel.INFO : DiagLogLevel.ERROR
-                console.log('logLevel', logLevel)
-                diag.setLogger(new DiagConsoleLogger(), DiagLogLevel.NONE)
+                diag.setLogger(new DiagConsoleLogger(), logLevel)
 
                 await this.reset()
 

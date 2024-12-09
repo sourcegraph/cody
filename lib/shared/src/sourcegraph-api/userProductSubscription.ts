@@ -4,10 +4,10 @@ import { logError } from '../logger'
 import {
     debounceTime,
     distinctUntilChanged,
+    firstValueFrom,
     pick,
     promiseFactoryToObservable,
     storeLastValue,
-    firstValueFrom
 } from '../misc/observable'
 import {
     firstResultFromOperation,
