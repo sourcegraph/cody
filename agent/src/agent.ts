@@ -9,6 +9,7 @@ import {
     type CodyCommand,
     CodyIDE,
     ModelUsage,
+    authStatus,
     checkIfEnterpriseUser,
     currentAuthStatus,
     currentAuthStatusAuthed,
@@ -78,10 +79,7 @@ import { AgentWorkspaceConfiguration } from './AgentWorkspaceConfiguration'
 import { AgentWorkspaceDocuments } from './AgentWorkspaceDocuments'
 import { registerNativeWebviewHandlers, resolveWebviewView } from './NativeWebview'
 import type { PollyRequestError } from './cli/command-jsonrpc-stdio'
-import {
-    currentProtocolAuthStatus,
-    currentProtocolAuthStatusOrNotReadyYet,
-} from './currentProtocolAuthStatus'
+import { toProtocolAuthStatus } from './currentProtocolAuthStatus'
 import { AgentGlobalState } from './global-state/AgentGlobalState'
 import {
     MessageHandler,
@@ -359,7 +357,6 @@ export class Agent extends MessageHandler implements ExtensionClient {
     public webviewViewProviders = new Map<string, vscode.WebviewViewProvider>()
 
     public authenticationHandler: AgentAuthHandler | null = null
-    private authenticationPromise: Promise<void> = Promise.resolve()
 
     private clientInfo: ClientInfo | null = null
 
@@ -456,14 +453,14 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
                 const ideType = AgentWorkspaceConfiguration.clientNameToIDE(this.clientInfo?.name ?? '')
 
-                this.authenticationPromise =
+                if (
                     clientInfo.extensionConfiguration &&
                     (clientInfo.extensionConfiguration?.accessToken || ideType === CodyIDE.Web)
-                        ? this.handleConfigChanges(clientInfo.extensionConfiguration, {
-                              forceAuthentication: true,
-                          })
-                        : Promise.resolve()
-                await this.authenticationPromise
+                ) {
+                    await this.handleConfigChanges(clientInfo.extensionConfiguration, {
+                        forceAuthentication: true,
+                    })
+                }
 
                 const webviewKind = clientInfo.capabilities?.webview || 'agentic'
                 const nativeWebviewConfig = clientInfo.capabilities?.webviewNativeConfig
@@ -482,11 +479,11 @@ export class Agent extends MessageHandler implements ExtensionClient {
                     this.registerWebviewHandlers()
                 }
 
-                const authStatus = currentProtocolAuthStatusOrNotReadyYet()
+                const status = await firstResultFromOperation(authStatus)
                 return {
                     name: 'cody-agent',
-                    authenticated: authStatus?.authenticated ?? false,
-                    authStatus,
+                    authenticated: status.authenticated,
+                    authStatus: toProtocolAuthStatus(status),
                 }
             } catch (error) {
                 console.error(
@@ -579,18 +576,16 @@ export class Agent extends MessageHandler implements ExtensionClient {
         })
 
         this.registerNotification('extensionConfiguration/didChange', config => {
-            this.authenticationPromise = this.handleConfigChanges(config)
+            this.handleConfigChanges(config)
         })
 
         this.registerRequest('extensionConfiguration/change', async config => {
-            this.authenticationPromise = this.handleConfigChanges(config)
-            await this.authenticationPromise
-            return currentProtocolAuthStatus()
+            await this.handleConfigChanges(config)
+            return firstResultFromOperation(authStatus).then(toProtocolAuthStatus)
         })
 
         this.registerRequest('extensionConfiguration/status', async () => {
-            await this.authenticationPromise
-            return currentProtocolAuthStatus()
+            return firstResultFromOperation(authStatus).then(toProtocolAuthStatus)
         })
 
         this.registerRequest('extensionConfiguration/getSettingsSchema', async () => {
@@ -1512,6 +1507,8 @@ export class Agent extends MessageHandler implements ExtensionClient {
                     'always-store'
                 )
 
+                await firstResultFromOperation(authStatus)
+
                 // Critical: we need to await for the handling of `onDidChangeConfiguration` to
                 // let the new credentials propagate. If we remove the statement below, then
                 // autocomplete may return empty results because we can't await for the updated
@@ -1524,6 +1521,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 })
             } catch (error) {
                 console.log('Authentication failed', error)
+                authProvider.setAuthPendingToEndpoint(config.serverEndpoint)
             }
         }
     }
@@ -1707,7 +1705,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
         callback: RequestCallback<M>
     ): void {
         this.registerRequest(method, async (params, token) => {
-            await this.authenticationPromise
+            await firstResultFromOperation(authStatus)
             if (vscode_shim.isTesting) {
                 await Promise.all(this.pendingPromises.values())
             }

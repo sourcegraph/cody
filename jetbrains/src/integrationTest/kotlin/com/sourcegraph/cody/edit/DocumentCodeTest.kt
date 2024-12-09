@@ -11,7 +11,7 @@ import com.sourcegraph.cody.edit.lenses.providers.EditWorkingCodeVisionProvider
 import com.sourcegraph.cody.util.CodyIntegrationTextFixture
 import com.sourcegraph.cody.util.CustomJunitClassRunner
 import org.hamcrest.MatcherAssert.assertThat
-import org.hamcrest.Matchers.startsWith
+import org.hamcrest.Matchers.containsString
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -67,7 +67,7 @@ class DocumentCodeTest : CodyIntegrationTextFixture() {
     assertNotNull("Lens group should be displayed", codeLenses.isNotEmpty())
 
     runAndWaitForCleanState(EditAcceptAction.ID)
-    assertThat(myFixture.editor.document.text, startsWith("/**"))
+    assertThat(myFixture.editor.document.text, containsString("public class Foo {\n\n    /**"))
   }
 
   @Test
