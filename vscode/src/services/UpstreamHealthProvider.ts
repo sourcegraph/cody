@@ -1,6 +1,7 @@
 import {
+    type BrowserOrNodeResponse,
     addCodyClientIdentificationHeaders,
-    addTraceparent, BrowserOrNodeResponse,
+    addTraceparent,
     currentResolvedConfig,
     distinctUntilChanged,
     isDotCom,
