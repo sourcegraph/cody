@@ -14,7 +14,7 @@ import { HTTP_METHODS } from '@pollyjs/utils';
 
 import getUrlFromOptions from './utils/get-url-from-options';
 import mergeChunks from './utils/merge-chunks';
-import urlToOptions from './utils/url-to-options';
+import { urlToHttpOptions } from 'node:url'
 
 const IS_STUBBED = Symbol();
 const ABORT_HANDLER = Symbol();
@@ -39,7 +39,8 @@ export default class HttpAdapter extends Adapter {
             !nock.isActive()
         );
 
-        this.NativeClientRequest = http.ClientRequest;
+        this.NativeHttpRequest = http.request;
+        this.NativeHttpsRequest = https.request;
         this.setupNock();
 
         // Patch methods overridden by nock to add some missing functionality
@@ -50,7 +51,8 @@ export default class HttpAdapter extends Adapter {
         this.unpatchOverriddenMethods();
         nock.cleanAll();
         nock.restore();
-        this.NativeClientRequest = null;
+        this.NativeHttpRequest = null;
+        this.NativeHttpsRequest = null;
     }
 
     setupNock() {
@@ -186,11 +188,13 @@ export default class HttpAdapter extends Adapter {
         const { method, headers, body } = pollyRequest;
         const { options } = parsedArguments;
 
-        const request = new this.NativeClientRequest({
+        const requestFn = pollyRequest.url.startsWith('https:') ? this.NativeHttpsRequest : this.NativeHttpRequest
+
+        const request = requestFn({
             ...options,
             method,
             headers: { ...headers },
-            ...urlToOptions(new URL(pollyRequest.url))
+            ...urlToHttpOptions(new URL(pollyRequest.url))
         });
 
         const chunks = this.getChunksFromBody(body, headers);
@@ -325,7 +329,6 @@ export default class HttpAdapter extends Adapter {
         // is as an array of base64 strings
         if (isContentEncoded(headers)) {
             const encodedChunks = JSON.parse(body);
-
             return encodedChunks.map((chunk) => Buffer.from(chunk, encoding));
         }
 
