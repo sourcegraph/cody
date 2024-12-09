@@ -12,60 +12,58 @@ log:
         bodySize: 0
         cookies: []
         headers:
+          - name: accept
+            value: "*/*"
+          - name: accept-encoding
+            value: gzip,deflate
           - name: authorization
             value: token
               REDACTED_fc324d3667e841181b0779375f26dedc911d26b303d23b29b1a2d7ee63dc77eb
+          - name: connection
+            value: close
           - name: content-type
             value: application/json; charset=utf-8
           - name: user-agent
             value: jetbrains/6.0-localbuild (Node.js v20.12.2)
           - name: x-requested-with
             value: jetbrains 6.0-localbuild
-        headersSize: 364
+          - name: host
+            value: sourcegraph.com
+        headersSize: 450
         httpVersion: HTTP/1.1
         method: GET
         queryString: []
         url: https://sourcegraph.com/.api/client-config
       response:
-        bodySize: 277
+        bodySize: 224
         content:
+          encoding: base64
           mimeType: text/plain; charset=utf-8
-          size: 277
-          text: |
-            {
-                "codyEnabled": true,
-                "chatEnabled": true,
-                "autoCompleteEnabled": true,
-                "customCommandsEnabled": true,
-                "attributionEnabled": false,
-                "smartContextWindowEnabled": true,
-                "modelsAPIEnabled": false,
-                "latestSupportedCompletionsStreamAPIVersion": 5
-            }
+          size: 224
+          text: "[\"H4sIAAAAAAAAA2yOsQrCMBRF935F6Ozq0q0Eh26Fgs6v5omBvLySd4OK+O8uFZfM59zDf\
+            XfOOddfNbxOmdbEoR8cSuXDDu6EJqAK9SpbYnB7WQ0qXkUoB2s3gBLXiqj5z2+U7CeY\
+            UIHXDH7iEnPQR7MjGjjZOE/tSiKwYanbpgUc9tdRsy0oTDLO05mLRc394I7dp/sCAAD\
+            //wMA/iebYBUBAAA=\"]"
         cookies: []
         headers:
+          - name: date
+            value: Mon, 09 Dec 2024 15:53:00 GMT
+          - name: content-type
+            value: text/plain; charset=utf-8
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: close
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
             value: ""
           - name: cache-control
             value: no-cache, max-age=0
-          - name: connection
-            value: keep-alive
-          - name: content-encoding
-            value: br
-          - name: content-type
-            value: text/plain; charset=utf-8
-          - name: date
-            value: Fri, 06 Dec 2024 12:59:15 GMT
           - name: observed-calculated-ip-from-forwarded-for
             value: 80.82.18.146
           - name: observed-x-forwarded-for
             value: 80.82.18.146
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-          - name: transfer-encoding
-            value: chunked
           - name: vary
             value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
               X-Requested-With,Cookie
@@ -75,13 +73,17 @@ log:
             value: DENY
           - name: x-xss-protection
             value: 1; mode=block
-        headersSize: 1046
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+          - name: content-encoding
+            value: gzip
+        headersSize: 1434
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-12-06T12:59:15.038Z
-      time: 168
+      startedDateTime: 2024-12-09T15:53:00.384Z
+      time: 229
       timings:
         blocked: -1
         connect: -1
@@ -89,12 +91,12 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 168
-    - _id: ad559195055f2dff960a3173fc8643d0
+        wait: 229
+    - _id: c7327f699da3de5388b86581bd3a348b
       _order: 0
       cache: {}
       request:
-        bodySize: 3384
+        bodySize: 3382
         cookies: []
         headers:
           - name: accept-encoding
@@ -107,12 +109,16 @@ log:
           - name: content-type
             value: application/json
           - name: traceparent
-            value: 00-d804910f66af86a802b2bd78f3d47d2f-359d45d49bac6cda-01
+            value: 00-e989425c3d8e03602d022df278ef7cd0-d01bcd086f54307b-01
+          - name: transfer-encoding
+            value: chunked
           - name: user-agent
             value: jetbrains/6.0-localbuild (Node.js v20.12.2)
           - name: x-requested-with
             value: jetbrains 6.0-localbuild
-        headersSize: 469
+          - name: host
+            value: sourcegraph.com
+        headersSize: 520
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -205,7 +211,7 @@ log:
             stopSequences:
               - </CODE5711>
               - "    public void foo() {"
-            temperature: 0.2
+            temperature: 0
             topK: -1
             topP: -1
         queryString:
@@ -217,14 +223,14 @@ log:
             value: 6.0-localbuild
         url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=jetbrains&client-version=6.0-localbuild
       response:
-        bodySize: 1180
+        bodySize: 781
         content:
           mimeType: text/event-stream
-          size: 1180
+          size: 781
           text: >+
             event: completion
 
-            data: {"deltaText":"\n/**\n * Generates a Fibonacci sequence and prints the first 10 numbers.\n * The Fibonacci sequence is a series of numbers where each number is the sum of the two preceding ones, starting from 0 and 1.\n * This method creates a list of Integers, adds the first two numbers (0 and 1), and then calculates the next 8 numbers in the sequence,\n * printing each number to the console.\n */\n","stopReason":"stop_sequence"}
+            data: {"deltaText":"\n/**\n * Generates a sequence of Fibonacci numbers and prints them to the console.\n * The sequence starts with 0 and 1, and each subsequent number is the sum of the\n * previous two. The first 10 numbers in the sequence are printed.\n */\n","stopReason":"stop_sequence"}
 
 
             event: done
@@ -233,26 +239,24 @@ log:
 
         cookies: []
         headers:
+          - name: date
+            value: Mon, 09 Dec 2024 15:53:02 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
             value: ""
           - name: cache-control
             value: no-cache
-          - name: connection
-            value: keep-alive
-          - name: content-type
-            value: text/event-stream
-          - name: date
-            value: Fri, 06 Dec 2024 13:02:48 GMT
           - name: observed-calculated-ip-from-forwarded-for
             value: 80.82.18.146
           - name: observed-x-forwarded-for
             value: 80.82.18.146
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-          - name: transfer-encoding
-            value: chunked
           - name: vary
             value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
               X-Requested-With,Cookie
@@ -262,13 +266,15 @@ log:
             value: DENY
           - name: x-xss-protection
             value: 1; mode=block
-        headersSize: 1005
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1396
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-12-06T13:02:46.282Z
-      time: 1831
+      startedDateTime: 2024-12-09T15:53:01.049Z
+      time: 1528
       timings:
         blocked: -1
         connect: -1
@@ -276,7 +282,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 1831
+        wait: 1528
     - _id: a376faab1c8a1993bb48c745757f0a4a
       _order: 0
       cache: {}
@@ -284,16 +290,26 @@ log:
         bodySize: 318
         cookies: []
         headers:
+          - name: accept
+            value: "*/*"
+          - name: accept-encoding
+            value: gzip,deflate
           - name: authorization
             value: token
               REDACTED_fc324d3667e841181b0779375f26dedc911d26b303d23b29b1a2d7ee63dc77eb
+          - name: connection
+            value: close
+          - name: content-length
+            value: "318"
           - name: content-type
             value: application/json; charset=utf-8
           - name: user-agent
             value: jetbrains/6.0-localbuild (Node.js v20.12.2)
           - name: x-requested-with
             value: jetbrains 6.0-localbuild
-        headersSize: 391
+          - name: host
+            value: sourcegraph.com
+        headersSize: 498
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -320,39 +336,45 @@ log:
             value: null
         url: https://sourcegraph.com/.api/graphql?CurrentSiteCodyLlmConfiguration
       response:
-        bodySize: 282
+        bodySize: 248
         content:
+          encoding: base64
           mimeType: application/json
-          size: 282
-          text: "{\"data\":{\"site\":{\"codyLLMConfiguration\":{\"chatModel\":\"sourcegra\
-            ph/claude-3.5-sonnet\",\"chatModelMaxTokens\":45000,\"fastChatModel\
-            \":\"sourcegraph/claude-3-haiku\",\"fastChatModelMaxTokens\":7000,\
-            \"completionModel\":\"sourcegraph/deepseek-coder-v2-lite-base\",\"c\
-            ompletionModelMaxTokens\":2048}}}}"
+          size: 248
+          text: "[\"H4sIAAAAAAAAA4TOTQ6CMBAF4LvMmmqDEA1btrLzAmM7QAN2SH+MhvTuBjYSNXH1ksmbL\
+            28GjQGhmsGbQEsq1s/zuanZtqaLDoNhu957DA1rGqECz9Ep6hxO/V6NGDWJw64Unq2l\
+            ANm72+DjwgNZD1VRSikzaNGH+g8lejRDhI/yxjqulOLbNNKy7xemiSZPNAjFmpy452I\
+            0gcQVPcHX78bOZXFKKaUXAAAA//8DADDh/dAaAQAA\"]"
+          textDecoded:
+            data:
+              site:
+                codyLLMConfiguration:
+                  chatModel: sourcegraph/claude-3.5-sonnet
+                  chatModelMaxTokens: 45000
+                  completionModel: sourcegraph/deepseek-coder-v2-lite-base
+                  completionModelMaxTokens: 2048
+                  fastChatModel: sourcegraph/claude-3-haiku
+                  fastChatModelMaxTokens: 7000
         cookies: []
         headers:
+          - name: date
+            value: Mon, 09 Dec 2024 15:53:00 GMT
+          - name: content-type
+            value: application/json
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: close
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
             value: ""
           - name: cache-control
             value: no-cache, max-age=0
-          - name: connection
-            value: keep-alive
-          - name: content-encoding
-            value: br
-          - name: content-type
-            value: application/json
-          - name: date
-            value: Fri, 06 Dec 2024 12:59:15 GMT
           - name: observed-calculated-ip-from-forwarded-for
             value: 80.82.18.146
           - name: observed-x-forwarded-for
             value: 80.82.18.146
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-          - name: transfer-encoding
-            value: chunked
           - name: vary
             value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
               X-Requested-With,Cookie
@@ -362,13 +384,17 @@ log:
             value: DENY
           - name: x-xss-protection
             value: 1; mode=block
-        headersSize: 1037
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+          - name: content-encoding
+            value: gzip
+        headersSize: 1565
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-12-06T12:59:14.818Z
-      time: 164
+      startedDateTime: 2024-12-09T15:53:00.051Z
+      time: 321
       timings:
         blocked: -1
         connect: -1
@@ -376,7 +402,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 164
+        wait: 321
     - _id: 0484c4d780805faf3dd3ddabae814640
       _order: 0
       cache: {}
@@ -384,16 +410,26 @@ log:
         bodySize: 165
         cookies: []
         headers:
+          - name: accept
+            value: "*/*"
+          - name: accept-encoding
+            value: gzip,deflate
           - name: authorization
             value: token
               REDACTED_fc324d3667e841181b0779375f26dedc911d26b303d23b29b1a2d7ee63dc77eb
+          - name: connection
+            value: close
+          - name: content-length
+            value: "165"
           - name: content-type
             value: application/json; charset=utf-8
           - name: user-agent
             value: jetbrains/6.0-localbuild (Node.js v20.12.2)
           - name: x-requested-with
             value: jetbrains 6.0-localbuild
-        headersSize: 391
+          - name: host
+            value: sourcegraph.com
+        headersSize: 498
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -415,36 +451,38 @@ log:
             value: null
         url: https://sourcegraph.com/.api/graphql?CurrentSiteCodyLlmConfiguration
       response:
-        bodySize: 76
+        bodySize: 136
         content:
+          encoding: base64
           mimeType: application/json
-          size: 76
-          text: "{\"data\":{\"site\":{\"codyLLMConfiguration\":{\"smartContextWindow\":\"\
-            disabled\"}}}}"
+          size: 136
+          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdHJ+SmVPj6+zvl5aZnppUWJJZn5eWD53MSiE\
+            uf8vJLUipLwzLyU/HIlK6WUzOLEpJzUFKXa2tpaAAAAAP//AwArMNn0TAAAAA==\"]"
+          textDecoded:
+            data:
+              site:
+                codyLLMConfiguration:
+                  smartContextWindow: disabled
         cookies: []
         headers:
+          - name: date
+            value: Mon, 09 Dec 2024 15:53:00 GMT
+          - name: content-type
+            value: application/json
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: close
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
             value: ""
           - name: cache-control
             value: no-cache, max-age=0
-          - name: connection
-            value: keep-alive
-          - name: content-encoding
-            value: br
-          - name: content-type
-            value: application/json
-          - name: date
-            value: Fri, 06 Dec 2024 12:59:15 GMT
           - name: observed-calculated-ip-from-forwarded-for
             value: 80.82.18.146
           - name: observed-x-forwarded-for
             value: 80.82.18.146
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-          - name: transfer-encoding
-            value: chunked
           - name: vary
             value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
               X-Requested-With,Cookie
@@ -454,13 +492,17 @@ log:
             value: DENY
           - name: x-xss-protection
             value: 1; mode=block
-        headersSize: 1037
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+          - name: content-encoding
+            value: gzip
+        headersSize: 1565
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-12-06T12:59:14.818Z
-      time: 216
+      startedDateTime: 2024-12-09T15:53:00.092Z
+      time: 277
       timings:
         blocked: -1
         connect: -1
@@ -468,7 +510,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 216
+        wait: 277
     - _id: e141c56e63809042300db9bf8551d492
       _order: 0
       cache: {}
@@ -476,16 +518,26 @@ log:
         bodySize: 150
         cookies: []
         headers:
+          - name: accept
+            value: "*/*"
+          - name: accept-encoding
+            value: gzip,deflate
           - name: authorization
             value: token
               REDACTED_fc324d3667e841181b0779375f26dedc911d26b303d23b29b1a2d7ee63dc77eb
+          - name: connection
+            value: close
+          - name: content-length
+            value: "150"
           - name: content-type
             value: application/json; charset=utf-8
           - name: user-agent
             value: jetbrains/6.0-localbuild (Node.js v20.12.2)
           - name: x-requested-with
             value: jetbrains 6.0-localbuild
-        headersSize: 386
+          - name: host
+            value: sourcegraph.com
+        headersSize: 493
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -507,36 +559,38 @@ log:
             value: null
         url: https://sourcegraph.com/.api/graphql?CurrentSiteCodyLlmProvider
       response:
-        bodySize: 69
+        bodySize: 128
         content:
+          encoding: base64
           mimeType: application/json
-          size: 69
-          text: "{\"data\":{\"site\":{\"codyLLMConfiguration\":{\"provider\":\"sourcegraph\
-            \"}}}}"
+          size: 128
+          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdHJ+SmVPj6+zvl5aZnppUWJJZn5eSDxgqL8s\
+            syU1CIlK6Xi/NKi5NT0osSCDKXa2tpaAAAAAP//AwAfFAXARQAAAA==\"]"
+          textDecoded:
+            data:
+              site:
+                codyLLMConfiguration:
+                  provider: sourcegraph
         cookies: []
         headers:
+          - name: date
+            value: Mon, 09 Dec 2024 15:53:00 GMT
+          - name: content-type
+            value: application/json
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: close
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
             value: ""
           - name: cache-control
             value: no-cache, max-age=0
-          - name: connection
-            value: keep-alive
-          - name: content-encoding
-            value: br
-          - name: content-type
-            value: application/json
-          - name: date
-            value: Fri, 06 Dec 2024 12:59:15 GMT
           - name: observed-calculated-ip-from-forwarded-for
             value: 80.82.18.146
           - name: observed-x-forwarded-for
             value: 80.82.18.146
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-          - name: transfer-encoding
-            value: chunked
           - name: vary
             value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
               X-Requested-With,Cookie
@@ -546,13 +600,17 @@ log:
             value: DENY
           - name: x-xss-protection
             value: 1; mode=block
-        headersSize: 1037
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+          - name: content-encoding
+            value: gzip
+        headersSize: 1565
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-12-06T12:59:14.818Z
-      time: 176
+      startedDateTime: 2024-12-09T15:53:00.073Z
+      time: 345
       timings:
         blocked: -1
         connect: -1
@@ -560,7 +618,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 176
+        wait: 345
     - _id: 5b9030a4e18d1e000c71d6000a7cef6f
       _order: 0
       cache: {}
@@ -568,16 +626,26 @@ log:
         bodySize: 341
         cookies: []
         headers:
+          - name: accept
+            value: "*/*"
+          - name: accept-encoding
+            value: gzip,deflate
           - name: authorization
             value: token
               REDACTED_fc324d3667e841181b0779375f26dedc911d26b303d23b29b1a2d7ee63dc77eb
+          - name: connection
+            value: close
+          - name: content-length
+            value: "341"
           - name: content-type
             value: application/json; charset=utf-8
           - name: user-agent
             value: jetbrains/6.0-localbuild (Node.js v20.12.2)
           - name: x-requested-with
             value: jetbrains 6.0-localbuild
-        headersSize: 298
+          - name: host
+            value: sourcegraph.com
+        headersSize: 478
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -610,40 +678,49 @@ log:
             value: null
         url: https://sourcegraph.com/.api/graphql?CurrentUser
       response:
-        bodySize: 334
+        bodySize: 376
         content:
+          encoding: base64
           mimeType: application/json
-          size: 334
-          text: "{\"data\":{\"currentUser\":{\"id\":\"VXNlcjozNDQ1Mjc=\",\"hasVerifiedEma\
-            il\":true,\"displayName\":\"SourcegraphBot-9000\",\"username\":\"so\
-            urcegraphbot9k-fnwmu\",\"avatarURL\":\"https://lh3.googleuserconten\
-            t.com/a/ACg8ocKFaqbYeuBkbj5dFEzx8bXV8a7i3sVbKCNPV7G0uyvk=s96-c\",\"\
-            primaryEmail\":{\"email\":\"sourcegraphbot9k@gmail.com\"},\"organiz\
-            ations\":{\"nodes\":[]}}}}"
+          size: 376
+          text: "[\"H4sIAAAAAAAAA2RPy07CQBT9l7tuaQ1R2klIFAQXaOMjNBjj4nZ6aaePmToPFJr+O2kwc\
+            eHunJzHvaeHHC0C64E7rUnarSE9UpEDg3SXNLxSp+T+5eqp4nPwoESTkhZ7QfmqRdEA\
+            s9qRB7kwXYPHBFsCBm/KaU6Fxq5cKOvHYRiCB86QlheD+TNkysa1v5ffrQMP8IAW9fb\
+            1ERiU1naGBUFTTieFUkVDYwNX0pK0E67aAIO7ZREpvlnjV/ZOblFn1XW+Xp1+omyXRj\
+            gTU5Nmm2XynM4eQnc81HMT3/gcPOi0aFEff0f0QBfw77PbYhTGazB4oHSBUpzQCiXNG\
+            JMqJwPs43MYhuEMAAD//wMASoyTP04BAAA=\"]"
+          textDecoded:
+            data:
+              currentUser:
+                avatarURL: https://lh3.googleusercontent.com/a/ACg8ocKFaqbYeuBkbj5dFEzx8bXV8a7i3sVbKCNPV7G0uyvk=s96-c
+                displayName: SourcegraphBot-9000
+                hasVerifiedEmail: true
+                id: VXNlcjozNDQ1Mjc=
+                organizations:
+                  nodes: []
+                primaryEmail:
+                  email: sourcegraphbot9k@gmail.com
+                username: sourcegraphbot9k-fnwmu
         cookies: []
         headers:
+          - name: date
+            value: Mon, 09 Dec 2024 15:53:00 GMT
+          - name: content-type
+            value: application/json
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: close
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
             value: ""
           - name: cache-control
             value: no-cache, max-age=0
-          - name: connection
-            value: keep-alive
-          - name: content-encoding
-            value: br
-          - name: content-type
-            value: application/json
-          - name: date
-            value: Fri, 06 Dec 2024 12:59:14 GMT
           - name: observed-calculated-ip-from-forwarded-for
             value: 80.82.18.146
           - name: observed-x-forwarded-for
             value: 80.82.18.146
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-          - name: transfer-encoding
-            value: chunked
           - name: vary
             value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
               X-Requested-With,Cookie
@@ -653,13 +730,17 @@ log:
             value: DENY
           - name: x-xss-protection
             value: 1; mode=block
-        headersSize: 1037
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+          - name: content-encoding
+            value: gzip
+        headersSize: 1565
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-12-06T12:59:14.474Z
-      time: 325
+      startedDateTime: 2024-12-09T15:52:59.787Z
+      time: 218
       timings:
         blocked: -1
         connect: -1
@@ -667,7 +748,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 325
+        wait: 218
     - _id: aef0c9fe7483280d9c05ac8e97e37571
       _order: 0
       cache: {}
@@ -675,16 +756,26 @@ log:
         bodySize: 268
         cookies: []
         headers:
+          - name: accept
+            value: "*/*"
+          - name: accept-encoding
+            value: gzip,deflate
           - name: authorization
             value: token
               REDACTED_fc324d3667e841181b0779375f26dedc911d26b303d23b29b1a2d7ee63dc77eb
+          - name: connection
+            value: close
+          - name: content-length
+            value: "268"
           - name: content-type
             value: application/json; charset=utf-8
           - name: user-agent
             value: jetbrains/6.0-localbuild (Node.js v20.12.2)
           - name: x-requested-with
             value: jetbrains 6.0-localbuild
-        headersSize: 387
+          - name: host
+            value: sourcegraph.com
+        headersSize: 494
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -710,38 +801,44 @@ log:
             value: null
         url: https://sourcegraph.com/.api/graphql?CurrentUserCodySubscription
       response:
-        bodySize: 194
+        bodySize: 224
         content:
+          encoding: base64
           mimeType: application/json
-          size: 194
-          text: "{\"data\":{\"currentUser\":{\"codySubscription\":{\"status\":\"ACTIVE\",\
-            \"plan\":\"PRO\",\"applyProRateLimits\":true,\"currentPeriodStartAt\
-            \":\"2024-11-14T22:11:32Z\",\"currentPeriodEndAt\":\"2024-12-14T22:\
-            11:32Z\"}}}}"
+          size: 224
+          text: "[\"H4sIAAAAAAAAA1zMsQrCMBSF4Xc5cwsmdspWpIMgWNrq4BabDIGahJuboZS8uygI6nh+P\
+            s4Go1lDbZgzkfV8SZbeM5h1zPc0k4vsgn+1xJpzgkJ7mI7XDhXioj0U+uGMCjrGZe0p\
+            DJrtyT0cJyimbKvPd2/JBTOyJm4ZCnInm1qIWjSTlEoItZc3/OnOmy8rf20ppTwBAAD\
+            //wMAUqNoZMIAAAA=\"]"
+          textDecoded:
+            data:
+              currentUser:
+                codySubscription:
+                  applyProRateLimits: true
+                  currentPeriodEndAt: 2024-12-14T22:11:32Z
+                  currentPeriodStartAt: 2024-11-14T22:11:32Z
+                  plan: PRO
+                  status: ACTIVE
         cookies: []
         headers:
+          - name: date
+            value: Mon, 09 Dec 2024 15:53:00 GMT
+          - name: content-type
+            value: application/json
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: close
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
             value: ""
           - name: cache-control
             value: no-cache, max-age=0
-          - name: connection
-            value: keep-alive
-          - name: content-encoding
-            value: br
-          - name: content-type
-            value: application/json
-          - name: date
-            value: Fri, 06 Dec 2024 12:59:15 GMT
           - name: observed-calculated-ip-from-forwarded-for
             value: 80.82.18.146
           - name: observed-x-forwarded-for
             value: 80.82.18.146
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-          - name: transfer-encoding
-            value: chunked
           - name: vary
             value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
               X-Requested-With,Cookie
@@ -751,13 +848,17 @@ log:
             value: DENY
           - name: x-xss-protection
             value: 1; mode=block
-        headersSize: 1037
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+          - name: content-encoding
+            value: gzip
+        headersSize: 1565
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-12-06T12:59:14.824Z
-      time: 326
+      startedDateTime: 2024-12-09T15:53:00.125Z
+      time: 354
       timings:
         blocked: -1
         connect: -1
@@ -765,7 +866,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 326
+        wait: 354
     - _id: 4504fab53d7cb602861f73dc2aa883d2
       _order: 0
       cache: {}
@@ -773,16 +874,26 @@ log:
         bodySize: 101
         cookies: []
         headers:
+          - name: accept
+            value: "*/*"
+          - name: accept-encoding
+            value: gzip,deflate
           - name: authorization
             value: token
               REDACTED_fc324d3667e841181b0779375f26dedc911d26b303d23b29b1a2d7ee63dc77eb
+          - name: connection
+            value: close
+          - name: content-length
+            value: "101"
           - name: content-type
             value: application/json; charset=utf-8
           - name: user-agent
             value: jetbrains/6.0-localbuild (Node.js v20.12.2)
           - name: x-requested-with
             value: jetbrains 6.0-localbuild
-        headersSize: 378
+          - name: host
+            value: sourcegraph.com
+        headersSize: 485
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -802,36 +913,34 @@ log:
             value: null
         url: https://sourcegraph.com/.api/graphql?SiteProductVersion
       response:
-        bodySize: 74
+        bodySize: 143
         content:
+          encoding: base64
           mimeType: application/json
-          size: 74
-          text: "{\"data\":{\"site\":{\"productVersion\":\"302915_2024-12-06_5.10-486a04a\
-            8effb\"}}}"
+          size: 143
+          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdEFRfkppcklYalFxZn5eUpWSsYGxgYGRvFGB\
+            kYmuoZGugZm8aZ6hga6BolJhkkmScmpiUmmSrW1tQAAAAD//w==\",\"AwC/9OtLSgA\
+            AAA==\"]"
         cookies: []
         headers:
+          - name: date
+            value: Mon, 09 Dec 2024 15:53:00 GMT
+          - name: content-type
+            value: application/json
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: close
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
             value: ""
           - name: cache-control
             value: no-cache, max-age=0
-          - name: connection
-            value: keep-alive
-          - name: content-encoding
-            value: br
-          - name: content-type
-            value: application/json
-          - name: date
-            value: Fri, 06 Dec 2024 12:59:15 GMT
           - name: observed-calculated-ip-from-forwarded-for
             value: 80.82.18.146
           - name: observed-x-forwarded-for
             value: 80.82.18.146
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-          - name: transfer-encoding
-            value: chunked
           - name: vary
             value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
               X-Requested-With,Cookie
@@ -841,13 +950,17 @@ log:
             value: DENY
           - name: x-xss-protection
             value: 1; mode=block
-        headersSize: 1037
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+          - name: content-encoding
+            value: gzip
+        headersSize: 1565
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-12-06T12:59:14.822Z
-      time: 215
+      startedDateTime: 2024-12-09T15:53:00.109Z
+      time: 263
       timings:
         blocked: -1
         connect: -1
@@ -855,7 +968,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 215
+        wait: 263
     - _id: fbb23499ae0eec5c2e188687b429531b
       _order: 0
       cache: {}
@@ -863,562 +976,81 @@ log:
         bodySize: 0
         cookies: []
         headers:
+          - name: accept
+            value: "*/*"
+          - name: accept-encoding
+            value: gzip,deflate
           - name: authorization
             value: token
               REDACTED_fc324d3667e841181b0779375f26dedc911d26b303d23b29b1a2d7ee63dc77eb
+          - name: connection
+            value: close
           - name: user-agent
             value: jetbrains/6.0-localbuild (Node.js v20.12.2)
           - name: x-requested-with
             value: jetbrains 6.0-localbuild
-        headersSize: 264
+          - name: host
+            value: sourcegraph.com
+        headersSize: 350
         httpVersion: HTTP/1.1
         method: GET
         queryString: []
         url: https://sourcegraph.com/.api/modelconfig/supported-models.json
       response:
-        bodySize: 16021
+        bodySize: 1759
         content:
+          encoding: base64
           mimeType: text/plain; charset=utf-8
-          size: 16021
-          text: >
-            {
-                "schemaVersion": "1.0",
-                "revision": "0.0.0+dev",
-                "providers": [
-                    {
-                        "id": "anthropic",
-                        "displayName": "Anthropic"
-                    },
-                    {
-                        "id": "fireworks",
-                        "displayName": "Fireworks"
-                    },
-                    {
-                        "id": "google",
-                        "displayName": "Google"
-                    },
-                    {
-                        "id": "openai",
-                        "displayName": "OpenAI"
-                    },
-                    {
-                        "id": "mistral",
-                        "displayName": "Mistral"
-                    }
-                ],
-                "models": [
-                    {
-                        "modelRef": "anthropic::2024-10-22::claude-3-5-sonnet-latest",
-                        "displayName": "Claude 3.5 Sonnet (New)",
-                        "modelName": "claude-3-5-sonnet-latest",
-                        "capabilities": [
-                            "edit",
-                            "chat",
-                            "vision"
-                        ],
-                        "category": "accuracy",
-                        "status": "stable",
-                        "tier": "free",
-                        "contextWindow": {
-                            "maxInputTokens": 45000,
-                            "maxOutputTokens": 4000
-                        },
-                        "estimatedModelCost": {
-                            "unit": "mtok",
-                            "inputTokenPennies": 300,
-                            "outputTokenPennies": 1500
-                        }
-                    },
-                    {
-                        "modelRef": "anthropic::2023-06-01::claude-3-opus",
-                        "displayName": "Claude 3 Opus",
-                        "modelName": "claude-3-opus-20240229",
-                        "capabilities": [
-                            "edit",
-                            "chat"
-                        ],
-                        "category": "other",
-                        "status": "stable",
-                        "tier": "pro",
-                        "contextWindow": {
-                            "maxInputTokens": 45000,
-                            "maxOutputTokens": 4000
-                        },
-                        "estimatedModelCost": {
-                            "unit": "mtok",
-                            "inputTokenPennies": 1500,
-                            "outputTokenPennies": 7500
-                        }
-                    },
-                    {
-                        "modelRef": "anthropic::2024-10-22::claude-3-5-haiku-latest",
-                        "displayName": "Claude 3.5 Haiku",
-                        "modelName": "claude-3-5-haiku-latest",
-                        "capabilities": [
-                            "edit",
-                            "chat"
-                        ],
-                        "category": "speed",
-                        "status": "stable",
-                        "tier": "free",
-                        "contextWindow": {
-                            "maxInputTokens": 45000,
-                            "maxOutputTokens": 4000
-                        },
-                        "estimatedModelCost": {
-                            "unit": "mtok",
-                            "inputTokenPennies": 100,
-                            "outputTokenPennies": 500
-                        }
-                    },
-                    {
-                        "modelRef": "anthropic::2023-06-01::claude-3-haiku",
-                        "displayName": "Claude 3 Haiku",
-                        "modelName": "claude-3-haiku-20240307",
-                        "capabilities": [
-                            "edit",
-                            "chat"
-                        ],
-                        "category": "speed",
-                        "status": "stable",
-                        "tier": "free",
-                        "contextWindow": {
-                            "maxInputTokens": 7000,
-                            "maxOutputTokens": 4000
-                        },
-                        "estimatedModelCost": {
-                            "unit": "mtok",
-                            "inputTokenPennies": 25,
-                            "outputTokenPennies": 125
-                        }
-                    },
-                    {
-                        "modelRef": "anthropic::2023-06-01::claude-3.5-sonnet",
-                        "displayName": "Claude 3.5 Sonnet",
-                        "modelName": "claude-3-5-sonnet-latest",
-                        "capabilities": [
-                            "edit",
-                            "chat",
-                            "vision"
-                        ],
-                        "category": "accuracy",
-                        "status": "deprecated",
-                        "tier": "free",
-                        "contextWindow": {
-                            "maxInputTokens": 45000,
-                            "maxOutputTokens": 4000
-                        },
-                        "estimatedModelCost": {
-                            "unit": "mtok",
-                            "inputTokenPennies": 300,
-                            "outputTokenPennies": 1500
-                        }
-                    },
-                    {
-                        "modelRef": "anthropic::2023-06-01::claude-3-5-sonnet-20240620",
-                        "displayName": "Claude 3.5 Sonnet",
-                        "modelName": "claude-3-5-sonnet-20240620",
-                        "capabilities": [
-                            "edit",
-                            "chat",
-                            "vision"
-                        ],
-                        "category": "accuracy",
-                        "status": "deprecated",
-                        "tier": "free",
-                        "contextWindow": {
-                            "maxInputTokens": 45000,
-                            "maxOutputTokens": 4000
-                        },
-                        "estimatedModelCost": {
-                            "unit": "mtok",
-                            "inputTokenPennies": 300,
-                            "outputTokenPennies": 1500
-                        }
-                    },
-                    {
-                        "modelRef": "anthropic::2023-06-01::claude-3-sonnet",
-                        "displayName": "Claude 3 Sonnet",
-                        "modelName": "claude-3-sonnet-20240229",
-                        "capabilities": [
-                            "edit",
-                            "chat"
-                        ],
-                        "category": "other",
-                        "status": "deprecated",
-                        "tier": "free",
-                        "contextWindow": {
-                            "maxInputTokens": 45000,
-                            "maxOutputTokens": 4000
-                        },
-                        "estimatedModelCost": {
-                            "unit": "mtok",
-                            "inputTokenPennies": 300,
-                            "outputTokenPennies": 1500
-                        }
-                    },
-                    {
-                        "modelRef": "anthropic::2023-01-01::claude-2.1",
-                        "displayName": "Claude 2.1",
-                        "modelName": "claude-2.1",
-                        "capabilities": [
-                            "edit",
-                            "chat"
-                        ],
-                        "category": "other",
-                        "status": "deprecated",
-                        "tier": "free",
-                        "contextWindow": {
-                            "maxInputTokens": 7000,
-                            "maxOutputTokens": 4000
-                        },
-                        "estimatedModelCost": {
-                            "unit": "mtok",
-                            "inputTokenPennies": 800,
-                            "outputTokenPennies": 2400
-                        }
-                    },
-                    {
-                        "modelRef": "anthropic::2023-01-01::claude-2.0",
-                        "displayName": "Claude 2.0",
-                        "modelName": "claude-2.0",
-                        "capabilities": [
-                            "edit",
-                            "chat"
-                        ],
-                        "category": "other",
-                        "status": "deprecated",
-                        "tier": "free",
-                        "contextWindow": {
-                            "maxInputTokens": 7000,
-                            "maxOutputTokens": 4000
-                        },
-                        "estimatedModelCost": {
-                            "unit": "mtok",
-                            "inputTokenPennies": 800,
-                            "outputTokenPennies": 2400
-                        }
-                    },
-                    {
-                        "modelRef": "fireworks::v1::starcoder",
-                        "displayName": "StarCoder",
-                        "modelName": "starcoder",
-                        "capabilities": [
-                            "autocomplete"
-                        ],
-                        "category": "speed",
-                        "status": "stable",
-                        "tier": "free",
-                        "contextWindow": {
-                            "maxInputTokens": 2048,
-                            "maxOutputTokens": 256
-                        },
-                        "estimatedModelCost": {
-                            "unit": "mtok",
-                            "inputTokenPennies": 20,
-                            "outputTokenPennies": 20
-                        }
-                    },
-                    {
-                        "modelRef": "fireworks::v1::deepseek-coder-v2-lite-base",
-                        "displayName": "DeepSeek V2 Lite Base",
-                        "modelName": "accounts/sourcegraph/models/deepseek-coder-v2-lite-base",
-                        "capabilities": [
-                            "autocomplete"
-                        ],
-                        "category": "speed",
-                        "status": "stable",
-                        "tier": "free",
-                        "contextWindow": {
-                            "maxInputTokens": 2048,
-                            "maxOutputTokens": 256
-                        },
-                        "estimatedModelCost": {
-                            "unit": "",
-                            "inputTokenPennies": 0,
-                            "outputTokenPennies": 0
-                        }
-                    },
-                    {
-                        "modelRef": "fireworks::v1::autoedits-default",
-                        "displayName": "AutoEdits Fireworks Default",
-                        "modelName": "cody-model-auto-edits-fireworks-default",
-                        "capabilities": [
-                            "autocomplete"
-                        ],
-                        "category": "speed",
-                        "status": "experimental",
-                        "tier": "free",
-                        "contextWindow": {
-                            "maxInputTokens": 12000,
-                            "maxOutputTokens": 4000
-                        },
-                        "estimatedModelCost": {
-                            "unit": "",
-                            "inputTokenPennies": 0,
-                            "outputTokenPennies": 0
-                        }
-                    },
-                    {
-                        "modelRef": "google::v1::gemini-1.5-pro",
-                        "displayName": "Gemini 1.5 Pro",
-                        "modelName": "gemini-1.5-pro",
-                        "capabilities": [
-                            "edit",
-                            "chat"
-                        ],
-                        "category": "balanced",
-                        "status": "stable",
-                        "tier": "free",
-                        "contextWindow": {
-                            "maxInputTokens": 45000,
-                            "maxOutputTokens": 4000
-                        },
-                        "estimatedModelCost": {
-                            "unit": "mtok",
-                            "inputTokenPennies": 125,
-                            "outputTokenPennies": 500
-                        }
-                    },
-                    {
-                        "modelRef": "google::v1::gemini-1.5-flash",
-                        "displayName": "Gemini 1.5 Flash",
-                        "modelName": "gemini-1.5-flash",
-                        "capabilities": [
-                            "edit",
-                            "chat"
-                        ],
-                        "category": "speed",
-                        "status": "stable",
-                        "tier": "free",
-                        "contextWindow": {
-                            "maxInputTokens": 45000,
-                            "maxOutputTokens": 4000
-                        },
-                        "estimatedModelCost": {
-                            "unit": "btok",
-                            "inputTokenPennies": 75000,
-                            "outputTokenPennies": 30000
-                        }
-                    },
-                    {
-                        "modelRef": "mistral::v1::mixtral-8x7b-instruct",
-                        "displayName": "Mixtral 8x7B",
-                        "modelName": "accounts/fireworks/models/mixtral-8x7b-instruct",
-                        "capabilities": [
-                            "chat"
-                        ],
-                        "category": "speed",
-                        "status": "stable",
-                        "tier": "free",
-                        "contextWindow": {
-                            "maxInputTokens": 7000,
-                            "maxOutputTokens": 4000
-                        },
-                        "estimatedModelCost": {
-                            "unit": "mtok",
-                            "inputTokenPennies": 50,
-                            "outputTokenPennies": 50
-                        }
-                    },
-                    {
-                        "modelRef": "mistral::v1::mixtral-8x22b-instruct",
-                        "displayName": "Mixtral 8x22B",
-                        "modelName": "accounts/fireworks/models/mixtral-8x22b-instruct",
-                        "capabilities": [
-                            "edit",
-                            "chat"
-                        ],
-                        "category": "other",
-                        "status": "deprecated",
-                        "tier": "free",
-                        "contextWindow": {
-                            "maxInputTokens": 7000,
-                            "maxOutputTokens": 4000
-                        },
-                        "estimatedModelCost": {
-                            "unit": "mtok",
-                            "inputTokenPennies": 120,
-                            "outputTokenPennies": 120
-                        }
-                    },
-                    {
-                        "modelRef": "mistral::v1::autoedits-mixtral-v2",
-                        "displayName": "AutoEdits Mixtral V2",
-                        "modelName": "accounts/sourcegraph/models/autoedits-neg-0p12f-combined-mixtral-v2",
-                        "capabilities": [
-                            "autocomplete"
-                        ],
-                        "category": "speed",
-                        "status": "experimental",
-                        "tier": "free",
-                        "contextWindow": {
-                            "maxInputTokens": 12000,
-                            "maxOutputTokens": 4000
-                        },
-                        "estimatedModelCost": {
-                            "unit": "",
-                            "inputTokenPennies": 0,
-                            "outputTokenPennies": 0
-                        }
-                    },
-                    {
-                        "modelRef": "openai::2024-02-01::gpt-4o",
-                        "displayName": "GPT-4o",
-                        "modelName": "gpt-4o",
-                        "capabilities": [
-                            "edit",
-                            "chat",
-                            "vision"
-                        ],
-                        "category": "accuracy",
-                        "status": "stable",
-                        "tier": "pro",
-                        "contextWindow": {
-                            "maxInputTokens": 45000,
-                            "maxOutputTokens": 4000
-                        },
-                        "estimatedModelCost": {
-                            "unit": "mtok",
-                            "inputTokenPennies": 250,
-                            "outputTokenPennies": 1000
-                        }
-                    },
-                    {
-                        "modelRef": "openai::2024-02-01::gpt-4o-mini",
-                        "displayName": "GPT-4o-mini",
-                        "modelName": "gpt-4o-mini",
-                        "capabilities": [
-                            "edit",
-                            "chat",
-                            "vision"
-                        ],
-                        "category": "speed",
-                        "status": "stable",
-                        "tier": "free",
-                        "contextWindow": {
-                            "maxInputTokens": 45000,
-                            "maxOutputTokens": 4000
-                        },
-                        "estimatedModelCost": {
-                            "unit": "mtok",
-                            "inputTokenPennies": 15,
-                            "outputTokenPennies": 60
-                        }
-                    },
-                    {
-                        "modelRef": "openai::2024-02-01::cody-chat-preview-001",
-                        "displayName": "OpenAI o1-preview",
-                        "modelName": "cody-chat-preview-001",
-                        "capabilities": [
-                            "chat"
-                        ],
-                        "category": "accuracy",
-                        "status": "waitlist",
-                        "tier": "pro",
-                        "contextWindow": {
-                            "maxInputTokens": 45000,
-                            "maxOutputTokens": 4000
-                        },
-                        "estimatedModelCost": {
-                            "unit": "mtok",
-                            "inputTokenPennies": 1500,
-                            "outputTokenPennies": 6000
-                        }
-                    },
-                    {
-                        "modelRef": "openai::2024-02-01::cody-chat-preview-002",
-                        "displayName": "OpenAI o1-mini",
-                        "modelName": "cody-chat-preview-002",
-                        "capabilities": [
-                            "chat"
-                        ],
-                        "category": "accuracy",
-                        "status": "waitlist",
-                        "tier": "pro",
-                        "contextWindow": {
-                            "maxInputTokens": 45000,
-                            "maxOutputTokens": 4000
-                        },
-                        "estimatedModelCost": {
-                            "unit": "mtok",
-                            "inputTokenPennies": 300,
-                            "outputTokenPennies": 1200
-                        }
-                    },
-                    {
-                        "modelRef": "openai::2024-02-01::gpt-4-turbo",
-                        "displayName": "GPT-4 Turbo",
-                        "modelName": "gpt-4-turbo",
-                        "capabilities": [
-                            "edit",
-                            "chat"
-                        ],
-                        "category": "other",
-                        "status": "deprecated",
-                        "tier": "pro",
-                        "contextWindow": {
-                            "maxInputTokens": 7000,
-                            "maxOutputTokens": 4000
-                        },
-                        "estimatedModelCost": {
-                            "unit": "mtok",
-                            "inputTokenPennies": 1000,
-                            "outputTokenPennies": 3000
-                        }
-                    },
-                    {
-                        "modelRef": "openai::2024-02-01::gpt-3.5-turbo",
-                        "displayName": "GPT-3.5 Turbo",
-                        "modelName": "gpt-3.5-turbo",
-                        "capabilities": [
-                            "edit",
-                            "chat"
-                        ],
-                        "category": "speed",
-                        "status": "deprecated",
-                        "tier": "pro",
-                        "contextWindow": {
-                            "maxInputTokens": 7000,
-                            "maxOutputTokens": 4000
-                        },
-                        "estimatedModelCost": {
-                            "unit": "mtok",
-                            "inputTokenPennies": 300,
-                            "outputTokenPennies": 400
-                        }
-                    }
-                ],
-                "defaultModels": {
-                    "chat": "anthropic::2023-06-01::claude-3.5-sonnet",
-                    "fastChat": "anthropic::2023-06-01::claude-3-haiku",
-                    "codeCompletion": "fireworks::v1::deepseek-coder-v2-lite-base"
-                }
-            }
+          size: 1759
+          text: "[\"H4sIAAAAAAAA/+ybQW+jOBTH7/MpUE672nFqnNJ0uXU6O7sjbafVtuoeVnNw4CWxAhgZk\
+            6Ya9buvgEBKcIJpk0lQ6InC/z2/xL88+9nmxwfDMIxe5EzBp48gIsaDnm30zD7ufcye\
+            CZiz/Dbu4z7+zYV5/jAUfM5cEFHPNv5LbyV/P4qrVMTcxJYGcip4yJylbfHYZVHo0ed\
+            v1IdEd1XoCtnLx+2ux0zAExezqMb1l0Kn7XrC+cSDGr9/ZiJtpzyEgLIap7chBFdf9Z\
+            36LJKCejVeb5aqldv06vuyP33ugre1M1PFPzAudaltE0zOkYkRIbbteDR2AQ2QhSIeB\
+            CCRRyVEsia069TMGPQt4z41M375Bk+/rlulAeQ2uk05NKQj5jHJoPzpCgW4bN0qs5xS\
+            5f3lj6L04HulVQkTLp7T78pxYkGd5/XIIkllnMSUXI2qqEkGImVcQOWZwwMJC/kvC1z\
+            +1LPXuir7tujiaxDG8oHPIEiaObcwxorP49PFbSxLSoxxSfey1jxEkvlUgnuTdMk1j6\
+            Q6hjhgMiVU8pnqq2RFgHcQBFkPDZRB8lWEK6lprcep8ZvZjPEA4QuEzVcY8zCuyyw5u\
+            8atQqsmNvGKkp8NJuT3HfOqTSWXUxBvRTIU/ISITDDTRXK4WyRVmXVK2SxunFj/Sqx0\
+            M+q2Jn4WoFEI4HY5s/JcSag+oPtOmVMVZ5tyZgMoMyTTrDnAw5OGctgKJomlPYwTa59\
+            I9vMZYtNZ6MnMP10IBSQmFbRPNJ8e0xy04CvNfRcE7xnjTc10IHcgvwvkRkm4EbuvyT\
+            3ekqqD85jgNF/DSfqmHpcKoQpJhezkIGzHLPVSn0FyvmcGNUd2hVDN4K6H8I7B9jNYb\
+            JjY9ty07UhS4XC32ltr6N1LKq5VuhJ5G73Vg0djyR3uhx5IaFk5TvD5pRZkxLo4XDWu\
+            j9hOAXMBwghghlIu0Jwgj0lAIxrVba19BgjvAWbGIzH+ZhKMTwqbEn7UcXgcyOgs4rF\
+            wYCJoOD3L9rXOGsTRwboPWHVB1eZ0p5gmPZqMfRFyYUxjr65MuYol/yPRG8XOsvFZbV\
+            kem7n7jNI7KGkSZW0WwWxq/UBIwiIEwXwIZHV3eddgmuRgY/WRoZkdPMi4nIDPAobMv\
+            oUUe27rhxFSsWH2LeOuKi5xuN3vz5onjqhHA+fwSbEl9bKpv6T+3nJ5A4Njj0ZTfQq/\
+            qOSbOFT6Pql9nQNiOGqA4XBDmEoQB7gSakMUl6ebMhZ9tkj+QZeL4QixIJIidurG6pv\
+            MxrhcDD/pzR+L8TifPWo1W89qC5lsRwVtNdj+3geMhLyBRkLej+O2hrvVnkJ3TKya+q\
+            W4+c5avETrqsTJ8ZkT7Sonp/axYqJdga/aD2CCcGiSMXK4P2IBuFtC6kqfEyp9suPRy\
+            5NvmKTL45NQovPa0ufuQSEqTzWVftqwq92dxXx9qkg/e7535rmZRpRULVpIKpUKLpW6\
+            w8N5FHPQlqBpalfnF7vnMl1YTHodhQLmDJ4QxnV72tl7JgY3c5v6pcu6FnZdA9Unxyf\
+            KpMeq5+5OMz02Oap+sY/8qKKkbpq54rA2WWq57yBsz7kesq8xGslYjLSmjcaDSlkdo9\
+            UeW1Nl74jBlhTZDZco98LgoG9pUzjoW5ocbvR6JGvlHYlvTYZbzvakV/mrustN4pv8j\
+            d1VpFlPvu2ViN6YRvJaz77ylk8yMMN1tg==\",\"CLN8Y7zBQZAP2Wd8+fB/AAAA//+\
+            AboyjlT4AAA==\"]"
         cookies: []
         headers:
+          - name: date
+            value: Mon, 09 Dec 2024 15:53:00 GMT
+          - name: content-type
+            value: text/plain; charset=utf-8
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: close
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
             value: ""
           - name: cache-control
             value: no-cache, max-age=0
-          - name: connection
-            value: keep-alive
           - name: content-encoding
             value: gzip
-          - name: content-type
-            value: text/plain; charset=utf-8
-          - name: date
-            value: Fri, 06 Dec 2024 12:59:15 GMT
           - name: observed-calculated-ip-from-forwarded-for
             value: 80.82.18.146
           - name: observed-x-forwarded-for
             value: 80.82.18.146
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-          - name: transfer-encoding
-            value: chunked
           - name: vary
             value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
               X-Requested-With,Cookie
@@ -1428,13 +1060,15 @@ log:
             value: DENY
           - name: x-xss-protection
             value: 1; mode=block
-        headersSize: 1048
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1434
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-12-06T12:59:15.213Z
-      time: 172
+      startedDateTime: 2024-12-09T15:53:00.628Z
+      time: 248
       timings:
         blocked: -1
         connect: -1
@@ -1442,6 +1076,6 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 172
+        wait: 248
   pages: []
   version: "1.2"
