@@ -84,7 +84,7 @@ export function getAuthErrorMessage(error: AuthenticationError): AuthenticationE
                 message:
                     'Based on your email address we think you may be an employee of ' +
                     `${error.enterprise}. To get access to all your features please sign ` +
-                    "in through your organization's enterprise instance instead. If you need assistance" +
+                    "in through your organization's enterprise instance instead. If you need assistance " +
                     'please contact your Sourcegraph admin.',
             }
     }
