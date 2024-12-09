@@ -22,10 +22,6 @@ jobs:
           run_install: true
       - run: pnpm build
       - run: pnpm run test
-      - run: xvfb-run -a pnpm -C vscode run test:integration
-      - run: xvfb-run -a pnpm -C vscode run test:e2e
-        env:
-          NO_LOG_TESTING_TELEMETRY_CALLS: true
       - run: pnpm -C vscode run build
       - name: Check bundle sizes
         run: |
@@ -56,7 +52,7 @@ jobs:
           current_date=$(date +'%Y-%m-%d')
           
           # Now create the JSON and insert into BigQuery
-          echo "{\"release_version\": \"1.0.0\", \"extension_bundle_size_mb\": $EXTENSION_BUNDLE_SIZE_MB, \"webview_bundle_size_mb\": $WEBVIEW_BUNDLE_SIZE_MB, \"date\": \"$current_date\"}" > data.json
+          echo "{\"release_version\": \"${{ steps.create_release.outputs.version_tag }}\", \"extension_bundle_size_mb\": $EXTENSION_BUNDLE_SIZE_MB, \"webview_bundle_size_mb\": $WEBVIEW_BUNDLE_SIZE_MB, \"date\": \"$current_date\"}" > data.json
           bq load \
             --project_id='cody-core-dev' \
             --source_format=NEWLINE_DELIMITED_JSON \
