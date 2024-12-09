@@ -1,5 +1,11 @@
-import opentelemetry, { SpanStatusCode, context, propagation, type Span } from '@opentelemetry/api'
-import type { BrowserOrNodeResponse } from '../sourcegraph-api/graphql/client'
+import opentelemetry, {
+    type Context,
+    ROOT_CONTEXT,
+    SpanStatusCode,
+    context,
+    propagation,
+    type Span,
+} from '@opentelemetry/api'
 
 const INSTRUMENTATION_SCOPE_NAME = 'cody'
 const INSTRUMENTATION_SCOPE_VERSION = '0.1'
@@ -61,7 +67,7 @@ export function addTraceparent(headers: Headers): void {
     })
 }
 
-export function logResponseHeadersToSpan(span: Span, response: BrowserOrNodeResponse) {
+export function logResponseHeadersToSpan(span: Span, response: Response) {
     const responseHeaders: Record<string, string> = {}
     response.headers.forEach((value, key) => {
         responseHeaders[key] = value
@@ -88,4 +94,20 @@ export function recordErrorToSpan(span: Span, error: Error): Error {
     span.setStatus({ code: SpanStatusCode.ERROR })
     span.end()
     return error
+}
+
+// Extracts a context from a traceparent header for use in a wrapped function
+// that is called with context.with. This is useful for propagating the trace
+// context between webview and extension host.
+export function extractContextFromTraceparent(traceparent?: string | undefined | null): Context {
+    const carrier = { traceparent } as Record<string, any>
+    const getter = {
+        get(carrier: Record<string, any>, key: string) {
+            return carrier[key]
+        },
+        keys(carrier: Record<string, any>) {
+            return Object.keys(carrier)
+        },
+    }
+    return propagation.extract(ROOT_CONTEXT, carrier, getter)
 }

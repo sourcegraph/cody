@@ -254,11 +254,9 @@ export {
 } from './sourcegraph-api/graphql'
 export { ClientConfigSingleton, type CodyClientConfig } from './sourcegraph-api/clientConfig'
 export {
-    isNodeResponse,
     INCLUDE_EVERYTHING_CONTEXT_FILTERS,
     EXCLUDE_EVERYTHING_CONTEXT_FILTERS,
     PromptMode,
-    type BrowserOrNodeResponse,
     type ContextFilters,
     type CodyContextFilterItem,
     type RepoListResponse,

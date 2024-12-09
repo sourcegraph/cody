@@ -32,9 +32,9 @@ const MOCKED_SERVER_MODELS_CONFIG = {
     ],
     models: [
         {
-            modelRef: 'anthropic::2023-06-01::claude-3.5-sonnet',
+            modelRef: 'aanthropic::2024-10-22::claude-3-5-sonnet-latest',
             displayName: 'Claude 3.5 Sonnet',
-            modelName: 'claude-3-5-sonnet-20240620',
+            modelName: 'claude-3-5-sonnet-20241022',
             capabilities: ['edit', 'chat'],
             category: 'balanced' as ModelTag.Balanced,
             status: 'stable',
@@ -163,7 +163,7 @@ const MOCKED_SERVER_MODELS_CONFIG = {
         },
     ],
     defaultModels: {
-        chat: 'anthropic::2023-06-01::claude-3.5-sonnet',
+        chat: 'anthropic::2024-10-22::claude-3-5-sonnet-latest',
         fastChat: 'anthropic::2023-06-01::claude-3-haiku',
         codeCompletion: 'fireworks::v1::deepseek-coder-v2-lite-base',
     },
@@ -175,4 +175,8 @@ export function getMockedDotComClientModels(): Model[] {
 
 export function getMockedDotComServerModels(): ServerModel[] {
     return MOCKED_SERVER_MODELS_CONFIG.models
+}
+
+export function getMockedDotComServerModelConfiguration(): ServerModelConfiguration {
+    return MOCKED_SERVER_MODELS_CONFIG
 }
