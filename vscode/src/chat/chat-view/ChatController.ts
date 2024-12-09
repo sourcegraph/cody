@@ -417,7 +417,10 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     startAuthProgressIndicator()
                     tokenReceiverUrl = await this.startTokenReceiver?.(endpoint, async credentials => {
                         closeAuthProgressIndicator()
-                        const authStatus = await authProvider.validateAndStoreCredentials(credentials, 'store-if-valid')
+                        const authStatus = await authProvider.validateAndStoreCredentials(
+                            credentials,
+                            'store-if-valid'
+                        )
                         telemetryRecorder.recordEvent('cody.auth.fromTokenReceiver.web', 'succeeded', {
                             metadata: {
                                 success: authStatus.authenticated ? 1 : 0,

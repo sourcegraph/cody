@@ -56,9 +56,7 @@ describe('rewrite-query', () => {
         expect(expanded).toMatchInlineSnapshot(`"parse file with tree-sitter"`)
     )
 
-    check(ps`type Zoekt struct {`, expanded =>
-        expect(expanded).toMatchInlineSnapshot(`"struct zoekt"`)
-    )
+    check(ps`type Zoekt struct {`, expanded => expect(expanded).toMatchInlineSnapshot(`"struct zoekt"`))
 
     check(
         ps`type Zoekt struct {
@@ -83,14 +81,12 @@ describe('rewrite-query', () => {
 
     check(
         ps`Explain how the context window limit is calculated. how much budget is given to @-mentions vs. search context?`,
-        expanded =>
-            expect(expanded).toMatchInlineSnapshot(`"budget context mentions search window"`)
+        expanded => expect(expanded).toMatchInlineSnapshot(`"budget context mentions search window"`)
     )
 
     check(
         ps`parse file with tree-sitter. follow these rules:\n*use the Google Go style guide\n*panic if parsing fails`,
-        expanded =>
-            expect(expanded).toMatchInlineSnapshot(`"go google panic parse tree-sitter"`)
+        expanded => expect(expanded).toMatchInlineSnapshot(`"go google panic parse tree-sitter"`)
     )
 
     afterAll(async () => {
