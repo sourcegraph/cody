@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { postProcessCompletionsStreamText } from './CodyPersister'
+import { postProcessCompletionsStreamText } from './CodyPersisterV2'
 
 // NOTE(olafurpg) This code path runs with all the tests so it's a bit overkill
 // to write tests for test code, but this post-processing logic can be tricky to
