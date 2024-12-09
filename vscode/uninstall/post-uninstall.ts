@@ -42,7 +42,7 @@ async function main() {
 
             const provider = process.env.CODY_TESTING
                 ? new MockServerTelemetryRecorderProvider(config)
-                : new TelemetryRecorderProvider(config, 'connected-instance-only')
+                : new TelemetryRecorderProvider(config)
             const recorder = provider.getRecorder()
             recorder.recordEvent('cody.extension', 'uninstalled', {
                 billingMetadata: {

@@ -509,11 +509,11 @@ describe('syncModels', () => {
         expect(storage.data?.[AUTH_STATUS_FIXTURE_AUTHED.endpoint]!.selected.chat).toBe(undefined)
         vi.spyOn(modelsService, 'modelsChanges', 'get').mockReturnValue(Observable.of(result))
 
-        // Check if DeepCody model is in the primary models
+        // Check if Deep Cody model is in the primary models list.
         expect(result.primaryModels.some(model => model.id.includes('deep-cody'))).toBe(true)
 
-        // Check if DeepCody is set as the default chat model
-        expect(result.preferences.defaults.chat?.includes('deep-cody')).toBe(true)
+        // Deep Cody should not replace the default chat / edit model.
+        expect(result.preferences.defaults.chat?.includes('deep-cody')).toBe(false)
         expect(result.preferences.defaults.edit?.includes('deep-cody')).toBe(false)
 
         // preference should not be affected and remains unchanged as this is handled in a later step.

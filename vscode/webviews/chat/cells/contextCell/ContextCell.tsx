@@ -208,7 +208,17 @@ export const ContextCell: FunctionComponent<{
                             data-testid="context"
                         >
                             {isContextLoading ? (
-                                <LoadingDots />
+                                isDeepCodyEnabled ? (
+                                    <div className="tw-flex tw-items-center tw-rounded-md tw-bg-muted-transparent tw-p-4">
+                                        <LoadingDots />
+                                        <div className="tw-ml-4 tw-text-sm">
+                                            May take a few seconds to fetch relevant context to improve
+                                            response quality
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <LoadingDots />
+                                )
                             ) : (
                                 <>
                                     <AccordionContent overflow={showSnippets}>
@@ -226,7 +236,7 @@ export const ContextCell: FunctionComponent<{
                                                     {editContextNode}
                                                 </Button>
                                             )}
-                                            {resubmitWithRepoContext && (
+                                            {resubmitWithRepoContext && !isDeepCodyEnabled && (
                                                 <Button
                                                     size="sm"
                                                     variant="outline"
@@ -339,11 +349,18 @@ export const ContextCell: FunctionComponent<{
                                                         </span>
                                                     </TooltipTrigger>
                                                     <TooltipContent side="bottom">
-                                                        <span>
-                                                            Information and general reasoning
-                                                            capabilities trained into the model{' '}
-                                                            {model && <code>{model}</code>}
-                                                        </span>
+                                                        {isDeepCodyEnabled ? (
+                                                            <span>
+                                                                Deep Cody fetches additional context to
+                                                                improve response quality when needed
+                                                            </span>
+                                                        ) : (
+                                                            <span>
+                                                                Information and general reasoning
+                                                                capabilities trained into the model{' '}
+                                                                {model && <code>{model}</code>}
+                                                            </span>
+                                                        )}
                                                     </TooltipContent>
                                                 </Tooltip>
                                             </li>

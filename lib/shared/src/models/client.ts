@@ -24,8 +24,8 @@ function getDeepCodyServerModel(): ServerModel {
         modelName: 'deep-cody',
         capabilities: ['chat'],
         category: 'accuracy',
-        status: 'internal' as ModelTag.Internal,
-        tier: 'free' as ModelTag.Free,
+        status: 'experimental' as ModelTag.Experimental,
+        tier: 'pro' as ModelTag.Pro,
         contextWindow: {
             maxInputTokens: 45000,
             maxOutputTokens: 4000,

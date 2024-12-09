@@ -55,28 +55,25 @@ export const ModelSelectField: React.FunctionComponent<{
 
     const onModelSelect = useCallback(
         (model: Model): void => {
-            // Log event when user switches to a different model from Deep Cody.
-            if (selectedModel.id.includes('deep-cody') && selectedModel.id !== model.id) {
-                // TODO (bee) remove after testing has been completed.
-                telemetryRecorder.recordEvent('cody.deepCody', 'switch')
+            if (selectedModel.id !== model.id) {
+                telemetryRecorder.recordEvent('cody.modelSelector', 'select', {
+                    metadata: {
+                        modelIsCodyProOnly: isCodyProModel(model) ? 1 : 0,
+                        isCodyProUser: isCodyProUser ? 1 : 0,
+                        // Log event when user switches to a different model from Deep Cody.
+                        isSwitchedFromDeepCody: selectedModel.id.includes('deep-cody') ? 1 : 0,
+                    },
+                    privateMetadata: {
+                        modelId: model.id,
+                        modelProvider: model.provider,
+                        modelTitle: model.title,
+                    },
+                    billingMetadata: {
+                        product: 'cody',
+                        category: 'billable',
+                    },
+                })
             }
-
-            telemetryRecorder.recordEvent('cody.modelSelector', 'select', {
-                metadata: {
-                    modelIsCodyProOnly: isCodyProModel(model) ? 1 : 0,
-                    isCodyProUser: isCodyProUser ? 1 : 0,
-                },
-                privateMetadata: {
-                    modelId: model.id,
-                    modelProvider: model.provider,
-                    modelTitle: model.title,
-                },
-                billingMetadata: {
-                    product: 'cody',
-                    category: 'billable',
-                },
-            })
-
             if (showCodyProBadge && isCodyProModel(model)) {
                 getVSCodeAPI().postMessage({
                     command: 'links',

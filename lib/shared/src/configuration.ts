@@ -32,7 +32,7 @@ export interface AutoEditsTokenLimit {
 }
 
 export interface AutoEditsModelConfig {
-    provider: 'openai' | 'fireworks' | 'cody-gateway-fastpath-chat'
+    provider: 'openai' | 'fireworks' | 'cody-gateway-fastpath-chat' | 'sourcegraph-chat'
     model: string
     url: string
     apiKey: string
@@ -49,6 +49,13 @@ export interface NetConfiguration {
     vscode?: string | undefined | null
 }
 
+export interface AgenticContextConfiguration {
+    shell?: {
+        allow?: string[] | undefined | null
+        block?: string[] | undefined | null
+    }
+}
+
 interface RawClientConfiguration {
     net: NetConfiguration
     codebase?: string
@@ -63,6 +70,9 @@ interface RawClientConfiguration {
     codeActions: boolean
     commandHints: boolean
     commandCodeLenses: boolean
+
+    // Deep Cody
+    agenticContext?: AgenticContextConfiguration
 
     //#region Autocomplete
     autocomplete: boolean

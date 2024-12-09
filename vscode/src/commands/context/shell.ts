@@ -9,11 +9,13 @@ import {
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
+import { getConfiguration } from '../../configuration'
 import { logError } from '../../output-channel-logger'
 
 const execAsync = promisify(exec)
-const config = vscode.workspace.getConfiguration('cody')
-const isDisabled = Boolean(config.get('context.shell.disabled'))
+
+// Pre-compute home directory path
+const HOME_DIR = os.homedir() || process.env.HOME || process.env.USERPROFILE || ''
 
 const OUTPUT_WRAPPER = `
 Terminal output from the \`{command}\` command enclosed between <OUTPUT0412> tags:
@@ -23,6 +25,8 @@ Terminal output from the \`{command}\` command enclosed between <OUTPUT0412> tag
 
 export async function getContextFileFromShell(command: string): Promise<ContextItem[]> {
     return wrapInActiveSpan('commands.context.command', async () => {
+        const userShellConfig = getConfiguration()?.agenticContext?.shell
+        const isDisabled = !userShellConfig?.allow?.length
         if (!vscode.env.shell || isDisabled) {
             void vscode.window.showErrorMessage(
                 'Shell command is not supported in your current workspace.'
@@ -30,22 +34,35 @@ export async function getContextFileFromShell(command: string): Promise<ContextI
             return []
         }
 
-        const homeDir = os.homedir() || process.env.HOME || process.env.USERPROFILE || ''
+        // Process command and workspace
         const cwd = vscode.workspace.workspaceFolders?.[0]?.uri?.fsPath
-        const filteredCommand = command.replaceAll(/(\s~\/)/g, ` ${homeDir}${path.sep}`)
+        const filteredCommand = command.replaceAll(/(\s~\/)/g, ` ${HOME_DIR}${path.sep}`)
+
+        // Process user config list
+        const allowList = new Set(userShellConfig?.allow?.filter(cmd => cmd !== '*') ?? [])
+        const blockList = new Set([...BASE_DISALLOWED_COMMANDS, ...(userShellConfig?.block ?? [])])
 
         try {
-            if (commandsNotAllowed.some(cmd => filteredCommand.startsWith(cmd))) {
+            // Command validation
+            const commandStart = filteredCommand.split(' ')[0]
+            if (
+                (allowList?.size &&
+                    !Array.from(allowList).some(cmd => filteredCommand.startsWith(cmd))) ||
+                blockList.has(commandStart)
+            ) {
                 void vscode.window.showErrorMessage('Cody cannot execute this command')
                 throw new Error('Cody cannot execute this command')
             }
 
+            // Execute command
             const { stdout, stderr } = await execAsync(filteredCommand, { cwd, encoding: 'utf8' })
             const output = JSON.stringify(stdout || stderr).trim()
+
             if (!output || output === '""') {
                 throw new Error('Empty output')
             }
 
+            // Create context item
             const content = OUTPUT_WRAPPER.replace('{command}', command).replace('{output}', output)
             const size = await TokenCounterUtils.countTokens(content)
 
@@ -61,14 +78,14 @@ export async function getContextFileFromShell(command: string): Promise<ContextI
             ]
         } catch (error) {
             logError('getContextFileFromShell', 'failed', { verbose: error })
-            const errorContent = `${error}`
+            const errorContent = `Failed to run ${command} in terminal:\n${error}`
             const size = await TokenCounterUtils.countTokens(errorContent)
 
             return [
                 {
                     type: 'file',
                     content: errorContent,
-                    title: 'Terminal Output',
+                    title: 'Terminal Output Error',
                     uri: vscode.Uri.file(command),
                     source: ContextItemSource.Terminal,
                     size,
@@ -78,8 +95,8 @@ export async function getContextFileFromShell(command: string): Promise<ContextI
     })
 }
 
-// TODO(bee): allows users to configure the allow list.
-const commandsNotAllowed = [
+// Pre-defined base disallowed commands
+const BASE_DISALLOWED_COMMANDS = [
     'rm',
     'chmod',
     'shutdown',
