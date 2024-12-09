@@ -14,6 +14,7 @@ import type {
     SerializedChatMessage,
     UserProductSubscription,
 } from '@sourcegraph/cody-shared'
+import type { PromptEditorRefAPI } from '@sourcegraph/prompt-editor'
 
 import type { BillingCategory, BillingProduct } from '@sourcegraph/cody-shared/src/telemetry-v2'
 
@@ -174,7 +175,12 @@ export type ExtensionMessage =
           smartApplyResult?: SmartApplyResult | undefined | null
           submitHumanInput?: boolean | undefined | null
           setPromptAsInput?:
-              | { text: string; mode?: PromptMode | undefined | null; autoSubmit: boolean }
+              | {
+                    text: string
+                    mode?: PromptMode | undefined | null
+                    autoSubmit: boolean
+                    editorRef: React.RefObject<PromptEditorRefAPI | null>
+                }
               | undefined
               | null
       }

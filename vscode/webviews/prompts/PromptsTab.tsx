@@ -7,6 +7,7 @@ import { getVSCodeAPI } from '../utils/VSCodeApi'
 
 import { CodyIDE } from '@sourcegraph/cody-shared'
 import type { PromptMode } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
+import type { PromptEditorRefAPI } from '@sourcegraph/prompt-editor'
 import { PromptMigrationWidget } from '../components/promptsMigration/PromptsMigration'
 import styles from './PromptsTab.module.css'
 
@@ -14,7 +15,8 @@ export const PromptsTab: React.FC<{
     IDE: CodyIDE
     setView: (view: View) => void
     isPromptsV2Enabled?: boolean
-}> = ({ IDE, setView, isPromptsV2Enabled }) => {
+    editorRef: React.RefObject<PromptEditorRefAPI | null>
+}> = ({ IDE, setView, isPromptsV2Enabled, editorRef }) => {
     const runAction = useActionSelect()
 
     return (
@@ -30,7 +32,8 @@ export const PromptsTab: React.FC<{
                 recommendedOnly={false}
                 showOnlyPromptInsertableCommands={false}
                 showPromptLibraryUnsupportedMessage={true}
-                onSelect={item => runAction(item, setView)}
+                onSelect={item => runAction(item, editorRef, setView)}
+                editorRef={editorRef}
                 className={styles.promptsContainer}
                 inputClassName={styles.promptsInput}
             />
@@ -58,7 +61,11 @@ export function useActionSelect() {
         {}
     )
 
-    return async (action: Action, setView: (view: View) => void) => {
+    return async (
+        action: Action,
+        editorRef: React.RefObject<PromptEditorRefAPI | null>,
+        setView: (view: View) => void
+    ) => {
         try {
             const actionKey = action.actionType === 'prompt' ? action.id : action.key
             persistValue({ ...lastUsedActions, [actionKey]: Date.now() })
@@ -76,6 +83,7 @@ export function useActionSelect() {
                             text: action.definition.text,
                             mode: action.mode,
                             autoSubmit: action.autoSubmit || false,
+                            editorRef: editorRef,
                         },
                     },
                     // Buffer because PromptEditor is not guaranteed to be mounted after the `setView`

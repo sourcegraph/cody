@@ -1,4 +1,5 @@
 import type { Action, ChatMessage, Model } from '@sourcegraph/cody-shared'
+import type { PromptEditorRefAPI } from '@sourcegraph/prompt-editor'
 import { useExtensionAPI } from '@sourcegraph/prompt-editor'
 import clsx from 'clsx'
 import { type FunctionComponent, useCallback } from 'react'
@@ -20,6 +21,8 @@ export const Toolbar: FunctionComponent<{
 
     isEditorFocused: boolean
 
+    editorRef: React.RefObject<PromptEditorRefAPI | null>
+
     onMentionClick?: () => void
 
     onSubmitClick: (intent?: ChatMessage['intent']) => void
@@ -37,6 +40,7 @@ export const Toolbar: FunctionComponent<{
 }> = ({
     userInfo,
     isEditorFocused,
+    editorRef,
     onMentionClick,
     onSubmitClick,
     submitState,
@@ -86,7 +90,11 @@ export const Toolbar: FunctionComponent<{
                         className={`tw-opacity-60 focus-visible:tw-opacity-100 hover:tw-opacity-100 tw-mr-2 tw-gap-0.5 ${toolbarStyles.button} ${toolbarStyles.buttonSmallIcon}`}
                     />
                 )}
-                <PromptSelectFieldToolbarItem focusEditor={focusEditor} className="tw-ml-1 tw-mr-1" />
+                <PromptSelectFieldToolbarItem
+                    focusEditor={focusEditor}
+                    editorRef={editorRef}
+                    className="tw-ml-1 tw-mr-1"
+                />
                 <ModelSelectFieldToolbarItem
                     models={models}
                     userInfo={userInfo}
@@ -109,19 +117,27 @@ export const Toolbar: FunctionComponent<{
 
 const PromptSelectFieldToolbarItem: FunctionComponent<{
     focusEditor?: () => void
+    editorRef: React.RefObject<PromptEditorRefAPI | null>
     className?: string
-}> = ({ focusEditor, className }) => {
+}> = ({ focusEditor, editorRef, className }) => {
     const runAction = useActionSelect()
 
     const onSelect = useCallback(
-        async (item: Action) => {
-            await runAction(item, () => {})
+        async (item: Action, editorRef: React.RefObject<PromptEditorRefAPI | null>) => {
+            await runAction(item, editorRef, () => {})
             focusEditor?.()
         },
         [focusEditor, runAction]
     )
 
-    return <PromptSelectField onSelect={onSelect} onCloseByEscape={focusEditor} className={className} />
+    return (
+        <PromptSelectField
+            onSelect={onSelect}
+            editorRef={editorRef}
+            onCloseByEscape={focusEditor}
+            className={className}
+        />
+    )
 }
 
 const ModelSelectFieldToolbarItem: FunctionComponent<{
