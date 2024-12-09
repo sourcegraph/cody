@@ -11,6 +11,7 @@ import {
 } from '@sourcegraph/cody-shared'
 import {
     PromptEditor,
+    PromptEditorV2,
     type PromptEditorRefAPI,
     useDefaultContextForChat,
     useExtensionAPI,
@@ -417,6 +418,7 @@ export const HumanMessageEditor: FunctionComponent<{
         currentChatModel?.contextWindow?.context?.user ||
         currentChatModel?.contextWindow?.input ||
         FAST_CHAT_INPUT_TOKEN_BUDGET
+    const Editor = experimentalOneBoxEnabled ? PromptEditorV2 : PromptEditor
 
     return (
         // biome-ignore lint/a11y/useKeyWithClickEvents: only relevant to click areas
@@ -436,7 +438,7 @@ export const HumanMessageEditor: FunctionComponent<{
             onFocus={onFocus}
             onBlur={onBlur}
         >
-            <PromptEditor
+            <Editor
                 seamless={true}
                 placeholder={placeholder}
                 initialEditorState={initialEditorState}
