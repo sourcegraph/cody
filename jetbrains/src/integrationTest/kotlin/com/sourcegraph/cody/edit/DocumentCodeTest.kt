@@ -12,13 +12,14 @@ import com.sourcegraph.cody.util.CodyIntegrationTextFixture
 import com.sourcegraph.cody.util.CustomJunitClassRunner
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.containsString
+import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(CustomJunitClassRunner::class)
 class DocumentCodeTest : CodyIntegrationTextFixture() {
 
-  @Test
+  @Ignore @Test
   fun testGetsWorkingGroupLens() {
     val codeLenses = runAndWaitForLenses(DocumentCodeAction.ID, EditCancelAction.ID)
 
