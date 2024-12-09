@@ -9,6 +9,7 @@ import {
     type CodyCommand,
     CodyIDE,
     ModelUsage,
+    checkIfEnterpriseUser,
     currentAuthStatus,
     currentAuthStatusAuthed,
     firstResultFromOperation,
@@ -1155,7 +1156,8 @@ export class Agent extends MessageHandler implements ExtensionClient {
             const instruction = PromptString.unsafe_fromUserQuery(params.instruction)
             const models = getModelOptionItems(
                 await firstResultFromOperation(modelsService.getModels(ModelUsage.Edit)),
-                true
+                true,
+                await checkIfEnterpriseUser()
             )
             const previousInput: QuickPickInput = {
                 instruction: instruction,
