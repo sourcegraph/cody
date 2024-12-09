@@ -57,7 +57,14 @@
     "version-bump:patch": "RELEASE_TYPE=patch ts-node-transpile-only ./scripts/version-bump.ts",
     "version-bump:dry-run": "RELEASE_TYPE=prerelease ts-node-transpile-only ./scripts/version-bump.ts"
   },
-  "categories": ["AI", "Chat", "Programming Languages", "Machine Learning", "Snippets", "Education"],
+  "categories": [
+    "AI",
+    "Chat",
+    "Programming Languages",
+    "Machine Learning",
+    "Snippets",
+    "Education"
+  ],
   "keywords": [
     "cody",
     "codey",
@@ -122,7 +129,11 @@
   },
   "main": "./dist/extension.node.js",
   "browser": "./dist/extension.web.js",
-  "activationEvents": ["onLanguage", "onStartupFinished", "onWebviewPanel:cody.editorPanel"],
+  "activationEvents": [
+    "onLanguage",
+    "onStartupFinished",
+    "onWebviewPanel:cody.editorPanel"
+  ],
   "contributes": {
     "walkthroughs": [
       {
@@ -738,13 +749,17 @@
       },
       {
         "command": "cody.supercompletion.jumpTo",
-        "args": ["next"],
+        "args": [
+          "next"
+        ],
         "key": "shift+ctrl+down",
         "when": "cody.activated && !editorReadonly && cody.hasActionableSupercompletion"
       },
       {
         "command": "cody.supercompletion.jumpTo",
-        "args": ["previous"],
+        "args": [
+          "previous"
+        ],
         "key": "shift+ctrl+up",
         "when": "cody.activated && !editorReadonly && cody.hasActionableSupercompletion"
       },
@@ -1014,7 +1029,10 @@
           "order": 2,
           "type": "string",
           "markdownDescription": "A Git repository URL to use instead of allowing Cody to infer the Git repository from the workspace.",
-          "examples": ["https://github.com/sourcegraph/cody", "ssh://git@github.com/sourcegraph/cody"]
+          "examples": [
+            "https://github.com/sourcegraph/cody",
+            "ssh://git@github.com/sourcegraph/cody"
+          ]
         },
         "cody.customHeaders": {
           "order": 4,
@@ -1064,12 +1082,18 @@
           "order": 6,
           "type": "string",
           "markdownDescription": "A custom instruction to be included at the start of all chat messages (e.g. \"Answer all my questions in Spanish.\")",
-          "examples": ["Answer all my questions in Spanish."]
+          "examples": [
+            "Answer all my questions in Spanish."
+          ]
         },
         "cody.chat.defaultLocation": {
           "order": 6,
           "type": "string",
-          "enum": ["sticky", "sidebar", "editor"],
+          "enum": [
+            "sticky",
+            "sidebar",
+            "editor"
+          ],
           "markdownDescription": "Controls where the Cody chat view opens when the user invokes the `Cody: New Chat` command, or the Alt+L and Alt+/ shortcuts.",
           "enumDescriptions": [
             "Opens in the last-activated view location, which is set whenever the user explicitly chooses to open chat in a given location",
@@ -1082,7 +1106,9 @@
           "order": 7,
           "type": "string",
           "markdownDescription": "A custom instruction to be included at the end of all instructions for edit commands (e.g. \"Write all unit tests with Jest instead of detected framework.\")",
-          "examples": ["Write all unit tests with Jest instead of detected framework."]
+          "examples": [
+            "Write all unit tests with Jest instead of detected framework."
+          ]
         },
         "cody.codeActions.enabled": {
           "order": 11,
@@ -1133,15 +1159,24 @@
         "cody.telemetry.level": {
           "order": 99,
           "type": "string",
-          "enum": ["all", "off"],
-          "enumDescriptions": ["Sends usage data and errors.", "Disables all extension telemetry."],
+          "enum": [
+            "all",
+            "off"
+          ],
+          "enumDescriptions": [
+            "Sends usage data and errors.",
+            "Disables all extension telemetry."
+          ],
           "markdownDescription": "Controls the telemetry about Cody usage and errors. See [Cody usage and privacy notice](https://about.sourcegraph.com/terms/cody-notice).",
           "default": "all"
         },
         "cody.autocomplete.advanced.provider": {
           "type": "string",
           "default": "default",
-          "enum": ["default", "experimental-ollama"],
+          "enum": [
+            "default",
+            "experimental-ollama"
+          ],
           "enumDescriptions": [
             "Our recommended setup with the best balance of quality and latency. We continuously update this for optimal performance.",
             "Experimental support for Ollama users. Use `cody.autocomplete.experimental.ollamaOptions` to configure requests to Ollama server."
@@ -1165,7 +1200,10 @@
         },
         "cody.experimental.foldingRanges": {
           "type": "string",
-          "enum": ["lsp", "indentation-based"],
+          "enum": [
+            "lsp",
+            "indentation-based"
+          ],
           "enumDescriptions": [
             "Use folding ranges that are enabled by default in VS Code, and are usually powered by LSP",
             "Use custom implementation of folding ranges that is indentation based. This is the implementation that is used by other Cody clients like the JetBrains plugin"
@@ -1176,7 +1214,11 @@
         "cody.autocomplete.experimental.graphContext": {
           "type": "string",
           "default": null,
-          "enum": [null, "tsc", "tsc-mixed"],
+          "enum": [
+            null,
+            "tsc",
+            "tsc-mixed"
+          ],
           "markdownDescription": "Use the code graph to retrieve context for autocomplete requests."
         },
         "cody.autocomplete.experimental.fireworksOptions": {
@@ -1269,7 +1311,11 @@
         },
         "cody.net.mode": {
           "type": "string",
-          "enum": ["auto", "bypass", "vscode"],
+          "enum": [
+            "auto",
+            "bypass",
+            "vscode"
+          ],
           "enumDescriptions": [
             "Default behavior. If `cody.net.proxy.endpoint` is configured, bypassing is automatically enabled, otherwise direct is used.",
             "Bypass VSCode's network stack, using Cody's instead.",
@@ -1283,7 +1329,11 @@
           "type": "string",
           "default": "",
           "pattern": "^((http|https|socks|socks4|socks4a|socks5|socks5h)://[^:]+:\\d+|unix://(~|/|[a-zA-Z]:\\\\).+)?$",
-          "examples": ["https://localhost:7080", "socks5://1.2.3.4:1080", "unix://~/cody-proxy.sock"]
+          "examples": [
+            "https://localhost:7080",
+            "socks5://1.2.3.4:1080",
+            "unix://~/cody-proxy.sock"
+          ]
         },
         "cody.net.proxy.skipCertValidation": {
           "description": "Whether to skip proxy server CA cert validation. Useful if the proxy server uses a self-signed certificate.",
@@ -1300,7 +1350,9 @@
           },
           "default": {
             "shell": {
-              "allow": ["*"],
+              "allow": [
+                "*"
+              ],
               "block": [
                 "rm",
                 "chmod",
@@ -1331,8 +1383,15 @@
           },
           "examples": {
             "shell": {
-              "allow": ["git", "gh"],
-              "block": ["history", "sudo", "rm"]
+              "allow": [
+                "git",
+                "gh"
+              ],
+              "block": [
+                "history",
+                "sudo",
+                "rm"
+              ]
             }
           },
           "markdownDescription": "Configures shell command execution for Cody Agent when terminal context is enabled (feature flag required). The 'allow' property can be either ['*'] for all commands or an array of allowed command prefixes. The 'block' property is an array of blocked commands that will be combined with built-in safety blocklist. Commands in the blocklist take precedence over allowed commands. When a command is executed, its output will be used as context. If no 'allow' list is specified, the feature will be disabled."
@@ -1425,7 +1484,9 @@
     "untrustedWorkspaces": {
       "supported": "limited",
       "description": "Cody only uses providers (configured in `openctx.providers`) from trusted workspaces because providers may execute arbitrary code.",
-      "restrictedConfigurations": ["openctx.providers"]
+      "restrictedConfigurations": [
+        "openctx.providers"
+      ]
     }
   },
   "dependencies": {
@@ -1441,6 +1502,7 @@
     "@opentelemetry/sdk-trace-base": "^1.18.1",
     "@opentelemetry/sdk-trace-node": "^1.18.1",
     "@opentelemetry/semantic-conventions": "^1.18.1",
+    "@pollyjs/adapter-fetch": "^6.0.6",
     "@radix-ui/react-accordion": "^1.2.0",
     "@radix-ui/react-collapsible": "^1.1.0",
     "@radix-ui/react-dialog": "^1.0.5",
@@ -1472,6 +1534,7 @@
     "crypto-js": "^4.2.0",
     "detect-indent": "7.0.0",
     "diff": "^5.2.0",
+    "fast-myers-diff": "^3.2.0",
     "fast-xml-parser": "^4.3.2",
     "fzf": "^0.5.2",
     "glob": "^7.2.3",
@@ -1510,8 +1573,7 @@
     "uuid": "^9.0.0",
     "vscode-languageserver-textdocument": "^1.0.8",
     "vscode-uri": "^3.0.8",
-    "wink-nlp-utils": "^2.1.0",
-    "fast-myers-diff": "^3.2.0"
+    "wink-nlp-utils": "^2.1.0"
   },
   "devDependencies": {
     "7zip-min": "^1.4.5",
@@ -1521,10 +1583,12 @@
     "@jgoz/esbuild-plugin-typecheck": "^4.0.1",
     "@npmcli/promise-spawn": "^7.0.2",
     "@playwright/test": "1.47.2",
+    "@pollyjs/adapter": "^6.0.6",
     "@pollyjs/adapter-node-http": "^6.0.6",
     "@pollyjs/core": "^6.0.6",
     "@pollyjs/persister": "^6.0.6",
     "@pollyjs/persister-fs": "^6.0.6",
+    "@pollyjs/utils": "^6.0.6",
     "@storybook/preview-api": "^8.0.5",
     "@types/7zip-min": "^1.3.3",
     "@types/crypto-js": "^4.2.2",
@@ -1578,6 +1642,7 @@
     "keytar": "^7.9.0",
     "kill-sync": "^1.0.3",
     "mocha": "^10.2.0",
+    "nock": "^14.0.0-beta.19",
     "node-fetch": "^2.6.4",
     "normalize-url": "5.3.1",
     "on-headers": "^1.0.2",

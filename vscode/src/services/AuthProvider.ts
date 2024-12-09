@@ -185,7 +185,7 @@ class AuthProvider implements vscode.Disposable {
         config: ResolvedConfigurationCredentialsOnly | AuthCredentials,
         mode: 'store-if-valid' | 'always-store',
         signal?: AbortSignal
-    ): Promise<{ isStored: boolean; authStatus: AuthStatus }> {
+    ): Promise<AuthStatus> {
         let credentials: ResolvedConfigurationCredentialsOnly
         if ('auth' in config) {
             credentials = toCredentialsOnlyNormalized(config)
@@ -216,7 +216,7 @@ class AuthProvider implements vscode.Disposable {
             reportAuthTelemetryEvent(authStatus)
         }
         await this.handleAuthTelemetry(authStatus, signal)
-        return { isStored: shouldStore, authStatus }
+        return authStatus
     }
 
     public setAuthPendingToEndpoint(endpoint: string): void {
