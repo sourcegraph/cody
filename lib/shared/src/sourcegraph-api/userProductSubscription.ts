@@ -88,16 +88,12 @@ export function currentUserProductSubscription(): Promise<UserProductSubscriptio
     return firstResultFromOperation(userProductSubscriptionStorage.observable)
 }
 
-export function checkIfEnterpriseUser(): Promise<boolean> {
-    return currentUserProductSubscription().then(async subscription => {
-        const authStatusValue = await firstValueFrom(authStatus)
-        // If subscription is null, check if the user is not a dotcom user
-        if (subscription === null) {
-            return !isDotCom(authStatusValue)
-        }
-        // If userCanUpgrade is false, the user is an enterprise user
-        return !subscription.userCanUpgrade
-    })
+/**
+ * Check if the user is an enterprise user.
+ */
+export async function checkIfEnterpriseUser(): Promise<boolean> {
+    const authStatusValue = await firstValueFrom(authStatus)
+    return !isDotCom(authStatusValue)
 }
 
 /**
