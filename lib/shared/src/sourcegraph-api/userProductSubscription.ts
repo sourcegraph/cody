@@ -7,6 +7,7 @@ import {
     pick,
     promiseFactoryToObservable,
     storeLastValue,
+    firstValueFrom
 } from '../misc/observable'
 import {
     firstResultFromOperation,
@@ -85,6 +86,18 @@ const userProductSubscriptionStorage = storeLastValue(userProductSubscription)
  */
 export function currentUserProductSubscription(): Promise<UserProductSubscription | null> {
     return firstResultFromOperation(userProductSubscriptionStorage.observable)
+}
+
+export function checkIfEnterpriseUser(): Promise<boolean> {
+    return currentUserProductSubscription().then(async subscription => {
+        const authStatusValue = await firstValueFrom(authStatus)
+        // If subscription is null, check if the user is not a dotcom user
+        if (subscription === null) {
+            return !isDotCom(authStatusValue)
+        }
+        // If userCanUpgrade is false, the user is an enterprise user
+        return !subscription.userCanUpgrade
+    })
 }
 
 /**
