@@ -2,6 +2,7 @@ import { autoeditsLogger } from '../logger'
 import type { AutoeditsModelAdapter } from '../prompt-provider'
 import { getModelResponse } from '../prompt-provider'
 import type { AutoeditModelOptions } from '../prompt-provider'
+import { getOpenaiCompatibleChatPrompt } from './utils'
 
 export class OpenAIAdapter implements AutoeditsModelAdapter {
     async getModelResponse(option: AutoeditModelOptions): Promise<string> {
@@ -10,7 +11,10 @@ export class OpenAIAdapter implements AutoeditsModelAdapter {
                 option.url,
                 JSON.stringify({
                     model: option.model,
-                    messages: option.prompt,
+                    messages: getOpenaiCompatibleChatPrompt(
+                        option.prompt.systemMessage,
+                        option.prompt.userMessage
+                    ),
                     temperature: 0.5,
                     max_tokens: 256,
                     response_format: {
