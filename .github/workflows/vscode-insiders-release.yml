@@ -22,6 +22,7 @@ jobs:
       - run: xvfb-run -a pnpm -C vscode run test:e2e
         env:
           NO_LOG_TESTING_TELEMETRY_CALLS: true
+      - run: pnpm -C vscode run build
       - name: Check bundle sizes
         run: |
           cd vscode

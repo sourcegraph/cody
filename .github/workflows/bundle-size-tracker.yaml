@@ -14,39 +14,18 @@ jobs:
       contents: write # for publishing the release
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v3
         with:
           node-version-file: .tool-versions
       - uses: pnpm/action-setup@fe02b34f77f8bc703788d5817da081398fad5dd2 # SECURITY: pin third-party action hashes
-      - run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
-        shell: bash
-        id: pnpm-cache
-      - name: Cache pnpm store
-        uses: actions/cache@v4
         with:
-          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: ${{ runner.os }}-pnpm-store-
-      - run: pnpm install
-      # Run Biome and capture the output. If biome crashes, it still reports a
-      # successful CI run (exit code 0) but that will ripple down to errors in
-      # the Biome VS Code extension. This ensures that we don't accidentally
-      # break Biome.
-      - name: Biome
-        run: |
-          set +e
-          output=$(pnpm exec biome ci --error-on-warnings . 2>&1)
-          status=$?
-          echo "$output"
-          if [ $status -ne 0 ]; then
-            exit $status
-          fi
-          if echo "$output" | grep -q "Biome encountered an unexpected error"; then
-            echo "Error string 'Biome encountered an unexpected error' detected in output."
-            exit 1
-          fi
-        shell: bash
-      - run: pnpm run build
+          run_install: true
+      - run: pnpm build
+      - run: pnpm run test
+      - run: xvfb-run -a pnpm -C vscode run test:integration
+      - run: xvfb-run -a pnpm -C vscode run test:e2e
+        env:
+          NO_LOG_TESTING_TELEMETRY_CALLS: true
       - run: pnpm -C vscode run build
       - name: Check bundle sizes
         run: |
