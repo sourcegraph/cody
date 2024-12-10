@@ -1,7 +1,7 @@
 import { Observable, interval, map } from 'observable-fns'
 import type { AuthStatus } from '../auth/types'
 import type { ClientConfiguration } from '../configuration'
-import { clientCapabilities } from '../configuration/clientCapabilities'
+import { clientCapabilities, isClientOnStableVersion } from '../configuration/clientCapabilities'
 import { cenv } from '../configuration/environment'
 import type { PickResolvedConfiguration } from '../configuration/resolver'
 import { FeatureFlag, featureFlagProvider } from '../experimentation/FeatureFlagProvider'
@@ -98,13 +98,18 @@ export function syncModels({
                         customHeaders: config.configuration.customHeaders,
                         providerLimitPrompt: config.configuration.providerLimitPrompt,
                         devModels: config.configuration.devModels,
+                        agentExtensionVersion: config.configuration.agentExtensionVersion,
                     },
                     auth: config.auth,
                     clientState: {
                         waitlist_o1: config.clientState.waitlist_o1,
                     },
                 }) satisfies PickResolvedConfiguration<{
-                    configuration: 'providerLimitPrompt' | 'customHeaders' | 'devModels'
+                    configuration:
+                        | 'providerLimitPrompt'
+                        | 'customHeaders'
+                        | 'devModels'
+                        | 'agentExtensionVersion'
                     auth: true
                     clientState: 'waitlist_o1'
                 }>
@@ -225,9 +230,13 @@ export function syncModels({
                                             // DEEP CODY is enabled for all PLG users.
                                             // Enterprise users need to have the feature flag enabled.
                                             const isDeepCodyEnabled = isDotComUser || hasDeepCodyFlag
+                                            const isPreRelease = !isClientOnStableVersion()
+
                                             if (
                                                 isDeepCodyEnabled &&
                                                 sonnetModel &&
+                                                // Only displays in pre-release version
+                                                isPreRelease &&
                                                 // Ensure the deep-cody model is only added once.
                                                 !data.primaryModels.some(m => m.id.includes('deep-cody'))
                                             ) {

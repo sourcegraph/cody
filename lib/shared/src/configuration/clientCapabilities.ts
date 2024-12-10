@@ -263,3 +263,17 @@ export const CLIENT_CAPABILITIES_FIXTURE: ClientCapabilitiesWithLegacyFields = {
     agentExtensionVersion: '1.2.3',
     agentIDEVersion: '4.5.6',
 }
+
+export function isClientOnStableVersion(): boolean {
+    if (!_extensionVersion || _extensionVersion.endsWith('nightly')) {
+        return false
+    }
+
+    // Check JetBrains IDE nightly version
+    if (_value?.configuration.agentIDEVersion?.endsWith('nightly')) {
+        return false
+    }
+
+    const [, minorVersion] = _extensionVersion.split('.')
+    return !!(minorVersion && Number.parseInt(minorVersion, 10) % 2 === 0)
+}
