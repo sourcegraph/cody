@@ -76,6 +76,11 @@ export enum FeatureFlag {
 
     /** Enable experimental One Box feature in Cody */
     CodyExperimentalOneBox = 'cody-experimental-one-box',
+    /** Enable debug mode for One Box feature in Cody */
+    CodyExperimentalOneBoxDebug = 'cody-experimental-one-box-debug',
+
+    /** Show Edit Code option in the Cody message submit dropdown */
+    CodyExperimentalShowEditCodeIntent = 'cody-experimental-show-edit-code-intent',
 
     /** Whether user has access to early-acess models. */
     CodyEarlyAccess = 'cody-early-access',

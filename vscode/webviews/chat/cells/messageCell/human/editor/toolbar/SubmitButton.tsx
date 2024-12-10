@@ -1,7 +1,7 @@
 import type { ChatMessage } from '@sourcegraph/cody-shared'
-import { CodyIDE } from '@sourcegraph/cody-shared'
+import { CodyIDE, FeatureFlag } from '@sourcegraph/cody-shared'
 import clsx from 'clsx'
-import { BadgeCheck, BetweenHorizonalEnd, Pencil, Search } from 'lucide-react'
+import { BadgeCheck, Pencil, Search } from 'lucide-react'
 import type { FC } from 'react'
 import { useMemo } from 'react'
 import { Kbd } from '../../../../../../components/Kbd'
@@ -11,6 +11,7 @@ import { ToolbarPopoverItem } from '../../../../../../components/shadcn/ui/toolb
 import { Tooltip, TooltipContent, TooltipTrigger } from '../../../../../../components/shadcn/ui/tooltip'
 import { useConfig } from '../../../../../../utils/useConfig'
 import { useExperimentalOneBox } from '../../../../../../utils/useExperimentalOneBox'
+import { useFeatureFlag } from '../../../../../../utils/useFeatureFlags'
 import { CodyIcon } from '../../../../../components/CodyIcon'
 
 export type SubmitButtonState = 'submittable' | 'emptyEditorValue' | 'waitingResponseComplete'
@@ -21,7 +22,7 @@ interface IntentOption {
     intent: ChatMessage['intent']
 }
 
-function getIntentOptions(ide: CodyIDE): IntentOption[] {
+function getIntentOptions(ide: CodyIDE, showEditIntent?: boolean): IntentOption[] {
     const standardOneBoxIntents: IntentOption[] = [
         {
             title: 'Best for question',
@@ -40,7 +41,7 @@ function getIntentOptions(ide: CodyIDE): IntentOption[] {
         },
     ]
 
-    if (ide === CodyIDE.Web) {
+    if (ide === CodyIDE.Web || !showEditIntent) {
         return standardOneBoxIntents
     }
 
@@ -50,11 +51,6 @@ function getIntentOptions(ide: CodyIDE): IntentOption[] {
             title: 'Edit Code',
             icon: Pencil,
             intent: 'edit',
-        },
-        {
-            title: 'Insert Code',
-            icon: BetweenHorizonalEnd,
-            intent: 'insert',
         },
     ]
 }
@@ -72,7 +68,12 @@ export const SubmitButton: FC<{
         clientCapabilities: { agentIDE },
     } = useConfig()
 
-    const intentOptions = useMemo(() => getIntentOptions(agentIDE), [agentIDE])
+    const showEditCodeIntent = useFeatureFlag(FeatureFlag.CodyExperimentalShowEditCodeIntent)
+
+    const intentOptions = useMemo(
+        () => getIntentOptions(agentIDE, showEditCodeIntent),
+        [agentIDE, showEditCodeIntent]
+    )
 
     if (state === 'waitingResponseComplete') {
         return (

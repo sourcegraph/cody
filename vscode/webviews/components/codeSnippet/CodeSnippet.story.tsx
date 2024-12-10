@@ -1,11 +1,11 @@
 import type { Meta, StoryObj } from '@storybook/react'
 import { Observable } from 'observable-fns'
 import { VSCodeStandaloneComponent } from '../../storybook/VSCodeStoryDecorator'
-import { FileContentSearchResult } from './CodeSnippet'
+import { FileMatchSearchResult } from './CodeSnippet'
 
-const meta: Meta<typeof FileContentSearchResult> = {
-    title: 'cody/FileContentSearchResult',
-    component: FileContentSearchResult,
+const meta: Meta<typeof FileMatchSearchResult> = {
+    title: 'cody/FileMatchSearchResult',
+    component: FileMatchSearchResult,
     decorators: [story => <div style={{ padding: 20 }}> {story()} </div>, VSCodeStandaloneComponent],
     args: {
         allExpanded: false,
@@ -13,6 +13,7 @@ const meta: Meta<typeof FileContentSearchResult> = {
         repoDisplayName: 'microsoft/vscode',
         showAllMatches: false,
         result: {
+            __typename: 'FileMatch',
             chunkMatches: [
                 {
                     content: '\nclass SnippetBodyInsights {\n\n',
@@ -194,14 +195,14 @@ const meta: Meta<typeof FileContentSearchResult> = {
                     ],
                 },
             ],
-            branches: [''],
-            commit: '90501335849147dda27da6b94372ac31de63f718',
-            language: 'TypeScript',
-            path: 'src/vs/workbench/contrib/snippets/browser/snippetsFile.ts',
-            repoLastFetched: '2024-09-10T03:19:51.107336Z',
-            repoStars: 162299,
-            repository: 'github.com/microsoft/vscode',
-            type: 'content',
+            file: {
+                url: 'sourcegraph.com/github.com/microsoft/vscode/-/blob/src/vs/workbench/contrib/snippets/browser/snippetsFile.ts',
+                path: 'src/vs/workbench/contrib/snippets/browser/snippetsFile.ts',
+                commit: {
+                    oid: '90501335849147dda27da6b94372ac31de63f718',
+                },
+            },
+            repository: { id: '1', name: 'github.com/microsoft/vscode' },
         },
         onSelect: () => {},
     },
@@ -209,7 +210,7 @@ const meta: Meta<typeof FileContentSearchResult> = {
 
 export default meta
 
-type Story = StoryObj<typeof FileContentSearchResult>
+type Story = StoryObj<typeof FileMatchSearchResult>
 
 export const PlainText: Story = {
     args: {},

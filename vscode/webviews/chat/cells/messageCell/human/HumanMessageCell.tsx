@@ -35,7 +35,7 @@ interface HumanMessageCellProps {
 
     onEditorFocusChange?: (focused: boolean) => void
     onChange?: (editorState: SerializedPromptEditorValue) => void
-    onSubmit: (editorValue: SerializedPromptEditorValue) => void
+    onSubmit: (editorState: SerializedPromptEditorValue, intent?: ChatMessage['intent']) => void
     onStop: () => void
 
     isFirstInteraction?: boolean

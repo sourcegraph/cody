@@ -643,3 +643,70 @@ export const HIGHLIGHTED_FILE_QUERY = `
         }
     }
 `
+
+export const NLS_SEARCH_QUERY = `
+    query NLSSearchQuery($query: String!) {
+        search(query: $query, version: V3, patternType: nls) {
+            results {
+                results {
+                    __typename
+                    ... on FileMatch {
+                        repository {
+                            id
+                            name
+                        }
+                        file {
+                            url
+                            path
+                            commit {
+                                oid
+                            }
+                        }
+                        chunkMatches {
+                            content
+                            contentStart {
+                                line
+                                character
+                            }
+                            ranges {
+                                start {
+                                    line
+                                    character
+                                }
+                                end {
+                                    line
+                                    character
+                                }
+                            }
+                        }
+                        pathMatches {
+                            start {
+                                line
+                                character
+                            }
+                            end {
+                                line
+                                character
+                            }
+                        }
+                        symbols {
+                            name
+                            location {
+                                range {
+                                    start {
+                                        line
+                                        character
+                                    }
+                                    end {
+
+                                        line
+                                        character
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }`
