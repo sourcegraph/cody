@@ -358,11 +358,13 @@ const ModelTitleWithIcon: React.FC<{
 
     return (
         <span className={clsx(styles.modelTitleWithIcon, { [styles.disabled]: isDisabled })}>
-            {showIcon && model.id.includes('deep-cody') ? (
-                <FlaskConicalIcon size={16} className={styles.modelIcon} />
-            ) : (
-                <ChatModelIcon model={model.provider} className={styles.modelIcon} />
-            )}
+            {showIcon ? (
+                model.id.includes('deep-cody') ? (
+                    <FlaskConicalIcon size={16} className={styles.modelIcon} />
+                ) : (
+                    <ChatModelIcon model={model.provider} className={styles.modelIcon} />
+                )
+            ) : null}
             <span className={clsx('tw-flex-grow', styles.modelName)}>{model.title}</span>
             {modelBadge && (
                 <Badge
