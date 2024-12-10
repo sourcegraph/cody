@@ -8,6 +8,7 @@ import {
     ModelUsage,
     PromptString,
     SYMBOL_CONTEXT_MENTION_PROVIDER,
+    checkIfEnterpriseUser,
     currentUserProductSubscription,
     displayLineRange,
     firstResultFromOperation,
@@ -97,9 +98,10 @@ export const getInput = async (
               : SELECTION_RANGE_ITEM
 
     const sub = await currentUserProductSubscription()
+    const isEnterpriseUser = await checkIfEnterpriseUser()
     const isCodyPro = Boolean(sub && !sub.userCanUpgrade)
     const modelOptions = await firstResultFromOperation(modelsService.getModels(ModelUsage.Edit))
-    const modelItems = getModelOptionItems(modelOptions, isCodyPro)
+    const modelItems = getModelOptionItems(modelOptions, isCodyPro, isEnterpriseUser)
     const showModelSelector = modelOptions.length > 1
 
     let activeModel = initialValues.initialModel
@@ -180,7 +182,7 @@ export const getInput = async (
         const modelInput = createQuickPick({
             title: activeTitle,
             placeHolder: 'Select a model',
-            getItems: () => getModelInputItems(modelOptions, activeModel, isCodyPro),
+            getItems: () => getModelInputItems(modelOptions, activeModel, isCodyPro, isEnterpriseUser),
             buttons: [vscode.QuickInputButtons.Back],
             onDidHide: () => editor.setDecorations(PREVIEW_RANGE_DECORATION, []),
             onDidTriggerButton: () => editInput.render(editInput.input.value),
@@ -196,7 +198,7 @@ export const getInput = async (
                     },
                 })
 
-                if (acceptedItem.codyProOnly && !isCodyPro) {
+                if (acceptedItem.codyProOnly && !isCodyPro && !isEnterpriseUser) {
                     const option = await vscode.window.showInformationMessage(
                         'Upgrade to Cody Pro',
                         {
