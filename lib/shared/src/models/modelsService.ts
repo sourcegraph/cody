@@ -393,15 +393,34 @@ export class ModelsService {
             this.getModelsByType(type),
             this.modelsChanges,
             authStatus,
-            userProductSubscription
+            userProductSubscription,
+            featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyChatDefaultToClaude35Haiku)
         ).pipe(
-            map(([models, modelsData, authStatus, userProductSubscription]) => {
+            map(([models, modelsData, authStatus, userProductSubscription, useHaikuAsDefault]) => {
                 if (
                     models === pendingOperation ||
                     modelsData === pendingOperation ||
                     userProductSubscription === pendingOperation
                 ) {
                     return pendingOperation
+                }
+                if (
+                    useHaikuAsDefault &&
+                    userProductSubscription?.userCanUpgrade &&
+                    type === ModelUsage.Chat
+                ) {
+                    const defaultModel = models.find(m => m.id.includes('claude-3-5-haiku-latest'))
+                    if (
+                        defaultModel &&
+                        this._isModelAvailable(
+                            modelsData,
+                            authStatus,
+                            userProductSubscription,
+                            defaultModel
+                        ) === true
+                    ) {
+                        return defaultModel
+                    }
                 }
 
                 // Free users can only use the default free model, so we just find the first model they can use

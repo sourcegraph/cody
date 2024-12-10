@@ -4,6 +4,7 @@ import { currentAuthStatus, mockAuthStatus } from '../auth/authStatus'
 import { AUTH_STATUS_FIXTURE_AUTHED, type AuthenticatedAuthStatus } from '../auth/types'
 import { FeatureFlag, featureFlagProvider } from '../experimentation/FeatureFlagProvider'
 import { firstValueFrom } from '../misc/observable'
+import { pendingOperation } from '../misc/observableOperation'
 import { DOTCOM_URL } from '../sourcegraph-api/environments'
 import * as userProductSubscriptionModule from '../sourcegraph-api/userProductSubscription'
 import type { UserProductSubscription } from '../sourcegraph-api/userProductSubscription'
@@ -167,6 +168,7 @@ describe('modelsService', () => {
         let modelsService: ModelsService
         beforeEach(() => {
             mockAuthStatus(codyProAuthStatus)
+            vi.spyOn(featureFlagProvider, 'evaluatedFeatureFlag').mockReturnValue(Observable.of(false))
             vi.spyOn(userProductSubscriptionModule, 'userProductSubscription', 'get').mockReturnValue(
                 Observable.of(codyProSub)
             )
@@ -488,6 +490,89 @@ describe('modelsService', () => {
             const prefsAfter = storage.getModelPreferences()
             const selectedEditModel = prefsAfter[freeUserAuthStatus.endpoint]?.selected?.edit
             expect(selectedEditModel).toBe('other-edit-model')
+        })
+    })
+
+    describe('A/B test for default chat model', () => {
+        let modelsService: ModelsService
+        let storage: TestLocalStorageForModelPreferences
+        const haikuModel = createModel({
+            id: 'claude-3-5-haiku-latest',
+            usage: [ModelUsage.Chat],
+            tags: [],
+        })
+        const proModel = createModel({
+            id: 'claude-3-sonnet-latest',
+            usage: [ModelUsage.Chat],
+            tags: [ModelTag.Pro],
+        })
+        modelsService = new ModelsService(
+            Observable.of({
+                primaryModels: [proModel, haikuModel],
+                localModels: [],
+                preferences: {
+                    defaults: {},
+                    selected: {},
+                },
+            })
+        )
+
+        beforeEach(() => {
+            storage = new TestLocalStorageForModelPreferences()
+        })
+
+        afterEach(() => {
+            vi.resetAllMocks()
+        })
+
+        it('sets Haiku as the default chat model for free users', async () => {
+            mockAuthStatus(freeUserAuthStatus)
+            vi.spyOn(featureFlagProvider, 'evaluatedFeatureFlag').mockImplementation(
+                (flag: FeatureFlag) => Observable.of(flag === FeatureFlag.CodyChatDefaultToClaude35Haiku)
+            )
+            vi.spyOn(userProductSubscriptionModule, 'userProductSubscription', 'get').mockReturnValue(
+                Observable.of(freeUserSub)
+            )
+            modelsService.setStorage(storage)
+
+            const defaultChatModel = await firstValueFrom(modelsService.getDefaultModel(ModelUsage.Chat))
+            if (defaultChatModel === undefined || defaultChatModel === pendingOperation) {
+                throw new Error('Failed to get default chat model')
+            }
+            expect(defaultChatModel?.id).toBe('claude-3-5-haiku-latest')
+        })
+        it('default chat model should remain unchanged for pro users when feature flag value is not set', async () => {
+            mockAuthStatus(freeUserAuthStatus)
+            vi.spyOn(featureFlagProvider, 'evaluatedFeatureFlag').mockImplementation(
+                (flag: FeatureFlag) => Observable.of(false)
+            )
+            vi.spyOn(userProductSubscriptionModule, 'userProductSubscription', 'get').mockReturnValue(
+                Observable.of(freeUserSub)
+            )
+            modelsService.setStorage(storage)
+
+            const defaultChatModel = await firstValueFrom(modelsService.getDefaultModel(ModelUsage.Chat))
+            if (defaultChatModel === undefined || defaultChatModel === pendingOperation) {
+                throw new Error('Failed to get default chat model')
+            }
+            expect(defaultChatModel?.id).toBe('claude-3-5-haiku-latest')
+        })
+
+        it('default chat model should remain unchanged for pro users', async () => {
+            mockAuthStatus(codyProAuthStatus)
+            vi.spyOn(featureFlagProvider, 'evaluatedFeatureFlag').mockImplementation(
+                (flag: FeatureFlag) => Observable.of(flag === FeatureFlag.CodyChatDefaultToClaude35Haiku)
+            )
+            vi.spyOn(userProductSubscriptionModule, 'userProductSubscription', 'get').mockReturnValue(
+                Observable.of(codyProSub)
+            )
+            modelsService.setStorage(storage)
+
+            const defaultChatModel = await firstValueFrom(modelsService.getDefaultModel(ModelUsage.Chat))
+            if (defaultChatModel === undefined || defaultChatModel === pendingOperation) {
+                throw new Error('Failed to get default chat model')
+            }
+            expect(defaultChatModel?.id).toBe('claude-3-sonnet-latest')
         })
     })
 })
