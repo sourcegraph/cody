@@ -662,11 +662,6 @@ export const NLS_SEARCH_QUERY = `
                                 oid
                             }
                         }
-                        lineMatches {
-                            preview
-                            lineNumber
-                            offsetAndLengths
-                        }
                         chunkMatches {
                             content
                             contentStart {

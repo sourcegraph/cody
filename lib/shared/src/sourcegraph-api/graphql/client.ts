@@ -326,11 +326,6 @@ export interface NLSSearchFileMatch {
             oid: string
         }
     }
-    lineMatches?: {
-        preview: string
-        lineNumber: number
-        offsetAndLengths: number[][]
-    }[]
     chunkMatches?: {
         content: string
         contentStart: Position
