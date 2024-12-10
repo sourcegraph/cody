@@ -377,6 +377,7 @@ export { fetchLocalOllamaModels } from './llm-providers/ollama/utils'
 export * from './editor/editorState'
 export {
     currentUserProductSubscription,
+    checkIfEnterpriseUser,
     type UserProductSubscription,
     cachedUserProductSubscription,
     userProductSubscription,

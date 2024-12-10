@@ -15,6 +15,7 @@ import { addTraceparent, wrapInActiveSpan } from '../../tracing'
 import { isError } from '../../utils'
 import { addCodyClientIdentificationHeaders } from '../client-name-version'
 import { isAbortError } from '../errors'
+import { type GraphQLResultCache, ObservableInvalidatedGraphQLResultCacheFactory } from './cache'
 import {
     BUILTIN_PROMPTS_QUERY,
     CHANGE_PROMPT_VISIBILITY,
@@ -633,6 +634,8 @@ const QUERY_TO_NAME_REGEXP = /^\s*(?:query|mutation)\s+(\w+)/m
 
 export class SourcegraphGraphQLAPIClient {
     private isAgentTesting = process.env.CODY_SHIM_TESTING === 'true'
+    private readonly resultCacheFactory: ObservableInvalidatedGraphQLResultCacheFactory
+    private readonly siteVersionCache: GraphQLResultCache<string>
 
     public static withGlobalConfig(): SourcegraphGraphQLAPIClient {
         return new SourcegraphGraphQLAPIClient(resolvedConfig)
@@ -647,17 +650,33 @@ export class SourcegraphGraphQLAPIClient {
         return new SourcegraphGraphQLAPIClient(Observable.of(config))
     }
 
-    private constructor(private readonly config: Observable<GraphQLAPIClientConfig>) {}
+    private constructor(private readonly config: Observable<GraphQLAPIClientConfig>) {
+        this.resultCacheFactory = new ObservableInvalidatedGraphQLResultCacheFactory(
+            this.config.pipe(distinctUntilChanged()),
+            {
+                maxAgeMsec: 1000 * 60 * 10, // 10 minutes,
+                initialRetryDelayMsec: 10, // Don't cache errors for long
+                backoffFactor: 1.5, // Back off exponentially
+            }
+        )
+        this.siteVersionCache = this.resultCacheFactory.create<string>('SiteProductVersion')
+    }
+
+    [Symbol.dispose]() {
+        this.resultCacheFactory[Symbol.dispose]()
+    }
 
     public async getSiteVersion(signal?: AbortSignal): Promise<string | Error> {
-        return this.fetchSourcegraphAPI<APIResponse<SiteVersionResponse>>(
-            CURRENT_SITE_VERSION_QUERY,
-            {},
-            signal
-        ).then(response =>
-            extractDataOrError(
-                response,
-                data => data.site?.productVersion ?? new Error('site version not found')
+        return this.siteVersionCache.get(signal, signal =>
+            this.fetchSourcegraphAPI<APIResponse<SiteVersionResponse>>(
+                CURRENT_SITE_VERSION_QUERY,
+                {},
+                signal
+            ).then(response =>
+                extractDataOrError(
+                    response,
+                    data => data.site?.productVersion ?? new Error('site version not found')
+                )
             )
         )
     }

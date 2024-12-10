@@ -187,33 +187,34 @@ function exampleToCsvRecord(example: ExampleOutput): any {
         type: example.type,
         targetRepoRevs: repoRevsToString(example.targetRepoRevs),
         query: example.query,
-        essentialContext: example.essentialContext
-            .map(c => `${c.repoName}:${c.path}:${c.startLine}-${c.endLine}`)
-            .join('\n'),
+        essentialContext: example.essentialContext.map(contextItemToString).join('\n'),
         helpfulContext_optional: example.helpfulContext
             .map(c => `${c.repoName}:${c.path}:${c.startLine}-${c.endLine}`)
             .join('\n'),
         langs_optional: example.langs?.join('\n'),
         source_optional: example.source,
-
-        actualContext: example.actualContext.map(contextItemToString).join('\n'),
+        actualContext: example.actualContext.map(item => contextItemToString(item)).join('\n'),
     }
 }
 
 export function contextItemFromString(item: string): EvalContextItem {
-    const [repoName, path, lineRange] = item.split(':')
+    // To handle clickable link format which is "https://sourcegraph.sourcegraph.com/github.com/sourcegraph-testing/pinned-cody/-/blob/README.md?L42-43"
+    const url = new URL(item)
+    const pathParts = url.pathname.split('/-/blob/')
+    const repoName = pathParts[0].replace('/github.com/', '')
+    const path = pathParts[1]
+    const lineRange = url.search.replace('?L', '').split('-')
     if (!repoName || !path || !lineRange) {
         throw new Error(`Invalid context item: ${item}`)
     }
-    const [startLine, endLine] = lineRange.split('-')
     return {
         repoName,
         path,
-        startLine: Number.parseInt(startLine),
-        endLine: Number.parseInt(endLine),
+        startLine: Number.parseInt(lineRange[0]),
+        endLine: Number.parseInt(lineRange[1]),
     }
 }
 
 export function contextItemToString(item: EvalContextItem): string {
-    return `${item.retriever}:${item.repoName}:${item.path}:${item.startLine}-${item.endLine}`
+    return `${item.retriever}:https://sourcegraph.sourcegraph.com/github.com/${item.repoName}/-/blob/${item.path}?L${item.startLine}-${item.endLine}`
 }

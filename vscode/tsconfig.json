@@ -5,6 +5,7 @@
     "rootDir": ".",
     "outDir": "dist/tsc",
     "jsx": "react-jsx",
+    "target": "es2022",
     "lib": ["ESNext", "DOM", "DOM.Iterable", "es2021"],
     "types": ["@testing-library/jest-dom"],
     "paths": {
