@@ -1,5 +1,6 @@
 import type { TelemetryRecorder } from '@sourcegraph/cody-shared'
 
+import type { SpanContext } from '@opentelemetry/api'
 import { createContext, useContext } from 'react'
 import type { WebviewRecordEventParameters } from '../../src/chat/protocol'
 import type { ApiPostMessage } from '../Chat'
@@ -36,4 +37,10 @@ export function useTelemetryRecorder(): TelemetryRecorder {
         throw new Error('no telemetryRecorder')
     }
     return telemetryRecorder
+}
+
+export function getTraceparentFromSpanContext(spanContext: SpanContext): string {
+    return `00-${spanContext.traceId}-${spanContext.spanId}-${spanContext.traceFlags
+        .toString(16)
+        .padStart(2, '0')}`
 }
