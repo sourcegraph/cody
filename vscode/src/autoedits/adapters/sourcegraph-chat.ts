@@ -2,13 +2,14 @@ import type { ChatClient, Message } from '@sourcegraph/cody-shared'
 import { autoeditsLogger } from '../logger'
 import type { AutoeditsModelAdapter } from '../prompt-provider'
 import type { AutoeditModelOptions } from '../prompt-provider'
-import { getSourcegraphCompatibleChatPrompt } from './utils'
+import { getSourcegraphCompatibleChatPrompt, getMaxOutputTokensForAutoedits } from './utils'
 
 export class SourcegraphChatAdapter implements AutoeditsModelAdapter {
     constructor(private readonly chatClient: ChatClient) {}
 
     async getModelResponse(option: AutoeditModelOptions): Promise<string> {
         try {
+            const maxTokens = getMaxOutputTokensForAutoedits(option.codeToRewrite)
             const messages: Message[] = getSourcegraphCompatibleChatPrompt(
                 option.prompt.systemMessage,
                 option.prompt.userMessage
@@ -17,8 +18,12 @@ export class SourcegraphChatAdapter implements AutoeditsModelAdapter {
                 messages,
                 {
                     model: option.model,
-                    maxTokensToSample: 256,
+                    maxTokensToSample: maxTokens,
                     temperature: 0.2,
+                    prediction: {
+                        type: 'content',
+                        content: option.codeToRewrite,
+                    },
                 },
                 new AbortController().signal
             )
