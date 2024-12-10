@@ -189,11 +189,20 @@ export class KotlinEmitter implements Emitter {
         p.line(`data class ${name}(`)
         p.block(() => {
             for (const member of members) {
-                p.line(
-                    `val ${member.info.display_name}: ${member.typeSyntax}${
-                        member.isNullable ? ' = null' : ''
-                    },${member.oneOfComment}`
-                )
+                // HACK(camdencheek): member.typeSyntax is coming back empty for this type,
+                // so until I can rope someone in who understands this better, this makes the
+                // Kotlin types compile.
+                if (name === 'SerializedChatMessage' && member.info.display_name === 'search') {
+                    p.line(
+                        `val search: Any? = null,`
+                    )
+                } else {
+                    p.line(
+                        `val ${member.info.display_name}: ${member.typeSyntax}${
+                            member.isNullable ? ' = null' : ''
+                        },${member.oneOfComment}`
+                    )
+                }
             }
             if (members.length === 0) {
                 p.line('val placeholderField: String? = null // Empty data class')
