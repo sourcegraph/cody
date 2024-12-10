@@ -131,9 +131,9 @@ describe('getConfiguration', () => {
                         return undefined
                     case 'http':
                         return undefined
-                    case 'cody.experimental.agenticContext.shell':
+                    case 'cody.agentic.context.experimentalShell':
                         return false
-                    case 'cody.experimental.agenticContext.options':
+                    case 'cody.agentic.context.experimentalOptions':
                         return { shell: { allow: ['git'] } }
                     default:
                         assert(false, `unexpected key: ${key}`)
@@ -163,8 +163,8 @@ describe('getConfiguration', () => {
                 '*': true,
             },
             commandCodeLenses: true,
-            experimentalAgenticContextShell: false,
-            experimentalAgenticContextOptions: { shell: { allow: ['git'] } },
+            agenticContextExperimentalShell: false,
+            agenticContextExperimentalOptions: { shell: { allow: ['git'] } },
             experimentalSupercompletions: false,
             experimentalAutoeditsEnabled: undefined,
             experimentalAutoeditsConfigOverride: undefined,

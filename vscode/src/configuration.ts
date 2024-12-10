@@ -95,8 +95,8 @@ export function getConfiguration(
          * Instance must have feature flag enabled to use this feature.
          * Allows AI Agent to run shell commands automatically.
          */
-        experimentalAgenticContextShell: config.get(CONFIG_KEY.experimentalAgenticContextShell, false),
-        experimentalAgenticContextOptions: config.get(CONFIG_KEY.experimentalAgenticContextOptions, {}),
+        agenticContextExperimentalShell: config.get(CONFIG_KEY.agenticContextExperimentalShell, false),
+        agenticContextExperimentalOptions: config.get(CONFIG_KEY.agenticContextExperimentalOptions, {}),
 
         /**
          * Hidden settings for internal use only.

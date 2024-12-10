@@ -72,8 +72,8 @@ interface RawClientConfiguration {
     commandCodeLenses: boolean
 
     // Deep Cody
-    experimentalAgenticContextShell?: boolean | undefined | null
-    experimentalAgenticContextOptions?: AgenticContextConfiguration | undefined | null
+    agenticContextExperimentalShell?: boolean | undefined | null
+    agenticContextExperimentalOptions?: AgenticContextConfiguration | undefined | null
 
     //#region Autocomplete
     autocomplete: boolean
