@@ -18,6 +18,7 @@ import { usePromptsQuery } from './usePromptsQuery'
 import { commandRowValue } from './utils'
 
 import type { PromptsInput } from '@sourcegraph/cody-shared'
+import type { PromptEditorRefAPI } from '@sourcegraph/prompt-editor'
 import { useLocalStorage } from '../../components/hooks'
 import styles from './PromptList.module.css'
 
@@ -41,7 +42,8 @@ interface PromptListProps {
     appearanceMode?: 'flat-list' | 'chips-list'
     lastUsedSorting?: boolean
     recommendedOnly?: boolean
-    onSelect: (item: Action) => void
+    onSelect: (item: Action, editorRef: React.RefObject<PromptEditorRefAPI | null>) => void
+    editorRef: React.RefObject<PromptEditorRefAPI | null>
 }
 
 /**
@@ -65,6 +67,7 @@ export const PromptList: FC<PromptListProps> = props => {
         lastUsedSorting,
         recommendedOnly,
         onSelect: parentOnSelect,
+        editorRef: parentEditorRef,
     } = props
 
     const endpointURL = new URL(useConfig().authStatus.endpoint)
@@ -92,6 +95,7 @@ export const PromptList: FC<PromptListProps> = props => {
     const onSelect = useCallback(
         (rowValue: string): void => {
             const action = result?.actions.find(p => commandRowValue(p) === rowValue)
+            const editorRef = parentEditorRef
 
             if (!action || !result) {
                 return
@@ -139,7 +143,7 @@ export const PromptList: FC<PromptListProps> = props => {
                 },
             })
 
-            parentOnSelect(action)
+            parentOnSelect(action, editorRef)
         },
         [
             result,
@@ -148,6 +152,7 @@ export const PromptList: FC<PromptListProps> = props => {
             telemetryPublicMetadata,
             debouncedQuery,
             error,
+            parentEditorRef,
         ]
     )
 

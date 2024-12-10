@@ -1,4 +1,5 @@
 import type { Action } from '@sourcegraph/cody-shared'
+import type { PromptEditorRefAPI } from '@sourcegraph/prompt-editor'
 import { BookText } from 'lucide-react'
 import { useCallback } from 'react'
 import { Button } from '../../components/shadcn/ui/button'
@@ -10,13 +11,14 @@ import { ToolbarPopoverItem } from '../shadcn/ui/toolbar'
 import { cn } from '../shadcn/utils'
 
 export const PromptSelectField: React.FunctionComponent<{
-    onSelect: (item: Action) => void
+    onSelect: (item: Action, editorRef: React.RefObject<PromptEditorRefAPI | null>) => void
+    editorRef: React.RefObject<PromptEditorRefAPI | null>
     onCloseByEscape?: () => void
     className?: string
 
     /** For storybooks only. */
     __storybook__open?: boolean
-}> = ({ onSelect, onCloseByEscape, className, __storybook__open }) => {
+}> = ({ onSelect, editorRef, onCloseByEscape, className, __storybook__open }) => {
     const telemetryRecorder = useTelemetryRecorder()
     const { setView } = useTabView()
 
@@ -49,10 +51,11 @@ export const PromptSelectField: React.FunctionComponent<{
             popoverContent={close => (
                 <div className="tw-flex tw-flex-col tw-max-h-[500px] tw-overflow-auto">
                     <PromptList
-                        onSelect={item => {
-                            onSelect(item)
+                        onSelect={(item, editorRef) => {
+                            onSelect(item, editorRef)
                             close()
                         }}
+                        editorRef={editorRef}
                         showSearch={true}
                         paddingLevels="middle"
                         telemetryLocation="PromptSelectField"
