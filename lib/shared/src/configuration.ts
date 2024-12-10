@@ -50,13 +50,10 @@ export interface NetConfiguration {
 }
 
 export interface AgenticContextConfiguration {
-    shell?:
-        | {
-              allow?: string[] | undefined | null
-              block?: string[] | undefined | null
-          }
-        | undefined
-        | null
+    shell?: {
+        allow?: string[] | undefined | null
+        block?: string[] | undefined | null
+    }
 }
 
 interface RawClientConfiguration {
@@ -75,8 +72,8 @@ interface RawClientConfiguration {
     commandCodeLenses: boolean
 
     // Deep Cody
-    agenticContextExperimentalShell?: boolean | undefined | null
-    agenticContextExperimentalOptions?: AgenticContextConfiguration | undefined | null
+    agenticContextExperimentalShell?: boolean
+    agenticContextExperimentalOptions?: AgenticContextConfiguration
 
     //#region Autocomplete
     autocomplete: boolean
