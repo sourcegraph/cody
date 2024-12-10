@@ -1,13 +1,4 @@
-import {
-    FeatureFlag,
-    authStatus,
-    featureFlagProvider,
-    firstValueFrom,
-    isDefined,
-    ps,
-    storeLastValue,
-} from '@sourcegraph/cody-shared'
-import { getConfiguration } from '../../configuration'
+import { authStatus, firstValueFrom, isDefined, ps } from '@sourcegraph/cody-shared'
 import { getOpenCtxProviders } from '../../context/openctx'
 import type { ContextRetriever } from '../chat-view/ContextRetriever'
 import {
@@ -17,6 +8,12 @@ import {
     getDefaultCodyTools,
     registerDefaultTools,
 } from './CodyTool'
+
+interface CodyShellConfig {
+    user?: boolean
+    instance?: boolean
+    client?: boolean
+}
 
 /**
  * CodyToolProvider is a singleton class responsible for managing and providing access to various Cody tools.
@@ -31,6 +28,11 @@ import {
 export class CodyToolProvider {
     private openCtxTools: CodyTool[] = []
     private toolFactory = new ToolFactory()
+    private shellConfig: CodyShellConfig = {
+        user: false,
+        instance: false,
+        client: false,
+    }
 
     private constructor(private contextRetriever: Pick<ContextRetriever, 'retrieveContext'>) {
         this.initializeToolRegistry()
@@ -47,19 +49,19 @@ export class CodyToolProvider {
         registerDefaultTools(this.toolFactory.registry)
     }
 
-    private featureDeepCodyShellContext = storeLastValue(
-        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.DeepCodyShellContext)
-    )
+    public setShellConfig(config: CodyShellConfig): void {
+        // merge the new config into the old config
+        const newConfig = { ...this.shellConfig, ...config }
+        this.shellConfig = newConfig
+    }
 
-    private get isShellCommandEnabled(): boolean {
-        const isEnabledByInstance = !!this.featureDeepCodyShellContext.value.last
-        const isEnabledByUser = getConfiguration()?.agenticContext?.shell?.allow
-        return Boolean(isEnabledByInstance && isEnabledByUser)
+    public get isShellEnabled(): boolean {
+        return Boolean(this.shellConfig.client && this.shellConfig.instance && this.shellConfig.user)
     }
 
     public getTools(): CodyTool[] {
         const defaultTools = getDefaultCodyTools(
-            this.isShellCommandEnabled,
+            this.isShellEnabled,
             this.contextRetriever,
             this.toolFactory
         )

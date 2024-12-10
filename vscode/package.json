@@ -1290,52 +1290,35 @@
           "type": "boolean",
           "default": false
         },
-        "cody.agentic.context": {
+        "cody.agentic.context.experimentalShell": {
+          "type": "boolean",
+          "markdownDescription": "Enable Agents like Deep Cody to autonomously execute shell commands in your environment for context. Enable with caution as mistakes are possible.",
+          "default": false
+        },
+        "cody.agentic.context.experimentalOptions": {
           "type": "object",
           "properties": {
             "shell": {
-              "allow": "array",
-              "block": "array"
+              "allow": {
+                "type": "array",
+                "default": []
+              },
+              "block": {
+                "type": "array",
+                "default": []
+              }
             }
           },
-          "default": {
-            "shell": {
-              "allow": ["*"],
-              "block": [
-                "rm",
-                "chmod",
-                "shutdown",
-                "history",
-                "user",
-                "sudo",
-                "su",
-                "passwd",
-                "chown",
-                "chgrp",
-                "kill",
-                "reboot",
-                "poweroff",
-                "init",
-                "systemctl",
-                "journalctl",
-                "dmesg",
-                "lsblk",
-                "lsmod",
-                "modprobe",
-                "insmod",
-                "rmmod",
-                "lsusb",
-                "lspci"
-              ]
+          "default": {},
+          "examples": [
+            {
+              "shell": {
+                "allow": ["git", "ls", "find"],
+                "block": ["history", "sudo", "rm"]
+              }
             }
-          },
-          "examples": {
-            "shell": {
-              "allow": ["git", "gh"],
-              "block": ["history", "sudo", "rm"]
-            }
-          },
-          "markdownDescription": "Configures shell command execution for Cody Agent when terminal context is enabled (feature flag required). The 'allow' property can be either ['*'] for all commands or an array of allowed command prefixes. The 'block' property is an array of blocked commands that will be combined with built-in safety blocklist. Commands in the blocklist take precedence over allowed commands. When a command is executed, its output will be used as context. If no 'allow' list is specified, the feature will be disabled."
+          ],
+          "markdownDescription": "'shell' field is used to configure shell command execution for agents (like Deep Cody) when terminal context is enabled. The 'shell' field has two properties:\n\n- 'allow': Accepts either [] to allow all commands or an array of specific command prefixes\n- 'block': An array of command prefixes to block, which combines with built-in safety blocklist\n\nBlocked commands take precedence over allowed commands. Command outputs are used as context. Remove the 'shell' field to allow all commands."
         },
         "cody.net.proxy.cacert": {
           "markdownDescription": "Either the PEM-encoded CA certificate the proxy uses (replace newlines with `\\n`), or the path (absolute or tilde) to the file containing that certificate.\n\nExamples:\n- `~/.mitmproxy/mitmproxy-ca-cert.pem`\n- `-----BEGIN CERTIFICATE-----\\n...\\n-----END CERTIFICATE-----`",
