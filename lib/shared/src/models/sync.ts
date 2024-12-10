@@ -24,6 +24,7 @@ import type { CodyClientConfig } from '../sourcegraph-api/clientConfig'
 import { isDotCom } from '../sourcegraph-api/environments'
 import type { CodyLLMSiteConfiguration } from '../sourcegraph-api/graphql/client'
 import { RestClient } from '../sourcegraph-api/rest/client'
+import { userProductSubscription } from '../sourcegraph-api/userProductSubscription'
 import { CHAT_INPUT_TOKEN_BUDGET } from '../token/constants'
 import { isError } from '../utils'
 import { getExperimentalClientModelByFeatureFlag } from './client'
@@ -196,54 +197,89 @@ export function syncModels({
                                         featureFlagProvider.evaluatedFeatureFlag(
                                             FeatureFlag.CodyEarlyAccess
                                         ),
-                                        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.DeepCody)
+                                        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.DeepCody),
+                                        featureFlagProvider.evaluatedFeatureFlag(
+                                            FeatureFlag.CodyChatDefaultToClaude35Haiku
+                                        ),
+                                        userProductSubscription
                                     ).pipe(
-                                        switchMap(([hasEarlyAccess, hasDeepCodyFlag]) => {
-                                            // TODO(sqs): remove waitlist from localStorage when user has access
-                                            const isOnWaitlist = config.clientState.waitlist_o1
-                                            if (isDotComUser && (hasEarlyAccess || isOnWaitlist)) {
-                                                data.primaryModels = data.primaryModels.map(model => {
-                                                    if (model.tags.includes(ModelTag.Waitlist)) {
-                                                        const newTags = model.tags.filter(
-                                                            tag => tag !== ModelTag.Waitlist
-                                                        )
-                                                        newTags.push(
-                                                            hasEarlyAccess
-                                                                ? ModelTag.EarlyAccess
-                                                                : ModelTag.OnWaitlist
-                                                        )
-                                                        return { ...model, tags: newTags }
-                                                    }
-                                                    return model
-                                                })
-                                            }
-
-                                            // Replace user's current sonnet model with deep-cody model.
-                                            const sonnetModel = data.primaryModels.find(m =>
-                                                m.id.includes('sonnet')
-                                            )
-                                            // DEEP CODY is enabled for all PLG users.
-                                            // Enterprise users need to have the feature flag enabled.
-                                            const isDeepCodyEnabled = isDotComUser || hasDeepCodyFlag
-                                            if (
-                                                isDeepCodyEnabled &&
-                                                sonnetModel &&
-                                                // Ensure the deep-cody model is only added once.
-                                                !data.primaryModels.some(m => m.id.includes('deep-cody'))
-                                            ) {
-                                                const DEEPCODY_MODEL =
-                                                    getExperimentalClientModelByFeatureFlag(
-                                                        FeatureFlag.DeepCody
-                                                    )!
-                                                data.primaryModels.push(
-                                                    ...maybeAdjustContextWindows([DEEPCODY_MODEL]).map(
-                                                        createModelFromServerModel
+                                        switchMap(
+                                            ([
+                                                hasEarlyAccess,
+                                                hasDeepCodyFlag,
+                                                defaultToHaiku,
+                                                userSubscription,
+                                            ]) => {
+                                                // TODO(sqs): remove waitlist from localStorage when user has access
+                                                const isOnWaitlist = config.clientState.waitlist_o1
+                                                if (isDotComUser && (hasEarlyAccess || isOnWaitlist)) {
+                                                    data.primaryModels = data.primaryModels.map(
+                                                        model => {
+                                                            if (model.tags.includes(ModelTag.Waitlist)) {
+                                                                const newTags = model.tags.filter(
+                                                                    tag => tag !== ModelTag.Waitlist
+                                                                )
+                                                                newTags.push(
+                                                                    hasEarlyAccess
+                                                                        ? ModelTag.EarlyAccess
+                                                                        : ModelTag.OnWaitlist
+                                                                )
+                                                                return { ...model, tags: newTags }
+                                                            }
+                                                            return model
+                                                        }
                                                     )
-                                                )
-                                            }
+                                                }
 
-                                            return Observable.of(data)
-                                        })
+                                                // Replace user's current sonnet model with deep-cody model.
+                                                const sonnetModel = data.primaryModels.find(m =>
+                                                    m.id.includes('sonnet')
+                                                )
+                                                // DEEP CODY is enabled for all PLG users.
+                                                // Enterprise users need to have the feature flag enabled.
+                                                const isDeepCodyEnabled = isDotComUser || hasDeepCodyFlag
+                                                if (
+                                                    isDeepCodyEnabled &&
+                                                    sonnetModel &&
+                                                    // Ensure the deep-cody model is only added once.
+                                                    !data.primaryModels.some(m =>
+                                                        m.id.includes('deep-cody')
+                                                    )
+                                                ) {
+                                                    const DEEPCODY_MODEL =
+                                                        getExperimentalClientModelByFeatureFlag(
+                                                            FeatureFlag.DeepCody
+                                                        )!
+                                                    data.primaryModels.push(
+                                                        ...maybeAdjustContextWindows([
+                                                            DEEPCODY_MODEL,
+                                                        ]).map(createModelFromServerModel)
+                                                    )
+                                                }
+                                                const isFreeTier =
+                                                    userSubscription !== null &&
+                                                    typeof userSubscription === 'object' &&
+                                                    'userCanUpgrade' in userSubscription &&
+                                                    userSubscription.userCanUpgrade
+
+                                                // set the default model to Haiku for free users
+                                                if (isDotComUser && isFreeTier && defaultToHaiku) {
+                                                    const haikuModel = data.primaryModels.find(m =>
+                                                        m.id.includes('claude-3-5-haiku')
+                                                    )
+                                                    if (haikuModel) {
+                                                        if (!data.preferences) {
+                                                            data.preferences = {
+                                                                defaults: {},
+                                                            }
+                                                        }
+                                                        data.preferences.defaults.chat = haikuModel.id
+                                                    }
+                                                }
+
+                                                return Observable.of(data)
+                                            }
+                                        )
                                     )
                                 })
                             )
