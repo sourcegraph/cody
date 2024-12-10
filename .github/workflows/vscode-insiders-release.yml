@@ -22,6 +22,37 @@ jobs:
       - run: xvfb-run -a pnpm -C vscode run test:e2e
         env:
           NO_LOG_TESTING_TELEMETRY_CALLS: true
+      - run: pnpm -C vscode run build
+      - name: Check bundle sizes
+        run: |
+          cd vscode
+          pnpm ts-node ./scripts/measure-bundle-size.ts
+          cd ..
+          echo "Extension Bundle Size: $EXTENSION_BUNDLE_SIZE_MB MB"
+          echo "Webview Bundle Size: $WEBVIEW_BUNDLE_SIZE_MB MB"
+        env:
+          GITHUB_ENV: $GITHUB_ENV
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v1
+        with:
+          credentials_json: ${{ secrets.GCP_BQ_CREDENTIALS }}
+
+      - name: Insert data into BigQuery
+        run: |
+          # Compute the current date
+          current_date=$(date +'%Y-%m-%d')
+          
+          # Now create the JSON and insert into BigQuery
+          echo "{\"release_version\": \"${{ steps.create_release.outputs.version_tag }}\", \"extension_bundle_size_mb\": $EXTENSION_BUNDLE_SIZE_MB, \"webview_bundle_size_mb\": $WEBVIEW_BUNDLE_SIZE_MB, \"date\": \"$current_date\"}" > data.json
+          bq load \
+            --project_id='cody-core-dev' \
+            --source_format=NEWLINE_DELIMITED_JSON \
+            cody_release.bundle_sizes \
+            data.json
+
+        env:
+          EXTENSION_BUNDLE_SIZE_MB: ${{ env.EXTENSION_BUNDLE_SIZE_MB }}
+          WEBVIEW_BUNDLE_SIZE_MB: ${{ env.WEBVIEW_BUNDLE_SIZE_MB }}
       - run: CODY_RELEASE_TYPE=insiders pnpm -C vscode run release
         id: create_release
         if: github.repository == 'sourcegraph/cody'
