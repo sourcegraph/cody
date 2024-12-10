@@ -34,9 +34,9 @@ import type { UserAccountInfo } from '../Chat'
 import type { ApiPostMessage } from '../Chat'
 import { Button } from '../components/shadcn/ui/button'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
-import { useExperimentalOneBox, useExperimentalOneBoxDebug } from '../utils/useExperimentalOneBox'
 import { SpanManager } from '../utils/spanManager'
 import { getTraceparentFromSpanContext, useTelemetryRecorder } from '../utils/telemetry'
+import { useExperimentalOneBox, useExperimentalOneBoxDebug } from '../utils/useExperimentalOneBox'
 import type { CodeBlockActionsProps } from './ChatMessageContent/ChatMessageContent'
 import {
     ContextCell,

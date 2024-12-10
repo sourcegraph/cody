@@ -193,9 +193,7 @@ export class KotlinEmitter implements Emitter {
                 // so until I can rope someone in who understands this better, this makes the
                 // Kotlin types compile.
                 if (name === 'SerializedChatMessage' && member.info.display_name === 'search') {
-                    p.line(
-                        `val search: Any? = null,`
-                    )
+                    p.line(`val search: Any? = null,`)
                 } else {
                     p.line(
                         `val ${member.info.display_name}: ${member.typeSyntax}${
