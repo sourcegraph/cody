@@ -269,7 +269,7 @@ describe('ChatController', () => {
                 {
                     speaker: 'human',
                     text: 'Test input',
-                    intent: "chat",
+                    intent: 'chat',
                     model: undefined,
                     error: undefined,
                     search: undefined,
@@ -289,7 +289,7 @@ describe('ChatController', () => {
                 {
                     speaker: 'human',
                     text: 'Test edit',
-                    intent: "chat",
+                    intent: 'chat',
                     search: undefined,
                     model: undefined,
                     error: undefined,
