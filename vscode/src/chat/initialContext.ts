@@ -49,14 +49,19 @@ export function observeDefaultContext({
     return combineLatest(
         getCurrentFileOrSelection({ chatBuilder }).pipe(distinctUntilChanged()),
         getCorpusContextItemsForEditorState().pipe(distinctUntilChanged()),
+        getCurrentRepositoryContextItem().pipe(distinctUntilChanged()),
         getOpenCtxContextItems().pipe(distinctUntilChanged()),
         featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.NoDefaultRepoChip)
     ).pipe(
         debounceTime(50),
         map(
-            ([currentFileOrSelectionContext, corpusContext, openctxContext, noDefaultRepoChip]):
-                | DefaultContext
-                | typeof pendingOperation => {
+            ([
+                currentFileOrSelectionContext,
+                corpusContext,
+                currentRepositoryContext,
+                openctxContext,
+                noDefaultRepoChip,
+            ]): DefaultContext | typeof pendingOperation => {
                 if (corpusContext === pendingOperation) {
                     return pendingOperation
                 }
@@ -77,6 +82,7 @@ export function observeDefaultContext({
                         ...(currentFileOrSelectionContext === pendingOperation
                             ? []
                             : currentFileOrSelectionContext),
+                        ...currentRepositoryContext,
                         ...corpusContext,
                     ],
                     corpusContext: [],
@@ -249,6 +255,25 @@ export function getCorpusContextItemsForEditorState(): Observable<
             return items
         })
     )
+}
+export function getCurrentRepositoryContextItem(): Observable<ContextItem[]> {
+    const items: ContextItem[] = []
+    const workspaceFolder = vscode.workspace.workspaceFolders?.at(0)
+    if (workspaceFolder) {
+        items.push({
+            type: 'tree',
+            uri: workspaceFolder.uri,
+            title: 'Current Repository',
+            name: workspaceFolder.name,
+            description: workspaceFolder.name,
+            isWorkspaceRoot: true,
+            content: null,
+            source: ContextItemSource.Initial,
+            icon: 'folder',
+        } satisfies ContextItemTree)
+    }
+
+    return Observable.of(items)
 }
 
 function getOpenCtxContextItems(): Observable<ContextItem[] | typeof pendingOperation> {
