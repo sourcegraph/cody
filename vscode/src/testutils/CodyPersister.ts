@@ -1,35 +1,32 @@
+// TODO: This potentially introduces some breaking behaviour compared to the previous one.
+// When the playwright E2E lands properly we should re-record all agent tests
+// with this updated recorder.
+
 import crypto from 'node:crypto'
 
 import type { Har, HarEntry } from '@pollyjs/persister'
 import FSPersister from '@pollyjs/persister-fs'
-
 import { type CompletionData, isError, parseEvents } from '@sourcegraph/cody-shared'
 import { CompletionsResponseBuilder } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/CompletionsResponseBuilder'
 import { PollyYamlWriter } from './PollyYamlWriter'
 import { decodeCompressedBase64 } from './base64'
 
+const AUTH_HEADER_REGEX = /^(?<prefix>token|bearer)\s+(?<redacted>REDACTED_)?(?<token>.*?)\s*$/im
 /**
  * SHA-256 digests a Sourcegraph access token so that it's value is redacted but
  * remains uniquely identifyable. The token needs to be uniquely identifiable so
  * that we can correctly replay HTTP responses based on the access token.
  */
 export function redactAuthorizationHeader(header: string): string {
-    if (!header.startsWith('token')) {
-        // NOTE(olafurpg) When using fastpath, this header has the format
-        // `Bearer TOKEN`. We currently disable fastpath in the agent tests so
-        // we should not hit on this case. If fastpath gets enabled for some
-        // reason then the tests should fail quickly with a helpful error
-        // message. I spent almost 2h tracking down why tests were failing in
-        // replay mode when using fastpath and it was not at all obvious what
-        // the root cause was.
-        throw new Error(`Unexpected access token format: ${header}`)
+    const match = AUTH_HEADER_REGEX.exec(header)
+    if (match) {
+        if (match.groups?.redacted) {
+            return header
+        }
+        const tokenHash = sha256(`prefix${match.groups?.token}`)
+        return `${match.groups?.prefix} REDACTED_${tokenHash}`
     }
-
-    if (header.startsWith('token REDACTED_')) {
-        return header
-    }
-
-    return `token REDACTED_${sha256(`prefix${header}`)}`
+    return header
 }
 
 function sha256(input: string): string {
@@ -99,7 +96,7 @@ export class CodyPersister extends FSPersister {
             // and to remove any access tokens.
             const headers = [...entry.request.headers, ...entry.response.headers]
             for (const header of headers) {
-                switch (header.name) {
+                switch (header.name.toLowerCase()) {
                     case 'authorization':
                         header.value = redactAuthorizationHeader(header.value)
                         break
@@ -114,19 +111,15 @@ export class CodyPersister extends FSPersister {
             entry.response.content.text
             entry.request.cookies.length = 0
             entry.response.cookies.length = 0
-            entry.response.content.text = postProcessHarEntryResponse(entry)
+            entry.response.content.text = this.postProcessHarEntryResponse(entry)
 
-            // And other misc fields.
-            entry.time = 0
-            entry.timings = {
-                blocked: -1,
-                connect: -1,
-                dns: -1,
-                receive: 0,
-                send: 0,
-                ssl: -1,
-                wait: 0,
-            }
+            // Compared to V1 we don't nullify time fields as instead they can be configured on
+            // playback with adjustable speed. This makes it much easier to play
+            // back a test at the original recorded speed.
+
+            // entry.time = 0
+            // entry.timings = {}
+
             const responseContent = entry.response.content
             if (
                 responseContent?.encoding === 'base64' &&
@@ -151,6 +144,20 @@ export class CodyPersister extends FSPersister {
         return super.onSaveRecording(recordingId, recording)
     }
 
+    private postProcessHarEntryResponse(entry: HarEntry): string | undefined {
+        const { text } = entry.response.content
+        if (text === undefined) {
+            return undefined
+        }
+        if (
+            !entry.request.url.includes('/.api/completions/stream') &&
+            !entry.request.url.includes('/completions/code')
+        ) {
+            return text
+        }
+        return postProcessCompletionsStreamText(entry.request.url, text)
+    }
+
     private filterHeaders(
         headers: { name: string; value: string }[]
     ): { name: string; value: string }[] {
@@ -159,6 +166,9 @@ export class CodyPersister extends FSPersister {
             'server',
             'via',
             'x-sourcegraph-actor-anonymous-uid',
+            //TODO(rnauta): leaky abstraction, how to configure this on the other end
+            'x-mitm-proxy-endpoint',
+            'x-mitm-auth-available',
         ])
         const removeHeaderPrefixes = ['x-trace', 'cf-']
         return headers.filter(
@@ -167,20 +177,6 @@ export class CodyPersister extends FSPersister {
                 removeHeaderPrefixes.every(prefix => !header.name.startsWith(prefix))
         )
     }
-}
-
-export function postProcessHarEntryResponse(entry: HarEntry): string | undefined {
-    const { text } = entry.response.content
-    if (text === undefined) {
-        return undefined
-    }
-    if (
-        !entry.request.url.includes('/.api/completions/stream') &&
-        !entry.request.url.includes('/completions/code')
-    ) {
-        return text
-    }
-    return postProcessCompletionsStreamText(entry.request.url, text)
 }
 
 export function postProcessCompletionsStreamText(url: string, text: string): string | undefined {

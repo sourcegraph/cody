@@ -7,8 +7,8 @@ import * as path from 'node:path'
 import NodeHttpAdapter from '@pollyjs/adapter-node-http'
 import normalizeUrl from 'normalize-url'
 import type { TestContext, WorkerContext } from '.'
-import { redactAuthorizationHeader } from '../../../../src/testutils/CodyPersisterV2'
-import { CodyPersister } from '../../../../src/testutils/CodyPersisterV2'
+import { redactAuthorizationHeader } from '../../../../src/testutils/CodyPersister'
+import { CodyPersister } from '../../../../src/testutils/CodyPersister'
 import {
     MITM_PROXY_AUTH_AVAILABLE_HEADER,
     MITM_PROXY_AUTH_TOKEN_NAME_HEADER,
