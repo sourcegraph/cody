@@ -41,6 +41,20 @@ interface WorkspaceSettings {
     [key: string]: string | boolean | number
 }
 
+// Define an interface for the parameters
+interface PageFixtureParams {
+    page: Page
+    app: ElectronApplication
+    openDevTools: () => Promise<void>
+    assetsDirectory: string
+    expectedV2Events: string[]
+    preAuthenticate: boolean
+}
+
+export type EnterpriseTestOptions = {
+    shouldUseEnterprise: boolean
+}
+
 // Playwright test extension: Extra VSCode settings to write to
 // .vscode/settings.json.
 export interface ExtraWorkspaceSettings {
@@ -278,10 +292,18 @@ export const test = base
         },
     })
     .extend({
+        // @ts-ignore
         page: async (
-            { page: _page, app, openDevTools, assetsDirectory, expectedV2Events, preAuthenticate },
-            use,
-            testInfo
+            {
+                page: _page,
+                app,
+                openDevTools,
+                assetsDirectory,
+                expectedV2Events,
+                preAuthenticate,
+            }: PageFixtureParams,
+            use: (page: Page) => Promise<void>,
+            testInfo: TestInfo
         ) => {
             sendTestInfo(testInfo.title, testInfo.testId, uuid.v4())
 
