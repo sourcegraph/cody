@@ -356,21 +356,13 @@ const ModelTitleWithIcon: React.FC<{
     const modelBadge = getBadgeText(model, modelAvailability)
     const isDisabled = modelAvailability !== 'available'
 
-    if (model.id.includes('deep-cody')) {
-        return (
-            <span className={clsx(styles.modelTitleWithIcon, { [styles.disabled]: isDisabled })}>
-                {showIcon && <FlaskConicalIcon size={16} className={styles.modelIcon} />}
-                <span className={clsx('tw-flex-grow', styles.modelName)}>{model.title}</span>
-                <Badge variant="secondary" className={styles.badge}>
-                    Experimental ⓘ
-                </Badge>
-            </span>
-        )
-    }
-
     return (
         <span className={clsx(styles.modelTitleWithIcon, { [styles.disabled]: isDisabled })}>
-            {showIcon && <ChatModelIcon model={model.provider} className={styles.modelIcon} />}
+            {showIcon && model.id.includes('deep-cody') ? (
+                <FlaskConicalIcon size={16} className={styles.modelIcon} />
+            ) : (
+                <ChatModelIcon model={model.provider} className={styles.modelIcon} />
+            )}
             <span className={clsx('tw-flex-grow', styles.modelName)}>{model.title}</span>
             {modelBadge && (
                 <Badge
