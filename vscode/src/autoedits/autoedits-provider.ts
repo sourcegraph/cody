@@ -334,17 +334,9 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             context,
             tokenBudget
         )
-        let prompt: AutoeditsPrompt
-        if (this.config.isChatModel) {
-            prompt = {
-                systemMessage: SYSTEM_PROMPT,
-                userMessage: userPrompt,
-            }
-        } else {
-            prompt = {
-                userMessage: getCompletionsPromptWithSystemPrompt(SYSTEM_PROMPT, userPrompt),
-            }
-        }
+        const prompt: AutoeditsPrompt = this.config.isChatModel
+            ? { systemMessage: SYSTEM_PROMPT, userMessage: userPrompt }
+            : { userMessage: getCompletionsPromptWithSystemPrompt(SYSTEM_PROMPT, userPrompt) }
         return {
             codeToReplace,
             promptResponse: prompt,

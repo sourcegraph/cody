@@ -34,7 +34,6 @@ export class FireworksAdapter implements AutoeditsModelAdapter {
                 type: 'content',
                 content: option.codeToRewrite,
             },
-            rewrite_speculation: true,
             user: option.userId,
         }
         if (option.isChatModel) {

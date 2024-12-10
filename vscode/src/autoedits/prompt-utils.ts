@@ -81,6 +81,7 @@ export function getCompletionsPromptWithSystemPrompt(
     systemPrompt: PromptString,
     userPrompt: PromptString
 ): PromptString {
+    // The models are offline fine-tuned on this prompt. It is important to keep it consistent.
     return ps`${systemPrompt}\n\nUser: ${userPrompt}\n\nAssistant:`
 }
 
