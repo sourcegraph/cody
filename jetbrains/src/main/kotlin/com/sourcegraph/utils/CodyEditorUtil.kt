@@ -10,6 +10,7 @@ import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.Editor
+import com.intellij.openapi.editor.EditorKind
 import com.intellij.openapi.editor.ex.EditorEx
 import com.intellij.openapi.editor.impl.ImaginaryEditor
 import com.intellij.openapi.fileEditor.FileDocumentManager
@@ -101,6 +102,7 @@ object CodyEditorUtil {
     return editor.project != null &&
         !editor.isViewer &&
         !editor.isOneLineMode &&
+        editor.editorKind == EditorKind.MAIN_EDITOR &&
         editor !is EditorWindow &&
         editor !is ImaginaryEditor &&
         (editor !is EditorEx || !editor.isEmbeddedIntoDialogWrapper) &&
