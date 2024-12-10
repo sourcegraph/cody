@@ -1,8 +1,9 @@
-import type { Message, PromptString } from '@sourcegraph/cody-shared'
+import { type Message, type PromptString, charsToTokens } from '@sourcegraph/cody-shared'
 
 export function getMaxOutputTokensForAutoedits(codeToRewrite: string): number {
     const MAX_NEW_GENERATED_TOKENS = 256
-    return codeToRewrite.length + MAX_NEW_GENERATED_TOKENS
+    const codeToRewriteTokens = charsToTokens(codeToRewrite.length)
+    return codeToRewriteTokens + MAX_NEW_GENERATED_TOKENS
 }
 
 export function getOpenaiCompatibleChatPrompt(param: {
