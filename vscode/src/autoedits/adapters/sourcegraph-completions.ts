@@ -38,7 +38,7 @@ export class SourcegraphCompletionsAdapter implements AutoeditsModelAdapter {
             for await (const msg of stream) {
                 const newText = msg.completionResponse?.completion
                 if (newText) {
-                    accumulated += newText
+                    accumulated = newText
                 }
             }
             return accumulated
