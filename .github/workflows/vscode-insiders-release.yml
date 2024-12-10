@@ -32,21 +32,15 @@ jobs:
           echo "Webview Bundle Size: $WEBVIEW_BUNDLE_SIZE_MB MB"
         env:
           GITHUB_ENV: $GITHUB_ENV
-      - name: Set up Google Cloud SDK
-        uses: google-github-actions/setup-gcloud@v2
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v1
         with:
-          version: 'latest'
-          service_account_key: ${{ secrets.GCP_BQ_CREDENTIALS }}
-          project_id: 'cody-core-dev'
-          export_default_credentials: true
+          credentials_json: ${{ secrets.GCP_BQ_CREDENTIALS }}
 
       - name: Insert data into BigQuery
         run: |
-          # Write the service account key to a file
-          echo '${{ secrets.GCP_BQ_CREDENTIALS }}' > gcloud-service-key.json
-          
-          # Activate the service account
-          gcloud auth activate-service-account --key-file=gcloud-service-key.json
+          # Compute the current date
+          current_date=$(date +'%Y-%m-%d')
           
           # Now create the JSON and insert into BigQuery
           echo "{\"release_version\": \"${{ steps.create_release.outputs.version_tag }}\", \"extension_bundle_size_mb\": $EXTENSION_BUNDLE_SIZE_MB, \"webview_bundle_size_mb\": $WEBVIEW_BUNDLE_SIZE_MB, \"date\": \"$current_date\"}" > data.json
@@ -55,9 +49,7 @@ jobs:
             --source_format=NEWLINE_DELIMITED_JSON \
             cody_release.bundle_sizes \
             data.json
-          
-          # Clean up the service account key file
-          rm gcloud-service-key.json
+
         env:
           EXTENSION_BUNDLE_SIZE_MB: ${{ env.EXTENSION_BUNDLE_SIZE_MB }}
           WEBVIEW_BUNDLE_SIZE_MB: ${{ env.WEBVIEW_BUNDLE_SIZE_MB }}
