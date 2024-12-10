@@ -555,8 +555,9 @@ export class Agent extends MessageHandler implements ExtensionClient {
         this.registerRequest('textDocument/change', async document => {
             // We don't await the promise here, as it's got a fragile implicit contract.
             // Call testing/awaitPendingPromises if you want to wait for changes to settle.
-            this.handleDocumentChange(document)
-            return { success: true }
+            return this.handleDocumentChange(document).then(() => {
+                return { success: true }
+            })
         })
 
         this.registerNotification('textDocument/didClose', document => {
@@ -1508,22 +1509,22 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 )
 
                 await firstResultFromOperation(authStatus)
-
-                // Critical: we need to await for the handling of `onDidChangeConfiguration` to
-                // let the new credentials propagate. If we remove the statement below, then
-                // autocomplete may return empty results because we can't await for the updated
-                // `InlineCompletionItemProvider` to register.
-                await vscode_shim.onDidChangeConfiguration.cody_fireAsync({
-                    affectsConfiguration: () =>
-                        // assuming the return value below only impacts performance (not
-                        // functionality), we return true to always triggger the callback.
-                        true,
-                })
             } catch (error) {
                 console.log('Authentication failed', error)
                 authProvider.setAuthPendingToEndpoint(config.serverEndpoint)
             }
         }
+
+        // Critical: we need to await for the handling of `onDidChangeConfiguration` to
+        // let the new credentials propagate. If we remove the statement below, then
+        // autocomplete may return empty results because we can't await for the updated
+        // `InlineCompletionItemProvider` to register.
+        await vscode_shim.onDidChangeConfiguration.cody_fireAsync({
+            affectsConfiguration: () =>
+                // assuming the return value below only impacts performance (not
+                // functionality), we return true to always triggger the callback.
+                true,
+        })
     }
 
     private async handleDocumentChange(document: ProtocolTextDocument) {
