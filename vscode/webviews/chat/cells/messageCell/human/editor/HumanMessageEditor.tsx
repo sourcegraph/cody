@@ -58,7 +58,7 @@ export const HumanMessageEditor: FunctionComponent<{
 
     onEditorFocusChange?: (focused: boolean) => void
     onChange?: (editorState: SerializedPromptEditorValue) => void
-    onSubmit: (editorValue: SerializedPromptEditorValue, intent?: ChatMessage['intent']) => void
+    onSubmit: (editorState: SerializedPromptEditorValue, intent?: ChatMessage['intent']) => void
     onStop: () => void
 
     isFirstInteraction?: boolean

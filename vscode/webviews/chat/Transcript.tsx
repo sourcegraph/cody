@@ -15,8 +15,8 @@ import {
     useExtensionAPI,
 } from '@sourcegraph/prompt-editor'
 import { clsx } from 'clsx'
+import { isEqual } from 'lodash'
 import debounce from 'lodash/debounce'
-import isEqual from 'lodash/isEqual'
 import { Search } from 'lucide-react'
 import {
     type FC,
@@ -33,7 +33,7 @@ import type { ApiPostMessage } from '../Chat'
 import { Button } from '../components/shadcn/ui/button'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
 import { useTelemetryRecorder } from '../utils/telemetry'
-import { useExperimentalOneBox } from '../utils/useExperimentalOneBox'
+import { useExperimentalOneBox, useExperimentalOneBoxDebug } from '../utils/useExperimentalOneBox'
 import type { CodeBlockActionsProps } from './ChatMessageContent/ChatMessageContent'
 import {
     ContextCell,
@@ -249,7 +249,6 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
         smartApply,
         smartApplyEnabled,
         editorRef: parentEditorRef,
-        onAddToFollowupChat,
     } = props
 
     const [intentResults, setIntentResults] = useMutatedValue<
@@ -291,6 +290,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
 
     const extensionAPI = useExtensionAPI()
     const experimentalOneBoxEnabled = useExperimentalOneBox()
+    const experimentalOneBoxDebug = useExperimentalOneBoxDebug()
     const onChange = useMemo(() => {
         return debounce(async (editorValue: SerializedPromptEditorValue) => {
             setIntentResults(undefined)
@@ -418,7 +418,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                 onEditorFocusChange={resetIntent}
             />
 
-            {experimentalOneBoxEnabled && humanMessage.intent && (
+            {experimentalOneBoxEnabled && experimentalOneBoxDebug && humanMessage.intent && (
                 <InfoMessage>
                     {humanMessage.intent === 'search' ? (
                         <div className="tw-flex tw-justify-between tw-gap-4 tw-items-center">
@@ -465,11 +465,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                     contextAlternatives={humanMessage.contextAlternatives}
                     model={assistantMessage?.model}
                     isForFirstMessage={humanMessage.index === 0}
-                    showSnippets={experimentalOneBoxEnabled && humanMessage.intent === 'search'}
-                    defaultOpen={experimentalOneBoxEnabled && humanMessage.intent === 'search'}
-                    reSubmitWithChatIntent={reSubmitWithChatIntent}
                     isContextLoading={isContextLoading}
-                    onAddToFollowupChat={onAddToFollowupChat}
                     onManuallyEditContext={manuallyEditContext}
                     editContextNode={
                         humanMessage.intent === 'search'
@@ -478,31 +474,27 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                     }
                 />
             )}
-            {(!experimentalOneBoxEnabled || humanMessage.intent !== 'search') &&
-                assistantMessage &&
-                !isContextLoading && (
-                    <AssistantMessageCell
-                        key={assistantMessage.index}
-                        userInfo={userInfo}
-                        models={models}
-                        chatEnabled={chatEnabled}
-                        message={assistantMessage}
-                        feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
-                        copyButtonOnSubmit={copyButtonOnSubmit}
-                        insertButtonOnSubmit={insertButtonOnSubmit}
-                        postMessage={postMessage}
-                        guardrails={guardrails}
-                        humanMessage={humanMessageInfo}
-                        isLoading={assistantMessage.isLoading}
-                        showFeedbackButtons={
-                            !assistantMessage.isLoading &&
-                            !assistantMessage.error &&
-                            isLastSentInteraction
-                        }
-                        smartApply={smartApply}
-                        smartApplyEnabled={smartApplyEnabled}
-                    />
-                )}
+            {assistantMessage && !isContextLoading && (
+                <AssistantMessageCell
+                    key={assistantMessage.index}
+                    userInfo={userInfo}
+                    models={models}
+                    chatEnabled={chatEnabled}
+                    message={assistantMessage}
+                    feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
+                    copyButtonOnSubmit={copyButtonOnSubmit}
+                    insertButtonOnSubmit={insertButtonOnSubmit}
+                    postMessage={postMessage}
+                    guardrails={guardrails}
+                    humanMessage={humanMessageInfo}
+                    isLoading={assistantMessage.isLoading}
+                    showFeedbackButtons={
+                        !assistantMessage.isLoading && !assistantMessage.error && isLastSentInteraction
+                    }
+                    smartApply={smartApply}
+                    smartApplyEnabled={smartApplyEnabled}
+                />
+            )}
         </>
     )
 }, isEqual)
