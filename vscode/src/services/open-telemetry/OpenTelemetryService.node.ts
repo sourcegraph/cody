@@ -85,7 +85,10 @@ export class OpenTelemetryService {
         )
 
         // Add the console exporter used in development for verbose logging and debugging.
-        if (process.env.NODE_ENV === 'development' || (configuration.debugVerbose && !configuration.isRunningInsideAgent)) {
+        if (
+            process.env.NODE_ENV === 'development' ||
+            (configuration.debugVerbose && !configuration.isRunningInsideAgent)
+        ) {
             this.tracerProvider.addSpanProcessor(new BatchSpanProcessor(new ConsoleBatchSpanExporter()))
         }
 
