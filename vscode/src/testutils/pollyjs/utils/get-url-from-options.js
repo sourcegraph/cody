@@ -1,3 +1,11 @@
+/**
+ * Copyright (c) Netflix, Inc.
+ * Licensed under the Apache License, Version 2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Implementation copied from https://github.com/Netflix/pollyjs/blob/master/packages/%40pollyjs/adapter-node-http/src/utils/get-url-from-options.js
+*/
+
 import { URL } from '@pollyjs/utils';
 
 /**

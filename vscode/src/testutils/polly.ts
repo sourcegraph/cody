@@ -5,7 +5,7 @@ import jsonStableStringify from 'fast-json-stable-stringify'
 import { type EXPIRY_STRATEGY, type Headers, type MODE, Polly, type PollyConfig } from '@pollyjs/core'
 
 import { CodyNodeHttpAdapter } from './CodyNodeHttpAdapter'
-import { CodyPersister, redactAuthorizationHeader } from './CodyPersisterV2'
+import { CodyPersister, redactAuthorizationHeader } from './CodyPersister'
 
 interface PollyOptions {
     recordingName: string

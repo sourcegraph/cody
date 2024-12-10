@@ -1,3 +1,14 @@
+/**
+ * Copyright (c) Netflix, Inc.
+ * Licensed under the Apache License, Version 2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Implementation copied from https://github.com/Netflix/pollyjs/blob/master/packages/%40pollyjs/adapter-node-http/src/index.js
+ *
+ * We had to patch it to make sure https dispatching works properly:
+ * https://github.com/sourcegraph/cody/pull/6289/commits/4ca70905f104f30c1359e7ec89bf0b88c1c32529
+ */
+
 import http from 'http';
 import https from 'https';
 import { URL } from 'url';
