@@ -47,7 +47,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 09 Dec 2024 15:53:00 GMT
+            value: Tue, 10 Dec 2024 13:40:05 GMT
           - name: content-type
             value: text/plain; charset=utf-8
           - name: transfer-encoding
@@ -61,9 +61,9 @@ log:
           - name: cache-control
             value: no-cache, max-age=0
           - name: observed-calculated-ip-from-forwarded-for
-            value: 80.82.18.146
+            value: 148.81.137.5
           - name: observed-x-forwarded-for
-            value: 80.82.18.146
+            value: 148.81.137.5
           - name: vary
             value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
               X-Requested-With,Cookie
@@ -82,8 +82,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-12-09T15:53:00.384Z
-      time: 229
+      startedDateTime: 2024-12-10T13:40:04.734Z
+      time: 243
       timings:
         blocked: -1
         connect: -1
@@ -91,7 +91,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 229
+        wait: 243
     - _id: c7327f699da3de5388b86581bd3a348b
       _order: 0
       cache: {}
@@ -109,7 +109,7 @@ log:
           - name: content-type
             value: application/json
           - name: traceparent
-            value: 00-e989425c3d8e03602d022df278ef7cd0-d01bcd086f54307b-01
+            value: 00-2a85dc3f5aed9f6ac5e6b96bc609f8b2-87b0ed384050fe2c-01
           - name: transfer-encoding
             value: chunked
           - name: user-agent
@@ -223,14 +223,14 @@ log:
             value: 6.0-localbuild
         url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=jetbrains&client-version=6.0-localbuild
       response:
-        bodySize: 781
+        bodySize: 587
         content:
           mimeType: text/event-stream
-          size: 781
+          size: 587
           text: >+
             event: completion
 
-            data: {"deltaText":"\n/**\n * Generates a sequence of Fibonacci numbers and prints them to the console.\n * The sequence starts with 0 and 1, and each subsequent number is the sum of the\n * previous two. The first 10 numbers in the sequence are printed.\n */\n","stopReason":"stop_sequence"}
+            data: {"deltaText":"\n/**\n * Generates a sequence of Fibonacci numbers and prints them to the console.\n * The sequence starts with 0 and 1, and each subsequent number in the sequence\n * is the sum of the previous two numbers.\n */\n","stopReason":"stop_sequence"}
 
 
             event: done
@@ -240,7 +240,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 09 Dec 2024 15:53:02 GMT
+            value: Tue, 10 Dec 2024 13:40:07 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -254,9 +254,9 @@ log:
           - name: cache-control
             value: no-cache
           - name: observed-calculated-ip-from-forwarded-for
-            value: 80.82.18.146
+            value: 148.81.137.5
           - name: observed-x-forwarded-for
-            value: 80.82.18.146
+            value: 148.81.137.5
           - name: vary
             value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
               X-Requested-With,Cookie
@@ -273,8 +273,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-12-09T15:53:01.049Z
-      time: 1528
+      startedDateTime: 2024-12-10T13:40:05.861Z
+      time: 1169
       timings:
         blocked: -1
         connect: -1
@@ -282,7 +282,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 1528
+        wait: 1169
     - _id: a376faab1c8a1993bb48c745757f0a4a
       _order: 0
       cache: {}
@@ -358,7 +358,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 09 Dec 2024 15:53:00 GMT
+            value: Tue, 10 Dec 2024 13:40:04 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -372,9 +372,9 @@ log:
           - name: cache-control
             value: no-cache, max-age=0
           - name: observed-calculated-ip-from-forwarded-for
-            value: 80.82.18.146
+            value: 148.81.137.5
           - name: observed-x-forwarded-for
-            value: 80.82.18.146
+            value: 148.81.137.5
           - name: vary
             value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
               X-Requested-With,Cookie
@@ -393,8 +393,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-12-09T15:53:00.051Z
-      time: 321
+      startedDateTime: 2024-12-10T13:40:04.357Z
+      time: 328
       timings:
         blocked: -1
         connect: -1
@@ -402,7 +402,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 321
+        wait: 328
     - _id: 0484c4d780805faf3dd3ddabae814640
       _order: 0
       cache: {}
@@ -466,7 +466,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 09 Dec 2024 15:53:00 GMT
+            value: Tue, 10 Dec 2024 13:40:04 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -480,9 +480,9 @@ log:
           - name: cache-control
             value: no-cache, max-age=0
           - name: observed-calculated-ip-from-forwarded-for
-            value: 80.82.18.146
+            value: 148.81.137.5
           - name: observed-x-forwarded-for
-            value: 80.82.18.146
+            value: 148.81.137.5
           - name: vary
             value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
               X-Requested-With,Cookie
@@ -501,8 +501,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-12-09T15:53:00.092Z
-      time: 277
+      startedDateTime: 2024-12-10T13:40:04.398Z
+      time: 357
       timings:
         blocked: -1
         connect: -1
@@ -510,7 +510,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 277
+        wait: 357
     - _id: e141c56e63809042300db9bf8551d492
       _order: 0
       cache: {}
@@ -574,7 +574,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 09 Dec 2024 15:53:00 GMT
+            value: Tue, 10 Dec 2024 13:40:04 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -588,9 +588,9 @@ log:
           - name: cache-control
             value: no-cache, max-age=0
           - name: observed-calculated-ip-from-forwarded-for
-            value: 80.82.18.146
+            value: 148.81.137.5
           - name: observed-x-forwarded-for
-            value: 80.82.18.146
+            value: 148.81.137.5
           - name: vary
             value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
               X-Requested-With,Cookie
@@ -609,8 +609,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-12-09T15:53:00.073Z
-      time: 345
+      startedDateTime: 2024-12-10T13:40:04.379Z
+      time: 306
       timings:
         blocked: -1
         connect: -1
@@ -618,7 +618,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 345
+        wait: 306
     - _id: 5b9030a4e18d1e000c71d6000a7cef6f
       _order: 0
       cache: {}
@@ -704,7 +704,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 09 Dec 2024 15:53:00 GMT
+            value: Tue, 10 Dec 2024 13:40:04 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -718,9 +718,9 @@ log:
           - name: cache-control
             value: no-cache, max-age=0
           - name: observed-calculated-ip-from-forwarded-for
-            value: 80.82.18.146
+            value: 148.81.137.5
           - name: observed-x-forwarded-for
-            value: 80.82.18.146
+            value: 148.81.137.5
           - name: vary
             value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
               X-Requested-With,Cookie
@@ -739,8 +739,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-12-09T15:52:59.787Z
-      time: 218
+      startedDateTime: 2024-12-10T13:40:04.056Z
+      time: 253
       timings:
         blocked: -1
         connect: -1
@@ -748,7 +748,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 218
+        wait: 253
     - _id: aef0c9fe7483280d9c05ac8e97e37571
       _order: 0
       cache: {}
@@ -822,7 +822,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 09 Dec 2024 15:53:00 GMT
+            value: Tue, 10 Dec 2024 13:40:05 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -836,9 +836,9 @@ log:
           - name: cache-control
             value: no-cache, max-age=0
           - name: observed-calculated-ip-from-forwarded-for
-            value: 80.82.18.146
+            value: 148.81.137.5
           - name: observed-x-forwarded-for
-            value: 80.82.18.146
+            value: 148.81.137.5
           - name: vary
             value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
               X-Requested-With,Cookie
@@ -857,8 +857,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-12-09T15:53:00.125Z
-      time: 354
+      startedDateTime: 2024-12-10T13:40:04.433Z
+      time: 821
       timings:
         blocked: -1
         connect: -1
@@ -866,7 +866,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 354
+        wait: 821
     - _id: 4504fab53d7cb602861f73dc2aa883d2
       _order: 0
       cache: {}
@@ -918,13 +918,13 @@ log:
           encoding: base64
           mimeType: application/json
           size: 143
-          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdEFRfkppcklYalFxZn5eUpWSsYGxgYGRvFGB\
-            kYmuoZGugZm8aZ6hga6BolJhkkmScmpiUmmSrW1tQAAAAD//w==\",\"AwC/9OtLSgA\
+          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdEFRfkppcklYalFxZn5eUpWSsYGxoaWJvFGB\
+            kYmuoZGugaW8aZ6hga6qUmJhsYpRmlJaUaGSrW1tQAAAAD//w==\",\"AwDrYN6zSgA\
             AAA==\"]"
         cookies: []
         headers:
           - name: date
-            value: Mon, 09 Dec 2024 15:53:00 GMT
+            value: Tue, 10 Dec 2024 13:40:04 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -938,9 +938,9 @@ log:
           - name: cache-control
             value: no-cache, max-age=0
           - name: observed-calculated-ip-from-forwarded-for
-            value: 80.82.18.146
+            value: 148.81.137.5
           - name: observed-x-forwarded-for
-            value: 80.82.18.146
+            value: 148.81.137.5
           - name: vary
             value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
               X-Requested-With,Cookie
@@ -959,8 +959,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-12-09T15:53:00.109Z
-      time: 263
+      startedDateTime: 2024-12-10T13:40:04.416Z
+      time: 287
       timings:
         blocked: -1
         connect: -1
@@ -968,7 +968,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 263
+        wait: 287
     - _id: fbb23499ae0eec5c2e188687b429531b
       _order: 0
       cache: {}
@@ -997,11 +997,11 @@ log:
         queryString: []
         url: https://sourcegraph.com/.api/modelconfig/supported-models.json
       response:
-        bodySize: 1759
+        bodySize: 1752
         content:
           encoding: base64
           mimeType: text/plain; charset=utf-8
-          size: 1759
+          size: 1752
           text: "[\"H4sIAAAAAAAA/+ybQW+jOBTH7/MpUE672nFqnNJ0uXU6O7sjbafVtuoeVnNw4CWxAhgZk\
             6Ya9buvgEBKcIJpk0lQ6InC/z2/xL88+9nmxwfDMIxe5EzBp48gIsaDnm30zD7ufcye\
             CZiz/Dbu4z7+zYV5/jAUfM5cEFHPNv5LbyV/P4qrVMTcxJYGcip4yJylbfHYZVHo0ed\
@@ -1027,12 +1027,12 @@ log:
             w8N5FHPQlqBpalfnF7vnMl1YTHodhQLmDJ4QxnV72tl7JgY3c5v6pcu6FnZdA9Unxyf\
             KpMeq5+5OMz02Oap+sY/8qKKkbpq54rA2WWq57yBsz7kesq8xGslYjLSmjcaDSlkdo9\
             UeW1Nl74jBlhTZDZco98LgoG9pUzjoW5ocbvR6JGvlHYlvTYZbzvakV/mrustN4pv8j\
-            d1VpFlPvu2ViN6YRvJaz77ylk8yMMN1tg==\",\"CLN8Y7zBQZAP2Wd8+fB/AAAA//+\
-            AboyjlT4AAA==\"]"
+            d1VpFlPvu2ViN6YRvJaz77ylk8yMMN1tgizfGO8wUGQD9lnfPnwfwAAAP//gG6Mo5U+\
+            AAA=\"]"
         cookies: []
         headers:
           - name: date
-            value: Mon, 09 Dec 2024 15:53:00 GMT
+            value: Tue, 10 Dec 2024 13:40:05 GMT
           - name: content-type
             value: text/plain; charset=utf-8
           - name: transfer-encoding
@@ -1048,9 +1048,9 @@ log:
           - name: content-encoding
             value: gzip
           - name: observed-calculated-ip-from-forwarded-for
-            value: 80.82.18.146
+            value: 148.81.137.5
           - name: observed-x-forwarded-for
-            value: 80.82.18.146
+            value: 148.81.137.5
           - name: vary
             value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
               X-Requested-With,Cookie
@@ -1067,8 +1067,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-12-09T15:53:00.628Z
-      time: 248
+      startedDateTime: 2024-12-10T13:40:04.984Z
+      time: 219
       timings:
         blocked: -1
         connect: -1
@@ -1076,6 +1076,6 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 248
+        wait: 219
   pages: []
   version: "1.2"
