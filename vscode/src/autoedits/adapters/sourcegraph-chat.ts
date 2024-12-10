@@ -2,7 +2,7 @@ import type { ChatClient, Message } from '@sourcegraph/cody-shared'
 import { autoeditsLogger } from '../logger'
 import type { AutoeditsModelAdapter } from '../prompt-provider'
 import type { AutoeditModelOptions } from '../prompt-provider'
-import { getSourcegraphCompatibleChatPrompt, getMaxOutputTokensForAutoedits } from './utils'
+import { getMaxOutputTokensForAutoedits, getSourcegraphCompatibleChatPrompt } from './utils'
 
 export class SourcegraphChatAdapter implements AutoeditsModelAdapter {
     constructor(private readonly chatClient: ChatClient) {}
@@ -10,10 +10,10 @@ export class SourcegraphChatAdapter implements AutoeditsModelAdapter {
     async getModelResponse(option: AutoeditModelOptions): Promise<string> {
         try {
             const maxTokens = getMaxOutputTokensForAutoedits(option.codeToRewrite)
-            const messages: Message[] = getSourcegraphCompatibleChatPrompt(
-                option.prompt.systemMessage,
-                option.prompt.userMessage
-            )
+            const messages: Message[] = getSourcegraphCompatibleChatPrompt({
+                systemMessage: option.prompt.systemMessage,
+                userMessage: option.prompt.userMessage,
+            })
             const stream = await this.chatClient.chat(
                 messages,
                 {

@@ -11,10 +11,10 @@ export class OpenAIAdapter implements AutoeditsModelAdapter {
                 option.url,
                 JSON.stringify({
                     model: option.model,
-                    messages: getOpenaiCompatibleChatPrompt(
-                        option.prompt.systemMessage,
-                        option.prompt.userMessage
-                    ),
+                    messages: getOpenaiCompatibleChatPrompt({
+                        systemMessage: option.prompt.systemMessage,
+                        userMessage: option.prompt.userMessage,
+                    }),
                     temperature: 0.5,
                     max_tokens: 256,
                     response_format: {

@@ -2,7 +2,7 @@ import { autoeditsLogger } from '../logger'
 import type { AutoeditsModelAdapter } from '../prompt-provider'
 import { getModelResponse } from '../prompt-provider'
 import type { AutoeditModelOptions } from '../prompt-provider'
-import { getOpenaiCompatibleChatPrompt, getMaxOutputTokensForAutoedits } from './utils'
+import { getMaxOutputTokensForAutoedits, getOpenaiCompatibleChatPrompt } from './utils'
 
 export class CodyGatewayAdapter implements AutoeditsModelAdapter {
     async getModelResponse(option: AutoeditModelOptions): Promise<string> {
@@ -41,10 +41,10 @@ export class CodyGatewayAdapter implements AutoeditsModelAdapter {
         }
 
         if (option.isChatModel) {
-            body.messages = getOpenaiCompatibleChatPrompt(
-                option.prompt.systemMessage,
-                option.prompt.userMessage
-            )
+            body.messages = getOpenaiCompatibleChatPrompt({
+                systemMessage: option.prompt.systemMessage,
+                userMessage: option.prompt.userMessage,
+            })
         } else {
             body.prompt = option.prompt.userMessage
         }

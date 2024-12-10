@@ -5,26 +5,26 @@ export function getMaxOutputTokensForAutoedits(codeToRewrite: string): number {
     return codeToRewrite.length + MAX_NEW_GENERATED_TOKENS
 }
 
-export function getOpenaiCompatibleChatPrompt(
-    systemMessage: PromptString | undefined,
+export function getOpenaiCompatibleChatPrompt(param: {
+    systemMessage?: PromptString
     userMessage: PromptString
-): { role: string; content: PromptString }[] {
+}): { role: string; content: PromptString }[] {
     const prompt = []
-    if (systemMessage) {
-        prompt.push({ role: 'system', content: systemMessage })
+    if (param.systemMessage) {
+        prompt.push({ role: 'system', content: param.systemMessage })
     }
-    prompt.push({ role: 'user', content: userMessage })
+    prompt.push({ role: 'user', content: param.userMessage })
     return prompt
 }
 
-export function getSourcegraphCompatibleChatPrompt(
-    systemMessage: PromptString | undefined,
+export function getSourcegraphCompatibleChatPrompt(param: {
+    systemMessage: PromptString | undefined
     userMessage: PromptString
-): Message[] {
+}): Message[] {
     const prompt: Message[] = []
-    if (systemMessage) {
-        prompt.push({ speaker: 'system', text: systemMessage })
+    if (param.systemMessage) {
+        prompt.push({ speaker: 'system', text: param.systemMessage })
     }
-    prompt.push({ speaker: 'human', text: userMessage })
+    prompt.push({ speaker: 'human', text: param.userMessage })
     return prompt
 }

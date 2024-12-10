@@ -1,11 +1,11 @@
 import type { CodeCompletionsClient, Message } from '@sourcegraph/cody-shared'
+import type { CodeCompletionsParams } from '../../../../lib/shared/src/inferenceClient/misc'
+import type { ModelRefStr } from '../../../../lib/shared/src/models/modelsService'
 import { defaultCodeCompletionsClient } from '../../completions/default-client'
 import { autoeditsLogger } from '../logger'
 import type { AutoeditsModelAdapter } from '../prompt-provider'
 import type { AutoeditModelOptions } from '../prompt-provider'
-import { getMaxOutputTokensForAutoedits } from './utils'
-import {CodeCompletionsParams} from '../../../../lib/shared/src/inferenceClient/misc';
-import {ModelRefStr} from '../../../../lib/shared/src/models/modelsService';
+import { getMaxOutputTokensForAutoedits, getSourcegraphCompatibleChatPrompt } from './utils'
 
 export class SourcegraphCompletionsAdapter implements AutoeditsModelAdapter {
     private client: CodeCompletionsClient
@@ -17,12 +17,10 @@ export class SourcegraphCompletionsAdapter implements AutoeditsModelAdapter {
     async getModelResponse(option: AutoeditModelOptions): Promise<string> {
         try {
             const maxTokens = getMaxOutputTokensForAutoedits(option.codeToRewrite)
-            const messages: Message[] = [
-                {
-                    speaker: 'human',
-                    text: option.prompt.userMessage,
-                },
-            ]
+            const messages: Message[] = getSourcegraphCompatibleChatPrompt({
+                systemMessage: undefined,
+                userMessage: option.prompt.userMessage,
+            })
             const requestParam: CodeCompletionsParams = {
                 timeoutMs: 5_000,
                 model: option.model as ModelRefStr,
