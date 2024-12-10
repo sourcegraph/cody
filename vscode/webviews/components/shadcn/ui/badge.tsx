@@ -9,8 +9,6 @@ const badgeVariants = cva(
             variant: {
                 secondary: 'tw-bg-badge-background tw-text-badge-foreground',
                 outline: 'tw-border tw-border-muted-transparent tw-bg-[unset] tw-text-muted-foreground',
-                ghost: 'tw-bg-muted-transparent tw-text-muted-foreground',
-                cody: 'tw-bg-gradient-to-r tw-from-sourcegraph-blue tw-via-sourcegraph-purple tw-to-sourcegraph-orange tw-text-badge-foreground',
             },
         },
         defaultVariants: {

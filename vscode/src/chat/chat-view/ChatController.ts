@@ -471,9 +471,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     } else {
                         await showSignOutMenu()
                     }
-                    // Send config to refresh the endpoint history list.
-                    // TODO: Remove this when the config for webview is observable, see getConfigForWebview.
-                    await this.sendConfig(currentAuthStatus())
                     break
                 }
                 if (message.authKind === 'switch') {

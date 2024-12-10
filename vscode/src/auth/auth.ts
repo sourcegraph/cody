@@ -385,7 +385,7 @@ export async function signOut(endpoint: string): Promise<void> {
 
     await Promise.all([secretStorage.deleteToken(endpoint), localStorage.deleteEndpoint(endpoint)])
 
-    authProvider.signout(endpoint)
+    authProvider.signout()
 }
 
 /**
@@ -412,7 +412,7 @@ export async function validateCredentials(
     logDebug('auth', `Authenticating to ${config.auth.serverEndpoint}...`)
 
     // Check if credentials are valid and if Cody is enabled for the credentials and endpoint.
-    using client = SourcegraphGraphQLAPIClient.withStaticConfig({
+    const client = SourcegraphGraphQLAPIClient.withStaticConfig({
         configuration: {
             customHeaders: config.configuration.customHeaders,
             telemetryLevel: 'off',

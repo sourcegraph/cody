@@ -43,7 +43,6 @@ const InnerUserAvatar: FunctionComponent<Omit<Props, 'sourcegraphGradientBorder'
     className,
 }) => {
     const title = user.displayName || user.username
-    const highDPISize = size * 2
 
     if (user?.avatarURL) {
         let url = user.avatarURL
@@ -52,6 +51,7 @@ const InnerUserAvatar: FunctionComponent<Omit<Props, 'sourcegraphGradientBorder'
             // Add a size param for non-data URLs. This will resize the image if it is hosted on
             // certain places like Gravatar and GitHub.
             if (size && !user.avatarURL.startsWith('data:')) {
+                const highDPISize = size * 2
                 urlObject.searchParams.set('s', highDPISize.toString())
             }
             url = urlObject.href
@@ -75,7 +75,7 @@ const InnerUserAvatar: FunctionComponent<Omit<Props, 'sourcegraphGradientBorder'
         <div
             title={title}
             className={clsx(styles.userAvatar, className)}
-            style={{ width: `${highDPISize}px`, height: `${highDPISize}px, fontSize: ${size / 2}px` }}
+            style={{ width: `${size}px`, height: `${size}px` }}
         >
             <span className={styles.initials}>
                 {getInitials(user?.displayName || user?.username || '')}

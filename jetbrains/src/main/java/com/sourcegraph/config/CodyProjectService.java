@@ -87,4 +87,14 @@ public class CodyProjectService implements PersistentStateComponent<CodyProjectS
   public String getEnterpriseAccessToken() {
     return enterpriseAccessToken;
   }
+
+  public boolean areChatPredictionsEnabled() {
+    // TODO: implement
+    return false;
+  }
+
+  public String getCodebase() {
+    // TODO: implement
+    return null;
+  }
 }

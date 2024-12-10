@@ -65,30 +65,6 @@ describe('groupChangesForLines', () => {
         `)
     })
 
-    it('should create only a single change if made at the same timestamp', () => {
-        const text = dedent`
-            <D>let</D><I>const</I> x = 5;
-            <D>var</D><I>let</I> y = 10;
-            console.log(<D>x +</D><I>x *</I> y);
-        `
-        let { originalText, changes } = getTextDocumentChangesForText(text)
-        // Override the timestamp to use the same time for all changes
-        changes = changes.map(change => ({ ...change, timestamp: Date.now() }))
-
-        const result = groupOverlappingDocumentChanges(changes)
-        expect(result.length).toBe(1)
-        const diffs = getDiffsForContentChanges(originalText, result)
-        expect(processComputedDiff(diffs[0])).toMatchInlineSnapshot(`
-        "-let x = 5;
-        -var y = 10;
-        -console.log(x + y);
-        +const x = 5;
-        +let y = 10;
-        +console.log(x * y);
-        "
-        `)
-    })
-
     it('handles interleaved insertions and deletions', () => {
         const text = dedent`
             <D>let</D><I>const</I> x = 5;

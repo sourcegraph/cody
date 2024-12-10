@@ -3,6 +3,7 @@ package com.sourcegraph.cody.auth
 import com.intellij.util.xmlb.annotations.Attribute
 import com.intellij.util.xmlb.annotations.Tag
 import com.sourcegraph.cody.config.SourcegraphParseException
+import com.sourcegraph.config.ConfigUtil
 import java.net.URI
 import java.util.regex.Pattern
 
@@ -26,6 +27,7 @@ data class SourcegraphServerPath(
     get() = URI.create(url).host
 
   companion object {
+    const val DEFAULT_HOST = ConfigUtil.DOTCOM_URL
 
     // 1 - schema, 2 - host, 4 - port, 5 - path
     private val URL_REGEX =

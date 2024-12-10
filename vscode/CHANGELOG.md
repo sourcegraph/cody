@@ -6,25 +6,11 @@ This is a log of all notable changes to Cody for VS Code.
 
 ### Added
 
-- Deep Cody is now available to Cody Pro users as an experimental feature. Deep Cody is an AI agent powered by Claude 3.5 Sonnet (New) and other models with tool-use capabilities to gather contextual information for better responses. It can search your codebase, browse the web, execute shell commands in your terminal (when enabled), and utilize any configured tools to retrieve necessary context. To enable shell commands, set the "cody.agentic.context.experimentalShell" option to true in your settings.
-
 ### Fixed
 
 ### Changed
 
 - Telemetry support for Sourcegraph versions older than [5.2.5 (released 12/2023)](https://github.com/sourcegraph/sourcegraph-public-snapshot/releases/tag/v5.2.5) has been removed  [pull/6265](https://github.com/sourcegraph/cody/pull/6265)
-
-### Uncategorized
-
-## [1.48.1]
-
-### Added
-
-### Fixed
-
-- backport/vscode/1.48: chore(telemetry): remove legacy back-compat (#6265)  [pull/6275](https://github.com/sourcegraph/cody/pulls/6275)
-
-### Changed
 
 ### Uncategorized
 

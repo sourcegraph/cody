@@ -108,12 +108,7 @@ export const CodyPanel: FunctionComponent<CodyPanelProps> = ({
                 <Notices user={user} isTeamsUpgradeCtaEnabled={isTeamsUpgradeCtaEnabled} />
                 {/* Hide tab bar in editor chat panels. */}
                 {(clientCapabilities.agentIDE === CodyIDE.Web || config.webviewType !== 'editor') && (
-                    <TabsBar
-                        user={user}
-                        currentView={view}
-                        setView={setView}
-                        endpointHistory={config.endpointHistory ?? []}
-                    />
+                    <TabsBar currentView={view} setView={setView} IDE={clientCapabilities.agentIDE} />
                 )}
                 {errorMessages && <ErrorBanner errors={errorMessages} setErrors={setErrorMessages} />}
                 <TabContainer value={view} ref={tabContainerRef}>

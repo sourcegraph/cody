@@ -28,7 +28,7 @@ export const AccountSwitcher: React.FC<AccountSwitcherProps> = ({
     setLoading,
 }) => {
     type PopoverView = 'switch' | 'remove' | 'add'
-    const [getPopoverView, setPopoverView] = useState<PopoverView>('switch')
+    const [getPopoverView, serPopoverView] = useState<PopoverView>('switch')
     const [isOpen, setIsOpen] = useState(false)
 
     const [endpointToRemove, setEndpointToRemove] = useState<string | null>(null)
@@ -47,7 +47,7 @@ export const AccountSwitcher: React.FC<AccountSwitcherProps> = ({
         setIsOpen(open)
         if (!open) {
             setEndpointToRemove(null)
-            setPopoverView('switch')
+            serPopoverView('switch')
             setAddFormData(() => ({
                 endpoint: 'https://',
                 accessToken: '',
@@ -79,7 +79,7 @@ export const AccountSwitcher: React.FC<AccountSwitcherProps> = ({
                 variant="ghost"
                 onClick={() => {
                     setEndpointToRemove(endpoint)
-                    setPopoverView('remove')
+                    serPopoverView('remove')
                 }}
             >
                 <CircleMinus size={16} />
@@ -102,7 +102,7 @@ export const AccountSwitcher: React.FC<AccountSwitcherProps> = ({
                 key={'add-account'}
                 variant="ghost"
                 onClick={() => {
-                    setPopoverView('add')
+                    serPopoverView('add')
                 }}
             >
                 <Plus size={16} />

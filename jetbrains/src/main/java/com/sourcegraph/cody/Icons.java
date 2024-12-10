@@ -6,6 +6,7 @@ import javax.swing.*;
 
 public interface Icons {
   Icon CodyLogo = IconLoader.getIcon("/icons/codyLogo.svg", Icons.class);
+  Icon HiImCody = IconLoader.getIcon("/icons/hiImCodyLogo.svg", Icons.class);
 
   interface Actions {
     Icon Add = IconLoader.getIcon("/icons/actions/huge_plus.svg", Icons.class);
@@ -25,8 +26,26 @@ public interface Icons {
         IconLoader.getIcon("/icons/codyLogoMonochromaticUnavailable.svg", Icons.class);
   }
 
+  interface Onboarding {
+    Icon Autocomplete = IconLoader.getIcon("/icons/onboarding/autocomplete.svg", Icons.class);
+    Icon Chat = IconLoader.getIcon("/icons/onboarding/chat.svg", Icons.class);
+    Icon Commands = IconLoader.getIcon("/icons/onboarding/commands.svg", Icons.class);
+  }
+
+  interface SignIn {
+    Icon Github = IconLoader.getIcon("/icons/signIn/sign-in-logo-github.svg", Icons.class);
+    Icon Gitlab = IconLoader.getIcon("/icons/signIn/sign-in-logo-gitlab.svg", Icons.class);
+    Icon Google = IconLoader.getIcon("/icons/signIn/sign-in-logo-google.svg", Icons.class);
+  }
+
+  interface Chat {
+    Icon ChatLeaf = IconLoader.getIcon("/icons/chat/chatLeaf.svg", Icons.class);
+    Icon Download = IconLoader.getIcon("/icons/chat/download.svg", Icons.class);
+  }
+
   interface Edit {
     Icon Error = IconLoader.getIcon("/icons/edit/error.svg", Icons.class);
+    Icon Beta = IconLoader.getIcon("/icons/edit/beta.svg", Icons.class);
   }
 
   interface LLM {

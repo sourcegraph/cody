@@ -29,6 +29,11 @@ public class AccessTokenStorage {
     return token;
   }
 
+  public static void setApplicationEnterpriseAccessToken(@NotNull String accessToken) {
+    setApplicationLevelSecureConfig(enterpriseAccessTokenKeyParts, accessToken);
+    cachedEnterpriseAccessToken = accessToken;
+  }
+
   // Empty string means empty or no token. No value means user denied access to token.
   @NotNull
   public static Optional<String> getDotComAccessToken() {
@@ -38,6 +43,11 @@ public class AccessTokenStorage {
     Optional<String> token = getApplicationLevelSecureConfig(dotComAccessTokenKeyParts);
     token.ifPresent(t -> cachedDotComAccessToken = t);
     return token;
+  }
+
+  public static void setApplicationDotComAccessToken(@NotNull String accessToken) {
+    setApplicationLevelSecureConfig(dotComAccessTokenKeyParts, accessToken);
+    cachedDotComAccessToken = accessToken;
   }
 
   // Empty string means empty or no password. No value means user denied access to password.
@@ -54,6 +64,13 @@ public class AccessTokenStorage {
       return Optional.empty();
     }
     return Optional.of(password);
+  }
+
+  private static void setApplicationLevelSecureConfig(
+      @NotNull List<String> keyParts, @NotNull String accessToken) {
+    CredentialAttributes credentialAttributes = createCredentialAttributes(createKey(keyParts));
+    Credentials credentials = new Credentials(null, accessToken);
+    PasswordSafe.getInstance().set(credentialAttributes, credentials);
   }
 
   @NotNull

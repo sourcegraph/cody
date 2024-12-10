@@ -10,18 +10,16 @@ export function getTextDocumentChangesForText(text: string): {
 } {
     const { originalText, changeEvents } = parseTextAndGenerateChangeEvents(text)
     const documentChanges: TextDocumentChange[] = []
-    let currentTimeStamp = Date.now()
     for (const change of changeEvents) {
         const insertedRange = new vscode.Range(
             change.range.start,
             getPositionAfterTextInsertion(change.range.start, change.text)
         )
         documentChanges.push({
-            timestamp: currentTimeStamp,
+            timestamp: Date.now(),
             change: change,
             insertedRange,
         })
-        currentTimeStamp += 1
     }
     return { originalText, changes: documentChanges }
 }

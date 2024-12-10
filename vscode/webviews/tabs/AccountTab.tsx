@@ -103,7 +103,7 @@ export const AccountTab: React.FC<AccountTabProps> = ({
                     <div className="tw-flex tw-self-stretch tw-flex-col tw-w-full tw-items-center tw-justify-center">
                         <UserAvatar
                             user={authStatus}
-                            size={20}
+                            size={30}
                             className="tw-flex-shrink-0 tw-w-[30px] tw-h-[30px] tw-flex tw-items-center tw-justify-center"
                         />
                         <div className="tw-flex tw-self-stretch tw-flex-col tw-w-full tw-items-center tw-justify-center tw-mt-4">
