@@ -69,7 +69,7 @@ importers:
         specifier: ^14.2.2
         version: 14.2.2(react-dom@18.2.0)(react@18.2.0)
       '@types/fs-extra':
-        specifier: ^11.0.4
+        specifier: 11.0.4
         version: 11.0.4
       '@types/node':
         specifier: 20.12.7
@@ -145,46 +145,46 @@ importers:
         version: 2.2.3
     devDependencies:
       '@types/dedent':
-        specifier: ^0.7.0
+        specifier: 0.7.0
         version: 0.7.0
       '@types/diff':
-        specifier: ^5.0.9
+        specifier: 5.0.9
         version: 5.0.9
       '@types/fast-json-stable-stringify':
-        specifier: ^2.1.0
+        specifier: 2.1.0
         version: 2.1.0
       '@types/glob':
-        specifier: ^8.0.0
+        specifier: 8.0.0
         version: 8.0.0
       '@types/google-protobuf':
         specifier: 3.15.12
         version: 3.15.12
       '@types/js-levenshtein':
-        specifier: ^1.1.1
+        specifier: 1.1.1
         version: 1.1.1
       '@types/lodash':
-        specifier: ^4.14.195
+        specifier: 4.17.0
         version: 4.17.0
       '@types/minimatch':
-        specifier: ^5.1.2
+        specifier: 5.1.2
         version: 5.1.2
       '@types/node-localstorage':
-        specifier: ^1.3.3
+        specifier: 1.3.3
         version: 1.3.3
       '@types/open':
-        specifier: ^6.2.1
+        specifier: 6.2.1
         version: 6.2.1
       '@types/uuid':
-        specifier: ^9.0.2
+        specifier: 9.0.2
         version: 9.0.2
       '@types/vscode':
-        specifier: ^1.80.0
+        specifier: 1.80.0
         version: 1.80.0
       '@types/win-ca':
-        specifier: ^3.5.4
+        specifier: 3.5.4
         version: 3.5.4
       '@types/ws':
-        specifier: ^8.5.10
+        specifier: 8.5.10
         version: 8.5.10
       chalk:
         specifier: ^5.3.0
@@ -302,7 +302,7 @@ importers:
         specifier: 2.18.4
         version: 2.18.4
       '@types/bun':
-        specifier: ^1.1.13
+        specifier: 1.1.13
         version: 1.1.13
 
   lib/prompt-editor:
@@ -336,7 +336,7 @@ importers:
         version: 3.0.8
     devDependencies:
       '@types/lodash':
-        specifier: ^4.17.7
+        specifier: 4.17.7
         version: 4.17.7
       '@types/react':
         specifier: 18.2.37
@@ -412,28 +412,28 @@ importers:
         specifier: ^1.0.0
         version: 1.0.0
       '@types/crypto-js':
-        specifier: ^4.2.2
+        specifier: 4.2.2
         version: 4.2.2
       '@types/dedent':
-        specifier: ^0.7.0
+        specifier: 0.7.0
         version: 0.7.0
       '@types/diff':
-        specifier: ^5.0.9
+        specifier: 5.0.9
         version: 5.0.9
       '@types/isomorphic-fetch':
-        specifier: ^0.0.39
+        specifier: 0.0.39
         version: 0.0.39
       '@types/lodash':
-        specifier: ^4.14.195
+        specifier: 4.14.195
         version: 4.14.195
       '@types/node-fetch':
-        specifier: ^2.6.4
+        specifier: 2.6.4
         version: 2.6.4
       '@types/semver':
-        specifier: ^7.5.8
+        specifier: 7.5.8
         version: 7.5.8
       '@types/vscode':
-        specifier: ^1.80.0
+        specifier: 1.80.0
         version: 1.80.0
       agent-base:
         specifier: ^7.1.1
@@ -529,10 +529,10 @@ importers:
         specifier: ^0.1.9
         version: 0.1.9
       '@types/he':
-        specifier: ^1.2.3
+        specifier: 1.2.3
         version: 1.2.3
       '@types/mdast':
-        specifier: ^4.0.4
+        specifier: 4.0.4
         version: 4.0.4
       '@types/react':
         specifier: 18.2.79
@@ -731,70 +731,70 @@ importers:
         specifier: ^8.0.5
         version: 8.0.5
       '@types/7zip-min':
-        specifier: ^1.3.3
+        specifier: 1.3.3
         version: 1.3.3
       '@types/crypto-js':
-        specifier: ^4.2.2
+        specifier: 4.2.2
         version: 4.2.2
       '@types/dedent':
-        specifier: ^0.7.0
+        specifier: 0.7.0
         version: 0.7.0
       '@types/diff':
-        specifier: ^5.2.1
+        specifier: 5.2.1
         version: 5.2.1
       '@types/express':
-        specifier: ^4.17.17
+        specifier: 4.17.17
         version: 4.17.17
       '@types/fs-extra':
-        specifier: ^11.0.4
+        specifier: 11.0.4
         version: 11.0.4
       '@types/glob':
-        specifier: ^8.0.0
+        specifier: 8.0.0
         version: 8.0.0
       '@types/graceful-fs':
-        specifier: ^4.1.9
+        specifier: 4.1.9
         version: 4.1.9
       '@types/ini':
-        specifier: ^4.1.0
+        specifier: 4.1.0
         version: 4.1.0
       '@types/js-levenshtein':
-        specifier: ^1.1.1
+        specifier: 1.1.1
         version: 1.1.1
       '@types/lodash':
-        specifier: ^4.14.195
+        specifier: 4.14.195
         version: 4.14.195
       '@types/marked':
-        specifier: ^5.0.0
+        specifier: 5.0.0
         version: 5.0.0
       '@types/mocha':
-        specifier: ^10.0.6
+        specifier: 10.0.6
         version: 10.0.6
       '@types/node-fetch':
-        specifier: ^2.6.4
+        specifier: 2.6.4
         version: 2.6.4
       '@types/npmcli__promise-spawn':
-        specifier: ^6.0.3
+        specifier: 6.0.3
         version: 6.0.3
       '@types/on-headers':
-        specifier: ^1.0.3
+        specifier: 1.0.3
         version: 1.0.3
       '@types/pako':
-        specifier: ^2.0.3
+        specifier: 2.0.3
         version: 2.0.3
       '@types/semver':
-        specifier: ^7.5.0
+        specifier: 7.5.0
         version: 7.5.0
       '@types/signal-exit':
-        specifier: ^3.0.4
+        specifier: 3.0.4
         version: 3.0.4
       '@types/unzipper':
-        specifier: ^0.10.7
+        specifier: 0.10.7
         version: 0.10.7
       '@types/uuid':
-        specifier: ^9.0.2
+        specifier: 9.0.2
         version: 9.0.2
       '@types/vscode':
-        specifier: ^1.79.0
+        specifier: 1.80.0
         version: 1.80.0
       '@vscode/test-electron':
         specifier: ^2.4.0
@@ -965,7 +965,7 @@ importers:
         specifier: 4.14.195
         version: 4.14.195
       '@types/vscode':
-        specifier: ^1.92.0
+        specifier: 1.92.0
         version: 1.92.0
       '@vitejs/plugin-react-swc':
         specifier: ^3.6.0
@@ -5332,7 +5332,7 @@ packages:
     dependencies:
       '@storybook/core-events': 8.0.5
       '@storybook/global': 5.0.0
-      '@types/uuid': 9.0.8
+      '@types/uuid': 9.0.2
       dequal: 2.0.3
       polished: 4.3.1
       uuid: 9.0.1
@@ -5466,7 +5466,7 @@ packages:
       '@storybook/preview-api': 8.0.5
       '@storybook/theming': 8.0.5(react-dom@18.2.0)(react@18.2.0)
       '@storybook/types': 8.0.5
-      '@types/lodash': 4.14.195
+      '@types/lodash': 4.17.7
       color-convert: 2.0.1
       dequal: 2.0.3
       lodash: 4.17.21
@@ -5509,7 +5509,7 @@ packages:
       '@storybook/preview-api': 8.0.5
       '@storybook/theming': 8.0.5(react-dom@18.2.0)(react@18.3.1)
       '@storybook/types': 8.0.5
-      '@types/lodash': 4.14.195
+      '@types/lodash': 4.17.7
       color-convert: 2.0.1
       dequal: 2.0.3
       lodash: 4.17.21
@@ -6989,10 +6989,6 @@ packages:
 
   /@types/uuid@9.0.2:
     resolution: {integrity: sha512-kNnC1GFBLuhImSnV7w4njQkUiJi0ZXUycu1rUaouPqiKlXkh77JKgdRnTAp1x5eBwcIwbtI+3otwzuIDEuDoxQ==}
-    dev: true
-
-  /@types/uuid@9.0.8:
-    resolution: {integrity: sha512-jg+97EGIcY9AGHJJRaaPVgetKDsrTgbRjQ5Msgjh/DQKEFl0DtyRr/VCOyD1T2R1MNeWPK/u7JoGhlDZnKBAfA==}
     dev: true
 
   /@types/vscode@1.80.0:
