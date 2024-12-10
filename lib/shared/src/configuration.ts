@@ -50,10 +50,13 @@ export interface NetConfiguration {
 }
 
 export interface AgenticContextConfiguration {
-    shell?: {
-        allow?: string[] | undefined | null
-        block?: string[] | undefined | null
-    }
+    shell?:
+        | {
+              allow?: string[] | undefined | null
+              block?: string[] | undefined | null
+          }
+        | undefined
+        | null
 }
 
 interface RawClientConfiguration {

@@ -1299,13 +1299,18 @@
           "type": "object",
           "properties": {
             "shell": {
-              "allow": "array",
-              "block": "array"
+              "allow": {
+                "type": "array",
+                "default": []
+              },
+              "block": {
+                "type": "array",
+                "default": []
+              }
             }
           },
           "default": {},
           "examples": [
-            {},
             {
               "shell": {
                 "allow": ["git", "ls", "find"],

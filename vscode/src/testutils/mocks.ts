@@ -913,7 +913,7 @@ export const DEFAULT_VSCODE_SETTINGS = {
     internalDebugContext: false,
     internalDebugState: false,
     agenticContextExperimentalShell: false,
-    agenticContextExperimentalOptions: { shell: { allow: ['git'] } },
+    agenticContextExperimentalOptions: {},
     autocompleteAdvancedProvider: 'default',
     autocompleteAdvancedModel: null,
     autocompleteCompleteSuggestWidgetSelection: true,
