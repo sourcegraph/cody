@@ -22,7 +22,8 @@ export class InlineDiffDecorator implements vscode.Disposable, AutoEditsDecorato
             let currentInsertPosition: vscode.Position | null = null
             let currentInsertText = ''
 
-            for (const change of line.changes) {
+            // Ignore line changes rendered as an inline completion item ghost text.
+            for (const change of line.changes.filter(c => !c.usedAsInlineCompletion)) {
                 if (change.type === 'insert') {
                     const position = change.range.end
                     if (currentInsertPosition && position.isEqual(currentInsertPosition)) {
