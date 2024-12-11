@@ -1,4 +1,9 @@
-import { type AutocompleteContextSnippet, type PromptString, ps } from '@sourcegraph/cody-shared'
+import {
+    type AutocompleteContextSnippet,
+    type PromptString,
+    ps,
+    psDedent,
+} from '@sourcegraph/cody-shared'
 import { groupConsecutiveItemsByPredicate } from '../../completions/context/retrievers/recent-user-actions/recent-edits-diff-helpers/utils'
 import { RetrieverIdentifier } from '../../completions/context/utils'
 import { autoeditsLogger } from '../logger'
@@ -62,18 +67,19 @@ export class ShortTermPromptStrategy implements AutoeditsUserPromptStrategy {
             constants.JACCARD_SIMILARITY_INSTRUCTION,
             getJaccardSimilarityPrompt
         )
-        const finalPrompt = ps`${constants.BASE_USER_PROMPT}
-${jaccardSimilarityPrompt}
-${longTermViewPrompt}
-${constants.CURRENT_FILE_INSTRUCTION}${fileWithMarkerPrompt}
-${shortTermViewPrompt}
-${longTermEditsPrompt}
-${lintErrorsPrompt}
-${recentCopyPrompt}
-${areaPrompt}
-${shortTermEditsPrompt}
-${constants.FINAL_USER_PROMPT}
-`
+        const finalPrompt = psDedent`
+            ${constants.BASE_USER_PROMPT}
+            ${jaccardSimilarityPrompt}
+            ${longTermViewPrompt}
+            ${constants.CURRENT_FILE_INSTRUCTION}${fileWithMarkerPrompt}
+            ${shortTermViewPrompt}
+            ${longTermEditsPrompt}
+            ${lintErrorsPrompt}
+            ${recentCopyPrompt}
+            ${areaPrompt}
+            ${shortTermEditsPrompt}
+            ${constants.FINAL_USER_PROMPT}`
+
         autoeditsLogger.logDebug('AutoEdits', 'Prompt\n', finalPrompt)
         return {
             codeToReplace: codeToReplace,

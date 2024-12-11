@@ -1,4 +1,4 @@
-import { ps } from '@sourcegraph/cody-shared'
+import { psDedent } from '@sourcegraph/cody-shared'
 import { RetrieverIdentifier } from '../../completions/context/utils'
 import { autoeditsLogger } from '../logger'
 import type { AutoeditsUserPromptStrategy, UserPromptArgs, UserPromptResponse } from './base'
@@ -64,16 +64,17 @@ export class DefaultUserPromptStrategy implements AutoeditsUserPromptStrategy {
             constants.JACCARD_SIMILARITY_INSTRUCTION,
             getJaccardSimilarityPrompt
         )
-        const finalPrompt = ps`${constants.BASE_USER_PROMPT}
-${jaccardSimilarityPrompt}
-${recentViewsPrompt}
-${constants.CURRENT_FILE_INSTRUCTION}${fileWithMarkerPrompt}
-${recentEditsPrompt}
-${lintErrorsPrompt}
-${recentCopyPrompt}
-${areaPrompt}
-${constants.FINAL_USER_PROMPT}
-`
+        const finalPrompt = psDedent`
+            ${constants.BASE_USER_PROMPT}
+            ${jaccardSimilarityPrompt}
+            ${recentViewsPrompt}
+            ${constants.CURRENT_FILE_INSTRUCTION}${fileWithMarkerPrompt}
+            ${recentEditsPrompt}
+            ${lintErrorsPrompt}
+            ${recentCopyPrompt}
+            ${areaPrompt}
+            ${constants.FINAL_USER_PROMPT}`
+
         autoeditsLogger.logDebug('AutoEdits', 'Prompt\n', finalPrompt)
         return {
             codeToReplace: codeToReplace,
