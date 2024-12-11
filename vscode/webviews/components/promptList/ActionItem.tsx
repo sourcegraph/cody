@@ -25,6 +25,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '../../components/shadcn
 
 import { commandRowValue } from './utils'
 
+import { MESSAGE_CELL_AVATAR_SIZE } from '../../chat/cells/messageCell/BaseMessageCell'
 import { useConfig } from '../../utils/useConfig'
 import styles from './ActionItem.module.css'
 
@@ -74,7 +75,7 @@ const ActionPrompt: FC<ActionPromptProps> = props => {
         <div className={styles.prompt}>
             {prompt.createdBy && (
                 <UserAvatar
-                    size={14}
+                    size={MESSAGE_CELL_AVATAR_SIZE}
                     user={{ ...prompt.createdBy, endpoint: '' }}
                     className={styles.promptAvatar}
                 />

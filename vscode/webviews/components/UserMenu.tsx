@@ -15,6 +15,7 @@ import {
 import { useCallback, useState } from 'react'
 import { URI } from 'vscode-uri'
 import { ACCOUNT_USAGE_URL, isSourcegraphToken } from '../../src/chat/protocol'
+import { MESSAGE_CELL_AVATAR_SIZE } from '../chat/cells/messageCell/BaseMessageCell'
 import type { View } from '../tabs'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
 import { useTelemetryRecorder } from '../utils/telemetry'
@@ -315,7 +316,7 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
                                     <div className="tw-flex tw-w-full tw-justify-start tw-gap-4">
                                         <UserAvatar
                                             user={authStatus}
-                                            size={16}
+                                            size={MESSAGE_CELL_AVATAR_SIZE}
                                             sourcegraphGradientBorder={!!isProUser}
                                             className="tw-flex tw-justify-center"
                                         />
@@ -427,7 +428,11 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
                 },
             }}
         >
-            <UserAvatar user={authStatus} size={12} sourcegraphGradientBorder={!!isProUser} />
+            <UserAvatar
+                user={authStatus}
+                size={MESSAGE_CELL_AVATAR_SIZE}
+                sourcegraphGradientBorder={!!isProUser}
+            />
         </ToolbarPopoverItem>
     )
 }
