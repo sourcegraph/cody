@@ -12,6 +12,7 @@ import type {
 import { type ClientConfiguration, OLLAMA_DEFAULT_URL } from '@sourcegraph/cody-shared'
 
 import path from 'node:path'
+import { DefaultShellContextConfig } from '../commands/context/config'
 import { AgentEventEmitter as EventEmitter } from './AgentEventEmitter'
 import { AgentWorkspaceEdit as WorkspaceEdit } from './AgentWorkspaceEdit'
 import { Uri } from './uri'
@@ -912,8 +913,7 @@ export const DEFAULT_VSCODE_SETTINGS = {
     internalUnstable: false,
     internalDebugContext: false,
     internalDebugState: false,
-    agenticContextExperimentalShell: false,
-    agenticContextExperimentalOptions: {},
+    agenticContext: { shell: DefaultShellContextConfig },
     autocompleteAdvancedProvider: 'default',
     autocompleteAdvancedModel: null,
     autocompleteCompleteSuggestWidgetSelection: true,

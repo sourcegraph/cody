@@ -306,7 +306,7 @@ function modelAvailability(
 
 function getTooltip(model: Model, availability: string): string {
     if (model.id.includes('deep-cody')) {
-        return 'An agent powered by Claude 3.5 Sonnet (New) and other models with tool-use capabilities to gather contextual information for better responses. It can search your codebase, browse the web, execute shell commands in your terminal (when enabled), and utilize any configured tools to retrieve necessary context. To enable shell commands, set the "cody.agentic.context.experimentalShell" option to true in your settings.'
+        return 'Uses Claude 3.5 Sonnet (New) with other models to fetch any extra context needed for better responses'
     }
     if (model.tags.includes(ModelTag.Waitlist)) {
         return 'Request access to this new model'
@@ -351,7 +351,6 @@ const ModelTitleWithIcon: React.FC<{
     showIcon?: boolean
     showProvider?: boolean
     modelAvailability?: ModelAvailability
-    isCurrentlySelected?: boolean
 }> = ({ model, showIcon, modelAvailability }) => {
     const modelBadge = getBadgeText(model, modelAvailability)
     const isDisabled = modelAvailability !== 'available'
@@ -396,7 +395,7 @@ const ChatModelIcon: FunctionComponent<{ model: string; className?: string }> = 
 
 /** Common {@link ModelsService.uiGroup} values. */
 const ModelUIGroup: Record<string, string> = {
-    DeepCody: 'Agent, extensive context fetching',
+    DeepCody: 'Mixed models, extended processing',
     Power: 'More powerful models',
     Balanced: 'Balanced for power and speed',
     Speed: 'Faster models',

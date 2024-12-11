@@ -1,9 +1,7 @@
 import type { Span } from '@opentelemetry/api'
 import {
-    CodyIDE,
     type ContextItem,
     PromptString,
-    clientCapabilities,
     isDefined,
     logDebug,
     ps,
@@ -31,7 +29,6 @@ export class DeepCodyAgent extends CodyChatAgent {
         return CODYAGENT_PROMPTS.review
             .replace('{{CODY_TOOLS_PLACEHOLDER}}', join(toolInstructions))
             .replace('{{CODY_TOOLS_EXAMPLES_PLACEHOLDER}}', join(toolExamples))
-            .replace('{{CODY_IDE}}', fromAgentClientIDE(clientCapabilities().agentIDE || CodyIDE.VSCode))
     }
 
     /**
@@ -126,25 +123,5 @@ export class DeepCodyAgent extends CodyChatAgent {
             })
             return []
         }
-    }
-}
-
-// TODO: move to shared
-function fromAgentClientIDE(client: CodyIDE) {
-    switch (client) {
-        case CodyIDE.Web:
-            return ps`Sourcegraph Web`
-        case CodyIDE.VisualStudio:
-            return ps`Visual Studio`
-        case CodyIDE.JetBrains:
-            return ps`JetBrains`
-        case CodyIDE.Eclipse:
-            return ps`Eclipse`
-        case CodyIDE.Emacs:
-            return ps`Emacs`
-        case CodyIDE.Neovim:
-            return ps`Neovim`
-        default:
-            return ps`VS Code`
     }
 }
