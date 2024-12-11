@@ -20,6 +20,8 @@ export class DeepCodyRateLimiter {
      */
     public isAtLimit(): string | undefined {
         const DAILY_QUOTA = this.baseQuota * this.multiplier
+
+        // If there is no quota set, there is no limit.
         if (!DAILY_QUOTA) {
             return undefined
         }

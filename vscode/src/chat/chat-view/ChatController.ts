@@ -803,7 +803,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
         const isDeepCodyModel = model?.includes('deep-cody')
         const isDeepCodyEnabled = isDeepCodyModel && this.chatBuilder.getMessages().length < 4
-
+        // The limit could be 0, 50 * 1 (50), 50 * 2 (100)
         const deepCodyRateLimiter = new DeepCodyRateLimiter(
             this.featureDeepCodyRateLimitBase.value.last ? 50 : 0,
             this.featureDeepCodyRateLimitMultiplier.value.last ? 2 : 1

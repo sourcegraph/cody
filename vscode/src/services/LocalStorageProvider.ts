@@ -41,7 +41,7 @@ class LocalStorage implements LocalStorageForModelPreferences {
     public readonly keys = {
         // LLM waitlist for the 09/12/2024 openAI o1 models
         waitlist_o1: 'CODY_WAITLIST_LLM_09122024',
-        deepCodyLastUsageTime: 'DEEP_CODY_LAST_USED_TIMESTAMP',
+        deepCodyLastUsedDate: 'DEEP_CODY_LAST_USED_DATE',
         deepCodyDailyUsageCount: 'DEEP_CODY_DAILY_CHAT_USAGE',
     }
 
@@ -350,7 +350,7 @@ class LocalStorage implements LocalStorageForModelPreferences {
     public getDeepCodyUsage(): { quota: number | undefined; lastUsed: Date } {
         const quota = this.get<number>(this.keys.deepCodyDailyUsageCount) ?? undefined
         const lastUsed = new Date(
-            this.get<string>(this.keys.deepCodyLastUsageTime) ?? new Date().toISOString()
+            this.get<string>(this.keys.deepCodyLastUsedDate) ?? new Date().toISOString()
         )
 
         return { quota, lastUsed }
@@ -359,7 +359,7 @@ class LocalStorage implements LocalStorageForModelPreferences {
     public async setDeepCodyUsage(newQuota: number, lastUsed: string): Promise<void> {
         await Promise.all([
             localStorage.set(localStorage.keys.deepCodyDailyUsageCount, newQuota - 1),
-            localStorage.set(localStorage.keys.deepCodyLastUsageTime, lastUsed),
+            localStorage.set(localStorage.keys.deepCodyLastUsedDate, lastUsed),
         ])
     }
 
@@ -373,7 +373,7 @@ class LocalStorage implements LocalStorageForModelPreferences {
         // Get current quota and last used time, with defaults
         const currentQuota = this.get<number>(this.keys.deepCodyDailyUsageCount) ?? DAILY_QUOTA
         const lastUsedTime = new Date(
-            this.get<string>(this.keys.deepCodyLastUsageTime) ?? new Date().toISOString()
+            this.get<string>(this.keys.deepCodyLastUsedDate) ?? new Date().toISOString()
         ).getTime()
 
         const now = new Date().getTime()
@@ -388,7 +388,7 @@ class LocalStorage implements LocalStorageForModelPreferences {
             // Update quota and timestamp
             Promise.all([
                 this.set(this.keys.deepCodyDailyUsageCount, newQuota - 1),
-                this.set(this.keys.deepCodyLastUsageTime, new Date().toISOString()),
+                this.set(this.keys.deepCodyLastUsedDate, new Date().toISOString()),
             ])
             return undefined
         }
