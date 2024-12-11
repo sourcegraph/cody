@@ -143,3 +143,9 @@ ContextFiltersProvider.repoNameResolver = {
     getRepoNamesContainingUri: (uri, signal) =>
         firstResultFromOperation(repoNameResolver.getRepoNamesContainingUri(uri), signal),
 }
+
+export const getFirstRepoNameContainingUri = (uri: vscode.Uri): Promise<RepoName | undefined> => {
+    return firstResultFromOperation(repoNameResolver.getRepoNamesContainingUri(uri))
+        .then(repoNames => repoNames[0])
+        .catch(() => undefined)
+}

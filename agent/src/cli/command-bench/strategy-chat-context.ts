@@ -142,7 +142,7 @@ async function runContextCommand(
         for (const contextList of results) {
             actualContext.push(
                 ...contextList.contextList.map(result => ({
-                    repoName: result.repoName,
+                    repoName: result.repoName.replace(/^github\.com\//, ''),
                     path: result.path,
                     startLine: result.startLine,
                     endLine: result.endLine,

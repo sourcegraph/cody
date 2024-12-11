@@ -12,6 +12,7 @@ import {
     modelsService,
     posixFilePaths,
     telemetryRecorder,
+    tracer,
     uriBasename,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
@@ -55,6 +56,8 @@ export class EditProvider {
 
     public async startEdit(): Promise<void> {
         return wrapInActiveSpan('command.edit.start', async span => {
+            span.setAttribute('sampled', true)
+            const editTimeToFirstTokenSpan = tracer.startSpan('cody.edit.provider.timeToFirstToken')
             this.config.controller.startTask(this.config.task)
             const model = this.config.task.model
             const contextWindow = modelsService.getContextWindowByID(model)
@@ -154,11 +157,16 @@ export class EditProvider {
             )
 
             let textConsumed = 0
+            let firstTokenReceived = false
             for await (const message of stream) {
                 switch (message.type) {
                     case 'change': {
                         if (textConsumed === 0 && responsePrefix) {
                             void multiplexer.publish(responsePrefix)
+                        }
+                        if (!firstTokenReceived && message.text.length > 1) {
+                            editTimeToFirstTokenSpan.end()
+                            firstTokenReceived = true
                         }
                         const text = message.text.slice(textConsumed)
                         textConsumed += text.length

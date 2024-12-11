@@ -85,7 +85,8 @@
             "vscode/.schema-cache/*.json",
             "vscode/e2e/utils/vscody/resources/**/*",
             "*.snap.json",
-            "lib/noxide/node"
+            "lib/noxide/node",
+            "jetbrains/**"
         ]
     },
     "overrides": [

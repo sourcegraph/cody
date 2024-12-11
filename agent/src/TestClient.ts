@@ -85,7 +85,6 @@ interface TestClientParams {
     readonly credentials: TestingCredentials
     bin?: string
     telemetryExporter?: 'testing' | 'graphql' // defaults to testing, which doesn't send telemetry
-    logEventMode?: 'connected-instance-only' | 'all' | 'dotcom-only'
     onWindowRequest?: (params: ShowWindowMessageParams) => Promise<string>
     extraConfiguration?: Record<string, any>
 }
@@ -166,7 +165,6 @@ export class TestClient extends MessageHandler {
                 CODY_TELEMETRY_EXPORTER: params.telemetryExporter ?? 'testing',
                 DISABLE_FEATURE_FLAGS: 'true',
                 DISABLE_UPSTREAM_HEALTH_PINGS: 'true',
-                CODY_LOG_EVENT_MODE: params.logEventMode,
                 ...process.env,
             },
         })

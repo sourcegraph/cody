@@ -25,6 +25,7 @@ const SERVER_PORT = 49300;
 
 export const SERVER_URL = "http://localhost:49300";
 export const VALID_TOKEN = "sgp_1234567890123456789012345678901234567890";
+export const VALID_TOKEN_PERSON2 = "sgp_1234567890123456789012345678901234567123";
 
 const responses = {
     chat: "hello from the assistant",
@@ -357,8 +358,14 @@ export class MockServer {
 
         let attribution = false;
         let codyPro = false;
+        let authedUser = {
+            id: "u",
+            displayName: "Person",
+            username: "person",
+            primaryEmail: "person@company.com"
+        }
         app.get("/.api/client-config", (req, res) => {
-            if (req.headers.authorization !== `token ${VALID_TOKEN}`) {
+            if (req.headers.authorization !== `token ${VALID_TOKEN}` && req.headers.authorization !== `token ${VALID_TOKEN_PERSON2}`)  {
                 res.sendStatus(401);
                 return;
             }
@@ -376,11 +383,23 @@ export class MockServer {
         app.post("/.api/graphql", (req, res) => {
             const operation = new URL(req.url, "https://example.com").search.replace(/^\?/, "");
             if (
-                req.headers.authorization !== `token ${VALID_TOKEN}` &&
+                req.headers.authorization !== `token ${VALID_TOKEN}` && req.headers.authorization !== `token ${VALID_TOKEN_PERSON2}` &&
                 operation !== "SiteProductVersion"
             ) {
                 res.sendStatus(401);
                 return;
+            }
+
+            if (req.headers.authorization === `token ${VALID_TOKEN}`) {
+                authedUser.id = "u";
+                authedUser.displayName = "Person";
+                authedUser.username = "person";
+                authedUser.primaryEmail = "person@company.com";
+            } else {
+                authedUser.id = "u2";
+                authedUser.displayName = "Person 2";
+                authedUser.username = "person2";
+                authedUser.primaryEmail = "person2@company2.com";
             }
 
             if (controller.graphQlMocks.has(operation)) {
@@ -397,13 +416,13 @@ export class MockServer {
                             JSON.stringify({
                                 data: {
                                     currentUser: {
-                                        id: "u",
+                                        id: authedUser.id,
                                         hasVerifiedEmail: true,
-                                        displayName: "Person",
-                                        username: "person",
+                                        displayName: authedUser.displayName,
+                                        username: authedUser.username,
                                         avatarURL: "",
                                         primaryEmail: {
-                                            email: "person@company.comp",
+                                            email: authedUser.primaryEmail,
                                         },
                                     },
                                 },
