@@ -5,6 +5,8 @@ import { fetch } from '../../fetch'
 import type { TelemetryEventInput } from '@sourcegraph/telemetry'
 
 import escapeRegExp from 'lodash/escapeRegExp'
+import isEqual from 'lodash/isEqual'
+import omit from 'lodash/omit'
 import { Observable } from 'observable-fns'
 import semver from 'semver'
 import { dependentAbortController, onAbort } from '../../common/abortController'
@@ -690,7 +692,14 @@ export class SourcegraphGraphQLAPIClient implements Disposable {
 
     private constructor(private readonly config: Observable<GraphQLAPIClientConfig>) {
         this.resultCacheFactory = new ObservableInvalidatedGraphQLResultCacheFactory(
-            this.config.pipe(distinctUntilChanged()),
+            this.config.pipe(
+                distinctUntilChanged((a, b) =>
+                    // Omit unnecessary to cache system configuration fields
+                    // Client state doesn't have any effect on cache invalidation
+                    // See https://linear.app/sourcegraph/issue/SRCH-1456/cody-chat-fails-with-unsupported-model-error
+                    isEqual(omit(a, ['clientState']), omit(b, ['clientState']))
+                )
+            ),
             {
                 maxAgeMsec: 1000 * 60 * 10, // 10 minutes,
                 initialRetryDelayMsec: 10, // Don't cache errors for long
