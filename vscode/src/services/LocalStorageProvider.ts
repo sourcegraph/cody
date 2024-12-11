@@ -348,35 +348,34 @@ class LocalStorage implements LocalStorageForModelPreferences {
     }
 
     public isAtDeepCodyDailyLimit(): boolean {
-        const MAX_DEEP_CODY_DAILY_COUNT = 20
-        const lastCount = this.get<number>(this.keys.deepCodyDailyUsageCount) ?? 0
-        const lastUsed = this.get<string>(this.keys.deepCodyLastUsageTime)
-        const now = new Date().getTime()
-        const lastUsedTime = lastUsed ? new Date(lastUsed).getTime() : 0
-        const timeDiff = now - lastUsedTime
+        const DAILY_QUOTA = 20
         const ONE_DAY_MS = 24 * 60 * 60 * 1000
 
-        // Reset count if more than 24 hours have passed
-        // Stores all values in parallel without await since we don't need to wait for the result.
-        if (timeDiff > ONE_DAY_MS) {
+        // Get current quota and last used time, with defaults
+        const currentQuota = this.get<number>(this.keys.deepCodyDailyUsageCount) ?? DAILY_QUOTA
+        const lastUsedTime = new Date(
+            this.get<string>(this.keys.deepCodyLastUsageTime) ?? new Date().toISOString()
+        ).getTime()
+
+        const now = new Date().getTime()
+        const timeDiff = now - lastUsedTime
+
+        // Calculate quota replenishment based on time passed
+        const quotaToAdd = DAILY_QUOTA * (timeDiff / ONE_DAY_MS)
+        const newQuota = Math.min(DAILY_QUOTA, currentQuota + quotaToAdd)
+
+        // If we have at least 1 quota available
+        if (newQuota >= 1) {
+            // Update quota and timestamp
             Promise.all([
-                this.set(this.keys.deepCodyDailyUsageCount, 1),
+                this.set(this.keys.deepCodyDailyUsageCount, newQuota - 1),
                 this.set(this.keys.deepCodyLastUsageTime, new Date().toISOString()),
             ])
             return false
         }
 
-        // Check if already at limit within 24 hours
-        if (lastCount >= MAX_DEEP_CODY_DAILY_COUNT && timeDiff < ONE_DAY_MS) {
-            return true
-        }
-
-        // Increment count and update time
-        Promise.all([
-            this.set(this.keys.deepCodyDailyUsageCount, lastCount + 1),
-            this.set(this.keys.deepCodyLastUsageTime, new Date().toISOString()),
-        ])
-        return lastCount + 1 > MAX_DEEP_CODY_DAILY_COUNT
+        // No quota available
+        return true
     }
 
     public get<T>(key: string): T | null {
