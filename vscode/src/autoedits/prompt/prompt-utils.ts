@@ -1,43 +1,14 @@
-import { type AutoEditsTokenLimit, PromptString, ps, tokensToChars } from '@sourcegraph/cody-shared'
-import { Uri } from 'vscode'
-import * as vscode from 'vscode'
+import { PromptString, ps, tokensToChars } from '@sourcegraph/cody-shared'
 import type {
     AutocompleteContextSnippet,
     DocumentContext,
-} from '../../../lib/shared/src/completions/types'
-import { RetrieverIdentifier } from '../completions/context/utils'
-import { autoeditsLogger } from './logger'
-import { clip, splitLinesKeepEnds } from './utils'
-const LINT_ERRORS_TAG_OPEN = ps`<lint_errors>`
-const LINT_ERRORS_TAG_CLOSE = ps`</lint_errors>`
-const EXTRACTED_CODE_SNIPPETS_TAG_OPEN = ps`<extracted_code_snippets>`
-const EXTRACTED_CODE_SNIPPETS_TAG_CLOSE = ps`</extracted_code_snippets>`
-const SNIPPET_TAG_OPEN = ps`<snippet>`
-const SNIPPET_TAG_CLOSE = ps`</snippet>`
-const RECENT_SNIPPET_VIEWS_TAG_OPEN = ps`<recently_viewed_snippets>`
-const RECENT_SNIPPET_VIEWS_TAG_CLOSE = ps`</recently_viewed_snippets>`
-const RECENT_EDITS_TAG_OPEN = ps`<diff_history>`
-const RECENT_EDITS_TAG_CLOSE = ps`</diff_history>`
-const RECENT_COPY_TAG_OPEN = ps`<recent_copy>`
-const RECENT_COPY_TAG_CLOSE = ps`</recent_copy>`
-const FILE_TAG_OPEN = ps`<file>`
-const FILE_TAG_CLOSE = ps`</file>`
-const AREA_FOR_CODE_MARKER = ps`<<<AREA_AROUND_CODE_TO_REWRITE_WILL_BE_INSERTED_HERE>>>`
-const AREA_FOR_CODE_MARKER_OPEN = ps`<area_around_code_to_rewrite>`
-const AREA_FOR_CODE_MARKER_CLOSE = ps`</area_around_code_to_rewrite>`
-const CODE_TO_REWRITE_TAG_OPEN = ps`<code_to_rewrite>`
-const CODE_TO_REWRITE_TAG_CLOSE = ps`</code_to_rewrite>`
-
-// Some common prompt instructions
-export const SYSTEM_PROMPT = ps`You are an intelligent programmer named CodyBot. You are an expert at coding. Your goal is to help your colleague finish a code change.`
-const BASE_USER_PROMPT = ps`Help me finish a coding change. In particular, you will see a series of snippets from current open files in my editor, files I have recently viewed, the file I am editing, then a history of my recent codebase changes, then current compiler and linter errors, content I copied from my codebase. You will then rewrite the <code_to_rewrite>, to match what you think I would do next in the codebase. Note: I might have stopped in the middle of typing.`
-const FINAL_USER_PROMPT = ps`Now, continue where I left off and finish my change by rewriting "code_to_rewrite":`
-const RECENT_VIEWS_INSTRUCTION = ps`Here are some snippets of code I have recently viewed, roughly from oldest to newest. It's possible these aren't entirely relevant to my code change:\n`
-const JACCARD_SIMILARITY_INSTRUCTION = ps`Here are some snippets of code I have extracted from open files in my code editor. It's possible these aren't entirely relevant to my code change:\n`
-const RECENT_EDITS_INSTRUCTION = ps`Here is my recent series of edits from oldest to newest.\n`
-const LINT_ERRORS_INSTRUCTION = ps`Here are some linter errors from the code that you will rewrite.\n`
-const RECENT_COPY_INSTRUCTION = ps`Here is some recent code I copied from the editor.\n`
-const CURRENT_FILE_INSTRUCTION = ps`Here is the file that I am looking at `
+} from '@sourcegraph/cody-shared/src/completions/types'
+import { Uri } from 'vscode'
+import * as vscode from 'vscode'
+import { RetrieverIdentifier } from '../../completions/context/utils'
+import { autoeditsLogger } from '../logger'
+import { clip, splitLinesKeepEnds } from '../utils'
+import * as constants from './constants'
 
 export interface CurrentFilePromptOptions {
     docContext: DocumentContext
@@ -85,76 +56,6 @@ export function getCompletionsPromptWithSystemPrompt(
     return ps`${systemPrompt}\n\nUser: ${userPrompt}\n\nAssistant:`
 }
 
-// Helper function to get prompt in some format
-export function getBaseUserPrompt(
-    docContext: DocumentContext,
-    document: vscode.TextDocument,
-    position: vscode.Position,
-    context: AutocompleteContextSnippet[],
-    tokenBudget: AutoEditsTokenLimit
-): {
-    codeToReplace: CodeToReplaceData
-    prompt: PromptString
-} {
-    const contextItemMapping = getContextItemMappingWithTokenLimit(
-        context,
-        tokenBudget.contextSpecificTokenLimit
-    )
-    const { fileWithMarkerPrompt, areaPrompt, codeToReplace } = getCurrentFilePromptComponents({
-        docContext,
-        document,
-        position,
-        maxPrefixLinesInArea: tokenBudget.maxPrefixLinesInArea,
-        maxSuffixLinesInArea: tokenBudget.maxSuffixLinesInArea,
-        codeToRewritePrefixLines: tokenBudget.codeToRewritePrefixLines,
-        codeToRewriteSuffixLines: tokenBudget.codeToRewriteSuffixLines,
-    })
-    const recentViewsPrompt = getPromptForTheContextSource(
-        contextItemMapping.get(RetrieverIdentifier.RecentViewPortRetriever) || [],
-        RECENT_VIEWS_INSTRUCTION,
-        getRecentlyViewedSnippetsPrompt
-    )
-
-    const recentEditsPrompt = getPromptForTheContextSource(
-        contextItemMapping.get(RetrieverIdentifier.RecentEditsRetriever) || [],
-        RECENT_EDITS_INSTRUCTION,
-        getRecentEditsPrompt
-    )
-
-    const lintErrorsPrompt = getPromptForTheContextSource(
-        contextItemMapping.get(RetrieverIdentifier.DiagnosticsRetriever) || [],
-        LINT_ERRORS_INSTRUCTION,
-        getLintErrorsPrompt
-    )
-
-    const recentCopyPrompt = getPromptForTheContextSource(
-        contextItemMapping.get(RetrieverIdentifier.RecentCopyRetriever) || [],
-        RECENT_COPY_INSTRUCTION,
-        getRecentCopyPrompt
-    )
-
-    const jaccardSimilarityPrompt = getPromptForTheContextSource(
-        contextItemMapping.get(RetrieverIdentifier.JaccardSimilarityRetriever) || [],
-        JACCARD_SIMILARITY_INSTRUCTION,
-        getJaccardSimilarityPrompt
-    )
-    const finalPrompt = ps`${BASE_USER_PROMPT}
-${jaccardSimilarityPrompt}
-${recentViewsPrompt}
-${CURRENT_FILE_INSTRUCTION}${fileWithMarkerPrompt}
-${recentEditsPrompt}
-${lintErrorsPrompt}
-${recentCopyPrompt}
-${areaPrompt}
-${FINAL_USER_PROMPT}
-`
-    autoeditsLogger.logDebug('AutoEdits', 'Prompt\n', finalPrompt)
-    return {
-        codeToReplace: codeToReplace,
-        prompt: finalPrompt,
-    }
-}
-
 export function getPromptForTheContextSource(
     contextItems: AutocompleteContextSnippet[],
     instructionPrompt: PromptString,
@@ -184,24 +85,24 @@ export function getCurrentFilePromptComponents(
     } satisfies CodeToReplaceData
 
     const fileWithMarker = ps`${currentFileContext.prefixBeforeArea}
-${AREA_FOR_CODE_MARKER}
+${constants.AREA_FOR_CODE_MARKER}
 ${currentFileContext.suffixAfterArea}`
 
     const filePrompt = getContextPromptWithPath(
         PromptString.fromDisplayPath(options.document.uri),
-        ps`${FILE_TAG_OPEN}
+        ps`${constants.FILE_TAG_OPEN}
 ${fileWithMarker}
-${FILE_TAG_CLOSE}
+${constants.FILE_TAG_CLOSE}
 `
     )
 
-    const areaPrompt = ps`${AREA_FOR_CODE_MARKER_OPEN}
+    const areaPrompt = ps`${constants.AREA_FOR_CODE_MARKER_OPEN}
 ${currentFileContext.prefixInArea}
-${CODE_TO_REWRITE_TAG_OPEN}
+${constants.CODE_TO_REWRITE_TAG_OPEN}
 ${currentFileContext.codeToRewrite}
-${CODE_TO_REWRITE_TAG_CLOSE}
+${constants.CODE_TO_REWRITE_TAG_CLOSE}
 ${currentFileContext.suffixInArea}
-${AREA_FOR_CODE_MARKER_CLOSE}
+${constants.AREA_FOR_CODE_MARKER_CLOSE}
 `
     return { fileWithMarkerPrompt: filePrompt, areaPrompt: areaPrompt, codeToReplace: codeToReplace }
 }
@@ -304,9 +205,9 @@ export function getLintErrorsPrompt(contextItems: AutocompleteContextSnippet[]):
     }
 
     const lintErrorsPrompt = PromptString.join(combinedPrompts, ps`\n`)
-    return ps`${LINT_ERRORS_TAG_OPEN}
+    return ps`${constants.LINT_ERRORS_TAG_OPEN}
 ${lintErrorsPrompt}
-${LINT_ERRORS_TAG_CLOSE}
+${constants.LINT_ERRORS_TAG_CLOSE}
 `
 }
 
@@ -325,9 +226,9 @@ export function getRecentCopyPrompt(contextItems: AutocompleteContextSnippet[]):
         )
     )
     const recentCopyPrompt = PromptString.join(recentCopyPrompts, ps`\n`)
-    return ps`${RECENT_COPY_TAG_OPEN}
+    return ps`${constants.RECENT_COPY_TAG_OPEN}
 ${recentCopyPrompt}
-${RECENT_COPY_TAG_CLOSE}
+${constants.RECENT_COPY_TAG_CLOSE}
 `
 }
 
@@ -347,9 +248,9 @@ export function getRecentEditsPrompt(contextItems: AutocompleteContextSnippet[])
         )
     )
     const recentEditsPrompt = PromptString.join(recentEditsPrompts, ps`\n`)
-    return ps`${RECENT_EDITS_TAG_OPEN}
+    return ps`${constants.RECENT_EDITS_TAG_OPEN}
 ${recentEditsPrompt}
-${RECENT_EDITS_TAG_CLOSE}
+${constants.RECENT_EDITS_TAG_CLOSE}
 `
 }
 
@@ -366,18 +267,18 @@ export function getRecentlyViewedSnippetsPrompt(
     }
     const recentViewedSnippetPrompts = recentViewedSnippets.map(
         item =>
-            ps`${SNIPPET_TAG_OPEN}
+            ps`${constants.SNIPPET_TAG_OPEN}
 ${getContextPromptWithPath(
     PromptString.fromDisplayPath(item.uri),
     PromptString.fromAutocompleteContextSnippet(item).content
 )}
-${SNIPPET_TAG_CLOSE}
+${constants.SNIPPET_TAG_CLOSE}
 `
     )
     const snippetsPrompt = PromptString.join(recentViewedSnippetPrompts, ps`\n`)
-    return ps`${RECENT_SNIPPET_VIEWS_TAG_OPEN}
+    return ps`${constants.RECENT_SNIPPET_VIEWS_TAG_OPEN}
 ${snippetsPrompt}
-${RECENT_SNIPPET_VIEWS_TAG_CLOSE}
+${constants.RECENT_SNIPPET_VIEWS_TAG_CLOSE}
 `
 }
 
@@ -391,18 +292,18 @@ export function getJaccardSimilarityPrompt(contextItems: AutocompleteContextSnip
     }
     const jaccardSimilarityPrompts = jaccardSimilarity.map(
         item =>
-            ps`${SNIPPET_TAG_OPEN}
+            ps`${constants.SNIPPET_TAG_OPEN}
 ${getContextPromptWithPath(
     PromptString.fromDisplayPath(item.uri),
     PromptString.fromAutocompleteContextSnippet(item).content
 )}
-${SNIPPET_TAG_CLOSE}
+${constants.SNIPPET_TAG_CLOSE}
 `
     )
     const snippetsPrompt = PromptString.join(jaccardSimilarityPrompts, ps`\n`)
-    return ps`${EXTRACTED_CODE_SNIPPETS_TAG_OPEN}
+    return ps`${constants.EXTRACTED_CODE_SNIPPETS_TAG_OPEN}
 ${snippetsPrompt}
-${EXTRACTED_CODE_SNIPPETS_TAG_CLOSE}
+${constants.EXTRACTED_CODE_SNIPPETS_TAG_CLOSE}
 `
 }
 

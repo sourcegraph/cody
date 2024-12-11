@@ -3,8 +3,7 @@ import type { CodeCompletionsParams } from '../../../../lib/shared/src/inference
 import type { ModelRefStr } from '../../../../lib/shared/src/models/modelsService'
 import { defaultCodeCompletionsClient } from '../../completions/default-client'
 import { autoeditsLogger } from '../logger'
-import type { AutoeditsModelAdapter } from '../prompt-provider'
-import type { AutoeditModelOptions } from '../prompt-provider'
+import type { AutoeditModelOptions, AutoeditsModelAdapter } from './base'
 import { getMaxOutputTokensForAutoedits, getSourcegraphCompatibleChatPrompt } from './utils'
 
 export class SourcegraphCompletionsAdapter implements AutoeditsModelAdapter {

@@ -1,7 +1,6 @@
 import type { ChatClient, Message } from '@sourcegraph/cody-shared'
 import { autoeditsLogger } from '../logger'
-import type { AutoeditsModelAdapter } from '../prompt-provider'
-import type { AutoeditModelOptions } from '../prompt-provider'
+import type { AutoeditModelOptions, AutoeditsModelAdapter } from './base'
 import { getMaxOutputTokensForAutoedits, getSourcegraphCompatibleChatPrompt } from './utils'
 
 export class SourcegraphChatAdapter implements AutoeditsModelAdapter {

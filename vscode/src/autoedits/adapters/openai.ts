@@ -1,8 +1,6 @@
 import { autoeditsLogger } from '../logger'
-import type { AutoeditsModelAdapter } from '../prompt-provider'
-import { getModelResponse } from '../prompt-provider'
-import type { AutoeditModelOptions } from '../prompt-provider'
-import { getOpenaiCompatibleChatPrompt } from './utils'
+import type { AutoeditModelOptions, AutoeditsModelAdapter } from './base'
+import { getModelResponse, getOpenaiCompatibleChatPrompt } from './utils'
 
 export class OpenAIAdapter implements AutoeditsModelAdapter {
     async getModelResponse(option: AutoeditModelOptions): Promise<string> {
