@@ -88,76 +88,6 @@ export function getCompletionsPromptWithSystemPrompt(
     return ps`${systemPrompt}\n\nUser: ${userPrompt}\n\nAssistant:`
 }
 
-// Helper function to get prompt in some format
-export function getBaseUserPrompt(
-    docContext: DocumentContext,
-    document: vscode.TextDocument,
-    position: vscode.Position,
-    context: AutocompleteContextSnippet[],
-    tokenBudget: AutoEditsTokenLimit
-): {
-    codeToReplace: CodeToReplaceData
-    prompt: PromptString
-} {
-    const contextItemMapping = getContextItemMappingWithTokenLimit(
-        context,
-        tokenBudget.contextSpecificTokenLimit
-    )
-    const { fileWithMarkerPrompt, areaPrompt, codeToReplace } = getCurrentFilePromptComponents({
-        docContext,
-        document,
-        position,
-        maxPrefixLinesInArea: tokenBudget.maxPrefixLinesInArea,
-        maxSuffixLinesInArea: tokenBudget.maxSuffixLinesInArea,
-        codeToRewritePrefixLines: tokenBudget.codeToRewritePrefixLines,
-        codeToRewriteSuffixLines: tokenBudget.codeToRewriteSuffixLines,
-    })
-    const recentViewsPrompt = getPromptForTheContextSource(
-        contextItemMapping.get(RetrieverIdentifier.RecentViewPortRetriever) || [],
-        RECENT_VIEWS_INSTRUCTION,
-        getRecentlyViewedSnippetsPrompt
-    )
-
-    const recentEditsPrompt = getPromptForTheContextSource(
-        contextItemMapping.get(RetrieverIdentifier.RecentEditsRetriever) || [],
-        RECENT_EDITS_INSTRUCTION,
-        getRecentEditsPrompt
-    )
-
-    const lintErrorsPrompt = getPromptForTheContextSource(
-        contextItemMapping.get(RetrieverIdentifier.DiagnosticsRetriever) || [],
-        LINT_ERRORS_INSTRUCTION,
-        getLintErrorsPrompt
-    )
-
-    const recentCopyPrompt = getPromptForTheContextSource(
-        contextItemMapping.get(RetrieverIdentifier.RecentCopyRetriever) || [],
-        RECENT_COPY_INSTRUCTION,
-        getRecentCopyPrompt
-    )
-
-    const jaccardSimilarityPrompt = getPromptForTheContextSource(
-        contextItemMapping.get(RetrieverIdentifier.JaccardSimilarityRetriever) || [],
-        JACCARD_SIMILARITY_INSTRUCTION,
-        getJaccardSimilarityPrompt
-    )
-    const finalPrompt = ps`${BASE_USER_PROMPT}
-${jaccardSimilarityPrompt}
-${recentViewsPrompt}
-${CURRENT_FILE_INSTRUCTION}${fileWithMarkerPrompt}
-${recentEditsPrompt}
-${lintErrorsPrompt}
-${recentCopyPrompt}
-${areaPrompt}
-${FINAL_USER_PROMPT}
-`
-    autoeditsLogger.logDebug('AutoEdits', 'Prompt\n', finalPrompt)
-    return {
-        codeToReplace: codeToReplace,
-        prompt: finalPrompt,
-    }
-}
-
 export function getPromptForTheContextSource(
     contextItems: AutocompleteContextSnippet[],
     instructionPrompt: PromptString,
@@ -187,24 +117,24 @@ export function getCurrentFilePromptComponents(
     } satisfies CodeToReplaceData
 
     const fileWithMarker = ps`${currentFileContext.prefixBeforeArea}
-${AREA_FOR_CODE_MARKER}
+${constants.AREA_FOR_CODE_MARKER}
 ${currentFileContext.suffixAfterArea}`
 
     const filePrompt = getContextPromptWithPath(
         PromptString.fromDisplayPath(options.document.uri),
-        ps`${FILE_TAG_OPEN}
+        ps`${constants.FILE_TAG_OPEN}
 ${fileWithMarker}
-${FILE_TAG_CLOSE}
+${constants.FILE_TAG_CLOSE}
 `
     )
 
-    const areaPrompt = ps`${AREA_FOR_CODE_MARKER_OPEN}
+    const areaPrompt = ps`${constants.AREA_FOR_CODE_MARKER_OPEN}
 ${currentFileContext.prefixInArea}
-${CODE_TO_REWRITE_TAG_OPEN}
+${constants.CODE_TO_REWRITE_TAG_OPEN}
 ${currentFileContext.codeToRewrite}
-${CODE_TO_REWRITE_TAG_CLOSE}
+${constants.CODE_TO_REWRITE_TAG_CLOSE}
 ${currentFileContext.suffixInArea}
-${AREA_FOR_CODE_MARKER_CLOSE}
+${constants.AREA_FOR_CODE_MARKER_CLOSE}
 `
     return { fileWithMarkerPrompt: filePrompt, areaPrompt: areaPrompt, codeToReplace: codeToReplace }
 }
@@ -307,9 +237,9 @@ export function getLintErrorsPrompt(contextItems: AutocompleteContextSnippet[]):
     }
 
     const lintErrorsPrompt = PromptString.join(combinedPrompts, ps`\n`)
-    return ps`${LINT_ERRORS_TAG_OPEN}
+    return ps`${constants.LINT_ERRORS_TAG_OPEN}
 ${lintErrorsPrompt}
-${LINT_ERRORS_TAG_CLOSE}
+${constants.LINT_ERRORS_TAG_CLOSE}
 `
 }
 
@@ -328,9 +258,9 @@ export function getRecentCopyPrompt(contextItems: AutocompleteContextSnippet[]):
         )
     )
     const recentCopyPrompt = PromptString.join(recentCopyPrompts, ps`\n`)
-    return ps`${RECENT_COPY_TAG_OPEN}
+    return ps`${constants.RECENT_COPY_TAG_OPEN}
 ${recentCopyPrompt}
-${RECENT_COPY_TAG_CLOSE}
+${constants.RECENT_COPY_TAG_CLOSE}
 `
 }
 
@@ -350,9 +280,9 @@ export function getRecentEditsPrompt(contextItems: AutocompleteContextSnippet[])
         )
     )
     const recentEditsPrompt = PromptString.join(recentEditsPrompts, ps`\n`)
-    return ps`${RECENT_EDITS_TAG_OPEN}
+    return ps`${constants.RECENT_EDITS_TAG_OPEN}
 ${recentEditsPrompt}
-${RECENT_EDITS_TAG_CLOSE}
+${constants.RECENT_EDITS_TAG_CLOSE}
 `
 }
 
@@ -369,18 +299,18 @@ export function getRecentlyViewedSnippetsPrompt(
     }
     const recentViewedSnippetPrompts = recentViewedSnippets.map(
         item =>
-            ps`${SNIPPET_TAG_OPEN}
+            ps`${constants.SNIPPET_TAG_OPEN}
 ${getContextPromptWithPath(
     PromptString.fromDisplayPath(item.uri),
     PromptString.fromAutocompleteContextSnippet(item).content
 )}
-${SNIPPET_TAG_CLOSE}
+${constants.SNIPPET_TAG_CLOSE}
 `
     )
     const snippetsPrompt = PromptString.join(recentViewedSnippetPrompts, ps`\n`)
-    return ps`${RECENT_SNIPPET_VIEWS_TAG_OPEN}
+    return ps`${constants.RECENT_SNIPPET_VIEWS_TAG_OPEN}
 ${snippetsPrompt}
-${RECENT_SNIPPET_VIEWS_TAG_CLOSE}
+${constants.RECENT_SNIPPET_VIEWS_TAG_CLOSE}
 `
 }
 
@@ -394,18 +324,18 @@ export function getJaccardSimilarityPrompt(contextItems: AutocompleteContextSnip
     }
     const jaccardSimilarityPrompts = jaccardSimilarity.map(
         item =>
-            ps`${SNIPPET_TAG_OPEN}
+            ps`${constants.SNIPPET_TAG_OPEN}
 ${getContextPromptWithPath(
     PromptString.fromDisplayPath(item.uri),
     PromptString.fromAutocompleteContextSnippet(item).content
 )}
-${SNIPPET_TAG_CLOSE}
+${constants.SNIPPET_TAG_CLOSE}
 `
     )
     const snippetsPrompt = PromptString.join(jaccardSimilarityPrompts, ps`\n`)
-    return ps`${EXTRACTED_CODE_SNIPPETS_TAG_OPEN}
+    return ps`${constants.EXTRACTED_CODE_SNIPPETS_TAG_OPEN}
 ${snippetsPrompt}
-${EXTRACTED_CODE_SNIPPETS_TAG_CLOSE}
+${constants.EXTRACTED_CODE_SNIPPETS_TAG_CLOSE}
 `
 }
 
