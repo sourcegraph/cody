@@ -548,6 +548,12 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     private featureDeepCodyShellContext = storeLastValue(
         featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.DeepCodyShellContext)
     )
+    private featureDeepCodyRateLimitBase = storeLastValue(
+        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.DeepCodyRateLimitBase)
+    )
+    private featureDeepCodyRateLimitMultiplier = storeLastValue(
+        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.DeepCodyRateLimitMultiplier)
+    )
 
     private async getConfigForWebview(): Promise<ConfigurationSubsetForWebview & LocalEnv> {
         const { configuration, auth } = await currentResolvedConfig()
@@ -798,8 +804,16 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         this.postEmptyMessageInProgress(model)
 
         const isDeepCodyModel = model?.includes('deep-cody')
+
+        // NOTE: This is a temporary rate limit for deep-cody models to prevent users from
+        // running into rate limits that block them from using Cody.
+        // We should remove this once we have a more robust solution in place.
+        // Any first 2 human messages submitted with Deep Cody is counted toward the usage.
         const isDeepCodyEnabled = this.chatBuilder.getMessages().length < 4
-        const isAtDeepCodyLimit = localStorage.isAtDeepCodyDailyLimit()
+        const deepCodyRateLimitBase = this.featureDeepCodyRateLimitBase.value.last ? 50 : 0
+        const deepCodyRateLimitMultiplier = this.featureDeepCodyRateLimitMultiplier.value.last ? 2 : 1
+        const deepCodyRateLimit = deepCodyRateLimitBase * deepCodyRateLimitMultiplier
+        const isAtDeepCodyLimit = localStorage.isAtDeepCodyDailyLimit(deepCodyRateLimit)
         if (isDeepCodyModel && isDeepCodyEnabled && isAtDeepCodyLimit) {
             this.postError(
                 new RateLimitError('Deep Cody', 'daily limit', false, undefined, isAtDeepCodyLimit),

@@ -350,8 +350,11 @@ class LocalStorage implements LocalStorageForModelPreferences {
     /**
      * Returns the number of seconds the user needs to wait before they can use DeepCody again.
      */
-    public isAtDeepCodyDailyLimit(): string | undefined {
-        const DAILY_QUOTA = 50
+    public isAtDeepCodyDailyLimit(DAILY_QUOTA?: number): string | undefined {
+        if (!DAILY_QUOTA) {
+            return undefined
+        }
+
         const ONE_DAY_MS = 24 * 60 * 60 * 1000
 
         // Get current quota and last used time, with defaults
