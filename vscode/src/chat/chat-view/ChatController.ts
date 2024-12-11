@@ -802,6 +802,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         this.chatBuilder.setSelectedModel(model)
 
         const isDeepCodyModel = model?.includes('deep-cody')
+        // Deep Cody is only invoked for the first 2 submitted messages.
         const isDeepCodyEnabled = isDeepCodyModel && this.chatBuilder.getMessages().length < 4
         // The limit could be 0, 50 * 1 (50), 50 * 2 (100)
         const deepCodyRateLimiter = new DeepCodyRateLimiter(
@@ -921,7 +922,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         }
 
         // Experimental Feature: Deep Cody
-        if (isDeepCodyModel) {
+        if (isDeepCodyEnabled) {
             const agenticContext = await new DeepCodyAgent(
                 this.chatBuilder,
                 this.chatClient,
