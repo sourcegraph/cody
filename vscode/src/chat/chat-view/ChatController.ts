@@ -794,6 +794,16 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         }
         this.chatBuilder.setSelectedModel(model)
         const isDeepCodyModel = model?.includes('deep-cody')
+        if (isDeepCodyModel && localStorage.isAtDeepCodyDailyLimit()) {
+            this.postError(
+                new Error(
+                    'You have reached the daily chat limit for Deep Cody. Please use another model instead.'
+                ),
+                'transcript'
+            )
+            this.handleAbort()
+            return
+        }
         const { isPublic: repoIsPublic, repoMetadata } = await wrapInActiveSpan(
             'chat.getRepoMetadata',
             () => firstResultFromOperation(publicRepoMetadataIfAllWorkspaceReposArePublic)

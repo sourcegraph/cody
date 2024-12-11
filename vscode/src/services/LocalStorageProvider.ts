@@ -41,6 +41,8 @@ class LocalStorage implements LocalStorageForModelPreferences {
     public readonly keys = {
         // LLM waitlist for the 09/12/2024 openAI o1 models
         waitlist_o1: 'CODY_WAITLIST_LLM_09122024',
+        deepCodyLastUsageTime: 'DEEP_CODY_LAST_USED_TIMESTAMP',
+        deepCodyDailyUsageCount: 'DEEP_CODY_DAILY_CHAT_USAGE',
     }
 
     /**
@@ -343,6 +345,37 @@ class LocalStorage implements LocalStorageForModelPreferences {
 
     public async setChatMemory(memories: string[]): Promise<void> {
         await this.set(this.CODY_CHAT_MEMORY, memories)
+    }
+
+    public isAtDeepCodyDailyLimit(): boolean {
+        const DAILY_QUOTA = 20
+        const ONE_DAY_MS = 24 * 60 * 60 * 1000
+
+        // Get current quota and last used time, with defaults
+        const currentQuota = this.get<number>(this.keys.deepCodyDailyUsageCount) ?? DAILY_QUOTA
+        const lastUsedTime = new Date(
+            this.get<string>(this.keys.deepCodyLastUsageTime) ?? new Date().toISOString()
+        ).getTime()
+
+        const now = new Date().getTime()
+        const timeDiff = now - lastUsedTime
+
+        // Calculate quota replenishment based on time passed
+        const quotaToAdd = DAILY_QUOTA * (timeDiff / ONE_DAY_MS)
+        const newQuota = Math.min(DAILY_QUOTA, currentQuota + quotaToAdd)
+
+        // If we have at least 1 quota available
+        if (newQuota >= 1) {
+            // Update quota and timestamp
+            Promise.all([
+                this.set(this.keys.deepCodyDailyUsageCount, newQuota - 1),
+                this.set(this.keys.deepCodyLastUsageTime, new Date().toISOString()),
+            ])
+            return false
+        }
+
+        // No quota available
+        return true
     }
 
     public get<T>(key: string): T | null {
