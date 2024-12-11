@@ -43,8 +43,6 @@ export interface AddedLineInfo {
     type: 'added'
     text: string
     modifiedLineNumber: number
-    /** signifies if this part of the prediction is rendered by the inline completion item provider */
-    usedAsInlineCompletion?: boolean
 }
 
 export interface RemovedLineInfo {
@@ -78,8 +76,6 @@ export type LineChange = {
     /** `range` in the modified text relative to the document start */
     range: vscode.Range
     text: string
-    /** signifies if this part of the prediction is rendered by the inline completion item provider */
-    usedAsInlineCompletion?: boolean
 }
 
 export interface DecorationInfo {
