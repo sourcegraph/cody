@@ -26,7 +26,6 @@ import type { CodyLLMSiteConfiguration } from '../sourcegraph-api/graphql/client
 import { RestClient } from '../sourcegraph-api/rest/client'
 import { CHAT_INPUT_TOKEN_BUDGET } from '../token/constants'
 import { isError } from '../utils'
-import { getExperimentalClientModelByFeatureFlag } from './client'
 import { type Model, type ServerModel, createModel, createModelFromServerModel } from './model'
 import type {
     DefaultsAndUserPreferencesForEndpoint,
@@ -216,30 +215,6 @@ export function syncModels({
                                                     }
                                                     return model
                                                 })
-                                            }
-
-                                            // Replace user's current sonnet model with deep-cody model.
-                                            const sonnetModel = data.primaryModels.find(m =>
-                                                m.id.includes('sonnet')
-                                            )
-                                            // DEEP CODY is enabled for all PLG users.
-                                            // Enterprise users need to have the feature flag enabled.
-                                            const isDeepCodyEnabled = isDotComUser || hasDeepCodyFlag
-                                            if (
-                                                isDeepCodyEnabled &&
-                                                sonnetModel &&
-                                                // Ensure the deep-cody model is only added once.
-                                                !data.primaryModels.some(m => m.id.includes('deep-cody'))
-                                            ) {
-                                                const DEEPCODY_MODEL =
-                                                    getExperimentalClientModelByFeatureFlag(
-                                                        FeatureFlag.DeepCody
-                                                    )!
-                                                data.primaryModels.push(
-                                                    ...maybeAdjustContextWindows([DEEPCODY_MODEL]).map(
-                                                        createModelFromServerModel
-                                                    )
-                                                )
                                             }
 
                                             return Observable.of(data)
