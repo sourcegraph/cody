@@ -1,3 +1,4 @@
+import { Observable } from 'observable-fns'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
@@ -13,6 +14,7 @@ import {
     uriBasename,
 } from '@sourcegraph/cody-shared'
 
+import { RepoNameResolver } from '../../repository/repo-name-resolver'
 import { filterContextItemFiles, getFileContextFiles, resolveContextItems } from './editor-context'
 
 vi.mock('lodash/throttle', () => ({ default: vi.fn(fn => fn) }))
@@ -24,6 +26,12 @@ afterEach(() => {
 describe('getFileContextFiles', () => {
     beforeEach(() => {
         vi.spyOn(contextFiltersProvider, 'isUriIgnored').mockResolvedValue(false)
+        const mockGetRepoNamesContainingUri = vi.fn().mockReturnValue(Observable.of(['testreponame']))
+
+        // Spy on the method and replace with mock
+        vi.spyOn(RepoNameResolver.prototype, 'getRepoNamesContainingUri').mockImplementation(
+            mockGetRepoNamesContainingUri
+        )
     })
     function setFiles(relativePaths: string[]) {
         vscode.workspace.findFiles = vi

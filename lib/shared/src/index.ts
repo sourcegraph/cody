@@ -259,7 +259,6 @@ export {
     EXCLUDE_EVERYTHING_CONTEXT_FILTERS,
     PromptMode,
     type BrowserOrNodeResponse,
-    type LogEventMode,
     type ContextFilters,
     type CodyContextFilterItem,
     type RepoListResponse,
@@ -378,6 +377,7 @@ export { fetchLocalOllamaModels } from './llm-providers/ollama/utils'
 export * from './editor/editorState'
 export {
     currentUserProductSubscription,
+    checkIfEnterpriseUser,
     type UserProductSubscription,
     cachedUserProductSubscription,
     userProductSubscription,

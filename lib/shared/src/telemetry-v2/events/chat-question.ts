@@ -109,7 +109,6 @@ export const events = [
                 } & SharedProperties,
                 spans: {
                     current: Span
-                    firstToken: Span
                     addMetadata: boolean
                 },
                 tokenCounterUtils: TokenCounterUtils
@@ -131,7 +130,6 @@ export const events = [
                       }
                 if (spans.addMetadata) {
                     spans.current.setAttributes(metadata)
-                    spans.firstToken.setAttributes(metadata)
                 }
 
                 const telemetryData = {

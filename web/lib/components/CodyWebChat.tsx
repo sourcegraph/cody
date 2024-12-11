@@ -218,6 +218,7 @@ const CodyWebPanel: FC<CodyWebPanelProps> = props => {
                               end: { line: initialContextData.fileRange.endLine + 1, character: 0 },
                           }
                         : undefined,
+                    repoName: repository.name,
                     remoteRepositoryName: repository.name,
                     uri: URI.file(`${repository.name}/${fileURL}`),
                     source: ContextItemSource.Initial,

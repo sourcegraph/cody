@@ -2,7 +2,7 @@
 
 This is a log of all notable changes to Cody for VS Code.
 
-## [Unreleased]
+## Unreleased
 
 ### Added
 
@@ -10,9 +10,67 @@ This is a log of all notable changes to Cody for VS Code.
 
 ### Changed
 
+- Telemetry support for Sourcegraph versions older than [5.2.5 (released 12/2023)](https://github.com/sourcegraph/sourcegraph-public-snapshot/releases/tag/v5.2.5) has been removed  [pull/6265](https://github.com/sourcegraph/cody/pull/6265)
+
 ### Uncategorized
 
-## [1.46.0]
+## 1.48.1
+
+### Added
+
+### Fixed
+
+- backport/vscode/1.48: chore(telemetry): remove legacy back-compat (#6265)  [pull/6275](https://github.com/sourcegraph/cody/pulls/6275)
+
+### Changed
+
+### Uncategorized
+
+## 1.48.0
+
+### Added
+- Add account switcher component in the Accounts webview tab  [pull/6159](https://github.com/sourcegraph/cody/pulls/6159)
+- Prompts Picker  [pull/6160](https://github.com/sourcegraph/cody/pulls/6160)
+- Add Sourcegraph CLI installation description to README.md  [pull/6170](https://github.com/sourcegraph/cody/pulls/6170)
+- Fetch standard prompts from remote prompts API  [pull/6150](https://github.com/sourcegraph/cody/pulls/6150)
+
+#### Autoedits
+- feat(autoedit): combine inline completion provider and selection change  [pull/6147](https://github.com/sourcegraph/cody/pulls/6147)
+- feat(autoedit): use code completion feature for auto edits  [pull/6161](https://github.com/sourcegraph/cody/pulls/6161)
+- add 10 sec diff for autoedit experiments  [pull/6191](https://github.com/sourcegraph/cody/pulls/6191)
+- adding line level diff strategy for the recent edits diff calculation  [pull/6188](https://github.com/sourcegraph/cody/pulls/6188)
+- Hitesh/add diff stratagies  [pull/6190](https://github.com/sourcegraph/cody/pulls/6190)
+- Hitesh/add diff strategies logging  [pull/6189](https://github.com/sourcegraph/cody/pulls/6189)
+
+### Fixed
+- [Backport vscode-v1.48.x] Make signout as non-blocking as possible  [pull/6213](https://github.com/sourcegraph/cody/pulls/6213)
+- do not block chat panel initialization or human message handling on current session save  [pull/6186](https://github.com/sourcegraph/cody/pulls/6186)
+- patch highlight.js to address memory leak  [pull/6146](https://github.com/sourcegraph/cody/pulls/6146)
+- fix(api): Set API identifying headers on all HTTP requests (CODY-4209)  [pull/6102](https://github.com/sourcegraph/cody/pulls/6102)
+#### Autoedits
+- feat(autoedit): fix cursor jumping issue  [pull/6156](https://github.com/sourcegraph/cody/pulls/6156)
+- fix(autoedit): fix suffix matching logic  [pull/6171](https://github.com/sourcegraph/cody/pulls/6171)
+- fix(audoedit): fix the scrollbar issue  [pull/6158](https://github.com/sourcegraph/cody/pulls/6158)
+- fix added lines sorting in autoedits  [pull/6155](https://github.com/sourcegraph/cody/pulls/6155)
+
+### Changed
+- Add default value for 'search.useIgnoreFiles' in agent config  [pull/6202](https://github.com/sourcegraph/cody/pulls/6202)
+- Deep Cody: Move shell context behind feature flag  [pull/6199](https://github.com/sourcegraph/cody/pulls/6199)
+- Add built-in prompts related fields to prompt select analytic event  [pull/6180](https://github.com/sourcegraph/cody/pulls/6180)
+#### Autoedits
+- feat(autoedit): restrict autoedit to vscode  [pull/6184](https://github.com/sourcegraph/cody/pulls/6184)
+- chore(audoedit): test diff logic with different new line chars  [pull/6176](https://github.com/sourcegraph/cody/pulls/6176)
+- chore(audoedit): simplify diff utils and renderer data structures  [pull/6172](https://github.com/sourcegraph/cody/pulls/6172)
+- feat(autoedit): refactor renderer code to simplify iteration on decor…  [pull/6163](https://github.com/sourcegraph/cody/pulls/6163)
+
+### Build & Test
+- [Backport vscode-v1.48.x] remove last line in backport GHA  [pull/6205](https://github.com/sourcegraph/cody/pulls/6205)
+- remove last line in backport GHA  [pull/6204](https://github.com/sourcegraph/cody/pulls/6204)
+- add changelog templating and tooling  [pull/6195](https://github.com/sourcegraph/cody/pulls/6195)
+- Bench: make sure to respect CODY_RECORDING_MODE  [pull/6167](https://github.com/sourcegraph/cody/pulls/6167)
+- Revert "Update backport.yml (#6137)"  [pull/6164](https://github.com/sourcegraph/cody/pulls/6164)
+
+## 1.46.0
 
 ### Added
 
@@ -86,6 +144,7 @@ This is a log of all notable changes to Cody for VS Code.
 - Deep Cody: remove TOOL context item after review [pull/6079](https://github.com/sourcegraph/cody/pull/6079)
 
 ## 1.42.0
+
 Hey Cody users! For those who want to track detailed technical changes, we will be updating this changelog to provide more comprehensive updates on new features, improvements, and fixes. For major releases and announcements, check out our [public changelog](https://sourcegraph.com/changelog).
 
 ### Added
@@ -94,14 +153,16 @@ Hey Cody users! For those who want to track detailed technical changes, we will 
 - Telemetry: Added `cody.debug.logCharacterCounters` for debugging. [pull/6057](https://github.com/sourcegraph/cody/pull/6057)
 
 ### Fixed
+
 - Chat: This patch updates the chat keyboard shortcuts to be as follows, thereby avoiding the tendency to "double-add" a code snippet when using the `alt+L` shortcut:
   - `Alt+L`: between chat and editor (this is unchanged)
   - `Shift+Alt+L` (previously alt+L): add selection as context:
   - `Shift+Ctrl+L` (previously shift+alt+L): new chat
 - Markdown files were not bundled in the VSIX leading to onboarding views not displaying or showing an error.
 - Ensured that a correct http/https agent is loaded depending on endpoint protocol and that secureConnection correclty passes CA certs via [hpagent](https://github.com/delvedor/hpagent)
-  
+
 ### Changed
+
 - Networking: In addition to Node and user configured manual CA certs, we now automatically attempt to load CA certs in your system's trust store. This is done using [rustls](https://github.com/rustls/rustls) via a new [napi-rs](https://napi.rs/) library `lib/noxide`. This behaviour is enabled by default but can be diasabled by setting the `experimental.noxide.enabled` to `false` in your settings. Any issues loading the library will be logged to the usual error output channels and we will fallback to the previous behaviour. This will replace the previous method of loading system CA certs using shell commands or bundled executables such as `win-ca.exe`.
 
 ### Uncategorized
@@ -138,11 +199,13 @@ Hey Cody users! For those who want to track detailed technical changes, we will 
 ## 1.40.2
 
 ### Fixed
+
 - Agent: Fixed bugs in `workspace::getConfiguration` vscode shim [pull/6058](https://github.com/sourcegraph/cody/pull/6058)
 
 ## 1.40.1
 
 ### Fixed
+
 - Auth: Fixed UI conditional rendering logic for non VS Code clients. [pull/6047](https://github.com/sourcegraph/cody/pull/6047)
 
 ## 1.40.0
