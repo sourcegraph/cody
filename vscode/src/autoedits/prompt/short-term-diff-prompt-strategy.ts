@@ -16,6 +16,7 @@ import {
     getJaccardSimilarityPrompt,
     getLintErrorsPrompt,
     getPromptForTheContextSource,
+    getPromptWithNewline,
     getRecentCopyPrompt,
     getRecentEditsPrompt,
     getRecentlyViewedSnippetsPrompt,
@@ -67,18 +68,20 @@ export class ShortTermPromptStrategy implements AutoeditsUserPromptStrategy {
             constants.JACCARD_SIMILARITY_INSTRUCTION,
             getJaccardSimilarityPrompt
         )
+        const currentFilePrompt = ps`${constants.CURRENT_FILE_INSTRUCTION}${fileWithMarkerPrompt}`
+
         const finalPrompt = psDedent`
-            ${constants.BASE_USER_PROMPT}
-            ${jaccardSimilarityPrompt}
-            ${longTermViewPrompt}
-            ${constants.CURRENT_FILE_INSTRUCTION}${fileWithMarkerPrompt}
-            ${shortTermViewPrompt}
-            ${longTermEditsPrompt}
-            ${lintErrorsPrompt}
-            ${recentCopyPrompt}
-            ${areaPrompt}
-            ${shortTermEditsPrompt}
-            ${constants.FINAL_USER_PROMPT}`
+            ${getPromptWithNewline(constants.BASE_USER_PROMPT)}
+            ${getPromptWithNewline(jaccardSimilarityPrompt)}
+            ${getPromptWithNewline(longTermViewPrompt)}
+            ${getPromptWithNewline(currentFilePrompt)}
+            ${getPromptWithNewline(shortTermViewPrompt)}
+            ${getPromptWithNewline(longTermEditsPrompt)}
+            ${getPromptWithNewline(lintErrorsPrompt)}
+            ${getPromptWithNewline(recentCopyPrompt)}
+            ${getPromptWithNewline(areaPrompt)}
+            ${getPromptWithNewline(shortTermEditsPrompt)}
+            ${getPromptWithNewline(constants.FINAL_USER_PROMPT)}`
 
         autoeditsLogger.logDebug('AutoEdits', 'Prompt\n', finalPrompt)
         return {
@@ -87,7 +90,7 @@ export class ShortTermPromptStrategy implements AutoeditsUserPromptStrategy {
         }
     }
 
-    private getRecentSnippetViewPrompt(contextItems: AutocompleteContextSnippet[]): {
+    public getRecentSnippetViewPrompt(contextItems: AutocompleteContextSnippet[]): {
         shortTermViewPrompt: PromptString
         longTermViewPrompt: PromptString
     } {
@@ -111,16 +114,16 @@ export class ShortTermPromptStrategy implements AutoeditsUserPromptStrategy {
 
         const shortTermViewPrompt =
             shortTermViewedSnippets.length > 0
-                ? ps`${constants.SHORT_TERM_SNIPPET_VIEWS_INSTRUCTION}${getRecentlyViewedSnippetsPrompt(
-                      shortTermViewedSnippets
-                  )}`
+                ? psDedent`
+                    ${constants.SHORT_TERM_SNIPPET_VIEWS_INSTRUCTION}
+                    ${getRecentlyViewedSnippetsPrompt(shortTermViewedSnippets)}`
                 : ps``
 
         const longTermViewPrompt =
             longTermViewedSnippets.length > 0
-                ? ps`${constants.LONG_TERM_SNIPPET_VIEWS_INSTRUCTION}${getRecentlyViewedSnippetsPrompt(
-                      longTermViewedSnippets
-                  )}`
+                ? psDedent`
+                    ${constants.LONG_TERM_SNIPPET_VIEWS_INSTRUCTION}
+                    ${getRecentlyViewedSnippetsPrompt(longTermViewedSnippets)}`
                 : ps``
 
         return {
@@ -129,7 +132,7 @@ export class ShortTermPromptStrategy implements AutoeditsUserPromptStrategy {
         }
     }
 
-    private getRecentEditsPrompt(contextItems: AutocompleteContextSnippet[]): {
+    public getRecentEditsPrompt(contextItems: AutocompleteContextSnippet[]): {
         shortTermEditsPrompt: PromptString
         longTermEditsPrompt: PromptString
     } {
@@ -175,6 +178,8 @@ export class ShortTermPromptStrategy implements AutoeditsUserPromptStrategy {
             combinedContextItems.push(combinedItem)
         }
 
-        return ps`${constants.RECENT_EDITS_INSTRUCTION}${getRecentEditsPrompt(combinedContextItems)}`
+        return psDedent`
+            ${constants.RECENT_EDITS_INSTRUCTION}
+            ${getRecentEditsPrompt(combinedContextItems)}`
     }
 }

@@ -56,6 +56,13 @@ export function getCompletionsPromptWithSystemPrompt(
     return ps`${systemPrompt}\n\nUser: ${userPrompt}\n\nAssistant:`
 }
 
+export function getPromptWithNewline(prompt: PromptString): PromptString {
+    if (prompt.length === 0) {
+        return ps``
+    }
+    return ps`${prompt}\n`
+}
+
 export function getPromptForTheContextSource(
     contextItems: AutocompleteContextSnippet[],
     instructionPrompt: PromptString,
@@ -65,7 +72,7 @@ export function getPromptForTheContextSource(
     if (contextItems.length === 0 || prompt.length === 0) {
         return ps``
     }
-    return ps`${instructionPrompt}${prompt}\n`
+    return ps`${instructionPrompt}\n${prompt}`
 }
 
 //  Prompt components helper functions
