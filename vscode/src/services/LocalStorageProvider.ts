@@ -41,6 +41,8 @@ class LocalStorage implements LocalStorageForModelPreferences {
     public readonly keys = {
         // LLM waitlist for the 09/12/2024 openAI o1 models
         waitlist_o1: 'CODY_WAITLIST_LLM_09122024',
+        deepCodyLastUsedDate: 'DEEP_CODY_LAST_USED_DATE',
+        deepCodyDailyUsageCount: 'DEEP_CODY_DAILY_CHAT_USAGE',
     }
 
     /**
@@ -343,6 +345,58 @@ class LocalStorage implements LocalStorageForModelPreferences {
 
     public async setChatMemory(memories: string[]): Promise<void> {
         await this.set(this.CODY_CHAT_MEMORY, memories)
+    }
+
+    public getDeepCodyUsage(): { quota: number | undefined; lastUsed: Date } {
+        const quota = this.get<number>(this.keys.deepCodyDailyUsageCount) ?? undefined
+        const lastUsed = new Date(
+            this.get<string>(this.keys.deepCodyLastUsedDate) ?? new Date().toISOString()
+        )
+
+        return { quota, lastUsed }
+    }
+
+    public async setDeepCodyUsage(newQuota: number, lastUsed: string): Promise<void> {
+        await Promise.all([
+            localStorage.set(localStorage.keys.deepCodyDailyUsageCount, newQuota - 1),
+            localStorage.set(localStorage.keys.deepCodyLastUsedDate, lastUsed),
+        ])
+    }
+
+    public isAtDeepCodyDailyLimit(DAILY_QUOTA?: number): string | undefined {
+        if (!DAILY_QUOTA) {
+            return undefined
+        }
+
+        const ONE_DAY_MS = 24 * 60 * 60 * 1000
+
+        // Get current quota and last used time, with defaults
+        const currentQuota = this.get<number>(this.keys.deepCodyDailyUsageCount) ?? DAILY_QUOTA
+        const lastUsedTime = new Date(
+            this.get<string>(this.keys.deepCodyLastUsedDate) ?? new Date().toISOString()
+        ).getTime()
+
+        const now = new Date().getTime()
+        const timeDiff = now - lastUsedTime
+
+        // Calculate quota replenishment based on time passed
+        const quotaToAdd = DAILY_QUOTA * (timeDiff / ONE_DAY_MS)
+        const newQuota = Math.min(DAILY_QUOTA, currentQuota + quotaToAdd)
+
+        // If we have at least 1 quota available
+        if (newQuota >= 1) {
+            // Update quota and timestamp
+            Promise.all([
+                this.set(this.keys.deepCodyDailyUsageCount, newQuota - 1),
+                this.set(this.keys.deepCodyLastUsedDate, new Date().toISOString()),
+            ])
+            return undefined
+        }
+
+        // No quota available.
+        // Calculate how much time after the lastUsedTime we need to wait.
+        const timeToWait = ONE_DAY_MS - timeDiff
+        return Math.floor(timeToWait / 1000).toString()
     }
 
     public get<T>(key: string): T | null {

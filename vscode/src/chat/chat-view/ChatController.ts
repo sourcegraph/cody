@@ -130,6 +130,7 @@ import { TestSupport } from '../../test-support'
 import type { MessageErrorType } from '../MessageProvider'
 import { CodyToolProvider } from '../agentic/CodyToolProvider'
 import { DeepCodyAgent } from '../agentic/DeepCody'
+import { DeepCodyRateLimiter } from '../agentic/DeepCodyRateLimiter'
 import { getMentionMenuData } from '../context/chatContext'
 import type { ChatIntentAPIClient } from '../context/chatIntentAPIClient'
 import { observeDefaultContext } from '../initialContext'
@@ -548,6 +549,12 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     private featureDeepCodyShellContext = storeLastValue(
         featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.DeepCodyShellContext)
     )
+    private featureDeepCodyRateLimitBase = storeLastValue(
+        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.DeepCodyRateLimitBase)
+    )
+    private featureDeepCodyRateLimitMultiplier = storeLastValue(
+        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.DeepCodyRateLimitMultiplier)
+    )
 
     private async getConfigForWebview(): Promise<ConfigurationSubsetForWebview & LocalEnv> {
         const { configuration, auth } = await currentResolvedConfig()
@@ -794,7 +801,22 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             throw new Error('No model selected, and no default chat model is available')
         }
         this.chatBuilder.setSelectedModel(model)
+
         const isDeepCodyModel = model?.includes('deep-cody')
+        // Deep Cody is only invoked for the first 2 submitted messages.
+        const isDeepCodyEnabled = isDeepCodyModel && this.chatBuilder.getMessages().length < 4
+        // The limit could be 0, 50 * 1 (50), 50 * 2 (100)
+        const deepCodyRateLimiter = new DeepCodyRateLimiter(
+            this.featureDeepCodyRateLimitBase.value.last ? 50 : 0,
+            this.featureDeepCodyRateLimitMultiplier.value.last ? 2 : 1
+        )
+        const deepCodyLimit = deepCodyRateLimiter.isAtLimit()
+        if (isDeepCodyModel && isDeepCodyEnabled && deepCodyLimit) {
+            this.postError(deepCodyRateLimiter.getRateLimitError(deepCodyLimit), 'transcript')
+            this.handleAbort()
+            return
+        }
+
         const { isPublic: repoIsPublic, repoMetadata } = await wrapInActiveSpan(
             'chat.getRepoMetadata',
             () => firstResultFromOperation(publicRepoMetadataIfAllWorkspaceReposArePublic)
@@ -903,7 +925,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         }
 
         // Experimental Feature: Deep Cody
-        if (isDeepCodyModel) {
+        if (isDeepCodyEnabled) {
             const agenticContext = await new DeepCodyAgent(
                 this.chatBuilder,
                 this.chatClient,
