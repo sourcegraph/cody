@@ -210,14 +210,6 @@ export function inputTextWithoutContextChipsFromPromptEditorState(
 export function inputTextWithMappedContextChipsFromPromptEditorState(
     state: SerializedPromptEditorState
 ): string {
-    const contextItemTypeToNodeType: Record<SerializedContextItem['type'], string> = {
-        repository: '@repo',
-        file: '@file',
-        tree: '@directory',
-        symbol: '@symbol',
-        openctx: '',
-    }
-
     const newTextNode = (text: string): SerializedTextNode => ({
         type: 'text',
         version: 1,
@@ -229,19 +221,27 @@ export function inputTextWithMappedContextChipsFromPromptEditorState(
     })
 
     const mentionToTextNode = (node: SerializedContextItemMentionNode): SerializedTextNode => {
-        if (node.contextItem.type === 'openctx') {
-            switch (node.contextItem.providerUri) {
-                case REMOTE_REPOSITORY_PROVIDER_URI:
-                    return newTextNode('@repo')
-                case REMOTE_DIRECTORY_PROVIDER_URI:
-                    return newTextNode('@directory')
-                case REMOTE_FILE_PROVIDER_URI:
-                    return newTextNode('@file')
-                default:
-                    return newTextNode('')
-            }
+        switch (node.contextItem.type) {
+            case 'repository':
+                return newTextNode('@repo')
+            case 'file':
+                return newTextNode('@file')
+            case 'tree':
+                return newTextNode('@dir')
+            case 'symbol':
+                return newTextNode('@symbol')
+            case 'openctx':
+                switch (node.contextItem.providerUri) {
+                    case REMOTE_REPOSITORY_PROVIDER_URI:
+                        return newTextNode('@repo')
+                    case REMOTE_DIRECTORY_PROVIDER_URI:
+                        return newTextNode('@dir')
+                    case REMOTE_FILE_PROVIDER_URI:
+                        return newTextNode('@file')
+                }
         }
-        return newTextNode(contextItemTypeToNodeType[node.contextItem.type])
+        // If unknown type, just remove it
+        return newTextNode('')
     }
 
     state = mapLexicalNodes(state, node => {
