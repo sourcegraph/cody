@@ -1,4 +1,5 @@
 import { type AutocompleteContextSnippet, type PromptString, ps } from '@sourcegraph/cody-shared'
+import { groupConsecutiveItemsByPredicate } from '../../completions/context/retrievers/recent-user-actions/recent-edits-diff-helpers/utils'
 import { RetrieverIdentifier } from '../../completions/context/utils'
 import { autoeditsLogger } from '../logger'
 import type { AutoeditsUserPromptStrategy, UserPromptArgs, UserPromptResponse } from './base'
@@ -80,7 +81,7 @@ ${constants.FINAL_USER_PROMPT}
         }
     }
 
-    getRecentSnippetViewPrompt(contextItems: AutocompleteContextSnippet[]): {
+    private getRecentSnippetViewPrompt(contextItems: AutocompleteContextSnippet[]): {
         shortTermViewPrompt: PromptString
         longTermViewPrompt: PromptString
     } {
@@ -122,7 +123,7 @@ ${constants.FINAL_USER_PROMPT}
         }
     }
 
-    getRecentEditsPrompt(contextItems: AutocompleteContextSnippet[]): {
+    private getRecentEditsPrompt(contextItems: AutocompleteContextSnippet[]): {
         shortTermEditsPrompt: PromptString
         longTermEditsPrompt: PromptString
     } {
@@ -130,21 +131,44 @@ ${constants.FINAL_USER_PROMPT}
             contextItems,
             RetrieverIdentifier.RecentEditsRetriever
         )
-        let shortTermEditsPrompt = ps``
-        let longTermEditsPrompt = ps``
 
-        if (recentEditsSnippets.length > 0) {
-            shortTermEditsPrompt = ps`${getRecentEditsPrompt([recentEditsSnippets[0]])}`
-        }
+        const shortTermEditsPrompt =
+            recentEditsSnippets.length > 0 ? ps`${getRecentEditsPrompt([recentEditsSnippets[0]])}` : ps``
 
-        if (recentEditsSnippets.length > 1) {
-            longTermEditsPrompt = ps`${constants.RECENT_EDITS_INSTRUCTION}${getRecentEditsPrompt(
-                recentEditsSnippets.slice(1)
-            )}`
-        }
+        const longTermEditsPrompt =
+            recentEditsSnippets.length > 1
+                ? this.computeLongTermRecentEditsPrompt(recentEditsSnippets.slice(1))
+                : ps``
+
         return {
             shortTermEditsPrompt,
             longTermEditsPrompt,
         }
+    }
+
+    private computeLongTermRecentEditsPrompt(contextItems: AutocompleteContextSnippet[]): PromptString {
+        if (contextItems.length === 0) {
+            return ps``
+        }
+        // Group consecutive items by file name
+        const groupedContextItems = groupConsecutiveItemsByPredicate(
+            contextItems,
+            (a, b) => a.uri.toString() === b.uri.toString()
+        )
+        const combinedContextItems: AutocompleteContextSnippet[] = []
+        for (const group of groupedContextItems) {
+            const combinedItem = {
+                ...group[0],
+                // The group content is from the latest to the oldest item.
+                // We need to reverse the order of the content to get diff from old to new.
+                content: group
+                    .map(item => item.content)
+                    .reverse()
+                    .join('\nthen\n'),
+            }
+            combinedContextItems.push(combinedItem)
+        }
+
+        return ps`${constants.RECENT_EDITS_INSTRUCTION}${getRecentEditsPrompt(combinedContextItems)}`
     }
 }

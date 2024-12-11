@@ -242,7 +242,7 @@ export function getRecentEditsPrompt(contextItems: AutocompleteContextSnippet[])
         return ps``
     }
     const recentEditsPrompts = recentEdits.map(item =>
-        getContextPromptWithPath(
+        getRecentEditsContextPromptWithPath(
             PromptString.fromDisplayPath(item.uri),
             PromptString.fromAutocompleteContextSnippet(item).content
         )
@@ -363,4 +363,11 @@ export function getContextItemsForIdentifier(
 
 function getContextPromptWithPath(filePath: PromptString, content: PromptString): PromptString {
     return ps`(\`${filePath}\`)\n\n${content}\n`
+}
+
+function getRecentEditsContextPromptWithPath(
+    filePath: PromptString,
+    content: PromptString
+): PromptString {
+    return ps`${filePath}\n${content}`
 }
