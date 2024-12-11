@@ -16,6 +16,7 @@ import {
     extractContextFromTraceparent,
     firstResultFromOperation,
     forceHydration,
+    inputTextWithMappedContextChipsFromPromptEditorState,
     isAbortError,
     pendingOperation,
     ps,
@@ -833,7 +834,9 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
         const { intent, intentScores } = await this.getIntentAndScores({
             requestID,
-            input: inputTextWithoutContextChips.toString(),
+            input: editorState
+                ? inputTextWithMappedContextChipsFromPromptEditorState(editorState)
+                : inputText.toString(),
             detectedIntent,
             detectedIntentScores,
             signal,
