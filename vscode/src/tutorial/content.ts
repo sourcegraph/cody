@@ -1,3 +1,4 @@
+import { toUint8Array } from '@sourcegraph/cody-shared'
 import dedent from 'dedent'
 import * as vscode from 'vscode'
 import { findRangeOfText } from './utils'
@@ -20,7 +21,7 @@ export const getStepContent = (step: TutorialStepKey): string => {
                 """
                 def greet(name, surname):
                     """Greets a user with a simple message"""
-                    
+
                 #    ^ Autocomplete: Place cursor above
                 # When you see a suggestion, press Tab to accept or Opt+\ to generate another.
             `
@@ -164,7 +165,7 @@ export const getNextStep = (step: TutorialStepKey): TutorialStepKey | null => {
 
 export const initTutorialDocument = async (uri: vscode.Uri): Promise<vscode.TextDocument> => {
     const firstStep = getStepContent('autocomplete')
-    await vscode.workspace.fs.writeFile(uri, Buffer.from(firstStep))
+    await vscode.workspace.fs.writeFile(uri, toUint8Array(Buffer.from(firstStep)))
     return vscode.workspace.openTextDocument(uri)
 }
 

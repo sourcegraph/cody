@@ -59,6 +59,9 @@ export enum FeatureFlag {
     // Enables gpt-4o-mini as a default Edit model
     CodyEditDefaultToGpt4oMini = 'cody-edit-default-to-gpt-4o-mini',
 
+    // Enables Claude 3.5 Haiku as a default Chat model
+    CodyChatDefaultToClaude35Haiku = 'cody-chat-default-to-claude-3-5-haiku',
+
     // use-ssc-for-cody-subscription is a feature flag that enables the use of SSC as the source of truth for Cody subscription data.
     UseSscForCodySubscription = 'use-ssc-for-cody-subscription',
 
