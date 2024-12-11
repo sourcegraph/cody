@@ -19,19 +19,17 @@ import { RetrieverIdentifier } from '../completions/context/utils'
 import { getCurrentDocContext } from '../completions/get-current-doc-context'
 import { completionMatchesSuffix } from '../completions/is-completion-visible'
 import { getConfiguration } from '../configuration'
+import type { AutoeditsModelAdapter, AutoeditsPrompt } from './adapters/base'
 import { CodyGatewayAdapter } from './adapters/cody-gateway'
 import { FireworksAdapter } from './adapters/fireworks'
 import { OpenAIAdapter } from './adapters/openai'
 import { SourcegraphChatAdapter } from './adapters/sourcegraph-chat'
 import { SourcegraphCompletionsAdapter } from './adapters/sourcegraph-completions'
 import { autoeditsLogger } from './logger'
-import type { AutoeditsModelAdapter, AutoeditsPrompt, PromptResponseData } from './prompt-provider'
-import {
-    type CodeToReplaceData,
-    SYSTEM_PROMPT,
-    getBaseUserPrompt,
-    getCompletionsPromptWithSystemPrompt,
-} from './prompt-utils'
+import type { AutoeditsUserPromptStrategy } from './prompt/base'
+import { SYSTEM_PROMPT } from './prompt/constants'
+import { DefaultUserPromptStrategy } from './prompt/default-prompt-strategy'
+import { type CodeToReplaceData, getCompletionsPromptWithSystemPrompt } from './prompt/prompt-utils'
 import { DefaultDecorator } from './renderer/decorators/default-decorator'
 import { AutoEditsRendererManager } from './renderer/manager'
 import {
@@ -79,6 +77,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
     private readonly onSelectionChangeDebounced: DebouncedFunc<typeof this.autoeditOnSelectionChange>
     // Keeps track of the last time the text was changed in the editor.
     private lastTextChangeTimeStamp: number | undefined
+    private readonly promptProvider: AutoeditsUserPromptStrategy = new DefaultUserPromptStrategy()
 
     constructor(private readonly chatClient: ChatClient) {
         this.contextMixer = new ContextMixer({
@@ -312,14 +311,17 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         position: vscode.Position,
         context: AutocompleteContextSnippet[],
         tokenBudget: AutoEditsTokenLimit
-    ): PromptResponseData {
-        const { codeToReplace, prompt: userPrompt } = getBaseUserPrompt(
+    ): {
+        codeToReplace: CodeToReplaceData
+        promptResponse: AutoeditsPrompt
+    } {
+        const { codeToReplace, prompt: userPrompt } = this.promptProvider.getUserPrompt({
             docContext,
             document,
             position,
             context,
-            tokenBudget
-        )
+            tokenBudget,
+        })
         const prompt: AutoeditsPrompt = this.config.isChatModel
             ? { systemMessage: SYSTEM_PROMPT, userMessage: userPrompt }
             : { userMessage: getCompletionsPromptWithSystemPrompt(SYSTEM_PROMPT, userPrompt) }

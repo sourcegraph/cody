@@ -1,8 +1,6 @@
 import { autoeditsLogger } from '../logger'
-import type { AutoeditsModelAdapter } from '../prompt-provider'
-import { getModelResponse } from '../prompt-provider'
-import type { AutoeditModelOptions } from '../prompt-provider'
-import { getMaxOutputTokensForAutoedits, getOpenaiCompatibleChatPrompt } from './utils'
+import type { AutoeditModelOptions, AutoeditsModelAdapter } from './base'
+import { getMaxOutputTokensForAutoedits, getModelResponse, getOpenaiCompatibleChatPrompt } from './utils'
 
 export class FireworksAdapter implements AutoeditsModelAdapter {
     async getModelResponse(option: AutoeditModelOptions): Promise<string> {
