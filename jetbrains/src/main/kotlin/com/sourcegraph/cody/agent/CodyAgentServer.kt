@@ -139,6 +139,9 @@ interface _SubsetGeneratedCodyAgentServer {
       params: com.sourcegraph.cody.agent.protocol_generated.TelemetryEvent
   ): CompletableFuture<Null?>
 
+  @JsonRequest("testing/awaitPendingPromises")
+  fun testing_awaitPendingPromises(params: Null?): CompletableFuture<Null?>
+
   //  // =============
   //  // Notifications
   //  // =============

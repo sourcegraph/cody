@@ -102,7 +102,8 @@ object CodyEditorUtil {
     return editor.project != null &&
         !editor.isViewer &&
         !editor.isOneLineMode &&
-        editor.editorKind == EditorKind.MAIN_EDITOR &&
+        (editor.editorKind == EditorKind.MAIN_EDITOR ||
+            ConfigUtil.isIntegrationTestModeEnabled()) &&
         editor !is EditorWindow &&
         editor !is ImaginaryEditor &&
         (editor !is EditorEx || !editor.isEmbeddedIntoDialogWrapper) &&

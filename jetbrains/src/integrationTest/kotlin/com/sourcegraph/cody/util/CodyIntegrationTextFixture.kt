@@ -47,6 +47,12 @@ open class CodyIntegrationTextFixture : BasePlatformTestCase(), LensListener {
     initCredentialsAndAgent()
     initCaretPosition()
 
+    val done = CompletableFuture<Void>()
+    CodyAgentService.withAgent(project) { agent ->
+      agent.server.testing_awaitPendingPromises(null).thenAccept { done.complete(null) }
+    }
+    done.get(ASYNC_WAIT_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+
     checkInitialConditions()
     LensesService.getInstance(project).addListener(this)
   }
