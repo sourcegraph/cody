@@ -357,6 +357,7 @@ class LocalStorage implements LocalStorageForModelPreferences {
         const ONE_DAY_MS = 24 * 60 * 60 * 1000
 
         // Reset count if more than 24 hours have passed
+        // Stores all values in parallel without await since we don't need to wait for the result.
         if (timeDiff > ONE_DAY_MS) {
             Promise.all([
                 this.set(this.keys.deepCodyDailyUsageCount, 1),
