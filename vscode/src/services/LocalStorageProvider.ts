@@ -41,6 +41,8 @@ class LocalStorage implements LocalStorageForModelPreferences {
     public readonly keys = {
         // LLM waitlist for the 09/12/2024 openAI o1 models
         waitlist_o1: 'CODY_WAITLIST_LLM_09122024',
+        deepCodyLastUsageTime: 'DEEP_CODY_LAST_USED_TIMESTAMP',
+        deepCodyDailyUsageCount: 'DEEP_CODY_DAILY_CHAT_USAGE',
     }
 
     /**
@@ -343,6 +345,37 @@ class LocalStorage implements LocalStorageForModelPreferences {
 
     public async setChatMemory(memories: string[]): Promise<void> {
         await this.set(this.CODY_CHAT_MEMORY, memories)
+    }
+
+    public isAtDeepCodyDailyLimit(): boolean {
+        const MAX_DEEP_CODY_DAILY_COUNT = 20
+        const lastCount = this.get<number>(this.keys.deepCodyDailyUsageCount) ?? 0
+        const lastUsed = this.get<string>(this.keys.deepCodyLastUsageTime)
+        const now = new Date().getTime()
+        const lastUsedTime = lastUsed ? new Date(lastUsed).getTime() : 0
+        const timeDiff = now - lastUsedTime
+        const ONE_DAY_MS = 24 * 60 * 60 * 1000
+
+        // Reset count if more than 24 hours have passed
+        if (timeDiff > ONE_DAY_MS) {
+            Promise.all([
+                this.set(this.keys.deepCodyDailyUsageCount, 1),
+                this.set(this.keys.deepCodyLastUsageTime, new Date().toISOString()),
+            ])
+            return false
+        }
+
+        // Check if already at limit within 24 hours
+        if (lastCount >= MAX_DEEP_CODY_DAILY_COUNT && timeDiff < ONE_DAY_MS) {
+            return true
+        }
+
+        // Increment count and update time
+        Promise.all([
+            this.set(this.keys.deepCodyDailyUsageCount, lastCount + 1),
+            this.set(this.keys.deepCodyLastUsageTime, new Date().toISOString()),
+        ])
+        return lastCount + 1 > MAX_DEEP_CODY_DAILY_COUNT
     }
 
     public get<T>(key: string): T | null {
