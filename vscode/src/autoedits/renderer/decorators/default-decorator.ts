@@ -1,6 +1,7 @@
 import * as vscode from 'vscode'
-import { ThemeColor } from 'vscode'
+
 import { GHOST_TEXT_COLOR } from '../../../commands/GhostHintDecorator'
+
 import type { AutoEditsDecorator, DecorationInfo, ModifiedLineInfo } from './base'
 
 interface AddedLinesDecorationInfo {
@@ -23,10 +24,10 @@ export class DefaultDecorator implements AutoEditsDecorator {
         this.editor = editor
         // Initialize decoration types
         this.removedTextDecorationType = vscode.window.createTextEditorDecorationType({
-            backgroundColor: new ThemeColor('diffEditor.removedTextBackground'),
+            backgroundColor: new vscode.ThemeColor('diffEditor.removedTextBackground'),
         })
         this.modifiedTextDecorationType = vscode.window.createTextEditorDecorationType({
-            backgroundColor: new ThemeColor('diffEditor.removedTextBackground'),
+            backgroundColor: new vscode.ThemeColor('diffEditor.removedTextBackground'),
         })
         this.suggesterType = vscode.window.createTextEditorDecorationType({
             before: { color: GHOST_TEXT_COLOR },
@@ -75,7 +76,9 @@ export class DefaultDecorator implements AutoEditsDecorator {
     public setDecorations(decorationInfo: DecorationInfo): void {
         const { modifiedLines, removedLines, addedLines } = decorationInfo
 
-        const removedLinesRanges = removedLines.map(line => this.createFullLineRange(line.lineNumber))
+        const removedLinesRanges = removedLines.map(line =>
+            this.createFullLineRange(line.originalLineNumber)
+        )
         this.editor.setDecorations(this.removedTextDecorationType, removedLinesRanges)
 
         if (addedLines.length > 0 || !isOnlyAddingTextForModifiedLines(modifiedLines)) {
@@ -112,13 +115,13 @@ export class DefaultDecorator implements AutoEditsDecorator {
             if (addedRanges.length > 0) {
                 if (!firstModifiedLineMatch) {
                     firstModifiedLineMatch = {
-                        beforeLine: modifiedLine.lineNumber,
-                        afterLine: modifiedLine.lineNumber,
+                        beforeLine: modifiedLine.modifiedLineNumber,
+                        afterLine: modifiedLine.modifiedLineNumber,
                     }
                 }
                 addedLinesInfo.push({
                     ranges: addedRanges,
-                    afterLine: modifiedLine.lineNumber,
+                    afterLine: modifiedLine.modifiedLineNumber,
                     lineText: modifiedLine.newText,
                 })
             }
@@ -129,7 +132,7 @@ export class DefaultDecorator implements AutoEditsDecorator {
         for (const addedLine of addedLines) {
             addedLinesInfo.push({
                 ranges: [],
-                afterLine: addedLine.lineNumber,
+                afterLine: addedLine.modifiedLineNumber,
                 lineText: addedLine.text,
             })
         }
@@ -139,7 +142,7 @@ export class DefaultDecorator implements AutoEditsDecorator {
         const min = Math.min(...lineNumbers)
         const max = Math.max(...lineNumbers)
         for (const unchangedLine of unchangedLines) {
-            const lineNumber = unchangedLine.lineNumber
+            const lineNumber = unchangedLine.modifiedLineNumber
             if (lineNumber < min || lineNumber > max) {
                 continue
             }
