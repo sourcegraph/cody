@@ -11,6 +11,7 @@ import { JaccardSimilarityRetriever } from './retrievers/jaccard-similarity/jacc
 import { LspLightRetriever } from './retrievers/lsp-light/lsp-light-retriever'
 import { DiagnosticsRetriever } from './retrievers/recent-user-actions/diagnostics-retriever'
 import { RecentCopyRetriever } from './retrievers/recent-user-actions/recent-copy'
+import { LineLevelDiffStrategy } from './retrievers/recent-user-actions/recent-edits-diff-helpers/line-level-diff'
 import { UnifiedDiffStrategy } from './retrievers/recent-user-actions/recent-edits-diff-helpers/unified-diff'
 import { RecentEditsRetriever } from './retrievers/recent-user-actions/recent-edits-retriever'
 import { RecentViewPortRetriever } from './retrievers/recent-user-actions/recent-view-port'
@@ -132,7 +133,13 @@ export class DefaultContextStrategyFactory implements ContextStrategyFactory {
                                 new RecentEditsRetriever({
                                     maxAgeMs: 10 * 60 * 1000,
                                     diffStrategyList: [
-                                        new UnifiedDiffStrategy({ addLineNumbers: true }),
+                                        new LineLevelDiffStrategy({
+                                            contextLines: 3,
+                                            minShortTermEvents: 1,
+                                            minShortTermTimeMs: 0,
+                                            longTermDiffCombinationStrategy: undefined,
+                                            trimSurroundingContext: true,
+                                        }),
                                     ],
                                 }),
                                 new DiagnosticsRetriever({

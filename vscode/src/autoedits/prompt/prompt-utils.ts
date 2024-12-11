@@ -354,7 +354,7 @@ export function getContextItemsInTokenBudget(
     return autocompleteItemsWithBudget
 }
 
-function getContextItemsForIdentifier(
+export function getContextItemsForIdentifier(
     contextItems: AutocompleteContextSnippet[],
     identifier: string
 ): AutocompleteContextSnippet[] {

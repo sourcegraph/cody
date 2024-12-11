@@ -28,8 +28,8 @@ import { SourcegraphCompletionsAdapter } from './adapters/sourcegraph-completion
 import { autoeditsLogger } from './logger'
 import type { AutoeditsUserPromptStrategy } from './prompt/base'
 import { SYSTEM_PROMPT } from './prompt/constants'
-import { DefaultUserPromptStrategy } from './prompt/default-prompt-strategy'
 import { type CodeToReplaceData, getCompletionsPromptWithSystemPrompt } from './prompt/prompt-utils'
+import { ShortTermPromptStrategy } from './prompt/short-term-diff-prompt-strategy'
 import { DefaultDecorator } from './renderer/decorators/default-decorator'
 import { AutoEditsRendererManager } from './renderer/manager'
 import {
@@ -77,7 +77,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
     private readonly onSelectionChangeDebounced: DebouncedFunc<typeof this.autoeditOnSelectionChange>
     // Keeps track of the last time the text was changed in the editor.
     private lastTextChangeTimeStamp: number | undefined
-    private readonly promptProvider: AutoeditsUserPromptStrategy = new DefaultUserPromptStrategy()
+    private readonly promptProvider: AutoeditsUserPromptStrategy = new ShortTermPromptStrategy()
 
     constructor(private readonly chatClient: ChatClient) {
         this.contextMixer = new ContextMixer({

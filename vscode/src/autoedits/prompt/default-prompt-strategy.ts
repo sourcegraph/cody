@@ -37,7 +37,7 @@ export class DefaultUserPromptStrategy implements AutoeditsUserPromptStrategy {
         })
         const recentViewsPrompt = getPromptForTheContextSource(
             contextItemMapping.get(RetrieverIdentifier.RecentViewPortRetriever) || [],
-            constants.RECENT_VIEWS_INSTRUCTION,
+            constants.LONG_TERM_SNIPPET_VIEWS_INSTRUCTION,
             getRecentlyViewedSnippetsPrompt
         )
 
