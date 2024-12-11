@@ -16,6 +16,7 @@ import {
     extractContextFromTraceparent,
     firstResultFromOperation,
     forceHydration,
+    inputTextWithMappedContextChipsFromPromptEditorState,
     isAbortError,
     pendingOperation,
     ps,
@@ -825,15 +826,11 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
         this.postEmptyMessageInProgress(model)
 
-        const inputTextWithoutContextChips = editorState
-            ? PromptString.unsafe_fromUserQuery(
-                  inputTextWithoutContextChipsFromPromptEditorState(editorState)
-              )
-            : inputText
-
         const { intent, intentScores } = await this.getIntentAndScores({
             requestID,
-            input: inputTextWithoutContextChips.toString(),
+            input: editorState
+                ? inputTextWithMappedContextChipsFromPromptEditorState(editorState)
+                : inputText.toString(),
             detectedIntent,
             detectedIntentScores,
             signal,
@@ -842,6 +839,12 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         signal.throwIfAborted()
         this.chatBuilder.setLastMessageIntent(intent)
         this.postEmptyMessageInProgress(model)
+
+        const inputTextWithoutContextChips = editorState
+            ? PromptString.unsafe_fromUserQuery(
+                  inputTextWithoutContextChipsFromPromptEditorState(editorState)
+              )
+            : inputText
 
         if (intent === 'search') {
             return await this.handleSearchIntent({

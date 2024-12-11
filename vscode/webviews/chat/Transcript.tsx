@@ -6,7 +6,7 @@ import {
     REMOTE_FILE_PROVIDER_URI,
     type SerializedPromptEditorValue,
     deserializeContextItem,
-    inputTextWithoutContextChipsFromPromptEditorState,
+    inputTextWithMappedContextChipsFromPromptEditorState,
     isAbortErrorOrSocketHangUp,
 } from '@sourcegraph/cody-shared'
 import {
@@ -357,7 +357,9 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
             setIntentResults(undefined)
 
             const subscription = extensionAPI
-                .detectIntent(inputTextWithoutContextChipsFromPromptEditorState(editorValue.editorState))
+                .detectIntent(
+                    inputTextWithMappedContextChipsFromPromptEditorState(editorValue.editorState)
+                )
                 .subscribe({
                     next: value => {
                         setIntentResults(value)
