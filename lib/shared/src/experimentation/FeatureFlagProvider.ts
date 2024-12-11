@@ -106,8 +106,8 @@ export enum FeatureFlag {
     DeepCodyShellContext = 'deep-cody-shell-context',
 
     /** Enable Rate Limit for Deep Cody */
-    DeepCodyRateLimitBase = 'deep-cody-rate-limit',
-    DeepCodyRateLimitMultiplier = 'deep-cody-rate-limit-multiplier',
+    DeepCodyRateLimitBase = 'deep-cody-experimental-rate-limit',
+    DeepCodyRateLimitMultiplier = 'deep-cody-experimental-rate-limit-multiplier',
 
     /**
      * Whether the current repo context chip is shown in the chat input by default

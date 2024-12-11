@@ -347,9 +347,22 @@ class LocalStorage implements LocalStorageForModelPreferences {
         await this.set(this.CODY_CHAT_MEMORY, memories)
     }
 
-    /**
-     * Returns the number of seconds the user needs to wait before they can use DeepCody again.
-     */
+    public getDeepCodyUsage(): { quota: number | undefined; lastUsed: Date } {
+        const quota = this.get<number>(this.keys.deepCodyDailyUsageCount) ?? undefined
+        const lastUsed = new Date(
+            this.get<string>(this.keys.deepCodyLastUsageTime) ?? new Date().toISOString()
+        )
+
+        return { quota, lastUsed }
+    }
+
+    public async setDeepCodyUsage(newQuota: number, lastUsed: string): Promise<void> {
+        await Promise.all([
+            localStorage.set(localStorage.keys.deepCodyDailyUsageCount, newQuota - 1),
+            localStorage.set(localStorage.keys.deepCodyLastUsageTime, lastUsed),
+        ])
+    }
+
     public isAtDeepCodyDailyLimit(DAILY_QUOTA?: number): string | undefined {
         if (!DAILY_QUOTA) {
             return undefined

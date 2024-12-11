@@ -9,7 +9,6 @@ import {
     REMOTE_DIRECTORY_PROVIDER_URI,
     REMOTE_FILE_PROVIDER_URI,
     REMOTE_REPOSITORY_PROVIDER_URI,
-    RateLimitError,
     cenv,
     clientCapabilities,
     currentSiteVersion,
@@ -130,6 +129,7 @@ import { TestSupport } from '../../test-support'
 import type { MessageErrorType } from '../MessageProvider'
 import { CodyToolProvider } from '../agentic/CodyToolProvider'
 import { DeepCodyAgent } from '../agentic/DeepCody'
+import { DeepCodyRateLimiter } from '../agentic/DeepCodyRateLimiter'
 import { getMentionMenuData } from '../context/chatContext'
 import type { ChatIntentAPIClient } from '../context/chatIntentAPIClient'
 import { observeDefaultContext } from '../initialContext'
@@ -801,24 +801,16 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         }
         this.chatBuilder.setSelectedModel(model)
 
-        this.postEmptyMessageInProgress(model)
-
         const isDeepCodyModel = model?.includes('deep-cody')
+        const isDeepCodyEnabled = isDeepCodyModel && this.chatBuilder.getMessages().length < 4
 
-        // NOTE: This is a temporary rate limit for deep-cody models to prevent users from
-        // running into rate limits that block them from using Cody.
-        // We should remove this once we have a more robust solution in place.
-        // Any first 2 human messages submitted with Deep Cody is counted toward the usage.
-        const isDeepCodyEnabled = this.chatBuilder.getMessages().length < 4
-        const deepCodyRateLimitBase = this.featureDeepCodyRateLimitBase.value.last ? 50 : 0
-        const deepCodyRateLimitMultiplier = this.featureDeepCodyRateLimitMultiplier.value.last ? 2 : 1
-        const deepCodyRateLimit = deepCodyRateLimitBase * deepCodyRateLimitMultiplier
-        const isAtDeepCodyLimit = localStorage.isAtDeepCodyDailyLimit(deepCodyRateLimit)
-        if (isDeepCodyModel && isDeepCodyEnabled && isAtDeepCodyLimit) {
-            this.postError(
-                new RateLimitError('Deep Cody', 'daily limit', false, undefined, isAtDeepCodyLimit),
-                'transcript'
-            )
+        const deepCodyRateLimiter = new DeepCodyRateLimiter(
+            this.featureDeepCodyRateLimitBase.value.last ? 50 : 0,
+            this.featureDeepCodyRateLimitMultiplier.value.last ? 2 : 1
+        )
+        const deepCodyLimit = deepCodyRateLimiter.isAtLimit()
+        if (isDeepCodyModel && isDeepCodyEnabled && deepCodyLimit) {
+            this.postError(deepCodyRateLimiter.getRateLimitError(deepCodyLimit), 'transcript')
             this.handleAbort()
             return
         }
@@ -851,6 +843,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             },
             tokenCounterUtils
         )
+
+        this.postEmptyMessageInProgress(model)
 
         const inputTextWithoutContextChips = editorState
             ? PromptString.unsafe_fromUserQuery(
