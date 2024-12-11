@@ -1,13 +1,9 @@
 import { Observable, map } from 'observable-fns'
 import semver from 'semver'
 import { authStatus } from '../auth/authStatus'
+import type { AuthStatus } from '../auth/types'
 import { logError } from '../logger'
-import {
-    distinctUntilChanged,
-    pick,
-    promiseFactoryToObservable,
-    storeLastValue,
-} from '../misc/observable'
+import { distinctUntilChanged, pick, promiseFactoryToObservable } from '../misc/observable'
 import {
     firstResultFromOperation,
     pendingOperation,
@@ -24,6 +20,9 @@ export interface SiteAndCodyAPIVersions {
 
 /**
  * Observe the site version and Cody API version of the currently authenticated endpoint.
+ *
+ * TODO: `siteVersion` updates at most once per authStatus change. This means it can cache transient
+ * errors, like network errors, indefinitely. Fix it to retry after transient failures.
  */
 export const siteVersion: Observable<SiteAndCodyAPIVersions | null | typeof pendingOperation> =
     authStatus.pipe(
@@ -40,7 +39,6 @@ export const siteVersion: Observable<SiteAndCodyAPIVersions | null | typeof pend
                 if (!authStatus.authenticated) {
                     return Observable.of(null)
                 }
-
                 return promiseFactoryToObservable(signal => graphqlClient.getSiteVersion(signal)).pipe(
                     map((siteVersion): SiteAndCodyAPIVersions | null | typeof pendingOperation => {
                         if (isError(siteVersion)) {
@@ -61,13 +59,24 @@ export const siteVersion: Observable<SiteAndCodyAPIVersions | null | typeof pend
         map(result => (isError(result) ? null : result)) // the operation catches its own errors, so errors will never get here
     )
 
-const siteVersionStorage = storeLastValue(siteVersion)
+const authStatusAuthed: Observable<AuthStatus> = authStatus.filter(
+    authStatus => authStatus.authenticated
+)
 
 /**
  * Get the current site version. If authentication is pending, it awaits successful authentication.
  */
-export function currentSiteVersion(): Promise<SiteAndCodyAPIVersions | null> {
-    return firstResultFromOperation(siteVersionStorage.observable)
+export async function currentSiteVersion(): Promise<SiteAndCodyAPIVersions | null> {
+    const authStatus = await firstResultFromOperation(authStatusAuthed)
+    const siteVersion = await graphqlClient.getSiteVersion()
+    if (isError(siteVersion)) {
+        logError('siteVersion', `Failed to get site version from ${authStatus.endpoint}: ${siteVersion}`)
+        return null
+    }
+    return {
+        siteVersion,
+        codyAPIVersion: inferCodyApiVersion(siteVersion, isDotCom(authStatus)),
+    }
 }
 
 interface CheckVersionInput {

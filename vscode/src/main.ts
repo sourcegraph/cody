@@ -456,7 +456,7 @@ async function registerCodyCommands(
     )
 
     // Initialize autoedit provider if experimental feature is enabled
-    registerAutoEdits(disposables)
+    registerAutoEdits(chatClient, disposables)
 
     // Initialize autoedit tester
     disposables.push(
@@ -705,7 +705,7 @@ async function tryRegisterTutorial(
     }
 }
 
-function registerAutoEdits(disposables: vscode.Disposable[]): void {
+function registerAutoEdits(chatClient: ChatClient, disposables: vscode.Disposable[]): void {
     disposables.push(
         subscriptionDisposable(
             combineLatest(
@@ -718,7 +718,7 @@ function registerAutoEdits(disposables: vscode.Disposable[]): void {
                 .pipe(
                     map(([config, authStatus, autoeditEnabled]) => {
                         if (shouldEnableExperimentalAutoedits(config, autoeditEnabled, authStatus)) {
-                            const provider = new AutoeditsProvider()
+                            const provider = new AutoeditsProvider(chatClient)
 
                             const completionRegistration =
                                 vscode.languages.registerInlineCompletionItemProvider(

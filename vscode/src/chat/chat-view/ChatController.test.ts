@@ -100,7 +100,7 @@ describe('ChatController', () => {
         mockContextRetriever.retrieveContext.mockResolvedValue([])
 
         // Send the first message in a new chat.
-        await chatController.handleUserMessageSubmission({
+        await chatController.handleUserMessage({
             requestID: '1',
             inputText: PromptString.unsafe_fromUserQuery('Test input'),
             mentions: [],
@@ -108,7 +108,7 @@ describe('ChatController', () => {
             signal: new AbortController().signal,
             source: 'chat',
         })
-        expect(postMessageSpy.mock.calls.at(3)?.at(0)).toStrictEqual<
+        expect(postMessageSpy.mock.calls.at(4)?.at(0)).toStrictEqual<
             Extract<ExtensionMessage, { type: 'transcript' }>
         >({
             type: 'transcript',
@@ -118,8 +118,9 @@ describe('ChatController', () => {
                 {
                     speaker: 'human',
                     text: 'Test input',
-                    intent: undefined,
+                    intent: 'chat',
                     model: undefined,
+                    search: undefined,
                     error: undefined,
                     editorState: null,
                     contextFiles: [],
@@ -128,6 +129,7 @@ describe('ChatController', () => {
                     speaker: 'assistant',
                     model: 'my-model',
                     intent: undefined,
+                    search: undefined,
                     error: undefined,
                     editorState: undefined,
                     text: undefined,
@@ -144,15 +146,16 @@ describe('ChatController', () => {
             Extract<ExtensionMessage, { type: 'transcript' }>
         >({
             type: 'transcript',
-            isMessageInProgress: false,
+            isMessageInProgress: true,
             chatID: mockNowDate.toUTCString(),
             messages: [
                 {
                     speaker: 'human',
                     text: 'Test input',
-                    intent: undefined,
+                    intent: 'chat',
                     model: undefined,
                     error: undefined,
+                    search: undefined,
                     editorState: null,
                     contextFiles: [],
                 },
@@ -163,6 +166,7 @@ describe('ChatController', () => {
                     error: undefined,
                     editorState: undefined,
                     text: 'Test reply 1',
+                    search: undefined,
                     contextFiles: undefined,
                 },
             ],
@@ -176,7 +180,7 @@ describe('ChatController', () => {
                 yield { type: 'complete', text: 'Test reply 2' }
             })() satisfies AsyncGenerator<CompletionGeneratorValue>
         )
-        await chatController.handleUserMessageSubmission({
+        await chatController.handleUserMessage({
             requestID: '2',
             inputText: PromptString.unsafe_fromUserQuery('Test followup'),
             mentions: [],
@@ -191,15 +195,16 @@ describe('ChatController', () => {
             Extract<ExtensionMessage, { type: 'transcript' }>
         >({
             type: 'transcript',
-            isMessageInProgress: false,
+            isMessageInProgress: true,
             chatID: mockNowDate.toUTCString(),
             messages: [
                 {
                     speaker: 'human',
                     text: 'Test input',
-                    intent: undefined,
+                    intent: 'chat',
                     model: undefined,
                     error: undefined,
+                    search: undefined,
                     editorState: null,
                     contextFiles: [],
                 },
@@ -210,13 +215,15 @@ describe('ChatController', () => {
                     error: undefined,
                     editorState: undefined,
                     text: 'Test reply 1',
+                    search: undefined,
                     contextFiles: undefined,
                 },
                 {
                     speaker: 'human',
                     text: 'Test followup',
-                    intent: undefined,
+                    intent: 'chat',
                     model: undefined,
+                    search: undefined,
                     error: undefined,
                     editorState: null,
                     contextFiles: [],
@@ -229,6 +236,7 @@ describe('ChatController', () => {
                     editorState: undefined,
                     text: 'Test reply 2',
                     contextFiles: undefined,
+                    search: undefined,
                 },
             ],
         })
@@ -255,15 +263,16 @@ describe('ChatController', () => {
             Extract<ExtensionMessage, { type: 'transcript' }>
         >({
             type: 'transcript',
-            isMessageInProgress: false,
+            isMessageInProgress: true,
             chatID: mockNowDate.toUTCString(),
             messages: [
                 {
                     speaker: 'human',
                     text: 'Test input',
-                    intent: undefined,
+                    intent: 'chat',
                     model: undefined,
                     error: undefined,
+                    search: undefined,
                     editorState: null,
                     contextFiles: [],
                 },
@@ -274,12 +283,14 @@ describe('ChatController', () => {
                     error: undefined,
                     editorState: undefined,
                     text: 'Test reply 1',
+                    search: undefined,
                     contextFiles: undefined,
                 },
                 {
                     speaker: 'human',
                     text: 'Test edit',
-                    intent: undefined,
+                    intent: 'chat',
+                    search: undefined,
                     model: undefined,
                     error: undefined,
                     editorState: null,
@@ -289,6 +300,7 @@ describe('ChatController', () => {
                     speaker: 'assistant',
                     model: 'my-model',
                     intent: undefined,
+                    search: undefined,
                     error: undefined,
                     editorState: undefined,
                     text: 'Test reply 3',
@@ -313,7 +325,7 @@ describe('ChatController', () => {
         mockContextRetriever.retrieveContext.mockResolvedValue([])
 
         // Send the first message in a new chat.
-        await chatController.handleUserMessageSubmission({
+        await chatController.handleUserMessage({
             requestID: '1',
             inputText: PromptString.unsafe_fromUserQuery('Test input'),
             mentions: [],
@@ -324,7 +336,7 @@ describe('ChatController', () => {
         await vi.runOnlyPendingTimersAsync()
         expect(mockChatClient.chat).toBeCalledTimes(1)
         expect(addBotMessageSpy).toHaveBeenCalledWith('1', ps`Test partial reply`, 'my-model')
-        expect(postMessageSpy.mock.calls.at(5)?.at(0)).toStrictEqual<
+        expect(postMessageSpy.mock.calls.at(6)?.at(0)).toStrictEqual<
             Extract<ExtensionMessage, { type: 'transcript' }>
         >({
             type: 'transcript',
@@ -338,7 +350,8 @@ describe('ChatController', () => {
                     error: undefined,
                     editorState: null,
                     contextFiles: [],
-                    intent: undefined,
+                    intent: 'chat',
+                    search: undefined,
                 },
                 {
                     speaker: 'assistant',
@@ -348,6 +361,7 @@ describe('ChatController', () => {
                     editorState: undefined,
                     text: undefined,
                     contextFiles: undefined,
+                    search: undefined,
                 },
             ],
         })

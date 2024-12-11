@@ -13,25 +13,18 @@ import {
 
 import { clsx } from 'clsx'
 
-import type {
-    ChunkMatch,
-    ContentMatch,
-    HighlightLineRange,
-    LineMatch,
-    MatchGroup,
-    SearchMatch,
-} from './types'
+import type { ChunkMatch, HighlightLineRange, MatchGroup, SearchMatch } from './types'
 
 import { FileMatchChildren } from './components/FileMatchChildren'
 import { RepoFileLink } from './components/RepoLink'
 import {
     type ForwardReferenceExoticComponent,
     formatRepositoryStarCount,
-    getFileMatchUrl,
     getRevision,
     pluralize,
 } from './utils'
 
+import type { NLSSearchFileMatch } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 import type { Observable } from 'observable-fns'
 import { useInView } from 'react-intersection-observer'
 import styles from './CodeSnippet.module.css'
@@ -46,9 +39,9 @@ export interface FetchFileParameters {
     ranges: HighlightLineRange[]
 }
 
-interface FileContentSearchResultProps {
+interface FileMatchSearchResultProps {
     /** The file match search result. */
-    result: ContentMatch
+    result: NLSSearchFileMatch
 
     /** Whether or not to show all matches for this file, or only a subset. */
     showAllMatches: boolean
@@ -85,7 +78,7 @@ interface FileContentSearchResultProps {
     }) => void
 }
 
-export const FileContentSearchResult: FC<PropsWithChildren<FileContentSearchResultProps>> = props => {
+export const FileMatchSearchResult: FC<PropsWithChildren<FileMatchSearchResultProps>> = props => {
     const {
         className,
         result,
@@ -96,7 +89,6 @@ export const FileContentSearchResult: FC<PropsWithChildren<FileContentSearchResu
         serverEndpoint,
         fetchHighlightedFileLineRanges,
         onSelect,
-        onAddToFollowupChat,
     } = props
 
     const unhighlightedGroups: MatchGroup[] = useMemo(() => matchesToMatchGroups(result), [result])
@@ -109,9 +101,11 @@ export const FileContentSearchResult: FC<PropsWithChildren<FileContentSearchResu
     const [expandedGroups, setExpandedGroups] = useState(unhighlightedGroups)
 
     // Calculated state
-    const revisionDisplayName = getRevision(result.branches, result.commit)
-    const repoAtRevisionURL = getRepositoryUrl(serverEndpoint, result.repository, result.branches)
-    const fileURL = getFileMatchUrl(serverEndpoint, result)
+    const revisionDisplayName = getRevision([], result.file.commit.oid)
+    const repoAtRevisionURL = getRepositoryUrl(serverEndpoint, result.repository.name, [
+        result.file.commit.oid,
+    ])
+    const fileURL = result.file.url
     const collapsedGroups = truncateGroups(expandedGroups, 5, 1)
     const expandedHighlightCount = countHighlightRanges(expandedGroups)
     const collapsedHighlightCount = countHighlightRanges(collapsedGroups)
@@ -129,17 +123,11 @@ export const FileContentSearchResult: FC<PropsWithChildren<FileContentSearchResu
                 return
             }
 
-            // This file contains some large lines, avoid stressing
-            // syntax-highlighter and the browser.
-            if (result.chunkMatches?.some(chunk => chunk.contentTruncated)) {
-                return
-            }
-
             fetchHighlightedFileLineRanges(
                 {
-                    repoName: result.repository,
-                    commitID: result.commit || '',
-                    filePath: result.path,
+                    repoName: result.repository.name,
+                    commitID: result.file.commit.oid || '',
+                    filePath: result.file.path,
                     disableTimeout: false,
                     // Explicitly narrow the object otherwise we'll send a bunch of extra data in the request.
                     ranges: unhighlightedGroups.map(({ startLine, endLine }) => ({
@@ -182,9 +170,9 @@ export const FileContentSearchResult: FC<PropsWithChildren<FileContentSearchResu
 
     const title = (
         <RepoFileLink
-            repoName={result.repository}
+            repoName={result.repository.name}
             repoURL={repoAtRevisionURL}
-            filePath={result.path}
+            filePath={result.file.path}
             pathMatchRanges={result.pathMatches ?? []}
             fileURL={fileURL}
             repoDisplayName={
@@ -195,7 +183,6 @@ export const FileContentSearchResult: FC<PropsWithChildren<FileContentSearchResu
             className={styles.titleInner}
             collapsed={hidden}
             onToggleCollapse={() => setHidden(current => !current)}
-            onAddToFollowupChat={onAddToFollowupChat}
         />
     )
 
@@ -210,12 +197,8 @@ export const FileContentSearchResult: FC<PropsWithChildren<FileContentSearchResu
         <ResultContainer
             ref={rootRef}
             title={title}
-            resultType={result.type}
             onResultClicked={onSelect}
-            repoStars={result.repoStars}
             className={className}
-            rankingDebug={result.debug}
-            repoLastFetched={result.repoLastFetched}
             collapsed={hidden}
         >
             <div ref={ref} data-expanded={expanded}>
@@ -331,11 +314,31 @@ function countHighlightRanges(groups: MatchGroup[]): number {
     return groups.reduce((count, group) => count + group.matches.length, 0)
 }
 
-function matchesToMatchGroups(result: ContentMatch): MatchGroup[] {
+function matchesToMatchGroups(result: NLSSearchFileMatch): MatchGroup[] {
     return [
-        ...(result.lineMatches?.map(lineToMatchGroup) ?? []),
         ...(result.chunkMatches?.map(chunkToMatchGroup) ?? []),
+        ...(result.symbols?.map(symbolToMatchGroup) ?? []),
     ]
+}
+
+function symbolToMatchGroup(chunk: NonNullable<NLSSearchFileMatch['symbols']>[0]): MatchGroup {
+    const range = chunk.location.range
+    const matches = [
+        {
+            startLine: range.start.line,
+            startCharacter: range.start.character,
+            endLine: range.end.line,
+            endCharacter: range.end.character,
+        },
+    ]
+    const plaintextLines = [chunk.name]
+    return {
+        plaintextLines,
+        highlightedHTMLRows: undefined, // populated lazily
+        matches,
+        startLine: chunk.location.range.start.line,
+        endLine: chunk.location.range.end.line + Math.max(plaintextLines.length, 1),
+    }
 }
 
 function chunkToMatchGroup(chunk: ChunkMatch): MatchGroup {
@@ -352,22 +355,6 @@ function chunkToMatchGroup(chunk: ChunkMatch): MatchGroup {
         matches,
         startLine: chunk.contentStart.line,
         endLine: chunk.contentStart.line + Math.max(plaintextLines.length, 1),
-    }
-}
-
-function lineToMatchGroup(line: LineMatch): MatchGroup {
-    const matches = line.offsetAndLengths.map(offsetAndLength => ({
-        startLine: line.lineNumber,
-        startCharacter: offsetAndLength[0],
-        endLine: line.lineNumber,
-        endCharacter: offsetAndLength[0] + offsetAndLength[1],
-    }))
-    return {
-        plaintextLines: [line.line],
-        highlightedHTMLRows: undefined, // populated lazily
-        matches,
-        startLine: line.lineNumber,
-        endLine: line.lineNumber + 1, // the matches support `endLine` == `startLine`, but MatchGroup requires `endLine` > `startLine`
     }
 }
 

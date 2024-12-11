@@ -11,7 +11,6 @@ const fakeProcessEnv: Record<string, string | boolean> = {
     CODY_TESTING: false,
     CODY_PROFILE_TEMP: false,
     CODY_TELEMETRY_EXPORTER: 'graphql',
-    CODY_WEB_DEMO: process.env.NODE_ENV === 'development',
     NODE_ENV: 'production',
     NODE_DEBUG: false,
     CODY_OVERRIDE_DOTCOM_URL: 'https://sourcegraph.com',
@@ -19,6 +18,8 @@ const fakeProcessEnv: Record<string, string | boolean> = {
     LSP_LIGHT_LOGGING_ENABLED: false,
     LSP_LIGHT_CACHE_DISABLED: false,
     language: 'en-US',
+    CODY_WEB_DEMO: true,
+    CODY_WEB_DEMO_STANDALONE_MODE: process.env.CODY_WEB_DEMO_STANDALONE_MODE,
 }
 
 export default defineProjectWithDefaults(__dirname, {
@@ -56,6 +57,8 @@ export default defineProjectWithDefaults(__dirname, {
                 replacement: resolve(__dirname, 'node_modules/path-browserify'),
             },
             { find: 'node:stream', replacement: resolve(__dirname, 'node_modules/stream-browserify') },
+            { find: 'zlib', replacement: resolve(__dirname, 'lib/agent/shims/zlib.ts') },
+            { find: 'stream', replacement: resolve(__dirname, 'lib/agent/shims/stream.ts') },
             { find: /^(node:)?events$/, replacement: resolve(__dirname, 'node_modules/events') },
             { find: /^(node:)?util$/, replacement: resolve(__dirname, 'node_modules/util') },
             { find: /^(node:)?buffer$/, replacement: resolve(__dirname, 'node_modules/buffer') },

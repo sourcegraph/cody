@@ -92,6 +92,13 @@ export interface ClientCapabilities {
     accountSwitchingInWebview?: 'none' | 'enabled' | undefined | null
 
     /**
+     * 🚨 SECURITY: Please tag the Security Team for PR review when enabling shell context.
+     * When enabled, the client must be running with node integration enabled that supports
+     * child_process.spawn. This is needed for the agent to spawn a shell process to run commands.
+     */
+    shell?: 'none' | 'enabled' | undefined | null
+
+    /**
      * When 'object-encoded' (default), the server uses the `webview/postMessage` method to send
      * structured JSON objects.  When 'string-encoded', the server uses the
      * `webview/postMessageStringEncoded` method to send a JSON-encoded string. This is convenient

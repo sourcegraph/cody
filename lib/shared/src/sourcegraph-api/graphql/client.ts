@@ -9,13 +9,13 @@ import { Observable } from 'observable-fns'
 import semver from 'semver'
 import { dependentAbortController, onAbort } from '../../common/abortController'
 import { type PickResolvedConfiguration, resolvedConfig } from '../../configuration/resolver'
-import { logDebug, logError } from '../../logger'
-import { firstValueFrom } from '../../misc/observable'
+import { logError } from '../../logger'
+import { distinctUntilChanged, firstValueFrom } from '../../misc/observable'
 import { addTraceparent, wrapInActiveSpan } from '../../tracing'
 import { isError } from '../../utils'
 import { addCodyClientIdentificationHeaders } from '../client-name-version'
-import { DOTCOM_URL, isDotCom } from '../environments'
 import { isAbortError } from '../errors'
+import { type GraphQLResultCache, ObservableInvalidatedGraphQLResultCacheFactory } from './cache'
 import {
     BUILTIN_PROMPTS_QUERY,
     CHANGE_PROMPT_VISIBILITY,
@@ -51,8 +51,7 @@ import {
     LEGACY_CHAT_INTENT_QUERY,
     LEGACY_CONTEXT_SEARCH_QUERY,
     LEGACY_PROMPTS_QUERY_5_8,
-    LOG_EVENT_MUTATION,
-    LOG_EVENT_MUTATION_DEPRECATED,
+    NLS_SEARCH_QUERY,
     PACKAGE_LIST_QUERY,
     PROMPTS_QUERY,
     PromptsOrderBy,
@@ -314,6 +313,43 @@ interface FileMatchSearchResponse {
     }
 }
 
+export interface NLSSearchFileMatch {
+    __typename: 'FileMatch'
+    repository: {
+        id: string
+        name: string
+    }
+    file: {
+        url: string
+        path: string
+        commit: {
+            oid: string
+        }
+    }
+    chunkMatches?: {
+        content: string
+        contentStart: Position
+        ranges: Range[]
+    }[]
+    pathMatches?: Range[]
+    symbols?: {
+        name: string
+        location: {
+            range: Range
+        }
+    }[]
+}
+
+export type NLSSearchResult = NLSSearchFileMatch | { __typename: 'unknown' }
+
+export interface NLSSearchResponse {
+    search: {
+        results: {
+            results: NLSSearchResult[]
+        }
+    }
+}
+
 interface FileContentsResponse {
     repository: {
         commit: {
@@ -346,8 +382,6 @@ interface SearchAttributionResponse {
         nodes: { repositoryName: string }[]
     }
 }
-
-type LogEventResponse = unknown
 
 interface ChatIntentResponse {
     chatIntent: {
@@ -636,10 +670,10 @@ type GraphQLAPIClientConfig = PickResolvedConfiguration<{
 
 const QUERY_TO_NAME_REGEXP = /^\s*(?:query|mutation)\s+(\w+)/m
 
-export class SourcegraphGraphQLAPIClient {
-    private dotcomUrl = DOTCOM_URL
-
+export class SourcegraphGraphQLAPIClient implements Disposable {
     private isAgentTesting = process.env.CODY_SHIM_TESTING === 'true'
+    private readonly resultCacheFactory: ObservableInvalidatedGraphQLResultCacheFactory
+    private readonly siteVersionCache: GraphQLResultCache<string>
 
     public static withGlobalConfig(): SourcegraphGraphQLAPIClient {
         return new SourcegraphGraphQLAPIClient(resolvedConfig)
@@ -654,17 +688,33 @@ export class SourcegraphGraphQLAPIClient {
         return new SourcegraphGraphQLAPIClient(Observable.of(config))
     }
 
-    private constructor(private readonly config: Observable<GraphQLAPIClientConfig>) {}
+    private constructor(private readonly config: Observable<GraphQLAPIClientConfig>) {
+        this.resultCacheFactory = new ObservableInvalidatedGraphQLResultCacheFactory(
+            this.config.pipe(distinctUntilChanged()),
+            {
+                maxAgeMsec: 1000 * 60 * 10, // 10 minutes,
+                initialRetryDelayMsec: 10, // Don't cache errors for long
+                backoffFactor: 1.5, // Back off exponentially
+            }
+        )
+        this.siteVersionCache = this.resultCacheFactory.create<string>('SiteProductVersion')
+    }
+
+    [Symbol.dispose]() {
+        this.resultCacheFactory[Symbol.dispose]()
+    }
 
     public async getSiteVersion(signal?: AbortSignal): Promise<string | Error> {
-        return this.fetchSourcegraphAPI<APIResponse<SiteVersionResponse>>(
-            CURRENT_SITE_VERSION_QUERY,
-            {},
-            signal
-        ).then(response =>
-            extractDataOrError(
-                response,
-                data => data.site?.productVersion ?? new Error('site version not found')
+        return this.siteVersionCache.get(signal, signal =>
+            this.fetchSourcegraphAPI<APIResponse<SiteVersionResponse>>(
+                CURRENT_SITE_VERSION_QUERY,
+                {},
+                signal
+            ).then(response =>
+                extractDataOrError(
+                    response,
+                    data => data.site?.productVersion ?? new Error('site version not found')
+                )
             )
         )
     }
@@ -1069,7 +1119,9 @@ export class SourcegraphGraphQLAPIClient {
         signal?: AbortSignal
         filePatterns?: string[]
     }): Promise<ContextSearchResult[] | null | Error> {
-        const hasContextMatchingSupport = await this.isValidSiteVersion({ minimumVersion: '5.8.0' })
+        const hasContextMatchingSupport = await this.isValidSiteVersion({
+            minimumVersion: '5.8.0',
+        })
         const hasFilePathSupport =
             hasContextMatchingSupport || (await this.isValidSiteVersion({ minimumVersion: '5.7.0' }))
         const config = await firstValueFrom(this.config!)
@@ -1249,7 +1301,9 @@ export class SourcegraphGraphQLAPIClient {
         signal?: AbortSignal
         orderByMultiple?: PromptsOrderBy[]
     }): Promise<Prompt[]> {
-        const hasIncludeViewerDraftsArg = await this.isValidSiteVersion({ minimumVersion: '5.9.0' })
+        const hasIncludeViewerDraftsArg = await this.isValidSiteVersion({
+            minimumVersion: '5.9.0',
+        })
 
         const response = await this.fetchSourcegraphAPI<APIResponse<{ prompts: { nodes: Prompt[] } }>>(
             hasIncludeViewerDraftsArg ? PROMPTS_QUERY : LEGACY_PROMPTS_QUERY_5_8,
@@ -1265,6 +1319,26 @@ export class SourcegraphGraphQLAPIClient {
             signal
         )
         const result = extractDataOrError(response, data => data.prompts.nodes)
+        if (result instanceof Error) {
+            throw result
+        }
+        return result
+    }
+
+    public async nlsSearchQuery({
+        query,
+        signal,
+    }: {
+        query: string
+        signal?: AbortSignal
+    }): Promise<NLSSearchResponse['search']> {
+        const response = await this.fetchSourcegraphAPI<APIResponse<NLSSearchResponse>>(
+            NLS_SEARCH_QUERY,
+            { query },
+            signal
+        )
+
+        const result = extractDataOrError(response, data => data.search)
         if (result instanceof Error) {
             throw result
         }
@@ -1351,91 +1425,6 @@ export class SourcegraphGraphQLAPIClient {
         return extractDataOrError(initialResponse, data => data)
     }
 
-    /**
-     * logEvent is the legacy event-logging mechanism.
-     * @deprecated use an implementation of implementation TelemetryRecorder
-     * from '@sourcegraph/telemetry' instead.
-     */
-    public async logEvent(event: event, mode: LogEventMode): Promise<LogEventResponse | Error> {
-        if (process.env.CODY_TESTING === 'true') {
-            return this.sendEventLogRequestToTestingAPI(event)
-        }
-        if (this.isAgentTesting) {
-            return {}
-        }
-        const config = await firstValueFrom(this.config!)
-        if (config.configuration?.telemetryLevel === 'off') {
-            return {}
-        }
-        /**
-         * If connected to dotcom, just log events to the instance, as it means
-         * the same thing.
-         */
-        if (isDotCom(config.auth.serverEndpoint)) {
-            return this.sendEventLogRequestToAPI(event)
-        }
-
-        switch (process.env.CODY_LOG_EVENT_MODE) {
-            case 'connected-instance-only':
-                mode = 'connected-instance-only'
-                break
-            case 'dotcom-only':
-                mode = 'dotcom-only'
-                break
-            case 'all':
-                mode = 'all'
-                break
-            default:
-                if (process.env.CODY_LOG_EVENT_MODE) {
-                    logDebug(
-                        'SourcegraphGraphQLAPIClient.logEvent',
-                        'unknown mode',
-                        process.env.CODY_LOG_EVENT_MODE
-                    )
-                }
-        }
-
-        switch (mode) {
-            /**
-             * Only log events to dotcom, not the connected instance. Used when
-             * another mechanism delivers event logs the instance (i.e. the
-             * new telemetry clients)
-             */
-            case 'dotcom-only':
-                return this.sendEventLogRequestToDotComAPI(event)
-
-            /**
-             * Only log events to the connected instance, not dotcom. Used when
-             * another mechanism handles reporting to dotcom (i.e. the old
-             * client and/or the new telemetry framework, which exports events
-             * from all instances: https://sourcegraph.com/docs/dev/background-information/telemetry)
-             */
-            case 'connected-instance-only':
-                return this.sendEventLogRequestToAPI(event)
-
-            case 'all': // continue to default handling
-        }
-
-        /**
-         * Otherwise, send events to the connected instance AND to dotcom (default)
-         */
-        const responses = await Promise.all([
-            this.sendEventLogRequestToAPI(event),
-            this.sendEventLogRequestToDotComAPI(event),
-        ])
-        if (isError(responses[0]) && isError(responses[1])) {
-            return new Error(
-                `Errors logging events: ${responses[0].toString()}, ${responses[1].toString()}`
-            )
-        }
-        if (isError(responses[0])) {
-            return responses[0]
-        }
-        if (isError(responses[1])) {
-            return responses[1]
-        }
-        return {}
-    }
     // Deletes an access token, if it exists on the server
     public async DeleteAccessToken(token: string): Promise<unknown | Error> {
         const initialResponse = await this.fetchSourcegraphAPI<APIResponse<unknown>>(
@@ -1456,57 +1445,6 @@ export class SourcegraphGraphQLAPIClient {
             event.parameters.metadata = undefined
             event.parameters.privateMetadata = {}
         }
-    }
-
-    private anonymizeEvent(event: event): void {
-        if (this.isAgentTesting) {
-            event.publicArgument = undefined
-            event.argument = undefined
-            event.userCookieID = 'ANONYMOUS_USER_COOKIE_ID'
-            event.hashedLicenseKey = undefined
-        }
-    }
-
-    private async sendEventLogRequestToDotComAPI(event: event): Promise<LogEventResponse | Error> {
-        this.anonymizeEvent(event)
-        const response = await this.fetchSourcegraphDotcomAPI<APIResponse<LogEventResponse>>(
-            LOG_EVENT_MUTATION,
-            event
-        )
-        return extractDataOrError(response, data => data)
-    }
-
-    private async sendEventLogRequestToAPI(event: event): Promise<LogEventResponse | Error> {
-        this.anonymizeEvent(event)
-        const initialResponse = await this.fetchSourcegraphAPI<APIResponse<LogEventResponse>>(
-            LOG_EVENT_MUTATION,
-            event
-        )
-        const initialDataOrError = extractDataOrError(initialResponse, data => data)
-
-        if (isError(initialDataOrError)) {
-            const secondResponse = await this.fetchSourcegraphAPI<APIResponse<LogEventResponse>>(
-                LOG_EVENT_MUTATION_DEPRECATED,
-                event
-            )
-            return extractDataOrError(secondResponse, data => data)
-        }
-
-        return initialDataOrError
-    }
-
-    private async sendEventLogRequestToTestingAPI(event: event): Promise<LogEventResponse | Error> {
-        const initialResponse =
-            await this.fetchSourcegraphTestingAPI<APIResponse<LogEventResponse>>(event)
-        const initialDataOrError = extractDataOrError(initialResponse, data => data)
-
-        if (isError(initialDataOrError)) {
-            const secondResponse =
-                await this.fetchSourcegraphTestingAPI<APIResponse<LogEventResponse>>(event)
-            return extractDataOrError(secondResponse, data => data)
-        }
-
-        return initialDataOrError
     }
 
     public async searchAttribution(
@@ -1603,50 +1541,6 @@ export class SourcegraphGraphQLAPIClient {
                 .catch(catchHTTPError(url, timeoutSignal))
         )
     }
-    // make an anonymous request to the dotcom API
-    private fetchSourcegraphDotcomAPI<T>(
-        query: string,
-        variables: Record<string, any>
-    ): Promise<T | Error> {
-        const url = buildGraphQLUrl({
-            request: query,
-            baseUrl: this.dotcomUrl.href,
-        })
-        const headers = new Headers()
-        addCodyClientIdentificationHeaders(headers)
-        addTraceparent(headers)
-
-        const queryName = query.match(QUERY_TO_NAME_REGEXP)?.[1]
-
-        return wrapInActiveSpan(`graphql.dotcom.fetch${queryName ? `.${queryName}` : ''}`, () =>
-            fetch(url, {
-                method: 'POST',
-                body: JSON.stringify({ query, variables }),
-                headers,
-            })
-                .then(verifyResponseCode)
-                .then(response => response.json() as T)
-                .catch(error => new Error(`error fetching Sourcegraph GraphQL API: ${error} (${url})`))
-        )
-    }
-
-    // make an anonymous request to the Testing API
-    private fetchSourcegraphTestingAPI<T>(body: Record<string, any>): Promise<T | Error> {
-        const url = 'http://localhost:49300/.test/testLogging'
-        const headers = new Headers({
-            'Content-Type': 'application/json',
-        })
-        addCodyClientIdentificationHeaders(headers)
-
-        return fetch(url, {
-            method: 'POST',
-            headers,
-            body: JSON.stringify(body),
-        })
-            .then(verifyResponseCode)
-            .then(response => response.json() as T)
-            .catch(error => new Error(`error fetching Testing Sourcegraph API: ${error} (${url})`))
-    }
 
     // Performs an authenticated request to our non-GraphQL HTTP / REST API.
     public async fetchHTTP<T>(
@@ -1705,7 +1599,9 @@ function dependentAbortControllerWithTimeout(signal?: AbortSignal): {
 
     const timeoutSignal = AbortSignal.timeout(DEFAULT_TIMEOUT_MSEC)
     onAbort(timeoutSignal, () =>
-        abortController.abort({ message: `timed out after ${DEFAULT_TIMEOUT_MSEC}ms` })
+        abortController.abort({
+            message: `timed out after ${DEFAULT_TIMEOUT_MSEC}ms`,
+        })
     )
     return { abortController, timeoutSignal }
 }
@@ -1743,11 +1639,6 @@ export async function verifyResponseCode(
     }
     return response
 }
-
-export type LogEventMode =
-    | 'dotcom-only' // only log to dotcom
-    | 'connected-instance-only' // only log to the connected instance
-    | 'all' // log to both dotcom AND the connected instance
 
 function hasOutdatedAPIErrorMessages(error: Error): boolean {
     // Sourcegraph 5.2.3 returns an empty string ("") instead of an error message

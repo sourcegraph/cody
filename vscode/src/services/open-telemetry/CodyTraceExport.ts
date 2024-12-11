@@ -50,6 +50,20 @@ export class CodyTraceExporter extends OTLPTraceExporter {
         for (const span of spans) {
             const rootSpan = getRootSpan(spanMap, span)
             if (rootSpan === null) {
+                // The child of the root is sampled but root is not and the span is continued
+                // This for the cases where the root span is actually present in the webview
+                // but not in the extension host.
+                const effectiveRootSpan = getEffectiveRootSpan(spanMap, span)
+                if (
+                    effectiveRootSpan &&
+                    isSampled(effectiveRootSpan) &&
+                    isContinued(effectiveRootSpan)
+                ) {
+                    spansToExport.push(span)
+                    // Since we pushed the spans, we don't need to queue them
+                    continue
+                }
+
                 const spanId = span.spanContext().spanId
                 if (!this.queuedSpans.has(spanId)) {
                     // No root span was found yet, so let's queue this span for a
@@ -58,7 +72,7 @@ export class CodyTraceExporter extends OTLPTraceExporter {
                     this.queuedSpans.set(spanId, { span, enqueuedAt: now })
                 }
             } else {
-                if (isRootSampled(rootSpan)) {
+                if (isSampled(rootSpan)) {
                     spansToExport.push(span)
                 }
                 // else: The span is dropped
@@ -69,6 +83,40 @@ export class CodyTraceExporter extends OTLPTraceExporter {
     }
 }
 
+// This function checks if a span is continued in the extension host where the parent span is present
+// in the webview.
+function isContinued(span: ReadableSpan): boolean {
+    return span.attributes.continued === true
+}
+
+// This function attempts to find the "effective root span" for a given span.
+// The effective root span is defined as the first ancestor span that is not found in the span map.
+// If a parent span is not found, it assumes the current span is the effective root.
+function getEffectiveRootSpan(
+    spanMap: Map<string, ReadableSpan>,
+    span: ReadableSpan
+): ReadableSpan | null {
+    let currentSpan = span
+
+    while (currentSpan.parentSpanId) {
+        const parentSpan = spanMap.get(currentSpan.parentSpanId)
+        if (!parentSpan) {
+            // If the parent span is not found in the map, the current span is considered the effective root.
+            return currentSpan
+        }
+        currentSpan = parentSpan
+    }
+
+    // If there is no parent span ID, the span is considered a root span.
+    return null
+}
+
+function isSampled(span: ReadableSpan): boolean {
+    return span.attributes.sampled === true
+}
+
+// This function finds the root span of a given span so that we can check eventually check if it is sampled.
+// This is useful to put all the spans that are part of the same trace together.
 function getRootSpan(spanMap: Map<string, ReadableSpan>, span: ReadableSpan): ReadableSpan | null {
     if (span.parentSpanId) {
         const parentSpan = spanMap.get(span.parentSpanId)
@@ -78,8 +126,4 @@ function getRootSpan(spanMap: Map<string, ReadableSpan>, span: ReadableSpan): Re
         return getRootSpan(spanMap, parentSpan)
     }
     return span
-}
-
-function isRootSampled(rootSpan: ReadableSpan): boolean {
-    return rootSpan.attributes.sampled === true
 }
