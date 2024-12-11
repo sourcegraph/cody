@@ -639,7 +639,7 @@ export async function logTestingData(data: string, type?: string, testName?: str
     };
 
     // Publishes the message as a string
-    const dataBuffer = new Uint8Array(Buffer.from(JSON.stringify(message)));
+    const dataBuffer = Buffer.from(JSON.stringify(message));
 
     await topicPublisher.publishMessage({ data: dataBuffer }).catch((error) => {
         console.error("Error publishing message:", error);

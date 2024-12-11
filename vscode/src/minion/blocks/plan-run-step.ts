@@ -86,7 +86,7 @@ async function runUpdateChangelog(memory: Memory, anthropic: Anthropic): Promise
 
     const newClContents = clContents.slice(0, clStart) + newClChunk + clContents.slice(clEnd)
 
-    await vscode.workspace.fs.writeFile(changelogUri, new Uint8Array(Buffer.from(newClContents)))
+    await vscode.workspace.fs.writeFile(changelogUri, Buffer.from(newClContents))
 
     const prevUri = vscode.Uri.from({
         scheme: 'git',

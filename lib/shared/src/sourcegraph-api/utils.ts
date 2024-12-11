@@ -27,16 +27,8 @@ export function toPartialUtf8String(buf: Buffer): { str: string; buf: Buffer } {
             lastValidByteOffsetExclusive -= numBytes
         }
     }
-    const slicedBuffer: Buffer = buf.slice(lastValidByteOffsetExclusive)
-
-    const bufferFromSlice = Buffer.from(slicedBuffer)
-
     return {
         str: buf.slice(0, lastValidByteOffsetExclusive).toString('utf8'),
-        buf: bufferFromSlice,
+        buf: Buffer.from(buf.slice(lastValidByteOffsetExclusive)),
     }
-}
-
-export function toUint8Array(buffer: Buffer): Uint8Array {
-    return new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength)
 }

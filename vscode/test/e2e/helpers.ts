@@ -41,16 +41,6 @@ interface WorkspaceSettings {
     [key: string]: string | boolean | number
 }
 
-// Define an interface for the parameters
-interface PageFixtureParams {
-    page: Page
-    app: ElectronApplication
-    openDevTools: () => Promise<void>
-    assetsDirectory: string
-    expectedV2Events: string[]
-    preAuthenticate: boolean
-}
-
 export type EnterpriseTestOptions = {
     shouldUseEnterprise: boolean
 }
@@ -311,18 +301,10 @@ export const test = base
         },
     })
     .extend({
-        // @ts-ignore
         page: async (
-            {
-                page: _page,
-                app,
-                openDevTools,
-                assetsDirectory,
-                expectedV2Events,
-                preAuthenticate,
-            }: PageFixtureParams,
-            use: (page: Page) => Promise<void>,
-            testInfo: TestInfo
+            { page: _page, app, openDevTools, assetsDirectory, expectedV2Events, preAuthenticate },
+            use,
+            testInfo
         ) => {
             sendTestInfo(testInfo.title, testInfo.testId, uuid.v4())
 

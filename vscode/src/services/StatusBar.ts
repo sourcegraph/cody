@@ -345,14 +345,11 @@ export class CodyStatusBar implements vscode.Disposable {
 
         if (loaders.size > 0) {
             const isStarting = [...loaders.values()].some(loader => loader.kind === 'startup')
-            const firstLoader = loaders.values().next().value
             return {
                 icon: 'loading',
                 tooltip: isStarting
                     ? 'Cody is getting ready...'
-                    : firstLoader
-                      ? firstLoader.title
-                      : 'Loading...',
+                    : `${loaders.values().next().value.title}`,
                 style: 'normal',
                 tags,
                 interact: interactDefault({
