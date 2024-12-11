@@ -1,4 +1,5 @@
 import { diff } from 'fast-myers-diff'
+import * as uuid from 'uuid'
 import * as vscode from 'vscode'
 
 import { getNewLineChar } from '../../completions/text-processing'
@@ -66,6 +67,7 @@ function computeDiffOperations(originalLines: string[], modifiedLines: string[])
         // Process unchanged lines before the current diff
         while (originalIndex < originalStart && modifiedIndex < modifiedStart) {
             lineInfos.push({
+                id: uuid.v4(),
                 type: 'unchanged',
                 originalLineNumber: originalIndex,
                 modifiedLineNumber: modifiedIndex,
@@ -97,6 +99,7 @@ function computeDiffOperations(originalLines: string[], modifiedLines: string[])
                 )
             } else {
                 lineInfos.push({
+                    id: uuid.v4(),
                     type: 'unchanged',
                     originalLineNumber: originalStart + i,
                     modifiedLineNumber: modifiedStart + i,
@@ -109,6 +112,7 @@ function computeDiffOperations(originalLines: string[], modifiedLines: string[])
         // Process remaining deletions (removed lines)
         for (let j = i; j < numDeletions; j++) {
             lineInfos.push({
+                id: uuid.v4(),
                 type: 'removed',
                 originalLineNumber: originalStart + j,
                 text: originalLines[originalStart + j],
@@ -118,6 +122,7 @@ function computeDiffOperations(originalLines: string[], modifiedLines: string[])
         // Process remaining insertions (added lines)
         for (let j = i; j < numInsertions; j++) {
             lineInfos.push({
+                id: uuid.v4(),
                 type: 'added',
                 modifiedLineNumber: modifiedStart + j,
                 text: modifiedLines[modifiedStart + j],
@@ -132,6 +137,7 @@ function computeDiffOperations(originalLines: string[], modifiedLines: string[])
     // Process any remaining unchanged lines after the last diff chunk.
     while (originalIndex < originalLines.length && modifiedIndex < modifiedLines.length) {
         lineInfos.push({
+            id: uuid.v4(),
             type: 'unchanged',
             originalLineNumber: originalIndex,
             modifiedLineNumber: modifiedIndex,
@@ -163,6 +169,7 @@ function createModifiedLineInfo({
     const lineChanges = computeLineChanges({ oldChunks, newChunks, lineNumber: modifiedLineNumber })
 
     return {
+        id: uuid.v4(),
         type: 'modified',
         originalLineNumber,
         modifiedLineNumber,
@@ -202,6 +209,7 @@ function computeLineChanges({
                     oldOffset
                 )
                 changes.push({
+                    id: uuid.v4(),
                     type: 'unchanged',
                     range: unchangedRange,
                     text: unchangedText,
@@ -230,6 +238,7 @@ function computeLineChanges({
                     oldOffset
                 )
                 changes.push({
+                    id: uuid.v4(),
                     type: 'delete',
                     range: deleteRange,
                     text: deletionText,
@@ -255,6 +264,7 @@ function computeLineChanges({
                 )
 
                 changes.push({
+                    id: uuid.v4(),
                     type: 'insert',
                     range: insertRange,
                     text: insertionText,
@@ -277,6 +287,7 @@ function computeLineChanges({
                 oldOffset
             )
             changes.push({
+                id: uuid.v4(),
                 type: 'unchanged',
                 range: unchangedRange,
                 text: unchangedText,

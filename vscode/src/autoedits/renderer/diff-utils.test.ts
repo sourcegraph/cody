@@ -18,6 +18,7 @@ describe('getDecorationInfo', () => {
                     removedLines: [],
                     modifiedLines: [
                         {
+                            id: expect.any(String),
                             type: 'modified',
                             originalLineNumber: 1,
                             modifiedLineNumber: 1,
@@ -25,11 +26,13 @@ describe('getDecorationInfo', () => {
                             newText: 'modified2',
                             changes: [
                                 {
+                                    id: expect.any(String),
                                     type: 'delete',
                                     range: expect.anything(),
                                     text: 'line2',
                                 },
                                 {
+                                    id: expect.any(String),
                                     type: 'insert',
                                     range: expect.anything(),
                                     text: 'modified2',
@@ -39,12 +42,14 @@ describe('getDecorationInfo', () => {
                     ],
                     unchangedLines: [
                         {
+                            id: expect.any(String),
                             type: 'unchanged',
                             originalLineNumber: 0,
                             modifiedLineNumber: 0,
                             text: 'line1',
                         },
                         {
+                            id: expect.any(String),
                             type: 'unchanged',
                             originalLineNumber: 2,
                             modifiedLineNumber: 2,
@@ -63,17 +68,26 @@ describe('getDecorationInfo', () => {
                 const decorationInfo = getDecorationInfo(originalText, modifiedText)
 
                 const expected: DecorationInfo = {
-                    addedLines: [{ type: 'added', modifiedLineNumber: 2, text: 'line3' }],
+                    addedLines: [
+                        {
+                            id: expect.any(String),
+                            type: 'added',
+                            modifiedLineNumber: 2,
+                            text: 'line3',
+                        },
+                    ],
                     removedLines: [],
                     modifiedLines: [],
                     unchangedLines: [
                         {
+                            id: expect.any(String),
                             type: 'unchanged',
                             originalLineNumber: 0,
                             modifiedLineNumber: 0,
                             text: 'line1',
                         },
                         {
+                            id: expect.any(String),
                             type: 'unchanged',
                             originalLineNumber: 1,
                             modifiedLineNumber: 1,
@@ -93,16 +107,25 @@ describe('getDecorationInfo', () => {
 
                 const expected: DecorationInfo = {
                     addedLines: [],
-                    removedLines: [{ type: 'removed', originalLineNumber: 1, text: 'line2' }],
+                    removedLines: [
+                        {
+                            id: expect.any(String),
+                            type: 'removed',
+                            originalLineNumber: 1,
+                            text: 'line2',
+                        },
+                    ],
                     modifiedLines: [],
                     unchangedLines: [
                         {
+                            id: expect.any(String),
                             type: 'unchanged',
                             originalLineNumber: 0,
                             modifiedLineNumber: 0,
                             text: 'line1',
                         },
                         {
+                            id: expect.any(String),
                             type: 'unchanged',
                             originalLineNumber: 2,
                             modifiedLineNumber: 1,
@@ -125,6 +148,7 @@ describe('getDecorationInfo', () => {
                     removedLines: [],
                     modifiedLines: [
                         {
+                            id: expect.any(String),
                             type: 'modified',
                             originalLineNumber: 1,
                             modifiedLineNumber: 1,
@@ -132,11 +156,13 @@ describe('getDecorationInfo', () => {
                             newText: 'modified2',
                             changes: [
                                 {
+                                    id: expect.any(String),
                                     type: 'delete',
                                     range: expect.anything(),
                                     text: 'line2',
                                 },
                                 {
+                                    id: expect.any(String),
                                     type: 'insert',
                                     range: expect.anything(),
                                     text: 'modified2',
@@ -144,6 +170,7 @@ describe('getDecorationInfo', () => {
                             ],
                         },
                         {
+                            id: expect.any(String),
                             type: 'modified',
                             originalLineNumber: 2,
                             modifiedLineNumber: 2,
@@ -151,11 +178,13 @@ describe('getDecorationInfo', () => {
                             newText: 'newline',
                             changes: [
                                 {
+                                    id: expect.any(String),
                                     type: 'delete',
                                     range: expect.anything(),
                                     text: 'line3',
                                 },
                                 {
+                                    id: expect.any(String),
                                     type: 'insert',
                                     range: expect.anything(),
                                     text: 'newline',
@@ -165,12 +194,14 @@ describe('getDecorationInfo', () => {
                     ],
                     unchangedLines: [
                         {
+                            id: expect.any(String),
                             type: 'unchanged',
                             originalLineNumber: 0,
                             modifiedLineNumber: 0,
                             text: 'line1',
                         },
                         {
+                            id: expect.any(String),
                             type: 'unchanged',
                             originalLineNumber: 3,
                             modifiedLineNumber: 3,
@@ -194,6 +225,7 @@ describe('getDecorationInfo', () => {
                     modifiedLines: [],
                     unchangedLines: [
                         {
+                            id: expect.any(String),
                             originalLineNumber: 0,
                             modifiedLineNumber: 0,
                             text: '',
@@ -212,9 +244,17 @@ describe('getDecorationInfo', () => {
                 const decorationInfo = getDecorationInfo(originalText, modifiedText)
 
                 const expected: DecorationInfo = {
-                    addedLines: [{ type: 'added', modifiedLineNumber: 5, text: 'add2' }],
+                    addedLines: [
+                        {
+                            id: expect.any(String),
+                            type: 'added',
+                            modifiedLineNumber: 5,
+                            text: 'add2',
+                        },
+                    ],
                     removedLines: [
                         {
+                            id: expect.any(String),
                             originalLineNumber: 2,
                             text: 'removeLine1',
                             type: 'removed',
@@ -222,6 +262,7 @@ describe('getDecorationInfo', () => {
                     ],
                     modifiedLines: [
                         {
+                            id: expect.any(String),
                             type: 'modified',
                             originalLineNumber: 1,
                             modifiedLineNumber: 1,
@@ -229,11 +270,13 @@ describe('getDecorationInfo', () => {
                             newText: 'modified1',
                             changes: [
                                 {
+                                    id: expect.any(String),
                                     type: 'delete',
                                     range: expect.anything(),
                                     text: 'remove1',
                                 },
                                 {
+                                    id: expect.any(String),
                                     type: 'insert',
                                     range: expect.anything(),
                                     text: 'modified1',
@@ -241,6 +284,7 @@ describe('getDecorationInfo', () => {
                             ],
                         },
                         {
+                            id: expect.any(String),
                             type: 'modified',
                             originalLineNumber: 4,
                             modifiedLineNumber: 3,
@@ -248,11 +292,13 @@ describe('getDecorationInfo', () => {
                             newText: 'add1',
                             changes: [
                                 {
+                                    id: expect.any(String),
                                     type: 'delete',
                                     range: expect.anything(),
                                     text: 'remove2',
                                 },
                                 {
+                                    id: expect.any(String),
                                     type: 'insert',
                                     range: expect.anything(),
                                     text: 'add1',
@@ -260,6 +306,7 @@ describe('getDecorationInfo', () => {
                             ],
                         },
                         {
+                            id: expect.any(String),
                             type: 'modified',
                             originalLineNumber: 5,
                             modifiedLineNumber: 4,
@@ -267,11 +314,13 @@ describe('getDecorationInfo', () => {
                             newText: 'modified2',
                             changes: [
                                 {
+                                    id: expect.any(String),
                                     type: 'delete',
                                     range: expect.anything(),
                                     text: 'modify2',
                                 },
                                 {
+                                    id: expect.any(String),
                                     type: 'insert',
                                     range: expect.anything(),
                                     text: 'modified2',
@@ -281,18 +330,21 @@ describe('getDecorationInfo', () => {
                     ],
                     unchangedLines: [
                         {
+                            id: expect.any(String),
                             type: 'unchanged',
                             originalLineNumber: 0,
                             modifiedLineNumber: 0,
                             text: 'keep1',
                         },
                         {
+                            id: expect.any(String),
                             type: 'unchanged',
                             originalLineNumber: 3,
                             modifiedLineNumber: 2,
                             text: 'keep2',
                         },
                         {
+                            id: expect.any(String),
                             type: 'unchanged',
                             originalLineNumber: 6,
                             modifiedLineNumber: 6,
@@ -315,6 +367,7 @@ describe('getDecorationInfo', () => {
                     removedLines: [],
                     modifiedLines: [
                         {
+                            id: expect.any(String),
                             type: 'modified',
                             originalLineNumber: 0,
                             modifiedLineNumber: 0,
@@ -322,11 +375,13 @@ describe('getDecorationInfo', () => {
                             newText: 'different1',
                             changes: [
                                 {
+                                    id: expect.any(String),
                                     type: 'delete',
                                     range: expect.anything(),
                                     text: 'line1',
                                 },
                                 {
+                                    id: expect.any(String),
                                     type: 'insert',
                                     range: expect.anything(),
                                     text: 'different1',
@@ -334,6 +389,7 @@ describe('getDecorationInfo', () => {
                             ],
                         },
                         {
+                            id: expect.any(String),
                             type: 'modified',
                             originalLineNumber: 1,
                             modifiedLineNumber: 1,
@@ -341,11 +397,13 @@ describe('getDecorationInfo', () => {
                             newText: 'different2',
                             changes: [
                                 {
+                                    id: expect.any(String),
                                     type: 'delete',
                                     range: expect.anything(),
                                     text: 'line2',
                                 },
                                 {
+                                    id: expect.any(String),
                                     type: 'insert',
                                     range: expect.anything(),
                                     text: 'different2',
@@ -353,6 +411,7 @@ describe('getDecorationInfo', () => {
                             ],
                         },
                         {
+                            id: expect.any(String),
                             type: 'modified',
                             originalLineNumber: 2,
                             modifiedLineNumber: 2,
@@ -360,11 +419,13 @@ describe('getDecorationInfo', () => {
                             newText: 'different3',
                             changes: [
                                 {
+                                    id: expect.any(String),
                                     type: 'delete',
                                     range: expect.anything(),
                                     text: 'line3',
                                 },
                                 {
+                                    id: expect.any(String),
                                     type: 'insert',
                                     range: expect.anything(),
                                     text: 'different3',
@@ -386,11 +447,22 @@ describe('getDecorationInfo', () => {
 
                 const expected: DecorationInfo = {
                     addedLines: [
-                        { type: 'added', modifiedLineNumber: 1, text: 'line2' },
-                        { type: 'added', modifiedLineNumber: 2, text: 'line3' },
+                        {
+                            id: expect.any(String),
+                            type: 'added',
+                            modifiedLineNumber: 1,
+                            text: 'line2',
+                        },
+                        {
+                            id: expect.any(String),
+                            type: 'added',
+                            modifiedLineNumber: 2,
+                            text: 'line3',
+                        },
                     ],
                     modifiedLines: [
                         {
+                            id: expect.any(String),
                             type: 'modified',
                             originalLineNumber: 0,
                             modifiedLineNumber: 0,
@@ -398,6 +470,7 @@ describe('getDecorationInfo', () => {
                             newText: 'line1',
                             changes: [
                                 {
+                                    id: expect.any(String),
                                     type: 'insert',
                                     range: expect.anything(),
                                     text: 'line1',
@@ -421,11 +494,22 @@ describe('getDecorationInfo', () => {
                 const expected: DecorationInfo = {
                     addedLines: [],
                     removedLines: [
-                        { type: 'removed', originalLineNumber: 1, text: 'line2' },
-                        { type: 'removed', originalLineNumber: 2, text: 'line3' },
+                        {
+                            id: expect.any(String),
+                            type: 'removed',
+                            originalLineNumber: 1,
+                            text: 'line2',
+                        },
+                        {
+                            id: expect.any(String),
+                            type: 'removed',
+                            originalLineNumber: 2,
+                            text: 'line3',
+                        },
                     ],
                     modifiedLines: [
                         {
+                            id: expect.any(String),
                             type: 'modified',
                             originalLineNumber: 0,
                             modifiedLineNumber: 0,
@@ -433,6 +517,7 @@ describe('getDecorationInfo', () => {
                             newText: '',
                             changes: [
                                 {
+                                    id: expect.any(String),
                                     type: 'delete',
                                     range: expect.anything(),
                                     text: 'line1',
@@ -457,6 +542,7 @@ describe('getDecorationInfo', () => {
                     removedLines: [],
                     modifiedLines: [
                         {
+                            id: expect.any(String),
                             type: 'modified',
                             originalLineNumber: 0,
                             modifiedLineNumber: 0,
@@ -464,11 +550,13 @@ describe('getDecorationInfo', () => {
                             newText: 'line1',
                             changes: [
                                 {
+                                    id: expect.any(String),
                                     type: 'delete',
                                     range: expect.anything(),
                                     text: '  ',
                                 },
                                 {
+                                    id: expect.any(String),
                                     type: 'unchanged',
                                     range: expect.anything(),
                                     text: 'line1',
@@ -476,6 +564,7 @@ describe('getDecorationInfo', () => {
                             ],
                         },
                         {
+                            id: expect.any(String),
                             type: 'modified',
                             originalLineNumber: 1,
                             modifiedLineNumber: 1,
@@ -483,11 +572,13 @@ describe('getDecorationInfo', () => {
                             newText: 'line2',
                             changes: [
                                 {
+                                    id: expect.any(String),
                                     type: 'unchanged',
                                     range: expect.anything(),
                                     text: 'line2',
                                 },
                                 {
+                                    id: expect.any(String),
                                     type: 'delete',
                                     range: expect.anything(),
                                     text: '  ',
@@ -495,6 +586,7 @@ describe('getDecorationInfo', () => {
                             ],
                         },
                         {
+                            id: expect.any(String),
                             type: 'modified',
                             originalLineNumber: 2,
                             modifiedLineNumber: 2,
@@ -502,16 +594,19 @@ describe('getDecorationInfo', () => {
                             newText: 'line3',
                             changes: [
                                 {
+                                    id: expect.any(String),
                                     type: 'delete',
                                     range: expect.anything(),
                                     text: ' ',
                                 },
                                 {
+                                    id: expect.any(String),
                                     type: 'unchanged',
                                     range: expect.anything(),
                                     text: 'line3',
                                 },
                                 {
+                                    id: expect.any(String),
                                     type: 'delete',
                                     range: expect.anything(),
                                     text: ' ',
@@ -536,6 +631,7 @@ describe('getDecorationInfo', () => {
                     removedLines: [],
                     modifiedLines: [
                         {
+                            id: expect.any(String),
                             type: 'modified',
                             originalLineNumber: 0,
                             modifiedLineNumber: 0,
@@ -543,46 +639,55 @@ describe('getDecorationInfo', () => {
                             newText: 'const span = trace.getActiveTrace()',
                             changes: [
                                 {
+                                    id: expect.any(String),
                                     type: 'unchanged',
                                     range: expect.anything(),
                                     text: 'const',
                                 },
                                 {
+                                    id: expect.any(String),
                                     type: 'unchanged',
                                     range: expect.anything(),
                                     text: ' ',
                                 },
                                 {
+                                    id: expect.any(String),
                                     type: 'delete',
                                     range: expect.anything(),
                                     text: 'value',
                                 },
                                 {
+                                    id: expect.any(String),
                                     type: 'insert',
                                     range: expect.anything(),
                                     text: 'span',
                                 },
                                 {
+                                    id: expect.any(String),
                                     type: 'unchanged',
                                     range: expect.anything(),
                                     text: ' ',
                                 },
                                 {
+                                    id: expect.any(String),
                                     type: 'unchanged',
                                     range: expect.anything(),
                                     text: '=',
                                 },
                                 {
+                                    id: expect.any(String),
                                     type: 'unchanged',
                                     range: expect.anything(),
                                     text: ' ',
                                 },
                                 {
+                                    id: expect.any(String),
                                     type: 'delete',
                                     range: expect.anything(),
                                     text: '123',
                                 },
                                 {
+                                    id: expect.any(String),
                                     type: 'insert',
                                     range: expect.anything(),
                                     text: 'trace.getActiveTrace()',
