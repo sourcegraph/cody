@@ -8,6 +8,7 @@
     justify-content: center;
     width: auto;
     height: 100%;
+    max-height: 24px;
 }
 
 .sourcegraph-gradient-border {
