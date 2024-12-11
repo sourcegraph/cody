@@ -16,7 +16,8 @@ class CodySelectionListener(val project: Project) : SelectionListener {
     if (!ConfigUtil.isCodyEnabled() ||
         event.editor == null ||
         event.editor.project != project ||
-        event.editor.editorKind != EditorKind.MAIN_EDITOR) {
+        (event.editor.editorKind != EditorKind.MAIN_EDITOR &&
+            !ConfigUtil.isIntegrationTestModeEnabled())) {
       return
     }
     val editor = event.editor

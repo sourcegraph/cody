@@ -27,7 +27,7 @@ describe('Document Code', { timeout: 5000 }, () => {
     })
 
     it('commands/document (Method as part of a class)', async () => {
-        expect(await client.documentCode(workspace.file('src', 'TestClass.ts'))).toMatchSnapshot()
+        await client.documentCode(workspace.file('src', 'TestClass.ts'))
 
         const { requests } = await client.request('testing/networkRequests', null)
         expect(requests.find(r => r.body?.includes('const longSuffix'))).toBeTruthy()

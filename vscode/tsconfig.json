@@ -1,6 +1,7 @@
 {
   "extends": "../tsconfig.json",
   "compilerOptions": {
+    "allowJs": true,
     "sourceMap": false, // sourcemaps come from esbuild/vite
     "rootDir": ".",
     "outDir": "dist/tsc",
@@ -31,7 +32,8 @@
     "dist",
     "test/integration",
     "**/test-data",
-    "webviews/vite.config.mts"
+    "webviews/vite.config.mts",
+    "**/*.mjs",
   ],
   "references": [
     {

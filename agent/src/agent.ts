@@ -9,6 +9,7 @@ import {
     type CodyCommand,
     CodyIDE,
     ModelUsage,
+    authStatus,
     currentAuthStatus,
     currentAuthStatusAuthed,
     firstResultFromOperation,
@@ -77,10 +78,7 @@ import { AgentWorkspaceConfiguration } from './AgentWorkspaceConfiguration'
 import { AgentWorkspaceDocuments } from './AgentWorkspaceDocuments'
 import { registerNativeWebviewHandlers, resolveWebviewView } from './NativeWebview'
 import type { PollyRequestError } from './cli/command-jsonrpc-stdio'
-import {
-    currentProtocolAuthStatus,
-    currentProtocolAuthStatusOrNotReadyYet,
-} from './currentProtocolAuthStatus'
+import { toProtocolAuthStatus } from './currentProtocolAuthStatus'
 import { AgentGlobalState } from './global-state/AgentGlobalState'
 import {
     MessageHandler,
@@ -358,7 +356,6 @@ export class Agent extends MessageHandler implements ExtensionClient {
     public webviewViewProviders = new Map<string, vscode.WebviewViewProvider>()
 
     public authenticationHandler: AgentAuthHandler | null = null
-    private authenticationPromise: Promise<void> = Promise.resolve()
 
     private clientInfo: ClientInfo | null = null
 
@@ -455,14 +452,15 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
                 const ideType = AgentWorkspaceConfiguration.clientNameToIDE(this.clientInfo?.name ?? '')
 
-                this.authenticationPromise =
-                    clientInfo.extensionConfiguration &&
-                    (clientInfo.extensionConfiguration?.accessToken || ideType === CodyIDE.Web)
-                        ? this.handleConfigChanges(clientInfo.extensionConfiguration, {
-                              forceAuthentication: true,
-                          })
-                        : Promise.resolve()
-                await this.authenticationPromise
+                const forceAuthentication =
+                    !!clientInfo.extensionConfiguration &&
+                    (!!clientInfo.extensionConfiguration?.accessToken || ideType === CodyIDE.Web)
+
+                const status: AuthStatus = clientInfo.extensionConfiguration
+                    ? await this.handleConfigChanges(clientInfo.extensionConfiguration, {
+                          forceAuthentication,
+                      })
+                    : { endpoint: '', authenticated: false, pendingValidation: false }
 
                 const webviewKind = clientInfo.capabilities?.webview || 'agentic'
                 const nativeWebviewConfig = clientInfo.capabilities?.webviewNativeConfig
@@ -481,11 +479,10 @@ export class Agent extends MessageHandler implements ExtensionClient {
                     this.registerWebviewHandlers()
                 }
 
-                const authStatus = currentProtocolAuthStatusOrNotReadyYet()
                 return {
                     name: 'cody-agent',
-                    authenticated: authStatus?.authenticated ?? false,
-                    authStatus,
+                    authenticated: status.authenticated,
+                    authStatus: toProtocolAuthStatus(status),
                 }
             } catch (error) {
                 console.error(
@@ -557,8 +554,9 @@ export class Agent extends MessageHandler implements ExtensionClient {
         this.registerRequest('textDocument/change', async document => {
             // We don't await the promise here, as it's got a fragile implicit contract.
             // Call testing/awaitPendingPromises if you want to wait for changes to settle.
-            this.handleDocumentChange(document)
-            return { success: true }
+            return this.handleDocumentChange(document).then(() => {
+                return { success: true }
+            })
         })
 
         this.registerNotification('textDocument/didClose', document => {
@@ -578,18 +576,15 @@ export class Agent extends MessageHandler implements ExtensionClient {
         })
 
         this.registerNotification('extensionConfiguration/didChange', config => {
-            this.authenticationPromise = this.handleConfigChanges(config)
+            this.handleConfigChanges(config)
         })
 
         this.registerRequest('extensionConfiguration/change', async config => {
-            this.authenticationPromise = this.handleConfigChanges(config)
-            await this.authenticationPromise
-            return currentProtocolAuthStatus()
+            return this.handleConfigChanges(config).then(toProtocolAuthStatus)
         })
 
         this.registerRequest('extensionConfiguration/status', async () => {
-            await this.authenticationPromise
-            return currentProtocolAuthStatus()
+            return firstResultFromOperation(authStatus).then(toProtocolAuthStatus)
         })
 
         this.registerRequest('extensionConfiguration/getSettingsSchema', async () => {
@@ -1501,13 +1496,14 @@ export class Agent extends MessageHandler implements ExtensionClient {
     private async handleConfigChanges(
         config: ExtensionConfiguration,
         params?: { forceAuthentication: boolean }
-    ): Promise<void> {
+    ): Promise<AuthStatus> {
         const isAuthChange = vscode_shim.isAuthenticationChange(config)
         vscode_shim.setExtensionConfiguration(config)
+
         // If this is an authentication change we need to reauthenticate prior to firing events
         // that update the clients
-        if (isAuthChange || params?.forceAuthentication) {
-            try {
+        try {
+            if (isAuthChange || params?.forceAuthentication) {
                 await authProvider.validateAndStoreCredentials(
                     {
                         configuration: {
@@ -1523,21 +1519,25 @@ export class Agent extends MessageHandler implements ExtensionClient {
                     },
                     'always-store'
                 )
-
-                // Critical: we need to await for the handling of `onDidChangeConfiguration` to
-                // let the new credentials propagate. If we remove the statement below, then
-                // autocomplete may return empty results because we can't await for the updated
-                // `InlineCompletionItemProvider` to register.
-                await vscode_shim.onDidChangeConfiguration.cody_fireAsync({
-                    affectsConfiguration: () =>
-                        // assuming the return value below only impacts performance (not
-                        // functionality), we return true to always triggger the callback.
-                        true,
-                })
-            } catch (error) {
-                console.log('Authentication failed', error)
             }
+        } catch (error) {
+            console.log('Authentication failed', error)
         }
+
+        await firstResultFromOperation(authStatus)
+
+        // Critical: we need to await for the handling of `onDidChangeConfiguration` to
+        // let the new credentials propagate. If we remove the statement below, then
+        // autocomplete may return empty results because we can't await for the updated
+        // `InlineCompletionItemProvider` to register.
+        await vscode_shim.onDidChangeConfiguration.cody_fireAsync({
+            affectsConfiguration: () =>
+                // assuming the return value below only impacts performance (not
+                // functionality), we return true to always trigger the callback.
+                true,
+        })
+
+        return await firstResultFromOperation(authStatus)
     }
 
     private async handleDocumentChange(document: ProtocolTextDocument) {
@@ -1719,7 +1719,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
         callback: RequestCallback<M>
     ): void {
         this.registerRequest(method, async (params, token) => {
-            await this.authenticationPromise
+            await firstResultFromOperation(authStatus)
             if (vscode_shim.isTesting) {
                 await Promise.all(this.pendingPromises.values())
             }

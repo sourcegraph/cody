@@ -199,7 +199,7 @@ describe('Enterprise - S2 (close main branch)', { timeout: 5000 }, () => {
                 snippet: 'sourcegraph.Location(new LRU',
             })
             expect(repoNames).empty
-            expect(error).null
+            expect(error).toEqual('Attribution search is turned off.')
         }, 20_000)
     })
 

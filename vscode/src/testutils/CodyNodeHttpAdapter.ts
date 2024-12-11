@@ -1,7 +1,7 @@
-import NodeHttpAdapter from '@pollyjs/adapter-node-http'
 import type { Request } from '@pollyjs/core'
+import HttpAdapter from './pollyjs/NodeHttpAdapter'
 
-export class CodyNodeHttpAdapter extends NodeHttpAdapter {
+export class CodyNodeHttpAdapter extends HttpAdapter {
     public async onRequest(request: Request): Promise<void> {
         if (request.body) {
             request.body = request.body
@@ -10,5 +10,9 @@ export class CodyNodeHttpAdapter extends NodeHttpAdapter {
         }
 
         return super.onRequest(request)
+    }
+
+    public async onRequestFailed(request: Request): Promise<void> {
+        return super.onRequestFailed(request)
     }
 }

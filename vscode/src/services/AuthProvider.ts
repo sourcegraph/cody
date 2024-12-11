@@ -14,6 +14,7 @@ import {
     currentResolvedConfig,
     disposableSubscription,
     distinctUntilChanged,
+    firstResultFromOperation,
     clientCapabilities as getClientCapabilities,
     isAbortError,
     normalizeServerEndpointURL,
@@ -84,6 +85,7 @@ class AuthProvider implements vscode.Disposable {
                         // Emitting `authenticated: false` for a brief period is both true and a
                         // way to ensure that subscribers are robust to changes in
                         // authentication status.
+                        signal?.throwIfAborted()
                         this.status.next({
                             authenticated: false,
                             pendingValidation: true,
@@ -122,6 +124,9 @@ class AuthProvider implements vscode.Disposable {
                         'setContext',
                         'cody.serverEndpoint',
                         authStatus.endpoint
+                    )
+                    console.error(
+                        `### AuthStatus | ${authStatus.endpoint} | ${authStatus.authenticated} `
                     )
                 } catch (error) {
                     logError('AuthProvider', 'Unexpected error while setting context', error)
@@ -180,7 +185,7 @@ class AuthProvider implements vscode.Disposable {
         config: ResolvedConfigurationCredentialsOnly | AuthCredentials,
         mode: 'store-if-valid' | 'always-store',
         signal?: AbortSignal
-    ): Promise<{ isStored: boolean; authStatus: AuthStatus }> {
+    ): Promise<AuthStatus> {
         let credentials: ResolvedConfigurationCredentialsOnly
         if ('auth' in config) {
             credentials = toCredentialsOnlyNormalized(config)
@@ -198,20 +203,21 @@ class AuthProvider implements vscode.Disposable {
         signal?.throwIfAborted()
         const shouldStore = mode === 'always-store' || authStatus.authenticated
         if (shouldStore) {
+            signal?.throwIfAborted()
             this.lastValidatedAndStoredCredentials.next(credentials)
             await Promise.all([
                 localStorage.saveEndpointAndToken(credentials.auth),
                 this.serializeUninstallerInfo(authStatus),
             ])
+            await firstResultFromOperation(localStorage.clientStateChanges)
             this.status.next(authStatus)
-            signal?.throwIfAborted()
         }
         if (!shouldStore) {
             // Always report telemetry even if we don't store it.
             reportAuthTelemetryEvent(authStatus)
         }
         await this.handleAuthTelemetry(authStatus, signal)
-        return { isStored: shouldStore, authStatus }
+        return authStatus
     }
 
     public setAuthPendingToEndpoint(endpoint: string): void {
