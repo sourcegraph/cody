@@ -1,6 +1,6 @@
 import type { ContextItem, Model } from '@sourcegraph/cody-shared'
 import { pluralize } from '@sourcegraph/cody-shared'
-import type { RankedContext } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import type { ChatMessage, RankedContext } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { MENTION_CLASS_NAME } from '@sourcegraph/prompt-editor'
 import { clsx } from 'clsx'
 import { BrainIcon, FilePenLine, MessagesSquareIcon } from 'lucide-react'
@@ -47,9 +47,11 @@ export const ContextCell: FunctionComponent<{
     className?: string
 
     defaultOpen?: boolean
+    intent: ChatMessage['intent']
 
     onManuallyEditContext: () => void
     editContextNode: React.ReactNode
+    experimentalOneBoxEnabled?: boolean
 }> = memo(
     ({
         contextItems,
@@ -63,6 +65,8 @@ export const ContextCell: FunctionComponent<{
         isContextLoading,
         onManuallyEditContext,
         editContextNode,
+        intent,
+        experimentalOneBoxEnabled,
     }) => {
         const __storybook__initialOpen = useContext(__ContextCellStorybookContext)?.initialOpen ?? false
 
@@ -132,16 +136,24 @@ export const ContextCell: FunctionComponent<{
 
         // Text for top header text
         const headerText: { main: string; sub?: string } = {
-            main: isContextLoading ? 'Fetching context' : 'Context',
-            sub: isContextLoading
-                ? isDeepCodyEnabled
-                    ? 'Thinking…'
-                    : 'Retrieving codebase files…'
-                : contextItems === undefined
-                  ? 'none requested'
-                  : contextItems.length === 0
-                    ? 'none fetched'
-                    : itemCountLabel,
+            main:
+                experimentalOneBoxEnabled && !intent
+                    ? 'Reviewing query'
+                    : isContextLoading
+                      ? 'Fetching context'
+                      : 'Context',
+            sub:
+                experimentalOneBoxEnabled && !intent
+                    ? 'Figuring out query intent...'
+                    : isContextLoading
+                      ? isDeepCodyEnabled
+                          ? 'Thinking…'
+                          : 'Retrieving codebase files…'
+                      : contextItems === undefined
+                        ? 'none requested'
+                        : contextItems.length === 0
+                          ? 'none fetched'
+                          : itemCountLabel,
         }
 
         return (
