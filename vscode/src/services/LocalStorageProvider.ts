@@ -347,8 +347,11 @@ class LocalStorage implements LocalStorageForModelPreferences {
         await this.set(this.CODY_CHAT_MEMORY, memories)
     }
 
-    public isAtDeepCodyDailyLimit(): boolean {
-        const DAILY_QUOTA = 20
+    /**
+     * Returns the number of seconds the user needs to wait before they can use DeepCody again.
+     */
+    public isAtDeepCodyDailyLimit(): string | undefined {
+        const DAILY_QUOTA = 50
         const ONE_DAY_MS = 24 * 60 * 60 * 1000
 
         // Get current quota and last used time, with defaults
@@ -371,11 +374,13 @@ class LocalStorage implements LocalStorageForModelPreferences {
                 this.set(this.keys.deepCodyDailyUsageCount, newQuota - 1),
                 this.set(this.keys.deepCodyLastUsageTime, new Date().toISOString()),
             ])
-            return false
+            return undefined
         }
 
-        // No quota available
-        return true
+        // No quota available.
+        // Calculate how much time after the lastUsedTime we need to wait.
+        const timeToWait = ONE_DAY_MS - timeDiff
+        return Math.floor(timeToWait / 1000).toString()
     }
 
     public get<T>(key: string): T | null {

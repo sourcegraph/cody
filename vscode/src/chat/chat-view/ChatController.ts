@@ -9,6 +9,7 @@ import {
     REMOTE_DIRECTORY_PROVIDER_URI,
     REMOTE_FILE_PROVIDER_URI,
     REMOTE_REPOSITORY_PROVIDER_URI,
+    RateLimitError,
     cenv,
     clientCapabilities,
     currentSiteVersion,
@@ -793,17 +794,21 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             throw new Error('No model selected, and no default chat model is available')
         }
         this.chatBuilder.setSelectedModel(model)
+
+        this.postEmptyMessageInProgress(model)
+
         const isDeepCodyModel = model?.includes('deep-cody')
-        if (isDeepCodyModel && localStorage.isAtDeepCodyDailyLimit()) {
+        const isDeepCodyEnabled = this.chatBuilder.getMessages().length < 4
+        const isAtDeepCodyLimit = localStorage.isAtDeepCodyDailyLimit()
+        if (isDeepCodyModel && isDeepCodyEnabled && isAtDeepCodyLimit) {
             this.postError(
-                new Error(
-                    'You have reached the daily chat limit for Deep Cody. Please use another model instead.'
-                ),
+                new RateLimitError('Deep Cody', 'daily limit', false, undefined, isAtDeepCodyLimit),
                 'transcript'
             )
             this.handleAbort()
             return
         }
+
         const { isPublic: repoIsPublic, repoMetadata } = await wrapInActiveSpan(
             'chat.getRepoMetadata',
             () => firstResultFromOperation(publicRepoMetadataIfAllWorkspaceReposArePublic)
@@ -832,8 +837,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             },
             tokenCounterUtils
         )
-
-        this.postEmptyMessageInProgress(model)
 
         const inputTextWithoutContextChips = editorState
             ? PromptString.unsafe_fromUserQuery(
