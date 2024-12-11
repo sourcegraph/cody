@@ -41,15 +41,15 @@ export type DecorationLineInfo = AddedLineInfo | RemovedLineInfo | ModifiedLineI
 export interface AddedLineInfo {
     type: 'added'
     text: string
-    /** `lineNumber` in the modified text */
-    lineNumber: number
+    modifiedLineNumber: number
+    /** signifies if this part of the prediction is rendered by the inline completion item provider */
+    usedAsInlineCompletion?: boolean
 }
 
 export interface RemovedLineInfo {
     type: 'removed'
     text: string
-    /** `lineNumber` in the original text */
-    lineNumber: number
+    originalLineNumber: number
 }
 
 export interface ModifiedLineInfo {
@@ -57,22 +57,24 @@ export interface ModifiedLineInfo {
     oldText: string
     newText: string
     changes: LineChange[]
-    /** `lineNumber` in the modified text */
-    lineNumber: number
+    originalLineNumber: number
+    modifiedLineNumber: number
 }
 
 export interface UnchangedLineInfo {
     type: 'unchanged'
     text: string
-    /** `lineNumber` in the modified text */
-    lineNumber: number
+    originalLineNumber: number
+    modifiedLineNumber: number
 }
 
 export type LineChange = {
-    type: 'insert' | 'delete'
+    type: 'insert' | 'delete' | 'unchanged'
     /** `range` in the modified text relative to the document start */
     range: vscode.Range
     text: string
+    /** signifies if this part of the prediction is rendered by the inline completion item provider */
+    usedAsInlineCompletion?: boolean
 }
 
 export interface DecorationInfo {

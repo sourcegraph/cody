@@ -57,14 +57,14 @@ export async function executeExplainOutput(
                 text: prompt,
                 contextItems: [],
                 source,
+                submitType: 'continue-chat',
             }),
         }
     })
 }
 
-const template = ps`
-Review and analyze this terminal output from the \`{{PROCESS}}\` process and summarize the key information. If this indicates an error, provide step-by-step instructions on how I can resolve this:
+const template = ps`Review and analyze this terminal output from the \`{{PROCESS}}\` process and summarize the key information. If this indicates an error, provide step-by-step instructions on how I can resolve this:
 \n\`\`\`
-\n{{OUTPUT}}
-\n\`\`\`
+{{OUTPUT}}
+\`\`\`
 `

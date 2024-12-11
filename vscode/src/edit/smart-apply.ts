@@ -11,6 +11,7 @@ export interface SmartApplyArguments {
         document: vscode.TextDocument
         model?: EditModel
         isNewFile?: boolean
+        traceparent: string | undefined | null
     }
     source?: EventSource
 }

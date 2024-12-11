@@ -47,7 +47,7 @@ import type { CommandResult } from './CommandResult'
 import { showAccountMenu } from './auth/account-menu'
 import { showSignInMenu, showSignOutMenu, tokenCallbackHandler } from './auth/auth'
 import { AutoeditsProvider } from './autoedits/autoedits-provider'
-import { registerTestRenderCommand } from './autoedits/renderer/renderer-testing'
+import { registerAutoEditTestRenderCommand } from './autoedits/renderer/renderer-testing'
 import type { MessageProviderOptions } from './chat/MessageProvider'
 import { ChatsController, CodyChatEditorViewType } from './chat/chat-view/ChatsController'
 import { ContextRetriever } from './chat/chat-view/ContextRetriever'
@@ -456,13 +456,13 @@ async function registerCodyCommands(
     )
 
     // Initialize autoedit provider if experimental feature is enabled
-    registerAutoEdits(disposables)
+    registerAutoEdits(chatClient, disposables)
 
     // Initialize autoedit tester
     disposables.push(
         enableFeature(
             ({ configuration }) => configuration.experimentalAutoeditsRendererTesting !== false,
-            () => registerTestRenderCommand()
+            () => registerAutoEditTestRenderCommand()
         )
     )
     disposables.push(
@@ -705,7 +705,7 @@ async function tryRegisterTutorial(
     }
 }
 
-function registerAutoEdits(disposables: vscode.Disposable[]): void {
+function registerAutoEdits(chatClient: ChatClient, disposables: vscode.Disposable[]): void {
     disposables.push(
         subscriptionDisposable(
             combineLatest(
@@ -718,7 +718,7 @@ function registerAutoEdits(disposables: vscode.Disposable[]): void {
                 .pipe(
                     map(([config, authStatus, autoeditEnabled]) => {
                         if (shouldEnableExperimentalAutoedits(config, autoeditEnabled, authStatus)) {
-                            const provider = new AutoeditsProvider()
+                            const provider = new AutoeditsProvider(chatClient)
 
                             const completionRegistration =
                                 vscode.languages.registerInlineCompletionItemProvider(

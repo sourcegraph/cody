@@ -1,11 +1,14 @@
 import type { Span } from '@opentelemetry/api'
 import {
+    CodyIDE,
     type ContextItem,
     PromptString,
+    clientCapabilities,
     isDefined,
     logDebug,
     ps,
     telemetryRecorder,
+    wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
 import { CodyChatAgent } from './CodyChatAgent'
 import { CODYAGENT_PROMPTS } from './prompts'
@@ -28,6 +31,7 @@ export class DeepCodyAgent extends CodyChatAgent {
         return CODYAGENT_PROMPTS.review
             .replace('{{CODY_TOOLS_PLACEHOLDER}}', join(toolInstructions))
             .replace('{{CODY_TOOLS_EXAMPLES_PLACEHOLDER}}', join(toolExamples))
+            .replace('{{CODY_IDE}}', fromAgentClientIDE(clientCapabilities().agentIDE || CodyIDE.VSCode))
     }
 
     /**
@@ -39,11 +43,18 @@ export class DeepCodyAgent extends CodyChatAgent {
      * @param maxLoops - The maximum number of loops to perform when retrieving the context.
      * @returns The context items retrieved for the current chat.
      */
-    public async getContext(
+    public async getContext(chatAbortSignal: AbortSignal, maxLoops = 2): Promise<ContextItem[]> {
+        return wrapInActiveSpan('DeepCody.getContext', span =>
+            this._getContext(span, chatAbortSignal, maxLoops)
+        )
+    }
+
+    private async _getContext(
         span: Span,
         chatAbortSignal: AbortSignal,
         maxLoops = 2
     ): Promise<ContextItem[]> {
+        span.setAttribute('sampled', true)
         this.models.review = this.chatBuilder.selectedModel
 
         const startTime = performance.now()
@@ -54,6 +65,7 @@ export class DeepCodyAgent extends CodyChatAgent {
                 durationMs: performance.now() - startTime,
                 ...count,
                 model: this.models.review,
+                traceId: span.spanContext().traceId,
             },
             billingMetadata: {
                 product: 'cody',
@@ -68,6 +80,7 @@ export class DeepCodyAgent extends CodyChatAgent {
         chatAbortSignal: AbortSignal,
         maxLoops: number
     ): Promise<{ context: number; loop: number }> {
+        span.addEvent('reviewLoop')
         let context = 0
         let loop = 0
 
@@ -91,7 +104,7 @@ export class DeepCodyAgent extends CodyChatAgent {
     private async review(span: Span, chatAbortSignal: AbortSignal): Promise<ContextItem[]> {
         const prompter = this.getPrompter(this.context)
         const promptData = await prompter.makePrompt(this.chatBuilder, 1, this.promptMixins)
-
+        span.addEvent('sendReviewRequest')
         try {
             const res = await this.processStream(promptData.prompt, chatAbortSignal, this.models.review)
             // If the response is empty or contains the CONTEXT_SUFFICIENT token, the context is sufficient.
@@ -113,5 +126,25 @@ export class DeepCodyAgent extends CodyChatAgent {
             })
             return []
         }
+    }
+}
+
+// TODO: move to shared
+function fromAgentClientIDE(client: CodyIDE) {
+    switch (client) {
+        case CodyIDE.Web:
+            return ps`Sourcegraph Web`
+        case CodyIDE.VisualStudio:
+            return ps`Visual Studio`
+        case CodyIDE.JetBrains:
+            return ps`JetBrains`
+        case CodyIDE.Eclipse:
+            return ps`Eclipse`
+        case CodyIDE.Emacs:
+            return ps`Emacs`
+        case CodyIDE.Neovim:
+            return ps`Neovim`
+        default:
+            return ps`VS Code`
     }
 }

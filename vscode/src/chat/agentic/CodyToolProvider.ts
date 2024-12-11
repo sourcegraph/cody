@@ -9,6 +9,12 @@ import {
     registerDefaultTools,
 } from './CodyTool'
 
+interface CodyShellConfig {
+    user?: boolean
+    instance?: boolean
+    client?: boolean
+}
+
 /**
  * CodyToolProvider is a singleton class responsible for managing and providing access to various Cody tools.
  * It handles both default tools and OpenContext-based tools (like web and Linear integrations).
@@ -22,6 +28,11 @@ import {
 export class CodyToolProvider {
     private openCtxTools: CodyTool[] = []
     private toolFactory = new ToolFactory()
+    private shellConfig: CodyShellConfig = {
+        user: false,
+        instance: false,
+        client: false,
+    }
 
     private constructor(private contextRetriever: Pick<ContextRetriever, 'retrieveContext'>) {
         this.initializeToolRegistry()
@@ -38,9 +49,19 @@ export class CodyToolProvider {
         registerDefaultTools(this.toolFactory.registry)
     }
 
-    public async getTools(isShellContextEnabled = false): Promise<CodyTool[]> {
+    public setShellConfig(config: CodyShellConfig): void {
+        // merge the new config into the old config
+        const newConfig = { ...this.shellConfig, ...config }
+        this.shellConfig = newConfig
+    }
+
+    public get isShellEnabled(): boolean {
+        return Boolean(this.shellConfig.client && this.shellConfig.instance && this.shellConfig.user)
+    }
+
+    public getTools(): CodyTool[] {
         const defaultTools = getDefaultCodyTools(
-            isShellContextEnabled,
+            this.isShellEnabled,
             this.contextRetriever,
             this.toolFactory
         )

@@ -74,7 +74,7 @@ export function isPredictedTextAlreadyInSuffix({
     }
 
     const allAddedLinesText = addedLines
-        .sort((a, b) => a.lineNumber - b.lineNumber)
+        .sort((a, b) => a.modifiedLineNumber - b.modifiedLineNumber)
         .map(line => line.text)
         .join(getNewLineChar(codeToRewrite))
 

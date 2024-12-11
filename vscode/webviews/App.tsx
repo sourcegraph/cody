@@ -1,7 +1,5 @@
 import { type ComponentProps, useCallback, useEffect, useMemo, useState } from 'react'
 
-import styles from './App.module.css'
-
 import {
     type ChatMessage,
     type DefaultContext,
@@ -11,13 +9,16 @@ import {
     getAuthErrorMessage,
 } from '@sourcegraph/cody-shared'
 import type { AuthMethod } from '../src/chat/protocol'
+import styles from './App.module.css'
 import { AuthPage } from './AuthPage'
 import { LoadingPage } from './LoadingPage'
 import { useClientActionDispatcher } from './client/clientState'
+import { WebviewOpenTelemetryService } from './utils/webviewOpenTelemetryService'
 
 import { ExtensionAPIProviderFromVSCodeAPI } from '@sourcegraph/prompt-editor'
 import { CodyPanel } from './CodyPanel'
 import { AuthenticationErrorBanner } from './components/AuthenticationErrorBanner'
+import { useSuppressKeys } from './components/hooks'
 import { View } from './tabs'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 import { ComposedWrappers, type Wrapper } from './utils/composeWrappers'
@@ -45,6 +46,8 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
             })
         })
     }, [vscodeAPI])
+
+    useSuppressKeys()
 
     useEffect(
         () =>
@@ -112,20 +115,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     )
 
     useEffect(() => {
-        // On macOS, suppress the '¬' character emitted by default for alt+L
-        const handleKeyDown = (event: KeyboardEvent) => {
-            const suppressedKeys = ['¬', 'Ò', '¿', '÷']
-            if (event.altKey && suppressedKeys.includes(event.key)) {
-                event.preventDefault()
-            }
-        }
-        window.addEventListener('keydown', handleKeyDown)
-        return () => {
-            window.removeEventListener('keydown', handleKeyDown)
-        }
-    }, [])
-
-    useEffect(() => {
         // Notify the extension host that we are ready to receive events
         vscodeAPI.postMessage({ command: 'ready' })
     }, [vscodeAPI])
@@ -153,6 +142,22 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
 
     // V2 telemetry recorder
     const telemetryRecorder = useMemo(() => createWebviewTelemetryRecorder(vscodeAPI), [vscodeAPI])
+
+    const webviewTelemetryService = useMemo(() => {
+        const service = WebviewOpenTelemetryService.getInstance()
+        return service
+    }, [])
+
+    useEffect(() => {
+        if (config) {
+            webviewTelemetryService.configure({
+                isTracingEnabled: true,
+                debugVerbose: true,
+                agentIDE: config.clientCapabilities.agentIDE,
+                extensionAgentVersion: config.clientCapabilities.agentExtensionVersion,
+            })
+        }
+    }, [config, webviewTelemetryService])
 
     const wrappers = useMemo<Wrapper[]>(
         () => getAppWrappers({ vscodeAPI, telemetryRecorder, config }),

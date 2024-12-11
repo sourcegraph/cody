@@ -19,7 +19,11 @@ const MODEL_PROVIDER_ICONS: Record<string, string> = {
 const getModelProviderIcon = (provider: string): string =>
     MODEL_PROVIDER_ICONS[provider.toLowerCase()] || '$(cody-logo)'
 
-export const getModelOptionItems = (modelOptions: Model[], isCodyPro: boolean): EditModelItem[] => {
+export const getModelOptionItems = (
+    modelOptions: Model[],
+    isCodyPro: boolean,
+    isEnterpriseUser: boolean
+): EditModelItem[] => {
     const allOptions = modelOptions
         .map(modelOption => {
             const icon = getModelProviderIcon(modelOption.provider)
@@ -30,12 +34,12 @@ export const getModelOptionItems = (modelOptions: Model[], isCodyPro: boolean): 
                 alwaysShow: true,
                 model: modelOption.id,
                 modelTitle: title,
-                codyProOnly: isCodyProModel(modelOption),
+                codyProOnly: isCodyProModel(modelOption) && !isEnterpriseUser,
             }
         })
         .filter(isDefined)
 
-    if (!isCodyPro) {
+    if (!isCodyPro && !isEnterpriseUser) {
         return [
             ...allOptions.filter(option => !option.codyProOnly),
             { label: 'upgrade to cody pro', kind: vscode.QuickPickItemKind.Separator } as EditModelItem,
@@ -49,9 +53,10 @@ export const getModelOptionItems = (modelOptions: Model[], isCodyPro: boolean): 
 export const getModelInputItems = (
     modelOptions: Model[],
     activeModel: EditModel,
-    isCodyPro: boolean
+    isCodyPro: boolean,
+    isEnterpriseUser: boolean
 ): GetItemsResult => {
-    const modelItems = getModelOptionItems(modelOptions, isCodyPro)
+    const modelItems = getModelOptionItems(modelOptions, isCodyPro, isEnterpriseUser)
     const activeItem = modelItems.find(item => item.model === activeModel)
 
     if (activeItem) {
