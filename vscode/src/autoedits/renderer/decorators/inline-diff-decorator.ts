@@ -3,19 +3,15 @@ import * as vscode from 'vscode'
 import type { AutoEditsDecorator, DecorationInfo } from './base'
 
 export class InlineDiffDecorator implements vscode.Disposable, AutoEditsDecorator {
-    private readonly editor: vscode.TextEditor
-    private readonly addedTextDecorationType: vscode.TextEditorDecorationType
-    private readonly removedTextDecorationType: vscode.TextEditorDecorationType
+    private readonly addedTextDecorationType = vscode.window.createTextEditorDecorationType({
+        // backgroundColor: 'rgba(50, 205, 50, 0.3)', // Light green background
+    })
 
-    constructor(editor: vscode.TextEditor) {
-        this.editor = editor
-        this.addedTextDecorationType = vscode.window.createTextEditorDecorationType({
-            // backgroundColor: 'rgba(50, 205, 50, 0.3)', // Light green background
-        })
-        this.removedTextDecorationType = vscode.window.createTextEditorDecorationType({
-            // textDecoration: 'line-through',
-        })
-    }
+    private readonly removedTextDecorationType = vscode.window.createTextEditorDecorationType({
+        // textDecoration: 'line-through',
+    })
+
+    constructor(private readonly editor: vscode.TextEditor) {}
 
     public setDecorations({ modifiedLines }: DecorationInfo): void {
         const removedRanges: vscode.DecorationOptions[] = []
@@ -107,7 +103,7 @@ export class InlineDiffDecorator implements vscode.Disposable, AutoEditsDecorato
         this.editor.setDecorations(this.addedTextDecorationType, addedRanges)
     }
 
-    public clearDecorations(): void {
+    private clearDecorations(): void {
         this.editor.setDecorations(this.addedTextDecorationType, [])
         this.editor.setDecorations(this.removedTextDecorationType, [])
     }

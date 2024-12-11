@@ -82,15 +82,16 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             dataCollectionEnabled: false,
         })
 
-        const isInlineRendererEnabled = vscode.workspace
+        const enabledRenderer = vscode.workspace
             .getConfiguration()
-            .get<boolean>('cody.experimental.autoedits.inline-renderer', false)
+            .get<'default' | 'inline'>('cody.experimental.autoedits.renderer', 'default')
 
-        this.rendererManager = isInlineRendererEnabled
-            ? new AutoEditsInlineRendererManager(editor => new InlineDiffDecorator(editor))
-            : new AutoEditsDefaultRendererManager(
-                  (editor: vscode.TextEditor) => new DefaultDecorator(editor)
-              )
+        this.rendererManager =
+            enabledRenderer === 'inline'
+                ? new AutoEditsInlineRendererManager(editor => new InlineDiffDecorator(editor))
+                : new AutoEditsDefaultRendererManager(
+                      (editor: vscode.TextEditor) => new DefaultDecorator(editor)
+                  )
 
         this.onSelectionChangeDebounced = debounce(
             (event: vscode.TextEditorSelectionChangeEvent) => this.autoeditOnSelectionChange(event),
