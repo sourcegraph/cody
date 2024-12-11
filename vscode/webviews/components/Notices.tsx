@@ -28,7 +28,7 @@ interface Notice {
 }
 
 type NoticeVariants = 'default' | 'warning'
-type NoticeIDs = 'DogfoodS2' | 'TeamsUpgrade' | 'DeepCody'
+type NoticeIDs = 'DogfoodS2' | 'TeamsUpgrade' | 'DeepCodyDotCom' | 'DeepCodyEnterprise'
 
 interface NoticesProps {
     user: UserAccountInfo
@@ -69,14 +69,16 @@ export const Notices: React.FC<NoticesProps> = ({ user, isTeamsUpgradeCtaEnabled
         () => [
             {
                 id: 'DeepCody',
-                isVisible: isDeepCodyEnabled && user.IDE !== CodyIDE.Web,
+                isVisible: (isDeepCodyEnabled || user.isCodyProUser) && user.IDE !== CodyIDE.Web,
                 content: (
                     <NoticeContent
-                        id="DeepCody"
+                        id={user.isCodyProUser ? 'DeepCodyDotCom' : 'DeepCodyEnterprise'}
                         variant="default"
                         title="Deep Cody (Experimental)"
                         message="An AI agent powered by Claude 3.5 Sonnet (New) and other models with tool-use capabilities to gather contextual information for enhanced responses. It can search your codebase, browse the web, execute shell commands in your terminal (when enabled), and utilize any configured tools to retrieve necessary context."
-                        onDismiss={() => dismissNotice('DeepCody')}
+                        onDismiss={() =>
+                            dismissNotice(user.isCodyProUser ? 'DeepCodyDotCom' : 'DeepCodyEnterprise')
+                        }
                         actions={
                             isDeepCodyShellContextSupported
                                 ? [
@@ -239,7 +241,12 @@ const NoticeContent: FunctionComponent<NoticeContentProps> = ({
     }[variant]
 
     const header = {
-        DeepCody: (
+        DeepCodyDotCom: (
+            <>
+                <CodyLogo size={16} />
+            </>
+        ),
+        DeepCodyEnterprise: (
             <>
                 <CodyLogo size={16} />
             </>
