@@ -3,10 +3,6 @@ name: vscode-insiders-release
 on:
   workflow_dispatch:
 
-permissions:
-  id-token: write
-  contents: read
-
 jobs:
   release:
     if: github.repository == 'sourcegraph/cody'

@@ -5,10 +5,6 @@ on:
   pull_request:
     types: [opened, synchronize, reopened]
 
-permissions:
-  id-token: write
-  contents: read
-
 
 jobs:
   release:
@@ -26,6 +22,8 @@ jobs:
       - uses: pnpm/action-setup@fe02b34f77f8bc703788d5817da081398fad5dd2 # SECURITY: pin third-party action hashes
         with:
           run_install: true
+      - run: pnpm build
+      - run: pnpm run test
       - name: Authenticate to Google Cloud
         id: auth
         uses: 'google-github-actions/auth@v2'
@@ -37,8 +35,6 @@ jobs:
           export_environment_variables: true
       - id: create_release
         run: echo "::set-output name=version_tag::v13.0.0"
-      - run: pnpm build
-      - run: pnpm run test
       - run: pnpm -C vscode run build
       - name: Check bundle sizes
         run: |
