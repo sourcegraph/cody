@@ -58,7 +58,7 @@ export const HumanMessageEditor: FunctionComponent<{
 
     onEditorFocusChange?: (focused: boolean) => void
     onChange?: (editorState: SerializedPromptEditorValue) => void
-    onSubmit: (intent?: ChatMessage['intent']) => void
+    onSubmit: (editorState: SerializedPromptEditorValue, intent?: ChatMessage['intent']) => void
     onStop: () => void
 
     isFirstInteraction?: boolean
@@ -151,7 +151,7 @@ export const HumanMessageEditor: FunctionComponent<{
             }
 
             const value = editorRef.current.getSerializedValue()
-            parentOnSubmit(intent)
+            parentOnSubmit(value, intent)
 
             telemetryRecorder.recordEvent('cody.humanMessageEditor', 'submit', {
                 metadata: {
