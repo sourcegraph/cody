@@ -23,7 +23,9 @@ jobs:
       - uses: pnpm/action-setup@fe02b34f77f8bc703788d5817da081398fad5dd2 # SECURITY: pin third-party action hashes
         with:
           run_install: true
-
+      - uses: actions/setup-node@v3
+        with:
+          node-version-file: .tool-versions
       - name: Authenticate to Google Cloud
         id: auth
         uses: 'google-github-actions/auth@v2'
@@ -39,17 +41,25 @@ jobs:
 
       - id: create_release
         run: echo "::set-output name=version_tag::v13.0.0"
-      
+      - run: pnpm build
+      - run: pnpm run test
+      - run: pnpm -C vscode run build
+      - name: Check bundle sizes
+        run: |
+          cd vscode
+          pnpm ts-node ./scripts/measure-bundle-size.ts
+          cd ..
+          echo "Extension Bundle Size: $EXTENSION_BUNDLE_SIZE_MB MB"
+          echo "Webview Bundle Size: $WEBVIEW_BUNDLE_SIZE_MB MB"
+        env:
+          GITHUB_ENV: $GITHUB_ENV
       - name: Insert data into BigQuery
         run: |
-          # Verify authentication
-          gcloud auth list
           # Compute the current date
           current_date=$(date +'%Y-%m-%d')
           
           # Now create the JSON and insert into BigQuery
-          echo "{\"release_version\": \"1.0.0\", \"extension_bundle_size_mb\": 100, \"webview_bundle_size_mb\": 100, \"date\": \"$current_date\"}" > data.json
-          
+          echo "{\"release_version\": \"${{ steps.create_release.outputs.version_tag }}\", \"extension_bundle_size_mb\": $EXTENSION_BUNDLE_SIZE_MB, \"webview_bundle_size_mb\": $WEBVIEW_BUNDLE_SIZE_MB, \"date\": \"$current_date\"}" > data.json
           bq load \
             --project_id='cody-core-dev' \
             --source_format=NEWLINE_DELIMITED_JSON \
