@@ -1,5 +1,5 @@
 import { ps } from '@sourcegraph/cody-shared'
-import { beforeEach, afterAll,  describe, expect, it, vi } from 'vitest'
+import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { AutoeditModelOptions } from '../prompt-provider'
 import { FireworksAdapter } from './fireworks'
 
