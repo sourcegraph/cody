@@ -74,6 +74,8 @@ export type {
     UserLocalHistory,
     SerializedChatMessage,
     RankedContext,
+    ChatMessageWithSearch,
+    ChatMessageSearch,
 } from './chat/transcript/messages'
 export {
     CODY_PASSTHROUGH_VSCODE_OPEN_COMMAND_ID,
