@@ -74,11 +74,12 @@ export const Notices: React.FC<NoticesProps> = ({ user, isTeamsUpgradeCtaEnabled
                     <NoticeContent
                         id={user.isCodyProUser ? 'DeepCodyDotCom' : 'DeepCodyEnterprise'}
                         variant="default"
-                        title="Deep Cody (Experimental)"
-                        message="An AI agent powered by Claude 3.5 Sonnet (New) and other models with tool-use capabilities to gather contextual information for enhanced responses. It can search your codebase, browse the web, execute shell commands in your terminal (when enabled), and utilize any configured tools to retrieve necessary context."
+                        title="Deep Cody (Experimental with daily usage limit)"
+                        message="An advanced AI agent powered by Claude 3.5 Sonnet (New) and additional models that uses tools to gather contextual information for better responses. Deep Cody can search your codebase, browse the web, run terminal commands (when enabled), and leverage configured tools to obtain relevant context. To enable terminal commands, set 'cody.agentic.context.experimentalShell' to true in your settings."
                         onDismiss={() =>
                             dismissNotice(user.isCodyProUser ? 'DeepCodyDotCom' : 'DeepCodyEnterprise')
                         }
+                        info="Usage limits apply during the experimental phase."
                         actions={
                             isDeepCodyShellContextSupported
                                 ? [
@@ -223,6 +224,7 @@ interface NoticeContentProps {
         iconPosition?: 'start' | 'end'
     }>
     onDismiss: () => void
+    info?: string
 }
 
 const NoticeContent: FunctionComponent<NoticeContentProps> = ({
@@ -231,6 +233,7 @@ const NoticeContent: FunctionComponent<NoticeContentProps> = ({
     message,
     actions,
     id,
+    info,
     onDismiss,
 }) => {
     const telemetryRecorder = useTelemetryRecorder()
@@ -305,6 +308,7 @@ const NoticeContent: FunctionComponent<NoticeContentProps> = ({
                     </Button>
                 ))}
             </div>
+            {info && <p className="tw-mt-2">ⓘ {info}</p>}
             {/* Dismiss button. */}
             <Button variant="ghost" onClick={onDismiss} className="tw-absolute tw-top-2 tw-right-2">
                 <XIcon size="14" />
