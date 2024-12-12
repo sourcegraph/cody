@@ -1,9 +1,13 @@
-import { testFileUri } from '@sourcegraph/cody-shared'
+import { type AutocompleteContextSnippet, ps, testFileUri } from '@sourcegraph/cody-shared'
 import { describe, expect, it } from 'vitest'
-import type { AutocompleteContextSnippet } from '../../../lib/shared/src/completions/types'
 import { getCurrentDocContext } from '../completions/get-current-doc-context'
 import { documentAndPosition } from '../completions/test-helpers'
-import { getBaseUserPrompt, getContextItemsInTokenBudget, getCurrentFileContext } from './prompt-utils'
+import {
+    getBaseUserPrompt,
+    getCompletionsPromptWithSystemPrompt,
+    getContextItemsInTokenBudget,
+    getCurrentFileContext,
+} from './prompt-utils'
 
 describe('getCurrentFileContext', () => {
     it('correctly splits content into different areas based on cursor position', () => {
@@ -446,5 +450,15 @@ describe('getContextItemsInTokenBudget', () => {
         expect(result.length).toBe(2)
         expect(result[0].identifier).toBe('test1')
         expect(result[1].identifier).toBe('test3')
+    })
+})
+
+describe('getCompletionsPromptWithSystemPrompt', () => {
+    it('creates a prompt in the correct format', () => {
+        const systemPrompt = ps`System prompt`
+        const userPrompt = ps`User prompt`
+        const expectedPrompt = 'System prompt\n\nUser: User prompt\n\nAssistant:'
+        const result = getCompletionsPromptWithSystemPrompt(systemPrompt, userPrompt)
+        expect(result.toString()).toEqual(expectedPrompt)
     })
 })

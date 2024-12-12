@@ -1,23 +1,34 @@
 import type { PromptString } from '@sourcegraph/cody-shared'
 import type * as utils from './prompt-utils'
 
-export type ChatPrompt = {
-    role: 'system' | 'user' | 'assistant'
-    content: PromptString
-}[]
-
+/**
+ * Represents the structure of a prompt for auto-edits functionality
+ */
+export type AutoeditsPrompt = {
+    /**
+     * Optional system message to provide context or instructions
+     * This field is only valid for the chat models.
+     * For the completions models, this is ignored by the adapters.
+     */
+    systemMessage?: PromptString
+    /**
+     * The user message containing the code to be rewritten.
+     */
+    userMessage: PromptString
+}
 export interface AutoeditModelOptions {
     url: string
     model: string
     apiKey: string
-    prompt: ChatPrompt
+    prompt: AutoeditsPrompt
     codeToRewrite: string
     userId: string | null
+    isChatModel: boolean
 }
 
 export interface PromptResponseData {
     codeToReplace: utils.CodeToReplaceData
-    promptResponse: ChatPrompt
+    promptResponse: AutoeditsPrompt
 }
 
 export interface AutoeditsModelAdapter {

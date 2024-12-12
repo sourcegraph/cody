@@ -1,10 +1,13 @@
-import { type AutoEditsTokenLimit, PromptString, ps, tokensToChars } from '@sourcegraph/cody-shared'
+import {
+    type AutoEditsTokenLimit,
+    type AutocompleteContextSnippet,
+    type DocumentContext,
+    PromptString,
+    ps,
+    tokensToChars,
+} from '@sourcegraph/cody-shared'
 import { Uri } from 'vscode'
 import * as vscode from 'vscode'
-import type {
-    AutocompleteContextSnippet,
-    DocumentContext,
-} from '../../../lib/shared/src/completions/types'
 import { RetrieverIdentifier } from '../completions/context/utils'
 import { autoeditsLogger } from './logger'
 import { clip, splitLinesKeepEnds } from './utils'
@@ -75,6 +78,14 @@ interface CurrentFileContext {
     prefixBeforeArea: PromptString
     suffixAfterArea: PromptString
     range: vscode.Range
+}
+
+export function getCompletionsPromptWithSystemPrompt(
+    systemPrompt: PromptString,
+    userPrompt: PromptString
+): PromptString {
+    // The models are offline fine-tuned on this prompt. It is important to keep it consistent.
+    return ps`${systemPrompt}\n\nUser: ${userPrompt}\n\nAssistant:`
 }
 
 // Helper function to get prompt in some format
