@@ -315,7 +315,7 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
                                     <div className="tw-flex tw-w-full tw-justify-start tw-gap-4">
                                         <UserAvatar
                                             user={authStatus}
-                                            size={16}
+                                            size={USER_MENU_AVATAR_SIZE}
                                             sourcegraphGradientBorder={!!isProUser}
                                             className="tw-flex tw-justify-center"
                                         />
@@ -427,7 +427,13 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
                 },
             }}
         >
-            <UserAvatar user={authStatus} size={12} sourcegraphGradientBorder={!!isProUser} />
+            <UserAvatar
+                user={authStatus}
+                size={USER_MENU_AVATAR_SIZE}
+                sourcegraphGradientBorder={!!isProUser}
+            />
         </ToolbarPopoverItem>
     )
 }
+
+export const USER_MENU_AVATAR_SIZE = 20
