@@ -25,7 +25,7 @@ export const UserAvatar: FunctionComponent<Props> = ({
         <InnerUserAvatar
             user={user}
             size={sourcegraphGradientBorder ? size - SOURCEGRAPH_GRADIENT_BORDER_SIZE * 2 : size}
-            className={sourcegraphGradientBorder ? undefined : className}
+            className={className}
         />
     )
     return sourcegraphGradientBorder ? (
@@ -61,7 +61,7 @@ const InnerUserAvatar: FunctionComponent<Omit<Props, 'sourcegraphGradientBorder'
 
         return (
             <img
-                className={styles.userAvatar}
+                className={clsx(styles.userAvatar, className)}
                 src={url}
                 role="presentation"
                 title={title}
@@ -75,7 +75,7 @@ const InnerUserAvatar: FunctionComponent<Omit<Props, 'sourcegraphGradientBorder'
         <div
             title={title}
             className={clsx(styles.userAvatar, className)}
-            style={{ width: `${highDPISize}px`, height: `${highDPISize}px, fontSize: ${size / 2}px` }}
+            style={{ width: `${highDPISize}px`, height: `${highDPISize}px`, fontSize: `${size / 2}px` }}
         >
             <span className={styles.initials}>
                 {getInitials(user?.displayName || user?.username || '')}
