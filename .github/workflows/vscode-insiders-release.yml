@@ -3,11 +3,18 @@ name: vscode-insiders-release
 on:
   workflow_dispatch:
 
+permissions:
+  id-token: write
+  contents: read
+
 jobs:
   release:
     if: github.repository == 'sourcegraph/cody'
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    permissions:
+      contents: write
+      id-token: write
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v3
@@ -33,10 +40,14 @@ jobs:
         env:
           GITHUB_ENV: $GITHUB_ENV
       - name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v1
+        id: auth
+        uses: 'google-github-actions/auth@v2'
         with:
-          credentials_json: ${{ secrets.GCP_BQ_CREDENTIALS }}
-
+          project_id: 'cody-core-dev'
+          workload_identity_provider: 'projects/39257127245/locations/global/workloadIdentityPools/github/providers/cody'
+          service_account: 'bundle-size-tracker@cody-core-dev.iam.gserviceaccount.com'
+          create_credentials_file: true
+          export_environment_variables: true
       - name: Insert data into BigQuery
         run: |
           # Compute the current date
@@ -49,7 +60,6 @@ jobs:
             --source_format=NEWLINE_DELIMITED_JSON \
             cody_release.bundle_sizes \
             data.json
-
         env:
           EXTENSION_BUNDLE_SIZE_MB: ${{ env.EXTENSION_BUNDLE_SIZE_MB }}
           WEBVIEW_BUNDLE_SIZE_MB: ${{ env.WEBVIEW_BUNDLE_SIZE_MB }}
