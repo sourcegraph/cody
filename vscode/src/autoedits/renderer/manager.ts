@@ -4,7 +4,7 @@ import type { DocumentContext } from '@sourcegraph/cody-shared'
 
 import { completionMatchesSuffix } from '../../completions/is-completion-visible'
 import { autoeditsLogger } from '../logger'
-import type { CodeToReplaceData } from '../prompt-utils'
+import type { CodeToReplaceData } from '../prompt/prompt-utils'
 import {
     adjustPredictionIfInlineCompletionPossible,
     extractInlineCompletionFromRewrittenCode,

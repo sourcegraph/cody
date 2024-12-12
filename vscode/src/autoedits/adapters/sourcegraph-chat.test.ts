@@ -1,7 +1,7 @@
 import { ps } from '@sourcegraph/cody-shared'
 import type { ChatClient } from '@sourcegraph/cody-shared'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
-import type { AutoeditModelOptions } from '../prompt-provider'
+import type { AutoeditModelOptions } from './base'
 import { SourcegraphChatAdapter } from './sourcegraph-chat'
 import { getMaxOutputTokensForAutoedits } from './utils'
 

@@ -19,6 +19,7 @@ import { DefaultContextStrategyFactory } from '../completions/context/context-st
 import { RetrieverIdentifier } from '../completions/context/utils'
 import { getCurrentDocContext } from '../completions/get-current-doc-context'
 import { getConfiguration } from '../configuration'
+import type { AutoeditsModelAdapter, AutoeditsPrompt } from './adapters/base'
 import { CodyGatewayAdapter } from './adapters/cody-gateway'
 import { FireworksAdapter } from './adapters/fireworks'
 import { OpenAIAdapter } from './adapters/openai'

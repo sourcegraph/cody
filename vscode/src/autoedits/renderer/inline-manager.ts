@@ -5,7 +5,7 @@ import type { DocumentContext } from '@sourcegraph/cody-shared'
 import { completionMatchesSuffix } from '../../completions/is-completion-visible'
 import { getNewLineChar } from '../../completions/text-processing'
 import { autoeditsLogger } from '../logger'
-import type { CodeToReplaceData } from '../prompt-utils'
+import type { CodeToReplaceData } from '../prompt/prompt-utils'
 import { adjustPredictionIfInlineCompletionPossible } from '../utils'
 
 import type {

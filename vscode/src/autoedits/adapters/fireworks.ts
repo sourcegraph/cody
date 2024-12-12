@@ -1,7 +1,7 @@
 import { autoeditsLogger } from '../logger'
-import type { AutoeditsModelAdapter } from '../prompt-provider'
-import { getModelResponse } from '../prompt-provider'
-import type { AutoeditModelOptions } from '../prompt-provider'
+import type { AutoeditsModelAdapter } from './base'
+import type { AutoeditModelOptions } from './base'
+import { getModelResponse } from './utils'
 import {
     type FireworksCompatibleRequestParams,
     getMaxOutputTokensForAutoedits,

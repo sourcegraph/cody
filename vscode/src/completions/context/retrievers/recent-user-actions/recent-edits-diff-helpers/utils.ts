@@ -31,6 +31,13 @@ export interface TextDocumentChangeGroup {
     replacementRange?: vscode.Range
 }
 
+enum LineType {
+    Added = 0,
+    Deleted = 1,
+    Context = 2,
+    Other = 3,
+}
+
 interface TextDocumentChangeWithRange {
     change: TextDocumentChange
     insertedRange: vscode.Range

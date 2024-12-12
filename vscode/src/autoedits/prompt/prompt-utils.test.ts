@@ -1,7 +1,9 @@
 import { type AutocompleteContextSnippet, ps, testFileUri } from '@sourcegraph/cody-shared'
+import dedent from 'dedent'
 import { describe, expect, it } from 'vitest'
-import { getCurrentDocContext } from '../completions/get-current-doc-context'
-import { documentAndPosition } from '../completions/test-helpers'
+import { RetrieverIdentifier } from '../../completions/context/utils'
+import { getCurrentDocContext } from '../../completions/get-current-doc-context'
+import { documentAndPosition } from '../../completions/test-helpers'
 import {
     getCompletionsPromptWithSystemPrompt,
     getContextItemsInTokenBudget,
