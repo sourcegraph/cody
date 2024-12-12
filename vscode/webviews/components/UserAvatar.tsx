@@ -75,7 +75,7 @@ const InnerUserAvatar: FunctionComponent<Omit<Props, 'sourcegraphGradientBorder'
         <div
             title={title}
             className={clsx(styles.userAvatar, className)}
-            style={{ width: `${highDPISize}px`, height: `${highDPISize}px`, fontSize: `${size / 2}px` }}
+            style={{ width: `${size}px`, height: `${size}px`, fontSize: `${size / 3}px` }}
         >
             <span className={styles.initials}>
                 {getInitials(user?.displayName || user?.username || '')}
