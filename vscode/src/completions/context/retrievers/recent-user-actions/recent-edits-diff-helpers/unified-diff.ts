@@ -27,8 +27,9 @@ export class UnifiedDiffStrategy implements RecentEditsRetrieverDiffStrategy {
             uri: input.uri,
             oldContent: input.oldContent,
             changes: input.changes,
-            addLineNumbersForDiff: this.addLineNumbers,
+            shouldAddLineNumbersForDiff: this.addLineNumbers,
             contextLines: this.numContextLines,
+            shouldTrimSurroundingContextLines: false,
         })
         return diffHunk ? [diffHunk] : []
     }

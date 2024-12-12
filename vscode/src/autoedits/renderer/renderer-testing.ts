@@ -1,7 +1,7 @@
 import * as vscode from 'vscode'
 
 import { getNewLineChar } from '../../completions/text-processing'
-import type { CodeToReplaceData } from '../prompt-utils'
+import type { CodeToReplaceData } from '../prompt/prompt-utils'
 
 import { autoeditsLogger } from '../logger'
 import { DefaultDecorator } from './decorators/default-decorator'

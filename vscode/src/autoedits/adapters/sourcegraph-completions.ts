@@ -6,8 +6,7 @@ import type {
 } from '@sourcegraph/cody-shared'
 import { defaultCodeCompletionsClient } from '../../completions/default-client'
 import { autoeditsLogger } from '../logger'
-import type { AutoeditsModelAdapter } from '../prompt-provider'
-import type { AutoeditModelOptions } from '../prompt-provider'
+import type { AutoeditModelOptions, AutoeditsModelAdapter } from './base'
 import { getMaxOutputTokensForAutoedits, getSourcegraphCompatibleChatPrompt } from './utils'
 
 export class SourcegraphCompletionsAdapter implements AutoeditsModelAdapter {
