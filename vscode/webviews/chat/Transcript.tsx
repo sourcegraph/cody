@@ -558,6 +558,16 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
         ?.getSerializedValue()
         .contextItems.some(item => item.type === 'repository')
 
+    const onHumanMessageSubmit = useCallback(
+        (intent?: ChatMessage['intent']) => {
+            if (humanMessage.isUnsentFollowup) {
+                onFollowupSubmit(intent)
+            }
+            onEditSubmit(intent)
+        },
+        [humanMessage.isUnsentFollowup, onFollowupSubmit, onEditSubmit]
+    )
+
     return (
         <>
             <HumanMessageCell
@@ -570,9 +580,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                 isSent={!humanMessage.isUnsentFollowup}
                 isPendingPriorResponse={priorAssistantMessageIsLoading}
                 onChange={onChange}
-                onSubmit={
-                    humanMessage.isUnsentFollowup ? () => onFollowupSubmit() : () => onEditSubmit()
-                }
+                onSubmit={onHumanMessageSubmit}
                 onStop={onStop}
                 isFirstInteraction={isFirstInteraction}
                 isLastInteraction={isLastInteraction}
