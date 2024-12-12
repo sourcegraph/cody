@@ -3,9 +3,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { AutoeditModelOptions } from '../prompt-provider'
 import { CodyGatewayAdapter } from './cody-gateway'
 
-const mockFetch = vi.fn()
-global.fetch = mockFetch
-
 describe('CodyGatewayAdapter', () => {
     let adapter: CodyGatewayAdapter
 
@@ -22,7 +19,10 @@ describe('CodyGatewayAdapter', () => {
         isChatModel: true,
     }
 
+    const mockFetch = vi.fn()
+
     beforeEach(() => {
+        global.fetch = mockFetch
         adapter = new CodyGatewayAdapter()
         mockFetch.mockReset()
     })

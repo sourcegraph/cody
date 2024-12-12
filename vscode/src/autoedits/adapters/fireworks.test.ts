@@ -3,9 +3,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { AutoeditModelOptions } from '../prompt-provider'
 import { FireworksAdapter } from './fireworks'
 
-const mockFetch = vi.fn()
-global.fetch = mockFetch
-
 describe('FireworksAdapter', () => {
     let adapter: FireworksAdapter
 
@@ -22,7 +19,10 @@ describe('FireworksAdapter', () => {
         isChatModel: true,
     }
 
+    const mockFetch = vi.fn()
+
     beforeEach(() => {
+        global.fetch = mockFetch
         adapter = new FireworksAdapter()
         mockFetch.mockReset()
     })
