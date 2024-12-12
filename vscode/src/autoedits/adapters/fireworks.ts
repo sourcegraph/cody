@@ -2,7 +2,11 @@ import { autoeditsLogger } from '../logger'
 import type { AutoeditsModelAdapter } from '../prompt-provider'
 import { getModelResponse } from '../prompt-provider'
 import type { AutoeditModelOptions } from '../prompt-provider'
-import { getMaxOutputTokensForAutoedits, getOpenaiCompatibleChatPrompt } from './utils'
+import {
+    type FireworksCompatibleRequestParams,
+    getMaxOutputTokensForAutoedits,
+    getOpenaiCompatibleChatPrompt,
+} from './utils'
 
 export class FireworksAdapter implements AutoeditsModelAdapter {
     async getModelResponse(option: AutoeditModelOptions): Promise<string> {
@@ -19,10 +23,11 @@ export class FireworksAdapter implements AutoeditsModelAdapter {
         }
     }
 
-    private getMessageBody(option: AutoeditModelOptions): string {
-        const maxTokens = getMaxOutputTokensForAutoedits(option.codeToRewrite)
-        const body: Record<string, any> = {
-            model: option.model,
+    private getMessageBody(options: AutoeditModelOptions): string {
+        const maxTokens = getMaxOutputTokensForAutoedits(options.codeToRewrite)
+        const body: FireworksCompatibleRequestParams = {
+            stream: false,
+            model: options.model,
             temperature: 0.2,
             max_tokens: maxTokens,
             response_format: {
@@ -32,18 +37,19 @@ export class FireworksAdapter implements AutoeditsModelAdapter {
             // https://docs.fireworks.ai/guides/querying-text-models#predicted-outputs
             prediction: {
                 type: 'content',
-                content: option.codeToRewrite,
+                content: options.codeToRewrite,
             },
-            user: option.userId,
+            user: options.userId || undefined,
         }
-        if (option.isChatModel) {
-            body.messages = getOpenaiCompatibleChatPrompt({
-                systemMessage: option.prompt.systemMessage,
-                userMessage: option.prompt.userMessage,
-            })
-        } else {
-            body.prompt = option.prompt.userMessage
-        }
-        return JSON.stringify(body)
+        const request = options.isChatModel
+            ? {
+                  ...body,
+                  messages: getOpenaiCompatibleChatPrompt({
+                      systemMessage: options.prompt.systemMessage,
+                      userMessage: options.prompt.userMessage,
+                  }),
+              }
+            : { ...body, prompt: options.prompt.userMessage }
+        return JSON.stringify(request)
     }
 }

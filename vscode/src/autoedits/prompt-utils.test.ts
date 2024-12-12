@@ -1,6 +1,5 @@
-import { ps, testFileUri } from '@sourcegraph/cody-shared'
+import { type AutocompleteContextSnippet, ps, testFileUri } from '@sourcegraph/cody-shared'
 import { describe, expect, it } from 'vitest'
-import type { AutocompleteContextSnippet } from '../../../lib/shared/src/completions/types'
 import { getCurrentDocContext } from '../completions/get-current-doc-context'
 import { documentAndPosition } from '../completions/test-helpers'
 import {

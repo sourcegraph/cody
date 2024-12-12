@@ -1,6 +1,9 @@
-import type { CodeCompletionsClient, Message } from '@sourcegraph/cody-shared'
-import type { CodeCompletionsParams } from '../../../../lib/shared/src/inferenceClient/misc'
-import type { ModelRefStr } from '../../../../lib/shared/src/models/modelsService'
+import type {
+    CodeCompletionsClient,
+    CodeCompletionsParams,
+    Message,
+    ModelRefStr,
+} from '@sourcegraph/cody-shared'
 import { defaultCodeCompletionsClient } from '../../completions/default-client'
 import { autoeditsLogger } from '../logger'
 import type { AutoeditsModelAdapter } from '../prompt-provider'
@@ -32,10 +35,13 @@ export class SourcegraphCompletionsAdapter implements AutoeditsModelAdapter {
                     content: option.codeToRewrite,
                 },
             }
-            const stream = await this.client.complete(requestParam, new AbortController())
+            const completionResponseGenerator = await this.client.complete(
+                requestParam,
+                new AbortController()
+            )
 
             let accumulated = ''
-            for await (const msg of stream) {
+            for await (const msg of completionResponseGenerator) {
                 const newText = msg.completionResponse?.completion
                 if (newText) {
                     accumulated = newText

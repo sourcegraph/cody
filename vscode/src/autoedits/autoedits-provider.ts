@@ -13,7 +13,6 @@ import {
     isDotComAuthed,
     tokensToChars,
 } from '@sourcegraph/cody-shared'
-
 import { ContextRankingStrategy } from '../completions/context/completions-context-ranker'
 import { ContextMixer } from '../completions/context/context-mixer'
 import { DefaultContextStrategyFactory } from '../completions/context/context-strategy'

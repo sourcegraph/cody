@@ -1,6 +1,6 @@
+import { createGitDiff } from '@sourcegraph/cody-shared'
 import levenshtein from 'js-levenshtein'
 import type * as vscode from 'vscode'
-import { createGitDiff } from '../../../../lib/shared/src/editor/create-git-diff'
 import { updateRangeMultipleChanges } from '../../non-stop/tracked-range'
 
 import type {

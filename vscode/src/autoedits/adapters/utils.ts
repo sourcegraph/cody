@@ -1,5 +1,21 @@
 import { type Message, type PromptString, charsToTokens } from '@sourcegraph/cody-shared'
 
+export interface FireworksCompatibleRequestParams {
+    stream: boolean
+    model: string
+    temperature: number
+    max_tokens: number
+    response_format: {
+        type: string
+    }
+    prediction: {
+        type: string
+        content: string
+    }
+    rewrite_speculation?: boolean
+    user?: string
+}
+
 export function getMaxOutputTokensForAutoedits(codeToRewrite: string): number {
     const MAX_NEW_GENERATED_TOKENS = 256
     const codeToRewriteTokens = charsToTokens(codeToRewrite.length)

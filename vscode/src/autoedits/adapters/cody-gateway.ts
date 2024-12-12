@@ -2,7 +2,11 @@ import { autoeditsLogger } from '../logger'
 import type { AutoeditsModelAdapter } from '../prompt-provider'
 import { getModelResponse } from '../prompt-provider'
 import type { AutoeditModelOptions } from '../prompt-provider'
-import { getMaxOutputTokensForAutoedits, getOpenaiCompatibleChatPrompt } from './utils'
+import {
+    type FireworksCompatibleRequestParams,
+    getMaxOutputTokensForAutoedits,
+    getOpenaiCompatibleChatPrompt,
+} from './utils'
 
 export class CodyGatewayAdapter implements AutoeditsModelAdapter {
     async getModelResponse(option: AutoeditModelOptions): Promise<string> {
@@ -24,7 +28,7 @@ export class CodyGatewayAdapter implements AutoeditsModelAdapter {
 
     private getMessageBody(option: AutoeditModelOptions): string {
         const maxTokens = getMaxOutputTokensForAutoedits(option.codeToRewrite)
-        const body: Record<string, any> = {
+        const body: FireworksCompatibleRequestParams = {
             stream: false,
             model: option.model,
             temperature: 0.2,
@@ -37,17 +41,17 @@ export class CodyGatewayAdapter implements AutoeditsModelAdapter {
                 content: option.codeToRewrite,
             },
             rewrite_speculation: true,
-            user: option.userId,
+            user: option.userId || undefined,
         }
-
-        if (option.isChatModel) {
-            body.messages = getOpenaiCompatibleChatPrompt({
-                systemMessage: option.prompt.systemMessage,
-                userMessage: option.prompt.userMessage,
-            })
-        } else {
-            body.prompt = option.prompt.userMessage
-        }
-        return JSON.stringify(body)
+        const request = option.isChatModel
+            ? {
+                  ...body,
+                  messages: getOpenaiCompatibleChatPrompt({
+                      systemMessage: option.prompt.systemMessage,
+                      userMessage: option.prompt.userMessage,
+                  }),
+              }
+            : { ...body, prompt: option.prompt.userMessage }
+        return JSON.stringify(request)
     }
 }
