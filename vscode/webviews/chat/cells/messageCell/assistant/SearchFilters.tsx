@@ -1,6 +1,7 @@
 import classNames from 'classnames'
 
 import type { NLSSearchDynamicFilter, NLSSearchDynamicFilterKind } from '@sourcegraph/cody-shared'
+import { uniqBy } from 'lodash'
 import { XIcon } from 'lucide-react'
 import { useCallback, useMemo } from 'react'
 import { Badge } from '../../../../components/shadcn/ui/badge'
@@ -17,7 +18,7 @@ export const SearchFilters = ({
 }: SearchFiltersProps) => {
     const filterGroups = useMemo(
         () =>
-            filters.reduce(
+            uniqBy([...filters, ...selectedFilters], ({ value, kind }) => `${value}-${kind}`).reduce(
                 (groups, filter) => {
                     if (['repo', 'file', 'type', 'lang'].includes(filter.kind)) {
                         groups[filter.kind as NLSSearchDynamicFilterKind].push(filter)
@@ -30,7 +31,7 @@ export const SearchFilters = ({
                     NLSSearchDynamicFilter[]
                 >
             ),
-        [filters]
+        [filters, selectedFilters]
     )
 
     const onFilterSelect = useCallback(

@@ -1,4 +1,4 @@
-import type { ChatMessageWithSearch } from '@sourcegraph/cody-shared'
+import type { ChatMessageWithSearch, NLSSearchDynamicFilter } from '@sourcegraph/cody-shared'
 import { ArrowDown, ExternalLink, FilterIcon, Search } from 'lucide-react'
 import { useState } from 'react'
 import { NLSResultSnippet } from '../../../../components/NLSResultSnippet'
@@ -10,11 +10,11 @@ import { SearchFiltersModal } from './SearchFiltersModal'
 
 interface SearchResultsProps {
     message: ChatMessageWithSearch
+    onSelectedFiltersUpdate: (filters: NLSSearchDynamicFilter[]) => void
 }
 
 const DEFAULT_RESULTS_LIMIT = 5
-const selectedFilters: any[] = []
-export const SearchResults = ({ message }: SearchResultsProps) => {
+export const SearchResults = ({ message, onSelectedFiltersUpdate }: SearchResultsProps) => {
     const experimentalOneBoxDebug = useExperimentalOneBoxDebug()
 
     const [showAll, setShowAll] = useState(false)
@@ -30,8 +30,8 @@ export const SearchResults = ({ message }: SearchResultsProps) => {
         return (
             <SearchFiltersModal
                 filters={message.search.response?.results?.dynamicFilters || []}
-                selectedFilters={selectedFilters}
-                onSelectedFiltersUpdate={() => {}}
+                selectedFilters={message.search.selectedFilters || []}
+                onSelectedFiltersUpdate={onSelectedFiltersUpdate}
                 close={() => setShowFilters(false)}
             />
         )
@@ -39,7 +39,7 @@ export const SearchResults = ({ message }: SearchResultsProps) => {
 
     return (
         <>
-            {message.search.response?.results?.results?.length > 0 && (
+            {!!message.search.response?.results?.results?.length && (
                 <div className="tw-flex tw-items-center tw-gap-4 tw-justify-between">
                     <div className="tw-flex tw-gap-2 tw-items-center tw-font-semibold tw-text-muted-foreground">
                         <Search className="tw-size-8" />
@@ -54,7 +54,14 @@ export const SearchResults = ({ message }: SearchResultsProps) => {
                     </div>
                 </div>
             )}
-            {experimentalOneBoxDebug && <InfoMessage>Query: {message.search.query}</InfoMessage>}
+            {experimentalOneBoxDebug && message.search.query && (
+                <InfoMessage className="tw-mt-4">Query: {message.search.query}</InfoMessage>
+            )}
+            {experimentalOneBoxDebug && message.search.queryWithSelectedFilters && (
+                <InfoMessage className="tw-mt-4">
+                    Query with selected filters: {message.search.queryWithSelectedFilters}
+                </InfoMessage>
+            )}
             {!!message.search.response?.results?.results?.length && (
                 <ul className="tw-list-none tw-flex tw-flex-col tw-gap-2 tw-pt-2">
                     {message.search.response.results.results.map((result, i) =>

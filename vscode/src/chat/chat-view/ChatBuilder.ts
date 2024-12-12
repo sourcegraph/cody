@@ -254,6 +254,20 @@ export class ChatBuilder {
         this.changeNotifications.next()
     }
 
+    public updateAssistantMessageAtIndex(index: number, update: Omit<ChatMessage, 'speaker'>): void {
+        const message = this.messages.at(index)
+        if (!message) {
+            throw new Error('invalid index')
+        }
+        if (message.speaker !== 'assistant') {
+            throw new Error('Cannot set selected filters for human message')
+        }
+
+        Object.assign(message, { ...update, speaker: 'assistant' })
+
+        this.changeNotifications.next()
+    }
+
     public getMessages(): readonly ChatMessage[] {
         return this.messages
     }

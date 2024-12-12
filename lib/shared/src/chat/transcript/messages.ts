@@ -44,7 +44,8 @@ export type ChatMessageWithSearch = ChatMessage & { search: ChatMessageSearch }
 
 export interface ChatMessageSearch {
     query: string
-    response: NLSSearchResponse['search']
+    queryWithSelectedFilters?: string
+    response?: NLSSearchResponse['search']
     selectedFilters?: NLSSearchDynamicFilter[]
 }
 

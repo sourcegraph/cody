@@ -3,6 +3,7 @@ import {
     ContextItemSource,
     type Guardrails,
     type Model,
+    type NLSSearchDynamicFilter,
     REMOTE_FILE_PROVIDER_URI,
     type SerializedPromptEditorValue,
     deserializeContextItem,
@@ -567,6 +568,16 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
         [humanMessage.isUnsentFollowup, onFollowupSubmit, onEditSubmit]
     )
 
+    const onSelectedFiltersUpdate = useCallback(
+        (selectedFilters: NLSSearchDynamicFilter[]) => {
+            reEvaluateSearchWithSelectedFilters({
+                messageIndexInTranscript: humanMessage.index,
+                selectedFilters,
+            })
+        },
+        [humanMessage.index]
+    )
+
     return (
         <>
             <HumanMessageCell
@@ -641,8 +652,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                     }
                     smartApply={smartApply}
                     smartApplyEnabled={smartApplyEnabled}
-                    reSubmitWithChatIntent={reSubmitWithChatIntent}
-                    reSubmitWithSearchIntent={reSubmitWithSearchIntent}
+                    onSelectedFiltersUpdate={onSelectedFiltersUpdate}
                 />
             )}
         </>
@@ -716,6 +726,21 @@ function submitHumanMessage({
         intentScores,
         manuallySelectedIntent,
         traceparent,
+    })
+    focusLastHumanMessageEditor()
+}
+
+function reEvaluateSearchWithSelectedFilters({
+    messageIndexInTranscript,
+    selectedFilters,
+}: {
+    messageIndexInTranscript: number
+    selectedFilters: NLSSearchDynamicFilter[]
+}): void {
+    getVSCodeAPI().postMessage({
+        command: 'reEvaluateSearchWithSelectedFilters',
+        index: messageIndexInTranscript,
+        selectedFilters,
     })
     focusLastHumanMessageEditor()
 }

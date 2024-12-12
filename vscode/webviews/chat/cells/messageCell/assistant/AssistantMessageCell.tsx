@@ -5,6 +5,7 @@ import {
     type Guardrails,
     type Model,
     ModelTag,
+    type NLSSearchDynamicFilter,
     type PromptString,
     contextItemsFromPromptEditorValue,
     filterContextItemsFromPromptEditorValue,
@@ -54,8 +55,7 @@ export const AssistantMessageCell: FunctionComponent<{
 
     postMessage?: ApiPostMessage
     guardrails?: Guardrails
-    reSubmitWithChatIntent: () => void
-    reSubmitWithSearchIntent: () => void
+    onSelectedFiltersUpdate: (filters: NLSSearchDynamicFilter[]) => void
 }> = memo(
     ({
         message,
@@ -72,8 +72,7 @@ export const AssistantMessageCell: FunctionComponent<{
         guardrails,
         smartApply,
         smartApplyEnabled,
-        reSubmitWithChatIntent,
-        reSubmitWithSearchIntent,
+        onSelectedFiltersUpdate,
     }) => {
         const displayMarkdown = useMemo(
             () => (message.text ? reformatBotMessageForChat(message.text).toString() : ''),
@@ -125,7 +124,10 @@ export const AssistantMessageCell: FunctionComponent<{
                             </div>
                         )}
                         {experimentalOneBoxEnabled && !isLoading && message.search && (
-                            <SearchResults message={message as ChatMessageWithSearch} />
+                            <SearchResults
+                                message={message as ChatMessageWithSearch}
+                                onSelectedFiltersUpdate={onSelectedFiltersUpdate}
+                            />
                         )}
                         {!isSearchIntent && displayMarkdown ? (
                             <ChatMessageContent
