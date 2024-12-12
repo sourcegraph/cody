@@ -7,7 +7,6 @@ import {
     ExternalLinkIcon,
     EyeIcon,
     HeartIcon,
-    TerminalIcon,
     Users2Icon,
     XIcon,
 } from 'lucide-react'
@@ -84,34 +83,17 @@ export const Notices: React.FC<NoticesProps> = ({ user, isTeamsUpgradeCtaEnabled
                         title="Deep Cody (Experimental)"
                         message={
                             "An early preview of agentic experience powered by Claude 3.5 Sonnet and other models to enrich context and leverage different tools for better quality responses. Deep Cody does this by searching your codebase, browsing the web, and running terminal commands (once enabled)! To enable terminal commands, set `cody.agentic.context.experimentalShell' to true in your " +
-                            settingsNameByIDE
+                            settingsNameByIDE +
+                            '.'
                         }
                         onDismiss={() =>
                             dismissNotice(user.isCodyProUser ? 'DeepCodyDotCom' : 'DeepCodyEnterprise')
                         }
                         info="Usage limits apply during the experimental phase."
-                        actions={
-                            isDeepCodyShellContextSupported
-                                ? [
-                                      {
-                                          label: 'Enable Command Execution in Settings',
-                                          onClick: () =>
-                                              getVSCodeAPI().postMessage({
-                                                  command: 'command',
-                                                  id: 'cody.status-bar.interacted',
-                                              }),
-                                          variant: 'default',
-                                          icon: <TerminalIcon size={14} />,
-                                          iconPosition: 'start',
-                                      },
-                                  ]
-                                : [
-                                      {
-                                          label: 'Contact admins to enable Command Execution',
-                                          onClick: () => {},
-                                          variant: 'secondary',
-                                      },
-                                  ]
+                        footer={
+                            !isDeepCodyShellContextSupported
+                                ? 'Contact admins to enable Command Execution'
+                                : ''
                         }
                     />
                 ),
@@ -236,6 +218,7 @@ interface NoticeContentProps {
     }>
     onDismiss: () => void
     info?: string
+    footer?: string
 }
 
 const NoticeContent: FunctionComponent<NoticeContentProps> = ({
@@ -245,6 +228,7 @@ const NoticeContent: FunctionComponent<NoticeContentProps> = ({
     actions,
     id,
     info,
+    footer,
     onDismiss,
 }) => {
     const telemetryRecorder = useTelemetryRecorder()
@@ -320,6 +304,7 @@ const NoticeContent: FunctionComponent<NoticeContentProps> = ({
                     </Button>
                 ))}
             </div>
+            {footer && <p className="tw-mt-2">{footer}</p>}
             {/* Dismiss button. */}
             <Button variant="ghost" onClick={onDismiss} className="tw-absolute tw-top-2 tw-right-2">
                 <XIcon size="14" />
