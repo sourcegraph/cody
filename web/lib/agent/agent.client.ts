@@ -88,7 +88,9 @@ export async function createAgentClient({
             customConfiguration: {
                 'cody.autocomplete.enabled': false,
                 'cody.experimental.urlContext': true,
-                'cody.internal.debug.state': !!process.env.CODY_WEB_DEMO,
+                // Will be replaced with vite in build time
+                // @ts-ignore
+                'cody.internal.debug.state': import.meta.env.MODE === 'development',
             },
         },
     } satisfies ClientInfo)
