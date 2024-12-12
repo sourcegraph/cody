@@ -672,7 +672,7 @@ type GraphQLAPIClientConfig = PickResolvedConfiguration<{
 
 const QUERY_TO_NAME_REGEXP = /^\s*(?:query|mutation)\s+(\w+)/m
 
-export class SourcegraphGraphQLAPIClient implements Disposable {
+export class SourcegraphGraphQLAPIClient {
     private isAgentTesting = process.env.CODY_SHIM_TESTING === 'true'
     private readonly resultCacheFactory: ObservableInvalidatedGraphQLResultCacheFactory
     private readonly siteVersionCache: GraphQLResultCache<string>
@@ -709,8 +709,8 @@ export class SourcegraphGraphQLAPIClient implements Disposable {
         this.siteVersionCache = this.resultCacheFactory.create<string>('SiteProductVersion')
     }
 
-    [Symbol.dispose]() {
-        this.resultCacheFactory[Symbol.dispose]()
+    dispose(): void {
+        this.resultCacheFactory.dispose()
     }
 
     public async getSiteVersion(signal?: AbortSignal): Promise<string | Error> {
