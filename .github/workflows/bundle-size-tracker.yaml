@@ -23,6 +23,9 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version-file: .tool-versions
+      - uses: pnpm/action-setup@fe02b34f77f8bc703788d5817da081398fad5dd2 # SECURITY: pin third-party action hashes
+        with:
+          run_install: true
       - name: Authenticate to Google Cloud
         id: auth
         uses: 'google-github-actions/auth@v2'
