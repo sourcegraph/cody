@@ -65,6 +65,13 @@ export const Notices: React.FC<NoticesProps> = ({ user, isTeamsUpgradeCtaEnabled
         [telemetryRecorder, setDismissedNotices]
     )
 
+    const settingsNameByIDE =
+        user.IDE === CodyIDE.JetBrains
+            ? 'Settings Editor'
+            : user.IDE === CodyIDE.VSCode
+              ? 'settings.json'
+              : 'Extension Settings'
+
     const notices: Notice[] = useMemo(
         () => [
             {
@@ -74,8 +81,11 @@ export const Notices: React.FC<NoticesProps> = ({ user, isTeamsUpgradeCtaEnabled
                     <NoticeContent
                         id={user.isCodyProUser ? 'DeepCodyDotCom' : 'DeepCodyEnterprise'}
                         variant="default"
-                        title="Deep Cody (Experimental with daily usage limit)"
-                        message="An advanced AI agent powered by Claude 3.5 Sonnet (New) and additional models that uses tools to gather contextual information for better responses. Deep Cody can search your codebase, browse the web, run terminal commands (when enabled), and leverage configured tools to obtain relevant context. To enable terminal commands, set 'cody.agentic.context.experimentalShell' to true in your settings."
+                        title="Deep Cody (Experimental)"
+                        message={
+                            "An early preview of agentic experience powered by Claude 3.5 Sonnet and other models to enrich context and leverage different tools for better quality responses. Deep Cody does this by searching your codebase, browsing the web, and running terminal commands (once enabled)! To enable terminal commands, set `cody.agentic.context.experimentalShell' to true in your " +
+                            settingsNameByIDE
+                        }
                         onDismiss={() =>
                             dismissNotice(user.isCodyProUser ? 'DeepCodyDotCom' : 'DeepCodyEnterprise')
                         }
@@ -186,6 +196,7 @@ export const Notices: React.FC<NoticesProps> = ({ user, isTeamsUpgradeCtaEnabled
             isTeamsUpgradeCtaEnabled,
             isDeepCodyEnabled,
             isDeepCodyShellContextSupported,
+            settingsNameByIDE,
         ]
     )
 
@@ -276,6 +287,7 @@ const NoticeContent: FunctionComponent<NoticeContentProps> = ({
         >
             <div className="tw-flex tw-gap-3 tw-mb-2">{header}</div>
             {title && <h1 className="tw-text-lg tw-font-semibold">{title}</h1>}
+            {info && <p className="tw-mb-2">ⓘ {info}</p>}
             <p>{message}</p>
             <div className="tw-mt-3 tw-flex tw-gap-3">
                 {actions.map((action, _index) => (
@@ -308,7 +320,6 @@ const NoticeContent: FunctionComponent<NoticeContentProps> = ({
                     </Button>
                 ))}
             </div>
-            {info && <p className="tw-mt-2">ⓘ {info}</p>}
             {/* Dismiss button. */}
             <Button variant="ghost" onClick={onDismiss} className="tw-absolute tw-top-2 tw-right-2">
                 <XIcon size="14" />
