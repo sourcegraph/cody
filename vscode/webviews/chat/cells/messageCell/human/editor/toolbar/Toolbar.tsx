@@ -7,7 +7,7 @@ import { ModelSelectField } from '../../../../../../components/modelSelectField/
 import { PromptSelectField } from '../../../../../../components/promptSelectField/PromptSelectField'
 import toolbarStyles from '../../../../../../components/shadcn/ui/toolbar.module.css'
 import { useActionSelect } from '../../../../../../prompts/PromptsTab'
-import { useConfig } from '../../../../../../utils/useConfig'
+import { useClientConfig } from '../../../../../../utils/useClientConfig'
 import { AddContextButton } from './AddContextButton'
 import { SubmitButton, type SubmitButtonState } from './SubmitButton'
 
@@ -130,7 +130,8 @@ const ModelSelectFieldToolbarItem: FunctionComponent<{
     focusEditor?: () => void
     className?: string
 }> = ({ userInfo, focusEditor, className, models }) => {
-    const config = useConfig()
+    const clientConfig = useClientConfig()
+    const serverSentModelsEnabled = !!clientConfig?.modelsAPIEnabled
 
     const api = useExtensionAPI()
 
@@ -146,11 +147,11 @@ const ModelSelectFieldToolbarItem: FunctionComponent<{
 
     return (
         !!models?.length &&
-        (userInfo.isDotComUser || config.configFeatures.serverSentModels) && (
+        (userInfo.isDotComUser || serverSentModelsEnabled) && (
             <ModelSelectField
                 models={models}
                 onModelSelect={onModelSelect}
-                serverSentModelsEnabled={config.configFeatures.serverSentModels}
+                serverSentModelsEnabled={serverSentModelsEnabled}
                 userInfo={userInfo}
                 onCloseByEscape={focusEditor}
                 className={className}

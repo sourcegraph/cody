@@ -3,7 +3,6 @@ import {
     type AuthStatus,
     type ClientCapabilitiesWithLegacyFields,
     ClientConfigSingleton,
-    type CodyClientConfig,
     DOTCOM_URL,
     NEVER,
     type ResolvedConfiguration,
@@ -14,11 +13,9 @@ import {
     currentResolvedConfig,
     disposableSubscription,
     distinctUntilChanged,
-    filter,
     clientCapabilities as getClientCapabilities,
     isAbortError,
     normalizeServerEndpointURL,
-    pendingOperation,
     resolvedConfig as resolvedConfig_,
     setAuthStatusObservable as setAuthStatusObservable_,
     startWith,
@@ -95,15 +92,8 @@ class AuthProvider implements vscode.Disposable {
             distinctUntilChanged()
         )
 
-        const clientConfigChanges = ClientConfigSingleton.getInstance().changes.pipe(
-            filter(
-                (config): config is CodyClientConfig =>
-                    config !== undefined && config !== pendingOperation
-            ),
-            distinctUntilChanged((prev, curr) => isEqual(prev, curr))
-        )
         this.subscriptions.push(
-            clientConfigChanges
+            ClientConfigSingleton.getInstance().updates
                 .pipe(
                     abortableOperation(async (_, signal) =>
                         this.validateAndUpdateAuthStatus(await currentResolvedConfig(), signal)

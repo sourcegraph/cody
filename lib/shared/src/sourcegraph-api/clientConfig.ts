@@ -13,7 +13,7 @@ import {
     switchMap,
 } from '../misc/observable'
 import {
-    type pendingOperation,
+    pendingOperation,
     skipPendingOperation,
     switchMapReplayOperation,
 } from '../misc/observableOperation'
@@ -48,6 +48,16 @@ export interface CodyClientConfig {
 
     // Whether the user should sign in to an enterprise instance.
     userShouldUseEnterprise: boolean
+}
+
+export const dummyClientConfigForTest: CodyClientConfig = {
+    chatEnabled: true,
+    autoCompleteEnabled: true,
+    customCommandsEnabled: true,
+    attributionEnabled: true,
+    smartContextWindowEnabled: true,
+    modelsAPIEnabled: true,
+    userShouldUseEnterprise: false,
 }
 
 /**
@@ -95,6 +105,11 @@ export class ClientConfigSingleton {
             map(value => (isError(value) ? undefined : value)),
             distinctUntilChanged()
         )
+
+    public readonly updates: Observable<CodyClientConfig> = this.changes.pipe(
+        filter(value => value !== undefined && value !== pendingOperation),
+        distinctUntilChanged()
+    )
 
     private constructor() {}
 
