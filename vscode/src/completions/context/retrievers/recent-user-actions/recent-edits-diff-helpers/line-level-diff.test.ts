@@ -26,6 +26,7 @@ describe('LineLevelDiffStrategy', () => {
         longTermDiffCombinationStrategy: shouldGroupNonOverlappingLines ? 'lines-based' : undefined,
         minShortTermEvents: 1,
         minShortTermTimeMs: 0,
+        trimSurroundingContext: false,
     })
 
     beforeEach(() => {

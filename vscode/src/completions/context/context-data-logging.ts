@@ -128,14 +128,16 @@ export class ContextRetrieverDataCollection implements vscode.Disposable {
                             contextLines: 3,
                             longTermDiffCombinationStrategy: 'lines-based',
                             minShortTermEvents: 1,
-                            minShortTermTimeMs: 30 * 1000, // 30 seconds
+                            minShortTermTimeMs: 30 * 1000, // 30 seconds,
+                            trimSurroundingContext: false,
                         }),
                         // Use unified diff for long term changes, and line based diff for short term changes.
                         new LineLevelDiffStrategy({
                             contextLines: 3,
                             longTermDiffCombinationStrategy: 'unified-diff',
                             minShortTermEvents: 1,
-                            minShortTermTimeMs: 2 * 60 * 1000, // 2 minutes
+                            minShortTermTimeMs: 2 * 60 * 1000, // 2 minutes,
+                            trimSurroundingContext: false,
                         }),
                         // Use raw line based changes for all the diff calculation.
                         new LineLevelDiffStrategy({
@@ -143,6 +145,7 @@ export class ContextRetrieverDataCollection implements vscode.Disposable {
                             longTermDiffCombinationStrategy: undefined,
                             minShortTermEvents: 1,
                             minShortTermTimeMs: 0,
+                            trimSurroundingContext: false,
                         }),
                     ],
                 })

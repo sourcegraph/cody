@@ -88,6 +88,13 @@ export function getCompletionsPromptWithSystemPrompt(
     return ps`${systemPrompt}\n\nUser: ${userPrompt}\n\nAssistant:`
 }
 
+export function getPromptWithNewline(prompt: PromptString): PromptString {
+    if (prompt.length === 0) {
+        return ps``
+    }
+    return ps`${prompt}\n`
+}
+
 export function getPromptForTheContextSource(
     contextItems: AutocompleteContextSnippet[],
     instructionPrompt: PromptString,
@@ -97,7 +104,7 @@ export function getPromptForTheContextSource(
     if (contextItems.length === 0 || prompt.length === 0) {
         return ps``
     }
-    return ps`${instructionPrompt}${prompt}\n`
+    return ps`${instructionPrompt}\n${prompt}`
 }
 
 //  Prompt components helper functions
@@ -116,26 +123,28 @@ export function getCurrentFilePromptComponents(
         suffixInArea: currentFileContext.suffixInArea.toString(),
     } satisfies CodeToReplaceData
 
-    const fileWithMarker = ps`${currentFileContext.prefixBeforeArea}
-${constants.AREA_FOR_CODE_MARKER}
-${currentFileContext.suffixAfterArea}`
+    const fileWithMarker = psDedent`
+        ${currentFileContext.prefixBeforeArea}
+        ${constants.AREA_FOR_CODE_MARKER}
+        ${currentFileContext.suffixAfterArea}`
 
     const filePrompt = getContextPromptWithPath(
         PromptString.fromDisplayPath(options.document.uri),
-        ps`${constants.FILE_TAG_OPEN}
-${fileWithMarker}
-${constants.FILE_TAG_CLOSE}
-`
+        psDedent`
+            ${constants.FILE_TAG_OPEN}
+            ${fileWithMarker}
+            ${constants.FILE_TAG_CLOSE}`
     )
 
-    const areaPrompt = ps`${constants.AREA_FOR_CODE_MARKER_OPEN}
-${currentFileContext.prefixInArea}
-${constants.CODE_TO_REWRITE_TAG_OPEN}
-${currentFileContext.codeToRewrite}
-${constants.CODE_TO_REWRITE_TAG_CLOSE}
-${currentFileContext.suffixInArea}
-${constants.AREA_FOR_CODE_MARKER_CLOSE}
-`
+    const areaPrompt = psDedent`
+        ${constants.AREA_FOR_CODE_MARKER_OPEN}
+        ${currentFileContext.prefixInArea}
+        ${constants.CODE_TO_REWRITE_TAG_OPEN}
+        ${currentFileContext.codeToRewrite}
+        ${constants.CODE_TO_REWRITE_TAG_CLOSE}
+        ${currentFileContext.suffixInArea}
+        ${constants.AREA_FOR_CODE_MARKER_CLOSE}`
+
     return { fileWithMarkerPrompt: filePrompt, areaPrompt: areaPrompt, codeToReplace: codeToReplace }
 }
 
@@ -236,11 +245,11 @@ export function getLintErrorsPrompt(contextItems: AutocompleteContextSnippet[]):
         combinedPrompts.push(promptWithPath)
     }
 
-    const lintErrorsPrompt = PromptString.join(combinedPrompts, ps`\n`)
-    return ps`${constants.LINT_ERRORS_TAG_OPEN}
-${lintErrorsPrompt}
-${constants.LINT_ERRORS_TAG_CLOSE}
-`
+    const lintErrorsPrompt = PromptString.join(combinedPrompts, ps`\n\n`)
+    return psDedent`
+        ${constants.LINT_ERRORS_TAG_OPEN}
+        ${lintErrorsPrompt}
+        ${constants.LINT_ERRORS_TAG_CLOSE}`
 }
 
 export function getRecentCopyPrompt(contextItems: AutocompleteContextSnippet[]): PromptString {
@@ -257,11 +266,11 @@ export function getRecentCopyPrompt(contextItems: AutocompleteContextSnippet[]):
             PromptString.fromAutocompleteContextSnippet(item).content
         )
     )
-    const recentCopyPrompt = PromptString.join(recentCopyPrompts, ps`\n`)
-    return ps`${constants.RECENT_COPY_TAG_OPEN}
-${recentCopyPrompt}
-${constants.RECENT_COPY_TAG_CLOSE}
-`
+    const recentCopyPrompt = PromptString.join(recentCopyPrompts, ps`\n\n`)
+    return psDedent`
+        ${constants.RECENT_COPY_TAG_OPEN}
+        ${recentCopyPrompt}
+        ${constants.RECENT_COPY_TAG_CLOSE}`
 }
 
 export function getRecentEditsPrompt(contextItems: AutocompleteContextSnippet[]): PromptString {
@@ -274,16 +283,16 @@ export function getRecentEditsPrompt(contextItems: AutocompleteContextSnippet[])
         return ps``
     }
     const recentEditsPrompts = recentEdits.map(item =>
-        getContextPromptWithPath(
+        getRecentEditsContextPromptWithPath(
             PromptString.fromDisplayPath(item.uri),
             PromptString.fromAutocompleteContextSnippet(item).content
         )
     )
     const recentEditsPrompt = PromptString.join(recentEditsPrompts, ps`\n`)
-    return ps`${constants.RECENT_EDITS_TAG_OPEN}
-${recentEditsPrompt}
-${constants.RECENT_EDITS_TAG_CLOSE}
-`
+    return psDedent`
+        ${constants.RECENT_EDITS_TAG_OPEN}
+        ${recentEditsPrompt}
+        ${constants.RECENT_EDITS_TAG_CLOSE}`
 }
 
 export function getRecentlyViewedSnippetsPrompt(
@@ -299,19 +308,20 @@ export function getRecentlyViewedSnippetsPrompt(
     }
     const recentViewedSnippetPrompts = recentViewedSnippets.map(
         item =>
-            ps`${constants.SNIPPET_TAG_OPEN}
-${getContextPromptWithPath(
-    PromptString.fromDisplayPath(item.uri),
-    PromptString.fromAutocompleteContextSnippet(item).content
-)}
-${constants.SNIPPET_TAG_CLOSE}
-`
+            psDedent`
+                ${constants.SNIPPET_TAG_OPEN}
+                ${getContextPromptWithPath(
+                    PromptString.fromDisplayPath(item.uri),
+                    PromptString.fromAutocompleteContextSnippet(item).content
+                )}
+                ${constants.SNIPPET_TAG_CLOSE}`
     )
+
     const snippetsPrompt = PromptString.join(recentViewedSnippetPrompts, ps`\n`)
-    return ps`${constants.RECENT_SNIPPET_VIEWS_TAG_OPEN}
-${snippetsPrompt}
-${constants.RECENT_SNIPPET_VIEWS_TAG_CLOSE}
-`
+    return psDedent`
+        ${constants.RECENT_SNIPPET_VIEWS_TAG_OPEN}
+        ${snippetsPrompt}
+        ${constants.RECENT_SNIPPET_VIEWS_TAG_CLOSE}`
 }
 
 export function getJaccardSimilarityPrompt(contextItems: AutocompleteContextSnippet[]): PromptString {
@@ -324,19 +334,21 @@ export function getJaccardSimilarityPrompt(contextItems: AutocompleteContextSnip
     }
     const jaccardSimilarityPrompts = jaccardSimilarity.map(
         item =>
-            ps`${constants.SNIPPET_TAG_OPEN}
-${getContextPromptWithPath(
-    PromptString.fromDisplayPath(item.uri),
-    PromptString.fromAutocompleteContextSnippet(item).content
-)}
-${constants.SNIPPET_TAG_CLOSE}
-`
+            psDedent`
+                ${constants.SNIPPET_TAG_OPEN}
+                ${getContextPromptWithPath(
+                    PromptString.fromDisplayPath(item.uri),
+                    PromptString.fromAutocompleteContextSnippet(item).content
+                )}
+                ${constants.SNIPPET_TAG_CLOSE}`
     )
+
     const snippetsPrompt = PromptString.join(jaccardSimilarityPrompts, ps`\n`)
-    return ps`${constants.EXTRACTED_CODE_SNIPPETS_TAG_OPEN}
-${snippetsPrompt}
-${constants.EXTRACTED_CODE_SNIPPETS_TAG_CLOSE}
-`
+
+    return psDedent`
+        ${constants.EXTRACTED_CODE_SNIPPETS_TAG_OPEN}
+        ${snippetsPrompt}
+        ${constants.EXTRACTED_CODE_SNIPPETS_TAG_CLOSE}`
 }
 
 //  Helper functions
@@ -386,13 +398,20 @@ export function getContextItemsInTokenBudget(
     return autocompleteItemsWithBudget
 }
 
-function getContextItemsForIdentifier(
+export function getContextItemsForIdentifier(
     contextItems: AutocompleteContextSnippet[],
     identifier: string
 ): AutocompleteContextSnippet[] {
     return contextItems.filter(item => item.identifier === identifier)
 }
 
-function getContextPromptWithPath(filePath: PromptString, content: PromptString): PromptString {
-    return ps`(\`${filePath}\`)\n\n${content}\n`
+export function getContextPromptWithPath(filePath: PromptString, content: PromptString): PromptString {
+    return ps`(\`${filePath}\`)\n${content}`
+}
+
+export function getRecentEditsContextPromptWithPath(
+    filePath: PromptString,
+    content: PromptString
+): PromptString {
+    return ps`${filePath}\n${content}`
 }

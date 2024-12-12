@@ -5,8 +5,151 @@ import { documentAndPosition } from '../completions/test-helpers'
 import {
     getCompletionsPromptWithSystemPrompt,
     getContextItemsInTokenBudget,
+    getContextPromptWithPath,
     getCurrentFileContext,
+    getCurrentFilePromptComponents,
+    getJaccardSimilarityPrompt,
+    getLintErrorsPrompt,
+    getRecentCopyPrompt,
+    getRecentEditsContextPromptWithPath,
+    getRecentEditsPrompt,
+    getRecentlyViewedSnippetsPrompt,
 } from '../prompt/prompt-utils'
+
+describe('getContextPromptWithPath', () => {
+    it('correct prompt with path', () => {
+        const filePath = ps`/path/to/file.js`
+        const content = ps`const foo = 1`
+        const prompt = getContextPromptWithPath(filePath, content)
+        expect(prompt.toString()).toBe(dedent`
+            (\`/path/to/file.js\`)
+            const foo = 1
+        `)
+    })
+})
+
+describe('getRecentEditsContextPromptWithPath', () => {
+    it('correct prompt with path', () => {
+        const filePath = ps`/path/to/file.js`
+        const content = ps`const foo = 1`
+        const prompt = getRecentEditsContextPromptWithPath(filePath, content)
+        expect(prompt.toString()).toBe(dedent`
+            /path/to/file.js
+            const foo = 1
+        `)
+    })
+})
+
+describe('getCurrentFilePromptComponents', () => {
+    it('handles the markers correctly for current file context', () => {
+        // Create a large file content
+        const longPrefix = Array(10).fill('prefix-line').join('\n')
+        const longSuffix = Array(10).fill('suffix-line').join('\n')
+        const content = `${longPrefix}\ncursor█line\n${longSuffix}`
+
+        const { document, position } = documentAndPosition(content)
+
+        const docContext = getCurrentDocContext({
+            document,
+            position,
+            maxPrefixLength: 100,
+            maxSuffixLength: 100,
+        })
+
+        const options = {
+            docContext,
+            document,
+            position,
+            maxPrefixLinesInArea: 1,
+            maxSuffixLinesInArea: 1,
+            codeToRewritePrefixLines: 1,
+            codeToRewriteSuffixLines: 1,
+        }
+
+        const result = getCurrentFilePromptComponents(options)
+        expect(result.fileWithMarkerPrompt.toString()).toBe(dedent`
+            (\`test.ts\`)
+            <file>
+            prefix-line
+            prefix-line
+            prefix-line
+            prefix-line
+            prefix-line
+            prefix-line
+
+            <<<AREA_AROUND_CODE_TO_REWRITE_WILL_BE_INSERTED_HERE>>>
+            suffix-line
+            suffix-line
+            suffix-line
+            suffix-line
+            suffix-line
+            suffix-line
+            </file>
+        `)
+        expect(result.areaPrompt.toString()).toBe(dedent`
+            <area_around_code_to_rewrite>
+            prefix-line
+
+            <code_to_rewrite>
+            prefix-line
+            cursorline
+            suffix-line
+
+            </code_to_rewrite>
+            suffix-line
+
+            </area_around_code_to_rewrite>
+        `)
+    })
+
+    it('handles the markers correctly for all content under area prompt', () => {
+        // Create a large file content
+        const longPrefix = Array(10).fill('prefix-line').join('\n')
+        const longSuffix = Array(10).fill('suffix-line').join('\n')
+        const content = `${longPrefix}\ncursor█line\n${longSuffix}`
+
+        const { document, position } = documentAndPosition(content)
+
+        const docContext = getCurrentDocContext({
+            document,
+            position,
+            maxPrefixLength: 30,
+            maxSuffixLength: 30,
+        })
+
+        const options = {
+            docContext,
+            document,
+            position,
+            maxPrefixLinesInArea: 1,
+            maxSuffixLinesInArea: 1,
+            codeToRewritePrefixLines: 1,
+            codeToRewriteSuffixLines: 1,
+        }
+
+        const result = getCurrentFilePromptComponents(options)
+        expect(result.fileWithMarkerPrompt.toString()).toBe(dedent`
+            (\`test.ts\`)
+            <file>
+            <<<AREA_AROUND_CODE_TO_REWRITE_WILL_BE_INSERTED_HERE>>>
+            </file>
+        `)
+        expect(result.areaPrompt.toString()).toBe(dedent`
+            <area_around_code_to_rewrite>
+            prefix-line
+
+            <code_to_rewrite>
+            prefix-line
+            cursorline
+            suffix-line
+
+            </code_to_rewrite>
+            suffix-line
+
+            </area_around_code_to_rewrite>
+        `)
+    })
+})
 
 describe('getCurrentFileContext', () => {
     it('correctly splits content into different areas based on cursor position', () => {
@@ -373,5 +516,361 @@ describe('getCompletionsPromptWithSystemPrompt', () => {
         const expectedPrompt = 'System prompt\n\nUser: User prompt\n\nAssistant:'
         const result = getCompletionsPromptWithSystemPrompt(systemPrompt, userPrompt)
         expect(result.toString()).toEqual(expectedPrompt)
+    })
+})
+
+describe('getLintErrorsPrompt', () => {
+    const getContextItem = (
+        content: string,
+        identifier: string,
+        fileName = 'foo.ts'
+    ): AutocompleteContextSnippet => ({
+        content,
+        identifier,
+        uri: testFileUri(fileName),
+        startLine: 0,
+        endLine: 0,
+    })
+
+    it('filters only the context items from the diagnostics context sources', () => {
+        const contextItems = [
+            getContextItem('foo\nErr | Defined foo', RetrieverIdentifier.DiagnosticsRetriever),
+            getContextItem('bar\nErr | Defined bar', RetrieverIdentifier.DiagnosticsRetriever),
+            getContextItem('baz', RetrieverIdentifier.RecentCopyRetriever),
+            getContextItem('qux', RetrieverIdentifier.RecentViewPortRetriever),
+        ]
+        const prompt = getLintErrorsPrompt(contextItems)
+        expect(prompt.toString()).toBe(dedent`
+            <lint_errors>
+            (\`foo.ts\`)
+            foo
+            Err | Defined foo
+
+            bar
+            Err | Defined bar
+            </lint_errors>
+        `)
+    })
+
+    it('returns empty prompt for no diagnostics error', () => {
+        const contextItems: AutocompleteContextSnippet[] = []
+        const prompt = getLintErrorsPrompt(contextItems)
+        expect(prompt.toString()).toBe('')
+    })
+
+    it('diagnostics errors from multiple files', () => {
+        const contextItems: AutocompleteContextSnippet[] = [
+            getContextItem('foo\nErr | Defined foo', RetrieverIdentifier.DiagnosticsRetriever, 'foo.ts'),
+            getContextItem(
+                'another foo\nErr | Defined another foo',
+                RetrieverIdentifier.DiagnosticsRetriever,
+                'foo.ts'
+            ),
+            getContextItem('bar\nErr | Defined bar', RetrieverIdentifier.DiagnosticsRetriever, 'bar.ts'),
+            getContextItem(
+                'another bar\nErr | Defined another bar',
+                RetrieverIdentifier.DiagnosticsRetriever,
+                'bar.ts'
+            ),
+        ]
+        const prompt = getLintErrorsPrompt(contextItems)
+        expect(prompt.toString()).toBe(dedent`
+            <lint_errors>
+            (\`foo.ts\`)
+            foo
+            Err | Defined foo
+
+            another foo
+            Err | Defined another foo
+
+            (\`bar.ts\`)
+            bar
+            Err | Defined bar
+
+            another bar
+            Err | Defined another bar
+            </lint_errors>
+        `)
+    })
+})
+
+describe('getRecentCopyPrompt', () => {
+    const getContextItem = (
+        content: string,
+        identifier: string,
+        fileName = 'foo.ts'
+    ): AutocompleteContextSnippet => ({
+        content,
+        identifier,
+        uri: testFileUri(fileName),
+        startLine: 0,
+        endLine: 0,
+    })
+
+    it('filters only the context items from the recent copy context sources', () => {
+        const contextItems = [
+            getContextItem('foo\nErr | Defined foo', RetrieverIdentifier.DiagnosticsRetriever),
+            getContextItem('bar\nErr | Defined bar', RetrieverIdentifier.DiagnosticsRetriever),
+            getContextItem('baz', RetrieverIdentifier.RecentCopyRetriever),
+            getContextItem('qux', RetrieverIdentifier.RecentViewPortRetriever),
+        ]
+        const prompt = getRecentCopyPrompt(contextItems)
+        expect(prompt.toString()).toBe(dedent`
+            <recent_copy>
+            (\`foo.ts\`)
+            baz
+            </recent_copy>
+        `)
+    })
+
+    it('empty prompt if no recent copy context', () => {
+        const contextItems = [
+            getContextItem('foo\nErr | Defined foo', RetrieverIdentifier.DiagnosticsRetriever),
+        ]
+        const prompt = getRecentCopyPrompt(contextItems)
+        expect(prompt.toString()).toBe('')
+    })
+
+    it('recent copy context items from multiple sources', () => {
+        const contextItems = [
+            getContextItem('foo copy content', RetrieverIdentifier.RecentCopyRetriever, 'foo.ts'),
+            getContextItem('bar copy content', RetrieverIdentifier.RecentCopyRetriever, 'bar.ts'),
+        ]
+        const prompt = getRecentCopyPrompt(contextItems)
+        expect(prompt.toString()).toBe(dedent`
+            <recent_copy>
+            (\`foo.ts\`)
+            foo copy content
+
+            (\`bar.ts\`)
+            bar copy content
+            </recent_copy>
+        `)
+    })
+})
+
+describe('getRecentEditsPrompt', () => {
+    const getContextItem = (
+        content: string,
+        identifier: string,
+        fileName = 'foo.ts'
+    ): AutocompleteContextSnippet => ({
+        content,
+        identifier,
+        uri: testFileUri(fileName),
+        startLine: 0,
+        endLine: 0,
+    })
+
+    it('filters only the context items from the recent edits context sources', () => {
+        const contextItems = [
+            getContextItem('1-|const =\n1+|const i = 5', RetrieverIdentifier.RecentEditsRetriever),
+            getContextItem('1-|let z =\n1+|let z = x + y', RetrieverIdentifier.RecentEditsRetriever),
+            getContextItem('baz', RetrieverIdentifier.RecentViewPortRetriever),
+            getContextItem('qux', RetrieverIdentifier.RecentViewPortRetriever),
+        ]
+        const prompt = getRecentEditsPrompt(contextItems)
+        expect(prompt.toString()).toBe(dedent`
+            <diff_history>
+            foo.ts
+            1-|let z =
+            1+|let z = x + y
+            foo.ts
+            1-|const =
+            1+|const i = 5
+            </diff_history>
+        `)
+    })
+
+    it('empty prompt on no context items', () => {
+        const contextItems: AutocompleteContextSnippet[] = []
+        const prompt = getRecentEditsPrompt(contextItems)
+        expect(prompt.toString()).toBe('')
+    })
+
+    it('Recent edits from multiple files in the correct order', () => {
+        const contextItems = [
+            getContextItem(
+                '1-|const =\n1+|const i = 5',
+                RetrieverIdentifier.RecentEditsRetriever,
+                'foo.ts'
+            ),
+            getContextItem(
+                '1-|let z =\n1+|let z = x + y',
+                RetrieverIdentifier.RecentEditsRetriever,
+                'bar.ts'
+            ),
+            getContextItem(
+                '5-|function test() {}\n5+|function test() { return true; }',
+                RetrieverIdentifier.RecentEditsRetriever,
+                'baz.ts'
+            ),
+            getContextItem(
+                '5-|const value = null\n5+|const value = "test"',
+                RetrieverIdentifier.RecentEditsRetriever,
+                'qux.ts'
+            ),
+        ]
+        const prompt = getRecentEditsPrompt(contextItems)
+        expect(prompt.toString()).toBe(dedent`
+            <diff_history>
+            qux.ts
+            5-|const value = null
+            5+|const value = "test"
+            baz.ts
+            5-|function test() {}
+            5+|function test() { return true; }
+            bar.ts
+            1-|let z =
+            1+|let z = x + y
+            foo.ts
+            1-|const =
+            1+|const i = 5
+            </diff_history>
+        `)
+    })
+})
+
+describe('getRecentlyViewedSnippetsPrompt', () => {
+    const getContextItem = (
+        content: string,
+        identifier: string,
+        fileName = 'foo.ts'
+    ): AutocompleteContextSnippet => ({
+        content,
+        identifier,
+        uri: testFileUri(fileName),
+        startLine: 0,
+        endLine: 0,
+    })
+
+    it('filters only the context items from the recent snippet views context sources', () => {
+        const contextItems = [
+            getContextItem('foo', RetrieverIdentifier.RecentViewPortRetriever),
+            getContextItem('bar', RetrieverIdentifier.RecentViewPortRetriever),
+            getContextItem('baz', RetrieverIdentifier.DiagnosticsRetriever),
+            getContextItem('qux', RetrieverIdentifier.RecentCopyRetriever),
+        ]
+        const prompt = getRecentlyViewedSnippetsPrompt(contextItems)
+        expect(prompt.toString()).toBe(dedent`
+            <recently_viewed_snippets>
+            <snippet>
+            (\`foo.ts\`)
+            bar
+            </snippet>
+            <snippet>
+            (\`foo.ts\`)
+            foo
+            </snippet>
+            </recently_viewed_snippets>
+        `)
+    })
+
+    it('empty prompt on no context items', () => {
+        const contextItems: AutocompleteContextSnippet[] = []
+        const prompt = getRecentlyViewedSnippetsPrompt(contextItems)
+        expect(prompt.toString()).toBe('')
+    })
+
+    it('Recent views from multiple files in the correct order', () => {
+        const contextItems = [
+            getContextItem('foo', RetrieverIdentifier.RecentViewPortRetriever, 'foo.ts'),
+            getContextItem('bar', RetrieverIdentifier.RecentViewPortRetriever, 'bar.ts'),
+            getContextItem('bax', RetrieverIdentifier.RecentViewPortRetriever, 'baz.ts'),
+            getContextItem('qux', RetrieverIdentifier.RecentViewPortRetriever, 'qux.ts'),
+        ]
+        const prompt = getRecentlyViewedSnippetsPrompt(contextItems)
+        expect(prompt.toString()).toBe(dedent`
+            <recently_viewed_snippets>
+            <snippet>
+            (\`qux.ts\`)
+            qux
+            </snippet>
+            <snippet>
+            (\`baz.ts\`)
+            bax
+            </snippet>
+            <snippet>
+            (\`bar.ts\`)
+            bar
+            </snippet>
+            <snippet>
+            (\`foo.ts\`)
+            foo
+            </snippet>
+            </recently_viewed_snippets>
+        `)
+    })
+})
+
+describe('getJaccardSimilarityPrompt', () => {
+    const getContextItem = (
+        content: string,
+        identifier: string,
+        fileName = 'foo.ts'
+    ): AutocompleteContextSnippet => ({
+        content,
+        identifier,
+        uri: testFileUri(fileName),
+        startLine: 0,
+        endLine: 0,
+    })
+
+    it('filters only the context items from the jaccard similarity context sources', () => {
+        const contextItems = [
+            getContextItem('foo', RetrieverIdentifier.JaccardSimilarityRetriever),
+            getContextItem('bar', RetrieverIdentifier.JaccardSimilarityRetriever),
+            getContextItem('baz', RetrieverIdentifier.DiagnosticsRetriever),
+            getContextItem('qux', RetrieverIdentifier.RecentCopyRetriever),
+        ]
+        const prompt = getJaccardSimilarityPrompt(contextItems)
+        expect(prompt.toString()).toBe(dedent`
+            <extracted_code_snippets>
+            <snippet>
+            (\`foo.ts\`)
+            foo
+            </snippet>
+            <snippet>
+            (\`foo.ts\`)
+            bar
+            </snippet>
+            </extracted_code_snippets>
+        `)
+    })
+
+    it('empty prompt on no context items', () => {
+        const contextItems: AutocompleteContextSnippet[] = []
+        const prompt = getJaccardSimilarityPrompt(contextItems)
+        expect(prompt.toString()).toBe('')
+    })
+
+    it('jaccard similarity from multiple files in the correct order', () => {
+        const contextItems = [
+            getContextItem('foo', RetrieverIdentifier.JaccardSimilarityRetriever, 'foo.ts'),
+            getContextItem('bar', RetrieverIdentifier.JaccardSimilarityRetriever, 'bar.ts'),
+            getContextItem('bax', RetrieverIdentifier.JaccardSimilarityRetriever, 'baz.ts'),
+            getContextItem('qux', RetrieverIdentifier.JaccardSimilarityRetriever, 'qux.ts'),
+        ]
+        const prompt = getJaccardSimilarityPrompt(contextItems)
+        expect(prompt.toString()).toBe(dedent`
+            <extracted_code_snippets>
+            <snippet>
+            (\`foo.ts\`)
+            foo
+            </snippet>
+            <snippet>
+            (\`bar.ts\`)
+            bar
+            </snippet>
+            <snippet>
+            (\`baz.ts\`)
+            bax
+            </snippet>
+            <snippet>
+            (\`qux.ts\`)
+            qux
+            </snippet>
+            </extracted_code_snippets>
+        `)
     })
 })

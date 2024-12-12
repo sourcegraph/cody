@@ -1,4 +1,4 @@
-import { ps } from '@sourcegraph/cody-shared'
+import { ps, psDedent } from '@sourcegraph/cody-shared'
 import { RetrieverIdentifier } from '../../completions/context/utils'
 import { autoeditsLogger } from '../logger'
 import type { AutoeditsUserPromptStrategy, UserPromptArgs, UserPromptResponse } from './base'
@@ -9,6 +9,7 @@ import {
     getJaccardSimilarityPrompt,
     getLintErrorsPrompt,
     getPromptForTheContextSource,
+    getPromptWithNewline,
     getRecentCopyPrompt,
     getRecentEditsPrompt,
     getRecentlyViewedSnippetsPrompt,
@@ -37,7 +38,7 @@ export class DefaultUserPromptStrategy implements AutoeditsUserPromptStrategy {
         })
         const recentViewsPrompt = getPromptForTheContextSource(
             contextItemMapping.get(RetrieverIdentifier.RecentViewPortRetriever) || [],
-            constants.RECENT_VIEWS_INSTRUCTION,
+            constants.LONG_TERM_SNIPPET_VIEWS_INSTRUCTION,
             getRecentlyViewedSnippetsPrompt
         )
 
@@ -64,16 +65,20 @@ export class DefaultUserPromptStrategy implements AutoeditsUserPromptStrategy {
             constants.JACCARD_SIMILARITY_INSTRUCTION,
             getJaccardSimilarityPrompt
         )
-        const finalPrompt = ps`${constants.BASE_USER_PROMPT}
-${jaccardSimilarityPrompt}
-${recentViewsPrompt}
-${constants.CURRENT_FILE_INSTRUCTION}${fileWithMarkerPrompt}
-${recentEditsPrompt}
-${lintErrorsPrompt}
-${recentCopyPrompt}
-${areaPrompt}
-${constants.FINAL_USER_PROMPT}
-`
+
+        const currentFilePrompt = ps`${constants.CURRENT_FILE_INSTRUCTION}${fileWithMarkerPrompt}`
+
+        const finalPrompt = psDedent`
+            ${getPromptWithNewline(constants.BASE_USER_PROMPT)}
+            ${getPromptWithNewline(jaccardSimilarityPrompt)}
+            ${getPromptWithNewline(recentViewsPrompt)}
+            ${getPromptWithNewline(currentFilePrompt)}
+            ${getPromptWithNewline(recentEditsPrompt)}
+            ${getPromptWithNewline(lintErrorsPrompt)}
+            ${getPromptWithNewline(recentCopyPrompt)}
+            ${getPromptWithNewline(areaPrompt)}
+            ${getPromptWithNewline(constants.FINAL_USER_PROMPT)}`
+
         autoeditsLogger.logDebug('AutoEdits', 'Prompt\n', finalPrompt)
         return {
             codeToReplace: codeToReplace,
