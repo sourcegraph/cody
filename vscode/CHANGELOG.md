@@ -2529,3 +2529,4 @@ Chat: Cody is now defaulted to run in the sidebar for both Enterprise and Non-En
 ### Fixed
 
 ### Changed
+foo
