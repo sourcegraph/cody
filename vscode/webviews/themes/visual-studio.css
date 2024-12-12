@@ -426,6 +426,7 @@ html[data-ide='VisualStudio'] {
     /* --vscode-settings-textInputBorder: var(); */
     /* --vscode-settings-textInputForeground: var(); */
     --vscode-sideBar-background: var(--visualstudio-toolwindowbackground);
+    --vscode-search-filters-background: var(--vscode-sideBar-background);
     --vscode-sideBar-foreground: var(--visualstudio-toolwindowtext);
     --vscode-sideBar-border: var(--visualstudio-toolwindowborder);
     /* --vscode-sideBarActivityBarTop-border: var(); */

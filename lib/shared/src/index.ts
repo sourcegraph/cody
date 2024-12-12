@@ -267,6 +267,11 @@ export {
     type SuggestionsRepo,
     type RepoSuggestionsSearchResponse,
     type ChatIntentResult,
+    type NLSSearchResult,
+    type NLSSearchResponse,
+    type NLSSearchFileMatch,
+    type NLSSearchDynamicFilter,
+    type NLSSearchDynamicFilterKind,
 } from './sourcegraph-api/graphql/client'
 export type {
     CodyLLMSiteConfiguration,

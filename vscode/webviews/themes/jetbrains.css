@@ -423,6 +423,7 @@ html[data-ide='JetBrains'] {
     --vscode-settings-textInputBorder: var(--jetbrains-Settings-textInputBorder);
     --vscode-settings-textInputForeground: var(--jetbrains-ComboBox-foreground);
     --vscode-sideBar-background: var(--jetbrains-MenuBar-background);
+    --vscode-search-filters-background: var(--vscode-sideBar-background);
     --vscode-sideBar-border: var(--jetbrains-MenuBar-borderColor);
     --vscode-sideBarActivityBarTop-border: var(--jetbrains-MenuBar-borderColor);
     --vscode-sideBarSectionHeader-border: var(--jetbrains-MenuBar-shadow);
