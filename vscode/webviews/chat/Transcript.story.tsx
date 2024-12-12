@@ -44,7 +44,6 @@ const meta: Meta<typeof Transcript> = {
         postMessage: () => {},
         chatEnabled: true,
         models: mockedModels,
-        setActiveChatContext: () => {},
     } satisfies ComponentProps<typeof Transcript>,
 
     decorators: [

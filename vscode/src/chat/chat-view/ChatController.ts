@@ -19,6 +19,9 @@ import {
     skipPendingOperation,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
+import * as uuid from 'uuid'
+import * as vscode from 'vscode'
+
 import {
     type BillingCategory,
     type BillingProduct,
@@ -76,8 +79,6 @@ import {
     truncatePromptString,
     userProductSubscription,
 } from '@sourcegraph/cody-shared'
-import * as uuid from 'uuid'
-import * as vscode from 'vscode'
 
 import type { Span } from '@opentelemetry/api'
 import { captureException } from '@sentry/core'
@@ -108,7 +109,6 @@ import { authProvider } from '../../services/AuthProvider'
 import { AuthProviderSimplified } from '../../services/AuthProviderSimplified'
 import { localStorage } from '../../services/LocalStorageProvider'
 import { secretStorage } from '../../services/SecretStorageProvider'
-import { TraceSender } from '../../services/open-telemetry/trace-sender'
 import { recordExposedExperimentsToSpan } from '../../services/open-telemetry/utils'
 import {
     handleCodeFromInsertAtCursor,
@@ -328,9 +328,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     message.fileName
                 )
                 break
-            case 'trace-export':
-                TraceSender.send(message.traceSpanEncodedJson)
-                break
             case 'smartApplyAccept':
                 await vscode.commands.executeCommand('cody.fixup.codelens.accept', message.id)
                 break
@@ -474,6 +471,9 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     } else {
                         await showSignOutMenu()
                     }
+                    // Send config to refresh the endpoint history list.
+                    // TODO: Remove this when the config for webview is observable, see getConfigForWebview.
+                    await this.sendConfig(currentAuthStatus())
                     break
                 }
                 if (message.authKind === 'switch') {
@@ -529,10 +529,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
     private featureCodyExperimentalOneBox = storeLastValue(
         featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyExperimentalOneBox)
-    )
-
-    private featureDeepCodyShellContext = storeLastValue(
-        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.DeepCodyShellContext)
     )
 
     private async getConfigForWebview(): Promise<ConfigurationSubsetForWebview & LocalEnv> {
@@ -723,6 +719,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             throw new Error('No model selected, and no default chat model is available')
         }
         this.chatBuilder.setSelectedModel(model)
+        const isDeepCodyModel = model?.includes('deep-cody')
         const { isPublic: repoIsPublic, repoMetadata } = await wrapInActiveSpan(
             'chat.getRepoMetadata',
             () => firstResultFromOperation(publicRepoMetadataIfAllWorkspaceReposArePublic)
@@ -797,7 +794,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
         const finalIntentDetectionResponse = detectedIntent
             ? { intent: detectedIntent, allScores: detectedIntentScores }
-            : this.featureCodyExperimentalOneBox && repositoryMentioned
+            : this.featureCodyExperimentalOneBox && repositoryMentioned && !isDeepCodyModel
               ? await this.detectChatIntent({
                     requestID,
                     text: inputTextWithoutContextChips.toString(),
@@ -849,13 +846,13 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         }
 
         // Experimental Feature: Deep Cody
-        if (model?.includes('deep-cody')) {
+        if (isDeepCodyModel) {
             const agenticContext = await new DeepCodyAgent(
                 this.chatBuilder,
                 this.chatClient,
-                await this.toolProvider.getTools(!!this.featureDeepCodyShellContext.value.last),
+                this.toolProvider.getTools(),
                 corpusContext
-            ).getContext(span, signal)
+            ).getContext(signal)
             corpusContext.push(...agenticContext)
         }
 

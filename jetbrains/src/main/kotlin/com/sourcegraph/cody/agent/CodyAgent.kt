@@ -23,6 +23,7 @@ import java.net.URI
 import java.nio.file.*
 import java.util.*
 import java.util.concurrent.*
+import kotlin.collections.flatten
 import org.eclipse.lsp4j.jsonrpc.Launcher
 
 /**
@@ -99,7 +100,18 @@ private constructor(
 
     @JvmField val executorService: ExecutorService = Executors.newCachedThreadPool()
 
-    private fun shouldSpawnDebuggableAgent() = System.getenv("CODY_AGENT_DEBUG_INSPECT") == "true"
+    enum class Debuggability {
+      NotDebuggable,
+      Debuggable,
+      DebuggableWaitForAttach,
+    }
+
+    private fun shouldSpawnDebuggableAgent(): Debuggability =
+        when (System.getenv("CODY_AGENT_DEBUG_INSPECT")) {
+          "true" -> Debuggability.Debuggable
+          "wait" -> Debuggability.DebuggableWaitForAttach
+          else -> Debuggability.NotDebuggable
+        }
 
     fun create(project: Project): CompletableFuture<CodyAgent> {
       try {
@@ -166,37 +178,23 @@ private constructor(
       val token = CancellationToken()
 
       val binaryPath = nodeBinary(token).absolutePath
-      val jsonRpcArgs = arrayOf("api", "jsonrpc-stdio")
-      val command: List<String> =
-          if (System.getenv("CODY_DIR") != null) {
-            val script = File(System.getenv("CODY_DIR"), "agent/dist/index.js")
-            logger.info("using Cody agent script " + script.absolutePath)
-            if (shouldSpawnDebuggableAgent()) {
-              listOf(
-                  binaryPath,
-                  "--inspect-brk",
-                  "--enable-source-maps",
-                  script.absolutePath,
-                  *jsonRpcArgs)
-            } else {
-              listOf(binaryPath, "--enable-source-maps", script.absolutePath, *jsonRpcArgs)
-            }
-          } else {
-            val script =
-                agentDirectory()?.resolve("index.js")
-                    ?: throw CodyAgentException(
-                        "Sourcegraph Cody + Code Search plugin path not found")
-            if (shouldSpawnDebuggableAgent()) {
-              listOf(
-                  binaryPath,
-                  "--inspect",
-                  "--enable-source-maps",
-                  script.toFile().absolutePath,
-                  *jsonRpcArgs)
-            } else {
-              listOf(binaryPath, script.toFile().absolutePath, *jsonRpcArgs)
-            }
+      val jsonRpcArgs = listOf("api", "jsonrpc-stdio")
+      val script =
+          agentDirectory()?.resolve("index.js")
+              ?: throw CodyAgentException("Sourcegraph Cody + Code Search plugin path not found")
+      val debuggerArgs =
+          when (shouldSpawnDebuggableAgent()) {
+            Debuggability.NotDebuggable -> emptyList()
+            Debuggability.Debuggable -> listOf("--enable-source-maps", "--inspect")
+            Debuggability.DebuggableWaitForAttach -> listOf("--enable-source-maps", "--inspect-brk")
           }
+      val command: List<String> =
+          listOf(
+                  listOf(binaryPath),
+                  debuggerArgs,
+                  listOf(script.toFile().absolutePath),
+                  jsonRpcArgs)
+              .flatten()
 
       val processBuilder = ProcessBuilder(command)
       if (java.lang.Boolean.getBoolean("cody.accept-non-trusted-certificates-automatically") ||
@@ -334,14 +332,13 @@ private constructor(
       return "node-" + os + "-" + arch + binarySuffix()
     }
 
-    private fun agentDirectory(): Path? {
-      // N.B. this is the default/production setting. CODY_DIR overrides it locally.
+    fun agentDirectory(): Path? {
       return pluginDirectory()?.resolve("agent")
     }
 
     /**
      * Gets the plugin path, or null if not found. Can be overridden with the cody-agent.directory
-     * system property. Does not consider CODY_DIR environment variable overrides.
+     * system property.
      */
     fun pluginDirectory(): Path? {
       val fromProperty = System.getProperty("cody-agent.directory", "")
