@@ -1,6 +1,6 @@
 import { ps } from '@sourcegraph/cody-shared'
 import type { ChatClient } from '@sourcegraph/cody-shared'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, afterAll, describe, expect, it, vi } from 'vitest'
 import type { AutoeditModelOptions } from '../prompt-provider'
 import { SourcegraphChatAdapter } from './sourcegraph-chat'
 import { getMaxOutputTokensForAutoedits } from './utils'
@@ -34,6 +34,10 @@ describe('SourcegraphChatAdapter', () => {
         } as unknown as ChatClient
 
         adapter = new SourcegraphChatAdapter(mockChatClient)
+    })
+
+    afterAll(() => {
+        vi.restoreAllMocks()
     })
 
     it('sends correct request parameters', async () => {

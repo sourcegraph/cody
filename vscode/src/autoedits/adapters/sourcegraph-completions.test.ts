@@ -1,6 +1,6 @@
 import type { CodeCompletionsClient } from '@sourcegraph/cody-shared'
 import { ps } from '@sourcegraph/cody-shared'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, afterAll, describe, expect, it, vi } from 'vitest'
 import type { AutoeditModelOptions } from '../prompt-provider'
 import { SourcegraphCompletionsAdapter } from './sourcegraph-completions'
 import { getMaxOutputTokensForAutoedits } from './utils'
@@ -32,6 +32,10 @@ describe('SourcegraphCompletionsAdapter', () => {
         } as unknown as CodeCompletionsClient
 
         adapter = new SourcegraphCompletionsAdapter()
+    })
+
+    afterAll(() => {
+        vi.restoreAllMocks()
     })
 
     it('sends correct request parameters', async () => {

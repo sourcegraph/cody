@@ -1,5 +1,5 @@
 import { ps } from '@sourcegraph/cody-shared'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { AutoeditModelOptions } from '../prompt-provider'
 import { CodyGatewayAdapter } from './cody-gateway'
 
@@ -25,6 +25,10 @@ describe('CodyGatewayAdapter', () => {
         global.fetch = mockFetch
         adapter = new CodyGatewayAdapter()
         mockFetch.mockReset()
+    })
+
+    afterAll(() => {
+        vi.restoreAllMocks()
     })
 
     it('sends correct request parameters for chat model', async () => {

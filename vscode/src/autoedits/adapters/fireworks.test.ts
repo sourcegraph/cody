@@ -1,5 +1,5 @@
 import { ps } from '@sourcegraph/cody-shared'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, afterAll,  describe, expect, it, vi } from 'vitest'
 import type { AutoeditModelOptions } from '../prompt-provider'
 import { FireworksAdapter } from './fireworks'
 
@@ -25,6 +25,10 @@ describe('FireworksAdapter', () => {
         global.fetch = mockFetch
         adapter = new FireworksAdapter()
         mockFetch.mockReset()
+    })
+
+    afterAll(() => {
+        vi.restoreAllMocks()
     })
 
     it('sends correct request parameters for chat model', async () => {
