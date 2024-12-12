@@ -95,6 +95,7 @@ export const Notices: React.FC<NoticesProps> = ({ user, isTeamsUpgradeCtaEnabled
                                 ? 'Contact admins to enable Command Execution'
                                 : ''
                         }
+                        actions={[]}
                     />
                 ),
             },
