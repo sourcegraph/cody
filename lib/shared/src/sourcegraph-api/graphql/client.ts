@@ -33,7 +33,6 @@ import {
     CURRENT_SITE_CODY_LLM_PROVIDER,
     CURRENT_SITE_GRAPHQL_FIELDS_QUERY,
     CURRENT_SITE_HAS_CODY_ENABLED_QUERY,
-    CURRENT_SITE_IDENTIFICATION,
     CURRENT_SITE_VERSION_QUERY,
     CURRENT_USER_CODY_PRO_ENABLED_QUERY,
     CURRENT_USER_CODY_SUBSCRIPTION_QUERY,
@@ -168,13 +167,6 @@ interface GetURLContentResponse {
         title: string | null
         content: string
     }
-}
-
-interface SiteIdentificationResponse {
-    site: {
-        siteID: string
-        productSubscription: { license: { hashedKey: string } }
-    } | null
 }
 
 interface SiteGraphqlFieldsResponse {
@@ -818,23 +810,6 @@ export class SourcegraphGraphQLAPIClient {
                 response,
                 data => data.urlMentionContext ?? new Error('failed to fetch url content')
             )
-        )
-    }
-
-    public async getSiteIdentification(): Promise<{ siteid: string; hashedLicenseKey: string } | Error> {
-        const response = await this.fetchSourcegraphAPI<APIResponse<SiteIdentificationResponse>>(
-            CURRENT_SITE_IDENTIFICATION,
-            {}
-        )
-        return extractDataOrError(response, data =>
-            data.site?.siteID
-                ? data.site?.productSubscription?.license?.hashedKey
-                    ? {
-                          siteid: data.site?.siteID,
-                          hashedLicenseKey: data.site?.productSubscription?.license?.hashedKey,
-                      }
-                    : new Error('site hashed license key not found')
-                : new Error('site ID not found')
         )
     }
 
