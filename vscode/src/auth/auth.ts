@@ -412,7 +412,7 @@ export async function validateCredentials(
     logDebug('auth', `Authenticating to ${config.auth.serverEndpoint}...`)
 
     // Check if credentials are valid and if Cody is enabled for the credentials and endpoint.
-    using client = SourcegraphGraphQLAPIClient.withStaticConfig({
+    const client = SourcegraphGraphQLAPIClient.withStaticConfig({
         configuration: {
             customHeaders: config.configuration.customHeaders,
             telemetryLevel: 'off',
@@ -421,41 +421,45 @@ export async function validateCredentials(
         clientState: config.clientState,
     })
 
-    const userInfo = await client.getCurrentUserInfo(signal)
-    signal?.throwIfAborted()
+    try {
+        const userInfo = await client.getCurrentUserInfo(signal)
+        signal?.throwIfAborted()
 
-    if (isError(userInfo) && isNetworkLikeError(userInfo)) {
-        logDebug(
-            'auth',
-            `Failed to authenticate to ${config.auth.serverEndpoint} due to likely network error`,
-            userInfo.message
-        )
-        return {
-            authenticated: false,
-            showNetworkError: true,
-            endpoint: config.auth.serverEndpoint,
-            pendingValidation: false,
+        if (isError(userInfo) && isNetworkLikeError(userInfo)) {
+            logDebug(
+                'auth',
+                `Failed to authenticate to ${config.auth.serverEndpoint} due to likely network error`,
+                userInfo.message
+            )
+            return {
+                authenticated: false,
+                showNetworkError: true,
+                endpoint: config.auth.serverEndpoint,
+                pendingValidation: false,
+            }
         }
-    }
-    if (!userInfo || isError(userInfo)) {
-        logDebug(
-            'auth',
-            `Failed to authenticate to ${config.auth.serverEndpoint} due to invalid credentials or other endpoint error`,
-            userInfo?.message
-        )
-        return {
-            authenticated: false,
-            endpoint: config.auth.serverEndpoint,
-            showInvalidAccessTokenError: true,
-            pendingValidation: false,
+        if (!userInfo || isError(userInfo)) {
+            logDebug(
+                'auth',
+                `Failed to authenticate to ${config.auth.serverEndpoint} due to invalid credentials or other endpoint error`,
+                userInfo?.message
+            )
+            return {
+                authenticated: false,
+                endpoint: config.auth.serverEndpoint,
+                showInvalidAccessTokenError: true,
+                pendingValidation: false,
+            }
         }
-    }
 
-    logDebug('auth', `Authentication succeed to endpoint ${config.auth.serverEndpoint}`)
-    return newAuthStatus({
-        ...userInfo,
-        endpoint: config.auth.serverEndpoint,
-        authenticated: true,
-        hasVerifiedEmail: false,
-    })
+        logDebug('auth', `Authentication succeed to endpoint ${config.auth.serverEndpoint}`)
+        return newAuthStatus({
+            ...userInfo,
+            endpoint: config.auth.serverEndpoint,
+            authenticated: true,
+            hasVerifiedEmail: false,
+        })
+    } finally {
+        client.dispose()
+    }
 }
