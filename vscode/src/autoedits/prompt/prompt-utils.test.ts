@@ -25,6 +25,7 @@ describe('getContextPromptWithPath', () => {
         const prompt = getContextPromptWithPath(filePath, content)
         expect(prompt.toString()).toBe(dedent`
             (\`/path/to/file.js\`)
+
             const foo = 1
         `)
     })
@@ -545,6 +546,7 @@ describe('getLintErrorsPrompt', () => {
         expect(prompt.toString()).toBe(dedent`
             <lint_errors>
             (\`foo.ts\`)
+
             foo
             Err | Defined foo
 
@@ -579,6 +581,7 @@ describe('getLintErrorsPrompt', () => {
         expect(prompt.toString()).toBe(dedent`
             <lint_errors>
             (\`foo.ts\`)
+
             foo
             Err | Defined foo
 
@@ -586,6 +589,7 @@ describe('getLintErrorsPrompt', () => {
             Err | Defined another foo
 
             (\`bar.ts\`)
+
             bar
             Err | Defined bar
 
@@ -620,6 +624,7 @@ describe('getRecentCopyPrompt', () => {
         expect(prompt.toString()).toBe(dedent`
             <recent_copy>
             (\`foo.ts\`)
+
             baz
             </recent_copy>
         `)
@@ -642,9 +647,11 @@ describe('getRecentCopyPrompt', () => {
         expect(prompt.toString()).toBe(dedent`
             <recent_copy>
             (\`foo.ts\`)
+
             foo copy content
 
             (\`bar.ts\`)
+
             bar copy content
             </recent_copy>
         `)
@@ -758,10 +765,12 @@ describe('getRecentlyViewedSnippetsPrompt', () => {
             <recently_viewed_snippets>
             <snippet>
             (\`foo.ts\`)
+
             bar
             </snippet>
             <snippet>
             (\`foo.ts\`)
+
             foo
             </snippet>
             </recently_viewed_snippets>
@@ -786,18 +795,22 @@ describe('getRecentlyViewedSnippetsPrompt', () => {
             <recently_viewed_snippets>
             <snippet>
             (\`qux.ts\`)
+
             qux
             </snippet>
             <snippet>
             (\`baz.ts\`)
+
             bax
             </snippet>
             <snippet>
             (\`bar.ts\`)
+
             bar
             </snippet>
             <snippet>
             (\`foo.ts\`)
+
             foo
             </snippet>
             </recently_viewed_snippets>
@@ -830,10 +843,12 @@ describe('getJaccardSimilarityPrompt', () => {
             <extracted_code_snippets>
             <snippet>
             (\`foo.ts\`)
+
             foo
             </snippet>
             <snippet>
             (\`foo.ts\`)
+
             bar
             </snippet>
             </extracted_code_snippets>
@@ -858,18 +873,22 @@ describe('getJaccardSimilarityPrompt', () => {
             <extracted_code_snippets>
             <snippet>
             (\`foo.ts\`)
+
             foo
             </snippet>
             <snippet>
             (\`bar.ts\`)
+
             bar
             </snippet>
             <snippet>
             (\`baz.ts\`)
+
             bax
             </snippet>
             <snippet>
             (\`qux.ts\`)
+
             qux
             </snippet>
             </extracted_code_snippets>

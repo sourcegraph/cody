@@ -99,7 +99,7 @@ export function getCurrentFilePromptComponents(
         ${constants.AREA_FOR_CODE_MARKER}
         ${currentFileContext.suffixAfterArea}`
 
-    const filePrompt = getContextPromptWithPath(
+    const filePrompt = getCurrentFileContextPromptWithPath(
         PromptString.fromDisplayPath(options.document.uri),
         psDedent`
             ${constants.FILE_TAG_OPEN}
@@ -377,6 +377,13 @@ export function getContextItemsForIdentifier(
 }
 
 export function getContextPromptWithPath(filePath: PromptString, content: PromptString): PromptString {
+    return ps`(\`${filePath}\`)\n\n${content}`
+}
+
+export function getCurrentFileContextPromptWithPath(
+    filePath: PromptString,
+    content: PromptString
+): PromptString {
     return ps`(\`${filePath}\`)\n${content}`
 }
 
