@@ -56,6 +56,7 @@ import {
     PACKAGE_LIST_QUERY,
     PROMPTS_QUERY,
     PromptsOrderBy,
+    PROMPT_TAGS_QUERY,
     RECORD_TELEMETRY_EVENTS_MUTATION,
     REPOSITORY_IDS_QUERY,
     REPOSITORY_ID_QUERY,
@@ -487,6 +488,12 @@ export enum PromptMode {
     EDIT = 'EDIT',
     INSERT = 'INSERT',
 }
+
+export interface PromptTag {
+    id: string
+    name: string
+}
+
 
 interface ContextFiltersResponse {
     site: {
@@ -1240,12 +1247,14 @@ export class SourcegraphGraphQLAPIClient {
         query,
         first,
         recommendedOnly,
+        tags,
         signal,
         orderByMultiple,
     }: {
         query?: string
         first: number | undefined
         recommendedOnly?: boolean
+        tags?: string[]
         signal?: AbortSignal
         orderByMultiple?: PromptsOrderBy[]
     }): Promise<Prompt[]> {
@@ -1261,6 +1270,7 @@ export class SourcegraphGraphQLAPIClient {
                     PromptsOrderBy.PROMPT_RECOMMENDED,
                     PromptsOrderBy.PROMPT_UPDATED_AT,
                 ],
+                tags: tags ?? ['1'],
             },
             signal
         )
@@ -1328,6 +1338,22 @@ export class SourcegraphGraphQLAPIClient {
 
         return
     }
+
+    public async queryPromptTags({signal}: {
+        signal?: AbortSignal
+    }): Promise<PromptTag[]> {
+
+        const response = await this.fetchSourcegraphAPI<APIResponse<{ promptTags: { nodes: PromptTag[] } }>>(
+            PROMPT_TAGS_QUERY,
+            signal
+        )
+        const result = extractDataOrError(response, data => data.promptTags.nodes)
+        if (result instanceof Error) {
+            throw result
+        }
+        return result
+    }
+
 
     /**
      * recordTelemetryEvents uses the new Telemetry API to record events that

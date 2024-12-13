@@ -390,20 +390,6 @@ function useTabs(input: Pick<TabsBarProps, 'IDE'>): TabConfig[] {
                         title: 'Prompts',
                         Icon: BookTextIcon,
                         changesView: true,
-                        subActions: [
-                            {
-                                title: 'Create Prompt',
-                                Icon: PlusCircle,
-                                command: '',
-                                uri: `${serverEndpoint}prompts/new`,
-                            },
-                            {
-                                title: 'Prompts Library',
-                                Icon: ExternalLink,
-                                command: '',
-                                uri: `${serverEndpoint}prompts`,
-                            },
-                        ],
                     },
                     multipleWebviewsEnabled
                         ? {

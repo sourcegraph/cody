@@ -10,7 +10,7 @@ import {
     graphqlClient,
     isAbortError,
     isErrorLike,
-    isValidVersion,
+    isValidVersion, PromptTagsResult,
 } from '@sourcegraph/cody-shared'
 import { FIXTURE_COMMANDS } from '../../webviews/components/promptList/fixtures'
 import { getCodyCommandList } from '../commands/CommandsController'
@@ -66,6 +66,24 @@ const STANDARD_PROMPTS_LIKE_COMMAND: CommandAction[] = [
     },
 ]
 
+export async function listPromptTags(signal: AbortSignal): Promise<PromptTagsResult> {
+    try {
+        return await graphqlClient.queryPromptTags({ signal })
+    } catch (error) {
+        if (isAbortError(error)) {
+            throw error
+        }
+
+        const errorMessage = isErrorLike(error) ? error.message : String(error)
+        if (errorMessage.startsWith(`Cannot query field "promptTags"`)) {
+            // Server does not yet support prompt tags.
+            return []
+        }
+
+        return []
+    }
+}
+
 /**
  * Merges results  of querying the prompts from the Prompt Library, (deprecated) built-in commands,
  * and (deprecated) custom commands. Commands are deprecated in favor of prompts in the Prompt
@@ -75,10 +93,10 @@ export async function mergedPromptsAndLegacyCommands(
     input: PromptsInput,
     signal: AbortSignal
 ): Promise<PromptsResult> {
-    const { query, recommendedOnly, first } = input
+    const { query, recommendedOnly, first, tags } = input
     const queryLower = query.toLowerCase()
     const [customPrompts, isUnifiedPromptsEnabled, isNewPromptsSgVersion] = await Promise.all([
-        fetchCustomPrompts(queryLower, first, recommendedOnly, signal),
+        fetchCustomPrompts(queryLower, first, recommendedOnly, signal, tags),
 
         // Unified prompts flag provides prompts-like commands API
         featureFlagProvider.evaluateFeatureFlagEphemerally(FeatureFlag.CodyUnifiedPrompts),
@@ -116,10 +134,11 @@ async function fetchCustomPrompts(
     query: string,
     first: number | undefined,
     recommendedOnly: boolean,
-    signal: AbortSignal
+    signal: AbortSignal,
+    tags?: string[],
 ): Promise<PromptAction[] | 'unsupported'> {
     try {
-        const prompts = await graphqlClient.queryPrompts({ query, first, recommendedOnly, signal })
+        const prompts = await graphqlClient.queryPrompts({ query, first, recommendedOnly, signal, tags })
         return prompts.map(prompt => ({ ...prompt, actionType: 'prompt' }))
     } catch (error) {
         if (isAbortError(error)) {
