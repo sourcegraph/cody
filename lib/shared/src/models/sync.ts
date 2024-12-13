@@ -268,12 +268,7 @@ export function syncModels({
                                                         m.id.includes('claude-3-5-haiku')
                                                     )
                                                     if (haikuModel) {
-                                                        if (!data.preferences) {
-                                                            data.preferences = {
-                                                                defaults: {},
-                                                            }
-                                                        }
-                                                        data.preferences.defaults.chat = haikuModel.id
+                                                        data.preferences!.defaults.chat = haikuModel.id
                                                     }
                                                 }
 
