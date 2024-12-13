@@ -1,4 +1,7 @@
 import { describe, expect, it } from 'vitest'
+
+import { Position, Range } from '../../testutils/mocks'
+
 import type { DecorationInfo } from './decorators/base'
 import { getDecorationInfo } from './diff-utils'
 
@@ -28,14 +31,16 @@ describe('getDecorationInfo', () => {
                                 {
                                     id: expect.any(String),
                                     type: 'delete',
-                                    range: expect.anything(),
                                     text: 'line2',
+                                    originalRange: new Range(new Position(1, 0), new Position(1, 5)),
+                                    modifiedRange: new Range(new Position(1, 0), new Position(1, 0)),
                                 },
                                 {
                                     id: expect.any(String),
                                     type: 'insert',
-                                    range: expect.anything(),
                                     text: 'modified2',
+                                    originalRange: new Range(new Position(1, 5), new Position(1, 5)),
+                                    modifiedRange: new Range(new Position(1, 0), new Position(1, 9)),
                                 },
                             ],
                         },
@@ -158,14 +163,16 @@ describe('getDecorationInfo', () => {
                                 {
                                     id: expect.any(String),
                                     type: 'delete',
-                                    range: expect.anything(),
                                     text: 'line2',
+                                    originalRange: new Range(new Position(1, 0), new Position(1, 5)),
+                                    modifiedRange: new Range(new Position(1, 0), new Position(1, 0)),
                                 },
                                 {
                                     id: expect.any(String),
                                     type: 'insert',
-                                    range: expect.anything(),
                                     text: 'modified2',
+                                    originalRange: new Range(new Position(1, 5), new Position(1, 5)),
+                                    modifiedRange: new Range(new Position(1, 0), new Position(1, 9)),
                                 },
                             ],
                         },
@@ -180,14 +187,16 @@ describe('getDecorationInfo', () => {
                                 {
                                     id: expect.any(String),
                                     type: 'delete',
-                                    range: expect.anything(),
                                     text: 'line3',
+                                    originalRange: new Range(new Position(2, 0), new Position(2, 5)),
+                                    modifiedRange: new Range(new Position(2, 0), new Position(2, 0)),
                                 },
                                 {
                                     id: expect.any(String),
                                     type: 'insert',
-                                    range: expect.anything(),
                                     text: 'newline',
+                                    originalRange: new Range(new Position(2, 5), new Position(2, 5)),
+                                    modifiedRange: new Range(new Position(2, 0), new Position(2, 7)),
                                 },
                             ],
                         },
@@ -272,14 +281,16 @@ describe('getDecorationInfo', () => {
                                 {
                                     id: expect.any(String),
                                     type: 'delete',
-                                    range: expect.anything(),
                                     text: 'remove1',
+                                    originalRange: new Range(new Position(1, 0), new Position(1, 7)),
+                                    modifiedRange: new Range(new Position(1, 0), new Position(1, 0)),
                                 },
                                 {
                                     id: expect.any(String),
                                     type: 'insert',
-                                    range: expect.anything(),
                                     text: 'modified1',
+                                    originalRange: new Range(new Position(1, 7), new Position(1, 7)),
+                                    modifiedRange: new Range(new Position(1, 0), new Position(1, 9)),
                                 },
                             ],
                         },
@@ -294,14 +305,16 @@ describe('getDecorationInfo', () => {
                                 {
                                     id: expect.any(String),
                                     type: 'delete',
-                                    range: expect.anything(),
                                     text: 'remove2',
+                                    originalRange: new Range(new Position(4, 0), new Position(4, 7)),
+                                    modifiedRange: new Range(new Position(3, 0), new Position(3, 0)),
                                 },
                                 {
                                     id: expect.any(String),
                                     type: 'insert',
-                                    range: expect.anything(),
                                     text: 'add1',
+                                    originalRange: new Range(new Position(4, 7), new Position(4, 7)),
+                                    modifiedRange: new Range(new Position(3, 0), new Position(3, 4)),
                                 },
                             ],
                         },
@@ -316,14 +329,16 @@ describe('getDecorationInfo', () => {
                                 {
                                     id: expect.any(String),
                                     type: 'delete',
-                                    range: expect.anything(),
                                     text: 'modify2',
+                                    originalRange: new Range(new Position(5, 0), new Position(5, 7)),
+                                    modifiedRange: new Range(new Position(4, 0), new Position(4, 0)),
                                 },
                                 {
                                     id: expect.any(String),
                                     type: 'insert',
-                                    range: expect.anything(),
                                     text: 'modified2',
+                                    originalRange: new Range(new Position(5, 7), new Position(5, 7)),
+                                    modifiedRange: new Range(new Position(4, 0), new Position(4, 9)),
                                 },
                             ],
                         },
@@ -377,14 +392,16 @@ describe('getDecorationInfo', () => {
                                 {
                                     id: expect.any(String),
                                     type: 'delete',
-                                    range: expect.anything(),
                                     text: 'line1',
+                                    originalRange: new Range(new Position(0, 0), new Position(0, 5)),
+                                    modifiedRange: new Range(new Position(0, 0), new Position(0, 0)),
                                 },
                                 {
                                     id: expect.any(String),
                                     type: 'insert',
-                                    range: expect.anything(),
                                     text: 'different1',
+                                    originalRange: new Range(new Position(0, 5), new Position(0, 5)),
+                                    modifiedRange: new Range(new Position(0, 0), new Position(0, 10)),
                                 },
                             ],
                         },
@@ -399,14 +416,16 @@ describe('getDecorationInfo', () => {
                                 {
                                     id: expect.any(String),
                                     type: 'delete',
-                                    range: expect.anything(),
                                     text: 'line2',
+                                    originalRange: new Range(new Position(1, 0), new Position(1, 5)),
+                                    modifiedRange: new Range(new Position(1, 0), new Position(1, 0)),
                                 },
                                 {
                                     id: expect.any(String),
                                     type: 'insert',
-                                    range: expect.anything(),
                                     text: 'different2',
+                                    originalRange: new Range(new Position(1, 5), new Position(1, 5)),
+                                    modifiedRange: new Range(new Position(1, 0), new Position(1, 10)),
                                 },
                             ],
                         },
@@ -421,14 +440,16 @@ describe('getDecorationInfo', () => {
                                 {
                                     id: expect.any(String),
                                     type: 'delete',
-                                    range: expect.anything(),
                                     text: 'line3',
+                                    originalRange: new Range(new Position(2, 0), new Position(2, 5)),
+                                    modifiedRange: new Range(new Position(2, 0), new Position(2, 0)),
                                 },
                                 {
                                     id: expect.any(String),
                                     type: 'insert',
-                                    range: expect.anything(),
                                     text: 'different3',
+                                    originalRange: new Range(new Position(2, 5), new Position(2, 5)),
+                                    modifiedRange: new Range(new Position(2, 0), new Position(2, 10)),
                                 },
                             ],
                         },
@@ -472,8 +493,9 @@ describe('getDecorationInfo', () => {
                                 {
                                     id: expect.any(String),
                                     type: 'insert',
-                                    range: expect.anything(),
                                     text: 'line1',
+                                    originalRange: new Range(new Position(0, 0), new Position(0, 0)),
+                                    modifiedRange: new Range(new Position(0, 0), new Position(0, 5)),
                                 },
                             ],
                         },
@@ -519,8 +541,9 @@ describe('getDecorationInfo', () => {
                                 {
                                     id: expect.any(String),
                                     type: 'delete',
-                                    range: expect.anything(),
                                     text: 'line1',
+                                    originalRange: new Range(new Position(0, 0), new Position(0, 5)),
+                                    modifiedRange: new Range(new Position(0, 0), new Position(0, 0)),
                                 },
                             ],
                         },
@@ -552,14 +575,16 @@ describe('getDecorationInfo', () => {
                                 {
                                     id: expect.any(String),
                                     type: 'delete',
-                                    range: expect.anything(),
                                     text: '  ',
+                                    originalRange: new Range(new Position(0, 0), new Position(0, 2)),
+                                    modifiedRange: new Range(new Position(0, 0), new Position(0, 0)),
                                 },
                                 {
                                     id: expect.any(String),
                                     type: 'unchanged',
-                                    range: expect.anything(),
                                     text: 'line1',
+                                    originalRange: new Range(new Position(0, 2), new Position(0, 7)),
+                                    modifiedRange: new Range(new Position(0, 0), new Position(0, 5)),
                                 },
                             ],
                         },
@@ -574,14 +599,16 @@ describe('getDecorationInfo', () => {
                                 {
                                     id: expect.any(String),
                                     type: 'unchanged',
-                                    range: expect.anything(),
                                     text: 'line2',
+                                    originalRange: new Range(new Position(1, 0), new Position(1, 5)),
+                                    modifiedRange: new Range(new Position(1, 0), new Position(1, 5)),
                                 },
                                 {
                                     id: expect.any(String),
                                     type: 'delete',
-                                    range: expect.anything(),
                                     text: '  ',
+                                    originalRange: new Range(new Position(1, 5), new Position(1, 7)),
+                                    modifiedRange: new Range(new Position(1, 5), new Position(1, 5)),
                                 },
                             ],
                         },
@@ -596,20 +623,23 @@ describe('getDecorationInfo', () => {
                                 {
                                     id: expect.any(String),
                                     type: 'delete',
-                                    range: expect.anything(),
                                     text: ' ',
+                                    originalRange: new Range(new Position(2, 0), new Position(2, 1)),
+                                    modifiedRange: new Range(new Position(2, 0), new Position(2, 0)),
                                 },
                                 {
                                     id: expect.any(String),
                                     type: 'unchanged',
-                                    range: expect.anything(),
                                     text: 'line3',
+                                    originalRange: new Range(new Position(2, 1), new Position(2, 6)),
+                                    modifiedRange: new Range(new Position(2, 0), new Position(2, 5)),
                                 },
                                 {
                                     id: expect.any(String),
                                     type: 'delete',
-                                    range: expect.anything(),
                                     text: ' ',
+                                    originalRange: new Range(new Position(2, 6), new Position(2, 7)),
+                                    modifiedRange: new Range(new Position(2, 5), new Position(2, 5)),
                                 },
                             ],
                         },
@@ -641,56 +671,120 @@ describe('getDecorationInfo', () => {
                                 {
                                     id: expect.any(String),
                                     type: 'unchanged',
-                                    range: expect.anything(),
                                     text: 'const',
+                                    originalRange: new Range(new Position(0, 0), new Position(0, 5)),
+                                    modifiedRange: new Range(new Position(0, 0), new Position(0, 5)),
                                 },
                                 {
                                     id: expect.any(String),
                                     type: 'unchanged',
-                                    range: expect.anything(),
                                     text: ' ',
+                                    originalRange: new Range(new Position(0, 5), new Position(0, 6)),
+                                    modifiedRange: new Range(new Position(0, 5), new Position(0, 6)),
                                 },
                                 {
                                     id: expect.any(String),
                                     type: 'delete',
-                                    range: expect.anything(),
                                     text: 'value',
+                                    originalRange: new Range(new Position(0, 6), new Position(0, 11)),
+                                    modifiedRange: new Range(new Position(0, 6), new Position(0, 6)),
                                 },
                                 {
                                     id: expect.any(String),
                                     type: 'insert',
-                                    range: expect.anything(),
                                     text: 'span',
+                                    originalRange: new Range(new Position(0, 11), new Position(0, 11)),
+                                    modifiedRange: new Range(new Position(0, 6), new Position(0, 10)),
                                 },
                                 {
                                     id: expect.any(String),
                                     type: 'unchanged',
-                                    range: expect.anything(),
                                     text: ' ',
+                                    originalRange: new Range(new Position(0, 11), new Position(0, 12)),
+                                    modifiedRange: new Range(new Position(0, 10), new Position(0, 11)),
                                 },
                                 {
                                     id: expect.any(String),
                                     type: 'unchanged',
-                                    range: expect.anything(),
                                     text: '=',
+                                    originalRange: new Range(new Position(0, 12), new Position(0, 13)),
+                                    modifiedRange: new Range(new Position(0, 11), new Position(0, 12)),
                                 },
                                 {
                                     id: expect.any(String),
                                     type: 'unchanged',
-                                    range: expect.anything(),
                                     text: ' ',
+                                    originalRange: new Range(new Position(0, 13), new Position(0, 14)),
+                                    modifiedRange: new Range(new Position(0, 12), new Position(0, 13)),
                                 },
                                 {
                                     id: expect.any(String),
                                     type: 'delete',
-                                    range: expect.anything(),
                                     text: '123',
+                                    originalRange: new Range(new Position(0, 14), new Position(0, 17)),
+                                    modifiedRange: new Range(new Position(0, 13), new Position(0, 13)),
                                 },
                                 {
                                     id: expect.any(String),
                                     type: 'insert',
-                                    range: expect.anything(),
                                     text: 'trace.getActiveTrace()',
+                                    originalRange: new Range(new Position(0, 17), new Position(0, 17)),
+                                    modifiedRange: new Range(new Position(0, 13), new Position(0, 35)),
+                                },
+                            ],
+                        },
+                    ],
+                    unchangedLines: [],
+                }
+
+                expect(decorationInfo).toEqual(expected)
+            })
+
+            it('should merge adjacent insertions and deletions into separate changes', () => {
+                const originalText = '            '
+                const modifiedText = `        elif field == "email":${newLineChar}            return self.email`
+
+                const decorationInfo = getDecorationInfo(originalText, modifiedText)
+
+                const expected: DecorationInfo = {
+                    addedLines: [
+                        {
+                            id: expect.any(String),
+                            type: 'added',
+                            text: '            return self.email',
+                            modifiedLineNumber: 1,
+                        },
+                    ],
+                    removedLines: [],
+                    modifiedLines: [
+                        {
+                            id: expect.any(String),
+                            type: 'modified',
+                            originalLineNumber: 0,
+                            modifiedLineNumber: 0,
+                            oldText: '            ',
+                            newText: '        elif field == "email":',
+                            changes: [
+                                {
+                                    id: expect.any(String),
+                                    type: 'unchanged',
+                                    text: '        ',
+                                    originalRange: new Range(new Position(0, 0), new Position(0, 8)),
+                                    modifiedRange: new Range(new Position(0, 0), new Position(0, 8)),
+                                },
+                                {
+                                    id: expect.any(String),
+                                    type: 'delete',
+                                    text: '    ',
+                                    originalRange: new Range(new Position(0, 8), new Position(0, 12)),
+                                    modifiedRange: new Range(new Position(0, 8), new Position(0, 8)),
+                                },
+                                {
+                                    id: expect.any(String),
+                                    type: 'insert',
+                                    text: 'elif field == "email":',
+                                    originalRange: new Range(new Position(0, 12), new Position(0, 12)),
+                                    modifiedRange: new Range(new Position(0, 8), new Position(0, 30)),
                                 },
                             ],
                         },

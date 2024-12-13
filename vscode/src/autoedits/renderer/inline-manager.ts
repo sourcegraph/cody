@@ -194,12 +194,17 @@ export function getCompletionText({
             // To do that we extract all the inserted text after the cursor position.
             if (candidate.type === 'modified') {
                 candidateText = candidate.changes
-                    .filter(lineChange => lineChange.range.end.character >= cursorPosition.character)
-                    .sort((a, b) => a.range.start.compareTo(b.range.start))
+                    .filter(
+                        lineChange => lineChange.originalRange.end.character >= cursorPosition.character
+                    )
+                    .sort((a, b) => a.originalRange.start.compareTo(b.originalRange.start))
                     .reduce((lineChangeText, lineChange) => {
                         // If a line change starts before the cursor position, cut if off from this point.
                         const textAfterCursor = lineChange.text.slice(
-                            Math.max(cursorPosition.character - lineChange.range.start.character, 0)
+                            Math.max(
+                                cursorPosition.character - lineChange.originalRange.start.character,
+                                0
+                            )
                         )
 
                         if (textAfterCursor.length && lineChange.type === 'insert') {
