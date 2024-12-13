@@ -7,6 +7,7 @@ import { useConfig } from '../../../../utils/useConfig'
 import { useExperimentalOneBoxDebug } from '../../../../utils/useExperimentalOneBox'
 import { FeedbackButtons } from '../../../components/FeedbackButtons'
 import { InfoMessage } from '../../../components/InfoMessage'
+import { LoadingDots } from '../../../components/LoadingDots'
 import { SearchFiltersModal } from './SearchFiltersModal'
 
 interface SearchResultsProps {
@@ -43,6 +44,12 @@ export const SearchResults = ({
                 close={() => setShowFilters(false)}
             />
         )
+    }
+
+    // This is to figure out if the current assistant response in loading state.
+    // `messageInProgress` is otherwise passed at the global level for the latest message.
+    if (!message.text && !!message.search.query) {
+        return <LoadingDots />
     }
 
     return (
