@@ -161,7 +161,7 @@ export type ExtensionMessage =
       }
     | {
           type: 'clientConfig'
-          clientConfig: CodyClientConfig | null | undefined
+          clientConfig?: CodyClientConfig | null | undefined
       }
     | {
           /** Used by JetBrains and not VS Code. */
