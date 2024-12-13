@@ -15,6 +15,7 @@ describe('Document Code', { timeout: 5000 }, () => {
     beforeAll(async () => {
         await workspace.beforeAll()
         await client.beforeAll()
+        await new Promise(resolve => setTimeout(resolve, 500))
     })
 
     afterAll(async () => {

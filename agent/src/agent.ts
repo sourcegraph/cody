@@ -373,7 +373,6 @@ export class Agent extends MessageHandler implements ExtensionClient {
         }
     ) {
         super(params.conn)
-        console.log('Agent constructor params:', params)
         vscode_shim.setAgent(this)
         this.registerRequest('initialize', async clientInfo => {
             vscode.languages.registerFoldingRangeProvider(
@@ -587,9 +586,6 @@ export class Agent extends MessageHandler implements ExtensionClient {
         })
 
         this.registerRequest('extensionConfiguration/status', async () => {
-            console.log('Handling extensionConfiguration/status request')
-            const result = await firstResultFromOperation(authStatus)
-            console.log('Auth status result:', result)
             return firstResultFromOperation(authStatus).then(toProtocolAuthStatus)
         })
 
@@ -1490,8 +1486,6 @@ export class Agent extends MessageHandler implements ExtensionClient {
         config: ExtensionConfiguration,
         params?: { forceAuthentication: boolean }
     ): Promise<AuthStatus> {
-        console.log('Config changes:', config)
-        console.log('Force authentication:', params?.forceAuthentication)
         const isAuthChange = vscode_shim.isAuthenticationChange(config)
         vscode_shim.setExtensionConfiguration(config)
 
