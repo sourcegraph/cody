@@ -54,26 +54,40 @@ export function shrinkReplacerTextToCodeToReplaceRange(
     codeToReplaceData: CodeToReplaceData
 ) {
     const { initial, replacer } = autoEditResponseFromTemplate
-    const { codeToRewrite } = codeToReplaceData
+    const codeToRewrite = codeToReplaceData.codeToRewrite.trimEnd()
 
-    const startOffset = initial.text.indexOf(codeToRewrite.trimEnd())
-    if (startOffset === -1) {
+    const newLineChar = getNewLineChar(codeToRewrite)
+    const codeToRewriteLines = codeToRewrite.split(newLineChar)
+    const rewriteStartOffset = initial.text.indexOf(codeToRewrite)
+    const rewriteStartLineNumber = offsetToLineNumber(initial.text, rewriteStartOffset)
+
+    if (rewriteStartLineNumber === -1) {
         autoeditsLogger.logError(
             'Autoedits',
             '`shrinkReplacerTextToCodeToReplaceRange` unable to find `codeToRewrite` start offset'
         )
         return undefined
     }
-    const newLineChar = getNewLineChar(replacer.text)
-    const endOffset = startOffset + codeToRewrite.length
-    const suffixLineNumber = initial.text.slice(endOffset).split(newLineChar).length
-    const replacerTextAndSuffixLines = replacer.text.slice(startOffset).split(newLineChar)
-    const predictionLines = replacerTextAndSuffixLines.slice(
-        0,
-        suffixLineNumber > 0 ? -suffixLineNumber : replacerTextAndSuffixLines.length
+    const suffixLinesNumber = initial.text
+        .split(newLineChar)
+        .slice(rewriteStartLineNumber + codeToRewriteLines.length).length
+
+    const replacerLines = replacer.text.split(newLineChar)
+
+    const predictionLines = replacerLines.slice(
+        rewriteStartLineNumber,
+        suffixLinesNumber > 0 ? -suffixLinesNumber : replacerLines.length
     )
 
-    return predictionLines.join(newLineChar) + newLineChar
+    return predictionLines.join(newLineChar) + (codeToRewrite.endsWith(newLineChar) ? newLineChar : '')
+}
+
+function offsetToLineNumber(text: string, offset: number): number {
+    if (offset < 0 || offset > text.length) {
+        return -1
+    }
+
+    return text.slice(0, offset).split('\n').length - 1
 }
 
 export function registerAutoEditTestRenderCommand(): vscode.Disposable {
