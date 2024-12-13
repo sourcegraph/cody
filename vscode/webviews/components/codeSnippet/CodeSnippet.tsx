@@ -106,7 +106,7 @@ export const FileMatchSearchResult: FC<PropsWithChildren<FileMatchSearchResultPr
         result.file.commit.oid,
     ])
     const fileURL = result.file.url
-    const collapsedGroups = truncateGroups(expandedGroups, 5, 1)
+    const collapsedGroups = truncateGroups(expandedGroups, 1, 1)
     const expandedHighlightCount = countHighlightRanges(expandedGroups)
     const collapsedHighlightCount = countHighlightRanges(collapsedGroups)
     const hiddenMatchesCount = expandedHighlightCount - collapsedHighlightCount
