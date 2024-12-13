@@ -7,6 +7,7 @@ import {
     graphqlClient,
     isDefined,
     isError,
+    pluralize,
 } from '@sourcegraph/cody-shared'
 import * as v from 'valibot'
 
@@ -22,6 +23,7 @@ type Result = v.InferInput<typeof ResultSchema>
 
 const MentionDataSchema = v.object({
     results: v.array(ResultSchema),
+    tooltip: v.optional(v.string()),
 })
 type MentionData = v.InferInput<typeof MentionDataSchema>
 
@@ -87,18 +89,27 @@ async function getFileItem(repoName: string, filePath: string, rev = 'HEAD'): Pr
     ] satisfies Item[]
 }
 
+/**
+ * Create a context item for a set of code search results. If `originalMessage` is provided, it will be incorporated
+ * into the tooltip.
+ *
+ * @param results The code search results to create a context item for.
+ * @param originalMessage The original message that triggered the code search.
+ * @returns The context item.
+ */
 export function createContextItem(results: Result[]): ContextItemOpenCtx {
     const uri = `search://${CODE_SEARCH_PROVIDER_URI}`
     return {
         type: 'openctx',
         provider: 'openctx',
-        title: `${results.length} code search results`,
+        title: `${results.length} code search ${pluralize('result', results.length)}`,
         uri: URI.parse(uri),
         providerUri: CODE_SEARCH_PROVIDER_URI,
         mention: {
             uri,
             data: {
                 results: results,
+                tooltip: 'Code results make the organization, repo name, and code available as context',
             } satisfies MentionData,
         },
         source: ContextItemSource.User,

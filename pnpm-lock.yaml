@@ -335,6 +335,9 @@ importers:
       lucide-react:
         specifier: ^0.378.0
         version: 0.378.0(react@18.2.0)
+      valibot:
+        specifier: 1.0.0-beta.9
+        version: 1.0.0-beta.9(typescript@5.5.4)
       vscode-uri:
         specifier: ^3.0.8
         version: 3.0.8

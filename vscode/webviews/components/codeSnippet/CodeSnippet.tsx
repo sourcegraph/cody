@@ -203,18 +203,19 @@ export const FileMatchSearchResult: FC<PropsWithChildren<FileMatchSearchResultPr
         triggerOnce: true,
     })
 
-    const actions = onSelectForContext ? (
+    const actions = (
         <div>
             <input
                 type="checkbox"
                 id="search-results.select-all"
                 checked={selectedForContext}
+                disabled={!onSelectForContext}
                 onChange={event => {
-                    onSelectForContext(event.target.checked, result)
+                    onSelectForContext?.(event.target.checked, result)
                 }}
             />
         </div>
-    ) : null
+    )
 
     return (
         <ResultContainer
@@ -266,7 +267,7 @@ interface ResultContainerProps {
     resultType?: SearchMatch['type']
     className?: string
     rankingDebug?: string
-    actions?: ReactElement | boolean
+    actions?: ReactElement | null
     onResultClicked?: () => void
     collapsed: boolean
 }
@@ -311,12 +312,12 @@ const ResultContainer: ForwardReferenceExoticComponent<
                     </span>
                     <div className={clsx(styles.headerTitle, titleClassName)}>{title}</div>
 
-                    {actions}
                     {formattedRepositoryStarCount && (
                         <span className="d-flex align-items-center">
                             <span aria-hidden={true}>{formattedRepositoryStarCount}</span>
                         </span>
                     )}
+                    {actions}
                 </header>
                 {rankingDebug && <div>{rankingDebug}</div>}
                 {children && !collapsed && (

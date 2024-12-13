@@ -30,10 +30,9 @@
 }
 
 .header {
-    padding: 0.45rem 0.5rem;
+    padding: 0.45rem 0rem;
     display: flex;
     align-items: center;
-    flex-wrap: wrap;
     position: sticky;
     top: 0;
 

@@ -59,7 +59,8 @@ export const SearchResults = ({
     const initialResults = useMemo(() => totalResults?.slice(0, DEFAULT_RESULTS_LIMIT), [totalResults])
     const totalResultsCount = totalResults?.length || 0
 
-    const resultsToShow = initialResults?.length === totalResults?.length || showAll ? totalResults : initialResults
+    const resultsToShow =
+        initialResults?.length === totalResults?.length || showAll ? totalResults : initialResults
 
     const {
         config: { serverEndpoint },
@@ -124,7 +125,7 @@ export const SearchResults = ({
             {!!resultsToShow && (
                 <div className="tw-flex tw-items-center tw-gap-4 tw-justify-between">
                     <div className="tw-flex tw-gap-2 tw-items-center tw-font-semibold tw-text-muted-foreground">
-                        <Search className="tw-size-8" />
+                        <Search className="tw-size-8 tw-flex-shrink-0" />
                         Displaying {resultsToShow.length} of {totalResultsCount} code search results
                     </div>
                     <div className="tw-flex tw-gap-4">
@@ -132,26 +133,25 @@ export const SearchResults = ({
                             <FilterIcon className="tw-size-8" />
                             Filters
                         </Button>
-                        {enableContextSelection && (
-                            <div className="tw-flex tw-items-center tw-gap-4 tw-pr-3">
-                                <Label htmlFor="search-results.select-all">Add to context:</Label>
-                                <input
-                                    type="checkbox"
-                                    id="search-results.select-all"
-                                    checked={selectedFollowUpResults.size === resultsToShow.length}
-                                    onChange={event => {
-                                        if (event.target.checked) {
-                                            updateSelectedFollowUpResults({
-                                                type: 'add',
-                                                results: resultsToShow,
-                                            })
-                                        } else {
-                                            updateSelectedFollowUpResults({ type: 'init', results: [] })
-                                        }
-                                    }}
-                                />
-                            </div>
-                        )}
+                        <div className="tw-flex tw-items-center tw-gap-4">
+                            <Label htmlFor="search-results.select-all">Add to context:</Label>
+                            <input
+                                type="checkbox"
+                                id="search-results.select-all"
+                                checked={selectedFollowUpResults.size === resultsToShow.length}
+                                disabled={!enableContextSelection}
+                                onChange={event => {
+                                    if (event.target.checked) {
+                                        updateSelectedFollowUpResults({
+                                            type: 'add',
+                                            results: resultsToShow,
+                                        })
+                                    } else {
+                                        updateSelectedFollowUpResults({ type: 'init', results: [] })
+                                    }
+                                }}
+                            />
+                        </div>
                     </div>
                 </div>
             )}
