@@ -24,7 +24,7 @@ import type { CodyClientConfig } from '../sourcegraph-api/clientConfig'
 import { isDotCom } from '../sourcegraph-api/environments'
 import type { CodyLLMSiteConfiguration } from '../sourcegraph-api/graphql/client'
 import { RestClient } from '../sourcegraph-api/rest/client'
-import { userProductSubscription } from '../sourcegraph-api/userProductSubscription'
+import type { UserProductSubscription } from '../sourcegraph-api/userProductSubscription'
 import { CHAT_INPUT_TOKEN_BUDGET } from '../token/constants'
 import { isError } from '../utils'
 import { getExperimentalClientModelByFeatureFlag } from './client'
@@ -49,6 +49,7 @@ export function syncModels({
     configOverwrites,
     clientConfig,
     fetchServerSideModels_ = fetchServerSideModels,
+    userProductSubscription = Observable.of(null),
 }: {
     resolvedConfig: Observable<
         PickResolvedConfiguration<{
@@ -61,6 +62,7 @@ export function syncModels({
     configOverwrites: Observable<CodyLLMSiteConfiguration | null | typeof pendingOperation>
     clientConfig: Observable<CodyClientConfig | undefined | typeof pendingOperation>
     fetchServerSideModels_?: typeof fetchServerSideModels
+    userProductSubscription: Observable<UserProductSubscription | null | typeof pendingOperation>
 }): Observable<ModelsData | typeof pendingOperation> {
     // Refresh Ollama models when Ollama-related config changes and periodically.
     const localModels = combineLatest(

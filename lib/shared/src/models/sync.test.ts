@@ -43,9 +43,6 @@ vi.mock('../experimentation/FeatureFlagProvider')
 
 // Returns true for all feature flags enabled during synctests.
 vi.spyOn(featureFlagProvider, 'evaluatedFeatureFlag').mockReturnValue(Observable.of(true))
-vi.spyOn(userProductSubscriptionModule, 'userProductSubscription', 'get').mockReturnValue(
-    Observable.of({ userCanUpgrade: true })
-)
 
 mockClientCapabilities(CLIENT_CAPABILITIES_FIXTURE)
 
@@ -210,6 +207,7 @@ describe('server sent models', async () => {
                 modelsAPIEnabled: true,
             } satisfies Partial<CodyClientConfig> as CodyClientConfig),
             fetchServerSideModels_: mockFetchServerSideModels,
+            userProductSubscription: Observable.of({ userCanUpgrade: true }),
         }).pipe(skipPendingOperation())
     )
     const storage = new TestLocalStorageForModelPreferences()
@@ -265,6 +263,7 @@ describe('syncModels', () => {
                 configOverwrites: configOverwritesSubject.pipe(shareReplay()),
                 clientConfig: clientConfigSubject.pipe(shareReplay()),
                 fetchServerSideModels_: mockFetchServerSideModels,
+                userProductSubscription: Observable.of({ userCanUpgrade: true }),
             })
             const { values, clearValues, unsubscribe, done } = readValuesFrom(syncModelsObservable)
 
@@ -505,6 +504,7 @@ describe('syncModels', () => {
                     modelsAPIEnabled: true,
                 } satisfies Partial<CodyClientConfig> as CodyClientConfig),
                 fetchServerSideModels_: mockFetchServerSideModels,
+                userProductSubscription: Observable.of({ userCanUpgrade: true }),
             }).pipe(skipPendingOperation())
         )
 
@@ -584,11 +584,6 @@ describe('syncModels', () => {
                 )
             }
 
-            // set user tier
-            vi.spyOn(userProductSubscriptionModule, 'userProductSubscription', 'get').mockReturnValue(
-                Observable.of({ userCanUpgrade })
-            )
-
             return firstValueFrom(
                 syncModels({
                     resolvedConfig: Observable.of({
@@ -605,6 +600,7 @@ describe('syncModels', () => {
                         modelsAPIEnabled: true,
                     } satisfies Partial<CodyClientConfig> as CodyClientConfig),
                     fetchServerSideModels_: mockFetchServerSideModels,
+                    userProductSubscription: Observable.of({ userCanUpgrade }),
                 }).pipe(skipPendingOperation())
             )
         }
