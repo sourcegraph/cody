@@ -122,6 +122,8 @@ export const AssistantMessageCell: FunctionComponent<{
                             <SearchResults
                                 message={message as ChatMessageWithSearch}
                                 onSelectedFiltersUpdate={onSelectedFiltersUpdate}
+                                showFeedbackButtons={showFeedbackButtons}
+                                feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
                             />
                         )}
                         {!isSearchIntent && displayMarkdown ? (
@@ -160,12 +162,14 @@ export const AssistantMessageCell: FunctionComponent<{
                                 </div>
                             )}
                             <div className="tw-flex tw-items-center tw-divide-x tw-transition tw-divide-muted tw-opacity-65 hover:tw-opacity-100">
-                                {showFeedbackButtons && feedbackButtonsOnSubmit && (
-                                    <FeedbackButtons
-                                        feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
-                                        className="tw-pr-4"
-                                    />
-                                )}
+                                {showFeedbackButtons &&
+                                    feedbackButtonsOnSubmit &&
+                                    !(experimentalOneBoxEnabled && isSearchIntent) && (
+                                        <FeedbackButtons
+                                            feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
+                                            className="tw-pr-4"
+                                        />
+                                    )}
                                 {!isLoading && (!message.error || isAborted) && !isSearchIntent && (
                                     <ContextFocusActions
                                         humanMessage={humanMessage}

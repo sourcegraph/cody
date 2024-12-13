@@ -5,16 +5,24 @@ import { NLSResultSnippet } from '../../../../components/NLSResultSnippet'
 import { Button } from '../../../../components/shadcn/ui/button'
 import { useConfig } from '../../../../utils/useConfig'
 import { useExperimentalOneBoxDebug } from '../../../../utils/useExperimentalOneBox'
+import { FeedbackButtons } from '../../../components/FeedbackButtons'
 import { InfoMessage } from '../../../components/InfoMessage'
 import { SearchFiltersModal } from './SearchFiltersModal'
 
 interface SearchResultsProps {
     message: ChatMessageWithSearch
+    showFeedbackButtons?: boolean
+    feedbackButtonsOnSubmit?: (text: string) => void
     onSelectedFiltersUpdate: (filters: NLSSearchDynamicFilter[]) => void
 }
 
 const DEFAULT_RESULTS_LIMIT = 5
-export const SearchResults = ({ message, onSelectedFiltersUpdate }: SearchResultsProps) => {
+export const SearchResults = ({
+    message,
+    onSelectedFiltersUpdate,
+    showFeedbackButtons,
+    feedbackButtonsOnSubmit,
+}: SearchResultsProps) => {
     const experimentalOneBoxDebug = useExperimentalOneBoxDebug()
 
     const [showAll, setShowAll] = useState(false)
@@ -77,15 +85,18 @@ export const SearchResults = ({ message, onSelectedFiltersUpdate }: SearchResult
                     )}
                 </ul>
             )}
-            <div className="tw-flex tw-justify-between tw-gap-2 tw-my-4">
-                {!showAll && totalResults > DEFAULT_RESULTS_LIMIT ? (
-                    <Button onClick={() => setShowAll(true)} variant="outline">
-                        <ArrowDown className="tw-size-8" />
-                        More results
-                    </Button>
-                ) : (
-                    <div />
-                )}
+            <div className="tw-flex tw-justify-between tw-gap-4 tw-my-4">
+                <div className="tw-flex tw-items-center tw-gap-4">
+                    {!showAll && totalResults > DEFAULT_RESULTS_LIMIT && (
+                        <Button onClick={() => setShowAll(true)} variant="outline">
+                            <ArrowDown className="tw-size-8" />
+                            More results
+                        </Button>
+                    )}
+                    {showFeedbackButtons && feedbackButtonsOnSubmit && (
+                        <FeedbackButtons feedbackButtonsOnSubmit={feedbackButtonsOnSubmit} />
+                    )}
+                </div>
                 <a
                     href={`${serverEndpoint}/search`}
                     target="_blank"

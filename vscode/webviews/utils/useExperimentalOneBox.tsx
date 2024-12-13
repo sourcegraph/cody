@@ -6,5 +6,5 @@ export const useExperimentalOneBox = (): boolean | undefined => {
 }
 
 export const useExperimentalOneBoxDebug = (): boolean | undefined => {
-    return useFeatureFlag(FeatureFlag.CodyExperimentalOneBox)
+    return useFeatureFlag(FeatureFlag.CodyExperimentalOneBoxDebug)
 }

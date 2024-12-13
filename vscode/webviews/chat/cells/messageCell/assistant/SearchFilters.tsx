@@ -17,6 +17,7 @@ export const SearchFilters = ({
 }: SearchFiltersProps) => {
     const filterGroups = useMemo(
         () =>
+            // selectedFilter is included just as a safeguard in case the selected filter is not in the search response filters
             uniqBy([...filters, ...selectedFilters], ({ value, kind }) => `${value}-${kind}`).reduce(
                 (groups, filter) => {
                     if (['repo', 'file', 'type', 'lang'].includes(filter.kind)) {
