@@ -195,15 +195,13 @@ class AuthProvider implements vscode.Disposable {
 
     public async validateAndStoreCredentials(
         config: ResolvedConfigurationCredentialsOnly | AuthCredentials,
-        mode: 'store-if-valid' | 'always-store',
-        signal?: AbortSignal
-    ): Promise<{ isStored: boolean; authStatus: AuthStatus }> {
+        mode: 'store-if-valid' | 'always-store'
+    ): Promise<AuthStatus> {
         let credentials: ResolvedConfigurationCredentialsOnly
         if ('auth' in config) {
             credentials = toCredentialsOnlyNormalized(config)
         } else {
             const prevConfig = await currentResolvedConfig()
-            signal?.throwIfAborted()
             credentials = toCredentialsOnlyNormalized({
                 configuration: prevConfig.configuration,
                 auth: config,
@@ -211,24 +209,22 @@ class AuthProvider implements vscode.Disposable {
             })
         }
 
-        const authStatus = await validateCredentials(credentials, signal)
-        signal?.throwIfAborted()
+        const authStatus = await validateCredentials(credentials, undefined)
         const shouldStore = mode === 'always-store' || authStatus.authenticated
         if (shouldStore) {
-            this.lastValidatedAndStoredCredentials.next(credentials)
             await Promise.all([
                 localStorage.saveEndpointAndToken(credentials.auth),
                 this.serializeUninstallerInfo(authStatus),
             ])
+            this.lastValidatedAndStoredCredentials.next(credentials)
             this.status.next(authStatus)
-            signal?.throwIfAborted()
         }
         if (!shouldStore) {
             // Always report telemetry even if we don't store it.
             reportAuthTelemetryEvent(authStatus)
         }
-        await this.handleAuthTelemetry(authStatus, signal)
-        return { isStored: shouldStore, authStatus }
+        await this.handleAuthTelemetry(authStatus, undefined)
+        return authStatus
     }
 
     public setAuthPendingToEndpoint(endpoint: string): void {

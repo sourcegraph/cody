@@ -9,13 +9,13 @@ function getCompletionTextFromStrings(currentFileText: string, predictedFileText
     const { position } = documentAndPosition(currentFileText)
     const decorationInfo = getDecorationInfo(currentFileText.replace('█', ''), predictedFileText)
 
-    const completionText = getCompletionText({
+    const { insertText } = getCompletionText({
         prediction: predictedFileText,
         cursorPosition: position,
         decorationInfo,
     })
 
-    return completionText
+    return insertText
 }
 
 describe('getCompletionText', () => {

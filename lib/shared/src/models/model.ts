@@ -232,6 +232,8 @@ export function getServerModelTags(
         }
     } else if (status === 'internal') {
         tags.push(ModelTag.Internal)
+    } else if (status === 'experimental') {
+        tags.push(ModelTag.Experimental)
     }
     if (category === 'accuracy') {
         tags.push(ModelTag.Power)

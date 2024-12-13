@@ -486,18 +486,6 @@ mutation ChangePromptVisibility($id: ID!, $newVisibility: PromptVisibility!) {
 }
 `
 
-export const CURRENT_SITE_IDENTIFICATION = `
-query SiteIdentification {
-	site {
-		siteID
-		productSubscription {
-			license {
-				hashedKey
-			}
-		}
-	}
-}`
-
 export const GET_FEATURE_FLAGS_QUERY = `
     query FeatureFlags {
         evaluatedFeatureFlags {

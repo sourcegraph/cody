@@ -86,27 +86,25 @@ export async function showSignInMenu(
             const selectedEndpoint = item.uri
             const token = await secretStorage.getToken(selectedEndpoint)
             const tokenSource = await secretStorage.getTokenSource(selectedEndpoint)
-            let { authStatus } = token
+            let authStatus = token
                 ? await authProvider.validateAndStoreCredentials(
                       { serverEndpoint: selectedEndpoint, accessToken: token, tokenSource },
                       'store-if-valid'
                   )
-                : { authStatus: undefined }
+                : undefined
             if (!authStatus?.authenticated) {
                 const newToken = await showAccessTokenInputBox(selectedEndpoint)
                 if (!newToken) {
                     return
                 }
-                authStatus = (
-                    await authProvider.validateAndStoreCredentials(
-                        {
-                            serverEndpoint: selectedEndpoint,
-                            accessToken: newToken,
-                            tokenSource: 'paste',
-                        },
-                        'store-if-valid'
-                    )
-                ).authStatus
+                authStatus = await authProvider.validateAndStoreCredentials(
+                    {
+                        serverEndpoint: selectedEndpoint,
+                        accessToken: newToken,
+                        tokenSource: 'paste',
+                    },
+                    'store-if-valid'
+                )
             }
             await showAuthResultMessage(selectedEndpoint, authStatus)
             logDebug('AuthProvider:signinMenu', mode, selectedEndpoint)
@@ -233,7 +231,7 @@ async function signinMenuForInstanceUrl(instanceUrl: string): Promise<void> {
     if (!accessToken) {
         return
     }
-    const { authStatus } = await authProvider.validateAndStoreCredentials(
+    const authStatus = await authProvider.validateAndStoreCredentials(
         { serverEndpoint: instanceUrl, accessToken: accessToken, tokenSource: 'paste' },
         'store-if-valid'
     )
@@ -312,7 +310,7 @@ export async function tokenCallbackHandler(uri: vscode.Uri): Promise<void> {
         return
     }
 
-    const { authStatus } = await authProvider.validateAndStoreCredentials(
+    const authStatus = await authProvider.validateAndStoreCredentials(
         { serverEndpoint: endpoint, accessToken: token, tokenSource: 'redirect' },
         'store-if-valid'
     )
@@ -426,63 +424,67 @@ export async function validateCredentials(
     }
 
     // Check if credentials are valid and if Cody is enabled for the credentials and endpoint.
-    using client = SourcegraphGraphQLAPIClient.withStaticConfig(apiClientConfig)
+    const client = SourcegraphGraphQLAPIClient.withStaticConfig(apiClientConfig)
 
-    const userInfo = await client.getCurrentUserInfo(signal)
-    signal?.throwIfAborted()
+    try {
+        const userInfo = await client.getCurrentUserInfo(signal)
+        signal?.throwIfAborted()
 
-    if (isError(userInfo) && isNetworkLikeError(userInfo)) {
-        logDebug(
-            'auth',
-            `Failed to authenticate to ${config.auth.serverEndpoint} due to likely network error`,
-            userInfo.message
-        )
-        return {
-            authenticated: false,
-            error: { type: 'network-error' },
-            endpoint: config.auth.serverEndpoint,
-            pendingValidation: false,
+        if (isError(userInfo) && isNetworkLikeError(userInfo)) {
+            logDebug(
+                'auth',
+                `Failed to authenticate to ${config.auth.serverEndpoint} due to likely network error`,
+                userInfo.message
+            )
+            return {
+                authenticated: false,
+                error: { type: 'network-error' },
+                endpoint: config.auth.serverEndpoint,
+                pendingValidation: false,
+            }
         }
-    }
-    if (!userInfo || isError(userInfo)) {
-        logDebug(
-            'auth',
-            `Failed to authenticate to ${config.auth.serverEndpoint} due to invalid credentials or other endpoint error`,
-            userInfo?.message
-        )
-        return {
-            authenticated: false,
-            endpoint: config.auth.serverEndpoint,
-            error: { type: 'invalid-access-token' },
-            pendingValidation: false,
-        }
-    }
-
-    if (isDotCom(config.auth.serverEndpoint)) {
-        const clientConfig = await ClientConfigSingleton.getInstance().fetchConfigWithToken(
-            apiClientConfig,
-            signal
-        )
-        if (clientConfig?.userShouldUseEnterprise) {
+        if (!userInfo || isError(userInfo)) {
+            logDebug(
+                'auth',
+                `Failed to authenticate to ${config.auth.serverEndpoint} due to invalid credentials or other endpoint error`,
+                userInfo?.message
+            )
             return {
                 authenticated: false,
                 endpoint: config.auth.serverEndpoint,
+                error: { type: 'invalid-access-token' },
                 pendingValidation: false,
-                error: {
-                    type: 'enterprise-user-logged-into-dotcom',
-                    enterprise: getEnterpriseName(userInfo.primaryEmail?.email || ''),
-                },
             }
         }
-    }
 
-    logDebug('auth', `Authentication succeed to endpoint ${config.auth.serverEndpoint}`)
-    return newAuthStatus({
-        ...userInfo,
-        endpoint: config.auth.serverEndpoint,
-        authenticated: true,
-        hasVerifiedEmail: false,
-    })
+        if (isDotCom(config.auth.serverEndpoint)) {
+            const clientConfig = await ClientConfigSingleton.getInstance().fetchConfigWithToken(
+                apiClientConfig,
+                signal
+            )
+            if (clientConfig?.userShouldUseEnterprise) {
+                return {
+                    authenticated: false,
+                    endpoint: config.auth.serverEndpoint,
+                    pendingValidation: false,
+                    error: {
+                        type: 'enterprise-user-logged-into-dotcom',
+                        enterprise: getEnterpriseName(userInfo.primaryEmail?.email || ''),
+                    },
+                }
+            }
+        }
+
+        logDebug('auth', `Authentication succeed to endpoint ${config.auth.serverEndpoint}`)
+        return newAuthStatus({
+            ...userInfo,
+            endpoint: config.auth.serverEndpoint,
+            authenticated: true,
+            hasVerifiedEmail: false,
+        })
+    } finally {
+        client.dispose()
+    }
 }
 
 function getEnterpriseName(email: string): string {

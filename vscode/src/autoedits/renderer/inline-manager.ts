@@ -5,7 +5,7 @@ import type { DocumentContext } from '@sourcegraph/cody-shared'
 import { completionMatchesSuffix } from '../../completions/is-completion-visible'
 import { getNewLineChar } from '../../completions/text-processing'
 import { autoeditsLogger } from '../logger'
-import type { CodeToReplaceData } from '../prompt-utils'
+import type { CodeToReplaceData } from '../prompt/prompt-utils'
 import { adjustPredictionIfInlineCompletionPossible } from '../utils'
 
 import type {
@@ -44,22 +44,19 @@ export class AutoEditsInlineRendererManager
             codeToReplaceData.codeToRewriteSuffix
         )
 
-        const completionTextAfterCursor = getCompletionText({
+        const { insertText, usedChangeIds } = getCompletionText({
             prediction: originalPrediction,
             cursorPosition: position,
             decorationInfo,
         })
 
         // The current line suffix should not require any char removals to render the completion.
-        const isSuffixMatch = completionMatchesSuffix(
-            { insertText: completionTextAfterCursor },
-            docContext.currentLineSuffix
-        )
+        const isSuffixMatch = completionMatchesSuffix({ insertText }, docContext.currentLineSuffix)
 
         let inlineCompletions: vscode.InlineCompletionItem[] | null = null
 
         if (isSuffixMatch) {
-            const completionText = docContext.currentLinePrefix + completionTextAfterCursor
+            const completionText = docContext.currentLinePrefix + insertText
 
             inlineCompletions = [
                 new vscode.InlineCompletionItem(
@@ -74,11 +71,26 @@ export class AutoEditsInlineRendererManager
             autoeditsLogger.logDebug('Autocomplete Inline Response: ', completionText)
         }
 
+        function withoutUsedChanges<T extends { id: string }>(array: T[]): T[] {
+            return array.filter(item => !usedChangeIds.has(item.id))
+        }
+
+        // Filter out changes that were used to render the inline completion.
+        const decorationInfoWithoutUsedChanges = {
+            addedLines: withoutUsedChanges(decorationInfo.addedLines),
+            removedLines: withoutUsedChanges(decorationInfo.removedLines),
+            modifiedLines: withoutUsedChanges(decorationInfo.modifiedLines).map(c => ({
+                ...c,
+                changes: withoutUsedChanges(c.changes),
+            })),
+            unchangedLines: withoutUsedChanges(decorationInfo.unchangedLines),
+        }
+
         await this.showEdit({
             document,
             range: codeToReplaceData.range,
             prediction,
-            decorationInfo,
+            decorationInfo: decorationInfoWithoutUsedChanges,
         })
 
         return { inlineCompletions, updatedDecorationInfo: decorationInfo }
@@ -127,7 +139,15 @@ export function getCompletionText({
     prediction,
     cursorPosition,
     decorationInfo,
-}: { prediction: string; cursorPosition: vscode.Position; decorationInfo: DecorationInfo }): string {
+}: {
+    prediction: string
+    cursorPosition: vscode.Position
+    decorationInfo: DecorationInfo
+}): {
+    insertText: string
+    usedChangeIds: Set<string>
+} {
+    const usedChangeIds = new Set<string>()
     const candidates = [...decorationInfo.modifiedLines, ...decorationInfo.addedLines]
 
     let currentLine = cursorPosition.line
@@ -154,10 +174,9 @@ export function getCompletionText({
         }
 
         if (candidate.type === 'added') {
-            // TODO(valery): avoid modifying array items in place, make side-effects obvious to the caller.
-            // Mark this added line as rendered as a part of the inline completion item
+            // Collect candidate IDs rendered as a part of the inline completion item
             // so that we don't decorate it with line decorations later.
-            candidate.usedAsInlineCompletion = true
+            usedChangeIds.add(candidate.id)
             candidateText = candidate.text
         }
 
@@ -184,10 +203,9 @@ export function getCompletionText({
                         )
 
                         if (textAfterCursor.length && lineChange.type === 'insert') {
-                            // TODO(valery): avoid modifying array items in place, make side-effects obvious to the caller.
-                            // Mark this line change as rendered as a part of the inline completion item
+                            // Collect this line change IDs rendered as a part of the inline completion item
                             // so that we don't decorate it with line decorations later.
-                            lineChange.usedAsInlineCompletion = true
+                            usedChangeIds.add(lineChange.id)
                         }
 
                         lineChangeText += textAfterCursor
@@ -206,7 +224,9 @@ export function getCompletionText({
             candidate.changes.every(c => c.type === 'insert')
         ) {
             for (const change of candidate.changes) {
-                change.usedAsInlineCompletion = true
+                // Collect this line change IDs rendered as a part of the inline completion item
+                // so that we don't decorate it with line decorations later.
+                usedChangeIds.add(change.id)
             }
 
             candidateText = candidate.newText
@@ -223,5 +243,8 @@ export function getCompletionText({
         break
     }
 
-    return lines.join(getNewLineChar(prediction))
+    return {
+        insertText: lines.join(getNewLineChar(prediction)),
+        usedChangeIds,
+    }
 }

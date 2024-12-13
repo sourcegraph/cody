@@ -6,7 +6,7 @@ import { getDiffsForContentChanges, getTextDocumentChangesForText } from './help
 import {
     type TextDocumentChangeGroup,
     applyTextDocumentChanges,
-    computeDiffWithLineNumbers,
+    computeCustomDiffFormat,
     divideGroupedChangesIntoShortTermAndLongTerm,
     getRangeUnion,
     groupConsecutiveItemsByPredicate,
@@ -344,7 +344,7 @@ describe('groupConsecutiveItemsByPredicate', () => {
     })
 })
 
-describe('computeDiffWithLineNumbers', () => {
+describe('computeCustomDiffFormat', () => {
     const createTestUri = () =>
         ({
             fsPath: '/path/to/file.ts',
@@ -356,14 +356,54 @@ describe('computeDiffWithLineNumbers', () => {
         expect(result).toMatchInlineSnapshot(expectedSnapshot)
     }
 
+    it('handle diff with no modification with context lines', () => {
+        const uri = createTestUri()
+        const originalContent = 'line 1\nline 2\nline 3'
+        const modifiedContent = 'line 1\nline 2\nline 3'
+        const numContextLines = 2
+
+        const result = computeCustomDiffFormat(
+            uri,
+            originalContent,
+            modifiedContent,
+            numContextLines,
+            true,
+            false
+        )
+        assertDiffResult(result, dedent`""`)
+    })
+
+    it('handle diff with no modification without context lines', () => {
+        const uri = createTestUri()
+        const originalContent = 'line 1\nline 2\nline 3'
+        const modifiedContent = 'line 1\nline 2\nline 3'
+        const numContextLines = 2
+
+        const result = computeCustomDiffFormat(
+            uri,
+            originalContent,
+            modifiedContent,
+            numContextLines,
+            true,
+            true
+        )
+        assertDiffResult(result, dedent`""`)
+    })
+
     it('should compute diff with line numbers for added content', () => {
         const uri = createTestUri()
         const originalContent = 'line 1\nline 2\nline 3'
         const modifiedContent = 'line 1\nline 2\nnew line\nline 3'
         const numContextLines = 2
 
-        const result = computeDiffWithLineNumbers(uri, originalContent, modifiedContent, numContextLines)
-
+        const result = computeCustomDiffFormat(
+            uri,
+            originalContent,
+            modifiedContent,
+            numContextLines,
+            true,
+            false
+        )
         assertDiffResult(
             result,
             dedent`
@@ -375,13 +415,100 @@ describe('computeDiffWithLineNumbers', () => {
         )
     })
 
+    it('compute diff for only added content when trimming', () => {
+        const uri = createTestUri()
+        const originalContent = 'line 1\nline 2\nline 3'
+        const modifiedContent = 'line 1\nline 2\nnew line\nline 3'
+        const numContextLines = 2
+
+        const result = computeCustomDiffFormat(
+            uri,
+            originalContent,
+            modifiedContent,
+            numContextLines,
+            true,
+            true
+        )
+        assertDiffResult(
+            result,
+            dedent`
+            "3+| new line"
+            `
+        )
+    })
+
+    it('compute diff for intermediate diff without context lines when trimming', () => {
+        const uri = createTestUri()
+        const originalContent = 'line 1\nline 2\nline 3\nline 4\nline 5\nline 6\nline 7\nline 8'
+        const modifiedContent = 'line 1\nline 2\nnew line 3\nline 4\nline 5\nnew line 6\nline 7\nline 8'
+        const numContextLines = 2
+
+        const result = computeCustomDiffFormat(
+            uri,
+            originalContent,
+            modifiedContent,
+            numContextLines,
+            true,
+            true
+        )
+        assertDiffResult(
+            result,
+            dedent`
+            "3-| line 3
+            3+| new line 3
+            4 | line 4
+            5 | line 5
+            6-| line 6
+            6+| new line 6"
+            `
+        )
+    })
+
+    it('compute diff for intermediate diff with context lines', () => {
+        const uri = createTestUri()
+        const originalContent = 'line 1\nline 2\nline 3\nline 4\nline 5\nline 6\nline 7\nline 8'
+        const modifiedContent = 'line 1\nline 2\nnew line 3\nline 4\nline 5\nnew line 6\nline 7\nline 8'
+        const numContextLines = 2
+
+        const result = computeCustomDiffFormat(
+            uri,
+            originalContent,
+            modifiedContent,
+            numContextLines,
+            true,
+            false
+        )
+        assertDiffResult(
+            result,
+            dedent`
+            "1 | line 1
+            2 | line 2
+            3-| line 3
+            3+| new line 3
+            4 | line 4
+            5 | line 5
+            6-| line 6
+            6+| new line 6
+            7 | line 7
+            8 | line 8"
+            `
+        )
+    })
+
     it('should compute diff with line numbers for removed content', () => {
         const uri = createTestUri()
         const originalContent = 'line 1\nline 2\nline to remove\nline 3'
         const modifiedContent = 'line 1\nline 2\nline 3'
         const numContextLines = 2
 
-        const result = computeDiffWithLineNumbers(uri, originalContent, modifiedContent, numContextLines)
+        const result = computeCustomDiffFormat(
+            uri,
+            originalContent,
+            modifiedContent,
+            numContextLines,
+            true,
+            false
+        )
 
         assertDiffResult(
             result,
@@ -400,7 +527,14 @@ describe('computeDiffWithLineNumbers', () => {
         const modifiedContent = 'line 1\nnew line\nline 3'
         const numContextLines = 1
 
-        const result = computeDiffWithLineNumbers(uri, originalContent, modifiedContent, numContextLines)
+        const result = computeCustomDiffFormat(
+            uri,
+            originalContent,
+            modifiedContent,
+            numContextLines,
+            true,
+            false
+        )
 
         assertDiffResult(
             result,
@@ -419,7 +553,14 @@ describe('computeDiffWithLineNumbers', () => {
         const modifiedContent = 'line 1\nline 2\nmodified line\nline 4\nline 5'
         const numContextLines = 1
 
-        const result = computeDiffWithLineNumbers(uri, originalContent, modifiedContent, numContextLines)
+        const result = computeCustomDiffFormat(
+            uri,
+            originalContent,
+            modifiedContent,
+            numContextLines,
+            true,
+            false
+        )
 
         assertDiffResult(
             result,
@@ -434,7 +575,7 @@ describe('computeDiffWithLineNumbers', () => {
 
     it('should handle empty content', () => {
         const uri = createTestUri()
-        const result = computeDiffWithLineNumbers(uri, '', 'new content', 1)
+        const result = computeCustomDiffFormat(uri, '', 'new content', 1, true, false)
 
         assertDiffResult(
             result,

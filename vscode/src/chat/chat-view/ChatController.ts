@@ -16,6 +16,7 @@ import {
     extractContextFromTraceparent,
     firstResultFromOperation,
     forceHydration,
+    inputTextWithMappedContextChipsFromPromptEditorState,
     pendingOperation,
     ps,
     resolvedConfig,
@@ -128,6 +129,7 @@ import { TestSupport } from '../../test-support'
 import type { MessageErrorType } from '../MessageProvider'
 import { CodyToolProvider } from '../agentic/CodyToolProvider'
 import { DeepCodyAgent } from '../agentic/DeepCody'
+import { DeepCodyRateLimiter } from '../agentic/DeepCodyRateLimiter'
 import { getMentionMenuData } from '../context/chatContext'
 import type { ChatIntentAPIClient } from '../context/chatIntentAPIClient'
 import { observeDefaultContext } from '../initialContext'
@@ -436,19 +438,20 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     startAuthProgressIndicator()
                     tokenReceiverUrl = await this.startTokenReceiver?.(endpoint, async credentials => {
                         closeAuthProgressIndicator()
-                        const {
-                            authStatus: { authenticated },
-                        } = await authProvider.validateAndStoreCredentials(credentials, 'store-if-valid')
+                        const authStatus = await authProvider.validateAndStoreCredentials(
+                            credentials,
+                            'store-if-valid'
+                        )
                         telemetryRecorder.recordEvent('cody.auth.fromTokenReceiver.web', 'succeeded', {
                             metadata: {
-                                success: authenticated ? 1 : 0,
+                                success: authStatus.authenticated ? 1 : 0,
                             },
                             billingMetadata: {
                                 product: 'cody',
                                 category: 'billable',
                             },
                         })
-                        if (!authenticated) {
+                        if (!authStatus.authenticated) {
                             void vscode.window.showErrorMessage(
                                 'Authentication failed. Please check your token and try again.'
                             )
@@ -511,16 +514,14 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                             if (!token) {
                                 return
                             }
-                            const {
-                                authStatus: { authenticated },
-                            } = await authProvider.validateAndStoreCredentials(
+                            const authStatus = await authProvider.validateAndStoreCredentials(
                                 {
                                     serverEndpoint: DOTCOM_URL.href,
                                     accessToken: token,
                                 },
                                 'store-if-valid'
                             )
-                            if (!authenticated) {
+                            if (!authStatus.authenticated) {
                                 void vscode.window.showErrorMessage(
                                     'Authentication failed. Please check your token and try again.'
                                 )
@@ -552,6 +553,12 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
     private featureDeepCodyShellContext = storeLastValue(
         featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.DeepCodyShellContext)
+    )
+    private featureDeepCodyRateLimitBase = storeLastValue(
+        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.DeepCodyRateLimitBase)
+    )
+    private featureDeepCodyRateLimitMultiplier = storeLastValue(
+        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.DeepCodyRateLimitMultiplier)
     )
 
     private async getConfigForWebview(): Promise<ConfigurationSubsetForWebview & LocalEnv> {
@@ -786,7 +793,22 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             throw new Error('No model selected, and no default chat model is available')
         }
         this.chatBuilder.setSelectedModel(model)
+
         const isDeepCodyModel = model?.includes('deep-cody')
+        // Deep Cody is only invoked for the first 2 submitted messages.
+        const isDeepCodyEnabled = isDeepCodyModel && this.chatBuilder.getMessages().length < 4
+        // The limit could be 0, 50 * 1 (50), 50 * 2 (100)
+        const deepCodyRateLimiter = new DeepCodyRateLimiter(
+            this.featureDeepCodyRateLimitBase.value.last ? 50 : 0,
+            this.featureDeepCodyRateLimitMultiplier.value.last ? 2 : 1
+        )
+        const deepCodyLimit = deepCodyRateLimiter.isAtLimit()
+        if (isDeepCodyModel && isDeepCodyEnabled && deepCodyLimit) {
+            this.postError(deepCodyRateLimiter.getRateLimitError(deepCodyLimit), 'transcript')
+            this.handleAbort()
+            return
+        }
+
         const { isPublic: repoIsPublic, repoMetadata } = await wrapInActiveSpan(
             'chat.getRepoMetadata',
             () => firstResultFromOperation(publicRepoMetadataIfAllWorkspaceReposArePublic)
@@ -826,7 +848,9 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
         const { intent, intentScores } = await this.getIntentAndScores({
             requestID,
-            input: inputTextWithoutContextChips.toString(),
+            input: editorState
+                ? inputTextWithMappedContextChipsFromPromptEditorState(editorState)
+                : inputText.toString(),
             detectedIntent,
             detectedIntentScores,
             signal,
@@ -893,7 +917,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         }
 
         // Experimental Feature: Deep Cody
-        if (isDeepCodyModel) {
+        if (isDeepCodyEnabled) {
             const agenticContext = await new DeepCodyAgent(
                 this.chatBuilder,
                 this.chatClient,

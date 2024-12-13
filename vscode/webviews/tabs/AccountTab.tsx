@@ -15,6 +15,7 @@ import {
 } from '../../src/chat/protocol'
 import { AccountSwitcher } from '../components/AccountSwitcher'
 import { UserAvatar } from '../components/UserAvatar'
+import { USER_MENU_AVATAR_SIZE } from '../components/UserMenu'
 import { Button } from '../components/shadcn/ui/button'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
 
@@ -103,8 +104,8 @@ export const AccountTab: React.FC<AccountTabProps> = ({
                     <div className="tw-flex tw-self-stretch tw-flex-col tw-w-full tw-items-center tw-justify-center">
                         <UserAvatar
                             user={authStatus}
-                            size={20}
-                            className="tw-flex-shrink-0 tw-w-[30px] tw-h-[30px] tw-flex tw-items-center tw-justify-center"
+                            size={USER_MENU_AVATAR_SIZE}
+                            className="tw-flex-shrink-0 tw-flex tw-items-center tw-justify-center"
                         />
                         <div className="tw-flex tw-self-stretch tw-flex-col tw-w-full tw-items-center tw-justify-center tw-mt-4">
                             <p className="tw-text-lg tw-font-semibold">{displayName ?? username}</p>
