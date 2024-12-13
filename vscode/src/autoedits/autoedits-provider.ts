@@ -1,6 +1,11 @@
+import { type DebouncedFunc, debounce } from 'lodash'
+import { Observable } from 'observable-fns'
+import * as vscode from 'vscode'
+
 import {
     type AutoEditsModelConfig,
     type AutoEditsTokenLimit,
+    type AutocompleteContextSnippet,
     type ChatClient,
     type DocumentContext,
     currentResolvedConfig,
@@ -8,35 +13,37 @@ import {
     isDotComAuthed,
     tokensToChars,
 } from '@sourcegraph/cody-shared'
-import { type DebouncedFunc, debounce } from 'lodash'
-import { Observable } from 'observable-fns'
-import * as vscode from 'vscode'
-import type { AutocompleteContextSnippet } from '../../../lib/shared/src/completions/types'
 import { ContextRankingStrategy } from '../completions/context/completions-context-ranker'
 import { ContextMixer } from '../completions/context/context-mixer'
 import { DefaultContextStrategyFactory } from '../completions/context/context-strategy'
 import { RetrieverIdentifier } from '../completions/context/utils'
 import { getCurrentDocContext } from '../completions/get-current-doc-context'
-import { completionMatchesSuffix } from '../completions/is-completion-visible'
 import { getConfiguration } from '../configuration'
+import type { AutoeditsModelAdapter, AutoeditsPrompt } from './adapters/base'
 import { CodyGatewayAdapter } from './adapters/cody-gateway'
 import { FireworksAdapter } from './adapters/fireworks'
 import { OpenAIAdapter } from './adapters/openai'
 import { SourcegraphChatAdapter } from './adapters/sourcegraph-chat'
+import { SourcegraphCompletionsAdapter } from './adapters/sourcegraph-completions'
 import { autoeditsLogger } from './logger'
-import type { AutoeditsModelAdapter, ChatPrompt, PromptResponseData } from './prompt-provider'
-import { type CodeToReplaceData, SYSTEM_PROMPT, getBaseUserPrompt } from './prompt-utils'
+import type { AutoeditsUserPromptStrategy } from './prompt/base'
+import { SYSTEM_PROMPT } from './prompt/constants'
+import { DefaultUserPromptStrategy } from './prompt/default-prompt-strategy'
+import { type CodeToReplaceData, getCompletionsPromptWithSystemPrompt } from './prompt/prompt-utils'
 import { DefaultDecorator } from './renderer/decorators/default-decorator'
-import { AutoEditsRendererManager } from './renderer/manager'
+import { InlineDiffDecorator } from './renderer/decorators/inline-diff-decorator'
+import { getDecorationInfo } from './renderer/diff-utils'
+import { AutoEditsInlineRendererManager } from './renderer/inline-manager'
+import { AutoEditsDefaultRendererManager, type AutoEditsRendererManager } from './renderer/manager'
 import {
-    adjustPredictionIfInlineCompletionPossible,
-    extractInlineCompletionFromRewrittenCode,
-} from './utils'
+    extractAutoEditResponseFromCurrentDocumentCommentTemplate,
+    shrinkReplacerTextToCodeToReplaceRange,
+} from './renderer/renderer-testing'
 import { isPredictedTextAlreadyInSuffix } from './utils'
 
 const AUTOEDITS_CONTEXT_STRATEGY = 'auto-edits'
-const INLINE_COMPLETETION_DEFAULT_DEBOUNCE_INTERVAL_MS = 150
-const ONSELECTION_CHANGE_DEFAULT_DEBOUNCE_INTERVAL_MS = 150
+const INLINE_COMPLETION_DEFAULT_DEBOUNCE_INTERVAL_MS = 150
+const ON_SELECTION_CHANGE_DEFAULT_DEBOUNCE_INTERVAL_MS = 150
 const RESET_SUGGESTION_ON_CURSOR_CHANGE_AFTER_INTERVAL_MS = 60 * 1000
 
 export interface AutoEditsProviderOptions {
@@ -58,6 +65,8 @@ interface ProviderConfig {
     model: string
     url: string
     tokenLimit: AutoEditsTokenLimit
+    // Is the model a chat model or a completions model
+    isChatModel: boolean
 }
 
 /**
@@ -69,8 +78,13 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
     private readonly rendererManager: AutoEditsRendererManager
     private readonly config: ProviderConfig
     private readonly onSelectionChangeDebounced: DebouncedFunc<typeof this.autoeditOnSelectionChange>
-    // Keeps track of the last time the text was changed in the editor.
+    /** Keeps track of the last time the text was changed in the editor. */
     private lastTextChangeTimeStamp: number | undefined
+    private readonly promptProvider: AutoeditsUserPromptStrategy = new DefaultUserPromptStrategy()
+
+    private isMockResponseFromCurrentDocumentTemplateEnabled = vscode.workspace
+        .getConfiguration()
+        .get<boolean>('cody.experimental.autoedits.use-mock-responses', false)
 
     constructor(private readonly chatClient: ChatClient) {
         this.contextMixer = new ContextMixer({
@@ -80,12 +94,21 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             contextRankingStrategy: ContextRankingStrategy.TimeBased,
             dataCollectionEnabled: false,
         })
-        this.rendererManager = new AutoEditsRendererManager(
-            (editor: vscode.TextEditor) => new DefaultDecorator(editor)
-        )
+
+        const enabledRenderer = vscode.workspace
+            .getConfiguration()
+            .get<'default' | 'inline'>('cody.experimental.autoedits.renderer', 'default')
+
+        this.rendererManager =
+            enabledRenderer === 'inline'
+                ? new AutoEditsInlineRendererManager(editor => new InlineDiffDecorator(editor))
+                : new AutoEditsDefaultRendererManager(
+                      (editor: vscode.TextEditor) => new DefaultDecorator(editor)
+                  )
+
         this.onSelectionChangeDebounced = debounce(
             (event: vscode.TextEditorSelectionChangeEvent) => this.autoeditOnSelectionChange(event),
-            ONSELECTION_CHANGE_DEFAULT_DEBOUNCE_INTERVAL_MS
+            ON_SELECTION_CHANGE_DEFAULT_DEBOUNCE_INTERVAL_MS
         )
         this.config = this.initializeConfig()
 
@@ -106,23 +129,29 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         return {
             experimentalAutoeditsConfigOverride: userConfig,
             providerName: baseConfig.provider,
-            provider: this.createPromptProvider(baseConfig.provider),
+            provider: this.createPromptProvider(baseConfig.provider, baseConfig.isChatModel),
             model: baseConfig.model,
             url: baseConfig.url,
             tokenLimit: baseConfig.tokenLimit,
+            isChatModel: baseConfig.isChatModel,
         }
     }
 
-    private createPromptProvider(providerName: AutoEditsModelConfig['provider']): AutoeditsModelAdapter {
+    private createPromptProvider(
+        providerName: AutoEditsModelConfig['provider'],
+        isChatModel: boolean
+    ): AutoeditsModelAdapter {
         switch (providerName) {
             case 'openai':
                 return new OpenAIAdapter()
             case 'fireworks':
                 return new FireworksAdapter()
-            case 'cody-gateway-fastpath-chat':
+            case 'cody-gateway':
                 return new CodyGatewayAdapter()
-            case 'sourcegraph-chat':
-                return new SourcegraphChatAdapter(this.chatClient)
+            case 'sourcegraph':
+                return isChatModel
+                    ? new SourcegraphChatAdapter(this.chatClient)
+                    : new SourcegraphCompletionsAdapter()
             default:
                 autoeditsLogger.logDebug('Config', `Provider ${providerName} not supported`)
                 throw new Error(`Provider ${providerName} not supported`)
@@ -159,9 +188,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         const controller = new AbortController()
         token?.onCancellationRequested(() => controller.abort())
 
-        await new Promise(resolve =>
-            setTimeout(resolve, INLINE_COMPLETETION_DEFAULT_DEBOUNCE_INTERVAL_MS)
-        )
+        await new Promise(resolve => setTimeout(resolve, INLINE_COMPLETION_DEFAULT_DEBOUNCE_INTERVAL_MS))
         return this.showAutoEdit(document, position, controller.signal)
     }
 
@@ -189,60 +216,46 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             return null
         }
         const { prediction, codeToReplaceData } = autoeditResponse
-        const inlineCompletionItems = this.tryMakeInlineCompletionResponse(
-            prediction,
-            codeToReplaceData,
-            document,
-            position,
-            docContext
-        )
-        if (inlineCompletionItems) {
-            return inlineCompletionItems
-        }
-        await this.showEditAsDecorations(document, codeToReplaceData, prediction)
-        return null
-    }
 
-    private tryMakeInlineCompletionResponse(
-        originalPrediction: string,
-        codeToReplace: CodeToReplaceData,
-        document: vscode.TextDocument,
-        position: vscode.Position,
-        docContext: DocumentContext
-    ): vscode.InlineCompletionItem[] | null {
-        const prediction = adjustPredictionIfInlineCompletionPossible(
-            originalPrediction,
-            codeToReplace.codeToRewritePrefix,
-            codeToReplace.codeToRewriteSuffix
-        )
-        const codeToRewriteAfterCurrentLine = codeToReplace.codeToRewriteSuffix.slice(
-            docContext.currentLineSuffix.length + 1 // Additional char for newline
-        )
-        const isPrefixMatch = prediction.startsWith(codeToReplace.codeToRewritePrefix)
-        const isSuffixMatch =
-            // The current line suffix should not require any char removals to render the completion.
-            completionMatchesSuffix({ insertText: prediction }, docContext.currentLineSuffix) &&
-            // The new lines suggested after the current line must be equal to the prediction.
-            prediction.endsWith(codeToRewriteAfterCurrentLine)
+        const currentFileText = document.getText()
+        const predictedFileText =
+            currentFileText.slice(0, document.offsetAt(codeToReplaceData.range.start)) +
+            prediction +
+            currentFileText.slice(document.offsetAt(codeToReplaceData.range.end))
 
-        if (isPrefixMatch && isSuffixMatch) {
-            const autocompleteInlineResponse = extractInlineCompletionFromRewrittenCode(
+        // TODO: handle cases where prediction's last line is the modification of the first line
+        // from the current document suffix
+        //
+        // Repro in: code-matching-eval/edits_experiments/examples/renderer-testing-examples/working-okay/codium-add-email-field-autoedits.py
+        // The prediction comes with: `self.email = email`, while the first suffix line is `self.email =`
+        // which results into a line addition instead of modification.
+        const decorationInfo = getDecorationInfo(currentFileText, predictedFileText)
+
+        if (
+            isPredictedTextAlreadyInSuffix({
+                codeToRewrite: codeToReplaceData.codeToRewrite,
                 prediction,
-                codeToReplace.codeToRewritePrefix,
-                codeToReplace.codeToRewriteSuffix
+                suffix: codeToReplaceData.suffixInArea + codeToReplaceData.suffixAfterArea,
+            })
+        ) {
+            autoeditsLogger.logDebug(
+                'Autoedits',
+                'Skipping autoedit - predicted text already exists in suffix'
             )
-            const autocompleteResponse = docContext.currentLinePrefix + autocompleteInlineResponse
-            const inlineCompletionItem = new vscode.InlineCompletionItem(
-                autocompleteResponse,
-                new vscode.Range(
-                    document.lineAt(position).range.start,
-                    document.lineAt(position).range.end
-                )
-            )
-            autoeditsLogger.logDebug('Autocomplete Inline Response: ', autocompleteResponse)
-            return [inlineCompletionItem]
+            return null
         }
-        return null
+
+        const { inlineCompletions } =
+            await this.rendererManager.maybeRenderDecorationsAndTryMakeInlineCompletionResponse(
+                prediction,
+                codeToReplaceData,
+                document,
+                position,
+                docContext,
+                decorationInfo
+            )
+
+        return inlineCompletions
     }
 
     private async inferEdit(options: AutoEditsProviderOptions): Promise<AutoeditsPrediction | null> {
@@ -262,14 +275,27 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             this.config.tokenLimit
         )
         const apiKey = await this.getApiKey()
-        const response = await this.config.provider.getModelResponse({
-            url: this.config.url,
-            model: this.config.model,
-            apiKey,
-            prompt,
-            codeToRewrite: codeToReplace.codeToRewrite,
-            userId: (await currentResolvedConfig()).clientState.anonymousUserID,
-        })
+
+        let response: string | undefined = undefined
+        if (this.isMockResponseFromCurrentDocumentTemplateEnabled) {
+            const responseMetadata = extractAutoEditResponseFromCurrentDocumentCommentTemplate()
+
+            if (responseMetadata) {
+                response = shrinkReplacerTextToCodeToReplaceRange(responseMetadata, codeToReplace)
+            }
+        }
+
+        if (response === undefined) {
+            response = await this.config.provider.getModelResponse({
+                url: this.config.url,
+                model: this.config.model,
+                apiKey,
+                prompt,
+                codeToRewrite: codeToReplace.codeToRewrite,
+                userId: (await currentResolvedConfig()).clientState.anonymousUserID,
+                isChatModel: this.config.isChatModel,
+            })
+        }
 
         if (options.abortSignal?.aborted || !response) {
             return null
@@ -297,60 +323,24 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         position: vscode.Position,
         context: AutocompleteContextSnippet[],
         tokenBudget: AutoEditsTokenLimit
-    ): PromptResponseData {
-        const { codeToReplace, prompt: userPrompt } = getBaseUserPrompt(
+    ): {
+        codeToReplace: CodeToReplaceData
+        promptResponse: AutoeditsPrompt
+    } {
+        const { codeToReplace, prompt: userPrompt } = this.promptProvider.getUserPrompt({
             docContext,
             document,
             position,
             context,
-            tokenBudget
-        )
-        const prompt: ChatPrompt = [
-            {
-                role: 'system',
-                content: SYSTEM_PROMPT,
-            },
-            {
-                role: 'user',
-                content: userPrompt,
-            },
-        ]
+            tokenBudget,
+        })
+        const prompt: AutoeditsPrompt = this.config.isChatModel
+            ? { systemMessage: SYSTEM_PROMPT, userMessage: userPrompt }
+            : { userMessage: getCompletionsPromptWithSystemPrompt(SYSTEM_PROMPT, userPrompt) }
         return {
             codeToReplace,
             promptResponse: prompt,
         }
-    }
-
-    private async showEditAsDecorations(
-        document: vscode.TextDocument,
-        codeToReplaceData: CodeToReplaceData,
-        prediction: string
-    ): Promise<void> {
-        const currentFileText = document.getText()
-        const predictedFileText =
-            currentFileText.slice(0, document.offsetAt(codeToReplaceData.range.start)) +
-            prediction +
-            currentFileText.slice(document.offsetAt(codeToReplaceData.range.end))
-        if (
-            isPredictedTextAlreadyInSuffix({
-                codeToRewrite: codeToReplaceData.codeToRewrite,
-                prediction,
-                suffix: codeToReplaceData.suffixInArea + codeToReplaceData.suffixAfterArea,
-            })
-        ) {
-            autoeditsLogger.logDebug(
-                'Autoedits',
-                'Skipping autoedit - predicted text already exists in suffix'
-            )
-            return
-        }
-        await this.rendererManager.showEdit({
-            document,
-            range: codeToReplaceData.range,
-            prediction,
-            currentFileText,
-            predictedFileText,
-        })
     }
 
     private onDidChangeTextDocument(event: vscode.TextDocumentChangeEvent): void {
@@ -379,23 +369,25 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         // Use fast-path for dotcom
         if (isDotComAuthed()) {
             return {
-                provider: 'cody-gateway-fastpath-chat',
+                provider: 'cody-gateway',
                 model: 'cody-model-auto-edits-fireworks-default',
                 url: 'https://cody-gateway.sourcegraph.com/v1/completions/fireworks',
                 tokenLimit: defaultTokenLimit,
+                isChatModel: true,
             }
         }
         return {
-            provider: 'sourcegraph-chat',
+            provider: 'sourcegraph',
             model: 'fireworks::v1::autoedits-default',
             tokenLimit: defaultTokenLimit,
             // We use chat completions client for sourcegraph-chat, so we don't need to specify url.
             url: '',
+            isChatModel: true,
         }
     }
 
     private async getApiKey(): Promise<string> {
-        if (this.config.providerName === 'cody-gateway-fastpath-chat') {
+        if (this.config.providerName === 'cody-gateway') {
             const config = await currentResolvedConfig()
             const fastPathAccessToken = dotcomTokenToGatewayToken(config.auth.accessToken)
             if (!fastPathAccessToken) {
@@ -404,7 +396,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             }
             return fastPathAccessToken
         }
-        if (this.config.providerName === 'sourcegraph-chat') {
+        if (this.config.providerName === 'sourcegraph') {
             // We use chat completions client for sourcegraph-chat, so we don't need to specify api key.
             return ''
         }

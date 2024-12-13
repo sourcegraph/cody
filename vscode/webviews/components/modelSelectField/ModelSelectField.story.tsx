@@ -16,6 +16,14 @@ const MODELS: Model[] = [
         usage: [ModelUsage.Chat],
         tags: [ModelTag.Ollama, ModelTag.Local],
     },
+    {
+        title: 'Deep Cody',
+        provider: 'sourcegraph',
+        id: 'deep-cody',
+        contextWindow: { input: 100, output: 100 },
+        usage: [ModelUsage.Chat],
+        tags: [ModelTag.Pro, ModelTag.Experimental],
+    },
 ]
 
 const meta: Meta<typeof ModelSelectField> = {

@@ -1,20 +1,28 @@
 import type { ChatClient, Message } from '@sourcegraph/cody-shared'
 import { autoeditsLogger } from '../logger'
-import type { AutoeditsModelAdapter, ChatPrompt } from '../prompt-provider'
-import type { AutoeditModelOptions } from '../prompt-provider'
+import type { AutoeditModelOptions, AutoeditsModelAdapter } from './base'
+import { getMaxOutputTokensForAutoedits, getSourcegraphCompatibleChatPrompt } from './utils'
 
 export class SourcegraphChatAdapter implements AutoeditsModelAdapter {
     constructor(private readonly chatClient: ChatClient) {}
 
     async getModelResponse(option: AutoeditModelOptions): Promise<string> {
         try {
-            const messages = this.convertChatPromptToMessage(option.prompt)
+            const maxTokens = getMaxOutputTokensForAutoedits(option.codeToRewrite)
+            const messages: Message[] = getSourcegraphCompatibleChatPrompt({
+                systemMessage: option.prompt.systemMessage,
+                userMessage: option.prompt.userMessage,
+            })
             const stream = await this.chatClient.chat(
                 messages,
                 {
                     model: option.model,
-                    maxTokensToSample: 256,
+                    maxTokensToSample: maxTokens,
                     temperature: 0.2,
+                    prediction: {
+                        type: 'content',
+                        content: option.codeToRewrite,
+                    },
                 },
                 new AbortController().signal
             )
@@ -30,19 +38,8 @@ export class SourcegraphChatAdapter implements AutoeditsModelAdapter {
             }
             return accumulated
         } catch (error) {
-            autoeditsLogger.logDebug('AutoEdits', 'Error calling Cody Gateway:', error)
+            autoeditsLogger.logDebug('AutoEdits', 'Error calling Sourcegraph Chat:', error)
             throw error
         }
-    }
-
-    private convertChatPromptToMessage(prompt: ChatPrompt): Message[] {
-        return prompt.map(p => ({
-            speaker: this.getSpeaker(p.role) as 'system' | 'assistant' | 'human',
-            text: p.content,
-        }))
-    }
-
-    private getSpeaker(role: string): string {
-        return role === 'user' ? 'human' : role
     }
 }

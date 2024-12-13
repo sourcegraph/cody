@@ -4,6 +4,7 @@ import { logError } from '../logger'
 import {
     debounceTime,
     distinctUntilChanged,
+    firstValueFrom,
     pick,
     promiseFactoryToObservable,
     storeLastValue,
@@ -85,6 +86,14 @@ const userProductSubscriptionStorage = storeLastValue(userProductSubscription)
  */
 export function currentUserProductSubscription(): Promise<UserProductSubscription | null> {
     return firstResultFromOperation(userProductSubscriptionStorage.observable)
+}
+
+/**
+ * Check if the user is an enterprise user.
+ */
+export async function checkIfEnterpriseUser(): Promise<boolean> {
+    const authStatusValue = await firstValueFrom(authStatus)
+    return !isDotCom(authStatusValue)
 }
 
 /**

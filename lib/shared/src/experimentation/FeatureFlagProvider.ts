@@ -76,6 +76,11 @@ export enum FeatureFlag {
 
     /** Enable experimental One Box feature in Cody */
     CodyExperimentalOneBox = 'cody-experimental-one-box',
+    /** Enable debug mode for One Box feature in Cody */
+    CodyExperimentalOneBoxDebug = 'cody-experimental-one-box-debug',
+
+    /** Show Edit Code option in the Cody message submit dropdown */
+    CodyExperimentalShowEditCodeIntent = 'cody-experimental-show-edit-code-intent',
 
     /** Whether user has access to early-acess models. */
     CodyEarlyAccess = 'cody-early-access',
@@ -99,6 +104,10 @@ export enum FeatureFlag {
 
     /** Enable Shell Context for Deep Cody */
     DeepCodyShellContext = 'deep-cody-shell-context',
+
+    /** Enable Rate Limit for Deep Cody */
+    DeepCodyRateLimitBase = 'deep-cody-experimental-rate-limit',
+    DeepCodyRateLimitMultiplier = 'deep-cody-experimental-rate-limit-multiplier',
 
     /**
      * Whether the current repo context chip is shown in the chat input by default

@@ -1,3 +1,10 @@
+## 0.17.0
+- Fixes runtime error with `Symbol.dispose` in Firefox
+- Hides Cody Panel debug state in production mode 
+
+## 0.16.0 
+- Fixes cody chat start up on empty local storage (new users run chat for the first time case), [Linear issue](https://linear.app/sourcegraph/issue/SRCH-1456/cody-chat-fails-with-unsupported-model-error) 
+
 ## 0.15.0
 - Fixes problem with not working prompts when chat has some sent messages 
 

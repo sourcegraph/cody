@@ -74,7 +74,7 @@ const ActionPrompt: FC<ActionPromptProps> = props => {
         <div className={styles.prompt}>
             {prompt.createdBy && (
                 <UserAvatar
-                    size={22}
+                    size={ACTION_ITEM_AVATAR_SIZE}
                     user={{ ...prompt.createdBy, endpoint: '' }}
                     className={styles.promptAvatar}
                 />
@@ -177,3 +177,5 @@ const ActionCommand: FC<ActionCommandProps> = props => {
         </div>
     )
 }
+
+export const ACTION_ITEM_AVATAR_SIZE = 22

@@ -17,7 +17,6 @@ describe('Enterprise - S2 (close main branch)', { timeout: 5000 }, () => {
         workspaceRootUri: workspace.rootUri,
         name: 'enterpriseMainBranchClient',
         credentials: TESTING_CREDENTIALS.s2,
-        logEventMode: 'connected-instance-only',
     })
     const sumUri = workspace.file('src', 'sum.ts')
     const animalUri = workspace.file('src', 'animal.ts')

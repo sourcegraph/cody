@@ -385,7 +385,7 @@ export async function signOut(endpoint: string): Promise<void> {
 
     await Promise.all([secretStorage.deleteToken(endpoint), localStorage.deleteEndpoint(endpoint)])
 
-    authProvider.signout()
+    authProvider.signout(endpoint)
 }
 
 /**
@@ -421,41 +421,45 @@ export async function validateCredentials(
         clientState: config.clientState,
     })
 
-    const userInfo = await client.getCurrentUserInfo(signal)
-    signal?.throwIfAborted()
+    try {
+        const userInfo = await client.getCurrentUserInfo(signal)
+        signal?.throwIfAborted()
 
-    if (isError(userInfo) && isNetworkLikeError(userInfo)) {
-        logDebug(
-            'auth',
-            `Failed to authenticate to ${config.auth.serverEndpoint} due to likely network error`,
-            userInfo.message
-        )
-        return {
-            authenticated: false,
-            showNetworkError: true,
-            endpoint: config.auth.serverEndpoint,
-            pendingValidation: false,
+        if (isError(userInfo) && isNetworkLikeError(userInfo)) {
+            logDebug(
+                'auth',
+                `Failed to authenticate to ${config.auth.serverEndpoint} due to likely network error`,
+                userInfo.message
+            )
+            return {
+                authenticated: false,
+                showNetworkError: true,
+                endpoint: config.auth.serverEndpoint,
+                pendingValidation: false,
+            }
         }
-    }
-    if (!userInfo || isError(userInfo)) {
-        logDebug(
-            'auth',
-            `Failed to authenticate to ${config.auth.serverEndpoint} due to invalid credentials or other endpoint error`,
-            userInfo?.message
-        )
-        return {
-            authenticated: false,
-            endpoint: config.auth.serverEndpoint,
-            showInvalidAccessTokenError: true,
-            pendingValidation: false,
+        if (!userInfo || isError(userInfo)) {
+            logDebug(
+                'auth',
+                `Failed to authenticate to ${config.auth.serverEndpoint} due to invalid credentials or other endpoint error`,
+                userInfo?.message
+            )
+            return {
+                authenticated: false,
+                endpoint: config.auth.serverEndpoint,
+                showInvalidAccessTokenError: true,
+                pendingValidation: false,
+            }
         }
-    }
 
-    logDebug('auth', `Authentication succeed to endpoint ${config.auth.serverEndpoint}`)
-    return newAuthStatus({
-        ...userInfo,
-        endpoint: config.auth.serverEndpoint,
-        authenticated: true,
-        hasVerifiedEmail: false,
-    })
+        logDebug('auth', `Authentication succeed to endpoint ${config.auth.serverEndpoint}`)
+        return newAuthStatus({
+            ...userInfo,
+            endpoint: config.auth.serverEndpoint,
+            authenticated: true,
+            hasVerifiedEmail: false,
+        })
+    } finally {
+        client.dispose()
+    }
 }

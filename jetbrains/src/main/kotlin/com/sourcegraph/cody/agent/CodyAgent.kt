@@ -142,6 +142,7 @@ private constructor(
                               ignore = ClientCapabilities.IgnoreEnum.Enabled,
                               untitledDocuments = ClientCapabilities.UntitledDocumentsEnum.Enabled,
                               codeActions = ClientCapabilities.CodeActionsEnum.Enabled,
+                              shell = ClientCapabilities.ShellEnum.Enabled,
                               globalState = ClientCapabilities.GlobalStateEnum.`Server-managed`,
                               secrets = ClientCapabilities.SecretsEnum.`Client-managed`,
                               webview = ClientCapabilities.WebviewEnum.Native,

@@ -9,6 +9,7 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.editor.Editor
+import com.intellij.openapi.editor.EditorKind
 import com.intellij.openapi.editor.Inlay
 import com.intellij.openapi.editor.InlayModel
 import com.intellij.openapi.editor.colors.EditorColorsManager
@@ -119,6 +120,11 @@ class CodyAutocompleteManager {
     val project = editor.project
     if (project == null) {
       logger.warn("triggered autocomplete with null project")
+      return
+    }
+
+    if (editor.editorKind != EditorKind.MAIN_EDITOR) {
+      logger.warn("triggered autocomplete with non-main editor")
       return
     }
 

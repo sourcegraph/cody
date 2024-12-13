@@ -31,6 +31,19 @@ export interface TextDocumentChangeGroup {
     replacementRange?: vscode.Range
 }
 
+enum LineType {
+    Added = 0,
+    Deleted = 1,
+    Context = 2,
+    Other = 3,
+}
+
+interface TextDocumentChangeWithRange {
+    change: TextDocumentChange
+    insertedRange: vscode.Range
+    replacementRange: vscode.Range
+}
+
 /**
  * Groups consecutive text document changes together based on line overlap.
  * This function helps create more meaningful diffs by combining related changes that occur on overlapping lines.
@@ -44,14 +57,26 @@ export interface TextDocumentChangeGroup {
 export function groupOverlappingDocumentChanges(
     documentChanges: TextDocumentChange[]
 ): TextDocumentChangeGroup[] {
+    const mergePredicate = (
+        lastItem: TextDocumentChangeWithRange,
+        currentItem: TextDocumentChangeWithRange
+    ) => {
+        const doLinesOverlap = doLineOverlapForRanges(
+            lastItem.insertedRange,
+            currentItem.replacementRange
+        )
+        const doTimeOverlap = lastItem.change.timestamp === currentItem.change.timestamp
+        return doLinesOverlap || doTimeOverlap
+    }
+
     return mergeDocumentChanges({
         items: documentChanges.map(change => ({
+            change,
             insertedRange: change.insertedRange,
             replacementRange: change.change.range,
-            originalChange: change,
         })),
-        mergePredicate: (a, b) => Boolean(a && b && doLineOverlapForRanges(a, b)),
-        getChanges: item => [item.originalChange],
+        mergePredicate,
+        getChanges: item => [item.change],
     })
 }
 
@@ -70,9 +95,16 @@ export function groupOverlappingDocumentChanges(
 export function groupNonOverlappingChangeGroups(
     groupedChanges: TextDocumentChangeGroup[]
 ): TextDocumentChangeGroup[] {
+    const mergePredicate = (lastItem: TextDocumentChangeGroup, currentItem: TextDocumentChangeGroup) => {
+        if (!lastItem.insertedRange || !currentItem.replacementRange) {
+            return false
+        }
+        return !doLineOverlapForRanges(lastItem.insertedRange, currentItem.replacementRange)
+    }
+
     return mergeDocumentChanges({
         items: groupedChanges,
-        mergePredicate: (a, b) => Boolean(a && b && !doLineOverlapForRanges(a, b)),
+        mergePredicate,
         getChanges: group => group.changes,
     })
 }
@@ -89,7 +121,7 @@ function mergeDocumentChanges<
     T extends { insertedRange?: vscode.Range; replacementRange?: vscode.Range },
 >(args: {
     items: T[]
-    mergePredicate: (a?: vscode.Range, b?: vscode.Range) => boolean
+    mergePredicate: (a: T, b: T) => boolean
     getChanges: (item: T) => TextDocumentChange[]
 }): TextDocumentChangeGroup[] {
     if (args.items.length === 0) {
@@ -97,7 +129,7 @@ function mergeDocumentChanges<
     }
 
     const mergedGroups = groupConsecutiveItemsByPredicate(args.items, (lastItem, currentItem) => {
-        return args.mergePredicate(lastItem.insertedRange, currentItem.replacementRange)
+        return args.mergePredicate(lastItem, currentItem)
     })
 
     return mergedGroups
@@ -146,11 +178,93 @@ export function groupConsecutiveItemsByPredicate<T>(
     }, [])
 }
 
-export function computeDiffWithLineNumbers(
+/**
+ * Formats a diff hunk into a custom string representation.
+ * @param hunk - The diff hunk to format
+ * @param shouldAddLineNumbersForDiff - Whether to include line numbers in the output
+ * @param shouldTrimSurroundingContextLines - Whether to trim context lines around modifications
+ * @returns A formatted string representing the diff hunk, with optional line numbers and context trimming
+ */
+function getCustomDiffFormatForHunk(
+    hunk: Diff.Hunk,
+    shouldAddLineNumbersForDiff: boolean,
+    shouldTrimSurroundingContextLines: boolean
+): string {
+    const lines = []
+    let oldLineNumber = hunk.oldStart
+    let newLineNumber = hunk.newStart
+    let firstModificationIndex = hunk.lines.length
+    let lastModificationIndex = 0
+
+    for (const [i, line] of hunk.lines.entries()) {
+        if (line.length === 0) {
+            continue
+        }
+
+        const lineType = getLineType(line)
+        const linePrefix = getLinePrefixForCustomLineFormat(
+            line,
+            lineType === LineType.Deleted ? oldLineNumber : newLineNumber,
+            shouldAddLineNumbersForDiff
+        )
+        if (lineType === LineType.Deleted || lineType === LineType.Added) {
+            firstModificationIndex = Math.min(firstModificationIndex, i)
+            lastModificationIndex = Math.max(lastModificationIndex, i)
+        }
+
+        if (lineType === LineType.Deleted) {
+            oldLineNumber++
+        } else if (lineType === LineType.Added) {
+            newLineNumber++
+        } else if (lineType === LineType.Context) {
+            oldLineNumber++
+            newLineNumber++
+        }
+        if (
+            lineType === LineType.Deleted ||
+            lineType === LineType.Added ||
+            lineType === LineType.Context
+        ) {
+            lines.push(`${linePrefix}${line.slice(1)}`)
+        }
+    }
+
+    return shouldTrimSurroundingContextLines
+        ? lines.slice(firstModificationIndex, lastModificationIndex + 1).join('\n')
+        : lines.join('\n')
+}
+
+function getLineType(line: string): LineType {
+    if (line[0] === '-') {
+        return LineType.Deleted
+    }
+    if (line[0] === '+') {
+        return LineType.Added
+    }
+    if (line[0] === ' ') {
+        return LineType.Context
+    }
+    return LineType.Other
+}
+
+function getLinePrefixForCustomLineFormat(
+    line: string,
+    lineNumber: number,
+    shouldAddLineNumbersForDiff: boolean
+): string {
+    if (shouldAddLineNumbersForDiff) {
+        return `${lineNumber}${line[0]}| `
+    }
+    return line[0]
+}
+
+export function computeCustomDiffFormat(
     uri: vscode.Uri,
     originalContent: string,
     modifiedContent: string,
-    numContextLines: number
+    numContextLines: number,
+    shouldAddLineNumbersForDiff: boolean,
+    shouldTrimSurroundingContextLines: boolean
 ): PromptString {
     const hunkDiffs = []
     const filename = displayPath(uri)
@@ -164,50 +278,40 @@ export function computeDiffWithLineNumbers(
         { context: numContextLines }
     )
     for (const hunk of patch.hunks) {
-        const diffString = getDiffStringForHunkWithLineNumbers(hunk)
+        const diffString = getCustomDiffFormatForHunk(
+            hunk,
+            shouldAddLineNumbersForDiff,
+            shouldTrimSurroundingContextLines
+        )
         hunkDiffs.push(diffString)
     }
     const gitDiff = PromptString.fromStructuredGitDiff(uri, hunkDiffs.join('\nthen\n'))
     return gitDiff
 }
 
-export function getDiffStringForHunkWithLineNumbers(hunk: Diff.Hunk): string {
-    const lines = []
-    let oldLineNumber = hunk.oldStart
-    let newLineNumber = hunk.newStart
-    for (const line of hunk.lines) {
-        if (line.length === 0) {
-            continue
-        }
-        if (line[0] === '-') {
-            lines.push(`${oldLineNumber}${line[0]}| ${line.slice(1)}`)
-            oldLineNumber++
-        } else if (line[0] === '+') {
-            lines.push(`${newLineNumber}${line[0]}| ${line.slice(1)}`)
-            newLineNumber++
-        } else if (line[0] === ' ') {
-            lines.push(`${newLineNumber}${line[0]}| ${line.slice(1)}`)
-            oldLineNumber++
-            newLineNumber++
-        }
-    }
-    return lines.join('\n')
-}
-
 export function getUnifiedDiffHunkFromTextDocumentChange(params: {
     uri: vscode.Uri
     oldContent: string
     changes: TextDocumentChange[]
-    addLineNumbersForDiff: boolean
+    shouldAddLineNumbersForDiff: boolean
     contextLines: number
+    shouldTrimSurroundingContextLines: boolean
 }): UnifiedPatchResponse {
     const newContent = applyTextDocumentChanges(
         params.oldContent,
         params.changes.map(c => c.change)
     )
-    const diff = params.addLineNumbersForDiff
-        ? computeDiffWithLineNumbers(params.uri, params.oldContent, newContent, params.contextLines)
-        : PromptString.fromGitDiff(params.uri, params.oldContent, newContent)
+    const diff =
+        params.shouldAddLineNumbersForDiff || params.shouldTrimSurroundingContextLines
+            ? computeCustomDiffFormat(
+                  params.uri,
+                  params.oldContent,
+                  newContent,
+                  params.contextLines,
+                  params.shouldAddLineNumbersForDiff,
+                  params.shouldTrimSurroundingContextLines
+              )
+            : PromptString.fromGitDiff(params.uri, params.oldContent, newContent)
 
     return {
         uri: params.uri,

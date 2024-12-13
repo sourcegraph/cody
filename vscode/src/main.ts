@@ -25,6 +25,7 @@ import {
     fromVSCodeEvent,
     graphqlClient,
     isDotCom,
+    isS2,
     modelsService,
     resolvedConfig,
     setClientCapabilities,
@@ -41,13 +42,12 @@ import {
 import _ from 'lodash'
 import { isEqual } from 'lodash'
 import { filter, map } from 'observable-fns'
-import { isS2 } from '../../lib/shared/src/sourcegraph-api/environments'
 import { isReinstalling } from '../uninstall/reinstall'
 import type { CommandResult } from './CommandResult'
 import { showAccountMenu } from './auth/account-menu'
 import { showSignInMenu, showSignOutMenu, tokenCallbackHandler } from './auth/auth'
 import { AutoeditsProvider } from './autoedits/autoedits-provider'
-import { registerTestRenderCommand } from './autoedits/renderer/renderer-testing'
+import { registerAutoEditTestRenderCommand } from './autoedits/renderer/renderer-testing'
 import type { MessageProviderOptions } from './chat/MessageProvider'
 import { ChatsController, CodyChatEditorViewType } from './chat/chat-view/ChatsController'
 import { ContextRetriever } from './chat/chat-view/ContextRetriever'
@@ -462,7 +462,7 @@ async function registerCodyCommands(
     disposables.push(
         enableFeature(
             ({ configuration }) => configuration.experimentalAutoeditsRendererTesting !== false,
-            () => registerTestRenderCommand()
+            () => registerAutoEditTestRenderCommand()
         )
     )
     disposables.push(

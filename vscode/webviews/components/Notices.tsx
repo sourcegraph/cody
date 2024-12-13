@@ -1,4 +1,4 @@
-import { CodyIDE } from '@sourcegraph/cody-shared'
+import { CodyIDE, FeatureFlag } from '@sourcegraph/cody-shared'
 import { S2_URL } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 import {
     ArrowLeftRightIcon,
@@ -7,6 +7,7 @@ import {
     ExternalLinkIcon,
     EyeIcon,
     HeartIcon,
+    TerminalIcon,
     Users2Icon,
     XIcon,
 } from 'lucide-react'
@@ -15,6 +16,9 @@ import SourcegraphIcon from '../../resources/sourcegraph-mark.svg'
 import type { UserAccountInfo } from '../Chat'
 import { CodyLogo } from '../icons/CodyLogo'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
+import { useTelemetryRecorder } from '../utils/telemetry'
+import { useFeatureFlag } from '../utils/useFeatureFlags'
+import { useLocalStorage } from './hooks'
 import { Button } from './shadcn/ui/button'
 
 interface Notice {
@@ -24,7 +28,7 @@ interface Notice {
 }
 
 type NoticeVariants = 'default' | 'warning'
-type NoticeIDs = 'DogfoodS2' | 'TeamsUpgrade'
+type NoticeIDs = 'DogfoodS2' | 'TeamsUpgrade' | 'DeepCodyDotCom' | 'DeepCodyEnterprise'
 
 interface NoticesProps {
     user: UserAccountInfo
@@ -32,15 +36,75 @@ interface NoticesProps {
     isTeamsUpgradeCtaEnabled?: boolean
 }
 
-export const Notices: React.FC<NoticesProps> = ({ user, isTeamsUpgradeCtaEnabled }) => {
-    const [dismissedNotices, setDismissedNotices] = useState<Set<string>>(new Set())
+const storageKey = 'DismissedWelcomeNotices'
 
-    const dismissNotice = useCallback((noticeId: string) => {
-        setDismissedNotices(prev => new Set([...prev, noticeId]))
-    }, [])
+export const Notices: React.FC<NoticesProps> = ({ user, isTeamsUpgradeCtaEnabled }) => {
+    const telemetryRecorder = useTelemetryRecorder()
+
+    const isDeepCodyEnabled = useFeatureFlag(FeatureFlag.DeepCody)
+    const isDeepCodyShellContextSupported = useFeatureFlag(FeatureFlag.DeepCodyShellContext)
+
+    // dismissed notices from local storage
+    const [dismissedNotices, setDismissedNotices] = useLocalStorage(storageKey, '')
+    // session-only dismissal - for notices we want to show if the user logs out and logs back in.
+    const [sessionDismissedNotices, setSessionDismissedNotices] = useState<string[]>([])
+
+    const dismissNotice = useCallback(
+        (noticeId: string, type: 'sessional' | 'permanent' = 'permanent') => {
+            if (type === 'permanent') {
+                // For notices we don't want to show again after it's been dismissed once
+                setDismissedNotices(prev => [...prev, noticeId].join(''))
+            } else {
+                // For notices we want to show if the user logs out and logs back in.
+                setSessionDismissedNotices(prev => [...prev, noticeId])
+                telemetryRecorder.recordEvent('cody.notice.cta', 'clicked', {
+                    privateMetadata: { noticeId, title: 'close' },
+                })
+            }
+        },
+        [telemetryRecorder, setDismissedNotices]
+    )
 
     const notices: Notice[] = useMemo(
         () => [
+            {
+                id: 'DeepCody',
+                isVisible: (isDeepCodyEnabled || user.isCodyProUser) && user.IDE !== CodyIDE.Web,
+                content: (
+                    <NoticeContent
+                        id={user.isCodyProUser ? 'DeepCodyDotCom' : 'DeepCodyEnterprise'}
+                        variant="default"
+                        title="Deep Cody (Experimental)"
+                        message="An AI agent powered by Claude 3.5 Sonnet (New) and other models with tool-use capabilities to gather contextual information for enhanced responses. It can search your codebase, browse the web, execute shell commands in your terminal (when enabled), and utilize any configured tools to retrieve necessary context."
+                        onDismiss={() =>
+                            dismissNotice(user.isCodyProUser ? 'DeepCodyDotCom' : 'DeepCodyEnterprise')
+                        }
+                        actions={
+                            isDeepCodyShellContextSupported
+                                ? [
+                                      {
+                                          label: 'Enable Command Execution in Settings',
+                                          onClick: () =>
+                                              getVSCodeAPI().postMessage({
+                                                  command: 'command',
+                                                  id: 'cody.status-bar.interacted',
+                                              }),
+                                          variant: 'default',
+                                          icon: <TerminalIcon size={14} />,
+                                          iconPosition: 'start',
+                                      },
+                                  ]
+                                : [
+                                      {
+                                          label: 'Contact admins to enable Command Execution',
+                                          onClick: () => {},
+                                          variant: 'secondary',
+                                      },
+                                  ]
+                        }
+                    />
+                ),
+            },
             /**
              * Notifies users that they are eligible for a free upgrade to Sourcegraph Teams.
              * TODO: Update to live link https://linear.app/sourcegraph/issue/CORE-535/cody-clients-migrate-ctas-to-live-links
@@ -91,7 +155,7 @@ export const Notices: React.FC<NoticesProps> = ({ user, isTeamsUpgradeCtaEnabled
                         variant="warning"
                         title=""
                         message="Sourcegraph team members should use S2 not dotcom (except when testing dotcom-specific behavior) so that we dogfood our enterprise customer experience."
-                        onDismiss={() => dismissNotice('DogfoodS2')}
+                        onDismiss={() => dismissNotice('DogfoodS2', 'sessional')}
                         actions={[
                             {
                                 label: 'Switch to S2',
@@ -107,7 +171,7 @@ export const Notices: React.FC<NoticesProps> = ({ user, isTeamsUpgradeCtaEnabled
                             },
                             {
                                 label: 'Dismiss',
-                                onClick: () => dismissNotice('DogfoodS2'),
+                                onClick: () => dismissNotice('DogfoodS2', 'sessional'),
                                 variant: 'secondary',
                             },
                         ]}
@@ -115,12 +179,25 @@ export const Notices: React.FC<NoticesProps> = ({ user, isTeamsUpgradeCtaEnabled
                 ),
             },
         ],
-        [user, dismissNotice, isTeamsUpgradeCtaEnabled]
+        [
+            user,
+            dismissNotice,
+            isTeamsUpgradeCtaEnabled,
+            isDeepCodyEnabled,
+            isDeepCodyShellContextSupported,
+        ]
     )
 
+    // First, modify the activeNotice useMemo to add conditional logic for DogfoodS2
     const activeNotice = useMemo(
-        () => notices.find(notice => notice.isVisible && !dismissedNotices.has(notice.id)),
-        [dismissedNotices, notices]
+        () =>
+            notices.find(notice => {
+                if (notice.id === 'DogfoodS2') {
+                    return notice.isVisible && !sessionDismissedNotices.includes(notice.id)
+                }
+                return notice.isVisible && !dismissedNotices?.includes(notice.id)
+            }),
+        [dismissedNotices, sessionDismissedNotices, notices]
     )
 
     if (!activeNotice) {
@@ -156,12 +233,24 @@ const NoticeContent: FunctionComponent<NoticeContentProps> = ({
     id,
     onDismiss,
 }) => {
+    const telemetryRecorder = useTelemetryRecorder()
+
     const bgColor = {
         default: 'tw-bg-accent tw-bg-opacity-50',
         warning: 'tw-bg-red-700 tw-text-white',
     }[variant]
 
     const header = {
+        DeepCodyDotCom: (
+            <>
+                <CodyLogo size={16} />
+            </>
+        ),
+        DeepCodyEnterprise: (
+            <>
+                <CodyLogo size={16} />
+            </>
+        ),
         DogfoodS2: (
             <>
                 <EyeIcon />
@@ -191,7 +280,12 @@ const NoticeContent: FunctionComponent<NoticeContentProps> = ({
                         key={action.label + '-button'}
                         variant={action.variant}
                         size="sm"
-                        onClick={action.onClick}
+                        onClick={() => {
+                            action.onClick?.()
+                            telemetryRecorder.recordEvent('cody.notice.cta', 'clicked', {
+                                privateMetadata: { noticeId: id, title: action.label },
+                            })
+                        }}
                         className="tw-flex tw-gap-1"
                     >
                         {action.iconPosition === 'start' && action.icon}

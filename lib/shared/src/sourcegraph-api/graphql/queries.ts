@@ -470,40 +470,6 @@ query SnippetAttribution($snippet: String!) {
     }
 }`
 
-/**
- * Deprecated following new event structure: https://github.com/sourcegraph/sourcegraph/pull/55126.
- */
-export const LOG_EVENT_MUTATION_DEPRECATED = `
-mutation LogEventMutation($event: String!, $userCookieID: String!, $url: String!, $source: EventSource!, $argument: String, $publicArgument: String) {
-    logEvent(
-		event: $event
-		userCookieID: $userCookieID
-		url: $url
-		source: $source
-		argument: $argument
-		publicArgument: $publicArgument
-    ) {
-		alwaysNil
-	}
-}`
-
-export const LOG_EVENT_MUTATION = `
-mutation LogEventMutation($event: String!, $userCookieID: String!, $url: String!, $source: EventSource!, $argument: String, $publicArgument: String, $client: String, $connectedSiteID: String, $hashedLicenseKey: String) {
-    logEvent(
-		event: $event
-		userCookieID: $userCookieID
-		url: $url
-		source: $source
-		argument: $argument
-		publicArgument: $publicArgument
-		client: $client
-		connectedSiteID: $connectedSiteID
-		hashedLicenseKey: $hashedLicenseKey
-    ) {
-		alwaysNil
-	}
-}`
-
 export const RECORD_TELEMETRY_EVENTS_MUTATION = `
 mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
 	telemetry {
@@ -529,18 +495,6 @@ mutation ChangePromptVisibility($id: ID!, $newVisibility: PromptVisibility!) {
     }
 }
 `
-
-export const CURRENT_SITE_IDENTIFICATION = `
-query SiteIdentification {
-	site {
-		siteID
-		productSubscription {
-			license {
-				hashedKey
-			}
-		}
-	}
-}`
 
 export const GET_FEATURE_FLAGS_QUERY = `
     query FeatureFlags {
@@ -687,3 +641,70 @@ export const HIGHLIGHTED_FILE_QUERY = `
         }
     }
 `
+
+export const NLS_SEARCH_QUERY = `
+    query NLSSearchQuery($query: String!) {
+        search(query: $query, version: V3, patternType: nls) {
+            results {
+                results {
+                    __typename
+                    ... on FileMatch {
+                        repository {
+                            id
+                            name
+                        }
+                        file {
+                            url
+                            path
+                            commit {
+                                oid
+                            }
+                        }
+                        chunkMatches {
+                            content
+                            contentStart {
+                                line
+                                character
+                            }
+                            ranges {
+                                start {
+                                    line
+                                    character
+                                }
+                                end {
+                                    line
+                                    character
+                                }
+                            }
+                        }
+                        pathMatches {
+                            start {
+                                line
+                                character
+                            }
+                            end {
+                                line
+                                character
+                            }
+                        }
+                        symbols {
+                            name
+                            location {
+                                range {
+                                    start {
+                                        line
+                                        character
+                                    }
+                                    end {
+
+                                        line
+                                        character
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }`

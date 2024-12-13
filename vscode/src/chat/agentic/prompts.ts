@@ -25,8 +25,8 @@ In this environment you have access to this set of tools you can use to fetch co
 [NOTES]
 1. Only use <TOOL*> tags when additional context is necessary to answer the question.
 2. You may use multiple <TOOL*> tags in a single response if needed.
-3. Never request sensitive information such as passwords or API keys.
-4. The user is working in the VS Code editor on ${getOSPromptString()}.
+3. NEVER request sensitive information or files such as passwords, API keys, or dotEnv files.
+4. The user is working in {{CODY_IDE}} on ${getOSPromptString()}.
 
 [GOAL]
 - Determine if you can answer the question with the given context, or if you need more information.

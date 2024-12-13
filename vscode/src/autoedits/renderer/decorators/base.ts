@@ -39,37 +39,40 @@ export interface AutoEditsDecorator extends vscode.Disposable {
 export type DecorationLineInfo = AddedLineInfo | RemovedLineInfo | ModifiedLineInfo | UnchangedLineInfo
 
 export interface AddedLineInfo {
+    id: string
     type: 'added'
     text: string
-    /** `lineNumber` in the modified text */
-    lineNumber: number
+    modifiedLineNumber: number
 }
 
 export interface RemovedLineInfo {
+    id: string
     type: 'removed'
     text: string
-    /** `lineNumber` in the original text */
-    lineNumber: number
+    originalLineNumber: number
 }
 
 export interface ModifiedLineInfo {
+    id: string
     type: 'modified'
     oldText: string
     newText: string
     changes: LineChange[]
-    /** `lineNumber` in the modified text */
-    lineNumber: number
+    originalLineNumber: number
+    modifiedLineNumber: number
 }
 
 export interface UnchangedLineInfo {
+    id: string
     type: 'unchanged'
     text: string
-    /** `lineNumber` in the modified text */
-    lineNumber: number
+    originalLineNumber: number
+    modifiedLineNumber: number
 }
 
 export type LineChange = {
-    type: 'insert' | 'delete'
+    id: string
+    type: 'insert' | 'delete' | 'unchanged'
     /** `range` in the modified text relative to the document start */
     range: vscode.Range
     text: string

@@ -111,17 +111,19 @@ const RateLimitErrorItem: React.FunctionComponent<{
                             Upgrade
                         </VSCodeButton>
                     )}
-                    <VSCodeButton
-                        type="button"
-                        onClick={() =>
-                            canUpgrade
-                                ? onButtonClick('upgrade', 'upgrade')
-                                : onButtonClick('rate-limits', 'learn-more')
-                        }
-                        appearance="secondary"
-                    >
-                        {canUpgrade ? 'See Plans →' : 'Learn More'}
-                    </VSCodeButton>
+                    {error.feature !== 'Deep Cody' && (
+                        <VSCodeButton
+                            type="button"
+                            onClick={() =>
+                                canUpgrade
+                                    ? onButtonClick('upgrade', 'upgrade')
+                                    : onButtonClick('rate-limits', 'learn-more')
+                            }
+                            appearance="secondary"
+                        >
+                            {canUpgrade ? 'See Plans →' : 'Learn More'}
+                        </VSCodeButton>
+                    )}
                 </div>
                 {error.retryMessage && <p className={styles.retryMessage}>{error.retryMessage}</p>}
             </div>

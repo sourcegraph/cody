@@ -6,6 +6,7 @@ import com.intellij.codeInsight.lookup.LookupListener
 import com.intellij.codeInsight.lookup.LookupManagerListener
 import com.intellij.codeInsight.lookup.impl.LookupImpl
 import com.intellij.openapi.diagnostic.Logger
+import com.intellij.openapi.editor.EditorKind
 import com.sourcegraph.cody.autocomplete.CodyAutocompleteManager.Companion.instance
 import com.sourcegraph.cody.config.CodyApplicationSettings
 import com.sourcegraph.cody.vscode.InlineCompletionTriggerKind
@@ -16,6 +17,10 @@ class CodyLookupListener : LookupManagerListener {
   override fun activeLookupChanged(oldLookup: Lookup?, newLookup: Lookup?) {
     if (newLookup != null && CodyApplicationSettings.instance.isLookupAutocompleteEnabled) {
       val newEditor = newLookup.editor
+      if (newEditor.editorKind != EditorKind.MAIN_EDITOR) {
+        return
+      }
+
       if (newLookup is LookupImpl) {
         newLookup.addLookupListener(
             object : LookupListener {

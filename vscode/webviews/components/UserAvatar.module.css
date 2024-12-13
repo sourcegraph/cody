@@ -6,7 +6,6 @@
     color: var(--vscode-inputOption-activeForeground);
     align-items: center;
     justify-content: center;
-    height: 100%;
 }
 
 .sourcegraph-gradient-border {
@@ -15,5 +14,16 @@
     border-radius: 50%;
     padding: 1px;
     background-clip: padding-box;
-    background-image: linear-gradient(180deg, #00CBEC 0%, #A112FF 50%, #FF5543 100%);
+    background-image: linear-gradient(
+        180deg,
+        #00cbec 0%,
+        #a112ff 50%,
+        #ff5543 100%
+    );
+
+    align-items: center;
+    justify-content: center;
+
+    width: fit-content;
+    height: fit-content;
 }

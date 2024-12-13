@@ -74,6 +74,8 @@ export type {
     UserLocalHistory,
     SerializedChatMessage,
     RankedContext,
+    ChatMessageWithSearch,
+    ChatMessageSearch,
 } from './chat/transcript/messages'
 export {
     CODY_PASSTHROUGH_VSCODE_OPEN_COMMAND_ID,
@@ -259,7 +261,6 @@ export {
     EXCLUDE_EVERYTHING_CONTEXT_FILTERS,
     PromptMode,
     type BrowserOrNodeResponse,
-    type LogEventMode,
     type ContextFilters,
     type CodyContextFilterItem,
     type RepoListResponse,
@@ -378,6 +379,7 @@ export { fetchLocalOllamaModels } from './llm-providers/ollama/utils'
 export * from './editor/editorState'
 export {
     currentUserProductSubscription,
+    checkIfEnterpriseUser,
     type UserProductSubscription,
     cachedUserProductSubscription,
     userProductSubscription,
@@ -389,3 +391,5 @@ export {
     checkVersion,
 } from './sourcegraph-api/siteVersion'
 export { configOverwrites } from './models/configOverwrites'
+export { isS2 } from './sourcegraph-api/environments'
+export { createGitDiff } from './editor/create-git-diff'
