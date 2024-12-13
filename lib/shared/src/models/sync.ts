@@ -136,9 +136,9 @@ export function syncModels({
         preferences: Pick<ModelsData['preferences'], 'defaults'> | null
     }
     const remoteModelsData: Observable<RemoteModelsData | Error | typeof pendingOperation> =
-        combineLatest(relevantConfig, authStatus).pipe(
-            switchMapReplayOperation(([config, authStatus]) => {
-                if (authStatus.pendingValidation) {
+        combineLatest(relevantConfig, authStatus, userProductSubscription).pipe(
+            switchMapReplayOperation(([config, authStatus, userProductSubscription]) => {
+                if (authStatus.pendingValidation || userProductSubscription === pendingOperation) {
                     return Observable.of(pendingOperation)
                 }
 
@@ -147,6 +147,8 @@ export function syncModels({
                 }
 
                 const isDotComUser = isDotCom(authStatus)
+                const isCodyFreeUser =
+                    userProductSubscription == null || userProductSubscription.userCanUpgrade === true
 
                 const serverModelsConfig: Observable<
                     RemoteModelsData | Error | typeof pendingOperation
@@ -200,16 +202,10 @@ export function syncModels({
                                         featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.DeepCody),
                                         featureFlagProvider.evaluatedFeatureFlag(
                                             FeatureFlag.CodyChatDefaultToClaude35Haiku
-                                        ),
-                                        userProductSubscription
+                                        )
                                     ).pipe(
                                         switchMap(
-                                            ([
-                                                hasEarlyAccess,
-                                                hasDeepCodyFlag,
-                                                defaultToHaiku,
-                                                userSubscription,
-                                            ]) => {
+                                            ([hasEarlyAccess, hasDeepCodyFlag, defaultToHaiku]) => {
                                                 // TODO(sqs): remove waitlist from localStorage when user has access
                                                 const isOnWaitlist = config.clientState.waitlist_o1
                                                 if (isDotComUser && (hasEarlyAccess || isOnWaitlist)) {
@@ -256,14 +252,9 @@ export function syncModels({
                                                         ]).map(createModelFromServerModel)
                                                     )
                                                 }
-                                                const isFreeTier =
-                                                    userSubscription !== null &&
-                                                    typeof userSubscription === 'object' &&
-                                                    'userCanUpgrade' in userSubscription &&
-                                                    userSubscription.userCanUpgrade
 
                                                 // set the default model to Haiku for free users
-                                                if (isDotComUser && isFreeTier && defaultToHaiku) {
+                                                if (isDotComUser && isCodyFreeUser && defaultToHaiku) {
                                                     const haikuModel = data.primaryModels.find(m =>
                                                         m.id.includes('claude-3-5-haiku')
                                                     )
