@@ -52,6 +52,11 @@ export interface PromptEditorRefAPI {
     setFocus(focus: boolean, options?: { moveCursorToEnd?: boolean }): Promise<void>
     appendText(text: string): Promise<void>
     addMentions(items: ContextItem[], position?: 'before' | 'after', sep?: string): Promise<void>
+    /**
+     * Similar to `addMentions`, but unlike `addMentions` it doesn't merge mentions with overlapping
+     * ranges. Instead it updates the meta data of existing mentions with the same uri.
+     */
+    upsertMentions(items: ContextItem[], position?: 'before' | 'after', sep?: string): Promise<void>
     filterMentions(filter: (item: SerializedContextItem) => boolean): Promise<void>
     setInitialContextMentions(items: ContextItem[]): Promise<void>
     setEditorState(state: SerializedPromptEditorState): void
@@ -193,46 +198,43 @@ export const PromptEditor: FunctionComponent<Props> = ({
                     return
                 }
 
-                return new Promise(resolve =>
-                    editorRef.current?.update(
-                        () => {
-                            switch (position) {
-                                case 'before': {
-                                    const nodesToInsert = lexicalNodesForContextItems(
-                                        ops.create,
-                                        {
-                                            isFromInitialContext: false,
-                                        },
-                                        sep
-                                    )
-                                    const pNode = $createParagraphNode()
-                                    pNode.append(...nodesToInsert)
-                                    $insertFirst($getRoot(), pNode)
-                                    $selectEnd()
-                                    break
-                                }
-                                case 'after': {
-                                    const lexicalNodes = lexicalNodesForContextItems(
-                                        ops.create,
-                                        {
-                                            isFromInitialContext: false,
-                                        },
-                                        sep
-                                    )
-                                    const pNode = $createParagraphNode()
-                                    pNode.append(
-                                        $createTextNode(getWhitespace($getRoot())),
-                                        ...lexicalNodes,
-                                        $createTextNode(sep)
-                                    )
-                                    $insertNodes([pNode])
-                                    $selectEnd()
-                                    break
-                                }
-                            }
-                        },
-                        { onUpdate: resolve }
-                    )
+                return insertMentions(editor, ops.create, position, sep)
+            },
+            async upsertMentions(items, position = 'after', sep = ' '): Promise<void> {
+                const editor = editorRef.current
+                if (!editor) {
+                    return
+                }
+
+                const existingMentions = new Set(getContextItemsForEditor(editor).map(item => item.uri))
+                const toUpdate = new Map<string, ContextItem>()
+                for (const item of items) {
+                    const uri = item.uri.toString()
+                    if (existingMentions.has(uri)) {
+                        toUpdate.set(uri, item)
+                    }
+                }
+
+                // ! visitContextItemsForEditor must only be called when we have changes to make. Otherwise
+                // the promise it returns will never resolve.
+                if (toUpdate.size > 0) {
+                    await visitContextItemsForEditor(editor, existing => {
+                        const update = toUpdate.get(existing.contextItem.uri)
+                        if (update) {
+                            // replace the existing mention inline with the new one
+                            existing.replace($createContextItemMentionNode(update))
+                        }
+                    })
+                }
+                if (items.length === toUpdate.size) {
+                    return
+                }
+
+                return insertMentions(
+                    editor,
+                    items.filter(item => !toUpdate.has(item.uri.toString())),
+                    position,
+                    sep
                 )
             },
             setInitialContextMentions(items: ContextItem[]): Promise<void> {
@@ -332,4 +334,53 @@ function normalizeEditorStateJSON(
 function getWhitespace(root: RootNode): string {
     const needsWhitespaceBefore = !/(^|\s)$/.test(root.getTextContent())
     return needsWhitespaceBefore ? ' ' : ''
+}
+
+function insertMentions(
+    editor: LexicalEditor,
+    items: (SerializedContextItem | ContextItem)[],
+    position: 'before' | 'after',
+    sep?: string
+): Promise<void> {
+    return new Promise(resolve =>
+        editor.update(
+            () => {
+                switch (position) {
+                    case 'before': {
+                        const nodesToInsert = lexicalNodesForContextItems(
+                            items,
+                            {
+                                isFromInitialContext: false,
+                            },
+                            sep
+                        )
+                        const pNode = $createParagraphNode()
+                        pNode.append(...nodesToInsert)
+                        $insertFirst($getRoot(), pNode)
+                        $selectEnd()
+                        break
+                    }
+                    case 'after': {
+                        const lexicalNodes = lexicalNodesForContextItems(
+                            items,
+                            {
+                                isFromInitialContext: false,
+                            },
+                            sep
+                        )
+                        const pNode = $createParagraphNode()
+                        pNode.append(
+                            $createTextNode(getWhitespace($getRoot())),
+                            ...lexicalNodes,
+                            $createTextNode(sep)
+                        )
+                        $insertNodes([pNode])
+                        $selectEnd()
+                        break
+                    }
+                }
+            },
+            { onUpdate: resolve }
+        )
+    )
 }

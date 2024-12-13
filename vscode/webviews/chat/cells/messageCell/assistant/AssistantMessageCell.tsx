@@ -56,6 +56,7 @@ export const AssistantMessageCell: FunctionComponent<{
     postMessage?: ApiPostMessage
     guardrails?: Guardrails
     onSelectedFiltersUpdate: (filters: NLSSearchDynamicFilter[]) => void
+    isLastSentInteraction: boolean
 }> = memo(
     ({
         message,
@@ -73,6 +74,7 @@ export const AssistantMessageCell: FunctionComponent<{
         smartApply,
         smartApplyEnabled,
         onSelectedFiltersUpdate,
+        isLastSentInteraction: isLastInteraction,
     }) => {
         const displayMarkdown = useMemo(
             () => (message.text ? reformatBotMessageForChat(message.text).toString() : ''),
@@ -124,6 +126,7 @@ export const AssistantMessageCell: FunctionComponent<{
                                 onSelectedFiltersUpdate={onSelectedFiltersUpdate}
                                 showFeedbackButtons={showFeedbackButtons}
                                 feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
+                                enableContextSelection={isLastInteraction}
                             />
                         )}
                         {!isSearchIntent && displayMarkdown ? (
