@@ -437,7 +437,7 @@ const noopLocalStorage = {
     update: () => Promise.resolve(undefined),
 } as any as Memento
 
-export function mockLocalStorage(storage: Memento = noopLocalStorage) {
+export function mockLocalStorage(storage: Memento | 'noop' | 'inMemory' = noopLocalStorage) {
     localStorage.setStorage(storage)
 }
 
