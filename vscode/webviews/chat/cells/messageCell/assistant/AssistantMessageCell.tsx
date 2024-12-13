@@ -118,11 +118,6 @@ export const AssistantMessageCell: FunctionComponent<{
                                 />
                             )
                         ) : null}
-                        {isSearchIntent && isLoading && (
-                            <div className="tw-flex">
-                                <LoadingDots /> Searching...
-                            </div>
-                        )}
                         {experimentalOneBoxEnabled && !isLoading && message.search && (
                             <SearchResults
                                 message={message as ChatMessageWithSearch}

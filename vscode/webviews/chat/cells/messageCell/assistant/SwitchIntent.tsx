@@ -19,6 +19,7 @@ export const SwitchIntent = ({ intent, onSwitch }: SwitchIntentProps) => {
             </div>
             <div>
                 <Button
+                    size="sm"
                     variant="outline"
                     className="tw-text-prmary tw-flex tw-gap-2 tw-items-center"
                     onClick={onSwitch}

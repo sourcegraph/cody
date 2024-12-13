@@ -22,8 +22,8 @@ export const SearchFiltersModal = ({
 
     return (
         <div className="tw-flex tw-flex-col tw-gap-8">
-            <div className="tw-flex tw-font-bold tw-items-center tw-justify-between ">
-                <div>Filter results</div>
+            <div className="tw-flex tw-items-center tw-justify-between ">
+                <div className="tw-font-bold">Filter results</div>
                 <div className="tw-flex tw-gap-4">
                     <Button variant="outline" onClick={close}>
                         Close
@@ -36,7 +36,7 @@ export const SearchFiltersModal = ({
                 selectedFilters={currentSelectedFitlers}
                 onSelectedFiltersUpdate={setCurrentSelectedFilters}
             />
-            <div className="tw-flex tw-font-bold tw-text-muted-foreground tw-items-center tw-justify-between ">
+            <div className="tw-flex tw-text-muted-foreground tw-items-center tw-justify-between">
                 <div />
                 <div className="tw-flex tw-gap-4">
                     <Button variant="outline" onClick={close}>

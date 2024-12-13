@@ -1033,7 +1033,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         const scopes: string[] = await this.getSearchScopesFromMentions(mentions)
 
         const query = scopes.length
-            ? `${inputTextWithContextChips} (${scopes.join(' OR ')})`
+            ? `content:"${inputTextWithContextChips.replaceAll('"', '\\"')}" (${scopes.join(' OR ')})`
             : inputTextWithContextChips
 
         try {

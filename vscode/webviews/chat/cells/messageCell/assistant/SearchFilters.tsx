@@ -4,7 +4,6 @@ import type { NLSSearchDynamicFilter, NLSSearchDynamicFilterKind } from '@source
 import { uniqBy } from 'lodash'
 import { XIcon } from 'lucide-react'
 import { useCallback, useMemo } from 'react'
-import { Badge } from '../../../../components/shadcn/ui/badge'
 import styles from './SearchFilters.module.css'
 export interface SearchFiltersProps {
     filters: NLSSearchDynamicFilter[]
@@ -51,42 +50,34 @@ export const SearchFilters = ({
 
     return (
         <div className="tw-flex tw-flex-col tw-gap-8">
-            <div className="tw-flex tw-flex-col tw-gap-4">
-                <div className="tw-font-bold tw-mb-4">Language</div>
-                {filterGroups.lang.map(filter => (
-                    <SearchFilter
-                        key={filter.value}
-                        filter={filter}
-                        onFilterSelect={onFilterSelect}
-                        onFilterDeselect={onFilterDeselect}
-                        selectedFilters={selectedFilters}
-                    />
-                ))}
-            </div>
-            <div className="tw-flex tw-flex-col tw-gap-4">
-                <div className="tw-font-bold tw-mb-4">Repository</div>
-                {filterGroups.repo.map(filter => (
-                    <SearchFilter
-                        key={filter.value}
-                        filter={filter}
-                        onFilterSelect={onFilterSelect}
-                        onFilterDeselect={onFilterDeselect}
-                        selectedFilters={selectedFilters}
-                    />
-                ))}
-            </div>
-            <div className="tw-flex tw-flex-col tw-gap-4">
-                <div className="tw-font-bold tw-mb-4">File and path</div>
-                {filterGroups.file.map(filter => (
-                    <SearchFilter
-                        key={filter.value}
-                        filter={filter}
-                        onFilterSelect={onFilterSelect}
-                        onFilterDeselect={onFilterDeselect}
-                        selectedFilters={selectedFilters}
-                    />
-                ))}
-            </div>
+            {filterGroups.lang.length > 0 && (
+                <div className="tw-flex tw-flex-col tw-gap-4">
+                    <div className="tw-font-bold tw-mb-4">Language</div>
+                    {filterGroups.lang.map(filter => (
+                        <SearchFilter
+                            key={filter.value}
+                            filter={filter}
+                            onFilterSelect={onFilterSelect}
+                            onFilterDeselect={onFilterDeselect}
+                            selectedFilters={selectedFilters}
+                        />
+                    ))}
+                </div>
+            )}
+            {filterGroups.file.length > 0 && (
+                <div className="tw-flex tw-flex-col tw-gap-4">
+                    <div className="tw-font-bold tw-mb-4">File and path</div>
+                    {filterGroups.file.map(filter => (
+                        <SearchFilter
+                            key={filter.value}
+                            filter={filter}
+                            onFilterSelect={onFilterSelect}
+                            onFilterDeselect={onFilterDeselect}
+                            selectedFilters={selectedFilters}
+                        />
+                    ))}
+                </div>
+            )}
         </div>
     )
 }
@@ -127,10 +118,7 @@ const SearchFilter = ({
             onKeyDown={onClickHandler}
         >
             <div>{filter.label}</div>
-            <div className="tw-flex tw-gap-2 tw-items-center">
-                <Badge>{filter.count}</Badge>
-                {selected && <XIcon className="tw-size-8" />}
-            </div>
+            <div>{selected && <XIcon className="tw-size-8" />}</div>
         </div>
     )
 }
