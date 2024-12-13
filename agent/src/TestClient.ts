@@ -90,23 +90,7 @@ interface TestClientParams {
     extraConfiguration?: Record<string, any>
 }
 
-let isBuilt = false
-export function buildAgentBinary(): void {
-    if (isBuilt) {
-        return
-    }
-    isBuilt = true
-    // Bundle the agent. When running `pnpm run test`, vitest doesn't re-run this step.
-    //
-    // ! If this line fails when running unit tests, chances are that the error is being swallowed.
-    // To see the full error, run this file in isolation:
-    //
-    //   pnpm test agent/src/index.test.ts
-    execSync('pnpm run build:for-tests ', {
-        cwd: getAgentDir(),
-        stdio: 'inherit',
-    })
-
+export function setupRecording(): void {
     const mayRecord =
         process.env.CODY_RECORDING_MODE === 'record' || process.env.CODY_RECORD_IF_MISSING === 'true'
     if (mayRecord) {
@@ -135,7 +119,7 @@ export class TestClient extends MessageHandler {
     private secrets = new AgentStatelessSecretStorage()
     private extensionConfigurationDuringInitialization: ExtensionConfiguration | undefined
     public static create({ bin = 'node', ...params }: TestClientParams): TestClient {
-        buildAgentBinary()
+        setupRecording()
         const agentDir = getAgentDir()
         const recordingDirectory = path.join(agentDir, 'recordings')
         const agentScript = path.join(agentDir, 'dist', 'index.js')
