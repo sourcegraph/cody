@@ -95,17 +95,3 @@ describe('test block', () => {
 })
 "
 `;
-
-exports[`Document Code > editCommands/document (basic function) 1`] = `
-"/**
- * Adds two numbers together and returns the result.
- * 
- * @param a - The first number to add.
- * @param b - The second number to add.
- * @returns The sum of the two input numbers.
- */
-export function sum(a: number, b: number): number {
-    /* CURSOR */
-}
-"
-`;

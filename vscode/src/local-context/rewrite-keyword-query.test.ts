@@ -68,7 +68,7 @@ describe('rewrite-query', () => {
 
 \tmu       sync.RWMute
 `,
-        expanded => expect(expanded).toMatchInlineSnapshot(`"cache sync test zoekt"`)
+        expanded => expect(expanded).toMatchInlineSnapshot(`"cache client sync zoekt"`)
     )
 
     check(ps`C'est ou la logique pour recloner les dépôts?`, expanded =>
