@@ -9,6 +9,7 @@ import { PromptSelectField } from '../../../../../../components/promptSelectFiel
 import { ToolbarButton } from '../../../../../../components/shadcn/ui/toolbar'
 import toolbarStyles from '../../../../../../components/shadcn/ui/toolbar.module.css'
 import { useActionSelect } from '../../../../../../prompts/PromptsTab'
+import { getVSCodeAPI } from '../../../../../../utils/VSCodeApi'
 import { useConfig } from '../../../../../../utils/useConfig'
 import { AddContextButton } from './AddContextButton'
 import { SubmitButton, type SubmitButtonState } from './SubmitButton'
@@ -91,7 +92,7 @@ export const Toolbar: FunctionComponent<{
                         variant="secondary"
                         tooltip="Upload an image"
                         iconStart={PaperclipIcon}
-                        //onClick={() => getVSCodeAPI().postMessage({ command: 'chat/upload-image' })}
+                        onClick={() => getVSCodeAPI().postMessage({ command: 'chat/upload-image' })}
                         aria-label="Upload image"
                     />
                 )}

@@ -531,6 +531,20 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 logger(message.filterLabel, message.message)
                 break
             }
+            case 'chat/upload-image': {
+                const files = await vscode.window.showOpenDialog({
+                    canSelectMany: false,
+                    openLabel: 'Show Cody',
+                    title: 'Select an Image',
+                    filters: {
+                        Images: ['png', 'jpg', 'jpeg', 'svg'],
+                    },
+                })
+                if (files?.[0]) {
+                    this.chatBuilder.addImages([files[0]])
+                }
+                break
+            }
         }
     }
 

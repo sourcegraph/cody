@@ -139,7 +139,9 @@ export type WebviewMessage =
           filterLabel: string
           message: string
       }
-
+    | {
+          command: 'chat/upload-image'
+      }
 export interface SmartApplyResult {
     taskId: FixupTaskID
     taskState: CodyTaskState

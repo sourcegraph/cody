@@ -21,6 +21,8 @@ import {
 
 import type { RankedContext } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { Observable, Subject, map } from 'observable-fns'
+import * as vscode from 'vscode'
+import type { URI } from 'vscode-uri'
 import { getChatPanelTitle } from './chat-helpers'
 
 /**
@@ -94,7 +96,8 @@ export class ChatBuilder {
 
         public readonly sessionID: string = new Date(Date.now()).toUTCString(),
         private messages: ChatMessage[] = [],
-        private customChatTitle?: string
+        private customChatTitle?: string,
+        private images: string[] = []
     ) {}
 
     /** An observable that emits whenever the {@link ChatBuilder}'s chat changes. */
@@ -295,6 +298,17 @@ export class ChatBuilder {
             interactions,
         }
         return result
+    }
+
+    public async addImages(imageUris: URI[]): Promise<void> {
+        this.images = []
+        this.images = await Promise.all(
+            imageUris.map(async uri => {
+                const imageFile = await vscode.workspace.fs.readFile(uri)
+                return Buffer.from(imageFile).toString('base64')
+            })
+        )
+        console.log('images', this.images[0].length)
     }
 }
 
