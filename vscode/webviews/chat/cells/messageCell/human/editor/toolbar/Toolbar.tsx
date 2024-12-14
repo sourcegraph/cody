@@ -1,10 +1,12 @@
-import type { Action, ChatMessage, Model } from '@sourcegraph/cody-shared'
+import { type Action, type ChatMessage, type Model, ModelTag } from '@sourcegraph/cody-shared'
 import { useExtensionAPI } from '@sourcegraph/prompt-editor'
 import clsx from 'clsx'
+import { PaperclipIcon } from 'lucide-react'
 import { type FunctionComponent, useCallback } from 'react'
 import type { UserAccountInfo } from '../../../../../../Chat'
 import { ModelSelectField } from '../../../../../../components/modelSelectField/ModelSelectField'
 import { PromptSelectField } from '../../../../../../components/promptSelectField/PromptSelectField'
+import { ToolbarButton } from '../../../../../../components/shadcn/ui/toolbar'
 import toolbarStyles from '../../../../../../components/shadcn/ui/toolbar.module.css'
 import { useActionSelect } from '../../../../../../prompts/PromptsTab'
 import { useConfig } from '../../../../../../utils/useConfig'
@@ -64,6 +66,10 @@ export const Toolbar: FunctionComponent<{
         [onGapClick]
     )
 
+    const isGoogleModel = useCallback((model: Model) => {
+        return model?.tags.includes(ModelTag.BYOK) && model?.id.includes('gemini-2.0-flash')
+    }, [])
+
     return (
         // biome-ignore lint/a11y/useKeyWithClickEvents: only relevant to click areas
         <menu
@@ -80,6 +86,15 @@ export const Toolbar: FunctionComponent<{
         >
             <div className="tw-flex tw-items-center">
                 {/* Can't use tw-gap-1 because the popover creates an empty element when open. */}
+                {isGoogleModel(models[0]) && (
+                    <ToolbarButton
+                        variant="secondary"
+                        tooltip="Upload an image"
+                        iconStart={PaperclipIcon}
+                        //onClick={() => getVSCodeAPI().postMessage({ command: 'chat/upload-image' })}
+                        aria-label="Upload image"
+                    />
+                )}
                 {onMentionClick && (
                     <AddContextButton
                         onClick={onMentionClick}
