@@ -67,7 +67,7 @@ jobs:
           key: ${{ runner.os }}-${{ matrix.node }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: ${{ runner.os }}-${{ matrix.node }}-pnpm-store-
       - run: pnpm install
-      - run: pnpm build
+      - run: pnpm build:for-test
       - run: pnpm run test:unit --run
         env:
           CODY_NODE_VERSION: ${{ matrix.node }}
