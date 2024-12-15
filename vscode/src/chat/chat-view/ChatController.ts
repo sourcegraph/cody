@@ -1690,6 +1690,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             const params = {
                 model,
                 maxTokensToSample: contextWindow.output,
+                images: this.chatBuilder.getAndResetImages()
             } as CompletionParameters
 
             // Set stream param only when the model is disabled for streaming.

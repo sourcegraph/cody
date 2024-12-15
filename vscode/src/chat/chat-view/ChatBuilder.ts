@@ -20,6 +20,7 @@ import {
 } from '@sourcegraph/cody-shared'
 
 import type { RankedContext } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import type { ImageData, MimeType } from '@sourcegraph/cody-shared/src/llm-providers/google'
 import { Observable, Subject, map } from 'observable-fns'
 import * as vscode from 'vscode'
 import type { URI } from 'vscode-uri'
@@ -97,7 +98,7 @@ export class ChatBuilder {
         public readonly sessionID: string = new Date(Date.now()).toUTCString(),
         private messages: ChatMessage[] = [],
         private customChatTitle?: string,
-        private images: string[] = []
+        private images: ImageData[] = []
     ) {}
 
     /** An observable that emits whenever the {@link ChatBuilder}'s chat changes. */
@@ -300,15 +301,59 @@ export class ChatBuilder {
         return result
     }
 
+    /**
+     * Asynchronously adds an array of image URIs to the ChatBuilder's image collection.
+     * For each URI, the method reads the file, detects the MIME type, and stores the
+     * base64-encoded image data and MIME type in the `images` array.
+     *
+     * @param imageUris - An array of `URI` objects representing the image files to add.
+     * @returns A Promise that resolves when all images have been added.
+     */
     public async addImages(imageUris: URI[]): Promise<void> {
-        this.images = []
         this.images = await Promise.all(
             imageUris.map(async uri => {
                 const imageFile = await vscode.workspace.fs.readFile(uri)
-                return Buffer.from(imageFile).toString('base64')
+                // Detect mime type from buffer header
+                const mimeType = this.detectMimeType(imageFile)
+                return {
+                    data: Buffer.from(imageFile).toString('base64'),
+                    mimeType,
+                }
             })
         )
-        console.log('images', this.images[0].length)
+    }
+
+    /**
+     * Retrieves and resets the images collected by the `ChatBuilder`.
+     *
+     * @returns The array of `ImageData` objects collected so far, or `undefined` if no images have been collected.
+     */
+    public getAndResetImages(): ImageData[] | undefined {
+        const images = this.images
+        this.images = []
+        return images.length ? images : undefined
+    }
+
+    /**
+     * Detects the MIME type of an image buffer based on the first bytes of the buffer.
+     * If the MIME type cannot be detected, it defaults to 'image/jpeg'.
+     *
+     * @param buffer - The image data buffer.
+     * @returns The detected MIME type of the image.
+     */
+    private detectMimeType(buffer: Uint8Array): MimeType {
+        // Check magic numbers at start of buffer
+        if (buffer[0] === 0xff && buffer[1] === 0xd8) {
+            return 'image/jpeg'
+        }
+        if (buffer[0] === 0x89 && buffer[1] === 0x50) {
+            return 'image/png'
+        }
+        if (buffer[8] === 0x57 && buffer[9] === 0x45) {
+            return 'image/webp'
+        }
+        // Default to jpeg if unknown
+        return 'image/jpeg'
     }
 }
 

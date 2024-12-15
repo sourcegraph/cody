@@ -1,4 +1,4 @@
-import type { GeminiCompletionResponse } from '.'
+import type { GeminiChatMessage, GeminiCompletionResponse } from '.'
 import type { ChatNetworkClientParams } from '..'
 import { getCompletionsModelConfig, logDebug } from '../..'
 import { onAbort } from '../../common/abortController'
@@ -45,6 +45,19 @@ export async function googleChatClient({
 
     // Construct the messages array for the API
     const messages = await constructGeminiChatMessages(params.messages)
+
+    // Adds an inline image data part to the last user message in the `messages` array, if the `params.images` array has at least one element.
+    if (params.images?.[0]) {
+        const lastUserMessage = messages.at(-1) as GeminiChatMessage | undefined
+        if (lastUserMessage?.role === 'user') {
+            lastUserMessage.parts.push({
+                inline_data: {
+                    mime_type: params.images[0].mimeType,
+                    data: params.images[0].data,
+                },
+            })
+        }
+    }
 
     // Sends the completion parameters and callbacks to the API.
     fetch(apiEndpoint, {

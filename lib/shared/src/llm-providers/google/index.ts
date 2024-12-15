@@ -13,7 +13,23 @@ export interface GeminiCompletionResponse {
     }[]
 }
 
+export interface ImageData {
+    data: string
+    mimeType: MimeType
+}
+
+export type MimeType = 'image/jpeg' | 'image/png' | 'image/webp'
+export interface InlineDataPart {
+    inline_data: {
+        mime_type: MimeType
+        data: string
+    }
+}
+export interface Part {
+    text: string
+}
+
 export interface GeminiChatMessage {
     role: string
-    parts: { text: string }[]
+    parts: (Part | InlineDataPart)[]
 }
