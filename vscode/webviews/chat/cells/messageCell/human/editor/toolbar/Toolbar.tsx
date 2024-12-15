@@ -1,18 +1,18 @@
-import { type Action, type ChatMessage, type Model, ModelTag } from '@sourcegraph/cody-shared'
+import type { Action, ChatMessage, Model } from '@sourcegraph/cody-shared'
 import { useExtensionAPI } from '@sourcegraph/prompt-editor'
 import clsx from 'clsx'
-import { PaperclipIcon } from 'lucide-react'
 import { type FunctionComponent, useCallback } from 'react'
 import type { UserAccountInfo } from '../../../../../../Chat'
 import { ModelSelectField } from '../../../../../../components/modelSelectField/ModelSelectField'
 import { PromptSelectField } from '../../../../../../components/promptSelectField/PromptSelectField'
-import { ToolbarButton } from '../../../../../../components/shadcn/ui/toolbar'
 import toolbarStyles from '../../../../../../components/shadcn/ui/toolbar.module.css'
 import { useActionSelect } from '../../../../../../prompts/PromptsTab'
 import { getVSCodeAPI } from '../../../../../../utils/VSCodeApi'
+import { isGeminiFlashModel } from '../../../../../../utils/modelUtils'
 import { useConfig } from '../../../../../../utils/useConfig'
 import { AddContextButton } from './AddContextButton'
 import { SubmitButton, type SubmitButtonState } from './SubmitButton'
+import { UploadImageButton } from './UploadImageButton'
 
 /**
  * The toolbar for the human message editor.
@@ -68,7 +68,7 @@ export const Toolbar: FunctionComponent<{
     )
 
     const isGoogleModel = useCallback((model: Model) => {
-        return model?.tags.includes(ModelTag.BYOK) && model?.id.includes('gemini-2.0-flash')
+        return isGeminiFlashModel(model)
     }, [])
 
     return (
@@ -88,12 +88,9 @@ export const Toolbar: FunctionComponent<{
             <div className="tw-flex tw-items-center">
                 {/* Can't use tw-gap-1 because the popover creates an empty element when open. */}
                 {isGoogleModel(models[0]) && (
-                    <ToolbarButton
-                        variant="secondary"
-                        tooltip="Upload an image"
-                        iconStart={PaperclipIcon}
+                    <UploadImageButton
+                        className="tw-opacity-60"
                         onClick={() => getVSCodeAPI().postMessage({ command: 'chat/upload-image' })}
-                        aria-label="Upload image"
                     />
                 )}
                 {onMentionClick && (
@@ -108,6 +105,7 @@ export const Toolbar: FunctionComponent<{
                     userInfo={userInfo}
                     focusEditor={focusEditor}
                     className="tw-mr-1"
+                    supportsImageUpload={isGoogleModel(models[0])}
                 />
             </div>
             <div className="tw-flex-1 tw-flex tw-justify-end">
@@ -145,7 +143,8 @@ const ModelSelectFieldToolbarItem: FunctionComponent<{
     userInfo: UserAccountInfo
     focusEditor?: () => void
     className?: string
-}> = ({ userInfo, focusEditor, className, models }) => {
+    supportsImageUpload?: boolean
+}> = ({ userInfo, focusEditor, className, models, supportsImageUpload }) => {
     const config = useConfig()
 
     const api = useExtensionAPI()

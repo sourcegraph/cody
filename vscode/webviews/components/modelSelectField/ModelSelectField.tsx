@@ -1,9 +1,10 @@
 import { type Model, ModelTag, isCodyProModel, isWaitlistModel } from '@sourcegraph/cody-shared'
 import { clsx } from 'clsx'
-import { BookOpenIcon, BuildingIcon, ExternalLinkIcon, FlaskConicalIcon } from 'lucide-react'
+import { BookOpenIcon, BuildingIcon, ExternalLinkIcon, FlaskConicalIcon, ImageIcon } from 'lucide-react'
 import { type FunctionComponent, type ReactNode, useCallback, useMemo } from 'react'
 import type { UserAccountInfo } from '../../Chat'
 import { getVSCodeAPI } from '../../utils/VSCodeApi'
+import { isGeminiFlashModel } from '../../utils/modelUtils'
 import { useTelemetryRecorder } from '../../utils/telemetry'
 import { chatModelIconComponent } from '../ChatModelIcon'
 import { Badge } from '../shadcn/ui/badge'
@@ -355,6 +356,7 @@ const ModelTitleWithIcon: React.FC<{
 }> = ({ model, showIcon, modelAvailability }) => {
     const modelBadge = getBadgeText(model, modelAvailability)
     const isDisabled = modelAvailability !== 'available'
+    const supportsImageUpload = isGeminiFlashModel(model)
 
     return (
         <span className={clsx(styles.modelTitleWithIcon, { [styles.disabled]: isDisabled })}>
@@ -366,6 +368,11 @@ const ModelTitleWithIcon: React.FC<{
                 )
             ) : null}
             <span className={clsx('tw-flex-grow', styles.modelName)}>{model.title}</span>
+            {supportsImageUpload && (
+                <span className={styles.supportsImageUploadIcon} title="Supports image upload">
+                    <ImageIcon size={16} strokeWidth={1.25} className="tw-opacity-80" />
+                </span>
+            )}
             {modelBadge && (
                 <Badge
                     variant="secondary"
