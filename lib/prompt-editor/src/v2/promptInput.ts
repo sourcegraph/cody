@@ -727,8 +727,7 @@ export const promptInput = setup({
                             type: 'updateEditorState',
                             params: replaceAtMention(
                                 context.editorState,
-                                createMentionNode({ item: serializeContextItem(item) }),
-                                true
+                                createMentionNode({ item: serializeContextItem(item) })
                             ),
                         })
                     }),

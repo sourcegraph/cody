@@ -1,7 +1,13 @@
 import { EditorState, TextSelection } from 'prosemirror-state'
 import { beforeEach, expect, test } from 'vitest'
 import { schema } from '../promptInput'
-import { createAtMentionPlugin, enableAtMention, getAtMentionValue, hasAtMention } from './atMention'
+import {
+    createAtMentionPlugin,
+    enableAtMention,
+    getAtMentionPosition,
+    getAtMentionValue,
+    hasAtMention,
+} from './atMention'
 
 let state: EditorState
 
@@ -20,6 +26,7 @@ beforeEach(() => {
 test('create at mention', () => {
     const newState = state.apply(enableAtMention(state.tr.insertText('abc @')))
     expect(hasAtMention(newState)).toBe(true)
+    expect(getAtMentionPosition(newState)).toBe(5)
 })
 
 test('update at mention value', () => {
@@ -32,6 +39,22 @@ test('update at mention value', () => {
     expect(getAtMentionValue(newState)).toBe('@foobar')
 })
 
+test('create at mention in the middle of a text', () => {
+    let newState = state.apply(state.tr.insertText('foo bar'))
+    newState = newState.apply(
+        enableAtMention(newState.tr.setSelection(TextSelection.create(newState.doc, 5)).insertText('@'))
+    )
+
+    expect(newState.doc.textContent).toBe('foo @bar')
+    expect(hasAtMention(newState)).toBe(true)
+    expect(getAtMentionPosition(newState)).toBe(5)
+    expect(getAtMentionValue(newState)).toBe('@')
+
+    newState = newState.apply(newState.tr.insertText('baz'))
+    expect(newState.doc.textContent).toBe('foo @bazbar')
+    expect(getAtMentionValue(newState)).toBe('@baz')
+})
+
 test('disable at mention when selection moves outside', () => {
     let newState = state.apply(enableAtMention(state.tr.insertText('abc @')))
 
@@ -39,20 +62,36 @@ test('disable at mention when selection moves outside', () => {
     expect(hasAtMention(newState)).toBe(true)
 
     // NOTE: 5 is the position before the '@' character
-    newState = newState.apply(newState.tr.setSelection(TextSelection.create(newState.doc, 5)))
+    const atMentionPosition = 5
+
+    expect(getAtMentionPosition(newState)).toBe(atMentionPosition)
+
+    newState = newState.apply(
+        newState.tr.setSelection(TextSelection.create(newState.doc, atMentionPosition))
+    )
     expect(hasAtMention(newState), 'keeps at mention when selection moves to its start').toBe(true)
 
     newState = newState.apply(newState.tr.setSelection(TextSelection.atStart(newState.doc)))
     expect(hasAtMention(newState), 'removes at mention when selection moves outside').toBe(false)
 })
 
-test('disable at mention when two space are entered', () => {
+test('disable at mention when selection is not empty', () => {
     let newState = state.apply(enableAtMention(state.tr.insertText('abc @')))
 
     newState = newState.apply(newState.tr.insertText('foo'))
     expect(hasAtMention(newState)).toBe(true)
 
-    newState = newState.apply(newState.tr.insertText(' '))
+    newState = newState.apply(newState.tr.setSelection(TextSelection.create(newState.doc, 2, 8)))
+    expect(hasAtMention(newState), 'removes at mention when selection is not empty').toBe(false)
+})
+
+test('disable at mention when three space are entered', () => {
+    let newState = state.apply(enableAtMention(state.tr.insertText('abc @')))
+
+    newState = newState.apply(newState.tr.insertText('foo'))
+    expect(hasAtMention(newState)).toBe(true)
+
+    newState = newState.apply(newState.tr.insertText('  '))
     expect(hasAtMention(newState)).toBe(true)
 
     newState = newState.apply(newState.tr.insertText(' '))

@@ -63,6 +63,9 @@ function fromSerializedLexicalNode(node: SerializedLexicalNode): unknown {
 
 /**
  * Convert a {@link SerializedPromptEditorState} to a ProseMirror document.
+ *
+ * This makes a best-effort attempt to convert a Lexical document to a ProseMirror document.
+ * A Lexical document contains more information than a ProseMirror document, some data is ignored/lost.
  */
 export function fromSerializedPromptEditorState(state: SerializedPromptEditorState): unknown {
     return fromSerializedLexicalNode(state.lexicalEditorState.root)
@@ -70,11 +73,18 @@ export function fromSerializedPromptEditorState(state: SerializedPromptEditorSta
 
 /**
  * Convert a ProseMirror document to a {@link SerializedPromptEditorValue}.
+ *
+ * This makes a best-effort attempt to serialize a ProseMirror document to a Lexical document.
+ * A Lexical document contains more information than a ProseMirror document, some data is set to seemingly reasonable defaults.
  */
 export function toSerializedPromptEditorValue(doc: Node): SerializedPromptEditorValue {
     const contextItems: SerializedContextItem[] = []
     const direction =
-        typeof window !== 'undefined' ? window.getComputedStyle(window.document.body).direction : null
+        (typeof window !== 'undefined'
+            ? window.getComputedStyle(window.document.body).direction
+            : null) === 'rtl'
+            ? 'rtl'
+            : 'ltr'
 
     doc.descendants(node => {
         if (node.type.name === 'mention') {
@@ -98,7 +108,7 @@ export function toSerializedPromptEditorValue(doc: Node): SerializedPromptEditor
                 return {
                     type: 'paragraph',
                     children,
-                    direction: direction === 'rtl' ? 'rtl' : 'ltr',
+                    direction,
                     format: '',
                     indent: 0,
                     version: 1,
@@ -146,7 +156,7 @@ export function toSerializedPromptEditorValue(doc: Node): SerializedPromptEditor
             format: '',
             indent: 0,
             version: 1,
-            direction: direction === 'rtl' ? 'rtl' : 'ltr',
+            direction,
         }
     }
 

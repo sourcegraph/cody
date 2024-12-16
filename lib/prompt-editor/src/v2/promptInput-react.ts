@@ -128,9 +128,7 @@ export const usePromptInput = (options: PromptEditorOptions): [PromptInputActor,
                         },
                     },
                     handleKeyDown: (_view, event) => {
-                        // For some reason we have to avoid calling onEnterKey when shift is pressed,
-                        // otherwise the editor's Shift-Enter keybinding will not be triggered.
-                        if (!event.shiftKey && event.key === 'Enter') {
+                        if (event.key === 'Enter') {
                             onEnterKeyRef.current?.(event)
                             return event.defaultPrevented
                         }
@@ -160,11 +158,11 @@ export const usePromptInput = (options: PromptEditorOptions): [PromptInputActor,
     const api: PromptEditorAPI = useMemo(
         () => ({
             setFocus(focus, options) {
-                if (focus) {
-                    editor.send({ type: 'focus', moveCursorToEnd: options?.moveCursorToEnd })
-                } else {
-                    editor.send({ type: 'blur' })
-                }
+                editor.send(
+                    focus
+                        ? { type: 'focus', moveCursorToEnd: options?.moveCursorToEnd }
+                        : { type: 'blur' }
+                )
             },
             setDocument(doc: Node) {
                 editor.send({ type: 'document.set', doc })
@@ -220,11 +218,29 @@ export const usePromptInput = (options: PromptEditorOptions): [PromptInputActor,
 }
 
 interface MentionsMenuData {
+    /**
+     * Whether the mentions menu should be visible or not.
+     */
     show: boolean
+    /**
+     * The items to display in the menu.
+     */
     items: MenuItem[]
+    /**
+     * The index of the currently selected item.
+     */
     selectedIndex: number
+    /**
+     * The query that was used to fetch the menu items.
+     */
     query: string
+    /**
+     * The absolute screen coordinates at which the top-left corner of the menu should be placed.
+     */
     position: Position
+    /**
+     * The currently selected provider, if any.
+     */
     parent: ContextMentionProviderMetadata | null
 }
 
