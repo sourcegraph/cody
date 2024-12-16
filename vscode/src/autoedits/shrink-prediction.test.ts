@@ -3,49 +3,48 @@ import { describe, expect, it } from 'vitest'
 import { getCurrentDocContext } from '../completions/get-current-doc-context'
 import { documentAndPosition } from '../completions/test-helpers'
 
+import dedent from 'dedent'
 import { type CodeToReplaceData, getCurrentFilePromptComponents } from './prompt-utils'
 import { shrinkPredictionUntilSuffix } from './shrink-prediction'
 
 describe('shrinkPredictionUntilSuffix', () => {
     it('middle of file, no overlap, 4-line prediction', () => {
-        const codeToReplaceData = createCodeToReplaceData(
-            `const a = 1
-const b = 2
-const c = 3
-console.log(a, b, c)█
-function greet() { console.log("Hello") }
-const x = 10
-console.log(x)
-console.log("end")
-`
-        )
+        const codeToReplaceData = createCodeToReplaceData`const a = 1
+            const b = 2
+            const c = 3
+            console.log(a, b, c)█
+            function greet() { console.log("Hello") }
+            const x = 10
+            console.log(x)
+            console.log("end")
+        `
 
-        const prediction = `const c = 999
-console.log(a + b, c)
-let y = 42
-function greet() { console.log("Changed!") }`
+        const prediction = dedent`const c = 999
+            console.log(a + b, c)
+            let y = 42
+            function greet() { console.log("Changed!") }
+        `
 
         const result = shrinkPredictionUntilSuffix(prediction, codeToReplaceData)
         expect(result.trimEnd()).toBe(prediction)
     })
 
     it('middle of file, partial overlap, 4-line prediction', () => {
-        const codeToReplaceData = createCodeToReplaceData(
-            `const a = 1
-const b = 2
-const c = 3
-console.log(a, b, c)█
-function greet() { console.log("Hello") }
-console.log(a)
-console.log("end")
-`
-        )
+        const codeToReplaceData = createCodeToReplaceData`const a = 1
+            const b = 2
+            const c = 3
+            console.log(a, b, c)█
+            function greet() { console.log("Hello") }
+            console.log(a)
+            console.log("end")
+        `
 
         // 4-line prediction. The last line "console.log(a)" is a suffix line and should be overlapped and removed.
-        const prediction = `const c = 999
-console.log(a * b * c)
-function greet() { console.log("Modified hello") }
-console.log(a)`
+        const prediction = dedent`const c = 999
+            console.log(a * b * c)
+            function greet() { console.log("Modified hello") }
+            console.log(a)
+        `
 
         const result = shrinkPredictionUntilSuffix(prediction, codeToReplaceData)
 
@@ -55,23 +54,22 @@ console.log(a)`
     })
 
     it('middle of file, full overlap, 4-line prediction', () => {
-        const codeToReplaceData = createCodeToReplaceData(
-            `const a = 1
-const b = 2
-const c = 3
-console.log(a, b, c)█
-function greet() { console.log("Hello") }
-const x = 10
-console.log(x)
-console.log("end")
-`
-        )
+        const codeToReplaceData = createCodeToReplaceData`const a = 1
+            const b = 2
+            const c = 3
+            console.log(a, b, c)█
+            function greet() { console.log("Hello") }
+            const x = 10
+            console.log(x)
+            console.log("end")
+        `
 
         // 4-line prediction that ends with both suffix lines: "const x = 10" and "console.log(x)"
-        const prediction = `const c = 1000
-console.log(a - b - c)
-const x = 10
-console.log(x)`
+        const prediction = dedent`const c = 1000
+            console.log(a - b - c)
+            const x = 10
+            console.log(x)
+        `
 
         const result = shrinkPredictionUntilSuffix(prediction, codeToReplaceData)
         // After removing the two overlapping suffix lines ("const x = 10" and "console.log(x)"),
@@ -85,18 +83,17 @@ console.log(x)`
     })
 
     it('cursor at end of file, no overlap, 4-line prediction', () => {
-        const codeToReplaceData = createCodeToReplaceData(
-            `line1
-line2
-line3█
-`
-        )
+        const codeToReplaceData = createCodeToReplaceData`line1
+            line2
+            line3█
+        `
 
         // 4-line prediction rewriting line3 and adding more lines.
-        const prediction = `line3_modified
-extra_line1
-extra_line2
-extra_line3`
+        const prediction = dedent`line3_modified
+            extra_line1
+            extra_line2
+            extra_line3
+        `
 
         const result = shrinkPredictionUntilSuffix(prediction, codeToReplaceData)
         // codeToReplace is smaller, but we have more lines in prediction. No overlap removal needed.
@@ -104,18 +101,17 @@ extra_line3`
     })
 
     it('cursor near start, partial overlap, 4-line prediction', () => {
-        const codeToReplaceData = createCodeToReplaceData(
-            `console.log("start")█
-let val = 123
-console.log("end")
-`
-        )
+        const codeToReplaceData = createCodeToReplaceData`console.log("start")█
+            let val = 123
+            console.log("end")
+        `
 
         // 4-line prediction tries to rewrite "console.log("start")" and includes "console.log("end")" at the end for overlap.
-        const prediction = `console.log("modified start")
-let val = 999
-extra_line_here
-console.log("end")`
+        const prediction = dedent`console.log("modified start")
+            let val = 999
+            extra_line_here
+            console.log("end")
+        `
 
         const result = shrinkPredictionUntilSuffix(prediction, codeToReplaceData)
         // Removing overlap "console.log("end")", leaves us with 3 lines.
@@ -123,8 +119,8 @@ console.log("end")`
     })
 })
 
-function createCodeToReplaceData(textWithCursor: string): CodeToReplaceData {
-    const { document, position } = documentAndPosition(textWithCursor)
+function createCodeToReplaceData(code: TemplateStringsArray, ...values: unknown[]): CodeToReplaceData {
+    const { document, position } = documentAndPosition(dedent(code, values))
     const docContext = getCurrentDocContext({
         document,
         position,
