@@ -877,7 +877,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
         if (intent === 'search') {
             return await this.handleSearchIntent({
-                inputTextWithContextChips: inputTextWithoutContextChips.toString(),
+                inputTextWithoutContextChips: inputTextWithoutContextChips.toString(),
                 mentions,
                 signal,
             })
@@ -1019,11 +1019,11 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     }
 
     private async handleSearchIntent({
-        inputTextWithContextChips,
+        inputTextWithoutContextChips,
         mentions,
         signal,
     }: {
-        inputTextWithContextChips: string
+        inputTextWithoutContextChips: string
         mentions: ContextItem[]
         signal: AbortSignal
     }): Promise<void> {
@@ -1033,8 +1033,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         const scopes: string[] = await this.getSearchScopesFromMentions(mentions)
 
         const query = scopes.length
-            ? `content:"${inputTextWithContextChips.replaceAll('"', '\\"')}" (${scopes.join(' OR ')})`
-            : inputTextWithContextChips
+            ? `content:"${inputTextWithoutContextChips.replaceAll('"', '\\"')}" (${scopes.join(' OR ')})`
+            : inputTextWithoutContextChips
 
         try {
             const response = await graphqlClient.nlsSearchQuery({ query, signal })
