@@ -150,7 +150,6 @@ export class ClientConfigSingleton {
 
     private async fetchConfig(signal?: AbortSignal): Promise<CodyClientConfig> {
         logDebug('ClientConfigSingleton', 'refreshing configuration')
-        const viewerSettingsRequest = graphqlClient.viewerSettings(signal)
 
         // Determine based on the site version if /.api/client-config is available.
         return graphqlClient
@@ -195,7 +194,7 @@ export class ClientConfigSingleton {
             .then(clientConfig => {
                 signal?.throwIfAborted()
                 logDebug('ClientConfigSingleton', 'refreshed', JSON.stringify(clientConfig))
-                return viewerSettingsRequest.then(viewerSettings => {
+                return graphqlClient.viewerSettings(signal).then(viewerSettings => {
                     // Don't fail the whole chat because of viewer setting (used only to show banners)
                     if (isError(viewerSettings)) {
                         return { ...clientConfig, notices: [] }
