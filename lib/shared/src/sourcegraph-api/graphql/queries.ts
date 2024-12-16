@@ -407,7 +407,7 @@ query ViewerPrompts($query: String, $first: Int!, $recommendedOnly: Boolean!, $o
                 displayName
                 avatarURL
             }
-            tags(first: 20) {
+            tags(first: 999) {
                 nodes {
                     id
                     name
@@ -450,7 +450,7 @@ query ViewerBuiltinPrompts($query: String!, $first: Int!, $orderByMultiple: [Pro
 
 export const PROMPT_TAGS_QUERY = `
 query PromptTags() {
-    promptTags(first: 20) {
+    promptTags(first: 999) {
         nodes {
             id
             name

@@ -94,8 +94,7 @@ export const PromptsFilter: FC<PromptFilterProps> = props => {
                     {!!resultTags?.length && !errorTags && (
                         <div className="tw-border-t tw-border-border tw-w-full tw-mt-4 tw-mb-4  tw-pt-4">
                             <div className="tw-text-muted-foreground tw-mt-4">By tag</div>
-                            {/*todo: scrollable*/}
-                            <ul className="tw-mt-4">
+                            <ul className="tw-mt-4 tw-max-h-[200px] tw-overflow-y-auto">
                                 {resultTags.map(tag => (
                                     <li key={tag.id} className="tw-flex">
                                         <PromptsFilterItem
