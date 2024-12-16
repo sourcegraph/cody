@@ -105,7 +105,7 @@ export const FileMatchSearchResult: FC<PropsWithChildren<FileMatchSearchResultPr
     const repoAtRevisionURL = getRepositoryUrl(serverEndpoint, result.repository.name, [
         result.file.commit.oid,
     ])
-    const fileURL = result.file.url
+    const fileURL = serverEndpoint + result.file.url
     const collapsedGroups = truncateGroups(expandedGroups, 1, 1)
     const expandedHighlightCount = countHighlightRanges(expandedGroups)
     const collapsedHighlightCount = countHighlightRanges(collapsedGroups)

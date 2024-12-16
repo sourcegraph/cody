@@ -54,7 +54,9 @@ export const formatRepositoryStarCount = (repoStars?: number): string | undefine
 export function getFileMatchUrl(base: string, fileMatch: NLSSearchFileMatch): string {
     const revision = getRevision([], fileMatch.file.commit?.oid)
     const encodedFilePath = fileMatch.file.path.split('/').map(encodeURIComponent).join('/')
-    return `${base}${fileMatch.repository}${revision ? '@' + revision : ''}/-/blob/${encodedFilePath}`
+    return `${base}${fileMatch.repository.name}${
+        revision ? '@' + revision : ''
+    }/-/blob/${encodedFilePath}`
 }
 
 export function getRevision(branches?: string[], version?: string): string {
