@@ -205,6 +205,7 @@ describe('server sent models', async () => {
                 modelsAPIEnabled: true,
             } satisfies Partial<CodyClientConfig> as CodyClientConfig),
             fetchServerSideModels_: mockFetchServerSideModels,
+            userProductSubscription: Observable.of({ userCanUpgrade: true }),
         }).pipe(skipPendingOperation())
     )
     const storage = new TestLocalStorageForModelPreferences()
@@ -260,6 +261,7 @@ describe('syncModels', () => {
                 configOverwrites: configOverwritesSubject.pipe(shareReplay()),
                 clientConfig: clientConfigSubject.pipe(shareReplay()),
                 fetchServerSideModels_: mockFetchServerSideModels,
+                userProductSubscription: Observable.of({ userCanUpgrade: true }),
             })
             const { values, clearValues, unsubscribe, done } = readValuesFrom(syncModelsObservable)
 
@@ -500,6 +502,7 @@ describe('syncModels', () => {
                     modelsAPIEnabled: true,
                 } satisfies Partial<CodyClientConfig> as CodyClientConfig),
                 fetchServerSideModels_: mockFetchServerSideModels,
+                userProductSubscription: Observable.of({ userCanUpgrade: true }),
             }).pipe(skipPendingOperation())
         )
 
