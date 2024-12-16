@@ -187,7 +187,9 @@ describe('ShortTermPromptStrategy', () => {
 
                 Here is the file that I am looking at (\`test.ts\`)
                 <file>
+
                 <<<AREA_AROUND_CODE_TO_REWRITE_WILL_BE_INSERTED_HERE>>>
+
                 </file>
 
 
@@ -271,7 +273,9 @@ describe('ShortTermPromptStrategy', () => {
 
                 Here is the file that I am looking at (\`test.ts\`)
                 <file>
+
                 <<<AREA_AROUND_CODE_TO_REWRITE_WILL_BE_INSERTED_HERE>>>
+
                 </file>
 
                 Here are some snippets of code I just looked at:

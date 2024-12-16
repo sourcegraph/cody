@@ -1,9 +1,4 @@
-import {
-    type AutocompleteContextSnippet,
-    type PromptString,
-    ps,
-    psDedent,
-} from '@sourcegraph/cody-shared'
+import { type AutocompleteContextSnippet, type PromptString, ps } from '@sourcegraph/cody-shared'
 import { groupConsecutiveItemsByPredicate } from '../../completions/context/retrievers/recent-user-actions/recent-edits-diff-helpers/utils'
 import { RetrieverIdentifier } from '../../completions/context/utils'
 import { autoeditsLogger } from '../logger'
@@ -20,6 +15,7 @@ import {
     getRecentCopyPrompt,
     getRecentEditsPrompt,
     getRecentlyViewedSnippetsPrompt,
+    joinPromptsWithNewlineSeperator,
 } from './prompt-utils'
 
 export class ShortTermPromptStrategy implements AutoeditsUserPromptStrategy {
@@ -70,18 +66,19 @@ export class ShortTermPromptStrategy implements AutoeditsUserPromptStrategy {
         )
         const currentFilePrompt = ps`${constants.CURRENT_FILE_INSTRUCTION}${fileWithMarkerPrompt}`
 
-        const finalPrompt = psDedent`
-            ${getPromptWithNewline(constants.BASE_USER_PROMPT)}
-            ${getPromptWithNewline(jaccardSimilarityPrompt)}
-            ${getPromptWithNewline(longTermViewPrompt)}
-            ${getPromptWithNewline(currentFilePrompt)}
-            ${getPromptWithNewline(shortTermViewPrompt)}
-            ${getPromptWithNewline(longTermEditsPrompt)}
-            ${getPromptWithNewline(lintErrorsPrompt)}
-            ${getPromptWithNewline(recentCopyPrompt)}
-            ${getPromptWithNewline(areaPrompt)}
-            ${getPromptWithNewline(shortTermEditsPrompt)}
-            ${getPromptWithNewline(constants.FINAL_USER_PROMPT)}`
+        const finalPrompt = joinPromptsWithNewlineSeperator(
+            getPromptWithNewline(constants.BASE_USER_PROMPT),
+            getPromptWithNewline(jaccardSimilarityPrompt),
+            getPromptWithNewline(longTermViewPrompt),
+            getPromptWithNewline(currentFilePrompt),
+            getPromptWithNewline(shortTermViewPrompt),
+            getPromptWithNewline(longTermEditsPrompt),
+            getPromptWithNewline(lintErrorsPrompt),
+            getPromptWithNewline(recentCopyPrompt),
+            getPromptWithNewline(areaPrompt),
+            getPromptWithNewline(shortTermEditsPrompt),
+            constants.FINAL_USER_PROMPT
+        )
 
         autoeditsLogger.logDebug('AutoEdits', 'Prompt\n', finalPrompt)
         return {
@@ -114,16 +111,18 @@ export class ShortTermPromptStrategy implements AutoeditsUserPromptStrategy {
 
         const shortTermViewPrompt =
             shortTermViewedSnippets.length > 0
-                ? psDedent`
-                    ${constants.SHORT_TERM_SNIPPET_VIEWS_INSTRUCTION}
-                    ${getRecentlyViewedSnippetsPrompt(shortTermViewedSnippets)}`
+                ? joinPromptsWithNewlineSeperator(
+                      constants.SHORT_TERM_SNIPPET_VIEWS_INSTRUCTION,
+                      getRecentlyViewedSnippetsPrompt(shortTermViewedSnippets)
+                  )
                 : ps``
 
         const longTermViewPrompt =
             longTermViewedSnippets.length > 0
-                ? psDedent`
-                    ${constants.LONG_TERM_SNIPPET_VIEWS_INSTRUCTION}
-                    ${getRecentlyViewedSnippetsPrompt(longTermViewedSnippets)}`
+                ? joinPromptsWithNewlineSeperator(
+                      constants.LONG_TERM_SNIPPET_VIEWS_INSTRUCTION,
+                      getRecentlyViewedSnippetsPrompt(longTermViewedSnippets)
+                  )
                 : ps``
 
         return {
@@ -178,8 +177,9 @@ export class ShortTermPromptStrategy implements AutoeditsUserPromptStrategy {
             combinedContextItems.push(combinedItem)
         }
 
-        return psDedent`
-            ${constants.RECENT_EDITS_INSTRUCTION}
-            ${getRecentEditsPrompt(combinedContextItems)}`
+        return joinPromptsWithNewlineSeperator(
+            constants.RECENT_EDITS_INSTRUCTION,
+            getRecentEditsPrompt(combinedContextItems)
+        )
     }
 }

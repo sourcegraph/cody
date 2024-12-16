@@ -16,6 +16,7 @@ import {
     getRecentEditsContextPromptWithPath,
     getRecentEditsPrompt,
     getRecentlyViewedSnippetsPrompt,
+    joinPromptsWithNewlineSeperator,
 } from '../prompt/prompt-utils'
 
 describe('getContextPromptWithPath', () => {
@@ -87,6 +88,7 @@ describe('getCurrentFilePromptComponents', () => {
             suffix-line
             suffix-line
             suffix-line
+
             </file>
         `)
         expect(result.areaPrompt.toString()).toBe(dedent`
@@ -134,7 +136,9 @@ describe('getCurrentFilePromptComponents', () => {
         expect(result.fileWithMarkerPrompt.toString()).toBe(dedent`
             (\`test.ts\`)
             <file>
+
             <<<AREA_AROUND_CODE_TO_REWRITE_WILL_BE_INSERTED_HERE>>>
+
             </file>
         `)
         expect(result.areaPrompt.toString()).toBe(dedent`
@@ -892,6 +896,16 @@ describe('getJaccardSimilarityPrompt', () => {
             qux
             </snippet>
             </extracted_code_snippets>
+        `)
+    })
+})
+
+describe('joinPromptsWithNewlineSeperator', () => {
+    it('joins multiple prompt strings with a new line separator', () => {
+        const prompt = joinPromptsWithNewlineSeperator(ps`foo`, ps`bar`)
+        expect(prompt.toString()).toBe(dedent`
+            foo
+            bar
         `)
     })
 })

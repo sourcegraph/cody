@@ -218,7 +218,9 @@ describe('DefaultUserPromptStrategy', () => {
 
             Here is the file that I am looking at (\`test.ts\`)
             <file>
+
             <<<AREA_AROUND_CODE_TO_REWRITE_WILL_BE_INSERTED_HERE>>>
+
             </file>
 
             Here is my recent series of edits from oldest to newest.
@@ -310,7 +312,9 @@ describe('DefaultUserPromptStrategy', () => {
 
             Here is the file that I am looking at (\`test.ts\`)
             <file>
+
             <<<AREA_AROUND_CODE_TO_REWRITE_WILL_BE_INSERTED_HERE>>>
+
             </file>
 
 
