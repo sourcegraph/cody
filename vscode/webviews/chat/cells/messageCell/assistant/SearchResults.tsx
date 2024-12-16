@@ -73,33 +73,33 @@ export const SearchResults = ({
 
     // Update the context chip in the last editor (when enabled) when the selected search results change.
     useLayoutEffect(() => {
-        if (enableContextSelection) {
-            if (selectedFollowUpResults.size > 0) {
-                const contextItem = createContextItem(
-                    Array.from(selectedFollowUpResults)
-                        .map(result => {
-                            switch (result.__typename) {
-                                case 'FileMatch':
-                                    return {
-                                        type: 'file' as const,
-                                        repoName: result.repository.name,
-                                        filePath: result.file.path,
-                                        rev: result.file.commit.oid,
-                                    }
-                                default:
-                                    return null
-                            }
-                        })
-                        .filter(isDefined)
-                        .flat()
-                )
-                lastEditorRef.current?.upsertMentions([contextItem])
-            } else {
-                lastEditorRef.current?.filterMentions(
-                    mention =>
-                        mention.type !== 'openctx' || mention.providerUri !== CODE_SEARCH_PROVIDER_URI
-                )
-            }
+        if (!enableContextSelection) {
+            return
+        }
+
+        if (selectedFollowUpResults.size > 0) {
+            const contextItem = createContextItem(
+                Array.from(selectedFollowUpResults)
+                    .map(result => {
+                        switch (result.__typename) {
+                            case 'FileMatch':
+                                return {
+                                    type: 'file' as const,
+                                    repoName: result.repository.name,
+                                    filePath: result.file.path,
+                                    rev: result.file.commit.oid,
+                                }
+                            default:
+                                return null
+                        }
+                    })
+                    .filter(isDefined)
+            )
+            lastEditorRef.current?.upsertMentions([contextItem])
+        } else {
+            lastEditorRef.current?.filterMentions(
+                mention => mention.type !== 'openctx' || mention.providerUri !== CODE_SEARCH_PROVIDER_URI
+            )
         }
     }, [enableContextSelection, selectedFollowUpResults, lastEditorRef])
 

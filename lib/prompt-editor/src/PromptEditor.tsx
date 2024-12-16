@@ -345,40 +345,33 @@ function insertMentions(
     return new Promise(resolve =>
         editor.update(
             () => {
+                const nodesToInsert = lexicalNodesForContextItems(
+                    items,
+                    {
+                        isFromInitialContext: false,
+                    },
+                    sep
+                )
+                const pNode = $createParagraphNode()
+
                 switch (position) {
                     case 'before': {
-                        const nodesToInsert = lexicalNodesForContextItems(
-                            items,
-                            {
-                                isFromInitialContext: false,
-                            },
-                            sep
-                        )
-                        const pNode = $createParagraphNode()
                         pNode.append(...nodesToInsert)
                         $insertFirst($getRoot(), pNode)
-                        $selectEnd()
                         break
                     }
                     case 'after': {
-                        const lexicalNodes = lexicalNodesForContextItems(
-                            items,
-                            {
-                                isFromInitialContext: false,
-                            },
-                            sep
-                        )
-                        const pNode = $createParagraphNode()
                         pNode.append(
                             $createTextNode(getWhitespace($getRoot())),
-                            ...lexicalNodes,
+                            ...nodesToInsert,
                             $createTextNode(sep)
                         )
                         $insertNodes([pNode])
-                        $selectEnd()
                         break
                     }
                 }
+
+                $selectEnd()
             },
             { onUpdate: resolve }
         )
