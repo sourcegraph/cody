@@ -636,6 +636,12 @@ export const NLS_SEARCH_QUERY = `
     query NLSSearchQuery($query: String!) {
         search(query: $query, version: V3, patternType: nls) {
             results {
+                dynamicFilters {
+                    value
+                    label
+                    count
+                    kind
+                }
                 results {
                     __typename
                     ... on FileMatch {

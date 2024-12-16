@@ -5,6 +5,7 @@ import {
     type Guardrails,
     type Model,
     ModelTag,
+    type NLSSearchDynamicFilter,
     type PromptString,
     contextItemsFromPromptEditorValue,
     filterContextItemsFromPromptEditorValue,
@@ -54,8 +55,7 @@ export const AssistantMessageCell: FunctionComponent<{
 
     postMessage?: ApiPostMessage
     guardrails?: Guardrails
-    reSubmitWithChatIntent: () => void
-    reSubmitWithSearchIntent: () => void
+    onSelectedFiltersUpdate: (filters: NLSSearchDynamicFilter[]) => void
 }> = memo(
     ({
         message,
@@ -72,8 +72,7 @@ export const AssistantMessageCell: FunctionComponent<{
         guardrails,
         smartApply,
         smartApplyEnabled,
-        reSubmitWithChatIntent,
-        reSubmitWithSearchIntent,
+        onSelectedFiltersUpdate,
     }) => {
         const displayMarkdown = useMemo(
             () => (message.text ? reformatBotMessageForChat(message.text).toString() : ''),
@@ -119,13 +118,13 @@ export const AssistantMessageCell: FunctionComponent<{
                                 />
                             )
                         ) : null}
-                        {isSearchIntent && isLoading && (
-                            <div className="tw-flex">
-                                <LoadingDots /> Searching...
-                            </div>
-                        )}
                         {experimentalOneBoxEnabled && !isLoading && message.search && (
-                            <SearchResults message={message as ChatMessageWithSearch} />
+                            <SearchResults
+                                message={message as ChatMessageWithSearch}
+                                onSelectedFiltersUpdate={onSelectedFiltersUpdate}
+                                showFeedbackButtons={showFeedbackButtons}
+                                feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
+                            />
                         )}
                         {!isSearchIntent && displayMarkdown ? (
                             <ChatMessageContent
@@ -163,12 +162,14 @@ export const AssistantMessageCell: FunctionComponent<{
                                 </div>
                             )}
                             <div className="tw-flex tw-items-center tw-divide-x tw-transition tw-divide-muted tw-opacity-65 hover:tw-opacity-100">
-                                {showFeedbackButtons && feedbackButtonsOnSubmit && (
-                                    <FeedbackButtons
-                                        feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
-                                        className="tw-pr-4"
-                                    />
-                                )}
+                                {showFeedbackButtons &&
+                                    feedbackButtonsOnSubmit &&
+                                    !(experimentalOneBoxEnabled && isSearchIntent) && (
+                                        <FeedbackButtons
+                                            feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
+                                            className="tw-pr-4"
+                                        />
+                                    )}
                                 {!isLoading && (!message.error || isAborted) && !isSearchIntent && (
                                     <ContextFocusActions
                                         humanMessage={humanMessage}

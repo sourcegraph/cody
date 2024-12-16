@@ -17,7 +17,7 @@ export const SwitchIntent = ({ intent, onSwitch }: SwitchIntentProps) => {
                 <Brain className="tw-size-8" />
                 Query review selected a {intent === 'search' ? 'code search' : 'chat'} response
             </div>
-            <div className="tw-shrink-0 tw-self-start">
+            <div>
                 <Button
                     size="sm"
                     variant="outline"
