@@ -1,10 +1,10 @@
-import {Book, BookUp2, Box, ChevronDown, ExternalLink, FilePen, Plus, Sparkles, Tag, UserRoundPlus} from "lucide-react";
+import {Book, BookUp2, Box, ChevronDown, ExternalLink, Plus, Tag, UserRoundPlus} from "lucide-react";
 import {FC, useState} from "react";
-import {usePromptTagsQuery} from "../promptFilter/usePromptTagsQuery";
+import {usePromptTagsQuery} from "./usePromptTagsQuery";
 import {Popover, PopoverContent, PopoverTrigger} from "../shadcn/ui/popover";
 import {Button} from "../shadcn/ui/button";
 import {useConfig} from "../../utils/useConfig";
-import {cn} from "../shadcn/utils";
+import {useCurrentUserId} from "./useCurrentUserId";
 
 export interface PromptFilterProps {
     promptFilters: PromptsFilterArgs;
@@ -14,6 +14,8 @@ export interface PromptFilterProps {
 export interface PromptsFilterArgs {
     owner?: string;
     tags?: string[];
+    promoted?: boolean;
+    core?: boolean;
 }
 
 export const PromptsFilter: FC<PromptFilterProps> = props => {
@@ -26,6 +28,8 @@ export const PromptsFilter: FC<PromptFilterProps> = props => {
         config: {serverEndpoint},
     } = useConfig()
 
+    const {value: userId, error} = useCurrentUserId();
+
     const selectPromptFilter = (param: PromptsFilterArgs, origin: FilterContentArgs) => {
         setIsPromptTagsOpen(false);
         setSelectedFilter(origin)
@@ -35,13 +39,13 @@ export const PromptsFilter: FC<PromptFilterProps> = props => {
     return (
         <Popover open={isPromptTagsOpen}>
             <PopoverTrigger asChild onClick={() => setIsPromptTagsOpen(!isPromptTagsOpen)}
-                            className="tw-m-4">
+                            className="tw-ml-8 tw-mt-8">
                 <Button
                     variant="secondary"
                     className={"tw-bg-popover tw-border tw-border-border tw-w-48 !tw-justify-start"}
                 >
                     <span className="tw-w-full tw-flex tw-items-center tw-justify-between">
-                        <FilterContent value={selectedFilter.value} nameOverride={selectedFilter.nameOverride} />
+                        <FilterContent value={selectedFilter.value} nameOverride={selectedFilter.nameOverride}/>
                         <ChevronDown size={16}/>
                     </span>
                 </Button>
@@ -57,19 +61,20 @@ export const PromptsFilter: FC<PromptFilterProps> = props => {
                     </a>
                     <div className="tw-border-t tw-border-border tw-w-full tw-mt-4 tw-mb-4 tw-pt-4">
                         <PromptsFilterItem onSelect={() => selectPromptFilter({}, {value: 'all'})} value={'all'}
-                                           />
-                        <PromptsFilterItem onSelect={() => selectPromptFilter({owner: 'you'}, {value: 'you'})}
-                                           value={'you'} />
-                        <PromptsFilterItem onSelect={() => selectPromptFilter({owner: 'you'}, {value: 'drafts'})}
-                                           value={'drafts'} />
+                        />
+                        {
+                            (typeof userId === 'string' && !error) && (
+                                <PromptsFilterItem onSelect={() => selectPromptFilter({owner: userId}, {value: 'you'})}
+                                                   value={'you'}/>
+                            )
+                        }
                     </div>
                     <div className="tw-border-t tw-border-border tw-w-full tw-mt-4 tw-mb-4  tw-pt-4">
-                        <PromptsFilterItem onSelect={() => selectPromptFilter({}, {value: 'promoted'})}
+                        <PromptsFilterItem onSelect={() => selectPromptFilter({promoted: true}, {value: 'promoted'})}
                                            value={'promoted'}/>
-                        <PromptsFilterItem onSelect={() => selectPromptFilter({}, {value: 'new'})} value={'new'}
-                                           />
-                        <PromptsFilterItem onSelect={() => selectPromptFilter({}, {value: 'core'})} value={'core'}
-                                           />
+                        <PromptsFilterItem onSelect={() => selectPromptFilter({core: true}, {value: 'core'})}
+                                           value={'core'}
+                        />
                     </div>
                     {
                         (!!resultTags?.length && !errorTags) && (
@@ -80,7 +85,10 @@ export const PromptsFilter: FC<PromptFilterProps> = props => {
                                     {resultTags.map(tag => (
                                         <li key={tag.id} className="tw-flex">
                                             <PromptsFilterItem
-                                                onSelect={() => selectPromptFilter({tags: [tag.id]}, {value: 'tag', nameOverride: tag.name})}
+                                                onSelect={() => selectPromptFilter({tags: [tag.id]}, {
+                                                    value: 'tag',
+                                                    nameOverride: tag.name
+                                                })}
                                                 value={tag.id} nameOverride={tag.name}/>
                                         </li>
                                     ))}
@@ -102,13 +110,13 @@ export const PromptsFilter: FC<PromptFilterProps> = props => {
 
 }
 
-type PromptsFilterValue = 'all' | 'you' | 'drafts' | 'promoted' | 'new' | 'core' | string;
+type PromptsFilterValue = 'all' | 'you' | 'promoted' | 'core' | string;
 
 interface PromptsFilterItemProps extends FilterContentArgs {
     onSelect: () => void,
 }
 
-const iconForFilter: Record<PromptsFilterValue, {icon: typeof Tag, name: string}> = {
+const iconForFilter: Record<PromptsFilterValue, { icon: typeof Tag, name: string }> = {
     'all': {
         icon: Book,
         name: 'All Prompts'
@@ -117,17 +125,9 @@ const iconForFilter: Record<PromptsFilterValue, {icon: typeof Tag, name: string}
         icon: UserRoundPlus,
         name: 'Owned by You'
     },
-    'drafts': {
-        icon: FilePen,
-        name: 'Your Drafts'
-    },
     'promoted': {
         icon: BookUp2,
         name: 'Promoted'
-    },
-    'new': {
-        icon: Sparkles,
-        name: 'New'
     },
     'core': {
         icon: Box,
@@ -144,7 +144,7 @@ const PromptsFilterItem: FC<PromptsFilterItemProps> = props => {
         variant={"ghost"}
     >
         <span className="tw-flex tw-pt-2 tw-pb-2">
-            <FilterContent value={props.value} nameOverride={props.nameOverride} />
+            <FilterContent value={props.value} nameOverride={props.nameOverride}/>
         </span>
     </Button></div>
 }

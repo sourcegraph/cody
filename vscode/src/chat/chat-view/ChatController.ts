@@ -146,6 +146,7 @@ import {getChatPanelTitle} from './chat-helpers'
 import {getPriorityContext, type HumanInput} from './context'
 import {DefaultPrompter, type PromptInfo} from './prompt'
 import {getPromptsMigrationInfo, startPromptsMigration} from './prompts-migration'
+import {getCurrentUserId} from "../../auth/user";
 
 export interface ChatControllerOptions {
     extensionUri: vscode.Uri
@@ -1953,6 +1954,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                         ),
                     promptsMigrationStatus: () => getPromptsMigrationInfo(),
                     startPromptsMigration: () => promiseFactoryToObservable(startPromptsMigration),
+                    getCurrentUserId: () => promiseFactoryToObservable(signal => getCurrentUserId(signal)),
                     prompts: input =>
                         promiseFactoryToObservable(signal =>
                             mergedPromptsAndLegacyCommands(input, signal)

@@ -93,10 +93,10 @@ export async function mergedPromptsAndLegacyCommands(
     input: PromptsInput,
     signal: AbortSignal
 ): Promise<PromptsResult> {
-    const { query, recommendedOnly, first, tags } = input
+    const { query, recommendedOnly, first, tags, owner, includeViewerDrafts, builtinOnly } = input
     const queryLower = query.toLowerCase()
     const [customPrompts, isUnifiedPromptsEnabled, isNewPromptsSgVersion] = await Promise.all([
-        fetchCustomPrompts(queryLower, first, recommendedOnly, signal, tags),
+        fetchCustomPrompts(queryLower, first, recommendedOnly, signal, tags, owner, includeViewerDrafts, builtinOnly),
 
         // Unified prompts flag provides prompts-like commands API
         featureFlagProvider.evaluateFeatureFlagEphemerally(FeatureFlag.CodyUnifiedPrompts),
@@ -136,9 +136,12 @@ async function fetchCustomPrompts(
     recommendedOnly: boolean,
     signal: AbortSignal,
     tags?: string[],
+    owner?: string,
+    includeViewerDrafts?: boolean,
+    builtinOnly?: boolean,
 ): Promise<PromptAction[] | 'unsupported'> {
     try {
-        const prompts = await graphqlClient.queryPrompts({ query, first, recommendedOnly, signal, tags })
+        const prompts = await graphqlClient.queryPrompts({ query, first, recommendedOnly, signal, tags, owner, includeViewerDrafts, builtinOnly })
         return prompts.map(prompt => ({ ...prompt, actionType: 'prompt' }))
     } catch (error) {
         if (isAbortError(error)) {

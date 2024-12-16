@@ -383,8 +383,8 @@ export enum PromptsOrderBy {
 }
 
 export const PROMPTS_QUERY = `
-query ViewerPrompts($query: String, $first: Int!, $recommendedOnly: Boolean!, $orderByMultiple: [PromptsOrderBy!], $tags: [ID!]) {
-    prompts(query: $query, first: $first, includeDrafts: false, recommendedOnly: $recommendedOnly, includeViewerDrafts: true, viewerIsAffiliated: true, orderByMultiple: $orderByMultiple, tags: $tags) {
+query ViewerPrompts($query: String, $first: Int!, $recommendedOnly: Boolean!, $orderByMultiple: [PromptsOrderBy!], $tags: [ID!], $owner: ID, $includeViewerDrafts: Boolean!) {
+    prompts(query: $query, first: $first, includeDrafts: false, recommendedOnly: $recommendedOnly, includeViewerDrafts: $includeViewerDrafts, viewerIsAffiliated: true, orderByMultiple: $orderByMultiple, tags: $tags, owner: $owner) {
         nodes {
             id
             name
@@ -406,6 +406,12 @@ query ViewerPrompts($query: String, $first: Int!, $recommendedOnly: Boolean!, $o
                 username
                 displayName
                 avatarURL
+            }
+            tags(first: 20) {
+                nodes {
+                    id
+                    name
+                }
             }
         }
         totalCount

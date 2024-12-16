@@ -1,7 +1,7 @@
 import clsx from 'clsx'
 import {type FC, useCallback, useMemo, useState} from 'react'
 
-import type {Action, PromptsInput} from '@sourcegraph/cody-shared'
+import {Action, PromptsInput} from '@sourcegraph/cody-shared'
 
 import {useTelemetryRecorder} from '../../utils/telemetry'
 import {useConfig} from '../../utils/useConfig'
@@ -78,8 +78,10 @@ export const PromptList: FC<PromptListProps> = props => {
         () => ({
             query: debouncedQuery,
             first: showFirstNItems,
-            recommendedOnly: recommendedOnly ?? false,
-            // tags: promptFilters?.tags,
+            recommendedOnly: promptFilters?.promoted ?? recommendedOnly ?? false,
+            builtinOnly: promptFilters?.core ?? false,
+            tags: promptFilters?.tags,
+            owner: promptFilters?.owner,
         }),
         [debouncedQuery, showFirstNItems, recommendedOnly, promptFilters]
     )
@@ -148,12 +150,23 @@ export const PromptList: FC<PromptListProps> = props => {
         ]
     )
 
+    const filteredActions = useCallback((actions: Action[]) => {
+        if (promptFilters?.core) {
+            return actions.filter(action => action.actionType === 'prompt' && action.builtin);
+        }
+        const shouldExcludeBuiltinCommands = promptFilters?.promoted || promptFilters?.owner || promptFilters?.tags;
+        if (shouldExcludeBuiltinCommands) {
+            return actions.filter(action => action.actionType === 'prompt' && !action.builtin);
+        }
+        return actions;
+    }, [promptFilters]);
+
     // Don't show builtin commands to insert in the prompt editor.
-    const allActions = showOnlyPromptInsertableCommands
+    const allActions = (showOnlyPromptInsertableCommands)
         ? result?.actions.filter(action => action.actionType === 'prompt' || action.mode === 'ask') ?? []
         : result?.actions ?? []
 
-    const sortedActions = lastUsedSorting ? getSortedActions(allActions, lastUsedActions) : allActions
+    const sortedActions = lastUsedSorting ? getSortedActions(filteredActions(allActions), lastUsedActions) : filteredActions(allActions)
     const actions = showFirstNItems ? sortedActions.slice(0, showFirstNItems) : sortedActions
 
     const inputPaddingClass =
@@ -161,7 +174,6 @@ export const PromptList: FC<PromptListProps> = props => {
 
     const itemPaddingClass =
         paddingLevels !== 'none' ? (paddingLevels === 'middle' ? '!tw-px-6' : '!tw-px-8') : ''
-
 
     return (
         <Command
@@ -239,7 +251,6 @@ export const PromptList: FC<PromptListProps> = props => {
         </Command>
     )
 }
-
 
 function getSortedActions(actions: Action[], lastUsedActions: Record<string, number>): Action[] {
     return [...actions].sort((action1, action2) => {

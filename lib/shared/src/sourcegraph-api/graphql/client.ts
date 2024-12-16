@@ -841,10 +841,11 @@ export class SourcegraphGraphQLAPIClient {
         ).then(response => extractDataOrError(response, data => data.site?.isCodyEnabled ?? false))
     }
 
-    public async getCurrentUserId(): Promise<string | null | Error> {
+    public async getCurrentUserId(signal?: AbortSignal): Promise<string | null | Error> {
         return this.fetchSourcegraphAPI<APIResponse<CurrentUserIdResponse>>(
             CURRENT_USER_ID_QUERY,
-            {}
+            {},
+            signal,
         ).then(response =>
             extractDataOrError(response, data => (data.currentUser ? data.currentUser.id : null))
         )
@@ -1286,16 +1287,26 @@ export class SourcegraphGraphQLAPIClient {
         tags,
         signal,
         orderByMultiple,
+        owner,
+        includeViewerDrafts,
+        builtinOnly,
     }: {
         query?: string
         first: number | undefined
         recommendedOnly?: boolean
         tags?: string[]
         signal?: AbortSignal
-        orderByMultiple?: PromptsOrderBy[]
+        orderByMultiple?: PromptsOrderBy[],
+        owner?: string,
+        includeViewerDrafts?: boolean,
+        builtinOnly?: boolean,
     }): Promise<Prompt[]> {
         const hasIncludeViewerDraftsArg = await this.isValidSiteVersion({
             minimumVersion: '5.9.0',
+        })
+        const hasPromptTagsField = await this.isValidSiteVersion({
+            minimumVersion: '5.11.0',
+            insider: true,
         })
 
         const response = await this.fetchSourcegraphAPI<APIResponse<{ prompts: { nodes: Prompt[] } }>>(
@@ -1308,7 +1319,10 @@ export class SourcegraphGraphQLAPIClient {
                     PromptsOrderBy.PROMPT_RECOMMENDED,
                     PromptsOrderBy.PROMPT_UPDATED_AT,
                 ],
-                tags: tags ?? ['1'],
+                tags: hasPromptTagsField ? tags : undefined,
+                owner,
+                includeViewerDrafts: includeViewerDrafts ?? true,
+                builtinOnly,
             },
             signal
         )
@@ -1400,6 +1414,13 @@ export class SourcegraphGraphQLAPIClient {
     public async queryPromptTags({signal}: {
         signal?: AbortSignal
     }): Promise<PromptTag[]> {
+        const hasPromptTags = await this.isValidSiteVersion({
+            minimumVersion: '5.11.0',
+            insider: true,
+        })
+        if (!hasPromptTags) {
+            return []
+        }
 
         const response = await this.fetchSourcegraphAPI<APIResponse<{ promptTags: { nodes: PromptTag[] } }>>(
             PROMPT_TAGS_QUERY,

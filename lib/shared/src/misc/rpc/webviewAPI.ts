@@ -29,6 +29,7 @@ export interface WebviewToExtensionAPI {
      */
     prompts(input: PromptsInput): Observable<PromptsResult>
     promptTags(input: PromptTagsInput): Observable<PromptTagsResult>
+    getCurrentUserId(): Observable<string | null | Error>
 
     /**
      * Stream with actions from cody agent service, serves as transport for any client
@@ -114,6 +115,7 @@ export function createExtensionAPI(
         evaluatedFeatureFlag: proxyExtensionAPI(messageAPI, 'evaluatedFeatureFlag'),
         prompts: proxyExtensionAPI(messageAPI, 'prompts'),
         promptTags: proxyExtensionAPI(messageAPI, 'promptTags'),
+        getCurrentUserId: proxyExtensionAPI(messageAPI, 'getCurrentUserId'),
         clientActionBroadcast: proxyExtensionAPI(messageAPI, 'clientActionBroadcast'),
         models: proxyExtensionAPI(messageAPI, 'models'),
         chatModels: proxyExtensionAPI(messageAPI, 'chatModels'),
@@ -159,6 +161,9 @@ export interface PromptsInput {
     first?: number
     recommendedOnly: boolean
     tags?: string[]
+    owner?: string
+    includeViewerDrafts?: boolean
+    builtinOnly?: boolean
 }
 
 export type Action = PromptAction | CommandAction
