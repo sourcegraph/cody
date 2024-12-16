@@ -3,6 +3,7 @@ import * as vscode from 'vscode'
 import {
     type AuthStatus,
     ClientConfigSingleton,
+    type CodyClientConfig,
     DOTCOM_URL,
     type GraphQLAPIClientConfig,
     type PickResolvedConfiguration,
@@ -405,7 +406,8 @@ export type ResolvedConfigurationCredentialsOnly = PickResolvedConfiguration<{
  */
 export async function validateCredentials(
     config: ResolvedConfigurationCredentialsOnly,
-    signal?: AbortSignal
+    signal?: AbortSignal,
+    clientConfig?: CodyClientConfig
 ): Promise<AuthStatus> {
     // An access token is needed except for Cody Web, which uses cookies.
     if (!config.auth.accessToken && !clientCapabilities().isCodyWeb) {
@@ -458,10 +460,12 @@ export async function validateCredentials(
         }
 
         if (isDotCom(config.auth.serverEndpoint)) {
-            const clientConfig = await ClientConfigSingleton.getInstance().fetchConfigWithToken(
-                apiClientConfig,
-                signal
-            )
+            if (!clientConfig) {
+                clientConfig = await ClientConfigSingleton.getInstance().fetchConfigWithToken(
+                    apiClientConfig,
+                    signal
+                )
+            }
             if (clientConfig?.userShouldUseEnterprise) {
                 return {
                     authenticated: false,

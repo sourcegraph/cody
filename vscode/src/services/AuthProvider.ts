@@ -95,9 +95,22 @@ class AuthProvider implements vscode.Disposable {
         this.subscriptions.push(
             ClientConfigSingleton.getInstance()
                 .updates.pipe(
-                    abortableOperation(async (_, signal) =>
-                        this.validateAndUpdateAuthStatus(await currentResolvedConfig(), signal)
-                    )
+                    abortableOperation(async (config, signal) => {
+                        const nextAuthStatus = await validateCredentials(
+                            await currentResolvedConfig(),
+                            signal,
+                            config
+                        )
+                        // The only case where client config impacts the auth status is when the user is
+                        // logged into dotcom but the client config is set to use an enterprise instance
+                        // we explicitly check for this error and only update if so
+                        if (
+                            !nextAuthStatus.authenticated &&
+                            nextAuthStatus.error?.type === 'enterprise-user-logged-into-dotcom'
+                        ) {
+                            this.status.next(nextAuthStatus)
+                        }
+                    })
                 )
                 .subscribe({})
         )
