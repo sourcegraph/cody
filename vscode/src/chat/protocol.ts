@@ -160,6 +160,7 @@ export type ExtensionMessage =
           type: 'config'
           config: ConfigurationSubsetForWebview & LocalEnv
           clientCapabilities: ClientCapabilitiesWithLegacyFields
+          instanceViewerSettings: Record<string, any>
           authStatus: AuthStatus
           userProductSubscription?: UserProductSubscription | null | undefined
           isDotComUser: boolean

@@ -29,6 +29,7 @@ interface CodyPanelProps {
     setView: (view: View) => void
     configuration: {
         config: LocalEnv & ConfigurationSubsetForWebview
+        instanceViewerSettings: Record<string, any>
         clientCapabilities: ClientCapabilitiesWithLegacyFields
         authStatus: AuthStatus
         isDotComUser: boolean
@@ -54,7 +55,14 @@ interface CodyPanelProps {
 export const CodyPanel: FunctionComponent<CodyPanelProps> = ({
     view,
     setView,
-    configuration: { config, clientCapabilities, authStatus, isDotComUser, userProductSubscription },
+    configuration: {
+        config,
+        instanceViewerSettings,
+        clientCapabilities,
+        authStatus,
+        isDotComUser,
+        userProductSubscription,
+    },
     errorMessages,
     setErrorMessages,
     attributionEnabled,
@@ -97,6 +105,8 @@ export const CodyPanel: FunctionComponent<CodyPanelProps> = ({
         }
     }, [api.clientActionBroadcast])
 
+    console.log(instanceViewerSettings)
+
     return (
         <TabViewContext.Provider value={useMemo(() => ({ view, setView }), [view, setView])}>
             <TabRoot
@@ -105,7 +115,11 @@ export const CodyPanel: FunctionComponent<CodyPanelProps> = ({
                 orientation="vertical"
                 className={styles.outerContainer}
             >
-                <Notices user={user} isTeamsUpgradeCtaEnabled={isTeamsUpgradeCtaEnabled} />
+                <Notices
+                    user={user}
+                    viewerSettings={instanceViewerSettings}
+                    isTeamsUpgradeCtaEnabled={isTeamsUpgradeCtaEnabled}
+                />
                 {/* Hide tab bar in editor chat panels. */}
                 {(clientCapabilities.agentIDE === CodyIDE.Web || config.webviewType !== 'editor') && (
                     <TabsBar

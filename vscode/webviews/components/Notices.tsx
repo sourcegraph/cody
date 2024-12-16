@@ -17,6 +17,7 @@ import { CodyLogo } from '../icons/CodyLogo'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
 import { useTelemetryRecorder } from '../utils/telemetry'
 import { useFeatureFlag } from '../utils/useFeatureFlags'
+import { MarkdownFromCody } from './MarkdownFromCody'
 import { useLocalStorage } from './hooks'
 import { Button } from './shadcn/ui/button'
 
@@ -26,6 +27,12 @@ interface Notice {
     content: JSX.Element
 }
 
+interface CodyNotice {
+    key: string
+    title: string
+    message: string
+}
+
 type NoticeVariants = 'default' | 'warning'
 type NoticeIDs = 'DogfoodS2' | 'TeamsUpgrade' | 'DeepCodyDotCom' | 'DeepCodyEnterprise'
 
@@ -33,11 +40,12 @@ interface NoticesProps {
     user: UserAccountInfo
     // Whether to show the Sourcegraph Teams upgrade CTA or not.
     isTeamsUpgradeCtaEnabled?: boolean
+    viewerSettings: Record<string, any>
 }
 
 const storageKey = 'DismissedWelcomeNotices'
 
-export const Notices: React.FC<NoticesProps> = ({ user, isTeamsUpgradeCtaEnabled }) => {
+export const Notices: React.FC<NoticesProps> = ({ user, isTeamsUpgradeCtaEnabled, viewerSettings }) => {
     const telemetryRecorder = useTelemetryRecorder()
 
     const isDeepCodyEnabled = useFeatureFlag(FeatureFlag.DeepCody)
@@ -71,8 +79,24 @@ export const Notices: React.FC<NoticesProps> = ({ user, isTeamsUpgradeCtaEnabled
               ? 'settings.json'
               : 'Extension Settings'
 
+    const instanceNotices = useMemo(
+        () => Array.from<CodyNotice>(viewerSettings['cody.notices']) ?? [],
+        [viewerSettings]
+    )
+
     const notices: Notice[] = useMemo(
         () => [
+            ...instanceNotices.map(notice => ({
+                id: notice.key,
+                isVisible: true,
+                content: (
+                    <MarkdownNotice
+                        title={notice.title}
+                        content={notice.message}
+                        onDismiss={() => dismissNotice(notice.key)}
+                    />
+                ),
+            })),
             {
                 id: 'DeepCody',
                 isVisible: (isDeepCodyEnabled || user.isCodyProUser) && user.IDE !== CodyIDE.Web,
@@ -180,6 +204,7 @@ export const Notices: React.FC<NoticesProps> = ({ user, isTeamsUpgradeCtaEnabled
             isDeepCodyEnabled,
             isDeepCodyShellContextSupported,
             settingsNameByIDE,
+            instanceNotices,
         ]
     )
 
@@ -311,5 +336,31 @@ const NoticeContent: FunctionComponent<NoticeContentProps> = ({
                 <XIcon size="14" />
             </Button>
         </aside>
+    )
+}
+
+interface MarkdownNotice {
+    title: string
+    content: string
+    onDismiss: () => void
+}
+
+const MarkdownNotice: FunctionComponent<MarkdownNotice> = props => {
+    const { title, content, onDismiss } = props
+    const message = content.length > 240 ? `${content.slice(0, 240)}...` : content
+
+    return (
+        <div
+            className="tw--ml-2 tw--mr-2 tw-border tw-border-border tw-relative tw-rounded-md tw-flex tw-flex-col tw-gap-2 tw-p-4"
+            data-markdown-notice=""
+        >
+            {title && <h1 className="tw-text-lg tw-font-semibold">{title}</h1>}
+
+            <MarkdownFromCody>{message}</MarkdownFromCody>
+
+            <Button variant="ghost" onClick={onDismiss} className="tw-absolute tw-top-2 tw-right-2">
+                <XIcon size="14" />
+            </Button>
+        </div>
     )
 }

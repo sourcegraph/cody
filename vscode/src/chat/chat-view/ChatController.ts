@@ -617,6 +617,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             type: 'config',
             config: configForWebview,
             clientCapabilities: clientCapabilities(),
+            instanceViewerSettings: viewerSettings,
             authStatus: authStatus,
             userProductSubscription: await currentUserProductSubscription(),
             workspaceFolderUris,
