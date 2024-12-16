@@ -24,6 +24,7 @@ import type { CodyClientConfig } from '../sourcegraph-api/clientConfig'
 import { isDotCom } from '../sourcegraph-api/environments'
 import type { CodyLLMSiteConfiguration } from '../sourcegraph-api/graphql/client'
 import { RestClient } from '../sourcegraph-api/rest/client'
+import { userProductSubscription } from '../sourcegraph-api/userProductSubscription'
 import { CHAT_INPUT_TOKEN_BUDGET } from '../token/constants'
 import { isError } from '../utils'
 import { getExperimentalClientModelByFeatureFlag } from './client'
@@ -135,9 +136,9 @@ export function syncModels({
         preferences: Pick<ModelsData['preferences'], 'defaults'> | null
     }
     const remoteModelsData: Observable<RemoteModelsData | Error | typeof pendingOperation> =
-        combineLatest(relevantConfig, authStatus).pipe(
-            switchMapReplayOperation(([config, authStatus]) => {
-                if (authStatus.pendingValidation) {
+        combineLatest(relevantConfig, authStatus, userProductSubscription).pipe(
+            switchMapReplayOperation(([config, authStatus, subscription]) => {
+                if (authStatus.pendingValidation || subscription === pendingOperation) {
                     return Observable.of(pendingOperation)
                 }
 
@@ -146,6 +147,7 @@ export function syncModels({
                 }
 
                 const isDotComUser = isDotCom(authStatus)
+                const isCodyFreeUser = subscription == null || subscription?.userCanUpgrade === true
 
                 const serverModelsConfig: Observable<
                     RemoteModelsData | Error | typeof pendingOperation
@@ -224,7 +226,8 @@ export function syncModels({
                                             )
                                             // DEEP CODY is enabled for all PLG users.
                                             // Enterprise users need to have the feature flag enabled.
-                                            const isDeepCodyEnabled = isDotComUser || hasDeepCodyFlag
+                                            const isDeepCodyEnabled =
+                                                (isDotComUser && !isCodyFreeUser) || hasDeepCodyFlag
                                             if (
                                                 isDeepCodyEnabled &&
                                                 sonnetModel &&
