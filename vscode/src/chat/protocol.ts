@@ -6,6 +6,7 @@ import type {
     ClientConfiguration,
     CodyClientConfig,
     CodyIDE,
+    CodyNotice,
     ContextItem,
     ContextItemSource,
     NLSSearchDynamicFilter,
@@ -159,8 +160,8 @@ export type ExtensionMessage =
     | {
           type: 'config'
           config: ConfigurationSubsetForWebview & LocalEnv
+          instanceNotices: CodyNotice[]
           clientCapabilities: ClientCapabilitiesWithLegacyFields
-          instanceViewerSettings: Record<string, any>
           authStatus: AuthStatus
           userProductSubscription?: UserProductSubscription | null | undefined
           isDotComUser: boolean

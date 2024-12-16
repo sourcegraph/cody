@@ -16,6 +16,7 @@ const CLIENT_CONFIG_FIXTURE: CodyClientConfig = {
     smartContextWindowEnabled: true,
     modelsAPIEnabled: false,
     userShouldUseEnterprise: false,
+    notices: [],
 }
 
 describe('ClientConfigSingleton', () => {

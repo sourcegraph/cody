@@ -31,7 +31,7 @@ const dummyVSCodeAPI: VSCodeWrapper = {
                 smartApply: false,
                 hasEditCapability: false,
             },
-            instanceViewerSettings: {},
+            instanceNotices: [],
             clientCapabilities: CLIENT_CAPABILITIES_FIXTURE,
             authStatus: {
                 ...AUTH_STATUS_FIXTURE_AUTHED,

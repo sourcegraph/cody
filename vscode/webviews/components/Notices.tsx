@@ -1,4 +1,4 @@
-import { CodyIDE, FeatureFlag } from '@sourcegraph/cody-shared'
+import { CodyIDE, type CodyNotice, FeatureFlag } from '@sourcegraph/cody-shared'
 import { S2_URL } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 import {
     ArrowLeftRightIcon,
@@ -27,12 +27,6 @@ interface Notice {
     content: JSX.Element
 }
 
-interface CodyNotice {
-    key: string
-    title: string
-    message: string
-}
-
 type NoticeVariants = 'default' | 'warning'
 type NoticeIDs = 'DogfoodS2' | 'TeamsUpgrade' | 'DeepCodyDotCom' | 'DeepCodyEnterprise'
 
@@ -40,12 +34,12 @@ interface NoticesProps {
     user: UserAccountInfo
     // Whether to show the Sourcegraph Teams upgrade CTA or not.
     isTeamsUpgradeCtaEnabled?: boolean
-    viewerSettings: Record<string, any>
+    instanceNotices: CodyNotice[]
 }
 
 const storageKey = 'DismissedWelcomeNotices'
 
-export const Notices: React.FC<NoticesProps> = ({ user, isTeamsUpgradeCtaEnabled, viewerSettings }) => {
+export const Notices: React.FC<NoticesProps> = ({ user, isTeamsUpgradeCtaEnabled, instanceNotices }) => {
     const telemetryRecorder = useTelemetryRecorder()
 
     const isDeepCodyEnabled = useFeatureFlag(FeatureFlag.DeepCody)
@@ -78,11 +72,6 @@ export const Notices: React.FC<NoticesProps> = ({ user, isTeamsUpgradeCtaEnabled
             : user.IDE === CodyIDE.VSCode
               ? 'settings.json'
               : 'Extension Settings'
-
-    const instanceNotices = useMemo(
-        () => Array.from<CodyNotice>(viewerSettings['cody.notices']) ?? [],
-        [viewerSettings]
-    )
 
     const notices: Notice[] = useMemo(
         () => [

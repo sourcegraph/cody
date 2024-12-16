@@ -30,7 +30,7 @@ const createMockConfig = (overrides = {}) => ({
         serverEndpoint: 'https://sourcegraph.com',
         uiKindIsWeb: false,
     } as ConfigurationSubsetForWebview & LocalEnv,
-    instanceViewerSettings: {},
+    instanceNotices: [],
     clientCapabilities: {
         isVSCode: false,
         agentIDE: CodyIDE.VSCode,

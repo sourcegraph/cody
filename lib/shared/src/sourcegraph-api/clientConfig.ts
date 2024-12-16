@@ -19,7 +19,19 @@ import {
 } from '../misc/observableOperation'
 import { isError } from '../utils'
 import { isAbortError } from './errors'
-import { type CodyConfigFeatures, type GraphQLAPIClientConfig, graphqlClient } from './graphql/client'
+import { type CodyConfigFeatures, type GraphQLAPIClientConfig,graphqlClient } from './graphql/client'
+
+export interface CodyNotice {
+    key: string
+    title: string
+    message: string
+}
+
+interface RawCodyNotice {
+    key: string
+    title: string
+    message: string
+}
 // The client configuration describing all of the features that are currently available.
 //
 // This is fetched from the Sourcegraph instance and is specific to the current user.
@@ -45,6 +57,10 @@ export interface CodyClientConfig {
     // Whether the new Sourcegraph backend LLM models API endpoint should be used to query which
     // models are available.
     modelsAPIEnabled: boolean
+
+    // List of global instance-level cody notice/banners (set only by admins in global
+    // instance configuration file
+    notices: CodyNotice[]
 
     // Whether the user should sign in to an enterprise instance.
     userShouldUseEnterprise: boolean
@@ -134,6 +150,7 @@ export class ClientConfigSingleton {
 
     private async fetchConfig(signal?: AbortSignal): Promise<CodyClientConfig> {
         logDebug('ClientConfigSingleton', 'refreshing configuration')
+        const viewerSettingsRequest = graphqlClient.viewerSettings(signal)
 
         // Determine based on the site version if /.api/client-config is available.
         return graphqlClient
@@ -178,7 +195,25 @@ export class ClientConfigSingleton {
             .then(clientConfig => {
                 signal?.throwIfAborted()
                 logDebug('ClientConfigSingleton', 'refreshed', JSON.stringify(clientConfig))
-                return clientConfig
+                return viewerSettingsRequest.then(viewerSettings => {
+                    // Don't fail the whole chat because of viewer setting (used only to show banners)
+                    if (isError(viewerSettings)) {
+                        return { ...clientConfig, notices: [] }
+                    }
+
+                    return {
+                        ...clientConfig,
+                        // Make sure that notice object will have all important field (notices come from
+                        // instance global JSONC configuration so they can have any arbitrary field values.
+                        notices: Array.from<RawCodyNotice>(viewerSettings['cody.notices'] ?? []).map(
+                            (notice, index) => ({
+                                key: notice?.key ?? index.toString(),
+                                title: notice?.title ?? '',
+                                message: notice?.message ?? '',
+                            })
+                        ),
+                    }
+                })
             })
             .catch(e => {
                 if (!isAbortError(e)) {
@@ -205,6 +240,7 @@ export class ClientConfigSingleton {
 
             // Things that did not exist before logically default to disabled.
             modelsAPIEnabled: false,
+            notices: [],
             userShouldUseEnterprise: false,
         }
     }
