@@ -206,12 +206,14 @@ export const PromptEditor: FunctionComponent<Props> = ({
                     return
                 }
 
-                const existingMentions = new Set(getContextItemsForEditor(editor).map(item => item.uri))
+                const existingMentions = new Set(
+                    getContextItemsForEditor(editor).map(getKeyForContextItem)
+                )
                 const toUpdate = new Map<string, ContextItem>()
                 for (const item of items) {
-                    const uri = item.uri.toString()
-                    if (existingMentions.has(uri)) {
-                        toUpdate.set(uri, item)
+                    const key = getKeyForContextItem(item)
+                    if (existingMentions.has(key)) {
+                        toUpdate.set(key, item)
                     }
                 }
 
@@ -219,7 +221,7 @@ export const PromptEditor: FunctionComponent<Props> = ({
                 // the promise it returns will never resolve.
                 if (toUpdate.size > 0) {
                     await visitContextItemsForEditor(editor, existing => {
-                        const update = toUpdate.get(existing.contextItem.uri)
+                        const update = toUpdate.get(getKeyForContextItem(existing.contextItem))
                         if (update) {
                             // replace the existing mention inline with the new one
                             existing.replace($createContextItemMentionNode(update))
@@ -232,7 +234,7 @@ export const PromptEditor: FunctionComponent<Props> = ({
 
                 return insertMentions(
                     editor,
-                    items.filter(item => !toUpdate.has(item.uri.toString())),
+                    items.filter(item => !toUpdate.has(getKeyForContextItem(item))),
                     position,
                     sep
                 )
@@ -376,4 +378,18 @@ function insertMentions(
             { onUpdate: resolve }
         )
     )
+}
+
+/**
+ * Computes a unique key for a context item that can be used in e.g. a Map.
+ *
+ * The URI is not sufficient to uniquely identify a context item because the same URI can be used
+ * for different types of context items or, in case of openctx, different provider URIs.
+ */
+function getKeyForContextItem(item: SerializedContextItem | ContextItem): string {
+    let key = `${item.uri.toString()}|${item.type}`
+    if (item.type === 'openctx') {
+        key += `|${item.providerUri}`
+    }
+    return key
 }
