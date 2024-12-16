@@ -1,6 +1,6 @@
 import { type Model, ModelTag, isCodyProModel, isWaitlistModel } from '@sourcegraph/cody-shared'
 import { clsx } from 'clsx'
-import { BookOpenIcon, BuildingIcon, ExternalLinkIcon, FlaskConicalIcon, ImageIcon } from 'lucide-react'
+import { BookOpenIcon, BuildingIcon, ExternalLinkIcon, FlaskConicalIcon } from 'lucide-react'
 import { type FunctionComponent, type ReactNode, useCallback, useMemo } from 'react'
 import type { UserAccountInfo } from '../../Chat'
 import { getVSCodeAPI } from '../../utils/VSCodeApi'
@@ -356,7 +356,7 @@ const ModelTitleWithIcon: React.FC<{
 }> = ({ model, showIcon, modelAvailability }) => {
     const modelBadge = getBadgeText(model, modelAvailability)
     const isDisabled = modelAvailability !== 'available'
-    const supportsImageUpload = isGeminiFlashModel(model)
+    const GeminiFlashModelTitle = 'Gemini Flash 2.0'
 
     return (
         <span className={clsx(styles.modelTitleWithIcon, { [styles.disabled]: isDisabled })}>
@@ -367,12 +367,9 @@ const ModelTitleWithIcon: React.FC<{
                     <ChatModelIcon model={model.provider} className={styles.modelIcon} />
                 )
             ) : null}
-            <span className={clsx('tw-flex-grow', styles.modelName)}>{model.title}</span>
-            {supportsImageUpload && (
-                <span className={styles.supportsImageUploadIcon} title="Supports image upload">
-                    <ImageIcon size={16} strokeWidth={1.25} className="tw-opacity-80" />
-                </span>
-            )}
+            <span className={clsx('tw-flex-grow', styles.modelName)}>
+                {isGeminiFlashModel(model) ? GeminiFlashModelTitle : model.title}
+            </span>
             {modelBadge && (
                 <Badge
                     variant="secondary"
@@ -380,7 +377,7 @@ const ModelTitleWithIcon: React.FC<{
                         'tw-opacity-75': modelAvailability === 'needs-cody-pro',
                     })}
                 >
-                    {modelBadge}
+                    {isGeminiFlashModel(model) ? 'Vision' : modelBadge}
                 </Badge>
             )}
         </span>
@@ -403,6 +400,7 @@ const ModelUIGroup: Record<string, string> = {
     Speed: 'Faster models',
     Ollama: 'Ollama (Local models)',
     Other: 'Other',
+    Vision: 'Vision',
 }
 
 const getModelDropDownUIGroup = (model: Model): string => {
@@ -411,6 +409,7 @@ const getModelDropDownUIGroup = (model: Model): string => {
     if (model.tags.includes(ModelTag.Balanced)) return ModelUIGroup.Balanced
     if (model.tags.includes(ModelTag.Speed)) return ModelUIGroup.Speed
     if (model.tags.includes(ModelTag.Ollama)) return ModelUIGroup.Ollama
+    if (model.tags.includes(ModelTag.Vision)) return ModelUIGroup.Vision
     return ModelUIGroup.Other
 }
 
@@ -421,6 +420,7 @@ const optionByGroup = (
         ModelUIGroup.Power,
         ModelUIGroup.Balanced,
         ModelUIGroup.Speed,
+        ModelUIGroup.Vision,
         ModelUIGroup.Ollama,
         ModelUIGroup.Other,
     ]

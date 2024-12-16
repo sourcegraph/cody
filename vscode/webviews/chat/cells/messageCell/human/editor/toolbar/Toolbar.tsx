@@ -1,13 +1,12 @@
 import type { Action, ChatMessage, Model } from '@sourcegraph/cody-shared'
 import { useExtensionAPI } from '@sourcegraph/prompt-editor'
 import clsx from 'clsx'
-import { type FunctionComponent, useCallback, useEffect, useState } from 'react'
+import { type FunctionComponent, useCallback } from 'react'
 import type { UserAccountInfo } from '../../../../../../Chat'
 import { ModelSelectField } from '../../../../../../components/modelSelectField/ModelSelectField'
 import { PromptSelectField } from '../../../../../../components/promptSelectField/PromptSelectField'
 import toolbarStyles from '../../../../../../components/shadcn/ui/toolbar.module.css'
 import { useActionSelect } from '../../../../../../prompts/PromptsTab'
-import { getVSCodeAPI } from '../../../../../../utils/VSCodeApi'
 import { isGeminiFlashModel } from '../../../../../../utils/modelUtils'
 import { useConfig } from '../../../../../../utils/useConfig'
 import { AddContextButton } from './AddContextButton'
@@ -37,6 +36,8 @@ export const Toolbar: FunctionComponent<{
     className?: string
     intent?: ChatMessage['intent']
     onSelectIntent?: (intent: ChatMessage['intent']) => void
+    imageFile?: File
+    setImageFile: (file: File | undefined) => void
 }> = ({
     userInfo,
     isEditorFocused,
@@ -50,6 +51,8 @@ export const Toolbar: FunctionComponent<{
     models,
     intent,
     onSelectIntent,
+    imageFile,
+    setImageFile,
 }) => {
     /**
      * If the user clicks in a gap or on the toolbar outside of any of its buttons, report back to
@@ -70,43 +73,6 @@ export const Toolbar: FunctionComponent<{
     const isGoogleModel = useCallback((model: Model) => {
         return isGeminiFlashModel(model)
     }, [])
-
-    const [imageFile, setImageFile] = useState<File | undefined>(undefined)
-
-    useEffect(() => {
-        const processImage = async () => {
-            if (imageFile) {
-                const readFileGetBase64String = (file: File): Promise<string> => {
-                    return new Promise((resolve, reject) => {
-                        const reader = new FileReader()
-                        reader.onload = () => {
-                            const base64 = reader.result
-                            if (base64 && typeof base64 === 'string') {
-                                resolve(base64.split(',')[1])
-                            } else {
-                                reject(new Error('Failed to read file'))
-                            }
-                        }
-                        reader.onerror = () => reject(new Error('Failed to read file'))
-                        reader.readAsDataURL(file)
-                    })
-                }
-
-                const base64 = await readFileGetBase64String(imageFile)
-                getVSCodeAPI().postMessage({
-                    command: 'chat/upload-image',
-                    image: base64,
-                })
-            } /*else {
-                getVSCodeAPI().postMessage({
-                    command: 'chat/upload-image',
-                    image: '',
-                })
-                //setImageFile(undefined)
-            } */
-        }
-        processImage()
-    }, [imageFile])
 
     return (
         // biome-ignore lint/a11y/useKeyWithClickEvents: only relevant to click areas

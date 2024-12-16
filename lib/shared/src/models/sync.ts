@@ -393,8 +393,11 @@ function getModelsFromVSCodeConfiguration({
     configuration: { devModels },
 }: PickResolvedConfiguration<{ configuration: 'devModels' }>): Model[] {
     return (
-        devModels?.map(m =>
-            createModel({
+        devModels?.map(m => {
+            const isGeminiFlash = m?.model.includes('gemini-2.0-flash')
+            const baseTags = [ModelTag.BYOK, ModelTag.Experimental, ModelTag.Local]
+            const tags = isGeminiFlash ? [...baseTags, ModelTag.Vision] : [...baseTags]
+            return createModel({
                 id: `${m.provider}/${m.model}`,
                 usage: [ModelUsage.Chat, ModelUsage.Edit],
                 contextWindow: {
@@ -406,9 +409,9 @@ function getModelsFromVSCodeConfiguration({
                     apiEndpoint: m.apiEndpoint,
                     options: m.options,
                 },
-                tags: [ModelTag.Local, ModelTag.BYOK, ModelTag.Experimental],
+                tags: tags,
             })
-        ) ?? []
+        }) ?? []
     )
 }
 
