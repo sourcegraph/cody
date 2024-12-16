@@ -68,7 +68,10 @@ export const SearchResults = ({
 
     // Select all results by default when the results are rendered the first time
     useLayoutEffect(() => {
-        updateSelectedFollowUpResults({ type: 'init', results: initialResults ?? [] })
+        updateSelectedFollowUpResults({
+            type: 'init',
+            results: initialResults ?? [],
+        })
     }, [initialResults])
 
     // Update the context chip in the last editor (when enabled) when the selected search results change.
@@ -104,7 +107,10 @@ export const SearchResults = ({
     }, [enableContextSelection, selectedFollowUpResults, lastEditorRef])
 
     const handleSelectForContext = useCallback((selected: boolean, result: NLSSearchResult) => {
-        updateSelectedFollowUpResults({ type: selected ? 'add' : 'remove', results: [result] })
+        updateSelectedFollowUpResults({
+            type: selected ? 'add' : 'remove',
+            results: [result],
+        })
     }, [])
 
     if (showFilters) {
@@ -130,7 +136,7 @@ export const SearchResults = ({
                 <div className="tw-flex tw-items-center tw-gap-4 tw-justify-between">
                     <div className="tw-flex tw-gap-2 tw-items-center tw-font-semibold tw-text-muted-foreground">
                         <Search className="tw-size-8 tw-flex-shrink-0" />
-                        Displaying {resultsToShow.length} of {totalResultsCount} code search results
+                        Displaying {resultsToShow.length} code search results
                     </div>
                     <div className="tw-flex tw-gap-4">
                         <Button onClick={() => setShowFilters(true)} variant="outline">
@@ -151,7 +157,10 @@ export const SearchResults = ({
                                             results: resultsToShow,
                                         })
                                     } else {
-                                        updateSelectedFollowUpResults({ type: 'init', results: [] })
+                                        updateSelectedFollowUpResults({
+                                            type: 'init',
+                                            results: [],
+                                        })
                                     }
                                 }}
                             />
