@@ -51,7 +51,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 16 Dec 2024 08:41:31 GMT
+            value: Mon, 16 Dec 2024 10:33:46 GMT
           - name: content-type
             value: text/plain; charset=utf-8
           - name: transfer-encoding
@@ -86,8 +86,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-12-16T08:41:30.875Z
-      time: 252
+      startedDateTime: 2024-12-16T10:33:46.197Z
+      time: 575
       timings:
         blocked: -1
         connect: -1
@@ -95,7 +95,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 252
+        wait: 575
     - _id: c7327f699da3de5388b86581bd3a348b
       _order: 0
       cache: {}
@@ -113,7 +113,7 @@ log:
           - name: content-type
             value: application/json
           - name: traceparent
-            value: 00-27681e91fa9e46d5b05c60db76645679-d03c5b535f59906f-01
+            value: 00-1f8b0b0af28decf5f4f34a33e2667fc8-6c22874baba28676-01
           - name: user-agent
             value: jetbrains/6.0-localbuild (Node.js v20.12.2)
           - name: x-requested-with
@@ -225,14 +225,14 @@ log:
             value: 6.0-localbuild
         url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=jetbrains&client-version=6.0-localbuild
       response:
-        bodySize: 331
+        bodySize: 694
         content:
           mimeType: text/event-stream
-          size: 331
+          size: 694
           text: >+
             event: completion
 
-            data: {"deltaText":"\n/**\n * Generates and prints the first 10 numbers of the Fibonacci sequence.\n */\n","stopReason":"stop_sequence"}
+            data: {"deltaText":"\n/**\n * Generates and prints the first 10 Fibonacci numbers.\n * The Fibonacci sequence is a series of numbers where each number is the sum of the two preceding ones,\n * starting from 0 and 1. This method creates a list of the first 10 Fibonacci numbers and prints them.\n */\n","stopReason":"stop_sequence"}
 
 
             event: done
@@ -242,7 +242,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 16 Dec 2024 08:41:32 GMT
+            value: Mon, 16 Dec 2024 10:33:50 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -275,8 +275,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-12-16T08:41:31.860Z
-      time: 978
+      startedDateTime: 2024-12-16T10:33:47.808Z
+      time: 2812
       timings:
         blocked: -1
         connect: -1
@@ -284,7 +284,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 978
+        wait: 2812
     - _id: a376faab1c8a1993bb48c745757f0a4a
       _order: 0
       cache: {}
@@ -365,7 +365,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 16 Dec 2024 08:41:30 GMT
+            value: Mon, 16 Dec 2024 10:33:46 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -400,8 +400,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-12-16T08:41:30.538Z
-      time: 330
+      startedDateTime: 2024-12-16T10:33:45.836Z
+      time: 355
       timings:
         blocked: -1
         connect: -1
@@ -409,7 +409,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 330
+        wait: 355
     - _id: 0484c4d780805faf3dd3ddabae814640
       _order: 0
       cache: {}
@@ -478,7 +478,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 16 Dec 2024 08:41:30 GMT
+            value: Mon, 16 Dec 2024 10:33:46 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -513,8 +513,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-12-16T08:41:30.586Z
-      time: 319
+      startedDateTime: 2024-12-16T10:33:45.890Z
+      time: 346
       timings:
         blocked: -1
         connect: -1
@@ -522,7 +522,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 319
+        wait: 346
     - _id: e141c56e63809042300db9bf8551d492
       _order: 0
       cache: {}
@@ -591,7 +591,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 16 Dec 2024 08:41:30 GMT
+            value: Mon, 16 Dec 2024 10:33:46 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -626,8 +626,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-12-16T08:41:30.564Z
-      time: 340
+      startedDateTime: 2024-12-16T10:33:45.861Z
+      time: 328
       timings:
         blocked: -1
         connect: -1
@@ -635,7 +635,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 340
+        wait: 328
     - _id: 5b9030a4e18d1e000c71d6000a7cef6f
       _order: 0
       cache: {}
@@ -726,7 +726,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 16 Dec 2024 08:41:30 GMT
+            value: Mon, 16 Dec 2024 10:33:45 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -761,8 +761,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-12-16T08:41:30.150Z
-      time: 334
+      startedDateTime: 2024-12-16T10:33:45.463Z
+      time: 317
       timings:
         blocked: -1
         connect: -1
@@ -770,7 +770,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 334
+        wait: 317
     - _id: aef0c9fe7483280d9c05ac8e97e37571
       _order: 0
       cache: {}
@@ -849,7 +849,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 16 Dec 2024 08:41:30 GMT
+            value: Mon, 16 Dec 2024 10:33:46 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -884,8 +884,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-12-16T08:41:30.629Z
-      time: 348
+      startedDateTime: 2024-12-16T10:33:45.933Z
+      time: 736
       timings:
         blocked: -1
         connect: -1
@@ -893,7 +893,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 348
+        wait: 736
     - _id: 4504fab53d7cb602861f73dc2aa883d2
       _order: 0
       cache: {}
@@ -959,7 +959,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 16 Dec 2024 08:41:30 GMT
+            value: Mon, 16 Dec 2024 10:33:46 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -994,8 +994,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-12-16T08:41:30.608Z
-      time: 262
+      startedDateTime: 2024-12-16T10:33:45.912Z
+      time: 274
       timings:
         blocked: -1
         connect: -1
@@ -1003,7 +1003,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 262
+        wait: 274
     - _id: fbb23499ae0eec5c2e188687b429531b
       _order: 0
       cache: {}
@@ -1070,7 +1070,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 16 Dec 2024 08:41:31 GMT
+            value: Mon, 16 Dec 2024 10:33:47 GMT
           - name: content-type
             value: text/plain; charset=utf-8
           - name: transfer-encoding
@@ -1105,8 +1105,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-12-16T08:41:31.136Z
-      time: 271
+      startedDateTime: 2024-12-16T10:33:46.793Z
+      time: 825
       timings:
         blocked: -1
         connect: -1
@@ -1114,6 +1114,6 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 271
+        wait: 825
   pages: []
   version: "1.2"
