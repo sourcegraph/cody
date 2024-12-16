@@ -140,7 +140,7 @@ describe(
             expect(models.map(({ model }) => model.id)).toContain('openai::2024-02-01::gpt-4o') // arbitrary model that we expect to be included
         })
 
-        it.skip('switches to a different account', async ({ task }) => {
+        it('switches to a different account', async ({ task }) => {
             // Re-authenticate to a different endpoint so we can switch from it. It is important to
             // do this even if the preceding test does it because we might not be running the prior
             // tests or we might be running with `repeats > 0`.
