@@ -96,7 +96,7 @@ const RateLimitErrorItem: React.FunctionComponent<{
             {canUpgrade && <div className={styles.icon}>⚡️</div>}
             <div className={styles.body}>
                 <header>
-                    <h1>{canUpgrade ? 'Upgrade to Cody Pro' : 'Unable to Send Message'}</h1>
+                    <h1>{canUpgrade ? 'Upgrade to Cody Pro' : 'Unable to blur the message'}</h1>
                     <p>
                         {error.userMessage}
                         {canUpgrade &&
