@@ -67,7 +67,7 @@ describe('Custom Commands', () => {
         expect(result.type).toBe('chat')
         const lastMessage = await client.firstNonEmptyTranscript(result.chatResult as string)
         expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(
-            `"No"`,
+            `"no"`,
             explainPollyError
         )
     }, 30_000)
@@ -82,7 +82,7 @@ describe('Custom Commands', () => {
         expect(result.type).toBe('chat')
         const lastMessage = await client.firstNonEmptyTranscript(result.chatResult as string)
         const reply = trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')
-        expect(reply).toMatchInlineSnapshot(`"6"`, explainPollyError)
+        expect(reply).toMatchInlineSnapshot(`"7"`, explainPollyError)
     }, 30_000)
 
     it('commands/custom, edit command, insert mode', async () => {

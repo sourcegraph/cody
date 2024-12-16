@@ -1,48 +1,52 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
 exports[`Agent > Chat > chat/submitMessage (long message) 1`] = `
-"Absolutely! I'd be happy to generate a simple "Hello World" function in Java for you. Here's a straightforward implementation:
+"I'll create a simple Hello World function in Java. Here's a clean and straightforward implementation:
 
-\`\`\`java:/src/HelloWorld.java
+\`\`\`java:src/HelloWorld.java
 public class HelloWorld {
-    public static void main(String[] args) {
+    public static void sayHello() {
         System.out.println("Hello, World!");
+    }
+
+    public static void main(String[] args) {
+        sayHello();
     }
 }
 \`\`\`
 
-This code defines a class called \`HelloWorld\` with a \`main\` method, which is the entry point of the Java program. The \`System.out.println()\` statement outputs the classic "Hello, World!" message to the console.
-
-To compile and run this Java program, you can use the following commands in your terminal:
+To compile and run this program, you can use these commands:
 
 \`\`\`bash
-javac /src/HelloWorld.java
+javac src/HelloWorld.java
 \`\`\`
 
 \`\`\`bash
-java -cp /src HelloWorld
+java -cp src HelloWorld
 \`\`\`
 
-These commands will compile the Java source file and then execute the compiled program, displaying the "Hello, World!" message on your screen. Enjoy your Java programming!"
+This Java program includes:
+- A dedicated \`sayHello()\` function that prints the greeting
+- A \`main()\` method that calls our function
+- Clean, standard Java naming conventions
+- A simple and reusable structure
+
+Feel free to use this as a starting point for more complex Java programs!"
 `;
 
 exports[`Agent > Chat > chat/submitMessage (short message) 1`] = `
 {
-  "model": "anthropic::2023-06-01::claude-3.5-sonnet",
+  "model": "anthropic::2024-10-22::claude-3-5-sonnet-latest",
   "speaker": "assistant",
-  "text": "Hello there! It's wonderful to hear from you. I'm excited to assist you with any questions or tasks you may have. What can I help you with today?",
+  "text": "Hi there! Great to meet you! I'm Cody, ready to help you with any coding or technical questions you may have. What would you like to work on together?",
 }
 `;
 
 exports[`Agent > Chat > chat/submitMessage (with mock context) 1`] = `
-"Certainly! Here's the Dog class that implements the Animal interface:
-
-\`\`\`typescript:src/dog.ts
-import { Animal } from './animal';
-
+"\`\`\`typescript:src/dog.ts
 export class Dog implements Animal {
     name: string;
-    isMammal: boolean = true;
+    isMammal = true;
 
     constructor(name: string) {
         this.name = name;
@@ -52,152 +56,83 @@ export class Dog implements Animal {
         return "Woof!";
     }
 }
-\`\`\`
-
-This implementation fulfills the Animal interface requirements and is ready to use in your workspace."
+\`\`\`"
 `;
 
 exports[`Agent > Commands > commands/explain 1`] = `
-"The code you provided is an interface in TypeScript named "Animal". An interface in TypeScript is a structure that defines the shape of an object, which includes the object's properties, methods, and types. In essence, it sets a blueprint for an object.
+"The code you have shared is an excerpt from a TypeScript file called \`animal.ts\`, and it defines an interface called \`Animal\`. An interface is a concept in TypeScript (and other programming languages) that allows you to define a blueprint for an object, specifying its structure and behavior.
 
-The Animal interface has three properties - "name", "makeAnimalSound()" method, and "isMammal" boolean. Let me explain how each one works:
+The \`Animal\` interface defines a shape for objects that represent animals in a program. Specifically, it specifies that any object that claims to be an animal should have three properties: \`name\` of type string, \`makeAnimalSound\` of type function, and \`isMammal\` of type boolean.
 
-1. "name": This is a property of the type string that represents the name of the animal.
-2. "makeAnimalSound()": This is a method, which is a function that is a part of an object. In this case, this method is used to make an animal sound. The method does not take any input parameters and returns the sound as a string value.
-3. "isMammal": This is a boolean property indicating whether the animal is a mammal or not (true or false).
+The \`name\` property represents the name of the animal, such as "cat" or "dog". The \`makeAnimalSound\` property is a function that simulates the sound the animal makes. The \`isMammal\` property specifies if the animal is a mammal, represented by a boolean value of \`true\` or \`false\`.
 
-In summary, this Animal interface serves as a contract that specifies what an object should look like in terms of properties, methods, and their types if it is to be considered an animal in the program. It does not produce any output, but rather, it defines a structure that can help create objects based on its blueprint.
+In summary, the purpose of the code in \`animal.ts\` is to define the structure and behavior of animal objects in a TypeScript program. By specifying the required properties and methods of the \`Animal\` interface, it ensures that any object that claims to be an animal meets certain criteria. The interface takes no inputs, but any object that is created to conform to this interface will have the three properties specified in the interface.
 
-To illustrate, a developer can use this Animal interface to create a concrete object or class that implements the interface. Here's an example of how a class named Dog can implement the Animal interface:
+The output of this code is not a specific value, but rather a blueprint for what an animal object in this program should look like. It is up to the programmer to create objects that conform to this interface and implement the required properties and methods.
 
-\`\`\`
-class Dog implements Animal {
-    name: string
-    isMammal: boolean
+The \`Animal\` interface achieves its purpose by specifying the structure and behavior of animal objects in the program. By requiring that any object that claims to be an animal has a \`name\`, \`makeAnimalSound\`, and \`isMammal\` property, it provides a clear definition of what an animal is in this program. This makes it easier for other parts of the program to interact with these objects, as they know what properties and methods to expect.
 
-    constructor(name: string) {
-        this.name = name
-        this.isMammal = true
-    }
-
-    makeAnimalSound(): string {
-        return 'Woof!'
-    }
-}
-\`\`\`
-
-With the Animal interface defined, you can create a consistent object or class structure for the animal throughout the codebase, making it easier to understand and maintain."
+Overall, the code you have shared is an important part of defining the structure and behavior of animal objects in a TypeScript program. By specifying an interface for these objects, it provides a clear and consistent definition of what an animal is in the program, making it easier for other parts of the program to interact with these objects."
 `;
 
 exports[`Agent > Commands > commands/smell 1`] = `
-"Based on the provided code, here are some suggestions for improvement:
+"Here are 5 suggestions to improve the code:
 
-1. Consider adding a docstring or JSDoc comment to describe the \`Animal\` interface. This will improve readability and make it easier for developers to understand the intended use of the interface.
+1. Extract type \`AnimalSound\` from \`makeAnimalSound\` method:
+Defining a separate type \`AnimalSound\` for return type of \`makeAnimalSound\` method can make it more explicit and easier to understand.
+\`\`\`ts
+type AnimalSound = string;
 
-Explanation: Adding a comment will help other developers understand the intended functionality of the \`Animal\` interface.
-
-Before:
-\`\`\`typescript
 export interface Animal {
     name: string
-    makeAnimalSound(): string
+    makeAnimalSound(): AnimalSound
     isMammal: boolean
 }
 \`\`\`
-After:
-\`\`\`typescript
-/**
- * Describes the structure of an animal.
- */
-export interface Animal {
+2. Add TypeScript type annotations to variables and parameters:
+Adding type annotations to variables and parameters in the codebase can help catch errors earlier and improve maintainability.
+\`\`\`ts
+interface Animal {
     name: string
-    makeAnimalSound(): string
+    makeAnimalSound(): AnimalSound
     isMammal: boolean
 }
+
+const anAnimal: Animal = {
+    name: 'Lion',
+    makeAnimalSound() {
+        return 'Roar';
+    },
+    isMammal: true,
+};
 \`\`\`
-2. Consider adding a type definition for the \`makeAnimalSound\` method return value.
-
-Explanation: Adding a type definition will make it clear to other developers what type of value the method returns and help prevent bugs caused by type mismatches.
-
-Before:
-\`\`\`typescript
-export interface Animal {
+3. Use consistency in capitalization:
+Capitalization should be consistent throughout the codebase. For example, in the current code, \`isMammal\` is in lowercase, which could be confusing.
+\`\`\`ts
+interface Animal {
     name: string
-    makeAnimalSound(): string
+    makeAnimalSound(): AnimalSound
     isMammal: boolean
 }
 \`\`\`
-After:
-\`\`\`typescript
-export interface Animal {
+4. Provide default values for method parameters:
+Providing default values for method parameters can make it clear what the method does and what values are expected.
+For example:
+\`\`\`ts
+interface Animal {
     name: string
-    makeAnimalSound(): string
+    makeAnimalSound(animalSound: AnimalSound = 'none'): AnimalSound
     isMammal: boolean
-    sound: string // or use a specific type for animal sounds if available
 }
 \`\`\`
-3. Consider using \`readonly\` for properties that should not be modified.
-
-Explanation: Using \`readonly\` for properties that should not be modified helps ensure that the code follows immutable design principles, making it easier to write thread-safe code and preventing bugs caused by accidental modifications.
-
-Before:
-\`\`\`typescript
-export interface Animal {
+5. Write method signatures with correct types:
+Currently, the method \`makeAnimalSound()\` does not have a correct type. It should be \`makeAnimalSound(): AnimalSound\`.
+\`\`\`ts
+interface Animal {
     name: string
-    makeAnimalSound(): string
+    makeAnimalSound(): AnimalSound
     isMammal: boolean
 }
 \`\`\`
-After:
-\`\`\`typescript
-export interface Animal {
-    readonly name: string
-    makeAnimalSound(): string
-    readonly isMammal: boolean
-}
-\`\`\`
-4. Consider using a more specific type for the \`name\` property if appropriate.
-
-Explanation: Using a more specific type for the \`name\` property helps prevent bugs caused by incorrect input. For example, if the \`name\` property should only contain a certain format, such as a string starting with an uppercase letter and containing only letters, a more specific type could be defined to enforce that format.
-
-Before:
-\`\`\`typescript
-export interface Animal {
-    name: string
-    makeAnimalSound(): string
-    isMammal: boolean
-}
-\`\`\`
-After (example using a regular expression to define a specific type for the \`name\` property):
-\`\`\`typescript
-type Name = /^[A-Z][a-zA-Z]*$/;
-
-export interface Animal {
-    name: Name
-    makeAnimalSound(): string
-    isMammal: boolean
-}
-\`\`\`
-5. Consider adding a default value for the \`isMammal\` property.
-
-Explanation: Adding a default value for the \`isMammal\` property helps ensure that the code functions correctly even if the property is not explicitly set.
-
-Before:
-\`\`\`typescript
-export interface Animal {
-    name: string
-    makeAnimalSound(): string
-    isMammal: boolean
-}
-\`\`\`
-After:
-\`\`\`typescript
-export interface Animal {
-    name: string
-    makeAnimalSound(): string
-    isMammal: boolean
-    isMammal = true // or false, depending on the default value for the use case
-}
-\`\`\`
-Overall, the code is generally well-written and follows sound design principles. However, the above suggestions could help make the code more robust, efficient, and align with best practices."
+Overall, the code is well-written and follows good design principles. However, adding type annotations, improving capitalization and parameter defaults can help improve readability and maintainability further."
 `;

@@ -1,9 +1,11 @@
 import {
     type ChatMessage,
+    type ChatMessageWithSearch,
     ContextItemSource,
     type Guardrails,
     type Model,
     ModelTag,
+    type NLSSearchDynamicFilter,
     type PromptString,
     contextItemsFromPromptEditorValue,
     filterContextItemsFromPromptEditorValue,
@@ -16,11 +18,7 @@ import isEqual from 'lodash/isEqual'
 import { type FunctionComponent, type RefObject, memo, useMemo } from 'react'
 import type { ApiPostMessage, UserAccountInfo } from '../../../../Chat'
 import { chatModelIconComponent } from '../../../../components/ChatModelIcon'
-import { NLSResultSnippet } from '../../../../components/NLSResultSnippet'
-import {
-    useExperimentalOneBox,
-    useExperimentalOneBoxDebug,
-} from '../../../../utils/useExperimentalOneBox'
+import { useExperimentalOneBox } from '../../../../utils/useExperimentalOneBox'
 import {
     ChatMessageContent,
     type CodeBlockActionsProps,
@@ -28,10 +26,10 @@ import {
 import { ErrorItem, RequestErrorItem } from '../../../ErrorItem'
 import { type Interaction, editHumanMessage } from '../../../Transcript'
 import { FeedbackButtons } from '../../../components/FeedbackButtons'
-import { InfoMessage } from '../../../components/InfoMessage'
 import { LoadingDots } from '../../../components/LoadingDots'
 import { BaseMessageCell, MESSAGE_CELL_AVATAR_SIZE } from '../BaseMessageCell'
 import { ContextFocusActions } from './ContextFocusActions'
+import { SearchResults } from './SearchResults'
 
 /**
  * A component that displays a chat message from the assistant.
@@ -57,6 +55,7 @@ export const AssistantMessageCell: FunctionComponent<{
 
     postMessage?: ApiPostMessage
     guardrails?: Guardrails
+    onSelectedFiltersUpdate: (filters: NLSSearchDynamicFilter[]) => void
 }> = memo(
     ({
         message,
@@ -73,6 +72,7 @@ export const AssistantMessageCell: FunctionComponent<{
         guardrails,
         smartApply,
         smartApplyEnabled,
+        onSelectedFiltersUpdate,
     }) => {
         const displayMarkdown = useMemo(
             () => (message.text ? reformatBotMessageForChat(message.text).toString() : ''),
@@ -86,13 +86,18 @@ export const AssistantMessageCell: FunctionComponent<{
         const hasLongerResponseTime = chatModel?.tags?.includes(ModelTag.StreamDisabled)
 
         const experimentalOneBoxEnabled = useExperimentalOneBox()
-        const experimentalOneBoxDebug = useExperimentalOneBoxDebug()
+
+        const isSearchIntent = experimentalOneBoxEnabled && humanMessage?.intent === 'search'
 
         return (
             <BaseMessageCell
-                speakerIcon={ModelIcon ? <ModelIcon size={NON_HUMAN_CELL_AVATAR_SIZE} /> : null}
+                speakerIcon={
+                    ModelIcon && (!isSearchIntent || isLoading) ? (
+                        <ModelIcon size={NON_HUMAN_CELL_AVATAR_SIZE} />
+                    ) : null
+                }
                 speakerTitle={
-                    message.search ? undefined : (
+                    isSearchIntent ? undefined : (
                         <span data-testid="chat-model">
                             {chatModel
                                 ? chatModel.title ?? `Model ${chatModel.id} by ${chatModel.provider}`
@@ -113,27 +118,15 @@ export const AssistantMessageCell: FunctionComponent<{
                                 />
                             )
                         ) : null}
-                        {experimentalOneBoxEnabled && message.search && (
-                            <>
-                                {experimentalOneBoxDebug && (
-                                    <InfoMessage>Query: {message.search.query}</InfoMessage>
-                                )}
-                                {!!message.search.response?.results?.results?.length && (
-                                    <ul className="tw-list-none tw-flex tw-flex-col tw-gap-2 tw-pt-2">
-                                        {message.search.response.results.results.map((result, i) => (
-                                            <li
-                                                // biome-ignore lint/correctness/useJsxKeyInIterable:
-                                                // biome-ignore lint/suspicious/noArrayIndexKey: stable order
-                                                key={i}
-                                            >
-                                                <NLSResultSnippet result={result} />
-                                            </li>
-                                        ))}
-                                    </ul>
-                                )}
-                            </>
+                        {experimentalOneBoxEnabled && !isLoading && message.search && (
+                            <SearchResults
+                                message={message as ChatMessageWithSearch}
+                                onSelectedFiltersUpdate={onSelectedFiltersUpdate}
+                                showFeedbackButtons={showFeedbackButtons}
+                                feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
+                            />
                         )}
-                        {!(experimentalOneBoxEnabled && message.search) && displayMarkdown ? (
+                        {!isSearchIntent && displayMarkdown ? (
                             <ChatMessageContent
                                 displayMarkdown={displayMarkdown}
                                 isMessageLoading={isLoading}
@@ -169,13 +162,15 @@ export const AssistantMessageCell: FunctionComponent<{
                                 </div>
                             )}
                             <div className="tw-flex tw-items-center tw-divide-x tw-transition tw-divide-muted tw-opacity-65 hover:tw-opacity-100">
-                                {showFeedbackButtons && feedbackButtonsOnSubmit && (
-                                    <FeedbackButtons
-                                        feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
-                                        className="tw-pr-4"
-                                    />
-                                )}
-                                {!isLoading && (!message.error || isAborted) && (
+                                {showFeedbackButtons &&
+                                    feedbackButtonsOnSubmit &&
+                                    !(experimentalOneBoxEnabled && isSearchIntent) && (
+                                        <FeedbackButtons
+                                            feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
+                                            className="tw-pr-4"
+                                        />
+                                    )}
+                                {!isLoading && (!message.error || isAborted) && !isSearchIntent && (
                                     <ContextFocusActions
                                         humanMessage={humanMessage}
                                         longResponseTime={hasLongerResponseTime}
@@ -206,6 +201,7 @@ export interface HumanMessageInitialContextInfo {
 
 export interface PriorHumanMessageInfo {
     text?: PromptString
+    intent?: ChatMessage['intent']
     hasInitialContext: HumanMessageInitialContextInfo
     rerunWithDifferentContext: (withInitialContext: HumanMessageInitialContextInfo) => void
 
@@ -226,6 +222,7 @@ export function makeHumanMessageInfo(
 
     return {
         text: humanMessage.text,
+        intent: humanMessage.intent,
         hasInitialContext: {
             repositories: Boolean(
                 contextItems.some(item => item.type === 'repository' || item.type === 'tree')

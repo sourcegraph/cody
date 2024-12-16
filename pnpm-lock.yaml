@@ -484,6 +484,9 @@ importers:
       '@opentelemetry/semantic-conventions':
         specifier: ^1.18.1
         version: 1.27.0
+      '@pollyjs/adapter-fetch':
+        specifier: ^6.0.6
+        version: 6.0.6
       '@radix-ui/react-accordion':
         specifier: ^1.2.0
         version: 1.2.0(@types/react-dom@18.2.25)(@types/react@18.2.79)(react-dom@18.2.0)(react@18.2.0)
@@ -562,6 +565,9 @@ importers:
       class-variance-authority:
         specifier: ^0.7.0
         version: 0.7.0
+      classnames:
+        specifier: ^2.5.1
+        version: 2.5.1
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
@@ -719,6 +725,9 @@ importers:
       '@playwright/test':
         specifier: 1.47.2
         version: 1.47.2
+      '@pollyjs/adapter':
+        specifier: ^6.0.6
+        version: 6.0.6
       '@pollyjs/adapter-node-http':
         specifier: ^6.0.6
         version: 6.0.6
@@ -729,6 +738,9 @@ importers:
         specifier: ^6.0.6
         version: 6.0.6
       '@pollyjs/persister-fs':
+        specifier: ^6.0.6
+        version: 6.0.6
+      '@pollyjs/utils':
         specifier: ^6.0.6
         version: 6.0.6
       '@storybook/preview-api':
@@ -890,6 +902,9 @@ importers:
       mocha:
         specifier: ^10.2.0
         version: 10.2.0
+      nock:
+        specifier: ^13.5.4
+        version: 13.5.4
       node-fetch:
         specifier: ^2.6.4
         version: 2.7.0
@@ -3907,6 +3922,15 @@ packages:
       playwright: 1.47.2
     dev: true
 
+  /@pollyjs/adapter-fetch@6.0.6:
+    resolution: {integrity: sha512-euWzM5TnA2jptdJgjIkEd/Q2hNFB652XivPKerWpLMFB13IKlrERX9wn2Dw3pquDAP0LvXH1qVBZt5DK0Xhzyg==}
+    dependencies:
+      '@pollyjs/adapter': 6.0.6
+      '@pollyjs/utils': 6.0.6
+      detect-node: 2.1.0
+      to-arraybuffer: 1.0.1
+    dev: false
+
   /@pollyjs/adapter-node-http@6.0.6:
     resolution: {integrity: sha512-jdJG7oncmSHZAtVMmRgOxh5A56b7G8H9ULlk/ZaVJ+jNrlFXhLmPpx8OQoSF4Cuq2ugdiWmwmAjFXHStcpY3Mw==}
     dependencies:
@@ -3922,7 +3946,6 @@ packages:
     resolution: {integrity: sha512-szhys0NiFQqCJDMC0kpDyjhLqSI7aWc6m6iATCRKgcMcN/7QN85pb3GmRzvnNV8+/Bi2AUSCwxZljcsKhbYVWQ==}
     dependencies:
       '@pollyjs/utils': 6.0.6
-    dev: true
 
   /@pollyjs/core@6.0.6:
     resolution: {integrity: sha512-1ZZcmojW8iSFmvHGeLlvuudM3WiDV842FsVvtPAo3HoAYE6jCNveLHJ+X4qvonL4enj1SyTF3hXA107UkQFQrA==}
@@ -8280,7 +8303,6 @@ packages:
 
   /classnames@2.5.1:
     resolution: {integrity: sha512-saHYOzhIQs6wy2sVxTM6bUDsQO4F50V9RQ22qBpEdCW+I+/Wmke2HOl6lS6dTpdxVhb88/I6+Hs+438c3lfUow==}
-    dev: true
 
   /clean-stack@2.2.0:
     resolution: {integrity: sha512-4diC9HaTE+KRAMWhDhrGOECgWZxoevMc5TlkObMqNSsVU62PYzXZ/SMTjzyGAFF1YusgxGcSWTEXBhp0CPwQ1A==}
@@ -9033,6 +9055,10 @@ packages:
 
   /detect-node-es@1.1.0:
     resolution: {integrity: sha512-ypdmJU/TbBby2Dxibuv7ZLW3Bs1QEmM7nHjEANfohJLvE0XVujisn1qPJcZxg+qDucsr+bP6fLD1rPS3AhJ7EQ==}
+    dev: false
+
+  /detect-node@2.1.0:
+    resolution: {integrity: sha512-T0NIuQpnTvFDATNuHN5roPwSBG83rFsuO+MXXH9/3N1eFbn4wcPjttvjMLEPWJ0RGUYgQE7cGgS3tNxbqCGM7g==}
     dev: false
 
   /detect-package-manager@2.0.1:
@@ -16037,6 +16063,10 @@ packages:
     engines: {node: '>=14.14'}
     dev: true
 
+  /to-arraybuffer@1.0.1:
+    resolution: {integrity: sha512-okFlQcoGTi4LQBG/PgSYblw9VOyptsz2KJZqc6qtgGdes8VktzUQkj4BI2blit072iS8VODNcMA+tvnS9dnuMA==}
+    dev: false
+
   /to-fast-properties@2.0.0:
     resolution: {integrity: sha512-/OaKK0xYrs3DmxRYqL/yDc+FxFUVYhDlXMhRmv3z915w2HF1tnN1omB354j8VUGO/hbRzyD6Y3sA7v7GS/ceog==}
     engines: {node: '>=4'}
@@ -17376,7 +17406,7 @@ packages:
     dev: false
 
   '@storage.googleapis.com/sourcegraph-assets/npm/lexical-react-sourcegraph-fork-31065486.tgz(react-dom@18.2.0)(react@18.2.0)(yjs@13.6.19)':
-    resolution: {registry: https://registry.npmjs.org/, tarball: https://storage.googleapis.com/sourcegraph-assets/npm/lexical-react-sourcegraph-fork-31065486.tgz}
+    resolution: {tarball: https://storage.googleapis.com/sourcegraph-assets/npm/lexical-react-sourcegraph-fork-31065486.tgz}
     id: '@storage.googleapis.com/sourcegraph-assets/npm/lexical-react-sourcegraph-fork-31065486.tgz'
     name: '@lexical/react'
     version: 0.17.0

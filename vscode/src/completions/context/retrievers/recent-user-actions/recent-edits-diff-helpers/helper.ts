@@ -1,5 +1,5 @@
+import { createGitDiff } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
-import { createGitDiff } from '../../../../../../../lib/shared/src/editor/create-git-diff'
 import { getPositionAfterTextInsertion } from '../../../../text-processing/utils'
 import type { TextDocumentChange } from './recent-edits-diff-strategy'
 import { type TextDocumentChangeGroup, applyTextDocumentChanges } from './utils'

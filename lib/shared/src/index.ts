@@ -74,6 +74,8 @@ export type {
     UserLocalHistory,
     SerializedChatMessage,
     RankedContext,
+    ChatMessageWithSearch,
+    ChatMessageSearch,
 } from './chat/transcript/messages'
 export {
     CODY_PASSTHROUGH_VSCODE_OPEN_COMMAND_ID,
@@ -265,6 +267,11 @@ export {
     type SuggestionsRepo,
     type RepoSuggestionsSearchResponse,
     type ChatIntentResult,
+    type NLSSearchResult,
+    type NLSSearchResponse,
+    type NLSSearchFileMatch,
+    type NLSSearchDynamicFilter,
+    type NLSSearchDynamicFilterKind,
 } from './sourcegraph-api/graphql/client'
 export type {
     CodyLLMSiteConfiguration,
@@ -389,3 +396,5 @@ export {
     checkVersion,
 } from './sourcegraph-api/siteVersion'
 export { configOverwrites } from './models/configOverwrites'
+export { isS2 } from './sourcegraph-api/environments'
+export { createGitDiff } from './editor/create-git-diff'

@@ -2,7 +2,7 @@ import type { ContextItem } from '../../codebase-context/messages'
 import type { Message } from '../../sourcegraph-api'
 
 import type { SerializedChatTranscript } from '.'
-import type { NLSSearchResponse } from '../../sourcegraph-api/graphql/client'
+import type { NLSSearchDynamicFilter, NLSSearchResponse } from '../../sourcegraph-api/graphql/client'
 
 /**
  * The list of context items (most important first) along with
@@ -40,9 +40,13 @@ export interface ChatMessage extends Message {
     search?: ChatMessageSearch | undefined | null
 }
 
+export type ChatMessageWithSearch = ChatMessage & { search: ChatMessageSearch }
+
 export interface ChatMessageSearch {
     query: string
-    response: NLSSearchResponse['search']
+    queryWithSelectedFilters?: string
+    response?: NLSSearchResponse['search']
+    selectedFilters?: NLSSearchDynamicFilter[]
 }
 
 // An unsafe version of the {@link ChatMessage} that has the PromptString

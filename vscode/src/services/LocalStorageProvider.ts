@@ -343,7 +343,7 @@ class LocalStorage implements LocalStorageForModelPreferences {
         return this.get<string[]>(this.CODY_CHAT_MEMORY) ?? null
     }
 
-    public async setChatMemory(memories: string[]): Promise<void> {
+    public async setChatMemory(memories: string[] | null): Promise<void> {
         await this.set(this.CODY_CHAT_MEMORY, memories)
     }
 
@@ -437,7 +437,7 @@ const noopLocalStorage = {
     update: () => Promise.resolve(undefined),
 } as any as Memento
 
-export function mockLocalStorage(storage: Memento = noopLocalStorage) {
+export function mockLocalStorage(storage: Memento | 'noop' | 'inMemory' = noopLocalStorage) {
     localStorage.setStorage(storage)
 }
 

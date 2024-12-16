@@ -296,7 +296,7 @@ to various formats depending on the configuration:
 
 - Interactive Trace UI view
 - HTML report
-- Github Action / Buildkite compatible output
+- GitHub Action / Buildkite compatible output
 
 You can easily create your own test reporter. For instance you could make one
 that runs on CI which publishes all the snapshotted telemetry events, which are

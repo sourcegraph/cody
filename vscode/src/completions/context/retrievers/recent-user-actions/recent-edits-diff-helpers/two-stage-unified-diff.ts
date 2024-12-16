@@ -58,15 +58,17 @@ export class TwoStageUnifiedDiffStrategy implements RecentEditsRetrieverDiffStra
             uri: input.uri,
             oldContent: input.oldContent,
             changes: longTermChanges.flatMap(c => c.changes),
-            addLineNumbersForDiff: true,
+            shouldAddLineNumbersForDiff: true,
             contextLines: this.options.longTermContextLines,
+            shouldTrimSurroundingContextLines: false,
         })
         const shortTermPatch = getUnifiedDiffHunkFromTextDocumentChange({
             uri: input.uri,
             oldContent: longTermPatch.newContent,
             changes: shortTermChanges.flatMap(c => c.changes),
-            addLineNumbersForDiff: true,
+            shouldAddLineNumbersForDiff: true,
             contextLines: this.options.shortTermContextLines,
+            shouldTrimSurroundingContextLines: false,
         })
         const diffs = [
             getDiffHunkFromUnifiedPatch(shortTermPatch),

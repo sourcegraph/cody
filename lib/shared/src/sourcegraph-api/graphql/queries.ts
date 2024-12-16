@@ -486,18 +486,6 @@ mutation ChangePromptVisibility($id: ID!, $newVisibility: PromptVisibility!) {
 }
 `
 
-export const CURRENT_SITE_IDENTIFICATION = `
-query SiteIdentification {
-	site {
-		siteID
-		productSubscription {
-			license {
-				hashedKey
-			}
-		}
-	}
-}`
-
 export const GET_FEATURE_FLAGS_QUERY = `
     query FeatureFlags {
         evaluatedFeatureFlags {
@@ -648,6 +636,12 @@ export const NLS_SEARCH_QUERY = `
     query NLSSearchQuery($query: String!) {
         search(query: $query, version: V3, patternType: nls) {
             results {
+                dynamicFilters {
+                    value
+                    label
+                    count
+                    kind
+                }
                 results {
                     __typename
                     ... on FileMatch {

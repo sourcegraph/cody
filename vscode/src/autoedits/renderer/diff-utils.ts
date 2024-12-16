@@ -166,7 +166,12 @@ function createModifiedLineInfo({
 }): ModifiedLineInfo {
     const oldChunks = splitLineIntoChunks(originalText)
     const newChunks = splitLineIntoChunks(modifiedText)
-    const lineChanges = computeLineChanges({ oldChunks, newChunks, lineNumber: modifiedLineNumber })
+    const lineChanges = computeLineChanges({
+        oldChunks,
+        newChunks,
+        originalLineNumber,
+        modifiedLineNumber,
+    })
 
     return {
         id: uuid.v4(),
@@ -185,115 +190,237 @@ function createModifiedLineInfo({
 function computeLineChanges({
     oldChunks,
     newChunks,
-    lineNumber,
-}: { oldChunks: string[]; newChunks: string[]; lineNumber: number }): LineChange[] {
+    originalLineNumber,
+    modifiedLineNumber,
+}: {
+    oldChunks: string[]
+    newChunks: string[]
+    originalLineNumber: number
+    modifiedLineNumber: number
+}): LineChange[] {
     const changes: LineChange[] = []
     const chunkDiffs = diff(oldChunks, newChunks)
 
+    let originalOffset = 0 // Position in the original line's text
+    let modifiedOffset = 0 // Position in the modified line's text
+
     let oldIndex = 0
     let newIndex = 0
-    let oldOffset = 0
 
-    for (const [oldStart, oldEnd, newStart, newEnd] of chunkDiffs) {
-        // Process unchanged chunks before this diff
-        while (oldIndex < oldStart && newIndex < newStart) {
+    function pushUnchangedUntil(targetOldIndex: number, targetNewIndex: number) {
+        while (oldIndex < targetOldIndex && newIndex < targetNewIndex) {
             const unchangedText = oldChunks[oldIndex]
-            const unchangedStartOffset = oldOffset
-            oldOffset += unchangedText.length
-
             if (unchangedText) {
-                const unchangedRange = new vscode.Range(
-                    lineNumber,
-                    unchangedStartOffset,
-                    lineNumber,
-                    oldOffset
-                )
+                const startOriginal = originalOffset
+                const startModified = modifiedOffset
+                const length = unchangedText.length
+
+                originalOffset += length
+                modifiedOffset += length
+
                 changes.push({
                     id: uuid.v4(),
                     type: 'unchanged',
-                    range: unchangedRange,
                     text: unchangedText,
+                    originalRange: new vscode.Range(
+                        originalLineNumber,
+                        startOriginal,
+                        originalLineNumber,
+                        originalOffset
+                    ),
+                    modifiedRange: new vscode.Range(
+                        modifiedLineNumber,
+                        startModified,
+                        modifiedLineNumber,
+                        modifiedOffset
+                    ),
                 })
             }
-
             oldIndex++
             newIndex++
         }
-
-        // Process deletions from oldChunks (merge adjacent deletions)
-        if (oldStart < oldEnd) {
-            let deletionText = ''
-            const deletionStartOffset = oldOffset
-            for (let i = oldStart; i < oldEnd; i++) {
-                deletionText += oldChunks[i]
-                oldOffset += oldChunks[i].length
-                oldIndex++
-            }
-
-            if (deletionText) {
-                const deleteRange = new vscode.Range(
-                    lineNumber,
-                    deletionStartOffset,
-                    lineNumber,
-                    oldOffset
-                )
-                changes.push({
-                    id: uuid.v4(),
-                    type: 'delete',
-                    range: deleteRange,
-                    text: deletionText,
-                })
-            }
-        }
-
-        // Process insertions from newChunks (merge adjacent insertions)
-        if (newStart < newEnd) {
-            let insertionText = ''
-            const insertionStartOffset = oldOffset
-            for (let i = newStart; i < newEnd; i++) {
-                insertionText += newChunks[i]
-                newIndex++
-            }
-
-            if (insertionText) {
-                const insertRange = new vscode.Range(
-                    lineNumber,
-                    insertionStartOffset,
-                    lineNumber,
-                    insertionStartOffset // Zero-width range
-                )
-
-                changes.push({
-                    id: uuid.v4(),
-                    type: 'insert',
-                    range: insertRange,
-                    text: insertionText,
-                })
-            }
-        }
     }
 
-    // Process any remaining unchanged chunks after the last diff
-    while (oldIndex < oldChunks.length && newIndex < newChunks.length) {
-        const unchangedText = oldChunks[oldIndex]
-        const unchangedStartOffset = oldOffset
-        oldOffset += unchangedText.length
+    for (const [oldStart, oldEnd, newStart, newEnd] of chunkDiffs) {
+        // Add unchanged chunks before this diff hunk
+        pushUnchangedUntil(oldStart, newStart)
 
-        if (unchangedText) {
-            const unchangedRange = new vscode.Range(
-                lineNumber,
-                unchangedStartOffset,
-                lineNumber,
-                oldOffset
-            )
+        const deletionText = oldChunks.slice(oldStart, oldEnd).join('')
+        const insertionText = newChunks.slice(newStart, newEnd).join('')
+
+        oldIndex = oldEnd
+        newIndex = newEnd
+
+        if (!deletionText && !insertionText) {
+            // No changes, continue
+            continue
+        }
+
+        // Identify common whitespace prefix
+        let prefixLength = 0
+        while (
+            prefixLength < deletionText.length &&
+            prefixLength < insertionText.length &&
+            deletionText[prefixLength] === insertionText[prefixLength] &&
+            /\s/.test(deletionText[prefixLength])
+        ) {
+            prefixLength++
+        }
+
+        // Identify common whitespace suffix
+        let suffixLength = 0
+        while (
+            suffixLength < deletionText.length - prefixLength &&
+            suffixLength < insertionText.length - prefixLength &&
+            deletionText[deletionText.length - 1 - suffixLength] ===
+                insertionText[insertionText.length - 1 - suffixLength] &&
+            /\s/.test(deletionText[deletionText.length - 1 - suffixLength])
+        ) {
+            suffixLength++
+        }
+
+        // Handle unchanged prefix
+        if (prefixLength > 0) {
+            const unchangedText = deletionText.slice(0, prefixLength)
+            const startOriginal = originalOffset
+            const startModified = modifiedOffset
+
+            originalOffset += prefixLength
+            modifiedOffset += prefixLength
+
             changes.push({
                 id: uuid.v4(),
                 type: 'unchanged',
-                range: unchangedRange,
                 text: unchangedText,
+                originalRange: new vscode.Range(
+                    originalLineNumber,
+                    startOriginal,
+                    originalLineNumber,
+                    originalOffset
+                ),
+                modifiedRange: new vscode.Range(
+                    modifiedLineNumber,
+                    startModified,
+                    modifiedLineNumber,
+                    modifiedOffset
+                ),
             })
         }
 
+        // Handle deletion core
+        const deletionCore = deletionText.slice(prefixLength, deletionText.length - suffixLength)
+        if (deletionCore) {
+            const startOriginal = originalOffset
+            const startModified = modifiedOffset
+
+            originalOffset += deletionCore.length
+            // modifiedOffset does not advance for deletion
+
+            changes.push({
+                id: uuid.v4(),
+                type: 'delete',
+                text: deletionCore,
+                originalRange: new vscode.Range(
+                    originalLineNumber,
+                    startOriginal,
+                    originalLineNumber,
+                    originalOffset
+                ),
+                modifiedRange: new vscode.Range(
+                    modifiedLineNumber,
+                    startModified,
+                    modifiedLineNumber,
+                    startModified
+                ),
+            })
+        }
+
+        // Handle insertion core
+        const insertionCore = insertionText.slice(prefixLength, insertionText.length - suffixLength)
+        if (insertionCore) {
+            const startOriginal = originalOffset
+            const startModified = modifiedOffset
+
+            modifiedOffset += insertionCore.length
+            // originalOffset does not advance for insertion
+
+            changes.push({
+                id: uuid.v4(),
+                type: 'insert',
+                text: insertionCore,
+                originalRange: new vscode.Range(
+                    originalLineNumber,
+                    startOriginal,
+                    originalLineNumber,
+                    startOriginal
+                ),
+                modifiedRange: new vscode.Range(
+                    modifiedLineNumber,
+                    startModified,
+                    modifiedLineNumber,
+                    modifiedOffset
+                ),
+            })
+        }
+
+        // Handle unchanged suffix
+        if (suffixLength > 0) {
+            const unchangedText = deletionText.slice(deletionText.length - suffixLength)
+            const startOriginal = originalOffset
+            const startModified = modifiedOffset
+
+            originalOffset += suffixLength
+            modifiedOffset += suffixLength
+
+            changes.push({
+                id: uuid.v4(),
+                type: 'unchanged',
+                text: unchangedText,
+                originalRange: new vscode.Range(
+                    originalLineNumber,
+                    startOriginal,
+                    originalLineNumber,
+                    originalOffset
+                ),
+                modifiedRange: new vscode.Range(
+                    modifiedLineNumber,
+                    startModified,
+                    modifiedLineNumber,
+                    modifiedOffset
+                ),
+            })
+        }
+    }
+
+    // Handle any remaining unchanged chunks after the last diff hunk
+    while (oldIndex < oldChunks.length && newIndex < newChunks.length) {
+        const unchangedText = oldChunks[oldIndex]
+        if (unchangedText) {
+            const startOriginal = originalOffset
+            const startModified = modifiedOffset
+            const length = unchangedText.length
+
+            originalOffset += length
+            modifiedOffset += length
+
+            changes.push({
+                id: uuid.v4(),
+                type: 'unchanged',
+                text: unchangedText,
+                originalRange: new vscode.Range(
+                    originalLineNumber,
+                    startOriginal,
+                    originalLineNumber,
+                    originalOffset
+                ),
+                modifiedRange: new vscode.Range(
+                    modifiedLineNumber,
+                    startModified,
+                    modifiedLineNumber,
+                    modifiedOffset
+                ),
+            })
+        }
         oldIndex++
         newIndex++
     }

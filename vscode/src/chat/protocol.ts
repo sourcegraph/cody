@@ -7,6 +7,7 @@ import type {
     CodyIDE,
     ContextItem,
     ContextItemSource,
+    NLSSearchDynamicFilter,
     PromptMode,
     RangeData,
     RequestMessage,
@@ -140,9 +141,16 @@ export type WebviewMessage =
           message: string
       }
     | {
+
           command: 'chat/upload-image'
           image: string
       }
+    | {
+          command: 'reevaluateSearchWithSelectedFilters'
+          index: number
+          selectedFilters: NLSSearchDynamicFilter[]
+      }
+
 export interface SmartApplyResult {
     taskId: FixupTaskID
     taskState: CodyTaskState
