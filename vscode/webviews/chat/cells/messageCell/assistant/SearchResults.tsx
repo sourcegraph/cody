@@ -6,7 +6,7 @@ import {
     isDefined,
 } from '@sourcegraph/cody-shared'
 import { ArrowDown, ExternalLink, FilterIcon, Search } from 'lucide-react'
-import { useContext, useLayoutEffect, useMemo, useReducer, useState } from 'react'
+import { useCallback, useContext, useLayoutEffect, useMemo, useReducer, useState } from 'react'
 import { createContextItem } from '../../../../../src/context/openctx/codeSearch'
 import { LastEditorContext } from '../../../../chat/context'
 import { NLSResultSnippet } from '../../../../components/NLSResultSnippet'
@@ -103,6 +103,10 @@ export const SearchResults = ({
         }
     }, [enableContextSelection, selectedFollowUpResults, lastEditorRef])
 
+    const handleSelectForContext = useCallback((selected: boolean, result: NLSSearchResult) => {
+        updateSelectedFollowUpResults({ type: selected ? 'add' : 'remove', results: [result] })
+    }, [])
+
     if (showFilters) {
         return (
             <SearchFiltersModal
@@ -175,14 +179,7 @@ export const SearchResults = ({
                                 result={result}
                                 selectedForContext={selectedFollowUpResults.has(result)}
                                 onSelectForContext={
-                                    enableContextSelection
-                                        ? selected => {
-                                              updateSelectedFollowUpResults({
-                                                  type: selected ? 'add' : 'remove',
-                                                  results: [result],
-                                              })
-                                          }
-                                        : undefined
+                                    enableContextSelection ? handleSelectForContext : undefined
                                 }
                             />
                         </li>
