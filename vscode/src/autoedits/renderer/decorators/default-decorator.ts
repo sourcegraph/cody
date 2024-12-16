@@ -107,9 +107,12 @@ export class DefaultDecorator implements AutoEditsDecorator {
             const addedRanges: [number, number][] = []
             for (const change of changes) {
                 if (change.type === 'delete') {
-                    removedRanges.push(change.range)
+                    removedRanges.push(change.modifiedRange)
                 } else if (change.type === 'insert') {
-                    addedRanges.push([change.range.start.character, change.range.end.character])
+                    addedRanges.push([
+                        change.modifiedRange.start.character,
+                        change.modifiedRange.end.character,
+                    ])
                 }
             }
             if (addedRanges.length > 0) {
@@ -248,7 +251,7 @@ export class DefaultDecorator implements AutoEditsDecorator {
             .filter(change => change.type === 'insert')
             .map(change => {
                 return {
-                    range: change.range,
+                    range: change.modifiedRange,
                     renderOptions: {
                         before: {
                             contentText: change.text,

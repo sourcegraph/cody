@@ -73,8 +73,10 @@ export interface UnchangedLineInfo {
 export type LineChange = {
     id: string
     type: 'insert' | 'delete' | 'unchanged'
+    /** `range` in the original text relative to the document start */
+    originalRange: vscode.Range
     /** `range` in the modified text relative to the document start */
-    range: vscode.Range
+    modifiedRange: vscode.Range
     text: string
 }
 
