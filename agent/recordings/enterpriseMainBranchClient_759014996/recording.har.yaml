@@ -909,6 +909,156 @@ log:
         send: 0
         ssl: -1
         wait: 240
+    - _id: 58db5729e7d9b6a2c9f5fd6d707dfc97
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 92
+        cookies: []
+        headers:
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_1858aad0e1ff07ae26d4042086acb9da455866ad617afd2cb9ab9419e1be1104
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: enterprisemainbranchclient/v1 (Node.js v20.8.1)
+          - _fromType: array
+            name: x-requested-with
+            value: enterprisemainbranchclient v1
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "92"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - name: host
+            value: sourcegraph.sourcegraph.com
+        headersSize: 493
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            query: |
+              
+              query ViewerSettings {
+                viewerSettings {
+                  final
+                }
+              }
+            variables: {}
+        queryString:
+          - name: ViewerSettings
+            value: null
+        url: https://sourcegraph.sourcegraph.com/.api/graphql?ViewerSettings
+      response:
+        bodySize: 774
+        content:
+          encoding: base64
+          mimeType: application/json
+          size: 774
+          text: "[\"H4sIAAAAAAAA/9RTzXLjRBB+lUZcSJUteb1JnLiK2nJRG5IDVEigOFh7aI1a0uDRjGq6x\
+            7bW5Rt37ly48gjwOrwAPAI1ir3eJXDhttfur3++r7/eJSUKJvNdsta0If9IItrWHCOV\
+            tmiSebLLE+XKPrVOtCLOk/lylycr6vNknidCHCvGBVpLfryifjzNk1GetMSMNQ2gbxv\
+            NoBkOYDjkQNwQAhc8WNqACiyufZd+6jkCxh4aHdE3ZPQWKj+AUljeYtf10DijS+z5zW\
+            eNSMfzLNtsNmnvgoSCUuXabIOimlfrz19f1e3i4cv1vbk7gzy3sLAlcEdKowFuXIi7S\
+            Jz0SOhVA0LYpgMf0WKe2NxqeHTBK6o9ds0nebJ/M8oT2nbkdUtW0NwQSvCDVrs8KeLw\
+            Lxq0NfHrLakg2tk8mYsPNBrEpa+c1eK8tvX3VNw6t+JTvgpv3/Y32pbkF8ac4pY2T0s\
+            +EAcjN9oIeb5HS/8N4u/uTrnOO1Si1/QBYlHXnmqMO763BA+QbwL5/s52QQYh1tM82c\
+            chHzij1NxqZl0Mch3qjVN4oJ0n4rpnFvnjx9///O0nWHiC3gUwzq2iUyrnQdvKI6BSx\
+            DxYxrtQGOLGOYHOu8JQy6/g3hAywVqzFljWLuPp2HUHU8yz7F3kbOhqaSvAQh2n8ECo\
+            muPll5+WmlVgHivjQnnqEY3Fp8OnbFCtBntFbfSaOHtWeQa6GghZohIaMl0aNdv9Q5H\
+            GtfRMkr9++flX+NoJgTQoIPGJSuqM66PLoEGGzus1CkH0EGD0MlnW8aaHXyLPUT/n22\
+            EYjAfuJbWOR9A9KRaYYBlD6fvslGtPtP8tewbashCWR0b/7/AfE8v4564jq2Sbdt6td\
+            Un+8OTHHrVmSWstTSgCk1fOClkZXCINWWzRrkKLPns5m1xVk6vzqphiUV7MsMSKZtWL\
+            88vppCirWeZxk9FMzSYX16q4KCbn1WVFhOVkMqVZ8RKvJ+qieIHnRXF9mR23SX84Pu1\
+            +n+z3+78DAAD//1rKAYzhBQAA\"]"
+          textDecoded:
+            data:
+              viewerSettings:
+                final: "{\"cody.notices\":[{\"key\":\"testing-banner-key-2\",\"message\":\"This
+                  is testing message to test our new custom message banner, say
+                  hi to Felix from me. [Happy
+                  holidays](https://www.youtube.com/watch?v=E8gmARGvPlI) \\n And
+                  special shout out to Search team.\",\"title\":\"Hi
+                  Sourcegraph!\"}],\"experimentalFeatures\":{\"batchChangesExec\
+                  ution\":true,\"codeMonitoringWebHooks\":true,\"fuzzyFinderAll\
+                  \":true,\"newSearchResultFiltersPanel\":true,\"newSearchResul\
+                  tsUI\":true,\"proactiveSearchResultsAggregations\":true,\"sea\
+                  rchQueryInput\":\"v2\"},\"notices\":[{\"dismissible\":true,\"\
+                  location\":\"top\",\"message\":\"ℹ️ Are you looking for infra
+                  access to troubleshoot problems? Please visit
+                  [go/s2-ops](http://go/s2-ops) for next steps. Reach out to
+                  [#discuss-cloud-ops](https://sourcegraph.slack.com/archives/d\
+                  iscuss-cloud-ops) if you need
+                  help.\"},{\"location\":\"home\",\"message\":\"🚨 Note that
+                  this deployment has private code and sensitive customers
+                  information - for demos, please use
+                  [demo.sourcegraph.com](https://demo.sourcegraph.com)
+                  instead.\"},{\"dismissible\":true,\"location\":\"top\",\"mess\
+                  age\":\"🚨 Note that this deployment has private code and
+                  sensitive customers information - for demos, please use
+                  [demo.sourcegraph.com](https://demo.sourcegraph.com)
+                  instead.\"}],\"openctx.providers\":{\"https://gist.githubuser\
+                  content.com/thenamankumar/3708f084fb2abd57adafe7f14620bdf7/ra\
+                  w/e7c7059cb5b04f6feead002e7b3a90c5b1a4bb96/provider.js\":true\
+                  }}"
+        cookies: []
+        headers:
+          - name: date
+            value: Mon, 16 Dec 2024 19:40:29 GMT
+          - name: content-type
+            value: application/json
+          - name: content-length
+            value: "774"
+          - name: connection
+            value: close
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: content-encoding
+            value: gzip
+          - name: observed-calculated-ip-from-forwarded-for
+            value: 34.117.155.115
+          - name: observed-x-forwarded-for
+            value: 79.153.114.146, 162.158.120.142, 34.117.155.115
+          - name: vary
+            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
+              Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1371
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-12-16T19:40:29.502Z
+      time: 333
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 333
     - _id: 088f4011556a3aad423d546bd2bd19fe
       _order: 0
       cache: {}
