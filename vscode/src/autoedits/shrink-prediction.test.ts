@@ -117,6 +117,23 @@ describe('shrinkPredictionUntilSuffix', () => {
         // Removing overlap "console.log("end")", leaves us with 3 lines.
         expect(result.trimEnd()).toBe(withoutLastLines(prediction, 1))
     })
+
+    it('returns the original text in case of full match with the suffix', () => {
+        const codeToReplaceData = createCodeToReplaceData`function test() {
+            █const a = 1;
+            const b = 2;
+            console.log(a + b);
+        }`
+
+        const prediction = dedent`function test() {
+            const a = 1;
+            const b = 2;
+            console.log(a + b);
+        }`
+
+        const result = shrinkPredictionUntilSuffix(prediction, codeToReplaceData)
+        expect(result).toBe(codeToReplaceData.codeToRewrite)
+    })
 })
 
 function createCodeToReplaceData(code: TemplateStringsArray, ...values: unknown[]): CodeToReplaceData {

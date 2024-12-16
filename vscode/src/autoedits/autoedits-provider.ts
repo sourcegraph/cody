@@ -211,6 +211,10 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         let { prediction, codeToReplaceData } = autoeditResponse
         prediction = shrinkPredictionUntilSuffix(prediction, codeToReplaceData)
 
+        if (prediction === codeToReplaceData.codeToRewrite) {
+            return null
+        }
+
         const currentFileText = document.getText()
         const predictedFileText =
             currentFileText.slice(0, document.offsetAt(codeToReplaceData.range.start)) +
