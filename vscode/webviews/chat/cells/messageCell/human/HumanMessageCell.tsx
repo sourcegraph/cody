@@ -8,7 +8,7 @@ import {
 import type { PromptEditorRefAPI } from '@sourcegraph/prompt-editor'
 import isEqual from 'lodash/isEqual'
 import { ColumnsIcon } from 'lucide-react'
-import { type FC, memo, useMemo, useState } from 'react'
+import { type FC, memo, useMemo, useRef, useState } from 'react'
 import type { UserAccountInfo } from '../../../../Chat'
 import { UserAvatar } from '../../../../components/UserAvatar'
 import { BaseMessageCell, MESSAGE_CELL_AVATAR_SIZE } from '../BaseMessageCell'
@@ -67,10 +67,17 @@ type HumanMessageCellContent = {
 
 const HumanMessageCellContent = memo<HumanMessageCellContent>(props => {
     const [isDragging, setIsDragging] = useState(false)
+    const dragCounter = useRef(0)
+
+    const resetDragState = () => {
+        dragCounter.current = 0
+        setIsDragging(false)
+    }
 
     const handleDragEnter = (event: React.DragEvent) => {
         event.preventDefault()
         event.stopPropagation()
+        dragCounter.current += 1
         const items = Array.from(event.dataTransfer.items)
         if (items.some(item => item.type.startsWith('image/'))) {
             setIsDragging(true)
@@ -80,7 +87,10 @@ const HumanMessageCellContent = memo<HumanMessageCellContent>(props => {
     const handleDragLeave = (event: React.DragEvent) => {
         event.preventDefault()
         event.stopPropagation()
-        setIsDragging(false)
+        dragCounter.current -= 1
+        if (dragCounter.current === 0) {
+            setIsDragging(false)
+        }
     }
 
     const handleDrop = (event: React.DragEvent) => {
@@ -101,27 +111,32 @@ const HumanMessageCellContent = memo<HumanMessageCellContent>(props => {
         event.dataTransfer.dropEffect = 'copy'
     }
 
+    const handleDragEnd = () => {
+        resetDragState()
+    }
+
     return (
-        <div
-            onDragEnter={handleDragEnter}
-            onDragLeave={handleDragLeave}
-            onDragOver={handleDragOver}
-            onDrop={handleDrop}
-            className={clsx(props.className, {
-                'tw-border-2 tw-border-dashed tw-border-focusBorder tw-rounded-md': isDragging,
-            })}
-        >
-            <BaseMessageCell
-                speakerIcon={
-                    <UserAvatar
-                        user={props.userInfo.user}
-                        size={MESSAGE_CELL_AVATAR_SIZE}
-                        sourcegraphGradientBorder={true}
-                    />
-                }
-                speakerTitle={props.userInfo.user.displayName ?? props.userInfo.user.username}
-                cellAction={props.isFirstMessage && <OpenInNewEditorAction />}
-                content={
+        <BaseMessageCell
+            speakerIcon={
+                <UserAvatar
+                    user={props.userInfo.user}
+                    size={MESSAGE_CELL_AVATAR_SIZE}
+                    sourcegraphGradientBorder={true}
+                />
+            }
+            speakerTitle={props.userInfo.user.displayName ?? props.userInfo.user.username}
+            cellAction={props.isFirstMessage && <OpenInNewEditorAction />}
+            content={
+                <div
+                    onDragEnter={handleDragEnter}
+                    onDragLeave={handleDragLeave}
+                    onDragOver={handleDragOver}
+                    onDrop={handleDrop}
+                    onDragEnd={handleDragEnd}
+                    className={clsx({
+                        'tw-border-2 tw-border-dashed tw-border-focusBorder tw-rounded-md': isDragging,
+                    })}
+                >
                     <HumanMessageEditor
                         models={props.models}
                         userInfo={props.userInfo}
@@ -148,9 +163,10 @@ const HumanMessageCellContent = memo<HumanMessageCellContent>(props => {
                         imageFile={props.imageFile}
                         setImageFile={props.setImageFile}
                     />
-                }
-            />
-        </div>
+                </div>
+            }
+            className={props.className}
+        />
     )
 }, isEqual)
 const OpenInNewEditorAction = () => {

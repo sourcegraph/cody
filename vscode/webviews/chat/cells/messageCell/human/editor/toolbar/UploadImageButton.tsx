@@ -21,6 +21,14 @@ export const UploadImageButton = (props: UploadImageButtonProps) => {
         props.onClick(file)
     }
 
+    const handleRemoveImage = () => {
+        // Reset the file input value when removing the image
+        if (fileInputRef.current) {
+            fileInputRef.current.value = ''
+        }
+        props.onClick(undefined)
+    }
+
     return (
         <Tooltip>
             <TooltipTrigger asChild>
@@ -41,7 +49,7 @@ export const UploadImageButton = (props: UploadImageButtonProps) => {
                             <XIcon
                                 strokeWidth={1.25}
                                 className="tw-h-8 tw-w-8"
-                                onClick={() => props.onClick(undefined)}
+                                onClick={handleRemoveImage}
                             />
                         </>
                     ) : (
