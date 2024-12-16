@@ -73,6 +73,8 @@ export const HumanMessageEditor: FunctionComponent<{
     __storybook__focus?: boolean
 
     initialIntent?: ChatMessage['intent']
+    imageFile?: File
+    setImageFile: (file: File | undefined) => void
 }> = ({
     models,
     userInfo,
@@ -93,6 +95,8 @@ export const HumanMessageEditor: FunctionComponent<{
     __storybook__focus,
     onEditorFocusChange: parentOnEditorFocusChange,
     initialIntent,
+    imageFile,
+    setImageFile,
 }) => {
     const telemetryRecorder = useTelemetryRecorder()
 
@@ -135,8 +139,6 @@ export const HumanMessageEditor: FunctionComponent<{
         // set the input box intent when the message is changed or a new chat is created
         setSubmitIntent(initialIntent)
     }, [initialIntent])
-
-    const [imageFile, setImageFile] = useState<File | undefined>(undefined)
 
     const onSubmitClick = useCallback(
         (intent?: ChatMessage['intent'], forceSubmit?: boolean): void => {
@@ -207,6 +209,7 @@ export const HumanMessageEditor: FunctionComponent<{
             isFirstMessage,
             isSent,
             imageFile,
+            setImageFile,
         ]
     )
 
