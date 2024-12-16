@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest'
 import { getCurrentDocContext } from '../completions/get-current-doc-context'
 import { documentAndPosition } from '../completions/test-helpers'
 
-import { type CodeToReplaceData, getCurrentFilePromptComponents } from './prompt-utils'
+import { type CodeToReplaceData, getCurrentFilePromptComponents } from './prompt/prompt-utils'
 import { shrinkPredictionUntilSuffix } from './shrink-prediction'
 
 describe('shrinkPredictionUntilSuffix', () => {

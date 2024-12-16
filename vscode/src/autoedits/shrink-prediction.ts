@@ -1,6 +1,6 @@
 import { getNewLineChar, lines } from '../completions/text-processing'
 
-import type { CodeToReplaceData } from './prompt-utils'
+import type { CodeToReplaceData } from './prompt/prompt-utils'
 
 /**
  * Shrinks the prediction by removing overlapping lines with the suffix.
