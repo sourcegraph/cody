@@ -141,6 +141,7 @@ export type WebviewMessage =
       }
     | {
           command: 'chat/upload-image'
+          image: string
       }
 export interface SmartApplyResult {
     taskId: FixupTaskID

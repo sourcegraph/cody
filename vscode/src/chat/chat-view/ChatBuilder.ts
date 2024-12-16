@@ -22,8 +22,6 @@ import {
 import type { RankedContext } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import type { ImageData, MimeType } from '@sourcegraph/cody-shared/src/llm-providers/google'
 import { Observable, Subject, map } from 'observable-fns'
-import * as vscode from 'vscode'
-import type { URI } from 'vscode-uri'
 import { getChatPanelTitle } from './chat-helpers'
 
 /**
@@ -302,25 +300,20 @@ export class ChatBuilder {
     }
 
     /**
-     * Asynchronously adds an array of image URIs to the ChatBuilder's image collection.
-     * For each URI, the method reads the file, detects the MIME type, and stores the
-     * base64-encoded image data and MIME type in the `images` array.
+     * Adds images to the `ChatBuilder`.
      *
-     * @param imageUris - An array of `URI` objects representing the image files to add.
-     * @returns A Promise that resolves when all images have been added.
+     * @param imageUris - A string containing the base64-encoded image data.
+     * @returns A `Promise` that resolves when the images have been added.
      */
-    public async addImages(imageUris: URI[]): Promise<void> {
-        this.images = await Promise.all(
-            imageUris.map(async uri => {
-                const imageFile = await vscode.workspace.fs.readFile(uri)
-                // Detect mime type from buffer header
-                const mimeType = this.detectMimeType(imageFile)
-                return {
-                    data: Buffer.from(imageFile).toString('base64'),
-                    mimeType,
-                }
-            })
-        )
+    public async addImage(imageUri: string): Promise<void> {
+        this.images = []
+        if (imageUri === '') {
+            return
+        }
+        this.images.push({
+            data: imageUri,
+            mimeType: this.detectMimeType(imageUri),
+        })
     }
 
     /**
@@ -335,23 +328,29 @@ export class ChatBuilder {
     }
 
     /**
-     * Detects the MIME type of an image buffer based on the first bytes of the buffer.
-     * If the MIME type cannot be detected, it defaults to 'image/jpeg'.
+     * Detects the MIME type of an image encoded in base64 format.
      *
-     * @param buffer - The image data buffer.
-     * @returns The detected MIME type of the image.
+     * @param base64String - The base64-encoded image data.
+     * @returns The MIME type of the image, such as 'image/jpeg', 'image/png', or 'image/webp'. If the MIME type cannot be detected, it defaults to 'image/jpeg'.
      */
-    private detectMimeType(buffer: Uint8Array): MimeType {
-        // Check magic numbers at start of buffer
-        if (buffer[0] === 0xff && buffer[1] === 0xd8) {
+    private detectMimeType(base64String: string): MimeType {
+        // Remove data URI prefix if present
+        const base64Data = base64String.replace(/^data:image\/\w+;base64,/, '')
+
+        // Get first 10 bytes from base64
+        const binaryStart = atob(base64Data).slice(0, 10)
+
+        // Check magic numbers using charCodes
+        if (binaryStart.charCodeAt(0) === 0xff && binaryStart.charCodeAt(1) === 0xd8) {
             return 'image/jpeg'
         }
-        if (buffer[0] === 0x89 && buffer[1] === 0x50) {
+        if (binaryStart.charCodeAt(0) === 0x89 && binaryStart.charCodeAt(1) === 0x50) {
             return 'image/png'
         }
-        if (buffer[8] === 0x57 && buffer[9] === 0x45) {
+        if (binaryStart.charCodeAt(8) === 0x57 && binaryStart.charCodeAt(9) === 0x45) {
             return 'image/webp'
         }
+
         // Default to jpeg if unknown
         return 'image/jpeg'
     }

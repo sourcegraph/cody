@@ -1,7 +1,7 @@
 import type { Action, ChatMessage, Model } from '@sourcegraph/cody-shared'
 import { useExtensionAPI } from '@sourcegraph/prompt-editor'
 import clsx from 'clsx'
-import { type FunctionComponent, useCallback } from 'react'
+import { type FunctionComponent, useCallback, useEffect, useState } from 'react'
 import type { UserAccountInfo } from '../../../../../../Chat'
 import { ModelSelectField } from '../../../../../../components/modelSelectField/ModelSelectField'
 import { PromptSelectField } from '../../../../../../components/promptSelectField/PromptSelectField'
@@ -71,6 +71,43 @@ export const Toolbar: FunctionComponent<{
         return isGeminiFlashModel(model)
     }, [])
 
+    const [imageFile, setImageFile] = useState<File | undefined>(undefined)
+
+    useEffect(() => {
+        const processImage = async () => {
+            if (imageFile) {
+                const readFileGetBase64String = (file: File): Promise<string> => {
+                    return new Promise((resolve, reject) => {
+                        const reader = new FileReader()
+                        reader.onload = () => {
+                            const base64 = reader.result
+                            if (base64 && typeof base64 === 'string') {
+                                resolve(base64.split(',')[1])
+                            } else {
+                                reject(new Error('Failed to read file'))
+                            }
+                        }
+                        reader.onerror = () => reject(new Error('Failed to read file'))
+                        reader.readAsDataURL(file)
+                    })
+                }
+
+                const base64 = await readFileGetBase64String(imageFile)
+                getVSCodeAPI().postMessage({
+                    command: 'chat/upload-image',
+                    image: base64,
+                })
+            } /*else {
+                getVSCodeAPI().postMessage({
+                    command: 'chat/upload-image',
+                    image: '',
+                })
+                //setImageFile(undefined)
+            } */
+        }
+        processImage()
+    }, [imageFile])
+
     return (
         // biome-ignore lint/a11y/useKeyWithClickEvents: only relevant to click areas
         <menu
@@ -90,7 +127,8 @@ export const Toolbar: FunctionComponent<{
                 {isGoogleModel(models[0]) && (
                     <UploadImageButton
                         className="tw-opacity-60"
-                        onClick={() => getVSCodeAPI().postMessage({ command: 'chat/upload-image' })}
+                        imageFile={imageFile}
+                        onClick={setImageFile}
                     />
                 )}
                 {onMentionClick && (
