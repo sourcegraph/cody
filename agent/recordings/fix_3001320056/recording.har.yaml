@@ -963,6 +963,123 @@ log:
         send: 0
         ssl: -1
         wait: 214
+    - _id: fd0fee4687419870bc82cba9d1023319
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 92
+        cookies: []
+        headers:
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_fc324d3667e841181b0779375f26dedc911d26b303d23b29b1a2d7ee63dc77eb
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: fix/v1 (Node.js v20.8.1)
+          - _fromType: array
+            name: x-requested-with
+            value: fix v1
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "92"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - name: host
+            value: sourcegraph.com
+        headersSize: 400
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            query: |
+              
+              query ViewerSettings {
+                viewerSettings {
+                  final
+                }
+              }
+            variables: {}
+        queryString:
+          - name: ViewerSettings
+            value: null
+        url: https://sourcegraph.com/.api/graphql?ViewerSettings
+      response:
+        bodySize: 280
+        content:
+          encoding: base64
+          mimeType: application/json
+          size: 280
+          text: "[\"H4sIAAAAAAAAA4zPwUoDQRAE0H/pc75gbyoGAwrikttcOkk529D2LD292cRl/l0WAsGD4\
+            LXqUVALnTiYuoXOghneI0Is1zX5FGOljpZEuIxw+YIF6xYck6Mm6tbG+KB45e/ro5ZD\
+            f7Xgy4vkQSUP61KiLnzCJpFh7sF+HD5QJ42taMDrOxv0T1T3u3s3euFjyBm/xEPOjsw\
+            hxerd1n+Qocxvk4ao2G3yqVgtiptpm0RlhO3s+SRRfD3cGrXWfgAAAP//AwDHP3NmNg\
+            EAAA==\"]"
+          textDecoded:
+            data:
+              viewerSettings:
+                final: "{\"experimentalFeatures\":{\"enableLazyBlobSyntaxHighlighting\":true,\"\
+                  newSearchResultFiltersPanel\":true,\"newSearchResultsUI\":tru\
+                  e,\"proactiveSearchResultsAggregations\":true,\"searchResults\
+                  Aggregations\":true,\"showMultilineSearchConsole\":true},\"op\
+                  enInEditor\":{}}"
+        cookies: []
+        headers:
+          - name: date
+            value: Mon, 16 Dec 2024 22:12:31 GMT
+          - name: content-type
+            value: application/json
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: close
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: observed-calculated-ip-from-forwarded-for
+            value: 79.153.114.146
+          - name: observed-x-forwarded-for
+            value: 79.153.114.146
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+          - name: content-encoding
+            value: gzip
+        headersSize: 1569
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-12-16T22:12:31.275Z
+      time: 577
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 577
     - _id: fbb23499ae0eec5c2e188687b429531b
       _order: 0
       cache: {}
