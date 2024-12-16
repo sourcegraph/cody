@@ -351,7 +351,7 @@ const MarkdownNotice: FunctionComponent<MarkdownNotice> = props => {
 
     return (
         <div
-            className="tw--ml-2 tw--mr-2 tw-border tw-border-border tw-relative tw-rounded-md tw-flex tw-flex-col tw-gap-2 tw-p-4"
+            className="tw-bg-accent tw-bg-opacity-50 tw--ml-2 tw--mr-2 tw-border tw-border-border tw-relative tw-rounded-md tw-flex tw-flex-col tw-gap-2 tw-p-4"
             data-markdown-notice=""
         >
             {title && <h1 className="tw-text-lg tw-font-semibold">{title}</h1>}
