@@ -28,8 +28,8 @@ import { SourcegraphCompletionsAdapter } from './adapters/sourcegraph-completion
 import { autoeditsLogger } from './logger'
 import type { AutoeditsUserPromptStrategy } from './prompt/base'
 import { SYSTEM_PROMPT } from './prompt/constants'
-import { DefaultUserPromptStrategy } from './prompt/default-prompt-strategy'
 import { type CodeToReplaceData, getCompletionsPromptWithSystemPrompt } from './prompt/prompt-utils'
+import { ShortTermPromptStrategy } from './prompt/short-term-diff-prompt-strategy'
 import { DefaultDecorator } from './renderer/decorators/default-decorator'
 import { InlineDiffDecorator } from './renderer/decorators/inline-diff-decorator'
 import { getDecorationInfo } from './renderer/diff-utils'
@@ -80,7 +80,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
     private readonly onSelectionChangeDebounced: DebouncedFunc<typeof this.autoeditOnSelectionChange>
     /** Keeps track of the last time the text was changed in the editor. */
     private lastTextChangeTimeStamp: number | undefined
-    private readonly promptProvider: AutoeditsUserPromptStrategy = new DefaultUserPromptStrategy()
+    private readonly promptProvider: AutoeditsUserPromptStrategy = new ShortTermPromptStrategy()
 
     private isMockResponseFromCurrentDocumentTemplateEnabled = vscode.workspace
         .getConfiguration()
@@ -373,16 +373,16 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 model: 'cody-model-auto-edits-fireworks-default',
                 url: 'https://cody-gateway.sourcegraph.com/v1/completions/fireworks',
                 tokenLimit: defaultTokenLimit,
-                isChatModel: true,
+                isChatModel: false,
             }
         }
         return {
             provider: 'sourcegraph',
-            model: 'fireworks::v1::autoedits-default',
+            model: 'fireworks::v1::autoedits-deepseek-v2-lite',
             tokenLimit: defaultTokenLimit,
-            // We use chat completions client for sourcegraph-chat, so we don't need to specify url.
+            // We use completions client for sourcegraph provider, so we don't need to specify url.
             url: '',
-            isChatModel: true,
+            isChatModel: false,
         }
     }
 
