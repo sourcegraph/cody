@@ -13,16 +13,16 @@ sealed class AuthenticationError {
     val deserializer: JsonDeserializer<AuthenticationError> =
       JsonDeserializer { element: JsonElement, _: Type, context: JsonDeserializationContext ->
         when (element.getAsJsonObject().get("type").getAsString()) {
-          "network-error" -> context.deserialize<`network-errorAuthenticationError`>(element, `network-errorAuthenticationError`::class.java)
-          "invalid-access-token" -> context.deserialize<`invalid-access-tokenAuthenticationError`>(element, `invalid-access-tokenAuthenticationError`::class.java)
-          "enterprise-user-logged-into-dotcom" -> context.deserialize<`enterprise-user-logged-into-dotcomAuthenticationError`>(element, `enterprise-user-logged-into-dotcomAuthenticationError`::class.java)
+          "network-error" -> context.deserialize<NetworkAuthError>(element, NetworkAuthError::class.java)
+          "invalid-access-token" -> context.deserialize<InvalidAccessTokenError>(element, InvalidAccessTokenError::class.java)
+          "enterprise-user-logged-into-dotcom" -> context.deserialize<EnterpriseUserDotComError>(element, EnterpriseUserDotComError::class.java)
           else -> throw Exception("Unknown discriminator ${element}")
         }
       }
   }
 }
 
-data class `network-errorAuthenticationError`(
+data class NetworkAuthError(
   val type: TypeEnum, // Oneof: network-error
 ) : AuthenticationError() {
 
@@ -31,7 +31,7 @@ data class `network-errorAuthenticationError`(
   }
 }
 
-data class `invalid-access-tokenAuthenticationError`(
+data class InvalidAccessTokenError(
   val type: TypeEnum, // Oneof: invalid-access-token
 ) : AuthenticationError() {
 
@@ -40,7 +40,7 @@ data class `invalid-access-tokenAuthenticationError`(
   }
 }
 
-data class `enterprise-user-logged-into-dotcomAuthenticationError`(
+data class EnterpriseUserDotComError(
   val type: TypeEnum, // Oneof: enterprise-user-logged-into-dotcom
   val enterprise: String,
 ) : AuthenticationError() {

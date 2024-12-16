@@ -49,17 +49,20 @@ export interface UnauthenticatedAuthStatus {
     pendingValidation: boolean
 }
 
-export type AuthenticationError =
-    | {
-          type: 'network-error'
-      }
-    | {
-          type: 'invalid-access-token'
-      }
-    | {
-          type: 'enterprise-user-logged-into-dotcom'
-          enterprise: string
-      }
+export interface NetworkAuthError {
+    type: 'network-error'
+}
+
+export interface InvalidAccessTokenError {
+    type: 'invalid-access-token'
+}
+
+export interface EnterpriseUserDotComError {
+    type: 'enterprise-user-logged-into-dotcom'
+    enterprise: string
+}
+
+export type AuthenticationError = NetworkAuthError | InvalidAccessTokenError | EnterpriseUserDotComError
 
 export interface AuthenticationErrorMessage {
     title?: string
