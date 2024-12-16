@@ -1,9 +1,9 @@
+import dedent from 'dedent'
 import { describe, expect, it } from 'vitest'
 
 import { getCurrentDocContext } from '../completions/get-current-doc-context'
 import { documentAndPosition } from '../completions/test-helpers'
 
-import dedent from 'dedent'
 import { type CodeToReplaceData, getCurrentFilePromptComponents } from './prompt-utils'
 import { shrinkPredictionUntilSuffix } from './shrink-prediction'
 
@@ -140,5 +140,8 @@ function createCodeToReplaceData(code: TemplateStringsArray, ...values: unknown[
 }
 
 function withoutLastLines(text: string, n: number): string {
-    return text.split('\n').slice(0, -n).join('\n')
+    return text
+        .split('\n')
+        .slice(0, n > 0 ? -n : 0)
+        .join('\n')
 }
