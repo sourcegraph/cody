@@ -1,4 +1,4 @@
-import { getNewLineChar } from '../completions/text-processing'
+import { getNewLineChar, lines } from '../completions/text-processing'
 
 import type { CodeToReplaceData } from './prompt-utils'
 
@@ -16,9 +16,9 @@ export function shrinkPredictionUntilSuffix(
     const suffix = codeToReplaceData.suffixInArea + codeToReplaceData.suffixAfterArea
 
     // Split the prediction and suffix into arrays of lines
-    const predictionLines = prediction.split(newLineChar)
-    const suffixLines = suffix.split(newLineChar)
-    const originalLines = codeToReplaceData.codeToRewrite.trimEnd().split(newLineChar)
+    const predictionLines = lines(prediction)
+    const suffixLines = lines(suffix)
+    const originalLines = lines(codeToReplaceData.codeToRewrite.trimEnd())
 
     // Determine the maximum possible overlap
     const maxOverlap = Math.min(predictionLines.length, suffixLines.length)
