@@ -1,7 +1,7 @@
 import type { ChatMessage } from '@sourcegraph/cody-shared'
 import { CodyIDE } from '@sourcegraph/cody-shared'
 import clsx from 'clsx'
-import { BadgeCheck, BetweenHorizonalEnd, Pencil, Search } from 'lucide-react'
+import { BadgeCheck, BetweenHorizonalEnd, MessageSquare, Pencil, Search } from 'lucide-react'
 import type { FC } from 'react'
 import { useMemo } from 'react'
 import { Kbd } from '../../../../../../components/Kbd'
@@ -11,7 +11,6 @@ import { ToolbarPopoverItem } from '../../../../../../components/shadcn/ui/toolb
 import { Tooltip, TooltipContent, TooltipTrigger } from '../../../../../../components/shadcn/ui/tooltip'
 import { useConfig } from '../../../../../../utils/useConfig'
 import { useExperimentalOneBox } from '../../../../../../utils/useExperimentalOneBox'
-import { CodyIcon } from '../../../../../components/CodyIcon'
 
 export type SubmitButtonState = 'submittable' | 'emptyEditorValue' | 'waitingResponseComplete'
 
@@ -19,25 +18,39 @@ interface IntentOption {
     title: string
     icon: React.FC<{ className?: string }>
     intent: ChatMessage['intent']
+    shortcut?: React.ReactNode
     hidden?: boolean
 }
 
 function getIntentOptions(ide: CodyIDE): IntentOption[] {
     const standardOneBoxIntents: IntentOption[] = [
         {
-            title: 'Best for question',
+            title: 'Auto',
             icon: BadgeCheck,
             intent: undefined,
         },
         {
-            title: 'Ask the LLM',
-            icon: CodyIcon,
+            title: 'Chat with code assistant',
+            icon: MessageSquare,
             intent: 'chat',
+            shortcut: (
+                <>
+                    <Kbd macOS="cmd" linuxAndWindows="ctrl" />
+                    <Kbd macOS="return" linuxAndWindows="return" />
+                </>
+            ),
         },
         {
             title: 'Search Code',
             icon: Search,
             intent: 'search',
+            shortcut: (
+                <>
+                    <Kbd macOS="cmd" linuxAndWindows="ctrl" />
+                    <Kbd macOS="opt" linuxAndWindows="alt" />
+                    <Kbd macOS="return" linuxAndWindows="return" />
+                </>
+            ),
         },
     ]
 
@@ -163,6 +176,9 @@ export const SubmitButton: FC<{
                                                 <option.icon className="tw-size-8" />
                                                 {option.title}
                                             </div>
+                                            {option.shortcut && (
+                                                <div className="tw-flex tw-gap-2">{option.shortcut}</div>
+                                            )}
                                         </CommandItem>
                                     )
                                 )}
@@ -170,7 +186,7 @@ export const SubmitButton: FC<{
                         </Command>
                     )}
                     popoverContentProps={{
-                        className: 'tw-w-[225px] !tw-p-0',
+                        className: 'tw-w-[250px] !tw-p-0',
                         onCloseAutoFocus: event => {
                             // Prevent the popover trigger from stealing focus after the user selects an
                             // item. We want the focus to return to the editor.

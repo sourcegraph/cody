@@ -1,6 +1,6 @@
 import type { ChatMessageWithSearch, NLSSearchDynamicFilter } from '@sourcegraph/cody-shared'
 import { ArrowDown, ExternalLink, FilterIcon, Search } from 'lucide-react'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { NLSResultSnippet } from '../../../../components/NLSResultSnippet'
 import { Button } from '../../../../components/shadcn/ui/button'
 import { useConfig } from '../../../../utils/useConfig'
@@ -17,7 +17,7 @@ interface SearchResultsProps {
     onSelectedFiltersUpdate: (filters: NLSSearchDynamicFilter[]) => void
 }
 
-const DEFAULT_RESULTS_LIMIT = 5
+const DEFAULT_RESULTS_LIMIT = 10
 export const SearchResults = ({
     message,
     onSelectedFiltersUpdate,
@@ -29,7 +29,15 @@ export const SearchResults = ({
     const [showAll, setShowAll] = useState(false)
     const [showFilters, setShowFilters] = useState(false)
 
-    const totalResults = message.search.response?.results.results.length ?? 0
+    const results = useMemo(
+        () =>
+            message.search.response?.results.results.filter(
+                result => result.__typename === 'FileMatch' && result.chunkMatches?.length
+            ) || [],
+        [message.search.response]
+    )
+
+    const totalResults = results.length
 
     const {
         config: { serverEndpoint },
@@ -82,9 +90,9 @@ export const SearchResults = ({
                     Query with selected filters: {message.search.queryWithSelectedFilters}
                 </InfoMessage>
             )}
-            {!!message.search.response?.results.results.length && (
+            {!!results && (
                 <ul className="tw-list-none tw-flex tw-flex-col tw-gap-2 tw-pt-2">
-                    {message.search.response.results.results.map((result, i) =>
+                    {results.map((result, i) =>
                         showAll || i < DEFAULT_RESULTS_LIMIT ? (
                             <li
                                 // biome-ignore lint/correctness/useJsxKeyInIterable:
