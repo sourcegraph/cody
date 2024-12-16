@@ -370,7 +370,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         if (isDotComAuthed()) {
             return {
                 provider: 'cody-gateway',
-                model: 'cody-model-auto-edits-fireworks-default',
+                model: 'autoedits-deepseek-lite-default',
                 url: 'https://cody-gateway.sourcegraph.com/v1/completions/fireworks',
                 tokenLimit: defaultTokenLimit,
                 isChatModel: false,
@@ -378,7 +378,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         }
         return {
             provider: 'sourcegraph',
-            model: 'fireworks::v1::autoedits-deepseek-v2-lite',
+            model: 'fireworks::v1::autoedits-deepseek-lite-default',
             tokenLimit: defaultTokenLimit,
             // We use completions client for sourcegraph provider, so we don't need to specify url.
             url: '',
