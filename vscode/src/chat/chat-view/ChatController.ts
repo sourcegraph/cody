@@ -1,16 +1,12 @@
 import {
-    addMessageListenersForExtensionAPI,
     type AuthStatus,
-    authStatus,
     type BillingCategory,
     type BillingProduct,
-    cenv,
     CHAT_OUTPUT_TOKEN_BUDGET,
     type ChatClient,
     type ChatMessage,
     type ChatModel,
     type ClientActionBroadcast,
-    clientCapabilities,
     ClientConfigSingleton,
     type CodyClientConfig,
     type CompletionParameters,
@@ -19,25 +15,41 @@ import {
     type ContextItemOpenCtx,
     type ContextItemRepository,
     ContextItemSource,
+    DOTCOM_URL,
+    type DefaultChatCommands,
+    DefaultEditCommands,
+    type EventSource,
+    FeatureFlag,
+    type Guardrails,
+    type Message,
+    ModelUsage,
+    type NLSSearchDynamicFilter,
+    PromptString,
+    REMOTE_DIRECTORY_PROVIDER_URI,
+    REMOTE_FILE_PROVIDER_URI,
+    REMOTE_REPOSITORY_PROVIDER_URI,
+    type RankedContext,
+    type SerializedChatInteraction,
+    type SerializedChatTranscript,
+    type SerializedPromptEditorState,
+    Typewriter,
+    addMessageListenersForExtensionAPI,
+    authStatus,
+    cenv,
+    clientCapabilities,
     createMessageAPIForExtension,
     currentAuthStatus,
     currentAuthStatusAuthed,
     currentResolvedConfig,
     currentSiteVersion,
     currentUserProductSubscription,
-    type DefaultChatCommands,
-    DefaultEditCommands,
     distinctUntilChanged,
-    DOTCOM_URL,
-    type EventSource,
     extractContextFromTraceparent,
-    FeatureFlag,
     featureFlagProvider,
     firstResultFromOperation,
     forceHydration,
     getContextForChatMessage,
     graphqlClient,
-    type Guardrails,
     hydrateAfterPostMessage,
     inputTextWithMappedContextChipsFromPromptEditorState,
     inputTextWithoutContextChipsFromPromptEditorState,
@@ -49,25 +61,14 @@ import {
     isError,
     isRateLimitError,
     logError,
-    type Message,
     modelsService,
-    ModelUsage,
-    type NLSSearchDynamicFilter,
     pendingOperation,
     promiseFactoryToObservable,
-    PromptString,
     ps,
-    type RankedContext,
     recordErrorToSpan,
     reformatBotMessageForChat,
-    REMOTE_DIRECTORY_PROVIDER_URI,
-    REMOTE_FILE_PROVIDER_URI,
-    REMOTE_REPOSITORY_PROVIDER_URI,
     resolvedConfig,
     serializeChatMessage,
-    type SerializedChatInteraction,
-    type SerializedChatTranscript,
-    type SerializedPromptEditorState,
     shareReplay,
     skip,
     skipPendingOperation,
@@ -78,59 +79,61 @@ import {
     telemetryRecorder,
     tracer,
     truncatePromptString,
-    Typewriter,
     userProductSubscription,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
 import * as uuid from 'uuid'
 import * as vscode from 'vscode'
 
-import {context, type Span} from '@opentelemetry/api'
-import {captureException} from '@sentry/core'
-import {getTokenCounterUtils} from '@sourcegraph/cody-shared/src/token/counter'
-import type {TelemetryEventParameters} from '@sourcegraph/telemetry'
-import {map, Subject} from 'observable-fns'
-import type {URI} from 'vscode-uri'
-import {View} from '../../../webviews/tabs/types'
-import {redirectToEndpointLogin, showSignInMenu, showSignOutMenu, signOut} from '../../auth/auth'
-import {closeAuthProgressIndicator, startAuthProgressIndicator,} from '../../auth/auth-progress-indicator'
-import type {startTokenReceiver} from '../../auth/token-receiver'
-import {getCurrentUserId} from '../../auth/user'
-import {executeCodyCommand} from '../../commands/CommandsController'
-import {getContextFileFromUri} from '../../commands/context/file-path'
-import {getContextFileFromCursor} from '../../commands/context/selection'
-import {escapeRegExp} from '../../context/openctx/remoteFileSearch'
-import {resolveContextItems} from '../../editor/utils/editor-context'
-import type {VSCodeEditor} from '../../editor/vscode-editor'
-import type {ExtensionClient} from '../../extension-client'
-import {migrateAndNotifyForOutdatedModels} from '../../models/modelMigrator'
-import {logDebug, outputChannelLogger} from '../../output-channel-logger'
-import {getCategorizedMentions} from '../../prompt-builder/utils'
-import {hydratePromptText} from '../../prompts/prompt-hydration'
-import {listPromptTags, mergedPromptsAndLegacyCommands} from '../../prompts/prompts'
-import {publicRepoMetadataIfAllWorkspaceReposArePublic} from '../../repository/githubRepoMetadata'
-import {getFirstRepoNameContainingUri} from '../../repository/repo-name-resolver'
-import {authProvider} from '../../services/AuthProvider'
-import {AuthProviderSimplified} from '../../services/AuthProviderSimplified'
-import {localStorage} from '../../services/LocalStorageProvider'
-import {secretStorage} from '../../services/SecretStorageProvider'
-import {TraceSender} from '../../services/open-telemetry/trace-sender'
-import {recordExposedExperimentsToSpan} from '../../services/open-telemetry/utils'
+import { type Span, context } from '@opentelemetry/api'
+import { captureException } from '@sentry/core'
+import { getTokenCounterUtils } from '@sourcegraph/cody-shared/src/token/counter'
+import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
+import { Subject, map } from 'observable-fns'
+import type { URI } from 'vscode-uri'
+import { View } from '../../../webviews/tabs/types'
+import { redirectToEndpointLogin, showSignInMenu, showSignOutMenu, signOut } from '../../auth/auth'
+import {
+    closeAuthProgressIndicator,
+    startAuthProgressIndicator,
+} from '../../auth/auth-progress-indicator'
+import type { startTokenReceiver } from '../../auth/token-receiver'
+import { getCurrentUserId } from '../../auth/user'
+import { executeCodyCommand } from '../../commands/CommandsController'
+import { getContextFileFromUri } from '../../commands/context/file-path'
+import { getContextFileFromCursor } from '../../commands/context/selection'
+import { escapeRegExp } from '../../context/openctx/remoteFileSearch'
+import { resolveContextItems } from '../../editor/utils/editor-context'
+import type { VSCodeEditor } from '../../editor/vscode-editor'
+import type { ExtensionClient } from '../../extension-client'
+import { migrateAndNotifyForOutdatedModels } from '../../models/modelMigrator'
+import { logDebug, outputChannelLogger } from '../../output-channel-logger'
+import { getCategorizedMentions } from '../../prompt-builder/utils'
+import { hydratePromptText } from '../../prompts/prompt-hydration'
+import { listPromptTags, mergedPromptsAndLegacyCommands } from '../../prompts/prompts'
+import { publicRepoMetadataIfAllWorkspaceReposArePublic } from '../../repository/githubRepoMetadata'
+import { getFirstRepoNameContainingUri } from '../../repository/repo-name-resolver'
+import { authProvider } from '../../services/AuthProvider'
+import { AuthProviderSimplified } from '../../services/AuthProviderSimplified'
+import { localStorage } from '../../services/LocalStorageProvider'
+import { secretStorage } from '../../services/SecretStorageProvider'
+import { TraceSender } from '../../services/open-telemetry/trace-sender'
+import { recordExposedExperimentsToSpan } from '../../services/open-telemetry/utils'
 import {
     handleCodeFromInsertAtCursor,
     handleCodeFromSaveToNewFile,
     handleCopiedCode,
     handleSmartApply,
 } from '../../services/utils/codeblock-action-tracker'
-import {openExternalLinks} from '../../services/utils/workspace-action'
-import {TestSupport} from '../../test-support'
-import type {MessageErrorType} from '../MessageProvider'
-import {CodyToolProvider} from '../agentic/CodyToolProvider'
-import {DeepCodyAgent} from '../agentic/DeepCody'
-import {DeepCodyRateLimiter} from '../agentic/DeepCodyRateLimiter'
-import {getMentionMenuData} from '../context/chatContext'
-import type {ChatIntentAPIClient} from '../context/chatIntentAPIClient'
-import {observeDefaultContext} from '../initialContext'
+import { openExternalLinks } from '../../services/utils/workspace-action'
+import { TestSupport } from '../../test-support'
+import type { MessageErrorType } from '../MessageProvider'
+import { CodyToolProvider } from '../agentic/CodyToolProvider'
+import { DeepCodyAgent } from '../agentic/DeepCody'
+import { DeepCodyRateLimiter } from '../agentic/DeepCodyRateLimiter'
+import { getMentionMenuData } from '../context/chatContext'
+import type { ChatIntentAPIClient } from '../context/chatIntentAPIClient'
+import { observeDefaultContext } from '../initialContext'
 import {
     CODY_BLOG_URL_o1_WAITLIST,
     type ConfigurationSubsetForWebview,
@@ -139,16 +142,16 @@ import {
     type SmartApplyResult,
     type WebviewMessage,
 } from '../protocol'
-import {countGeneratedCode} from '../utils'
-import {ChatBuilder, prepareChatMessage} from './ChatBuilder'
-import {chatHistory} from './ChatHistoryManager'
-import {CodyChatEditorViewType} from './ChatsController'
-import {type ContextRetriever, toStructuredMentions} from './ContextRetriever'
-import {InitDoer} from './InitDoer'
-import {getChatPanelTitle} from './chat-helpers'
-import {getPriorityContext, type HumanInput} from './context'
-import {DefaultPrompter, type PromptInfo} from './prompt'
-import {getPromptsMigrationInfo, startPromptsMigration} from './prompts-migration'
+import { countGeneratedCode } from '../utils'
+import { ChatBuilder, prepareChatMessage } from './ChatBuilder'
+import { chatHistory } from './ChatHistoryManager'
+import { CodyChatEditorViewType } from './ChatsController'
+import { type ContextRetriever, toStructuredMentions } from './ContextRetriever'
+import { InitDoer } from './InitDoer'
+import { getChatPanelTitle } from './chat-helpers'
+import { type HumanInput, getPriorityContext } from './context'
+import { DefaultPrompter, type PromptInfo } from './prompt'
+import { getPromptsMigrationInfo, startPromptsMigration } from './prompts-migration'
 
 export interface ChatControllerOptions {
     extensionUri: vscode.Uri
