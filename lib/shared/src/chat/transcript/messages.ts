@@ -40,6 +40,8 @@ export interface ChatMessage extends Message {
     search?: ChatMessageSearch | undefined | null
 }
 
+export type ChatMessageWithSearch = ChatMessage & { search: ChatMessageSearch }
+
 export interface ChatMessageSearch {
     query: string
     response: NLSSearchResponse['search']

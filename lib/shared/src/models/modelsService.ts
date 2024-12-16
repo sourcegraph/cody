@@ -23,7 +23,6 @@ import {
     userProductSubscription,
 } from '../sourcegraph-api/userProductSubscription'
 import { CHAT_INPUT_TOKEN_BUDGET, CHAT_OUTPUT_TOKEN_BUDGET } from '../token/constants'
-
 import { configOverwrites } from './configOverwrites'
 import { type Model, type ServerModel, modelTier } from './model'
 import { syncModels } from './sync'
@@ -328,6 +327,7 @@ export class ModelsService {
         authStatus,
         configOverwrites,
         clientConfig: ClientConfigSingleton.getInstance().changes,
+        userProductSubscription,
     })
 
     /**

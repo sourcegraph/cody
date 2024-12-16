@@ -74,6 +74,8 @@ export type {
     UserLocalHistory,
     SerializedChatMessage,
     RankedContext,
+    ChatMessageWithSearch,
+    ChatMessageSearch,
 } from './chat/transcript/messages'
 export {
     CODY_PASSTHROUGH_VSCODE_OPEN_COMMAND_ID,
@@ -389,3 +391,5 @@ export {
     checkVersion,
 } from './sourcegraph-api/siteVersion'
 export { configOverwrites } from './models/configOverwrites'
+export { isS2 } from './sourcegraph-api/environments'
+export { createGitDiff } from './editor/create-git-diff'

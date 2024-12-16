@@ -132,7 +132,9 @@ export class DefaultContextStrategyFactory implements ContextStrategyFactory {
                                 new RecentEditsRetriever({
                                     maxAgeMs: 10 * 60 * 1000,
                                     diffStrategyList: [
-                                        new UnifiedDiffStrategy({ addLineNumbers: true }),
+                                        new UnifiedDiffStrategy({
+                                            addLineNumbers: true,
+                                        }),
                                     ],
                                 }),
                                 new DiagnosticsRetriever({

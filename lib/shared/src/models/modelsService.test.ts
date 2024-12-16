@@ -79,7 +79,7 @@ describe('modelsService', () => {
         it('returns max token limit for known DotCom chat model with higher context window (claude 3)', () => {
             const models = getMockedDotComClientModels()
             const modelsService = modelsServiceWithModels(models)
-            const claude3SonnetSubString = 'claude-3.5-sonnet'
+            const claude3SonnetSubString = 'claude-3-5-sonnet-latest'
             const claude3SonnetModel = modelsService.getModelByIDSubstringOrError(claude3SonnetSubString)
             expect(claude3SonnetModel?.contextWindow?.context?.user).greaterThan(0)
             expect(claude3SonnetModel).toBeDefined()

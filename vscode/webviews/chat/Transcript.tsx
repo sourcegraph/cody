@@ -17,7 +17,6 @@ import {
 import { clsx } from 'clsx'
 import { isEqual } from 'lodash'
 import debounce from 'lodash/debounce'
-import { Search } from 'lucide-react'
 import {
     type FC,
     type MutableRefObject,
@@ -32,11 +31,10 @@ import {
 import { URI } from 'vscode-uri'
 import type { UserAccountInfo } from '../Chat'
 import type { ApiPostMessage } from '../Chat'
-import { Button } from '../components/shadcn/ui/button'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
 import { SpanManager } from '../utils/spanManager'
 import { getTraceparentFromSpanContext, useTelemetryRecorder } from '../utils/telemetry'
-import { useExperimentalOneBox, useExperimentalOneBoxDebug } from '../utils/useExperimentalOneBox'
+import { useExperimentalOneBox } from '../utils/useExperimentalOneBox'
 import type { CodeBlockActionsProps } from './ChatMessageContent/ChatMessageContent'
 import {
     ContextCell,
@@ -48,10 +46,9 @@ import {
     makeHumanMessageInfo,
 } from './cells/messageCell/assistant/AssistantMessageCell'
 import { HumanMessageCell } from './cells/messageCell/human/HumanMessageCell'
-import { CodyIcon } from './components/CodyIcon'
-import { InfoMessage } from './components/InfoMessage'
 
 import { type Context, type Span, context, trace } from '@opentelemetry/api'
+import { SwitchIntent } from './cells/messageCell/assistant/SwitchIntent'
 interface TranscriptProps {
     activeChatContext?: Context
     setActiveChatContext: (context: Context | undefined) => void
@@ -339,7 +336,6 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
 
     const extensionAPI = useExtensionAPI()
     const experimentalOneBoxEnabled = useExperimentalOneBox()
-    const experimentalOneBoxDebug = useExperimentalOneBoxDebug()
     const onChange = useMemo(() => {
         return debounce(async (editorValue: SerializedPromptEditorValue) => {
             if (!experimentalOneBoxEnabled) {
@@ -380,8 +376,11 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
         })
     }, [])
 
+    const isSearchIntent = experimentalOneBoxEnabled && humanMessage.intent === 'search'
+
     const isContextLoading = Boolean(
-        humanMessage.contextFiles === undefined &&
+        !isSearchIntent &&
+            humanMessage.contextFiles === undefined &&
             isLastSentInteraction &&
             assistantMessage?.text === undefined
     )
@@ -558,6 +557,16 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
         ?.getSerializedValue()
         .contextItems.some(item => item.type === 'repository')
 
+    const onHumanMessageSubmit = useCallback(
+        (intent?: ChatMessage['intent']) => {
+            if (humanMessage.isUnsentFollowup) {
+                onFollowupSubmit(intent)
+            }
+            onEditSubmit(intent)
+        },
+        [humanMessage.isUnsentFollowup, onFollowupSubmit, onEditSubmit]
+    )
+
     return (
         <>
             <HumanMessageCell
@@ -570,9 +579,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                 isSent={!humanMessage.isUnsentFollowup}
                 isPendingPriorResponse={priorAssistantMessageIsLoading}
                 onChange={onChange}
-                onSubmit={
-                    humanMessage.isUnsentFollowup ? () => onFollowupSubmit() : () => onEditSubmit()
-                }
+                onSubmit={onHumanMessageSubmit}
                 onStop={onStop}
                 isFirstInteraction={isFirstInteraction}
                 isLastInteraction={isLastInteraction}
@@ -581,44 +588,21 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                 className={!isFirstInteraction && isLastInteraction ? 'tw-mt-auto' : ''}
                 onEditorFocusChange={resetIntent}
             />
-
-            {experimentalOneBoxEnabled && experimentalOneBoxDebug && humanMessage.intent && (
-                <InfoMessage>
-                    {humanMessage.intent === 'search' ? (
-                        <div className="tw-flex tw-justify-between tw-gap-4 tw-items-center">
-                            <span>Intent detection selected a code search response.</span>
-                            <div className="tw-shrink-0 tw-self-start">
-                                <Button
-                                    size="sm"
-                                    variant="outline"
-                                    className="tw-text-prmary tw-flex tw-gap-2 tw-items-center"
-                                    onClick={reSubmitWithChatIntent}
-                                >
-                                    <CodyIcon className="tw-text-link" />
-                                    Ask the LLM
-                                </Button>
-                            </div>
-                        </div>
-                    ) : (
-                        <div className="tw-flex tw-justify-between tw-gap-4 tw-items-center">
-                            <span>Intent detection selected an LLM response.</span>
-                            <div className="tw-shrink-0 tw-self-start">
-                                <Button
-                                    size="sm"
-                                    variant="outline"
-                                    className="tw-text-prmary tw-flex tw-gap-2 tw-items-center"
-                                    onClick={reSubmitWithSearchIntent}
-                                >
-                                    <Search className="tw-size-8 tw-text-link" />
-                                    Search Code
-                                </Button>
-                            </div>
-                        </div>
-                    )}
-                </InfoMessage>
+            {experimentalOneBoxEnabled && (
+                <SwitchIntent
+                    intent={humanMessage?.intent}
+                    onSwitch={
+                        humanMessage?.intent === 'search'
+                            ? reSubmitWithChatIntent
+                            : reSubmitWithSearchIntent
+                    }
+                />
             )}
-            {(humanMessage.contextFiles || assistantMessage || isContextLoading) && (
+
+            {(humanMessage.contextFiles || assistantMessage || isContextLoading) && !isSearchIntent && (
                 <ContextCell
+                    experimentalOneBoxEnabled={experimentalOneBoxEnabled}
+                    intent={humanMessage.intent}
                     resubmitWithRepoContext={
                         corpusContextItems.length > 0 && !mentionsContainRepository && assistantMessage
                             ? resubmitWithRepoContext
@@ -657,6 +641,8 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                     }
                     smartApply={smartApply}
                     smartApplyEnabled={smartApplyEnabled}
+                    reSubmitWithChatIntent={reSubmitWithChatIntent}
+                    reSubmitWithSearchIntent={reSubmitWithSearchIntent}
                 />
             )}
         </>
