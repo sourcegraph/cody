@@ -1,5 +1,12 @@
 import { Observable } from 'observable-fns'
-import { distinctUntilChanged, fromLateSetSource, shareReplay, storeLastValue } from '../misc/observable'
+import {
+    distinctUntilChanged,
+    firstValueFrom,
+    fromLateSetSource,
+    shareReplay,
+    storeLastValue,
+} from '../misc/observable'
+import { skipPendingOperation } from '../misc/observableOperation'
 import { isDotCom } from '../sourcegraph-api/environments'
 import type { PartialDeep } from '../utils'
 import {
@@ -68,6 +75,14 @@ export function currentAuthStatusAuthed(): AuthenticatedAuthStatus {
 /** Like {@link currentAuthStatus}, but does NOT throw if not ready. */
 export function currentAuthStatusOrNotReadyYet(): AuthStatus | undefined {
     return syncValue.last
+}
+
+export function firstNonPendingAuthStatus(): Promise<AuthStatus> {
+    return firstValueFrom(
+        Observable.from(authStatus)
+            .pipe(skipPendingOperation())
+            .filter(status => !status.pendingValidation)
+    )
 }
 
 /**

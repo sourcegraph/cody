@@ -20,6 +20,7 @@ import com.intellij.testFramework.PlatformTestUtil
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import com.intellij.testFramework.runInEdtAndWait
 import com.sourcegraph.cody.agent.CodyAgentService
+import com.sourcegraph.cody.agent.protocol_generated.ProtocolAuthenticatedAuthStatus
 import com.sourcegraph.cody.agent.protocol_generated.ProtocolCodeLens
 import com.sourcegraph.cody.auth.CodyAccount
 import com.sourcegraph.cody.auth.SourcegraphServerPath
@@ -116,6 +117,8 @@ open class CodyIntegrationTextFixture : BasePlatformTestCase(), LensListener {
   }
 
   private fun checkInitialConditions() {
+    isAuthenticated()
+
     // If you don't specify this system property with this setting when running the tests,
     // the tests will fail, because IntelliJ will run them from the EDT, which can't block.
     // Setting this property invokes the tests from an executor pool thread, which lets us
@@ -142,6 +145,19 @@ open class CodyIntegrationTextFixture : BasePlatformTestCase(), LensListener {
     assertEquals("Action description should be empty", "", presentation.description)
     assertTrue("Action should be enabled", presentation.isEnabled)
     assertTrue("Action should be visible", presentation.isVisible)
+  }
+
+  private fun isAuthenticated() {
+    val authenticated = CompletableFuture<Boolean>()
+    CodyAgentService.withAgent(project) { agent ->
+      agent.server.extensionConfiguration_status(null).thenAccept { authStatus ->
+        authenticated.complete(authStatus is ProtocolAuthenticatedAuthStatus)
+      }
+    }
+
+    assertTrue(
+        "User is not authenticated",
+        authenticated.completeOnTimeout(false, ASYNC_WAIT_TIMEOUT_SECONDS, TimeUnit.SECONDS).get())
   }
 
   private fun createEditorContext(editor: Editor): DataContext {

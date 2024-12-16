@@ -33,7 +33,7 @@ log:
             value: gzip,deflate
           - name: host
             value: sourcegraph.com
-        headersSize: 431
+        headersSize: 358
         httpVersion: HTTP/1.1
         method: GET
         queryString: []
@@ -51,7 +51,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 16 Dec 2024 10:33:46 GMT
+            value: Mon, 16 Dec 2024 11:16:36 GMT
           - name: content-type
             value: text/plain; charset=utf-8
           - name: transfer-encoding
@@ -65,9 +65,9 @@ log:
           - name: cache-control
             value: no-cache, max-age=0
           - name: observed-calculated-ip-from-forwarded-for
-            value: 148.81.137.5
+            value: 80.82.18.146
           - name: observed-x-forwarded-for
-            value: 148.81.137.5
+            value: 80.82.18.146
           - name: vary
             value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
               X-Requested-With,Cookie
@@ -86,8 +86,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-12-16T10:33:46.197Z
-      time: 575
+      startedDateTime: 2024-12-16T11:16:36.382Z
+      time: 244
       timings:
         blocked: -1
         connect: -1
@@ -95,7 +95,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 575
+        wait: 244
     - _id: c7327f699da3de5388b86581bd3a348b
       _order: 0
       cache: {}
@@ -113,7 +113,7 @@ log:
           - name: content-type
             value: application/json
           - name: traceparent
-            value: 00-1f8b0b0af28decf5f4f34a33e2667fc8-6c22874baba28676-01
+            value: 00-b6c582f612de2fb903dbf34f1697500f-dffd7ef71c7d102f-01
           - name: user-agent
             value: jetbrains/6.0-localbuild (Node.js v20.12.2)
           - name: x-requested-with
@@ -225,14 +225,14 @@ log:
             value: 6.0-localbuild
         url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=jetbrains&client-version=6.0-localbuild
       response:
-        bodySize: 694
+        bodySize: 822
         content:
           mimeType: text/event-stream
-          size: 694
+          size: 822
           text: >+
             event: completion
 
-            data: {"deltaText":"\n/**\n * Generates and prints the first 10 Fibonacci numbers.\n * The Fibonacci sequence is a series of numbers where each number is the sum of the two preceding ones,\n * starting from 0 and 1. This method creates a list of the first 10 Fibonacci numbers and prints them.\n */\n","stopReason":"stop_sequence"}
+            data: {"deltaText":"\n/**\n * Generates a Fibonacci sequence and prints the values.\n * \n * This method initializes an ArrayList called 'mystery' with the first two Fibonacci numbers (0 and 1), then\n * iterates from 2 to 9 and adds the next Fibonacci number to the list. Finally, it prints out all 10 Fibonacci\n * numbers in the list.\n */\n","stopReason":"stop_sequence"}
 
 
             event: done
@@ -242,7 +242,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 16 Dec 2024 10:33:50 GMT
+            value: Mon, 16 Dec 2024 11:16:40 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -256,9 +256,9 @@ log:
           - name: cache-control
             value: no-cache
           - name: observed-calculated-ip-from-forwarded-for
-            value: 148.81.137.5
+            value: 80.82.18.146
           - name: observed-x-forwarded-for
-            value: 148.81.137.5
+            value: 80.82.18.146
           - name: vary
             value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
               X-Requested-With,Cookie
@@ -275,8 +275,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-12-16T10:33:47.808Z
-      time: 2812
+      startedDateTime: 2024-12-16T11:16:39.249Z
+      time: 1480
       timings:
         blocked: -1
         connect: -1
@@ -284,7 +284,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 2812
+        wait: 1480
     - _id: a376faab1c8a1993bb48c745757f0a4a
       _order: 0
       cache: {}
@@ -324,7 +324,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentSiteCodyLlmConfiguration {
                   site {
                       codyLLMConfiguration {
@@ -365,7 +365,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 16 Dec 2024 10:33:46 GMT
+            value: Mon, 16 Dec 2024 11:16:37 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -379,9 +379,9 @@ log:
           - name: cache-control
             value: no-cache, max-age=0
           - name: observed-calculated-ip-from-forwarded-for
-            value: 148.81.137.5
+            value: 80.82.18.146
           - name: observed-x-forwarded-for
-            value: 148.81.137.5
+            value: 80.82.18.146
           - name: vary
             value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
               X-Requested-With,Cookie
@@ -400,8 +400,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-12-16T10:33:45.836Z
-      time: 355
+      startedDateTime: 2024-12-16T11:16:36.668Z
+      time: 333
       timings:
         blocked: -1
         connect: -1
@@ -409,7 +409,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 355
+        wait: 333
     - _id: 0484c4d780805faf3dd3ddabae814640
       _order: 0
       cache: {}
@@ -449,7 +449,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentSiteCodyLlmConfiguration {
                   site {
                       codyLLMConfiguration {
@@ -478,7 +478,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 16 Dec 2024 10:33:46 GMT
+            value: Mon, 16 Dec 2024 11:16:37 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -492,9 +492,9 @@ log:
           - name: cache-control
             value: no-cache, max-age=0
           - name: observed-calculated-ip-from-forwarded-for
-            value: 148.81.137.5
+            value: 80.82.18.146
           - name: observed-x-forwarded-for
-            value: 148.81.137.5
+            value: 80.82.18.146
           - name: vary
             value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
               X-Requested-With,Cookie
@@ -513,8 +513,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-12-16T10:33:45.890Z
-      time: 346
+      startedDateTime: 2024-12-16T11:16:36.723Z
+      time: 269
       timings:
         blocked: -1
         connect: -1
@@ -522,7 +522,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 346
+        wait: 269
     - _id: e141c56e63809042300db9bf8551d492
       _order: 0
       cache: {}
@@ -562,7 +562,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentSiteCodyLlmProvider {
                   site {
                       codyLLMConfiguration {
@@ -591,7 +591,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 16 Dec 2024 10:33:46 GMT
+            value: Mon, 16 Dec 2024 11:16:37 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -605,9 +605,9 @@ log:
           - name: cache-control
             value: no-cache, max-age=0
           - name: observed-calculated-ip-from-forwarded-for
-            value: 148.81.137.5
+            value: 80.82.18.146
           - name: observed-x-forwarded-for
-            value: 148.81.137.5
+            value: 80.82.18.146
           - name: vary
             value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
               X-Requested-With,Cookie
@@ -626,8 +626,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-12-16T10:33:45.861Z
-      time: 328
+      startedDateTime: 2024-12-16T11:16:36.699Z
+      time: 284
       timings:
         blocked: -1
         connect: -1
@@ -635,7 +635,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 328
+        wait: 284
     - _id: 5b9030a4e18d1e000c71d6000a7cef6f
       _order: 0
       cache: {}
@@ -667,7 +667,7 @@ log:
             value: gzip,deflate
           - name: host
             value: sourcegraph.com
-        headersSize: 386
+        headersSize: 459
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -675,7 +675,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentUser {
                   currentUser {
                       id
@@ -726,7 +726,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 16 Dec 2024 10:33:45 GMT
+            value: Mon, 16 Dec 2024 11:16:36 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -740,9 +740,9 @@ log:
           - name: cache-control
             value: no-cache, max-age=0
           - name: observed-calculated-ip-from-forwarded-for
-            value: 148.81.137.5
+            value: 80.82.18.146
           - name: observed-x-forwarded-for
-            value: 148.81.137.5
+            value: 80.82.18.146
           - name: vary
             value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
               X-Requested-With,Cookie
@@ -761,8 +761,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-12-16T10:33:45.463Z
-      time: 317
+      startedDateTime: 2024-12-16T11:16:36.106Z
+      time: 226
       timings:
         blocked: -1
         connect: -1
@@ -770,7 +770,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 317
+        wait: 226
     - _id: aef0c9fe7483280d9c05ac8e97e37571
       _order: 0
       cache: {}
@@ -810,7 +810,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentUserCodySubscription {
                   currentUser {
                       codySubscription {
@@ -849,7 +849,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 16 Dec 2024 10:33:46 GMT
+            value: Mon, 16 Dec 2024 11:16:37 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -863,9 +863,9 @@ log:
           - name: cache-control
             value: no-cache, max-age=0
           - name: observed-calculated-ip-from-forwarded-for
-            value: 148.81.137.5
+            value: 80.82.18.146
           - name: observed-x-forwarded-for
-            value: 148.81.137.5
+            value: 80.82.18.146
           - name: vary
             value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
               X-Requested-With,Cookie
@@ -884,8 +884,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-12-16T10:33:45.933Z
-      time: 736
+      startedDateTime: 2024-12-16T11:16:36.766Z
+      time: 386
       timings:
         blocked: -1
         connect: -1
@@ -893,7 +893,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 736
+        wait: 386
     - _id: 4504fab53d7cb602861f73dc2aa883d2
       _order: 0
       cache: {}
@@ -933,7 +933,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query SiteProductVersion {
                   site {
                       productVersion
@@ -959,7 +959,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 16 Dec 2024 10:33:46 GMT
+            value: Mon, 16 Dec 2024 11:16:37 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -973,9 +973,9 @@ log:
           - name: cache-control
             value: no-cache, max-age=0
           - name: observed-calculated-ip-from-forwarded-for
-            value: 148.81.137.5
+            value: 80.82.18.146
           - name: observed-x-forwarded-for
-            value: 148.81.137.5
+            value: 80.82.18.146
           - name: vary
             value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
               X-Requested-With,Cookie
@@ -994,8 +994,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-12-16T10:33:45.912Z
-      time: 274
+      startedDateTime: 2024-12-16T11:16:36.745Z
+      time: 265
       timings:
         blocked: -1
         connect: -1
@@ -1003,7 +1003,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 274
+        wait: 265
     - _id: fbb23499ae0eec5c2e188687b429531b
       _order: 0
       cache: {}
@@ -1070,7 +1070,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 16 Dec 2024 10:33:47 GMT
+            value: Mon, 16 Dec 2024 11:16:39 GMT
           - name: content-type
             value: text/plain; charset=utf-8
           - name: transfer-encoding
@@ -1086,9 +1086,9 @@ log:
           - name: content-encoding
             value: gzip
           - name: observed-calculated-ip-from-forwarded-for
-            value: 148.81.137.5
+            value: 80.82.18.146
           - name: observed-x-forwarded-for
-            value: 148.81.137.5
+            value: 80.82.18.146
           - name: vary
             value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
               X-Requested-With,Cookie
@@ -1105,8 +1105,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-12-16T10:33:46.793Z
-      time: 825
+      startedDateTime: 2024-12-16T11:16:38.803Z
+      time: 246
       timings:
         blocked: -1
         connect: -1
@@ -1114,6 +1114,6 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 825
+        wait: 246
   pages: []
   version: "1.2"
