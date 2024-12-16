@@ -1,18 +1,24 @@
 import clsx from 'clsx'
-import {type FC, useCallback, useMemo, useState} from 'react'
+import { type FC, useCallback, useMemo, useState } from 'react'
 
-import {Action, PromptsInput} from '@sourcegraph/cody-shared'
+import type { Action, PromptsInput } from '@sourcegraph/cody-shared'
 
-import {useTelemetryRecorder} from '../../utils/telemetry'
-import {useConfig} from '../../utils/useConfig'
-import {useDebounce} from '../../utils/useDebounce'
-import {Command, CommandInput, CommandList, CommandLoading, CommandSeparator,} from '../shadcn/ui/command'
-import {ActionItem} from './ActionItem'
-import {usePromptsQuery} from './usePromptsQuery'
-import {commandRowValue} from './utils'
-import {useLocalStorage} from '../../components/hooks'
+import { useLocalStorage } from '../../components/hooks'
+import { useTelemetryRecorder } from '../../utils/telemetry'
+import { useConfig } from '../../utils/useConfig'
+import { useDebounce } from '../../utils/useDebounce'
+import type { PromptsFilterArgs } from '../promptFilter/PromptsFilter'
+import {
+    Command,
+    CommandInput,
+    CommandList,
+    CommandLoading,
+    CommandSeparator,
+} from '../shadcn/ui/command'
+import { ActionItem } from './ActionItem'
 import styles from './PromptList.module.css'
-import {PromptsFilterArgs} from "../promptFilter/PromptsFilter";
+import { usePromptsQuery } from './usePromptsQuery'
+import { commandRowValue } from './utils'
 
 const BUILT_IN_PROMPTS_CODE: Record<string, number> = {
     'document-code': 1,
@@ -34,8 +40,8 @@ interface PromptListProps {
     appearanceMode?: 'flat-list' | 'chips-list'
     lastUsedSorting?: boolean
     recommendedOnly?: boolean
-    onSelect: (item: Action) => void,
-    promptFilters?: PromptsFilterArgs,
+    onSelect: (item: Action) => void
+    promptFilters?: PromptsFilterArgs
 }
 
 /**
@@ -46,7 +52,6 @@ interface PromptListProps {
  * in a popover).
  */
 export const PromptList: FC<PromptListProps> = props => {
-
     const {
         showSearch,
         showFirstNItems,
@@ -86,7 +91,7 @@ export const PromptList: FC<PromptListProps> = props => {
         [debouncedQuery, showFirstNItems, recommendedOnly, promptFilters]
     )
 
-    const {value: result, error} = usePromptsQuery(promptInput)
+    const { value: result, error } = usePromptsQuery(promptInput)
 
     const onSelect = useCallback(
         (rowValue: string): void => {
@@ -150,23 +155,29 @@ export const PromptList: FC<PromptListProps> = props => {
         ]
     )
 
-    const filteredActions = useCallback((actions: Action[]) => {
-        if (promptFilters?.core) {
-            return actions.filter(action => action.actionType === 'prompt' && action.builtin);
-        }
-        const shouldExcludeBuiltinCommands = promptFilters?.promoted || promptFilters?.owner || promptFilters?.tags;
-        if (shouldExcludeBuiltinCommands) {
-            return actions.filter(action => action.actionType === 'prompt' && !action.builtin);
-        }
-        return actions;
-    }, [promptFilters]);
+    const filteredActions = useCallback(
+        (actions: Action[]) => {
+            if (promptFilters?.core) {
+                return actions.filter(action => action.actionType === 'prompt' && action.builtin)
+            }
+            const shouldExcludeBuiltinCommands =
+                promptFilters?.promoted || promptFilters?.owner || promptFilters?.tags
+            if (shouldExcludeBuiltinCommands) {
+                return actions.filter(action => action.actionType === 'prompt' && !action.builtin)
+            }
+            return actions
+        },
+        [promptFilters]
+    )
 
     // Don't show builtin commands to insert in the prompt editor.
-    const allActions = (showOnlyPromptInsertableCommands)
+    const allActions = showOnlyPromptInsertableCommands
         ? result?.actions.filter(action => action.actionType === 'prompt' || action.mode === 'ask') ?? []
         : result?.actions ?? []
 
-    const sortedActions = lastUsedSorting ? getSortedActions(filteredActions(allActions), lastUsedActions) : filteredActions(allActions)
+    const sortedActions = lastUsedSorting
+        ? getSortedActions(filteredActions(allActions), lastUsedActions)
+        : filteredActions(allActions)
     const actions = showFirstNItems ? sortedActions.slice(0, showFirstNItems) : sortedActions
 
     const inputPaddingClass =
@@ -234,7 +245,7 @@ export const PromptList: FC<PromptListProps> = props => {
 
                 {showPromptLibraryUnsupportedMessage && result && !result.arePromptsSupported && (
                     <>
-                        <CommandSeparator alwaysRender={true}/>
+                        <CommandSeparator alwaysRender={true} />
                         <CommandLoading className="tw-px-4">
                             Prompt Library is not yet available on {endpointURL.hostname}. Ask your site
                             admin to upgrade to Sourcegraph 5.6 or later.

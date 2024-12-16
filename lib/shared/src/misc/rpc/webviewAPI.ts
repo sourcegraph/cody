@@ -8,7 +8,11 @@ import type { FeatureFlag } from '../../experimentation/FeatureFlagProvider'
 import type { ContextMentionProviderMetadata } from '../../mentions/api'
 import type { MentionQuery } from '../../mentions/query'
 import type { Model } from '../../models/model'
-import type {FetchHighlightFileParameters, Prompt, PromptTag} from '../../sourcegraph-api/graphql/client'
+import type {
+    FetchHighlightFileParameters,
+    Prompt,
+    PromptTag,
+} from '../../sourcegraph-api/graphql/client'
 import { type createMessageAPIForWebview, proxyExtensionAPI } from './rpc'
 
 export interface WebviewToExtensionAPI {
@@ -178,10 +182,11 @@ export interface PromptsResult {
     query: string
 }
 
-export interface PromptTagsInput {
+export type PromptTagsInput = {
+    first?: number
 }
 
-export type PromptTagsResult = PromptTag[];
+export type PromptTagsResult = PromptTag[]
 
 export type PromptsMigrationStatus =
     | InitialPromptsMigrationStatus

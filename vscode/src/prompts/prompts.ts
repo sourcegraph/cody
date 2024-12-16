@@ -3,6 +3,7 @@ import {
     type CommandAction,
     FeatureFlag,
     type PromptAction,
+    type PromptTagsResult,
     type PromptsInput,
     type PromptsResult,
     clientCapabilities,
@@ -10,7 +11,7 @@ import {
     graphqlClient,
     isAbortError,
     isErrorLike,
-    isValidVersion, PromptTagsResult,
+    isValidVersion,
 } from '@sourcegraph/cody-shared'
 import { FIXTURE_COMMANDS } from '../../webviews/components/promptList/fixtures'
 import { getCodyCommandList } from '../commands/CommandsController'
@@ -96,7 +97,16 @@ export async function mergedPromptsAndLegacyCommands(
     const { query, recommendedOnly, first, tags, owner, includeViewerDrafts, builtinOnly } = input
     const queryLower = query.toLowerCase()
     const [customPrompts, isUnifiedPromptsEnabled, isNewPromptsSgVersion] = await Promise.all([
-        fetchCustomPrompts(queryLower, first, recommendedOnly, signal, tags, owner, includeViewerDrafts, builtinOnly),
+        fetchCustomPrompts(
+            queryLower,
+            first,
+            recommendedOnly,
+            signal,
+            tags,
+            owner,
+            includeViewerDrafts,
+            builtinOnly
+        ),
 
         // Unified prompts flag provides prompts-like commands API
         featureFlagProvider.evaluateFeatureFlagEphemerally(FeatureFlag.CodyUnifiedPrompts),
@@ -138,10 +148,19 @@ async function fetchCustomPrompts(
     tags?: string[],
     owner?: string,
     includeViewerDrafts?: boolean,
-    builtinOnly?: boolean,
+    builtinOnly?: boolean
 ): Promise<PromptAction[] | 'unsupported'> {
     try {
-        const prompts = await graphqlClient.queryPrompts({ query, first, recommendedOnly, signal, tags, owner, includeViewerDrafts, builtinOnly })
+        const prompts = await graphqlClient.queryPrompts({
+            query,
+            first,
+            recommendedOnly,
+            signal,
+            tags,
+            owner,
+            includeViewerDrafts,
+            builtinOnly,
+        })
         return prompts.map(prompt => ({ ...prompt, actionType: 'prompt' }))
     } catch (error) {
         if (isAbortError(error)) {

@@ -1,5 +1,5 @@
-import {useExtensionAPI, useObservable, type UseObservableResult} from '@sourcegraph/prompt-editor'
-import {useMemo} from 'react'
+import { type UseObservableResult, useExtensionAPI, useObservable } from '@sourcegraph/prompt-editor'
+import { useMemo } from 'react'
 
 /**
  * React hook to query for prompts in the prompt library.

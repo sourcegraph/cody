@@ -1,4 +1,4 @@
-import {graphqlClient, isAbortError} from "@sourcegraph/cody-shared";
+import { graphqlClient, isAbortError } from '@sourcegraph/cody-shared'
 
 export async function getCurrentUserId(signal: AbortSignal): Promise<string | null | Error> {
     try {

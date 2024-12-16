@@ -55,8 +55,8 @@ import {
     NLS_SEARCH_QUERY,
     PACKAGE_LIST_QUERY,
     PROMPTS_QUERY,
-    PromptsOrderBy,
     PROMPT_TAGS_QUERY,
+    PromptsOrderBy,
     RECORD_TELEMETRY_EVENTS_MUTATION,
     REPOSITORY_IDS_QUERY,
     REPOSITORY_ID_QUERY,
@@ -522,7 +522,6 @@ export interface PromptTag {
     name: string
 }
 
-
 interface ContextFiltersResponse {
     site: {
         codyContextFilters: {
@@ -845,7 +844,7 @@ export class SourcegraphGraphQLAPIClient {
         return this.fetchSourcegraphAPI<APIResponse<CurrentUserIdResponse>>(
             CURRENT_USER_ID_QUERY,
             {},
-            signal,
+            signal
         ).then(response =>
             extractDataOrError(response, data => (data.currentUser ? data.currentUser.id : null))
         )
@@ -1296,10 +1295,10 @@ export class SourcegraphGraphQLAPIClient {
         recommendedOnly?: boolean
         tags?: string[]
         signal?: AbortSignal
-        orderByMultiple?: PromptsOrderBy[],
-        owner?: string,
-        includeViewerDrafts?: boolean,
-        builtinOnly?: boolean,
+        orderByMultiple?: PromptsOrderBy[]
+        owner?: string
+        includeViewerDrafts?: boolean
+        builtinOnly?: boolean
     }): Promise<Prompt[]> {
         const hasIncludeViewerDraftsArg = await this.isValidSiteVersion({
             minimumVersion: '5.9.0',
@@ -1411,7 +1410,9 @@ export class SourcegraphGraphQLAPIClient {
         return
     }
 
-    public async queryPromptTags({signal}: {
+    public async queryPromptTags({
+        signal,
+    }: {
         signal?: AbortSignal
     }): Promise<PromptTag[]> {
         const hasPromptTags = await this.isValidSiteVersion({
@@ -1422,17 +1423,15 @@ export class SourcegraphGraphQLAPIClient {
             return []
         }
 
-        const response = await this.fetchSourcegraphAPI<APIResponse<{ promptTags: { nodes: PromptTag[] } }>>(
-            PROMPT_TAGS_QUERY,
-            signal
-        )
+        const response = await this.fetchSourcegraphAPI<
+            APIResponse<{ promptTags: { nodes: PromptTag[] } }>
+        >(PROMPT_TAGS_QUERY, signal)
         const result = extractDataOrError(response, data => data.promptTags.nodes)
         if (result instanceof Error) {
             throw result
         }
         return result
     }
-
 
     /**
      * recordTelemetryEvents uses the new Telemetry API to record events that
