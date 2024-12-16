@@ -36,7 +36,7 @@ export class RateLimitError extends Error {
         this.userMessage =
             feature === 'Deep Cody'
                 ? `You've reached the daily limit for Deep Cody. Please select another model and try again.`
-                : `You've used all of your ${feature} for ${upgradeIsAvailable ? 'the month' : 'today'}.`
+                : ` Done bro my man You've used all of your ${feature} for ${upgradeIsAvailable ? 'the month' : 'today'}.`
         this.retryAfterDate = retryAfter
             ? /^\d+$/.test(retryAfter)
                 ? new Date(Date.now() + Number.parseInt(retryAfter, 10) * 1000)
