@@ -104,7 +104,8 @@ export function buildAgentBinary(): void {
     //   pnpm test agent/src/index.test.ts
     execSync('pnpm run build:for-tests ', {
         cwd: getAgentDir(),
-        stdio: 'inherit',
+        stdio: 'pipe',
+        encoding: 'utf-8',
     })
 
     const mayRecord =
