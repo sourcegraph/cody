@@ -12,24 +12,28 @@ log:
         bodySize: 0
         cookies: []
         headers:
-          - name: accept
-            value: "*/*"
-          - name: accept-encoding
-            value: gzip,deflate
-          - name: authorization
+          - _fromType: array
+            name: authorization
             value: token
               REDACTED_fc324d3667e841181b0779375f26dedc911d26b303d23b29b1a2d7ee63dc77eb
-          - name: connection
-            value: close
-          - name: content-type
+          - _fromType: array
+            name: content-type
             value: application/json; charset=utf-8
-          - name: user-agent
+          - _fromType: array
+            name: user-agent
             value: jetbrains/6.0-localbuild (Node.js v20.12.2)
-          - name: x-requested-with
+          - _fromType: array
+            name: x-requested-with
             value: jetbrains 6.0-localbuild
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
           - name: host
             value: sourcegraph.com
-        headersSize: 450
+        headersSize: 431
         httpVersion: HTTP/1.1
         method: GET
         queryString: []
@@ -47,7 +51,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 11 Dec 2024 13:34:07 GMT
+            value: Mon, 16 Dec 2024 08:41:31 GMT
           - name: content-type
             value: text/plain; charset=utf-8
           - name: transfer-encoding
@@ -61,9 +65,9 @@ log:
           - name: cache-control
             value: no-cache, max-age=0
           - name: observed-calculated-ip-from-forwarded-for
-            value: 80.82.18.146
+            value: 148.81.137.5
           - name: observed-x-forwarded-for
-            value: 80.82.18.146
+            value: 148.81.137.5
           - name: vary
             value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
               X-Requested-With,Cookie
@@ -82,8 +86,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-12-11T13:34:06.913Z
-      time: 291
+      startedDateTime: 2024-12-16T08:41:30.875Z
+      time: 252
       timings:
         blocked: -1
         connect: -1
@@ -91,7 +95,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 291
+        wait: 252
     - _id: c7327f699da3de5388b86581bd3a348b
       _order: 0
       cache: {}
@@ -109,16 +113,14 @@ log:
           - name: content-type
             value: application/json
           - name: traceparent
-            value: 00-f4c8b76588cc4652fb70d70eda205553-69e11d2fcfcd12e8-01
-          - name: transfer-encoding
-            value: chunked
+            value: 00-27681e91fa9e46d5b05c60db76645679-d03c5b535f59906f-01
           - name: user-agent
             value: jetbrains/6.0-localbuild (Node.js v20.12.2)
           - name: x-requested-with
             value: jetbrains 6.0-localbuild
           - name: host
             value: sourcegraph.com
-        headersSize: 520
+        headersSize: 492
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -223,14 +225,14 @@ log:
             value: 6.0-localbuild
         url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=jetbrains&client-version=6.0-localbuild
       response:
-        bodySize: 764
+        bodySize: 331
         content:
           mimeType: text/event-stream
-          size: 764
+          size: 331
           text: >+
             event: completion
 
-            data: {"deltaText":"\n/**\n * Generates a sequence of Fibonacci numbers and prints them to the console.\n * The sequence starts with 0 and 1, and each subsequent number is the sum of the\n * two preceding ones. This method generates and prints the first 10 Fibonacci\n * numbers.\n */\n","stopReason":"stop_sequence"}
+            data: {"deltaText":"\n/**\n * Generates and prints the first 10 numbers of the Fibonacci sequence.\n */\n","stopReason":"stop_sequence"}
 
 
             event: done
@@ -240,7 +242,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 11 Dec 2024 13:34:09 GMT
+            value: Mon, 16 Dec 2024 08:41:32 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -254,9 +256,9 @@ log:
           - name: cache-control
             value: no-cache
           - name: observed-calculated-ip-from-forwarded-for
-            value: 80.82.18.146
+            value: 148.81.137.5
           - name: observed-x-forwarded-for
-            value: 80.82.18.146
+            value: 148.81.137.5
           - name: vary
             value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
               X-Requested-With,Cookie
@@ -273,8 +275,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-12-11T13:34:08.346Z
-      time: 1430
+      startedDateTime: 2024-12-16T08:41:31.860Z
+      time: 978
       timings:
         blocked: -1
         connect: -1
@@ -282,7 +284,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 1430
+        wait: 978
     - _id: a376faab1c8a1993bb48c745757f0a4a
       _order: 0
       cache: {}
@@ -290,26 +292,31 @@ log:
         bodySize: 318
         cookies: []
         headers:
-          - name: accept
-            value: "*/*"
-          - name: accept-encoding
-            value: gzip,deflate
-          - name: authorization
+          - _fromType: array
+            name: authorization
             value: token
               REDACTED_fc324d3667e841181b0779375f26dedc911d26b303d23b29b1a2d7ee63dc77eb
-          - name: connection
-            value: close
-          - name: content-length
-            value: "318"
-          - name: content-type
+          - _fromType: array
+            name: content-type
             value: application/json; charset=utf-8
-          - name: user-agent
+          - _fromType: array
+            name: user-agent
             value: jetbrains/6.0-localbuild (Node.js v20.12.2)
-          - name: x-requested-with
+          - _fromType: array
+            name: x-requested-with
             value: jetbrains 6.0-localbuild
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "318"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
           - name: host
             value: sourcegraph.com
-        headersSize: 498
+        headersSize: 479
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -317,7 +324,7 @@ log:
           params: []
           textJSON:
             query: |-
-
+              
               query CurrentSiteCodyLlmConfiguration {
                   site {
                       codyLLMConfiguration {
@@ -358,7 +365,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 11 Dec 2024 13:34:07 GMT
+            value: Mon, 16 Dec 2024 08:41:30 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -372,9 +379,9 @@ log:
           - name: cache-control
             value: no-cache, max-age=0
           - name: observed-calculated-ip-from-forwarded-for
-            value: 80.82.18.146
+            value: 148.81.137.5
           - name: observed-x-forwarded-for
-            value: 80.82.18.146
+            value: 148.81.137.5
           - name: vary
             value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
               X-Requested-With,Cookie
@@ -393,8 +400,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-12-11T13:34:06.595Z
-      time: 611
+      startedDateTime: 2024-12-16T08:41:30.538Z
+      time: 330
       timings:
         blocked: -1
         connect: -1
@@ -402,7 +409,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 611
+        wait: 330
     - _id: 0484c4d780805faf3dd3ddabae814640
       _order: 0
       cache: {}
@@ -410,26 +417,31 @@ log:
         bodySize: 165
         cookies: []
         headers:
-          - name: accept
-            value: "*/*"
-          - name: accept-encoding
-            value: gzip,deflate
-          - name: authorization
+          - _fromType: array
+            name: authorization
             value: token
               REDACTED_fc324d3667e841181b0779375f26dedc911d26b303d23b29b1a2d7ee63dc77eb
-          - name: connection
-            value: close
-          - name: content-length
-            value: "165"
-          - name: content-type
+          - _fromType: array
+            name: content-type
             value: application/json; charset=utf-8
-          - name: user-agent
+          - _fromType: array
+            name: user-agent
             value: jetbrains/6.0-localbuild (Node.js v20.12.2)
-          - name: x-requested-with
+          - _fromType: array
+            name: x-requested-with
             value: jetbrains 6.0-localbuild
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "165"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
           - name: host
             value: sourcegraph.com
-        headersSize: 498
+        headersSize: 479
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -437,7 +449,7 @@ log:
           params: []
           textJSON:
             query: |-
-
+              
               query CurrentSiteCodyLlmConfiguration {
                   site {
                       codyLLMConfiguration {
@@ -466,7 +478,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 11 Dec 2024 13:34:06 GMT
+            value: Mon, 16 Dec 2024 08:41:30 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -480,9 +492,9 @@ log:
           - name: cache-control
             value: no-cache, max-age=0
           - name: observed-calculated-ip-from-forwarded-for
-            value: 80.82.18.146
+            value: 148.81.137.5
           - name: observed-x-forwarded-for
-            value: 80.82.18.146
+            value: 148.81.137.5
           - name: vary
             value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
               X-Requested-With,Cookie
@@ -501,7 +513,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-12-11T13:34:06.636Z
+      startedDateTime: 2024-12-16T08:41:30.586Z
       time: 319
       timings:
         blocked: -1
@@ -518,26 +530,31 @@ log:
         bodySize: 150
         cookies: []
         headers:
-          - name: accept
-            value: "*/*"
-          - name: accept-encoding
-            value: gzip,deflate
-          - name: authorization
+          - _fromType: array
+            name: authorization
             value: token
               REDACTED_fc324d3667e841181b0779375f26dedc911d26b303d23b29b1a2d7ee63dc77eb
-          - name: connection
-            value: close
-          - name: content-length
-            value: "150"
-          - name: content-type
+          - _fromType: array
+            name: content-type
             value: application/json; charset=utf-8
-          - name: user-agent
+          - _fromType: array
+            name: user-agent
             value: jetbrains/6.0-localbuild (Node.js v20.12.2)
-          - name: x-requested-with
+          - _fromType: array
+            name: x-requested-with
             value: jetbrains 6.0-localbuild
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "150"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
           - name: host
             value: sourcegraph.com
-        headersSize: 493
+        headersSize: 474
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -545,7 +562,7 @@ log:
           params: []
           textJSON:
             query: |-
-
+              
               query CurrentSiteCodyLlmProvider {
                   site {
                       codyLLMConfiguration {
@@ -574,7 +591,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 11 Dec 2024 13:34:06 GMT
+            value: Mon, 16 Dec 2024 08:41:30 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -588,9 +605,9 @@ log:
           - name: cache-control
             value: no-cache, max-age=0
           - name: observed-calculated-ip-from-forwarded-for
-            value: 80.82.18.146
+            value: 148.81.137.5
           - name: observed-x-forwarded-for
-            value: 80.82.18.146
+            value: 148.81.137.5
           - name: vary
             value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
               X-Requested-With,Cookie
@@ -609,8 +626,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-12-11T13:34:06.617Z
-      time: 313
+      startedDateTime: 2024-12-16T08:41:30.564Z
+      time: 340
       timings:
         blocked: -1
         connect: -1
@@ -618,7 +635,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 313
+        wait: 340
     - _id: 5b9030a4e18d1e000c71d6000a7cef6f
       _order: 0
       cache: {}
@@ -626,26 +643,31 @@ log:
         bodySize: 341
         cookies: []
         headers:
-          - name: accept
-            value: "*/*"
-          - name: accept-encoding
-            value: gzip,deflate
-          - name: authorization
+          - _fromType: array
+            name: authorization
             value: token
               REDACTED_fc324d3667e841181b0779375f26dedc911d26b303d23b29b1a2d7ee63dc77eb
-          - name: connection
-            value: close
-          - name: content-length
-            value: "341"
-          - name: content-type
+          - _fromType: array
+            name: content-type
             value: application/json; charset=utf-8
-          - name: user-agent
+          - _fromType: array
+            name: user-agent
             value: jetbrains/6.0-localbuild (Node.js v20.12.2)
-          - name: x-requested-with
+          - _fromType: array
+            name: x-requested-with
             value: jetbrains 6.0-localbuild
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "341"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
           - name: host
             value: sourcegraph.com
-        headersSize: 478
+        headersSize: 386
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -653,7 +675,7 @@ log:
           params: []
           textJSON:
             query: |-
-
+              
               query CurrentUser {
                   currentUser {
                       id
@@ -704,7 +726,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 11 Dec 2024 13:34:06 GMT
+            value: Mon, 16 Dec 2024 08:41:30 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -718,9 +740,9 @@ log:
           - name: cache-control
             value: no-cache, max-age=0
           - name: observed-calculated-ip-from-forwarded-for
-            value: 80.82.18.146
+            value: 148.81.137.5
           - name: observed-x-forwarded-for
-            value: 80.82.18.146
+            value: 148.81.137.5
           - name: vary
             value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
               X-Requested-With,Cookie
@@ -739,8 +761,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-12-11T13:34:06.318Z
-      time: 237
+      startedDateTime: 2024-12-16T08:41:30.150Z
+      time: 334
       timings:
         blocked: -1
         connect: -1
@@ -748,7 +770,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 237
+        wait: 334
     - _id: aef0c9fe7483280d9c05ac8e97e37571
       _order: 0
       cache: {}
@@ -756,26 +778,31 @@ log:
         bodySize: 268
         cookies: []
         headers:
-          - name: accept
-            value: "*/*"
-          - name: accept-encoding
-            value: gzip,deflate
-          - name: authorization
+          - _fromType: array
+            name: authorization
             value: token
               REDACTED_fc324d3667e841181b0779375f26dedc911d26b303d23b29b1a2d7ee63dc77eb
-          - name: connection
-            value: close
-          - name: content-length
-            value: "268"
-          - name: content-type
+          - _fromType: array
+            name: content-type
             value: application/json; charset=utf-8
-          - name: user-agent
+          - _fromType: array
+            name: user-agent
             value: jetbrains/6.0-localbuild (Node.js v20.12.2)
-          - name: x-requested-with
+          - _fromType: array
+            name: x-requested-with
             value: jetbrains 6.0-localbuild
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "268"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
           - name: host
             value: sourcegraph.com
-        headersSize: 494
+        headersSize: 475
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -783,7 +810,7 @@ log:
           params: []
           textJSON:
             query: |-
-
+              
               query CurrentUserCodySubscription {
                   currentUser {
                       codySubscription {
@@ -801,19 +828,28 @@ log:
             value: null
         url: https://sourcegraph.com/.api/graphql?CurrentUserCodySubscription
       response:
-        bodySize: 231
+        bodySize: 228
         content:
           encoding: base64
           mimeType: application/json
-          size: 231
-          text: "[\"H4sIAAAAAAAAA1zMsQrCMBSF4Xc5cwsmdspWpIMgWNrq4BabDIGahJuboZS8uygI6nh+P\
-            s4Go1lDbZgzkfV8SZbeM5h1zPc0k4vsgn+1xJpzgkJ7mI7XDhXioj0U+uGMCjrGZe0p\
-            DJrtyT0cJyimbKvPd2/JBTOyJm4ZCnInm1qIWjSTlEoItZc3/OnOmy8rf20ppTwBAAD\
-            //w==\",\"AwBSo2hkwgAAAA==\"]"
+          size: 228
+          text: "[\"H4sIAAAAAAAAA1zMsQrCMBSF4Xc5cwtNrEu2Ih0EwdJWB7fYZAjUJNzcDqXk3UWhg47n5\
+            +NsMJo11IZpIbKeb8nSdwazDsszTeQiu+A/LbHmJUGhOY3ne4sCcdYeCl1/RQEd47x2\
+            FHrN9uJejhMU02KL/buz5IIZWBM3DAVZyboUshT1KKUSQh3kA3+69Wa3x7ISvzbnnN8\
+            AAAD//wMAGcWkRMIAAAA=\"]"
+          textDecoded:
+            data:
+              currentUser:
+                codySubscription:
+                  applyProRateLimits: true
+                  currentPeriodEndAt: 2025-01-14T22:11:32Z
+                  currentPeriodStartAt: 2024-12-14T22:11:32Z
+                  plan: PRO
+                  status: ACTIVE
         cookies: []
         headers:
           - name: date
-            value: Wed, 11 Dec 2024 13:34:07 GMT
+            value: Mon, 16 Dec 2024 08:41:30 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -827,9 +863,9 @@ log:
           - name: cache-control
             value: no-cache, max-age=0
           - name: observed-calculated-ip-from-forwarded-for
-            value: 80.82.18.146
+            value: 148.81.137.5
           - name: observed-x-forwarded-for
-            value: 80.82.18.146
+            value: 148.81.137.5
           - name: vary
             value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
               X-Requested-With,Cookie
@@ -848,8 +884,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-12-11T13:34:06.670Z
-      time: 768
+      startedDateTime: 2024-12-16T08:41:30.629Z
+      time: 348
       timings:
         blocked: -1
         connect: -1
@@ -857,7 +893,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 768
+        wait: 348
     - _id: 4504fab53d7cb602861f73dc2aa883d2
       _order: 0
       cache: {}
@@ -865,26 +901,31 @@ log:
         bodySize: 101
         cookies: []
         headers:
-          - name: accept
-            value: "*/*"
-          - name: accept-encoding
-            value: gzip,deflate
-          - name: authorization
+          - _fromType: array
+            name: authorization
             value: token
               REDACTED_fc324d3667e841181b0779375f26dedc911d26b303d23b29b1a2d7ee63dc77eb
-          - name: connection
-            value: close
-          - name: content-length
-            value: "101"
-          - name: content-type
+          - _fromType: array
+            name: content-type
             value: application/json; charset=utf-8
-          - name: user-agent
+          - _fromType: array
+            name: user-agent
             value: jetbrains/6.0-localbuild (Node.js v20.12.2)
-          - name: x-requested-with
+          - _fromType: array
+            name: x-requested-with
             value: jetbrains 6.0-localbuild
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "101"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
           - name: host
             value: sourcegraph.com
-        headersSize: 485
+        headersSize: 466
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -892,7 +933,7 @@ log:
           params: []
           textJSON:
             query: |-
-
+              
               query SiteProductVersion {
                   site {
                       productVersion
@@ -904,18 +945,21 @@ log:
             value: null
         url: https://sourcegraph.com/.api/graphql?SiteProductVersion
       response:
-        bodySize: 143
+        bodySize: 136
         content:
           encoding: base64
           mimeType: application/json
-          size: 143
-          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdEFRfkppcklYalFxZn5eUpWSsYGxiaG5vFGB\
-            kYmuoZGuoaG8aZ6hga6hkappkZJxkkm5inGSrW1tQAAAAD//w==\",\"AwA9AYcESgA\
-            AAA==\"]"
+          size: 136
+          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdEFRfkppcklYalFxZn5eUpWSsYGxmaGhvFGB\
+            kYmuoZGuoaG8aZ6hga6BinmJgYWppbJhmaGSrW1tQAAAAD//wMArL5ku0oAAAA=\"]"
+          textDecoded:
+            data:
+              site:
+                productVersion: 303611_2024-12-11_5.10-0d740859c161
         cookies: []
         headers:
           - name: date
-            value: Wed, 11 Dec 2024 13:34:06 GMT
+            value: Mon, 16 Dec 2024 08:41:30 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -929,9 +973,9 @@ log:
           - name: cache-control
             value: no-cache, max-age=0
           - name: observed-calculated-ip-from-forwarded-for
-            value: 80.82.18.146
+            value: 148.81.137.5
           - name: observed-x-forwarded-for
-            value: 80.82.18.146
+            value: 148.81.137.5
           - name: vary
             value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
               X-Requested-With,Cookie
@@ -950,8 +994,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-12-11T13:34:06.654Z
-      time: 253
+      startedDateTime: 2024-12-16T08:41:30.608Z
+      time: 262
       timings:
         blocked: -1
         connect: -1
@@ -959,7 +1003,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 253
+        wait: 262
     - _id: fbb23499ae0eec5c2e188687b429531b
       _order: 0
       cache: {}
@@ -967,22 +1011,25 @@ log:
         bodySize: 0
         cookies: []
         headers:
-          - name: accept
-            value: "*/*"
-          - name: accept-encoding
-            value: gzip,deflate
-          - name: authorization
+          - _fromType: array
+            name: authorization
             value: token
               REDACTED_fc324d3667e841181b0779375f26dedc911d26b303d23b29b1a2d7ee63dc77eb
-          - name: connection
-            value: close
-          - name: user-agent
+          - _fromType: array
+            name: user-agent
             value: jetbrains/6.0-localbuild (Node.js v20.12.2)
-          - name: x-requested-with
+          - _fromType: array
+            name: x-requested-with
             value: jetbrains 6.0-localbuild
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
           - name: host
             value: sourcegraph.com
-        headersSize: 350
+        headersSize: 331
         httpVersion: HTTP/1.1
         method: GET
         queryString: []
@@ -1023,7 +1070,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 11 Dec 2024 13:34:08 GMT
+            value: Mon, 16 Dec 2024 08:41:31 GMT
           - name: content-type
             value: text/plain; charset=utf-8
           - name: transfer-encoding
@@ -1039,9 +1086,9 @@ log:
           - name: content-encoding
             value: gzip
           - name: observed-calculated-ip-from-forwarded-for
-            value: 80.82.18.146
+            value: 148.81.137.5
           - name: observed-x-forwarded-for
-            value: 80.82.18.146
+            value: 148.81.137.5
           - name: vary
             value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
               X-Requested-With,Cookie
@@ -1058,8 +1105,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-12-11T13:34:07.214Z
-      time: 963
+      startedDateTime: 2024-12-16T08:41:31.136Z
+      time: 271
       timings:
         blocked: -1
         connect: -1
@@ -1067,6 +1114,6 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 963
+        wait: 271
   pages: []
   version: "1.2"
