@@ -1,8 +1,17 @@
-import type { ChatMessageWithSearch, NLSSearchDynamicFilter } from '@sourcegraph/cody-shared'
+import {
+    CODE_SEARCH_PROVIDER_URI,
+    type ChatMessageWithSearch,
+    type NLSSearchDynamicFilter,
+    type NLSSearchResult,
+    isDefined,
+} from '@sourcegraph/cody-shared'
 import { ArrowDown, ExternalLink, FilterIcon, Search } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { useCallback, useContext, useLayoutEffect, useMemo, useReducer, useState } from 'react'
+import { createContextItem } from '../../../../../src/context/openctx/codeSearch'
+import { LastEditorContext } from '../../../../chat/context'
 import { NLSResultSnippet } from '../../../../components/NLSResultSnippet'
 import { Button } from '../../../../components/shadcn/ui/button'
+import { Label } from '../../../../components/shadcn/ui/label'
 import { useConfig } from '../../../../utils/useConfig'
 import { useExperimentalOneBoxDebug } from '../../../../utils/useExperimentalOneBox'
 import { FeedbackButtons } from '../../../components/FeedbackButtons'
@@ -15,6 +24,10 @@ interface SearchResultsProps {
     showFeedbackButtons?: boolean
     feedbackButtonsOnSubmit?: (text: string) => void
     onSelectedFiltersUpdate: (filters: NLSSearchDynamicFilter[]) => void
+    /**
+     * Whether or not search results can be selected as context for the next interaction.
+     */
+    enableContextSelection: boolean
 }
 
 const DEFAULT_RESULTS_LIMIT = 10
@@ -23,13 +36,19 @@ export const SearchResults = ({
     onSelectedFiltersUpdate,
     showFeedbackButtons,
     feedbackButtonsOnSubmit,
+    enableContextSelection,
 }: SearchResultsProps) => {
     const experimentalOneBoxDebug = useExperimentalOneBoxDebug()
+    const lastEditorRef = useContext(LastEditorContext)
+    const [selectedFollowUpResults, updateSelectedFollowUpResults] = useReducer(
+        selectedResultsReducer,
+        new Set<NLSSearchResult>()
+    )
 
     const [showAll, setShowAll] = useState(false)
     const [showFilters, setShowFilters] = useState(false)
 
-    const results = useMemo(
+    const totalResults = useMemo(
         () =>
             message.search.response?.results.results.filter(
                 result => result.__typename === 'FileMatch' && result.chunkMatches?.length
@@ -37,11 +56,61 @@ export const SearchResults = ({
         [message.search.response]
     )
 
-    const totalResults = results.length
+    const initialResults = useMemo(() => totalResults?.slice(0, DEFAULT_RESULTS_LIMIT), [totalResults])
+
+    const resultsToShow =
+        initialResults?.length === totalResults?.length || showAll ? totalResults : initialResults
 
     const {
         config: { serverEndpoint },
     } = useConfig()
+
+    // Select all results by default when the results are rendered the first time
+    useLayoutEffect(() => {
+        updateSelectedFollowUpResults({
+            type: 'init',
+            results: initialResults ?? [],
+        })
+    }, [initialResults])
+
+    // Update the context chip in the last editor (when enabled) when the selected search results change.
+    useLayoutEffect(() => {
+        if (!enableContextSelection) {
+            return
+        }
+
+        if (selectedFollowUpResults.size > 0) {
+            const contextItem = createContextItem(
+                Array.from(selectedFollowUpResults)
+                    .map(result => {
+                        switch (result.__typename) {
+                            case 'FileMatch':
+                                return {
+                                    type: 'file' as const,
+                                    repoName: result.repository.name,
+                                    filePath: result.file.path,
+                                    rev: result.file.commit.oid,
+                                }
+                            default:
+                                return null
+                        }
+                    })
+                    .filter(isDefined)
+            )
+            lastEditorRef.current?.upsertMentions([contextItem])
+        } else {
+            lastEditorRef.current?.filterMentions(
+                mention => mention.type !== 'openctx' || mention.providerUri !== CODE_SEARCH_PROVIDER_URI
+            )
+        }
+    }, [enableContextSelection, selectedFollowUpResults, lastEditorRef])
+
+    const handleSelectForContext = useCallback((selected: boolean, result: NLSSearchResult) => {
+        updateSelectedFollowUpResults({
+            type: selected ? 'add' : 'remove',
+            results: [result],
+        })
+    }, [])
 
     if (showFilters) {
         return (
@@ -62,23 +131,39 @@ export const SearchResults = ({
 
     return (
         <>
-            {!!message.search.response?.results.results.length && (
+            {!!resultsToShow && (
                 <div className="tw-flex tw-items-center tw-gap-4 tw-justify-between">
                     <div className="tw-flex tw-gap-2 tw-items-center tw-font-semibold tw-text-muted-foreground">
-                        <Search className="tw-size-8" />
-                        Displaying{' '}
-                        <span className="tw-text-muted-foreground">
-                            {totalResults > DEFAULT_RESULTS_LIMIT && !showAll
-                                ? `${DEFAULT_RESULTS_LIMIT} of ${totalResults}`
-                                : totalResults}
-                        </span>{' '}
-                        code search results
+                        <Search className="tw-size-8 tw-flex-shrink-0" />
+                        Displaying {resultsToShow.length} code search results
                     </div>
-                    <div>
+                    <div className="tw-flex tw-gap-4">
                         <Button onClick={() => setShowFilters(true)} variant="outline">
                             <FilterIcon className="tw-size-8" />
                             Filters
                         </Button>
+                        <div className="tw-flex tw-items-center tw-gap-4">
+                            <Label htmlFor="search-results.select-all">Add to context:</Label>
+                            <input
+                                type="checkbox"
+                                id="search-results.select-all"
+                                checked={selectedFollowUpResults.size === resultsToShow.length}
+                                disabled={!enableContextSelection}
+                                onChange={event => {
+                                    if (event.target.checked) {
+                                        updateSelectedFollowUpResults({
+                                            type: 'add',
+                                            results: resultsToShow,
+                                        })
+                                    } else {
+                                        updateSelectedFollowUpResults({
+                                            type: 'init',
+                                            results: [],
+                                        })
+                                    }
+                                }}
+                            />
+                        </div>
                     </div>
                 </div>
             )}
@@ -90,25 +175,38 @@ export const SearchResults = ({
                     Query with selected filters: {message.search.queryWithSelectedFilters}
                 </InfoMessage>
             )}
-            {!!results && (
+            {!!resultsToShow && (
                 <ul className="tw-list-none tw-flex tw-flex-col tw-gap-2 tw-pt-2">
-                    {results.map((result, i) =>
-                        showAll || i < DEFAULT_RESULTS_LIMIT ? (
-                            <li
-                                // biome-ignore lint/correctness/useJsxKeyInIterable:
-                                // biome-ignore lint/suspicious/noArrayIndexKey: stable order
-                                key={i}
-                            >
-                                <NLSResultSnippet result={result} />
-                            </li>
-                        ) : null
-                    )}
+                    {resultsToShow.map((result, i) => (
+                        <li
+                            // biome-ignore lint/correctness/useJsxKeyInIterable:
+                            // biome-ignore lint/suspicious/noArrayIndexKey: stable order
+                            key={i}
+                        >
+                            <NLSResultSnippet
+                                result={result}
+                                selectedForContext={selectedFollowUpResults.has(result)}
+                                onSelectForContext={
+                                    enableContextSelection ? handleSelectForContext : undefined
+                                }
+                            />
+                        </li>
+                    ))}
                 </ul>
             )}
             <div className="tw-flex tw-justify-between tw-gap-4 tw-my-4">
                 <div className="tw-flex tw-items-center tw-gap-4">
-                    {!showAll && totalResults > DEFAULT_RESULTS_LIMIT && (
-                        <Button onClick={() => setShowAll(true)} variant="outline">
+                    {!showAll && resultsToShow && totalResults && resultsToShow !== totalResults && (
+                        <Button
+                            onClick={() => {
+                                setShowAll(true)
+                                updateSelectedFollowUpResults({
+                                    type: 'add',
+                                    results: totalResults.slice(resultsToShow.length),
+                                })
+                            }}
+                            variant="outline"
+                        >
                             <ArrowDown className="tw-size-8" />
                             More results
                         </Button>
@@ -130,4 +228,28 @@ export const SearchResults = ({
             </div>
         </>
     )
+}
+
+type SelectedResultAction =
+    | { type: 'init'; results: NLSSearchResult[] }
+    | { type: 'add'; results: NLSSearchResult[] }
+    | { type: 'remove'; results: NLSSearchResult[] }
+
+function selectedResultsReducer(
+    state: Set<NLSSearchResult>,
+    action: SelectedResultAction
+): Set<NLSSearchResult> {
+    switch (action.type) {
+        case 'init':
+            return new Set(action.results)
+        case 'add':
+            return new Set([...state, ...action.results])
+        case 'remove': {
+            const newState = new Set(state)
+            for (const result of action.results) {
+                newState.delete(result)
+            }
+            return newState
+        }
+    }
 }

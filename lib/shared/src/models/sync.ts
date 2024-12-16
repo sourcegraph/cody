@@ -235,7 +235,8 @@ export function syncModels({
                                                 )
                                                 // DEEP CODY is enabled for all PLG users.
                                                 // Enterprise users need to have the feature flag enabled.
-                                                const isDeepCodyEnabled = isDotComUser || hasDeepCodyFlag
+                                                const isDeepCodyEnabled =
+                                                    (isDotComUser && !isCodyFreeUser) || hasDeepCodyFlag
                                                 if (
                                                     isDeepCodyEnabled &&
                                                     sonnetModel &&

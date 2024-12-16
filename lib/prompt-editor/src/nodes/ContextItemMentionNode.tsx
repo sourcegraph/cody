@@ -24,6 +24,7 @@ import {
     TextNode,
 } from 'lexical'
 import { AtSignIcon } from 'lucide-react'
+import * as v from 'valibot'
 import { URI } from 'vscode-uri'
 import { iconForProvider } from '../mentions/mentionMenu/MentionMenuItem'
 import styles from './ContextItemMentionNode.module.css'
@@ -142,6 +143,9 @@ export class ContextItemMentionNode extends DecoratorNode<JSX.Element> {
                     : 'File is too large. Try adding the file again with a smaller range of lines.'
                 : displayPath(URI.parse(this.contextItem.uri))
         }
+        if (v.is(OpenCtxItemWithTooltipSchema, this.contextItem)) {
+            return this.contextItem.mention.data.tooltip
+        }
         if (this.contextItem.type === 'openctx') {
             return this.contextItem.uri
         }
@@ -209,3 +213,15 @@ export function $createContextItemTextNode(contextItem: ContextItem): TextNode {
     const textNode = new TextNode(contextItemMentionNodeDisplayText(serializeContextItem(contextItem)))
     return $applyNodeReplacement(textNode)
 }
+
+/**
+ * The structure of an openctx context item with a tooltip.
+ */
+const OpenCtxItemWithTooltipSchema = v.object({
+    type: v.literal('openctx'),
+    mention: v.object({
+        data: v.object({
+            tooltip: v.string(),
+        }),
+    }),
+})

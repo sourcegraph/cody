@@ -50,6 +50,8 @@ import { HumanMessageCell } from './cells/messageCell/human/HumanMessageCell'
 
 import { type Context, type Span, context, trace } from '@opentelemetry/api'
 import { SwitchIntent } from './cells/messageCell/assistant/SwitchIntent'
+import { LastEditorContext } from './context'
+
 interface TranscriptProps {
     activeChatContext?: Context
     setActiveChatContext: (context: Context | undefined) => void
@@ -132,34 +134,36 @@ export const Transcript: FC<TranscriptProps> = props => {
                 'tw-flex-grow': transcript.length > 0,
             })}
         >
-            {interactions.map((interaction, i) => (
-                <TranscriptInteraction
-                    key={interaction.humanMessage.index}
-                    activeChatContext={activeChatContext}
-                    setActiveChatContext={setActiveChatContext}
-                    models={models}
-                    chatEnabled={chatEnabled}
-                    userInfo={userInfo}
-                    interaction={interaction}
-                    guardrails={guardrails}
-                    postMessage={postMessage}
-                    feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
-                    copyButtonOnSubmit={copyButtonOnSubmit}
-                    insertButtonOnSubmit={insertButtonOnSubmit}
-                    isFirstInteraction={i === 0}
-                    isLastInteraction={i === interactions.length - 1}
-                    isLastSentInteraction={
-                        i === interactions.length - 2 && interaction.assistantMessage !== null
-                    }
-                    priorAssistantMessageIsLoading={Boolean(
-                        messageInProgress && interactions.at(i - 1)?.assistantMessage?.isLoading
-                    )}
-                    smartApply={smartApply}
-                    smartApplyEnabled={smartApplyEnabled}
-                    editorRef={i === interactions.length - 1 ? lastHumanEditorRef : undefined}
-                    onAddToFollowupChat={onAddToFollowupChat}
-                />
-            ))}
+            <LastEditorContext.Provider value={lastHumanEditorRef}>
+                {interactions.map((interaction, i) => (
+                    <TranscriptInteraction
+                        key={interaction.humanMessage.index}
+                        activeChatContext={activeChatContext}
+                        setActiveChatContext={setActiveChatContext}
+                        models={models}
+                        chatEnabled={chatEnabled}
+                        userInfo={userInfo}
+                        interaction={interaction}
+                        guardrails={guardrails}
+                        postMessage={postMessage}
+                        feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
+                        copyButtonOnSubmit={copyButtonOnSubmit}
+                        insertButtonOnSubmit={insertButtonOnSubmit}
+                        isFirstInteraction={i === 0}
+                        isLastInteraction={i === interactions.length - 1}
+                        isLastSentInteraction={
+                            i === interactions.length - 2 && interaction.assistantMessage !== null
+                        }
+                        priorAssistantMessageIsLoading={Boolean(
+                            messageInProgress && interactions.at(i - 1)?.assistantMessage?.isLoading
+                        )}
+                        smartApply={smartApply}
+                        smartApplyEnabled={smartApplyEnabled}
+                        editorRef={i === interactions.length - 1 ? lastHumanEditorRef : undefined}
+                        onAddToFollowupChat={onAddToFollowupChat}
+                    />
+                ))}
+            </LastEditorContext.Provider>
         </div>
     )
 }
@@ -653,6 +657,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                     smartApply={smartApply}
                     smartApplyEnabled={smartApplyEnabled}
                     onSelectedFiltersUpdate={onSelectedFiltersUpdate}
+                    isLastSentInteraction={isLastSentInteraction}
                 />
             )}
         </>
