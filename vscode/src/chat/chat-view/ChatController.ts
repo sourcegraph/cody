@@ -322,8 +322,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 })
                 break
             }
-            case 'reEvaluateSearchWithSelectedFilters': {
-                await this.reEvaluateSearchWithSelectedFilters({
+            case 'reevaluateSearchWithSelectedFilters': {
+                await this.reevaluateSearchWithSelectedFilters({
                     index: message.index ?? undefined,
                     selectedFilters: message.selectedFilters,
                 })
@@ -1327,7 +1327,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         void this.saveSession()
     }
 
-    private async reEvaluateSearchWithSelectedFilters({
+    private async reevaluateSearchWithSelectedFilters({
         index,
         selectedFilters,
     }: { index?: number; selectedFilters?: NLSSearchDynamicFilter[] }) {
@@ -1373,13 +1373,11 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     response,
                     selectedFilters,
                 },
-                text: ps`search found ${response?.results?.results?.length || 0} results`,
+                text: ps`search found ${response?.results.results.length || 0} results`,
             })
-
-            void this.saveSession()
-            this.postViewTranscript()
         } catch (err) {
             this.chatBuilder.addErrorAsBotMessage(err as Error, ChatBuilder.NO_MODEL)
+        } finally {
             void this.saveSession()
             this.postViewTranscript()
         }

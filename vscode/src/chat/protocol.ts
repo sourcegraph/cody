@@ -141,7 +141,7 @@ export type WebviewMessage =
           message: string
       }
     | {
-          command: 'reEvaluateSearchWithSelectedFilters'
+          command: 'reevaluateSearchWithSelectedFilters'
           index: number
           selectedFilters: NLSSearchDynamicFilter[]
       }

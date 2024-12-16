@@ -11,14 +11,14 @@ export const SearchFiltersModal = ({
     onSelectedFiltersUpdate,
     close,
 }: SearchFiltersModalProps) => {
-    const [currentSelectedFitlers, setCurrentSelectedFilters] = useState(selectedFilters)
+    const [currentSelectedFilters, setCurrentSelectedFilters] = useState(selectedFilters)
 
     useEffect(() => setCurrentSelectedFilters(selectedFilters), [selectedFilters])
 
     const onApply = useCallback(() => {
-        onSelectedFiltersUpdate(currentSelectedFitlers)
+        onSelectedFiltersUpdate(currentSelectedFilters)
         close()
-    }, [onSelectedFiltersUpdate, currentSelectedFitlers, close])
+    }, [onSelectedFiltersUpdate, currentSelectedFilters, close])
 
     return (
         <div className="tw-flex tw-flex-col tw-gap-8">
@@ -33,7 +33,7 @@ export const SearchFiltersModal = ({
             </div>
             <SearchFilters
                 filters={filters}
-                selectedFilters={currentSelectedFitlers}
+                selectedFilters={currentSelectedFilters}
                 onSelectedFiltersUpdate={setCurrentSelectedFilters}
             />
             <div className="tw-flex tw-text-muted-foreground tw-items-center tw-justify-between">

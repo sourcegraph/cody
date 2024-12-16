@@ -570,7 +570,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
 
     const onSelectedFiltersUpdate = useCallback(
         (selectedFilters: NLSSearchDynamicFilter[]) => {
-            reEvaluateSearchWithSelectedFilters({
+            reevaluateSearchWithSelectedFilters({
                 messageIndexInTranscript: humanMessage.index,
                 selectedFilters,
             })
@@ -730,7 +730,7 @@ function submitHumanMessage({
     focusLastHumanMessageEditor()
 }
 
-function reEvaluateSearchWithSelectedFilters({
+function reevaluateSearchWithSelectedFilters({
     messageIndexInTranscript,
     selectedFilters,
 }: {
@@ -738,9 +738,8 @@ function reEvaluateSearchWithSelectedFilters({
     selectedFilters: NLSSearchDynamicFilter[]
 }): void {
     getVSCodeAPI().postMessage({
-        command: 'reEvaluateSearchWithSelectedFilters',
+        command: 'reevaluateSearchWithSelectedFilters',
         index: messageIndexInTranscript,
         selectedFilters,
     })
-    focusLastHumanMessageEditor()
 }

@@ -149,7 +149,7 @@ export const SubmitButton: FC<{
                         <Command>
                             <CommandList className="tw-p-2">
                                 {intentOptions.map(option =>
-                                    // biome-ignore lint/correctness/useJsxKeyInIterable: <explanation>
+                                    // biome-ignore lint/correctness/useJsxKeyInIterable: We don't need a key for null
                                     option.hidden ? null : (
                                         <CommandItem
                                             key={option.intent ?? option.title}

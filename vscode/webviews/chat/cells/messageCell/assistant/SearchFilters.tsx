@@ -15,24 +15,28 @@ export const SearchFilters = ({
     selectedFilters,
     onSelectedFiltersUpdate,
 }: SearchFiltersProps) => {
-    const filterGroups = useMemo(
-        () =>
-            // selectedFilter is included just as a safeguard in case the selected filter is not in the search response filters
-            uniqBy([...filters, ...selectedFilters], ({ value, kind }) => `${value}-${kind}`).reduce(
-                (groups, filter) => {
-                    if (['repo', 'file', 'type', 'lang'].includes(filter.kind)) {
-                        groups[filter.kind as NLSSearchDynamicFilterKind].push(filter)
-                    }
+    const filterGroups = useMemo(() => {
+        const fields: string[] = [
+            'repo',
+            'file',
+            'type',
+            'lang',
+        ] satisfies Array<NLSSearchDynamicFilterKind>
 
-                    return groups
-                },
-                { repo: [], file: [], type: [], lang: [] } as Record<
-                    NLSSearchDynamicFilterKind,
-                    NLSSearchDynamicFilter[]
-                >
-            ),
-        [filters, selectedFilters]
-    )
+        // selectedFilter is included just as a safeguard in case the selected filter is not in the search response filters
+        return uniqBy([...filters, ...selectedFilters], ({ value, kind }) => `${value}-${kind}`).reduce<
+            Record<NLSSearchDynamicFilterKind, NLSSearchDynamicFilter[]>
+        >(
+            (groups, filter) => {
+                if (fields.includes(filter.kind)) {
+                    groups[filter.kind as NLSSearchDynamicFilterKind].push(filter)
+                }
+
+                return groups
+            },
+            { repo: [], file: [], type: [], lang: [] }
+        )
+    }, [filters, selectedFilters])
 
     const onFilterSelect = useCallback(
         (filter: NLSSearchDynamicFilter) => {

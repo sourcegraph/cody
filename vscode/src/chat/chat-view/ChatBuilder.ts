@@ -203,7 +203,7 @@ export class ChatBuilder {
             search,
             speaker: 'assistant',
             error,
-            text: ps`Search found ${search?.response?.results?.results?.length || 0} results`,
+            text: ps`Search found ${search?.response?.results.results.length || 0} results`,
         })
         this.changeNotifications.next()
     }

@@ -29,7 +29,7 @@ export const SearchResults = ({
     const [showAll, setShowAll] = useState(false)
     const [showFilters, setShowFilters] = useState(false)
 
-    const totalResults = message.search.response?.results?.results?.length ?? 0
+    const totalResults = message.search.response?.results.results.length ?? 0
 
     const {
         config: { serverEndpoint },
@@ -38,7 +38,7 @@ export const SearchResults = ({
     if (showFilters) {
         return (
             <SearchFiltersModal
-                filters={message.search.response?.results?.dynamicFilters || []}
+                filters={message.search.response?.results.dynamicFilters || []}
                 selectedFilters={message.search.selectedFilters || []}
                 onSelectedFiltersUpdate={onSelectedFiltersUpdate}
                 close={() => setShowFilters(false)}
@@ -46,7 +46,7 @@ export const SearchResults = ({
         )
     }
 
-    // This is to figure out if the current assistant response in loading state.
+    // This is to figure out if the current assistant response is in loading state.
     // `messageInProgress` is otherwise passed at the global level for the latest message.
     if (!message.text && !!message.search.query) {
         return <LoadingDots />
@@ -54,11 +54,16 @@ export const SearchResults = ({
 
     return (
         <>
-            {!!message.search.response?.results?.results?.length && (
+            {!!message.search.response?.results.results.length && (
                 <div className="tw-flex tw-items-center tw-gap-4 tw-justify-between">
                     <div className="tw-flex tw-gap-2 tw-items-center tw-font-semibold tw-text-muted-foreground">
                         <Search className="tw-size-8" />
-                        Displaying {showAll ? totalResults : DEFAULT_RESULTS_LIMIT} of {totalResults}{' '}
+                        Displaying{' '}
+                        <span className="tw-text-muted-foreground">
+                            {totalResults > DEFAULT_RESULTS_LIMIT && !showAll
+                                ? `${DEFAULT_RESULTS_LIMIT} of ${totalResults}`
+                                : totalResults}
+                        </span>{' '}
                         code search results
                     </div>
                     <div>
@@ -77,7 +82,7 @@ export const SearchResults = ({
                     Query with selected filters: {message.search.queryWithSelectedFilters}
                 </InfoMessage>
             )}
-            {!!message.search.response?.results?.results?.length && (
+            {!!message.search.response?.results.results.length && (
                 <ul className="tw-list-none tw-flex tw-flex-col tw-gap-2 tw-pt-2">
                     {message.search.response.results.results.map((result, i) =>
                         showAll || i < DEFAULT_RESULTS_LIMIT ? (
