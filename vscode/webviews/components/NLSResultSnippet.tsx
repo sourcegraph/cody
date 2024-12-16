@@ -5,14 +5,23 @@ import type { NLSSearchResult } from '@sourcegraph/cody-shared/src/sourcegraph-a
 import type { Observable } from 'observable-fns'
 import { useTelemetryRecorder } from '../utils/telemetry'
 import { useConfig } from '../utils/useConfig'
-import { type FetchFileParameters, FileMatchSearchResult } from './codeSnippet/CodeSnippet'
+import {
+    type FetchFileParameters,
+    FileMatchSearchResult,
+    type ISelectableForContext,
+} from './codeSnippet/CodeSnippet'
 
-interface NLSResultSnippetProps {
+interface NLSResultSnippetProps extends ISelectableForContext {
     result: NLSSearchResult
     className?: string
 }
 
-export const NLSResultSnippet: FC<NLSResultSnippetProps> = ({ result, className }) => {
+export const NLSResultSnippet: FC<NLSResultSnippetProps> = ({
+    result,
+    className,
+    selectedForContext,
+    onSelectForContext,
+}) => {
     const highlights = useExtensionAPI().highlights
     const {
         config: { serverEndpoint },
@@ -45,6 +54,8 @@ export const NLSResultSnippet: FC<NLSResultSnippetProps> = ({ result, className 
             fetchHighlightedFileLineRanges={fetchHighlights}
             className={className}
             onSelect={logSelection}
+            selectedForContext={selectedForContext}
+            onSelectForContext={onSelectForContext}
         />
     )
 }
