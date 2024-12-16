@@ -65,9 +65,10 @@ open class CodyIntegrationTextFixture : BasePlatformTestCase(), LensListener {
 
       val recordingsFuture = CompletableFuture<Void>()
       CodyAgentService.withAgent(project) { agent ->
-        val errors = agent.server.testingRequestErrors().get()
+        val errors = agent.server.testing_requestErrors(null).get()
         // We extract polly.js errors to notify users about the missing recordings, if any
-        val missingRecordings = errors.filter { it.error?.contains("`recordIfMissing` is") == true }
+        val missingRecordings =
+            errors.errors.filter { it.error?.contains("`recordIfMissing` is") == true }
         missingRecordings.forEach { missing ->
           logger.error(
               """Recording is missing: ${missing.error}
