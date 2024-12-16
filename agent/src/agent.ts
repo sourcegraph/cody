@@ -9,10 +9,10 @@ import {
     type CodyCommand,
     CodyIDE,
     ModelUsage,
-    authStatus,
     checkIfEnterpriseUser,
     currentAuthStatus,
     currentAuthStatusAuthed,
+    firstNonPendingAuthStatus,
     firstResultFromOperation,
     resolvedConfig,
     telemetryRecorder,
@@ -479,7 +479,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
                     ? await this.handleConfigChanges(clientInfo.extensionConfiguration, {
                           forceAuthentication,
                       })
-                    : await firstResultFromOperation(authStatus)
+                    : await firstNonPendingAuthStatus()
 
                 return {
                     name: 'cody-agent',
@@ -586,7 +586,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
         })
 
         this.registerRequest('extensionConfiguration/status', async () => {
-            return firstResultFromOperation(authStatus).then(toProtocolAuthStatus)
+            return firstNonPendingAuthStatus().then(toProtocolAuthStatus)
         })
 
         this.registerRequest('extensionConfiguration/getSettingsSchema', async () => {
@@ -1489,12 +1489,11 @@ export class Agent extends MessageHandler implements ExtensionClient {
         const isAuthChange = vscode_shim.isAuthenticationChange(config)
         vscode_shim.setExtensionConfiguration(config)
 
-        let status = undefined
         // If this is an authentication change we need to reauthenticate prior to firing events
         // that update the clients
         try {
             if (isAuthChange || params?.forceAuthentication) {
-                status = await authProvider.validateAndStoreCredentials(
+                await authProvider.validateAndStoreCredentials(
                     {
                         configuration: {
                             customHeaders: config.customHeaders,
@@ -1527,7 +1526,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
         })
         await firstResultFromOperation(resolvedConfig)
 
-        return status ?? (await firstResultFromOperation(authStatus))
+        return firstNonPendingAuthStatus()
     }
 
     private async handleDocumentChange(document: ProtocolTextDocument) {
@@ -1709,7 +1708,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
         callback: RequestCallback<M>
     ): void {
         this.registerRequest(method, async (params, token) => {
-            await firstResultFromOperation(authStatus)
+            await firstNonPendingAuthStatus()
             if (vscode_shim.isTesting) {
                 await Promise.all(this.pendingPromises.values())
             }

@@ -7,7 +7,7 @@ These tests don't run as part of CI. Instead, the goal is to make it easier for 
 Doing so will make diagnosing and verifying the results a lot easier for everyone.
 
 ## Rules:
-- Ideally test files are named with the Linear/Github Issue ID to make it easy to find them or pull in additional context.
+- Ideally test files are named with the Linear/GitHub Issue ID to make it easy to find them or pull in additional context.
 - Only tests explicitly marked with `only()` should run. Issue tests are by definition very tied to the specific issue someone is trying to diagnose, so running other tests would just be noise. This should already be if you extend the base test for the specific type. See [e2e/template.test.ts](./e2e/template.test.ts)
 - (Optional) I'm hoping to do [some experiments soon](#sidenote-openctx-experiment). So if you can please:
   - start each test with a `//CTX(linear-issue): <linear_url>` comment

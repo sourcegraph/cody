@@ -336,9 +336,19 @@ export interface NLSSearchFileMatch {
 
 export type NLSSearchResult = NLSSearchFileMatch | { __typename: 'unknown' }
 
+export interface NLSSearchDynamicFilter {
+    value: string
+    label: string
+    count: number
+    kind: NLSSearchDynamicFilterKind | string
+}
+
+export type NLSSearchDynamicFilterKind = 'repo' | 'lang' | 'type' | 'file'
+
 export interface NLSSearchResponse {
     search: {
         results: {
+            dynamicFilters?: NLSSearchDynamicFilter[]
             results: NLSSearchResult[]
         }
     }

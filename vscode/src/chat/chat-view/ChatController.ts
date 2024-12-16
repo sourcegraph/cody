@@ -6,6 +6,7 @@ import {
     type ContextItemFile,
     type ContextItemRepository,
     DefaultEditCommands,
+    type NLSSearchDynamicFilter,
     REMOTE_DIRECTORY_PROVIDER_URI,
     REMOTE_FILE_PROVIDER_URI,
     REMOTE_REPOSITORY_PROVIDER_URI,
@@ -324,6 +325,13 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     intent: message.intent,
                     intentScores: message.intentScores,
                     manuallySelectedIntent: message.manuallySelectedIntent,
+                })
+                break
+            }
+            case 'reevaluateSearchWithSelectedFilters': {
+                await this.reevaluateSearchWithSelectedFilters({
+                    index: message.index ?? undefined,
+                    selectedFilters: message.selectedFilters,
                 })
                 break
             }
@@ -862,7 +870,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
         if (intent === 'search') {
             return await this.handleSearchIntent({
-                inputTextWithContextChips: inputTextWithoutContextChips.toString(),
+                inputTextWithoutContextChips: inputTextWithoutContextChips.toString(),
                 mentions,
                 signal,
             })
@@ -1004,11 +1012,11 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     }
 
     private async handleSearchIntent({
-        inputTextWithContextChips,
+        inputTextWithoutContextChips,
         mentions,
         signal,
     }: {
-        inputTextWithContextChips: string
+        inputTextWithoutContextChips: string
         mentions: ContextItem[]
         signal: AbortSignal
     }): Promise<void> {
@@ -1016,7 +1024,11 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
         this.chatBuilder.setLastMessageIntent('search')
         const scopes: string[] = await this.getSearchScopesFromMentions(mentions)
-        const query = `${inputTextWithContextChips} (${scopes.join(' OR ')})`
+
+        const query = scopes.length
+            ? `content:"${inputTextWithoutContextChips.replaceAll('"', '\\"')}" (${scopes.join(' OR ')})`
+            : inputTextWithoutContextChips
+
         try {
             const response = await graphqlClient.nlsSearchQuery({ query, signal })
 
@@ -1306,6 +1318,73 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             this.submitOrEditOperation = undefined
         }
         void this.saveSession()
+    }
+
+    private async reevaluateSearchWithSelectedFilters({
+        index,
+        selectedFilters,
+    }: { index?: number; selectedFilters?: NLSSearchDynamicFilter[] }) {
+        if (index === undefined || !Array.isArray(selectedFilters)) {
+            return
+        }
+
+        const humanMessage = this.chatBuilder.getMessages().at(index)
+        const assistantMessage = this.chatBuilder.getMessages().at(index + 1)
+        if (
+            humanMessage?.speaker !== 'human' ||
+            humanMessage.intent !== 'search' ||
+            assistantMessage?.speaker !== 'assistant' ||
+            !assistantMessage?.search?.query
+        ) {
+            return
+        }
+
+        this.chatBuilder.updateAssistantMessageAtIndex(index + 1, {
+            ...assistantMessage,
+            search: {
+                ...assistantMessage.search,
+                response: undefined,
+                selectedFilters,
+            },
+            text: undefined,
+        })
+        this.postViewTranscript()
+
+        try {
+            const query = this.appendSelectedFiltersToSearchQuery({
+                query: assistantMessage.search.query,
+                filters: selectedFilters,
+            })
+
+            const response = await graphqlClient.nlsSearchQuery({ query })
+
+            this.chatBuilder.updateAssistantMessageAtIndex(index + 1, {
+                ...assistantMessage,
+                search: {
+                    ...assistantMessage.search,
+                    queryWithSelectedFilters: query,
+                    response,
+                    selectedFilters,
+                },
+                text: ps`search found ${response?.results.results.length || 0} results`,
+            })
+        } catch (err) {
+            this.chatBuilder.addErrorAsBotMessage(err as Error, ChatBuilder.NO_MODEL)
+        } finally {
+            void this.saveSession()
+            this.postViewTranscript()
+        }
+    }
+
+    private appendSelectedFiltersToSearchQuery({
+        query,
+        filters,
+    }: { query: string; filters: NLSSearchDynamicFilter[] }) {
+        if (!filters.length) {
+            return query
+        }
+
+        return `${query} ${filters.map(f => f.value).join(' ')}`
     }
 
     /**

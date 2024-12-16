@@ -1452,6 +1452,7 @@
     "async-mutex": "^0.4.0",
     "axios": "^1.3.6",
     "class-variance-authority": "^0.7.0",
+    "classnames": "^2.5.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.0.0",
     "crypto-js": "^4.2.0",

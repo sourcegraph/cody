@@ -8,6 +8,7 @@ import type {
     CodyIDE,
     ContextItem,
     ContextItemSource,
+    NLSSearchDynamicFilter,
     PromptMode,
     RangeData,
     RequestMessage,
@@ -139,6 +140,11 @@ export type WebviewMessage =
           level: 'debug' | 'error'
           filterLabel: string
           message: string
+      }
+    | {
+          command: 'reevaluateSearchWithSelectedFilters'
+          index: number
+          selectedFilters: NLSSearchDynamicFilter[]
       }
 
 export interface SmartApplyResult {
