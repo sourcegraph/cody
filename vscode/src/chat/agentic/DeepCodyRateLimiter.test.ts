@@ -87,6 +87,18 @@ describe('DeepCodyRateLimiter', () => {
 
             expect(rateLimiter.isAtLimit()).toBeUndefined()
         })
+
+        it('resets quota after 24 hours of non-use', () => {
+            rateLimiter = new DeepCodyRateLimiter(50, 1)
+            const mockUsage = {
+                quota: 0, // Empty quota
+                lastUsed: new Date(NOW.getTime() - 25 * 60 * 60 * 1000), // 25 hours ago
+            }
+            vi.spyOn(localStorage, 'getDeepCodyUsage').mockImplementation(() => mockUsage)
+
+            expect(rateLimiter.isAtLimit()).toBeUndefined()
+            expect(localStorage.setDeepCodyUsage).toHaveBeenCalledWith(50, NOW.toISOString())
+        })
     })
 
     describe('getRateLimitError', () => {
