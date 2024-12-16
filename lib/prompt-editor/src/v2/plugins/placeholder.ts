@@ -39,7 +39,7 @@ export function placeholderPlugin(text: string): Plugin {
                 return text
             },
             apply(tr, value) {
-                if (tr.getMeta(placeholderPluginKey)) {
+                if (tr.getMeta(placeholderPluginKey) !== undefined) {
                     return tr.getMeta(placeholderPluginKey)
                 }
                 return value

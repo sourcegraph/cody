@@ -13,7 +13,7 @@ export function readonlyPlugin(initial = false) {
                 return initial
             },
             apply(tr, value) {
-                if (tr.getMeta(readonlyPluginKey)) {
+                if (tr.getMeta(readonlyPluginKey) !== undefined) {
                     return tr.getMeta(readonlyPluginKey)
                 }
                 return value

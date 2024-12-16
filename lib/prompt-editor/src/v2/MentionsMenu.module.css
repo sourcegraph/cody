@@ -1,11 +1,5 @@
 .popover-dimensions {
     width: clamp(300px, 65vw, 440px);
-
-    /*
-    --max-items: 12;
-    --mention-item-height: 30px;
-    height: min(calc(var(--max-items)*var(--mention-item-height) + 2px), 90vh);
-    */
 }
 
 .menu {

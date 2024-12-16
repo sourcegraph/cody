@@ -85,14 +85,12 @@ export const MentionsMenu = <T,>({
         })
     }, [menuPosition, refs])
 
+    // biome-ignore lint/correctness/useExhaustiveDependencies(selectedIndex): we want to scroll the selected item into view but only when selectedIndex changes
     useEffect(() => {
-        // WORKAROUND: We want to scroll the selected item into view, but only when selectedIndex changes.
-        // This statement was added to prevent biome from flagging that selectedIndex is not used.
-        void selectedIndex
         container.current?.querySelector('[aria-selected="true"]')?.scrollIntoView({ block: 'nearest' })
     }, [selectedIndex])
 
-    // This prevents the input from lossing focus when clicking on the menu.
+    // This prevents the input from loosing focus when clicking on the menu.
     const handleMouseDown: MouseEventHandler = useCallback(event => {
         event.preventDefault()
     }, [])
@@ -103,8 +101,7 @@ export const MentionsMenu = <T,>({
             const listNode = target?.closest('[role=option]') as HTMLElement | null
             if (listNode?.parentNode) {
                 const options = listNode.parentNode.querySelectorAll('[role="option"]')
-                // @ts-expect-error - TS doesn't like this but it's OK
-                const index = [].indexOf.call(options, listNode)
+                const index = Array.prototype.indexOf.call(options, listNode)
                 if (index !== -1) {
                     onSelect?.(index)
                 }
@@ -116,7 +113,7 @@ export const MentionsMenu = <T,>({
     const header = getHeader()
 
     return (
-        // biome-ignore lint/a11y/useKeyWithClickEvents: the menu works like a combobox and isn't directly contrallable via keyboard. The keyboard events are handled by the editor.
+        // biome-ignore lint/a11y/useKeyWithClickEvents: the menu works like a combobox and isn't directly contrallable via keyboard. The keyboard events are handled by the editor and the component is updated accordingly.
         <div
             ref={node => {
                 container.current = node

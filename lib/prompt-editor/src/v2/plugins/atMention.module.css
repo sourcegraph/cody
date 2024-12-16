@@ -12,7 +12,7 @@
     border: 1px solid rgba(0, 0, 0, 0.02);
 }
 
-/* TODO dark */
+/* TODO: Properly handle dark and light mode after learning how theming works in Cody */
 .atMention::after {
     background-color: rgba(255, 255, 255, 0.035);
     border: 1px solid rgba(255, 255, 255, 0.035);
