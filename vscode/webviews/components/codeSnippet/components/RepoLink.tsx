@@ -53,21 +53,21 @@ export const RepoFileLink: React.FunctionComponent<React.PropsWithChildren<Props
     }, [pathMatchRanges, fileName])
 
     return (
-        <span className={cn(className, 'tw-flex tw-justify-between tw-w-full')}>
+        <span className={cn(className, 'tw-flex tw-items-center tw-w-full')}>
+            {collapsed ? (
+                <ChevronDown
+                    size={16}
+                    className="tw-inline-block tw-mr-2 tw-cursor-pointer"
+                    onClick={onToggleCollapse}
+                />
+            ) : (
+                <ChevronUp
+                    size={16}
+                    className="tw-inline-block tw-mr-2 tw-cursor-pointer"
+                    onClick={onToggleCollapse}
+                />
+            )}
             <span className="tw-flex-1">
-                {collapsed ? (
-                    <ChevronDown
-                        size={16}
-                        className="tw-inline-block tw-mr-2 tw-cursor-pointer"
-                        onClick={onToggleCollapse}
-                    />
-                ) : (
-                    <ChevronUp
-                        size={16}
-                        className="tw-inline-block tw-mr-2 tw-cursor-pointer"
-                        onClick={onToggleCollapse}
-                    />
-                )}
                 <a href={repoURL} target="_blank" rel="noreferrer">
                     {repoDisplayName || displayRepoName(repoName)}
                 </a>

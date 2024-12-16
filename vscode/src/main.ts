@@ -25,6 +25,7 @@ import {
     fromVSCodeEvent,
     graphqlClient,
     isDotCom,
+    isS2,
     modelsService,
     resolvedConfig,
     setClientCapabilities,
@@ -41,7 +42,6 @@ import {
 import _ from 'lodash'
 import { isEqual } from 'lodash'
 import { filter, map } from 'observable-fns'
-import { isS2 } from '../../lib/shared/src/sourcegraph-api/environments'
 import { isReinstalling } from '../uninstall/reinstall'
 import type { CommandResult } from './CommandResult'
 import { showAccountMenu } from './auth/account-menu'

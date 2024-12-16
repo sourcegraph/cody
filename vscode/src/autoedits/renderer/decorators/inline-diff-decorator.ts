@@ -25,7 +25,7 @@ export class InlineDiffDecorator implements vscode.Disposable, AutoEditsDecorato
             // Ignore line changes rendered as an inline completion item ghost text.
             for (const change of line.changes) {
                 if (change.type === 'insert') {
-                    const position = change.range.end
+                    const position = change.originalRange.end
                     if (currentInsertPosition && position.isEqual(currentInsertPosition)) {
                         // Same position as previous, accumulate the text
                         currentInsertText += change.text
@@ -69,7 +69,7 @@ export class InlineDiffDecorator implements vscode.Disposable, AutoEditsDecorato
                     // Handle deletions
                     if (change.type === 'delete') {
                         removedRanges.push({
-                            range: change.range,
+                            range: change.originalRange,
                             renderOptions: {
                                 before: {
                                     contentText: '\u00A0'.repeat(change.text.length),

@@ -24,12 +24,26 @@ import {
     pluralize,
 } from './utils'
 
-import type { NLSSearchFileMatch } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
+import type {
+    NLSSearchFileMatch,
+    NLSSearchResult,
+} from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 import type { Observable } from 'observable-fns'
 import { useInView } from 'react-intersection-observer'
 import styles from './CodeSnippet.module.css'
 
 const DEFAULT_VISIBILITY_OFFSET = '500px'
+
+export interface ISelectableForContext {
+    /** Whether the result is selected for context for the next chat. */
+    selectedForContext: boolean
+    /**
+     * Called when the result is selected for context for the next chat.
+     *
+     * If not present the component should not present a way to select the result for context.
+     */
+    onSelectForContext?: (selected: boolean, result: NLSSearchResult) => void
+}
 
 export interface FetchFileParameters {
     repoName: string
@@ -39,7 +53,7 @@ export interface FetchFileParameters {
     ranges: HighlightLineRange[]
 }
 
-interface FileMatchSearchResultProps {
+interface FileMatchSearchResultProps extends ISelectableForContext {
     /** The file match search result. */
     result: NLSSearchFileMatch
 
@@ -70,12 +84,6 @@ interface FileMatchSearchResultProps {
 
     /** Called when the file's search result is selected. */
     onSelect: () => void
-
-    onAddToFollowupChat?: (props: {
-        repoName: string
-        filePath: string
-        fileURL: string
-    }) => void
 }
 
 export const FileMatchSearchResult: FC<PropsWithChildren<FileMatchSearchResultProps>> = props => {
@@ -89,6 +97,8 @@ export const FileMatchSearchResult: FC<PropsWithChildren<FileMatchSearchResultPr
         serverEndpoint,
         fetchHighlightedFileLineRanges,
         onSelect,
+        selectedForContext,
+        onSelectForContext,
     } = props
 
     const unhighlightedGroups: MatchGroup[] = useMemo(() => matchesToMatchGroups(result), [result])
@@ -105,8 +115,8 @@ export const FileMatchSearchResult: FC<PropsWithChildren<FileMatchSearchResultPr
     const repoAtRevisionURL = getRepositoryUrl(serverEndpoint, result.repository.name, [
         result.file.commit.oid,
     ])
-    const fileURL = result.file.url
-    const collapsedGroups = truncateGroups(expandedGroups, 5, 1)
+    const fileURL = serverEndpoint + result.file.url
+    const collapsedGroups = truncateGroups(expandedGroups, 1, 1)
     const expandedHighlightCount = countHighlightRanges(expandedGroups)
     const collapsedHighlightCount = countHighlightRanges(collapsedGroups)
     const hiddenMatchesCount = expandedHighlightCount - collapsedHighlightCount
@@ -193,6 +203,20 @@ export const FileMatchSearchResult: FC<PropsWithChildren<FileMatchSearchResultPr
         triggerOnce: true,
     })
 
+    const actions = (
+        <div>
+            <input
+                type="checkbox"
+                id="search-results.select-all"
+                checked={selectedForContext}
+                disabled={!onSelectForContext}
+                onChange={event => {
+                    onSelectForContext?.(event.target.checked, result)
+                }}
+            />
+        </div>
+    )
+
     return (
         <ResultContainer
             ref={rootRef}
@@ -200,6 +224,7 @@ export const FileMatchSearchResult: FC<PropsWithChildren<FileMatchSearchResultPr
             onResultClicked={onSelect}
             className={className}
             collapsed={hidden}
+            actions={actions}
         >
             <div ref={ref} data-expanded={expanded}>
                 <FileMatchChildren
@@ -242,7 +267,7 @@ interface ResultContainerProps {
     resultType?: SearchMatch['type']
     className?: string
     rankingDebug?: string
-    actions?: ReactElement | boolean
+    actions?: ReactElement | null
     onResultClicked?: () => void
     collapsed: boolean
 }
@@ -287,12 +312,12 @@ const ResultContainer: ForwardReferenceExoticComponent<
                     </span>
                     <div className={clsx(styles.headerTitle, titleClassName)}>{title}</div>
 
-                    {actions}
                     {formattedRepositoryStarCount && (
                         <span className="d-flex align-items-center">
                             <span aria-hidden={true}>{formattedRepositoryStarCount}</span>
                         </span>
                     )}
+                    {actions}
                 </header>
                 {rankingDebug && <div>{rankingDebug}</div>}
                 {children && !collapsed && (

@@ -19,6 +19,7 @@ export interface LineLevelStrategyOptions {
     longTermDiffCombinationStrategy: 'unified-diff' | 'lines-based' | undefined
     minShortTermEvents: number
     minShortTermTimeMs: number
+    trimSurroundingContext: boolean
 }
 
 /**
@@ -64,8 +65,9 @@ export class LineLevelDiffStrategy implements RecentEditsRetrieverDiffStrategy {
                 uri: params.uri,
                 oldContent: currentContent,
                 changes: groupedChange.changes,
-                addLineNumbersForDiff: params.addLineNumbersForDiff,
+                shouldAddLineNumbersForDiff: params.addLineNumbersForDiff,
                 contextLines: params.contextLines,
+                shouldTrimSurroundingContextLines: this.options.trimSurroundingContext,
             })
             const hunk = getDiffHunkFromUnifiedPatch(patch)
             diffHunks.push(hunk)

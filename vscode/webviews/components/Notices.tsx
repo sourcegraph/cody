@@ -7,7 +7,6 @@ import {
     ExternalLinkIcon,
     EyeIcon,
     HeartIcon,
-    TerminalIcon,
     Users2Icon,
     XIcon,
 } from 'lucide-react'
@@ -65,6 +64,13 @@ export const Notices: React.FC<NoticesProps> = ({ user, isTeamsUpgradeCtaEnabled
         [telemetryRecorder, setDismissedNotices]
     )
 
+    const settingsNameByIDE =
+        user.IDE === CodyIDE.JetBrains
+            ? 'Settings Editor'
+            : user.IDE === CodyIDE.VSCode
+              ? 'settings.json'
+              : 'Extension Settings'
+
     const notices: Notice[] = useMemo(
         () => [
             {
@@ -75,33 +81,21 @@ export const Notices: React.FC<NoticesProps> = ({ user, isTeamsUpgradeCtaEnabled
                         id={user.isCodyProUser ? 'DeepCodyDotCom' : 'DeepCodyEnterprise'}
                         variant="default"
                         title="Deep Cody (Experimental)"
-                        message="An AI agent powered by Claude 3.5 Sonnet (New) and other models with tool-use capabilities to gather contextual information for enhanced responses. It can search your codebase, browse the web, execute shell commands in your terminal (when enabled), and utilize any configured tools to retrieve necessary context."
+                        message={
+                            "An early preview of agentic experience powered by Claude 3.5 Sonnet and other models to enrich context and leverage different tools for better quality responses. Deep Cody does this by searching your codebase, browsing the web, and running terminal commands (once enabled)! To enable terminal commands, set `cody.agentic.context.experimentalShell' to true in your " +
+                            settingsNameByIDE +
+                            '.'
+                        }
                         onDismiss={() =>
                             dismissNotice(user.isCodyProUser ? 'DeepCodyDotCom' : 'DeepCodyEnterprise')
                         }
-                        actions={
-                            isDeepCodyShellContextSupported
-                                ? [
-                                      {
-                                          label: 'Enable Command Execution in Settings',
-                                          onClick: () =>
-                                              getVSCodeAPI().postMessage({
-                                                  command: 'command',
-                                                  id: 'cody.status-bar.interacted',
-                                              }),
-                                          variant: 'default',
-                                          icon: <TerminalIcon size={14} />,
-                                          iconPosition: 'start',
-                                      },
-                                  ]
-                                : [
-                                      {
-                                          label: 'Contact admins to enable Command Execution',
-                                          onClick: () => {},
-                                          variant: 'secondary',
-                                      },
-                                  ]
+                        info="Usage limits apply during the experimental phase."
+                        footer={
+                            !isDeepCodyShellContextSupported
+                                ? 'Contact admins to enable Command Execution'
+                                : ''
                         }
+                        actions={[]}
                     />
                 ),
             },
@@ -185,6 +179,7 @@ export const Notices: React.FC<NoticesProps> = ({ user, isTeamsUpgradeCtaEnabled
             isTeamsUpgradeCtaEnabled,
             isDeepCodyEnabled,
             isDeepCodyShellContextSupported,
+            settingsNameByIDE,
         ]
     )
 
@@ -223,6 +218,8 @@ interface NoticeContentProps {
         iconPosition?: 'start' | 'end'
     }>
     onDismiss: () => void
+    info?: string
+    footer?: string
 }
 
 const NoticeContent: FunctionComponent<NoticeContentProps> = ({
@@ -231,6 +228,8 @@ const NoticeContent: FunctionComponent<NoticeContentProps> = ({
     message,
     actions,
     id,
+    info,
+    footer,
     onDismiss,
 }) => {
     const telemetryRecorder = useTelemetryRecorder()
@@ -273,6 +272,7 @@ const NoticeContent: FunctionComponent<NoticeContentProps> = ({
         >
             <div className="tw-flex tw-gap-3 tw-mb-2">{header}</div>
             {title && <h1 className="tw-text-lg tw-font-semibold">{title}</h1>}
+            {info && <p className="tw-mb-2">ⓘ {info}</p>}
             <p>{message}</p>
             <div className="tw-mt-3 tw-flex tw-gap-3">
                 {actions.map((action, _index) => (
@@ -305,6 +305,7 @@ const NoticeContent: FunctionComponent<NoticeContentProps> = ({
                     </Button>
                 ))}
             </div>
+            {footer && <p className="tw-mt-2">{footer}</p>}
             {/* Dismiss button. */}
             <Button variant="ghost" onClick={onDismiss} className="tw-absolute tw-top-2 tw-right-2">
                 <XIcon size="14" />

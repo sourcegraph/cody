@@ -205,7 +205,7 @@ export class ChatBuilder {
             search,
             speaker: 'assistant',
             error,
-            text: ps`Search found ${search?.response?.results?.results?.length || 0} results`,
+            text: ps`Search found ${search?.response?.results.results.length || 0} results`,
         })
         this.changeNotifications.next()
     }
@@ -253,6 +253,20 @@ export class ChatBuilder {
 
         // Removes everything from the index to the last element
         this.messages.splice(index)
+        this.changeNotifications.next()
+    }
+
+    public updateAssistantMessageAtIndex(index: number, update: Omit<ChatMessage, 'speaker'>): void {
+        const message = this.messages.at(index)
+        if (!message) {
+            throw new Error('invalid index')
+        }
+        if (message.speaker !== 'assistant') {
+            throw new Error('Cannot set selected filters for human message')
+        }
+
+        Object.assign(message, { ...update, speaker: 'assistant' })
+
         this.changeNotifications.next()
     }
 
