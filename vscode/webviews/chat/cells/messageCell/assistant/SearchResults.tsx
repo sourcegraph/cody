@@ -57,7 +57,6 @@ export const SearchResults = ({
     )
 
     const initialResults = useMemo(() => totalResults?.slice(0, DEFAULT_RESULTS_LIMIT), [totalResults])
-    const totalResultsCount = totalResults?.length || 0
 
     const resultsToShow =
         initialResults?.length === totalResults?.length || showAll ? totalResults : initialResults
