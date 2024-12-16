@@ -32,3 +32,9 @@ export const REMOTE_DIRECTORY_PROVIDER_URI = 'internal-remote-directory-search'
 export const WEB_PROVIDER_URI = 'internal-web-provider'
 export const GIT_OPENCTX_PROVIDER_URI = 'internal-git-openctx-provider'
 export const CODE_SEARCH_PROVIDER_URI = 'internal-code-search-provider'
+export const TEAMS_DIRECTORY_PROVIDER_URI = 'https://sourcegraph.com/cody/manage?provider=directories'
+export const TEAMS_REPOSITORY_PROVIDER_URI = 'https://sourcegraph.com/cody/manage?provider=repositories'
+
+export function isSourcegraphTeamsProvider(uri: string): boolean {
+    return uri === TEAMS_DIRECTORY_PROVIDER_URI || uri === TEAMS_REPOSITORY_PROVIDER_URI
+}

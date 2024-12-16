@@ -9,11 +9,14 @@ import {
     REMOTE_FILE_PROVIDER_URI,
     REMOTE_REPOSITORY_PROVIDER_URI,
     SYMBOL_CONTEXT_MENTION_PROVIDER,
+    TEAMS_DIRECTORY_PROVIDER_URI,
+    TEAMS_REPOSITORY_PROVIDER_URI,
     WEB_PROVIDER_URI,
     displayLineRange,
     displayPath,
     displayPathBasename,
     displayPathDirname,
+    isSourcegraphTeamsProvider,
 } from '@sourcegraph/cody-shared'
 import { clsx } from 'clsx'
 import {
@@ -121,6 +124,23 @@ export const MentionMenuProviderItemContent: FunctionComponent<{
     provider: ContextMentionProviderMetadata
 }> = ({ provider }) => {
     const Icon = iconForProvider[provider.id] ?? DatabaseIcon
+    if (isSourcegraphTeamsProvider(provider.id)) {
+        return (
+            <a
+                href={provider.id}
+                className={clsx(styles.row, 'tw-text-inherit tw-w-full tw-text-norm')}
+                title={provider.id}
+                target="_blank"
+                rel="noopener noreferrer"
+            >
+                <Icon size={16} strokeWidth={1.75} />
+                <span className="tw-text-inherit"> {provider.title}</span>
+                <div className="tw-inline-flex tw-items-center tw-ml-auto tw-rounded-[6px] tw-px-[5px] tw-py-0 tw-text-xs tw-bg-badge-background tw-text-badge-foreground">
+                    Upgrade to Teams
+                </div>
+            </a>
+        )
+    }
     return (
         <div className={styles.row} title={provider.id}>
             <Icon size={16} strokeWidth={1.75} />
@@ -160,4 +180,6 @@ export const iconForProvider: Record<
     [REMOTE_FILE_PROVIDER_URI]: FileIcon,
     [REMOTE_DIRECTORY_PROVIDER_URI]: FolderGitIcon,
     [WEB_PROVIDER_URI]: LinkIcon,
+    [TEAMS_DIRECTORY_PROVIDER_URI]: FolderGitIcon,
+    [TEAMS_REPOSITORY_PROVIDER_URI]: FolderGitIcon,
 }

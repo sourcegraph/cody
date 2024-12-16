@@ -10,6 +10,7 @@ import {
     REMOTE_DIRECTORY_PROVIDER_URI,
     REMOTE_FILE_PROVIDER_URI,
     SYMBOL_CONTEXT_MENTION_PROVIDER,
+    isSourcegraphTeamsProvider,
     parseMentionQuery,
 } from '@sourcegraph/cody-shared'
 import { clsx } from 'clsx'
@@ -116,6 +117,13 @@ export const MentionMenu: FunctionComponent<
             const provider = data.providers.find(p => commandRowValue(p) === value)
             if (!provider) {
                 throw new Error(`No provider found with value ${value}`)
+            }
+
+            const isTeamsProvider = isSourcegraphTeamsProvider(provider.id)
+            if (isTeamsProvider) {
+                // Open the teams page in a new tab.
+                window.open(provider.id)
+                return
             }
 
             updateMentionMenuParams({ parentItem: provider })

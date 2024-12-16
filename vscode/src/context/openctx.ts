@@ -37,6 +37,10 @@ import LinearIssuesProvider from './openctx/linear-issues'
 import RemoteDirectoryProvider, { createRemoteDirectoryProvider } from './openctx/remoteDirectorySearch'
 import RemoteFileProvider, { createRemoteFileProvider } from './openctx/remoteFileSearch'
 import RemoteRepositorySearch, { createRemoteRepositoryProvider } from './openctx/remoteRepositorySearch'
+import {
+    SourcegraphTeamsDirectoryProvider,
+    SourcegraphTeamsRepositoryProvider,
+} from './openctx/remoteSourcegraphTeams'
 import { createWebProvider } from './openctx/web'
 
 export function exposeOpenCtxClient(
@@ -119,11 +123,13 @@ export function getOpenCtxProviders(
         resolvedConfig.pipe(pluck('configuration'), distinctUntilChanged()),
         authStatusChanges,
         featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.GitMentionProvider),
-        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyExperimentalOneBox)
+        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyExperimentalOneBox),
+        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.SourcegraphTeamsUpgradeCTA)
     ).map(
-        ([config, authStatus, gitMentionProvider, enableOneBox]: [
+        ([config, authStatus, gitMentionProvider, enableOneBox, sourcegraphTeamsUpgrade]: [
             ClientConfiguration,
             Pick<AuthStatus, 'endpoint'>,
+            boolean | undefined,
             boolean | undefined,
             boolean | undefined,
         ]) => {
@@ -135,9 +141,22 @@ export function getOpenCtxProviders(
                 },
             ]
 
-            // Remote repository and remote files should be available only for
-            // non-dotcom users
-            if (!isDotCom(authStatus)) {
+            if (isDotCom(authStatus)) {
+                // Add providers for dotcom users with upgrade flag
+                if (sourcegraphTeamsUpgrade) {
+                    providers.push({
+                        settings: false,
+                        provider: SourcegraphTeamsRepositoryProvider,
+                        providerUri: SourcegraphTeamsRepositoryProvider.providerUri,
+                    })
+                    providers.push({
+                        settings: false,
+                        provider: SourcegraphTeamsDirectoryProvider,
+                        providerUri: SourcegraphTeamsDirectoryProvider.providerUri,
+                    })
+                }
+            } else {
+                // Remote repository and remote files should be available for non-dotcom users.
                 providers.push({
                     settings: true,
                     provider: RemoteRepositorySearch,
