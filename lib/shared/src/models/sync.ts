@@ -1,4 +1,5 @@
 import { Observable, interval, map } from 'observable-fns'
+import { userProductSubscription } from '..'
 import type { AuthStatus } from '../auth/types'
 import type { ClientConfiguration } from '../configuration'
 import { clientCapabilities } from '../configuration/clientCapabilities'
@@ -135,9 +136,9 @@ export function syncModels({
         preferences: Pick<ModelsData['preferences'], 'defaults'> | null
     }
     const remoteModelsData: Observable<RemoteModelsData | Error | typeof pendingOperation> =
-        combineLatest(relevantConfig, authStatus).pipe(
-            switchMapReplayOperation(([config, authStatus]) => {
-                if (authStatus.pendingValidation) {
+        combineLatest(relevantConfig, authStatus, userProductSubscription).pipe(
+            switchMapReplayOperation(([config, authStatus, subscription]) => {
+                if (authStatus.pendingValidation || subscription === pendingOperation) {
                     return Observable.of(pendingOperation)
                 }
 
@@ -146,6 +147,7 @@ export function syncModels({
                 }
 
                 const isDotComUser = isDotCom(authStatus)
+                const isCodyFreeUser = isDotComUser && subscription?.userCanUpgrade === true
 
                 const serverModelsConfig: Observable<
                     RemoteModelsData | Error | typeof pendingOperation
@@ -224,7 +226,8 @@ export function syncModels({
                                             )
                                             // DEEP CODY is enabled for all PLG users.
                                             // Enterprise users need to have the feature flag enabled.
-                                            const isDeepCodyEnabled = isDotComUser || hasDeepCodyFlag
+                                            const isDeepCodyEnabled =
+                                                (isDotComUser && !isCodyFreeUser) || hasDeepCodyFlag
                                             if (
                                                 isDeepCodyEnabled &&
                                                 sonnetModel &&
