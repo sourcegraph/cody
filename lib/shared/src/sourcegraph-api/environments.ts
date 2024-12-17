@@ -37,3 +37,6 @@ export function isS2(arg: Pick<AuthStatus, 'endpoint'> | undefined | string): bo
         return false
     }
 }
+
+// TODO: Update to live link https://linear.app/sourcegraph/issue/CORE-535/cody-clients-migrate-ctas-to-live-links
+export const DOTCOM_WORKSPACE_UPGRADE_URL = new URL('https://sourcegraph.com/cody/manage')

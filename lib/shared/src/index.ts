@@ -235,6 +235,7 @@ export * from './sourcegraph-api/completions/types'
 export {
     DOTCOM_URL,
     isDotCom,
+    DOTCOM_WORKSPACE_UPGRADE_URL,
 } from './sourcegraph-api/environments'
 export {
     AbortError,
