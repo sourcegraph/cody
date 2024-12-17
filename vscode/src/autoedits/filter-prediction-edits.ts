@@ -18,6 +18,11 @@ export class FilterPredictionBasedOnRecentEdits implements vscode.Disposable {
         this.recentEditsTracker = new RecentEditsTracker(MAX_FILTER_AGE_MS, workspace)
     }
 
+    /**
+     * Filters out predictions from auto-edit suggestion which undo the latest recent edits made by the user.
+     * The function compares diffs between document states and the prediction vs code to rewritep
+     * to determine if the same edit was recently reverted.
+     */
     public shouldFilterPrediction(uri: vscode.Uri, prediction: string, codeToRewrite: string): boolean {
         const trackedDocument = this.recentEditsTracker.getTrackedDocumentForUri(uri)
         if (!trackedDocument) {
@@ -44,6 +49,14 @@ export class FilterPredictionBasedOnRecentEdits implements vscode.Disposable {
         return false
     }
 
+    /**
+     * Checks if a text document change has been reverted by comparing diffs.
+     * @param finalDocumentSnapshot The final state of the document
+     * @param documentSnapshot The current snapshot of the document
+     * @param prediction The predicted code change
+     * @param codeToRewrite The original code being rewritten
+     * @returns True if the change has been reverted, false otherwise
+     */
     private isTextDocumentChangeReverted(
         finalDocumentSnapshot: string,
         documentSnapshot: string,
@@ -67,7 +80,7 @@ export class FilterPredictionBasedOnRecentEdits implements vscode.Disposable {
     }
 
     private createGitDiffForSnapshotComparison(oldContent: string, newContent: string): string {
-        const diff = createTwoFilesPatch(`a/file`, `b/file`, oldContent, newContent, '', '', {
+        const diff = createTwoFilesPatch('a/file', 'b/file', oldContent, newContent, '', '', {
             context: 0,
         })
         // First 4 lines are headers and file name
