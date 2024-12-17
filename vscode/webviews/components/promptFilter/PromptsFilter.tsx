@@ -36,102 +36,107 @@ export const PromptsFilter: FC<PromptFilterProps> = props => {
     }
 
     return (
-        <Popover open={isPromptTagsOpen}>
-            <PopoverTrigger
-                asChild
-                onClick={() => setIsPromptTagsOpen(!isPromptTagsOpen)}
-                className="tw-ml-8 tw-mt-8"
-            >
-                <Button
-                    variant="secondary"
-                    className={'tw-bg-popover tw-border tw-border-border tw-w-48 !tw-justify-start'}
+        // we need the surrounding div to prevent the remaining content from jumping
+        <div>
+            <Popover open={isPromptTagsOpen} onOpenChange={setIsPromptTagsOpen}>
+                <PopoverTrigger
+                    asChild
+                    onClick={() => setIsPromptTagsOpen(!isPromptTagsOpen)}
+                    className="tw-ml-8 tw-mt-8"
                 >
-                    <span className="tw-w-full tw-flex tw-items-center tw-justify-between">
-                        <FilterContent
-                            value={selectedFilter.value}
-                            nameOverride={selectedFilter.nameOverride}
-                        />
-                        <ChevronDown size={16} />
-                    </span>
-                </Button>
-            </PopoverTrigger>
-            <PopoverContent className="tw-flex tw-flex-col tw-w-full" side="bottom" align="center">
-                <div className="tw-w-[225px]">
-                    <a
-                        href={`${serverEndpoint}prompts/new`}
-                        target="_blank"
-                        className="tw-w-full"
-                        rel="noreferrer"
+                    <Button
+                        variant="secondary"
+                        className={'tw-bg-popover tw-border tw-border-border tw-w-48 !tw-justify-start'}
                     >
-                        <Button variant="outline" className="tw-w-full">
-                            <Plus size={16} /> Create new Prompt
-                        </Button>
-                    </a>
-                    <div className="tw-border-t tw-border-border tw-w-full tw-mt-4 tw-mb-4 tw-pt-4">
-                        <PromptsFilterItem
-                            onSelect={() => selectPromptFilter({}, { value: 'all' })}
-                            value={'all'}
-                        />
-                        {typeof userId === 'string' && !error && (
-                            <PromptsFilterItem
-                                onSelect={() => selectPromptFilter({ owner: userId }, { value: 'you' })}
-                                value={'you'}
+                        <span className="tw-w-full tw-flex tw-items-center tw-justify-between">
+                            <FilterContent
+                                value={selectedFilter.value}
+                                nameOverride={selectedFilter.nameOverride}
                             />
-                        )}
-                    </div>
-                    <div className="tw-border-t tw-border-border tw-w-full tw-mt-4 tw-mb-4  tw-pt-4">
-                        <PromptsFilterItem
-                            onSelect={() =>
-                                selectPromptFilter({ promoted: true }, { value: 'promoted' })
-                            }
-                            value={'promoted'}
-                        />
-                        <PromptsFilterItem
-                            onSelect={() => selectPromptFilter({ core: true }, { value: 'core' })}
-                            value={'core'}
-                        />
-                    </div>
-                    {!!resultTags?.length && !errorTags && (
+                            <ChevronDown size={16} />
+                        </span>
+                    </Button>
+                </PopoverTrigger>
+                <PopoverContent className="tw-flex tw-flex-col tw-w-full" side="bottom" align="center">
+                    <div className="tw-w-[225px]">
+                        <a
+                            href={`${serverEndpoint}prompts/new`}
+                            target="_blank"
+                            className="tw-w-full tw-no-underline tw-text-inherit"
+                            rel="noreferrer"
+                        >
+                            <Button variant="outline" className="tw-w-full">
+                                <Plus size={16} /> Create new Prompt
+                            </Button>
+                        </a>
+                        <div className="tw-border-t tw-border-border tw-w-full tw-mt-4 tw-mb-4 tw-pt-4">
+                            <PromptsFilterItem
+                                onSelect={() => selectPromptFilter({}, { value: 'all' })}
+                                value={'all'}
+                            />
+                            {typeof userId === 'string' && !error && (
+                                <PromptsFilterItem
+                                    onSelect={() =>
+                                        selectPromptFilter({ owner: userId }, { value: 'you' })
+                                    }
+                                    value={'you'}
+                                />
+                            )}
+                        </div>
                         <div className="tw-border-t tw-border-border tw-w-full tw-mt-4 tw-mb-4  tw-pt-4">
-                            <div className="tw-text-muted-foreground tw-mt-4">By tag</div>
-                            <ul className="tw-mt-4 tw-max-h-[200px] tw-overflow-y-auto">
-                                {resultTags.map(tag => (
-                                    <li key={tag.id} className="tw-flex">
-                                        <PromptsFilterItem
-                                            onSelect={() =>
-                                                selectPromptFilter(
-                                                    { tags: [tag.id] },
-                                                    {
-                                                        value: 'tag',
-                                                        nameOverride: tag.name,
-                                                    }
-                                                )
-                                            }
-                                            value={tag.id}
-                                            nameOverride={tag.name}
-                                        />
-                                    </li>
-                                ))}
-                            </ul>
+                            <PromptsFilterItem
+                                onSelect={() =>
+                                    selectPromptFilter({ promoted: true }, { value: 'promoted' })
+                                }
+                                value={'promoted'}
+                            />
+                            <PromptsFilterItem
+                                onSelect={() => selectPromptFilter({ core: true }, { value: 'core' })}
+                                value={'core'}
+                            />
                         </div>
-                    )}
+                        {!!resultTags?.length && !errorTags && (
+                            <div className="tw-border-t tw-border-border tw-w-full tw-mt-4 tw-mb-4  tw-pt-4">
+                                <div className="tw-text-muted-foreground tw-mt-4">By tag</div>
+                                <ul className="tw-mt-4 tw-max-h-[200px] tw-overflow-y-auto">
+                                    {resultTags.map(tag => (
+                                        <li key={tag.id} className="tw-flex">
+                                            <PromptsFilterItem
+                                                onSelect={() =>
+                                                    selectPromptFilter(
+                                                        { tags: [tag.id] },
+                                                        {
+                                                            value: 'tag',
+                                                            nameOverride: tag.name,
+                                                        }
+                                                    )
+                                                }
+                                                value={tag.id}
+                                                nameOverride={tag.name}
+                                            />
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        )}
 
-                    <div className="tw-border-t tw-border-border tw-w-full tw-pt-4  tw-pt-4">
-                        <div className="tw-flex">
-                            <a
-                                className="tw-flex-grow"
-                                href={`${serverEndpoint}prompts`}
-                                target="_blank"
-                                rel="noreferrer"
-                            >
-                                Explore Prompt Library
-                            </a>{' '}
-                            <ExternalLink size={16} />
+                        <div className="tw-border-t tw-border-border tw-w-full tw-pt-4  tw-pt-4">
+                            <div className="tw-flex">
+                                <a
+                                    className="tw-flex-grow"
+                                    href={`${serverEndpoint}prompts`}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                >
+                                    Explore Prompt Library
+                                </a>{' '}
+                                <ExternalLink size={16} />
+                            </div>
                         </div>
                     </div>
-                </div>
-            </PopoverContent>
-        </Popover>
+                </PopoverContent>
+            </Popover>
+        </div>
     )
 }
 
