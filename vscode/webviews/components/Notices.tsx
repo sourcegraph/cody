@@ -1,4 +1,5 @@
 import { CodyIDE, type CodyNotice, FeatureFlag } from '@sourcegraph/cody-shared'
+import { DOTCOM_WORKSPACE_UPGRADE_URL } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 import { S2_URL } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 import {
     ArrowLeftRightIcon,
@@ -12,6 +13,7 @@ import {
 } from 'lucide-react'
 import { type FunctionComponent, type ReactNode, useCallback, useMemo, useState } from 'react'
 import SourcegraphIcon from '../../resources/sourcegraph-mark.svg'
+import { DOTCOM_WORKSPACE_LEARN_MORE_URL } from '../../src/chat/protocol'
 import type { UserAccountInfo } from '../Chat'
 import { CodyLogo } from '../icons/CodyLogo'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
@@ -95,7 +97,7 @@ export const Notices: React.FC<NoticesProps> = ({ user, isTeamsUpgradeCtaEnabled
                         variant="default"
                         title="Deep Cody (Experimental)"
                         message={
-                            "An early preview of agentic experience powered by Claude 3.5 Sonnet and other models to enrich context and leverage different tools for better quality responses. Deep Cody does this by searching your codebase, browsing the web, and running terminal commands (once enabled)! To enable terminal commands, set `cody.agentic.context.experimentalShell' to true in your " +
+                            "An early preview of agentic experience powered by Claude 3.5 Sonnet and other models to enrich context and leverage different tools for better quality responses. Deep Cody does this by searching your codebase, browsing the web, and running terminal commands (once enabled)! To enable terminal commands, set 'cody.agentic.context.experimentalShell' to true in your " +
                             settingsNameByIDE +
                             '.'
                         }
@@ -130,7 +132,7 @@ export const Notices: React.FC<NoticesProps> = ({ user, isTeamsUpgradeCtaEnabled
                             {
                                 // TODO: Update to live link https://linear.app/sourcegraph/issue/CORE-535/cody-clients-migrate-ctas-to-live-links
                                 label: 'Upgrade to Teams',
-                                href: 'https://sourcegraph.com/cody/manage',
+                                href: DOTCOM_WORKSPACE_UPGRADE_URL.href,
                                 variant: 'default',
                                 icon: <Users2Icon size={14} />,
                                 iconPosition: 'start',
@@ -138,7 +140,7 @@ export const Notices: React.FC<NoticesProps> = ({ user, isTeamsUpgradeCtaEnabled
                             {
                                 // TODO: Update to live link https://linear.app/sourcegraph/issue/CORE-535/cody-clients-migrate-ctas-to-live-links
                                 label: 'Learn More',
-                                href: 'https://sourcegraph.com/docs',
+                                href: DOTCOM_WORKSPACE_LEARN_MORE_URL.href,
                                 variant: 'ghost',
                                 icon: <ExternalLinkIcon size={14} />,
                                 iconPosition: 'end',
