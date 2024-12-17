@@ -123,7 +123,7 @@ export class RecentEditsRetriever implements vscode.Disposable, ContextRetriever
             return null
         }
         const trackedDocument = this.recentEditsTracker.getTrackedDocumentForUri(uri)
-        if (!trackedDocument) {
+        if (!trackedDocument || trackedDocument.changes.length === 0) {
             return null
         }
         const diffHunks: DiffHunkWithStrategy[] = []
