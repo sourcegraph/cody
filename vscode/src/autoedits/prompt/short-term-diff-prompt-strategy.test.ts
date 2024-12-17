@@ -187,7 +187,9 @@ describe('ShortTermPromptStrategy', () => {
 
                 Here is the file that I am looking at (\`test.ts\`)
                 <file>
+
                 <<<AREA_AROUND_CODE_TO_REWRITE_WILL_BE_INSERTED_HERE>>>
+
                 </file>
 
 
@@ -245,10 +247,12 @@ describe('ShortTermPromptStrategy', () => {
                 <extracted_code_snippets>
                 <snippet>
                 (\`test1.ts\`)
+
                 jaccard similarity context 1
                 </snippet>
                 <snippet>
                 (\`test2.ts\`)
+
                 jaccard similarity context 2
                 </snippet>
                 </extracted_code_snippets>
@@ -257,27 +261,33 @@ describe('ShortTermPromptStrategy', () => {
                 <recently_viewed_snippets>
                 <snippet>
                 (\`test3.ts\`)
+
                 view port context 4
                 </snippet>
                 <snippet>
                 (\`test2.ts\`)
+
                 view port context 3
                 </snippet>
                 </recently_viewed_snippets>
 
                 Here is the file that I am looking at (\`test.ts\`)
                 <file>
+
                 <<<AREA_AROUND_CODE_TO_REWRITE_WILL_BE_INSERTED_HERE>>>
+
                 </file>
 
                 Here are some snippets of code I just looked at:
                 <recently_viewed_snippets>
                 <snippet>
                 (\`test1.ts\`)
+
                 view port context 2
                 </snippet>
                 <snippet>
                 (\`test0.ts\`)
+
                 view port context 1
                 </snippet>
                 </recently_viewed_snippets>
@@ -297,20 +307,24 @@ describe('ShortTermPromptStrategy', () => {
                 Here are some linter errors from the code that you will rewrite.
                 <lint_errors>
                 (\`test1.ts\`)
+
                 diagnostics context 1
 
                 diagnostics context 2
 
                 (\`test2.ts\`)
+
                 diagnostics context 3
                 </lint_errors>
 
                 Here is some recent code I copied from the editor.
                 <recent_copy>
                 (\`test1.ts\`)
+
                 recent copy context 1
 
                 (\`test2.ts\`)
+
                 recent copy context 2
                 </recent_copy>
 
@@ -403,10 +417,12 @@ describe('ShortTermPromptStrategy', () => {
                 <recently_viewed_snippets>
                 <snippet>
                 (\`test1.ts\`)
+
                 const test1 = true
                 </snippet>
                 <snippet>
                 (\`test0.ts\`)
+
                 const test0 = true
                 </snippet>
                 </recently_viewed_snippets>
@@ -416,10 +432,12 @@ describe('ShortTermPromptStrategy', () => {
                 <recently_viewed_snippets>
                 <snippet>
                 (\`test3.ts\`)
+
                 const test3 = null
                 </snippet>
                 <snippet>
                 (\`test2.ts\`)
+
                 const test2 = false
                 </snippet>
                 </recently_viewed_snippets>
