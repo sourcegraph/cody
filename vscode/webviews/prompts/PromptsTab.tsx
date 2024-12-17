@@ -22,7 +22,7 @@ export const PromptsTab: React.FC<{
     const [promptsFilter, setPromptsFilter] = useState<PromptsFilterArgs>({})
 
     return (
-        <div className="tw-overflow-auto tw-h-full tw-flex tw-flex-col tw-gap-6">
+        <div className="tw-overflow-auto tw-h-full tw-flex tw-flex-col">
             {isPromptsV2Enabled && IDE !== CodyIDE.Web && (
                 <PromptMigrationWidget dismissible={false} className={styles.promptMigrationWidget} />
             )}

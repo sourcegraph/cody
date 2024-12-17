@@ -38,13 +38,9 @@ export const PromptsFilter: FC<PromptFilterProps> = props => {
 
     return (
         // we need the surrounding div to prevent the remaining content from jumping
-        <div>
+        <div className="tw-pl-8 tw-pt-8">
             <Popover open={isPromptTagsOpen} onOpenChange={setIsPromptTagsOpen}>
-                <PopoverTrigger
-                    asChild
-                    onClick={() => setIsPromptTagsOpen(!isPromptTagsOpen)}
-                    className="tw-ml-8 tw-mt-8"
-                >
+                <PopoverTrigger asChild onClick={() => setIsPromptTagsOpen(!isPromptTagsOpen)}>
                     <Button
                         variant="secondary"
                         className={'tw-bg-popover tw-border tw-border-border tw-w-48 !tw-justify-start'}
@@ -61,7 +57,7 @@ export const PromptsFilter: FC<PromptFilterProps> = props => {
                 <PopoverContent
                     className="tw-flex tw-flex-col tw-w-full !tw-p-0"
                     side="bottom"
-                    align="center"
+                    align="start"
                 >
                     <div className="tw-w-[225px]">
                         <Command

@@ -1,4 +1,7 @@
-## 0.18.0 
+## 0.19.0 
+- Fixes prompts tag keyboard navigation and spacings
+
+## 0.18.0
 - Add support for `cody.notices` banners in Cody Chat UI
 
 ## 0.17.0
