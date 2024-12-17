@@ -17,7 +17,7 @@ export interface FireworksCompatibleRequestParams {
 }
 
 export function getMaxOutputTokensForAutoedits(codeToRewrite: string): number {
-    const MAX_NEW_GENERATED_TOKENS = 256
+    const MAX_NEW_GENERATED_TOKENS = 512
     const codeToRewriteTokens = charsToTokens(codeToRewrite.length)
     return codeToRewriteTokens + MAX_NEW_GENERATED_TOKENS
 }
