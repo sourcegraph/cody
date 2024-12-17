@@ -1530,10 +1530,11 @@ export class SourcegraphGraphQLAPIClient {
         ).then(response => extractDataOrError(response, data => data.evaluateFeatureFlag))
     }
 
-    public async viewerSettings(): Promise<Record<string, any> | Error> {
+    public async viewerSettings(signal?: AbortSignal): Promise<Record<string, any> | Error> {
         const response = await this.fetchSourcegraphAPI<APIResponse<ViewerSettingsResponse>>(
             VIEWER_SETTINGS_QUERY,
-            {}
+            {},
+            signal
         )
         return extractDataOrError(response, data => JSON.parse(data.viewerSettings.final))
     }
