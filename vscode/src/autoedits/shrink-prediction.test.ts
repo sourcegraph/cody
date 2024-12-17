@@ -28,14 +28,9 @@ describe('shrinkPredictionUntilSuffix', () => {
                 '}\n\n'
         }
 
-        const prediction = dedent`    constructor(recentEditsTracker: RecentEditsTracker) {
-                this.recentEditsTracker = recentEditsTracker
-        `
+        const prediction = "    constructor(recentEditsTracker: RecentEditsTracker) {\n        this.recentEditsTracker = recentEditsTracker\n    }\n\n"
         // Note: This appends extra "constructor(recentEditsTracker: RecentEditsTracker) {\n" line
-        const expected = dedent`    constructor(recentEditsTracker: RecentEditsTracker) {
-                this.recentEditsTracker = recentEditsTracker
-        constructor(recentEditsTracker: RecentEditsTracker) {\n
-        `
+        const expected = '    constructor(recentEditsTracker: RecentEditsTracker) {\n        this.recentEditsTracker = recentEditsTracker\n    constructor(recentEditsTracker: RecentEditsTracker) {\n'
 
         const result = shrinkPredictionUntilSuffix(prediction, codeToReplaceData)
         expect(result).toBe(expected)
