@@ -246,6 +246,42 @@ describe('FilterPredictionBasedOnRecentEdits', () => {
         })
     })
 
+    it('should not filter when changes do not match final diff', () => {
+        const text = dedent`
+            const a = 5
+            console.log('test')
+            const data = 5
+            function test() {
+                const a<I> = 1;</I>
+                const b<I> = 5;</I>
+                const c<I> = 10;</I>
+                return true
+            }
+        `
+        const codeToRewrite = dedent`
+            function test() {
+                const a = 1;
+                const b = 5;
+                const c = 10;
+                return true
+            }
+        `
+        const prediction = dedent`
+            function test() {
+                const a = 1;
+                const b = 5;
+                const  c
+                return true
+            }
+        `
+        assertShouldFilterPrediction({
+            documentTextWithChanges: text,
+            codeToRewrite,
+            prediction,
+            expectedFilterValue: false,
+        })
+    })
+
     it('should not filter prediction when non latest change is reverted', () => {
         const text = dedent`
             const a = 5
