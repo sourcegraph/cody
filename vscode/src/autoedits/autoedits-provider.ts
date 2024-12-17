@@ -39,7 +39,7 @@ import {
     extractAutoEditResponseFromCurrentDocumentCommentTemplate,
     shrinkReplacerTextToCodeToReplaceRange,
 } from './renderer/renderer-testing'
-import { isPredictedTextAlreadyInSuffix } from './utils'
+import { shrinkPredictionUntilSuffix } from './shrink-prediction'
 
 const AUTOEDITS_CONTEXT_STRATEGY = 'auto-edits'
 const INLINE_COMPLETION_DEFAULT_DEBOUNCE_INTERVAL_MS = 150
@@ -200,22 +200,31 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         if (abortSignal.aborted) {
             return null
         }
+
         const docContext = getCurrentDocContext({
             document,
             position,
             maxPrefixLength: tokensToChars(this.config.tokenLimit.prefixTokens),
             maxSuffixLength: tokensToChars(this.config.tokenLimit.suffixTokens),
         })
+
         const autoeditResponse = await this.inferEdit({
             document,
             position,
             docContext,
             abortSignal,
         })
+
         if (abortSignal.aborted || !autoeditResponse) {
             return null
         }
-        const { prediction, codeToReplaceData } = autoeditResponse
+
+        let { prediction, codeToReplaceData } = autoeditResponse
+        prediction = shrinkPredictionUntilSuffix(prediction, codeToReplaceData)
+
+        if (prediction === codeToReplaceData.codeToRewrite) {
+            return null
+        }
 
         const currentFileText = document.getText()
         const predictedFileText =
@@ -223,27 +232,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             prediction +
             currentFileText.slice(document.offsetAt(codeToReplaceData.range.end))
 
-        // TODO: handle cases where prediction's last line is the modification of the first line
-        // from the current document suffix
-        //
-        // Repro in: code-matching-eval/edits_experiments/examples/renderer-testing-examples/working-okay/codium-add-email-field-autoedits.py
-        // The prediction comes with: `self.email = email`, while the first suffix line is `self.email =`
-        // which results into a line addition instead of modification.
         const decorationInfo = getDecorationInfo(currentFileText, predictedFileText)
-
-        if (
-            isPredictedTextAlreadyInSuffix({
-                codeToRewrite: codeToReplaceData.codeToRewrite,
-                prediction,
-                suffix: codeToReplaceData.suffixInArea + codeToReplaceData.suffixAfterArea,
-            })
-        ) {
-            autoeditsLogger.logDebug(
-                'Autoedits',
-                'Skipping autoedit - predicted text already exists in suffix'
-            )
-            return null
-        }
 
         const { inlineCompletions } =
             await this.rendererManager.maybeRenderDecorationsAndTryMakeInlineCompletionResponse(
