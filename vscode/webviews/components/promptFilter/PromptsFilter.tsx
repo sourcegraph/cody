@@ -2,6 +2,7 @@ import { Book, BookUp2, Box, ChevronDown, ExternalLink, Plus, Tag, UserRoundPlus
 import { type FC, useState } from 'react'
 import { useConfig } from '../../utils/useConfig'
 import { Button } from '../shadcn/ui/button'
+import { Command, CommandGroup, CommandItem, CommandLink, CommandList } from '../shadcn/ui/command'
 import { Popover, PopoverContent, PopoverTrigger } from '../shadcn/ui/popover'
 import { useCurrentUserId } from './useCurrentUserId'
 import { usePromptTagsQuery } from './usePromptTagsQuery'
@@ -27,7 +28,7 @@ export const PromptsFilter: FC<PromptFilterProps> = props => {
         config: { serverEndpoint },
     } = useConfig()
 
-    const { value: userId, error } = useCurrentUserId()
+    const { value: userId, error: userIdError } = useCurrentUserId()
 
     const selectPromptFilter = (param: PromptsFilterArgs, origin: FilterContentArgs) => {
         setIsPromptTagsOpen(false)
@@ -37,13 +38,9 @@ export const PromptsFilter: FC<PromptFilterProps> = props => {
 
     return (
         // we need the surrounding div to prevent the remaining content from jumping
-        <div>
+        <div className="tw-pl-8 tw-pt-8">
             <Popover open={isPromptTagsOpen} onOpenChange={setIsPromptTagsOpen}>
-                <PopoverTrigger
-                    asChild
-                    onClick={() => setIsPromptTagsOpen(!isPromptTagsOpen)}
-                    className="tw-ml-8 tw-mt-8"
-                >
+                <PopoverTrigger asChild onClick={() => setIsPromptTagsOpen(!isPromptTagsOpen)}>
                     <Button
                         variant="secondary"
                         className={'tw-bg-popover tw-border tw-border-border tw-w-48 !tw-justify-start'}
@@ -57,82 +54,106 @@ export const PromptsFilter: FC<PromptFilterProps> = props => {
                         </span>
                     </Button>
                 </PopoverTrigger>
-                <PopoverContent className="tw-flex tw-flex-col tw-w-full" side="bottom" align="center">
+                <PopoverContent
+                    className="tw-flex tw-flex-col tw-w-full !tw-p-0"
+                    side="bottom"
+                    align="start"
+                >
                     <div className="tw-w-[225px]">
-                        <a
-                            href={`${serverEndpoint}prompts/new`}
-                            target="_blank"
-                            className="tw-w-full tw-no-underline tw-text-inherit"
-                            rel="noreferrer"
+                        <Command
+                            loop={true}
+                            defaultValue={selectedFilter.value}
+                            tabIndex={0}
+                            className="focus:tw-outline-none"
                         >
-                            <Button variant="outline" className="tw-w-full">
-                                <Plus size={16} /> Create new Prompt
-                            </Button>
-                        </a>
-                        <div className="tw-border-t tw-border-border tw-w-full tw-mt-4 tw-mb-4 tw-pt-4">
-                            <PromptsFilterItem
-                                onSelect={() => selectPromptFilter({}, { value: 'all' })}
-                                value={'all'}
-                            />
-                            {typeof userId === 'string' && !error && (
-                                <PromptsFilterItem
-                                    onSelect={() =>
-                                        selectPromptFilter({ owner: userId }, { value: 'you' })
-                                    }
-                                    value={'you'}
-                                />
-                            )}
-                        </div>
-                        <div className="tw-border-t tw-border-border tw-w-full tw-mt-4 tw-mb-4  tw-pt-4">
-                            <PromptsFilterItem
-                                onSelect={() =>
-                                    selectPromptFilter({ promoted: true }, { value: 'promoted' })
-                                }
-                                value={'promoted'}
-                            />
-                            <PromptsFilterItem
-                                onSelect={() => selectPromptFilter({ core: true }, { value: 'core' })}
-                                value={'core'}
-                            />
-                        </div>
-                        {!!resultTags?.length && !errorTags && (
-                            <div className="tw-border-t tw-border-border tw-w-full tw-mt-4 tw-mb-4  tw-pt-4">
-                                <div className="tw-text-muted-foreground tw-mt-4">By tag</div>
-                                <ul className="tw-mt-4 tw-max-h-[200px] tw-overflow-y-auto">
-                                    {resultTags.map(tag => (
-                                        <li key={tag.id} className="tw-flex">
-                                            <PromptsFilterItem
-                                                onSelect={() =>
-                                                    selectPromptFilter(
-                                                        { tags: [tag.id] },
-                                                        {
-                                                            value: 'tag',
-                                                            nameOverride: tag.name,
-                                                        }
-                                                    )
-                                                }
-                                                value={tag.id}
-                                                nameOverride={tag.name}
-                                            />
-                                        </li>
-                                    ))}
-                                </ul>
-                            </div>
-                        )}
-
-                        <div className="tw-border-t tw-border-border tw-w-full tw-pt-4  tw-pt-4">
-                            <div className="tw-flex">
-                                <a
-                                    className="tw-flex-grow"
-                                    href={`${serverEndpoint}prompts`}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                >
-                                    Explore Prompt Library
-                                </a>{' '}
-                                <ExternalLink size={16} />
-                            </div>
-                        </div>
+                            <CommandList>
+                                <CommandGroup>
+                                    <CommandLink
+                                        href={`${serverEndpoint}prompts/new`}
+                                        target="_blank"
+                                        className="tw-w-full tw-no-underline tw-text-inherit hover:!tw-bg-transparent"
+                                        rel="noreferrer"
+                                    >
+                                        <Button variant="outline" className="tw-w-full">
+                                            <Plus size={16} /> Create new Prompt
+                                        </Button>
+                                    </CommandLink>
+                                </CommandGroup>
+                                <CommandGroup className="tw-w-full">
+                                    <CommandItem
+                                        value="all"
+                                        onSelect={() => selectPromptFilter({}, { value: 'all' })}
+                                    >
+                                        <FilterContent value="all" />
+                                    </CommandItem>
+                                    {!userIdError && typeof userId === 'string' && (
+                                        <CommandItem
+                                            value="you"
+                                            onSelect={() =>
+                                                selectPromptFilter({ owner: userId }, { value: 'you' })
+                                            }
+                                        >
+                                            <FilterContent value="you" />
+                                        </CommandItem>
+                                    )}
+                                </CommandGroup>
+                                <CommandGroup className="tw-w-full">
+                                    <CommandItem
+                                        value="promoted"
+                                        onSelect={() =>
+                                            selectPromptFilter({ promoted: true }, { value: 'promoted' })
+                                        }
+                                    >
+                                        <FilterContent value="promoted" />
+                                    </CommandItem>
+                                    <CommandItem
+                                        value="core"
+                                        onSelect={() =>
+                                            selectPromptFilter({ core: true }, { value: 'core' })
+                                        }
+                                    >
+                                        <FilterContent value="core" />
+                                    </CommandItem>
+                                </CommandGroup>
+                                {!!resultTags?.length && !errorTags && (
+                                    <CommandGroup heading="By tag" className="tw-w-full">
+                                        <div className="tw-max-h-[200px] tw-overflow-y-auto">
+                                            {resultTags.map(tag => (
+                                                <CommandItem
+                                                    key={tag.id}
+                                                    value={`tag:${tag.id}`}
+                                                    onSelect={() =>
+                                                        selectPromptFilter(
+                                                            { tags: [tag.id] },
+                                                            {
+                                                                value: `tag:${tag.id}`,
+                                                                nameOverride: tag.name,
+                                                            }
+                                                        )
+                                                    }
+                                                >
+                                                    <FilterContent
+                                                        value={tag.id}
+                                                        nameOverride={tag.name}
+                                                    />
+                                                </CommandItem>
+                                            ))}
+                                        </div>
+                                    </CommandGroup>
+                                )}
+                                <CommandGroup className="tw-w-full">
+                                    <CommandLink
+                                        href={`${serverEndpoint}prompts`}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="tw-flex"
+                                    >
+                                        <span className="tw-flex-grow">Explore Prompt Library</span>
+                                        <ExternalLink size={16} />
+                                    </CommandLink>
+                                </CommandGroup>
+                            </CommandList>
+                        </Command>
                     </div>
                 </PopoverContent>
             </Popover>
@@ -141,10 +162,6 @@ export const PromptsFilter: FC<PromptFilterProps> = props => {
 }
 
 type PromptsFilterValue = 'all' | 'you' | 'promoted' | 'core' | string
-
-interface PromptsFilterItemProps extends FilterContentArgs {
-    onSelect: () => void
-}
 
 const iconForFilter: Record<PromptsFilterValue, { icon: typeof Tag; name: string }> = {
     all: {
@@ -163,24 +180,6 @@ const iconForFilter: Record<PromptsFilterValue, { icon: typeof Tag; name: string
         icon: Box,
         name: 'Core',
     },
-}
-
-const PromptsFilterItem: FC<PromptsFilterItemProps> = props => {
-    return (
-        <div>
-            <Button
-                key={`prompts-filter-${props.value}`}
-                value={props.value}
-                onClick={props.onSelect}
-                className={'tw-text-left'}
-                variant={'ghost'}
-            >
-                <span className="tw-flex tw-pt-2 tw-pb-2">
-                    <FilterContent value={props.value} nameOverride={props.nameOverride} />
-                </span>
-            </Button>
-        </div>
-    )
 }
 
 type FilterContentArgs = { value: string; nameOverride?: string }
