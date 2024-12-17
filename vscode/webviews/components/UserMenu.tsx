@@ -312,28 +312,35 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
                         <CommandList>
                             <CommandGroup title="Main Account Menu">
                                 <CommandItem>
-                                    <div className="tw-flex tw-w-full tw-justify-start tw-gap-4">
+                                    <div className="tw-flex tw-w-full tw-justify-start tw-gap-4 tw-align-middle">
                                         <UserAvatar
                                             user={authStatus}
                                             size={USER_MENU_AVATAR_SIZE}
                                             sourcegraphGradientBorder={!!isProUser}
-                                            className="tw-inline-flex tw-self-center tw-items-center tw-w-auto"
+                                            className="tw-inline-flex tw-self-center tw-items-center tw-w-auto tw-flex-none"
                                         />
-                                        <div className="tw-flex tw-self-stretch tw-flex-col tw-w-full tw-items-start tw-justify-center">
-                                            <p className="tw-text-md tw-font-semibold">
+                                        <div className="tw-flex tw-self-stretch tw-flex-col tw-w-full tw-items-start tw-justify-center tw-flex-auto tw-overflow-hidden">
+                                            <p
+                                                className="tw-text-md tw-font-semibold tw-truncate tw-w-full"
+                                                title={username}
+                                            >
                                                 {displayName ?? username}
                                             </p>
-                                            <p className="tw-text-sm tw-text-muted-foreground">
+                                            <p
+                                                className="tw-text-xs tw-text-muted-foreground tw-truncate tw-w-full"
+                                                title={primaryEmail}
+                                            >
                                                 {primaryEmail}
                                             </p>
                                         </div>
+                                        <Badge
+                                            variant={isProUser ? 'cody' : 'secondary'}
+                                            className="tw-opacity-85 tw-text-xs tw-h-fit tw-self-center"
+                                            title={endpoint}
+                                        >
+                                            {isDotComUser ? (isProUser ? 'Pro' : 'Free') : 'Enterprise'}
+                                        </Badge>
                                     </div>
-                                    <Badge
-                                        variant={isProUser ? 'cody' : 'secondary'}
-                                        className="tw-p-0 tw-opacity-85 tw-text-sm"
-                                    >
-                                        {isDotComUser ? (isProUser ? 'Pro' : 'Free') : 'Enterprise'}
-                                    </Badge>
                                 </CommandItem>
                             </CommandGroup>
 
