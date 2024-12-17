@@ -6,7 +6,6 @@ import { completionMatchesSuffix } from '../../completions/is-completion-visible
 import { getNewLineChar } from '../../completions/text-processing'
 import { autoeditsLogger } from '../logger'
 import type { CodeToReplaceData } from '../prompt/prompt-utils'
-import { adjustPredictionIfInlineCompletionPossible } from '../utils'
 
 import type {
     AddedLineInfo,
@@ -27,8 +26,23 @@ export class AutoEditsInlineRendererManager
     extends AutoEditsDefaultRendererManager
     implements AutoEditsRendererManager
 {
+    protected async acceptEdit(): Promise<void> {
+        const editor = vscode.window.activeTextEditor
+        if (!this.activeEdit || !editor || editor.document.uri.toString() !== this.activeEdit.uri) {
+            await this.dismissEdit()
+            return
+        }
+
+        await vscode.commands.executeCommand('editor.action.inlineSuggest.hide')
+        await editor.edit(editBuilder => {
+            editBuilder.replace(this.activeEdit!.range, this.activeEdit!.prediction)
+        })
+
+        await this.dismissEdit()
+    }
+
     async maybeRenderDecorationsAndTryMakeInlineCompletionResponse(
-        originalPrediction: string,
+        prediction: string,
         codeToReplaceData: CodeToReplaceData,
         document: vscode.TextDocument,
         position: vscode.Position,
@@ -38,14 +52,8 @@ export class AutoEditsInlineRendererManager
         inlineCompletions: vscode.InlineCompletionItem[] | null
         updatedDecorationInfo: DecorationInfo
     }> {
-        const prediction = adjustPredictionIfInlineCompletionPossible(
-            originalPrediction,
-            codeToReplaceData.codeToRewritePrefix,
-            codeToReplaceData.codeToRewriteSuffix
-        )
-
         const { insertText, usedChangeIds } = getCompletionText({
-            prediction: originalPrediction,
+            prediction,
             cursorPosition: position,
             decorationInfo,
         })
