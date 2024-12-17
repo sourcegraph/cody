@@ -818,7 +818,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             this.featureDeepCodyRateLimitMultiplier.value.last ? 2 : 1
         )
         const deepCodyLimit = deepCodyRateLimiter.isAtLimit()
-        if (isDeepCodyModel && isDeepCodyEnabled && deepCodyLimit) {
+        if (isDeepCodyEnabled && deepCodyLimit) {
             this.postError(deepCodyRateLimiter.getRateLimitError(deepCodyLimit), 'transcript')
             this.handleAbort()
             return

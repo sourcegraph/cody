@@ -52,16 +52,28 @@ describe('DeepCodyRateLimiter', () => {
 
         it('blocks usage when no quota available', () => {
             rateLimiter = new DeepCodyRateLimiter(10, 1)
-
+            const now = NOW.getTime()
             const mockUsage = {
                 quota: 0,
                 lastUsed: new Date(NOW.getTime() - 3600000),
             }
             vi.spyOn(localStorage, 'getDeepCodyUsage').mockImplementation(() => mockUsage)
 
+            const ONE_DAY_MS = 24 * 60 * 60 * 1000
+            const ONE_HOUR_MS = ONE_DAY_MS / 24
+
             const result = rateLimiter.isAtLimit()
+            const timeToWait = ONE_DAY_MS - (now - mockUsage.lastUsed.getTime())
+            const timeToWaitInSeconds = timeToWait / 1000
             expect(result).toBeDefined()
-            expect(Number(result)).toBeGreaterThan(0)
+            expect(Number(result)).toBe(timeToWaitInSeconds)
+
+            // Fake an hour has passed.
+            vi.advanceTimersByTime(ONE_HOUR_MS)
+
+            // Check if the time to wait has decreased by an hour.
+            const result2 = rateLimiter.isAtLimit()
+            expect(timeToWaitInSeconds - Number(result2)).toBe(ONE_HOUR_MS / 1000)
         })
 
         it('correctly calculates quota replenishment', () => {
@@ -89,7 +101,8 @@ describe('DeepCodyRateLimiter', () => {
         })
 
         it('resets quota after 24 hours of non-use', () => {
-            rateLimiter = new DeepCodyRateLimiter(50, 1)
+            const baseLimit = 10
+            rateLimiter = new DeepCodyRateLimiter(baseLimit, 1)
             const mockUsage = {
                 quota: 0, // Empty quota
                 lastUsed: new Date(NOW.getTime() - 25 * 60 * 60 * 1000), // 25 hours ago
@@ -97,7 +110,7 @@ describe('DeepCodyRateLimiter', () => {
             vi.spyOn(localStorage, 'getDeepCodyUsage').mockImplementation(() => mockUsage)
 
             expect(rateLimiter.isAtLimit()).toBeUndefined()
-            expect(localStorage.setDeepCodyUsage).toHaveBeenCalledWith(50, NOW.toISOString())
+            expect(localStorage.setDeepCodyUsage).toHaveBeenCalledWith(baseLimit - 1, NOW.toISOString())
         })
     })
 
