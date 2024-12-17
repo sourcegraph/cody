@@ -11,15 +11,9 @@ import { CHAT_INPUT_TOKEN_BUDGET, CHAT_OUTPUT_TOKEN_BUDGET } from '../token/cons
 import { getMockedDotComClientModels } from './dotcom'
 import type { Model } from './model'
 import { createModel } from './model'
-import { type ModelsData, ModelsService, TestLocalStorageForModelPreferences } from './modelsService'
+import {EMPTY_MODELS_DATA, ModelsService, TestLocalStorageForModelPreferences} from './modelsService'
 import { ModelTag } from './tags'
 import { ModelUsage } from './types'
-
-const EMPTY_MODELS_DATA: ModelsData = {
-    localModels: [],
-    preferences: { defaults: {}, selected: {} },
-    primaryModels: [],
-}
 
 describe('modelsService', () => {
     function modelsServiceWithModels(models: Model[]): ModelsService {
@@ -182,6 +176,7 @@ describe('modelsService', () => {
 
             vi.spyOn(modelsService, 'modelsChanges', 'get').mockReturnValue(
                 Observable.of({
+                    endpoint: currentAuthStatus().endpoint,
                     localModels: [],
                     primaryModels: [model2chat, model4edit],
                     preferences: storage?.getModelPreferences()[currentAuthStatus().endpoint]!,
@@ -443,6 +438,7 @@ describe('modelsService', () => {
         it('sets gpt-4o-mini as default edit model for enrolled users in A/B test', async () => {
             modelsService = new ModelsService(
                 Observable.of({
+                    endpoint: currentAuthStatus().endpoint,
                     primaryModels: [otherEditModel, gpt4oMiniModel],
                     localModels: [],
                     preferences: {
@@ -472,6 +468,7 @@ describe('modelsService', () => {
 
             modelsService = new ModelsService(
                 Observable.of({
+                    endpoint: currentAuthStatus().endpoint,
                     primaryModels: [otherEditModel, gpt4oMiniModel],
                     localModels: [],
                     preferences: {

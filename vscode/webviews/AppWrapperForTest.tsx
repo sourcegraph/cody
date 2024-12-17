@@ -90,6 +90,7 @@ export const AppWrapperForTest: FunctionComponent<{ children: ReactNode }> = ({ 
                     clientActionBroadcast: () => Observable.of(),
                     models: () =>
                         Observable.of({
+                            endpoint: 'https://example.com',
                             localModels: [],
                             primaryModels: getMockedDotComClientModels(),
                             preferences: { defaults: {}, selected: {} },

@@ -5,13 +5,12 @@ import {
     AUTH_STATUS_FIXTURE_AUTHED,
     AUTH_STATUS_FIXTURE_AUTHED_DOTCOM,
     type CodyLLMSiteConfiguration,
-    type ModelsData,
     type UserProductSubscription,
     featureFlagProvider,
     firstValueFrom,
     mockAuthStatus,
     modelsService,
-    skipPendingOperation,
+    skipPendingOperation, EMPTY_MODELS_DATA,
 } from '@sourcegraph/cody-shared'
 
 import { mockLocalStorage } from '../../../services/LocalStorageProvider'
@@ -31,12 +30,6 @@ async function createProviderForTest(...args: Parameters<typeof createProvider>)
     }
 
     return providerOrError
-}
-
-const EMPTY_MODELS_DATA: ModelsData = {
-    localModels: [],
-    preferences: { defaults: {}, selected: {} },
-    primaryModels: [],
 }
 
 describe('createProvider', () => {

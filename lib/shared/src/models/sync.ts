@@ -1,6 +1,5 @@
 import { Observable, interval, map } from 'observable-fns'
 import type { AuthStatus } from '../auth/types'
-import type { ClientConfiguration } from '../configuration'
 import { clientCapabilities } from '../configuration/clientCapabilities'
 import { cenv } from '../configuration/environment'
 import type { PickResolvedConfiguration } from '../configuration/resolver'
@@ -10,15 +9,12 @@ import { logDebug } from '../logger'
 import {
     combineLatest,
     distinctUntilChanged,
-    pick,
-    promiseFactoryToObservable,
     shareReplay,
     startWith,
-    switchMap,
     take,
     tap,
 } from '../misc/observable'
-import { pendingOperation, switchMapReplayOperation } from '../misc/observableOperation'
+import { pendingOperation } from '../misc/observableOperation'
 import { ANSWER_TOKENS } from '../prompt/constants'
 import type { CodyClientConfig } from '../sourcegraph-api/clientConfig'
 import { isDotCom } from '../sourcegraph-api/environments'
@@ -29,9 +25,9 @@ import { CHAT_INPUT_TOKEN_BUDGET } from '../token/constants'
 import { isError } from '../utils'
 import { getExperimentalClientModelByFeatureFlag } from './client'
 import { type Model, type ServerModel, createModel, createModelFromServerModel } from './model'
-import type {
+import {
     DefaultsAndUserPreferencesForEndpoint,
-    ModelsData,
+    ModelsData, modelsService,
     ServerModelConfiguration,
 } from './modelsService'
 import { ModelTag } from './tags'
@@ -39,6 +35,180 @@ import { ModelUsage } from './types'
 import { getEnterpriseContextWindow } from './utils'
 
 const EMPTY_PREFERENCES: DefaultsAndUserPreferencesForEndpoint = { defaults: {}, selected: {} }
+
+type ResolvedConfig = PickResolvedConfiguration<{
+    configuration: true
+    auth: true
+    clientState: 'modelPreferences' | 'waitlist_o1'
+}>
+
+type RemoteModelsData = Pick<ModelsData, 'primaryModels'> & {
+    preferences: Pick<ModelsData['preferences'], 'defaults'> | null
+}
+
+function getLocalModels(): Promise<Model[]> {
+    return clientCapabilities().isCodyWeb
+        ? Promise.resolve([]) // disable Ollama local models for Cody Web
+        : fetchLocalOllamaModels().catch(() => [])
+}
+
+function getUserModelPreferences(endpoint: string, config: ResolvedConfig) {
+    const preferences = config.clientState.modelPreferences
+    logDebug('ModelsService', 'User model preferences changed', JSON.stringify(preferences))
+    // Deep clone so it's not readonly and we can mutate it, for convenience.
+    const prevPreferences = preferences[endpoint]
+    return deepClone(prevPreferences ?? EMPTY_PREFERENCES)
+}
+
+async function getRemoteModels(
+    authStatus: AuthStatus,
+    clientConfig: CodyClientConfig | undefined,
+    config: ResolvedConfig,
+    configOverwrites: CodyLLMSiteConfiguration | null,
+    userProductSubscription: UserProductSubscription | null,
+    hasEarlyAccess: boolean,
+    hasDeepCodyFlag: boolean,
+    defaultToHaiku: boolean,
+    fetchServerSideModels_?: typeof fetchServerSideModels,
+) {
+    const isDotComUser = isDotCom(authStatus)
+    const isCodyFreeUser =
+        userProductSubscription == null || userProductSubscription.userCanUpgrade === true
+
+    if (isDotComUser || clientConfig?.modelsAPIEnabled) {
+        const serverModelsConfig = fetchServerSideModels_ ? await fetchServerSideModels_(config) : undefined
+        const data: RemoteModelsData = {
+            preferences: {defaults: {}},
+            primaryModels: [],
+        }
+
+        if (serverModelsConfig) {
+            logDebug('ModelsService', 'new models API enabled')
+
+            // Remove deprecated models from the list, filter out waitlisted models for Enterprise.
+            const filteredModels = serverModelsConfig?.models.filter(
+                m =>
+                    m.status !== 'deprecated' &&
+                    (isDotComUser || m.status !== 'waitlist')
+            )
+            data.primaryModels.push(
+                ...maybeAdjustContextWindows(filteredModels).map(
+                    createModelFromServerModel
+                )
+            )
+            data.preferences!.defaults =
+                defaultModelPreferencesFromServerModelsConfig(
+                    serverModelsConfig
+                )
+        }
+
+        // NOTE: Calling `registerModelsFromVSCodeConfiguration()` doesn't
+        // entirely make sense in a world where LLM models are managed
+        // server-side. However, this is how Cody can be extended to use locally
+        // running LLMs such as Ollama. (Though some more testing is needed.)
+        // See:
+        // https://sourcegraph.com/blog/local-code-completion-with-ollama-and-cody
+        data.primaryModels.push(...getModelsFromVSCodeConfiguration(config))
+
+        // For DotCom users with early access or on the waitlist, replace the waitlist tag with the appropriate tags.
+        // TODO(sqs): remove waitlist from localStorage when user has access
+        const isOnWaitlist = config.clientState.waitlist_o1
+        if (isDotComUser && (hasEarlyAccess || isOnWaitlist)) {
+            data.primaryModels = data.primaryModels.map(
+                model => {
+                    if (model.tags.includes(ModelTag.Waitlist)) {
+                        const newTags = model.tags.filter(
+                            tag => tag !== ModelTag.Waitlist
+                        )
+                        newTags.push(
+                            hasEarlyAccess
+                                ? ModelTag.EarlyAccess
+                                : ModelTag.OnWaitlist
+                        )
+                        return {...model, tags: newTags}
+                    }
+                    return model
+                }
+            )
+        }
+
+        // Replace user's current sonnet model with deep-cody model.
+        const sonnetModel = data.primaryModels.find(m =>
+            m.id.includes('sonnet')
+        )
+        // DEEP CODY is enabled for all PLG users.
+        // Enterprise users need to have the feature flag enabled.
+        const isDeepCodyEnabled =
+            (isDotComUser && !isCodyFreeUser) || hasDeepCodyFlag
+        if (
+            isDeepCodyEnabled &&
+            sonnetModel &&
+            // Ensure the deep-cody model is only added once.
+            !data.primaryModels.some(m =>
+                m.id.includes('deep-cody')
+            )
+        ) {
+            const DEEPCODY_MODEL =
+                getExperimentalClientModelByFeatureFlag(
+                    FeatureFlag.DeepCody
+                )!
+            data.primaryModels.push(
+                ...maybeAdjustContextWindows([
+                    DEEPCODY_MODEL,
+                ]).map(createModelFromServerModel)
+            )
+        }
+
+        // set the default model to Haiku for free users
+        if (isDotComUser && isCodyFreeUser && defaultToHaiku) {
+            const haikuModel = data.primaryModels.find(m =>
+                m.id.includes('claude-3-5-haiku')
+            )
+            if (haikuModel) {
+                data.preferences!.defaults.chat = haikuModel.id
+            }
+        }
+
+        return data
+    }
+
+    // In enterprise mode, we let the sg instance dictate the token limits and allow users
+    // to overwrite it locally (for debugging purposes).
+    //
+    // This is similiar to the behavior we had before introducing the new chat and allows
+    // BYOK customers to set a model of their choice without us having to map it to a known
+    // model on the client.
+    //
+    // NOTE: If configOverwrites?.chatModel is empty, automatically fallback to use the
+    // default model configured on the instance.
+
+    if (configOverwrites?.chatModel) {
+        return {
+            preferences: null,
+            primaryModels: [
+                createModel({
+                    id: configOverwrites.chatModel,
+                    // TODO (umpox) Add configOverwrites.editModel for separate edit support
+                    usage: [ModelUsage.Chat, ModelUsage.Edit],
+                    contextWindow: getEnterpriseContextWindow(
+                        configOverwrites?.chatModel,
+                        configOverwrites,
+                        config.configuration
+                    ),
+                    tags: [ModelTag.Enterprise],
+                }),
+            ],
+        } satisfies RemoteModelsData
+    }
+
+    // If the enterprise instance didn't have any configuration data for Cody, clear the
+    // models available in the modelsService. Otherwise there will be stale, defunct models
+    // available.
+    return {
+        preferences: null,
+        primaryModels: [],
+    } satisfies RemoteModelsData
+}
 
 /**
  * Observe the list of all available models.
@@ -64,18 +234,15 @@ export function syncModels({
     fetchServerSideModels_?: typeof fetchServerSideModels
     userProductSubscription: Observable<UserProductSubscription | null | typeof pendingOperation>
 }): Observable<ModelsData | typeof pendingOperation> {
-    // Refresh Ollama models when Ollama-related config changes and periodically.
-    const localModels = combineLatest(
-        resolvedConfig.pipe(
-            map(
-                config =>
-                    ({
-                        autocompleteExperimentalOllamaOptions:
-                            config.configuration.autocompleteExperimentalOllamaOptions,
-                    }) satisfies Pick<ClientConfiguration, 'autocompleteExperimentalOllamaOptions'>
-            ),
-            distinctUntilChanged()
-        ),
+    return combineLatest(
+        authStatus,
+        clientConfig,
+        resolvedConfig,
+        configOverwrites,
+        userProductSubscription,
+        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyEarlyAccess),
+        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.DeepCody),
+        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyChatDefaultToClaude35Haiku),
         interval(10 * 60 * 60 /* 10 minutes */).pipe(
             startWith(undefined),
             take(
@@ -84,272 +251,49 @@ export function syncModels({
             )
         )
     ).pipe(
-        switchMap(() =>
-            clientCapabilities().isCodyWeb
-                ? Observable.of([]) // disable Ollama local models for Cody Web
-                : promiseFactoryToObservable(signal => fetchLocalOllamaModels().catch(() => []))
-        ),
-        // Keep the old localModels results while we're fetching the new ones, to avoid UI jitter.
-        shareReplay()
-    )
+        map(async ([authStatus, clientConfig, resolvedConfig, configOverwrites, userProductSubscription, hasEarlyAccess, hasDeepCodyFlag, defaultToHaiku]): Promise<ModelsData | typeof pendingOperation> => {
+            if (authStatus.pendingValidation || userProductSubscription === pendingOperation || clientConfig === pendingOperation || configOverwrites === pendingOperation) {
+                return pendingOperation
+            }
 
-    const relevantConfig = resolvedConfig.pipe(
-        map(
-            config =>
-                ({
-                    configuration: {
-                        customHeaders: config.configuration.customHeaders,
-                        providerLimitPrompt: config.configuration.providerLimitPrompt,
-                        devModels: config.configuration.devModels,
-                    },
-                    auth: config.auth,
-                    clientState: {
-                        waitlist_o1: config.clientState.waitlist_o1,
-                    },
-                }) satisfies PickResolvedConfiguration<{
-                    configuration: 'providerLimitPrompt' | 'customHeaders' | 'devModels'
-                    auth: true
-                    clientState: 'waitlist_o1'
-                }>
-        ),
-        distinctUntilChanged()
-    )
+            const endpoint = authStatus.endpoint
+            const localModels = await getLocalModels()
+            const userModelPreferences = getUserModelPreferences(endpoint, resolvedConfig)
+            const remoteModelsData = await getRemoteModels(authStatus,
+                clientConfig,
+                resolvedConfig,
+                configOverwrites,
+                userProductSubscription,
+                hasEarlyAccess,
+                hasDeepCodyFlag,
+                defaultToHaiku,
+                fetchServerSideModels_)
 
-    const userModelPreferences: Observable<DefaultsAndUserPreferencesForEndpoint> = combineLatest(
-        resolvedConfig.pipe(
-            map(config => config.clientState.modelPreferences),
-            distinctUntilChanged()
-        ),
-        authStatus.pipe(pick('endpoint'), distinctUntilChanged())
-    ).pipe(
-        map(([modelPreferences, { endpoint }]) => {
-            // Deep clone so it's not readonly and we can mutate it, for convenience.
-            const prevPreferences = modelPreferences[endpoint]
-            return deepClone(prevPreferences ?? EMPTY_PREFERENCES)
-        }),
-        distinctUntilChanged(),
-        tap(preferences => {
-            logDebug('ModelsService', 'User model preferences changed', JSON.stringify(preferences))
-        }),
-        shareReplay()
-    )
-
-    type RemoteModelsData = Pick<ModelsData, 'primaryModels'> & {
-        preferences: Pick<ModelsData['preferences'], 'defaults'> | null
-    }
-    const remoteModelsData: Observable<RemoteModelsData | Error | typeof pendingOperation> =
-        combineLatest(relevantConfig, authStatus, userProductSubscription).pipe(
-            switchMapReplayOperation(([config, authStatus, userProductSubscription]) => {
-                if (authStatus.pendingValidation || userProductSubscription === pendingOperation) {
-                    return Observable.of(pendingOperation)
+            return {
+                    endpoint: endpoint,
+                    localModels: localModels,
+                    primaryModels: isError(remoteModelsData)
+                        ? []
+                        : normalizeModelList(remoteModelsData.primaryModels),
+                    preferences: isError(remoteModelsData)
+                        ? userModelPreferences
+                        : resolveModelPreferences(
+                            remoteModelsData.preferences,
+                            userModelPreferences
+                        ),
                 }
-
-                if (!authStatus.authenticated) {
-                    return Observable.of<RemoteModelsData>({ primaryModels: [], preferences: null })
-                }
-
-                const isDotComUser = isDotCom(authStatus)
-                const isCodyFreeUser =
-                    userProductSubscription == null || userProductSubscription.userCanUpgrade === true
-
-                const serverModelsConfig: Observable<
-                    RemoteModelsData | Error | typeof pendingOperation
-                > = clientConfig.pipe(
-                    switchMapReplayOperation(maybeClientConfig => {
-                        // NOTE: isDotComUser to enable server-side models for DotCom users,
-                        // as the modelsAPIEnabled is default to return false on DotCom to avoid older clients
-                        // that also share the same check from breaking.
-                        if (isDotComUser || maybeClientConfig?.modelsAPIEnabled) {
-                            logDebug('ModelsService', 'new models API enabled')
-                            return promiseFactoryToObservable(signal =>
-                                fetchServerSideModels_(config, signal)
-                            ).pipe(
-                                switchMap(serverModelsConfig => {
-                                    const data: RemoteModelsData = {
-                                        preferences: { defaults: {} },
-                                        primaryModels: [],
-                                    }
-
-                                    if (serverModelsConfig) {
-                                        // Remove deprecated models from the list, filter out waitlisted models for Enterprise.
-                                        const filteredModels = serverModelsConfig?.models.filter(
-                                            m =>
-                                                m.status !== 'deprecated' &&
-                                                (isDotComUser || m.status !== 'waitlist')
-                                        )
-                                        data.primaryModels.push(
-                                            ...maybeAdjustContextWindows(filteredModels).map(
-                                                createModelFromServerModel
-                                            )
-                                        )
-                                        data.preferences!.defaults =
-                                            defaultModelPreferencesFromServerModelsConfig(
-                                                serverModelsConfig
-                                            )
-                                    }
-
-                                    // NOTE: Calling `registerModelsFromVSCodeConfiguration()` doesn't
-                                    // entirely make sense in a world where LLM models are managed
-                                    // server-side. However, this is how Cody can be extended to use locally
-                                    // running LLMs such as Ollama. (Though some more testing is needed.)
-                                    // See:
-                                    // https://sourcegraph.com/blog/local-code-completion-with-ollama-and-cody
-                                    data.primaryModels.push(...getModelsFromVSCodeConfiguration(config))
-
-                                    // For DotCom users with early access or on the waitlist, replace the waitlist tag with the appropriate tags.
-                                    return combineLatest(
-                                        featureFlagProvider.evaluatedFeatureFlag(
-                                            FeatureFlag.CodyEarlyAccess
-                                        ),
-                                        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.DeepCody),
-                                        featureFlagProvider.evaluatedFeatureFlag(
-                                            FeatureFlag.CodyChatDefaultToClaude35Haiku
-                                        )
-                                    ).pipe(
-                                        switchMap(
-                                            ([hasEarlyAccess, hasDeepCodyFlag, defaultToHaiku]) => {
-                                                // TODO(sqs): remove waitlist from localStorage when user has access
-                                                const isOnWaitlist = config.clientState.waitlist_o1
-                                                if (isDotComUser && (hasEarlyAccess || isOnWaitlist)) {
-                                                    data.primaryModels = data.primaryModels.map(
-                                                        model => {
-                                                            if (model.tags.includes(ModelTag.Waitlist)) {
-                                                                const newTags = model.tags.filter(
-                                                                    tag => tag !== ModelTag.Waitlist
-                                                                )
-                                                                newTags.push(
-                                                                    hasEarlyAccess
-                                                                        ? ModelTag.EarlyAccess
-                                                                        : ModelTag.OnWaitlist
-                                                                )
-                                                                return { ...model, tags: newTags }
-                                                            }
-                                                            return model
-                                                        }
-                                                    )
-                                                }
-
-                                                // Replace user's current sonnet model with deep-cody model.
-                                                const sonnetModel = data.primaryModels.find(m =>
-                                                    m.id.includes('sonnet')
-                                                )
-                                                // DEEP CODY is enabled for all PLG users.
-                                                // Enterprise users need to have the feature flag enabled.
-                                                const isDeepCodyEnabled =
-                                                    (isDotComUser && !isCodyFreeUser) || hasDeepCodyFlag
-                                                if (
-                                                    isDeepCodyEnabled &&
-                                                    sonnetModel &&
-                                                    // Ensure the deep-cody model is only added once.
-                                                    !data.primaryModels.some(m =>
-                                                        m.id.includes('deep-cody')
-                                                    )
-                                                ) {
-                                                    const DEEPCODY_MODEL =
-                                                        getExperimentalClientModelByFeatureFlag(
-                                                            FeatureFlag.DeepCody
-                                                        )!
-                                                    data.primaryModels.push(
-                                                        ...maybeAdjustContextWindows([
-                                                            DEEPCODY_MODEL,
-                                                        ]).map(createModelFromServerModel)
-                                                    )
-                                                }
-
-                                                // set the default model to Haiku for free users
-                                                if (isDotComUser && isCodyFreeUser && defaultToHaiku) {
-                                                    const haikuModel = data.primaryModels.find(m =>
-                                                        m.id.includes('claude-3-5-haiku')
-                                                    )
-                                                    if (haikuModel) {
-                                                        data.preferences!.defaults.chat = haikuModel.id
-                                                    }
-                                                }
-
-                                                return Observable.of(data)
-                                            }
-                                        )
-                                    )
-                                })
-                            )
-                        }
-
-                        // In enterprise mode, we let the sg instance dictate the token limits and allow users
-                        // to overwrite it locally (for debugging purposes).
-                        //
-                        // This is similiar to the behavior we had before introducing the new chat and allows
-                        // BYOK customers to set a model of their choice without us having to map it to a known
-                        // model on the client.
-                        //
-                        // NOTE: If configOverwrites?.chatModel is empty, automatically fallback to use the
-                        // default model configured on the instance.
-                        return configOverwrites.pipe(
-                            map((configOverwrites): RemoteModelsData | typeof pendingOperation => {
-                                if (configOverwrites === pendingOperation) {
-                                    return pendingOperation
-                                }
-                                if (configOverwrites?.chatModel) {
-                                    return {
-                                        preferences: null,
-                                        primaryModels: [
-                                            createModel({
-                                                id: configOverwrites.chatModel,
-                                                // TODO (umpox) Add configOverwrites.editModel for separate edit support
-                                                usage: [ModelUsage.Chat, ModelUsage.Edit],
-                                                contextWindow: getEnterpriseContextWindow(
-                                                    configOverwrites?.chatModel,
-                                                    configOverwrites,
-                                                    config.configuration
-                                                ),
-                                                tags: [ModelTag.Enterprise],
-                                            }),
-                                        ],
-                                    } satisfies RemoteModelsData
-                                }
-
-                                // If the enterprise instance didn't have any configuration data for Cody, clear the
-                                // models available in the modelsService. Otherwise there will be stale, defunct models
-                                // available.
-                                return {
-                                    preferences: null,
-                                    primaryModels: [],
-                                } satisfies RemoteModelsData
-                            })
-                        )
-                    })
-                )
-                return serverModelsConfig
-            })
-        )
-
-    return combineLatest(localModels, remoteModelsData, userModelPreferences).pipe(
-        map(
-            ([localModels, remoteModelsData, userModelPreferences]):
-                | ModelsData
-                | typeof pendingOperation =>
-                remoteModelsData === pendingOperation
-                    ? pendingOperation
-                    : {
-                          localModels,
-                          primaryModels: isError(remoteModelsData)
-                              ? []
-                              : normalizeModelList(remoteModelsData.primaryModels),
-                          preferences: isError(remoteModelsData)
-                              ? userModelPreferences
-                              : resolveModelPreferences(
-                                    remoteModelsData.preferences,
-                                    userModelPreferences
-                                ),
-                      }
+            }
         ),
+        // Keep the old results while we're fetching the new ones, to avoid UI jitter.
         distinctUntilChanged(),
-        tap(modelsData => {
+        tap(async modelsData => {
             if (modelsData !== pendingOperation && modelsData.primaryModels.length > 0) {
                 logDebug(
                     'ModelsService',
                     'ModelsData changed',
                     `${modelsData.primaryModels.length} primary models`
                 )
+                await modelsService.setModelPreferences(modelsData, false)
             }
         }),
         shareReplay()

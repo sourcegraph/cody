@@ -95,6 +95,7 @@ export async function getAutocompleteProviderFromServerSideModelConfig({
 
     vi.spyOn(modelsService, 'modelsChanges', 'get').mockReturnValue(
         Observable.of({
+            endpoint: 'https://sourcegraph.com',
             primaryModels: mockedConfig.models.map(createModelFromServerModel),
             localModels: [],
             preferences: {
@@ -141,6 +142,7 @@ export function getAutocompleteProviderFromSiteConfigCodyLLMConfiguration({
 
     vi.spyOn(modelsService, 'modelsChanges', 'get').mockReturnValue(
         Observable.of({
+            endpoint: 'https://sourcegraph.com',
             primaryModels: [],
             localModels: [],
             preferences: { defaults: {}, selected: {} },

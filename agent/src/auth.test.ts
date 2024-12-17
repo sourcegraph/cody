@@ -1,12 +1,9 @@
 import path from 'node:path'
-import { ModelTag, ModelUsage, toModelRefStr } from '@sourcegraph/cody-shared'
-import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-import {
-    TESTING_CREDENTIALS,
-    type TestingCredentials,
-} from '../../vscode/src/testutils/testing-credentials'
-import { TestClient } from './TestClient'
-import { TestWorkspace } from './TestWorkspace'
+import {ModelTag, ModelUsage, toModelRefStr} from '@sourcegraph/cody-shared'
+import {afterAll, beforeAll, describe, expect, it} from 'vitest'
+import {TESTING_CREDENTIALS, type TestingCredentials,} from '../../vscode/src/testutils/testing-credentials'
+import {TestClient} from './TestClient'
+import {TestWorkspace} from './TestWorkspace'
 
 describe(
     'Auth',
@@ -180,7 +177,8 @@ describe(
             expect(
                 enterpriseModels.models?.some(({ model }) => model.tags.includes(ModelTag.Waitlist))
             ).toBeFalsy()
-
+            expect(
+                enterpriseModels.models.map(({ model }) => model.id)).toContain(FIXTURE_MODELS.defaultS2ChatModel)
             // The chat that we started before switching accounts should not be usable from the new
             // account.
             await expect(
@@ -203,6 +201,6 @@ describe(
             expect(models.map(({ model }) => toModelRefStr(model.modelRef!))).toContain(
                 'openai::2024-02-01::gpt-4o' // arbitrary model that we expect to be included
             )
-        })
+        }, 100_000)
     }
 )

@@ -1,11 +1,11 @@
-import { type Observable, map } from 'observable-fns'
+import {type Observable, map} from 'observable-fns'
 
-import { authStatus, currentAuthStatus } from '../auth/authStatus'
+import {authStatus} from '../auth/authStatus'
 import { mockAuthStatus } from '../auth/authStatus'
 import { type AuthStatus, isCodyProUser, isEnterpriseUser } from '../auth/types'
 import { AUTH_STATUS_FIXTURE_AUTHED_DOTCOM } from '../auth/types'
 import { type PickResolvedConfiguration, resolvedConfig } from '../configuration/resolver'
-import { FeatureFlag, featureFlagProvider } from '../experimentation/FeatureFlagProvider'
+import { FeatureFlag } from '../experimentation/FeatureFlagProvider'
 import { logDebug } from '../logger'
 import {
     type StoredLastValue,
@@ -14,9 +14,8 @@ import {
     distinctUntilChanged,
     shareReplay,
     storeLastValue,
-    tap,
 } from '../misc/observable'
-import { firstResultFromOperation, pendingOperation } from '../misc/observableOperation'
+import {firstResultFromOperation, pendingOperation} from '../misc/observableOperation'
 import { ClientConfigSingleton } from '../sourcegraph-api/clientConfig'
 import {
     type UserProductSubscription,
@@ -204,6 +203,8 @@ export interface DefaultsAndUserPreferencesForEndpoint {
 }
 
 export interface ModelsData {
+    endpoint: string,
+
     /** Models available on the endpoint (Sourcegraph instance). */
     primaryModels: Model[]
 
@@ -214,10 +215,11 @@ export interface ModelsData {
     preferences: DefaultsAndUserPreferencesForEndpoint
 }
 
-const EMPTY_MODELS_DATA: ModelsData = {
+export const EMPTY_MODELS_DATA: ModelsData = {
     localModels: [],
     preferences: { defaults: {}, selected: {} },
     primaryModels: [],
+    endpoint: ''
 }
 
 export interface LocalStorageForModelPreferences {
@@ -257,49 +259,39 @@ export class ModelsService {
         )
     }
 
+    public async setModelPreferences(modelsData: ModelsData, shouldEditDefaultToGpt4oMini: boolean): Promise<void> {
+        // Ensures we only change user preferences once
+        // when they join the A/B test.
+        const isEnrolled = this.storage?.getEnrollmentHistory(
+            FeatureFlag.CodyEditDefaultToGpt4oMini
+        )
+
+        // Ensures that we have the gpt-4o-mini model
+        // we want to default to in this A/B test.
+        const gpt4oMini = modelsData.primaryModels.find(
+            model => model?.modelRef?.modelId === 'gpt-4o-mini'
+        )
+
+        const allSitePrefs = this.storage?.getModelPreferences()
+        const currentAccountPrefs = { ...modelsData.preferences }
+
+        if (!isEnrolled && shouldEditDefaultToGpt4oMini && gpt4oMini) {
+            // For users enrolled in the A/B test, we'll default
+            // to the gpt-4-mini model when using the Edit command.
+            // They still can switch back to other models if they want.
+            currentAccountPrefs.selected.edit = gpt4oMini.id
+        }
+
+        const updated: DefaultsAndUserPreferencesByEndpoint = {
+            ...allSitePrefs,
+            [modelsData.endpoint]: currentAccountPrefs,
+        }
+
+        await this.storage?.setModelPreferences(updated)
+    }
+
     public setStorage(storage: LocalStorageForModelPreferences): void {
         this.storage = storage
-
-        this.syncPreferencesSubscription = combineLatest(
-            this.modelsChanges,
-            featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyEditDefaultToGpt4oMini)
-        )
-            .pipe(
-                tap(([data, shouldEditDefaultToGpt4oMini]) => {
-                    if (data === pendingOperation) {
-                        return
-                    }
-
-                    // Ensures we only change user preferences once
-                    // when they join the A/B test.
-                    const isEnrolled = this.storage?.getEnrollmentHistory(
-                        FeatureFlag.CodyEditDefaultToGpt4oMini
-                    )
-
-                    // Ensures that we have the gpt-4o-mini model
-                    // we want to default to in this A/B test.
-                    const gpt4oMini = data.primaryModels.find(
-                        model => model?.modelRef?.modelId === 'gpt-4o-mini'
-                    )
-
-                    const allSitePrefs = this.storage?.getModelPreferences()
-                    const currentAccountPrefs = { ...data.preferences }
-
-                    if (!isEnrolled && shouldEditDefaultToGpt4oMini && gpt4oMini) {
-                        // For users enrolled in the A/B test, we'll default
-                        // to the gpt-4-mini model when using the Edit command.
-                        // They still can switch back to other models if they want.
-                        currentAccountPrefs.selected.edit = gpt4oMini.id
-                    }
-
-                    const updated: DefaultsAndUserPreferencesByEndpoint = {
-                        ...allSitePrefs,
-                        [currentAuthStatus().endpoint]: currentAccountPrefs,
-                    }
-                    this.storage?.setModelPreferences(updated)
-                })
-            )
-            .subscribe({})
     }
 
     public dispose(): void {
@@ -395,10 +387,11 @@ export class ModelsService {
             authStatus,
             userProductSubscription
         ).pipe(
-            map(([models, modelsData, authStatus, userProductSubscription]) => {
+            map(([models, modelsData, authenticationStatus, userProductSubscription]) => {
                 if (
                     models === pendingOperation ||
                     modelsData === pendingOperation ||
+                    authenticationStatus.pendingValidation ||
                     userProductSubscription === pendingOperation
                 ) {
                     return pendingOperation
@@ -407,7 +400,7 @@ export class ModelsService {
                 // Free users can only use the default free model, so we just find the first model they can use
                 const firstModelUserCanUse = models.find(
                     m =>
-                        this._isModelAvailable(modelsData, authStatus, userProductSubscription, m) ===
+                        this._isModelAvailable(modelsData, authenticationStatus, userProductSubscription, m) ===
                         true
                 )
 
@@ -422,7 +415,7 @@ export class ModelsService {
                         selected &&
                         this._isModelAvailable(
                             modelsData,
-                            authStatus,
+                            authenticationStatus,
                             userProductSubscription,
                             selected
                         ) === true
@@ -474,7 +467,7 @@ export class ModelsService {
         if (!this.storage) {
             throw new Error('ModelsService.storage is not set')
         }
-        const serverEndpoint = currentAuthStatus().endpoint
+        const serverEndpoint = (await firstResultFromOperation(authStatus)).endpoint
         const currentPrefs = deepClone(this.storage.getModelPreferences())
         if (!currentPrefs[serverEndpoint]) {
             currentPrefs[serverEndpoint] = modelsData.preferences

@@ -304,6 +304,7 @@ describe('syncModels', () => {
             expect(values).toStrictEqual<typeof values>([
                 pendingOperation,
                 {
+                    endpoint: '',
                     localModels: [],
                     primaryModels: [modelFixture('foo')],
                     preferences: {
@@ -322,6 +323,7 @@ describe('syncModels', () => {
             configOverwritesSubject.next({ chatModel: 'bar' })
             await vi.advanceTimersByTimeAsync(0)
             const result0: ModelsData = {
+                endpoint: '',
                 localModels: [],
                 primaryModels: [modelFixture('bar')],
                 preferences: {
@@ -378,6 +380,7 @@ describe('syncModels', () => {
             clearValues()
             await vi.advanceTimersByTimeAsync(1)
             const result1: ModelsData = {
+                endpoint: 'https://example.com',
                 localModels: [],
                 primaryModels: [createModelFromServerModel(quxModel)],
                 preferences: {
@@ -443,6 +446,7 @@ describe('syncModels', () => {
             await vi.advanceTimersByTimeAsync(1)
             expect(values).toStrictEqual<typeof values>([
                 {
+                    endpoint: 'https://example.com',
                     localModels: [],
                     primaryModels: [createModelFromServerModel(zzzModel)],
                     preferences: {

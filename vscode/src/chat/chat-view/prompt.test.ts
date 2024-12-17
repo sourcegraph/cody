@@ -35,6 +35,7 @@ describe('DefaultPrompter', () => {
     it('constructs a prompt with no context', async () => {
         vi.spyOn(modelsService, 'modelsChanges', 'get').mockReturnValue(
             Observable.of<ModelsData>({
+                endpoint: 'https://sourcegraph.com',
                 primaryModels: [
                     createModel({
                         id: 'a-model-id',
@@ -115,6 +116,7 @@ describe('DefaultPrompter', () => {
 
         vi.spyOn(modelsService, 'modelsChanges', 'get').mockReturnValue(
             Observable.of<ModelsData>({
+                endpoint: 'https://sourcegraph.com',
                 primaryModels: [
                     createModel({
                         id: 'a-model-id',
@@ -159,6 +161,7 @@ describe('DefaultPrompter', () => {
     it('prefers latest context', async () => {
         vi.spyOn(modelsService, 'modelsChanges', 'get').mockReturnValue(
             Observable.of<ModelsData>({
+                endpoint: 'https://sourcegraph.com',
                 primaryModels: [
                     createModel({
                         id: 'a-model-id',
