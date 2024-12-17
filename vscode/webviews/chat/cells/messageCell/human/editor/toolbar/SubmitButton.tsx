@@ -1,5 +1,5 @@
 import type { ChatMessage } from '@sourcegraph/cody-shared'
-import { CodyIDE, FeatureFlag } from '@sourcegraph/cody-shared'
+import { CodyIDE } from '@sourcegraph/cody-shared'
 import clsx from 'clsx'
 import { BadgeCheck, Pencil, Search } from 'lucide-react'
 import type { FC } from 'react'
@@ -11,7 +11,6 @@ import { ToolbarPopoverItem } from '../../../../../../components/shadcn/ui/toolb
 import { Tooltip, TooltipContent, TooltipTrigger } from '../../../../../../components/shadcn/ui/tooltip'
 import { useConfig } from '../../../../../../utils/useConfig'
 import { useExperimentalOneBox } from '../../../../../../utils/useExperimentalOneBox'
-import { useFeatureFlag } from '../../../../../../utils/useFeatureFlags'
 import { CodyIcon } from '../../../../../components/CodyIcon'
 
 export type SubmitButtonState = 'submittable' | 'emptyEditorValue' | 'waitingResponseComplete'
@@ -20,9 +19,10 @@ interface IntentOption {
     title: string
     icon: React.FC<{ className?: string }>
     intent: ChatMessage['intent']
+    hidden?: boolean
 }
 
-function getIntentOptions(ide: CodyIDE, showEditIntent?: boolean): IntentOption[] {
+function getIntentOptions(ide: CodyIDE): IntentOption[] {
     const standardOneBoxIntents: IntentOption[] = [
         {
             title: 'Best for question',
@@ -41,7 +41,7 @@ function getIntentOptions(ide: CodyIDE, showEditIntent?: boolean): IntentOption[
         },
     ]
 
-    if (ide === CodyIDE.Web || !showEditIntent) {
+    if (ide === CodyIDE.Web) {
         return standardOneBoxIntents
     }
 
@@ -51,6 +51,7 @@ function getIntentOptions(ide: CodyIDE, showEditIntent?: boolean): IntentOption[
             title: 'Edit Code',
             icon: Pencil,
             intent: 'edit',
+            hidden: true,
         },
     ]
 }
@@ -68,12 +69,7 @@ export const SubmitButton: FC<{
         clientCapabilities: { agentIDE },
     } = useConfig()
 
-    const showEditCodeIntent = useFeatureFlag(FeatureFlag.CodyExperimentalShowEditCodeIntent)
-
-    const intentOptions = useMemo(
-        () => getIntentOptions(agentIDE, showEditCodeIntent),
-        [agentIDE, showEditCodeIntent]
-    )
+    const intentOptions = useMemo(() => getIntentOptions(agentIDE), [agentIDE])
 
     if (state === 'waitingResponseComplete') {
         return (
@@ -104,7 +100,7 @@ export const SubmitButton: FC<{
 
     return (
         <div className="tw-flex tw-items-center">
-            {experimentalOneBoxEnabled && selectedIntent && (
+            {experimentalOneBoxEnabled && selectedIntent && !selectedIntent.hidden && (
                 <selectedIntent.icon className="tw-size-8 tw-mr-2" />
             )}
             <Tooltip>
@@ -146,21 +142,25 @@ export const SubmitButton: FC<{
                     popoverContent={close => (
                         <Command>
                             <CommandList className="tw-p-2">
-                                {intentOptions.map(option => (
-                                    <CommandItem
-                                        key={option.intent ?? option.title}
-                                        onSelect={() => {
-                                            onSelectIntent?.(option.intent)
-                                            close()
-                                        }}
-                                        className="tw-flex tw-text-left tw-justify-between tw-rounded-sm"
-                                    >
-                                        <div className="tw-flex tw-items-center tw-gap-2">
-                                            <option.icon className="tw-size-8" />
-                                            {option.title}
-                                        </div>
-                                    </CommandItem>
-                                ))}
+                                {intentOptions.map(
+                                    option =>
+                                        // biome-ignore lint/correctness/useJsxKeyInIterable: no key required for false
+                                        !option.hidden && (
+                                            <CommandItem
+                                                key={option.intent ?? option.title}
+                                                onSelect={() => {
+                                                    onSelectIntent?.(option.intent)
+                                                    close()
+                                                }}
+                                                className="tw-flex tw-text-left tw-justify-between tw-rounded-sm"
+                                            >
+                                                <div className="tw-flex tw-items-center tw-gap-2">
+                                                    <option.icon className="tw-size-8" />
+                                                    {option.title}
+                                                </div>
+                                            </CommandItem>
+                                        )
+                                )}
                             </CommandList>
                         </Command>
                     )}
