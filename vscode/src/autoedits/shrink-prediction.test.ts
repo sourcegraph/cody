@@ -1,6 +1,6 @@
 import dedent from 'dedent'
 import { describe, expect, it } from 'vitest'
-
+import * as vscode from 'vscode'
 import { getCurrentDocContext } from '../completions/get-current-doc-context'
 import { documentAndPosition } from '../completions/test-helpers'
 
@@ -8,6 +8,39 @@ import { type CodeToReplaceData, getCurrentFilePromptComponents } from './prompt
 import { shrinkPredictionUntilSuffix } from './shrink-prediction'
 
 describe('shrinkPredictionUntilSuffix', () => {
+
+    it.only('repro issue', () => {
+        const codeToReplaceData: CodeToReplaceData = {
+            codeToRewrite:
+                '    constructor(recentEditsTracker: RecentEditsTracker) {\n        this.recentEditsTracker = \n    }\n\n',
+            codeToRewritePrefix:
+                '    constructor(recentEditsTracker: RecentEditsTracker) {\n        this.recentEditsTracker = ',
+            codeToRewriteSuffix:
+                '\n    }\n\n',
+            prefixBeforeArea:
+                '',
+            prefixInArea:
+                "import { RecentEditsTracker } from '../completions/context/retrievers/recent-user-actions/recent-edits-tracker'\n\nexport class FilterPredictionEditsBasedOnRecentEdits {\n\n    private readonly recentEditsTracker: RecentEditsTracker\n\n",
+            range: new vscode.Range(6, 0, 10, 0),
+            suffixAfterArea:
+                '',
+            suffixInArea:
+                '}\n\n'
+        }
+
+        const prediction = dedent`    constructor(recentEditsTracker: RecentEditsTracker) {
+                this.recentEditsTracker = recentEditsTracker
+        `
+        // Note: This appends extra "constructor(recentEditsTracker: RecentEditsTracker) {\n" line
+        const expected = dedent`    constructor(recentEditsTracker: RecentEditsTracker) {
+                this.recentEditsTracker = recentEditsTracker
+        constructor(recentEditsTracker: RecentEditsTracker) {\n
+        `
+
+        const result = shrinkPredictionUntilSuffix(prediction, codeToReplaceData)
+        expect(result).toBe(expected)
+    })
+
     it('middle of file, no overlap, 4-line prediction', () => {
         const codeToReplaceData = createCodeToReplaceData`const a = 1
             const b = 2
