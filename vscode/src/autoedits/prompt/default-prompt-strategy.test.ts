@@ -182,10 +182,12 @@ describe('DefaultUserPromptStrategy', () => {
             <extracted_code_snippets>
             <snippet>
             (\`test1.ts\`)
+
             jaccard similarity context 1
             </snippet>
             <snippet>
             (\`test2.ts\`)
+
             jaccard similarity context 2
             </snippet>
             </extracted_code_snippets>
@@ -194,25 +196,31 @@ describe('DefaultUserPromptStrategy', () => {
             <recently_viewed_snippets>
             <snippet>
             (\`test3.ts\`)
+
             view port context 4
             </snippet>
             <snippet>
             (\`test2.ts\`)
+
             view port context 3
             </snippet>
             <snippet>
             (\`test1.ts\`)
+
             view port context 2
             </snippet>
             <snippet>
             (\`test0.ts\`)
+
             view port context 1
             </snippet>
             </recently_viewed_snippets>
 
             Here is the file that I am looking at (\`test.ts\`)
             <file>
+
             <<<AREA_AROUND_CODE_TO_REWRITE_WILL_BE_INSERTED_HERE>>>
+
             </file>
 
             Here is my recent series of edits from oldest to newest.
@@ -232,20 +240,24 @@ describe('DefaultUserPromptStrategy', () => {
             Here are some linter errors from the code that you will rewrite.
             <lint_errors>
             (\`test1.ts\`)
+
             diagnostics context 1
 
             diagnostics context 2
 
             (\`test2.ts\`)
+
             diagnostics context 3
             </lint_errors>
 
             Here is some recent code I copied from the editor.
             <recent_copy>
             (\`test1.ts\`)
+
             recent copy context 1
 
             (\`test2.ts\`)
+
             recent copy context 2
             </recent_copy>
 
@@ -300,7 +312,9 @@ describe('DefaultUserPromptStrategy', () => {
 
             Here is the file that I am looking at (\`test.ts\`)
             <file>
+
             <<<AREA_AROUND_CODE_TO_REWRITE_WILL_BE_INSERTED_HERE>>>
+
             </file>
 
 

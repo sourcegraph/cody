@@ -1,51 +1,33 @@
 import {
     type AuthStatus,
-    type ChatModel,
-    type ClientActionBroadcast,
-    type CodyClientConfig,
-    type ContextItemFile,
-    type ContextItemRepository,
-    DefaultEditCommands,
-    type NLSSearchDynamicFilter,
-    REMOTE_DIRECTORY_PROVIDER_URI,
-    REMOTE_FILE_PROVIDER_URI,
-    REMOTE_REPOSITORY_PROVIDER_URI,
-    cenv,
-    clientCapabilities,
-    currentSiteVersion,
-    distinctUntilChanged,
-    extractContextFromTraceparent,
-    firstResultFromOperation,
-    forceHydration,
-    inputTextWithMappedContextChipsFromPromptEditorState,
-    isAbortError,
-    pendingOperation,
-    ps,
-    resolvedConfig,
-    shareReplay,
-    skip,
-    skipPendingOperation,
-    wrapInActiveSpan,
-} from '@sourcegraph/cody-shared'
-import {
     type BillingCategory,
     type BillingProduct,
     CHAT_OUTPUT_TOKEN_BUDGET,
     type ChatClient,
     type ChatMessage,
+    type ChatModel,
+    type ClientActionBroadcast,
     ClientConfigSingleton,
+    type CodyClientConfig,
     type CompletionParameters,
     type ContextItem,
+    type ContextItemFile,
     type ContextItemOpenCtx,
+    type ContextItemRepository,
     ContextItemSource,
     DOTCOM_URL,
     type DefaultChatCommands,
+    DefaultEditCommands,
     type EventSource,
     FeatureFlag,
     type Guardrails,
     type Message,
     ModelUsage,
+    type NLSSearchDynamicFilter,
     PromptString,
+    REMOTE_DIRECTORY_PROVIDER_URI,
+    REMOTE_FILE_PROVIDER_URI,
+    REMOTE_REPOSITORY_PROVIDER_URI,
     type RankedContext,
     type SerializedChatInteraction,
     type SerializedChatTranscript,
@@ -53,15 +35,23 @@ import {
     Typewriter,
     addMessageListenersForExtensionAPI,
     authStatus,
+    cenv,
+    clientCapabilities,
     createMessageAPIForExtension,
     currentAuthStatus,
     currentAuthStatusAuthed,
     currentResolvedConfig,
+    currentSiteVersion,
     currentUserProductSubscription,
+    distinctUntilChanged,
+    extractContextFromTraceparent,
     featureFlagProvider,
+    firstResultFromOperation,
+    forceHydration,
     getContextForChatMessage,
     graphqlClient,
     hydrateAfterPostMessage,
+    inputTextWithMappedContextChipsFromPromptEditorState,
     inputTextWithoutContextChipsFromPromptEditorState,
     isAbortErrorOrSocketHangUp,
     isContextWindowLimitError,
@@ -71,10 +61,16 @@ import {
     isRateLimitError,
     logError,
     modelsService,
+    pendingOperation,
     promiseFactoryToObservable,
+    ps,
     recordErrorToSpan,
     reformatBotMessageForChat,
+    resolvedConfig,
     serializeChatMessage,
+    shareReplay,
+    skip,
+    skipPendingOperation,
     startWith,
     storeLastValue,
     subscriptionDisposable,
@@ -83,6 +79,7 @@ import {
     tracer,
     truncatePromptString,
     userProductSubscription,
+    wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
 import * as uuid from 'uuid'
 import * as vscode from 'vscode'
@@ -100,6 +97,7 @@ import {
     startAuthProgressIndicator,
 } from '../../auth/auth-progress-indicator'
 import type { startTokenReceiver } from '../../auth/token-receiver'
+import { getCurrentUserId } from '../../auth/user'
 import { executeCodyCommand } from '../../commands/CommandsController'
 import { getContextFileFromUri } from '../../commands/context/file-path'
 import { getContextFileFromCursor } from '../../commands/context/selection'
@@ -111,7 +109,7 @@ import { migrateAndNotifyForOutdatedModels } from '../../models/modelMigrator'
 import { logDebug, outputChannelLogger } from '../../output-channel-logger'
 import { getCategorizedMentions } from '../../prompt-builder/utils'
 import { hydratePromptText } from '../../prompts/prompt-hydration'
-import { mergedPromptsAndLegacyCommands } from '../../prompts/prompts'
+import { listPromptTags, mergedPromptsAndLegacyCommands } from '../../prompts/prompts'
 import { publicRepoMetadataIfAllWorkspaceReposArePublic } from '../../repository/githubRepoMetadata'
 import { getFirstRepoNameContainingUri } from '../../repository/repo-name-resolver'
 import { authProvider } from '../../services/AuthProvider'
@@ -258,6 +256,13 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     // Run this async because this method may be called during initialization
                     // and awaiting on this.postMessage may result in a deadlock
                     void this.sendConfig(authStatus)
+                })
+            ),
+            subscriptionDisposable(
+                ClientConfigSingleton.getInstance().updates.subscribe(update => {
+                    // Run this async because this method may be called during initialization
+                    // and awaiting on this.postMessage may result in a deadlock
+                    void this.sendClientConfig(update)
                 })
             ),
 
@@ -608,20 +613,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         const workspaceFolderUris =
             vscode.workspace.workspaceFolders?.map(folder => folder.uri.toString()) ?? []
 
-        const abortController = new AbortController()
-        let clientConfig: CodyClientConfig | undefined
-        try {
-            clientConfig = await ClientConfigSingleton.getInstance().getConfig(abortController.signal)
-            if (abortController.signal.aborted) {
-                return
-            }
-        } catch (error) {
-            if (isAbortError(error) || abortController.signal.aborted) {
-                return
-            }
-            throw error
-        }
-
         await this.postMessage({
             type: 'config',
             config: configForWebview,
@@ -629,19 +620,20 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             authStatus: authStatus,
             userProductSubscription: await currentUserProductSubscription(),
             workspaceFolderUris,
-            configFeatures: {
-                // If clientConfig is undefined means we were unable to fetch the client configuration -
-                // most likely because we are not authenticated yet. We need to be able to display the
-                // chat panel (which is where all login functionality is) in this case, so we fallback
-                // to some default values:
-                chat: clientConfig?.chatEnabled ?? true,
-                attribution: clientConfig?.attributionEnabled ?? false,
-                serverSentModels: clientConfig?.modelsAPIEnabled ?? false,
-            },
             isDotComUser: isDotCom(authStatus),
         })
         logDebug('ChatController', 'updateViewConfig', {
             verbose: configForWebview,
+        })
+    }
+
+    private async sendClientConfig(clientConfig: CodyClientConfig) {
+        await this.postMessage({
+            type: 'clientConfig',
+            clientConfig,
+        })
+        logDebug('ChatController', 'updateClientConfig', {
+            verbose: clientConfig,
         })
     }
 
@@ -818,7 +810,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             this.featureDeepCodyRateLimitMultiplier.value.last ? 2 : 1
         )
         const deepCodyLimit = deepCodyRateLimiter.isAtLimit()
-        if (isDeepCodyModel && isDeepCodyEnabled && deepCodyLimit) {
+        if (isDeepCodyEnabled && deepCodyLimit) {
             this.postError(deepCodyRateLimiter.getRateLimitError(deepCodyLimit), 'transcript')
             this.handleAbort()
             return
@@ -2037,10 +2029,13 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                         ),
                     promptsMigrationStatus: () => getPromptsMigrationInfo(),
                     startPromptsMigration: () => promiseFactoryToObservable(startPromptsMigration),
+                    getCurrentUserId: () =>
+                        promiseFactoryToObservable(signal => getCurrentUserId(signal)),
                     prompts: input =>
                         promiseFactoryToObservable(signal =>
                             mergedPromptsAndLegacyCommands(input, signal)
                         ),
+                    promptTags: () => promiseFactoryToObservable(signal => listPromptTags(signal)),
                     models: () =>
                         modelsService.modelsChanges.pipe(
                             map(models => (models === pendingOperation ? null : models))

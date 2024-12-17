@@ -68,7 +68,7 @@ describe('rewrite-query', () => {
 
 \tmu       sync.RWMute
 `,
-        expanded => expect(expanded).toMatchInlineSnapshot(`"cache sync test zoekt"`)
+        expanded => expect(expanded).toMatchInlineSnapshot(`"cache client sync zoekt"`)
     )
 
     check(ps`C'est ou la logique pour recloner les dépôts?`, expanded =>
@@ -86,7 +86,7 @@ describe('rewrite-query', () => {
 
     check(
         ps`parse file with tree-sitter. follow these rules:\n*use the Google Go style guide\n*panic if parsing fails`,
-        expanded => expect(expanded).toMatchInlineSnapshot(`"go google panic parse tree-sitter"`)
+        expanded => expect(expanded).toMatchInlineSnapshot(`"go guide panic parse style tree-sitter"`)
     )
 
     afterAll(async () => {

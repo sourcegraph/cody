@@ -255,7 +255,11 @@ export {
     SourcegraphGraphQLAPIClient,
     graphqlClient,
 } from './sourcegraph-api/graphql'
-export { ClientConfigSingleton, type CodyClientConfig } from './sourcegraph-api/clientConfig'
+export {
+    ClientConfigSingleton,
+    type CodyClientConfig,
+    type CodyNotice,
+} from './sourcegraph-api/clientConfig'
 export {
     isNodeResponse,
     INCLUDE_EVERYTHING_CONTEXT_FILTERS,
@@ -273,6 +277,7 @@ export {
     type NLSSearchFileMatch,
     type NLSSearchDynamicFilter,
     type NLSSearchDynamicFilterKind,
+    type GraphQLAPIClientConfig,
 } from './sourcegraph-api/graphql/client'
 export type {
     CodyLLMSiteConfiguration,

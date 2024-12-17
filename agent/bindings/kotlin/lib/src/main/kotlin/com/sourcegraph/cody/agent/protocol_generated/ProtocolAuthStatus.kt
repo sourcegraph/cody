@@ -45,8 +45,7 @@ data class ProtocolUnauthenticatedAuthStatus(
   val status: StatusEnum, // Oneof: unauthenticated
   val authenticated: Boolean,
   val endpoint: String,
-  val showNetworkError: Boolean? = null,
-  val showInvalidAccessTokenError: Boolean? = null,
+  val error: AuthenticationError? = null,
   val pendingValidation: Boolean,
 ) : ProtocolAuthStatus() {
 

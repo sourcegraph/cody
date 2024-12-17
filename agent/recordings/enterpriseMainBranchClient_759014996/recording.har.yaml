@@ -909,6 +909,162 @@ log:
         send: 0
         ssl: -1
         wait: 240
+    - _id: 58db5729e7d9b6a2c9f5fd6d707dfc97
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 92
+        cookies: []
+        headers:
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_1858aad0e1ff07ae26d4042086acb9da455866ad617afd2cb9ab9419e1be1104
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: enterprisemainbranchclient/v1 (Node.js v20.8.1)
+          - _fromType: array
+            name: x-requested-with
+            value: enterprisemainbranchclient v1
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "92"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - name: host
+            value: sourcegraph.sourcegraph.com
+        headersSize: 493
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            query: |
+              
+              query ViewerSettings {
+                viewerSettings {
+                  final
+                }
+              }
+            variables: {}
+        queryString:
+          - name: ViewerSettings
+            value: null
+        url: https://sourcegraph.sourcegraph.com/.api/graphql?ViewerSettings
+      response:
+        bodySize: 784
+        content:
+          encoding: base64
+          mimeType: application/json
+          size: 784
+          text: "[\"H4sIAAAAAAAA/+xUwW4jRRD9lWK4ECme8XqTOLGEVhbakBxYhQTEwbOHmp6amcY93aOua\
+            tuzlm/cuXPhyifA7/AD8AmoJ/Z6Q4ADNySuVa+r6r1X1dukRMFktk1WmtbkH0hE25pj\
+            pNIWTTJLtnmiXNmn1olWxHkyW2zzZEl9nszyRIjji1GB1pIfLakfTfLkNE9aYsaaBtB\
+            XjWbQDHsw7HMgbgiBCx4srUEFFte+Tz/WPAXGHhod0ddk9AYqP4BSWNxg1/XQOKNL7P\
+            ntJ41Ix7MsW6/Xae+ChIJS5dpsjaKaV6tPX1/W7fz+89WduT2BPLcwtyVwR0qjAW5ci\
+            LNI7PRA6FUDQtimAx/RYh7Z3Gh4cMErqj12zUd5snt7mie06cjrlqyguSaU4AettnlS\
+            xOafNWhr4tcbUkG0s3kyEx/odBCXvnBWi/Pa1t9QcePckp/k+zf/a/9P2lfh3bv+Wtu\
+            S/NyYo3SW1o+17omDkWtthDzfoaW/B/HXt8dc5x0q0St6gpjXtacao40f+MQD5MtAvr\
+            +1XZBh3tUkT3axyRMDS82tZtbFwGr/3jiF+83IE3HdMyd//e6X337+HuaeoHcBjHPLa\
+            GjlPGhbeQRUipgHZ70LhSFunBPovCsMtfwK7gwhE6w0a4FF7TKejFy3926WZe8jJ0NV\
+            SxsBFuo4hXtC1RwMWnxcalaBeaSMC+WxRvSfj/6kbFAthy2I2ugVcfbs5QnoaiBkiUp\
+            oyHRp1Gz7J0Ua19IzSX7/8Yef4I0TAmlQQOKul9QZ18dDhAYZOq9XKATxzADjypFlHT\
+            3drzx5jvo53w7NYDRwL6l1fArdo2KBCRYxlH7ITrn2SPuvsiegLQtheWD074z/L7GM5\
+            +g6sko2aefdSpfk9//goUatWdJaSxOKwOSVs0JWhi2Rhiy2aJehRZ+9nI4vq/HlWVVM\
+            sCjPp1hiRdPqxdnFZFyU1TTzuM5oqqbj8ytVnBfjs+qiIsJyPJ7QtHiJV2N1XrzAs6K\
+            4usgO06TfHo52t0t2u90fAQAA//+X48EcBAcAAA==\"]"
+          textDecoded:
+            data:
+              viewerSettings:
+                final: "{\"cody.notices\":[{\"key\":\"testing-banner-key-2\",\"message\":\"This
+                  is testing message to test our new custom message banner, say
+                  hi to Felix from me. [Happy
+                  holidays](https://www.youtube.com/watch?v=E8gmARGvPlI) \\n And
+                  special shout out to Search team.\",\"title\":\"Hi
+                  Sourcegraph!\"}],\"experimentalFeatures\":{\"batchChangesExec\
+                  ution\":true,\"codeMonitoringWebHooks\":true,\"codyNotices\":\
+                  [{\"key\":\"testing-banner-key-2\",\"message\":\"This is
+                  testing message to test our new custom message banner, say hi
+                  to Felix from me. [Happy
+                  holidays](https://www.youtube.com/watch?v=E8gmARGvPlI) \\n And
+                  special shout out to Search team.\",\"title\":\"Hi
+                  Sourcegraph!\"}],\"fuzzyFinderAll\":true,\"newSearchResultFil\
+                  tersPanel\":true,\"newSearchResultsUI\":true,\"proactiveSearc\
+                  hResultsAggregations\":true,\"searchQueryInput\":\"v2\"},\"no\
+                  tices\":[{\"dismissible\":true,\"location\":\"top\",\"message\
+                  \":\"ℹ️ Are you looking for infra access to troubleshoot
+                  problems? Please visit [go/s2-ops](http://go/s2-ops) for next
+                  steps. Reach out to
+                  [#discuss-cloud-ops](https://sourcegraph.slack.com/archives/d\
+                  iscuss-cloud-ops) if you need
+                  help.\"},{\"location\":\"home\",\"message\":\"🚨 Note that
+                  this deployment has private code and sensitive customers
+                  information - for demos, please use
+                  [demo.sourcegraph.com](https://demo.sourcegraph.com)
+                  instead.\"},{\"dismissible\":true,\"location\":\"top\",\"mess\
+                  age\":\"🚨 Note that this deployment has private code and
+                  sensitive customers information - for demos, please use
+                  [demo.sourcegraph.com](https://demo.sourcegraph.com)
+                  instead.\"}],\"openctx.providers\":{\"https://gist.githubuser\
+                  content.com/thenamankumar/3708f084fb2abd57adafe7f14620bdf7/ra\
+                  w/e7c7059cb5b04f6feead002e7b3a90c5b1a4bb96/provider.js\":true\
+                  }}"
+        cookies: []
+        headers:
+          - name: date
+            value: Mon, 16 Dec 2024 22:12:22 GMT
+          - name: content-type
+            value: application/json
+          - name: content-length
+            value: "784"
+          - name: connection
+            value: close
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: content-encoding
+            value: gzip
+          - name: observed-calculated-ip-from-forwarded-for
+            value: 34.117.155.115
+          - name: observed-x-forwarded-for
+            value: 79.153.114.146, 172.68.134.82, 34.117.155.115
+          - name: vary
+            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
+              Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1369
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-12-16T22:12:22.131Z
+      time: 346
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 346
     - _id: 088f4011556a3aad423d546bd2bd19fe
       _order: 0
       cache: {}

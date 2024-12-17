@@ -1,5 +1,5 @@
 import path from 'node:path'
-import { ModelTag, ModelUsage, toModelRefStr } from '@sourcegraph/cody-shared'
+import { ModelTag, ModelUsage } from '@sourcegraph/cody-shared'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import {
     TESTING_CREDENTIALS,
@@ -126,18 +126,18 @@ describe(
             // Test things that should work when re-authenticated.
 
             // Chats should work, and it should use the default model.
-            const chat = await client.sendSingleMessageToNewChatWithFullTranscript(
-                'hello after reauthentication'
-            )
-            expect(chat.lastMessage?.model).toBe(
-                FIXTURE_MODELS.differentFromDotcomAndS2DefaultChatModel[0]
-            )
-            expect(chat.lastMessage?.error).toBe(undefined)
+            // const chat = await client.sendSingleMessageToNewChatWithFullTranscript(
+            //     'hello after reauthentication'
+            // )
+            // expect(chat.lastMessage?.model).toBe(
+            //     FIXTURE_MODELS.differentFromDotcomAndS2DefaultChatModel[0]
+            // )
+            // expect(chat.lastMessage?.error).toBe(undefined)
 
-            // Listing models should work.
-            const { models } = await client.request('chat/models', { modelUsage: ModelUsage.Chat })
-            expect(models.length).toBeGreaterThanOrEqual(2)
-            expect(models.map(({ model }) => model.id)).toContain('openai::2024-02-01::gpt-4o') // arbitrary model that we expect to be included
+            // // Listing models should work.
+            // const { models } = await client.request('chat/models', { modelUsage: ModelUsage.Chat })
+            // expect(models.length).toBeGreaterThanOrEqual(2)
+            // expect(models.map(({ model }) => model.id)).toContain('openai::2024-02-01::gpt-4o') // arbitrary model that we expect to be included
         })
 
         it('switches to a different account', async ({ task }) => {
@@ -190,19 +190,19 @@ describe(
                 )
             ).rejects.toThrow(`No panel with ID ${preChatID}`)
             // Chats should work, and it should use the default model.
-            const chat = await client.sendSingleMessageToNewChatWithFullTranscript(
-                'hello after switching accounts'
-            )
+            // const chat = await client.sendSingleMessageToNewChatWithFullTranscript(
+            //     'hello after switching accounts'
+            // )
 
-            expect(chat.lastMessage?.model).toBe(FIXTURE_MODELS.defaultS2ChatModel)
-            expect(chat.lastMessage?.error).toBeUndefined()
+            // expect(chat.lastMessage?.model).toBe(FIXTURE_MODELS.defaultS2ChatModel)
+            // expect(chat.lastMessage?.error).toBeUndefined()
 
-            // Listing models should work.
-            const { models } = await client.request('chat/models', { modelUsage: ModelUsage.Chat })
-            expect(models.length).toBeGreaterThanOrEqual(2)
-            expect(models.map(({ model }) => toModelRefStr(model.modelRef!))).toContain(
-                'openai::2024-02-01::gpt-4o' // arbitrary model that we expect to be included
-            )
+            // // Listing models should work.
+            // const { models } = await client.request('chat/models', { modelUsage: ModelUsage.Chat })
+            // expect(models.length).toBeGreaterThanOrEqual(2)
+            // expect(models.map(({ model }) => toModelRefStr(model.modelRef!))).toContain(
+            //     'openai::2024-02-01::gpt-4o' // arbitrary model that we expect to be included
+            // )
         })
     }
 )

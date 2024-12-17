@@ -41,6 +41,10 @@ interface WorkspaceSettings {
     [key: string]: string | boolean | number
 }
 
+export type EnterpriseTestOptions = {
+    shouldUseEnterprise: boolean
+}
+
 // Playwright test extension: Extra VSCode settings to write to
 // .vscode/settings.json.
 export interface ExtraWorkspaceSettings {
@@ -50,6 +54,10 @@ export interface ExtraWorkspaceSettings {
 // Playwright test extension: Treat this URL as if it is "dotcom".
 export interface DotcomUrlOverride {
     dotcomUrl: string | undefined
+}
+
+export interface ClientConfigSingletonRefetchIntervalOverride {
+    clientConfigSingletonRefetchInterval: number | undefined
 }
 
 export interface TestConfiguration {
@@ -109,6 +117,12 @@ export const test = base
     .extend<DotcomUrlOverride>({
         dotcomUrl: undefined,
     })
+    .extend<ClientConfigSingletonRefetchIntervalOverride>({
+        clientConfigSingletonRefetchInterval: undefined,
+    })
+    .extend<EnterpriseTestOptions>({
+        shouldUseEnterprise: [false, { option: true }],
+    })
     .extend<TestConfiguration>({
         preAuthenticate: false,
     })
@@ -144,9 +158,11 @@ export const test = base
     })
     .extend<{ server: MockServer }>({
         server: [
-            // biome-ignore lint/correctness/noEmptyPattern: Playwright ascribes meaning to the empty pattern: No dependencies.
-            async ({}, use) => {
+            async ({ shouldUseEnterprise }, use) => {
                 MockServer.run(async server => {
+                    if (shouldUseEnterprise !== undefined) {
+                        server.setUserShouldUseEnterprise(shouldUseEnterprise)
+                    }
                     await use(server)
                 })
             },
@@ -160,6 +176,7 @@ export const test = base
                 workspaceDirectory,
                 extraWorkspaceSettings,
                 dotcomUrl,
+                clientConfigSingletonRefetchInterval,
                 preAuthenticate,
                 userDataDirectory,
                 extensionsDirectory,
@@ -230,15 +247,21 @@ export const test = base
 
                 args.push(workspaceDirectory)
 
+                const env = {
+                    ...process.env,
+                    ...dotcomUrlOverride,
+                    ...secretStorageState,
+                    CODY_TESTING: 'true',
+                    CODY_LOG_FILE: tmpLogFile,
+                }
+                if (clientConfigSingletonRefetchInterval) {
+                    // @ts-ignore
+                    env.CODY_CLIENT_CONFIG_SINGLETON_REFETCH_INTERVAL =
+                        clientConfigSingletonRefetchInterval.toString()
+                }
                 const app = await electron.launch({
                     executablePath: vscodeExecutablePath,
-                    env: {
-                        ...process.env,
-                        ...dotcomUrlOverride,
-                        ...secretStorageState,
-                        CODY_TESTING: 'true',
-                        CODY_LOG_FILE: tmpLogFile,
-                    },
+                    env,
                     args,
                     recordVideo: {
                         // All running tests will be recorded to a temp video file.

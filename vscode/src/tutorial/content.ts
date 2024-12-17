@@ -20,7 +20,7 @@ export const getStepContent = (step: TutorialStepKey): string => {
                 """
                 def greet(name, surname):
                     """Greets a user with a simple message"""
-                    
+
                 #    ^ Autocomplete: Place cursor above
                 # When you see a suggestion, press Tab to accept or Opt+\ to generate another.
             `

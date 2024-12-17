@@ -4,6 +4,7 @@ import type {
     ChatMessage,
     ClientCapabilitiesWithLegacyFields,
     ClientConfiguration,
+    CodyClientConfig,
     CodyIDE,
     ContextItem,
     ContextItemSource,
@@ -161,13 +162,12 @@ export type ExtensionMessage =
           clientCapabilities: ClientCapabilitiesWithLegacyFields
           authStatus: AuthStatus
           userProductSubscription?: UserProductSubscription | null | undefined
-          configFeatures: {
-              chat: boolean
-              attribution: boolean
-              serverSentModels: boolean
-          }
           isDotComUser: boolean
           workspaceFolderUris: string[]
+      }
+    | {
+          type: 'clientConfig'
+          clientConfig?: CodyClientConfig | null | undefined
       }
     | {
           /** Used by JetBrains and not VS Code. */

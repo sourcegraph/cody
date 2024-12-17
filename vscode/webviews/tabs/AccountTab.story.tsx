@@ -45,11 +45,6 @@ const createMockConfig = (overrides = {}) => ({
     } as AuthenticatedAuthStatus,
     isDotComUser: true,
     userProductSubscription: null,
-    configFeatures: {
-        chat: true,
-        attribution: true,
-        serverSentModels: true,
-    },
     ...overrides,
 })
 

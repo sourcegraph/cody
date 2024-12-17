@@ -1,4 +1,4 @@
-import { ps, psDedent } from '@sourcegraph/cody-shared'
+import { ps } from '@sourcegraph/cody-shared'
 import { RetrieverIdentifier } from '../../completions/context/utils'
 import { autoeditsLogger } from '../logger'
 import type { AutoeditsUserPromptStrategy, UserPromptArgs, UserPromptResponse } from './base'
@@ -13,6 +13,7 @@ import {
     getRecentCopyPrompt,
     getRecentEditsPrompt,
     getRecentlyViewedSnippetsPrompt,
+    joinPromptsWithNewlineSeperator,
 } from './prompt-utils'
 
 export class DefaultUserPromptStrategy implements AutoeditsUserPromptStrategy {
@@ -68,16 +69,17 @@ export class DefaultUserPromptStrategy implements AutoeditsUserPromptStrategy {
 
         const currentFilePrompt = ps`${constants.CURRENT_FILE_INSTRUCTION}${fileWithMarkerPrompt}`
 
-        const finalPrompt = psDedent`
-            ${getPromptWithNewline(constants.BASE_USER_PROMPT)}
-            ${getPromptWithNewline(jaccardSimilarityPrompt)}
-            ${getPromptWithNewline(recentViewsPrompt)}
-            ${getPromptWithNewline(currentFilePrompt)}
-            ${getPromptWithNewline(recentEditsPrompt)}
-            ${getPromptWithNewline(lintErrorsPrompt)}
-            ${getPromptWithNewline(recentCopyPrompt)}
-            ${getPromptWithNewline(areaPrompt)}
-            ${getPromptWithNewline(constants.FINAL_USER_PROMPT)}`
+        const finalPrompt = joinPromptsWithNewlineSeperator(
+            getPromptWithNewline(constants.BASE_USER_PROMPT),
+            getPromptWithNewline(jaccardSimilarityPrompt),
+            getPromptWithNewline(recentViewsPrompt),
+            getPromptWithNewline(currentFilePrompt),
+            getPromptWithNewline(recentEditsPrompt),
+            getPromptWithNewline(lintErrorsPrompt),
+            getPromptWithNewline(recentCopyPrompt),
+            getPromptWithNewline(areaPrompt),
+            constants.FINAL_USER_PROMPT
+        )
 
         autoeditsLogger.logDebug('AutoEdits', 'Prompt\n', finalPrompt)
         return {

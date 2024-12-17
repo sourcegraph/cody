@@ -53,7 +53,7 @@ describe('FireworksAdapter', () => {
             expect.objectContaining({
                 stream: false,
                 model: options.model,
-                temperature: 0.2,
+                temperature: 0,
                 max_tokens: expect.any(Number),
                 response_format: { type: 'text' },
                 prediction: {
@@ -81,7 +81,7 @@ describe('FireworksAdapter', () => {
             expect.objectContaining({
                 stream: false,
                 model: options.model,
-                temperature: 0.2,
+                temperature: 0,
                 max_tokens: expect.any(Number),
                 response_format: { type: 'text' },
                 prediction: {
