@@ -58,7 +58,7 @@ plugins {
   id("org.jetbrains.kotlin.jvm") version "2.0.21"
   id("org.jetbrains.intellij.platform") version "2.1.0"
   id("org.jetbrains.changelog") version "2.2.1"
-  id("com.diffplug.spotless") version "6.25.0"
+  id("spotless-conventions")
 }
 
 val platformVersion: String by project
@@ -145,24 +145,7 @@ dependencies {
 }
 
 spotless {
-  lineEndings = com.diffplug.spotless.LineEnding.UNIX
-  java {
-    target("src/*/java/**/*.java")
-    importOrder()
-    removeUnusedImports()
-    googleJavaFormat()
-  }
-  kotlinGradle {
-    ktfmt()
-    trimTrailingWhitespace()
-  }
-  kotlin {
-    ktfmt()
-    trimTrailingWhitespace()
-    target("src/**/*.kt")
-    targetExclude("src/main/kotlin/com/sourcegraph/cody/agent/protocol_generated/**")
-    toggleOffOn()
-  }
+  kotlin { targetExclude("src/main/kotlin/com/sourcegraph/cody/agent/protocol_generated/**") }
 }
 
 java {
@@ -616,5 +599,47 @@ tasks {
     jvmArgs("-Didea.ProcessCanceledException=disabled")
     agentProperties.forEach { (key, value) -> systemProperty(key, value) }
     dependsOn("buildCody")
+  }
+}
+
+intellijPlatformTesting {
+  runIde {
+    register("runIdeForUiTests") {
+      task {
+        task.get().dependsOn(project.tasks.getByPath("buildCody"))
+
+        version.set(properties("platformRuntimeVersion"))
+        val myType = IntelliJPlatformType.fromCode(properties("platformRuntimeType") ?: "IC")
+        type.set(myType)
+        plugins {
+          robotServerPlugin()
+          plugins(properties("platformRuntimePlugins").orEmpty())
+        }
+        splitMode.set(properties("splitMode")?.toBoolean() ?: false)
+
+        // TODO: The cody-agent.directory property is necessary because node bundling is not done
+        val buildCodyDir =
+            layout.buildDirectory.asFile.get().resolve("sourcegraph").resolve("agent")
+        // TODO: Remove as many of these as possible to create a realistic runtime environment
+        val agentProperties =
+            mapOf<String, Any>(
+                "cody-agent.trace-path" to
+                    "${layout.buildDirectory.asFile.get()}/sourcegraph/cody-agent-trace.json",
+                "cody-agent.directory" to buildCodyDir.parent,
+                "sourcegraph.verbose-logging" to "true")
+
+        agentProperties.forEach { (key, value) -> task.get().systemProperty(key, value) }
+
+        jvmArgumentProviders += CommandLineArgumentProvider {
+          listOf(
+              "-Drobot-server.port=8082",
+              "-Drobot.encryption.enabled=false",
+              "-Dide.mac.message.dialogs.as.sheets=false",
+              "-Djb.privacy.policy.text=<!--999.999-->",
+              "-Djb.consents.confirmation.enabled=false",
+          )
+        }
+      }
+    }
   }
 }
