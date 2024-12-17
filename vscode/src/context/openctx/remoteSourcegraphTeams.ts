@@ -1,14 +1,18 @@
-import { TEAMS_DIRECTORY_PROVIDER_URI, TEAMS_REPOSITORY_PROVIDER_URI } from '@sourcegraph/cody-shared'
+import {
+    WORKSPACE_DIRECTORY_PROVIDER_URI,
+    WORKSPACE_REPOSITORY_PROVIDER_URI,
+} from '@sourcegraph/cody-shared'
 import type { OpenCtxProvider } from './types'
 
-export const SourcegraphTeamsDirectoryProvider: OpenCtxProvider =
-    createSourcegraphTeamsProvider('directory')
-export const SourcegraphTeamsRepositoryProvider: OpenCtxProvider =
-    createSourcegraphTeamsProvider('repository')
+export const RemoteWorkspaceDirectoryProvider: OpenCtxProvider =
+    createRemoteWorkspaceProvider('directory')
+export const RemoteWorkspaceRepositoryProvider: OpenCtxProvider =
+    createRemoteWorkspaceProvider('repository')
 
-export function createSourcegraphTeamsProvider(type: 'directory' | 'repository'): OpenCtxProvider {
+export function createRemoteWorkspaceProvider(type: 'directory' | 'repository'): OpenCtxProvider {
     return {
-        providerUri: type === 'directory' ? TEAMS_DIRECTORY_PROVIDER_URI : TEAMS_REPOSITORY_PROVIDER_URI,
+        providerUri:
+            type === 'directory' ? WORKSPACE_DIRECTORY_PROVIDER_URI : WORKSPACE_REPOSITORY_PROVIDER_URI,
 
         meta() {
             return {

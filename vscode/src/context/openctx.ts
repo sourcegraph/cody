@@ -38,8 +38,8 @@ import RemoteDirectoryProvider, { createRemoteDirectoryProvider } from './openct
 import RemoteFileProvider, { createRemoteFileProvider } from './openctx/remoteFileSearch'
 import RemoteRepositorySearch, { createRemoteRepositoryProvider } from './openctx/remoteRepositorySearch'
 import {
-    SourcegraphTeamsDirectoryProvider,
-    SourcegraphTeamsRepositoryProvider,
+    RemoteWorkspaceDirectoryProvider,
+    RemoteWorkspaceRepositoryProvider,
 } from './openctx/remoteSourcegraphTeams'
 import { createWebProvider } from './openctx/web'
 
@@ -126,7 +126,7 @@ export function getOpenCtxProviders(
         featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyExperimentalOneBox),
         featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.SourcegraphTeamsUpgradeCTA)
     ).map(
-        ([config, authStatus, gitMentionProvider, enableOneBox, sourcegraphTeamsUpgrade]: [
+        ([config, authStatus, gitMentionProvider, enableOneBox, showRemoteWorkspaceUpgrade]: [
             ClientConfiguration,
             Pick<AuthStatus, 'endpoint'>,
             boolean | undefined,
@@ -143,16 +143,16 @@ export function getOpenCtxProviders(
 
             if (isDotCom(authStatus)) {
                 // Add providers for dotcom users with upgrade flag
-                if (sourcegraphTeamsUpgrade) {
+                if (showRemoteWorkspaceUpgrade) {
                     providers.push({
                         settings: false,
-                        provider: SourcegraphTeamsRepositoryProvider,
-                        providerUri: SourcegraphTeamsRepositoryProvider.providerUri,
+                        provider: RemoteWorkspaceRepositoryProvider,
+                        providerUri: RemoteWorkspaceRepositoryProvider.providerUri,
                     })
                     providers.push({
                         settings: false,
-                        provider: SourcegraphTeamsDirectoryProvider,
-                        providerUri: SourcegraphTeamsDirectoryProvider.providerUri,
+                        provider: RemoteWorkspaceDirectoryProvider,
+                        providerUri: RemoteWorkspaceDirectoryProvider.providerUri,
                     })
                 }
             } else {
