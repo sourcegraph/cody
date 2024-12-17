@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react'
 
 import { AUTH_STATUS_FIXTURE_AUTHED, CLIENT_CAPABILITIES_FIXTURE } from '@sourcegraph/cody-shared'
+import { dummyClientConfigForTest } from '@sourcegraph/cody-shared/src/sourcegraph-api/clientConfig'
 import { App } from './App'
 import { VSCodeWebview } from './storybook/VSCodeStoryDecorator'
 import { View } from './tabs'
@@ -41,9 +42,12 @@ const dummyVSCodeAPI: VSCodeWrapper = {
                 endpoint: 'https://example.com',
             },
             userProductSubscription: null,
-            configFeatures: { attribution: true, chat: true, serverSentModels: true },
             workspaceFolderUris: [],
             isDotComUser: true,
+        })
+        cb({
+            type: 'clientConfig',
+            clientConfig: dummyClientConfigForTest,
         })
         if (firstTime) {
             cb({ type: 'view', view: View.Chat })

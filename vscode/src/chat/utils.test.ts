@@ -13,7 +13,7 @@ describe('validateAuthStatus', () => {
         ).toStrictEqual<AuthStatus>({
             endpoint: DOTCOM_URL.toString(),
             authenticated: false,
-            showInvalidAccessTokenError: true,
+            error: { type: 'invalid-access-token' },
             pendingValidation: false,
         })
     })
@@ -71,7 +71,7 @@ describe('validateAuthStatus', () => {
             authenticated: false,
             endpoint: 'https://example.com',
             pendingValidation: false,
-            showInvalidAccessTokenError: true,
+            error: { type: 'invalid-access-token' },
         })
     })
 })

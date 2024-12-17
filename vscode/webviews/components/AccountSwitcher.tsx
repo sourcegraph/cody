@@ -174,7 +174,7 @@ export const AccountSwitcher: React.FC<AccountSwitcherProps> = ({
                         <FormField
                             name="accessToken"
                             // TODO: It would be nice to have some server side token validation and feedback there
-                            // serverInvalid={authStatus && !authStatus.authenticated && authStatus.showNetworkError}
+                            // serverInvalid={authStatus && !authStatus.authenticated && authStatus.error?.type === 'network-error'}
                             className="tw-my-2"
                         >
                             <FormControl

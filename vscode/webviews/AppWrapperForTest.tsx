@@ -139,11 +139,6 @@ export const AppWrapperForTest: FunctionComponent<{ children: ReactNode }> = ({ 
                         userProductSubscription: null,
                         config: {} as any,
                         clientCapabilities: CLIENT_CAPABILITIES_FIXTURE,
-                        configFeatures: {
-                            chat: true,
-                            serverSentModels: true,
-                            attribution: true,
-                        },
                         isDotComUser: true,
                     },
                 },

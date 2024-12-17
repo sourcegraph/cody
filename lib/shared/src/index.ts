@@ -272,6 +272,7 @@ export {
     type NLSSearchFileMatch,
     type NLSSearchDynamicFilter,
     type NLSSearchDynamicFilterKind,
+    type GraphQLAPIClientConfig,
 } from './sourcegraph-api/graphql/client'
 export type {
     CodyLLMSiteConfiguration,

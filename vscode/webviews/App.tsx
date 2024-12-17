@@ -2,10 +2,12 @@ import { type ComponentProps, useCallback, useEffect, useMemo, useState } from '
 
 import {
     type ChatMessage,
+    type CodyClientConfig,
     type DefaultContext,
     GuardrailsPost,
     PromptString,
     type TelemetryRecorder,
+    getAuthErrorMessage,
 } from '@sourcegraph/cody-shared'
 import type { AuthMethod } from '../src/chat/protocol'
 import styles from './App.module.css'
@@ -16,17 +18,19 @@ import { WebviewOpenTelemetryService } from './utils/webviewOpenTelemetryService
 
 import { ExtensionAPIProviderFromVSCodeAPI } from '@sourcegraph/prompt-editor'
 import { CodyPanel } from './CodyPanel'
-import { ConnectivityStatusBanner } from './components/ConnectivityStatusBanner'
+import { AuthenticationErrorBanner } from './components/AuthenticationErrorBanner'
 import { useSuppressKeys } from './components/hooks'
 import { View } from './tabs'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 import { ComposedWrappers, type Wrapper } from './utils/composeWrappers'
 import { updateDisplayPathEnvInfoForWebview } from './utils/displayPathEnvInfo'
 import { TelemetryRecorderContext, createWebviewTelemetryRecorder } from './utils/telemetry'
+import { ClientConfigProvider } from './utils/useClientConfig'
 import { type Config, ConfigProvider } from './utils/useConfig'
 
 export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vscodeAPI }) => {
     const [config, setConfig] = useState<Config | null>(null)
+    const [clientConfig, setClientConfig] = useState<CodyClientConfig | null>(null)
     // NOTE: View state will be set by the extension host during initialization.
     const [view, setView] = useState<View>()
     const [messageInProgress, setMessageInProgress] = useState<ChatMessage | null>(null)
@@ -81,6 +85,11 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                         // Reset to the default view (Chat) for unauthenticated users.
                         if (view && view !== View.Chat && !message.authStatus?.authenticated) {
                             setView(View.Chat)
+                        }
+                        break
+                    case 'clientConfig':
+                        if (message.clientConfig) {
+                            setClientConfig(message.clientConfig)
                         }
                         break
                     case 'clientAction':
@@ -159,8 +168,8 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     }, [config, webviewTelemetryService])
 
     const wrappers = useMemo<Wrapper[]>(
-        () => getAppWrappers({ vscodeAPI, telemetryRecorder, config }),
-        [vscodeAPI, telemetryRecorder, config]
+        () => getAppWrappers({ vscodeAPI, telemetryRecorder, config, clientConfig }),
+        [vscodeAPI, telemetryRecorder, config, clientConfig]
     )
 
     // Wait for all the data to be loaded before rendering Chat View
@@ -172,8 +181,10 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
         <ComposedWrappers wrappers={wrappers}>
             {view === View.Login || !config.authStatus.authenticated ? (
                 <div className={styles.outerContainer}>
-                    {!config.authStatus.authenticated && config.authStatus.showNetworkError && (
-                        <ConnectivityStatusBanner />
+                    {!config.authStatus.authenticated && config.authStatus.error && (
+                        <AuthenticationErrorBanner
+                            errorMessage={getAuthErrorMessage(config.authStatus.error)}
+                        />
                     )}
                     <AuthPage
                         simplifiedLoginRedirect={loginRedirect}
@@ -191,8 +202,8 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     configuration={config}
                     errorMessages={errorMessages}
                     setErrorMessages={setErrorMessages}
-                    attributionEnabled={config.configFeatures.attribution}
-                    chatEnabled={config.configFeatures.chat}
+                    attributionEnabled={clientConfig?.attributionEnabled ?? false}
+                    chatEnabled={clientConfig?.chatEnabled ?? true}
                     messageInProgress={messageInProgress}
                     transcript={transcript}
                     vscodeAPI={vscodeAPI}
@@ -208,6 +219,7 @@ interface GetAppWrappersOptions {
     vscodeAPI: VSCodeWrapper
     telemetryRecorder: TelemetryRecorder
     config: Config | null
+    clientConfig: CodyClientConfig | null
     staticDefaultContext?: DefaultContext
 }
 
@@ -215,6 +227,7 @@ export function getAppWrappers({
     vscodeAPI,
     telemetryRecorder,
     config,
+    clientConfig,
     staticDefaultContext,
 }: GetAppWrappersOptions): Wrapper[] {
     return [
@@ -230,5 +243,9 @@ export function getAppWrappers({
             component: ConfigProvider,
             props: { value: config },
         } satisfies Wrapper<any, ComponentProps<typeof ConfigProvider>>,
+        {
+            component: ClientConfigProvider,
+            props: { value: clientConfig },
+        } satisfies Wrapper<any, ComponentProps<typeof ClientConfigProvider>>,
     ]
 }

@@ -1,8 +1,14 @@
 import { expect } from '@playwright/test'
 import { SERVER_URL, VALID_TOKEN, VALID_TOKEN_PERSON2 } from '../fixtures/mock-server'
-
-import { focusSidebar, getChatSidebarPanel } from './common'
-import { type ExpectedV2Events, test } from './helpers'
+import { expectSignInPage, sidebarSignin } from './common'
+import {
+    type ClientConfigSingletonRefetchIntervalOverride,
+    type DotcomUrlOverride,
+    type EnterpriseTestOptions,
+    type ExpectedV2Events,
+    signOut,
+    test,
+} from './helpers'
 
 test.extend<ExpectedV2Events>({
     // list of V2 telemetry events we expect this test to log, add to this list as needed
@@ -41,22 +47,77 @@ test.extend<ExpectedV2Events>({
     await expect(sidebar!.getByLabel('Chat message')).toBeVisible()
     await expect(sidebar!.getByRole('button', { name: 'New Chat' })).toBeVisible()
 
-    // Sign out from user dropdown menu
-    await sidebar!.getByLabel('Account Menu Button').click()
-    await sidebar!.getByRole('option', { name: 'Sign Out' }).click()
-
-    await page.waitForTimeout(2000)
-    await focusSidebar(page)
-
-    // Makes sure the sign in page is loaded in the sidebar view with Cody: Chat as the heading
-    // instead of the chat panel.
-    const sidebarFrame = getChatSidebarPanel(page)
-    await expect(sidebarFrame.getByText('Sign in to Sourcegraph')).toBeVisible()
-    await expect(page.getByRole('heading', { name: 'Cody: Chat' })).toBeVisible()
-
-    // Expect status bar to show the sign in button.
-    await expect(page.getByRole('button', { name: 'cody-logo-heavy Sign In, Sign' })).toBeVisible()
+    // Sign out.
+    await signOut(page)
+    await expectSignInPage(page)
 })
+
+// When an enterprise customer tries to log into a dotcom url, an error message is shown.
+test
+    .extend<DotcomUrlOverride>({
+        dotcomUrl: SERVER_URL,
+    })
+    .extend<EnterpriseTestOptions>({
+        shouldUseEnterprise: true,
+    })
+    .extend<ExpectedV2Events>({
+        // list of V2 telemetry events we expect this test to log, add to this list as needed
+        expectedV2Events: [
+            'cody.extension:installed',
+            'cody.auth.login:clicked',
+            'cody.auth.login.token:clicked',
+            'cody.auth:disconnected',
+            'cody.signInNotification:shown',
+        ],
+    })('test enterprise customers cannot log into dotcomUrl', async ({ page, sidebar }) => {
+    await sidebarSignin(page, sidebar, { skipAssertions: true })
+    await expect(
+        page
+            .frameLocator('iframe')
+            .first()
+            .frameLocator('iframe[title="Chat"]')
+            .getByText('Based on your email address')
+    ).toBeVisible()
+
+    await expectSignInPage(page)
+})
+
+const refetchInterval = 500
+test
+    .extend<DotcomUrlOverride>({
+        dotcomUrl: SERVER_URL,
+    })
+    .extend<ClientConfigSingletonRefetchIntervalOverride>({
+        clientConfigSingletonRefetchInterval: refetchInterval,
+    })
+    .extend<ExpectedV2Events>({
+        // list of V2 telemetry events we expect this test to log, add to this list as needed
+        expectedV2Events: [
+            'cody.extension:installed',
+            'cody.auth.login:clicked',
+            'cody.auth.login.token:clicked',
+            'cody.auth:disconnected',
+            'cody.signInNotification:shown',
+        ],
+    })(
+    'logs out the user when userShouldUseEnterprise is set to true',
+    async ({ page, sidebar, server }) => {
+        await sidebarSignin(page, sidebar, { skipAssertions: true })
+        await server.setUserShouldUseEnterprise(true)
+
+        await expect(
+            page
+                .frameLocator('iframe')
+                .first()
+                .frameLocator('iframe[title="Chat"]')
+                .getByText('Based on your email address')
+        ).toBeVisible({
+            timeout: refetchInterval * 10,
+        })
+
+        await expectSignInPage(page)
+    }
+)
 
 // TODO: Fix flaky test
 test.extend<ExpectedV2Events>({

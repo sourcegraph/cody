@@ -325,7 +325,9 @@ const ClientSignInForm: React.FC<ClientSignInFormProps> = memo(
                         setFormState(prev => ({
                             ...prev,
                             isSubmitting: false,
-                            showAuthError: !!authStatus?.authenticated || !!authStatus?.showNetworkError,
+                            showAuthError:
+                                !!authStatus?.authenticated ||
+                                authStatus?.error?.type === 'network-error',
                         }))
                     }, 8000)
                 }
@@ -359,7 +361,9 @@ const ClientSignInForm: React.FC<ClientSignInFormProps> = memo(
                     <FormField
                         name="accessToken"
                         serverInvalid={
-                            authStatus && !authStatus.authenticated && authStatus.showNetworkError
+                            authStatus &&
+                            !authStatus.authenticated &&
+                            authStatus?.error?.type === 'network-error'
                         }
                         className="tw-m-2"
                     >
