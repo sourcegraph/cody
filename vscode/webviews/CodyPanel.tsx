@@ -31,7 +31,6 @@ interface CodyPanelProps {
     configuration: {
         config: LocalEnv & ConfigurationSubsetForWebview
         clientCapabilities: ClientCapabilitiesWithLegacyFields
-        instanceNotices: CodyNotice[]
         authStatus: AuthStatus
         isDotComUser: boolean
         userProductSubscription?: UserProductSubscription | null | undefined
@@ -39,6 +38,7 @@ interface CodyPanelProps {
     errorMessages: string[]
     attributionEnabled: boolean
     chatEnabled: boolean
+    instanceNotices: CodyNotice[]
     messageInProgress: ChatMessage | null
     transcript: ChatMessage[]
     vscodeAPI: Pick<VSCodeWrapper, 'postMessage' | 'onMessage'>
@@ -56,18 +56,12 @@ interface CodyPanelProps {
 export const CodyPanel: FunctionComponent<CodyPanelProps> = ({
     view,
     setView,
-    configuration: {
-        config,
-        clientCapabilities,
-        authStatus,
-        isDotComUser,
-        userProductSubscription,
-        instanceNotices,
-    },
+    configuration: { config, clientCapabilities, authStatus, isDotComUser, userProductSubscription },
     errorMessages,
     setErrorMessages,
     attributionEnabled,
     chatEnabled,
+    instanceNotices,
     messageInProgress,
     transcript,
     vscodeAPI,

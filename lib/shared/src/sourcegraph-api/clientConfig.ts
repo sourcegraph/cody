@@ -19,7 +19,7 @@ import {
 } from '../misc/observableOperation'
 import { isError } from '../utils'
 import { isAbortError } from './errors'
-import { type CodyConfigFeatures, type GraphQLAPIClientConfig,graphqlClient } from './graphql/client'
+import { type CodyConfigFeatures, type GraphQLAPIClientConfig, graphqlClient } from './graphql/client'
 
 export interface CodyNotice {
     key: string
@@ -27,11 +27,6 @@ export interface CodyNotice {
     message: string
 }
 
-interface RawCodyNotice {
-    key: string
-    title: string
-    message: string
-}
 // The client configuration describing all of the features that are currently available.
 //
 // This is fetched from the Sourcegraph instance and is specific to the current user.
@@ -58,12 +53,12 @@ export interface CodyClientConfig {
     // models are available.
     modelsAPIEnabled: boolean
 
+    // Whether the user should sign in to an enterprise instance.
+    userShouldUseEnterprise: boolean
+
     // List of global instance-level cody notice/banners (set only by admins in global
     // instance configuration file
     notices: CodyNotice[]
-
-    // Whether the user should sign in to an enterprise instance.
-    userShouldUseEnterprise: boolean
 }
 
 export const dummyClientConfigForTest: CodyClientConfig = {
@@ -74,6 +69,7 @@ export const dummyClientConfigForTest: CodyClientConfig = {
     smartContextWindowEnabled: true,
     modelsAPIEnabled: true,
     userShouldUseEnterprise: false,
+    notices: [],
 }
 
 /**
@@ -204,7 +200,8 @@ export class ClientConfigSingleton {
                         ...clientConfig,
                         // Make sure that notice object will have all important field (notices come from
                         // instance global JSONC configuration so they can have any arbitrary field values.
-                        notices: Array.from<RawCodyNotice>(viewerSettings['cody.notices'] ?? []).map(
+                        notices: Array.from<Partial<CodyNotice>, CodyNotice>(
+                            viewerSettings['cody.notices'] ?? [],
                             (notice, index) => ({
                                 key: notice?.key ?? index.toString(),
                                 title: notice?.title ?? '',
@@ -239,8 +236,8 @@ export class ClientConfigSingleton {
 
             // Things that did not exist before logically default to disabled.
             modelsAPIEnabled: false,
-            notices: [],
             userShouldUseEnterprise: false,
+            notices: [],
         }
     }
 

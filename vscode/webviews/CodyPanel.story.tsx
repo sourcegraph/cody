@@ -24,7 +24,6 @@ const meta: Meta<typeof CodyPanel> = {
         setView: () => {},
         configuration: {
             config: {} as any,
-            instanceNotices: [],
             clientCapabilities: CLIENT_CAPABILITIES_FIXTURE,
             authStatus: AUTH_STATUS_FIXTURE_AUTHED,
             isDotComUser: true,
@@ -42,7 +41,6 @@ export const NetworkError: StoryObj<typeof meta> = {
     args: {
         configuration: {
             config: {} as any,
-            instanceNotices: [],
             clientCapabilities: CLIENT_CAPABILITIES_FIXTURE,
             authStatus: {
                 ...AUTH_STATUS_FIXTURE_UNAUTHED,

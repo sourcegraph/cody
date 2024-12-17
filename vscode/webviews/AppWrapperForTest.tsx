@@ -140,7 +140,6 @@ export const AppWrapperForTest: FunctionComponent<{ children: ReactNode }> = ({ 
                         } satisfies Partial<AuthStatus> as any,
                         userProductSubscription: null,
                         config: {} as any,
-                        instanceNotices: [],
                         clientCapabilities: CLIENT_CAPABILITIES_FIXTURE,
                         isDotComUser: true,
                     },
