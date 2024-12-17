@@ -561,7 +561,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
     const onHumanMessageSubmit = useCallback(
         (intent?: ChatMessage['intent']) => {
             if (humanMessage.isUnsentFollowup) {
-                onFollowupSubmit(intent)
+                return onFollowupSubmit(intent)
             }
             onEditSubmit(intent)
         },
