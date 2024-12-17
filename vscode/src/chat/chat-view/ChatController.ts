@@ -102,6 +102,7 @@ import { executeCodyCommand } from '../../commands/CommandsController'
 import { getContextFileFromUri } from '../../commands/context/file-path'
 import { getContextFileFromCursor } from '../../commands/context/selection'
 import { escapeRegExp } from '../../context/openctx/remoteFileSearch'
+import { getEditor } from '../../editor/active-editor'
 import { resolveContextItems } from '../../editor/utils/editor-context'
 import type { VSCodeEditor } from '../../editor/vscode-editor'
 import type { ExtensionClient } from '../../extension-client'
@@ -111,7 +112,7 @@ import { getCategorizedMentions } from '../../prompt-builder/utils'
 import { hydratePromptText } from '../../prompts/prompt-hydration'
 import { listPromptTags, mergedPromptsAndLegacyCommands } from '../../prompts/prompts'
 import { publicRepoMetadataIfAllWorkspaceReposArePublic } from '../../repository/githubRepoMetadata'
-import { getFirstRepoNameContainingUri } from '../../repository/repo-name-resolver'
+import { getFirstRepoNameContainingUri, repoNameResolver } from '../../repository/repo-name-resolver'
 import { authProvider } from '../../services/AuthProvider'
 import { AuthProviderSimplified } from '../../services/AuthProviderSimplified'
 import { localStorage } from '../../services/LocalStorageProvider'
@@ -768,7 +769,10 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             .catch(() => undefined)
 
         if (response) {
-            return { intent: response.intent, intentScores: response.allScores }
+            return {
+                intent: response.intent,
+                intentScores: response.allScores,
+            }
         }
 
         return { intent: 'chat', intentScores: [] }
@@ -1024,12 +1028,26 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         this.chatBuilder.setLastMessageIntent('search')
         const scopes: string[] = await this.getSearchScopesFromMentions(mentions)
 
+        const currentFile = getEditor()?.active?.document?.uri
+        const repoName = currentFile
+            ? (
+                  await firstResultFromOperation(repoNameResolver.getRepoNamesContainingUri(currentFile))
+              ).at(0)
+            : undefined
+        const boostParameter = repoName ? `boost:repo(${repoName})` : ''
+
         const query = scopes.length
-            ? `content:"${inputTextWithoutContextChips.replaceAll('"', '\\"')}" (${scopes.join(' OR ')})`
-            : inputTextWithoutContextChips
+            ? `content:"${inputTextWithoutContextChips.replaceAll(
+                  '"',
+                  '\\"'
+              )}" ${boostParameter} (${scopes.join(' OR ')})`
+            : `${inputTextWithoutContextChips} ${boostParameter}`
 
         try {
-            const response = await graphqlClient.nlsSearchQuery({ query, signal })
+            const response = await graphqlClient.nlsSearchQuery({
+                query,
+                signal,
+            })
 
             this.chatBuilder.addSearchResultAsBotMessage({
                 query,
@@ -1322,7 +1340,10 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     private async reevaluateSearchWithSelectedFilters({
         index,
         selectedFilters,
-    }: { index?: number; selectedFilters?: NLSSearchDynamicFilter[] }) {
+    }: {
+        index?: number
+        selectedFilters?: NLSSearchDynamicFilter[]
+    }) {
         if (index === undefined || !Array.isArray(selectedFilters)) {
             return
         }
@@ -1377,7 +1398,10 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     private appendSelectedFiltersToSearchQuery({
         query,
         filters,
-    }: { query: string; filters: NLSSearchDynamicFilter[] }) {
+    }: {
+        query: string
+        filters: NLSSearchDynamicFilter[]
+    }) {
         if (!filters.length) {
             return query
         }
@@ -2069,7 +2093,10 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                         promiseFactoryToObservable<
                             | {
                                   intent: ChatMessage['intent']
-                                  allScores: { intent: string; score: number }[]
+                                  allScores: {
+                                      intent: string
+                                      score: number
+                                  }[]
                               }
                             | undefined
                         >(() => this.detectChatIntent({ text })),
