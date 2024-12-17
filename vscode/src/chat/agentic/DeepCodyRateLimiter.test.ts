@@ -36,14 +36,14 @@ describe('DeepCodyRateLimiter', () => {
             rateLimiter = new DeepCodyRateLimiter(24, 1) // 24 tokens per day = 1 per hour
             const { quota, lastUsed } = localStorage.getDeepCodyUsage()
             expect(Math.ceil(quota!)).toBe(5)
-            expect(lastUsed.toISOString()).toBe(NOW.toISOString())
+            expect(lastUsed).toBe(NOW.toISOString())
             expect(rateLimiter.isAtLimit()).toBeUndefined()
         })
 
         it('respects multiplier in quota calculation', async () => {
             const { quota, lastUsed } = localStorage.getDeepCodyUsage()
             expect(Math.ceil(quota!)).toBe(4)
-            expect(lastUsed.toISOString()).toBe(NOW.toISOString())
+            expect(lastUsed).toBe(NOW.toISOString())
             rateLimiter = new DeepCodyRateLimiter(10, 2) // 20 tokens per day
             expect(rateLimiter.isAtLimit()).toBeUndefined()
         })
@@ -51,7 +51,7 @@ describe('DeepCodyRateLimiter', () => {
         it('resets quota after 24 hours of non-use', async () => {
             const { quota, lastUsed } = localStorage.getDeepCodyUsage()
             expect(Math.ceil(quota!)).toBe(3)
-            expect(lastUsed.toISOString()).toBe(NOW.toISOString())
+            expect(lastUsed).toBe(NOW.toISOString())
             rateLimiter = new DeepCodyRateLimiter(3, 1)
             expect(rateLimiter.isAtLimit()).toBeUndefined()
         })

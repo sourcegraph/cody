@@ -347,11 +347,9 @@ class LocalStorage implements LocalStorageForModelPreferences {
         await this.set(this.CODY_CHAT_MEMORY, memories)
     }
 
-    public getDeepCodyUsage(): { quota: number | undefined; lastUsed: Date } {
+    public getDeepCodyUsage(): { quota: number | undefined; lastUsed: string | undefined } {
         const quota = this.get<number>(this.keys.deepCodyDailyUsageCount) ?? undefined
-        const lastUsed = new Date(
-            this.get<string>(this.keys.deepCodyLastUsedDate) ?? new Date().toISOString()
-        )
+        const lastUsed = this.get<string>(this.keys.deepCodyLastUsedDate) ?? undefined
 
         return { quota, lastUsed }
     }

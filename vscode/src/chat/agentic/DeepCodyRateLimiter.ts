@@ -25,7 +25,14 @@ export class DeepCodyRateLimiter {
 
         const now = new Date().getTime()
         const { quota, lastUsed } = localStorage.getDeepCodyUsage()
-        const lastUsedTime = lastUsed.getTime()
+
+        // Reset for cases where lastUsed was not stored properly but quota was.
+        if (quota !== undefined && lastUsed === undefined) {
+            localStorage.setDeepCodyUsage(DAILY_QUOTA - 1, new Date().toISOString())
+            return undefined
+        }
+
+        const lastUsedTime = new Date(lastUsed ?? new Date().toISOString()).getTime()
         const timeDiff = now - lastUsedTime
 
         // Calculate remaining quota with time-based replenishment
