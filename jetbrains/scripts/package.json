@@ -1,8 +1,12 @@
 {
 	"type": "commonjs",
 	"devDependencies": {
-		"@types/node": "^22.7.2",
+	    "@types/node": "^22.7.2",
+            "java.io": "^2.4.0",
 		"ts-node": "^10.9.2",
 		"typescript": "^5.6.2"
-	}
+	},
+    "scripts": {
+        "roborepl": "ts-node roborepl.ts"
+    }
 }
