@@ -15,38 +15,38 @@ export class DeepCodyRateLimiter {
         private readonly multiplier: number = 1
     ) {}
 
-    /**
-     * Returns the number of seconds the user needs to wait before they can use DeepCody again.
-     */
     public isAtLimit(): string | undefined {
         const DAILY_QUOTA = this.baseQuota * this.multiplier
 
-        // If there is no quota set, there is no limit.
+        // If there is no quota set, there is no limit
         if (!DAILY_QUOTA) {
             return undefined
         }
 
-        // Get current quota and last used time, with defaults
+        const now = new Date()
         const { quota, lastUsed } = localStorage.getDeepCodyUsage()
-        const currentQuota = quota ?? DAILY_QUOTA
-        const lastUsedTime = lastUsed.getTime()
 
-        const now = new Date().getTime()
-        const timeDiff = now - lastUsedTime
+        // Reset for cases where lastUsed was not stored properly but quota was.
+        if (quota !== undefined && lastUsed === undefined) {
+            localStorage.setDeepCodyUsage(DAILY_QUOTA - 1, now.toISOString())
+            return undefined
+        }
 
-        // Calculate quota replenishment based on time passed
+        const lastUsedTime = new Date(lastUsed ?? now.toISOString()).getTime()
+        const timeDiff = now.getTime() - lastUsedTime
+
+        // Calculate remaining quota with time-based replenishment
         const quotaToAdd = DAILY_QUOTA * (timeDiff / this.ONE_DAY_MS)
+        const currentQuota = quota ?? DAILY_QUOTA
         const newQuota = Math.min(DAILY_QUOTA, currentQuota + quotaToAdd)
 
         // If we have at least 1 quota available
         if (newQuota >= 1) {
-            // Update quota and timestamp
-            localStorage?.setDeepCodyUsage(newQuota - 1, new Date().toISOString())
+            localStorage.setDeepCodyUsage(newQuota - 1, now.toISOString())
             return undefined
         }
 
-        // No quota available.
-        // Calculate how much time after the lastUsedTime we need to wait.
+        // Calculate wait time if no quota available
         const timeToWait = this.ONE_DAY_MS - timeDiff
         return Math.floor(timeToWait / 1000).toString()
     }

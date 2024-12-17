@@ -1430,6 +1430,7 @@
     "@radix-ui/react-collapsible": "^1.1.0",
     "@radix-ui/react-dialog": "^1.0.5",
     "@radix-ui/react-form": "^0.1.0",
+    "@radix-ui/react-label": "^2.1.1",
     "@radix-ui/react-popover": "^1.0.7",
     "@radix-ui/react-progress": "^1.1.0",
     "@radix-ui/react-slot": "^1.0.2",
@@ -1495,6 +1496,7 @@
     "unist-util-visit": "^5.0.0",
     "unzipper": "^0.10.14",
     "uuid": "^9.0.0",
+    "valibot": "1.0.0-beta.9",
     "vscode-languageserver-textdocument": "^1.0.8",
     "vscode-uri": "^3.0.8",
     "wink-nlp-utils": "^2.1.0"

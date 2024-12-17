@@ -272,6 +272,7 @@ export {
     type NLSSearchFileMatch,
     type NLSSearchDynamicFilter,
     type NLSSearchDynamicFilterKind,
+    type GraphQLAPIClientConfig,
 } from './sourcegraph-api/graphql/client'
 export type {
     CodyLLMSiteConfiguration,
@@ -351,6 +352,7 @@ export {
     REMOTE_DIRECTORY_PROVIDER_URI,
     WEB_PROVIDER_URI,
     GIT_OPENCTX_PROVIDER_URI,
+    CODE_SEARCH_PROVIDER_URI,
 } from './context/openctx/api'
 export * from './context/openctx/context'
 export * from './lexicalEditor/editorState'

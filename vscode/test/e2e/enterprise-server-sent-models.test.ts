@@ -9,7 +9,7 @@ test('allows multiple enterprise models when server-sent models is enabled', asy
     sidebar,
 }) => {
     server.setAvailableLLMs(SERVER_MODELS)
-    await sidebarSignin(page, sidebar, true)
+    await sidebarSignin(page, sidebar, { enableNotifications: true })
     // Open chat.
     const [chatFrame] = await createEmptyChatPanel(page)
     let modelSelect = chatFrame.getByRole('combobox', { name: 'Select a model' }).last()

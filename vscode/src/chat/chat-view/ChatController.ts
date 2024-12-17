@@ -53,7 +53,6 @@ import {
     hydrateAfterPostMessage,
     inputTextWithMappedContextChipsFromPromptEditorState,
     inputTextWithoutContextChipsFromPromptEditorState,
-    isAbortError,
     isAbortErrorOrSocketHangUp,
     isContextWindowLimitError,
     isDefined,
@@ -257,6 +256,13 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     // Run this async because this method may be called during initialization
                     // and awaiting on this.postMessage may result in a deadlock
                     void this.sendConfig(authStatus)
+                })
+            ),
+            subscriptionDisposable(
+                ClientConfigSingleton.getInstance().updates.subscribe(update => {
+                    // Run this async because this method may be called during initialization
+                    // and awaiting on this.postMessage may result in a deadlock
+                    void this.sendClientConfig(update)
                 })
             ),
 
@@ -607,20 +613,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         const workspaceFolderUris =
             vscode.workspace.workspaceFolders?.map(folder => folder.uri.toString()) ?? []
 
-        const abortController = new AbortController()
-        let clientConfig: CodyClientConfig | undefined
-        try {
-            clientConfig = await ClientConfigSingleton.getInstance().getConfig(abortController.signal)
-            if (abortController.signal.aborted) {
-                return
-            }
-        } catch (error) {
-            if (isAbortError(error) || abortController.signal.aborted) {
-                return
-            }
-            throw error
-        }
-
         await this.postMessage({
             type: 'config',
             config: configForWebview,
@@ -628,19 +620,20 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             authStatus: authStatus,
             userProductSubscription: await currentUserProductSubscription(),
             workspaceFolderUris,
-            configFeatures: {
-                // If clientConfig is undefined means we were unable to fetch the client configuration -
-                // most likely because we are not authenticated yet. We need to be able to display the
-                // chat panel (which is where all login functionality is) in this case, so we fallback
-                // to some default values:
-                chat: clientConfig?.chatEnabled ?? true,
-                attribution: clientConfig?.attributionEnabled ?? false,
-                serverSentModels: clientConfig?.modelsAPIEnabled ?? false,
-            },
             isDotComUser: isDotCom(authStatus),
         })
         logDebug('ChatController', 'updateViewConfig', {
             verbose: configForWebview,
+        })
+    }
+
+    private async sendClientConfig(clientConfig: CodyClientConfig) {
+        await this.postMessage({
+            type: 'clientConfig',
+            clientConfig,
+        })
+        logDebug('ChatController', 'updateClientConfig', {
+            verbose: clientConfig,
         })
     }
 
@@ -817,7 +810,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             this.featureDeepCodyRateLimitMultiplier.value.last ? 2 : 1
         )
         const deepCodyLimit = deepCodyRateLimiter.isAtLimit()
-        if (isDeepCodyModel && isDeepCodyEnabled && deepCodyLimit) {
+        if (isDeepCodyEnabled && deepCodyLimit) {
             this.postError(deepCodyRateLimiter.getRateLimitError(deepCodyLimit), 'transcript')
             this.handleAbort()
             return
