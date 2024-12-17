@@ -11,7 +11,7 @@
     container-type: inline-size;
     container-name: tabs-container;
     isolation: isolate;
-    z-index: 1;
+    z-index: 2;
 }
 
 .tabs-container {
