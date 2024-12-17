@@ -186,7 +186,7 @@ export const PromptList: FC<PromptListProps> = props => {
     const itemPaddingClass =
         paddingLevels !== 'none' ? (paddingLevels === 'middle' ? '!tw-px-6' : '!tw-px-8') : ''
 
-    const anyPromptFilterActive = !!Object.keys(promptFilters ?? {}).length;
+    const anyPromptFilterActive = !!Object.keys(promptFilters ?? {}).length
     return (
         <Command
             loop={true}
@@ -217,7 +217,7 @@ export const PromptList: FC<PromptListProps> = props => {
                     result &&
                     sortedActions.filter(action => action.actionType === 'prompt').length === 0 && (
                         <CommandLoading className={itemPaddingClass}>
-                            {(result?.query === '' && !anyPromptFilterActive) ? (
+                            {result?.query === '' && !anyPromptFilterActive ? (
                                 <>
                                     Your Prompt Library is empty.{' '}
                                     <a
