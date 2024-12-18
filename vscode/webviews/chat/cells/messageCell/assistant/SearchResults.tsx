@@ -154,6 +154,13 @@ export const SearchResults = ({
         )
     }
 
+    const onFilterSidebarClose = useCallback(() => {
+        telemetryRecorder.recordEvent('onebox.filterSidebar', 'closed', {
+            billingMetadata: { product: 'cody', category: 'billable' },
+        })
+        setShowFiltersSidebar(false)
+    }, [telemetryRecorder])
+
     return (
         <div
             className={classNames(
@@ -170,8 +177,8 @@ export const SearchResults = ({
                 >
                     <div
                         className="tw-absolute tw-top-2 tw-right-2"
-                        onClick={() => setShowFiltersSidebar(false)}
-                        onKeyDown={() => setShowFiltersSidebar(false)}
+                        onClick={onFilterSidebarClose}
+                        onKeyDown={onFilterSidebarClose}
                         role="button"
                     >
                         <PanelLeftClose className="tw-size-8" />
@@ -233,7 +240,7 @@ export const SearchResults = ({
                                             onClick={() => {
                                                 setShowFiltersSidebar(open => {
                                                     telemetryRecorder.recordEvent(
-                                                        'onebox.filterModal',
+                                                        'onebox.filterSidebar',
                                                         open ? 'closed' : 'opened',
                                                         {
                                                             billingMetadata: {
