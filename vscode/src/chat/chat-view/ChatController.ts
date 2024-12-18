@@ -112,7 +112,7 @@ import { getCategorizedMentions } from '../../prompt-builder/utils'
 import { hydratePromptText } from '../../prompts/prompt-hydration'
 import { listPromptTags, mergedPromptsAndLegacyCommands } from '../../prompts/prompts'
 import { publicRepoMetadataIfAllWorkspaceReposArePublic } from '../../repository/githubRepoMetadata'
-import { getFirstRepoNameContainingUri, repoNameResolver } from '../../repository/repo-name-resolver'
+import { getFirstRepoNameContainingUri } from '../../repository/repo-name-resolver'
 import { authProvider } from '../../services/AuthProvider'
 import { AuthProviderSimplified } from '../../services/AuthProviderSimplified'
 import { localStorage } from '../../services/LocalStorageProvider'
@@ -1029,11 +1029,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         const scopes: string[] = await this.getSearchScopesFromMentions(mentions)
 
         const currentFile = getEditor()?.active?.document?.uri
-        const repoName = currentFile
-            ? (
-                  await firstResultFromOperation(repoNameResolver.getRepoNamesContainingUri(currentFile))
-              ).at(0)
-            : undefined
+        const repoName = currentFile ? await getFirstRepoNameContainingUri(currentFile) : undefined
         const boostParameter = repoName ? `boost:repo(${repoName})` : ''
 
         const query = scopes.length
