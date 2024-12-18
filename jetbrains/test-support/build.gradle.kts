@@ -28,8 +28,8 @@ dependencies {
 intellijPlatform {
   buildSearchableOptions = false
   pluginConfiguration {
-    id = "cody-test-support"
-    name = "Cody Test Support"
+    id = "com.sourcegraph.jetbrains.testing"
+    name = "Sourcegraph Test Support"
     version = "1.0.0"
     ideaVersion { sinceBuild = "242" }
   }

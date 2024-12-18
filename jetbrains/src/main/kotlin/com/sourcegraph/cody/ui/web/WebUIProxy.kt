@@ -4,6 +4,7 @@ import com.google.gson.GsonBuilder
 import com.google.gson.JsonParser
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.diagnostic.Logger
+import com.intellij.openapi.extensions.ExtensionPointName
 import com.intellij.openapi.ide.CopyPasteManager
 import com.intellij.openapi.project.ProjectManager
 import com.intellij.ui.jcef.JBCefBrowserBase
@@ -16,6 +17,7 @@ import com.sourcegraph.cody.config.CodyApplicationSettings
 import com.sourcegraph.cody.sidebar.WebTheme
 import com.sourcegraph.cody.telemetry.TelemetryV2
 import com.sourcegraph.common.BrowserOpener
+import com.sourcegraph.jetbrains.testing.shared.WebviewSink
 import java.awt.Component
 import java.awt.datatransfer.StringSelection
 import java.io.IOException
@@ -106,6 +108,8 @@ internal class WebUIProxy(private val host: WebUIHost, private val browser: JBCe
           browser.cefBrowser)
     }
 
+      val EXTENSION_POINT_WEBVIEW_SINK: ExtensionPointName<WebviewSink> = ExtensionPointName.create("com.sourcegraph.jetbrains.testSupport.webviewSink")
+
     fun create(host: WebUIHost): WebUIProxy {
       val browser =
           JBCefBrowserBuilder()
@@ -113,6 +117,11 @@ internal class WebUIProxy(private val host: WebUIHost, private val browser: JBCe
                 setOffScreenRendering(CodyApplicationSettings.instance.isOffScreenRenderingEnabled)
               }
               .build()
+
+        // Notify the test support plugin we created a browser.
+for (sink: WebviewSink in EXTENSION_POINT_WEBVIEW_SINK.extensions) {
+    sink.greet("created a webview: $browser")
+}
 
       patchBrowserFocusHandler(browser)
       val proxy = WebUIProxy(host, browser)

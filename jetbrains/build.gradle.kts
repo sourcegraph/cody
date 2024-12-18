@@ -568,7 +568,11 @@ tasks {
   test { dependsOn(project.tasks.getByPath("buildCody")) }
 
   sourceSets {
-    main { kotlin.srcDir("src/intellij${majorPlatformVersion}/kotlin") }
+    main {
+        kotlin.srcDir("src/intellij${majorPlatformVersion}/kotlin")
+        kotlin.srcDir("src/testSupportShared")
+    }
+    create("testSupportShared") { kotlin.srcDir("src/testSupportShared") }
 
     create("integrationTest") {
       kotlin.srcDir("src/integrationTest/kotlin")
