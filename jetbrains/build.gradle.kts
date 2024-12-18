@@ -58,7 +58,8 @@ plugins {
   id("org.jetbrains.kotlin.jvm") version "2.0.21"
   id("org.jetbrains.intellij.platform") version "2.1.0"
   id("org.jetbrains.changelog") version "2.2.1"
-  id("spotless-conventions")
+  id("com.diffplug.spotless") version "6.25.0"
+//  id("spotless-conventions")
 }
 
 val platformVersion: String by project
@@ -145,7 +146,25 @@ dependencies {
 }
 
 spotless {
-  kotlin { targetExclude("src/main/kotlin/com/sourcegraph/cody/agent/protocol_generated/**") }
+  lineEndings = com.diffplug.spotless.LineEnding.UNIX
+  java {
+    target("src/*/java/**/*.java")
+    importOrder()
+    removeUnusedImports()
+    googleJavaFormat()
+  }
+  kotlinGradle {
+    ktfmt()
+    trimTrailingWhitespace()
+  }
+  kotlin {
+    ktfmt()
+    trimTrailingWhitespace()
+    target("src/**/*.kt")
+    targetExclude("src/main/kotlin/com/sourcegraph/cody/agent/protocol_generated/**")
+    toggleOffOn()
+  }
+  //  kotlin { targetExclude("src/main/kotlin/com/sourcegraph/cody/agent/protocol_generated/**") }
 }
 
 java {
