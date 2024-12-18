@@ -82,9 +82,10 @@ jobs:
         run: |
           echo "Posting release announcement to Slack"
           ANNOUNCE_EDITORS_SLACK_WEBHOOK_URL=${{ secrets.ANNOUNCE_EDITORS_SLACK_WEBHOOK_URL }}
+          ANNOUNCE_RELEASES_SLACK_WEBHOOK_URL=${{ secrets.ANNOUNCE_RELEASES_SLACK_WEBHOOK_URL }}
 
           # treat this like an array, add a space for the next webhook secret
-          webhooks=("$ANNOUNCE_EDITORS_SLACK_WEBHOOK_URL")
+          webhooks=("$ANNOUNCE_EDITORS_SLACK_WEBHOOK_URL" "ANNOUNCE_RELEASES_SLACK_WEBHOOK_URL")
           for webhook in "${webhooks[@]}"; do
             response=$(curl -s -w "%{http_code}" -X POST -H "Content-Type: application/json" -d '{
               "type": "mrkdwn",
@@ -103,42 +104,3 @@ jobs:
               echo "Posted to slack."
             fi
           done
-      - name: Check if the next release branch and backport label exist
-        id: check-exists
-        run: |
-          # Check if branch exists
-          if git ls-remote --heads origin ${{ env.NEXT_RELEASE_BRANCH }} | grep -q "${{ env.NEXT_RELEASE_BRANCH }}"; then
-            echo "Branch ${{ env.NEXT_RELEASE_BRANCH }} already exists"
-            echo "SKIP_BRANCH_CREATION=true" >> $GITHUB_ENV
-            exit 0
-          fi
-          
-          # Check if label exists
-          if gh label list | grep -q "backport ${{ env.NEXT_RELEASE_BRANCH }}"; then
-            echo "Label backport ${{ env.NEXT_RELEASE_BRANCH }} already exists"
-            echo "SKIP_LABEL_CREATION=true" >> $GITHUB_ENV
-            exit 0
-          fi
-      - name: Create backport label
-        if: ${{ !env.SKIP_LABEL_CREATION }}
-        uses: actions/github-script@v6
-        with:
-          script: |
-            const nextReleaseBranch = process.env.NEXT_RELEASE_BRANCH;
-            const nextBackportLabel = `backport ${nextReleaseBranch}`;
-            github.rest.issues.createLabel({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              name: `${nextBackportLabel}`,
-              description: `Backport to ${nextReleaseBranch} branch`
-            })      
-      - name: Create and push next release branch
-        if: ${{ !env.SKIP_BRANCH_CREATION }}
-        run: |
-          git checkout main
-          git checkout -b ${{ env.NEXT_RELEASE_BRANCH }}
-
-          if ! git push origin ${{ env.NEXT_RELEASE_BRANCH }}; then
-            echo "Failed to push the next release branch ${{ env.NEXT_RELEASE_BRANCH }} to origin"
-            exit 1
-          fi

@@ -25,6 +25,7 @@ import { FireworksAdapter } from './adapters/fireworks'
 import { OpenAIAdapter } from './adapters/openai'
 import { SourcegraphChatAdapter } from './adapters/sourcegraph-chat'
 import { SourcegraphCompletionsAdapter } from './adapters/sourcegraph-completions'
+import { FilterPredictionBasedOnRecentEdits } from './filter-prediction-edits'
 import { autoeditsLogger } from './logger'
 import type { AutoeditsUserPromptStrategy } from './prompt/base'
 import { SYSTEM_PROMPT } from './prompt/constants'
@@ -39,7 +40,7 @@ import {
     extractAutoEditResponseFromCurrentDocumentCommentTemplate,
     shrinkReplacerTextToCodeToReplaceRange,
 } from './renderer/renderer-testing'
-import { shrinkPredictionUntilSuffix } from './shrink-prediction'
+// import { shrinkPredictionUntilSuffix } from './shrink-prediction'
 
 const AUTOEDITS_CONTEXT_STRATEGY = 'auto-edits'
 const INLINE_COMPLETION_DEFAULT_DEBOUNCE_INTERVAL_MS = 150
@@ -81,6 +82,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
     /** Keeps track of the last time the text was changed in the editor. */
     private lastTextChangeTimeStamp: number | undefined
     private readonly promptProvider: AutoeditsUserPromptStrategy = new ShortTermPromptStrategy()
+    private readonly filterPrediction = new FilterPredictionBasedOnRecentEdits()
 
     private isMockResponseFromCurrentDocumentTemplateEnabled = vscode.workspace
         .getConfiguration()
@@ -219,8 +221,17 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             return null
         }
 
-        let { prediction, codeToReplaceData } = autoeditResponse
-        prediction = shrinkPredictionUntilSuffix(prediction, codeToReplaceData)
+        const { prediction, codeToReplaceData } = autoeditResponse
+        const shouldFilterPredictionBasedRecentEdits = this.filterPrediction.shouldFilterPrediction(
+            document.uri,
+            prediction,
+            codeToReplaceData.codeToRewrite
+        )
+        if (shouldFilterPredictionBasedRecentEdits) {
+            return null
+        }
+
+        // prediction = shrinkPredictionUntilSuffix(prediction, codeToReplaceData)
 
         if (prediction === codeToReplaceData.codeToRewrite) {
             return null

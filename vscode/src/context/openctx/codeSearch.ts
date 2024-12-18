@@ -37,7 +37,6 @@ export function createCodeSearchProvider(): OpenCtxProvider {
         meta() {
             return {
                 name: 'Code Search',
-                mentions: {},
             }
         },
 

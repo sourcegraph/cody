@@ -121,6 +121,7 @@ export const PromptList: FC<PromptListProps> = props => {
                 privateMetadata: {
                     nameWithOwner: isPrompt ? action.nameWithOwner : undefined,
                 },
+                billingMetadata: { product: 'cody', category: 'core' },
             })
 
             const prompts = result.actions.filter(action => action.actionType === 'prompt')
@@ -141,6 +142,7 @@ export const PromptList: FC<PromptListProps> = props => {
                     query: debouncedQuery,
                     usePromptsQueryErrorMessage: error?.message,
                 },
+                billingMetadata: { product: 'cody', category: 'core' },
             })
 
             parentOnSelect(action)
@@ -181,7 +183,7 @@ export const PromptList: FC<PromptListProps> = props => {
     const actions = showFirstNItems ? sortedActions.slice(0, showFirstNItems) : sortedActions
 
     const inputPaddingClass =
-        paddingLevels !== 'none' ? (paddingLevels === 'middle' ? '!tw-p-0' : '!tw-p-4') : ''
+        paddingLevels !== 'none' ? (paddingLevels === 'middle' ? '!tw-p-0' : '!tw-p-2') : ''
 
     const itemPaddingClass =
         paddingLevels !== 'none' ? (paddingLevels === 'middle' ? '!tw-px-6' : '!tw-px-8') : ''

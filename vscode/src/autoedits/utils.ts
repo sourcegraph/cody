@@ -84,7 +84,11 @@ export function adjustPredictionIfInlineCompletionPossible(
 
     const indexPrefix = originalPrediction.indexOf(prefixWithoutNewLine)
     const indexSuffix = originalPrediction.lastIndexOf(suffixWithoutNewLine)
-    if (indexPrefix === -1 || indexSuffix === -1) {
+    if (
+        indexPrefix === -1 ||
+        indexSuffix === -1 ||
+        indexPrefix + prefixWithoutNewLine.length > indexSuffix
+    ) {
         return originalPrediction
     }
 
