@@ -39,7 +39,7 @@ import {
     extractAutoEditResponseFromCurrentDocumentCommentTemplate,
     shrinkReplacerTextToCodeToReplaceRange,
 } from './renderer/renderer-testing'
-import { shrinkPredictionUntilSuffix } from './shrink-prediction'
+// import { shrinkPredictionUntilSuffix } from './shrink-prediction'
 
 const AUTOEDITS_CONTEXT_STRATEGY = 'auto-edits'
 const INLINE_COMPLETION_DEFAULT_DEBOUNCE_INTERVAL_MS = 150
@@ -219,8 +219,8 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             return null
         }
 
-        let { prediction, codeToReplaceData } = autoeditResponse
-        prediction = shrinkPredictionUntilSuffix(prediction, codeToReplaceData)
+        const { prediction, codeToReplaceData } = autoeditResponse
+        // prediction = shrinkPredictionUntilSuffix(prediction, codeToReplaceData)
 
         if (prediction === codeToReplaceData.codeToRewrite) {
             return null
