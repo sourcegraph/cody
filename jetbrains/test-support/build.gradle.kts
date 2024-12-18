@@ -37,10 +37,8 @@ intellijPlatform {
 
 sourceSets {
     main {
-        kotlin {
-            srcDir("src/main/kotlin")
-            srcDir("${rootProject.projectDir}/src/testSupportShared/kotlin")
-        }
+        // Pick up extension interfaces of the core plugin
+        compileClasspath += rootProject.sourceSets["main"].output
     }
 }
 
