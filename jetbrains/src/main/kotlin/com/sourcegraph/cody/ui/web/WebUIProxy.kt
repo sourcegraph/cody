@@ -120,7 +120,7 @@ internal class WebUIProxy(private val host: WebUIHost, private val browser: JBCe
 
         // Notify the test support plugin we created a browser.
 for (sink: WebviewSink in EXTENSION_POINT_WEBVIEW_SINK.extensions) {
-    sink.greet("created a webview: $browser")
+    sink.didCreateBrowser(browser)
 }
 
       patchBrowserFocusHandler(browser)
