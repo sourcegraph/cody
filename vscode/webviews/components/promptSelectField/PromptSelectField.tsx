@@ -23,7 +23,9 @@ export const PromptSelectField: React.FunctionComponent<{
     const onOpenChange = useCallback(
         (open: boolean): void => {
             if (open) {
-                telemetryRecorder.recordEvent('cody.promptSelectField', 'open', {})
+                telemetryRecorder.recordEvent('cody.promptSelectField', 'open', {
+                    billingMetadata: { product: 'cody', category: 'billable' },
+                })
             }
         },
         [telemetryRecorder.recordEvent]

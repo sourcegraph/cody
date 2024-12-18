@@ -1903,7 +1903,9 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         // Restore the old session in the current window
         this.restoreSession(sessionID)
 
-        telemetryRecorder.recordEvent('cody.duplicateSession', 'clicked')
+        telemetryRecorder.recordEvent('cody.duplicateSession', 'clicked', {
+            billingMetadata: { product: 'cody', category: 'billable' },
+        })
     }
 
     public async clearAndRestartSession(chatMessages?: ChatMessage[]): Promise<void> {
