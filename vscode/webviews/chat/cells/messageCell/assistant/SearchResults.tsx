@@ -21,6 +21,7 @@ import { LastEditorContext } from '../../../../chat/context'
 import { NLSResultSnippet } from '../../../../components/NLSResultSnippet'
 import { Button } from '../../../../components/shadcn/ui/button'
 import { Label } from '../../../../components/shadcn/ui/label'
+import { useTelemetryRecorder } from '../../../../utils/telemetry'
 import { useConfig } from '../../../../utils/useConfig'
 import { useExperimentalOneBoxDebug } from '../../../../utils/useExperimentalOneBox'
 import { FeedbackButtons } from '../../../components/FeedbackButtons'
@@ -50,6 +51,7 @@ export const SearchResults = ({
     feedbackButtonsOnSubmit,
     enableContextSelection,
 }: SearchResultsProps) => {
+    const telemetryRecorder = useTelemetryRecorder()
     const experimentalOneBoxDebug = useExperimentalOneBoxDebug()
     const lastEditorRef = useContext(LastEditorContext)
     const [selectedFollowUpResults, updateSelectedFollowUpResults] = useReducer(
@@ -118,12 +120,22 @@ export const SearchResults = ({
         }
     }, [enableContextSelection, selectedFollowUpResults, lastEditorRef])
 
-    const handleSelectForContext = useCallback((selected: boolean, result: NLSSearchResult) => {
-        updateSelectedFollowUpResults({
-            type: selected ? 'add' : 'remove',
-            results: [result],
-        })
-    }, [])
+    const handleSelectForContext = useCallback(
+        (selected: boolean, result: NLSSearchResult) => {
+            telemetryRecorder.recordEvent(
+                'onebox.resultContext',
+                selected ? 'individualSelected' : 'individualDeselected',
+                {
+                    metadata: { resultRank: totalResults.indexOf(result) },
+                }
+            )
+            updateSelectedFollowUpResults({
+                type: selected ? 'add' : 'remove',
+                results: [result],
+            })
+        },
+        [totalResults, telemetryRecorder]
+    )
 
     if (showFiltersModal) {
         return (
@@ -131,10 +143,18 @@ export const SearchResults = ({
                 filters={message.search.response?.results.dynamicFilters || []}
                 selectedFilters={message.search.selectedFilters || []}
                 onSelectedFiltersUpdate={onSelectedFiltersUpdate}
-                close={() => setShowFiltersModal(false)}
+                close={() => {
+                    telemetryRecorder.recordEvent('onebox.filterModal', 'closed')
+                    setShowFiltersModal(false)
+                }}
             />
         )
     }
+
+    const onFilterSidebarClose = useCallback(() => {
+        telemetryRecorder.recordEvent('onebox.filterSidebar', 'closed')
+        setShowFiltersSidebar(false)
+    }, [telemetryRecorder])
 
     return (
         <div
@@ -152,8 +172,8 @@ export const SearchResults = ({
                 >
                     <div
                         className="tw-absolute tw-top-2 tw-right-2"
-                        onClick={() => setShowFiltersSidebar(false)}
-                        onKeyDown={() => setShowFiltersSidebar(false)}
+                        onClick={onFilterSidebarClose}
+                        onKeyDown={onFilterSidebarClose}
                         role="button"
                     >
                         <PanelLeftClose className="tw-size-8" />
@@ -193,6 +213,10 @@ export const SearchResults = ({
                                     <>
                                         <Button
                                             onClick={() => {
+                                                telemetryRecorder.recordEvent(
+                                                    'onebox.filterModal',
+                                                    'opened'
+                                                )
                                                 setShowFiltersModal(true)
                                                 setShowFiltersSidebar(true)
                                             }}
@@ -210,7 +234,13 @@ export const SearchResults = ({
                                         </Button>
                                         <Button
                                             onClick={() => {
-                                                setShowFiltersSidebar(open => !open)
+                                                setShowFiltersSidebar(open => {
+                                                    telemetryRecorder.recordEvent(
+                                                        'onebox.filterSidebar',
+                                                        open ? 'closed' : 'opened'
+                                                    )
+                                                    return !open
+                                                })
                                             }}
                                             variant="outline"
                                             className={styles.filtersSidebarToggle}
@@ -239,7 +269,14 @@ export const SearchResults = ({
                                         checked={selectedFollowUpResults.size === resultsToShow.length}
                                         disabled={!enableContextSelection}
                                         onChange={event => {
-                                            if (event.target.checked) {
+                                            const checked = event.target.checked
+
+                                            telemetryRecorder.recordEvent(
+                                                'onebox.results',
+                                                checked ? 'selectAll' : 'deselectAll'
+                                            )
+
+                                            if (checked) {
                                                 updateSelectedFollowUpResults({
                                                     type: 'add',
                                                     results: resultsToShow,
@@ -299,6 +336,17 @@ export const SearchResults = ({
                                 resultsToShow !== totalResults && (
                                     <Button
                                         onClick={() => {
+                                            telemetryRecorder.recordEvent(
+                                                'onebox.moreResults',
+                                                'clicked',
+                                                {
+                                                    metadata: {
+                                                        totalResults: totalResults.length,
+                                                        resultsAdded:
+                                                            totalResults.length - resultsToShow.length,
+                                                    },
+                                                }
+                                            )
                                             setShowAll(true)
                                             updateSelectedFollowUpResults({
                                                 type: 'add',
@@ -320,6 +368,14 @@ export const SearchResults = ({
                             target="_blank"
                             rel="noreferrer"
                             className="tw-text-foreground"
+                            onClick={() => {
+                                telemetryRecorder.recordEvent('onebox.codeSearch', 'clicked', {
+                                    metadata: {
+                                        totalResults: totalResults.length,
+                                        resultsAdded: totalResults.length - resultsToShow.length,
+                                    },
+                                })
+                            }}
                         >
                             <Button variant="outline">
                                 Code search <ExternalLink className="tw-size-8" />

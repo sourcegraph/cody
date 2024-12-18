@@ -49,6 +49,7 @@ import {
 import { HumanMessageCell } from './cells/messageCell/human/HumanMessageCell'
 
 import { type Context, type Span, context, trace } from '@opentelemetry/api'
+import { TELEMETRY_INTENT } from '../../src/telemetry/onebox'
 import { SwitchIntent } from './cells/messageCell/assistant/SwitchIntent'
 import { LastEditorContext } from './context'
 
@@ -514,12 +515,15 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                 onEditSubmit(intent)
                 telemetryRecorder.recordEvent('onebox.intentCorrection', 'clicked', {
                     metadata: {
-                        recordsPrivateMetadataTranscript: 1,
+                        initialIntent:
+                            humanMessage.intent === 'search'
+                                ? TELEMETRY_INTENT.SEARCH
+                                : TELEMETRY_INTENT.CHAT,
+                        selectedIntent:
+                            intent === 'search' ? TELEMETRY_INTENT.SEARCH : TELEMETRY_INTENT.CHAT,
                     },
                     privateMetadata: {
-                        initialIntent: humanMessage.intent,
-                        userSpecifiedIntent: intent,
-                        promptText: editorState.text,
+                        query: editorState.text,
                     },
                 })
             }

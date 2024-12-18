@@ -4,6 +4,8 @@ import type { NLSSearchDynamicFilter, NLSSearchDynamicFilterKind } from '@source
 import { uniqBy } from 'lodash'
 import { XIcon } from 'lucide-react'
 import { useCallback, useMemo } from 'react'
+import { TELEMETRY_SEARCH_FILTER } from '../../../../../src/telemetry/onebox'
+import { useTelemetryRecorder } from '../../../../utils/telemetry'
 import styles from './SearchFilters.module.css'
 export interface SearchFiltersProps {
     filters: NLSSearchDynamicFilter[]
@@ -15,6 +17,7 @@ export const SearchFilters = ({
     selectedFilters,
     onSelectedFiltersUpdate,
 }: SearchFiltersProps) => {
+    const telemetryRecorder = useTelemetryRecorder()
     const filterGroups = useMemo(() => {
         const fields: string[] = [
             'repo',
@@ -40,9 +43,15 @@ export const SearchFilters = ({
 
     const onFilterSelect = useCallback(
         (filter: NLSSearchDynamicFilter) => {
+            telemetryRecorder.recordEvent('onebox.filter', 'clicked', {
+                metadata: {
+                    filterType: getTelemetryFilterType(filter),
+                },
+                privateMetadata: { value: filter.value },
+            })
             onSelectedFiltersUpdate([...selectedFilters, filter])
         },
-        [selectedFilters, onSelectedFiltersUpdate]
+        [selectedFilters, onSelectedFiltersUpdate, telemetryRecorder]
     )
     const onFilterDeselect = useCallback(
         (filter: NLSSearchDynamicFilter) => {
@@ -130,3 +139,18 @@ const SearchFilter = ({
 
 const isFilterEqual = (a: NLSSearchDynamicFilter, b: NLSSearchDynamicFilter) =>
     a.kind === b.kind && a.value === b.value
+
+function getTelemetryFilterType(filter: NLSSearchDynamicFilter): number {
+    switch (filter.kind) {
+        case 'lang':
+            return TELEMETRY_SEARCH_FILTER.LANGUAGE
+        case 'type':
+            return TELEMETRY_SEARCH_FILTER.TYPE
+        case 'repo':
+            return TELEMETRY_SEARCH_FILTER.REPO
+        case 'file':
+            return TELEMETRY_SEARCH_FILTER.FILE
+        default:
+            return TELEMETRY_SEARCH_FILTER.UNKNOWN
+    }
+}
