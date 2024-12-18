@@ -178,7 +178,12 @@ export const SearchResults = ({
                     })}
                 >
                     {!!resultsToShow && (
-                        <div className="tw-flex tw-items-center tw-gap-4 tw-justify-between">
+                        <div
+                            className={classNames(
+                                'tw-flex tw-items-center tw-gap-4 tw-justify-between',
+                                styles.searchResultsHeader
+                            )}
+                        >
                             <div className="tw-flex tw-gap-2 tw-items-center tw-font-semibold tw-text-muted-foreground">
                                 <Search className="tw-size-8 tw-flex-shrink-0" />
                                 Displaying {resultsToShow.length} code search results
@@ -199,7 +204,9 @@ export const SearchResults = ({
                                             ) : (
                                                 <FilterIcon className="tw-size-8" />
                                             )}
-                                            Filters
+                                            <span className={styles.searchResultsHeaderLabel}>
+                                                Filters
+                                            </span>
                                         </Button>
                                         <Button
                                             onClick={() => {
@@ -213,12 +220,19 @@ export const SearchResults = ({
                                             ) : (
                                                 <FilterIcon className="tw-size-8" />
                                             )}
-                                            Filters
+                                            <span className={styles.searchResultsHeaderLabel}>
+                                                Filters
+                                            </span>
                                         </Button>
                                     </>
                                 )}
                                 <div className="tw-flex tw-items-center tw-gap-4">
-                                    <Label htmlFor="search-results.select-all">Add to context:</Label>
+                                    <Label
+                                        htmlFor="search-results.select-all"
+                                        className={styles.searchResultsHeaderLabel}
+                                    >
+                                        Add to context:
+                                    </Label>
                                     <input
                                         type="checkbox"
                                         id="search-results.select-all"
