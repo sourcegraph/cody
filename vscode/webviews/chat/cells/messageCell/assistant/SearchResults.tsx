@@ -257,11 +257,14 @@ export const SearchResults = ({
                         </div>
                     )}
                     {experimentalOneBoxDebug && message.search.query && (
-                        <InfoMessage className="tw-mt-4">Query: {message.search.query}</InfoMessage>
+                        <InfoMessage className="tw-mt-4">
+                            Query: <code>{message.search.query}</code>
+                        </InfoMessage>
                     )}
                     {experimentalOneBoxDebug && message.search.queryWithSelectedFilters && (
                         <InfoMessage className="tw-mt-4">
-                            Query with selected filters: {message.search.queryWithSelectedFilters}
+                            Query with selected filters:{' '}
+                            <code>{message.search.queryWithSelectedFilters}</code>
                         </InfoMessage>
                     )}
                     {resultsToShow.length ? (
