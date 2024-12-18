@@ -7,4 +7,7 @@
         <projectService serviceImplementation="com.sourcegraph.jetbrains.testing.ProjectTesting" />
         <!-- TODO: Add a httpRequestHandler for CDP forwarding -->
     </extensions>
+    <extensions defaultExtensionNs="com.sourcegraph.jetbrains">
+        <testSupport.webviewSink implementation="com.sourcegraph.jetbrains.testing.WebviewAutomation" />
+    </extensions>
 </idea-plugin>
