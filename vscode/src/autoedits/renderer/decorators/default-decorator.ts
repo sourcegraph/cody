@@ -144,16 +144,19 @@ export class DefaultDecorator implements AutoEditsDecorator {
         const lineNumbers = addedLinesInfo.map(d => d.afterLine)
         const min = Math.min(...lineNumbers)
         const max = Math.max(...lineNumbers)
-        for (const unchangedLine of unchangedLines) {
-            const lineNumber = unchangedLine.modifiedLineNumber
-            if (lineNumber < min || lineNumber > max) {
+        const addedLineNumbers = new Set(addedLinesInfo.map(d => d.afterLine))
+
+        for (const line of [...unchangedLines, ...modifiedLines]) {
+            const lineNumber = line.modifiedLineNumber
+            if (lineNumber < min || lineNumber > max || addedLineNumbers.has(lineNumber)) {
                 continue
             }
             addedLinesInfo.push({
                 ranges: [],
                 afterLine: lineNumber,
-                lineText: unchangedLine.text,
+                lineText: 'newText' in line ? line.newText : line.text,
             })
+            addedLineNumbers.add(lineNumber)
         }
         // Sort addedLinesInfo by line number in ascending order
         addedLinesInfo.sort((a, b) => a.afterLine - b.afterLine)
