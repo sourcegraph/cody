@@ -346,8 +346,7 @@ const MarkdownNotice: FunctionComponent<MarkdownNotice> = props => {
             data-markdown-notice=""
         >
             {title && (
-                <h1 className="tw-text-md tw-font-semibold tw-text-title tw-flex tw-flex-row tw-items-center tw-gap-3 tw-my-2">
-                    <img src={SourcegraphIcon} alt="Sourcegraph Logo" className="tw-h-[16px]" />
+                <h1 className="tw-text-md tw-font-semibold tw-text-title tw-flex tw-flex-row tw-items-center tw-gap-3 tw-mt-1 tw-mb-2">
                     {title}
                 </h1>
             )}
