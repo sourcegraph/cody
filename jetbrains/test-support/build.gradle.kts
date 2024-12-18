@@ -35,7 +35,14 @@ intellijPlatform {
   }
 }
 
-// tasks.named("buildPlugin").get().dependsOn(rootProject.tasks.named("buildPlugin"))
+sourceSets {
+    main {
+        kotlin {
+            srcDir("src/main/kotlin")
+            srcDir("${rootProject.projectDir}/src/testSupportShared/kotlin")
+        }
+    }
+}
 
 tasks {
   val runIdeForTesting by

@@ -569,10 +569,11 @@ tasks {
 
   sourceSets {
     main {
-        kotlin.srcDir("src/intellij${majorPlatformVersion}/kotlin")
-        kotlin.srcDir("src/testSupportShared")
+        kotlin {
+            srcDir("src/intellij${majorPlatformVersion}/kotlin")
+            srcDir("src/testSupportShared/kotlin")
+        }
     }
-    create("testSupportShared") { kotlin.srcDir("src/testSupportShared") }
 
     create("integrationTest") {
       kotlin.srcDir("src/integrationTest/kotlin")
