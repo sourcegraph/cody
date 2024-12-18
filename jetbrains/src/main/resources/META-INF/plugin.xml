@@ -428,4 +428,8 @@
         <listener topic="com.intellij.openapi.command.CommandListener"
                   class="com.sourcegraph.cody.editor.CodyCommandListener"/>
     </projectListeners>
+
+    <extensionPoints>
+        <extensionPoint name="testSupport.webviewSink" interface="com.sourcegraph.jetbrains.testing.shared.WebviewSink" />
+    </extensionPoints>
 </idea-plugin>
