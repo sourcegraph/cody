@@ -1,5 +1,7 @@
 package com.sourcegraph.jetbrains.testing.shared
 
+import com.intellij.ui.jcef.JBCefBrowser
+
 interface WebviewSink {
-    fun greet(message: String)
+    fun didCreateBrowser(browser: JBCefBrowser)
 }
