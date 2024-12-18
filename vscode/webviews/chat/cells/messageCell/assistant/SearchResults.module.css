@@ -1,0 +1,35 @@
+.results-container {
+    max-width: calc(100% - 266px);
+
+    &.filters-sidebar-hidden {
+        max-width: 100%;
+    }
+}
+@container root-outer-container (max-width: 899px) {
+    .filters-sidebar,
+    .filters-sidebar-toggle {
+        display: none !important;
+    }
+
+    .container {
+        display: block !important;
+    }
+
+    .results-container {
+        max-width: 100% !important;
+    }
+}
+
+@container root-outer-container (min-width: 900px) {
+    .filters-modal-trigger {
+        display: none !important;
+    }
+}
+
+.filters-sidebar && .results-container {
+    transition: all 1s ease-in;
+}
+
+.filters-sidebar {
+    background-color: var(--vscode-input-background);
+}

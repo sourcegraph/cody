@@ -1342,7 +1342,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             ...assistantMessage,
             search: {
                 ...assistantMessage.search,
-                response: undefined,
                 selectedFilters,
             },
             text: undefined,
