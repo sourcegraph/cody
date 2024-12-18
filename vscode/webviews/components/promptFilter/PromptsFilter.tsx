@@ -38,20 +38,20 @@ export const PromptsFilter: FC<PromptFilterProps> = props => {
 
     return (
         // we need the surrounding div to prevent the remaining content from jumping
-        <div className="tw-pl-8 tw-pt-8">
+        <div className="tw-pl-6 tw-pt-6">
             <Popover open={isPromptTagsOpen} onOpenChange={setIsPromptTagsOpen}>
                 <PopoverTrigger asChild onClick={() => setIsPromptTagsOpen(!isPromptTagsOpen)}>
                     <Button
                         variant="secondary"
-                        className={'tw-bg-popover tw-border tw-border-border tw-w-48 !tw-justify-start'}
+                        className={'tw-bg-popover tw-border tw-border-border !tw-justify-between'}
                     >
-                        <span className="tw-w-full tw-flex tw-items-center tw-justify-between">
+                        <div className="tw-flex tw-items-center">
                             <FilterContent
                                 value={selectedFilter.value}
                                 nameOverride={selectedFilter.nameOverride}
                             />
-                            <ChevronDown size={16} />
-                        </span>
+                        </div>
+                        <ChevronDown size={16} className="tw-text-muted-foreground" />
                     </Button>
                 </PopoverTrigger>
                 <PopoverContent
@@ -59,7 +59,7 @@ export const PromptsFilter: FC<PromptFilterProps> = props => {
                     side="bottom"
                     align="start"
                 >
-                    <div className="tw-w-[225px]">
+                    <div className="tw-w-[240px]">
                         <Command
                             loop={true}
                             defaultValue={selectedFilter.value}
@@ -67,7 +67,7 @@ export const PromptsFilter: FC<PromptFilterProps> = props => {
                             className="focus:tw-outline-none"
                         >
                             <CommandList>
-                                <CommandGroup>
+                                <CommandGroup className="!tw-py-1">
                                     <CommandLink
                                         href={`${serverEndpoint}prompts/new`}
                                         target="_blank"
@@ -149,7 +149,7 @@ export const PromptsFilter: FC<PromptFilterProps> = props => {
                                         className="tw-flex"
                                     >
                                         <span className="tw-flex-grow">Explore Prompt Library</span>
-                                        <ExternalLink size={16} />
+                                        <ExternalLink size={16} className="tw-text-muted-foreground" />
                                     </CommandLink>
                                 </CommandGroup>
                             </CommandList>
