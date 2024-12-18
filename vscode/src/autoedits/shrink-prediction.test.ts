@@ -1,6 +1,5 @@
 import dedent from 'dedent'
 import { describe, expect, it } from 'vitest'
-
 import { getCurrentDocContext } from '../completions/get-current-doc-context'
 import { documentAndPosition } from '../completions/test-helpers'
 
@@ -8,78 +7,50 @@ import { type CodeToReplaceData, getCurrentFilePromptComponents } from './prompt
 import { shrinkPredictionUntilSuffix } from './shrink-prediction'
 
 describe('shrinkPredictionUntilSuffix', () => {
-    it('middle of file, no overlap, 4-line prediction', () => {
-        const codeToReplaceData = createCodeToReplaceData`const a = 1
-            const b = 2
-            const c = 3
-            console.log(a, b, c)█
-            function greet() { console.log("Hello") }
-            const x = 10
-            console.log(x)
-            console.log("end")
+    it('returns code to rewrite if the prediction does not change anything', () => {
+        const codeToReplaceData = createCodeToReplaceData`
+            import { RecentEditsTracker } from '../completions/context/retrievers/recent-user-actions/recent-edits-tracker'
+
+            export class FilterPredictionEditsBasedOnRecentEdits {
+
+                private readonly recentEditsTracker: RecentEditsTracker
+
+                constructor(recentEditsTracker: RecentEditsTracker) {
+                    this.recentEditsTracker = █
+                }
+
+            }\n\n
         `
 
-        const prediction = dedent`const c = 999
-            console.log(a + b, c)
-            let y = 42
-            function greet() { console.log("Changed!") }
-        `
+        const prediction = dedent`    constructor(recentEditsTracker: RecentEditsTracker) {
+            this.recentEditsTracker = recentEditsTracker
+        }\n\n`
 
         const result = shrinkPredictionUntilSuffix(prediction, codeToReplaceData)
-        expect(result.trimEnd()).toBe(prediction)
+        expect(result).toBe(prediction)
     })
 
-    it('middle of file, partial overlap, 4-line prediction', () => {
-        const codeToReplaceData = createCodeToReplaceData`const a = 1
-            const b = 2
-            const c = 3
-            console.log(a, b, c)█
-            function greet() { console.log("Hello") }
-            console.log(a)
-            console.log("end")
+    it('if prediction suggests line additions which duplicate the existing document suffix, remove them from prediction', () => {
+        const codeToReplaceData = createCodeToReplaceData`class ContactForm:
+            def __init__(self█, name, message):
+                self.name = name
+                self.message = message
+                self.email =
         `
 
         // 4-line prediction. The last line "console.log(a)" is a suffix line and should be overlapped and removed.
-        const prediction = dedent`const c = 999
-            console.log(a * b * c)
-            function greet() { console.log("Modified hello") }
-            console.log(a)
+        const prediction = dedent`class ContactForm:
+            def __init__(self, name, message, email):
+                self.name = name
+                self.message = message
+                self.email = email
         `
 
         const result = shrinkPredictionUntilSuffix(prediction, codeToReplaceData)
 
-        // After removing overlap (console.log(a)), we have 3 lines left.
-        // This matches the original codeToReplace line count (3 lines).
+        // After removing overlap (sel.email = email), we have 4 lines left.
+        // This matches the original codeToReplace line count (4 lines).
         expect(result.trimEnd()).toBe(withoutLastLines(prediction, 1))
-    })
-
-    it('middle of file, full overlap, 4-line prediction', () => {
-        const codeToReplaceData = createCodeToReplaceData`const a = 1
-            const b = 2
-            const c = 3
-            console.log(a, b, c)█
-            function greet() { console.log("Hello") }
-            const x = 10
-            console.log(x)
-            console.log("end")
-        `
-
-        // 4-line prediction that ends with both suffix lines: "const x = 10" and "console.log(x)"
-        const prediction = dedent`const c = 1000
-            console.log(a - b - c)
-            const x = 10
-            console.log(x)
-        `
-
-        const result = shrinkPredictionUntilSuffix(prediction, codeToReplaceData)
-        // After removing the two overlapping suffix lines ("const x = 10" and "console.log(x)"),
-        // we have only 2 lines left from prediction.
-        // Original codeToReplace is 3 lines. The function should append original lines to reach 3 lines total.
-        expect(result.trimEnd()).toMatchInlineSnapshot(`
-          "const c = 1000
-          console.log(a - b - c)
-          const c = 3"
-        `)
     })
 
     it('cursor at end of file, no overlap, 4-line prediction', () => {
@@ -102,13 +73,15 @@ describe('shrinkPredictionUntilSuffix', () => {
 
     it('cursor near start, partial overlap, 4-line prediction', () => {
         const codeToReplaceData = createCodeToReplaceData`console.log("start")█
-            let val = 123
+            let value = 123
+            console.log(value)
             console.log("end")
         `
 
         // 4-line prediction tries to rewrite "console.log("start")" and includes "console.log("end")" at the end for overlap.
         const prediction = dedent`console.log("modified start")
-            let val = 999
+            let value = 999
+            console.log(value)
             extra_line_here
             console.log("end")
         `
@@ -141,18 +114,18 @@ function createCodeToReplaceData(code: TemplateStringsArray, ...values: unknown[
     const docContext = getCurrentDocContext({
         document,
         position,
-        maxPrefixLength: 100,
-        maxSuffixLength: 100,
+        maxPrefixLength: 1000,
+        maxSuffixLength: 1000,
     })
 
     return getCurrentFilePromptComponents({
         docContext,
         position,
         document,
-        maxPrefixLinesInArea: 2,
-        maxSuffixLinesInArea: 2,
+        maxPrefixLinesInArea: 5,
+        maxSuffixLinesInArea: 5,
         codeToRewritePrefixLines: 1,
-        codeToRewriteSuffixLines: 1,
+        codeToRewriteSuffixLines: 2,
     }).codeToReplace
 }
 
