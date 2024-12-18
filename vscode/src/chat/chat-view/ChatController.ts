@@ -1032,12 +1032,10 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         const repoName = currentFile ? await getFirstRepoNameContainingUri(currentFile) : undefined
         const boostParameter = repoName ? `boost:repo(${repoName})` : ''
 
-        const query = scopes.length
-            ? `content:"${inputTextWithoutContextChips.replaceAll(
-                  '"',
-                  '\\"'
-              )}" ${boostParameter} (${scopes.join(' OR ')})`
-            : `${inputTextWithoutContextChips} ${boostParameter}`
+        const query = `content:"${inputTextWithoutContextChips.replaceAll(
+            '"',
+            '\\"'
+        )}" ${boostParameter} ${scopes.length ? `(${scopes.join(' OR ')})` : ''}`
 
         try {
             const response = await graphqlClient.nlsSearchQuery({
