@@ -8,7 +8,6 @@ import {
     ExternalLinkIcon,
     EyeIcon,
     HeartIcon,
-    InfoIcon,
     Users2Icon,
     XIcon,
 } from 'lucide-react'
@@ -355,14 +354,7 @@ const MarkdownNotice: FunctionComponent<MarkdownNotice> = props => {
 
             <MarkdownFromCody className="tw-text-subtle tw-leading-tight">{message}</MarkdownFromCody>
 
-            <div className="tw-bg-popover tw-my-4 tw-p-3 tw-rounded-lg tw-flex tw-flex-row tw-gap-3">
-                <InfoIcon size="14" className="tw-m-1 tw-text-subtle" />
-                <p className="tw-text-subtle tw-text-sm">
-                    Always review and verify answers or code generated. Mistakes are possible with AI.{' '}
-                </p>
-            </div>
-
-            <div className="tw-flex flex-row tw-gap-6 tw-mt-1 tw-mb-3">
+            <div className="tw-flex flex-row tw-gap-6 tw-my-4">
                 <Button variant="outline" onClick={onDismiss} size="sm">
                     OK, thanks!
                 </Button>
