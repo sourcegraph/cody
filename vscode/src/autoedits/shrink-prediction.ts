@@ -7,17 +7,20 @@ import type { CodeToReplaceData } from './prompt/prompt-utils'
  */
 export function shrinkPredictionUntilSuffix(
     prediction: string,
-    codeToReplaceData: CodeToReplaceData
+    { suffixInArea, suffixAfterArea, codeToRewrite }: CodeToReplaceData
 ): string {
-    // Combine the suffixInArea and suffixAfterArea to get the full suffix
-    const newLineChar = getNewLineChar(prediction)
-    const suffix = codeToReplaceData.suffixInArea + codeToReplaceData.suffixAfterArea
+    const newLineChar = getNewLineChar(codeToRewrite)
+    const suffix = suffixInArea + suffixAfterArea
 
     // Remove the last empty line from the prediction because it always ends
     // with an extra empty line. This extra line is technically the first line
     // of the suffix. Stripping it ensures we can accurately compare the last
     // lines of the prediction to the first lines of the suffix.
-    const predictionLines = lines(stripLastEmptyLineIfExists(prediction))
+    const predictionWithoutLastEmptyLine = prediction.endsWith(newLineChar)
+        ? prediction.slice(0, -newLineChar.length)
+        : prediction
+
+    const predictionLines = lines(predictionWithoutLastEmptyLine)
     const suffixLines = lines(suffix)
 
     // Determine the maximum possible overlap
@@ -53,9 +56,4 @@ export function shrinkPredictionUntilSuffix(
     }
 
     return predictionLines.join(newLineChar) + newLineChar
-}
-
-function stripLastEmptyLineIfExists(value: string) {
-    const newLineChar = getNewLineChar(value)
-    return value.endsWith(newLineChar) ? value.slice(0, -newLineChar.length) : value
 }
