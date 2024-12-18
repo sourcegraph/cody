@@ -13,7 +13,10 @@ export function shrinkPredictionUntilSuffix(
     const newLineChar = getNewLineChar(prediction)
     const suffix = codeToReplaceData.suffixInArea + codeToReplaceData.suffixAfterArea
 
-    // Split the prediction and suffix into arrays of lines
+    // Remove the last empty line from the prediction because it always ends
+    // with an extra empty line. This extra line is technically the first line
+    // of the suffix. Stripping it ensures we can accurately compare the last
+    // lines of the prediction to the first lines of the suffix.
     const predictionLines = lines(stripLastEmptyLineIfExists(prediction))
     const suffixLines = lines(suffix)
 
