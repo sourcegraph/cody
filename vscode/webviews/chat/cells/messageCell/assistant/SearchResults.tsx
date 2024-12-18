@@ -157,233 +157,240 @@ export const SearchResults = ({
     }, [telemetryRecorder])
 
     return (
-        <div
-            className={classNames(
-                styles.container,
-                'tw-flex tw-gap-8 tw-items-start tw-justify-between'
-            )}
-        >
-            {showFiltersSidebar && !!message.search.response?.results.dynamicFilters?.length && (
-                <div
-                    className={classNames(
-                        'tw-min-w-[250px] tw-w-[250px] tw-relative tw-mt-2 tw-p-4 tw-rounded-md',
-                        styles.filtersSidebar
-                    )}
-                >
+        <div className={styles.root}>
+            <div
+                className={classNames(
+                    styles.container,
+                    'tw-flex tw-gap-8 tw-items-start tw-justify-between'
+                )}
+            >
+                {showFiltersSidebar && !!message.search.response?.results.dynamicFilters?.length && (
                     <div
-                        className="tw-absolute tw-top-2 tw-right-2"
-                        onClick={onFilterSidebarClose}
-                        onKeyDown={onFilterSidebarClose}
-                        role="button"
+                        className={classNames(
+                            'tw-min-w-[250px] tw-w-[250px] tw-relative tw-mt-2 tw-p-4 tw-rounded-md',
+                            styles.filtersSidebar
+                        )}
                     >
-                        <PanelLeftClose className="tw-size-8" />
-                    </div>
-                    <SearchFilters
-                        filters={message.search.response?.results.dynamicFilters || []}
-                        selectedFilters={message.search.selectedFilters || []}
-                        onSelectedFiltersUpdate={onSelectedFiltersUpdate}
-                    />
-                </div>
-            )}
-            {!message.text && !!message.search.query ? (
-                <div className="tw-flex-1">
-                    <LoadingDots />
-                </div>
-            ) : (
-                <div
-                    className={classNames('tw-flex-1', styles.resultsContainer, {
-                        [styles.filtersSidebarHidden]:
-                            !showFiltersSidebar ||
-                            !message.search.response?.results.dynamicFilters?.length,
-                    })}
-                >
-                    {!!resultsToShow && (
                         <div
-                            className={classNames(
-                                'tw-flex tw-items-center tw-gap-4 tw-justify-between',
-                                styles.searchResultsHeader
-                            )}
+                            className="tw-absolute tw-top-2 tw-right-2"
+                            onClick={onFilterSidebarClose}
+                            onKeyDown={onFilterSidebarClose}
+                            role="button"
                         >
-                            <div className="tw-flex tw-gap-2 tw-items-center tw-font-semibold tw-text-muted-foreground">
-                                <Search className="tw-size-8 tw-flex-shrink-0" />
-                                Displaying {resultsToShow.length} code search results
+                            <PanelLeftClose className="tw-size-8" />
+                        </div>
+                        <SearchFilters
+                            filters={message.search.response?.results.dynamicFilters || []}
+                            selectedFilters={message.search.selectedFilters || []}
+                            onSelectedFiltersUpdate={onSelectedFiltersUpdate}
+                        />
+                    </div>
+                )}
+                {!message.text && !!message.search.query ? (
+                    <div className="tw-flex-1">
+                        <LoadingDots />
+                    </div>
+                ) : (
+                    <div
+                        className={classNames('tw-flex-1', styles.resultsContainer, {
+                            [styles.filtersSidebarHidden]:
+                                !showFiltersSidebar ||
+                                !message.search.response?.results.dynamicFilters?.length,
+                        })}
+                    >
+                        {!!resultsToShow && (
+                            <div
+                                className={classNames(
+                                    'tw-flex tw-items-center tw-gap-4 tw-justify-between',
+                                    styles.searchResultsHeader
+                                )}
+                            >
+                                <div className="tw-flex tw-gap-2 tw-items-center tw-font-semibold tw-text-muted-foreground">
+                                    <Search className="tw-size-8 tw-flex-shrink-0" />
+                                    Displaying {resultsToShow.length} code search results
+                                </div>
+                                <div className="tw-flex tw-gap-4">
+                                    {!!message.search.response?.results.dynamicFilters?.length && (
+                                        <>
+                                            <Button
+                                                onClick={() => {
+                                                    telemetryRecorder.recordEvent(
+                                                        'onebox.filterModal',
+                                                        'opened'
+                                                    )
+                                                    setShowFiltersModal(true)
+                                                    setShowFiltersSidebar(true)
+                                                }}
+                                                variant="outline"
+                                                className={styles.filtersModalTrigger}
+                                            >
+                                                {message.search.selectedFilters?.length ? (
+                                                    <FilterX className="tw-size-8" />
+                                                ) : (
+                                                    <FilterIcon className="tw-size-8" />
+                                                )}
+                                                <span className={styles.searchResultsHeaderLabel}>
+                                                    Filters
+                                                </span>
+                                            </Button>
+                                            <Button
+                                                onClick={() => {
+                                                    setShowFiltersSidebar(open => {
+                                                        telemetryRecorder.recordEvent(
+                                                            'onebox.filterSidebar',
+                                                            open ? 'closed' : 'opened'
+                                                        )
+                                                        return !open
+                                                    })
+                                                }}
+                                                variant="outline"
+                                                className={styles.filtersSidebarToggle}
+                                            >
+                                                {message.search.selectedFilters?.length ? (
+                                                    <FilterX className="tw-size-8" />
+                                                ) : (
+                                                    <FilterIcon className="tw-size-8" />
+                                                )}
+                                                <span className={styles.searchResultsHeaderLabel}>
+                                                    Filters
+                                                </span>
+                                            </Button>
+                                        </>
+                                    )}
+                                    <div className="tw-flex tw-items-center tw-gap-4">
+                                        <Label
+                                            htmlFor="search-results.select-all"
+                                            className={styles.searchResultsHeaderLabel}
+                                        >
+                                            Add to context:
+                                        </Label>
+                                        <input
+                                            type="checkbox"
+                                            id="search-results.select-all"
+                                            checked={
+                                                selectedFollowUpResults.size === resultsToShow.length
+                                            }
+                                            disabled={!enableContextSelection}
+                                            onChange={event => {
+                                                const checked = event.target.checked
+
+                                                telemetryRecorder.recordEvent(
+                                                    'onebox.results',
+                                                    checked ? 'selectAll' : 'deselectAll'
+                                                )
+
+                                                if (checked) {
+                                                    updateSelectedFollowUpResults({
+                                                        type: 'add',
+                                                        results: resultsToShow,
+                                                    })
+                                                } else {
+                                                    updateSelectedFollowUpResults({
+                                                        type: 'init',
+                                                        results: [],
+                                                    })
+                                                }
+                                            }}
+                                        />
+                                    </div>
+                                </div>
                             </div>
-                            <div className="tw-flex tw-gap-4">
-                                {!!message.search.response?.results.dynamicFilters?.length && (
-                                    <>
+                        )}
+                        {experimentalOneBoxDebug && message.search.query && (
+                            <InfoMessage className="tw-mt-4">
+                                Query: <code>{message.search.query}</code>
+                            </InfoMessage>
+                        )}
+                        {experimentalOneBoxDebug && message.search.queryWithSelectedFilters && (
+                            <InfoMessage className="tw-mt-4">
+                                Query with selected filters:{' '}
+                                <code>{message.search.queryWithSelectedFilters}</code>
+                            </InfoMessage>
+                        )}
+                        {resultsToShow.length ? (
+                            <ul className="tw-list-none tw-flex tw-flex-col tw-gap-2 tw-pt-2">
+                                {resultsToShow.map((result, i) => (
+                                    <li
+                                        // biome-ignore lint/correctness/useJsxKeyInIterable:
+                                        // biome-ignore lint/suspicious/noArrayIndexKey: stable order
+                                        key={i}
+                                    >
+                                        <NLSResultSnippet
+                                            result={result}
+                                            selectedForContext={selectedFollowUpResults.has(result)}
+                                            onSelectForContext={
+                                                enableContextSelection
+                                                    ? handleSelectForContext
+                                                    : undefined
+                                            }
+                                        />
+                                    </li>
+                                ))}
+                            </ul>
+                        ) : (
+                            <div className="tw-flex tw-flex-col tw-gap-4 tw-justify-center tw-items-center tw-my-20 tw-text-muted-foreground">
+                                <OctagonX className="tw-size-8" />
+                                <p>No search results found</p>
+                            </div>
+                        )}
+                        <div className="tw-flex tw-justify-between tw-gap-4 tw-my-4">
+                            <div className="tw-flex tw-items-center tw-gap-4">
+                                {!showAll &&
+                                    resultsToShow &&
+                                    totalResults &&
+                                    resultsToShow !== totalResults && (
                                         <Button
                                             onClick={() => {
                                                 telemetryRecorder.recordEvent(
-                                                    'onebox.filterModal',
-                                                    'opened'
+                                                    'onebox.moreResults',
+                                                    'clicked',
+                                                    {
+                                                        metadata: {
+                                                            totalResults: totalResults.length,
+                                                            resultsAdded:
+                                                                totalResults.length -
+                                                                resultsToShow.length,
+                                                        },
+                                                    }
                                                 )
-                                                setShowFiltersModal(true)
-                                                setShowFiltersSidebar(true)
-                                            }}
-                                            variant="outline"
-                                            className={styles.filtersModalTrigger}
-                                        >
-                                            {message.search.selectedFilters?.length ? (
-                                                <FilterX className="tw-size-8" />
-                                            ) : (
-                                                <FilterIcon className="tw-size-8" />
-                                            )}
-                                            <span className={styles.searchResultsHeaderLabel}>
-                                                Filters
-                                            </span>
-                                        </Button>
-                                        <Button
-                                            onClick={() => {
-                                                setShowFiltersSidebar(open => {
-                                                    telemetryRecorder.recordEvent(
-                                                        'onebox.filterSidebar',
-                                                        open ? 'closed' : 'opened'
-                                                    )
-                                                    return !open
-                                                })
-                                            }}
-                                            variant="outline"
-                                            className={styles.filtersSidebarToggle}
-                                        >
-                                            {message.search.selectedFilters?.length ? (
-                                                <FilterX className="tw-size-8" />
-                                            ) : (
-                                                <FilterIcon className="tw-size-8" />
-                                            )}
-                                            <span className={styles.searchResultsHeaderLabel}>
-                                                Filters
-                                            </span>
-                                        </Button>
-                                    </>
-                                )}
-                                <div className="tw-flex tw-items-center tw-gap-4">
-                                    <Label
-                                        htmlFor="search-results.select-all"
-                                        className={styles.searchResultsHeaderLabel}
-                                    >
-                                        Add to context:
-                                    </Label>
-                                    <input
-                                        type="checkbox"
-                                        id="search-results.select-all"
-                                        checked={selectedFollowUpResults.size === resultsToShow.length}
-                                        disabled={!enableContextSelection}
-                                        onChange={event => {
-                                            const checked = event.target.checked
-
-                                            telemetryRecorder.recordEvent(
-                                                'onebox.results',
-                                                checked ? 'selectAll' : 'deselectAll'
-                                            )
-
-                                            if (checked) {
+                                                setShowAll(true)
                                                 updateSelectedFollowUpResults({
                                                     type: 'add',
-                                                    results: resultsToShow,
+                                                    results: totalResults.slice(resultsToShow.length),
                                                 })
-                                            } else {
-                                                updateSelectedFollowUpResults({
-                                                    type: 'init',
-                                                    results: [],
-                                                })
-                                            }
-                                        }}
-                                    />
-                                </div>
-                            </div>
-                        </div>
-                    )}
-                    {experimentalOneBoxDebug && message.search.query && (
-                        <InfoMessage className="tw-mt-4">
-                            Query: <code>{message.search.query}</code>
-                        </InfoMessage>
-                    )}
-                    {experimentalOneBoxDebug && message.search.queryWithSelectedFilters && (
-                        <InfoMessage className="tw-mt-4">
-                            Query with selected filters:{' '}
-                            <code>{message.search.queryWithSelectedFilters}</code>
-                        </InfoMessage>
-                    )}
-                    {resultsToShow.length ? (
-                        <ul className="tw-list-none tw-flex tw-flex-col tw-gap-2 tw-pt-2">
-                            {resultsToShow.map((result, i) => (
-                                <li
-                                    // biome-ignore lint/correctness/useJsxKeyInIterable:
-                                    // biome-ignore lint/suspicious/noArrayIndexKey: stable order
-                                    key={i}
-                                >
-                                    <NLSResultSnippet
-                                        result={result}
-                                        selectedForContext={selectedFollowUpResults.has(result)}
-                                        onSelectForContext={
-                                            enableContextSelection ? handleSelectForContext : undefined
-                                        }
-                                    />
-                                </li>
-                            ))}
-                        </ul>
-                    ) : (
-                        <div className="tw-flex tw-flex-col tw-gap-4 tw-justify-center tw-items-center tw-my-20 tw-text-muted-foreground">
-                            <OctagonX className="tw-size-8" />
-                            <p>No search results found</p>
-                        </div>
-                    )}
-                    <div className="tw-flex tw-justify-between tw-gap-4 tw-my-4">
-                        <div className="tw-flex tw-items-center tw-gap-4">
-                            {!showAll &&
-                                resultsToShow &&
-                                totalResults &&
-                                resultsToShow !== totalResults && (
-                                    <Button
-                                        onClick={() => {
-                                            telemetryRecorder.recordEvent(
-                                                'onebox.moreResults',
-                                                'clicked',
-                                                {
-                                                    metadata: {
-                                                        totalResults: totalResults.length,
-                                                        resultsAdded:
-                                                            totalResults.length - resultsToShow.length,
-                                                    },
-                                                }
-                                            )
-                                            setShowAll(true)
-                                            updateSelectedFollowUpResults({
-                                                type: 'add',
-                                                results: totalResults.slice(resultsToShow.length),
-                                            })
-                                        }}
-                                        variant="outline"
-                                    >
-                                        <ArrowDown className="tw-size-8" />
-                                        More results
-                                    </Button>
+                                            }}
+                                            variant="outline"
+                                        >
+                                            <ArrowDown className="tw-size-8" />
+                                            More results
+                                        </Button>
+                                    )}
+                                {showFeedbackButtons && feedbackButtonsOnSubmit && (
+                                    <FeedbackButtons feedbackButtonsOnSubmit={feedbackButtonsOnSubmit} />
                                 )}
-                            {showFeedbackButtons && feedbackButtonsOnSubmit && (
-                                <FeedbackButtons feedbackButtonsOnSubmit={feedbackButtonsOnSubmit} />
-                            )}
+                            </div>
+                            <a
+                                href={`${serverEndpoint}/search`}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="tw-text-foreground"
+                                onClick={() => {
+                                    telemetryRecorder.recordEvent('onebox.codeSearch', 'clicked', {
+                                        metadata: {
+                                            totalResults: totalResults.length,
+                                            resultsAdded: totalResults.length - resultsToShow.length,
+                                        },
+                                    })
+                                }}
+                            >
+                                <Button variant="outline">
+                                    Code search <ExternalLink className="tw-size-8" />
+                                </Button>
+                            </a>
                         </div>
-                        <a
-                            href={`${serverEndpoint}/search`}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="tw-text-foreground"
-                            onClick={() => {
-                                telemetryRecorder.recordEvent('onebox.codeSearch', 'clicked', {
-                                    metadata: {
-                                        totalResults: totalResults.length,
-                                        resultsAdded: totalResults.length - resultsToShow.length,
-                                    },
-                                })
-                            }}
-                        >
-                            <Button variant="outline">
-                                Code search <ExternalLink className="tw-size-8" />
-                            </Button>
-                        </a>
                     </div>
-                </div>
-            )}
+                )}
+            </div>
         </div>
     )
 }

@@ -5,8 +5,6 @@
   box-sizing: border-box;
   height: 100%;
   overflow: hidden;
-  container-type: inline-size;
-  container-name: root-outer-container;
 }
 
 .error-container {

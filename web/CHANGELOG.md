@@ -1,3 +1,7 @@
+## 0.20.0 
+- Fixes problem with popover UI
+- Update banner UI
+
 ## 0.19.0 
 - Fixes prompts tag keyboard navigation and spacings
 

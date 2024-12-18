@@ -216,7 +216,7 @@ export const Notices: React.FC<NoticesProps> = ({ user, isTeamsUpgradeCtaEnabled
     }
 
     return (
-        <div className="tw-flex tw-flex-col tw-mx-4 tw-my-2 tw-p-4 tw-gap-2">{activeNotice.content}</div>
+        <div className="tw-flex tw-flex-col tw-mx-2 tw-my-2 tw-p-2 tw-gap-2">{activeNotice.content}</div>
     )
 }
 
@@ -342,14 +342,18 @@ const MarkdownNotice: FunctionComponent<MarkdownNotice> = props => {
 
     return (
         <div
-            className="tw-bg-accent tw-bg-opacity-50 tw--ml-2 tw--mr-2 tw-border tw-border-border tw-relative tw-rounded-md tw-flex tw-flex-col tw-gap-2 tw-p-4"
+            className="tw-bg-subtle tw-ml-2 tw-mr-2 tw-border tw-border-border tw-relative tw-rounded-lg tw-flex tw-flex-col tw-gap-2 tw-pt-4 tw-pb-6 tw-px-6"
             data-markdown-notice=""
         >
-            {title && <h1 className="tw-text-lg tw-font-semibold">{title}</h1>}
+            {title && (
+                <h1 className="tw-text-md tw-font-semibold tw-text-title tw-flex tw-flex-row tw-items-center tw-gap-3 tw-mt-1 tw-mb-2">
+                    {title}
+                </h1>
+            )}
 
-            <MarkdownFromCody>{message}</MarkdownFromCody>
+            <MarkdownFromCody className="tw-text-subtle tw-leading-tight">{message}</MarkdownFromCody>
 
-            <Button variant="ghost" onClick={onDismiss} className="tw-absolute tw-top-2 tw-right-2">
+            <Button variant="ghost" onClick={onDismiss} className="tw-absolute tw-top-3 tw-right-2">
                 <XIcon size="14" />
             </Button>
         </div>

@@ -1,3 +1,8 @@
+.root {
+    container-type: inline-size;
+    container-name: root-outer-container;
+}
+
 .results-container {
     max-width: calc(100% - 266px);
 
@@ -5,6 +10,7 @@
         max-width: 100%;
     }
 }
+
 @container root-outer-container (max-width: 899px) {
     .filters-sidebar,
     .filters-sidebar-toggle {
