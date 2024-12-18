@@ -362,6 +362,20 @@ const MarkdownNotice: FunctionComponent<MarkdownNotice> = props => {
                 </p>
             </div>
 
+            <div className="tw-flex flex-row tw-gap-6 tw-mt-1 tw-mb-3">
+                <Button variant="outline" onClick={onDismiss} size="sm">
+                    OK, thanks!
+                </Button>
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => window.open('https://docs.sourcegraph.com', '_blank')}
+                >
+                    Explore docs
+                    <ExternalLinkIcon size="14" className="tw-text-muted-foreground tw-ml-1" />
+                </Button>{' '}
+            </div>
+
             <Button variant="ghost" onClick={onDismiss} className="tw-absolute tw-top-2 tw-right-2">
                 <XIcon size="14" />
             </Button>
