@@ -57,6 +57,7 @@ describe('ChatController', () => {
     ).mockReturnValue(Observable.of({ isPublic: false, repoMetadata: undefined }))
 
     vi.spyOn(graphqlClient, 'getSiteVersion').mockResolvedValue('1.2.3')
+    vi.spyOn(graphqlClient, 'viewerSettings').mockResolvedValue({})
 
     const mockNowDate = new Date(123456)
 
@@ -108,7 +109,7 @@ describe('ChatController', () => {
             signal: new AbortController().signal,
             source: 'chat',
         })
-        expect(postMessageSpy.mock.calls.at(4)?.at(0)).toStrictEqual<
+        expect(postMessageSpy.mock.calls.at(5)?.at(0)).toStrictEqual<
             Extract<ExtensionMessage, { type: 'transcript' }>
         >({
             type: 'transcript',
@@ -137,12 +138,11 @@ describe('ChatController', () => {
                 },
             ],
         })
-
         // Make sure it was sent and the reply was received.
         await vi.runOnlyPendingTimersAsync()
         expect(mockChatClient.chat).toBeCalledTimes(1)
         expect(addBotMessageSpy).toHaveBeenCalledWith('1', ps`Test reply 1`, 'my-model')
-        expect(postMessageSpy.mock.calls.at(5)?.at(0)).toStrictEqual<
+        expect(postMessageSpy.mock.calls.at(6)?.at(0)).toStrictEqual<
             Extract<ExtensionMessage, { type: 'transcript' }>
         >({
             type: 'transcript',
@@ -336,7 +336,7 @@ describe('ChatController', () => {
         await vi.runOnlyPendingTimersAsync()
         expect(mockChatClient.chat).toBeCalledTimes(1)
         expect(addBotMessageSpy).toHaveBeenCalledWith('1', ps`Test partial reply`, 'my-model')
-        expect(postMessageSpy.mock.calls.at(6)?.at(0)).toStrictEqual<
+        expect(postMessageSpy.mock.calls.at(7)?.at(0)).toStrictEqual<
             Extract<ExtensionMessage, { type: 'transcript' }>
         >({
             type: 'transcript',

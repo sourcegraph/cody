@@ -1,12 +1,11 @@
 import * as vscode from 'vscode'
 
-import type { DocumentContext } from '@sourcegraph/cody-shared'
+import { type DocumentContext, isFileURI } from '@sourcegraph/cody-shared'
 
 import { completionMatchesSuffix } from '../../completions/is-completion-visible'
 import { getNewLineChar } from '../../completions/text-processing'
 import { autoeditsLogger } from '../logger'
 import type { CodeToReplaceData } from '../prompt/prompt-utils'
-import { adjustPredictionIfInlineCompletionPossible } from '../utils'
 
 import type {
     AddedLineInfo,
@@ -27,8 +26,35 @@ export class AutoEditsInlineRendererManager
     extends AutoEditsDefaultRendererManager
     implements AutoEditsRendererManager
 {
+    protected async acceptEdit(): Promise<void> {
+        const editor = vscode.window.activeTextEditor
+        if (!this.activeEdit || !editor || editor.document.uri.toString() !== this.activeEdit.uri) {
+            await this.dismissEdit()
+            return
+        }
+
+        await vscode.commands.executeCommand('editor.action.inlineSuggest.hide')
+        await editor.edit(editBuilder => {
+            editBuilder.replace(this.activeEdit!.range, this.activeEdit!.prediction)
+        })
+
+        await this.dismissEdit()
+    }
+
+    protected async onDidChangeTextEditorSelection(
+        event: vscode.TextEditorSelectionChangeEvent
+    ): Promise<void> {
+        // If the cursor moved in any file, we assume it's a user action and
+        // dismiss the active edit. This is because parts of the edit might be
+        // rendered as inline completion ghost text, which is hidden by default
+        // whenever the cursor moves.
+        if (isFileURI(event.textEditor.document.uri)) {
+            this.dismissEdit()
+        }
+    }
+
     async maybeRenderDecorationsAndTryMakeInlineCompletionResponse(
-        originalPrediction: string,
+        prediction: string,
         codeToReplaceData: CodeToReplaceData,
         document: vscode.TextDocument,
         position: vscode.Position,
@@ -38,14 +64,8 @@ export class AutoEditsInlineRendererManager
         inlineCompletions: vscode.InlineCompletionItem[] | null
         updatedDecorationInfo: DecorationInfo
     }> {
-        const prediction = adjustPredictionIfInlineCompletionPossible(
-            originalPrediction,
-            codeToReplaceData.codeToRewritePrefix,
-            codeToReplaceData.codeToRewriteSuffix
-        )
-
         const { insertText, usedChangeIds } = getCompletionText({
-            prediction: originalPrediction,
+            prediction,
             cursorPosition: position,
             decorationInfo,
         })

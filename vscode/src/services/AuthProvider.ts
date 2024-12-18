@@ -1,9 +1,8 @@
-import * as vscode from 'vscode'
-
 import {
     type AuthCredentials,
     type AuthStatus,
     type ClientCapabilitiesWithLegacyFields,
+    ClientConfigSingleton,
     DOTCOM_URL,
     NEVER,
     type ResolvedConfiguration,
@@ -26,6 +25,7 @@ import {
 } from '@sourcegraph/cody-shared'
 import isEqual from 'lodash/isEqual'
 import { Observable, Subject } from 'observable-fns'
+import * as vscode from 'vscode'
 import { serializeConfigSnapshot } from '../../uninstall/serializeConfig'
 import { type ResolvedConfigurationCredentialsOnly, validateCredentials } from '../auth/auth'
 import { logError } from '../output-channel-logger'
@@ -51,6 +51,32 @@ class AuthProvider implements vscode.Disposable {
 
     private subscriptions: Unsubscribable[] = []
 
+    private async validateAndUpdateAuthStatus(
+        credentials: ResolvedConfigurationCredentialsOnly,
+        signal?: AbortSignal
+    ): Promise<void> {
+        // Immediately emit the unauthenticated status while we are authenticating.
+        // Emitting `authenticated: false` for a brief period is both true and a
+        // way to ensure that subscribers are robust to changes in
+        // authentication status.
+        this.status.next({
+            authenticated: false,
+            pendingValidation: true,
+            endpoint: credentials.auth.serverEndpoint,
+        })
+
+        try {
+            const authStatus = await validateCredentials(credentials, signal)
+            signal?.throwIfAborted()
+            this.status.next(authStatus)
+            await this.handleAuthTelemetry(authStatus, signal)
+        } catch (error) {
+            if (!isAbortError(error)) {
+                logError('AuthProvider', 'Unexpected error validating credentials', error)
+            }
+        }
+    }
+
     constructor(setAuthStatusObservable = setAuthStatusObservable_, resolvedConfig = resolvedConfig_) {
         setAuthStatusObservable(this.status.pipe(distinctUntilChanged()))
 
@@ -64,6 +90,29 @@ class AuthProvider implements vscode.Disposable {
                     : Observable.of(credentials)
             }),
             distinctUntilChanged()
+        )
+
+        this.subscriptions.push(
+            ClientConfigSingleton.getInstance()
+                .updates.pipe(
+                    abortableOperation(async (config, signal) => {
+                        const nextAuthStatus = await validateCredentials(
+                            await currentResolvedConfig(),
+                            signal,
+                            config
+                        )
+                        // The only case where client config impacts the auth status is when the user is
+                        // logged into dotcom but the client config is set to use an enterprise instance
+                        // we explicitly check for this error and only update if so
+                        if (
+                            !nextAuthStatus.authenticated &&
+                            nextAuthStatus.error?.type === 'enterprise-user-logged-into-dotcom'
+                        ) {
+                            this.status.next(nextAuthStatus)
+                        }
+                    })
+                )
+                .subscribe({})
         )
 
         // Perform auth as config changes.
@@ -80,31 +129,7 @@ class AuthProvider implements vscode.Disposable {
                             // the initial load.
                             return
                         }
-
-                        // Immediately emit the unauthenticated status while we are authenticating.
-                        // Emitting `authenticated: false` for a brief period is both true and a
-                        // way to ensure that subscribers are robust to changes in
-                        // authentication status.
-                        this.status.next({
-                            authenticated: false,
-                            pendingValidation: true,
-                            endpoint: config.auth.serverEndpoint,
-                        })
-
-                        try {
-                            const authStatus = await validateCredentials(config, signal)
-                            signal?.throwIfAborted()
-                            this.status.next(authStatus)
-                            await this.handleAuthTelemetry(authStatus, signal)
-                        } catch (error) {
-                            if (!isAbortError(error)) {
-                                logError(
-                                    'AuthProvider',
-                                    'Unexpected error validating credentials',
-                                    error
-                                )
-                            }
-                        }
+                        await this.validateAndUpdateAuthStatus(config, signal)
                     })
                 )
                 .subscribe({})
@@ -293,7 +318,7 @@ function reportAuthTelemetryEvent(authStatus: AuthStatus): void {
     let eventValue: 'disconnected' | 'connected' | 'failed'
     if (
         !authStatus.authenticated &&
-        (authStatus.showNetworkError || authStatus.showInvalidAccessTokenError)
+        (authStatus.error?.type === 'network-error' || authStatus.error?.type === 'invalid-access-token')
     ) {
         eventValue = 'failed'
     } else if (authStatus.authenticated) {
@@ -308,7 +333,6 @@ function reportAuthTelemetryEvent(authStatus: AuthStatus): void {
         },
     })
 }
-
 function toCredentialsOnlyNormalized(
     config: ResolvedConfiguration | ResolvedConfigurationCredentialsOnly
 ): ResolvedConfigurationCredentialsOnly {

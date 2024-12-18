@@ -25,11 +25,12 @@ import { FireworksAdapter } from './adapters/fireworks'
 import { OpenAIAdapter } from './adapters/openai'
 import { SourcegraphChatAdapter } from './adapters/sourcegraph-chat'
 import { SourcegraphCompletionsAdapter } from './adapters/sourcegraph-completions'
+import { FilterPredictionBasedOnRecentEdits } from './filter-prediction-edits'
 import { autoeditsLogger } from './logger'
 import type { AutoeditsUserPromptStrategy } from './prompt/base'
 import { SYSTEM_PROMPT } from './prompt/constants'
-import { DefaultUserPromptStrategy } from './prompt/default-prompt-strategy'
 import { type CodeToReplaceData, getCompletionsPromptWithSystemPrompt } from './prompt/prompt-utils'
+import { ShortTermPromptStrategy } from './prompt/short-term-diff-prompt-strategy'
 import { DefaultDecorator } from './renderer/decorators/default-decorator'
 import { InlineDiffDecorator } from './renderer/decorators/inline-diff-decorator'
 import { getDecorationInfo } from './renderer/diff-utils'
@@ -39,7 +40,7 @@ import {
     extractAutoEditResponseFromCurrentDocumentCommentTemplate,
     shrinkReplacerTextToCodeToReplaceRange,
 } from './renderer/renderer-testing'
-import { isPredictedTextAlreadyInSuffix } from './utils'
+// import { shrinkPredictionUntilSuffix } from './shrink-prediction'
 
 const AUTOEDITS_CONTEXT_STRATEGY = 'auto-edits'
 const INLINE_COMPLETION_DEFAULT_DEBOUNCE_INTERVAL_MS = 150
@@ -80,7 +81,8 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
     private readonly onSelectionChangeDebounced: DebouncedFunc<typeof this.autoeditOnSelectionChange>
     /** Keeps track of the last time the text was changed in the editor. */
     private lastTextChangeTimeStamp: number | undefined
-    private readonly promptProvider: AutoeditsUserPromptStrategy = new DefaultUserPromptStrategy()
+    private readonly promptProvider: AutoeditsUserPromptStrategy = new ShortTermPromptStrategy()
+    private readonly filterPrediction = new FilterPredictionBasedOnRecentEdits()
 
     private isMockResponseFromCurrentDocumentTemplateEnabled = vscode.workspace
         .getConfiguration()
@@ -200,22 +202,40 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         if (abortSignal.aborted) {
             return null
         }
+
         const docContext = getCurrentDocContext({
             document,
             position,
             maxPrefixLength: tokensToChars(this.config.tokenLimit.prefixTokens),
             maxSuffixLength: tokensToChars(this.config.tokenLimit.suffixTokens),
         })
+
         const autoeditResponse = await this.inferEdit({
             document,
             position,
             docContext,
             abortSignal,
         })
+
         if (abortSignal.aborted || !autoeditResponse) {
             return null
         }
+
         const { prediction, codeToReplaceData } = autoeditResponse
+        const shouldFilterPredictionBasedRecentEdits = this.filterPrediction.shouldFilterPrediction(
+            document.uri,
+            prediction,
+            codeToReplaceData.codeToRewrite
+        )
+        if (shouldFilterPredictionBasedRecentEdits) {
+            return null
+        }
+
+        // prediction = shrinkPredictionUntilSuffix(prediction, codeToReplaceData)
+
+        if (prediction === codeToReplaceData.codeToRewrite) {
+            return null
+        }
 
         const currentFileText = document.getText()
         const predictedFileText =
@@ -223,27 +243,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             prediction +
             currentFileText.slice(document.offsetAt(codeToReplaceData.range.end))
 
-        // TODO: handle cases where prediction's last line is the modification of the first line
-        // from the current document suffix
-        //
-        // Repro in: code-matching-eval/edits_experiments/examples/renderer-testing-examples/working-okay/codium-add-email-field-autoedits.py
-        // The prediction comes with: `self.email = email`, while the first suffix line is `self.email =`
-        // which results into a line addition instead of modification.
         const decorationInfo = getDecorationInfo(currentFileText, predictedFileText)
-
-        if (
-            isPredictedTextAlreadyInSuffix({
-                codeToRewrite: codeToReplaceData.codeToRewrite,
-                prediction,
-                suffix: codeToReplaceData.suffixInArea + codeToReplaceData.suffixAfterArea,
-            })
-        ) {
-            autoeditsLogger.logDebug(
-                'Autoedits',
-                'Skipping autoedit - predicted text already exists in suffix'
-            )
-            return null
-        }
 
         const { inlineCompletions } =
             await this.rendererManager.maybeRenderDecorationsAndTryMakeInlineCompletionResponse(
@@ -370,19 +370,19 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         if (isDotComAuthed()) {
             return {
                 provider: 'cody-gateway',
-                model: 'cody-model-auto-edits-fireworks-default',
+                model: 'autoedits-deepseek-lite-default',
                 url: 'https://cody-gateway.sourcegraph.com/v1/completions/fireworks',
                 tokenLimit: defaultTokenLimit,
-                isChatModel: true,
+                isChatModel: false,
             }
         }
         return {
             provider: 'sourcegraph',
-            model: 'fireworks::v1::autoedits-default',
+            model: 'fireworks::v1::autoedits-deepseek-lite-default',
             tokenLimit: defaultTokenLimit,
-            // We use chat completions client for sourcegraph-chat, so we don't need to specify url.
+            // We use completions client for sourcegraph provider, so we don't need to specify url.
             url: '',
-            isChatModel: true,
+            isChatModel: false,
         }
     }
 

@@ -16,6 +16,7 @@ import {
     getRecentEditsContextPromptWithPath,
     getRecentEditsPrompt,
     getRecentlyViewedSnippetsPrompt,
+    joinPromptsWithNewlineSeperator,
 } from '../prompt/prompt-utils'
 
 describe('getContextPromptWithPath', () => {
@@ -25,6 +26,7 @@ describe('getContextPromptWithPath', () => {
         const prompt = getContextPromptWithPath(filePath, content)
         expect(prompt.toString()).toBe(dedent`
             (\`/path/to/file.js\`)
+
             const foo = 1
         `)
     })
@@ -86,6 +88,7 @@ describe('getCurrentFilePromptComponents', () => {
             suffix-line
             suffix-line
             suffix-line
+
             </file>
         `)
         expect(result.areaPrompt.toString()).toBe(dedent`
@@ -133,7 +136,9 @@ describe('getCurrentFilePromptComponents', () => {
         expect(result.fileWithMarkerPrompt.toString()).toBe(dedent`
             (\`test.ts\`)
             <file>
+
             <<<AREA_AROUND_CODE_TO_REWRITE_WILL_BE_INSERTED_HERE>>>
+
             </file>
         `)
         expect(result.areaPrompt.toString()).toBe(dedent`
@@ -545,6 +550,7 @@ describe('getLintErrorsPrompt', () => {
         expect(prompt.toString()).toBe(dedent`
             <lint_errors>
             (\`foo.ts\`)
+
             foo
             Err | Defined foo
 
@@ -579,6 +585,7 @@ describe('getLintErrorsPrompt', () => {
         expect(prompt.toString()).toBe(dedent`
             <lint_errors>
             (\`foo.ts\`)
+
             foo
             Err | Defined foo
 
@@ -586,6 +593,7 @@ describe('getLintErrorsPrompt', () => {
             Err | Defined another foo
 
             (\`bar.ts\`)
+
             bar
             Err | Defined bar
 
@@ -620,6 +628,7 @@ describe('getRecentCopyPrompt', () => {
         expect(prompt.toString()).toBe(dedent`
             <recent_copy>
             (\`foo.ts\`)
+
             baz
             </recent_copy>
         `)
@@ -642,9 +651,11 @@ describe('getRecentCopyPrompt', () => {
         expect(prompt.toString()).toBe(dedent`
             <recent_copy>
             (\`foo.ts\`)
+
             foo copy content
 
             (\`bar.ts\`)
+
             bar copy content
             </recent_copy>
         `)
@@ -758,10 +769,12 @@ describe('getRecentlyViewedSnippetsPrompt', () => {
             <recently_viewed_snippets>
             <snippet>
             (\`foo.ts\`)
+
             bar
             </snippet>
             <snippet>
             (\`foo.ts\`)
+
             foo
             </snippet>
             </recently_viewed_snippets>
@@ -786,18 +799,22 @@ describe('getRecentlyViewedSnippetsPrompt', () => {
             <recently_viewed_snippets>
             <snippet>
             (\`qux.ts\`)
+
             qux
             </snippet>
             <snippet>
             (\`baz.ts\`)
+
             bax
             </snippet>
             <snippet>
             (\`bar.ts\`)
+
             bar
             </snippet>
             <snippet>
             (\`foo.ts\`)
+
             foo
             </snippet>
             </recently_viewed_snippets>
@@ -830,10 +847,12 @@ describe('getJaccardSimilarityPrompt', () => {
             <extracted_code_snippets>
             <snippet>
             (\`foo.ts\`)
+
             foo
             </snippet>
             <snippet>
             (\`foo.ts\`)
+
             bar
             </snippet>
             </extracted_code_snippets>
@@ -858,21 +877,35 @@ describe('getJaccardSimilarityPrompt', () => {
             <extracted_code_snippets>
             <snippet>
             (\`foo.ts\`)
+
             foo
             </snippet>
             <snippet>
             (\`bar.ts\`)
+
             bar
             </snippet>
             <snippet>
             (\`baz.ts\`)
+
             bax
             </snippet>
             <snippet>
             (\`qux.ts\`)
+
             qux
             </snippet>
             </extracted_code_snippets>
+        `)
+    })
+})
+
+describe('joinPromptsWithNewlineSeperator', () => {
+    it('joins multiple prompt strings with a new line separator', () => {
+        const prompt = joinPromptsWithNewlineSeperator(ps`foo`, ps`bar`)
+        expect(prompt.toString()).toBe(dedent`
+            foo
+            bar
         `)
     })
 })

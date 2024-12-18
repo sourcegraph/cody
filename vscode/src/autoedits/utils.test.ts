@@ -299,6 +299,18 @@ describe('isAllNewLineChars', () => {
 })
 
 describe('adjustPredictionIfInlineCompletionPossible', () => {
+    it('prediction when the prefix matches partially with suffix', () => {
+        const originalPrediction = '\n    private async func {\n'
+        const prefix = '\n    private '
+        const suffix = '\n\n    private async func {\n'
+        const result = utils.adjustPredictionIfInlineCompletionPossible(
+            originalPrediction,
+            prefix,
+            suffix
+        )
+        expect(result).toBe(originalPrediction)
+    })
+
     it('returns original prediction if prefix or suffix not found', () => {
         const originalPrediction = 'some code'
         const prefix = 'prefix'
@@ -633,35 +645,5 @@ describe('countNewLineCharsStart', () => {
     it('handles no line endings', () => {
         expect(utils.countNewLineCharsStart('text')).toBe(0)
         expect(utils.countNewLineCharsStart('')).toBe(0)
-    })
-})
-
-describe('isPredictedTextAlreadyInSuffix', () => {
-    it('should return false when there are no added lines', () => {
-        const result = utils.isPredictedTextAlreadyInSuffix({
-            codeToRewrite: 'const x = 1;\nconst y = 2;',
-            prediction: 'const x = 1;\nconst y = 2;',
-            suffix: '',
-        })
-        expect(result).toBe(false)
-    })
-
-    it('should return false when predicted text is different from suffix', () => {
-        const result = utils.isPredictedTextAlreadyInSuffix({
-            codeToRewrite: 'function test() {\n    \n}',
-            prediction: 'function test() {\n    console.log("hello");\n}',
-            suffix: 'return true;\n}',
-        })
-        expect(result).toBe(false)
-    })
-
-    it('should handle multiline predictions correctly', () => {
-        const result = utils.isPredictedTextAlreadyInSuffix({
-            codeToRewrite: 'function test() {\n',
-            prediction:
-                'function test() {\n    const a = 1;\n    const b = 2;\n    console.log(a + b);\n}\n',
-            suffix: '    const a = 1;\n    const b = 2;\n    console.log(a + b);\n}\n',
-        })
-        expect(result).toBe(true)
     })
 })

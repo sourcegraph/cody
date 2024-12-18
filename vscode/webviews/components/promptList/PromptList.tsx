@@ -1,11 +1,13 @@
 import clsx from 'clsx'
 import { type FC, useCallback, useMemo, useState } from 'react'
 
-import type { Action } from '@sourcegraph/cody-shared'
+import type { Action, PromptsInput } from '@sourcegraph/cody-shared'
 
+import { useLocalStorage } from '../../components/hooks'
 import { useTelemetryRecorder } from '../../utils/telemetry'
 import { useConfig } from '../../utils/useConfig'
 import { useDebounce } from '../../utils/useDebounce'
+import type { PromptsFilterArgs } from '../promptFilter/PromptsFilter'
 import {
     Command,
     CommandInput,
@@ -14,12 +16,9 @@ import {
     CommandSeparator,
 } from '../shadcn/ui/command'
 import { ActionItem } from './ActionItem'
+import styles from './PromptList.module.css'
 import { usePromptsQuery } from './usePromptsQuery'
 import { commandRowValue } from './utils'
-
-import type { PromptsInput } from '@sourcegraph/cody-shared'
-import { useLocalStorage } from '../../components/hooks'
-import styles from './PromptList.module.css'
 
 const BUILT_IN_PROMPTS_CODE: Record<string, number> = {
     'document-code': 1,
@@ -42,6 +41,7 @@ interface PromptListProps {
     lastUsedSorting?: boolean
     recommendedOnly?: boolean
     onSelect: (item: Action) => void
+    promptFilters?: PromptsFilterArgs
 }
 
 /**
@@ -65,6 +65,7 @@ export const PromptList: FC<PromptListProps> = props => {
         lastUsedSorting,
         recommendedOnly,
         onSelect: parentOnSelect,
+        promptFilters,
     } = props
 
     const endpointURL = new URL(useConfig().authStatus.endpoint)
@@ -82,9 +83,12 @@ export const PromptList: FC<PromptListProps> = props => {
         () => ({
             query: debouncedQuery,
             first: showFirstNItems,
-            recommendedOnly: recommendedOnly ?? false,
+            recommendedOnly: promptFilters?.promoted ?? recommendedOnly ?? false,
+            builtinOnly: promptFilters?.core ?? false,
+            tags: promptFilters?.tags,
+            owner: promptFilters?.owner,
         }),
-        [debouncedQuery, showFirstNItems, recommendedOnly]
+        [debouncedQuery, showFirstNItems, recommendedOnly, promptFilters]
     )
 
     const { value: result, error } = usePromptsQuery(promptInput)
@@ -151,12 +155,29 @@ export const PromptList: FC<PromptListProps> = props => {
         ]
     )
 
+    const filteredActions = useCallback(
+        (actions: Action[]) => {
+            if (promptFilters?.core) {
+                return actions.filter(action => action.actionType === 'prompt' && action.builtin)
+            }
+            const shouldExcludeBuiltinCommands =
+                promptFilters?.promoted || promptFilters?.owner || promptFilters?.tags
+            if (shouldExcludeBuiltinCommands) {
+                return actions.filter(action => action.actionType === 'prompt' && !action.builtin)
+            }
+            return actions
+        },
+        [promptFilters]
+    )
+
     // Don't show builtin commands to insert in the prompt editor.
     const allActions = showOnlyPromptInsertableCommands
         ? result?.actions.filter(action => action.actionType === 'prompt' || action.mode === 'ask') ?? []
         : result?.actions ?? []
 
-    const sortedActions = lastUsedSorting ? getSortedActions(allActions, lastUsedActions) : allActions
+    const sortedActions = lastUsedSorting
+        ? getSortedActions(filteredActions(allActions), lastUsedActions)
+        : filteredActions(allActions)
     const actions = showFirstNItems ? sortedActions.slice(0, showFirstNItems) : sortedActions
 
     const inputPaddingClass =
@@ -165,6 +186,7 @@ export const PromptList: FC<PromptListProps> = props => {
     const itemPaddingClass =
         paddingLevels !== 'none' ? (paddingLevels === 'middle' ? '!tw-px-6' : '!tw-px-8') : ''
 
+    const anyPromptFilterActive = !!Object.keys(promptFilters ?? {}).length
     return (
         <Command
             loop={true}
@@ -193,9 +215,9 @@ export const PromptList: FC<PromptListProps> = props => {
                 )}
                 {!recommendedOnly &&
                     result &&
-                    allActions.filter(action => action.actionType === 'prompt').length === 0 && (
+                    sortedActions.filter(action => action.actionType === 'prompt').length === 0 && (
                         <CommandLoading className={itemPaddingClass}>
-                            {result?.query === '' ? (
+                            {result?.query === '' && !anyPromptFilterActive ? (
                                 <>
                                     Your Prompt Library is empty.{' '}
                                     <a

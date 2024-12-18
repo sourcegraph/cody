@@ -235,6 +235,7 @@ export * from './sourcegraph-api/completions/types'
 export {
     DOTCOM_URL,
     isDotCom,
+    DOTCOM_WORKSPACE_UPGRADE_URL,
 } from './sourcegraph-api/environments'
 export {
     AbortError,
@@ -254,7 +255,11 @@ export {
     SourcegraphGraphQLAPIClient,
     graphqlClient,
 } from './sourcegraph-api/graphql'
-export { ClientConfigSingleton, type CodyClientConfig } from './sourcegraph-api/clientConfig'
+export {
+    ClientConfigSingleton,
+    type CodyClientConfig,
+    type CodyNotice,
+} from './sourcegraph-api/clientConfig'
 export {
     isNodeResponse,
     INCLUDE_EVERYTHING_CONTEXT_FILTERS,
@@ -272,6 +277,7 @@ export {
     type NLSSearchFileMatch,
     type NLSSearchDynamicFilter,
     type NLSSearchDynamicFilterKind,
+    type GraphQLAPIClientConfig,
 } from './sourcegraph-api/graphql/client'
 export type {
     CodyLLMSiteConfiguration,
@@ -352,6 +358,9 @@ export {
     WEB_PROVIDER_URI,
     GIT_OPENCTX_PROVIDER_URI,
     CODE_SEARCH_PROVIDER_URI,
+    WORKSPACE_REPOSITORY_PROVIDER_URI,
+    WORKSPACE_DIRECTORY_PROVIDER_URI,
+    isRemoteWorkspaceProvider,
 } from './context/openctx/api'
 export * from './context/openctx/context'
 export * from './lexicalEditor/editorState'

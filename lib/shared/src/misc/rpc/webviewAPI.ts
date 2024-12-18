@@ -8,7 +8,11 @@ import type { FeatureFlag } from '../../experimentation/FeatureFlagProvider'
 import type { ContextMentionProviderMetadata } from '../../mentions/api'
 import type { MentionQuery } from '../../mentions/query'
 import type { Model } from '../../models/model'
-import type { FetchHighlightFileParameters, Prompt } from '../../sourcegraph-api/graphql/client'
+import type {
+    FetchHighlightFileParameters,
+    Prompt,
+    PromptTag,
+} from '../../sourcegraph-api/graphql/client'
 import { type createMessageAPIForWebview, proxyExtensionAPI } from './rpc'
 
 export interface WebviewToExtensionAPI {
@@ -28,6 +32,8 @@ export interface WebviewToExtensionAPI {
      * the Prompt Library).
      */
     prompts(input: PromptsInput): Observable<PromptsResult>
+    promptTags(input: PromptTagsInput): Observable<PromptTagsResult>
+    getCurrentUserId(): Observable<string | null | Error>
 
     /**
      * Stream with actions from cody agent service, serves as transport for any client
@@ -112,6 +118,8 @@ export function createExtensionAPI(
         mentionMenuData: proxyExtensionAPI(messageAPI, 'mentionMenuData'),
         evaluatedFeatureFlag: proxyExtensionAPI(messageAPI, 'evaluatedFeatureFlag'),
         prompts: proxyExtensionAPI(messageAPI, 'prompts'),
+        promptTags: proxyExtensionAPI(messageAPI, 'promptTags'),
+        getCurrentUserId: proxyExtensionAPI(messageAPI, 'getCurrentUserId'),
         clientActionBroadcast: proxyExtensionAPI(messageAPI, 'clientActionBroadcast'),
         models: proxyExtensionAPI(messageAPI, 'models'),
         chatModels: proxyExtensionAPI(messageAPI, 'chatModels'),
@@ -156,6 +164,10 @@ export interface PromptsInput {
     query: string
     first?: number
     recommendedOnly: boolean
+    tags?: string[]
+    owner?: string
+    includeViewerDrafts?: boolean
+    builtinOnly?: boolean
 }
 
 export type Action = PromptAction | CommandAction
@@ -169,6 +181,12 @@ export interface PromptsResult {
     /** The original query used to fetch this result. */
     query: string
 }
+
+export type PromptTagsInput = {
+    first?: number
+}
+
+export type PromptTagsResult = PromptTag[]
 
 export type PromptsMigrationStatus =
     | InitialPromptsMigrationStatus

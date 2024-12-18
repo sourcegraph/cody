@@ -1,6 +1,7 @@
 import type * as vscode from 'vscode'
 
 import type {
+    AuthenticationError,
     ClientCapabilities,
     CodyCommand,
     ContextFilters,
@@ -674,9 +675,7 @@ export interface ProtocolUnauthenticatedAuthStatus {
     status: 'unauthenticated'
     authenticated: boolean
     endpoint: string
-    showNetworkError?: boolean | null | undefined
-
-    showInvalidAccessTokenError?: boolean | null | undefined
+    error?: AuthenticationError | null | undefined
     pendingValidation: boolean
 }
 

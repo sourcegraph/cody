@@ -15,6 +15,8 @@ const CLIENT_CONFIG_FIXTURE: CodyClientConfig = {
     attributionEnabled: false,
     smartContextWindowEnabled: true,
     modelsAPIEnabled: false,
+    userShouldUseEnterprise: false,
+    notices: [],
 }
 
 describe('ClientConfigSingleton', () => {
@@ -30,6 +32,7 @@ describe('ClientConfigSingleton', () => {
         const authStatusSubject = new Subject<AuthStatus>()
         mockAuthStatus(authStatusSubject)
         const getSiteVersionMock = vi.spyOn(graphqlClient, 'getSiteVersion').mockResolvedValue('5.5.0')
+        const viewerSettingsMock = vi.spyOn(graphqlClient, 'viewerSettings').mockResolvedValue({})
         const fetchHTTPMock = vi
             .spyOn(graphqlClient, 'fetchHTTP')
             .mockResolvedValue(CLIENT_CONFIG_FIXTURE)
@@ -45,11 +48,13 @@ describe('ClientConfigSingleton', () => {
         authStatusSubject.next(AUTH_STATUS_FIXTURE_AUTHED)
         await vi.advanceTimersByTimeAsync(0)
         expect(getSiteVersionMock).toHaveBeenCalledTimes(1)
+        expect(viewerSettingsMock).toHaveBeenCalledTimes(1)
         expect(fetchHTTPMock).toHaveBeenCalledTimes(1)
         expect(await clientConfigSingleton.getConfig()).toEqual(CLIENT_CONFIG_FIXTURE)
         expect(getSiteVersionMock).toHaveBeenCalledTimes(1)
         expect(fetchHTTPMock).toHaveBeenCalledTimes(1)
         getSiteVersionMock.mockClear()
+        viewerSettingsMock.mockClear()
         fetchHTTPMock.mockClear()
     })
 
@@ -58,6 +63,7 @@ describe('ClientConfigSingleton', () => {
         const authStatusSubject = new Subject<AuthStatus>()
         mockAuthStatus(authStatusSubject)
         const getSiteVersionMock = vi.spyOn(graphqlClient, 'getSiteVersion').mockResolvedValue('5.5.0')
+        const viewerSettingsMock = vi.spyOn(graphqlClient, 'viewerSettings').mockResolvedValue({})
         const fetchHTTPMock = vi
             .spyOn(graphqlClient, 'fetchHTTP')
             .mockResolvedValue(CLIENT_CONFIG_FIXTURE)
@@ -72,8 +78,10 @@ describe('ClientConfigSingleton', () => {
         authStatusSubject.next(AUTH_STATUS_FIXTURE_AUTHED)
         await vi.advanceTimersByTimeAsync(0)
         expect(getSiteVersionMock).toHaveBeenCalledTimes(1)
+        expect(viewerSettingsMock).toHaveBeenCalledTimes(1)
         expect(fetchHTTPMock).toHaveBeenCalledTimes(1)
         getSiteVersionMock.mockClear()
+        viewerSettingsMock.mockClear()
         fetchHTTPMock.mockClear()
 
         // Set a different response for the next refetch.
@@ -108,6 +116,8 @@ describe('ClientConfigSingleton', () => {
         const getSiteVersionMock = vi
             .spyOn(graphqlClient, 'getSiteVersion')
             .mockImplementation(() => new Promise<string>(resolve => setTimeout(resolve, 100, '5.5.0')))
+
+        const viewerSettingsMock = vi.spyOn(graphqlClient, 'viewerSettings').mockResolvedValue({})
         const fetchHTTPMock = vi
             .spyOn(graphqlClient, 'fetchHTTP')
             .mockResolvedValue(CLIENT_CONFIG_FIXTURE)
@@ -158,6 +168,7 @@ describe('ClientConfigSingleton', () => {
         expect(getSiteVersionMock).toHaveBeenCalledTimes(1)
         expect(fetchHTTPMock).toHaveBeenCalledTimes(1)
         getSiteVersionMock.mockClear()
+        viewerSettingsMock.mockClear()
         fetchHTTPMock.mockClear()
     })
 
@@ -168,6 +179,7 @@ describe('ClientConfigSingleton', () => {
         const getSiteVersionMock = vi
             .spyOn(graphqlClient, 'getSiteVersion')
             .mockImplementation(() => new Promise<string>(resolve => setTimeout(resolve, 100, '5.5.0')))
+        const viewerSettingsMock = vi.spyOn(graphqlClient, 'viewerSettings').mockResolvedValue({})
         const fetchHTTPMock = vi
             .spyOn(graphqlClient, 'fetchHTTP')
             .mockResolvedValue(CLIENT_CONFIG_FIXTURE)
@@ -184,6 +196,7 @@ describe('ClientConfigSingleton', () => {
         expect(getSiteVersionMock).toHaveBeenCalledTimes(1)
         expect(fetchHTTPMock).toHaveBeenCalledTimes(1)
         getSiteVersionMock.mockClear()
+        viewerSettingsMock.mockClear()
         fetchHTTPMock.mockClear()
 
         // The non-stale cached value is reused.
@@ -202,13 +215,16 @@ describe('ClientConfigSingleton', () => {
         })
         await vi.advanceTimersByTimeAsync(ClientConfigSingleton.REFETCH_INTERVAL + 1)
         expect(getSiteVersionMock).toHaveBeenCalledTimes(1)
+        expect(viewerSettingsMock).toHaveBeenCalledTimes(0)
         expect(fetchHTTPMock).toHaveBeenCalledTimes(1)
         getSiteVersionMock.mockClear()
+        viewerSettingsMock.mockClear()
         fetchHTTPMock.mockClear()
 
         // A stale cached value will still be returned.
         expect(await clientConfigSingleton.getConfig()).toEqual(CLIENT_CONFIG_FIXTURE)
         expect(getSiteVersionMock).toHaveBeenCalledTimes(0)
+        expect(viewerSettingsMock).toHaveBeenCalledTimes(0)
         expect(fetchHTTPMock).toHaveBeenCalledTimes(0)
 
         // When the refetch is done, the new data is used and is available without a refetch.
@@ -217,6 +233,7 @@ describe('ClientConfigSingleton', () => {
         expect(getSiteVersionMock).toHaveBeenCalledTimes(0)
         expect(fetchHTTPMock).toHaveBeenCalledTimes(0)
         getSiteVersionMock.mockClear()
+        viewerSettingsMock.mockClear()
         fetchHTTPMock.mockClear()
     })
 
@@ -227,6 +244,7 @@ describe('ClientConfigSingleton', () => {
         const getSiteVersionMock = vi
             .spyOn(graphqlClient, 'getSiteVersion')
             .mockImplementation(() => new Promise<string>(resolve => setTimeout(resolve, 100, '5.5.0')))
+        const viewerSettingsMock = vi.spyOn(graphqlClient, 'viewerSettings').mockResolvedValue({})
         const fetchHTTPMock = vi
             .spyOn(graphqlClient, 'fetchHTTP')
             .mockResolvedValue(CLIENT_CONFIG_FIXTURE)
@@ -241,8 +259,10 @@ describe('ClientConfigSingleton', () => {
         authStatusSubject.next(AUTH_STATUS_FIXTURE_AUTHED)
         await vi.advanceTimersByTimeAsync(100)
         expect(getSiteVersionMock).toHaveBeenCalledTimes(1)
+        expect(viewerSettingsMock).toHaveBeenCalledTimes(1)
         expect(fetchHTTPMock).toHaveBeenCalledTimes(1)
         getSiteVersionMock.mockClear()
+        viewerSettingsMock.mockClear()
         fetchHTTPMock.mockClear()
 
         // Change the auth status.
@@ -265,8 +285,10 @@ describe('ClientConfigSingleton', () => {
         await vi.advanceTimersByTimeAsync(100)
         expect(await clientConfigSingleton.getConfig()).toEqual(fixture2)
         expect(getSiteVersionMock).toHaveBeenCalledTimes(1)
+        expect(viewerSettingsMock).toHaveBeenCalledTimes(1)
         expect(fetchHTTPMock).toHaveBeenCalledTimes(1)
         getSiteVersionMock.mockClear()
+        viewerSettingsMock.mockClear()
         fetchHTTPMock.mockClear()
     })
 })

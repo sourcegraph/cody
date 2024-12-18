@@ -45,9 +45,52 @@ export interface AuthenticatedAuthStatus {
 export interface UnauthenticatedAuthStatus {
     endpoint: string
     authenticated: false
-    showNetworkError?: boolean
-    showInvalidAccessTokenError?: boolean
+    error?: AuthenticationError
     pendingValidation: boolean
+}
+
+export interface NetworkAuthError {
+    type: 'network-error'
+}
+
+export interface InvalidAccessTokenError {
+    type: 'invalid-access-token'
+}
+
+export interface EnterpriseUserDotComError {
+    type: 'enterprise-user-logged-into-dotcom'
+    enterprise: string
+}
+
+export type AuthenticationError = NetworkAuthError | InvalidAccessTokenError | EnterpriseUserDotComError
+
+export interface AuthenticationErrorMessage {
+    title?: string
+    message: string
+}
+
+export function getAuthErrorMessage(error: AuthenticationError): AuthenticationErrorMessage {
+    switch (error.type) {
+        case 'network-error':
+            return {
+                title: 'Network Error',
+                message: 'Cody is unreachable',
+            }
+        case 'invalid-access-token':
+            return {
+                title: 'Invalid Access Token',
+                message: 'The access token is invalid or has expired',
+            }
+        case 'enterprise-user-logged-into-dotcom':
+            return {
+                title: 'Enterprise User Authentication Error',
+                message:
+                    'Based on your email address we think you may be an employee of ' +
+                    `${error.enterprise}. To get access to all your features please sign ` +
+                    "in through your organization's enterprise instance instead. If you need assistance " +
+                    'please contact your Sourcegraph admin.',
+            }
+    }
 }
 
 export const AUTH_STATUS_FIXTURE_AUTHED: AuthenticatedAuthStatus = {

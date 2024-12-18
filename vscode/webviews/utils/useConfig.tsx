@@ -13,12 +13,7 @@ import type { UserAccountInfo } from '../Chat'
 export interface Config
     extends Pick<
         Extract<ExtensionMessage, { type: 'config' }>,
-        | 'config'
-        | 'clientCapabilities'
-        | 'authStatus'
-        | 'configFeatures'
-        | 'isDotComUser'
-        | 'userProductSubscription'
+        'config' | 'clientCapabilities' | 'authStatus' | 'isDotComUser' | 'userProductSubscription'
     > {}
 
 const ConfigContext = createContext<Config | null>(null)

@@ -10,6 +10,7 @@ import {
     REMOTE_DIRECTORY_PROVIDER_URI,
     REMOTE_FILE_PROVIDER_URI,
     SYMBOL_CONTEXT_MENTION_PROVIDER,
+    isRemoteWorkspaceProvider,
     parseMentionQuery,
 } from '@sourcegraph/cody-shared'
 import { clsx } from 'clsx'
@@ -116,6 +117,10 @@ export const MentionMenu: FunctionComponent<
             const provider = data.providers.find(p => commandRowValue(p) === value)
             if (!provider) {
                 throw new Error(`No provider found with value ${value}`)
+            }
+
+            if (isRemoteWorkspaceProvider(provider.id)) {
+                return
             }
 
             updateMentionMenuParams({ parentItem: provider })

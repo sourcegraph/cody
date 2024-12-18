@@ -4,6 +4,7 @@ import { URI } from 'vscode-uri'
 
 import {
     type ChatMessage,
+    type CodyClientConfig,
     type ContextItem,
     type ContextItemOpenCtx,
     type ContextItemRepository,
@@ -122,6 +123,7 @@ const CodyWebPanel: FC<CodyWebPanelProps> = props => {
     const [messageInProgress, setMessageInProgress] = useState<ChatMessage | null>(null)
     const [transcript, setTranscript] = useState<ChatMessage[]>([])
     const [config, setConfig] = useState<Config | null>(null)
+    const [clientConfig, setClientConfig] = useState<CodyClientConfig | null>(null)
     const [view, setView] = useState<View | undefined>()
 
     useLayoutEffect(() => {
@@ -151,6 +153,11 @@ const CodyWebPanel: FC<CodyWebPanelProps> = props => {
                     message.config.webviewType = 'sidebar'
                     message.config.multipleWebviewsEnabled = false
                     setConfig(message)
+                    break
+                case 'clientConfig':
+                    if (message.clientConfig) {
+                        setClientConfig(message.clientConfig)
+                    }
                     break
                 case 'clientAction':
                     dispatchClientAction(message)
@@ -235,9 +242,10 @@ const CodyWebPanel: FC<CodyWebPanelProps> = props => {
                 vscodeAPI,
                 telemetryRecorder,
                 config,
+                clientConfig,
                 staticDefaultContext,
             }),
-        [vscodeAPI, telemetryRecorder, config, staticDefaultContext]
+        [vscodeAPI, telemetryRecorder, config, clientConfig, staticDefaultContext]
     )
 
     const CONTEXT_MENTIONS_SETTINGS = useMemo<ChatMentionsSettings>(() => {
@@ -264,6 +272,7 @@ const CodyWebPanel: FC<CodyWebPanelProps> = props => {
                             attributionEnabled={false}
                             configuration={config}
                             chatEnabled={true}
+                            instanceNotices={clientConfig?.notices ?? []}
                             showWelcomeMessage={true}
                             showIDESnippetActions={false}
                             messageInProgress={messageInProgress}

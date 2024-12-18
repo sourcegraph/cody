@@ -8,7 +8,7 @@ import { PromptSelectField } from '../../../../../../components/promptSelectFiel
 import toolbarStyles from '../../../../../../components/shadcn/ui/toolbar.module.css'
 import { useActionSelect } from '../../../../../../prompts/PromptsTab'
 import { isGeminiFlashModel } from '../../../../../../utils/modelUtils'
-import { useConfig } from '../../../../../../utils/useConfig'
+import { useClientConfig } from '../../../../../../utils/useClientConfig'
 import { AddContextButton } from './AddContextButton'
 import { SubmitButton, type SubmitButtonState } from './SubmitButton'
 import { UploadImageButton } from './UploadImageButton'
@@ -149,7 +149,8 @@ const ModelSelectFieldToolbarItem: FunctionComponent<{
     className?: string
     supportsImageUpload?: boolean
 }> = ({ userInfo, focusEditor, className, models, supportsImageUpload }) => {
-    const config = useConfig()
+    const clientConfig = useClientConfig()
+    const serverSentModelsEnabled = !!clientConfig?.modelsAPIEnabled
 
     const api = useExtensionAPI()
 
@@ -165,11 +166,11 @@ const ModelSelectFieldToolbarItem: FunctionComponent<{
 
     return (
         !!models?.length &&
-        (userInfo.isDotComUser || config.configFeatures.serverSentModels) && (
+        (userInfo.isDotComUser || serverSentModelsEnabled) && (
             <ModelSelectField
                 models={models}
                 onModelSelect={onModelSelect}
-                serverSentModelsEnabled={config.configFeatures.serverSentModels}
+                serverSentModelsEnabled={serverSentModelsEnabled}
                 userInfo={userInfo}
                 onCloseByEscape={focusEditor}
                 className={className}

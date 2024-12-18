@@ -55,6 +55,7 @@ import {
     NLS_SEARCH_QUERY,
     PACKAGE_LIST_QUERY,
     PROMPTS_QUERY,
+    PROMPT_TAGS_QUERY,
     PromptsOrderBy,
     RECORD_TELEMETRY_EVENTS_MUTATION,
     REPOSITORY_IDS_QUERY,
@@ -526,6 +527,11 @@ export enum PromptMode {
     INSERT = 'INSERT',
 }
 
+export interface PromptTag {
+    id: string
+    name: string
+}
+
 interface ContextFiltersResponse {
     site: {
         codyContextFilters: {
@@ -666,7 +672,7 @@ interface HighlightLineRange {
     startLine: number
 }
 
-type GraphQLAPIClientConfig = PickResolvedConfiguration<{
+export type GraphQLAPIClientConfig = PickResolvedConfiguration<{
     auth: true
     configuration: 'telemetryLevel' | 'customHeaders'
     clientState: 'anonymousUserID'
@@ -844,10 +850,11 @@ export class SourcegraphGraphQLAPIClient {
         ).then(response => extractDataOrError(response, data => data.site?.isCodyEnabled ?? false))
     }
 
-    public async getCurrentUserId(): Promise<string | null | Error> {
+    public async getCurrentUserId(signal?: AbortSignal): Promise<string | null | Error> {
         return this.fetchSourcegraphAPI<APIResponse<CurrentUserIdResponse>>(
             CURRENT_USER_ID_QUERY,
-            {}
+            {},
+            signal
         ).then(response =>
             extractDataOrError(response, data => (data.currentUser ? data.currentUser.id : null))
         )
@@ -1286,17 +1293,29 @@ export class SourcegraphGraphQLAPIClient {
         query,
         first,
         recommendedOnly,
+        tags,
         signal,
         orderByMultiple,
+        owner,
+        includeViewerDrafts,
+        builtinOnly,
     }: {
         query?: string
         first: number | undefined
         recommendedOnly?: boolean
+        tags?: string[]
         signal?: AbortSignal
         orderByMultiple?: PromptsOrderBy[]
+        owner?: string
+        includeViewerDrafts?: boolean
+        builtinOnly?: boolean
     }): Promise<Prompt[]> {
         const hasIncludeViewerDraftsArg = await this.isValidSiteVersion({
             minimumVersion: '5.9.0',
+        })
+        const hasPromptTagsField = await this.isValidSiteVersion({
+            minimumVersion: '5.11.0',
+            insider: true,
         })
 
         const response = await this.fetchSourcegraphAPI<APIResponse<{ prompts: { nodes: Prompt[] } }>>(
@@ -1309,6 +1328,10 @@ export class SourcegraphGraphQLAPIClient {
                     PromptsOrderBy.PROMPT_RECOMMENDED,
                     PromptsOrderBy.PROMPT_UPDATED_AT,
                 ],
+                tags: hasPromptTagsField ? tags : undefined,
+                owner,
+                includeViewerDrafts: includeViewerDrafts ?? true,
+                builtinOnly,
             },
             signal
         )
@@ -1395,6 +1418,29 @@ export class SourcegraphGraphQLAPIClient {
         }
 
         return
+    }
+
+    public async queryPromptTags({
+        signal,
+    }: {
+        signal?: AbortSignal
+    }): Promise<PromptTag[]> {
+        const hasPromptTags = await this.isValidSiteVersion({
+            minimumVersion: '5.11.0',
+            insider: true,
+        })
+        if (!hasPromptTags) {
+            return []
+        }
+
+        const response = await this.fetchSourcegraphAPI<
+            APIResponse<{ promptTags: { nodes: PromptTag[] } }>
+        >(PROMPT_TAGS_QUERY, signal)
+        const result = extractDataOrError(response, data => data.promptTags.nodes)
+        if (result instanceof Error) {
+            throw result
+        }
+        return result
     }
 
     /**
@@ -1484,10 +1530,11 @@ export class SourcegraphGraphQLAPIClient {
         ).then(response => extractDataOrError(response, data => data.evaluateFeatureFlag))
     }
 
-    public async viewerSettings(): Promise<Record<string, any> | Error> {
+    public async viewerSettings(signal?: AbortSignal): Promise<Record<string, any> | Error> {
         const response = await this.fetchSourcegraphAPI<APIResponse<ViewerSettingsResponse>>(
             VIEWER_SETTINGS_QUERY,
-            {}
+            {},
+            signal
         )
         return extractDataOrError(response, data => JSON.parse(data.viewerSettings.final))
     }
@@ -1542,13 +1589,19 @@ export class SourcegraphGraphQLAPIClient {
         method: string,
         urlPath: string,
         body?: string,
-        signal?: AbortSignal
+        signal?: AbortSignal,
+        configOverride?: GraphQLAPIClientConfig
     ): Promise<T | Error> {
-        if (!this.config) {
-            throw new Error('SourcegraphGraphQLAPIClient config not set')
-        }
-        const config = await firstValueFrom(this.config)
-        signal?.throwIfAborted()
+        const config =
+            configOverride ??
+            (await (async () => {
+                if (!this.config) {
+                    throw new Error('SourcegraphGraphQLAPIClient config not set')
+                }
+                const resolvedConfig = await firstValueFrom(this.config)
+                signal?.throwIfAborted()
+                return resolvedConfig
+            })())
 
         const headers = new Headers(config.configuration?.customHeaders as HeadersInit | undefined)
         headers.set('Content-Type', 'application/json; charset=utf-8')

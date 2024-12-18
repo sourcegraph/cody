@@ -1,5 +1,4 @@
 import type { Socket } from "node:net";
-
 import { PubSub } from "@google-cloud/pubsub";
 import express from "express";
 import * as uuid from "uuid";
@@ -156,7 +155,8 @@ class GraphQlMock {
 // Lets the test change the behavior of the mock server.
 export class MockServer {
     graphQlMocks: Map<string, GraphQlMock> = new Map();
-    availableLLMs: ServerModelConfiguration | undefined = getServerSentModelsMock()
+    availableLLMs: ServerModelConfiguration | undefined = getServerSentModelsMock();
+    userShouldUseEnterprise: boolean = false;
 
     constructor(public readonly express: express.Express) {}
 
@@ -167,6 +167,10 @@ export class MockServer {
             this.graphQlMocks.set(operation, mock);
         }
         return mock;
+    }
+
+    public setUserShouldUseEnterprise(value: boolean) {
+        this.userShouldUseEnterprise = value;
     }
 
     public setAvailableLLMs(config: ServerModelConfiguration) {
@@ -377,6 +381,7 @@ export class MockServer {
                     attributionEnabled: attribution,
                     // When server-sent LLMs have been set, we enable the models api
                     modelsAPIEnabled: !!controller.availableLLMs,
+                    userShouldUseEnterprise: controller.userShouldUseEnterprise,
                 }),
             );
         });
