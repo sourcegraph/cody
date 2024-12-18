@@ -110,7 +110,7 @@ export const SearchResults = ({
                     })
                     .filter(isDefined)
             )
-            lastEditorRef.current?.upsertMentions([contextItem])
+            lastEditorRef.current?.upsertMentions([contextItem], 'before', ' ', false)
         } else {
             lastEditorRef.current?.filterMentions(
                 mention => mention.type !== 'openctx' || mention.providerUri !== CODE_SEARCH_PROVIDER_URI
