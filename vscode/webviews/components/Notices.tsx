@@ -342,7 +342,7 @@ const MarkdownNotice: FunctionComponent<MarkdownNotice> = props => {
 
     return (
         <div
-            className="tw-bg-popover tw-ml-2 tw-mr-2 tw-border tw-border-border tw-relative tw-rounded-lg tw-flex tw-flex-col tw-gap-2 tw-pt-4 tw-pb-6 tw-px-6"
+            className="tw-bg-popover tw-my-2 tw-mx-2 tw-border tw-border-border tw-relative tw-rounded-lg tw-flex tw-flex-col tw-gap-2 tw-pt-4 tw-pb-6 tw-px-6"
             data-markdown-notice=""
         >
             {title && (
