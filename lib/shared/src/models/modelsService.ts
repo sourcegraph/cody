@@ -1,32 +1,26 @@
-import {type Observable, map} from 'observable-fns'
+import {map, type Observable} from 'observable-fns'
 
 import {authStatus} from '../auth/authStatus'
-import { mockAuthStatus } from '../auth/authStatus'
-import { type AuthStatus, isCodyProUser, isEnterpriseUser } from '../auth/types'
-import { AUTH_STATUS_FIXTURE_AUTHED_DOTCOM } from '../auth/types'
-import { type PickResolvedConfiguration, resolvedConfig } from '../configuration/resolver'
-import { FeatureFlag } from '../experimentation/FeatureFlagProvider'
-import { logDebug } from '../logger'
+import {type PickResolvedConfiguration, resolvedConfig} from '../configuration/resolver'
+import {FeatureFlag} from '../experimentation/FeatureFlagProvider'
+import {logDebug} from '../logger'
 import {
-    type StoredLastValue,
-    type Unsubscribable,
     combineLatest,
     distinctUntilChanged,
     shareReplay,
+    type StoredLastValue,
     storeLastValue,
+    type Unsubscribable,
 } from '../misc/observable'
-import {firstResultFromOperation, pendingOperation} from '../misc/observableOperation'
-import { ClientConfigSingleton } from '../sourcegraph-api/clientConfig'
-import {
-    type UserProductSubscription,
-    userProductSubscription,
-} from '../sourcegraph-api/userProductSubscription'
-import { CHAT_INPUT_TOKEN_BUDGET, CHAT_OUTPUT_TOKEN_BUDGET } from '../token/constants'
-import { configOverwrites } from './configOverwrites'
-import { type Model, type ServerModel, modelTier } from './model'
-import { syncModels } from './sync'
-import { ModelTag } from './tags'
-import { type ChatModel, type EditModel, type ModelContextWindow, ModelUsage } from './types'
+import {firstResultFromOperation, pendingOperation, skipPendingOperation} from '../misc/observableOperation'
+import {ClientConfigSingleton} from '../sourcegraph-api/clientConfig'
+import {userProductSubscription,} from '../sourcegraph-api/userProductSubscription'
+import {CHAT_INPUT_TOKEN_BUDGET, CHAT_OUTPUT_TOKEN_BUDGET} from '../token/constants'
+import {configOverwrites} from './configOverwrites'
+import {type Model, type ServerModel} from './model'
+import {syncModels} from './sync'
+import {ModelTag} from './tags'
+import {ChatModel, type ModelContextWindow, ModelUsage} from './types'
 
 type ModelId = string
 type ApiVersionId = string
@@ -187,22 +181,12 @@ export interface DefaultsAndUserPreferencesByEndpoint {
  * The endpoint defaults and user preferences for a single endpoint.
  */
 export interface DefaultsAndUserPreferencesForEndpoint {
-    /**
-     * The server's default models for each usage.
-     */
-    defaults: {
-        [usage in ModelUsage]?: string
-    }
-
-    /**
-     * The user's selected models for each usage, which take precedence over the defaults.
-     */
-    selected: {
-        [usage in ModelUsage]?: string
+    selectedOrDefault: {
+        [usage in ModelUsage]?: Model
     }
 }
 
-export interface ModelsData {
+export interface ModelsData extends DefaultsAndUserPreferencesForEndpoint{
     endpoint: string,
 
     /** Models available on the endpoint (Sourcegraph instance). */
@@ -210,16 +194,13 @@ export interface ModelsData {
 
     /** Models available on the user's local device (e.g., on Ollama). */
     localModels: Model[]
-
-    /** Preferences for the current endpoint. */
-    preferences: DefaultsAndUserPreferencesForEndpoint
 }
 
 export const EMPTY_MODELS_DATA: ModelsData = {
+    endpoint: '',
     localModels: [],
-    preferences: { defaults: {}, selected: {} },
     primaryModels: [],
-    endpoint: ''
+    selectedOrDefault: {}
 }
 
 export interface LocalStorageForModelPreferences {
@@ -273,18 +254,18 @@ export class ModelsService {
         )
 
         const allSitePrefs = this.storage?.getModelPreferences()
-        const currentAccountPrefs = { ...modelsData.preferences }
+        const currentAccountPrefs = { ...modelsData.selectedOrDefault }
 
         if (!isEnrolled && shouldEditDefaultToGpt4oMini && gpt4oMini) {
             // For users enrolled in the A/B test, we'll default
             // to the gpt-4-mini model when using the Edit command.
             // They still can switch back to other models if they want.
-            currentAccountPrefs.selected.edit = gpt4oMini.id
+            currentAccountPrefs.edit = gpt4oMini
         }
 
         const updated: DefaultsAndUserPreferencesByEndpoint = {
             ...allSitePrefs,
-            [modelsData.endpoint]: currentAccountPrefs,
+            [modelsData.endpoint]: { selectedOrDefault: currentAccountPrefs },
         }
 
         await this.storage?.setModelPreferences(updated)
@@ -332,19 +313,6 @@ export class ModelsService {
         return data ? data.primaryModels.concat(data.localModels) : []
     }
 
-    private getModelsByType(usage: ModelUsage): Observable<Model[] | typeof pendingOperation> {
-        return this.modelsChanges.pipe(
-            map(models => {
-                return models === pendingOperation
-                    ? pendingOperation
-                    : [...models.primaryModels, ...models.localModels].filter(model =>
-                          model.usage.includes(usage)
-                      )
-            }),
-            distinctUntilChanged()
-        )
-    }
-
     /**
      * Gets the available models of the specified usage type, with the default model first.
      *
@@ -352,106 +320,42 @@ export class ModelsService {
      * @returns An Observable that emits an array of models, with the default model first.
      */
     public getModels(type: ModelUsage): Observable<Model[] | typeof pendingOperation> {
-        return combineLatest(this.modelsChanges, this.getDefaultModel(type)).pipe(
-            map(([data, currentModel]) => {
-                if (data === pendingOperation || currentModel === pendingOperation) {
+        return combineLatest(this.modelsChanges).pipe(
+            map(([data]) => {
+                if (data === pendingOperation) {
                     return pendingOperation
                 }
                 const models = data.primaryModels
                     .concat(data.localModels)
                     .filter(model => model.usage.includes(type))
+                const currentModel = data.selectedOrDefault[type]
                 if (!currentModel) {
                     return models
                 }
-                return [currentModel].concat(models.filter(m => m.id !== currentModel.id))
+                return [currentModel].concat(models.filter(m => m.id !== currentModel?.id))
             }),
             distinctUntilChanged(),
             shareReplay()
-        )
-    }
-
-    public async getModelsAvailabilityStatus(type: ModelUsage): Promise<ModelAvailabilityStatus[]> {
-        const models = await firstResultFromOperation(modelsService.getModels(type))
-        return Promise.all(
-            models.map(async model => {
-                const isModelAvailable = await firstResultFromOperation(this.isModelAvailable(model))
-                return { model, isModelAvailable }
-            })
         )
     }
 
     public getDefaultModel(type: ModelUsage): Observable<Model | undefined | typeof pendingOperation> {
-        return combineLatest(
-            this.getModelsByType(type),
-            this.modelsChanges,
-            authStatus,
-            userProductSubscription
-        ).pipe(
-            map(([models, modelsData, authenticationStatus, userProductSubscription]) => {
-                if (
-                    models === pendingOperation ||
-                    modelsData === pendingOperation ||
-                    authenticationStatus.pendingValidation ||
-                    userProductSubscription === pendingOperation
-                ) {
+        return combineLatest(this.modelsChanges).pipe(
+            map(([data]) => {
+                if (data === pendingOperation) {
                     return pendingOperation
                 }
-
-                // Free users can only use the default free model, so we just find the first model they can use
-                const firstModelUserCanUse = models.find(
-                    m =>
-                        this._isModelAvailable(modelsData, authenticationStatus, userProductSubscription, m) ===
-                        true
-                )
-
-                if (modelsData.preferences) {
-                    // Check to see if the user has a selected a default model for this
-                    // usage type and if not see if there is a server sent default type
-                    const selected = this.resolveModel(
-                        modelsData,
-                        modelsData.preferences.selected[type] ?? modelsData.preferences.defaults[type]
-                    )
-                    if (
-                        selected &&
-                        this._isModelAvailable(
-                            modelsData,
-                            authenticationStatus,
-                            userProductSubscription,
-                            selected
-                        ) === true
-                    ) {
-                        return selected
-                    }
-                }
-                return firstModelUserCanUse
-            }),
-            distinctUntilChanged(),
-            shareReplay()
-        )
-    }
-
-    /**
-     * Gets the default edit model, which is determined by first checking the default edit model,
-     * and if that is not available, falling back to the default chat model.
-     */
-    public getDefaultEditModel(): Observable<EditModel | undefined | typeof pendingOperation> {
-        return combineLatest(
-            this.getDefaultModel(ModelUsage.Edit),
-            this.getDefaultModel(ModelUsage.Chat)
-        ).pipe(
-            map(([editModel, chatModel]) => {
-                if (editModel === pendingOperation || chatModel === pendingOperation) {
-                    return pendingOperation
-                }
-                return editModel?.id || chatModel?.id
+                return data.selectedOrDefault[type]
             })
         )
     }
 
     public getDefaultChatModel(): Observable<ChatModel | undefined | typeof pendingOperation> {
-        return this.getDefaultModel(ModelUsage.Chat).pipe(
-            map(model => (model === pendingOperation ? pendingOperation : model?.id))
-        )
+        return this.getDefaultModel(ModelUsage.Chat).pipe(skipPendingOperation(), map(value => value?.id))
+    }
+
+    public getDefaultEditModel(): Observable<ChatModel | undefined | typeof pendingOperation> {
+        return this.getDefaultModel(ModelUsage.Edit).pipe(skipPendingOperation(), map(value => value?.id))
     }
 
     public async setSelectedModel(type: ModelUsage, model: Model | string): Promise<void> {
@@ -470,51 +374,10 @@ export class ModelsService {
         const serverEndpoint = (await firstResultFromOperation(authStatus)).endpoint
         const currentPrefs = deepClone(this.storage.getModelPreferences())
         if (!currentPrefs[serverEndpoint]) {
-            currentPrefs[serverEndpoint] = modelsData.preferences
+            currentPrefs[serverEndpoint] = modelsData
         }
-        currentPrefs[serverEndpoint].selected[type] = resolved.id
+        currentPrefs[serverEndpoint].selectedOrDefault[type] = resolved
         await this.storage.setModelPreferences(currentPrefs)
-    }
-
-    public isModelAvailable(model: string | Model): Observable<boolean | typeof pendingOperation> {
-        return combineLatest(authStatus, this.modelsChanges, userProductSubscription).pipe(
-            map(([authStatus, modelsData, userProductSubscription]) =>
-                modelsData === pendingOperation || userProductSubscription === pendingOperation
-                    ? pendingOperation
-                    : this._isModelAvailable(modelsData, authStatus, userProductSubscription, model)
-            ),
-            distinctUntilChanged()
-        )
-    }
-
-    private _isModelAvailable(
-        modelsData: ModelsData,
-        authStatus: AuthStatus,
-        sub: UserProductSubscription | null,
-        model: string | Model
-    ): boolean {
-        const resolved = this.resolveModel(modelsData, model)
-        if (!resolved) {
-            return false
-        }
-        const tier = modelTier(resolved)
-        // Cody Enterprise users are able to use any models that the backend says is supported.
-        if (isEnterpriseUser(authStatus)) {
-            return true
-        }
-
-        // A Cody Pro user can use any Free or Pro model, but not Enterprise.
-        // (But in reality, Sourcegraph.com wouldn't serve any Enterprise-only models to
-        // Cody Pro users anyways.)
-        if (isCodyProUser(authStatus, sub)) {
-            return (
-                tier !== 'enterprise' &&
-                !resolved.tags.includes(ModelTag.Waitlist) &&
-                !resolved.tags.includes(ModelTag.OnWaitlist)
-            )
-        }
-
-        return tier === 'free'
     }
 
     // does an approximate match on the model id, seeing if there are any models in the
@@ -591,11 +454,6 @@ export class ModelsService {
 
 export const modelsService = new ModelsService()
 
-interface MockModelsServiceResult {
-    storage: TestLocalStorageForModelPreferences
-    modelsService: ModelsService
-}
-
 export class TestLocalStorageForModelPreferences implements LocalStorageForModelPreferences {
     private isEnrolled = false
     constructor(public data: DefaultsAndUserPreferencesByEndpoint | null = null) {}
@@ -615,20 +473,6 @@ export class TestLocalStorageForModelPreferences implements LocalStorageForModel
         }
         return true
     }
-}
-
-export function mockModelsService({
-    storage = new TestLocalStorageForModelPreferences(),
-    modelsService = new ModelsService(),
-    authStatus = AUTH_STATUS_FIXTURE_AUTHED_DOTCOM,
-}: {
-    authStatus?: AuthStatus
-    modelsService?: ModelsService
-    storage?: TestLocalStorageForModelPreferences
-}): MockModelsServiceResult {
-    modelsService.setStorage(storage)
-    mockAuthStatus(authStatus)
-    return { storage, modelsService }
 }
 
 function deepClone<T>(value: T): T {

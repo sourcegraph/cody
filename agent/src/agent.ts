@@ -1247,8 +1247,11 @@ export class Agent extends MessageHandler implements ExtensionClient {
         })
 
         this.registerAuthenticatedRequest('chat/models', async ({ modelUsage }) => {
+            const allModels = await firstResultFromOperation(modelsService.getModels(modelUsage))
             return {
-                models: await modelsService.getModelsAvailabilityStatus(modelUsage),
+                models: allModels.map(model => {
+                    return { model: model, isModelAvailable: true }
+                })
             }
         })
 
@@ -1525,8 +1528,9 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 true,
         })
         await firstResultFromOperation(resolvedConfig)
+        await firstResultFromOperation(modelsService.modelsChanges)
 
-        return firstNonPendingAuthStatus()
+        return await firstNonPendingAuthStatus()
     }
 
     private async handleDocumentChange(document: ProtocolTextDocument) {

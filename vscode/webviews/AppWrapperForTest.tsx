@@ -93,7 +93,7 @@ export const AppWrapperForTest: FunctionComponent<{ children: ReactNode }> = ({ 
                             endpoint: 'https://example.com',
                             localModels: [],
                             primaryModels: getMockedDotComClientModels(),
-                            preferences: { defaults: {}, selected: {} },
+                            selectedOrDefault: {}
                         } satisfies ModelsData),
                     chatModels: () => Observable.of(getMockedDotComClientModels()),
                     setChatModel: () => EMPTY,

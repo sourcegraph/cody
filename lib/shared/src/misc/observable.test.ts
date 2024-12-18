@@ -334,13 +334,19 @@ describe('combineLatest', { timeout: 500 }, () => {
 
     test('combines latest values (async)', async () => {
         const observable = combineLatest(
-            observableOfTimedSequence(0, 'A', 0, 'B'),
-            observableOfTimedSequence(0, 'x', 0, 'y')
+            observableOfTimedSequence(0, 'A', 0, 'B', 0, 'C'),
+            observableOfTimedSequence(0, 'x', 0, 'y', 0, 'z'),
+            observableOfTimedSequence(0, 'i', 0, 'ii', 0, 'iii'),
+        ).pipe(
+            distinctUntilChanged(),
+            shareReplay()
         )
         expect(await allValuesFrom(observable)).toEqual<ObservableValue<typeof observable>[]>([
-            ['A', 'x'],
-            ['B', 'x'],
-            ['B', 'y'],
+            ['A', 'x', 'i'],
+            ['B', 'x', 'i'],
+            ['B', 'y', 'i'],
+            ['C', 'y', 'i'],
+            ['C', 'z', 'i']
         ])
     })
 

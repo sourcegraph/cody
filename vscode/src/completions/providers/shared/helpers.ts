@@ -17,7 +17,6 @@ import {
     skipPendingOperation,
 } from '@sourcegraph/cody-shared'
 
-import { defaultModelPreferencesFromServerModelsConfig } from '@sourcegraph/cody-shared/src/models/sync'
 import { Observable } from 'observable-fns'
 import * as userProductSubscriptionModule from '../../../../../lib/shared/src/sourcegraph-api/userProductSubscription'
 import { getMockedGenerateCompletionsOptions } from '../../get-inline-completions-tests/helpers'
@@ -98,10 +97,8 @@ export async function getAutocompleteProviderFromServerSideModelConfig({
             endpoint: 'https://sourcegraph.com',
             primaryModels: mockedConfig.models.map(createModelFromServerModel),
             localModels: [],
-            preferences: {
-                defaults: defaultModelPreferencesFromServerModelsConfig(mockedConfig),
-                selected: {},
-            },
+            // TODO kuki
+            selectedOrDefault: {}//defaultModelPreferencesFromServerModelsConfig(mockedConfig)
         } satisfies Partial<ModelsData> as ModelsData)
     )
 
@@ -145,7 +142,8 @@ export function getAutocompleteProviderFromSiteConfigCodyLLMConfiguration({
             endpoint: 'https://sourcegraph.com',
             primaryModels: [],
             localModels: [],
-            preferences: { defaults: {}, selected: {} },
+            // TODO kuki
+            selectedOrDefault: {}
         } satisfies Partial<ModelsData> as ModelsData)
     )
 

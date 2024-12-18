@@ -58,27 +58,21 @@ export class ChatBuilder {
         return (chat instanceof Observable ? chat : chat.changes).pipe(
             map(chat => chat.selectedModel),
             distinctUntilChanged(),
-            switchMap(selectedModel =>
-                selectedModel
-                    ? modelsService.isModelAvailable(selectedModel).pipe(
-                          switchMap(isModelAvailable => {
-                              // Confirm that the user's explicitly selected model is available on the endpoint.
-                              if (isModelAvailable) {
-                                  return Observable.of(selectedModel)
-                              }
+            switchMap(selectedModel => {
+                    if (selectedModel) {
+                        return Observable.of(selectedModel)
+                    }
 
-                              // If the user's explicitly selected model is not available on the
-                              // endpoint, clear it and use the default going forward. This should
-                              // only happen if the server's model selection changes or if the user
-                              // switches accounts with an open chat. Perhaps we could show some
-                              // kind of indication to the user, but this is fine for now.
-                              if (chat instanceof ChatBuilder) {
-                                  chat.setSelectedModel(undefined)
-                              }
-                              return modelsService.getDefaultChatModel()
-                          })
-                      )
-                    : modelsService.getDefaultChatModel()
+                    // If the user's explicitly selected model is not available on the
+                    // endpoint, clear it and use the default going forward. This should
+                    // only happen if the server's model selection changes or if the user
+                    // switches accounts with an open chat. Perhaps we could show some
+                    // kind of indication to the user, but this is fine for now.
+                    if (chat instanceof ChatBuilder) {
+                        chat.setSelectedModel(undefined)
+                    }
+                    return modelsService.getDefaultChatModel()
+                }
             )
         )
     }

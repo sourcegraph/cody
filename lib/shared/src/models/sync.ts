@@ -1,5 +1,5 @@
 import { Observable, interval, map } from 'observable-fns'
-import type { AuthStatus } from '../auth/types'
+import {AuthStatus} from '../auth/types'
 import { clientCapabilities } from '../configuration/clientCapabilities'
 import { cenv } from '../configuration/environment'
 import type { PickResolvedConfiguration } from '../configuration/resolver'
@@ -24,7 +24,7 @@ import type { UserProductSubscription } from '../sourcegraph-api/userProductSubs
 import { CHAT_INPUT_TOKEN_BUDGET } from '../token/constants'
 import { isError } from '../utils'
 import { getExperimentalClientModelByFeatureFlag } from './client'
-import { type Model, type ServerModel, createModel, createModelFromServerModel } from './model'
+import {type Model, type ServerModel, createModel, createModelFromServerModel} from './model'
 import {
     DefaultsAndUserPreferencesForEndpoint,
     ModelsData, modelsService,
@@ -34,7 +34,7 @@ import { ModelTag } from './tags'
 import { ModelUsage } from './types'
 import { getEnterpriseContextWindow } from './utils'
 
-const EMPTY_PREFERENCES: DefaultsAndUserPreferencesForEndpoint = { defaults: {}, selected: {} }
+const EMPTY_PREFERENCES: DefaultsAndUserPreferencesForEndpoint = { selectedOrDefault: {} }
 
 type ResolvedConfig = PickResolvedConfiguration<{
     configuration: true
@@ -42,9 +42,7 @@ type ResolvedConfig = PickResolvedConfiguration<{
     clientState: 'modelPreferences' | 'waitlist_o1'
 }>
 
-type RemoteModelsData = Pick<ModelsData, 'primaryModels'> & {
-    preferences: Pick<ModelsData['preferences'], 'defaults'> | null
-}
+type RemoteModelsData = Pick<ModelsData, 'primaryModels' | 'selectedOrDefault'> | null
 
 function getLocalModels(): Promise<Model[]> {
     return clientCapabilities().isCodyWeb
@@ -52,13 +50,44 @@ function getLocalModels(): Promise<Model[]> {
         : fetchLocalOllamaModels().catch(() => [])
 }
 
-function getUserModelPreferences(endpoint: string, config: ResolvedConfig) {
+function getUserModelPreferences(endpoint: string, config: ResolvedConfig): DefaultsAndUserPreferencesForEndpoint {
     const preferences = config.clientState.modelPreferences
     logDebug('ModelsService', 'User model preferences changed', JSON.stringify(preferences))
     // Deep clone so it's not readonly and we can mutate it, for convenience.
     const prevPreferences = preferences[endpoint]
     return deepClone(prevPreferences ?? EMPTY_PREFERENCES)
 }
+
+function findAvailableModel(modelID: string | undefined, models: Model[], authStatus: AuthStatus, sub: UserProductSubscription | null): Model | undefined {
+    if (!modelID) return undefined
+    const model = models.find(m => modelID.endsWith(m.id)) ?? models.find(m => modelID.includes(m.id))
+    return model ?? models[0] //&& isModelAvailable(model, authStatus, sub) ? model : undefined
+}
+
+// function isModelAvailable(
+//     model: Model,
+//     authStatus: AuthStatus,
+//     sub: UserProductSubscription | null
+// ): boolean {
+//     const tier = modelTier(model)
+//     // Cody Enterprise users are able to use any models that the backend says is supported.
+//     if (isEnterpriseUser(authStatus)) {
+//         return true
+//     }
+//
+//     // A Cody Pro user can use any Free or Pro model, but not Enterprise.
+//     // (But in reality, Sourcegraph.com wouldn't serve any Enterprise-only models to
+//     // Cody Pro users anyways.)
+//     if (isCodyProUser(authStatus, sub)) {
+//         return (
+//             tier !== 'enterprise' &&
+//             !model.tags.includes(ModelTag.Waitlist) &&
+//             !model.tags.includes(ModelTag.OnWaitlist)
+//         )
+//     }
+//
+//     return tier === 'free'
+// }
 
 async function getRemoteModels(
     authStatus: AuthStatus,
@@ -70,16 +99,23 @@ async function getRemoteModels(
     hasDeepCodyFlag: boolean,
     defaultToHaiku: boolean,
     fetchServerSideModels_?: typeof fetchServerSideModels,
-) {
+): Promise<Pick<ModelsData, "primaryModels" | "selectedOrDefault">> {
+    if (!authStatus.authenticated) {
+        return {
+            primaryModels: [],
+            selectedOrDefault: {}
+        }
+    }
+
     const isDotComUser = isDotCom(authStatus)
     const isCodyFreeUser =
-        userProductSubscription == null || userProductSubscription.userCanUpgrade === true
+        userProductSubscription == null || userProductSubscription.userCanUpgrade
 
     if (isDotComUser || clientConfig?.modelsAPIEnabled) {
         const serverModelsConfig = fetchServerSideModels_ ? await fetchServerSideModels_(config) : undefined
         const data: RemoteModelsData = {
-            preferences: {defaults: {}},
-            primaryModels: [],
+            selectedOrDefault: {},
+            primaryModels: []
         }
 
         if (serverModelsConfig) {
@@ -96,10 +132,12 @@ async function getRemoteModels(
                     createModelFromServerModel
                 )
             )
-            data.preferences!.defaults =
-                defaultModelPreferencesFromServerModelsConfig(
-                    serverModelsConfig
-                )
+            const { chat, edit, autocomplete } = defaultModelPreferencesFromServerModelsConfig(serverModelsConfig)
+            data.selectedOrDefault = {
+                chat: findAvailableModel(chat, data.primaryModels, authStatus, userProductSubscription),
+                edit:  findAvailableModel(edit, data.primaryModels, authStatus, userProductSubscription),
+                autocomplete: findAvailableModel(autocomplete, data.primaryModels, authStatus, userProductSubscription),
+            }
         }
 
         // NOTE: Calling `registerModelsFromVSCodeConfiguration()` doesn't
@@ -165,7 +203,7 @@ async function getRemoteModels(
                 m.id.includes('claude-3-5-haiku')
             )
             if (haikuModel) {
-                data.preferences!.defaults.chat = haikuModel.id
+                data.selectedOrDefault.chat = haikuModel
             }
         }
 
@@ -184,7 +222,7 @@ async function getRemoteModels(
 
     if (configOverwrites?.chatModel) {
         return {
-            preferences: null,
+            selectedOrDefault: {},
             primaryModels: [
                 createModel({
                     id: configOverwrites.chatModel,
@@ -205,7 +243,7 @@ async function getRemoteModels(
     // models available in the modelsService. Otherwise there will be stale, defunct models
     // available.
     return {
-        preferences: null,
+        selectedOrDefault: {},
         primaryModels: [],
     } satisfies RemoteModelsData
 }
@@ -258,7 +296,7 @@ export function syncModels({
 
             const endpoint = authStatus.endpoint
             const localModels = await getLocalModels()
-            const userModelPreferences = getUserModelPreferences(endpoint, resolvedConfig)
+            const userModelPreferences = authStatus.authenticated ? getUserModelPreferences(endpoint, resolvedConfig) : { selectedOrDefault: {}}
             const remoteModelsData = await getRemoteModels(authStatus,
                 clientConfig,
                 resolvedConfig,
@@ -268,20 +306,15 @@ export function syncModels({
                 hasDeepCodyFlag,
                 defaultToHaiku,
                 fetchServerSideModels_)
+            const primaryModels = isError(remoteModelsData) ? [] : normalizeModelList(remoteModelsData.primaryModels)
 
             return {
                     endpoint: endpoint,
                     localModels: localModels,
-                    primaryModels: isError(remoteModelsData)
-                        ? []
-                        : normalizeModelList(remoteModelsData.primaryModels),
-                    preferences: isError(remoteModelsData)
-                        ? userModelPreferences
-                        : resolveModelPreferences(
-                            remoteModelsData.preferences,
-                            userModelPreferences
-                        ),
-                }
+                    primaryModels: primaryModels,
+                    selectedOrDefault: isError(remoteModelsData)
+                        ? userModelPreferences.selectedOrDefault
+                        : resolveModelPreferences(remoteModelsData, userModelPreferences).selectedOrDefault,                }
             }
         ),
         // Keep the old results while we're fetching the new ones, to avoid UI jitter.
@@ -301,28 +334,16 @@ export function syncModels({
 }
 
 function resolveModelPreferences(
-    remote: Pick<DefaultsAndUserPreferencesForEndpoint, 'defaults'> | null,
+    remote: DefaultsAndUserPreferencesForEndpoint,
     user: DefaultsAndUserPreferencesForEndpoint
 ): DefaultsAndUserPreferencesForEndpoint {
     user = deepClone(user)
 
-    function setDefaultModel(usage: ModelUsage, newDefaultModelId: string | undefined): void {
-        // If our cached default model matches, nothing needed.
-        if (user.defaults[usage] === newDefaultModelId) {
-            return
-        }
+    // TODO kuki - invalidate non existing local chats?
+    user.selectedOrDefault.chat = user.selectedOrDefault.chat || remote.selectedOrDefault.chat
+    user.selectedOrDefault.edit = user.selectedOrDefault.chat || remote.selectedOrDefault.chat || remote.selectedOrDefault.edit
+    user.selectedOrDefault.autocomplete = user.selectedOrDefault.autocomplete || remote.selectedOrDefault.autocomplete
 
-        // Otherwise, the model has updated so we should set it in the
-        // in-memory cache as well as the on-disk cache if it exists, and
-        // drop any previously selected models for this usage type.
-        user.defaults[usage] = newDefaultModelId
-        delete user.selected[usage]
-    }
-    if (remote?.defaults) {
-        setDefaultModel(ModelUsage.Chat, remote.defaults.chat)
-        setDefaultModel(ModelUsage.Edit, remote.defaults.edit || remote.defaults.chat)
-        setDefaultModel(ModelUsage.Autocomplete, remote.defaults.autocomplete)
-    }
     return user
 }
 
@@ -433,9 +454,7 @@ function deepClone<T>(value: T): T {
     return JSON.parse(JSON.stringify(value)) as T
 }
 
-export function defaultModelPreferencesFromServerModelsConfig(
-    config: ServerModelConfiguration
-): DefaultsAndUserPreferencesForEndpoint['defaults'] {
+export function defaultModelPreferencesFromServerModelsConfig(config: ServerModelConfiguration) {
     return {
         autocomplete: config.defaultModels.codeCompletion,
         chat: config.defaultModels.chat,
