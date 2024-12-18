@@ -4,21 +4,6 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
-neverBuiltDependencies:
-  - deasync
-  - playwright
-
-overrides:
-  tslib: 2.1.0
-  '@lexical/react': https://storage.googleapis.com/sourcegraph-assets/npm/lexical-react-sourcegraph-fork-31065486.tgz
-
-packageExtensionsChecksum: bc809394d179d8460f9d473fc54e379a
-
-patchedDependencies:
-  highlight.js@11.8.0:
-    hash: bzyroljkef3byfhzbomid6liny
-    path: patches/highlight.js@11.8.0.patch
-
 importers:
 
   .:
@@ -289,6 +274,19 @@ importers:
       webauthn4js:
         specifier: ^3.0.0
         version: 3.0.0
+
+  ide-test:
+    dependencies:
+      ide-test:
+        specifier: 'link:'
+        version: 'link:'
+    devDependencies:
+      '@playwright/test':
+        specifier: 1.47.2
+        version: 1.47.2
+      '@types/node':
+        specifier: 20.12.7
+        version: 20.12.7
 
   lib/icons:
     dependencies:
