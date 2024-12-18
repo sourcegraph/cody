@@ -7,6 +7,44 @@ import { type CodeToReplaceData, getCurrentFilePromptComponents } from './prompt
 import { shrinkPredictionUntilSuffix } from './shrink-prediction'
 
 describe('shrinkPredictionUntilSuffix', () => {
+
+    it.only('repro issue because of partial suffix match', () => {
+
+        // Note: Assume if instead of p there was nothing just the whitespace, then also the additional lines pred_line_1 and pred_line_2 would get trimmed
+        const codeToReplaceData = createCodeToReplaceData`
+            import { RecentEditsTracker } from '../completions/context/retrievers/recent-user-actions/recent-edits-tracker'
+
+            export class FilterPredictionEditsBasedOnRecentEdits {
+
+                private readonly recentEditsTracker: RecentEditsTracker
+
+                constructor(recentEditsTracker: RecentEditsTracker) {
+                    this.recentEditsTracker = █
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    // some code 
+        `
+
+        const prediction = dedent`    constructor(recentEditsTracker: RecentEditsTracker) {
+            this.recentEditsTracker = recentEditsTracker
+            pred_line_1
+            pred_line_2
+        `
+
+        const wrongExpectedResult = "constructor(recentEditsTracker: RecentEditsTracker) {\n"
+
+        const result = shrinkPredictionUntilSuffix(prediction, codeToReplaceData)
+        expect(result).toBe(wrongExpectedResult)
+    })
+
+
     it('returns code to rewrite if the prediction does not change anything', () => {
         const codeToReplaceData = createCodeToReplaceData`
             import { RecentEditsTracker } from '../completions/context/retrievers/recent-user-actions/recent-edits-tracker'
