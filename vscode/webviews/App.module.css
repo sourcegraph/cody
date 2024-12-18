@@ -1,41 +1,43 @@
 .outer-container {
-    background-color: var(--vscode-sideBar-background);
-    display: flex;
-    flex-direction: column;
-    box-sizing: border-box;
-    height: 100%;
-    overflow: hidden;
+  background-color: var(--vscode-sideBar-background);
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  height: 100%;
+  overflow: hidden;
+  container-type: inline-size;
+  container-name: root-outer-container;
 }
 
 .error-container {
-    display: flex;
-    flex-direction: column-reverse;
-    gap: 0.5rem;
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 0.5rem;
 }
 
 .error {
-    flex-direction: row;
-    display: flex;
-    padding: 1rem;
-    color: var(--vscode-input-foreground);
-    background-color: var(--vscode-inputValidation-errorBackground);
-    min-height: 2rem;
-    position: relative;
-    overflow: auto;
-    align-items: baseline;
+  flex-direction: row;
+  display: flex;
+  padding: 1rem;
+  color: var(--vscode-input-foreground);
+  background-color: var(--vscode-inputValidation-errorBackground);
+  min-height: 2rem;
+  position: relative;
+  overflow: auto;
+  align-items: baseline;
 }
 
 .close-btn {
-    position: absolute;
-    top: 0.65rem;
-    right: 0.65rem;
-    background: none;
-    border: none;
-    color: var(--vscode-input-foreground);
-    cursor: pointer;
+  position: absolute;
+  top: 0.65rem;
+  right: 0.65rem;
+  background: none;
+  border: none;
+  color: var(--vscode-input-foreground);
+  cursor: pointer;
 }
 
 /* Undo the UA stylesheet set by vscode */
 kbd {
-    all: unset;
+  all: unset;
 }
