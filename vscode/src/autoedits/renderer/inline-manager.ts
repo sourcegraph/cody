@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import type { DocumentContext } from '@sourcegraph/cody-shared'
+import { type DocumentContext, isFileURI } from '@sourcegraph/cody-shared'
 
 import { completionMatchesSuffix } from '../../completions/is-completion-visible'
 import { getNewLineChar } from '../../completions/text-processing'
@@ -39,6 +39,18 @@ export class AutoEditsInlineRendererManager
         })
 
         await this.dismissEdit()
+    }
+
+    protected async onDidChangeTextEditorSelection(
+        event: vscode.TextEditorSelectionChangeEvent
+    ): Promise<void> {
+        // If the cursor moved in any file, we assume it's a user action and
+        // dismiss the active edit. This is because parts of the edit might be
+        // rendered as inline completion ghost text, which is hidden by default
+        // whenever the cursor moves.
+        if (isFileURI(event.textEditor.document.uri)) {
+            this.dismissEdit()
+        }
     }
 
     async maybeRenderDecorationsAndTryMakeInlineCompletionResponse(
