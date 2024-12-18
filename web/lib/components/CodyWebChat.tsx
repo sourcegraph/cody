@@ -272,6 +272,7 @@ const CodyWebPanel: FC<CodyWebPanelProps> = props => {
                             attributionEnabled={false}
                             configuration={config}
                             chatEnabled={true}
+                            instanceNotices={clientConfig?.notices ?? []}
                             showWelcomeMessage={true}
                             showIDESnippetActions={false}
                             messageInProgress={messageInProgress}

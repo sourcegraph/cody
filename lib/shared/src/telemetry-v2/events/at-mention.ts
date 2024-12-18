@@ -3,6 +3,8 @@ import {
     REMOTE_FILE_PROVIDER_URI,
     REMOTE_REPOSITORY_PROVIDER_URI,
     WEB_PROVIDER_URI,
+    WORKSPACE_DIRECTORY_PROVIDER_URI,
+    WORKSPACE_REPOSITORY_PROVIDER_URI,
 } from '../../context/openctx/api'
 import { FILE_CONTEXT_MENTION_PROVIDER, SYMBOL_CONTEXT_MENTION_PROVIDER } from '../../mentions/api'
 import { telemetryRecorder } from '../singleton'
@@ -32,8 +34,8 @@ export const events = [
             source: { chat: 1 },
             provider: {
                 [fallbackValue]: 0,
-                [FILE_CONTEXT_MENTION_PROVIDER.id]: 1,
-                [SYMBOL_CONTEXT_MENTION_PROVIDER.id]: 2,
+                [FILE_CONTEXT_MENTION_PROVIDER?.id]: 1,
+                [SYMBOL_CONTEXT_MENTION_PROVIDER?.id]: 2,
                 [REMOTE_REPOSITORY_PROVIDER_URI]: 3,
                 [REMOTE_FILE_PROVIDER_URI]: 4,
                 [REMOTE_DIRECTORY_PROVIDER_URI]: 5,
@@ -51,6 +53,8 @@ export const events = [
                 'https://openctx.org/npm/@openctx/provider-hello-world': 7,
                 'https://openctx.org/npm/@openctx/provider-devdocs': 7,
                 'https://openctx.org/npm/@openctx/provider-sourcegraph-search': 7,
+                [WORKSPACE_REPOSITORY_PROVIDER_URI]: 8,
+                [WORKSPACE_DIRECTORY_PROVIDER_URI]: 8,
             },
         }
     ),

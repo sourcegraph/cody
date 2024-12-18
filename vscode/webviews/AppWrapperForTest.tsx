@@ -84,6 +84,8 @@ export const AppWrapperForTest: FunctionComponent<{ children: ReactNode }> = ({ 
                         prompts: FIXTURE_PROMPTS,
                         commands: FIXTURE_COMMANDS,
                     }),
+                    promptTags: () => Observable.of([]),
+                    getCurrentUserId: () => Observable.of(null),
                     highlights: () => Observable.of([]),
                     clientActionBroadcast: () => Observable.of(),
                     models: () =>
