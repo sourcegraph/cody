@@ -8,6 +8,7 @@ import {
     ExternalLinkIcon,
     EyeIcon,
     HeartIcon,
+    InfoIcon,
     Users2Icon,
     XIcon,
 } from 'lucide-react'
@@ -216,7 +217,7 @@ export const Notices: React.FC<NoticesProps> = ({ user, isTeamsUpgradeCtaEnabled
     }
 
     return (
-        <div className="tw-flex tw-flex-col tw-mx-4 tw-my-2 tw-p-4 tw-gap-2">{activeNotice.content}</div>
+        <div className="tw-flex tw-flex-col tw-mx-2 tw-my-2 tw-p-2 tw-gap-2">{activeNotice.content}</div>
     )
 }
 
@@ -342,12 +343,38 @@ const MarkdownNotice: FunctionComponent<MarkdownNotice> = props => {
 
     return (
         <div
-            className="tw-bg-accent tw-bg-opacity-50 tw--ml-2 tw--mr-2 tw-border tw-border-border tw-relative tw-rounded-md tw-flex tw-flex-col tw-gap-2 tw-p-4"
+            className="tw-bg-subtle tw-ml-2 tw-mr-2 tw-border tw-border-border tw-relative tw-rounded-lg tw-flex tw-flex-col tw-gap-2 tw-py-4 tw-px-6"
             data-markdown-notice=""
         >
-            {title && <h1 className="tw-text-lg tw-font-semibold">{title}</h1>}
+            {title && (
+                <h1 className="tw-text-md tw-font-semibold tw-text-title tw-flex tw-flex-row tw-items-center tw-gap-3 tw-my-2">
+                    <img src={SourcegraphIcon} alt="Sourcegraph Logo" className="tw-h-[16px]" />
+                    {title}
+                </h1>
+            )}
 
-            <MarkdownFromCody>{message}</MarkdownFromCody>
+            <MarkdownFromCody className="tw-text-subtle tw-leading-tight">{message}</MarkdownFromCody>
+
+            <div className="tw-bg-popover tw-my-4 tw-p-3 tw-rounded-lg tw-flex tw-flex-row tw-gap-3">
+                <InfoIcon size="16" className="tw-m-1 tw-text-subtle" />
+                <p className="tw-text-subtle tw-text-sm">
+                    Always review and verify answers or code generated. Mistakes are possible with AI.{' '}
+                </p>
+            </div>
+
+            <div className="tw-flex flex-row tw-gap-6 tw-my-1">
+                <Button variant="outline" onClick={onDismiss} size="sm">
+                    OK, thanks!
+                </Button>
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => window.open('https://docs.sourcegraph.com/cody', '_blank')}
+                >
+                    Explore docs
+                    <ExternalLinkIcon size="14" className="tw-text-muted-foreground" />
+                </Button>{' '}
+            </div>
 
             <Button variant="ghost" onClick={onDismiss} className="tw-absolute tw-top-2 tw-right-2">
                 <XIcon size="14" />
