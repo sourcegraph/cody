@@ -20,7 +20,7 @@ export class FilterPredictionBasedOnRecentEdits implements vscode.Disposable {
 
     /**
      * Filters out predictions from auto-edit suggestion which undo the latest recent edits made by the user.
-     * The function compares diffs between document states and the prediction vs code to rewritep
+     * The function compares diffs between document states and the prediction vs code to re-write
      * to determine if the same edit was recently reverted.
      */
     public shouldFilterPrediction(uri: vscode.Uri, prediction: string, codeToRewrite: string): boolean {
@@ -63,6 +63,11 @@ export class FilterPredictionBasedOnRecentEdits implements vscode.Disposable {
         prediction: string,
         codeToRewrite: string
     ): boolean {
+        // We compare two diffs:
+        // 1. The diff between a document snapshot and its final state (how the document changed)
+        // 2. The diff between the prediction and the code to rewrite (how the prediction would change the code)
+        // If these diffs are identical, it means the prediction would make the same changes as a recent edit,
+        // but in the opposite direction (i.e., reverting the change)
         const diff1 = this.createGitDiffForSnapshotComparison(documentSnapshot, finalDocumentSnapshot)
         const diff2 = this.createGitDiffForSnapshotComparison(prediction, codeToRewrite)
         if (diff1 === diff2) {

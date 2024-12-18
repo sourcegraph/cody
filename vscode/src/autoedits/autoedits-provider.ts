@@ -221,7 +221,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             return null
         }
 
-        let { prediction, codeToReplaceData } = autoeditResponse
+        const { prediction, codeToReplaceData } = autoeditResponse
         const shouldFilterPredictionBasedRecentEdits = this.filterPrediction.shouldFilterPrediction(
             document.uri,
             prediction,
