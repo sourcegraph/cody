@@ -26,13 +26,14 @@ export function shrinkPredictionUntilSuffix(
         const predictionSlice = predictionLines.slice(-i)
         const suffixSlice = suffixLines.slice(0, i)
 
-        let matches = false
+        // Assume the lines match until proven otherwise
+        let matches = true
         for (let j = 0; j < i; j++) {
             if (
-                (suffixSlice[j].length > 0 && predictionSlice[j].startsWith(suffixSlice[j])) ||
-                (suffixSlice[j].length === 0 && suffixSlice === predictionSlice)
+                (suffixSlice[j].length > 0 && !predictionSlice[j].startsWith(suffixSlice[j])) ||
+                (suffixSlice[j].length === 0 && suffixSlice !== predictionSlice)
             ) {
-                matches = true
+                matches = false
                 break
             }
         }
