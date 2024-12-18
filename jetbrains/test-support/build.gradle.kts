@@ -3,9 +3,8 @@ import org.jetbrains.intellij.platform.gradle.tasks.BuildPluginTask
 
 plugins {
   id("java")
-  id("org.jetbrains.kotlin.jvm") version "2.0.20"
+  id("org.jetbrains.kotlin.jvm") version "2.0.21"
   id("org.jetbrains.intellij.platform") version "2.1.0"
-  id("spotless-conventions")
 }
 
 repositories {
@@ -36,21 +35,22 @@ intellijPlatform {
   }
 }
 
+// tasks.named("buildPlugin").get().dependsOn(rootProject.tasks.named("buildPlugin"))
+
 tasks {
   val runIdeForTesting by
       intellijPlatformTesting.runIde.registering {
-        // TODO: Add the ability to test different products and versions.
+          val buildPluginTaskProvider = rootProject.tasks.named<BuildPluginTask>("buildPlugin")
+          // TODO: Despite this dependency, plugins/localPlugin below checks
+          // the root plugin output exists eagerly. When clean, it does not exist.
+          // If this task fails to find build/distributions/Sourcegraph-6.0-localbuild.zip,
+          // run ./gradlew :buildPlugin first.
+          task.get().dependsOn(buildPluginTaskProvider)
+          // TODO: Add the ability to test different products and versions.
         version.set("2024.2")
         type.set(IntelliJPlatformType.IntellijIdeaCommunity)
-        task.get().dependsOn(rootProject.tasks.named("buildPlugin"))
         plugins {
-          localPlugin(
-              rootProject.tasks
-                  .named<BuildPluginTask>("buildPlugin")
-                  .get()
-                  .outputs
-                  .files
-                  .singleFile)
+            localPlugin(buildPluginTaskProvider.get().outputs.files.singleFile)
         }
       }
 }
