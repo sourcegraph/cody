@@ -356,24 +356,10 @@ const MarkdownNotice: FunctionComponent<MarkdownNotice> = props => {
             <MarkdownFromCody className="tw-text-subtle tw-leading-tight">{message}</MarkdownFromCody>
 
             <div className="tw-bg-popover tw-my-4 tw-p-3 tw-rounded-lg tw-flex tw-flex-row tw-gap-3">
-                <InfoIcon size="16" className="tw-m-1 tw-text-subtle" />
+                <InfoIcon size="14" className="tw-m-1 tw-text-subtle" />
                 <p className="tw-text-subtle tw-text-sm">
                     Always review and verify answers or code generated. Mistakes are possible with AI.{' '}
                 </p>
-            </div>
-
-            <div className="tw-flex flex-row tw-gap-6 tw-my-1">
-                <Button variant="outline" onClick={onDismiss} size="sm">
-                    OK, thanks!
-                </Button>
-                <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => window.open('https://docs.sourcegraph.com/cody', '_blank')}
-                >
-                    Explore docs
-                    <ExternalLinkIcon size="14" className="tw-text-muted-foreground" />
-                </Button>{' '}
             </div>
 
             <Button variant="ghost" onClick={onDismiss} className="tw-absolute tw-top-2 tw-right-2">
