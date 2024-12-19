@@ -15,8 +15,8 @@ class DebugServerStartupActivity : ProjectActivity {
     withContext(Dispatchers.IO) {
       val server = embeddedServer(Netty, port = 8083) {
         routing {
-          get("/") {
-            call.respondText("debug server is running!")
+          get("/healthz") {
+            call.respondText("OK")
           }
         }
       }
