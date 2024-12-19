@@ -183,7 +183,7 @@ export const ModelSelectField: React.FunctionComponent<{
                     loop={true}
                     defaultValue={value}
                     tabIndex={0}
-                    className="focus:tw-outline-none"
+                    className={`focus:tw-outline-none ${styles.chatModelPopover}`}
                     data-testid="chat-model-popover"
                 >
                     <CommandList
