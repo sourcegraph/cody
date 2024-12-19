@@ -7,14 +7,14 @@ import {
 import * as vscode from 'vscode'
 
 export class ChatIntentAPIClient {
-    private featureCodyIntentDetectionAPI = storeLastValue(
-        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyIntentDetectionAPI)
+    private featureCodyExperimentalOneBox = storeLastValue(
+        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyExperimentalOneBox)
     )
 
     constructor(private readonly apiClient: SourcegraphGraphQLAPIClient) {}
 
     public dispose(): void {
-        this.featureCodyIntentDetectionAPI.subscription.unsubscribe()
+        this.featureCodyExperimentalOneBox.subscription.unsubscribe()
     }
 
     public async detectChatIntent(interactionID: string, query: string) {
@@ -28,6 +28,6 @@ export class ChatIntentAPIClient {
         if (vscode.workspace.getConfiguration().get<boolean>('cody.internal.intentDetectionAPI')) {
             return true
         }
-        return !!this.featureCodyIntentDetectionAPI.value.last
+        return !!this.featureCodyExperimentalOneBox.value.last
     }
 }

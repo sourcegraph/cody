@@ -72,9 +72,6 @@ export enum FeatureFlag {
     /** Interactive tutorial, primarily for onboarding */
     CodyInteractiveTutorial = 'cody-interactive-tutorial',
 
-    /** Whether to use intent detection API. */
-    CodyIntentDetectionAPI = 'cody-intent-detection-api',
-
     GitMentionProvider = 'git-mention-provider',
 
     /** Enable experimental One Box feature in Cody */
