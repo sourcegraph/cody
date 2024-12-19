@@ -108,8 +108,12 @@ export function registerAutoEditTestRenderCommand(): vscode.Disposable {
         }
 
         const replacerText = ret.replacer.text
-        const replaceStartOffset = ret.replacer.startOffset
-        const replaceEndOffset = ret.replacer.endOffset
+        const replaceStartOffset = text.indexOf(ret.initial.text, ret.replacer.endOffset)
+        if (replaceStartOffset === -1) {
+            console.error('Could not find replacement text')
+            return
+        }
+        const replaceEndOffset = replaceStartOffset + ret.initial.text.length
 
         const replaceStartLine = editor.document.positionAt(replaceStartOffset).line
         const replaceEndLine = editor.document.positionAt(replaceEndOffset).line
