@@ -13,12 +13,14 @@ import {
     isDotComAuthed,
     tokensToChars,
 } from '@sourcegraph/cody-shared'
+
 import { ContextRankingStrategy } from '../completions/context/completions-context-ranker'
 import { ContextMixer } from '../completions/context/context-mixer'
 import { DefaultContextStrategyFactory } from '../completions/context/context-strategy'
 import { RetrieverIdentifier } from '../completions/context/utils'
 import { getCurrentDocContext } from '../completions/get-current-doc-context'
 import { getConfiguration } from '../configuration'
+
 import type { AutoeditsModelAdapter, AutoeditsPrompt } from './adapters/base'
 import { CodyGatewayAdapter } from './adapters/cody-gateway'
 import { FireworksAdapter } from './adapters/fireworks'
@@ -40,7 +42,7 @@ import {
     extractAutoEditResponseFromCurrentDocumentCommentTemplate,
     shrinkReplacerTextToCodeToReplaceRange,
 } from './renderer/renderer-testing'
-// import { shrinkPredictionUntilSuffix } from './shrink-prediction'
+import { shrinkPredictionUntilSuffix } from './shrink-prediction'
 
 const AUTOEDITS_CONTEXT_STRATEGY = 'auto-edits'
 const INLINE_COMPLETION_DEFAULT_DEBOUNCE_INTERVAL_MS = 150
@@ -221,7 +223,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             return null
         }
 
-        const { prediction, codeToReplaceData } = autoeditResponse
+        let { prediction, codeToReplaceData } = autoeditResponse
         const shouldFilterPredictionBasedRecentEdits = this.filterPrediction.shouldFilterPrediction(
             document.uri,
             prediction,
@@ -231,7 +233,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             return null
         }
 
-        // prediction = shrinkPredictionUntilSuffix(prediction, codeToReplaceData)
+        prediction = shrinkPredictionUntilSuffix(prediction, codeToReplaceData)
 
         if (prediction === codeToReplaceData.codeToRewrite) {
             return null

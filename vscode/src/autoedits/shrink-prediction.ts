@@ -4,21 +4,28 @@ import type { CodeToReplaceData } from './prompt/prompt-utils'
 
 /**
  * Shrinks the prediction by removing overlapping lines with the suffix.
- * If the prediction becomes smaller than the original code to replace,
- * appends the missing original lines to maintain the line count.
  */
 export function shrinkPredictionUntilSuffix(
     prediction: string,
-    codeToReplaceData: CodeToReplaceData
+    { suffixInArea, suffixAfterArea, codeToRewrite }: CodeToReplaceData
 ): string {
-    // Combine the suffixInArea and suffixAfterArea to get the full suffix
-    const newLineChar = getNewLineChar(prediction)
-    const suffix = codeToReplaceData.suffixInArea + codeToReplaceData.suffixAfterArea
+    if (prediction.length === 0) {
+        return prediction
+    }
 
-    // Split the prediction and suffix into arrays of lines
-    const predictionLines = lines(prediction)
+    const newLineChar = getNewLineChar(codeToRewrite)
+    const suffix = suffixInArea + suffixAfterArea
+
+    // Remove the last empty line from the prediction because it always ends
+    // with an extra empty line. This extra line is technically the first line
+    // of the suffix. Stripping it ensures we can accurately compare the last
+    // lines of the prediction to the first lines of the suffix.
+    const predictionWithoutLastEmptyLine = prediction.endsWith(newLineChar)
+        ? prediction.slice(0, -newLineChar.length)
+        : prediction
+
+    const predictionLines = lines(predictionWithoutLastEmptyLine)
     const suffixLines = lines(suffix)
-    const originalLines = lines(codeToReplaceData.codeToRewrite.trimEnd())
 
     // Determine the maximum possible overlap
     const maxOverlap = Math.min(predictionLines.length, suffixLines.length)
@@ -26,16 +33,16 @@ export function shrinkPredictionUntilSuffix(
 
     // Iterate over possible overlap lengths
     for (let i = 1; i <= maxOverlap; i++) {
-        // Get the last 'i' lines of the prediction
         const predictionSlice = predictionLines.slice(-i)
-        // Get the first 'i' lines of the suffix
         const suffixSlice = suffixLines.slice(0, i)
 
         // Assume the lines match until proven otherwise
         let matches = true
         for (let j = 0; j < i; j++) {
-            // Compare lines after trimming whitespace
-            if (!suffixSlice[j].trim().startsWith(predictionSlice[j].trim())) {
+            // Using a partial match predictionSlice[j].startWith(suffixSlice[j] here
+            // gives us too many false positive, so if we encounter cases where the model
+            // suggests modified suffix lines, we should address it on a different stage.
+            if (predictionSlice[j] !== suffixSlice[j]) {
                 matches = false
                 break
             }
@@ -52,16 +59,5 @@ export function shrinkPredictionUntilSuffix(
         predictionLines.splice(-overlap, overlap)
     }
 
-    const originalLineCount = originalLines.length
-    const adjustedPredictionLineCount = predictionLines.length
-
-    // If the prediction has fewer lines than the original, append missing original lines
-    if (adjustedPredictionLineCount < originalLineCount) {
-        const missingLineCount = originalLineCount - adjustedPredictionLineCount
-        const linesToAppend = originalLines.slice(0, missingLineCount)
-        predictionLines.push(...linesToAppend)
-    }
-
-    // Return the final adjusted prediction
     return predictionLines.join(newLineChar) + newLineChar
 }
