@@ -1,3 +1,5 @@
+## 0.21.0
+- Fixes problem with Filters panel on small screens
 ## 0.20.0 
 - Fixes problem with popover UI
 - Update banner UI
