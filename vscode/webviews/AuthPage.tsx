@@ -1,4 +1,10 @@
-import type { AuthStatus, CodyIDE, TelemetryRecorder } from '@sourcegraph/cody-shared'
+import {
+    type AuthStatus,
+    type CodyIDE,
+    DOTCOM_URL,
+    type TelemetryRecorder,
+    isDotCom,
+} from '@sourcegraph/cody-shared'
 
 import signInLogoSourcegraph from '../resources/sourcegraph-mark.svg'
 import { type AuthMethod, isSourcegraphToken } from '../src/chat/protocol'
@@ -352,11 +358,16 @@ const ClientSignInForm: React.FC<ClientSignInFormProps> = memo(
                 <Form onSubmit={onSubmit}>
                     <FormField name="endpoint" className="tw-m-2">
                         <FormLabel title="Sourcegraph Instance URL" />
+                        {formState.formData.endpoint} is dot com?{' '}
+                        {isDotCom(formState.formData.endpoint) ? 'YES' : 'NO'}, dotcom is
+                        {DOTCOM_URL.toString()} / ${DOTCOM_URL.origin}
                         <FormControl
                             type="url"
                             name="endpoint"
                             placeholder="Example: https://instance.sourcegraph.com"
-                            value={formState.formData.endpoint}
+                            value={
+                                isDotCom(formState.formData.endpoint) ? '' : formState.formData.endpoint
+                            }
                             className="tw-w-full tw-my-2 !tw-p-4"
                             required
                             onChange={handleInputChange}
