@@ -1,4 +1,4 @@
-import { spawn } from 'node:child_process'
+//import { spawn } from 'node:child_process'
 import { chromium, test } from '@playwright/test'
 
 async function checkTestServerStarted(): Promise<void> {
@@ -27,6 +27,7 @@ test(
     'loads the plugin and displays content in the sidebar',
     async () => {
         // TODO: Refactor this out into a "JetBrains driver"
+        /*
         const ideProcess = spawn('./gradlew', [':test-support:runIdeForTesting'], {
             cwd: '../jetbrains',
             env: {
@@ -36,13 +37,12 @@ test(
             },
             stdio: ['ignore', process.stdout, process.stderr],
         })
+            */
         try {
             await checkTestServerStarted()
-            // TODO: Poll the development server until it is up
-            const browser = await chromium.connectOverCDP('ws://localhost:8083/jb')
-            // TODO: Make some assertions
-            console.log(browser)
+            const browser = await chromium.connectOverCDP('http://localhost:8083')
+            console.log(`${browser} with ${browser.contexts.length} contexts`)
         } finally {
-            ideProcess.kill()
+            //ideProcess.kill()
         }
     })

@@ -1,13 +1,18 @@
 package com.sourcegraph.jetbrains.testing
 
+import com.google.gson.Gson
+import com.google.gson.JsonObject
 import com.intellij.openapi.components.Service
 import com.intellij.ui.jcef.JBCefBrowser
 import io.ktor.server.websocket.DefaultWebSocketServerSession
 import io.ktor.http.HttpStatusCode
+import io.ktor.websocket.Frame
+import io.ktor.websocket.readText
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.yield
 import kotlinx.coroutines.launch
+import kotlinx.serialization.json.Json
 import org.cef.browser.CefDevToolsClient
 import java.lang.ref.WeakReference
 
@@ -34,6 +39,12 @@ class WebviewTarget {
 class ChromeDevToolsProtocolForwarder {
     val targets = mutableListOf<WebviewTarget>()
 
+    fun version(devToolsUrlPrefix: String): String {
+        // TODO: This hard-codes the first target.
+        return "{\"Protocol-Version\":\"1.3\",\"webSocketDebuggerUrl\":\"${devToolsUrlPrefix}0\"}"
+    }
+
+    // TODO: Rationalize this with /json/list/ in the CDP protocol
     fun listWebviews(devToolsUrlPrefix: String): List<WebviewData> {
         return synchronized(this.targets) {
             this.targets.map {
@@ -55,11 +66,31 @@ class ChromeDevToolsProtocolForwarder {
             session.call.response.status(HttpStatusCode.Gone)
             return
         }
+        for (message in session.incoming) {
+            message as? Frame.Text ?: continue
+            val payload = message.readText()
+            println("ws: ${payload}")
+            val gson = Gson()
+            val json = gson.fromJson(payload, JsonObject::class.java)
+            val params = json.get("params")
+            val future = client.executeDevToolsMethod(json.get("method").asString, if (params != null)  { gson.toJson(params) } else { null })
+            try {
+                // TODO: Don't block here.
+                val value = gson.fromJson(future.get(), JsonObject::class.java)
+                println("DevTools result: $value")
+                val result = JsonObject()
+                result.addProperty("id", json.get("id").asNumber)
+                result.add("result", value)
+                session.send(Frame.Text(gson.toJson(result)))
+            } catch (e: Exception) {
+                println("DevTools error: ${e.message}")
+            }
+            // TODO: Forward the result.
+        }
         // TODO: Check if we have other, concurrent sessions.
         // TODO: Receive messages and forward them.
         // TODO: Receive events and forward them to the session.
     }
-
     fun didCreateBrowser(viewType: String, browser: JBCefBrowser) {
         val weakBrowser = WeakReference(browser)
         val targets = this.targets
