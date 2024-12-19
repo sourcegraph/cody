@@ -597,6 +597,11 @@
         "command": "cody.command.insertCodeToNewFile",
         "title": "Save Code to New File...",
         "enablement": "cody.activated"
+      },
+      {
+        "command": "cody.command.autoedits-manual-trigger",
+        "title": "Autoedits Manual Trigger",
+        "enablement": "cody.activated"
       }
     ],
     "keybindings": [

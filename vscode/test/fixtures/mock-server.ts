@@ -262,6 +262,7 @@ export class MockServer {
             const lastHumanMessageText = messages[lastMessageIndex].text;
 
             let response = responses.chat;
+            console.log('Last human message: ', lastHumanMessageText);
 
             // Use a switch statement for faster response selection
             switch (true) {
@@ -278,9 +279,16 @@ export class MockServer {
                 case lastHumanMessageText.includes("show me a code snippet"):
                     response = responses.chatWithSnippet;
                     break;
+                case lastHumanMessageText.endsWith("Assistant:"):
+                    response = 'buzzfizz.pop(value.toString())'
+                    break;
                 case lastHumanMessageText.endsWith("delay"):
                     handleDelayedResponse(res);
                     return;
+            }
+
+            if (response.includes("fizzbuzz") || response.includes("buzzfizz")) {
+                throw new Error("value is actually response is : " + response);
             }
 
             function handleDelayedResponse(res: express.Response): void {
@@ -334,7 +342,7 @@ export class MockServer {
             let completionPrefix = request.body.messages.at(-1)?.text;
             if (!completionPrefix?.startsWith(OPENING_CODE_TAG)) {
                 throw new Error(
-                    `Last completion message did not contain code starting with ${OPENING_CODE_TAG}`,
+                    `Last completion message did not contain code starting with ${OPENING_CODE_TAG} Completion Text: ${completionPrefix}`,
                 );
             }
             completionPrefix = completionPrefix.slice(OPENING_CODE_TAG.length);

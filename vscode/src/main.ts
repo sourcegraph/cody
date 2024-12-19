@@ -25,7 +25,7 @@ import {
     fromVSCodeEvent,
     graphqlClient,
     isDotCom,
-    isS2,
+    // isS2,
     modelsService,
     resolvedConfig,
     setClientCapabilities,
@@ -707,32 +707,39 @@ async function tryRegisterTutorial(
 
 function registerAutoEdits(chatClient: ChatClient, disposables: vscode.Disposable[]): void {
     disposables.push(
-        subscriptionDisposable(
-            combineLatest(
-                resolvedConfig,
-                authStatus,
-                featureFlagProvider.evaluatedFeatureFlag(
-                    FeatureFlag.CodyAutoeditExperimentEnabledFeatureFlag
-                )
-            )
-                .pipe(
-                    map(([config, authStatus, autoeditEnabled]) => {
-                        if (shouldEnableExperimentalAutoedits(config, autoeditEnabled, authStatus)) {
-                            const provider = new AutoeditsProvider(chatClient)
+        // () => new AutoeditsProvider(chatClient)
 
-                            const completionRegistration =
-                                vscode.languages.registerInlineCompletionItemProvider(
-                                    [{ scheme: 'file', language: '*' }, { notebookType: '*' }],
-                                    provider
-                                )
-
-                            return vscode.Disposable.from(provider, completionRegistration)
-                        }
-                        return []
-                    })
-                )
-                .subscribe({})
+        enableFeature(
+            ({ configuration }) => true,
+            () => new AutoeditsProvider(chatClient)
         )
+
+        // subscriptionDisposable(
+        //     combineLatest(
+        //         resolvedConfig,
+        //         authStatus,
+        //         featureFlagProvider.evaluatedFeatureFlag(
+        //             FeatureFlag.CodyAutoeditExperimentEnabledFeatureFlag
+        //         )
+        //     )
+        //         .pipe(
+        //             map(([config, authStatus, autoeditEnabled]) => {
+        //                 if (shouldEnableExperimentalAutoedits(config, autoeditEnabled, authStatus)) {
+        //                     const provider = new AutoeditsProvider(chatClient)
+
+        //                     const completionRegistration =
+        //                         vscode.languages.registerInlineCompletionItemProvider(
+        //                             [{ scheme: 'file', language: '*' }, { notebookType: '*' }],
+        //                             provider
+        //                         )
+
+        //                     return vscode.Disposable.from(provider, completionRegistration)
+        //                 }
+        //                 return []
+        //             })
+        //         )
+        //         .subscribe({})
+        // )
     )
 }
 
@@ -741,11 +748,12 @@ function shouldEnableExperimentalAutoedits(
     autoeditExperimentFlag: boolean,
     authStatus: AuthStatus
 ): boolean {
-    // If the config is explicitly set in the vscode settings, use the setting instead of the feature flag.
-    if (config.configuration.experimentalAutoeditsEnabled !== undefined) {
-        return config.configuration.experimentalAutoeditsEnabled
-    }
-    return autoeditExperimentFlag && isS2(authStatus) && isRunningInsideAgent() === false
+    return true
+    // // If the config is explicitly set in the vscode settings, use the setting instead of the feature flag.
+    // if (config.configuration.experimentalAutoeditsEnabled !== undefined) {
+    //     return config.configuration.experimentalAutoeditsEnabled
+    // }
+    // return autoeditExperimentFlag && isS2(authStatus) && isRunningInsideAgent() === false
 }
 
 /**
