@@ -142,6 +142,10 @@ export type WebviewMessage =
           message: string
       }
     | {
+          command: 'chat/upload-image'
+          image: string
+      }
+    | {
           command: 'reevaluateSearchWithSelectedFilters'
           index: number
           selectedFilters: NLSSearchDynamicFilter[]

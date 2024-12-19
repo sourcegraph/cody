@@ -20,6 +20,7 @@ import {
 } from '@sourcegraph/cody-shared'
 
 import type { RankedContext } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import type { ImageData, MimeType } from '@sourcegraph/cody-shared/src/llm-providers/google'
 import { Observable, Subject, map } from 'observable-fns'
 import { getChatPanelTitle } from './chat-helpers'
 
@@ -94,7 +95,8 @@ export class ChatBuilder {
 
         public readonly sessionID: string = new Date(Date.now()).toUTCString(),
         private messages: ChatMessage[] = [],
-        private customChatTitle?: string
+        private customChatTitle?: string,
+        private images: ImageData[] = []
     ) {}
 
     /** An observable that emits whenever the {@link ChatBuilder}'s chat changes. */
@@ -309,6 +311,62 @@ export class ChatBuilder {
             interactions,
         }
         return result
+    }
+
+    /**
+     * Adds images to the `ChatBuilder`.
+     *
+     * @param imageUris - A string containing the base64-encoded image data.
+     * @returns A `Promise` that resolves when the images have been added.
+     */
+    public async addImage(imageUri: string): Promise<void> {
+        this.images = []
+        if (imageUri === '') {
+            return
+        }
+        this.images.push({
+            data: imageUri,
+            mimeType: this.detectMimeType(imageUri),
+        })
+    }
+
+    /**
+     * Retrieves and resets the images collected by the `ChatBuilder`.
+     *
+     * @returns The array of `ImageData` objects collected so far, or `undefined` if no images have been collected.
+     */
+    public getAndResetImages(): ImageData[] | undefined {
+        const images = this.images
+        this.images = []
+        return images.length ? images : undefined
+    }
+
+    /**
+     * Detects the MIME type of an image encoded in base64 format.
+     *
+     * @param base64String - The base64-encoded image data.
+     * @returns The MIME type of the image, such as 'image/jpeg', 'image/png', or 'image/webp'. If the MIME type cannot be detected, it defaults to 'image/jpeg'.
+     */
+    private detectMimeType(base64String: string): MimeType {
+        // Remove data URI prefix if present
+        const base64Data = base64String.replace(/^data:image\/\w+;base64,/, '')
+
+        // Get first 10 bytes from base64
+        const binaryStart = atob(base64Data).slice(0, 10)
+
+        // Check magic numbers using charCodes
+        if (binaryStart.charCodeAt(0) === 0xff && binaryStart.charCodeAt(1) === 0xd8) {
+            return 'image/jpeg'
+        }
+        if (binaryStart.charCodeAt(0) === 0x89 && binaryStart.charCodeAt(1) === 0x50) {
+            return 'image/png'
+        }
+        if (binaryStart.charCodeAt(8) === 0x57 && binaryStart.charCodeAt(9) === 0x45) {
+            return 'image/webp'
+        }
+
+        // Default to jpeg if unknown
+        return 'image/jpeg'
     }
 }
 
