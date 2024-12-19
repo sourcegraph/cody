@@ -1,7 +1,6 @@
 import {
     type AuthStatus,
     type CodyIDE,
-    DOTCOM_URL,
     type TelemetryRecorder,
     isDotCom,
 } from '@sourcegraph/cody-shared'
@@ -358,9 +357,6 @@ const ClientSignInForm: React.FC<ClientSignInFormProps> = memo(
                 <Form onSubmit={onSubmit}>
                     <FormField name="endpoint" className="tw-m-2">
                         <FormLabel title="Sourcegraph Instance URL" />
-                        {formState.formData.endpoint} is dot com?{' '}
-                        {isDotCom(formState.formData.endpoint) ? 'YES' : 'NO'}, dotcom is
-                        {DOTCOM_URL.toString()} / ${DOTCOM_URL.origin}
                         <FormControl
                             type="url"
                             name="endpoint"
