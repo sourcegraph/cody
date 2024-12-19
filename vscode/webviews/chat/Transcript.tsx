@@ -525,6 +525,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                     privateMetadata: {
                         query: editorState.text,
                     },
+                    billingMetadata: { product: 'cody', category: 'billable' },
                 })
             }
         },

@@ -127,6 +127,7 @@ export const SearchResults = ({
                 selected ? 'individualSelected' : 'individualDeselected',
                 {
                     metadata: { resultRank: totalResults.indexOf(result) },
+                    billingMetadata: { product: 'cody', category: 'billable' },
                 }
             )
             updateSelectedFollowUpResults({
@@ -144,7 +145,9 @@ export const SearchResults = ({
                 selectedFilters={message.search.selectedFilters || []}
                 onSelectedFiltersUpdate={onSelectedFiltersUpdate}
                 close={() => {
-                    telemetryRecorder.recordEvent('onebox.filterModal', 'closed')
+                    telemetryRecorder.recordEvent('onebox.filterModal', 'closed', {
+                        billingMetadata: { product: 'cody', category: 'billable' },
+                    })
                     setShowFiltersModal(false)
                 }}
             />
@@ -216,7 +219,13 @@ export const SearchResults = ({
                                                 onClick={() => {
                                                     telemetryRecorder.recordEvent(
                                                         'onebox.filterModal',
-                                                        'opened'
+                                                        'opened',
+                                                        {
+                                                            billingMetadata: {
+                                                                product: 'cody',
+                                                                category: 'billable',
+                                                            },
+                                                        }
                                                     )
                                                     setShowFiltersModal(true)
                                                     setShowFiltersSidebar(true)
@@ -238,7 +247,13 @@ export const SearchResults = ({
                                                     setShowFiltersSidebar(open => {
                                                         telemetryRecorder.recordEvent(
                                                             'onebox.filterSidebar',
-                                                            open ? 'closed' : 'opened'
+                                                            open ? 'closed' : 'opened',
+                                                            {
+                                                                billingMetadata: {
+                                                                    product: 'cody',
+                                                                    category: 'billable',
+                                                                },
+                                                            }
                                                         )
                                                         return !open
                                                     })
@@ -276,7 +291,13 @@ export const SearchResults = ({
 
                                                 telemetryRecorder.recordEvent(
                                                     'onebox.results',
-                                                    checked ? 'selectAll' : 'deselectAll'
+                                                    checked ? 'selectAll' : 'deselectAll',
+                                                    {
+                                                        billingMetadata: {
+                                                            product: 'cody',
+                                                            category: 'billable',
+                                                        },
+                                                    }
                                                 )
 
                                                 if (checked) {
@@ -351,6 +372,10 @@ export const SearchResults = ({
                                                                 totalResults.length -
                                                                 resultsToShow.length,
                                                         },
+                                                        billingMetadata: {
+                                                            product: 'cody',
+                                                            category: 'billable',
+                                                        },
                                                     }
                                                 )
                                                 setShowAll(true)
@@ -380,6 +405,7 @@ export const SearchResults = ({
                                             totalResults: totalResults.length,
                                             resultsAdded: totalResults.length - resultsToShow.length,
                                         },
+                                        billingMetadata: { product: 'cody', category: 'core' },
                                     })
                                 }}
                             >
