@@ -76,12 +76,6 @@ export class InlineDiffDecorator implements vscode.Disposable, AutoEditsDecorato
                 currentInsertPosition = null
                 currentInsertText = ''
             }
-
-            // Apply removed changes for this line
-            if (removed.length > 0) {
-                this.editor.setDecorations(this.removedTextDecorationType, removed)
-                removed.length = 0
-            }
         }
 
         return { added, removed }

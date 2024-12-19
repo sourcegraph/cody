@@ -299,6 +299,18 @@ describe('isAllNewLineChars', () => {
 })
 
 describe('adjustPredictionIfInlineCompletionPossible', () => {
+    it('prediction when the prefix matches partially with suffix', () => {
+        const originalPrediction = '\n    private async func {\n'
+        const prefix = '\n    private '
+        const suffix = '\n\n    private async func {\n'
+        const result = utils.adjustPredictionIfInlineCompletionPossible(
+            originalPrediction,
+            prefix,
+            suffix
+        )
+        expect(result).toBe(originalPrediction)
+    })
+
     it('returns original prediction if prefix or suffix not found', () => {
         const originalPrediction = 'some code'
         const prefix = 'prefix'

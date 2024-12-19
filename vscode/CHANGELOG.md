@@ -12,6 +12,22 @@ This is a log of all notable changes to Cody for VS Code.
 
 ### Uncategorized
 
+## 1.52.0
+
+### Added
+
+### Fixed
+
+### Changed
+- disable command execution by default  [pull/6296](https://github.com/sourcegraph/cody/pull/6296)
+
+#### Tracing & Logging
+- Remove legacy back-compat (#6265)  [pull/6276](https://github.com/sourcegraph/cody/pull/6276)
+- Adding Distributed Tracing and Smart Apply to cody  [pull/6178](https://github.com/sourcegraph/cody/pull/6178)
+
+### Experimental Features
+- Deep Cody: remove setting Deep Cody as default model. [pull/6308](https://github.com/sourcegraph/cody/pull/6308)
+  
 ## 1.50.0
 
 ### Added
@@ -24,8 +40,8 @@ This is a log of all notable changes to Cody for VS Code.
 - suppress emission of characters on emacs keybindings  [pull/6210](https://github.com/sourcegraph/cody/pull/6210)
 - use local storage to save repo accessibility  [pull/6193](https://github.com/sourcegraph/cody/pull/6193)
 
-#### Deep Cody
-- fix(deep-cody): wildcard should not be ignored in allow list for shell context  [pull/6256](https://github.com/sourcegraph/cody/pull/6256)
+### Experimental Features
+- Deep Cody: wildcard should not be ignored in allow list for shell context  [pull/6256](https://github.com/sourcegraph/cody/pull/6256)
 - Deep Cody: loading message for context fetching step  [pull/6241](https://github.com/sourcegraph/cody/pull/6241)
 - Deep Cody: remove setting user model preferences  [pull/6211](https://github.com/sourcegraph/cody/pull/6211)
 

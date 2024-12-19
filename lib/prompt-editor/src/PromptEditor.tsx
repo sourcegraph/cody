@@ -1,4 +1,3 @@
-import { $insertFirst } from '@lexical/utils'
 import {
     type ContextItem,
     type SerializedContextItem,
@@ -10,7 +9,6 @@ import {
 } from '@sourcegraph/cody-shared'
 import { clsx } from 'clsx'
 import {
-    $createParagraphNode,
     $createTextNode,
     $getRoot,
     $getSelection,
@@ -18,14 +16,21 @@ import {
     $setSelection,
     type LexicalEditor,
 } from 'lexical'
-import type { EditorState, RootNode, SerializedEditorState, SerializedLexicalNode } from 'lexical'
+import type { EditorState, SerializedEditorState, SerializedLexicalNode } from 'lexical'
 import isEqual from 'lodash/isEqual'
 import { type FunctionComponent, useCallback, useEffect, useImperativeHandle, useRef } from 'react'
 import { BaseEditor } from './BaseEditor'
 import styles from './PromptEditor.module.css'
 import { useSetGlobalPromptEditorConfig } from './config'
 import { isEditorContentOnlyInitialContext, lexicalNodesForContextItems } from './initialContext'
-import { $selectEnd, getContextItemsForEditor, visitContextItemsForEditor } from './lexicalUtils'
+import {
+    $insertMentions,
+    $selectEnd,
+    getContextItemsForEditor,
+    getWhitespace,
+    update,
+    walkContextItemMentionNodes,
+} from './lexicalUtils'
 import { $createContextItemMentionNode } from './nodes/ContextItemMentionNode'
 import type { KeyboardEventPluginProps } from './plugins/keyboardEvent'
 
@@ -55,8 +60,18 @@ export interface PromptEditorRefAPI {
     /**
      * Similar to `addMentions`, but unlike `addMentions` it doesn't merge mentions with overlapping
      * ranges. Instead it updates the meta data of existing mentions with the same uri.
+     *
+     * @param items The context items to add or update.
+     * @param position Where to insert the mentions, before or after the current input. Defaults to 'after'.
+     * @param sep The separator to use between mentions. Defaults to a space.
+     * @param focusEditor Whether to focus the editor after updating the mentions. Defaults to true.
      */
-    upsertMentions(items: ContextItem[], position?: 'before' | 'after', sep?: string): Promise<void>
+    upsertMentions(
+        items: ContextItem[],
+        position?: 'before' | 'after',
+        sep?: string,
+        focusEditor?: boolean
+    ): Promise<void>
     filterMentions(filter: (item: SerializedContextItem) => boolean): Promise<void>
     setInitialContextMentions(items: ContextItem[]): Promise<void>
     setEditorState(state: SerializedPromptEditorState): void
@@ -141,30 +156,31 @@ export const PromptEditor: FunctionComponent<Props> = ({
                 })
             },
             appendText(text: string): Promise<void> {
-                return new Promise(resolve =>
-                    editorRef.current?.update(
-                        () => {
-                            const root = $getRoot()
-                            root.selectEnd()
-                            $insertNodes([$createTextNode(`${getWhitespace(root)}${text}`)])
-                            root.selectEnd()
-                        },
-                        { onUpdate: resolve }
-                    )
-                )
+                if (!editorRef.current) {
+                    return Promise.resolve()
+                }
+                return update(editorRef.current, () => {
+                    const root = $getRoot()
+                    root.selectEnd()
+                    $insertNodes([$createTextNode(`${getWhitespace(root)}${text}`)])
+                    root.selectEnd()
+                    return true
+                })
             },
             filterMentions(filter: (item: SerializedContextItem) => boolean): Promise<void> {
-                return new Promise(resolve => {
-                    if (!editorRef.current) {
-                        resolve()
-                        return
-                    }
+                if (!editorRef.current) {
+                    return Promise.resolve()
+                }
 
-                    visitContextItemsForEditor(editorRef.current, node => {
+                return update(editorRef.current, () => {
+                    let updated = false
+                    walkContextItemMentionNodes($getRoot(), node => {
                         if (!filter(node.contextItem)) {
                             node.remove()
+                            updated = true
                         }
-                    }).then(resolve)
+                    })
+                    return updated
                 })
             },
             async addMentions(
@@ -181,8 +197,12 @@ export const PromptEditor: FunctionComponent<Props> = ({
                 const existingMentions = getContextItemsForEditor(editor)
                 const ops = getMentionOperations(existingMentions, newContextItems)
 
-                if (ops.modify.size + ops.delete.size > 0) {
-                    await visitContextItemsForEditor(editor, existing => {
+                await update(editor, () => {
+                    if (ops.modify.size + ops.delete.size === 0) {
+                        return false
+                    }
+
+                    walkContextItemMentionNodes($getRoot(), existing => {
                         const update = ops.modify.get(existing.contextItem)
                         if (update) {
                             // replace the existing mention inline with the new one
@@ -192,15 +212,25 @@ export const PromptEditor: FunctionComponent<Props> = ({
                             existing.remove()
                         }
                     })
-                }
+                    return true
+                })
 
-                if (ops.create.length === 0) {
-                    return
-                }
+                return update(editor, () => {
+                    if (ops.create.length === 0) {
+                        return false
+                    }
 
-                return insertMentions(editor, ops.create, position, sep)
+                    $insertMentions(ops.create, position, sep)
+                    $selectEnd()
+                    return true
+                })
             },
-            async upsertMentions(items, position = 'after', sep = ' '): Promise<void> {
+            async upsertMentions(
+                items,
+                position = 'after',
+                sep = ' ',
+                focusEditor = true
+            ): Promise<void> {
                 const editor = editorRef.current
                 if (!editor) {
                     return
@@ -217,63 +247,85 @@ export const PromptEditor: FunctionComponent<Props> = ({
                     }
                 }
 
-                // ! visitContextItemsForEditor must only be called when we have changes to make. Otherwise
-                // the promise it returns will never resolve.
-                if (toUpdate.size > 0) {
-                    await visitContextItemsForEditor(editor, existing => {
+                await update(editor, () => {
+                    if (toUpdate.size === 0) {
+                        return false
+                    }
+
+                    walkContextItemMentionNodes($getRoot(), existing => {
                         const update = toUpdate.get(getKeyForContextItem(existing.contextItem))
                         if (update) {
                             // replace the existing mention inline with the new one
                             existing.replace($createContextItemMentionNode(update))
                         }
                     })
-                }
-                if (items.length === toUpdate.size) {
-                    return
-                }
-
-                return insertMentions(
-                    editor,
-                    items.filter(item => !toUpdate.has(getKeyForContextItem(item))),
-                    position,
-                    sep
-                )
+                    if (focusEditor) {
+                        $selectEnd()
+                    } else {
+                        // Workaround for preventing the editor from stealing focus
+                        // (https://github.com/facebook/lexical/issues/2636#issuecomment-1184418601)
+                        // We need this until we can use the new 'skip-dom-selection' tag as
+                        // explained in https://lexical.dev/docs/concepts/selection#focus, introduced
+                        // by https://github.com/facebook/lexical/pull/6894
+                        $setSelection(null)
+                    }
+                    return true
+                })
+                return update(editor, () => {
+                    if (items.length === toUpdate.size) {
+                        return false
+                    }
+                    $insertMentions(
+                        items.filter(item => !toUpdate.has(getKeyForContextItem(item))),
+                        position,
+                        sep
+                    )
+                    if (focusEditor) {
+                        $selectEnd()
+                    } else {
+                        // Workaround for preventing the editor from stealing focus
+                        // (https://github.com/facebook/lexical/issues/2636#issuecomment-1184418601)
+                        // We need this until we can use the new 'skip-dom-selection' tag as
+                        // explained in https://lexical.dev/docs/concepts/selection#focus, introduced
+                        // by https://github.com/facebook/lexical/pull/6894
+                        $setSelection(null)
+                    }
+                    return true
+                })
             },
             setInitialContextMentions(items: ContextItem[]): Promise<void> {
-                return new Promise(resolve => {
-                    const editor = editorRef.current
-                    if (!editor) {
-                        return resolve()
+                const editor = editorRef.current
+                if (!editor) {
+                    return Promise.resolve()
+                }
+
+                return update(editor, () => {
+                    let updated = false
+
+                    if (!hasSetInitialContext.current || isEditorContentOnlyInitialContext(editor)) {
+                        if (isEditorContentOnlyInitialContext(editor)) {
+                            // Only clear in this case so that we don't clobber any text that was
+                            // inserted before initial context was received.
+                            $getRoot().clear()
+                            updated = true
+                        }
+                        const nodesToInsert = lexicalNodesForContextItems(items, {
+                            isFromInitialContext: true,
+                        })
+
+                        // Add whitespace after initial context items chips
+                        if (items.length > 0) {
+                            nodesToInsert.push($createTextNode(' '))
+                            updated = true
+                        }
+
+                        $setSelection($getRoot().selectStart()) // insert at start
+                        $insertNodes(nodesToInsert)
+                        $selectEnd()
+                        hasSetInitialContext.current = true
                     }
 
-                    editor.update(
-                        () => {
-                            if (
-                                !hasSetInitialContext.current ||
-                                isEditorContentOnlyInitialContext(editor)
-                            ) {
-                                if (isEditorContentOnlyInitialContext(editor)) {
-                                    // Only clear in this case so that we don't clobber any text that was
-                                    // inserted before initial context was received.
-                                    $getRoot().clear()
-                                }
-                                const nodesToInsert = lexicalNodesForContextItems(items, {
-                                    isFromInitialContext: true,
-                                })
-
-                                // Add whitespace after initial context items chips
-                                if (items.length > 0) {
-                                    nodesToInsert.push($createTextNode(' '))
-                                }
-
-                                $setSelection($getRoot().selectStart()) // insert at start
-                                $insertNodes(nodesToInsert)
-                                $selectEnd()
-                                hasSetInitialContext.current = true
-                            }
-                        },
-                        { onUpdate: resolve }
-                    )
+                    return updated
                 })
             },
         }),
@@ -283,7 +335,7 @@ export const PromptEditor: FunctionComponent<Props> = ({
     useSetGlobalPromptEditorConfig()
 
     const onBaseEditorChange = useCallback(
-        (_editorState: EditorState, editor: LexicalEditor, tags: Set<string>): void => {
+        (_editorState: EditorState, editor: LexicalEditor): void => {
             if (onChange) {
                 onChange(toSerializedPromptEditorValue(editor))
             }
@@ -331,53 +383,6 @@ function normalizeEditorStateJSON(
     value: SerializedEditorState<SerializedLexicalNode>
 ): SerializedEditorState<SerializedLexicalNode> {
     return JSON.parse(JSON.stringify(value))
-}
-
-function getWhitespace(root: RootNode): string {
-    const needsWhitespaceBefore = !/(^|\s)$/.test(root.getTextContent())
-    return needsWhitespaceBefore ? ' ' : ''
-}
-
-function insertMentions(
-    editor: LexicalEditor,
-    items: (SerializedContextItem | ContextItem)[],
-    position: 'before' | 'after',
-    sep?: string
-): Promise<void> {
-    return new Promise(resolve =>
-        editor.update(
-            () => {
-                const nodesToInsert = lexicalNodesForContextItems(
-                    items,
-                    {
-                        isFromInitialContext: false,
-                    },
-                    sep
-                )
-                const pNode = $createParagraphNode()
-
-                switch (position) {
-                    case 'before': {
-                        pNode.append(...nodesToInsert)
-                        $insertFirst($getRoot(), pNode)
-                        break
-                    }
-                    case 'after': {
-                        pNode.append(
-                            $createTextNode(getWhitespace($getRoot())),
-                            ...nodesToInsert,
-                            $createTextNode(sep)
-                        )
-                        $insertNodes([pNode])
-                        break
-                    }
-                }
-
-                $selectEnd()
-            },
-            { onUpdate: resolve }
-        )
-    )
 }
 
 /**
