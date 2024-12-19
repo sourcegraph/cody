@@ -1,11 +1,10 @@
 <idea-plugin>
+    <vendor>Sourcegraph</vendor>
     <id>com.sourcegraph.jetbrains.testing</id>
     <name>Cody Test Support</name>
     <depends>com.sourcegraph.jetbrains</depends>
     <extensions defaultExtensionNs="com.intellij">
         <postStartupActivity implementation="com.sourcegraph.jetbrains.testing.DebugServerStartupActivity" />
-        <projectService serviceImplementation="com.sourcegraph.jetbrains.testing.ProjectTesting" />
-        <!-- TODO: Add a httpRequestHandler for CDP forwarding -->
     </extensions>
     <extensions defaultExtensionNs="com.sourcegraph.jetbrains">
         <testSupport.webviewSink implementation="com.sourcegraph.jetbrains.testing.WebviewAutomation" />
