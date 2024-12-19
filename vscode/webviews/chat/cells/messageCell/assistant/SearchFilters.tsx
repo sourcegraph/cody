@@ -48,6 +48,7 @@ export const SearchFilters = ({
                     filterType: getTelemetryFilterType(filter),
                 },
                 privateMetadata: { value: filter.value },
+                billingMetadata: { product: 'cody', category: 'billable' },
             })
             onSelectedFiltersUpdate([...selectedFilters, filter])
         },
