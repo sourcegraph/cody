@@ -30,7 +30,7 @@ export const ProUser: Story = {
             authenticated: true,
             hasVerifiedEmail: true,
             requiresVerifiedEmail: false,
-            endpoint: 'https://example.com',
+            endpoint: 'https://sourcegraph.com',
         },
     },
 }
@@ -59,7 +59,7 @@ export const EnterpriseUser: Story = {
             ...AUTH_STATUS_FIXTURE_AUTHED,
             username: 'enterprise-tim',
             displayName: 'Enterprise Tim',
-            primaryEmail: 'enterprise@company.com',
+            primaryEmail: 'enterprise-tim@sourcegraph.enterprise.com',
             avatarURL: 'https://avatars.githubusercontent.com/u/153?v=4',
             endpoint: 'https://sourcegraph.enterprise.com',
         },
@@ -74,6 +74,18 @@ export const NoDisplayName: Story = {
             username: 'username-only',
             primaryEmail: 'user@example.com',
             endpoint: 'https://sourcegraph.com',
+        },
+    },
+}
+
+export const LongEmail: Story = {
+    args: {
+        isProUser: false,
+        authStatus: {
+            ...AUTH_STATUS_FIXTURE_AUTHED,
+            username: 'username',
+            primaryEmail: 'username-has-a-very-long-email@example.com',
+            endpoint: 'https://test.sourcegraph.com',
         },
     },
 }
