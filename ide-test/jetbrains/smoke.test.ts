@@ -6,7 +6,7 @@ async function checkTestServerStarted(): Promise<void> {
     let lastError: Error | undefined
     while (Date.now() < giveUpDeadline) {
         try {
-            const response = await fetch('http://localhost:8083/healthz')
+            const response = await fetch('http://localhost:8083/statusz')
             if (response.ok) {
                 return
             }

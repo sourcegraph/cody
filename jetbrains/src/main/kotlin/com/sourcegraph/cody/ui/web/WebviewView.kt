@@ -106,7 +106,7 @@ internal class WebviewViewManager(private val project: Project) {
 
   private fun provideView(viewHost: WebviewHost, provider: Provider) {
     val handle = "native-webview-view-${viewHost.id}"
-    WebUIService.getInstance(project).createWebviewView(handle) { proxy ->
+    WebUIService.getInstance(project).createWebviewView(handle, viewHost.id) { proxy ->
       viewHost.adopt(proxy)
       return@createWebviewView viewHost.viewDelegate
     }
