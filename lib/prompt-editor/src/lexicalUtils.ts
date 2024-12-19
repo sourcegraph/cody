@@ -1,7 +1,11 @@
-import type { SerializedContextItem } from '@sourcegraph/cody-shared'
+import { $insertFirst } from '@lexical/utils'
+import type { ContextItem, SerializedContextItem } from '@sourcegraph/cody-shared'
 import {
+    $createParagraphNode,
     $createRangeSelection,
+    $createTextNode,
     $getRoot,
+    $insertNodes,
     $isDecoratorNode,
     $isElementNode,
     $isTextNode,
@@ -13,6 +17,7 @@ import {
     type RootNode,
     type TextNode,
 } from 'lexical'
+import { lexicalNodesForContextItems } from './initialContext'
 import { ContextItemMentionNode } from './nodes/ContextItemMentionNode'
 
 function getLastNode(root: RootNode): ElementNode | TextNode | null {
@@ -73,19 +78,78 @@ export function getContextItemsForEditor(editor: LexicalEditor): SerializedConte
     })
 }
 
-export function visitContextItemsForEditor(
-    editor: LexicalEditor,
+export function walkContextItemMentionNodes(
+    node: LexicalNode,
     visit: (mention: ContextItemMentionNode) => void
-): Promise<void> {
+): void {
+    walkLexicalNodes(node, node => {
+        if (node instanceof ContextItemMentionNode) {
+            visit(node)
+        }
+        return true
+    })
+}
+
+/**
+ * Inserts the given context items before or after the current value of the editor.
+ *
+ * @param items The context items to insert.
+ * @param position Where to insert the context items, relative to the editor value. Defaults to 'after'.
+ * @param sep The separator to insert between the current value and the context items.
+ */
+export function $insertMentions(
+    items: (SerializedContextItem | ContextItem)[],
+    position: 'before' | 'after',
+    sep?: string
+): void {
+    const nodesToInsert = lexicalNodesForContextItems(
+        items,
+        {
+            isFromInitialContext: false,
+        },
+        sep
+    )
+    const pNode = $createParagraphNode()
+
+    switch (position) {
+        case 'before': {
+            pNode.append(...nodesToInsert)
+            $insertFirst($getRoot(), pNode)
+            break
+        }
+        case 'after': {
+            pNode.append(
+                $createTextNode(getWhitespace($getRoot())),
+                ...nodesToInsert,
+                $createTextNode(sep)
+            )
+            $insertNodes([pNode])
+            break
+        }
+    }
+}
+
+export function getWhitespace(root: RootNode): string {
+    const needsWhitespaceBefore = !/(^|\s)$/.test(root.getTextContent())
+    return needsWhitespaceBefore ? ' ' : ''
+}
+
+/**
+ * Helper function to update the editor state and get a promise that resolves when the update is done.
+ *
+ * IMPORTANT: The promise will never resolve when the update function does not cause any changes to the editor state.
+ * (not until we update to a version that includes https://github.com/facebook/lexical/pull/6894).
+ * To mitigate this, the update function should return a boolean, where  `false` indicates that it did not cause any changes,
+ * in which case the promise will resolve immediately.
+ */
+export function update(editor: LexicalEditor, updateFn: () => boolean): Promise<void> {
     return new Promise(resolve => {
         editor.update(
             () => {
-                walkLexicalNodes($getRoot(), node => {
-                    if (node instanceof ContextItemMentionNode) {
-                        visit(node)
-                    }
-                    return true
-                })
+                const result = updateFn()
+                if (result === false) {
+                    resolve()
+                }
             },
             { onUpdate: resolve }
         )

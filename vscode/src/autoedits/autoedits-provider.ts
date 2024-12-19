@@ -13,18 +13,21 @@ import {
     isDotComAuthed,
     tokensToChars,
 } from '@sourcegraph/cody-shared'
+
 import { ContextRankingStrategy } from '../completions/context/completions-context-ranker'
 import { ContextMixer } from '../completions/context/context-mixer'
 import { DefaultContextStrategyFactory } from '../completions/context/context-strategy'
 import { RetrieverIdentifier } from '../completions/context/utils'
 import { getCurrentDocContext } from '../completions/get-current-doc-context'
 import { getConfiguration } from '../configuration'
+
 import type { AutoeditsModelAdapter, AutoeditsPrompt } from './adapters/base'
 import { CodyGatewayAdapter } from './adapters/cody-gateway'
 import { FireworksAdapter } from './adapters/fireworks'
 import { OpenAIAdapter } from './adapters/openai'
 import { SourcegraphChatAdapter } from './adapters/sourcegraph-chat'
 import { SourcegraphCompletionsAdapter } from './adapters/sourcegraph-completions'
+import { FilterPredictionBasedOnRecentEdits } from './filter-prediction-edits'
 import { autoeditsLogger } from './logger'
 import type { AutoeditsUserPromptStrategy } from './prompt/base'
 import { SYSTEM_PROMPT } from './prompt/constants'
@@ -81,6 +84,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
     /** Keeps track of the last time the text was changed in the editor. */
     private lastTextChangeTimeStamp: number | undefined
     private readonly promptProvider: AutoeditsUserPromptStrategy = new ShortTermPromptStrategy()
+    private readonly filterPrediction = new FilterPredictionBasedOnRecentEdits()
 
     private isMockResponseFromCurrentDocumentTemplateEnabled = vscode.workspace
         .getConfiguration()
@@ -220,6 +224,15 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         }
 
         let { prediction, codeToReplaceData } = autoeditResponse
+        const shouldFilterPredictionBasedRecentEdits = this.filterPrediction.shouldFilterPrediction(
+            document.uri,
+            prediction,
+            codeToReplaceData.codeToRewrite
+        )
+        if (shouldFilterPredictionBasedRecentEdits) {
+            return null
+        }
+
         prediction = shrinkPredictionUntilSuffix(prediction, codeToReplaceData)
 
         if (prediction === codeToReplaceData.codeToRewrite) {

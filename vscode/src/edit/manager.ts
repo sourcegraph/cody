@@ -345,7 +345,9 @@ export class EditManager implements vscode.Disposable {
                     void vscode.window.showErrorMessage(
                         'Unable to apply this change to the file. Please try applying this code manually'
                     )
-                    telemetryRecorder.recordEvent('cody.smart-apply.selection', 'not-found')
+                    telemetryRecorder.recordEvent('cody.smart-apply.selection', 'not-found', {
+                        billingMetadata: { product: 'cody', category: 'billable' },
+                    })
                     return
                 }
 
@@ -353,6 +355,7 @@ export class EditManager implements vscode.Disposable {
                     metadata: {
                         [selection.type]: 1,
                     },
+                    billingMetadata: { product: 'cody', category: 'billable' },
                 })
 
                 // Move focus to the determined selection
