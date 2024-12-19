@@ -12,8 +12,6 @@ overrides:
   tslib: 2.1.0
   '@lexical/react': https://storage.googleapis.com/sourcegraph-assets/npm/lexical-react-sourcegraph-fork-31065486.tgz
 
-packageExtensionsChecksum: bc809394d179d8460f9d473fc54e379a
-
 patchedDependencies:
   highlight.js@11.8.0:
     hash: bzyroljkef3byfhzbomid6liny
@@ -556,9 +554,6 @@ importers:
       '@vscode/codicons':
         specifier: ^0.0.35
         version: 0.0.35
-      '@vscode/webview-ui-toolkit':
-        specifier: ^1.2.2
-        version: 1.2.2(react@18.2.0)
       agent-base:
         specifier: ^7.1.1
         version: 7.1.1
@@ -3495,41 +3490,6 @@ packages:
       '@types/react': 18.2.79
       react: 18.3.1
     dev: true
-
-  /@microsoft/fast-element@1.13.0:
-    resolution: {integrity: sha512-iFhzKbbD0cFRo9cEzLS3Tdo9BYuatdxmCEKCpZs1Cro/93zNMpZ/Y9/Z7SknmW6fhDZbpBvtO8lLh9TFEcNVAQ==}
-    dev: false
-
-  /@microsoft/fast-foundation@2.49.6:
-    resolution: {integrity: sha512-DZVr+J/NIoskFC1Y6xnAowrMkdbf2d5o7UyWK6gW5AiQ6S386Ql8dw4KcC4kHaeE1yL2CKvweE79cj6ZhJhTvA==}
-    dependencies:
-      '@microsoft/fast-element': 1.13.0
-      '@microsoft/fast-web-utilities': 5.4.1
-      tabbable: 5.3.3
-      tslib: 2.1.0
-    dev: false
-
-  /@microsoft/fast-react-wrapper@0.1.48(react@18.2.0):
-    resolution: {integrity: sha512-9NvEjru9Kn5ZKjomAMX6v+eF0DR+eDkxKDwDfi+Wb73kTbrNzcnmlwd4diN15ygH97kldgj2+lpvI4CKLQQWLg==}
-    peerDependencies:
-      react: '>=16.9.0'
-    dependencies:
-      '@microsoft/fast-element': 1.13.0
-      '@microsoft/fast-foundation': 2.49.6
-      react: 18.2.0
-    dev: false
-
-  /@microsoft/fast-web-utilities@5.4.1:
-    resolution: {integrity: sha512-ReWYncndjV3c8D8iq9tp7NcFNc1vbVHvcBFPME2nNFKNbS1XCesYZGlIlf3ot5EmuOXPlrzUHOWzQ2vFpIkqDg==}
-    dependencies:
-      exenv-es6: 1.1.1
-    dev: false
-
-  /@microsoft/fast-web-utilities@6.0.0:
-    resolution: {integrity: sha512-ckCA4Xn91ja1Qz+jhGGL1Q3ZeuRpA5VvYcRA7GzA1NP545sl14bwz3tbHCq8jIk+PL7mkSaIveGMYuJB2L4Izg==}
-    dependencies:
-      exenv-es6: 1.1.1
-    dev: false
 
   /@microsoft/fetch-event-source@2.0.1:
     resolution: {integrity: sha512-W6CLUJ2eBMw3Rec70qrsEW0jOm/3twwJv21mrmj2yORiaVmVYGS4sSS5yUwvQc1ZlDLYGPnClVWmUUMagKNsfA==}
@@ -7316,19 +7276,6 @@ packages:
       keytar: 7.9.0
     dev: true
 
-  /@vscode/webview-ui-toolkit@1.2.2(react@18.2.0):
-    resolution: {integrity: sha512-xIQoF4FC3Xh6d7KNKIoIezSiFWYFuf6gQMdDyKueKBFGeKwaHWEn+dY2g3makvvEsNMEDji/woEwvg9QSbuUsw==}
-    peerDependencies:
-      react: '>=16.9.0'
-    dependencies:
-      '@microsoft/fast-element': 1.13.0
-      '@microsoft/fast-foundation': 2.49.6
-      '@microsoft/fast-react-wrapper': 0.1.48(react@18.2.0)
-      '@microsoft/fast-web-utilities': 6.0.0
-      react: 18.2.0
-      tslib: 2.1.0
-    dev: false
-
   /@xmldom/xmldom@0.7.13:
     resolution: {integrity: sha512-lm2GW5PkosIzccsaZIz7tp8cPADSIlIHWDFTR1N0SzfinhhYgeIQjFMz4rYzanCScr3DqQLeomUDArp6MWKm+g==}
     engines: {node: '>=10.0.0'}
@@ -9716,10 +9663,6 @@ packages:
       signal-exit: 4.1.0
       strip-final-newline: 3.0.0
     dev: true
-
-  /exenv-es6@1.1.1:
-    resolution: {integrity: sha512-vlVu3N8d6yEMpMsEm+7sUBAI81aqYYuEvfK0jNqmdb/OPXzzH7QWDDnVjMvDSY47JdHEqx/dfC/q8WkfoTmpGQ==}
-    dev: false
 
   /expand-brackets@2.1.4:
     resolution: {integrity: sha512-w/ozOKR9Obk3qoWeY/WDi6MFta9AoMR+zud60mdnbniMcBxRuFJyDt2LdX/14A1UABeqk+Uk+LDfUpvoGKppZA==}
@@ -15933,10 +15876,6 @@ packages:
       better-path-resolve: 1.0.0
       rename-overwrite: 6.0.0
     dev: true
-
-  /tabbable@5.3.3:
-    resolution: {integrity: sha512-QD9qKY3StfbZqWOPLp0++pOrAVb/HbUi5xCc8cUo4XjP19808oaMiDzn0leBY5mCespIBM0CIZePzZjgzR83kA==}
-    dev: false
 
   /table@6.8.2:
     resolution: {integrity: sha512-w2sfv80nrAh2VCbqR5AK27wswXhqcck2AhfnNW76beQXskGZ1V12GwS//yYVa3d3fcvAip2OUnbDAjW2k3v9fA==}

@@ -82,14 +82,6 @@
       "tslib": "2.1.0",
       "@lexical/react": "https://storage.googleapis.com/sourcegraph-assets/npm/lexical-react-sourcegraph-fork-31065486.tgz"
     },
-    "packageExtensions": {
-      "@vscode/webview-ui-toolkit": {
-        "dependencies": {
-          "@microsoft/fast-web-utilities": "^6.0.0",
-          "tslib": "^2.1.0"
-        }
-      }
-    },
     "neverBuiltDependencies": ["deasync", "playwright"],
     "patchedDependencies": {
       "highlight.js@11.8.0": "patches/highlight.js@11.8.0.patch"
