@@ -3,8 +3,8 @@ import org.jetbrains.intellij.platform.gradle.tasks.BuildPluginTask
 
 plugins {
   id("java")
-  id("org.jetbrains.kotlin.jvm") version "2.0.21"
   id("org.jetbrains.intellij.platform") version "2.1.0"
+  kotlin("jvm") version "2.0.21"
 }
 
 repositories {
@@ -20,12 +20,10 @@ dependencies {
     pluginVerifier()
   }
 
-  val ktorVersion = "3.0.1"
+  val ktorVersion = "3.0.2"
   implementation("io.ktor:ktor-server-core:$ktorVersion")
-  implementation("io.ktor:ktor-server-content-negotiation:$ktorVersion")
   implementation("io.ktor:ktor-server-netty:$ktorVersion")
   implementation("io.ktor:ktor-server-websockets:$ktorVersion")
-  implementation("io.ktor:ktor-serialization-kotlinx-json:$ktorVersion")
 }
 
 intellijPlatform {

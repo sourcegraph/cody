@@ -3,7 +3,6 @@ package com.sourcegraph.jetbrains.testing
 import com.intellij.openapi.components.Service
 import com.intellij.ui.jcef.JBCefBrowser
 import io.ktor.server.websocket.DefaultWebSocketServerSession
-import kotlinx.serialization.Serializable
 import io.ktor.http.HttpStatusCode
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -12,7 +11,6 @@ import kotlinx.coroutines.launch
 import org.cef.browser.CefDevToolsClient
 import java.lang.ref.WeakReference
 
-@Serializable
 data class WebviewData(val cdpUrl: String, val viewType: String, val state: String)
 
 class WebviewTarget {
@@ -36,10 +34,10 @@ class WebviewTarget {
 class ChromeDevToolsProtocolForwarder {
     val targets = mutableListOf<WebviewTarget>()
 
-    fun listWebviews(urlPrefix: String): List<WebviewData> {
+    fun listWebviews(devToolsUrlPrefix: String): List<WebviewData> {
         return synchronized(this.targets) {
             this.targets.map {
-                WebviewData("$urlPrefix/${it.id}", it.viewType, if (it.client.get() == null) { "dead" } else { "alive" })
+                WebviewData("${devToolsUrlPrefix}${it.id}", it.viewType, if (it.client.get() == null) { "dead" } else { "alive" })
             }
         }
     }
