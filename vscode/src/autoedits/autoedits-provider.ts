@@ -120,6 +120,13 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             vscode.window.onDidChangeTextEditorSelection(this.onSelectionChangeDebounced),
             vscode.workspace.onDidChangeTextDocument(event => {
                 this.onDidChangeTextDocument(event)
+            }),
+            vscode.commands.registerCommand('cody.command.autoedits-manual-trigger', async () => {
+                this.showAutoEdit(
+                    vscode.window.activeTextEditor!.document!,
+                    vscode.window.activeTextEditor!.selection.active,
+                    new AbortController().signal
+                )
             })
         )
     }
@@ -187,6 +194,10 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         context: vscode.InlineCompletionContext,
         token?: vscode.CancellationToken
     ): Promise<vscode.InlineCompletionItem[] | vscode.InlineCompletionList | null> {
+        console.log('---------------------------------')
+        console.log('HITESH SAGTANI - AutoEditProvider')
+        console.log('---------------------------------')
+
         const controller = new AbortController()
         token?.onCancellationRequested(() => controller.abort())
 
@@ -373,7 +384,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 model: 'autoedits-deepseek-lite-default',
                 url: 'https://cody-gateway.sourcegraph.com/v1/completions/fireworks',
                 tokenLimit: defaultTokenLimit,
-                isChatModel: false,
+                isChatModel: true,
             }
         }
         return {
@@ -382,7 +393,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             tokenLimit: defaultTokenLimit,
             // We use completions client for sourcegraph provider, so we don't need to specify url.
             url: '',
-            isChatModel: false,
+            isChatModel: true,
         }
     }
 
