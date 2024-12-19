@@ -1,3 +1,7 @@
+.chat-model-popover {
+    max-height: var(--radix-popper-available-height);
+}
+
 .model-title-with-icon {
     flex: 1;
     display: flex;
