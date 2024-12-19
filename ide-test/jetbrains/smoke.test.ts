@@ -1,5 +1,5 @@
 //import { spawn } from 'node:child_process'
-import { chromium, test } from '@playwright/test'
+import { chromium, expect, test } from '@playwright/test'
 
 async function checkTestServerStarted(): Promise<void> {
     let giveUpDeadline = Date.now() + 60 * 1000
@@ -41,7 +41,13 @@ test(
         try {
             await checkTestServerStarted()
             const browser = await chromium.connectOverCDP('http://localhost:8083')
-            console.log(`${browser} with ${browser.contexts.length} contexts`)
+            const contexts = browser.contexts()
+            expect(contexts.length).toBe(1)
+            const context = contexts[0]
+            const pages = context.pages()
+            await new Promise(resolve => setTimeout(resolve, 20_000))
+            const page = pages[0]
+            await expect(page.getByText('Hey, Sourcegraph!')).toBeVisible()
         } finally {
             //ideProcess.kill()
         }

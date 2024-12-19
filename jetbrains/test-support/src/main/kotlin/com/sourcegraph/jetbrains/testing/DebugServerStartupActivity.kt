@@ -22,7 +22,7 @@ import kotlinx.coroutines.withContext
 class DebugServerStartupActivity : ProjectActivity {
   override suspend fun execute(project: Project) {
     withContext(Dispatchers.IO) {
-      val devToolsUrlPrefix = "http://localhost:8083/cdp/"
+      val devToolsUrlPrefix = "://localhost:8083/cdp/"
       val server = embeddedServer(Netty, port = 8083) {
         install(WebSockets)
         routing {

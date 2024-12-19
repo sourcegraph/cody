@@ -10,6 +10,7 @@ import io.ktor.websocket.Frame
 import io.ktor.websocket.readText
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.yield
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
@@ -41,7 +42,7 @@ class ChromeDevToolsProtocolForwarder {
 
     fun version(devToolsUrlPrefix: String): String {
         // TODO: This hard-codes the first target.
-        return "{\"Protocol-Version\":\"1.3\",\"webSocketDebuggerUrl\":\"${devToolsUrlPrefix}0\"}"
+        return "{\"Protocol-Version\":\"1.3\",\"webSocketDebuggerUrl\":\"ws${devToolsUrlPrefix}0\"}"
     }
 
     // TODO: Rationalize this with /json/list/ in the CDP protocol
@@ -54,6 +55,7 @@ class ChromeDevToolsProtocolForwarder {
     }
 
     suspend fun handleSession(webviewId: Int, session: DefaultWebSocketServerSession) {
+        val gson = Gson()
         val target = synchronized(this.targets) {
             this.targets.find { it.id == webviewId }
         }
@@ -66,26 +68,70 @@ class ChromeDevToolsProtocolForwarder {
             session.call.response.status(HttpStatusCode.Gone)
             return
         }
+        client.executeDevToolsMethod(
+            "Log.enable",
+            "{}"
+        ).thenApply {
+            println("*** enabled logging $it")
+        }
+        val eventChannel = Channel<String>()
+        client.addEventListener { eventName, messageAsJson ->
+            val message = JsonObject().apply {
+                addProperty("method", eventName)
+                add("params", gson.fromJson(messageAsJson, JsonObject::class.java))
+            }
+            eventChannel.trySend(gson.toJson(message))
+        }
+        val eventsJob = CoroutineScope(Dispatchers.IO).launch {
+            for (message in eventChannel) {
+                // TODO: Is it OK to call this from IO?
+                session.send(Frame.Text(message))
+            }
+        }
         for (message in session.incoming) {
             message as? Frame.Text ?: continue
             val payload = message.readText()
             println("ws: ${payload}")
-            val gson = Gson()
             val json = gson.fromJson(payload, JsonObject::class.java)
+            val id = json.get("id").asNumber
+            val method = json.get("method").asString
             val params = json.get("params")
-            val future = client.executeDevToolsMethod(json.get("method").asString, if (params != null)  { gson.toJson(params) } else { null })
+
+            // We hijack some CDP methods that JCEF doesn't support.
+            if (method == "Browser.setDownloadBehavior") {
+                session.send(Frame.Text("{\"id\":${id},\"result\":{}}"))
+                continue
+            }
+
+            // TODO: Should this be EDT?
+            val future = client.executeDevToolsMethod(method, if (params != null)  { gson.toJson(params) } else { null })
+            val result = JsonObject()
+            var extra = mutableListOf<JsonObject>()
             try {
                 // TODO: Don't block here.
                 val value = gson.fromJson(future.get(), JsonObject::class.java)
                 println("DevTools result: $value")
-                val result = JsonObject()
-                result.addProperty("id", json.get("id").asNumber)
                 result.add("result", value)
-                session.send(Frame.Text(gson.toJson(result)))
+
+                if (method == "Target.getTargetInfo") {
+                    // Playwright-CDP hacks: attach to the target
+                    extra.add(JsonObject().apply {
+                        addProperty("sessionId", "woozlwuzl")
+                        add("targetInfo", value.getAsJsonObject("targetInfo"))
+                        addProperty("waitingForDebugger", false)
+                    })
+                }
             } catch (e: Exception) {
-                println("DevTools error: ${e.message}")
+                println("devtools failed: ${e.message}")
+                val result = JsonObject()
+                result.addProperty("error", e.toString())
             }
-            // TODO: Forward the result.
+            result.addProperty("id", id)
+            session.send(Frame.Text(gson.toJson(result)))
+
+            for (extraMessage in extra) {
+                session.send(Frame.Text(gson.toJson(extraMessage)))
+            }
         }
         // TODO: Check if we have other, concurrent sessions.
         // TODO: Receive messages and forward them.
