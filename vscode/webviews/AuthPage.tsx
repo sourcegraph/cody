@@ -285,7 +285,7 @@ const ClientSignInForm: React.FC<ClientSignInFormProps> = memo(
             isSubmitting: false,
             showAuthError: false,
             formData: {
-                endpoint: authStatus?.endpoint ?? '',
+                endpoint: authStatus && !isDotCom(authStatus) ? authStatus.endpoint : '',
                 accessToken: '',
             },
         })
@@ -355,9 +355,7 @@ const ClientSignInForm: React.FC<ClientSignInFormProps> = memo(
                             type="url"
                             name="endpoint"
                             placeholder="Example: https://instance.sourcegraph.com"
-                            value={
-                                isDotCom(formState.formData.endpoint) ? '' : formState.formData.endpoint
-                            }
+                            value={formState.formData.endpoint}
                             className="tw-w-full tw-my-2 !tw-p-4"
                             required
                             onChange={handleInputChange}
