@@ -102,12 +102,14 @@ class WebUIService(private val project: Project) : Disposable {
 
   internal fun createWebviewView(
       handle: String,
+      viewType: String,
       createView: (proxy: WebUIProxy) -> WebviewViewDelegate
   ) {
     val delegate =
         WebUIHostImpl(
             project,
             handle,
+            viewType,
             WebviewOptions(
                 enableScripts = false,
                 enableForms = false,
@@ -138,7 +140,7 @@ class WebUIService(private val project: Project) : Disposable {
 
   internal fun createWebviewPanel(params: WebviewCreateWebviewPanelParams) {
     runInEdt {
-      val delegate = WebUIHostImpl(project, params.handle, params.options)
+      val delegate = WebUIHostImpl(project, params.handle, params.viewType, params.options)
       val proxy = WebUIProxy.create(delegate)
       delegate.view = panels.createPanel(proxy, params)
       proxy.updateTheme(themeController.getTheme())

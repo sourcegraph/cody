@@ -20,9 +20,12 @@ dependencies {
     pluginVerifier()
   }
 
-  implementation("io.ktor:ktor-server-core:3.0.1")
-  implementation("io.ktor:ktor-server-netty:3.0.1")
-  implementation("io.ktor:ktor-server-websockets:3.0.1")
+  val ktorVersion = "3.0.1"
+  implementation("io.ktor:ktor-server-core:$ktorVersion")
+  implementation("io.ktor:ktor-server-content-negotiation:$ktorVersion")
+  implementation("io.ktor:ktor-server-netty:$ktorVersion")
+  implementation("io.ktor:ktor-server-websockets:$ktorVersion")
+  implementation("io.ktor:ktor-serialization-kotlinx-json:$ktorVersion")
 }
 
 intellijPlatform {

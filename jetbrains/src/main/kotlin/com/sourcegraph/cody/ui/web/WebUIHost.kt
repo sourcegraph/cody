@@ -33,6 +33,9 @@ internal interface WebUIHost {
   // Provides, sinks Webview state from VSCode webview setState, getState API.
   var stateAsJSONString: String
 
+  // The type of view, for example cody.chat, this is hosting.
+  val viewType: String
+
   fun setOptions(options: WebviewOptions)
 
   fun setTitle(value: String)
@@ -47,6 +50,7 @@ internal interface WebUIHost {
 internal class WebUIHostImpl(
     val project: Project,
     val handle: String,
+    override val viewType: String,
     private var _options: WebviewOptions
 ) : WebUIHost {
   var view: WebviewViewDelegate? = null
