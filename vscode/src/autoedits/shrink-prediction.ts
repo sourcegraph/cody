@@ -9,6 +9,10 @@ export function shrinkPredictionUntilSuffix(
     prediction: string,
     { suffixInArea, suffixAfterArea, codeToRewrite }: CodeToReplaceData
 ): string {
+    if (prediction.length === 0) {
+        return prediction
+    }
+
     const newLineChar = getNewLineChar(codeToRewrite)
     const suffix = suffixInArea + suffixAfterArea
 
@@ -35,10 +39,10 @@ export function shrinkPredictionUntilSuffix(
         // Assume the lines match until proven otherwise
         let matches = true
         for (let j = 0; j < i; j++) {
-            if (
-                (suffixSlice[j].length > 0 && !predictionSlice[j].startsWith(suffixSlice[j])) ||
-                (suffixSlice[j].length === 0 && suffixSlice !== predictionSlice)
-            ) {
+            // Using a partial match predictionSlice[j].startWith(suffixSlice[j] here
+            // gives us too many false positive, so if we encounter cases where the model
+            // suggests modified suffix lines, we should address it on a different stage.
+            if (predictionSlice[j] !== suffixSlice[j]) {
                 matches = false
                 break
             }
