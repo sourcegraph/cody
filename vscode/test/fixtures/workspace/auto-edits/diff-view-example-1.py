@@ -42,6 +42,14 @@ class ContactForm(Base):
     email = Column(String(120), nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
 
+    @validates('email')
+    def validate_email(self, key, address):
+        pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}'
+        if not re.match(pattern, address):
+            raise ValueError('Invalid email address')
+        return address
+
+
     def to_json(self):
         return {
             "name": self.name,
@@ -74,6 +82,10 @@ class ContactForm(Base):
             "name": self.name,
             "email": self.email,
         }
+
+
+
+
 
 
 

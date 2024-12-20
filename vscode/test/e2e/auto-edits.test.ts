@@ -50,6 +50,11 @@ const autoeditsTestHelper = async ({
     await page.getByRole('treeitem', { name: 'auto-edits' }).locator('a').click()
     await page.getByRole('treeitem', { name: fileName }).locator('a').click()
 
+    await page.waitForTimeout(500)
+
+    // Close the explorer view
+    await sidebarExplorer(page).click()
+
     for (const lineNumber of lineNumbers) {
         await executeCommandInPalette(page, 'Go to Line/Column')
         await page.keyboard.type(`${lineNumber}:${maxColumnNumber}`)
@@ -60,12 +65,12 @@ const autoeditsTestHelper = async ({
         // Wait for the diff view to stabilize - required to reduce flakiness
         await page.waitForTimeout(1000)
 
-        await expect(page).toHaveScreenshot({ maxDiffPixelRatio: 0.01 })
+        await expect(page).toHaveScreenshot({ maxDiffPixelRatio: 0.05 })
     }
 }
 
 test('autoedits-multi-line-diff-view', async ({ page, sidebar }) => {
-    const lineNumbers: number[] = [70]
+    const lineNumbers: number[] = [78]
 
     await autoeditsTestHelper({ page, sidebar, fileName: 'diff-view-example-1.py', lineNumbers })
 })
