@@ -170,7 +170,7 @@ jobs:
             echo "SKIP_BRANCH_CREATION=true" >> $GITHUB_ENV
             exit 0
           fi
-          
+
           # Check if label exists
           if gh label list | grep -q "backport ${{ env.NEXT_RELEASE_BRANCH }}"; then
             echo "Label backport ${{ env.NEXT_RELEASE_BRANCH }} already exists"
@@ -189,7 +189,7 @@ jobs:
               repo: context.repo.repo,
               name: `${nextBackportLabel}`,
               description: `Backport to ${nextReleaseBranch} branch`
-            })      
+            })
       - name: Create and push next release branch
         if: ${{ !env.SKIP_BRANCH_CREATION }}
         run: |
