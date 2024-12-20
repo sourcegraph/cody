@@ -7,7 +7,7 @@ import { ModelSelectField } from '../../../../../../components/modelSelectField/
 import { PromptSelectField } from '../../../../../../components/promptSelectField/PromptSelectField'
 import toolbarStyles from '../../../../../../components/shadcn/ui/toolbar.module.css'
 import { useActionSelect } from '../../../../../../prompts/PromptsTab'
-import { isGeminiFlashModel } from '../../../../../../utils/modelUtils'
+import { isGeminiFlash2Model } from '../../../../../../utils/modelUtils'
 import { useClientConfig } from '../../../../../../utils/useClientConfig'
 import { AddContextButton } from './AddContextButton'
 import { SubmitButton, type SubmitButtonState } from './SubmitButton'
@@ -71,7 +71,7 @@ export const Toolbar: FunctionComponent<{
     )
 
     const isGoogleModel = useCallback((model: Model) => {
-        return isGeminiFlashModel(model)
+        return isGeminiFlash2Model(model)
     }, [])
 
     return (

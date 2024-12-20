@@ -4,7 +4,7 @@ import { BookOpenIcon, BuildingIcon, ExternalLinkIcon, FlaskConicalIcon } from '
 import { type FunctionComponent, type ReactNode, useCallback, useMemo } from 'react'
 import type { UserAccountInfo } from '../../Chat'
 import { getVSCodeAPI } from '../../utils/VSCodeApi'
-import { isGeminiFlashModel } from '../../utils/modelUtils'
+import { isGeminiFlash2Model } from '../../utils/modelUtils'
 import { useTelemetryRecorder } from '../../utils/telemetry'
 import { chatModelIconComponent } from '../ChatModelIcon'
 import { Badge } from '../shadcn/ui/badge'
@@ -356,7 +356,16 @@ const ModelTitleWithIcon: React.FC<{
 }> = ({ model, showIcon, modelAvailability }) => {
     const modelBadge = getBadgeText(model, modelAvailability)
     const isDisabled = modelAvailability !== 'available'
-    const GeminiFlashModelTitle = 'Gemini Flash 2.0'
+    const getModelTitle = (modelName: string): string =>
+        modelName
+            .split('-')
+            .map(part =>
+                part
+                    .split(' ')
+                    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                    .join(' ')
+            )
+            .join(' ')
 
     return (
         <span className={clsx(styles.modelTitleWithIcon, { [styles.disabled]: isDisabled })}>
@@ -368,7 +377,7 @@ const ModelTitleWithIcon: React.FC<{
                 )
             ) : null}
             <span className={clsx('tw-flex-grow', styles.modelName)}>
-                {isGeminiFlashModel(model) ? GeminiFlashModelTitle : model.title}
+                {isGeminiFlash2Model(model) ? getModelTitle(model.title) : model.title}
             </span>
             {modelBadge && (
                 <Badge
@@ -377,7 +386,7 @@ const ModelTitleWithIcon: React.FC<{
                         'tw-opacity-75': modelAvailability === 'needs-cody-pro',
                     })}
                 >
-                    {isGeminiFlashModel(model) ? 'Vision' : modelBadge}
+                    {isGeminiFlash2Model(model) ? 'Vision' : modelBadge}
                 </Badge>
             )}
         </span>
