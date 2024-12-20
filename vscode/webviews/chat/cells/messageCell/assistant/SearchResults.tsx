@@ -137,6 +137,11 @@ export const SearchResults = ({
         [totalResults, telemetryRecorder]
     )
 
+    const onFilterSidebarClose = useCallback(() => {
+        telemetryRecorder.recordEvent('onebox.filterSidebar', 'closed')
+        setShowFiltersSidebar(false)
+    }, [telemetryRecorder])
+
     if (showFiltersModal) {
         return (
             <SearchFiltersModal
@@ -150,11 +155,6 @@ export const SearchResults = ({
             />
         )
     }
-
-    const onFilterSidebarClose = useCallback(() => {
-        telemetryRecorder.recordEvent('onebox.filterSidebar', 'closed')
-        setShowFiltersSidebar(false)
-    }, [telemetryRecorder])
 
     return (
         <div className={styles.root}>
