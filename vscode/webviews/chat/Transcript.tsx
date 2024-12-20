@@ -174,7 +174,7 @@ export interface Interaction {
     /** The human message, either sent or not. */
     humanMessage: ChatMessage & { index: number; isUnsentFollowup: boolean }
 
-    /** `null` if the {@link Interaction.humanMessage} has not yet been sent. */
+    /** `null` if the {@link Interaction["humanMessage"]} has not yet been sent. */
     assistantMessage: (ChatMessage & { index: number; isLoading: boolean }) | null
 }
 
@@ -611,6 +611,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
             {experimentalOneBoxEnabled && (
                 <SwitchIntent
                     intent={humanMessage?.intent}
+                    manuallySelected={!!humanMessage.manuallySelectedIntent}
                     onSwitch={
                         humanMessage?.intent === 'search'
                             ? reSubmitWithChatIntent
