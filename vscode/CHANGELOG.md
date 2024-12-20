@@ -6,6 +6,8 @@ This is a log of all notable changes to Cody for VS Code.
 
 ### Added
 
+- Add Gemini Flash 2.0 experimental vision model support via cody dev models flag [pull/6354](https://github.com/sourcegraph/cody/pull/6354)
+
 ### Fixed
 
 ### Changed
