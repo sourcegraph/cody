@@ -63,6 +63,7 @@ export interface SerializedChatMessage {
     text?: string // Changed from PromptString
     model?: string
     intent?: ChatMessage['intent']
+    manuallySelectedIntent?: ChatMessage['manuallySelectedIntent']
     search?: ChatMessage['search']
 }
 
