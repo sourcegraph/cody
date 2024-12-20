@@ -703,6 +703,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     text: inputText,
                     editorState,
                     intent: detectedIntent,
+                    manuallySelectedIntent: manuallySelectedIntent ? detectedIntent : undefined,
                 })
                 this.postViewTranscript({ speaker: 'assistant' })
 

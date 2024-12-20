@@ -4,9 +4,10 @@ import { Button } from '../../../../components/shadcn/ui/button'
 
 interface SwitchIntentProps {
     intent: ChatMessage['intent']
+    manuallySelected: boolean
     onSwitch?: () => void
 }
-export const SwitchIntent = ({ intent, onSwitch }: SwitchIntentProps) => {
+export const SwitchIntent = ({ intent, manuallySelected, onSwitch }: SwitchIntentProps) => {
     if (!['chat', 'search'].includes(intent || '')) {
         return null
     }
@@ -15,7 +16,8 @@ export const SwitchIntent = ({ intent, onSwitch }: SwitchIntentProps) => {
         <div className="tw-flex tw-justify-between tw-gap-4 tw-items-center">
             <div className="tw-flex tw-gap-2 tw-text-muted-foreground tw-items-center">
                 <Brain className="tw-size-8 tw-flex-shrink-0" />
-                Query review selected a {intent === 'search' ? 'code search' : 'chat'} response
+                {manuallySelected ? 'User' : 'Query review'} selected a{' '}
+                {intent === 'search' ? 'code search' : 'chat'} response
             </div>
             <div>
                 <Button
