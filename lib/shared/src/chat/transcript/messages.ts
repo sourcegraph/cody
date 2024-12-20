@@ -37,6 +37,7 @@ export interface ChatMessage extends Message {
 
     /* The detected intent of the message */
     intent?: 'search' | 'chat' | 'edit' | 'insert' | undefined | null
+    manuallySelectedIntent?: 'search' | 'chat' | 'edit' | 'insert' | undefined | null
     search?: ChatMessageSearch | undefined | null
 }
 
