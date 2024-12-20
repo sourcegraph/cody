@@ -66,6 +66,7 @@
     "@openctx/client": "^0.0.30",
     "@opentelemetry/sdk-trace-web": "^1.18.1",
     "@sourcegraph/telemetry": "^0.18.0",
+    "http-proxy": "^1.18.1",
     "observable-fns": "^0.6.1",
     "react": "18.2.0",
     "react-dom": "18.2.0",
@@ -90,7 +91,10 @@
         }
       }
     },
-    "neverBuiltDependencies": ["deasync", "playwright"],
+    "neverBuiltDependencies": [
+      "deasync",
+      "playwright"
+    ],
     "patchedDependencies": {
       "highlight.js@11.8.0": "patches/highlight.js@11.8.0.patch"
     }
