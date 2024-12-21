@@ -203,7 +203,7 @@ export function inputTextWithoutContextChipsFromPromptEditorState(
 ): string {
     state = filterLexicalNodes(state, node => !isSerializedContextItemMentionNode(node))
 
-    return textContentFromSerializedLexicalNode(state.lexicalEditorState.root).trimStart()
+    return textContentFromSerializedLexicalNode(state.lexicalEditorState.root).trim()
 }
 
 // maps mentions to placeholders for intent detection
