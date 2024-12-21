@@ -1,0 +1,66 @@
+:root {
+    --prompt-editor-padding-y: 8px;
+    --prompt-editor-padding-x: 8px;
+}
+
+.editor {
+    font: inherit;
+    width: 100%;
+    overflow: auto;
+    scrollbar-width: thin;
+
+    /* Don't allow the input box to become larger than the webview to avoid submit buttons going off the screen */
+    max-height: 60vh;
+
+    p + p {
+        margin-top: 0.5rem;
+    }
+}
+
+.editor .input {
+    outline: none;
+}
+
+.editor:not(.seamless) {
+    background-color: var(--vscode-input-background);
+    color: var(--vscode-input-foreground);
+    box-sizing: border-box;
+    border: 1px solid transparent;
+    border-radius: 2px;
+    padding: var(--prompt-editor-padding-y) var(--prompt-editor-padding-x);
+}
+
+.editor:not(.seamless):focus,
+.editor:not(.seamless):focus-visible,
+.editor:not(.seamless):focus-within {
+    outline: 1px solid var(--vscode-focusBorder);
+    outline-offset: -1px;
+}
+
+.editor:not(.seamless) {
+    border-color: var(--vscode-input-border, transparent);
+}
+
+.disabled {
+    color: var(--vscode-input-foreground);
+    opacity: 0.5;
+}
+
+.editor .input[data-placeholder]::before {
+    content: attr(data-placeholder);
+    opacity: 0.6;
+    overflow: hidden;
+    position: absolute;
+    text-overflow: ellipsis;
+    top: 0;
+    left: 0;
+    right: 5px;
+    user-select: none;
+    white-space: nowrap;
+    display: inline-block;
+    pointer-events: none;
+}
+.editor:not(.seamless) .input[data-placeholder]::before {
+    top: var(--prompt-editor-padding-y);
+    left: var(--prompt-editor-padding-x);
+}

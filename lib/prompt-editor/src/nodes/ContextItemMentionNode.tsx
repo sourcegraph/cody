@@ -1,14 +1,12 @@
 import {
     CONTEXT_ITEM_MENTION_NODE_TYPE,
     type ContextItem,
-    ContextItemSource,
     FILE_CONTEXT_MENTION_PROVIDER,
     REMOTE_REPOSITORY_PROVIDER_URI,
     SYMBOL_CONTEXT_MENTION_PROVIDER,
     type SerializedContextItem,
     type SerializedContextItemMentionNode,
     contextItemMentionNodeDisplayText,
-    displayPath,
     serializeContextItem,
 } from '@sourcegraph/cody-shared'
 import {
@@ -24,11 +22,10 @@ import {
     TextNode,
 } from 'lexical'
 import { AtSignIcon } from 'lucide-react'
-import * as v from 'valibot'
-import { URI } from 'vscode-uri'
 import { iconForProvider } from '../mentions/mentionMenu/MentionMenuItem'
 import styles from './ContextItemMentionNode.module.css'
 import { MentionComponent } from './MentionComponent'
+import { tooltipForContextItem } from './tooltip'
 
 export const MENTION_CLASS_NAME = styles.contextItemMentionNode
 
@@ -130,26 +127,7 @@ export class ContextItemMentionNode extends DecoratorNode<JSX.Element> {
     }
 
     private getTooltip(): string | undefined {
-        if (this.contextItem.type === 'repository') {
-            return `Repository: ${this.contextItem.repoName ?? this.contextItem.title ?? 'unknown'}`
-        }
-        if (this.contextItem.type === 'tree') {
-            return this.contextItem.title || 'Local workspace'
-        }
-        if (this.contextItem.type === 'file') {
-            return this.contextItem.isTooLarge
-                ? this.contextItem.source === ContextItemSource.Initial
-                    ? 'File is too large. Select a smaller range of lines from the file.'
-                    : 'File is too large. Try adding the file again with a smaller range of lines.'
-                : displayPath(URI.parse(this.contextItem.uri))
-        }
-        if (v.is(OpenCtxItemWithTooltipSchema, this.contextItem)) {
-            return this.contextItem.mention.data.tooltip
-        }
-        if (this.contextItem.type === 'openctx') {
-            return this.contextItem.uri
-        }
-        return undefined
+        return tooltipForContextItem(this.contextItem)
     }
 
     decorate(_editor: LexicalEditor, _config: EditorConfig): JSX.Element {
@@ -213,15 +191,3 @@ export function $createContextItemTextNode(contextItem: ContextItem): TextNode {
     const textNode = new TextNode(contextItemMentionNodeDisplayText(serializeContextItem(contextItem)))
     return $applyNodeReplacement(textNode)
 }
-
-/**
- * The structure of an openctx context item with a tooltip.
- */
-const OpenCtxItemWithTooltipSchema = v.object({
-    type: v.literal('openctx'),
-    mention: v.object({
-        data: v.object({
-            tooltip: v.string(),
-        }),
-    }),
-})
