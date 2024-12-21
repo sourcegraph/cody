@@ -1,15 +1,11 @@
 import dedent from 'dedent'
 import { describe, expect, it } from 'vitest'
-
-import { getCurrentDocContext } from '../completions/get-current-doc-context'
-import { documentAndPosition } from '../completions/test-helpers'
-
-import { type CodeToReplaceData, getCurrentFilePromptComponents } from './prompt/prompt-utils'
+import { createCodeToReplaceDataForTest } from './prompt/test-helper'
 import { shrinkPredictionUntilSuffix } from './shrink-prediction'
 
 describe('shrinkPredictionUntilSuffix', () => {
     it('middle of file, no overlap, 4-line prediction', () => {
-        const codeToReplaceData = createCodeToReplaceData`const a = 1
+        const codeToReplaceData = createCodeToReplaceDataForTest`const a = 1
             const b = 2
             const c = 3
             console.log(a, b, c)█
@@ -30,7 +26,7 @@ describe('shrinkPredictionUntilSuffix', () => {
     })
 
     it('middle of file, partial overlap, 4-line prediction', () => {
-        const codeToReplaceData = createCodeToReplaceData`const a = 1
+        const codeToReplaceData = createCodeToReplaceDataForTest`const a = 1
             const b = 2
             const c = 3
             console.log(a, b, c)█
@@ -54,7 +50,7 @@ describe('shrinkPredictionUntilSuffix', () => {
     })
 
     it('middle of file, full overlap, 4-line prediction', () => {
-        const codeToReplaceData = createCodeToReplaceData`const a = 1
+        const codeToReplaceData = createCodeToReplaceDataForTest`const a = 1
             const b = 2
             const c = 3
             console.log(a, b, c)█
@@ -83,7 +79,7 @@ describe('shrinkPredictionUntilSuffix', () => {
     })
 
     it('cursor at end of file, no overlap, 4-line prediction', () => {
-        const codeToReplaceData = createCodeToReplaceData`line1
+        const codeToReplaceData = createCodeToReplaceDataForTest`line1
             line2
             line3█
         `
@@ -101,7 +97,7 @@ describe('shrinkPredictionUntilSuffix', () => {
     })
 
     it('cursor near start, partial overlap, 4-line prediction', () => {
-        const codeToReplaceData = createCodeToReplaceData`console.log("start")█
+        const codeToReplaceData = createCodeToReplaceDataForTest`console.log("start")█
             let val = 123
             console.log("end")
         `
@@ -119,7 +115,7 @@ describe('shrinkPredictionUntilSuffix', () => {
     })
 
     it('returns the original text in case of full match with the suffix', () => {
-        const codeToReplaceData = createCodeToReplaceData`function test() {
+        const codeToReplaceData = createCodeToReplaceDataForTest`function test() {
             █const a = 1;
             const b = 2;
             console.log(a + b);
@@ -135,26 +131,6 @@ describe('shrinkPredictionUntilSuffix', () => {
         expect(result).toBe(codeToReplaceData.codeToRewrite)
     })
 })
-
-function createCodeToReplaceData(code: TemplateStringsArray, ...values: unknown[]): CodeToReplaceData {
-    const { document, position } = documentAndPosition(dedent(code, values))
-    const docContext = getCurrentDocContext({
-        document,
-        position,
-        maxPrefixLength: 100,
-        maxSuffixLength: 100,
-    })
-
-    return getCurrentFilePromptComponents({
-        docContext,
-        position,
-        document,
-        maxPrefixLinesInArea: 2,
-        maxSuffixLinesInArea: 2,
-        codeToRewritePrefixLines: 1,
-        codeToRewriteSuffixLines: 1,
-    }).codeToReplace
-}
 
 function withoutLastLines(text: string, n: number): string {
     return text

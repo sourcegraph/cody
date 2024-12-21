@@ -7,27 +7,24 @@ import { autoeditsLogger } from '../logger'
 import { DefaultDecorator } from './decorators/default-decorator'
 import { getDecorationInfo } from './diff-utils'
 
-const INITIAL_TEXT_START_MARKER = '\n<<<<\n'
-const REPLACER_TEXT_START_MARKER = '\n====\n'
-const REPLACER_TEXT_END_MARKER = '\n>>>>\n'
+export const INITIAL_TEXT_START_MARKER = '\n<<<<\n'
+export const REPLACER_TEXT_START_MARKER = '\n====\n'
+export const REPLACER_TEXT_END_MARKER = '\n>>>>\n'
 
 interface AutoEditResponseFromTemplate {
     initial: { text: string; startOffset: number; endOffset: number }
     replacer: { text: string; startOffset: number; endOffset: number }
 }
 
-export function extractAutoEditResponseFromCurrentDocumentCommentTemplate():
-    | AutoEditResponseFromTemplate
-    | undefined {
-    const editor = vscode.window.activeTextEditor
-    const document = editor?.document
-
-    if (!editor || !document) {
+export function extractAutoEditResponseFromCurrentDocumentCommentTemplate(
+    document: vscode.TextDocument | undefined,
+    position: vscode.Position | undefined
+): AutoEditResponseFromTemplate | undefined {
+    if (!document || !position) {
         return undefined
     }
-
-    const cursorOffset = editor.document.offsetAt(editor.selection.start)
-    const documentText = editor.document.getText()
+    const cursorOffset = document.offsetAt(position)
+    const documentText = document.getText()
     const text = documentText.substring(0, cursorOffset)
 
     const initial = getTextBetweenMarkers({
@@ -79,7 +76,10 @@ export function shrinkReplacerTextToCodeToReplaceRange(
         suffixLinesNumber > 0 ? -suffixLinesNumber : replacerLines.length
     )
 
-    return predictionLines.join(newLineChar) + (codeToRewrite.endsWith(newLineChar) ? newLineChar : '')
+    return (
+        predictionLines.join(newLineChar) +
+        (codeToReplaceData.codeToRewrite.endsWith(newLineChar) ? newLineChar : '')
+    )
 }
 
 function offsetToLineNumber(text: string, offset: number): number {
@@ -102,7 +102,10 @@ export function registerAutoEditTestRenderCommand(): vscode.Disposable {
         const text = editor.document.getText()
 
         // extract replace start line and end line, replacerText, and replacerCol
-        const ret = extractAutoEditResponseFromCurrentDocumentCommentTemplate()
+        const ret = extractAutoEditResponseFromCurrentDocumentCommentTemplate(
+            document,
+            editor.selection.active
+        )
         if (!ret) {
             return
         }
@@ -140,7 +143,7 @@ export function registerAutoEditTestRenderCommand(): vscode.Disposable {
     })
 }
 
-function getTextBetweenMarkers({
+export function getTextBetweenMarkers({
     text,
     startMarker,
     endMarker,
@@ -149,14 +152,15 @@ function getTextBetweenMarkers({
     startMarker: string
     endMarker: string
 }): { text: string; startOffset: number; endOffset: number } | undefined {
-    const startOffset = text.indexOf(startMarker) + startMarker.length
-    const endOffset = text.indexOf(endMarker)
+    const startIndex = text.indexOf(startMarker)
+    const startOffset = startIndex + startMarker.length
+    const endIndex = text.indexOf(endMarker)
 
-    if (startOffset !== -1 && endOffset !== -1) {
+    if (startIndex !== -1 && endIndex !== -1) {
         return {
-            text: text.slice(startOffset, endOffset),
+            text: text.slice(startOffset, endIndex),
             startOffset,
-            endOffset,
+            endOffset: endIndex,
         }
     }
 

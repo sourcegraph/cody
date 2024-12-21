@@ -39,7 +39,7 @@ import { AutoEditsDefaultRendererManager, type AutoEditsRendererManager } from '
 import {
     extractAutoEditResponseFromCurrentDocumentCommentTemplate,
     shrinkReplacerTextToCodeToReplaceRange,
-} from './renderer/renderer-testing'
+} from './renderer/mock-renderer'
 // import { shrinkPredictionUntilSuffix } from './shrink-prediction'
 
 const AUTOEDITS_CONTEXT_STRATEGY = 'auto-edits'
@@ -84,6 +84,10 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
     private readonly promptProvider: AutoeditsUserPromptStrategy = new ShortTermPromptStrategy()
     private readonly filterPrediction = new FilterPredictionBasedOnRecentEdits()
 
+    /**
+     * Flag to enable mock responses from the current document template.
+     * This is also used in e2e tests to provide deterministic responses.
+     */
     private isMockResponseFromCurrentDocumentTemplateEnabled = vscode.workspace
         .getConfiguration()
         .get<boolean>('cody.experimental.autoedits.use-mock-responses', false)
@@ -120,6 +124,14 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             vscode.window.onDidChangeTextEditorSelection(this.onSelectionChangeDebounced),
             vscode.workspace.onDidChangeTextDocument(event => {
                 this.onDidChangeTextDocument(event)
+            }),
+            // Command used to trigger autoedits manually via command palette and is used by e2e test
+            vscode.commands.registerCommand('cody.command.autoedits-manual-trigger', async () => {
+                this.showAutoEdit(
+                    vscode.window.activeTextEditor!.document!,
+                    vscode.window.activeTextEditor!.selection.active,
+                    new AbortController().signal
+                )
             })
         )
     }
@@ -278,7 +290,10 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
 
         let response: string | undefined = undefined
         if (this.isMockResponseFromCurrentDocumentTemplateEnabled) {
-            const responseMetadata = extractAutoEditResponseFromCurrentDocumentCommentTemplate()
+            const responseMetadata = extractAutoEditResponseFromCurrentDocumentCommentTemplate(
+                options.document,
+                options.position
+            )
 
             if (responseMetadata) {
                 response = shrinkReplacerTextToCodeToReplaceRange(responseMetadata, codeToReplace)

@@ -597,6 +597,11 @@
         "command": "cody.command.insertCodeToNewFile",
         "title": "Save Code to New File...",
         "enablement": "cody.activated"
+      },
+      {
+        "command": "cody.command.autoedits-manual-trigger",
+        "title": "Autoedits Manual Trigger",
+        "enablement": "cody.activated && config.cody.experimental.autoedits.enabled"
       }
     ],
     "keybindings": [
@@ -758,11 +763,6 @@
         "command": "cody.supersuggest.dismiss",
         "key": "escape",
         "when": "editorTextFocus && cody.activated && cody.supersuggest.active"
-      },
-      {
-        "command": "cody.experimental.suggest",
-        "key": "ctrl+shift+enter",
-        "when": "cody.activated && config.cody.experimental.autoedits.enabled"
       },
       {
         "command": "cody.supersuggest.testExample",
