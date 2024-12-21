@@ -5,6 +5,7 @@ import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node'
 import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions'
 
 import {
+    type CodyIDE,
     FeatureFlag,
     type ResolvedConfiguration,
     type Unsubscribable,
@@ -80,6 +81,8 @@ export class OpenTelemetryService {
                     traceUrl,
                     isTracingEnabled: this.isTracingEnabled,
                     accessToken: auth.accessToken,
+                    clientPlatform: configuration.agentIDE ?? ('defaultIDE' as CodyIDE),
+                    agentVersion: configuration.agentExtensionVersion,
                 })
             )
         )
