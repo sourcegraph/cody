@@ -66,6 +66,12 @@ interface PromptEditorAPI {
     setFocus(focus: boolean, options?: { moveCursorToEnd?: boolean }): void
     appendText(text: string): void
     addMentions(items: ContextItem[], position?: 'before' | 'after', sep?: string): void
+    upsertMentions(
+        items: ContextItem[],
+        position?: 'before' | 'after',
+        sep?: string,
+        focusEditor?: boolean
+    ): void
     filterMentions(filter: (item: SerializedContextItem) => boolean): void
     setInitialContextMentions(items: ContextItem[]): void
     setDocument(doc: Node): void
@@ -183,6 +189,22 @@ export const usePromptInput = (options: PromptEditorOptions): [PromptInputActor,
                     position,
                     separator: sep,
                 })
+            },
+            upsertMentions(
+                items: ContextItem[],
+                position: 'before' | 'after' = 'after',
+                sep = ' ',
+                focusEditor = true
+            ) {
+                editor.send({
+                    type: 'document.mentions.upsert',
+                    items: items.map(serializeContextItem),
+                    position,
+                    separator: sep,
+                })
+                if (focusEditor) {
+                    editor.send({ type: 'focus' })
+                }
             },
             filterMentions(filter: (item: SerializedContextItem) => boolean) {
                 editor.send({ type: 'document.mentions.filter', filter })

@@ -240,6 +240,14 @@ type EditorEvents =
           position: 'before' | 'after'
           separator: string
       }
+    // Add or update additionals mentions to the input. Unlike `document.mentions.add`, this doesn't merge mentions
+    // with overlapping ranges.
+    | {
+          type: 'document.mentions.upsert'
+          items: SerializedContextItem[]
+          position: 'before' | 'after'
+          separator: string
+      }
     // Remove the mentions from the input that do not fulfill the filter function.
     | { type: 'document.mentions.filter'; filter: (item: SerializedContextItem) => boolean }
     // Set the initial mentions of the input. Initial mentions are specifically marked. If the
@@ -627,6 +635,18 @@ export const promptInput = setup({
                             ),
                     },
                 },
+                'document.mentions.upsert': {
+                    actions: {
+                        type: 'updateEditorState',
+                        params: ({ context, event }) =>
+                            upsertMentions(
+                                context.editorState,
+                                event.items,
+                                event.position,
+                                event.separator
+                            ),
+                    },
+                },
                 'document.mentions.setInitial': {
                     guard: 'canSetInitialMentions',
                     actions: [
@@ -941,7 +961,7 @@ function filterMentions(
  * @param doc The document
  * @returns An array of mentions
  */
-function getMentions(doc: Node): SerializedContextItem[] {
+export function getMentions(doc: Node): SerializedContextItem[] {
     const mentions: SerializedContextItem[] = []
     doc.descendants(node => {
         if (node.type === schema.nodes.mention) {
@@ -1011,6 +1031,95 @@ function addMentions(
     }
 
     return tr
+}
+
+/**
+ * Adds or updates mentions in the document. Unlike addMentions, this function does not remove any existing mentions.
+ * @param state The current editor state
+ * @param items The items to add or update
+ * @param position The position to add the mentions
+ * @param separator The separator to use between new mentions
+ * @returns A transaction that adds or updates mentions
+ */
+function upsertMentions(
+    state: EditorState,
+    items: SerializedContextItem[],
+    position: 'before' | 'after',
+    separator: string
+): Transaction {
+    const existingMentions = new Set(getMentions(state.doc).map(getKeyForContextItem))
+    const toUpdate = new Map<string, SerializedContextItem>()
+    for (const item of items) {
+        const key = getKeyForContextItem(item)
+        if (existingMentions.has(key)) {
+            toUpdate.set(key, item)
+        }
+    }
+    const tr = state.tr
+
+    if (toUpdate.size > 0) {
+        state.doc.descendants((node, pos) => {
+            if (node.type === schema.nodes.mention) {
+                const item = node.attrs.item as SerializedContextItem
+                const key = getKeyForContextItem(item)
+                if (toUpdate.has(key)) {
+                    const newItem = toUpdate.get(key)
+                    if (newItem) {
+                        tr.replaceWith(
+                            tr.mapping.map(pos),
+                            tr.mapping.map(pos + node.nodeSize),
+                            createMentionNode({ item: newItem })
+                        )
+                    }
+                }
+            }
+        })
+    }
+
+    return toUpdate.size !== items.length
+        ? insertMentions(
+              tr,
+              items.filter(item => !toUpdate.has(getKeyForContextItem(item))),
+              position,
+              separator
+          )
+        : tr
+}
+
+function insertMentions(
+    tr: Transaction,
+    items: SerializedContextItem[],
+    position: 'before' | 'after',
+    separator: string
+): Transaction {
+    const mentionNodes: Node[] = []
+    const separatorNode = schema.text(separator)
+    for (const item of items) {
+        mentionNodes.push(createMentionNode({ item }))
+        mentionNodes.push(separatorNode)
+    }
+
+    if (position === 'before') {
+        tr.insert(Selection.atStart(tr.doc).from, mentionNodes)
+    } else {
+        insertWhitespaceIfNeeded(tr, Selection.atEnd(tr.doc).from)
+        tr.insert(Selection.atEnd(tr.doc).from, mentionNodes)
+    }
+    return tr
+}
+
+/**
+ * Computes a unique key for a context item that can be used in e.g. a Map.
+ *
+ * The URI is not sufficient to uniquely identify a context item because the same URI can be used
+ * for different types of context items or, in case of openctx, different provider URIs.
+ */
+function getKeyForContextItem(item: SerializedContextItem): string {
+    let key = `${item.uri.toString()}|${item.type}`
+    if (item.type === 'openctx') {
+        key += `|${item.providerUri}`
+    }
+    return key
 }
 
 /**

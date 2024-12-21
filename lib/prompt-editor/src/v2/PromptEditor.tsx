@@ -64,6 +64,21 @@ export interface PromptEditorRefAPI {
     setFocus(focus: boolean, options?: { moveCursorToEnd?: boolean }): Promise<void>
     appendText(text: string): Promise<void>
     addMentions(items: ContextItem[], position?: 'before' | 'after', sep?: string): Promise<void>
+    /**
+     * Similar to `addMentions`, but unlike `addMentions` it doesn't merge mentions with overlapping
+     * ranges. Instead it updates the meta data of existing mentions with the same uri.
+     *
+     * @param items The context items to add or update.
+     * @param position Where to insert the mentions, before or after the current input. Defaults to 'after'.
+     * @param sep The separator to use between mentions. Defaults to a space.
+     * @param focusEditor Whether to focus the editor after updating the mentions. Defaults to true.
+     */
+    upsertMentions(
+        items: ContextItem[],
+        position?: 'before' | 'after',
+        sep?: string,
+        focusEditor?: boolean
+    ): Promise<void>
     filterMentions(filter: (item: SerializedContextItem) => boolean): Promise<void>
     setInitialContextMentions(items: ContextItem[]): Promise<void>
     setEditorState(state: SerializedPromptEditorState): void
@@ -188,6 +203,14 @@ export const PromptEditor: FunctionComponent<Props> = ({
                 sep = ' '
             ): Promise<void> {
                 api.addMentions(items, position, sep)
+            },
+            async upsertMentions(
+                items: ContextItem[],
+                position: 'before' | 'after' = 'after',
+                sep = ' ',
+                focusEditor = true
+            ): Promise<void> {
+                api.upsertMentions(items, position, sep, focusEditor)
             },
             async setInitialContextMentions(items: ContextItem[]): Promise<void> {
                 api.setInitialContextMentions(items)

@@ -1,11 +1,9 @@
 import { shift, size, useDismiss, useFloating, useHover, useInteractions } from '@floating-ui/react'
 import {
-    ContextItemSource,
     FILE_CONTEXT_MENTION_PROVIDER,
     REMOTE_REPOSITORY_PROVIDER_URI,
     SYMBOL_CONTEXT_MENTION_PROVIDER,
     type SerializedContextItem,
-    displayPath,
 } from '@sourcegraph/cody-shared'
 import clsx from 'clsx'
 import { AtSignIcon } from 'lucide-react'
@@ -13,8 +11,8 @@ import type { Node } from 'prosemirror-model'
 import type { NodeView } from 'prosemirror-view'
 import { useState } from 'react'
 import { type Root, createRoot } from 'react-dom/client'
-import { URI } from 'vscode-uri'
 import { iconForProvider } from '../mentions/mentionMenu/MentionMenuItem'
+import { tooltipForContextItem } from '../nodes/tooltip'
 import styles from './MentionView.module.css'
 
 export class MentionView implements NodeView {
@@ -104,26 +102,6 @@ const MentionChip: React.FC<MentionChipProps> = props => {
             )}
         </>
     )
-}
-
-function tooltipForContextItem(item: SerializedContextItem): string | undefined {
-    if (item.type === 'repository') {
-        return `Repository: ${item.repoName ?? item.title ?? 'unknown'}`
-    }
-    if (item.type === 'tree') {
-        return item.title || 'Local workspace'
-    }
-    if (item.type === 'file') {
-        return item.isTooLarge
-            ? item.source === ContextItemSource.Initial
-                ? 'File is too large. Select a smaller range of lines from the file.'
-                : 'File is too large. Try adding the file again with a smaller range of lines.'
-            : displayPath(URI.parse(item.uri))
-    }
-    if (item.type === 'openctx') {
-        return item.uri
-    }
-    return undefined
 }
 
 function iconForContextItem(item: SerializedContextItem): React.ComponentType {

@@ -16,6 +16,7 @@ import {
     type DataLoaderInput,
     type MenuItem,
     type PromptInputOptions,
+    getMentions,
     promptInput,
     schema,
 } from './promptInput'
@@ -181,6 +182,69 @@ describe('mentions', () => {
             })
 
             expect(getText(input)).toMatchInlineSnapshot(`"before  file2:1-10 after file1:1-6 ! "`)
+        })
+    })
+
+    describe('document.mentions.upsert', () => {
+        test('append', () => {
+            const input = createInput(['before ', cm('file1'), ' after'])
+            input.send({
+                type: 'document.mentions.upsert',
+                items: [cm('file2'), cm('file3')],
+                position: 'after',
+                separator: ' ! ',
+            })
+
+            expect(getText(input)).toMatchInlineSnapshot(`"before file1 after file2 ! file3 ! "`)
+        })
+
+        test('prepend', () => {
+            const input = createInput(['before ', cm('file1'), ' after'])
+            input.send({
+                type: 'document.mentions.upsert',
+                items: [cm('file2'), cm('file3')],
+                position: 'before',
+                separator: ' ! ',
+            })
+
+            expect(getText(input)).toMatchInlineSnapshot(`"file2 ! file3 ! before file1 after"`)
+        })
+
+        test('update mention', () => {
+            const input = createInput([
+                'before ',
+                {
+                    type: 'openctx',
+                    uri: 'file:///file1.txt',
+                    title: 'test',
+                    provider: 'openctx',
+                    providerUri: REMOTE_FILE_PROVIDER_URI,
+                },
+                ' after',
+            ])
+
+            const newMentionData = { uri: 'uri1', data: 1 }
+            input.send({
+                type: 'document.mentions.upsert',
+                items: [
+                    {
+                        type: 'openctx',
+                        uri: 'file:///file1.txt',
+                        title: '|test updated|',
+                        provider: 'openctx',
+                        providerUri: REMOTE_FILE_PROVIDER_URI,
+                        mention: newMentionData,
+                    },
+                ],
+                position: 'after',
+                separator: ' ! ',
+            })
+
+            expect(getText(input)).toMatchInlineSnapshot(`"before |test updated| after"`)
+            const state = getEditorState(input)
+            expect(getMentions(state.doc)).toEqual([
+                expect.objectContaining({ mention: newMentionData }),
+            ])
         })
     })
 
