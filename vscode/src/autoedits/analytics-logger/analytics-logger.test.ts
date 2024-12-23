@@ -1,36 +1,27 @@
+import omit from 'lodash/omit'
+import * as uuid from 'uuid'
 import { type MockInstance, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import * as vscode from 'vscode'
 
 import { ps, telemetryRecorder } from '@sourcegraph/cody-shared'
 
+import { documentAndPosition } from '../../completions/test-helpers'
 import * as sentryModule from '../../services/sentry/sentry'
 import type { AutoeditModelOptions } from '../adapters/base'
 
-import { AutoeditAnalyticsLogger } from './analytics-logger'
-
-// Ensure we can override shouldErrorBeReported in each test.
-vi.mock('../../services/sentry/sentry', async () => {
-    const actual: typeof import('../../services/sentry/sentry') = await vi.importActual(
-        '../../services/sentry/sentry'
-    )
-    return {
-        ...actual,
-        shouldErrorBeReported: vi.fn(),
-    }
-})
+import { AutoeditAnalyticsLogger, type AutoeditSessionID } from './analytics-logger'
 
 describe('AutoeditAnalyticsLogger', () => {
     let autoeditLogger: AutoeditAnalyticsLogger
     let recordSpy: MockInstance
-    const fakeDocument = {
-        offsetAt: () => 0,
-        uri: { toString: () => 'file:///fake-file.ts' },
-    } as unknown as vscode.TextDocument
-    const fakePosition = new vscode.Position(0, 0)
-    const defaultModelOptions: AutoeditModelOptions = {
-        url: 'https://my-test-url.com/',
-        model: 'my-autoedit-model',
-        apiKey: 'my-api-key',
+    let stableIdCounter = 0
+
+    const { document, position } = documentAndPosition('█', 'typescript', 'file:///fake-file.ts')
+
+    const modelOptions: AutoeditModelOptions = {
+        url: 'https://test-url.com/',
+        model: 'autoedit-model',
+        apiKey: 'api-key',
         prompt: {
             systemMessage: ps`This is test message`,
             userMessage: ps`This is test prompt text`,
@@ -40,24 +31,18 @@ describe('AutoeditAnalyticsLogger', () => {
         isChatModel: false,
     }
 
-    beforeEach(() => {
-        autoeditLogger = new AutoeditAnalyticsLogger()
-        recordSpy = vi.spyOn(telemetryRecorder, 'recordEvent')
-    })
+    const sessionStartMetadata: Parameters<AutoeditAnalyticsLogger['createSession']>[0] = {
+        languageId: 'typescript',
+        model: 'autoedit-model',
+        traceId: 'trace-id',
+    }
 
-    afterEach(() => {
-        vi.resetAllMocks()
-    })
+    function createAndAdvanceSession({
+        finalPhase,
+        prediction,
+    }: { finalPhase: 'suggested' | 'accepted' | 'rejected'; prediction: string }): AutoeditSessionID {
+        const sessionId = autoeditLogger.createSession(sessionStartMetadata)
 
-    it('logs a suggestion lifecycle (started -> contextLoaded -> loaded -> suggested -> read -> accepted)', () => {
-        // 1. Create session
-        const sessionId = autoeditLogger.createSession({
-            languageId: 'typescript',
-            model: 'my-autoedit-model',
-            traceId: 'trace-xyz',
-        })
-
-        // 2. Mark context loaded
         autoeditLogger.markAsContextLoaded({
             sessionId,
             payload: {
@@ -72,11 +57,12 @@ describe('AutoeditAnalyticsLogger', () => {
             },
         })
 
-        // 3. Mark loaded
-        const prediction = 'console.log("Hello from autoedit!")'
+        // Stabilize latency for tests
+        vi.advanceTimersByTime(300)
+
         autoeditLogger.markAsLoaded({
             sessionId,
-            modelOptions: defaultModelOptions,
+            modelOptions: modelOptions,
             payload: {
                 prediction,
                 source: 'network',
@@ -85,205 +71,201 @@ describe('AutoeditAnalyticsLogger', () => {
             },
         })
 
-        // 4. Mark suggested
         autoeditLogger.markAsSuggested(sessionId)
-
-        // 5. Mark read
         autoeditLogger.markAsRead(sessionId)
 
-        // 6. Mark accepted
-        autoeditLogger.markAsAccepted({
-            sessionId,
-            trackedRange: new vscode.Range(fakePosition, fakePosition),
-            position: fakePosition,
-            document: fakeDocument,
+        if (finalPhase === 'accepted') {
+            autoeditLogger.markAsAccepted({
+                sessionId,
+                trackedRange: new vscode.Range(position, position),
+                position,
+                document,
+                prediction,
+            })
+        }
+
+        if (finalPhase === 'rejected') {
+            autoeditLogger.markAsRejected(sessionId)
+        }
+
+        return sessionId
+    }
+
+    beforeEach(() => {
+        autoeditLogger = new AutoeditAnalyticsLogger()
+        recordSpy = vi.spyOn(telemetryRecorder, 'recordEvent')
+
+        stableIdCounter = 0
+        vi.spyOn(uuid, 'v4').mockImplementation(() => `stable-id-for-tests-${++stableIdCounter}`)
+
+        vi.useFakeTimers()
+    })
+
+    afterEach(() => {
+        vi.resetAllMocks()
+        vi.clearAllTimers()
+    })
+
+    it('logs a suggestion lifecycle (started -> contextLoaded -> loaded -> suggested -> read -> accepted)', () => {
+        const prediction = 'console.log("Hello from autoedit!")'
+        const sessionId = createAndAdvanceSession({
+            finalPhase: 'accepted',
             prediction,
         })
 
-        // Since the logger short-circuits after logging once (by setting suggestionLoggedAt),
-        // we see exactly ONE event record with action = "suggested".
-        // We only check that it's "cody.autoedit", "suggested", and an object with certain keys.
-        expect(recordSpy).toHaveBeenCalledTimes(1)
-        expect(recordSpy).toHaveBeenCalledWith(
+        // Invalid transition attempt
+        autoeditLogger.markAsAccepted({
+            sessionId,
+            trackedRange: new vscode.Range(position, position),
+            position,
+            document,
+            prediction,
+        })
+
+        expect(recordSpy).toHaveBeenCalledTimes(3)
+        expect(recordSpy).toHaveBeenNthCalledWith(1, 'cody.autoedit', 'suggested', expect.any(Object))
+        expect(recordSpy).toHaveBeenNthCalledWith(2, 'cody.autoedit', 'accepted', expect.any(Object))
+        expect(recordSpy).toHaveBeenNthCalledWith(
+            3,
             'cody.autoedit',
-            'suggested',
-            expect.objectContaining({
-                version: 0,
-                billingMetadata: expect.any(Object),
-                metadata: expect.any(Object),
-                privateMetadata: expect.any(Object),
-            })
+            'invalidTransitionToAccepted',
+            undefined
+        )
+
+        const suggestedEventPayload = recordSpy.mock.calls[0].at(2)
+        expect(suggestedEventPayload).toMatchInlineSnapshot(`
+          {
+            "billingMetadata": {
+              "category": "billable",
+              "product": "cody",
+            },
+            "metadata": {
+              "charCount": 35,
+              "contextSummary.duration": 1.234,
+              "contextSummary.prefixChars": 5,
+              "contextSummary.suffixChars": 5,
+              "contextSummary.totalChars": 10,
+              "displayDuration": 0,
+              "isAccepted": 1,
+              "isDisjoint": 0,
+              "isFullyOutsideOfVisibleRanges": 1,
+              "isFuzzyMatch": 0,
+              "isPartiallyOutsideOfVisibleRanges": 1,
+              "isRead": 1,
+              "isSelectionStale": 1,
+              "latency": 300,
+              "lineCount": 1,
+              "noActiveTextEditor": 0,
+              "otherCompletionProviderEnabled": 0,
+              "outsideOfActiveEditor": 1,
+              "suggestionsStartedSinceLastSuggestion": 1,
+              "windowNotFocused": 1,
+            },
+            "privateMetadata": {
+              "contextSummary": {
+                "duration": 1.234,
+                "prefixChars": 5,
+                "retrieverStats": {},
+                "strategy": "none",
+                "suffixChars": 5,
+                "totalChars": 10,
+              },
+              "gatewayLatency": undefined,
+              "id": "stable-id-for-tests-2",
+              "languageId": "typescript",
+              "model": "my-autoedit-model",
+              "otherCompletionProviders": [],
+              "prediction": "console.log("Hello from autoedit!")",
+              "responseHeaders": {},
+              "source": "network",
+              "traceId": "trace-abc",
+              "upstreamLatency": undefined,
+            },
+            "version": 0,
+          }
+        `)
+
+        const acceptedEventPayload = recordSpy.mock.calls[1].at(2)
+        // Accepted and suggested event payloads are only different by `billingMetadata`.
+        expect(acceptedEventPayload.billingMetadata).toMatchInlineSnapshot(`
+          {
+            "category": "core",
+            "product": "cody",
+          }
+        `)
+
+        expect(omit(acceptedEventPayload, 'billingMetadata')).toEqual(
+            omit(suggestedEventPayload, 'billingMetadata')
         )
     })
 
     it('reuses the autoedit suggestion ID for the same prediction text', () => {
         const prediction = 'function foo() {}\n'
 
-        // FIRST SESSION (started -> contextLoaded -> loaded -> suggested)
-        const session1 = autoeditLogger.createSession({
-            languageId: 'typescript',
-            model: 'my-autoedit-model',
-            traceId: 'trace-abc',
-        })
-        autoeditLogger.markAsContextLoaded({
-            sessionId: session1,
-            payload: { contextSummary: undefined },
-        })
-        autoeditLogger.markAsLoaded({
-            sessionId: session1,
-            modelOptions: defaultModelOptions,
-            payload: {
-                prediction,
-                source: 'network',
-                isFuzzyMatch: false,
-                responseHeaders: {},
-            },
-        })
-        autoeditLogger.markAsSuggested(session1)
-        // We do NOT accept or reject so that the ID remains "in use."
-
-        // SECOND SESSION with the same text
-        const session2 = autoeditLogger.createSession({
-            languageId: 'typescript',
-            model: 'my-autoedit-model',
-            traceId: 'trace-def',
-        })
-        autoeditLogger.markAsContextLoaded({
-            sessionId: session2,
-            payload: { contextSummary: undefined },
-        })
-        autoeditLogger.markAsLoaded({
-            sessionId: session2,
-            modelOptions: defaultModelOptions,
-            payload: {
-                prediction,
-                source: 'cache',
-                isFuzzyMatch: true,
-                responseHeaders: {},
-            },
-        })
-        autoeditLogger.markAsSuggested(session2)
-
-        // Accept the second session to finalize it
-        autoeditLogger.markAsAccepted({
-            sessionId: session2,
-            trackedRange: new vscode.Range(fakePosition, fakePosition),
-            position: fakePosition,
-            document: fakeDocument,
+        // First session (started -> contextLoaded -> loaded -> suggested -> rejected)
+        // The session ID should remain "in use"
+        createAndAdvanceSession({
+            finalPhase: 'rejected',
             prediction,
         })
 
         // After acceptance, ID can no longer be reused
-        const session3 = autoeditLogger.createSession({
-            languageId: 'typescript',
-            model: 'my-autoedit-model',
-            traceId: 'trace-ghi',
-        })
-        autoeditLogger.markAsContextLoaded({
-            sessionId: session3,
-            payload: { contextSummary: undefined },
-        })
-        autoeditLogger.markAsLoaded({
-            sessionId: session3,
-            modelOptions: defaultModelOptions,
-            payload: {
-                prediction,
-                source: 'cache',
-                isFuzzyMatch: true,
-                responseHeaders: {},
-            },
+        createAndAdvanceSession({
+            finalPhase: 'accepted',
+            prediction,
         })
 
-        // Expect 1 telemetry call from the acceptance on session2
-        expect(recordSpy).toHaveBeenCalledTimes(1)
-        expect(recordSpy).toHaveBeenCalledWith('cody.autoedit', 'suggested', expect.any(Object))
+        // Analytics event should use the new stable ID
+        createAndAdvanceSession({
+            finalPhase: 'rejected',
+            prediction,
+        })
+
+        expect(recordSpy).toHaveBeenCalledTimes(4)
+        expect(recordSpy).toHaveBeenNthCalledWith(1, 'cody.autoedit', 'suggested', expect.any(Object))
+        expect(recordSpy).toHaveBeenNthCalledWith(2, 'cody.autoedit', 'suggested', expect.any(Object))
+        expect(recordSpy).toHaveBeenNthCalledWith(3, 'cody.autoedit', 'accepted', expect.any(Object))
+        expect(recordSpy).toHaveBeenNthCalledWith(4, 'cody.autoedit', 'suggested', expect.any(Object))
+
+        const suggestedEvent1 = recordSpy.mock.calls[0].at(2)
+        const suggestedEvent2 = recordSpy.mock.calls[1].at(2)
+        const suggestedEvent3 = recordSpy.mock.calls[3].at(2)
+
+        // First two suggested calls should reuse the same stable ID
+        expect(suggestedEvent1.privateMetadata.id).toEqual('stable-id-for-tests-2')
+        expect(suggestedEvent2.privateMetadata.id).toEqual('stable-id-for-tests-2')
+        // The third one should be different because we just accepted a completion
+        // which removes the stable ID from the cache.
+        expect(suggestedEvent3.privateMetadata.id).toEqual('stable-id-for-tests-5')
     })
 
     it('logs noResponse if no suggestion was produced', () => {
-        // Start a session but never actually produce a suggestion
-        const sessionId = autoeditLogger.createSession({
-            languageId: 'typescript',
-            model: 'my-autoedit-model',
-            traceId: 'trace-nr',
-        })
-        autoeditLogger.markAsContextLoaded({
-            sessionId,
-            payload: { contextSummary: undefined },
-        })
+        const sessionId = autoeditLogger.createSession(sessionStartMetadata)
+        autoeditLogger.markAsContextLoaded({ sessionId, payload: { contextSummary: undefined } })
         autoeditLogger.markAsNoResponse(sessionId)
 
-        // We see a single telemetry event ("noResponse"), with any standard shape
         expect(recordSpy).toHaveBeenCalledTimes(1)
-        expect(recordSpy).toHaveBeenCalledWith(
-            'cody.autoedit',
-            'noResponse',
-            expect.objectContaining({
-                version: 0,
-            })
-        )
-    })
-
-    it('logs a rejection event after suggestion', () => {
-        // A valid chain: started -> contextLoaded -> loaded -> suggested -> rejected
-        const sessionId = autoeditLogger.createSession({
-            languageId: 'typescript',
-            model: 'my-autoedit-model',
-            traceId: 'trace-rej',
-        })
-        autoeditLogger.markAsContextLoaded({
-            sessionId,
-            payload: { contextSummary: undefined },
-        })
-        autoeditLogger.markAsLoaded({
-            sessionId,
-            modelOptions: defaultModelOptions,
-            payload: {
-                prediction: 'console.warn("reject test")',
-                source: 'network',
-                isFuzzyMatch: false,
-                responseHeaders: {},
-            },
-        })
-        autoeditLogger.markAsSuggested(sessionId)
-
-        // The user rejects
-        autoeditLogger.markAsRejected(sessionId)
-
-        // The logger lumps final data into the single "suggested" event call.
-        expect(recordSpy).toHaveBeenCalledTimes(1)
-        expect(recordSpy).toHaveBeenNthCalledWith(
-            1,
-            'cody.autoedit',
-            'suggested',
-            expect.objectContaining({
-                version: 0,
-            })
-        )
+        expect(recordSpy).toHaveBeenCalledWith('cody.autoedit', 'noResponse', expect.any(Object))
     })
 
     it('handles invalid transitions by logging debug events (invalidTransitionToXYZ)', () => {
-        const sessionId = autoeditLogger.createSession({
-            languageId: 'typescript',
-            model: 'my-autoedit-model',
-            traceId: 'trace-bad',
-        })
+        const sessionId = autoeditLogger.createSession(sessionStartMetadata)
 
         // Both calls below are invalid transitions, so the logger logs debug events
         autoeditLogger.markAsSuggested(sessionId)
         autoeditLogger.markAsRejected(sessionId)
 
-        // "invalidTransitionTosuggested" and then "invalidTransitionTorejected"
         expect(recordSpy).toHaveBeenCalledTimes(2)
         expect(recordSpy).toHaveBeenNthCalledWith(
             1,
             'cody.autoedit',
-            'invalidTransitionTosuggested',
+            'invalidTransitionToSuggested',
             undefined
         )
         expect(recordSpy).toHaveBeenNthCalledWith(
             2,
             'cody.autoedit',
-            'invalidTransitionTorejected',
+            'invalidTransitionToRejected',
             undefined
         )
     })

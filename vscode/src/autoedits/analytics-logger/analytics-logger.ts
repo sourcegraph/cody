@@ -1,3 +1,4 @@
+import capitalize from 'lodash/capitalize'
 import { LRUCache } from 'lru-cache'
 import * as uuid from 'uuid'
 import * as vscode from 'vscode'
@@ -30,7 +31,7 @@ export type AutoeditSuggestionID = string & { readonly _brand: 'AutoeditSuggesti
 /**
  * An ephemeral ID for a single “session” from creation to acceptance or rejection.
  */
-type AutoeditSessionID = string & { readonly _brand: 'AutoeditSessionID' }
+export type AutoeditSessionID = string & { readonly _brand: 'AutoeditSessionID' }
 
 /**
  * Specialized string type for referencing error messages in our rate-limiting map.
@@ -80,7 +81,10 @@ interface AutoeditLoadedMetadata extends AutoeditContextLoadedMetadata {
     /** Total characters in the suggestion. */
     charCount: number
 
-    /** Prediction text snippet of the suggestion. */
+    /**
+     * Prediction text snippet of the suggestion.
+     * Might be `undefined` if too long.
+     */
     prediction?: string
 
     /** The source of the suggestion, e.g. 'network', 'cache', etc. */
@@ -232,7 +236,7 @@ type AutoeditEventAction =
     | 'accepted'
     | 'noResponse'
     | 'error'
-    | `invalidTransitionTo${Phase}`
+    | `invalidTransitionTo${Capitalize<Phase>}`
 
 export class AutoeditAnalyticsLogger {
     /**
@@ -365,26 +369,27 @@ export class AutoeditAnalyticsLogger {
         document: vscode.TextDocument
         prediction: string
     }): void {
-        const rangeForCharacterMetadata = trackedRange || new vscode.Range(position, position)
-        const { charsDeleted, charsInserted, ...charactersLoggerMetadata } =
-            charactersLogger.getChangeEventMetadataForCodyCodeGenEvents({
-                document,
-                contentChanges: [
-                    {
-                        range: rangeForCharacterMetadata,
-                        rangeOffset: document.offsetAt(rangeForCharacterMetadata.start),
-                        rangeLength: 0,
-                        text: prediction,
-                    },
-                ],
-                reason: undefined,
-            })
-
         const acceptedAt = getTimeNowInMillis()
 
         const result = this.tryTransitionTo(sessionId, 'accepted', session => {
             // Ensure the AutoeditSuggestionID is never reused by removing it from the suggestion id registry
             this.suggestionIdRegistry.deleteEntryIfValueExists(session.payload.id)
+
+            // Calculate metadata required for PCW.
+            const rangeForCharacterMetadata = trackedRange || new vscode.Range(position, position)
+            const { charsDeleted, charsInserted, ...charactersLoggerMetadata } =
+                charactersLogger.getChangeEventMetadataForCodyCodeGenEvents({
+                    document,
+                    contentChanges: [
+                        {
+                            range: rangeForCharacterMetadata,
+                            rangeOffset: document.offsetAt(rangeForCharacterMetadata.start),
+                            rangeLength: 0,
+                            text: prediction,
+                        },
+                    ],
+                    reason: undefined,
+                })
 
             return {
                 ...session,
@@ -451,9 +456,13 @@ export class AutoeditAnalyticsLogger {
             return null
         }
 
-        const updatedSession = { ...currentSession, ...patch, phase: nextPhase } as PhaseStates[P]
-        this.activeSessions.set(sessionId, updatedSession)
+        const updatedSession = {
+            ...currentSession,
+            ...patch(currentSession),
+            phase: nextPhase,
+        } as PhaseStates[P]
 
+        this.activeSessions.set(sessionId, updatedSession)
         return { updatedSession, currentSession }
     }
 
@@ -472,7 +481,10 @@ export class AutoeditAnalyticsLogger {
             !session ||
             !(validSessionTransitions[session.phase] as readonly Phase[]).includes(nextPhase)
         ) {
-            this.writeDebugBookkeepingEvent(`invalidTransitionTo${nextPhase}`)
+            this.writeDebugBookkeepingEvent(
+                `invalidTransitionTo${capitalize(nextPhase) as Capitalize<Phase>}`
+            )
+
             return null
         }
 
@@ -483,7 +495,7 @@ export class AutoeditAnalyticsLogger {
         action: AutoeditEventAction,
         state: AcceptedState | RejectedState | NoResponseState
     ): void {
-        if (state.suggestionLoggedAt) {
+        if (action === 'suggested' && state.suggestionLoggedAt) {
             return
         }
 
@@ -497,7 +509,9 @@ export class AutoeditAnalyticsLogger {
             privateMetadata,
             billingMetadata: {
                 product: 'cody',
-                category: state.phase === 'accepted' ? 'core' : 'billable',
+                // TODO: double check with the analytics team
+                // whether we should be categorizing the different completion event types.
+                category: action === 'suggested' ? 'billable' : 'core',
             },
         })
 
@@ -548,7 +562,7 @@ export class AutoeditAnalyticsLogger {
         this.errorCounts.set(messageKey, currentCount + 1)
     }
 
-    private writeDebugBookkeepingEvent(action: `invalidTransitionTo${Phase}`): void {
+    private writeDebugBookkeepingEvent(action: `invalidTransitionTo${Capitalize<Phase>}`): void {
         this.writeAutoeditEvent(action)
     }
 }
