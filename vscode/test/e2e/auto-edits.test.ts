@@ -19,18 +19,30 @@ const test = baseTest
         },
     })
 
+interface clipArgs {
+    x: number
+    y: number
+    width: number
+    height: number
+}
+
+interface LineOptions {
+    lineNumber: number
+    clip?: clipArgs
+}
+
 interface AutoeditsTestOptions {
     page: Page
     sidebar: Frame | null
     fileName: string
-    lineNumbers: number[]
+    lineOptions: LineOptions[]
 }
 
 const autoeditsTestHelper = async ({
     page,
     sidebar,
     fileName,
-    lineNumbers,
+    lineOptions,
 }: AutoeditsTestOptions): Promise<void> => {
     // Use a large number to go the end of the line
     const maxColumnNumber = Number.MAX_SAFE_INTEGER
@@ -55,7 +67,7 @@ const autoeditsTestHelper = async ({
     // Close the explorer view
     await sidebarExplorer(page).click()
 
-    for (const lineNumber of lineNumbers) {
+    for (const { lineNumber, clip } of lineOptions) {
         await executeCommandInPalette(page, 'Go to Line/Column')
         await page.keyboard.type(`${lineNumber}:${maxColumnNumber}`)
         await page.keyboard.press('Enter')
@@ -65,12 +77,20 @@ const autoeditsTestHelper = async ({
         // Wait for the diff view to stabilize - required to reduce flakiness
         await page.waitForTimeout(1000)
 
-        await expect(page).toHaveScreenshot({ maxDiffPixelRatio: 0.05 })
+        await expect(page).toHaveScreenshot({ clip })
     }
 }
 
 test('autoedits-multi-line-diff-view', async ({ page, sidebar }) => {
-    const lineNumbers: number[] = [78]
-
-    await autoeditsTestHelper({ page, sidebar, fileName: 'diff-view-example-1.py', lineNumbers })
+    const lineOptions: LineOptions[] = [
+        {
+            lineNumber: 70,
+            clip: { x: 100, y: 300, width: 700, height: 250 },
+        },
+        {
+            lineNumber: 76,
+            clip: { x: 100, y: 300, width: 500, height: 150 },
+        },
+    ]
+    await autoeditsTestHelper({ page, sidebar, fileName: 'diff-view-example-1.py', lineOptions })
 })
