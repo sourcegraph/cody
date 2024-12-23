@@ -43,6 +43,8 @@ export interface CodyToolConfig {
  */
 export abstract class CodyTool {
     constructor(public readonly config: CodyToolConfig) {}
+
+    private static readonly EXECUTION_TIMEOUT_MS = 30000 // 30 seconds
     /**
      * Generates and returns the instruction prompt string for the tool.
      */
@@ -89,12 +91,26 @@ export abstract class CodyTool {
      * Abstract method to be implemented by subclasses for executing the tool.
      */
     protected abstract execute(span: Span, queries: string[]): Promise<ContextItem[]>
-    public run(span: Span, callback?: ToolStatusCallback): Promise<ContextItem[]> {
+    public async run(span: Span, callback?: ToolStatusCallback): Promise<ContextItem[]> {
         try {
             const queries = this.parse()
             if (queries.length) {
                 callback?.onToolStream(this.config.title, queries.join(', '))
-                return this.execute(span, queries)
+                // Create a timeout promise
+                const timeoutPromise = new Promise<ContextItem[]>((_, reject) => {
+                    setTimeout(() => {
+                        reject(
+                            new Error(
+                                `${this.config.title} execution timed out after ${CodyTool.EXECUTION_TIMEOUT_MS}ms`
+                            )
+                        )
+                    }, CodyTool.EXECUTION_TIMEOUT_MS)
+                })
+                // Race between execution and timeout
+                const results = await Promise.race([this.execute(span, queries), timeoutPromise])
+                // Notify that tool execution is complete
+                callback?.onToolExecuted(this.config.title)
+                return results
             }
         } catch (error) {
             callback?.onToolError(this.config.title, error as Error)

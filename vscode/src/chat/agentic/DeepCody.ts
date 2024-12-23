@@ -120,11 +120,12 @@ export class DeepCodyAgent extends CodyChatAgent {
                 Array.from(this.toolHandlers.entries()).map(async ([name, tool]) => {
                     try {
                         return await tool.run(span, this.statusCallback)
-                    } finally {
-                        this.statusCallback?.onToolExecuted(tool.config.title)
+                    } catch (error) {
+                        return []
                     }
                 })
             )
+
             return results.flat().filter(isDefined)
         } catch (error) {
             await this.multiplexer.notifyTurnComplete()
