@@ -7,7 +7,7 @@ import {
     type PromptString,
     newPromptMixin,
 } from '@sourcegraph/cody-shared'
-import type { StepMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import type { ChatMessageStep } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { getCategorizedMentions } from '../../prompt-builder/utils'
 import type { ChatBuilder } from '../chat-view/ChatBuilder'
 import { DefaultPrompter } from '../chat-view/prompt'
@@ -140,7 +140,7 @@ export abstract class CodyChatAgent {
         }
     }
 
-    private updateStepsAndNotify(steps: StepMessage[], model: string): void {
+    private updateStepsAndNotify(steps: ChatMessageStep[], model: string): void {
         this.chatBuilder.setStepsToLastMessage(steps)
         this.postMessageCallback?.(model)
     }

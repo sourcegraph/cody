@@ -39,10 +39,10 @@ export interface ChatMessage extends Message {
     intent?: 'search' | 'chat' | 'edit' | 'insert' | undefined | null
     manuallySelectedIntent?: 'search' | 'chat' | 'edit' | 'insert' | undefined | null
     search?: ChatMessageSearch | undefined | null
-    steps?: StepMessage[] | undefined | null
+    steps?: ChatMessageStep[] | undefined | null
 }
 
-export interface StepMessage {
+export interface ChatMessageStep {
     id: string
     content: string
     status: string

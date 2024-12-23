@@ -49,7 +49,7 @@ import {
 import { HumanMessageCell } from './cells/messageCell/human/HumanMessageCell'
 
 import { type Context, type Span, context, trace } from '@opentelemetry/api'
-import type { StepMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import type { ChatMessageStep } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { CheckCircle, CircleXIcon, Loader2Icon } from 'lucide-react'
 import { TELEMETRY_INTENT } from '../../src/telemetry/onebox'
 import { SwitchIntent } from './cells/messageCell/assistant/SwitchIntent'
@@ -623,7 +623,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                 />
             )}
             {humanMessage?.steps && (
-                <StepMessageList steps={humanMessage?.steps} isContextLoading={isContextLoading} />
+                <ChatMessageStepList steps={humanMessage?.steps} isContextLoading={isContextLoading} />
             )}
             {(humanMessage.contextFiles || assistantMessage || isContextLoading) && !isSearchIntent && (
                 <ContextCell
@@ -760,7 +760,7 @@ function reevaluateSearchWithSelectedFilters({
     })
 }
 
-const StepMessageList: FC<{ steps: StepMessage[]; isContextLoading: boolean }> = ({
+const ChatMessageStepList: FC<{ steps: ChatMessageStep[]; isContextLoading: boolean }> = ({
     steps,
     isContextLoading,
 }) => {
@@ -770,13 +770,13 @@ const StepMessageList: FC<{ steps: StepMessage[]; isContextLoading: boolean }> =
     return (
         <div className="tw-flex tw-flex-col tw-gap-1">
             {steps.map(step => (
-                <StepMessageItem key={step.id} step={step} isContextLoading={isContextLoading} />
+                <ChatMessageStepItem key={step.id} step={step} isContextLoading={isContextLoading} />
             ))}
         </div>
     )
 }
 
-const StepMessageItem: FC<{ step: StepMessage; isContextLoading: boolean }> = ({
+const ChatMessageStepItem: FC<{ step: ChatMessageStep; isContextLoading: boolean }> = ({
     step,
     isContextLoading,
 }) => {
