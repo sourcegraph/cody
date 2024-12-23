@@ -21,12 +21,12 @@ import kotlinx.coroutines.withContext
 
 class DebugServerStartupActivity : ProjectActivity {
   override suspend fun execute(project: Project) {
-    // doServe()
+    doServe()
   }
 
   suspend fun doServe() {
     withContext(Dispatchers.IO) {
-      val devToolsUrlPrefix = "://localhost:8083/cdp/"
+      val devToolsUrlPrefix = "://localhost:8083/"
       val server = embeddedServer(Netty, port = 8083) {
         install(WebSockets)
         routing {
@@ -44,7 +44,7 @@ class DebugServerStartupActivity : ProjectActivity {
             get("/json/version/") {
                 call.respondText(service<ChromeDevToolsProtocolForwarder>().version(devToolsUrlPrefix), ContentType.Application.Json.withCharset(Charsets.UTF_8))
             }
-          webSocket("/cdp/{webviewId}") {
+          webSocket("/devtools/browser/{webviewId}") {
             val webviewId = call.parameters["webviewId"]?.toIntOrNull()
             if (webviewId == null) {
               call.respond(HttpStatusCode.NotFound)

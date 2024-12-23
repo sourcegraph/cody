@@ -41,7 +41,7 @@ test(
         try {
             // await checkTestServerStarted()
             console.log('about to connect')
-            const browser = await chromium.connectOverCDP('http://localhost:8081')
+            const browser = await chromium.connectOverCDP('http://localhost:8083')
             console.log('connected')
             const contexts = browser.contexts()
             console.log('contexts', contexts)

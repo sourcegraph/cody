@@ -1,6 +1,7 @@
 package com.sourcegraph.jetbrains.testing
 
 import com.google.gson.Gson
+import com.google.gson.JsonNull
 import com.google.gson.JsonObject
 import com.intellij.openapi.components.Service
 import com.intellij.ui.jcef.JBCefBrowser
@@ -42,14 +43,14 @@ class ChromeDevToolsProtocolForwarder {
 
     fun version(devToolsUrlPrefix: String): String {
         // TODO: This hard-codes the first target.
-        return "{\"Protocol-Version\":\"1.3\",\"webSocketDebuggerUrl\":\"ws${devToolsUrlPrefix}0\"}"
+        return "{\"Protocol-Version\":\"1.3\",\"webSocketDebuggerUrl\":\"ws${devToolsUrlPrefix}devtools/browser/0\"}"
     }
 
     // TODO: Rationalize this with /json/list/ in the CDP protocol
     fun listWebviews(devToolsUrlPrefix: String): List<WebviewData> {
         return synchronized(this.targets) {
             this.targets.map {
-                WebviewData("${devToolsUrlPrefix}${it.id}", it.viewType, if (it.client.get() == null) { "dead" } else { "alive" })
+                WebviewData("${devToolsUrlPrefix}devtools/browser/${it.id}", it.viewType, if (it.client.get() == null) { "dead" } else { "alive" })
             }
         }
     }
@@ -68,17 +69,12 @@ class ChromeDevToolsProtocolForwarder {
             session.call.response.status(HttpStatusCode.Gone)
             return
         }
-        client.executeDevToolsMethod(
-            "Log.enable",
-            "{}"
-        ).thenApply {
-            println("*** enabled logging $it")
-        }
         val eventChannel = Channel<String>()
         client.addEventListener { eventName, messageAsJson ->
+            val params = gson.fromJson(messageAsJson, JsonObject::class.java)
             val message = JsonObject().apply {
                 addProperty("method", eventName)
-                add("params", gson.fromJson(messageAsJson, JsonObject::class.java))
+                add("params", params)
             }
             eventChannel.trySend(gson.toJson(message))
         }
@@ -91,52 +87,78 @@ class ChromeDevToolsProtocolForwarder {
         for (message in session.incoming) {
             message as? Frame.Text ?: continue
             val payload = message.readText()
-            println("ws: ${payload}")
+            println("> $payload")
             val json = gson.fromJson(payload, JsonObject::class.java)
             val id = json.get("id").asNumber
+            val sessionId = json.get("sessionId")
             val method = json.get("method").asString
             val params = json.get("params")
 
             // We hijack some CDP methods that JCEF doesn't support.
             if (method == "Browser.setDownloadBehavior") {
-                session.send(Frame.Text("{\"id\":${id},\"result\":{}}"))
+                session.send(Frame.Text("{\"id\":$id,\"result\":{}}"))
                 continue
             }
 
             // TODO: Should this be EDT?
-            val future = client.executeDevToolsMethod(method, if (params != null)  { gson.toJson(params) } else { null })
+            // TODO: executeDevToolsMethod says it accepts null here, but null and "null" fail for Browser.getVersion.
+            val future = client.executeDevToolsMethod(method, gson.toJson(params ?: JsonObject()))
             val result = JsonObject()
-            var extra = mutableListOf<JsonObject>()
+            val extras = mutableListOf<JsonObject>()
             try {
                 // TODO: Don't block here.
                 val value = gson.fromJson(future.get(), JsonObject::class.java)
-                println("DevTools result: $value")
                 result.add("result", value)
 
+                // With the intrinsic protocol, after Target.setAutoAttach we get:
+                // method: Target.attachedToTarget
+                // params:
+                //   sessionId: GUID string
+                //   targetInfo:
+                //     targetId: GUID string
+                //     type: "page"
+                //     title: "Cody"
+                //     url: "https://file+.sourcegraphstatic.com/main-resource-nonce?<number>
+                //     attached: true
+                //     canAccessOpener: false
+                //     browserContextId: GUID string
+                //   waitingForDebugger: false
+                // To have enough information for this, we need to catch the Target.getTargetInfo response:
                 if (method == "Target.getTargetInfo") {
                     // Playwright-CDP hacks: attach to the target
-                    extra.add(JsonObject().apply {
-                        addProperty("sessionId", "woozlwuzl")
-                        add("targetInfo", value.getAsJsonObject("targetInfo"))
-                        addProperty("waitingForDebugger", false)
+                    extras.add(JsonObject().apply {
+                        addProperty("method", "Target.attachedToTarget")
+                        add("params", JsonObject().apply {
+                            // TODO: Make up a legit session ID.
+                            addProperty("sessionId", "woozlwuzl")
+                            add("targetInfo", value.getAsJsonObject("targetInfo"))
+                            addProperty("waitingForDebugger", false)
+                        })
                     })
                 }
             } catch (e: Exception) {
                 println("devtools failed: ${e.message}")
-                val result = JsonObject()
                 result.addProperty("error", e.toString())
             }
             result.addProperty("id", id)
-            session.send(Frame.Text(gson.toJson(result)))
+            if (sessionId != null) {
+                result.add("sessionId", sessionId)
+            }
+            val resultText = gson.toJson(result)
+            println("< $resultText")
+            session.send(Frame.Text(resultText))
 
-            for (extraMessage in extra) {
-                session.send(Frame.Text(gson.toJson(extraMessage)))
+            for (extra in extras) {
+                val extraText = gson.toJson(extra)
+                println("<(extra) $extraText")
+                session.send(Frame.Text(extraText))
             }
         }
         // TODO: Check if we have other, concurrent sessions.
         // TODO: Receive messages and forward them.
         // TODO: Receive events and forward them to the session.
     }
+
     fun didCreateBrowser(viewType: String, browser: JBCefBrowser) {
         val weakBrowser = WeakReference(browser)
         val targets = this.targets
