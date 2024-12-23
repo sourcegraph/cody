@@ -86,6 +86,7 @@ import * as vscode from 'vscode'
 
 import { type Span, context } from '@opentelemetry/api'
 import { captureException } from '@sentry/core'
+import type { StepMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { getTokenCounterUtils } from '@sourcegraph/cody-shared/src/token/counter'
 import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
 import { Subject, map } from 'observable-fns'
@@ -930,12 +931,52 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
         // Experimental Feature: Deep Cody
         if (isDeepCodyEnabled) {
-            const agenticContext = await new DeepCodyAgent(
+            const agent = new DeepCodyAgent(
                 this.chatBuilder,
                 this.chatClient,
                 this.toolProvider.getTools(),
                 corpusContext
-            ).getContext(signal)
+            )
+            let loop = 0
+            const groupedSteps: Map<string, StepMessage> = new Map()
+            const makeStep = (toolName: string, content: string) => {
+                groupedSteps.set(toolName, {
+                    content,
+                    id: toolName.replace('TOOL', '').toLowerCase(),
+                    step: loop,
+                    status: 'pending',
+                })
+            }
+            agent.setStatusCallback({
+                onToolStart: newLoop => {
+                    loop++
+                },
+                onToolStream: (toolName, content) => {
+                    if (content) {
+                        makeStep(toolName, content)
+                        const steps = Array.from(groupedSteps.values())
+                        this.chatBuilder.addStepToLastMessage(steps, model)
+                        this.postEmptyMessageInProgress(model, steps)
+                    }
+                },
+                onToolComplete: () => {
+                    const steps = Array.from(groupedSteps.values()).map(step => ({
+                        ...step,
+                        status: 'completed',
+                    }))
+                    this.chatBuilder.addStepToLastMessage(steps, model)
+                    this.postEmptyMessageInProgress(model, steps)
+                },
+                onToolError: (_toolName, error) => {
+                    const steps = Array.from(groupedSteps.values()).map(step => ({
+                        ...step,
+                        status: 'completed',
+                    }))
+                    this.chatBuilder.addErrorAsBotMessage(error, model)
+                    this.postEmptyMessageInProgress(model, steps)
+                },
+            })
+            const agenticContext = await agent.getContext(signal)
             corpusContext.push(...agenticContext)
         }
 
@@ -1575,8 +1616,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     // #region view updaters
     // =======================================================================
 
-    private postEmptyMessageInProgress(model: ChatModel): void {
-        this.postViewTranscript({ speaker: 'assistant', model })
+    private postEmptyMessageInProgress(model: ChatModel, steps?: StepMessage[]): void {
+        this.postViewTranscript({ speaker: 'assistant', model, steps })
     }
 
     private postViewTranscript(messageInProgress?: ChatMessage): void {

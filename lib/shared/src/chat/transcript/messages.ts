@@ -39,6 +39,14 @@ export interface ChatMessage extends Message {
     intent?: 'search' | 'chat' | 'edit' | 'insert' | undefined | null
     manuallySelectedIntent?: 'search' | 'chat' | 'edit' | 'insert' | undefined | null
     search?: ChatMessageSearch | undefined | null
+    steps?: StepMessage[] | undefined | null
+}
+
+export interface StepMessage {
+    id: string
+    content: string
+    status: string
+    step?: number
 }
 
 export type ChatMessageWithSearch = ChatMessage & { search: ChatMessageSearch }
@@ -65,6 +73,7 @@ export interface SerializedChatMessage {
     intent?: ChatMessage['intent']
     manuallySelectedIntent?: ChatMessage['manuallySelectedIntent']
     search?: ChatMessage['search']
+    steps?: ChatMessage['steps']
 }
 
 export interface ChatError {

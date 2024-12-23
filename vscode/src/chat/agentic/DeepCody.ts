@@ -85,6 +85,7 @@ export class DeepCodyAgent extends CodyChatAgent {
         let loop = 0
 
         for (let i = 0; i < maxLoops && !chatAbortSignal.aborted; i++) {
+            this.statusCallback?.onToolStart(loop)
             const newContext = await this.review(span, chatAbortSignal)
             if (!newContext.length) break
 
@@ -94,7 +95,7 @@ export class DeepCodyAgent extends CodyChatAgent {
             context += newContext.length
             loop++
         }
-
+        // this.statusCallback?.onToolComplete()
         return { context, loop }
     }
 
@@ -116,7 +117,15 @@ export class DeepCodyAgent extends CodyChatAgent {
                 return []
             }
             const results = await Promise.all(
-                Array.from(this.toolHandlers.values()).map(tool => tool.execute(span))
+                Array.from(this.toolHandlers.entries()).map(async ([name, tool]) => {
+                    try {
+                        const result = await tool.run(span, this.statusCallback)
+                        return result
+                    } catch (error) {
+                        this.statusCallback?.onToolError(tool.config.title, error as Error)
+                        return []
+                    }
+                })
             )
             return results.flat().filter(isDefined)
         } catch (error) {

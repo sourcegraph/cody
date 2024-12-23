@@ -49,6 +49,8 @@ import {
 import { HumanMessageCell } from './cells/messageCell/human/HumanMessageCell'
 
 import { type Context, type Span, context, trace } from '@opentelemetry/api'
+import type { StepMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { CheckCircle, Loader2Icon } from 'lucide-react'
 import { TELEMETRY_INTENT } from '../../src/telemetry/onebox'
 import { SwitchIntent } from './cells/messageCell/assistant/SwitchIntent'
 import { LastEditorContext } from './context'
@@ -619,7 +621,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                     }
                 />
             )}
-
+            {humanMessage?.steps && <StepMessageList steps={humanMessage?.steps} />}
             {(humanMessage.contextFiles || assistantMessage || isContextLoading) && !isSearchIntent && (
                 <ContextCell
                     experimentalOneBoxEnabled={experimentalOneBoxEnabled}
@@ -753,4 +755,46 @@ function reevaluateSearchWithSelectedFilters({
         index: messageIndexInTranscript,
         selectedFilters,
     })
+}
+
+const StepMessageList: FC<{ steps: StepMessage[] }> = ({ steps }) => {
+    return (
+        <div className="tw-flex tw-flex-col tw-gap-1">
+            {steps.map(step => (
+                <StepMessageItem key={step.id} step={step} />
+            ))}
+        </div>
+    )
+}
+
+const StepMessageItem: FC<{ step: StepMessage }> = ({ step }) => {
+    const isLoading = step.status === 'pending'
+    const status = isLoading ? `Running ${step.id} tool...` : `Fetched context with ${step.id}...`
+    return (
+        <div
+            className="tw-bg-muted-transparent tw-border-t-4 tw-border-slate-500 tw-rounded-b tw-px-4 tw-py-3 tw-shadow-md"
+            role="status"
+        >
+            <div className="tw-flex">
+                <div className="tw-py-1">
+                    {isLoading ? (
+                        <Loader2Icon
+                            strokeWidth={3}
+                            size={24}
+                            className="tw-mr-2 tw-h-6 tw-w-6 tw-animate-spin"
+                        />
+                    ) : (
+                        <CheckCircle strokeWidth={3} size={24} className="tw-mr-2 tw-h-6 tw-w-6" />
+                    )}
+                </div>
+                <div className="tw-flex-grow tw-min-w-0">
+                    <p className="tw-font-bold tw-truncate tw-max-w-full">{status}</p>
+                    <p className="tw-text-xs tw-truncate tw-max-w-full">
+                        <span className="tw-font-bold">Query: </span>
+                        {step.content}
+                    </p>
+                </div>
+            </div>
+        </div>
+    )
 }

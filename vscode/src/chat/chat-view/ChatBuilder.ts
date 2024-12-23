@@ -19,7 +19,7 @@ import {
     toRangeData,
 } from '@sourcegraph/cody-shared'
 
-import type { RankedContext } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import type { RankedContext, StepMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { Observable, Subject, map } from 'observable-fns'
 import { getChatPanelTitle } from './chat-helpers'
 
@@ -220,6 +220,19 @@ export class ChatBuilder {
             speaker: 'assistant',
             error: errorToChatError(error),
         })
+        this.changeNotifications.next()
+    }
+
+    public addStepToLastMessage(
+        steps: StepMessage[],
+        model: ChatModel | typeof ChatBuilder.NO_MODEL
+    ): void {
+        const lastMessage = this.messages.at(-1)
+        if (!lastMessage) {
+            throw new Error('no last message')
+        }
+        lastMessage.steps = steps
+
         this.changeNotifications.next()
     }
 

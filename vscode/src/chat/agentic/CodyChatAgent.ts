@@ -11,11 +11,17 @@ import { getCategorizedMentions } from '../../prompt-builder/utils'
 import type { ChatBuilder } from '../chat-view/ChatBuilder'
 import { DefaultPrompter } from '../chat-view/prompt'
 import type { CodyTool } from './CodyTool'
+import type { ToolStatusCallback } from './CodyToolProvider'
 
 export abstract class CodyChatAgent {
     protected readonly multiplexer = new BotResponseMultiplexer()
     protected readonly promptMixins: PromptMixin[] = []
     protected readonly toolHandlers: Map<string, CodyTool>
+
+    protected statusCallback?: ToolStatusCallback
+    public setStatusCallback(callback: ToolStatusCallback): void {
+        this.statusCallback = callback
+    }
 
     constructor(
         protected readonly chatBuilder: ChatBuilder,
@@ -31,8 +37,12 @@ export abstract class CodyChatAgent {
     protected initializeMultiplexer(): void {
         for (const [tag, tool] of this.toolHandlers) {
             this.multiplexer.sub(tag, {
-                onResponse: async (content: string) => tool.stream(content),
-                onTurnComplete: async () => tool.stream(''),
+                onResponse: async (content: string) => {
+                    tool.stream(content)
+                    // this.statusCallback?.onToolStream(tool.config.tags.tag, content)
+                    // logDebug('Tool stream', content)
+                },
+                onTurnComplete: async () => {},
             })
         }
     }
