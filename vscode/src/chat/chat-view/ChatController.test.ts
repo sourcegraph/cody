@@ -100,7 +100,7 @@ describe('ChatController', () => {
 
         await chatController.handleUserMessage({
             requestID: mockRequestID,
-            inputText: PromptString.unsafe_fromUserQuery('Test input'),
+            inputText: ps`Test input`,
             mentions: [],
             editorState: null,
             signal: new AbortController().signal,
