@@ -44,8 +44,47 @@ export class DiagnosticsRetriever implements vscode.Disposable, ContextRetriever
         document,
         position,
     }: ContextRetrieverOptions): Promise<AutocompleteContextSnippet[]> {
+        if (document.uri.scheme === 'vscode-notebook-cell') {
+            // Handle the diagnostic error for the notebook
+            return await this.getDiagnosticsForNotebook(position)
+        }
+        return await this.getDiagnosticsForDocument(document, position)
+    }
+
+    private async getDiagnosticsForNotebook(
+        position: vscode.Position
+    ): Promise<AutocompleteContextSnippet[]> {
+        const diagnosticsSnippets: AutocompleteContextSnippet[] = []
+        const activeNotebook = vscode.window.activeNotebookEditor?.notebook
+        const notebookCells = activeNotebook?.getCells()
+        for (const cell of notebookCells || []) {
+            const diagnostics = vscode.languages.getDiagnostics(cell.document.uri)
+            const diagnosticsSnippet = await this.getDiagnosticsPromptFromInformation(
+                cell.document,
+                position,
+                diagnostics
+            )
+            for (const snippet of diagnosticsSnippet) {
+                diagnosticsSnippets.push({
+                    ...snippet,
+                    uri: activeNotebook!.uri,
+                })
+            }
+        }
+        return diagnosticsSnippets
+    }
+
+    private async getDiagnosticsForDocument(
+        document: vscode.TextDocument,
+        position: vscode.Position
+    ): Promise<AutocompleteContextSnippet[]> {
         const diagnostics = vscode.languages.getDiagnostics(document.uri)
-        return this.getDiagnosticsPromptFromInformation(document, position, diagnostics)
+        const diagnosticsSnippets = await this.getDiagnosticsPromptFromInformation(
+            document,
+            position,
+            diagnostics
+        )
+        return diagnosticsSnippets
     }
 
     public async getDiagnosticsPromptFromInformation(

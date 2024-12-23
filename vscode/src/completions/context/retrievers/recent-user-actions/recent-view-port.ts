@@ -4,10 +4,11 @@ import { LRUCache } from 'lru-cache'
 import * as vscode from 'vscode'
 import type { ContextRetriever, ContextRetrieverOptions } from '../../../types'
 import { RetrieverIdentifier, type ShouldUseContextParams, shouldBeUsedAsContext } from '../../utils'
+import { getNotebookLanguageId, getTextFromNotebookCells } from './notebook-utils'
 
 interface TrackedViewPort {
     uri: vscode.Uri
-    visibleRange: vscode.Range
+    content: string
     languageId: string
     lastAccessTimestamp: number
 }
@@ -29,7 +30,11 @@ export class RecentViewPortRetriever implements vscode.Disposable, ContextRetrie
         options: RecentViewPortRetrieverOptions,
         readonly window: Pick<
             typeof vscode.window,
-            'onDidChangeTextEditorVisibleRanges' | 'onDidChangeActiveTextEditor' | 'activeTextEditor'
+            | 'onDidChangeTextEditorVisibleRanges'
+            | 'onDidChangeActiveTextEditor'
+            | 'activeTextEditor'
+            | 'onDidChangeNotebookEditorVisibleRanges'
+            | 'onDidChangeActiveNotebookEditor'
         > = vscode.window
     ) {
         this.maxTrackedViewPorts = options.maxTrackedViewPorts
@@ -42,7 +47,11 @@ export class RecentViewPortRetriever implements vscode.Disposable, ContextRetrie
             window.onDidChangeTextEditorVisibleRanges(
                 debounce(this.onDidChangeTextEditorVisibleRanges.bind(this), 300)
             ),
-            window.onDidChangeActiveTextEditor(this.onDidChangeActiveTextEditor.bind(this))
+            window.onDidChangeNotebookEditorVisibleRanges(
+                debounce(this.onDidChangeNotebookEditorVisibleRanges.bind(this), 300)
+            ),
+            window.onDidChangeActiveTextEditor(this.onDidChangeActiveTextEditor.bind(this)),
+            window.onDidChangeActiveNotebookEditor(this.onDidChangeActiveNotebookEditor.bind(this))
         )
     }
 
@@ -50,22 +59,19 @@ export class RecentViewPortRetriever implements vscode.Disposable, ContextRetrie
         const sortedViewPorts = this.getValidViewPorts(document)
 
         const snippetPromises = sortedViewPorts.map(async viewPort => {
-            const document = await vscode.workspace.openTextDocument(viewPort.uri)
-            const content = document.getText(viewPort.visibleRange)
-
-            const snippet: AutocompleteContextSnippet = {
+            const snippet = {
                 uri: viewPort.uri,
-                content,
-                startLine: viewPort.visibleRange.start.line,
-                endLine: viewPort.visibleRange.end.line,
+                content: viewPort.content,
                 identifier: this.identifier,
                 metadata: {
                     timeSinceActionMs: Date.now() - viewPort.lastAccessTimestamp,
                 },
-            }
+            } satisfies Omit<AutocompleteContextSnippet, 'startLine' | 'endLine'>
             return snippet
         })
         const viewPortSnippets = await Promise.all(snippetPromises)
+        // remove the startLine and endLine from the response which might not be valid for notebooks
+        // @ts-ignore
         return viewPortSnippets
     }
 
@@ -100,40 +106,72 @@ export class RecentViewPortRetriever implements vscode.Disposable, ContextRetrie
             // Update the previous editor which was active before this one
             // Most of the property would remain same, but lastAccessTimestamp would be updated on the update
             this.updateTrackedViewPort(
-                this.activeTextEditor.document,
-                this.activeTextEditor.visibleRanges[0],
+                this.activeTextEditor.document.uri,
+                this.activeTextEditor.document.getText(this.activeTextEditor.visibleRanges[0]),
                 this.activeTextEditor.document.languageId
             )
         }
-        this.activeTextEditor = editor
-        if (!editor?.visibleRanges?.[0]) {
+        if (!editor) {
             return
         }
-        this.updateTrackedViewPort(editor.document, editor.visibleRanges[0], editor.document.languageId)
+        this.updateTextEditor(editor, editor.visibleRanges)
+    }
+
+    private onDidChangeActiveNotebookEditor(editor: vscode.NotebookEditor | undefined): void {
+        if (!editor?.notebook) {
+            return
+        }
+        this.updateNotebookEditor(editor, editor.visibleRanges)
     }
 
     private onDidChangeTextEditorVisibleRanges(event: vscode.TextEditorVisibleRangesChangeEvent): void {
-        const { textEditor, visibleRanges } = event
+        this.updateTextEditor(event.textEditor, event.visibleRanges)
+    }
+
+    private onDidChangeNotebookEditorVisibleRanges(
+        event: vscode.NotebookEditorVisibleRangesChangeEvent
+    ) {
+        this.updateNotebookEditor(event.notebookEditor, event.visibleRanges)
+    }
+
+    private updateTextEditor(editor: vscode.TextEditor, visibleRanges: readonly vscode.Range[]): void {
         if (visibleRanges.length === 0) {
             return
         }
-        this.updateTrackedViewPort(textEditor.document, visibleRanges[0], textEditor.document.languageId)
+        this.updateTrackedViewPort(
+            editor.document.uri,
+            editor.document.getText(visibleRanges?.at(-1)),
+            editor.document.languageId
+        )
     }
 
-    private updateTrackedViewPort(
-        document: vscode.TextDocument,
-        visibleRange: vscode.Range,
-        languageId: string
+    private updateNotebookEditor(
+        notebookEditor: vscode.NotebookEditor,
+        visibleRanges: readonly vscode.NotebookRange[]
     ): void {
-        if (document.uri.scheme !== 'file') {
+        if (!notebookEditor.notebook || visibleRanges.length === 0) {
+            return
+        }
+        const visibleCells = notebookEditor.notebook.getCells(visibleRanges?.at(-1))
+        const content = getTextFromNotebookCells(notebookEditor.notebook, visibleCells)
+
+        this.updateTrackedViewPort(
+            notebookEditor.notebook.uri,
+            content,
+            getNotebookLanguageId(notebookEditor.notebook)
+        )
+    }
+
+    private updateTrackedViewPort(uri: vscode.Uri, content: string, languageId: string): void {
+        if (uri.scheme !== 'file') {
             return
         }
         const now = Date.now()
-        const key = document.uri.toString()
+        const key = uri.toString()
 
         this.viewportsByDocumentUri.set(key, {
-            uri: document.uri,
-            visibleRange,
+            uri,
+            content,
             languageId,
             lastAccessTimestamp: now,
         })
