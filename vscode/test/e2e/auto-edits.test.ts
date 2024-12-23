@@ -52,6 +52,9 @@ const autoeditsTestHelper = async ({
         width: 1024,
         height: 741,
     })
+    await page.evaluate(() => {
+        window.devicePixelRatio = 1;
+    });
 
     // In your test setup or beforeAll hook
     await page.evaluate(() => {
