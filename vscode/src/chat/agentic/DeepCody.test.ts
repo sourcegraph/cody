@@ -149,7 +149,7 @@ describe('DeepCody', () => {
             mockCurrentContext
         )
 
-        const result = await agent.getContext({ aborted: false } as AbortSignal)
+        const result = await agent.getContext('', { aborted: false } as AbortSignal)
 
         expect(mockChatClient.chat).toHaveBeenCalled()
         expect(mockCodyTools).toHaveLength(3)

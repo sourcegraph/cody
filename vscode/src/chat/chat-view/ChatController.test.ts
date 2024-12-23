@@ -1,3 +1,4 @@
+import https from 'node:https'
 import {
     AUTH_STATUS_FIXTURE_AUTHED,
     CLIENT_CAPABILITIES_FIXTURE,
@@ -84,6 +85,34 @@ describe('ChatController', () => {
             contextRetriever: mockContextRetriever,
             chatIntentAPIClient: null,
         })
+    })
+
+    test('verifies interactionId is passed through chat requests', async () => {
+        const mockRequestID = '0'
+        const mockRequest = vi.spyOn(https, 'request')
+        mockChatClient.chat.mockReturnValue(
+            (async function* () {
+                yield { type: 'change', text: 'Test reply' }
+                yield { type: 'complete', text: 'Test reply' }
+            })()
+        )
+        mockContextRetriever.retrieveContext.mockResolvedValue([])
+
+        await chatController.handleUserMessage({
+            requestID: mockRequestID,
+            inputText: PromptString.unsafe_fromUserQuery('Test input'),
+            mentions: [],
+            editorState: null,
+            signal: new AbortController().signal,
+            source: 'chat',
+        })
+        await vi.runOnlyPendingTimersAsync()
+
+        expect(mockChatClient.chat).toBeCalledTimes(1)
+        const requestOptions = mockRequest.mock.calls[0][1]
+        expect(requestOptions?.headers?.['X-Sourcegraph-Interaction-ID']).toBe(mockRequestID)
+        const chatClientParams = mockChatClient.chat.mock.calls[0][1]
+        expect(chatClientParams.interactionId).toBe(mockRequestID)
     })
 
     test('send, followup, and edit', { timeout: 1500 }, async () => {
