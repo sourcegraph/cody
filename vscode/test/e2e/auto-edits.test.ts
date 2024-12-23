@@ -53,6 +53,13 @@ const autoeditsTestHelper = async ({
         height: 741,
     })
 
+    // In your test setup or beforeAll hook
+    await page.evaluate(() => {
+        document.body.style.fontFamily = 'monospace';
+        document.body.style.fontSize = '14px';
+        document.body.style.lineHeight = '1.5';
+    });
+
     // Sign into Cody
     await sidebarSignin(page, sidebar)
     // Open the Explorer view from the sidebar
