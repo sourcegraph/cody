@@ -43,13 +43,18 @@ export class DeepCodyAgent extends CodyChatAgent {
      * @param maxLoops - The maximum number of loops to perform when retrieving the context.
      * @returns The context items retrieved for the current chat.
      */
-    public async getContext(chatAbortSignal: AbortSignal, maxLoops = 2): Promise<ContextItem[]> {
+    public async getContext(
+        requestID: string,
+        chatAbortSignal: AbortSignal,
+        maxLoops = 2
+    ): Promise<ContextItem[]> {
         return wrapInActiveSpan('DeepCody.getContext', span =>
-            this._getContext(span, chatAbortSignal, maxLoops)
+            this._getContext(requestID, span, chatAbortSignal, maxLoops)
         )
     }
 
     private async _getContext(
+        requestID: string,
         span: Span,
         chatAbortSignal: AbortSignal,
         maxLoops = 2
@@ -58,7 +63,7 @@ export class DeepCodyAgent extends CodyChatAgent {
         this.models.review = this.chatBuilder.selectedModel
 
         const startTime = performance.now()
-        const count = await this.reviewLoop(span, chatAbortSignal, maxLoops)
+        const count = await this.reviewLoop(requestID, span, chatAbortSignal, maxLoops)
 
         telemetryRecorder.recordEvent('cody.deep-cody.context', 'reviewed', {
             privateMetadata: {
@@ -76,6 +81,7 @@ export class DeepCodyAgent extends CodyChatAgent {
     }
 
     private async reviewLoop(
+        requestID: string,
         span: Span,
         chatAbortSignal: AbortSignal,
         maxLoops: number
@@ -85,7 +91,7 @@ export class DeepCodyAgent extends CodyChatAgent {
         let loop = 0
 
         for (let i = 0; i < maxLoops && !chatAbortSignal.aborted; i++) {
-            const newContext = await this.review(span, chatAbortSignal)
+            const newContext = await this.review(requestID, span, chatAbortSignal)
             if (!newContext.length) break
 
             // Remove the TOOL context item that is only used during the review process.
@@ -101,12 +107,21 @@ export class DeepCodyAgent extends CodyChatAgent {
     /**
      * Performs a review of the current context and generates new context items based on the review outcome.
      */
-    private async review(span: Span, chatAbortSignal: AbortSignal): Promise<ContextItem[]> {
+    private async review(
+        requestID: string,
+        span: Span,
+        chatAbortSignal: AbortSignal
+    ): Promise<ContextItem[]> {
         const prompter = this.getPrompter(this.context)
         const promptData = await prompter.makePrompt(this.chatBuilder, 1, this.promptMixins)
         span.addEvent('sendReviewRequest')
         try {
-            const res = await this.processStream(promptData.prompt, chatAbortSignal, this.models.review)
+            const res = await this.processStream(
+                requestID,
+                promptData.prompt,
+                chatAbortSignal,
+                this.models.review
+            )
             // If the response is empty or contains the CONTEXT_SUFFICIENT token, the context is sufficient.
             if (!res || res?.includes('CONTEXT_SUFFICIENT')) {
                 // Process the response without generating any context items.

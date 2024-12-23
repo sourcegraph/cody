@@ -36,6 +36,7 @@ export interface CompletionParameters {
     topK?: number
     topP?: number
     model?: string
+    interactionId?: string
     stream?: boolean
     // Configuration for a Predicted Output, which can greatly improve response
     // times when large parts of the model response are known ahead of time.

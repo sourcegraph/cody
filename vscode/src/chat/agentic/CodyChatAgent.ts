@@ -42,13 +42,14 @@ export abstract class CodyChatAgent {
     }
 
     protected async processStream(
+        requestID: string,
         message: Message[],
         signal?: AbortSignal,
         model?: string
     ): Promise<string> {
         const stream = await this.chatClient.chat(
             message,
-            { model: model, maxTokensToSample: 4000 },
+            { model: model, maxTokensToSample: 4000, interactionId: requestID },
             new AbortController().signal
         )
 

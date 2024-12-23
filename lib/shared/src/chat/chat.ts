@@ -65,6 +65,7 @@ export class ChatClient {
             ...DEFAULT_CHAT_COMPLETION_PARAMETERS,
             ...params,
             messages: messagesToSend,
+            interactionId: params.interactionId,
         }
 
         // Enabled Fireworks tracing for Sourcegraph teammates.

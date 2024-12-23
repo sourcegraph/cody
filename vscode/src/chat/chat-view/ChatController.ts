@@ -934,7 +934,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 this.chatClient,
                 this.toolProvider.getTools(),
                 corpusContext
-            ).getContext(signal)
+            ).getContext(requestID, signal)
             corpusContext.push(...agenticContext)
         }
 
@@ -1680,6 +1680,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
             this.sendLLMRequest(
                 prompt,
+                requestID,
                 model,
                 {
                     update: content => {
@@ -1733,6 +1734,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
      */
     private async sendLLMRequest(
         prompt: Message[],
+        requestID: string,
         model: ChatModel,
         callbacks: {
             update: (response: string) => void
@@ -1763,6 +1765,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             const params = {
                 model,
                 maxTokensToSample: contextWindow.output,
+                interactionId: requestID,
             } as CompletionParameters
 
             // Set stream param only when the model is disabled for streaming.

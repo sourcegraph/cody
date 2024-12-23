@@ -87,15 +87,23 @@ export abstract class SourcegraphCompletionsClient {
     protected async prepareRequest(
         params: CompletionParameters,
         requestParams: CompletionRequestParameters
-    ): Promise<{ url: URL; serializedParams: SerializedCompletionParameters }> {
+    ): Promise<{
+        url: URL
+        serializedParams: SerializedCompletionParameters
+        headerParams: Record<string, string>
+    }> {
         const { apiVersion } = requestParams
         const serializedParams = await getSerializedParams(params)
+        const headerParams: Record<string, string> = {}
+        if (params.interactionId) {
+            headerParams['X-Sourcegraph-Interaction-ID'] = params.interactionId
+        }
         const url = new URL(await this.completionsEndpoint())
         if (apiVersion >= 1) {
             url.searchParams.append('api-version', '' + apiVersion)
         }
         addClientInfoParams(url.searchParams)
-        return { url, serializedParams }
+        return { url, serializedParams, headerParams }
     }
 
     protected abstract _fetchWithCallbacks(
