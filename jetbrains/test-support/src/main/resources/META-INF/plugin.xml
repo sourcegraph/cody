@@ -5,6 +5,8 @@
     <depends>com.sourcegraph.jetbrains</depends>
     <extensions defaultExtensionNs="com.intellij">
         <postStartupActivity implementation="com.sourcegraph.jetbrains.testing.DebugServerStartupActivity" />
+        <postStartupActivity implementation="com.sourcegraph.jetbrains.testing.ChromeDevToolsSnitch" />
+        <registryKey defaultValue="9226" description="Override this internal key" key="ide.browser.jcef.debug.port" />
     </extensions>
     <extensions defaultExtensionNs="com.sourcegraph.jetbrains">
         <testSupport.webviewSink implementation="com.sourcegraph.jetbrains.testing.WebviewAutomation" />

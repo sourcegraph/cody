@@ -130,6 +130,27 @@
       "args": ["test", "-c", "${workspaceFolder}/vscode/playwright.v2.config.ts", "--timeout=0", "--workers=1", "--headed"],
       "smartStep": true,
       "outputCapture": "std",
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "ide-tests smoke test",
+      "autoAttachChildProcesses": true,
+      "skipFiles": ["<node_internals>/**", ".test/global/vscode-server/**"],
+      "program": "${workspaceFolder}/vscode/node_modules/playwright/cli.js",
+      "env": {
+        "FORCE_COLOR": "true"
+      },
+      "cwd": "${workspaceFolder}/ide-test",
+      // TODO: this doesn't quite seem to be working right yet.
+      // "sourceMaps": true,
+      // "outFiles": [
+      //   "${workspaceRoot}/vscode/dist/**/*.js",
+      //   "${workspaceRoot}/vscode/",
+      // ],
+      "args": ["test", "--timeout=0", "--workers=1", "--headed"],
+      "smartStep": true,
+      "outputCapture": "std",
     }
   ],
 }

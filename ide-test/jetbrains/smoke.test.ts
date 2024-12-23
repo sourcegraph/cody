@@ -1,6 +1,6 @@
 //import { spawn } from 'node:child_process'
 import { chromium, expect, test } from '@playwright/test'
-
+/*
 async function checkTestServerStarted(): Promise<void> {
     let giveUpDeadline = Date.now() + 60 * 1000
     let lastError: Error | undefined
@@ -22,7 +22,7 @@ async function checkTestServerStarted(): Promise<void> {
     }
     throw new Error('timed out trying to connect to JetBrains test support server')
 }
-
+*/
 test(
     'loads the plugin and displays content in the sidebar',
     async () => {
@@ -39,15 +39,21 @@ test(
         })
             */
         try {
-            await checkTestServerStarted()
-            const browser = await chromium.connectOverCDP('http://localhost:8083')
+            // await checkTestServerStarted()
+            console.log('about to connect')
+            const browser = await chromium.connectOverCDP('http://localhost:8081')
+            console.log('connected')
             const contexts = browser.contexts()
+            console.log('contexts', contexts)
             expect(contexts.length).toBe(1)
             const context = contexts[0]
+            console.log('context', context)
             const pages = context.pages()
-            await new Promise(resolve => setTimeout(resolve, 20_000))
+            console.log('pages', pages)
+            expect(pages.length).toBe(1)
             const page = pages[0]
-            await expect(page.getByText('Hey, Sourcegraph!')).toBeVisible()
+            console.log('page', page)
+            await expect(page.getByText('Deep Cody (Experimental)')).toBeVisible()
         } finally {
             //ideProcess.kill()
         }
