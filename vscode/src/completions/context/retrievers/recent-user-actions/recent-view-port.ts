@@ -160,7 +160,7 @@ export class RecentViewPortRetriever implements vscode.Disposable, ContextRetrie
             return
         }
         const visibleCells = notebookEditor.notebook.getCells(visibleRanges?.at(-1))
-        const content = getTextFromNotebookCells(notebookEditor.notebook, visibleCells)
+        const content = getTextFromNotebookCells(notebookEditor.notebook, visibleCells).toString()
 
         this.updateTrackedViewPort(
             notebookEditor.notebook.uri,

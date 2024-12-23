@@ -1,16 +1,17 @@
+import { PromptString, ps } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
-import { lines } from '../../../../completions/text-processing'
+import { getNewLineChar } from '../../../../completions/text-processing'
 import { getLanguageConfig } from '../../../../tree-sitter/language'
 
 export function getTextFromNotebookCells(
     notebook: vscode.NotebookDocument,
     cells: vscode.NotebookCell[]
-): string {
+): PromptString {
     const orderedCells = cells.sort((a, b) => a.index - b.index)
-    const cellText: string[] = []
+    const cellText: PromptString[] = []
     const languageId = getNotebookLanguageId(notebook)
     for (const cell of orderedCells) {
-        const text = cell.document.getText()
+        const text = PromptString.fromDocumentText(cell.document)
         if (text.trim().length === 0) {
             continue
         }
@@ -21,7 +22,7 @@ export function getTextFromNotebookCells(
             cellText.push(getCellMarkupContent(languageId, text))
         }
     }
-    return cellText.join('\n\n')
+    return PromptString.join(cellText, ps`\n\n`)
 }
 
 export function getNotebookLanguageId(notebook: vscode.NotebookDocument): string {
@@ -34,13 +35,14 @@ export function getNotebookLanguageId(notebook: vscode.NotebookDocument): string
     return cells.length > 0 ? cells[0].document.languageId : ''
 }
 
-export function getCellMarkupContent(languageId: string, text: string): string {
+export function getCellMarkupContent(languageId: string, text: PromptString): PromptString {
     if (text.trim().length === 0) {
-        return ''
+        return ps``
     }
     const languageConfig = getLanguageConfig(languageId)
-    const commentStart = languageConfig ? languageConfig.commentStart : '// '
-    const contentLines = lines(text)
-    const markdownContent = contentLines.map(line => `${commentStart}${line}`).join('\n')
-    return markdownContent
+    const commentStart = languageConfig ? languageConfig.commentStart : ps`// `
+    const newLineChar = getNewLineChar(text.toString())
+
+    const contentLines = text.split(newLineChar).map(line => ps`${commentStart}${line}`)
+    return PromptString.join(contentLines, ps`\n`)
 }
