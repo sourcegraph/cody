@@ -36,9 +36,7 @@ export abstract class CodyChatAgent {
     protected initializeMultiplexer(): void {
         for (const [tag, tool] of this.toolHandlers) {
             this.multiplexer.sub(tag, {
-                onResponse: async (content: string) => {
-                    tool.stream(content)
-                },
+                onResponse: async (content: string) => tool.stream(content),
                 onTurnComplete: async () => {},
             })
         }
