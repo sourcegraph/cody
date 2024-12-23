@@ -84,18 +84,17 @@ export class DeepCodyAgent extends CodyChatAgent {
         span.addEvent('reviewLoop')
         let context = 0
         let loop = 0
-
         for (let i = 0; i < maxLoops && !chatAbortSignal.aborted; i++) {
+            if (!chatAbortSignal.aborted) {
+                break
+            }
             const newContext = await this.review(span, chatAbortSignal)
             if (!newContext.length) break
-
             // Remove the TOOL context item that is only used during the review process.
             this.context.push(...newContext.filter(c => c.title !== 'TOOLCONTEXT'))
-
             context += newContext.length
             loop++
         }
-
         return { context, loop }
     }
 
@@ -118,6 +117,10 @@ export class DeepCodyAgent extends CodyChatAgent {
             }
             const results = await Promise.all(
                 Array.from(this.toolHandlers.entries()).map(async ([name, tool]) => {
+                    // Check abort signal before each tool run
+                    if (chatAbortSignal.aborted) {
+                        return []
+                    }
                     try {
                         return await tool.run(span, this.statusCallback)
                     } catch (error) {
