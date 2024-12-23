@@ -223,16 +223,26 @@ export class ChatBuilder {
         this.changeNotifications.next()
     }
 
-    public addStepToLastMessage(
-        steps: StepMessage[],
-        model: ChatModel | typeof ChatBuilder.NO_MODEL
-    ): void {
+    public getStepsFromLastMessage(): StepMessage[] | undefined {
         const lastMessage = this.messages.at(-1)
         if (!lastMessage) {
             throw new Error('no last message')
         }
-        lastMessage.steps = steps
+        if (lastMessage.speaker !== 'human') {
+            throw new Error('Cannot set steps for bot message')
+        }
+        return lastMessage.steps || undefined
+    }
 
+    public setStepsToLastMessage(steps: StepMessage[]): void {
+        const lastMessage = this.messages.at(-1)
+        if (!lastMessage) {
+            throw new Error('no last message')
+        }
+        if (lastMessage.speaker !== 'human') {
+            throw new Error('Cannot set steps for bot message')
+        }
+        lastMessage.steps = steps
         this.changeNotifications.next()
     }
 

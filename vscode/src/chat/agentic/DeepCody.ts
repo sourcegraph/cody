@@ -55,7 +55,7 @@ export class DeepCodyAgent extends CodyChatAgent {
         maxLoops = 2
     ): Promise<ContextItem[]> {
         span.setAttribute('sampled', true)
-        this.models.review = this.chatBuilder.selectedModel
+        this.statusCallback?.onToolsStart()
 
         const startTime = performance.now()
         const count = await this.reviewLoop(span, chatAbortSignal, maxLoops)
@@ -72,6 +72,7 @@ export class DeepCodyAgent extends CodyChatAgent {
                 category: 'billable',
             },
         })
+        this.statusCallback?.onToolsComplete()
         return this.context
     }
 
@@ -85,7 +86,6 @@ export class DeepCodyAgent extends CodyChatAgent {
         let loop = 0
 
         for (let i = 0; i < maxLoops && !chatAbortSignal.aborted; i++) {
-            this.statusCallback?.onToolStart(loop)
             const newContext = await this.review(span, chatAbortSignal)
             if (!newContext.length) break
 
@@ -95,7 +95,7 @@ export class DeepCodyAgent extends CodyChatAgent {
             context += newContext.length
             loop++
         }
-        // this.statusCallback?.onToolComplete()
+
         return { context, loop }
     }
 
@@ -119,11 +119,9 @@ export class DeepCodyAgent extends CodyChatAgent {
             const results = await Promise.all(
                 Array.from(this.toolHandlers.entries()).map(async ([name, tool]) => {
                     try {
-                        const result = await tool.run(span, this.statusCallback)
-                        return result
-                    } catch (error) {
-                        this.statusCallback?.onToolError(tool.config.title, error as Error)
-                        return []
+                        return await tool.run(span, this.statusCallback)
+                    } finally {
+                        this.statusCallback?.onToolExecuted(tool.config.title)
                     }
                 })
             )

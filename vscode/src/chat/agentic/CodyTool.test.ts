@@ -7,8 +7,9 @@ import { ToolFactory, ToolRegistry, type ToolStatusCallback } from './CodyToolPr
 
 const mockCallback: ToolStatusCallback = {
     onToolStream: vi.fn(),
-    onToolStart: vi.fn(),
-    onToolComplete: vi.fn(),
+    onToolsStart: vi.fn(),
+    onToolExecuted: vi.fn(),
+    onToolsComplete: vi.fn(),
     onToolError: vi.fn(),
 }
 

@@ -25,6 +25,7 @@ import type { ToolFactory, ToolRegistry, ToolStatusCallback } from './CodyToolPr
  * Configuration interface for CodyTool instances.
  */
 export interface CodyToolConfig {
+    // The title of the tool. For UI display purposes.
     title: string
     tags: {
         tag: PromptString
@@ -89,10 +90,14 @@ export abstract class CodyTool {
      */
     protected abstract execute(span: Span, queries: string[]): Promise<ContextItem[]>
     public run(span: Span, callback?: ToolStatusCallback): Promise<ContextItem[]> {
-        const queries = this.parse()
-        if (queries.length) {
-            callback?.onToolStream(this.config.title, queries.join(', '))
-            return this.execute(span, queries)
+        try {
+            const queries = this.parse()
+            if (queries.length) {
+                callback?.onToolStream(this.config.title, queries.join(', '))
+                return this.execute(span, queries)
+            }
+        } catch (error) {
+            callback?.onToolError(this.config.title, error as Error)
         }
         return Promise.resolve([])
     }

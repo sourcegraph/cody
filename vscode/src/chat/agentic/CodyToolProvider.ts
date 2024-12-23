@@ -16,10 +16,11 @@ interface CodyShellConfig {
 }
 
 export interface ToolStatusCallback {
-    onToolStart: (loop: number) => void
+    onToolsStart: () => void
     onToolStream: (toolName: string, content: string) => void
-    onToolComplete: (toolName: string) => void
+    onToolExecuted: (toolName: string) => void
     onToolError: (toolName: string, error: Error) => void
+    onToolsComplete: () => void
 }
 
 /**
