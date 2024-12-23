@@ -76,7 +76,7 @@ export class RecentViewPortRetriever implements vscode.Disposable, ContextRetrie
     }
 
     private getValidViewPorts(document: vscode.TextDocument): TrackedViewPort[] {
-        const currentFileUri = document.uri.toString()
+        const currentFileUri = this.getCurrentDocumentUri(document).toString()
         const currentLanguageId = document.languageId
         const viewPorts = Array.from(this.viewportsByDocumentUri.entries())
             .map(([_, value]) => value)
@@ -95,6 +95,13 @@ export class RecentViewPortRetriever implements vscode.Disposable, ContextRetrie
             .slice(0, this.maxRetrievedViewPorts)
 
         return sortedViewPorts
+    }
+
+    private getCurrentDocumentUri(document: vscode.TextDocument): vscode.Uri {
+        if (document.uri.scheme === 'vscode-notebook-cell') {
+            return vscode.window.activeNotebookEditor?.notebook.uri || document.uri
+        }
+        return document.uri
     }
 
     public isSupportedForLanguageId(): boolean {
