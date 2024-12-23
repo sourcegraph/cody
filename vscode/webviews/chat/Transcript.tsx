@@ -50,9 +50,10 @@ import { HumanMessageCell } from './cells/messageCell/human/HumanMessageCell'
 
 import { type Context, type Span, context, trace } from '@opentelemetry/api'
 import type { StepMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
-import { CheckCircle, Loader2Icon } from 'lucide-react'
+import { CheckCircle, CircleXIcon, Loader2Icon } from 'lucide-react'
 import { TELEMETRY_INTENT } from '../../src/telemetry/onebox'
 import { SwitchIntent } from './cells/messageCell/assistant/SwitchIntent'
+import { LoadingDots } from './components/LoadingDots'
 import { LastEditorContext } from './context'
 
 interface TranscriptProps {
@@ -621,7 +622,9 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                     }
                 />
             )}
-            {humanMessage?.steps && <StepMessageList steps={humanMessage?.steps} />}
+            {humanMessage?.steps && (
+                <StepMessageList steps={humanMessage?.steps} isContextLoading={isContextLoading} />
+            )}
             {(humanMessage.contextFiles || assistantMessage || isContextLoading) && !isSearchIntent && (
                 <ContextCell
                     experimentalOneBoxEnabled={experimentalOneBoxEnabled}
@@ -757,40 +760,58 @@ function reevaluateSearchWithSelectedFilters({
     })
 }
 
-const StepMessageList: FC<{ steps: StepMessage[] }> = ({ steps }) => {
+const StepMessageList: FC<{ steps: StepMessage[]; isContextLoading: boolean }> = ({
+    steps,
+    isContextLoading,
+}) => {
+    if (!steps.length) {
+        return null
+    }
     return (
         <div className="tw-flex tw-flex-col tw-gap-1">
             {steps.map(step => (
-                <StepMessageItem key={step.id} step={step} />
+                <StepMessageItem key={step.id} step={step} isContextLoading={isContextLoading} />
             ))}
         </div>
     )
 }
 
-const StepMessageItem: FC<{ step: StepMessage }> = ({ step }) => {
-    const isLoading = step.status === 'pending'
-    const status = isLoading ? `Running ${step.id} tool...` : `Fetched context with ${step.id}...`
+const StepMessageItem: FC<{ step: StepMessage; isContextLoading: boolean }> = ({
+    step,
+    isContextLoading,
+}) => {
+    const isLoading = step.status === 'pending' || isContextLoading
+    if (step.step === 0) {
+        return (
+            <div className="tw-flex tw-items-center tw-rounded-md tw-bg-muted-transparent tw-p-4">
+                {isContextLoading && <LoadingDots />}
+                <div className="tw-ml-4 tw-text-sm">{step.content}</div>
+            </div>
+        )
+    }
+
     return (
         <div
-            className="tw-bg-muted-transparent tw-border-t-4 tw-border-slate-500 tw-rounded-b tw-px-4 tw-py-3 tw-shadow-md"
+            className="tw-bg-muted-transparent tw-border-l-4 tw-border-slate-500 tw-rounded-b tw-px-4 tw-py-3 tw-shadow-md tw-ml-6"
             role="status"
         >
-            <div className="tw-flex">
-                <div className="tw-py-1">
+            <div className="tw-flex tw-items-center">
+                <div>
                     {isLoading ? (
                         <Loader2Icon
                             strokeWidth={3}
-                            size={24}
+                            size={14}
                             className="tw-mr-2 tw-h-6 tw-w-6 tw-animate-spin"
                         />
+                    ) : step.status === 'error' ? (
+                        <CircleXIcon strokeWidth={3} size={14} />
                     ) : (
-                        <CheckCircle strokeWidth={3} size={24} className="tw-mr-2 tw-h-6 tw-w-6" />
+                        <CheckCircle strokeWidth={3} size={14} />
                     )}
                 </div>
-                <div className="tw-flex-grow tw-min-w-0">
-                    <p className="tw-font-bold tw-truncate tw-max-w-full">{status}</p>
+                <div className="tw-flex-grow tw-min-w-0 tw-ml-2">
                     <p className="tw-text-xs tw-truncate tw-max-w-full">
-                        <span className="tw-font-bold">Query: </span>
+                        <span className="tw-font-bold">{step.id}: </span>
                         {step.content}
                     </p>
                 </div>
