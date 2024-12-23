@@ -23,20 +23,57 @@ import type { AutoeditModelOptions } from '../adapters/base'
 import { AutoeditSuggestionIdRegistry } from './suggestion-id-registry'
 
 /**
- * A stable ID that identifies a particular autoedit suggestion. If the same text
- * and context recurs, we reuse this ID to avoid double-counting.
+ * This file implements a state machine to manage the lifecycle of an autoedit session.
+ * Each phase of the session is represented by a distinct state interface, and metadata
+ * evolves as the session progresses.
+ *
+ * 1. **State Relationships:**
+ *    - The `AutoeditBaseState` defines common properties shared across all states.
+ *    - Each phase (e.g., `started`, `loaded`, `accepted`) is represented by a more specific
+ *      state interface that extends `AutoeditBaseState` and adds phase-specific fields.
+ *    - Valid transitions between phases are enforced using the `validSessionTransitions` map,
+ *      ensuring logical progression through the session lifecycle.
+ *
+ * 2. **Metadata Evolution:**
+ *    - Metadata is progressively enriched as the session transitions between states.
+ *      For example, basic metadata like `languageId` and `model` is captured at the start,
+ *      while detailed suggestion data (e.g., `charCount`, `prediction`) is added in later phases.
+ *    - The `payload` field in each state encapsulates the relevant metadata, allowing for
+ *      fine-grained tracking of session progress.
+ *
+ * 3. **Analytics Event Payloads:**
+ *    - Events such as `suggested`, `accepted`, or `noResponse` are logged using the final
+ *      metadata from the corresponding state.
+ *    - Payload types like `AutoeditAcceptedEventPayload` or `AutoeditRejectedEventPayload`
+ *      are constructed by combining state-specific metadata with additional analytics data.
  */
-export type AutoeditSuggestionID = string & { readonly _brand: 'AutoeditSuggestionID' }
 
 /**
- * An ephemeral ID for a single “session” from creation to acceptance or rejection.
+ * Defines the possible phases of our autoedit session state machine.
  */
-export type AutoeditSessionID = string & { readonly _brand: 'AutoeditSessionID' }
+type Phase =
+    | 'started'
+    | 'contextLoaded'
+    | 'loaded'
+    | 'suggested'
+    | 'read'
+    | 'accepted'
+    | 'rejected'
+    | 'noResponse'
 
 /**
- * Specialized string type for referencing error messages in our rate-limiting map.
+ * Defines which phases can transition to which other phases.
  */
-type AutoeditErrorMessage = string & { readonly _brand: 'AutoeditErrorMessage' }
+const validSessionTransitions = {
+    started: ['contextLoaded', 'noResponse'],
+    contextLoaded: ['loaded', 'noResponse'],
+    loaded: ['suggested'],
+    suggested: ['read', 'accepted', 'rejected'],
+    read: ['accepted', 'rejected'],
+    accepted: [],
+    rejected: [],
+    noResponse: [],
+} as const satisfies Record<Phase, readonly Phase[]>
 
 interface AutoeditStartedMetadata {
     /** Document language ID (e.g., 'typescript'). */
@@ -66,6 +103,12 @@ interface AutoeditContextLoadedMetadata extends AutoeditStartedMetadata {
      */
     contextSummary?: ContextSummary
 }
+
+/**
+ * A stable ID that identifies a particular autoedit suggestion. If the same text
+ * and context recurs, we reuse this ID to avoid double-counting.
+ */
+export type AutoeditSuggestionID = string & { readonly _brand: 'AutoeditSuggestionID' }
 
 interface AutoeditLoadedMetadata extends AutoeditContextLoadedMetadata {
     /**
@@ -119,31 +162,9 @@ interface AutoeditRejectedEventPayload extends AutoEditFinalMetadata {}
 interface AutoeditNoResponseEventPayload extends AutoeditContextLoadedMetadata {}
 
 /**
- * Defines the possible phases of our autoedit session state machine.
+ * An ephemeral ID for a single “session” from creation to acceptance or rejection.
  */
-type Phase =
-    | 'started'
-    | 'contextLoaded'
-    | 'loaded'
-    | 'suggested'
-    | 'read'
-    | 'accepted'
-    | 'rejected'
-    | 'noResponse'
-
-/**
- * Defines which phases can transition to which other phases.
- */
-const validSessionTransitions = {
-    started: ['contextLoaded', 'noResponse'],
-    contextLoaded: ['loaded', 'noResponse'],
-    loaded: ['suggested'],
-    suggested: ['read', 'accepted', 'rejected'],
-    read: ['accepted', 'rejected'],
-    accepted: [],
-    rejected: [],
-    noResponse: [],
-} as const satisfies Record<Phase, readonly Phase[]>
+export type AutoeditSessionID = string & { readonly _brand: 'AutoeditSessionID' }
 
 /**
  * The base fields common to all session states. We track ephemeral times and
@@ -237,6 +258,11 @@ type AutoeditEventAction =
     | 'noResponse'
     | 'error'
     | `invalidTransitionTo${Capitalize<Phase>}`
+
+/**
+ * Specialized string type for referencing error messages in our rate-limiting map.
+ */
+type AutoeditErrorMessage = string & { readonly _brand: 'AutoeditErrorMessage' }
 
 export class AutoeditAnalyticsLogger {
     /**
