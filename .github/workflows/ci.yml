@@ -151,7 +151,7 @@ jobs:
           key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: ${{ runner.os }}-pnpm-store-
       - run: pnpm install
-      - run: GITHUB_REF=$BRANCH_NAME xvfb-run -a pnpm -C vscode run test:e2e --shard=${{ matrix.shard }} vscode/test/e2e/auto-edits.test.ts
+      - run: GITHUB_REF=$BRANCH_NAME xvfb-run -a pnpm -C vscode run test:e2e --shard=${{ matrix.shard }} vscode/test/e2e/auto-edits.test.ts --repeat-each 100
         if: matrix.runner == 'ubuntu'
         env:
           BUILDKITE_ANALYTICS_TOKEN: ${{ secrets.BUILDKITE_ANALYTICS_TOKEN }}
