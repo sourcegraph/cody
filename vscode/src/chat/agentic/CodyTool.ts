@@ -12,6 +12,7 @@ import {
     pendingOperation,
     ps,
 } from '@sourcegraph/cody-shared'
+import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
 import { getContextFromRelativePath } from '../../commands/context/file-path'
 import { getContextFileFromShell } from '../../commands/context/shell'
@@ -19,7 +20,7 @@ import { type ContextRetriever, toStructuredMentions } from '../chat-view/Contex
 import { getChatContextItemsForMention } from '../context/chatContext'
 import { getCorpusContextItemsForEditorState } from '../initialContext'
 import { CodyChatMemory } from './CodyChatMemory'
-import type { ToolFactory, ToolRegistry } from './CodyToolProvider'
+import type { ToolFactory, ToolRegistry, ToolStatusMessage } from './CodyToolProvider'
 
 /**
  * Configuration interface for CodyTool instances.
@@ -41,6 +42,19 @@ export interface CodyToolConfig {
  */
 export abstract class CodyTool {
     constructor(public readonly config: CodyToolConfig) {}
+
+    private statusEmitter = new vscode.EventEmitter<ToolStatusMessage>()
+    public readonly onStatusUpdate = this.statusEmitter.event
+
+    protected emitStatus(status: 'started' | 'completed' | 'error', message: PromptString): void {
+        this.statusEmitter.fire({
+            type: 'tool-status',
+            toolId: this.config.tags.tag,
+            status,
+            message,
+        })
+    }
+
     /**
      * Generates and returns the instruction prompt string for the tool.
      */
@@ -170,6 +184,7 @@ class SearchTool extends CodyTool {
         const queries = this.parse()
         const query = queries.find(q => !this.performedSearch.has(q))
         if (!this.contextRetriever || !query) {
+            this.emitStatus('error', ps`No context retriever or query found`)
             return []
         }
         // Get the latest corpus context items
@@ -183,6 +198,7 @@ class SearchTool extends CodyTool {
             return []
         }
         logDebug('SearchTool', `searching codebase for ${query}`)
+        this.emitStatus('started', PromptString.unsafe_fromLLMResponse(query))
         const context = await this.contextRetriever.retrieveContext(
             toStructuredMentions([repo]),
             PromptString.unsafe_fromLLMResponse(query),
@@ -201,6 +217,7 @@ class SearchTool extends CodyTool {
             title: 'TOOLCONTEXT',
         } satisfies ContextItem
         context.push(searchQueryItem)
+        this.emitStatus('completed', ps`Search completed`)
         return context.slice(-maxSearchItems)
     }
 }

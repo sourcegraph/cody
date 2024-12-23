@@ -1,4 +1,5 @@
-import { authStatus, firstValueFrom, isDefined, ps } from '@sourcegraph/cody-shared'
+import { type PromptString, authStatus, firstValueFrom, isDefined, ps } from '@sourcegraph/cody-shared'
+import * as vscode from 'vscode'
 import { getOpenCtxProviders } from '../../context/openctx'
 import type { ContextRetriever } from '../chat-view/ContextRetriever'
 import {
@@ -13,6 +14,13 @@ interface CodyShellConfig {
     user?: boolean
     instance?: boolean
     client?: boolean
+}
+
+export interface ToolStatusMessage {
+    type: 'tool-status'
+    toolId: PromptString
+    status: 'started' | 'completed' | 'error'
+    message: PromptString
 }
 
 /**
@@ -33,6 +41,9 @@ export class CodyToolProvider {
         instance: false,
         client: false,
     }
+
+    private readonly toolStatusEmitter = new vscode.EventEmitter<ToolStatusMessage>()
+    public readonly onToolStatus = this.toolStatusEmitter.event
 
     private constructor(private contextRetriever: Pick<ContextRetriever, 'retrieveContext'>) {
         this.initializeToolRegistry()
@@ -65,7 +76,14 @@ export class CodyToolProvider {
             this.contextRetriever,
             this.toolFactory
         )
-        return [...defaultTools, ...this.openCtxTools]
+        const tools = [...defaultTools, ...this.openCtxTools]
+        // Subscribe to status updates from each tool
+        for (const tool of tools) {
+            tool.onStatusUpdate(status => {
+                this.toolStatusEmitter.fire(status)
+            })
+        }
+        return tools
     }
 
     private async initializeOpenCtxTools(): Promise<void> {

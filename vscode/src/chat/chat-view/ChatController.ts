@@ -128,7 +128,7 @@ import {
 import { openExternalLinks } from '../../services/utils/workspace-action'
 import { TestSupport } from '../../test-support'
 import type { MessageErrorType } from '../MessageProvider'
-import { CodyToolProvider } from '../agentic/CodyToolProvider'
+import { CodyToolProvider, type ToolStatusMessage } from '../agentic/CodyToolProvider'
 import { DeepCodyAgent } from '../agentic/DeepCody'
 import { DeepCodyRateLimiter } from '../agentic/DeepCodyRateLimiter'
 import { getMentionMenuData } from '../context/chatContext'
@@ -285,6 +285,37 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     })
             )
         )
+
+        this.toolProvider.onToolStatus(status => {
+            this.queueToolStatus(status)
+        })
+    }
+
+    private toolStatusQueue: ToolStatusMessage[] = []
+    private isProcessingStatus = false
+
+    private async queueToolStatus(status: ToolStatusMessage): Promise<void> {
+        this.toolStatusQueue.push(status)
+        if (!this.isProcessingStatus) {
+            await this.processToolStatusQueue()
+        }
+    }
+
+    private async processToolStatusQueue(): Promise<void> {
+        this.isProcessingStatus = true
+
+        while (this.toolStatusQueue.length > 0) {
+            const status = this.toolStatusQueue.shift()
+            if (status) {
+                this.postViewTranscript({
+                    speaker: 'assistant',
+                    text: status.message,
+                    model: this.chatBuilder.selectedModel,
+                })
+            }
+        }
+
+        this.isProcessingStatus = false
     }
 
     /**
