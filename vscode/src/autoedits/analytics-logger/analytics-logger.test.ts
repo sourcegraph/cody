@@ -163,7 +163,7 @@ describe('AutoeditAnalyticsLogger', () => {
               "otherCompletionProviderEnabled": 0,
               "outsideOfActiveEditor": 1,
               "source": 1,
-              "suggestionsStartedSinceLastSuggestion": 1,
+              "suggestionsStartedSinceLastSuggestion": 0,
               "triggerKind": 1,
               "windowNotFocused": 1,
             },
