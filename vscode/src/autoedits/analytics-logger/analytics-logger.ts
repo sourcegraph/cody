@@ -56,7 +56,6 @@ type Phase =
     | 'contextLoaded'
     | 'loaded'
     | 'suggested'
-    | 'read'
     | 'accepted'
     | 'rejected'
     | 'noResponse'
@@ -68,8 +67,7 @@ const validSessionTransitions = {
     started: ['contextLoaded', 'noResponse'],
     contextLoaded: ['loaded', 'noResponse'],
     loaded: ['suggested'],
-    suggested: ['read', 'accepted', 'rejected'],
-    read: ['accepted', 'rejected'],
+    suggested: ['accepted', 'rejected'],
     accepted: [],
     rejected: [],
     noResponse: [],
@@ -146,8 +144,6 @@ interface AutoeditLoadedMetadata extends AutoeditContextLoadedMetadata {
 interface AutoEditFinalMetadata extends AutoeditLoadedMetadata {
     /** Displayed to the user for this many milliseconds. */
     displayDuration: number
-    /** Whether the user actually had enough time to see the suggestion. (markAsRead) */
-    isRead: boolean
     /** True if the suggestion was explicitly/intentionally accepted */
     isAccepted: boolean
     /** The number of completions we requested until this one was suggested. */
@@ -202,12 +198,6 @@ interface SuggestedState extends Omit<LoadedState, 'phase'> {
     suggestedAt: number
 }
 
-interface ReadState extends Omit<SuggestedState, 'phase'> {
-    phase: 'read'
-    /** Timestamp when the suggestion can be considered as read by a user. */
-    readAt: number
-}
-
 interface AcceptedState extends Omit<SuggestedState, 'phase'> {
     phase: 'accepted'
     /** Timestamp when the user accepted the suggestion. */
@@ -236,7 +226,6 @@ interface PhaseStates {
     contextLoaded: ContextLoadedState
     loaded: LoadedState
     suggested: SuggestedState
-    read: ReadState
     accepted: AcceptedState
     rejected: RejectedState
     noResponse: NoResponseState
@@ -375,13 +364,6 @@ export class AutoeditAnalyticsLogger {
         return result.updatedSession
     }
 
-    public markAsRead(sessionId: AutoeditSessionID): void {
-        this.tryTransitionTo(sessionId, 'read', currentSession => ({
-            ...currentSession,
-            readAt: getTimeNowInMillis(),
-        }))
-    }
-
     public markAsAccepted({
         sessionId,
         trackedRange,
@@ -423,7 +405,6 @@ export class AutoeditAnalyticsLogger {
                 payload: {
                     ...session.payload,
                     ...charactersLoggerMetadata,
-                    isRead: true,
                     isAccepted: true,
                     displayDuration: acceptedAt - session.suggestedAt,
                     suggestionsStartedSinceLastSuggestion: this.autoeditsStartedSinceLastSuggestion,
@@ -443,7 +424,6 @@ export class AutoeditAnalyticsLogger {
             ...session,
             payload: {
                 ...session.payload,
-                isRead: session.phase === 'read',
                 isAccepted: false,
                 displayDuration: getTimeNowInMillis() - session.suggestedAt,
                 suggestionsStartedSinceLastSuggestion: this.autoeditsStartedSinceLastSuggestion,

@@ -72,7 +72,6 @@ describe('AutoeditAnalyticsLogger', () => {
         })
 
         autoeditLogger.markAsSuggested(sessionId)
-        autoeditLogger.markAsRead(sessionId)
 
         if (finalPhase === 'accepted') {
             autoeditLogger.markAsAccepted({
@@ -106,7 +105,7 @@ describe('AutoeditAnalyticsLogger', () => {
         vi.clearAllTimers()
     })
 
-    it('logs a suggestion lifecycle (started -> contextLoaded -> loaded -> suggested -> read -> accepted)', () => {
+    it('logs a suggestion lifecycle (started -> contextLoaded -> loaded -> suggested -> accepted)', () => {
         const prediction = 'console.log("Hello from autoedit!")'
         const sessionId = createAndAdvanceSession({
             finalPhase: 'accepted',
@@ -151,7 +150,6 @@ describe('AutoeditAnalyticsLogger', () => {
               "isFullyOutsideOfVisibleRanges": 1,
               "isFuzzyMatch": 0,
               "isPartiallyOutsideOfVisibleRanges": 1,
-              "isRead": 1,
               "isSelectionStale": 1,
               "latency": 300,
               "lineCount": 1,
