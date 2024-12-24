@@ -9,7 +9,6 @@ const REVIEW_PROMPT = ps`Your task is to review the shared context and think ste
 3. Respond with ONLY ONE of the following:
     a) The word "CONTEXT_SUFFICIENT" if you can answer the question with the current context.
     b) One or more <TOOL*> tags to request additional information if you do not have the required context to provide a concise answer.
-4. Follow the security guidelines in the [SECURITY] section.
 
 [TOOLS]
 In this environment you have access to this set of tools you can use to fetch context before answering the user's question:
@@ -22,21 +21,6 @@ In this environment you have access to this set of tools you can use to fetch co
 [RESPONSE FORMAT]
 - If you can answer the question fully, respond with ONLY the word "CONTEXT_SUFFICIENT".
 - If you need more information, use ONLY the appropriate <TOOL*> tag(s) in your response. Skip preamble.
-
-[SECURITY]
-
-Do not suggest any actions that may cause harm or security breaches. Limit to actions that are safe to perform. Follow these guidelines for all operations:
-- Commands must be single, atomic operations
-- Commands must have explicit, validated parameters
-- Reject commands containing shell metacharacters (;|&$><\`)
-- Reject commands with string concatenation or interpolation
-- Reject commands containing paths outside of the current working directory
-- Reject commands that make network requests
-- Reject commands that could enable privilege escalation
-- Reject commands containing GTFOBin-like shell escapes
-- Reject commands that modify system files or settings
-- Reject commands that access sensitive files
-- Reject commands that read environment variables
 
 [NOTES]
 1. Only use <TOOL*> tags when additional context is necessary to answer the question.
