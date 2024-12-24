@@ -6,6 +6,7 @@ import * as vscode from 'vscode'
 import {
     type BillingCategory,
     type BillingProduct,
+    isDotComAuthed,
     isNetworkError,
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
@@ -99,6 +100,12 @@ interface AutoeditStartedMetadata {
 
     /** Describes how the autoedit request was triggered by the user. */
     triggerKind: AutoeditTriggerKindMetadata
+
+    /**
+     * The code to rewrite by autoedit.
+     * 🚨 SECURITY: included only for DotCom users.
+     */
+    codeToRewrite?: string
 
     /** True if other autoedit/completion providers might also be active (e.g., Copilot). */
     otherCompletionProviderEnabled: boolean
@@ -303,8 +310,14 @@ export class AutoeditAnalyticsLogger {
      * Creates a new ephemeral session with initial metadata. At this stage, we do not have the prediction yet.
      */
     public createSession(
-        payload: Pick<AutoeditStartedMetadata, 'languageId' | 'model' | 'traceId' | 'triggerKind'>
+        payload: Required<
+            Pick<
+                AutoeditStartedMetadata,
+                'languageId' | 'model' | 'traceId' | 'triggerKind' | 'codeToRewrite'
+            >
+        >
     ): AutoeditSessionID {
+        const { codeToRewrite, ...restPayload } = payload
         const sessionId = uuid.v4() as AutoeditSessionID
         const otherCompletionProviders = getOtherCompletionProvider()
 
@@ -317,7 +330,9 @@ export class AutoeditAnalyticsLogger {
                 otherCompletionProviders,
                 upstreamLatency: upstreamHealthProvider.getUpstreamLatency(),
                 gatewayLatency: upstreamHealthProvider.getGatewayLatency(),
-                ...payload,
+                // 🚨 SECURITY: included only for DotCom users.
+                codeToRewrite: isDotComAuthed() ? codeToRewrite : undefined,
+                ...restPayload,
             },
         }
 
@@ -350,12 +365,10 @@ export class AutoeditAnalyticsLogger {
     public markAsLoaded({
         sessionId,
         modelOptions,
-        isDotComUser,
         payload,
     }: {
         sessionId: AutoeditSessionID
         modelOptions: AutoeditModelOptions
-        isDotComUser: boolean
         payload: Required<
             Pick<AutoeditLoadedMetadata, 'source' | 'isFuzzyMatch' | 'responseHeaders' | 'prediction'>
         >
@@ -372,7 +385,8 @@ export class AutoeditAnalyticsLogger {
                 id: stableId,
                 lineCount: lines(prediction).length,
                 charCount: prediction.length,
-                prediction: isDotComUser && prediction.length < 300 ? prediction : undefined,
+                // 🚨 SECURITY: included only for DotCom users.
+                prediction: isDotComAuthed() && prediction.length < 300 ? prediction : undefined,
                 source,
                 isFuzzyMatch,
                 responseHeaders,

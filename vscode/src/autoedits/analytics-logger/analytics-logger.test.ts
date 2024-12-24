@@ -3,7 +3,7 @@ import * as uuid from 'uuid'
 import { type MockInstance, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import * as vscode from 'vscode'
 
-import { ps, telemetryRecorder } from '@sourcegraph/cody-shared'
+import { mockAuthStatus, ps, telemetryRecorder } from '@sourcegraph/cody-shared'
 
 import { documentAndPosition } from '../../completions/test-helpers'
 import * as sentryModule from '../../services/sentry/sentry'
@@ -41,6 +41,7 @@ describe('AutoeditAnalyticsLogger', () => {
         model: 'autoedit-model',
         traceId: 'trace-id',
         triggerKind: autoeditTriggerKind.automatic,
+        codeToRewrite: 'Code to rewrite',
     }
 
     function createAndAdvanceSession({
@@ -69,7 +70,6 @@ describe('AutoeditAnalyticsLogger', () => {
         autoeditLogger.markAsLoaded({
             sessionId,
             modelOptions: modelOptions,
-            isDotComUser: true,
             payload: {
                 prediction,
                 source: autoeditSource.network,
@@ -100,6 +100,7 @@ describe('AutoeditAnalyticsLogger', () => {
     beforeEach(() => {
         autoeditLogger = new AutoeditAnalyticsLogger()
         recordSpy = vi.spyOn(telemetryRecorder, 'recordEvent')
+        mockAuthStatus()
 
         stableIdCounter = 0
         vi.spyOn(uuid, 'v4').mockImplementation(() => `stable-id-for-tests-${++stableIdCounter}`)
@@ -170,6 +171,7 @@ describe('AutoeditAnalyticsLogger', () => {
               "windowNotFocused": 1,
             },
             "privateMetadata": {
+              "codeToRewrite": "Code to rewrite",
               "contextSummary": {
                 "duration": 1.234,
                 "prefixChars": 5,
