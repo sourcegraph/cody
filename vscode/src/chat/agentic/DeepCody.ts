@@ -85,7 +85,7 @@ export class DeepCodyAgent extends CodyChatAgent {
         let context = 0
         let loop = 0
         for (let i = 0; i < maxLoops && !chatAbortSignal.aborted; i++) {
-            if (!chatAbortSignal.aborted) {
+            if (chatAbortSignal.aborted) {
                 break
             }
             const newContext = await this.review(span, chatAbortSignal)
