@@ -129,7 +129,7 @@ interface AutoeditLoadedMetadata extends AutoeditContextLoadedMetadata {
     prediction?: string
 
     /** The source of the suggestion, e.g. 'network', 'cache', etc. */
-    source?: string
+    source?: 'network' | 'cache'
 
     /** True if we fuzzy-matched this suggestion from a local or remote cache. */
     isFuzzyMatch?: boolean
