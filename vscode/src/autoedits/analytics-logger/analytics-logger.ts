@@ -50,25 +50,32 @@ import { AutoeditSuggestionIdRegistry } from './suggestion-id-registry'
  * Defines the possible phases of our autoedit session state machine.
  */
 type Phase =
+    /** The autoedit session has started. */
     | 'started'
+    /** The context for the autoedit has been loaded. */
     | 'contextLoaded'
+    /** The autoedit suggestion has been loaded — we have a prediction string. */
     | 'loaded'
+    /** The autoedit suggestion has been suggested to the user. */
     | 'suggested'
+    /** The user has accepted the suggestion. */
     | 'accepted'
+    /** The user has rejected the suggestion. */
     | 'rejected'
-    | 'noResponse'
+    /** The autoedit session was discarded by our heuristics before being suggested to a user */
+    | 'discarded'
 
 /**
  * Defines which phases can transition to which other phases.
  */
 const validSessionTransitions = {
-    started: ['contextLoaded', 'noResponse'],
-    contextLoaded: ['loaded', 'noResponse'],
-    loaded: ['suggested'],
+    started: ['contextLoaded', 'discarded'],
+    contextLoaded: ['loaded', 'discarded'],
+    loaded: ['suggested', 'discarded'],
     suggested: ['accepted', 'rejected'],
     accepted: [],
     rejected: [],
-    noResponse: [],
+    discarded: [],
 } as const satisfies Record<Phase, readonly Phase[]>
 
 export const autoeditTriggerKind = {
@@ -190,7 +197,7 @@ interface AutoeditAcceptedEventPayload
         Omit<CodeGenEventMetadata, 'charsInserted' | 'charsDeleted'> {}
 
 interface AutoeditRejectedEventPayload extends AutoEditFinalMetadata {}
-interface AutoeditNoResponseEventPayload extends AutoeditContextLoadedMetadata {}
+interface AutoeditDiscardedEventPayload extends AutoeditContextLoadedMetadata {}
 
 /**
  * An ephemeral ID for a single “session” from creation to acceptance or rejection.
@@ -249,11 +256,11 @@ interface RejectedState extends Omit<SuggestedState, 'phase'> {
     payload: AutoeditRejectedEventPayload
 }
 
-interface NoResponseState extends Omit<StartedState, 'phase'> {
-    phase: 'noResponse'
+interface DiscardedState extends Omit<StartedState, 'phase'> {
+    phase: 'discarded'
     /** Timestamp when the suggestion was logged to our analytics backend. This is to avoid double-logging. */
     suggestionLoggedAt?: number
-    payload: AutoeditNoResponseEventPayload
+    payload: AutoeditDiscardedEventPayload
 }
 
 interface PhaseStates {
@@ -263,7 +270,7 @@ interface PhaseStates {
     suggested: SuggestedState
     accepted: AcceptedState
     rejected: RejectedState
-    noResponse: NoResponseState
+    discarded: DiscardedState
 }
 
 /**
@@ -279,7 +286,7 @@ type AutoeditSessionState = PhaseStates[Phase]
 type AutoeditEventAction =
     | 'suggested'
     | 'accepted'
-    | 'noResponse'
+    | 'discarded'
     | 'error'
     | `invalidTransitionTo${Capitalize<Phase>}`
 
@@ -487,14 +494,11 @@ export class AutoeditAnalyticsLogger {
         }
     }
 
-    /**
-     * If the suggestion was never provided at all (“noResponse”), treat as a specialized reject.
-     */
-    public markAsNoResponse(sessionId: AutoeditSessionID): void {
-        const result = this.tryTransitionTo(sessionId, 'noResponse', currentSession => currentSession)
+    public markAsDiscarded(sessionId: AutoeditSessionID): void {
+        const result = this.tryTransitionTo(sessionId, 'discarded', currentSession => currentSession)
 
         if (result?.updatedSession) {
-            this.writeAutoeditSessionEvent('noResponse', result.updatedSession)
+            this.writeAutoeditSessionEvent('discarded', result.updatedSession)
             this.activeSessions.delete(result.updatedSession.sessionId)
         }
     }
@@ -547,18 +551,22 @@ export class AutoeditAnalyticsLogger {
 
     private writeAutoeditSessionEvent(
         action: AutoeditEventAction,
-        state: AcceptedState | RejectedState | NoResponseState
+        state: AcceptedState | RejectedState | DiscardedState
     ): void {
-        if (action === 'suggested' && state.suggestionLoggedAt) {
+        const { suggestionLoggedAt, payload } = state
+
+        if (action === 'suggested' && suggestionLoggedAt) {
             return
         }
 
         // Update the session state to mark the suggestion as logged.
         state.suggestionLoggedAt = getTimeNowInMillis()
 
-        const { metadata, privateMetadata } = splitSafeMetadata(state.payload)
+        const { metadata, privateMetadata } = splitSafeMetadata(payload)
         this.writeAutoeditEvent(action, {
             version: 0,
+            // Extract `id` from payload into the first-class `interactionId` field.
+            interactionID: 'id' in payload ? payload.id : undefined,
             metadata: {
                 ...metadata,
                 recordsPrivateMetadataTranscript: 'prediction' in privateMetadata ? 1 : 0,

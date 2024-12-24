@@ -146,6 +146,7 @@ describe('AutoeditAnalyticsLogger', () => {
               "category": "billable",
               "product": "cody",
             },
+            "interactionID": "stable-id-for-tests-2",
             "metadata": {
               "charCount": 35,
               "contextSummary.duration": 1.234,
@@ -248,13 +249,13 @@ describe('AutoeditAnalyticsLogger', () => {
         expect(suggestedEvent3.privateMetadata.id).toEqual('stable-id-for-tests-5')
     })
 
-    it('logs noResponse if no suggestion was produced', () => {
+    it('logs `discarded` if the suggestion was not suggested for any reason', () => {
         const sessionId = autoeditLogger.createSession(sessionStartMetadata)
         autoeditLogger.markAsContextLoaded({ sessionId, payload: { contextSummary: undefined } })
-        autoeditLogger.markAsNoResponse(sessionId)
+        autoeditLogger.markAsDiscarded(sessionId)
 
         expect(recordSpy).toHaveBeenCalledTimes(1)
-        expect(recordSpy).toHaveBeenCalledWith('cody.autoedit', 'noResponse', expect.any(Object))
+        expect(recordSpy).toHaveBeenCalledWith('cody.autoedit', 'discarded', expect.any(Object))
     })
 
     it('handles invalid transitions by logging debug events (invalidTransitionToXYZ)', () => {
