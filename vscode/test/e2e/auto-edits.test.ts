@@ -82,6 +82,8 @@ const autoeditsTestHelper = async ({
 
     // Activate the zen mode to remove diffs from any other elements
     await executeCommandInPalette(page, 'View: Toggle Zen Mode')
+    // await page.pause()
+    await executeCommandInPalette(page, 'Hide Custom Title Bar In Full Screen')
 
     for (const { lineNumber, clip } of lineOptions) {
         const snapshotName = `${testCaseName}-${lineNumber}.png`
