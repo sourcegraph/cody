@@ -658,6 +658,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     /**
      * Handles user input text for both new and edit submissions
      */
+    // MARK 1
     public async handleUserMessage({
         requestID,
         inputText,
@@ -683,6 +684,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         manuallySelectedIntent?: boolean | undefined | null
         traceparent?: string | undefined | null
     }): Promise<void> {
+        console.log('### editorState', JSON.parse(JSON.stringify(editorState)), 'command', command)
         return context.with(extractContextFromTraceparent(traceparent), () => {
             return tracer.startActiveSpan('chat.handleUserMessage', async (span): Promise<void> => {
                 span.setAttribute('sampled', true)
@@ -779,6 +781,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         return { intent: 'chat', intentScores: [] }
     }
 
+    // MARK 2
     public async sendChat(
         {
             requestID,
@@ -801,6 +804,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         const model = await wrapInActiveSpan('chat.resolveModel', () =>
             firstResultFromOperation(ChatBuilder.resolvedModelForChat(this.chatBuilder))
         )
+        console.log('# model', model)
         if (!model) {
             throw new Error('No model selected, and no default chat model is available')
         }
@@ -1660,6 +1664,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         return { prompt, context }
     }
 
+    // MARK 3
     private streamAssistantResponse(
         requestID: string,
         prompt: Message[],
