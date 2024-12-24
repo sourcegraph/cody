@@ -31,6 +31,7 @@ import type { AutoeditsUserPromptStrategy } from './prompt/base'
 import { SYSTEM_PROMPT } from './prompt/constants'
 import { type CodeToReplaceData, getCompletionsPromptWithSystemPrompt } from './prompt/prompt-utils'
 import { ShortTermPromptStrategy } from './prompt/short-term-diff-prompt-strategy'
+import type { DecorationInfo } from './renderer/decorators/base'
 import { DefaultDecorator } from './renderer/decorators/default-decorator'
 import { InlineDiffDecorator } from './renderer/decorators/inline-diff-decorator'
 import { getDecorationInfo } from './renderer/diff-utils'
@@ -244,29 +245,20 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         }
 
         // prediction = shrinkPredictionUntilSuffix(prediction, codeToReplaceData)
-
         if (prediction === codeToReplaceData.codeToRewrite) {
             return null
         }
-
-        const currentFileText = document.getText()
-        const predictedFileText =
-            currentFileText.slice(0, document.offsetAt(codeToReplaceData.range.start)) +
-            prediction +
-            currentFileText.slice(document.offsetAt(codeToReplaceData.range.end))
-
-        const decorationInfo = getDecorationInfo(currentFileText, predictedFileText)
+        const decorationInfo = getDecorationInfoFromPrediction(document, prediction, codeToReplaceData)
 
         const { inlineCompletions } =
-            await this.rendererManager.maybeRenderDecorationsAndTryMakeInlineCompletionResponse(
+            await this.rendererManager.maybeRenderDecorationsAndTryMakeInlineCompletionResponse({
                 prediction,
                 codeToReplaceData,
                 document,
                 position,
                 docContext,
-                decorationInfo
-            )
-
+                decorationInfo,
+            })
         return inlineCompletions
     }
 
@@ -428,4 +420,19 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             disposable.dispose()
         }
     }
+}
+
+export function getDecorationInfoFromPrediction(
+    document: vscode.TextDocument,
+    prediction: string,
+    codeToReplaceData: CodeToReplaceData
+): DecorationInfo {
+    const currentFileText = document.getText()
+    const predictedFileText =
+        currentFileText.slice(0, document.offsetAt(codeToReplaceData.range.start)) +
+        prediction +
+        currentFileText.slice(document.offsetAt(codeToReplaceData.range.end))
+
+    const decorationInfo = getDecorationInfo(currentFileText, predictedFileText)
+    return decorationInfo
 }
