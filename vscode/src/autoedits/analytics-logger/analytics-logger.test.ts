@@ -11,7 +11,7 @@ import type { AutoeditModelOptions } from '../adapters/base'
 
 import {
     AutoeditAnalyticsLogger,
-    type AutoeditSessionID,
+    type AutoeditRequestID,
     autoeditSource,
     autoeditTriggerKind,
 } from './analytics-logger'
@@ -36,7 +36,7 @@ describe('AutoeditAnalyticsLogger', () => {
         isChatModel: false,
     }
 
-    const sessionStartMetadata: Parameters<AutoeditAnalyticsLogger['createSession']>[0] = {
+    const requestStartMetadata: Parameters<AutoeditAnalyticsLogger['createRequest']>[0] = {
         languageId: 'typescript',
         model: 'autoedit-model',
         traceId: 'trace-id',
@@ -44,14 +44,14 @@ describe('AutoeditAnalyticsLogger', () => {
         codeToRewrite: 'Code to rewrite',
     }
 
-    function createAndAdvanceSession({
+    function createAndAdvanceRequest({
         finalPhase,
         prediction,
-    }: { finalPhase: 'suggested' | 'accepted' | 'rejected'; prediction: string }): AutoeditSessionID {
-        const sessionId = autoeditLogger.createSession(sessionStartMetadata)
+    }: { finalPhase: 'suggested' | 'accepted' | 'rejected'; prediction: string }): AutoeditRequestID {
+        const requestId = autoeditLogger.createRequest(requestStartMetadata)
 
         autoeditLogger.markAsContextLoaded({
-            sessionId,
+            requestId,
             payload: {
                 contextSummary: {
                     strategy: 'none',
@@ -68,7 +68,7 @@ describe('AutoeditAnalyticsLogger', () => {
         vi.advanceTimersByTime(300)
 
         autoeditLogger.markAsLoaded({
-            sessionId,
+            requestId,
             modelOptions: modelOptions,
             payload: {
                 prediction,
@@ -78,11 +78,11 @@ describe('AutoeditAnalyticsLogger', () => {
             },
         })
 
-        autoeditLogger.markAsSuggested(sessionId)
+        autoeditLogger.markAsSuggested(requestId)
 
         if (finalPhase === 'accepted') {
             autoeditLogger.markAsAccepted({
-                sessionId,
+                requestId,
                 trackedRange: new vscode.Range(position, position),
                 position,
                 document,
@@ -91,10 +91,10 @@ describe('AutoeditAnalyticsLogger', () => {
         }
 
         if (finalPhase === 'rejected') {
-            autoeditLogger.markAsRejected(sessionId)
+            autoeditLogger.markAsRejected(requestId)
         }
 
-        return sessionId
+        return requestId
     }
 
     beforeEach(() => {
@@ -115,14 +115,14 @@ describe('AutoeditAnalyticsLogger', () => {
 
     it('logs a suggestion lifecycle (started -> contextLoaded -> loaded -> suggested -> accepted)', () => {
         const prediction = 'console.log("Hello from autoedit!")'
-        const sessionId = createAndAdvanceSession({
+        const requestId = createAndAdvanceRequest({
             finalPhase: 'accepted',
             prediction,
         })
 
         // Invalid transition attempt
         autoeditLogger.markAsAccepted({
-            sessionId,
+            requestId,
             trackedRange: new vscode.Range(position, position),
             position,
             document,
@@ -212,21 +212,21 @@ describe('AutoeditAnalyticsLogger', () => {
     it('reuses the autoedit suggestion ID for the same prediction text', () => {
         const prediction = 'function foo() {}\n'
 
-        // First session (started -> contextLoaded -> loaded -> suggested -> rejected)
-        // The session ID should remain "in use"
-        createAndAdvanceSession({
+        // First request (started -> contextLoaded -> loaded -> suggested -> rejected)
+        // The request ID should remain "in use"
+        createAndAdvanceRequest({
             finalPhase: 'rejected',
             prediction,
         })
 
         // After acceptance, ID can no longer be reused
-        createAndAdvanceSession({
+        createAndAdvanceRequest({
             finalPhase: 'accepted',
             prediction,
         })
 
         // Analytics event should use the new stable ID
-        createAndAdvanceSession({
+        createAndAdvanceRequest({
             finalPhase: 'rejected',
             prediction,
         })
@@ -250,20 +250,20 @@ describe('AutoeditAnalyticsLogger', () => {
     })
 
     it('logs `discarded` if the suggestion was not suggested for any reason', () => {
-        const sessionId = autoeditLogger.createSession(sessionStartMetadata)
-        autoeditLogger.markAsContextLoaded({ sessionId, payload: { contextSummary: undefined } })
-        autoeditLogger.markAsDiscarded(sessionId)
+        const requestId = autoeditLogger.createRequest(requestStartMetadata)
+        autoeditLogger.markAsContextLoaded({ requestId, payload: { contextSummary: undefined } })
+        autoeditLogger.markAsDiscarded(requestId)
 
         expect(recordSpy).toHaveBeenCalledTimes(1)
         expect(recordSpy).toHaveBeenCalledWith('cody.autoedit', 'discarded', expect.any(Object))
     })
 
     it('handles invalid transitions by logging debug events (invalidTransitionToXYZ)', () => {
-        const sessionId = autoeditLogger.createSession(sessionStartMetadata)
+        const requestId = autoeditLogger.createRequest(requestStartMetadata)
 
         // Both calls below are invalid transitions, so the logger logs debug events
-        autoeditLogger.markAsSuggested(sessionId)
-        autoeditLogger.markAsRejected(sessionId)
+        autoeditLogger.markAsSuggested(requestId)
+        autoeditLogger.markAsRejected(requestId)
 
         expect(recordSpy).toHaveBeenCalledTimes(2)
         expect(recordSpy).toHaveBeenNthCalledWith(

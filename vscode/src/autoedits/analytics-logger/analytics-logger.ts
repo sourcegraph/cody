@@ -24,15 +24,15 @@ import type { AutoeditModelOptions } from '../adapters/base'
 import { AutoeditSuggestionIdRegistry } from './suggestion-id-registry'
 
 /**
- * This file implements a state machine to manage the lifecycle of an autoedit session.
- * Each phase of the session is represented by a distinct state interface, and metadata
- * evolves as the session progresses.
+ * This file implements a state machine to manage the lifecycle of an autoedit request.
+ * Each phase of the request is represented by a distinct state interface, and metadata
+ * evolves as the request progresses.
  *
  * 1. Each autoedit request phase (e.g., `started`, `loaded`, `accepted`) is represented by a
  *    `state` interface that extends `AutoeditBaseState` and adds phase-specific fields.
  *
- * 2. Valid transitions between phases are enforced using the `validSessionTransitions` map,
- *    ensuring logical progression through the session lifecycle.
+ * 2. Valid transitions between phases are enforced using the `validRequestTransitions` map,
+ *    ensuring logical progression through the request lifecycle.
  *
  * 3. The `payload` field in each state encapsulates the exact list of fields that we plan to send
  *    to our analytics backend.
@@ -41,16 +41,16 @@ import { AutoeditSuggestionIdRegistry } from './suggestion-id-registry'
  *    analytics backend. This ensures we don't send unintentional or redundant information to
  *    the analytics backend.
  *
- * 5. Metadata is progressively enriched as the session transitions between states.
+ * 5. Metadata is progressively enriched as the request transitions between states.
  *
  * 6. Eventually, once we reach one of the terminal states and log its current `payload`.
  */
 
 /**
- * Defines the possible phases of our autoedit session state machine.
+ * Defines the possible phases of our autoedit request state machine.
  */
 type Phase =
-    /** The autoedit session has started. */
+    /** The autoedit request has started. */
     | 'started'
     /** The context for the autoedit has been loaded. */
     | 'contextLoaded'
@@ -62,13 +62,13 @@ type Phase =
     | 'accepted'
     /** The user has rejected the suggestion. */
     | 'rejected'
-    /** The autoedit session was discarded by our heuristics before being suggested to a user */
+    /** The autoedit request was discarded by our heuristics before being suggested to a user */
     | 'discarded'
 
 /**
  * Defines which phases can transition to which other phases.
  */
-const validSessionTransitions = {
+const validRequestTransitions = {
     started: ['contextLoaded', 'discarded'],
     contextLoaded: ['loaded', 'discarded'],
     loaded: ['suggested', 'discarded'],
@@ -200,17 +200,17 @@ interface AutoeditRejectedEventPayload extends AutoEditFinalMetadata {}
 interface AutoeditDiscardedEventPayload extends AutoeditContextLoadedMetadata {}
 
 /**
- * An ephemeral ID for a single “session” from creation to acceptance or rejection.
+ * An ephemeral ID for a single “request” from creation to acceptance or rejection.
  */
-export type AutoeditSessionID = string & { readonly _brand: 'AutoeditSessionID' }
+export type AutoeditRequestID = string & { readonly _brand: 'AutoeditRequestID' }
 
 /**
- * The base fields common to all session states. We track ephemeral times and
+ * The base fields common to all request states. We track ephemeral times and
  * the partial payload. Once we reach a certain phase, we log the payload as a telemetry event.
  */
 interface AutoeditBaseState {
-    sessionId: AutoeditSessionID
-    /** Current phase of the autoedit session */
+    requestId: AutoeditRequestID
+    /** Current phase of the autoedit request */
     phase: Phase
 }
 
@@ -278,10 +278,10 @@ interface PhaseStates {
  * and map that to the correct PhaseStates[fromPhase].
  */
 type PreviousPossiblePhaseFrom<T extends Phase> = {
-    [F in Phase]: T extends (typeof validSessionTransitions)[F][number] ? PhaseStates[F] : never
+    [F in Phase]: T extends (typeof validRequestTransitions)[F][number] ? PhaseStates[F] : never
 }[Phase]
 
-type AutoeditSessionState = PhaseStates[Phase]
+type AutoeditRequestState = PhaseStates[Phase]
 
 type AutoeditEventAction =
     | 'suggested'
@@ -297,9 +297,9 @@ type AutoeditErrorMessage = string & { readonly _brand: 'AutoeditErrorMessage' }
 
 export class AutoeditAnalyticsLogger {
     /**
-     * Stores ephemeral AutoeditSessionState for each session ID.
+     * Stores ephemeral AutoeditRequestState for each request ID.
      */
-    private activeSessions = new LRUCache<AutoeditSessionID, AutoeditSessionState>({ max: 20 })
+    private activeRequests = new LRUCache<AutoeditRequestID, AutoeditRequestState>({ max: 20 })
 
     /**
      * Encapsulates the logic for reusing stable suggestion IDs for repeated text/context.
@@ -314,22 +314,22 @@ export class AutoeditAnalyticsLogger {
     private ERROR_THROTTLE_INTERVAL_MS = 10 * 60 * 1000 // 10 minutes
 
     /**
-     * Creates a new ephemeral session with initial metadata. At this stage, we do not have the prediction yet.
+     * Creates a new ephemeral request with initial metadata. At this stage, we do not have the prediction yet.
      */
-    public createSession(
+    public createRequest(
         payload: Required<
             Pick<
                 AutoeditStartedMetadata,
                 'languageId' | 'model' | 'traceId' | 'triggerKind' | 'codeToRewrite'
             >
         >
-    ): AutoeditSessionID {
+    ): AutoeditRequestID {
         const { codeToRewrite, ...restPayload } = payload
-        const sessionId = uuid.v4() as AutoeditSessionID
+        const requestId = uuid.v4() as AutoeditRequestID
         const otherCompletionProviders = getOtherCompletionProvider()
 
-        const session: StartedState = {
-            sessionId,
+        const request: StartedState = {
+            requestId,
             phase: 'started',
             startedAt: getTimeNowInMillis(),
             payload: {
@@ -343,22 +343,22 @@ export class AutoeditAnalyticsLogger {
             },
         }
 
-        this.activeSessions.set(sessionId, session)
+        this.activeRequests.set(requestId, request)
         this.autoeditsStartedSinceLastSuggestion++
-        return sessionId
+        return requestId
     }
 
     public markAsContextLoaded({
-        sessionId,
+        requestId,
         payload,
     }: {
-        sessionId: AutoeditSessionID
+        requestId: AutoeditRequestID
         payload: Pick<AutoeditContextLoadedMetadata, 'contextSummary'>
     }): void {
-        this.tryTransitionTo(sessionId, 'contextLoaded', session => ({
-            ...session,
+        this.tryTransitionTo(requestId, 'contextLoaded', request => ({
+            ...request,
             payload: {
-                ...session.payload,
+                ...request.payload,
                 contextSummary: payload.contextSummary,
             },
         }))
@@ -370,11 +370,11 @@ export class AutoeditAnalyticsLogger {
      * and store the full suggestion metadata in ephemeral state.
      */
     public markAsLoaded({
-        sessionId,
+        requestId,
         modelOptions,
         payload,
     }: {
-        sessionId: AutoeditSessionID
+        requestId: AutoeditRequestID
         modelOptions: AutoeditModelOptions
         payload: Required<
             Pick<AutoeditLoadedMetadata, 'source' | 'isFuzzyMatch' | 'responseHeaders' | 'prediction'>
@@ -384,11 +384,11 @@ export class AutoeditAnalyticsLogger {
         const stableId = this.suggestionIdRegistry.getOrCreate(modelOptions, prediction)
         const loadedAt = getTimeNowInMillis()
 
-        this.tryTransitionTo(sessionId, 'loaded', session => ({
-            ...session,
+        this.tryTransitionTo(requestId, 'loaded', request => ({
+            ...request,
             loadedAt,
             payload: {
-                ...session.payload,
+                ...request.payload,
                 id: stableId,
                 lineCount: lines(prediction).length,
                 charCount: prediction.length,
@@ -397,14 +397,14 @@ export class AutoeditAnalyticsLogger {
                 source,
                 isFuzzyMatch,
                 responseHeaders,
-                latency: loadedAt - session.startedAt,
+                latency: loadedAt - request.startedAt,
             },
         }))
     }
 
-    public markAsSuggested(sessionId: AutoeditSessionID): SuggestedState | null {
-        const result = this.tryTransitionTo(sessionId, 'suggested', currentSession => ({
-            ...currentSession,
+    public markAsSuggested(requestId: AutoeditRequestID): SuggestedState | null {
+        const result = this.tryTransitionTo(requestId, 'suggested', currentRequest => ({
+            ...currentRequest,
             suggestedAt: getTimeNowInMillis(),
         }))
 
@@ -415,17 +415,17 @@ export class AutoeditAnalyticsLogger {
         // Reset the number of the auto-edits started since the last suggestion.
         this.autoeditsStartedSinceLastSuggestion = 0
 
-        return result.updatedSession
+        return result.updatedRequest
     }
 
     public markAsAccepted({
-        sessionId,
+        requestId,
         trackedRange,
         position,
         document,
         prediction,
     }: {
-        sessionId: AutoeditSessionID
+        requestId: AutoeditRequestID
         trackedRange?: vscode.Range
         position: vscode.Position
         document: vscode.TextDocument
@@ -433,9 +433,9 @@ export class AutoeditAnalyticsLogger {
     }): void {
         const acceptedAt = getTimeNowInMillis()
 
-        const result = this.tryTransitionTo(sessionId, 'accepted', session => {
+        const result = this.tryTransitionTo(requestId, 'accepted', request => {
             // Ensure the AutoeditSuggestionID is never reused by removing it from the suggestion id registry
-            this.suggestionIdRegistry.deleteEntryIfValueExists(session.payload.id)
+            this.suggestionIdRegistry.deleteEntryIfValueExists(request.payload.id)
 
             // Calculate metadata required for PCW.
             const rangeForCharacterMetadata = trackedRange || new vscode.Range(position, position)
@@ -454,39 +454,39 @@ export class AutoeditAnalyticsLogger {
                 })
 
             return {
-                ...session,
+                ...request,
                 acceptedAt,
                 payload: {
-                    ...session.payload,
+                    ...request.payload,
                     ...charactersLoggerMetadata,
                     isAccepted: true,
-                    displayDuration: acceptedAt - session.suggestedAt,
+                    displayDuration: acceptedAt - request.suggestedAt,
                     suggestionsStartedSinceLastSuggestion: this.autoeditsStartedSinceLastSuggestion,
                 },
             }
         })
 
-        if (result?.updatedSession) {
-            this.writeAutoeditSessionEvent('suggested', result.updatedSession)
-            this.writeAutoeditSessionEvent('accepted', result.updatedSession)
+        if (result?.updatedRequest) {
+            this.writeAutoeditRequestEvent('suggested', result.updatedRequest)
+            this.writeAutoeditRequestEvent('accepted', result.updatedRequest)
 
-            this.activeSessions.delete(result.updatedSession.sessionId)
+            this.activeRequests.delete(result.updatedRequest.requestId)
         }
     }
 
-    public markAsRejected(sessionId: AutoeditSessionID): void {
-        const result = this.tryTransitionTo(sessionId, 'rejected', session => ({
-            ...session,
+    public markAsRejected(requestId: AutoeditRequestID): void {
+        const result = this.tryTransitionTo(requestId, 'rejected', request => ({
+            ...request,
             payload: {
-                ...session.payload,
+                ...request.payload,
                 isAccepted: false,
-                displayDuration: getTimeNowInMillis() - session.suggestedAt,
+                displayDuration: getTimeNowInMillis() - request.suggestedAt,
                 suggestionsStartedSinceLastSuggestion: this.autoeditsStartedSinceLastSuggestion,
             },
         }))
 
-        if (result?.updatedSession) {
-            this.writeAutoeditSessionEvent('suggested', result.updatedSession)
+        if (result?.updatedRequest) {
+            this.writeAutoeditRequestEvent('suggested', result.updatedRequest)
 
             // Suggestions are kept in the LRU cache for longer. This is because they
             // can still become visible if e.g. they are served from the cache and we
@@ -494,50 +494,50 @@ export class AutoeditAnalyticsLogger {
         }
     }
 
-    public markAsDiscarded(sessionId: AutoeditSessionID): void {
-        const result = this.tryTransitionTo(sessionId, 'discarded', currentSession => currentSession)
+    public markAsDiscarded(requestId: AutoeditRequestID): void {
+        const result = this.tryTransitionTo(requestId, 'discarded', currentRequest => currentRequest)
 
-        if (result?.updatedSession) {
-            this.writeAutoeditSessionEvent('discarded', result.updatedSession)
-            this.activeSessions.delete(result.updatedSession.sessionId)
+        if (result?.updatedRequest) {
+            this.writeAutoeditRequestEvent('discarded', result.updatedRequest)
+            this.activeRequests.delete(result.updatedRequest.requestId)
         }
     }
 
     private tryTransitionTo<P extends Phase>(
-        sessionId: AutoeditSessionID,
+        requestId: AutoeditRequestID,
         nextPhase: P,
-        patch: (currentSession: PreviousPossiblePhaseFrom<P>) => Omit<PhaseStates[P], 'phase'>
-    ): { currentSession: PreviousPossiblePhaseFrom<P>; updatedSession: PhaseStates[P] } | null {
-        const currentSession = this.getSessionIfReadyForNextPhase(sessionId, nextPhase)
+        patch: (currentRequest: PreviousPossiblePhaseFrom<P>) => Omit<PhaseStates[P], 'phase'>
+    ): { currentRequest: PreviousPossiblePhaseFrom<P>; updatedRequest: PhaseStates[P] } | null {
+        const currentRequest = this.getRequestIfReadyForNextPhase(requestId, nextPhase)
 
-        if (!currentSession) {
+        if (!currentRequest) {
             return null
         }
 
-        const updatedSession = {
-            ...currentSession,
-            ...patch(currentSession),
+        const updatedRequest = {
+            ...currentRequest,
+            ...patch(currentRequest),
             phase: nextPhase,
         } as PhaseStates[P]
 
-        this.activeSessions.set(sessionId, updatedSession)
-        return { updatedSession, currentSession }
+        this.activeRequests.set(requestId, updatedRequest)
+        return { updatedRequest, currentRequest }
     }
 
     /**
-     * Retrieves the session if it is in a phase that can transition to nextPhase,
+     * Retrieves the request if it is in a phase that can transition to nextPhase,
      * returning null if not found or if the transition is invalid. Uses the derived
      * PreviousPossiblePhaseFrom type so that the returned State has the correct fields.
      */
-    private getSessionIfReadyForNextPhase<T extends Phase>(
-        sessionId: AutoeditSessionID,
+    private getRequestIfReadyForNextPhase<T extends Phase>(
+        requestId: AutoeditRequestID,
         nextPhase: T
     ): PreviousPossiblePhaseFrom<T> | null {
-        const session = this.activeSessions.get(sessionId)
+        const request = this.activeRequests.get(requestId)
 
         if (
-            !session ||
-            !(validSessionTransitions[session.phase] as readonly Phase[]).includes(nextPhase)
+            !request ||
+            !(validRequestTransitions[request.phase] as readonly Phase[]).includes(nextPhase)
         ) {
             this.writeDebugBookkeepingEvent(
                 `invalidTransitionTo${capitalize(nextPhase) as Capitalize<Phase>}`
@@ -546,10 +546,10 @@ export class AutoeditAnalyticsLogger {
             return null
         }
 
-        return session as PreviousPossiblePhaseFrom<T>
+        return request as PreviousPossiblePhaseFrom<T>
     }
 
-    private writeAutoeditSessionEvent(
+    private writeAutoeditRequestEvent(
         action: AutoeditEventAction,
         state: AcceptedState | RejectedState | DiscardedState
     ): void {
@@ -559,7 +559,7 @@ export class AutoeditAnalyticsLogger {
             return
         }
 
-        // Update the session state to mark the suggestion as logged.
+        // Update the request state to mark the suggestion as logged.
         state.suggestionLoggedAt = getTimeNowInMillis()
 
         const { metadata, privateMetadata } = splitSafeMetadata(payload)
