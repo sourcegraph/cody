@@ -1,11 +1,11 @@
 import { authStatus } from '../auth/authStatus'
 import { firstValueFrom } from '../misc/observable'
 import { modelsService } from '../models/modelsService'
-import type { Message } from '../sourcegraph-api'
 import type { SourcegraphCompletionsClient } from '../sourcegraph-api/completions/client'
 import type {
     CompletionGeneratorValue,
     CompletionParameters,
+    Message,
 } from '../sourcegraph-api/completions/types'
 import { currentSiteVersion } from '../sourcegraph-api/siteVersion'
 

@@ -150,6 +150,7 @@ import { type ContextRetriever, toStructuredMentions } from './ContextRetriever'
 import { InitDoer } from './InitDoer'
 import { getChatPanelTitle } from './chat-helpers'
 import { type HumanInput, getPriorityContext } from './context'
+import { type AgentHandlerDelegate, getAgent } from './interfaces'
 import { DefaultPrompter, type PromptInfo } from './prompt'
 import { getPromptsMigrationInfo, startPromptsMigration } from './prompts-migration'
 
@@ -199,7 +200,9 @@ export interface ChatSession {
  *    with other components outside the model and view is needed,
  *    use a broadcast/subscription design.
  */
-export class ChatController implements vscode.Disposable, vscode.WebviewViewProvider, ChatSession {
+export class ChatController
+    implements vscode.Disposable, vscode.WebviewViewProvider, ChatSession, AgentHandlerDelegate
+{
     private chatBuilder: ChatBuilder
 
     private readonly chatClient: ChatControllerOptions['chatClient']
@@ -712,6 +715,22 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 await this.saveSession()
                 signal.throwIfAborted()
 
+                // DEBUG
+                void this.sendChat2(
+                    {
+                        requestID,
+                        inputText,
+                        mentions,
+                        editorState,
+                        signal,
+                        source,
+                        command,
+                        intent: detectedIntent,
+                        intentScores: detectedIntentScores,
+                        manuallySelectedIntent,
+                    },
+                    span
+                )
                 return this.sendChat(
                     {
                         requestID,
@@ -779,6 +798,52 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         }
 
         return { intent: 'chat', intentScores: [] }
+    }
+
+    public postStatusUpdate(id: number, type: string, statusMessage: string): void {
+        console.log('# TODO: postStatusUpdate', id, type, statusMessage)
+    }
+    public postStatement(id: number, message: string): void {
+        console.log('# TODO: postStatement', id, message)
+    }
+    public postDone(status: 'success' | 'error' | 'canceled'): void {
+        console.log('# TODO: postDone', status)
+    }
+
+    public async sendChat2(
+        {
+            requestID,
+            inputText,
+            mentions,
+            editorState,
+            signal,
+            source,
+            command,
+            intent: detectedIntent,
+            intentScores: detectedIntentScores,
+            manuallySelectedIntent,
+        }: Parameters<typeof this.handleUserMessage>[0],
+        span: Span
+    ): Promise<void> {
+        // const authStatus = currentAuthStatusAuthed()
+
+        // Use default model if no model is selected.
+        const model = await firstResultFromOperation(ChatBuilder.resolvedModelForChat(this.chatBuilder))
+        if (!model) {
+            return
+        }
+        const agent = getAgent(model, this.contextRetriever, this.editor)
+        await agent.handle(
+            {
+                inputText,
+                mentions,
+                editorState,
+                signal,
+                chatClient: this.chatClient,
+                chatBuilder: this.chatBuilder,
+            },
+            this
+        )
     }
 
     // MARK 2
@@ -2264,7 +2329,7 @@ export function manipulateWebviewHTML(html: string, options: TransformHTMLOption
 // This is the manual ordering of the different retrieved and explicit context sources
 // It should be equivalent to the ordering of things in
 // ChatController:legacyComputeContext > context.ts:resolveContext
-function combineContext(
+export function combineContext(
     explicitMentions: ContextItem[],
     openCtxContext: ContextItemOpenCtx[],
     priorityContext: ContextItem[],
