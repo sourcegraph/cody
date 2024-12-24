@@ -45,8 +45,9 @@ export interface ChatMessage extends Message {
 export interface ChatMessageStep {
     id: string
     content: string
-    status: string
+    status: 'pending' | 'success' | 'error'
     step?: number
+    error?: ChatError
 }
 
 export type ChatMessageWithSearch = ChatMessage & { search: ChatMessageSearch }

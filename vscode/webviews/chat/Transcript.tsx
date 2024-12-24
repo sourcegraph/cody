@@ -780,7 +780,6 @@ const ChatMessageStepItem: FC<{ step: ChatMessageStep; isContextLoading: boolean
     step,
     isContextLoading,
 }) => {
-    const isLoading = step.status === 'pending' || isContextLoading
     if (step.step === 0) {
         return (
             <div className="tw-flex tw-items-center tw-rounded-md tw-bg-muted-transparent tw-p-4">
@@ -797,7 +796,7 @@ const ChatMessageStepItem: FC<{ step: ChatMessageStep; isContextLoading: boolean
         >
             <div className="tw-flex tw-items-center">
                 <div>
-                    {isLoading ? (
+                    {step.status === 'pending' ? (
                         <Loader2Icon
                             strokeWidth={3}
                             size={14}

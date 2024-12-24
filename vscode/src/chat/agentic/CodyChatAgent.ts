@@ -5,6 +5,7 @@ import {
     type Message,
     type PromptMixin,
     type PromptString,
+    errorToChatError,
     newPromptMixin,
 } from '@sourcegraph/cody-shared'
 import type { ChatMessageStep } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
@@ -89,7 +90,12 @@ export abstract class CodyChatAgent {
         const model = this.chatBuilder.selectedModel ?? ''
 
         // Create steps array once
-        const createStep = (content: string, id: string, stepNum: number, status: string) => ({
+        const createStep = (
+            content: string,
+            id: string,
+            stepNum: number,
+            status: ChatMessageStep['status']
+        ) => ({
             content,
             id,
             step: stepNum,
@@ -105,7 +111,7 @@ export abstract class CodyChatAgent {
                         'Fetching relevant context to improve response quality',
                         'agent',
                         0,
-                        'May take a few seconds...'
+                        'pending'
                     ),
                 ]
                 this.updateStepsAndNotify(steps, model)
@@ -115,7 +121,7 @@ export abstract class CodyChatAgent {
                 this.updateStepsAndNotify(steps, model)
             },
             onToolExecuted: toolName => {
-                steps = steps.map(step => (step.id === toolName ? { ...step, status: 'error' } : step))
+                steps = steps.map(step => (step.id === toolName ? { ...step, status: 'success' } : step))
                 this.updateStepsAndNotify(steps, model)
             },
             onToolsComplete: () => {
@@ -124,17 +130,21 @@ export abstract class CodyChatAgent {
                         ? {
                               ...step,
                               content: 'Fetched relevant context to improve response quality',
-                              status: 'completed',
+                              status: 'success',
                           }
                         : {
                               ...step,
-                              status: step.status === 'error' ? step.status : 'completed',
+                              status: step.status === 'error' ? step.status : 'success',
                           }
                 )
                 this.updateStepsAndNotify(steps, model)
             },
-            onToolError: (_toolName, error) => {
-                this.chatBuilder.addErrorAsBotMessage(error, model)
+            onToolError: (toolName, error) => {
+                steps = steps.map(step =>
+                    step.id === toolName
+                        ? { ...step, status: 'error', error: errorToChatError(error) }
+                        : step
+                )
                 this.postMessageCallback?.(model)
             },
         }
