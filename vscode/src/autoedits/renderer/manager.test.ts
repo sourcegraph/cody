@@ -103,5 +103,30 @@ describe('AutoEditsDefaultRendererManager', () => {
             `
             )
         })
+
+        it('should return single line inline completion when the suffix is present on same line', async () => {
+            const documentText = dedent`const a = 1
+                const b = 2
+                const c = 3
+                console█c)
+                function greet() { console.log("Hello") }
+                const x = 10
+                console.log(x)
+                console.log("end")
+            `
+            const prediction = dedent`const c = 3
+                console.log(a, b, c)
+                function greet() { console.log("Hello") }
+            `
+            const args = getAutoeditRendererManagerArgs(documentText, prediction)
+            const result = await manager.maybeRenderDecorationsAndTryMakeInlineCompletionResponse(args)
+            expect(result).toBeDefined()
+            assertInlineCompletionItems(
+                result.inlineCompletions!,
+                dedent`
+                console.log(a, b, c)
+            `
+            )
+        })
     })
 })
