@@ -27,25 +27,22 @@ import { AutoeditSuggestionIdRegistry } from './suggestion-id-registry'
  * Each phase of the session is represented by a distinct state interface, and metadata
  * evolves as the session progresses.
  *
- * 1. **State Relationships:**
- *    - The `AutoeditBaseState` defines common properties shared across all states.
- *    - Each phase (e.g., `started`, `loaded`, `accepted`) is represented by a more specific
- *      state interface that extends `AutoeditBaseState` and adds phase-specific fields.
- *    - Valid transitions between phases are enforced using the `validSessionTransitions` map,
- *      ensuring logical progression through the session lifecycle.
+ * 1. Each autoedit request phase (e.g., `started`, `loaded`, `accepted`) is represented by a
+ *    `state` interface that extends `AutoeditBaseState` and adds phase-specific fields.
  *
- * 2. **Metadata Evolution:**
- *    - Metadata is progressively enriched as the session transitions between states.
- *      For example, basic metadata like `languageId` and `model` is captured at the start,
- *      while detailed suggestion data (e.g., `charCount`, `prediction`) is added in later phases.
- *    - The `payload` field in each state encapsulates the relevant metadata, allowing for
- *      fine-grained tracking of session progress.
+ * 2. Valid transitions between phases are enforced using the `validSessionTransitions` map,
+ *    ensuring logical progression through the session lifecycle.
  *
- * 3. **Analytics Event Payloads:**
- *    - Events such as `suggested`, `accepted`, or `noResponse` are logged using the final
- *      metadata from the corresponding state.
- *    - Payload types like `AutoeditAcceptedEventPayload` or `AutoeditRejectedEventPayload`
- *      are constructed by combining state-specific metadata with additional analytics data.
+ * 3. The `payload` field in each state encapsulates the exact list of fields that we plan to send
+ *    to our analytics backend.
+ *
+ * 4. Other top-level `state` fields are saved only for bookkeeping and won't end up at our
+ *    analytics backend. This ensures we don't send unintentional or redundant information to
+ *    the analytics backend.
+ *
+ * 5. Metadata is progressively enriched as the session transitions between states.
+ *
+ * 6. Eventually, once we reach one of the terminal states and log its current `payload`.
  */
 
 /**
@@ -174,9 +171,9 @@ interface AutoeditLoadedMetadata extends AutoeditContextLoadedMetadata {
 interface AutoEditFinalMetadata extends AutoeditLoadedMetadata {
     /** Displayed to the user for this many milliseconds. */
     displayDuration: number
-    /** True if the suggestion was explicitly/intentionally accepted */
+    /** True if the suggestion was explicitly/intentionally accepted. */
     isAccepted: boolean
-    /** The number of completions we requested until this one was suggested. */
+    /** The number of the auto-edits started since the last suggestion was shown. */
     suggestionsStartedSinceLastSuggestion: number
 }
 
@@ -391,6 +388,9 @@ export class AutoeditAnalyticsLogger {
             return null
         }
 
+        // Reset the number of the auto-edits started since the last suggestion.
+        this.autoeditsStartedSinceLastSuggestion = 0
+
         return result.updatedSession
     }
 
@@ -445,6 +445,7 @@ export class AutoeditAnalyticsLogger {
         if (result?.updatedSession) {
             this.writeAutoeditSessionEvent('suggested', result.updatedSession)
             this.writeAutoeditSessionEvent('accepted', result.updatedSession)
+
             this.activeSessions.delete(result.updatedSession.sessionId)
         }
     }
@@ -550,9 +551,6 @@ export class AutoeditAnalyticsLogger {
                 category: action === 'suggested' ? 'billable' : 'core',
             },
         })
-
-        // Reset the number of the auto-edits started since the last suggestion.
-        this.autoeditsStartedSinceLastSuggestion = 0
     }
 
     private writeAutoeditEvent(
