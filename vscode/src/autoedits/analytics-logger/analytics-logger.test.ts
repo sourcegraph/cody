@@ -9,7 +9,12 @@ import { documentAndPosition } from '../../completions/test-helpers'
 import * as sentryModule from '../../services/sentry/sentry'
 import type { AutoeditModelOptions } from '../adapters/base'
 
-import { AutoeditAnalyticsLogger, type AutoeditSessionID } from './analytics-logger'
+import {
+    AutoeditAnalyticsLogger,
+    type AutoeditSessionID,
+    autoeditSource,
+    autoeditTriggerKind,
+} from './analytics-logger'
 
 describe('AutoeditAnalyticsLogger', () => {
     let autoeditLogger: AutoeditAnalyticsLogger
@@ -35,6 +40,7 @@ describe('AutoeditAnalyticsLogger', () => {
         languageId: 'typescript',
         model: 'autoedit-model',
         traceId: 'trace-id',
+        triggerKind: autoeditTriggerKind.automatic,
     }
 
     function createAndAdvanceSession({
@@ -65,7 +71,7 @@ describe('AutoeditAnalyticsLogger', () => {
             modelOptions: modelOptions,
             payload: {
                 prediction,
-                source: 'network',
+                source: autoeditSource.network,
                 isFuzzyMatch: false,
                 responseHeaders: {},
             },
@@ -156,7 +162,9 @@ describe('AutoeditAnalyticsLogger', () => {
               "noActiveTextEditor": 0,
               "otherCompletionProviderEnabled": 0,
               "outsideOfActiveEditor": 1,
+              "source": 1,
               "suggestionsStartedSinceLastSuggestion": 1,
+              "triggerKind": 1,
               "windowNotFocused": 1,
             },
             "privateMetadata": {
@@ -175,7 +183,6 @@ describe('AutoeditAnalyticsLogger', () => {
               "otherCompletionProviders": [],
               "prediction": "console.log("Hello from autoedit!")",
               "responseHeaders": {},
-              "source": "network",
               "traceId": "trace-id",
               "upstreamLatency": undefined,
             },

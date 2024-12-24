@@ -73,6 +73,23 @@ const validSessionTransitions = {
     noResponse: [],
 } as const satisfies Record<Phase, readonly Phase[]>
 
+export const autoeditTriggerKind = {
+    /** Suggestion was triggered automatically while editing. */
+    automatic: 1,
+
+    /** Suggestion was triggered manually by the user invoking the keyboard shortcut. */
+    manual: 2,
+
+    /** When the user uses the suggest widget to cycle through different suggestions. */
+    suggestWidget: 3,
+
+    /** Suggestion was triggered automatically by the selection change event. */
+    cursor: 4,
+} as const
+
+/** We use numeric keys to send these to the analytics backend */
+type AutoeditTriggerKindMetadata = (typeof autoeditTriggerKind)[keyof typeof autoeditTriggerKind]
+
 interface AutoeditStartedMetadata {
     /** Document language ID (e.g., 'typescript'). */
     languageId: string
@@ -82,6 +99,9 @@ interface AutoeditStartedMetadata {
 
     /** Optional trace ID for cross-service correlation, if your environment provides it. */
     traceId: string
+
+    /** Describes how the autoedit request was triggered by the user. */
+    triggerKind: AutoeditTriggerKindMetadata
 
     /** True if other autoedit/completion providers might also be active (e.g., Copilot). */
     otherCompletionProviderEnabled: boolean
@@ -108,6 +128,16 @@ interface AutoeditContextLoadedMetadata extends AutoeditStartedMetadata {
  */
 export type AutoeditSuggestionID = string & { readonly _brand: 'AutoeditSuggestionID' }
 
+export const autoeditSource = {
+    /** Autoedit originated from a request to our backend for the suggestion.  */
+    network: 1,
+    /** Autoedit originated from a client cached suggestion.  */
+    cache: 2,
+} as const
+
+/** We use numeric keys to send these to the analytics backend */
+type AutoeditSourceMetadata = (typeof autoeditSource)[keyof typeof autoeditSource]
+
 interface AutoeditLoadedMetadata extends AutoeditContextLoadedMetadata {
     /**
      * An ID to uniquely identify a suggest autoedit. Note: It is possible for this ID to be part
@@ -129,7 +159,7 @@ interface AutoeditLoadedMetadata extends AutoeditContextLoadedMetadata {
     prediction?: string
 
     /** The source of the suggestion, e.g. 'network', 'cache', etc. */
-    source?: 'network' | 'cache'
+    source?: AutoeditSourceMetadata
 
     /** True if we fuzzy-matched this suggestion from a local or remote cache. */
     isFuzzyMatch?: boolean
@@ -275,7 +305,7 @@ export class AutoeditAnalyticsLogger {
      * Creates a new ephemeral session with initial metadata. At this stage, we do not have the prediction yet.
      */
     public createSession(
-        payload: Pick<AutoeditStartedMetadata, 'languageId' | 'model' | 'traceId'>
+        payload: Pick<AutoeditStartedMetadata, 'languageId' | 'model' | 'traceId' | 'triggerKind'>
     ): AutoeditSessionID {
         const sessionId = uuid.v4() as AutoeditSessionID
         const otherCompletionProviders = getOtherCompletionProvider()
