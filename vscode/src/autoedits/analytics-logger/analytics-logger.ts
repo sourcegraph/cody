@@ -152,6 +152,7 @@ interface AutoeditLoadedMetadata extends AutoeditContextLoadedMetadata {
     /**
      * Prediction text snippet of the suggestion.
      * Might be `undefined` if too long.
+     * 🚨 SECURITY: included only for DotCom users.
      */
     prediction?: string
 
@@ -349,10 +350,12 @@ export class AutoeditAnalyticsLogger {
     public markAsLoaded({
         sessionId,
         modelOptions,
+        isDotComUser,
         payload,
     }: {
         sessionId: AutoeditSessionID
         modelOptions: AutoeditModelOptions
+        isDotComUser: boolean
         payload: Required<
             Pick<AutoeditLoadedMetadata, 'source' | 'isFuzzyMatch' | 'responseHeaders' | 'prediction'>
         >
@@ -369,7 +372,7 @@ export class AutoeditAnalyticsLogger {
                 id: stableId,
                 lineCount: lines(prediction).length,
                 charCount: prediction.length,
-                prediction: prediction.length < 300 ? prediction : undefined,
+                prediction: isDotComUser && prediction.length < 300 ? prediction : undefined,
                 source,
                 isFuzzyMatch,
                 responseHeaders,
@@ -542,7 +545,10 @@ export class AutoeditAnalyticsLogger {
         const { metadata, privateMetadata } = splitSafeMetadata(state.payload)
         this.writeAutoeditEvent(action, {
             version: 0,
-            metadata,
+            metadata: {
+                ...metadata,
+                recordsPrivateMetadataTranscript: 'prediction' in privateMetadata ? 1 : 0,
+            },
             privateMetadata,
             billingMetadata: {
                 product: 'cody',

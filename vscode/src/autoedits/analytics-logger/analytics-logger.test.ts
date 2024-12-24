@@ -69,6 +69,7 @@ describe('AutoeditAnalyticsLogger', () => {
         autoeditLogger.markAsLoaded({
             sessionId,
             modelOptions: modelOptions,
+            isDotComUser: true,
             payload: {
                 prediction,
                 source: autoeditSource.network,
@@ -162,6 +163,7 @@ describe('AutoeditAnalyticsLogger', () => {
               "noActiveTextEditor": 0,
               "otherCompletionProviderEnabled": 0,
               "outsideOfActiveEditor": 1,
+              "recordsPrivateMetadataTranscript": 1,
               "source": 1,
               "suggestionsStartedSinceLastSuggestion": 0,
               "triggerKind": 1,
