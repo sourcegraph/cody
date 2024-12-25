@@ -1765,7 +1765,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             const params = {
                 model,
                 maxTokensToSample: contextWindow.output,
-                interactionId: requestID,
             } as CompletionParameters
 
             // Set stream param only when the model is disabled for streaming.
@@ -1773,7 +1772,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 params.stream = false
             }
 
-            const stream = await this.chatClient.chat(prompt, params, abortSignal)
+            const stream = await this.chatClient.chat(prompt, params, abortSignal, requestID)
             for await (const message of stream) {
                 switch (message.type) {
                     case 'change': {

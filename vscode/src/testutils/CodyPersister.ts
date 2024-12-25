@@ -163,6 +163,7 @@ export class CodyPersister extends FSPersister {
     ): { name: string; value: string }[] {
         const removeHeaderNames = new Set([
             'set-cookie',
+            'x-sourcegraph-interaction-id',
             'server',
             'via',
             'x-sourcegraph-actor-anonymous-uid',

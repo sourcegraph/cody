@@ -33,6 +33,7 @@ export interface CompletionLogger {
 
 export interface CompletionRequestParameters {
     apiVersion: number
+    interactionId?: string
     customHeaders?: Record<string, string>
 }
 
@@ -92,11 +93,11 @@ export abstract class SourcegraphCompletionsClient {
         serializedParams: SerializedCompletionParameters
         headerParams: Record<string, string>
     }> {
-        const { apiVersion } = requestParams
+        const { apiVersion, interactionId } = requestParams
         const serializedParams = await getSerializedParams(params)
         const headerParams: Record<string, string> = {}
-        if (params.interactionId) {
-            headerParams['X-Sourcegraph-Interaction-ID'] = params.interactionId
+        if (interactionId) {
+            headerParams['X-Sourcegraph-Interaction-ID'] = interactionId
         }
         const url = new URL(await this.completionsEndpoint())
         if (apiVersion >= 1) {

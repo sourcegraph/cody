@@ -98,7 +98,6 @@ export function createFastPathClient(
         headers.set('Content-Type', `application/json${fireworksConfig ? '' : '; charset=utf-8'}`)
         headers.set('Authorization', `Bearer ${fastPathAccessToken}`)
         headers.set('X-Sourcegraph-Feature', 'code_completions')
-        headers.set('X-Sourcegraph-Interaction-ID', requestParams.interactionId || '')
         headers.set('X-Timeout-Ms', requestParams.timeoutMs.toString())
         addTraceparent(headers)
 

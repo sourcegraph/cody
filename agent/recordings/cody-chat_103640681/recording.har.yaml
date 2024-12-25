@@ -108,15 +108,13 @@ log:
             value: keep-alive
           - name: content-type
             value: application/json
-          - name: transfer-encoding
-            value: chunked
           - name: user-agent
-            value: cody-cli/6.0.0-SNAPSHOT (Node.js v20.10.0)
+            value: cody-cli/6.0.0-SNAPSHOT (Node.js v20.4.0)
           - name: x-requested-with
             value: cody-cli 6.0.0-SNAPSHOT
           - name: host
             value: sourcegraph.sourcegraph.com
-        headersSize: 472
+        headersSize: 511
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -151,10 +149,10 @@ log:
             value: 6.0.0-SNAPSHOT
         url: https://sourcegraph.sourcegraph.com/.api/completions/stream?api-version=2&client-name=jetbrains&client-version=6.0.0-SNAPSHOT
       response:
-        bodySize: 227
+        bodySize: 185
         content:
           mimeType: text/event-stream
-          size: 227
+          size: 185
           text: >+
             event: completion
 
@@ -168,7 +166,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 09 Dec 2024 14:47:38 GMT
+            value: Tue, 24 Dec 2024 01:23:09 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -181,10 +179,6 @@ log:
             value: ""
           - name: cache-control
             value: no-cache
-          - name: observed-calculated-ip-from-forwarded-for
-            value: 34.117.155.115
-          - name: observed-x-forwarded-for
-            value: 80.82.18.146, 162.158.103.117, 34.117.155.115
           - name: vary
             value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
               Cookie
@@ -196,13 +190,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1347
+        headersSize: 1215
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-12-09T14:47:37.094Z
-      time: 1668
+      startedDateTime: 2024-12-24T01:23:08.799Z
+      time: 1029
       timings:
         blocked: -1
         connect: -1
@@ -210,7 +204,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 1668
+        wait: 1029
     - _id: 820c56d277c7b94198495dbccdf71edd
       _order: 0
       cache: {}
@@ -227,15 +221,13 @@ log:
             value: keep-alive
           - name: content-type
             value: application/json
-          - name: transfer-encoding
-            value: chunked
           - name: user-agent
-            value: cody-cli/6.0.0-SNAPSHOT (Node.js v20.10.0)
+            value: cody-cli/6.0.0-SNAPSHOT (Node.js v20.4.0)
           - name: x-requested-with
             value: cody-cli 6.0.0-SNAPSHOT
           - name: host
             value: sourcegraph.sourcegraph.com
-        headersSize: 472
+        headersSize: 511
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -284,10 +276,10 @@ log:
             value: 6.0.0-SNAPSHOT
         url: https://sourcegraph.sourcegraph.com/.api/completions/stream?api-version=2&client-name=jetbrains&client-version=6.0.0-SNAPSHOT
       response:
-        bodySize: 542
+        bodySize: 458
         content:
           mimeType: text/event-stream
-          size: 542
+          size: 458
           text: >+
             event: completion
 
@@ -301,7 +293,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 09 Dec 2024 14:47:43 GMT
+            value: Tue, 24 Dec 2024 01:23:12 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -314,10 +306,6 @@ log:
             value: ""
           - name: cache-control
             value: no-cache
-          - name: observed-calculated-ip-from-forwarded-for
-            value: 34.117.155.115
-          - name: observed-x-forwarded-for
-            value: 80.82.18.146, 162.158.172.179, 34.117.155.115
           - name: vary
             value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
               Cookie
@@ -329,13 +317,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1347
+        headersSize: 1215
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-12-09T14:47:41.389Z
-      time: 1792
+      startedDateTime: 2024-12-24T01:23:11.527Z
+      time: 1087
       timings:
         blocked: -1
         connect: -1
@@ -343,7 +331,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 1792
+        wait: 1087
     - _id: 0db5ea58f43f787d4cf5168ac6cbad53
       _order: 0
       cache: {}

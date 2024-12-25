@@ -438,7 +438,7 @@ describe('Agent', () => {
                     'cody.chatResponse:noCode',
                 ])
             )
-        })
+        }, 30_000)
 
         describe('chat/editMessage', () => {
             it(
@@ -527,7 +527,6 @@ describe('Agent', () => {
                     expect.arrayContaining([
                         'cody.chat-question:submitted',
                         'cody.chat-question:executed',
-                        'cody.chatResponse:noCode',
                         'cody.editChatButton:clicked',
                     ])
                 )

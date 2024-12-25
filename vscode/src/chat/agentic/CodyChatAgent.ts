@@ -49,8 +49,9 @@ export abstract class CodyChatAgent {
     ): Promise<string> {
         const stream = await this.chatClient.chat(
             message,
-            { model: model, maxTokensToSample: 4000, interactionId: requestID },
-            new AbortController().signal
+            { model: model, maxTokensToSample: 4000 },
+            new AbortController().signal,
+            requestID
         )
 
         let accumulated = ''

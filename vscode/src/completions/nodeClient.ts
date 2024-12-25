@@ -37,7 +37,7 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
         cb: CompletionCallbacks,
         signal?: AbortSignal
     ): Promise<void> {
-        const { apiVersion } = requestParams
+        const { apiVersion, interactionId } = requestParams
 
         const url = new URL(await this.completionsEndpoint())
         if (apiVersion >= 1) {
@@ -94,7 +94,7 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                 // Disable gzip compression since the sg instance will start to batch
                 // responses afterwards.
                 'Accept-Encoding': 'gzip;q=0',
-                'X-Sourcegraph-Interaction-ID': params.interactionId || '',
+                'X-Sourcegraph-Interaction-ID': interactionId || '',
                 ...(auth.accessToken ? { Authorization: `token ${auth.accessToken}` } : null),
                 ...configuration?.customHeaders,
                 ...requestParams.customHeaders,
