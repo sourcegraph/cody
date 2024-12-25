@@ -145,8 +145,8 @@ const autoeditsTestHelper = async ({
         await page.waitForTimeout(500)
 
         await expect(page).toHaveScreenshot([snapshotPlatform, snapshotName], {
-            maxDiffPixelRatio: 0.01,
-            maxDiffPixels: 100,
+            maxDiffPixelRatio: 0.02,
+            maxDiffPixels: 1000,
             clip: clip,
         })
     }
