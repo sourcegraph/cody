@@ -2,6 +2,7 @@ import type { Span } from '@opentelemetry/api'
 import {
     type ChatModel,
     type CompletionParameters,
+    type ContextItem,
     type Message,
     PromptString,
     type RankedContext,
@@ -26,23 +27,31 @@ import type { AgentHandler, AgentHandlerDelegate, AgentRequest } from './interfa
 
 export class ChatHandler implements AgentHandler {
     constructor(
-        private modelId: string,
-        private contextRetriever: Pick<ContextRetriever, 'retrieveContext'>,
-        private readonly editor: ChatControllerOptions['editor'],
-        private chatClient: ChatControllerOptions['chatClient']
+        protected modelId: string,
+        protected contextRetriever: Pick<ContextRetriever, 'retrieveContext'>,
+        protected readonly editor: ChatControllerOptions['editor'],
+        protected chatClient: ChatControllerOptions['chatClient']
     ) {}
 
     public async handle(
-        { inputText, mentions, editorState, signal, chatBuilder, chatClient }: AgentRequest,
+        { inputText, mentions, editorState, signal, chatBuilder }: AgentRequest,
         delegate: AgentHandlerDelegate
     ): Promise<void> {
-        const contextAlternatives = await this.computeContext(
+        const contextResult = await this.computeContext(
             { text: inputText, mentions },
             editorState,
+            chatBuilder,
             signal
         )
+        if (contextResult.error) {
+            delegate.postError(contextResult.error, 'transcript')
+        }
+        if (contextResult.abort) {
+            delegate.postDone({ abort: contextResult.abort })
+            return
+        }
+        const corpusContext = contextResult.contextItems ?? []
         signal.throwIfAborted()
-        const corpusContext = contextAlternatives[0].items
         const { explicitMentions, implicitMentions } = getCategorizedMentions(corpusContext)
         const prompter = new DefaultPrompter(explicitMentions, implicitMentions, false)
 
@@ -50,13 +59,7 @@ export class ChatHandler implements AgentHandler {
         if (!versions) {
             throw new Error('unable to determine site version')
         }
-        const { prompt } = await this.buildPrompt(
-            prompter,
-            chatBuilder,
-            signal,
-            versions.codyAPIVersion,
-            contextAlternatives
-        )
+        const { prompt } = await this.buildPrompt(prompter, chatBuilder, signal, versions.codyAPIVersion)
 
         signal.throwIfAborted()
 
@@ -176,14 +179,13 @@ export class ChatHandler implements AgentHandler {
         prompter: DefaultPrompter,
         chatBuilder: ChatBuilder,
         abortSignal: AbortSignal,
-        codyApiVersion: number,
-        contextAlternatives?: RankedContext[]
+        codyApiVersion: number
     ): Promise<PromptInfo> {
         const { prompt, context } = await prompter.makePrompt(chatBuilder, codyApiVersion)
         abortSignal.throwIfAborted()
 
         // Update UI based on prompt construction. Includes the excluded context items to display in the UI
-        chatBuilder.setLastMessageContext([...context.used, ...context.ignored], contextAlternatives)
+        chatBuilder.setLastMessageContext([...context.used, ...context.ignored])
 
         return { prompt, context }
     }
@@ -192,27 +194,34 @@ export class ChatHandler implements AgentHandler {
         throw new Error('Method not implemented.')
     }
 
-    private async computeContext(
+    // Overridable by subclasses that want to customize context computation
+    protected async computeContext(
         { text, mentions }: HumanInput,
         editorState: SerializedPromptEditorState | null,
+        _chatBuilder: ChatBuilder,
         signal?: AbortSignal
-    ): Promise<RankedContext[]> {
+    ): Promise<{
+        contextItems?: ContextItem[]
+        error?: Error
+        abort?: boolean
+    }> {
         try {
-            return wrapInActiveSpan('chat.computeContext', span => {
-                return this._computeContext({ text, mentions }, editorState, span, signal)
+            return wrapInActiveSpan('chat.computeContext', async span => {
+                const contextAlternatives = await this.computeContextAlternatives(
+                    { text, mentions },
+                    editorState,
+                    span,
+                    signal
+                )
+                return { contextItems: contextAlternatives[0].items }
             })
         } catch (e) {
             this.postError(new Error(`Unexpected error computing context, no context was used: ${e}`))
-            return [
-                {
-                    strategy: 'none',
-                    items: [],
-                },
-            ]
+            return { contextItems: [] }
         }
     }
 
-    private async _computeContext(
+    private async computeContextAlternatives(
         { text, mentions }: HumanInput,
         editorState: SerializedPromptEditorState | null,
         span: Span,

@@ -150,7 +150,7 @@ import { type ContextRetriever, toStructuredMentions } from './ContextRetriever'
 import { InitDoer } from './InitDoer'
 import { getChatPanelTitle } from './chat-helpers'
 import { type HumanInput, getPriorityContext } from './context'
-import { getAgent } from './handlers/interfaces'
+import { getAgent } from './handlers/registry'
 import { DefaultPrompter, type PromptInfo } from './prompt'
 import { getPromptsMigrationInfo, startPromptsMigration } from './prompts-migration'
 
@@ -820,10 +820,13 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         if (!model) {
             return
         }
+        console.log('# model', model)
+
         const agent = getAgent(model, {
             contextRetriever: this.contextRetriever,
             editor: this.editor,
             chatClient: this.chatClient,
+            codyToolProvider: this.toolProvider,
         })
         let lastContent: PromptString = ps``
         this.postEmptyMessageInProgress(model)
@@ -833,7 +836,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 mentions,
                 editorState,
                 signal,
-                chatClient: this.chatClient,
                 chatBuilder: this.chatBuilder,
             },
             {
@@ -841,7 +843,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     console.error('# postStatusUpdated not implemented', id, type, statusMessage)
                 },
                 postError: (error: Error, type?: MessageErrorType): void => {
-                    this.postError(error, 'transcript')
+                    this.postError(error, type)
                 },
                 postStatement: (id: number, message: PromptString): void => {
                     lastContent = message
