@@ -114,6 +114,8 @@ jobs:
             echo 'matrix=[{"runner":"ubuntu"},{"runner":"windows"},{"runner":"macos"}]' >> $GITHUB_OUTPUT
           else
             echo 'matrix=[{"runner":"ubuntu","shard":"1/5"},{"runner":"ubuntu","shard":"2/5"},{"runner":"ubuntu","shard":"3/5"},{"runner":"ubuntu","shard":"4/5"},{"runner":"ubuntu","shard":"5/5"}]' >> $GITHUB_OUTPUT
+            echo 'matrix=[{"runner":"macos","shard":"1/5"},{"runner":"macos","shard":"2/5"},{"runner":"macos","shard":"3/5"},{"runner":"macos","shard":"4/5"},{"runner":"macos","shard":"5/5"}]' >> $GITHUB_OUTPUT
+            echo 'matrix=[{"runner":"windows","shard":"1/5"},{"runner":"windows","shard":"2/5"},{"runner":"windows","shard":"3/5"},{"runner":"windows","shard":"4/5"},{"runner":"windows","shard":"5/5"}]' >> $GITHUB_OUTPUT
           fi
 
   test-e2e:
