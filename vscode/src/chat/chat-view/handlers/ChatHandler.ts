@@ -2,7 +2,6 @@ import type { Span } from '@opentelemetry/api'
 import {
     type ChatModel,
     type CompletionParameters,
-    type ContextItem,
     type Message,
     PromptString,
     type RankedContext,
@@ -16,59 +15,14 @@ import {
     modelsService,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
-import { resolveContextItems } from '../../editor/utils/editor-context'
-import { getCategorizedMentions } from '../../prompt-builder/utils'
-import type { MessageErrorType } from '../MessageProvider'
-import { ChatBuilder } from './ChatBuilder'
-import { type ChatControllerOptions, combineContext } from './ChatController'
-import { type ContextRetriever, toStructuredMentions } from './ContextRetriever'
-import { type HumanInput, getPriorityContext } from './context'
-import { DefaultPrompter, type PromptInfo } from './prompt'
-
-const agentRegister = new Map<string, AgentHandler>()
-
-export const registerAgent = (id: string, handler: AgentHandler) => agentRegister.set(id, handler)
-
-interface AgentTools {
-    contextRetriever: Pick<ContextRetriever, 'retrieveContext'>
-    editor: ChatControllerOptions['editor']
-    chatClient: ChatControllerOptions['chatClient']
-}
-
-export function getAgent(
-    id: string,
-    { contextRetriever, editor, chatClient }: AgentTools
-): AgentHandler {
-    if (!agentRegister.has(id)) {
-        // If id is not found, assume it's a base model
-        return new ChatHandler(id, contextRetriever, editor, chatClient)
-    }
-    return agentRegister.get(id)!
-}
-
-/**
- * Interface for the agent to post messages back to the user
- */
-export interface AgentHandlerDelegate {
-    postStatusUpdate(id: number, type: string, statusMessage: string): void
-    postError(error: Error, type?: MessageErrorType): void
-    postStatement(id: number, message: PromptString): void
-    postDone(): void
-}
-
-export interface AgentRequest {
-    chatClient: ChatControllerOptions['chatClient']
-
-    inputText: PromptString
-    mentions: ContextItem[]
-    editorState: SerializedPromptEditorState | null
-    chatBuilder: ChatBuilder
-    signal: AbortSignal
-}
-
-interface AgentHandler {
-    handle(request: AgentRequest, delegate: AgentHandlerDelegate): Promise<void>
-}
+import { resolveContextItems } from '../../../editor/utils/editor-context'
+import { getCategorizedMentions } from '../../../prompt-builder/utils'
+import { ChatBuilder } from '../ChatBuilder'
+import { type ChatControllerOptions, combineContext } from '../ChatController'
+import { type ContextRetriever, toStructuredMentions } from '../ContextRetriever'
+import { type HumanInput, getPriorityContext } from '../context'
+import { DefaultPrompter, type PromptInfo } from '../prompt'
+import type { AgentHandler, AgentHandlerDelegate, AgentRequest } from './interfaces'
 
 export class ChatHandler implements AgentHandler {
     constructor(
