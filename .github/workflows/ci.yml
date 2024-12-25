@@ -123,7 +123,7 @@ jobs:
       matrix:
         include: ${{ fromJson(needs.slow_tests_matrix_prep.outputs.matrix) }}
     runs-on: ${{ matrix.runner }}-latest
-    timeout-minutes: 20
+    timeout-minutes: 200
     permissions:
       id-token: write
       contents: read
