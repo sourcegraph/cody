@@ -46,3 +46,28 @@ export function getCellMarkupContent(languageId: string, text: PromptString): Pr
     const contentLines = text.split(newLineChar).map(line => ps`${commentStart}${line}`)
     return PromptString.join(contentLines, ps`\n`)
 }
+
+/**
+ * Returns the index of a notebook cell within the currently active notebook editor.
+ * Each cell in the notebook is treated as a seperate document, so this function
+ * can be used to find the index of a cell within the notebook.
+ * @param document The VS Code text document to find the index for
+ * @returns The zero-based index of the cell within the notebook cells, or -1 if not found or no active notebook
+ */
+export function getCellIndexInActiveNotebookEditor(document: vscode.TextDocument): number {
+    const activeNotebook = vscode.window.activeNotebookEditor?.notebook
+    if (!activeNotebook || document.uri.scheme !== 'vscode-notebook-cell') {
+        return -1
+    }
+    const notebookCells = getNotebookCells(activeNotebook)
+    const currentCellIndex = notebookCells.findIndex(cell => cell.document === document)
+    return currentCellIndex
+}
+
+export function getNotebookCells(notebook: vscode.NotebookDocument): vscode.NotebookCell[] {
+    return notebook.getCells().sort((a, b) => a.index - b.index)
+}
+
+export function getActiveNotebookUri(): vscode.Uri | undefined {
+    return vscode.window.activeNotebookEditor?.notebook.uri
+}

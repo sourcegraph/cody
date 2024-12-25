@@ -4,7 +4,12 @@ import { LRUCache } from 'lru-cache'
 import * as vscode from 'vscode'
 import type { ContextRetriever, ContextRetrieverOptions } from '../../../types'
 import { RetrieverIdentifier, type ShouldUseContextParams, shouldBeUsedAsContext } from '../../utils'
-import { getNotebookLanguageId, getTextFromNotebookCells } from './notebook-utils'
+import {
+    getActiveNotebookUri,
+    getCellIndexInActiveNotebookEditor,
+    getNotebookLanguageId,
+    getTextFromNotebookCells,
+} from './notebook-utils'
 
 interface TrackedViewPort {
     uri: vscode.Uri
@@ -98,8 +103,8 @@ export class RecentViewPortRetriever implements vscode.Disposable, ContextRetrie
     }
 
     private getCurrentDocumentUri(document: vscode.TextDocument): vscode.Uri {
-        if (document.uri.scheme === 'vscode-notebook-cell') {
-            return vscode.window.activeNotebookEditor?.notebook.uri || document.uri
+        if (getCellIndexInActiveNotebookEditor(document) !== -1) {
+            return getActiveNotebookUri() ?? document.uri
         }
         return document.uri
     }

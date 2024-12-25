@@ -8,6 +8,11 @@ import {
 import { Uri } from 'vscode'
 import * as vscode from 'vscode'
 import { getTextFromNotebookCells } from '../../completions/context/retrievers/recent-user-actions/notebook-utils'
+import {
+    getActiveNotebookUri,
+    getCellIndexInActiveNotebookEditor,
+    getNotebookCells,
+} from '../../completions/context/retrievers/recent-user-actions/notebook-utils'
 import { RetrieverIdentifier } from '../../completions/context/utils'
 import { autoeditsLogger } from '../logger'
 import { clip, splitLinesKeepEnds } from '../utils'
@@ -196,7 +201,7 @@ export function getCurrentFileContext(options: CurrentFilePromptOptions): Curren
 export function getCurrentFilePath(document: vscode.TextDocument): PromptString {
     const uri =
         document.uri.scheme === 'vscode-notebook-cell'
-            ? vscode.window.activeNotebookEditor?.notebook.uri || document.uri
+            ? getActiveNotebookUri() ?? document.uri
             : document.uri
     return PromptString.fromDisplayPath(uri)
 }
@@ -232,29 +237,17 @@ export function getPrefixAndSuffixForAreaForNotebook(document: vscode.TextDocume
     prefixBeforeAreaForNotebook: PromptString
     suffixAfterAreaForNotebook: PromptString
 } {
-    if (document.uri.scheme !== 'vscode-notebook-cell') {
+    const currentCellIndex = getCellIndexInActiveNotebookEditor(document)
+    if (currentCellIndex === -1) {
         return {
             prefixBeforeAreaForNotebook: ps``,
             suffixAfterAreaForNotebook: ps``,
         }
     }
-    const activeNotebook = vscode.window.activeNotebookEditor?.notebook
-    if (!activeNotebook) {
-        return {
-            prefixBeforeAreaForNotebook: ps``,
-            suffixAfterAreaForNotebook: ps``,
-        }
-    }
-    const notebookCells = activeNotebook.getCells().sort((a, b) => a.index - b.index)
-    const indexCurrentCell = notebookCells.findIndex(cell => cell.document === document)
-    if (indexCurrentCell === -1) {
-        return {
-            prefixBeforeAreaForNotebook: ps``,
-            suffixAfterAreaForNotebook: ps``,
-        }
-    }
-    const cellsBeforeCurrentCell = notebookCells.slice(0, indexCurrentCell)
-    const cellsAfterCurrentCell = notebookCells.slice(indexCurrentCell + 1)
+    const activeNotebook = vscode.window.activeNotebookEditor?.notebook!
+    const notebookCells = getNotebookCells(activeNotebook)
+    const cellsBeforeCurrentCell = notebookCells.slice(0, currentCellIndex)
+    const cellsAfterCurrentCell = notebookCells.slice(currentCellIndex + 1)
     const beforeContent = getTextFromNotebookCells(activeNotebook, cellsBeforeCurrentCell)
     const afterContent = getTextFromNotebookCells(activeNotebook, cellsAfterCurrentCell)
     return {

@@ -4,6 +4,7 @@ import { XMLBuilder } from 'fast-xml-parser'
 import * as vscode from 'vscode'
 import type { ContextRetriever, ContextRetrieverOptions } from '../../../types'
 import { RetrieverIdentifier } from '../../utils'
+import { getCellIndexInActiveNotebookEditor, getNotebookCells } from './notebook-utils'
 
 // XML builder instance for formatting diagnostic messages
 const XML_BUILDER = new XMLBuilder({ format: true })
@@ -40,38 +41,35 @@ export class DiagnosticsRetriever implements vscode.Disposable, ContextRetriever
         this.useCaretToIndicateErrorLocation = options.useCaretToIndicateErrorLocation ?? true
     }
 
-    public async retrieve({
+    public retrieve({
         document,
         position,
     }: ContextRetrieverOptions): Promise<AutocompleteContextSnippet[]> {
-        if (document.uri.scheme === 'vscode-notebook-cell') {
+        if (getCellIndexInActiveNotebookEditor(document) !== -1) {
             // Handle the diagnostic error for the notebook
-            return await this.getDiagnosticsForNotebook(position)
+            return this.getDiagnosticsForNotebook(position)
         }
-        return await this.getDiagnosticsForDocument(document, position)
+        return this.getDiagnosticsForDocument(document, position)
     }
 
     private async getDiagnosticsForNotebook(
         position: vscode.Position
     ): Promise<AutocompleteContextSnippet[]> {
-        const diagnosticsSnippets: AutocompleteContextSnippet[] = []
         const activeNotebook = vscode.window.activeNotebookEditor?.notebook
-        const notebookCells = activeNotebook?.getCells()
-        for (const cell of notebookCells || []) {
-            const diagnostics = vscode.languages.getDiagnostics(cell.document.uri)
-            const diagnosticsSnippet = await this.getDiagnosticsPromptFromInformation(
-                cell.document,
-                position,
-                diagnostics
-            )
-            for (const snippet of diagnosticsSnippet) {
-                diagnosticsSnippets.push({
-                    ...snippet,
-                    uri: activeNotebook!.uri,
-                })
-            }
+        if (!activeNotebook) {
+            return []
         }
-        return diagnosticsSnippets
+        const notebookCells = getNotebookCells(activeNotebook)
+        const diagnostics = await Promise.all(
+            notebookCells.map(cell => {
+                const diagnostics = vscode.languages.getDiagnostics(cell.document.uri)
+                return this.getDiagnosticsPromptFromInformation(cell.document, position, diagnostics)
+            })
+        )
+        return diagnostics.flat().map(snippet => ({
+            ...snippet,
+            uri: activeNotebook!.uri,
+        }))
     }
 
     private async getDiagnosticsForDocument(
