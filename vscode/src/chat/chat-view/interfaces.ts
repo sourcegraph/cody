@@ -1,6 +1,5 @@
 import type { Span } from '@opentelemetry/api'
 import {
-    type ChatClient,
     type ChatModel,
     type CompletionParameters,
     type ContextItem,
@@ -19,6 +18,7 @@ import {
 } from '@sourcegraph/cody-shared'
 import { resolveContextItems } from '../../editor/utils/editor-context'
 import { getCategorizedMentions } from '../../prompt-builder/utils'
+import type { MessageErrorType } from '../MessageProvider'
 import { ChatBuilder } from './ChatBuilder'
 import { type ChatControllerOptions, combineContext } from './ChatController'
 import { type ContextRetriever, toStructuredMentions } from './ContextRetriever'
@@ -29,14 +29,19 @@ const agentRegister = new Map<string, AgentHandler>()
 
 export const registerAgent = (id: string, handler: AgentHandler) => agentRegister.set(id, handler)
 
+interface AgentTools {
+    contextRetriever: Pick<ContextRetriever, 'retrieveContext'>
+    editor: ChatControllerOptions['editor']
+    chatClient: ChatControllerOptions['chatClient']
+}
+
 export function getAgent(
     id: string,
-    contextRetriever: Pick<ContextRetriever, 'retrieveContext'>,
-    editor: ChatControllerOptions['editor']
+    { contextRetriever, editor, chatClient }: AgentTools
 ): AgentHandler {
     if (!agentRegister.has(id)) {
         // If id is not found, assume it's a base model
-        return new ChatHandler(id, contextRetriever, editor)
+        return new ChatHandler(id, contextRetriever, editor, chatClient)
     }
     return agentRegister.get(id)!
 }
@@ -46,8 +51,9 @@ export function getAgent(
  */
 export interface AgentHandlerDelegate {
     postStatusUpdate(id: number, type: string, statusMessage: string): void
-    postStatement(id: number, message: string): void
-    postDone(status: 'success' | 'error' | 'canceled'): void
+    postError(error: Error, type?: MessageErrorType): void
+    postStatement(id: number, message: PromptString): void
+    postDone(): void
 }
 
 export interface AgentRequest {
@@ -68,15 +74,14 @@ export class ChatHandler implements AgentHandler {
     constructor(
         private modelId: string,
         private contextRetriever: Pick<ContextRetriever, 'retrieveContext'>,
-        private readonly editor: ChatControllerOptions['editor']
+        private readonly editor: ChatControllerOptions['editor'],
+        private chatClient: ChatControllerOptions['chatClient']
     ) {}
 
     public async handle(
         { inputText, mentions, editorState, signal, chatBuilder, chatClient }: AgentRequest,
         delegate: AgentHandlerDelegate
     ): Promise<void> {
-        console.log('# ChatHandler.handle', { inputText, mentions, editorState })
-
         const contextAlternatives = await this.computeContext(
             { text: inputText, mentions },
             editorState,
@@ -91,7 +96,7 @@ export class ChatHandler implements AgentHandler {
         if (!versions) {
             throw new Error('unable to determine site version')
         }
-        const { prompt, context } = await this.buildPrompt(
+        const { prompt } = await this.buildPrompt(
             prompter,
             chatBuilder,
             signal,
@@ -100,11 +105,8 @@ export class ChatHandler implements AgentHandler {
         )
 
         signal.throwIfAborted()
-        console.log('# chat # ChatHandler.handle: dispatching message', prompt, context)
 
-        // NEXT(beyang): stream response
-
-        // this.streamAssistantResponse(requestID, prompt, model, span, signal)
+        this.streamAssistantResponse(prompt, this.modelId, signal, chatBuilder, delegate)
     }
 
     /**
@@ -112,7 +114,6 @@ export class ChatHandler implements AgentHandler {
      * with the response.
      */
     private async sendLLMRequest(
-        chatClient: ChatClient,
         prompt: Message[],
         model: ChatModel,
         chatBuilder: ChatBuilder,
@@ -152,7 +153,7 @@ export class ChatHandler implements AgentHandler {
                 params.stream = false
             }
 
-            const stream = await chatClient.chat(prompt, params, abortSignal)
+            const stream = await this.chatClient.chat(prompt, params, abortSignal)
             for await (const message of stream) {
                 switch (message.type) {
                     case 'change': {
@@ -176,63 +177,46 @@ export class ChatHandler implements AgentHandler {
         }
     }
 
-    // private streamAssistantResponse(
-    //     requestID: string,
-    //     prompt: Message[],
-    //     model: ChatModel,
-    //     chatSpan: Span,
-    //     abortSignal: AbortSignal
-    // ): void {
-    //     abortSignal.throwIfAborted()
-    //     // this.postEmptyMessageInProgress(model)
-
-    //     this.sendLLMRequest(
-    //         prompt,
-    //         model,
-    //         {
-    //             update: content => {
-    //                 measureFirstToken()
-    //                 this.postViewTranscript({
-    //                     speaker: 'assistant',
-    //                     text: PromptString.unsafe_fromLLMResponse(content),
-    //                     model,
-    //                 })
-    //             },
-    //             close: content => {
-    //                 measureFirstToken()
-    //                 recordExposedExperimentsToSpan(chatSpan)
-    //                 llmSpan.end()
-    //                 this.addBotMessage(
-    //                     requestID,
-    //                     PromptString.unsafe_fromLLMResponse(content),
-    //                     model
-    //                 ).finally(() => {
-    //                     chatSpan.end()
-    //                 })
-    //             },
-    //             error: (partialResponse, error) => {
-    //                 this.postError(error, 'transcript')
-    //                 if (isAbortErrorOrSocketHangUp(error)) {
-    //                     abortSignal.throwIfAborted()
-    //                 }
-    //                 try {
-    //                     // We should still add the partial response if there was an error
-    //                     // This'd throw an error if one has already been added
-    //                     this.addBotMessage(
-    //                         requestID,
-    //                         PromptString.unsafe_fromLLMResponse(partialResponse),
-    //                         model
-    //                     )
-    //                 } catch {
-    //                     console.error('Streaming Error', error)
-    //                 }
-    //                 recordErrorToSpan(llmSpan, error)
-    //                 chatSpan.end()
-    //             },
-    //         },
-    //         abortSignal
-    //     )
-    // }
+    private streamAssistantResponse(
+        prompt: Message[],
+        model: ChatModel,
+        abortSignal: AbortSignal,
+        chatBuilder: ChatBuilder,
+        delegate: AgentHandlerDelegate
+    ): void {
+        abortSignal.throwIfAborted()
+        this.sendLLMRequest(
+            prompt,
+            model,
+            chatBuilder,
+            {
+                update: content => {
+                    delegate.postStatement(0, PromptString.unsafe_fromLLMResponse(content))
+                },
+                close: content => {
+                    delegate.postDone()
+                },
+                error: (partialResponse, error) => {
+                    delegate.postError(error, 'transcript')
+                    if (isAbortErrorOrSocketHangUp(error)) {
+                        abortSignal.throwIfAborted()
+                    }
+                    // try {
+                    //     // We should still add the partial response if there was an error
+                    //     // This'd throw an error if one has already been added
+                    //     this.addBotMessage(
+                    //         requestID,
+                    //         PromptString.unsafe_fromLLMResponse(partialResponse),
+                    //         model
+                    //     )
+                    // } catch {
+                    //     console.error('Streaming Error', error)
+                    // }
+                },
+            },
+            abortSignal
+        )
+    }
 
     private async buildPrompt(
         prompter: DefaultPrompter,

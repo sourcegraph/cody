@@ -150,7 +150,7 @@ import { type ContextRetriever, toStructuredMentions } from './ContextRetriever'
 import { InitDoer } from './InitDoer'
 import { getChatPanelTitle } from './chat-helpers'
 import { type HumanInput, getPriorityContext } from './context'
-import { type AgentHandlerDelegate, getAgent } from './interfaces'
+import { getAgent } from './interfaces'
 import { DefaultPrompter, type PromptInfo } from './prompt'
 import { getPromptsMigrationInfo, startPromptsMigration } from './prompts-migration'
 
@@ -200,9 +200,7 @@ export interface ChatSession {
  *    with other components outside the model and view is needed,
  *    use a broadcast/subscription design.
  */
-export class ChatController
-    implements vscode.Disposable, vscode.WebviewViewProvider, ChatSession, AgentHandlerDelegate
-{
+export class ChatController implements vscode.Disposable, vscode.WebviewViewProvider, ChatSession {
     private chatBuilder: ChatBuilder
 
     private readonly chatClient: ChatControllerOptions['chatClient']
@@ -716,7 +714,7 @@ export class ChatController
                 signal.throwIfAborted()
 
                 // DEBUG
-                void this.sendChat2(
+                return this.sendChat2(
                     {
                         requestID,
                         inputText,
@@ -731,21 +729,21 @@ export class ChatController
                     },
                     span
                 )
-                return this.sendChat(
-                    {
-                        requestID,
-                        inputText,
-                        mentions,
-                        editorState,
-                        signal,
-                        source,
-                        command,
-                        intent: detectedIntent,
-                        intentScores: detectedIntentScores,
-                        manuallySelectedIntent,
-                    },
-                    span
-                )
+                // return this.sendChat(
+                //     {
+                //         requestID,
+                //         inputText,
+                //         mentions,
+                //         editorState,
+                //         signal,
+                //         source,
+                //         command,
+                //         intent: detectedIntent,
+                //         intentScores: detectedIntentScores,
+                //         manuallySelectedIntent,
+                //     },
+                //     span
+                // )
             })
         })
     }
@@ -800,16 +798,6 @@ export class ChatController
         return { intent: 'chat', intentScores: [] }
     }
 
-    public postStatusUpdate(id: number, type: string, statusMessage: string): void {
-        console.log('# TODO: postStatusUpdate', id, type, statusMessage)
-    }
-    public postStatement(id: number, message: string): void {
-        console.log('# TODO: postStatement', id, message)
-    }
-    public postDone(status: 'success' | 'error' | 'canceled'): void {
-        console.log('# TODO: postDone', status)
-    }
-
     public async sendChat2(
         {
             requestID,
@@ -832,7 +820,13 @@ export class ChatController
         if (!model) {
             return
         }
-        const agent = getAgent(model, this.contextRetriever, this.editor)
+        const agent = getAgent(model, {
+            contextRetriever: this.contextRetriever,
+            editor: this.editor,
+            chatClient: this.chatClient,
+        })
+        let lastContent: PromptString = ps``
+        this.postEmptyMessageInProgress(model)
         await agent.handle(
             {
                 inputText,
@@ -842,7 +836,25 @@ export class ChatController
                 chatClient: this.chatClient,
                 chatBuilder: this.chatBuilder,
             },
-            this
+            {
+                postStatusUpdate: (id: number, type: string, statusMessage: string): void => {
+                    console.error('# postStatusUpdated not implemented', id, type, statusMessage)
+                },
+                postError: (error: Error, type?: MessageErrorType): void => {
+                    this.postError(error, 'transcript')
+                },
+                postStatement: (id: number, message: PromptString): void => {
+                    lastContent = message
+                    this.postViewTranscript({
+                        speaker: 'assistant',
+                        text: message,
+                        model,
+                    })
+                },
+                postDone: (): void => {
+                    this.addBotMessage(requestID, lastContent, model)
+                },
+            }
         )
     }
 
