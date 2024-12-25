@@ -71,8 +71,8 @@ interface InlineCompletionItemRetrievedContext {
     identifier: string
     content: string
     filePath: string
-    startLine: number
-    endLine: number
+    startLine?: number
+    endLine?: number
 }
 
 interface InlineContextItemsParams extends GitIdentifiersForFile {
@@ -779,7 +779,6 @@ function getInlineContextItemContext(
         ),
     }
 }
-
 function suggestionDocumentDiffTracker(
     interactionId: CompletionAnalyticsID,
     document: vscode.TextDocument,

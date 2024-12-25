@@ -131,12 +131,9 @@ export class DefaultCompletionsContextRanker implements CompletionsContextRanker
         const fusedResults = fuseResults(
             results.map(r => r.snippets),
             result => {
-                // Ensure that context retrieved works when we do not have a startLine and
-                // endLine yet.
-                if (typeof result.startLine === 'undefined' || typeof result.endLine === 'undefined') {
+                if (result.startLine === undefined || result.endLine === undefined) {
                     return [result.uri.toString()]
                 }
-
                 const lineIds = []
                 for (let i = result.startLine; i <= result.endLine; i++) {
                     lineIds.push(`${result.uri.toString()}:${i}`)

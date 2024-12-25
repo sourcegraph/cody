@@ -19,8 +19,8 @@ interface AutocompleteContextSnippetMetadata {
 export interface AutocompleteFileContextSnippet {
     identifier: string
     uri: URI
-    startLine: number
-    endLine: number
+    startLine?: number
+    endLine?: number
     content: string
     /**
      * Metadata populated by the context retriever.

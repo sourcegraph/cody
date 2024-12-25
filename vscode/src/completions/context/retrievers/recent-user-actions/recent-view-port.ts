@@ -64,20 +64,17 @@ export class RecentViewPortRetriever implements vscode.Disposable, ContextRetrie
         const sortedViewPorts = this.getValidViewPorts(document)
 
         const snippetPromises = sortedViewPorts.map(async viewPort => {
-            const snippet = {
+            const snippet: AutocompleteContextSnippet = {
                 uri: viewPort.uri,
                 content: viewPort.content,
                 identifier: this.identifier,
                 metadata: {
                     timeSinceActionMs: Date.now() - viewPort.lastAccessTimestamp,
                 },
-            } satisfies Omit<AutocompleteContextSnippet, 'startLine' | 'endLine'>
+            }
             return snippet
         })
-        const viewPortSnippets = await Promise.all(snippetPromises)
-        // remove the startLine and endLine from the response which might not be valid for notebooks
-        // @ts-ignore
-        return viewPortSnippets
+        return await Promise.all(snippetPromises)
     }
 
     private getValidViewPorts(document: vscode.TextDocument): TrackedViewPort[] {
