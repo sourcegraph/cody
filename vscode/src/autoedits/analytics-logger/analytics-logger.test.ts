@@ -26,7 +26,6 @@ describe('AutoeditAnalyticsLogger', () => {
     const modelOptions: AutoeditModelOptions = {
         url: 'https://test-url.com/',
         model: 'autoedit-model',
-        apiKey: 'api-key',
         prompt: {
             systemMessage: ps`This is test message`,
             userMessage: ps`This is test prompt text`,

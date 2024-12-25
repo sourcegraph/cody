@@ -1,10 +1,16 @@
-import type { AutoEditsTokenLimit, PromptString } from '@sourcegraph/cody-shared'
+import type * as vscode from 'vscode'
+
 import type {
+    AutoEditsTokenLimit,
     AutocompleteContextSnippet,
     DocumentContext,
-} from '@sourcegraph/cody-shared/src/completions/types'
-import type * as vscode from 'vscode'
-import type { CodeToReplaceData } from './prompt-utils'
+    PromptString,
+} from '@sourcegraph/cody-shared'
+
+import type { AutoeditsPrompt } from '../adapters/base'
+
+import { SYSTEM_PROMPT } from './constants'
+import { type CodeToReplaceData, getCompletionsPromptWithSystemPrompt } from './prompt-utils'
 
 export interface UserPromptArgs {
     docContext: DocumentContext
@@ -19,15 +25,35 @@ export interface UserPromptResponse {
     prompt: PromptString
 }
 
+export interface UserPromptForModelArgs extends UserPromptArgs {
+    isChatModel: boolean
+}
+
+export interface UserPromptForModelResponse {
+    codeToReplace: CodeToReplaceData
+    prompt: AutoeditsPrompt
+}
+
 /**
- * Interface for generating user prompts in auto-edits functionality.
+ * Class for generating user prompts in auto-edits functionality.
  * The major difference between different strategy is the prompt rendering.
  */
-export interface AutoeditsUserPromptStrategy {
-    /**
-     * Generates a prompt string based on the provided arguments.
-     * @param args - The arguments containing document context, position, and token budget.
-     * @returns A promise that resolves to a prompt string.
-     */
-    getUserPrompt(args: UserPromptArgs): UserPromptResponse
+export abstract class AutoeditsUserPromptStrategy {
+    protected abstract getUserPrompt(args: UserPromptArgs): UserPromptResponse
+
+    public getPromptForModelType({
+        isChatModel,
+        ...userPromptArgs
+    }: UserPromptForModelArgs): UserPromptForModelResponse {
+        const { codeToReplace, prompt } = this.getUserPrompt(userPromptArgs)
+
+        const adjustedPrompt: AutoeditsPrompt = isChatModel
+            ? { systemMessage: SYSTEM_PROMPT, userMessage: prompt }
+            : { userMessage: getCompletionsPromptWithSystemPrompt(SYSTEM_PROMPT, prompt) }
+
+        return {
+            codeToReplace,
+            prompt: adjustedPrompt,
+        }
+    }
 }

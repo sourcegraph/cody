@@ -23,7 +23,6 @@ export type AutoeditsPrompt = {
 export interface AutoeditModelOptions {
     url: string
     model: string
-    apiKey: string
     prompt: AutoeditsPrompt
     codeToRewrite: string
     userId: string | null
