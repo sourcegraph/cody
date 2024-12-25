@@ -111,7 +111,7 @@ jobs:
       - id: set-matrix
         run: |
           if [ "$GITHUB_EVENT_NAME" == "push" ] && [ "$GITHUB_REF" == "refs/heads/main" ]; then
-            echo 'matrix=[{"runner":"ubuntu"},{"runner":"windows"},{"runner":"macos"}]' >> $GITHUB_OUTPUT
+            echo 'matrix=[{"runner":"ubuntu","shard":"1/5"},{"runner":"ubuntu","shard":"2/5"},{"runner":"ubuntu","shard":"3/5"},{"runner":"ubuntu","shard":"4/5"},{"runner":"ubuntu","shard":"5/5"}]' >> $GITHUB_OUTPUT
           else
             echo 'matrix=[{"runner":"ubuntu"},{"runner":"windows"},{"runner":"macos"}]' >> $GITHUB_OUTPUT
           fi
@@ -123,7 +123,7 @@ jobs:
       matrix:
         include: ${{ fromJson(needs.slow_tests_matrix_prep.outputs.matrix) }}
     runs-on: ${{ matrix.runner }}-latest
-    timeout-minutes: 200
+    timeout-minutes: 20
     permissions:
       id-token: write
       contents: read
@@ -158,7 +158,7 @@ jobs:
           # This is required because the test collector from Buildkite is imprecise when it
           # comes to infer the branch name on GitHub action.
           BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
-      - run: GITHUB_REF=$BRANCH_NAME pnpm -C vscode run test:e2e --shard=${{ matrix.shard }} vscode/test/e2e/auto-edits.test.ts --repeat-each 100
+      - run: GITHUB_REF=$BRANCH_NAME pnpm -C vscode run test:e2e --shard=${{ matrix.shard }}
         if: matrix.runner == 'macos'
         env:
           BUILDKITE_ANALYTICS_TOKEN: ${{ secrets.BUILDKITE_ANALYTICS_TOKEN }}
