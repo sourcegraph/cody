@@ -43,6 +43,7 @@ import {
     shrinkReplacerTextToCodeToReplaceRange,
 } from './renderer/renderer-testing'
 import { shrinkPredictionUntilSuffix } from './shrink-prediction'
+import { isPredictedTextAlreadyInSuffix } from './utils'
 
 const AUTOEDITS_CONTEXT_STRATEGY = 'auto-edits'
 const INLINE_COMPLETION_DEFAULT_DEBOUNCE_INTERVAL_MS = 150
@@ -224,18 +225,24 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         }
 
         let { prediction, codeToReplaceData } = autoeditResponse
+        const { codeToRewrite } = codeToReplaceData
+
         const shouldFilterPredictionBasedRecentEdits = this.filterPrediction.shouldFilterPrediction(
             document.uri,
             prediction,
-            codeToReplaceData.codeToRewrite
+            codeToRewrite
         )
         if (shouldFilterPredictionBasedRecentEdits) {
+            autoeditsLogger.logDebug('Autoedits', 'Skipping autoedit - based on recent edits')
             return null
         }
 
         prediction = shrinkPredictionUntilSuffix(prediction, codeToReplaceData)
-
-        if (prediction === codeToReplaceData.codeToRewrite) {
+        if (prediction === codeToRewrite) {
+            autoeditsLogger.logDebug(
+                'Autoedits',
+                'Skipping autoedit - prediction equals to code to rewrite'
+            )
             return null
         }
 
@@ -246,6 +253,20 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             currentFileText.slice(document.offsetAt(codeToReplaceData.range.end))
 
         const decorationInfo = getDecorationInfo(currentFileText, predictedFileText)
+
+        if (
+            isPredictedTextAlreadyInSuffix({
+                codeToRewrite,
+                decorationInfo,
+                suffix: codeToReplaceData.suffixInArea + codeToReplaceData.suffixAfterArea,
+            })
+        ) {
+            autoeditsLogger.logDebug(
+                'Autoedits',
+                'Skipping autoedit - predicted text already exists in suffix'
+            )
+            return null
+        }
 
         const { inlineCompletions } =
             await this.rendererManager.maybeRenderDecorationsAndTryMakeInlineCompletionResponse(
