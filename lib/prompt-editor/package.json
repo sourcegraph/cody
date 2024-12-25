@@ -19,16 +19,26 @@
     "prepublishOnly": "tsc --build --clean && pnpm run build"
   },
   "dependencies": {
+    "@floating-ui/react": "^0.26.28",
     "@lexical/react": "^0.17.0",
     "@lexical/utils": "^0.17.0",
     "@sourcegraph/cody-shared": "workspace:*",
+    "@xstate/react": "^5.0.0",
     "clsx": "^2.1.1",
     "cmdk": "^1.0.0",
     "lexical": "^0.17.0",
     "lodash": "^4.17.21",
     "lucide-react": "^0.378.0",
+    "prosemirror-commands": "^1.6.2",
+    "prosemirror-history": "^1.4.1",
+    "prosemirror-inputrules": "^1.4.0",
+    "prosemirror-keymap": "^1.2.2",
+    "prosemirror-model": "^1.23.0",
+    "prosemirror-state": "^1.4.3",
+    "prosemirror-view": "^1.36.0",
     "valibot": "1.0.0-beta.9",
-    "vscode-uri": "^3.0.8"
+    "vscode-uri": "^3.0.8",
+    "xstate": "^5.19.0"
   },
   "devDependencies": {
     "@types/lodash": "^4.17.7",

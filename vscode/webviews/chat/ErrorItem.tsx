@@ -5,7 +5,7 @@ import { type ChatError, RateLimitError } from '@sourcegraph/cody-shared'
 import type { UserAccountInfo } from '../Chat'
 import type { ApiPostMessage } from '../Chat'
 
-import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
+import { Button } from '../components/shadcn/ui/button'
 import { createWebviewTelemetryRecorder } from '../utils/telemetry'
 import styles from './ErrorItem.module.css'
 
@@ -104,25 +104,20 @@ const RateLimitErrorItem: React.FunctionComponent<{
                 </header>
                 <div className={styles.actions}>
                     {canUpgrade && (
-                        <VSCodeButton
-                            onClick={() => onButtonClick('upgrade', 'upgrade')}
-                            appearance="primary"
-                        >
-                            Upgrade
-                        </VSCodeButton>
+                        <Button onClick={() => onButtonClick('upgrade', 'upgrade')}>Upgrade</Button>
                     )}
                     {error.feature !== 'Deep Cody' && (
-                        <VSCodeButton
+                        <Button
                             type="button"
                             onClick={() =>
                                 canUpgrade
                                     ? onButtonClick('upgrade', 'upgrade')
                                     : onButtonClick('rate-limits', 'learn-more')
                             }
-                            appearance="secondary"
+                            variant="secondary"
                         >
                             {canUpgrade ? 'See Plans →' : 'Learn More'}
-                        </VSCodeButton>
+                        </Button>
                     )}
                 </div>
                 {error.retryMessage && <p className={styles.retryMessage}>{error.retryMessage}</p>}

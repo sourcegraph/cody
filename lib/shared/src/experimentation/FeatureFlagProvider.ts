@@ -72,15 +72,14 @@ export enum FeatureFlag {
     /** Interactive tutorial, primarily for onboarding */
     CodyInteractiveTutorial = 'cody-interactive-tutorial',
 
-    /** Whether to use intent detection API. */
-    CodyIntentDetectionAPI = 'cody-intent-detection-api',
-
     GitMentionProvider = 'git-mention-provider',
 
     /** Enable experimental One Box feature in Cody */
     CodyExperimentalOneBox = 'cody-experimental-one-box',
     /** Enable debug mode for One Box feature in Cody */
     CodyExperimentalOneBoxDebug = 'cody-experimental-one-box-debug',
+    /** Enable use of new prosemirror prompt editor */
+    CodyExperimentalPromptEditor = 'cody-experimental-prompt-editor',
 
     /** Show Edit Code option in the Cody message submit dropdown */
     CodyExperimentalShowEditCodeIntent = 'cody-experimental-show-edit-code-intent',

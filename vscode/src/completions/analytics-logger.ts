@@ -1279,7 +1279,7 @@ const otherCompletionProviders = [
     'TabNine.tabnine-vscode',
     'Venthe.fauxpilot',
 ]
-function getOtherCompletionProvider(): string[] {
+export function getOtherCompletionProvider(): string[] {
     return otherCompletionProviders.filter(id => vscode.extensions.getExtension(id)?.isActive)
 }
 

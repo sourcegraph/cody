@@ -95,11 +95,6 @@ export class DefaultDecorator implements AutoEditsDecorator {
         const removedRanges: vscode.Range[] = []
         const addedLinesInfo: AddedLinesDecorationInfo[] = []
 
-        let firstModifiedLineMatch: {
-            beforeLine: number
-            afterLine: number
-        } | null = null
-
         // Handle modified lines - collect removed ranges and added decorations
         for (const modifiedLine of modifiedLines) {
             const changes = modifiedLine.changes
@@ -107,7 +102,7 @@ export class DefaultDecorator implements AutoEditsDecorator {
             const addedRanges: [number, number][] = []
             for (const change of changes) {
                 if (change.type === 'delete') {
-                    removedRanges.push(change.modifiedRange)
+                    removedRanges.push(change.originalRange)
                 } else if (change.type === 'insert') {
                     addedRanges.push([
                         change.modifiedRange.start.character,
@@ -116,12 +111,6 @@ export class DefaultDecorator implements AutoEditsDecorator {
                 }
             }
             if (addedRanges.length > 0) {
-                if (!firstModifiedLineMatch) {
-                    firstModifiedLineMatch = {
-                        beforeLine: modifiedLine.modifiedLineNumber,
-                        afterLine: modifiedLine.modifiedLineNumber,
-                    }
-                }
                 addedLinesInfo.push({
                     ranges: addedRanges,
                     afterLine: modifiedLine.modifiedLineNumber,
@@ -144,32 +133,29 @@ export class DefaultDecorator implements AutoEditsDecorator {
         const lineNumbers = addedLinesInfo.map(d => d.afterLine)
         const min = Math.min(...lineNumbers)
         const max = Math.max(...lineNumbers)
-        for (const unchangedLine of unchangedLines) {
-            const lineNumber = unchangedLine.modifiedLineNumber
-            if (lineNumber < min || lineNumber > max) {
+        const addedLineNumbers = new Set(addedLinesInfo.map(d => d.afterLine))
+
+        for (const line of [...unchangedLines, ...modifiedLines]) {
+            const lineNumber = line.modifiedLineNumber
+            if (lineNumber < min || lineNumber > max || addedLineNumbers.has(lineNumber)) {
                 continue
             }
             addedLinesInfo.push({
                 ranges: [],
                 afterLine: lineNumber,
-                lineText: unchangedLine.text,
+                lineText: line.type === 'modified' ? line.newText : line.text,
             })
+            addedLineNumbers.add(lineNumber)
         }
         // Sort addedLinesInfo by line number in ascending order
         addedLinesInfo.sort((a, b) => a.afterLine - b.afterLine)
         if (addedLinesInfo.length === 0) {
             return
         }
-        let startLine = this.editor.selection.active.line
-        if (firstModifiedLineMatch) {
-            startLine =
-                firstModifiedLineMatch.beforeLine -
-                (firstModifiedLineMatch.afterLine - addedLinesInfo[0].afterLine)
-        }
-
         // todo (hitesh): handle case when too many lines to fit in the editor
         const oldLines = addedLinesInfo.map(info => this.editor.document.lineAt(info.afterLine))
         const replacerCol = Math.max(...oldLines.map(line => line.range.end.character))
+        const startLine = Math.min(...oldLines.map(line => line.lineNumber))
         this.renderAddedLinesDecorations(addedLinesInfo, startLine, replacerCol)
     }
 
@@ -251,7 +237,7 @@ export class DefaultDecorator implements AutoEditsDecorator {
             .filter(change => change.type === 'insert')
             .map(change => {
                 return {
-                    range: change.modifiedRange,
+                    range: change.originalRange,
                     renderOptions: {
                         before: {
                             contentText: change.text,

@@ -1,15 +1,6 @@
 import '@testing-library/jest-dom/vitest'
 import { cleanup } from '@testing-library/react'
-import { afterEach, vi } from 'vitest'
-
-vi.mock(
-    '@vscode/webview-ui-toolkit/react',
-    () =>
-        ({
-            VSCodeButton: 'VSCodeButton',
-            VSCodeBadge: 'VSCodeBadge',
-        }) satisfies Partial<Record<keyof typeof import('@vscode/webview-ui-toolkit/react'), string>>
-)
+import { afterEach } from 'vitest'
 
 class MockIntersectionObserver {
     observe() {}

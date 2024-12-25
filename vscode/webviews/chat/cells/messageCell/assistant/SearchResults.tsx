@@ -66,7 +66,9 @@ export const SearchResults = ({
     const totalResults = useMemo(
         () =>
             message.search.response?.results.results.filter(
-                result => result.__typename === 'FileMatch' && result.chunkMatches?.length
+                result =>
+                    result.__typename === 'FileMatch' &&
+                    (result.chunkMatches?.length || result.symbols?.length)
             ) || [],
         [message.search.response]
     )
@@ -127,6 +129,7 @@ export const SearchResults = ({
                 selected ? 'individualSelected' : 'individualDeselected',
                 {
                     metadata: { resultRank: totalResults.indexOf(result) },
+                    billingMetadata: { product: 'cody', category: 'billable' },
                 }
             )
             updateSelectedFollowUpResults({
@@ -137,6 +140,11 @@ export const SearchResults = ({
         [totalResults, telemetryRecorder]
     )
 
+    const onFilterSidebarClose = useCallback(() => {
+        telemetryRecorder.recordEvent('onebox.filterSidebar', 'closed')
+        setShowFiltersSidebar(false)
+    }, [telemetryRecorder])
+
     if (showFiltersModal) {
         return (
             <SearchFiltersModal
@@ -144,17 +152,14 @@ export const SearchResults = ({
                 selectedFilters={message.search.selectedFilters || []}
                 onSelectedFiltersUpdate={onSelectedFiltersUpdate}
                 close={() => {
-                    telemetryRecorder.recordEvent('onebox.filterModal', 'closed')
+                    telemetryRecorder.recordEvent('onebox.filterModal', 'closed', {
+                        billingMetadata: { product: 'cody', category: 'billable' },
+                    })
                     setShowFiltersModal(false)
                 }}
             />
         )
     }
-
-    const onFilterSidebarClose = useCallback(() => {
-        telemetryRecorder.recordEvent('onebox.filterSidebar', 'closed')
-        setShowFiltersSidebar(false)
-    }, [telemetryRecorder])
 
     return (
         <div className={styles.root}>
@@ -216,7 +221,13 @@ export const SearchResults = ({
                                                 onClick={() => {
                                                     telemetryRecorder.recordEvent(
                                                         'onebox.filterModal',
-                                                        'opened'
+                                                        'opened',
+                                                        {
+                                                            billingMetadata: {
+                                                                product: 'cody',
+                                                                category: 'billable',
+                                                            },
+                                                        }
                                                     )
                                                     setShowFiltersModal(true)
                                                     setShowFiltersSidebar(true)
@@ -238,7 +249,13 @@ export const SearchResults = ({
                                                     setShowFiltersSidebar(open => {
                                                         telemetryRecorder.recordEvent(
                                                             'onebox.filterSidebar',
-                                                            open ? 'closed' : 'opened'
+                                                            open ? 'closed' : 'opened',
+                                                            {
+                                                                billingMetadata: {
+                                                                    product: 'cody',
+                                                                    category: 'billable',
+                                                                },
+                                                            }
                                                         )
                                                         return !open
                                                     })
@@ -276,7 +293,13 @@ export const SearchResults = ({
 
                                                 telemetryRecorder.recordEvent(
                                                     'onebox.results',
-                                                    checked ? 'selectAll' : 'deselectAll'
+                                                    checked ? 'selectAll' : 'deselectAll',
+                                                    {
+                                                        billingMetadata: {
+                                                            product: 'cody',
+                                                            category: 'billable',
+                                                        },
+                                                    }
                                                 )
 
                                                 if (checked) {
@@ -351,6 +374,10 @@ export const SearchResults = ({
                                                                 totalResults.length -
                                                                 resultsToShow.length,
                                                         },
+                                                        billingMetadata: {
+                                                            product: 'cody',
+                                                            category: 'billable',
+                                                        },
                                                     }
                                                 )
                                                 setShowAll(true)
@@ -380,6 +407,7 @@ export const SearchResults = ({
                                             totalResults: totalResults.length,
                                             resultsAdded: totalResults.length - resultsToShow.length,
                                         },
+                                        billingMetadata: { product: 'cody', category: 'core' },
                                     })
                                 }}
                             >
