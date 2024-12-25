@@ -6,9 +6,38 @@ import {
     type DotcomUrlOverride,
     type ExtraWorkspaceSettings,
     test as baseTest,
-    // test,
     executeCommandInPalette,
 } from './helpers'
+
+/**
+ * Auto-edits Visual Regression Tests
+ *
+ * Currently these tests run only on macOS due to cross-platform rendering inconsistencies.
+ *
+ * Previous attempts and challenges encountered:
+ * 1. Platform-specific rendering differences:
+ *    - Despite fixing viewport size, font settings, and pixel ratio, minor scaling
+ *      differences persist across platforms
+ *    - These differences affect snapshot comparisons even with identical content
+ *
+ * 2. Attempted solutions that didn't fully resolve the issues:
+ *    - Enabled zen mode to remove UI elements
+ *    - Hidden taskbars and other VS Code interface elements
+ *    - Standardized font settings (family, size, line height)
+ *    - Fixed device pixel ratio
+ *    - Attempted viewport size normalization
+ *
+ * Future improvements needed for cross-platform support:
+ * - Investigate platform-specific rendering engines' differences
+ * - Consider platform-specific snapshot baselines
+ * - Explore more robust comparison strategies that handle minor rendering variations
+ *
+ * Note: While macOS E2E tests are not required by default in CI, these tests
+ * are currently running only on macOS to establish a baseline for visual regression
+ * testing of auto-edits functionality.
+ * [Slack discussion](https://sourcegraph.slack.com/archives/C07F8LLKE06/p1734715196312609)
+ * [Integration PR](https://github.com/sourcegraph/cody/pull/6454)
+ */
 
 const test = baseTest
     .extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL })
@@ -18,6 +47,10 @@ const test = baseTest
             'cody.experimental.autoedits.use-mock-responses': true,
         },
     })
+
+if (process.platform !== 'darwin') {
+    test.skip()
+}
 
 interface clipArgs {
     x: number
@@ -46,8 +79,8 @@ const autoeditsTestHelper = async ({
     testCaseName,
     lineOptions,
 }: AutoeditsTestOptions): Promise<void> => {
-    // const platform = process.platform
-    // const snapshotPlatform = platform === 'darwin' ? 'macos' : platform === 'linux' ? 'linux' : 'windows'
+    const platform = process.platform
+    const snapshotPlatform = platform === 'darwin' ? 'macos' : platform === 'linux' ? 'linux' : 'windows'
 
     // Use a large number to go the end of the line
     const maxColumnNumber = Number.MAX_SAFE_INTEGER
@@ -58,7 +91,6 @@ const autoeditsTestHelper = async ({
         height: 741,
     })
 
-    // In your test setup or beforeAll hook
     await page.evaluate(() => {
         document.body.style.fontFamily = 'monospace'
         document.body.style.fontSize = '14px'
@@ -82,7 +114,6 @@ const autoeditsTestHelper = async ({
 
     // Activate the zen mode to remove diffs from any other elements
     await executeCommandInPalette(page, 'View: Toggle Zen Mode')
-    // await page.pause()
     await executeCommandInPalette(page, 'Hide Custom Title Bar In Full Screen')
 
     for (const { lineNumber, clip } of lineOptions) {
@@ -111,10 +142,11 @@ const autoeditsTestHelper = async ({
         await executeCommandInPalette(page, 'Cody: Autoedits Manual Trigger')
 
         // Wait for the diff view to stabilize - required to reduce flakiness
-        await page.waitForTimeout(1000)
+        await page.waitForTimeout(500)
 
-        // await expect(page).toHaveScreenshot([snapshotPlatform, snapshotName], {
-        await expect(page).toHaveScreenshot([snapshotName], {
+        await expect(page).toHaveScreenshot([snapshotPlatform, snapshotName], {
+            maxDiffPixelRatio: 0.01,
+            maxDiffPixels: 100,
             clip: clip,
         })
     }
@@ -124,11 +156,9 @@ test('autoedits-multi-line-diff-view', async ({ page, sidebar }) => {
     const lineOptions: LineOptions[] = [
         {
             lineNumber: 70,
-            // clip: { x: 100, y: 300, width: 700, height: 250 },
         },
         {
             lineNumber: 76,
-            // clip: { x: 100, y: 300, width: 500, height: 150 },
         },
     ]
     await autoeditsTestHelper({
