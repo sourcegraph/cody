@@ -96,6 +96,7 @@ export abstract class SourcegraphCompletionsClient {
         const { apiVersion, interactionId } = requestParams
         const serializedParams = await getSerializedParams(params)
         const headerParams: Record<string, string> = {}
+        // Add interactionId to the request headers so that this data exists in both cody_gateway and telemetry (v2_events)
         if (interactionId) {
             headerParams['X-Sourcegraph-Interaction-ID'] = interactionId
         }

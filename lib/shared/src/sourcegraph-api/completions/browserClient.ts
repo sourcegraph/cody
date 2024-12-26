@@ -125,11 +125,12 @@ export class SourcegraphBrowserCompletionsClient extends SourcegraphCompletionsC
         signal?: AbortSignal
     ): Promise<void> {
         const { auth, configuration } = await currentResolvedConfig()
-        const { url, serializedParams } = await this.prepareRequest(params, requestParams)
+        const { url, serializedParams, headerParams } = await this.prepareRequest(params, requestParams)
         const headersInstance = new Headers({
             'Content-Type': 'application/json; charset=utf-8',
             ...configuration.customHeaders,
             ...requestParams.customHeaders,
+            ...headerParams,
         })
         addCodyClientIdentificationHeaders(headersInstance)
         if (auth.accessToken) {
