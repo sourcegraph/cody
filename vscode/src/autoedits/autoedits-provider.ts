@@ -101,14 +101,6 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             vscode.window.onDidChangeTextEditorSelection(this.onSelectionChangeDebounced),
             vscode.workspace.onDidChangeTextDocument(event => {
                 this.onDidChangeTextDocument(event)
-            }),
-            // Command used to trigger autoedits manually via command palette and is used by e2e test
-            vscode.commands.registerCommand('cody.command.autoedits-manual-trigger', async () => {
-                this.showAutoEdit(
-                    vscode.window.activeTextEditor!.document!,
-                    vscode.window.activeTextEditor!.selection.active,
-                    new AbortController().signal
-                )
             })
         )
     }

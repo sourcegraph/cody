@@ -719,13 +719,24 @@ function registerAutoEdits(chatClient: ChatClient, disposables: vscode.Disposabl
                     map(([config, authStatus, autoeditEnabled]) => {
                         if (shouldEnableExperimentalAutoedits(config, autoeditEnabled, authStatus)) {
                             const provider = new AutoeditsProvider(chatClient)
-
                             const completionRegistration =
                                 vscode.languages.registerInlineCompletionItemProvider(
                                     [{ scheme: 'file', language: '*' }, { notebookType: '*' }],
                                     provider
                                 )
 
+                            // Command used to trigger autoedits manually via command palette and is also used by e2e test
+                            vscode.commands.registerCommand(
+                                'cody.command.autoedits-manual-trigger',
+                                async () => {
+                                    await vscode.commands.executeCommand(
+                                        'editor.action.inlineSuggest.hide'
+                                    )
+                                    await vscode.commands.executeCommand(
+                                        'editor.action.inlineSuggest.trigger'
+                                    )
+                                }
+                            )
                             return vscode.Disposable.from(provider, completionRegistration)
                         }
                         return []
