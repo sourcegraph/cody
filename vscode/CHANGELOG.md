@@ -19,6 +19,7 @@ This is a log of all notable changes to Cody for VS Code.
 - Auto Edit: recent edit based [pull/6383](https://github.com/sourcegraph/cody/pull/6383)
 - Auto Edit: add heuristic to filter suggestion [pull/6396](https://github.com/sourcegraph/cody/pull/6396)
 - Prompt Library: add keyboard nav for prompts library [pull/6388](https://github.com/sourcegraph/cody/pull/6388)
+- Accounts: prevent PLG login methods for enterprise users [pull/6182](https://github.com/sourcegraph/cody/pull/6182)
 
 ### Fixed
 
