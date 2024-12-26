@@ -747,6 +747,7 @@ function shouldEnableExperimentalAutoedits(
     if (config.configuration.experimentalAutoeditsEnabled !== undefined) {
         return config.configuration.experimentalAutoeditsEnabled
     }
+    // If the feature flag is enabled, use the flag instead of the config.
     return autoeditExperimentFlag && isS2(authStatus) && isRunningInsideAgent() === false
 }
 
@@ -819,7 +820,7 @@ function registerAutocomplete(
                     })
                 )
                 .subscribe({})
-        )
+        ),
     )
 }
 

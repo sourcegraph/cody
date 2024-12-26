@@ -12,5 +12,9 @@ declare module 'wink-nlp-utils' {
         }
     }
 
+
     export default winkUtils
 }
+
+
+

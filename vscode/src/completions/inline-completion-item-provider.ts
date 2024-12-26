@@ -61,6 +61,7 @@ import {
 } from './suggested-autocomplete-items-cache'
 import { indentation } from './text-processing'
 import type { ProvideInlineCompletionItemsTracer, ProvideInlineCompletionsItemTraceData } from './tracer'
+import { showAutoeditOnboarding } from '../autoedits/autoedit-onboarding'
 
 interface AutocompleteResult extends vscode.InlineCompletionList {
     logId: CompletionLogID
@@ -138,6 +139,10 @@ export class InlineCompletionItemProvider
         tracer = null,
         ...config
     }: CodyCompletionItemProviderConfig) {
+
+        // Show the onboarding if the user has not enabled autoedits and want to use that instead of autocomplete
+        showAutoeditOnboarding()
+
         // This is a static field to allow for easy access in the static `configuration` getter.
         // There must only be one instance of this class at a time.
         InlineCompletionItemProviderConfigSingleton.set({
