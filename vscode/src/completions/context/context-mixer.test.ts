@@ -123,6 +123,7 @@ describe('ContextMixer', () => {
                     identifier: 'jaccard-similarity',
                     startLine: 0,
                     endLine: 0,
+                    type: 'file',
                 },
                 {
                     fileName: 'bar.ts',
@@ -130,6 +131,7 @@ describe('ContextMixer', () => {
                     identifier: 'jaccard-similarity',
                     startLine: 0,
                     endLine: 0,
+                    type: 'file',
                 },
             ])
             expect(logSummary).toEqual({
@@ -216,6 +218,7 @@ describe('ContextMixer', () => {
                   "fileName": "foo.ts",
                   "identifier": "retriever1",
                   "startLine": 0,
+                  "type": "file",
                 },
                 {
                   "content": "function foo1() {}
@@ -224,6 +227,7 @@ describe('ContextMixer', () => {
                   "fileName": "foo.ts",
                   "identifier": "retriever2",
                   "startLine": 0,
+                  "type": "file",
                 },
                 {
                   "content": "function bar1() {}",
@@ -231,6 +235,7 @@ describe('ContextMixer', () => {
                   "fileName": "bar.ts",
                   "identifier": "retriever1",
                   "startLine": 0,
+                  "type": "file",
                 },
                 {
                   "content": "function bar1() {}
@@ -239,6 +244,7 @@ describe('ContextMixer', () => {
                   "fileName": "bar.ts",
                   "identifier": "retriever2",
                   "startLine": 0,
+                  "type": "file",
                 },
                 {
                   "content": "function foo3() {}",
@@ -246,6 +252,7 @@ describe('ContextMixer', () => {
                   "fileName": "foo.ts",
                   "identifier": "retriever2",
                   "startLine": 10,
+                  "type": "file",
                 },
               ]
             `)
