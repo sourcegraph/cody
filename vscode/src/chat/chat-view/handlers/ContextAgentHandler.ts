@@ -34,6 +34,7 @@ export class ContextAgentHandler extends ChatHandler implements AgentHandler {
     )
 
     override async computeContext(
+        requestID: string,
         { text, mentions }: HumanInput,
         editorState: SerializedPromptEditorState | null,
         chatBuilder: ChatBuilder,
@@ -44,6 +45,7 @@ export class ContextAgentHandler extends ChatHandler implements AgentHandler {
         abort?: boolean
     }> {
         const baseContextResult = await super.computeContext(
+            requestID,
             { text, mentions },
             editorState,
             chatBuilder,
@@ -69,7 +71,7 @@ export class ContextAgentHandler extends ChatHandler implements AgentHandler {
             this.chatClient,
             this.toolProvider.getTools(),
             baseContext
-        ).getContext(signal)
+        ).getContext(requestID, signal)
         return { contextItems: [...baseContext, ...agenticContext] }
     }
 }

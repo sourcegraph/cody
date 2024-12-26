@@ -832,6 +832,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         this.postEmptyMessageInProgress(model)
         await agent.handle(
             {
+                requestID,
                 inputText,
                 mentions,
                 editorState,

@@ -34,10 +34,11 @@ export class ChatHandler implements AgentHandler {
     ) {}
 
     public async handle(
-        { inputText, mentions, editorState, signal, chatBuilder }: AgentRequest,
+        { requestID, inputText, mentions, editorState, signal, chatBuilder }: AgentRequest,
         delegate: AgentHandlerDelegate
     ): Promise<void> {
         const contextResult = await this.computeContext(
+            requestID,
             { text: inputText, mentions },
             editorState,
             chatBuilder,
@@ -196,6 +197,7 @@ export class ChatHandler implements AgentHandler {
 
     // Overridable by subclasses that want to customize context computation
     protected async computeContext(
+        requestID: string,
         { text, mentions }: HumanInput,
         editorState: SerializedPromptEditorState | null,
         _chatBuilder: ChatBuilder,

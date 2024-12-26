@@ -23,6 +23,7 @@ export interface AgentHandlerDelegate {
 }
 
 export interface AgentRequest {
+    requestID: string
     inputText: PromptString
     mentions: ContextItem[]
     editorState: SerializedPromptEditorState | null
