@@ -53,11 +53,12 @@
 }
 
 .error-item .banner-container {
-    position: absolute;
+    position: relative;
     top: 0;
     right: 0;
-    overflow: hidden;
+    overflow: visible;
     height: 100px;
+    z-index: 1000;
 }
 
 @property --error-item-reflection-position {
