@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo } from 'react'
 
-import { type ChatError, RateLimitError } from '@sourcegraph/cody-shared'
+import {  RateLimitError } from '@sourcegraph/cody-shared'
 
 import type { UserAccountInfo } from '../Chat'
 import type { ApiPostMessage } from '../Chat'
@@ -13,21 +13,22 @@ import styles from './ErrorItem.module.css'
  * An error message shown in the chat.
  */
 export const ErrorItem: React.FunctionComponent<{
-    error: Omit<ChatError, 'isChatErrorGuard'>
     userInfo: Pick<UserAccountInfo, 'isCodyProUser' | 'isDotComUser'>
     postMessage?: ApiPostMessage
-}> = ({ error, userInfo, postMessage }) => {
-    if (typeof error !== 'string' && error.name === RateLimitError.errorName && postMessage) {
+}> = ({ userInfo, postMessage }) => {
+    console.log('RateLimitErrorItem reached finally bro')
+    const newError = new RateLimitError('chat messages and commands', 'thing', true)
+    if (postMessage) {
         return (
             <RateLimitErrorItem
-                error={error as RateLimitError}
+                error={newError}
                 userInfo={userInfo}
                 postMessage={postMessage}
             />
         )
     }
 
-    return <RequestErrorItem error={error.message} />
+    return <RequestErrorItem error={newError.message} />
 }
 
 /**
