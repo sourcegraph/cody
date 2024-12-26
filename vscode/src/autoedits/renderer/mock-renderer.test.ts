@@ -2,6 +2,7 @@ import dedent from 'dedent'
 import { describe, expect, it, vi } from 'vitest'
 import * as vscode from 'vscode'
 import { documentAndPosition } from '../../completions/test-helpers'
+import type { CodeToReplaceData } from '../prompt/prompt-utils'
 import { createCodeToReplaceDataForTest } from '../prompt/test-helper'
 import {
     INITIAL_TEXT_START_MARKER,
@@ -11,6 +12,24 @@ import {
     getTextBetweenMarkers,
     shrinkReplacerTextToCodeToReplaceRange,
 } from './mock-renderer'
+
+function getCodeToReplaceForRenderer(
+    code: TemplateStringsArray,
+    ...values: unknown[]
+): CodeToReplaceData {
+    return createCodeToReplaceDataForTest(
+        code,
+        {
+            maxPrefixLength: 100,
+            maxSuffixLength: 100,
+            maxPrefixLinesInArea: 2,
+            maxSuffixLinesInArea: 2,
+            codeToRewritePrefixLines: 1,
+            codeToRewriteSuffixLines: 1,
+        },
+        ...values
+    )
+}
 
 describe('renderer-testing', () => {
     const createDocumentTextForMockRenderer = (param: {
@@ -150,7 +169,7 @@ describe('renderer-testing', () => {
                 extractAutoEditResponseFromCurrentDocumentCommentTemplate(document, position)
             expect(autoEditResponseFromTemplate).toBeDefined()
 
-            const codeToReplaceData = createCodeToReplaceDataForTest`${documentText}`
+            const codeToReplaceData = getCodeToReplaceForRenderer`${documentText}`
             const result = shrinkReplacerTextToCodeToReplaceRange(
                 autoEditResponseFromTemplate!,
                 codeToReplaceData
@@ -176,7 +195,7 @@ describe('renderer-testing', () => {
             const { document, position } = documentAndPosition(documentText)
             const autoEditResponseFromTemplate =
                 extractAutoEditResponseFromCurrentDocumentCommentTemplate(document, position)
-            const codeToReplaceData = createCodeToReplaceDataForTest`${documentText}`
+            const codeToReplaceData = getCodeToReplaceForRenderer`${documentText}`
 
             const result = shrinkReplacerTextToCodeToReplaceRange(
                 autoEditResponseFromTemplate!,
@@ -199,7 +218,7 @@ describe('renderer-testing', () => {
             const { document, position } = documentAndPosition(documentText)
             const autoEditResponseFromTemplate =
                 extractAutoEditResponseFromCurrentDocumentCommentTemplate(document, position)
-            const codeToReplaceData = createCodeToReplaceDataForTest`${documentText}`
+            const codeToReplaceData = getCodeToReplaceForRenderer`${documentText}`
 
             const result = shrinkReplacerTextToCodeToReplaceRange(
                 autoEditResponseFromTemplate!,
@@ -222,7 +241,7 @@ describe('renderer-testing', () => {
             const { document, position } = documentAndPosition(documentText)
             const autoEditResponseFromTemplate =
                 extractAutoEditResponseFromCurrentDocumentCommentTemplate(document, position)
-            const codeToReplaceData = createCodeToReplaceDataForTest`${documentText}`
+            const codeToReplaceData = getCodeToReplaceForRenderer`${documentText}`
 
             const result = shrinkReplacerTextToCodeToReplaceRange(
                 autoEditResponseFromTemplate!,
@@ -245,7 +264,7 @@ describe('renderer-testing', () => {
             const { document, position } = documentAndPosition(documentText)
             const autoEditResponseFromTemplate =
                 extractAutoEditResponseFromCurrentDocumentCommentTemplate(document, position)
-            const codeToReplaceData = createCodeToReplaceDataForTest`${documentText}`
+            const codeToReplaceData = getCodeToReplaceForRenderer`${documentText}`
 
             const result = shrinkReplacerTextToCodeToReplaceRange(
                 autoEditResponseFromTemplate!,
