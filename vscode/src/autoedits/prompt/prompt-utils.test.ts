@@ -1,9 +1,13 @@
-import { type AutocompleteContextSnippet, ps, testFileUri } from '@sourcegraph/cody-shared'
 import dedent from 'dedent'
-import { describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import * as vscode from 'vscode'
+import { NotebookCellKind } from 'vscode-languageserver-protocol'
+
+import { type AutocompleteContextSnippet, ps, testFileUri } from '@sourcegraph/cody-shared'
+
 import { RetrieverIdentifier } from '../../completions/context/utils'
 import { getCurrentDocContext } from '../../completions/get-current-doc-context'
-import { documentAndPosition } from '../../completions/test-helpers'
+import { createMockNotebook, document, documentAndPosition } from '../../completions/test-helpers'
 import {
     getCompletionsPromptWithSystemPrompt,
     getContextItemsInTokenBudget,
@@ -12,12 +16,13 @@ import {
     getCurrentFilePromptComponents,
     getJaccardSimilarityPrompt,
     getLintErrorsPrompt,
+    getPrefixAndSuffixForAreaForNotebook,
     getRecentCopyPrompt,
     getRecentEditsContextPromptWithPath,
     getRecentEditsPrompt,
     getRecentlyViewedSnippetsPrompt,
     joinPromptsWithNewlineSeperator,
-} from '../prompt/prompt-utils'
+} from './prompt-utils'
 
 describe('getContextPromptWithPath', () => {
     it('correct prompt with path', () => {
@@ -907,5 +912,132 @@ describe('joinPromptsWithNewlineSeperator', () => {
             foo
             bar
         `)
+    })
+})
+
+// A helper to set up your global "activeNotebookEditor" mock.
+function mockActiveNotebookEditor(notebook: vscode.NotebookDocument | undefined) {
+    vi.spyOn(vscode.window, 'activeNotebookEditor', 'get').mockReturnValue(
+        notebook
+            ? ({
+                  notebook,
+              } as vscode.NotebookEditor)
+            : undefined
+    )
+}
+
+describe.only('getPrefixAndSuffixForAreaForNotebook', () => {
+    beforeEach(() => {
+        // Clear all mocks before each test
+        vi.restoreAllMocks()
+        vi.clearAllMocks()
+    })
+
+    it('returns empty prefix/suffix if there is no active notebook', () => {
+        mockActiveNotebookEditor(undefined)
+
+        const { prefixBeforeAreaForNotebook, suffixAfterAreaForNotebook } =
+            getPrefixAndSuffixForAreaForNotebook(document('Just some content'))
+
+        expect(prefixBeforeAreaForNotebook.toString()).toBe('')
+        expect(suffixAfterAreaForNotebook.toString()).toBe('')
+    })
+
+    it('returns prefix/suffix content for a cell in the middle of a 3-cell notebook', () => {
+        const notebookDoc = createMockNotebook({
+            uri: 'file://test.ipynb',
+            cells: [
+                {
+                    kind: NotebookCellKind.Code,
+                    text: 'console.log("cell0 code")',
+                    languageId: 'javascript',
+                },
+                {
+                    kind: NotebookCellKind.Markup,
+                    text: '# This is a markdown cell',
+                    languageId: 'markdown',
+                },
+                {
+                    kind: NotebookCellKind.Code,
+                    text: 'console.log("cell2 code")',
+                    languageId: 'javascript',
+                },
+            ],
+        })
+
+        mockActiveNotebookEditor(notebookDoc)
+
+        // We'll pass the "document" of cell1 (the middle cell) as the "current" document
+        const currentCellDocument = notebookDoc.cellAt(1).document
+
+        const { prefixBeforeAreaForNotebook, suffixAfterAreaForNotebook } =
+            getPrefixAndSuffixForAreaForNotebook(currentCellDocument)
+
+        // Expect prefix to have cell0 code, suffix to have cell2 code
+        expect(prefixBeforeAreaForNotebook.toString()).toMatch('console.log("cell0 code")')
+        expect(suffixAfterAreaForNotebook.toString()).toMatch('console.log("cell2 code")')
+    })
+
+    it('comments out markup cells in prefix or suffix', () => {
+        const notebookDoc = createMockNotebook({
+            uri: 'file://test2.ipynb',
+            cells: [
+                { kind: NotebookCellKind.Markup, text: '# Markup cell0', languageId: 'markdown' },
+                {
+                    kind: NotebookCellKind.Code,
+                    text: 'console.log("cell1 code")',
+                    languageId: 'javascript',
+                },
+                { kind: NotebookCellKind.Markup, text: '# Markup cell2', languageId: 'markdown' },
+            ],
+        })
+
+        mockActiveNotebookEditor(notebookDoc)
+
+        // current document is the code cell in the middle (index 1)
+        const currentCellDocument = notebookDoc.cellAt(1).document
+        const { prefixBeforeAreaForNotebook, suffixAfterAreaForNotebook } =
+            getPrefixAndSuffixForAreaForNotebook(currentCellDocument)
+
+        // Markup content should be commented out. For unknown languages, it might default to '// '
+        // or, if your code recognizes languageId="javascript", it might also use '// ' for comments.
+        expect(prefixBeforeAreaForNotebook.toString()).toContain('// # Markup cell0')
+        expect(suffixAfterAreaForNotebook.toString()).toContain('// # Markup cell2')
+    })
+
+    it('handles a notebook with only code cells (no markup)', () => {
+        // This covers a scenario where there are multiple code cells before and after the active cell.
+        // This ensures it does not try to comment out code cells, only markdown cells.
+        const notebookDoc = createMockNotebook({
+            uri: 'file://codeonly.ipynb',
+            cells: [
+                {
+                    kind: NotebookCellKind.Code,
+                    text: 'console.log("First code cell")',
+                    languageId: 'javascript',
+                },
+                {
+                    kind: NotebookCellKind.Code,
+                    text: 'console.log("Second code cell, active")',
+                    languageId: 'javascript',
+                },
+                {
+                    kind: NotebookCellKind.Code,
+                    text: 'console.log("Third code cell")',
+                    languageId: 'javascript',
+                },
+            ],
+        })
+
+        mockActiveNotebookEditor(notebookDoc)
+
+        // current document is the middle code cell
+        const currentCellDocument = notebookDoc.cellAt(1).document
+        const { prefixBeforeAreaForNotebook, suffixAfterAreaForNotebook } =
+            getPrefixAndSuffixForAreaForNotebook(currentCellDocument)
+
+        expect(prefixBeforeAreaForNotebook.toString()).toMatch('console.log("First code cell")')
+        expect(suffixAfterAreaForNotebook.toString()).toMatch('console.log("Third code cell")')
+        // No markup => no comment lines expected
     })
 })
