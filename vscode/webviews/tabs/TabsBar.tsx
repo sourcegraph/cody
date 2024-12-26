@@ -128,7 +128,7 @@ export const TabsBar = memo<TabsBarProps>(props => {
                         <TabButton
                             prominent
                             Icon={MessageSquarePlusIcon}
-                            title="New Chat"
+                            title="new Tab"
                             IDE={IDE}
                             alwaysShowTitle={true}
                             tooltipExtra={

@@ -132,7 +132,7 @@ const RateLimitErrorItem: React.FunctionComponent<{
                         onClick={() => onButtonClick('upgrade', 'upgrade')}
                         onKeyDown={() => onButtonClick('upgrade', 'upgrade')}
                     >
-                        Go Pro
+                        Go low
                     </div>
                 </div>
             )}
