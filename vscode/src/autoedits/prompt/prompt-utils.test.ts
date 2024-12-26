@@ -7,7 +7,7 @@ import { type AutocompleteContextSnippet, ps, testFileUri } from '@sourcegraph/c
 
 import { RetrieverIdentifier } from '../../completions/context/utils'
 import { getCurrentDocContext } from '../../completions/get-current-doc-context'
-import { createMockNotebook, document, documentAndPosition } from '../../completions/test-helpers'
+import { documentAndPosition, mockNotebookAndPosition } from '../../completions/test-helpers'
 import {
     getCompletionsPromptWithSystemPrompt,
     getContextItemsInTokenBudget,
@@ -16,13 +16,23 @@ import {
     getCurrentFilePromptComponents,
     getJaccardSimilarityPrompt,
     getLintErrorsPrompt,
-    getPrefixAndSuffixForAreaForNotebook,
     getRecentCopyPrompt,
     getRecentEditsContextPromptWithPath,
     getRecentEditsPrompt,
     getRecentlyViewedSnippetsPrompt,
     joinPromptsWithNewlineSeperator,
 } from './prompt-utils'
+
+// A helper to set up your global "activeNotebookEditor" mock.
+function mockActiveNotebookEditor(notebook: vscode.NotebookDocument | undefined) {
+    vi.spyOn(vscode.window, 'activeNotebookEditor', 'get').mockReturnValue(
+        notebook
+            ? ({
+                  notebook,
+              } as vscode.NotebookEditor)
+            : undefined
+    )
+}
 
 describe('getContextPromptWithPath', () => {
     it('correct prompt with path', () => {
@@ -57,12 +67,14 @@ describe('getCurrentFilePromptComponents', () => {
         const content = `${longPrefix}\ncursor█line\n${longSuffix}`
 
         const { document, position } = documentAndPosition(content)
+        const maxPrefixLength = 100
+        const maxSuffixLength = 100
 
         const docContext = getCurrentDocContext({
             document,
             position,
-            maxPrefixLength: 100,
-            maxSuffixLength: 100,
+            maxPrefixLength,
+            maxSuffixLength,
         })
 
         const options = {
@@ -120,11 +132,14 @@ describe('getCurrentFilePromptComponents', () => {
 
         const { document, position } = documentAndPosition(content)
 
+        const maxPrefixLength = 30
+        const maxSuffixLength = 30
+
         const docContext = getCurrentDocContext({
             document,
             position,
-            maxPrefixLength: 30,
-            maxSuffixLength: 30,
+            maxPrefixLength,
+            maxSuffixLength,
         })
 
         const options = {
@@ -135,6 +150,8 @@ describe('getCurrentFilePromptComponents', () => {
             maxSuffixLinesInArea: 1,
             codeToRewritePrefixLines: 1,
             codeToRewriteSuffixLines: 1,
+            maxPrefixLength,
+            maxSuffixLength,
         }
 
         const result = getCurrentFilePromptComponents(options)
@@ -164,14 +181,43 @@ describe('getCurrentFilePromptComponents', () => {
 })
 
 describe('getCurrentFileContext', () => {
-    it('correctly splits content into different areas based on cursor position', () => {
-        const { document, position } = documentAndPosition('line1\nline2\nline3█line4\nline5\nline6')
+    beforeEach(() => {
+        vi.restoreAllMocks()
+        vi.clearAllMocks()
+    })
+
+    it('correctly handles the notebook document with only code cells', async () => {
+        const { notebookDoc, position } = mockNotebookAndPosition({
+            uri: 'file://test.ipynb',
+            cells: [
+                {
+                    kind: NotebookCellKind.Code,
+                    text: 'console.log("cell0 code")',
+                    languageId: 'python',
+                },
+                {
+                    kind: NotebookCellKind.Code,
+                    text: 'console.log("cell1█ code")',
+                    languageId: 'python',
+                },
+                {
+                    kind: NotebookCellKind.Code,
+                    text: 'console.log("cell2 code")',
+                    languageId: 'python',
+                },
+            ],
+        })
+        mockActiveNotebookEditor(notebookDoc)
+        const document = notebookDoc.cellAt(1).document
+
+        const maxPrefixLength = 100
+        const maxSuffixLength = 100
 
         const docContext = getCurrentDocContext({
             document,
             position,
-            maxPrefixLength: 100,
-            maxSuffixLength: 100,
+            maxPrefixLength,
+            maxSuffixLength,
         })
 
         const options = {
@@ -182,6 +228,110 @@ describe('getCurrentFileContext', () => {
             maxSuffixLinesInArea: 1,
             codeToRewritePrefixLines: 1,
             codeToRewriteSuffixLines: 1,
+            maxPrefixLength,
+            maxSuffixLength,
+        }
+
+        const result = getCurrentFileContext(options)
+
+        // Verify the results
+        expect(result.codeToRewrite.toString()).toBe('console.log("cell1 code")')
+        expect(result.codeToRewritePrefix.toString()).toBe('console.log("cell1')
+        expect(result.codeToRewriteSuffix.toString()).toBe(' code")')
+        expect(result.prefixInArea.toString()).toBe('')
+        expect(result.suffixInArea.toString()).toBe('')
+        expect(result.prefixBeforeArea.toString()).toBe('console.log("cell0 code")\n')
+        expect(result.suffixAfterArea.toString()).toBe('\nconsole.log("cell2 code")')
+    })
+
+    it('correctly handles the notebook document and relevant context', async () => {
+        const { notebookDoc, position } = mockNotebookAndPosition({
+            uri: 'file://test.ipynb',
+            cells: [
+                {
+                    kind: NotebookCellKind.Code,
+                    text: 'console.log("cell0 code")',
+                    languageId: 'python',
+                },
+                {
+                    kind: NotebookCellKind.Code,
+                    text: 'console.log("cell1█ code")',
+                    languageId: 'python',
+                },
+                {
+                    kind: NotebookCellKind.Markup,
+                    text: '# This is a markdown cell',
+                    languageId: 'markdown',
+                },
+                {
+                    kind: NotebookCellKind.Code,
+                    text: 'console.log("cell2 code")',
+                    languageId: 'python',
+                },
+            ],
+        })
+        mockActiveNotebookEditor(notebookDoc)
+        const document = notebookDoc.cellAt(1).document
+
+        const maxPrefixLength = 100
+        const maxSuffixLength = 100
+
+        const docContext = getCurrentDocContext({
+            document,
+            position,
+            maxPrefixLength,
+            maxSuffixLength,
+        })
+
+        const options = {
+            docContext,
+            document,
+            position,
+            maxPrefixLinesInArea: 1,
+            maxSuffixLinesInArea: 1,
+            codeToRewritePrefixLines: 1,
+            codeToRewriteSuffixLines: 1,
+            maxPrefixLength,
+            maxSuffixLength,
+        }
+
+        const result = getCurrentFileContext(options)
+
+        // Verify the results
+        expect(result.codeToRewrite.toString()).toBe('console.log("cell1 code")')
+        expect(result.codeToRewritePrefix.toString()).toBe('console.log("cell1')
+        expect(result.codeToRewriteSuffix.toString()).toBe(' code")')
+        expect(result.prefixInArea.toString()).toBe('')
+        expect(result.suffixInArea.toString()).toBe('')
+        expect(result.prefixBeforeArea.toString()).toBe('console.log("cell0 code")\n')
+        expect(result.suffixAfterArea.toString()).toBe(
+            '\n# # This is a markdown cell\n\nconsole.log("cell2 code")'
+        )
+    })
+
+    it('correctly splits content into different areas based on cursor position', () => {
+        const { document, position } = documentAndPosition('line1\nline2\nline3█line4\nline5\nline6')
+
+        const maxPrefixLength = 100
+        const maxSuffixLength = 100
+
+        const docContext = getCurrentDocContext({
+            document,
+            position,
+            maxPrefixLength,
+            maxSuffixLength,
+        })
+
+        const options = {
+            docContext,
+            document,
+            position,
+            maxPrefixLinesInArea: 1,
+            maxSuffixLinesInArea: 1,
+            codeToRewritePrefixLines: 1,
+            codeToRewriteSuffixLines: 1,
+            maxPrefixLength,
+            maxSuffixLength,
         }
 
         const result = getCurrentFileContext(options)
@@ -201,11 +351,14 @@ describe('getCurrentFileContext', () => {
     it('handles cursor at start of line', () => {
         const { document, position } = documentAndPosition('line1\nline2\n█line3\nline4\nline5')
 
+        const maxPrefixLength = 100
+        const maxSuffixLength = 100
+
         const docContext = getCurrentDocContext({
             document,
             position,
-            maxPrefixLength: 100,
-            maxSuffixLength: 100,
+            maxPrefixLength,
+            maxSuffixLength,
         })
 
         const options = {
@@ -216,6 +369,8 @@ describe('getCurrentFileContext', () => {
             maxSuffixLinesInArea: 1,
             codeToRewritePrefixLines: 1,
             codeToRewriteSuffixLines: 1,
+            maxPrefixLength,
+            maxSuffixLength,
         }
 
         const result = getCurrentFileContext(options)
@@ -231,11 +386,14 @@ describe('getCurrentFileContext', () => {
     it('handles single line content', () => {
         const { document, position } = documentAndPosition('const foo = █bar')
 
+        const maxPrefixLength = 100
+        const maxSuffixLength = 100
+
         const docContext = getCurrentDocContext({
             document,
             position,
-            maxPrefixLength: 100,
-            maxSuffixLength: 100,
+            maxPrefixLength,
+            maxSuffixLength,
         })
 
         const options = {
@@ -246,6 +404,8 @@ describe('getCurrentFileContext', () => {
             maxSuffixLinesInArea: 1,
             codeToRewritePrefixLines: 1,
             codeToRewriteSuffixLines: 1,
+            maxPrefixLength,
+            maxSuffixLength,
         }
 
         const result = getCurrentFileContext(options)
@@ -262,11 +422,14 @@ describe('getCurrentFileContext', () => {
     it('handles cursor at start of file', () => {
         const { document, position } = documentAndPosition('█line1\nline2\nline3')
 
+        const maxPrefixLength = 100
+        const maxSuffixLength = 100
+
         const docContext = getCurrentDocContext({
             document,
             position,
-            maxPrefixLength: 100,
-            maxSuffixLength: 100,
+            maxPrefixLength,
+            maxSuffixLength,
         })
 
         const options = {
@@ -277,6 +440,8 @@ describe('getCurrentFileContext', () => {
             maxSuffixLinesInArea: 1,
             codeToRewritePrefixLines: 1,
             codeToRewriteSuffixLines: 1,
+            maxPrefixLength,
+            maxSuffixLength,
         }
 
         const result = getCurrentFileContext(options)
@@ -293,11 +458,14 @@ describe('getCurrentFileContext', () => {
     it('handles cursor at end of file', () => {
         const { document, position } = documentAndPosition('line1\nline2\nline3█')
 
+        const maxPrefixLength = 100
+        const maxSuffixLength = 100
+
         const docContext = getCurrentDocContext({
             document,
             position,
-            maxPrefixLength: 100,
-            maxSuffixLength: 100,
+            maxPrefixLength,
+            maxSuffixLength,
         })
 
         const options = {
@@ -308,6 +476,8 @@ describe('getCurrentFileContext', () => {
             maxSuffixLinesInArea: 1,
             codeToRewritePrefixLines: 1,
             codeToRewriteSuffixLines: 1,
+            maxPrefixLength,
+            maxSuffixLength,
         }
 
         const result = getCurrentFileContext(options)
@@ -326,11 +496,14 @@ describe('getCurrentFileContext', () => {
             'line1\nline2\nline3\nline4\nline5\n█line6\nline7'
         )
 
+        const maxPrefixLength = 100
+        const maxSuffixLength = 100
+
         const docContext = getCurrentDocContext({
             document,
             position,
-            maxPrefixLength: 100,
-            maxSuffixLength: 100,
+            maxPrefixLength,
+            maxSuffixLength,
         })
 
         const options = {
@@ -341,6 +514,8 @@ describe('getCurrentFileContext', () => {
             maxSuffixLinesInArea: 1,
             codeToRewritePrefixLines: 3, // Increased prefix lines
             codeToRewriteSuffixLines: 1,
+            maxPrefixLength,
+            maxSuffixLength,
         }
 
         const result = getCurrentFileContext(options)
@@ -362,11 +537,14 @@ describe('getCurrentFileContext', () => {
 
         const { document, position } = documentAndPosition(content)
 
+        const maxPrefixLength = 30
+        const maxSuffixLength = 30
+
         const docContext = getCurrentDocContext({
             document,
             position,
-            maxPrefixLength: 30,
-            maxSuffixLength: 30,
+            maxPrefixLength,
+            maxSuffixLength,
         })
 
         const options = {
@@ -377,6 +555,8 @@ describe('getCurrentFileContext', () => {
             maxSuffixLinesInArea: 1,
             codeToRewritePrefixLines: 1,
             codeToRewriteSuffixLines: 1,
+            maxPrefixLength,
+            maxSuffixLength,
         }
 
         const result = getCurrentFileContext(options)
@@ -399,11 +579,14 @@ describe('getCurrentFileContext', () => {
 
         const { document, position } = documentAndPosition(content)
 
+        const maxPrefixLength = 20
+        const maxSuffixLength = 20
+
         const docContext = getCurrentDocContext({
             document,
             position,
-            maxPrefixLength: 20,
-            maxSuffixLength: 20,
+            maxPrefixLength,
+            maxSuffixLength,
         })
 
         const options = {
@@ -414,6 +597,8 @@ describe('getCurrentFileContext', () => {
             maxSuffixLinesInArea: 2,
             codeToRewritePrefixLines: 2,
             codeToRewriteSuffixLines: 2,
+            maxPrefixLength,
+            maxSuffixLength,
         }
 
         const result = getCurrentFileContext(options)
@@ -431,11 +616,14 @@ describe('getCurrentFileContext', () => {
     it('handles file shorter than requested ranges', () => {
         const { document, position } = documentAndPosition('line1\n█line2\nline3\n')
 
+        const maxPrefixLength = 100
+        const maxSuffixLength = 100
+
         const docContext = getCurrentDocContext({
             document,
             position,
-            maxPrefixLength: 100,
-            maxSuffixLength: 100,
+            maxPrefixLength,
+            maxSuffixLength,
         })
 
         const options = {
@@ -446,6 +634,8 @@ describe('getCurrentFileContext', () => {
             maxSuffixLinesInArea: 5, // Larger than file
             codeToRewritePrefixLines: 3, // Larger than file
             codeToRewriteSuffixLines: 3, // Larger than file
+            maxPrefixLength,
+            maxSuffixLength,
         }
 
         const result = getCurrentFileContext(options)
@@ -918,132 +1108,5 @@ describe('joinPromptsWithNewlineSeperator', () => {
             foo
             bar
         `)
-    })
-})
-
-// A helper to set up your global "activeNotebookEditor" mock.
-function mockActiveNotebookEditor(notebook: vscode.NotebookDocument | undefined) {
-    vi.spyOn(vscode.window, 'activeNotebookEditor', 'get').mockReturnValue(
-        notebook
-            ? ({
-                  notebook,
-              } as vscode.NotebookEditor)
-            : undefined
-    )
-}
-
-describe('getPrefixAndSuffixForAreaForNotebook', () => {
-    beforeEach(() => {
-        // Clear all mocks before each test
-        vi.restoreAllMocks()
-        vi.clearAllMocks()
-    })
-
-    it('returns empty prefix/suffix if there is no active notebook', () => {
-        mockActiveNotebookEditor(undefined)
-
-        const { prefixBeforeAreaForNotebook, suffixAfterAreaForNotebook } =
-            getPrefixAndSuffixForAreaForNotebook(document('Just some content'))
-
-        expect(prefixBeforeAreaForNotebook.toString()).toBe('')
-        expect(suffixAfterAreaForNotebook.toString()).toBe('')
-    })
-
-    it('returns prefix/suffix content for a cell in the middle of a 3-cell notebook', () => {
-        const notebookDoc = createMockNotebook({
-            uri: 'file://test.ipynb',
-            cells: [
-                {
-                    kind: NotebookCellKind.Code,
-                    text: 'console.log("cell0 code")',
-                    languageId: 'javascript',
-                },
-                {
-                    kind: NotebookCellKind.Markup,
-                    text: '# This is a markdown cell',
-                    languageId: 'markdown',
-                },
-                {
-                    kind: NotebookCellKind.Code,
-                    text: 'console.log("cell2 code")',
-                    languageId: 'javascript',
-                },
-            ],
-        })
-
-        mockActiveNotebookEditor(notebookDoc)
-
-        // We'll pass the "document" of cell1 (the middle cell) as the "current" document
-        const currentCellDocument = notebookDoc.cellAt(1).document
-
-        const { prefixBeforeAreaForNotebook, suffixAfterAreaForNotebook } =
-            getPrefixAndSuffixForAreaForNotebook(currentCellDocument)
-
-        // Expect prefix to have cell0 code, suffix to have cell2 code
-        expect(prefixBeforeAreaForNotebook.toString()).toMatch('console.log("cell0 code")')
-        expect(suffixAfterAreaForNotebook.toString()).toMatch('console.log("cell2 code")')
-    })
-
-    it('comments out markup cells in prefix or suffix', () => {
-        const notebookDoc = createMockNotebook({
-            uri: 'file://test2.ipynb',
-            cells: [
-                { kind: NotebookCellKind.Markup, text: '# Markup cell0', languageId: 'markdown' },
-                {
-                    kind: NotebookCellKind.Code,
-                    text: 'console.log("cell1 code")',
-                    languageId: 'javascript',
-                },
-                { kind: NotebookCellKind.Markup, text: '# Markup cell2', languageId: 'markdown' },
-            ],
-        })
-
-        mockActiveNotebookEditor(notebookDoc)
-
-        // current document is the code cell in the middle (index 1)
-        const currentCellDocument = notebookDoc.cellAt(1).document
-        const { prefixBeforeAreaForNotebook, suffixAfterAreaForNotebook } =
-            getPrefixAndSuffixForAreaForNotebook(currentCellDocument)
-
-        // Markup content should be commented out. For unknown languages, it might default to '// '
-        // or, if your code recognizes languageId="javascript", it might also use '// ' for comments.
-        expect(prefixBeforeAreaForNotebook.toString()).toContain('// # Markup cell0')
-        expect(suffixAfterAreaForNotebook.toString()).toContain('// # Markup cell2')
-    })
-
-    it('handles a notebook with only code cells (no markup)', () => {
-        // This covers a scenario where there are multiple code cells before and after the active cell.
-        // This ensures it does not try to comment out code cells, only markdown cells.
-        const notebookDoc = createMockNotebook({
-            uri: 'file://codeonly.ipynb',
-            cells: [
-                {
-                    kind: NotebookCellKind.Code,
-                    text: 'console.log("First code cell")',
-                    languageId: 'javascript',
-                },
-                {
-                    kind: NotebookCellKind.Code,
-                    text: 'console.log("Second code cell, active")',
-                    languageId: 'javascript',
-                },
-                {
-                    kind: NotebookCellKind.Code,
-                    text: 'console.log("Third code cell")',
-                    languageId: 'javascript',
-                },
-            ],
-        })
-
-        mockActiveNotebookEditor(notebookDoc)
-
-        // current document is the middle code cell
-        const currentCellDocument = notebookDoc.cellAt(1).document
-        const { prefixBeforeAreaForNotebook, suffixAfterAreaForNotebook } =
-            getPrefixAndSuffixForAreaForNotebook(currentCellDocument)
-
-        expect(prefixBeforeAreaForNotebook.toString()).toMatch('console.log("First code cell")')
-        expect(suffixAfterAreaForNotebook.toString()).toMatch('console.log("Third code cell")')
-        // No markup => no comment lines expected
     })
 })

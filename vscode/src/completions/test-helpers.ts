@@ -85,7 +85,7 @@ export function prefixAndSuffix(textWithCursor: string): {
 // vscode.NotebookDocument mocks
 //-------------------------------------------
 
-export function createMockNotebook({
+export function mockNotebookAndPosition({
     uri,
     cells,
     notebookType,
@@ -106,7 +106,7 @@ export function createMockNotebook({
         languageId?: string
     }[]
     notebookType?: string
-}): vscode.NotebookDocument {
+}): { notebookDoc: vscode.NotebookDocument; position: vscode.Position } {
     const mockUri = Uri.parse(uri)
 
     const notebookDoc = new MockNotebookDocument({
@@ -115,15 +115,28 @@ export function createMockNotebook({
         cells: [],
     })
 
+    const positionsWithCursorInNotebook: vscode.Position[] = []
+
     const mockCells: vscode.NotebookCell[] = cells.map((cellData, index) => {
+        let cellText = cellData.text
+        let notebookCursorIndex = -1
+
+        if (cellData.text.includes(CURSOR_MARKER)) {
+            const { prefix, suffix, cursorIndex } = prefixAndSuffix(cellData.text)
+            cellText = prefix + suffix
+            notebookCursorIndex = cursorIndex
+        }
         const cellTextDoc = wrapVSCodeTextDocument(
             TextDocument.create(
                 `vscode-notebook-cell://mock/${index}`,
                 cellData.languageId ?? 'plaintext',
                 0, // version
-                cellData.text
+                cellText
             )
         )
+        if (notebookCursorIndex !== -1) {
+            positionsWithCursorInNotebook.push(cellTextDoc.positionAt(notebookCursorIndex))
+        }
 
         return new MockNotebookCell({
             index,
@@ -133,13 +146,18 @@ export function createMockNotebook({
         })
     })
 
+    if (positionsWithCursorInNotebook.length !== 1) {
+        throw new Error(
+            `Only one cell is currently supported to have a cursor position in notebook, received: ${positionsWithCursorInNotebook.length}`
+        )
+    }
     // Patch the internal cells array
     // We do not create cells first to ensure they have a
     // parent notebook reference.
     ;(notebookDoc as any).cellsInternal = mockCells
     notebookDoc.cellCount = mockCells.length
 
-    return notebookDoc
+    return { notebookDoc, position: positionsWithCursorInNotebook[0] }
 }
 
 class NotebookCellOutput implements vscode.NotebookCellOutput {
