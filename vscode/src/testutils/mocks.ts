@@ -229,6 +229,10 @@ export class CodeActionKind {
 
     constructor(public readonly value: string) {}
 }
+export enum NotebookCellKind {
+    Markup = 1,
+    Code = 2,
+}
 // biome-ignore lint/complexity/noStaticOnlyClass: mock
 export class QuickInputButtons {
     public static readonly Back: vscode_types.QuickInputButton = {
@@ -793,6 +797,7 @@ export const vsCodeMocks = {
         showErrorMessage(message: string) {
             console.error(message)
         },
+        activeNotebookEditor: undefined,
         activeTextEditor: {
             document: { uri: { scheme: 'not-cody' } },
             options: { tabSize: 4 },
@@ -867,6 +872,7 @@ export const vsCodeMocks = {
     FoldingRange,
     FoldingRangeKind,
     CodeActionKind,
+    NotebookCellKind,
     DiagnosticSeverity,
     ViewColumn,
     TextDocumentChangeReason,

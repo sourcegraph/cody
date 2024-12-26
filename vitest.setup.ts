@@ -9,5 +9,5 @@ function buildAgentForTests() {
 }
 
 export default function setup() {
-    buildAgentForTests()
+    // buildAgentForTests()
 }
