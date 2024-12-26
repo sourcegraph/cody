@@ -21,6 +21,7 @@ import { FilterPredictionBasedOnRecentEdits } from './filter-prediction-edits'
 import { autoeditsLogger } from './logger'
 import type { CodeToReplaceData } from './prompt/prompt-utils'
 import { ShortTermPromptStrategy } from './prompt/short-term-diff-prompt-strategy'
+import type { DecorationInfo } from './renderer/decorators/base'
 import { DefaultDecorator } from './renderer/decorators/default-decorator'
 import { InlineDiffDecorator } from './renderer/decorators/inline-diff-decorator'
 import { getDecorationInfo } from './renderer/diff-utils'
@@ -29,7 +30,7 @@ import { AutoEditsDefaultRendererManager, type AutoEditsRendererManager } from '
 import {
     extractAutoEditResponseFromCurrentDocumentCommentTemplate,
     shrinkReplacerTextToCodeToReplaceRange,
-} from './renderer/renderer-testing'
+} from './renderer/mock-renderer'
 import { shrinkPredictionUntilSuffix } from './shrink-prediction'
 import { isPredictedTextAlreadyInSuffix } from './utils'
 
@@ -186,14 +187,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             )
             return null
         }
-
-        const currentFileText = document.getText()
-        const predictedFileText =
-            currentFileText.slice(0, document.offsetAt(codeToReplaceData.range.start)) +
-            prediction +
-            currentFileText.slice(document.offsetAt(codeToReplaceData.range.end))
-
-        const decorationInfo = getDecorationInfo(currentFileText, predictedFileText)
+        const decorationInfo = getDecorationInfoFromPrediction(document, prediction, codeToReplaceData)
 
         if (
             isPredictedTextAlreadyInSuffix({
@@ -210,15 +204,14 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         }
 
         const { inlineCompletions } =
-            await this.rendererManager.maybeRenderDecorationsAndTryMakeInlineCompletionResponse(
+            await this.rendererManager.maybeRenderDecorationsAndTryMakeInlineCompletionResponse({
                 prediction,
                 codeToReplaceData,
                 document,
                 position,
                 docContext,
-                decorationInfo
-            )
-
+                decorationInfo,
+            })
         return inlineCompletions
     }
 
@@ -244,7 +237,10 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
 
         let response: string | undefined = undefined
         if (autoeditsProviderConfig.isMockResponseFromCurrentDocumentTemplateEnabled) {
-            const responseMetadata = extractAutoEditResponseFromCurrentDocumentCommentTemplate()
+            const responseMetadata = extractAutoEditResponseFromCurrentDocumentCommentTemplate(
+                document,
+                position
+            )
 
             if (responseMetadata) {
                 response = shrinkReplacerTextToCodeToReplaceRange(responseMetadata, codeToReplace)
@@ -288,4 +284,19 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             disposable.dispose()
         }
     }
+}
+
+export function getDecorationInfoFromPrediction(
+    document: vscode.TextDocument,
+    prediction: string,
+    codeToReplaceData: CodeToReplaceData
+): DecorationInfo {
+    const currentFileText = document.getText()
+    const predictedFileText =
+        currentFileText.slice(0, document.offsetAt(codeToReplaceData.range.start)) +
+        prediction +
+        currentFileText.slice(document.offsetAt(codeToReplaceData.range.end))
+
+    const decorationInfo = getDecorationInfo(currentFileText, predictedFileText)
+    return decorationInfo
 }
