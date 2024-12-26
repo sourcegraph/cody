@@ -1,5 +1,7 @@
 import { getNewLineChar, lines } from '../completions/text-processing'
 
+import type { DecorationInfo } from './renderer/decorators/base'
+
 export function fixFirstLineIndentation(source: string, target: string): string {
     // Check the first line indentation of source string and replaces in target string.
     const codeToRewriteLines = lines(source)
@@ -54,6 +56,27 @@ export function trimExtraNewLineCharsFromSuggestion(
 function getNumberOfNewLineCharsAtSuffix(text: string): number {
     const match = text.match(/\n+$/)
     return match ? match[0].length : 0
+}
+
+export function isPredictedTextAlreadyInSuffix({
+    codeToRewrite,
+    decorationInfo: { addedLines },
+    suffix,
+}: {
+    codeToRewrite: string
+    decorationInfo: DecorationInfo
+    suffix: string
+}): boolean {
+    if (addedLines.length === 0) {
+        return false
+    }
+
+    const allAddedLinesText = addedLines
+        .sort((a, b) => a.modifiedLineNumber - b.modifiedLineNumber)
+        .map(line => line.text)
+        .join(getNewLineChar(codeToRewrite))
+
+    return suffix.startsWith(allAddedLinesText)
 }
 
 /**
