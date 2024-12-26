@@ -1113,9 +1113,12 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         this.chatBuilder.setLastMessageIntent('search')
         const scopes: string[] = await this.getSearchScopesFromMentions(mentions)
 
-        const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri
-        const currentFile = getEditor()?.active?.document?.uri || workspaceRoot
-        const repoName = currentFile ? await getFirstRepoNameContainingUri(currentFile) : undefined
+        // DEBUG-LOCAL
+        // const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri
+        // const currentFile = getEditor()?.active?.document?.uri || workspaceRoot
+        // const repoName = currentFile ? await getFirstRepoNameContainingUri(currentFile) : undefined
+        const repoName = 'github.com/sourcegraph/cody'
+
         const boostParameter = repoName ? `boost:repo(${repoName})` : ''
 
         const query = `content:"${inputTextWithoutContextChips.replaceAll(
