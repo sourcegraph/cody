@@ -42,6 +42,7 @@ export abstract class CodyChatAgent {
     }
 
     protected async processStream(
+        requestID: string,
         message: Message[],
         signal?: AbortSignal,
         model?: string
@@ -49,7 +50,8 @@ export abstract class CodyChatAgent {
         const stream = await this.chatClient.chat(
             message,
             { model: model, maxTokensToSample: 4000 },
-            new AbortController().signal
+            new AbortController().signal,
+            requestID
         )
 
         let accumulated = ''

@@ -935,7 +935,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 this.chatClient,
                 this.toolProvider.getTools(),
                 corpusContext
-            ).getContext(signal)
+            ).getContext(requestID, signal)
             corpusContext.push(...agenticContext)
         }
 
@@ -1682,6 +1682,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
             this.sendLLMRequest(
                 prompt,
+                requestID,
                 model,
                 {
                     update: content => {
@@ -1735,6 +1736,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
      */
     private async sendLLMRequest(
         prompt: Message[],
+        requestID: string,
         model: ChatModel,
         callbacks: {
             update: (response: string) => void
@@ -1772,7 +1774,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 params.stream = false
             }
 
-            const stream = await this.chatClient.chat(prompt, params, abortSignal)
+            const stream = await this.chatClient.chat(prompt, params, abortSignal, requestID)
             for await (const message of stream) {
                 switch (message.type) {
                     case 'change': {

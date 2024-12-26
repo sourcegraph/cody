@@ -266,16 +266,14 @@ log:
           - name: content-type
             value: application/json
           - name: traceparent
-            value: 00-c232ce83a7b70af5237f348de4e484c0-ca2a18e181aba429-01
-          - name: transfer-encoding
-            value: chunked
+            value: 00-a5e44e873b9f0c17a3c4267b99b91e03-e76ce0b49e6e208d-01
           - name: user-agent
-            value: edit/v1 (Node.js v20.10.0)
+            value: edit/v1 (Node.js v20.4.0)
           - name: x-requested-with
             value: edit v1
           - name: host
             value: sourcegraph.com
-        headersSize: 469
+        headersSize: 472
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -381,14 +379,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=edit&client-version=v1
       response:
-        bodySize: 764
+        bodySize: 804
         content:
           mimeType: text/event-stream
-          size: 764
+          size: 804
           text: >+
             event: completion
 
-            data: {"deltaText":"\ninterface Message {\n    chatID: string;\n    text: string;\n}\n\ninterface ChatColumnProps {\n    messages: Message[];\n    setChatID: (chatID: string) => void;\n    isLoading: boolean;\n}\n\nexport default function ChatColumn({\n    messages,\n    setChatID,\n    isLoading,\n}: ChatColumnProps) {\n","stopReason":"stop_sequence"}
+            data: {"deltaText":"interface Message {\n    chatID: string;\n    text: string;\n}\n\ninterface ChatColumnProps {\n    messages: Message[];\n    setChatID: (chatID: string) => void;\n    isLoading: boolean;\n}\n\nexport default function ChatColumn({\n    messages,\n    setChatID,\n    isLoading,\n}: ChatColumnProps) {\n","stopReason":"stop_sequence"}
 
 
             event: done
@@ -398,25 +396,19 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 09 Dec 2024 14:47:44 GMT
+            value: Wed, 25 Dec 2024 19:12:08 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
             value: chunked
           - name: connection
             value: keep-alive
-          - name: retry-after
-            value: "599"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
             value: ""
           - name: cache-control
             value: no-cache
-          - name: observed-calculated-ip-from-forwarded-for
-            value: 80.82.18.146
-          - name: observed-x-forwarded-for
-            value: 80.82.18.146
           - name: vary
             value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
               X-Requested-With,Cookie
@@ -428,13 +420,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1503
+        headersSize: 1299
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-12-09T14:47:41.667Z
-      time: 2996
+      startedDateTime: 2024-12-25T19:12:05.621Z
+      time: 3068
       timings:
         blocked: -1
         connect: -1
@@ -442,7 +434,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 2996
+        wait: 3068
     - _id: 22edaf43775d3be48787d8946426592c
       _order: 0
       cache: {}
@@ -460,16 +452,14 @@ log:
           - name: content-type
             value: application/json
           - name: traceparent
-            value: 00-64c9f52436798a9dac9157fc67e0dbfa-b75d880746b266da-01
-          - name: transfer-encoding
-            value: chunked
+            value: 00-a7f44f16ddf488da12ad3ed1f8f57c6f-5ce23c0dba6f6b5f-01
           - name: user-agent
-            value: edit/v1 (Node.js v20.10.0)
+            value: edit/v1 (Node.js v20.4.0)
           - name: x-requested-with
             value: edit v1
           - name: host
             value: sourcegraph.com
-        headersSize: 469
+        headersSize: 472
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -551,10 +541,10 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=edit&client-version=v1
       response:
-        bodySize: 680
+        bodySize: 1016
         content:
           mimeType: text/event-stream
-          size: 680
+          size: 1016
           text: >+
             event: completion
 
@@ -568,25 +558,19 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 09 Dec 2024 14:47:49 GMT
+            value: Wed, 25 Dec 2024 19:12:13 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
             value: chunked
           - name: connection
             value: keep-alive
-          - name: retry-after
-            value: "596"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
             value: ""
           - name: cache-control
             value: no-cache
-          - name: observed-calculated-ip-from-forwarded-for
-            value: 80.82.18.146
-          - name: observed-x-forwarded-for
-            value: 80.82.18.146
           - name: vary
             value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
               X-Requested-With,Cookie
@@ -598,13 +582,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1503
+        headersSize: 1299
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-12-09T14:47:44.687Z
-      time: 4823
+      startedDateTime: 2024-12-25T19:12:08.703Z
+      time: 5105
       timings:
         blocked: -1
         connect: -1
@@ -612,7 +596,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 4823
+        wait: 5105
     - _id: a376faab1c8a1993bb48c745757f0a4a
       _order: 0
       cache: {}
