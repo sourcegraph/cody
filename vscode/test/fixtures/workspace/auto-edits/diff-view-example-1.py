@@ -42,7 +42,7 @@ class ContactForm(Base):
     email = Column(String(120), nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
 
-    def to_json(self):
+    def get_json(self):
         return {
             "name": self.name,
             "email": self.email,

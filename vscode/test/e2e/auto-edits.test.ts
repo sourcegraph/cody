@@ -37,6 +37,29 @@ import {
  * testing of auto-edits functionality.
  * [Slack discussion](https://sourcegraph.slack.com/archives/C07F8LLKE06/p1734715196312609)
  * [Integration PR](https://github.com/sourcegraph/cody/pull/6454)
+ *
+ * Implementation Note: Mock Response Strategy
+ *
+ * While typically E2E tests use mock-server.ts for server responses, auto-edits tests
+ * use direct mock responses instead, for the following reasons:
+ *
+ * 1. Flexibility & Extensibility:
+ *    - Mock server requires maintaining a hardcoded list of responses checked against prompts
+ *    - Adding new test cases (e.g. 10-12 different image types from cody-chat-eval)
+ *      would be cumbersome with mock-server
+ *
+ * 2. Response Generation:
+ *    - Server responses require rewriting code snippets
+ *    - Would need to either manually extract logic or use mock-renderer setup
+ *    - Current approach allows direct porting of examples from cody-chat-eval
+ *
+ * 3. Test Coverage:
+ *    - Adapters are already covered by extensive unit tests
+ *    - E2E tests focus on visual regression testing of the feature
+ *    - Skipping adapter layer in E2E is acceptable given the coverage elsewhere
+ *
+ * While this approach bypasses the adapter layer in E2E setup, it provides better
+ * flexibility for testing visual aspects of auto-edits functionality.
  */
 
 const test = baseTest

@@ -237,7 +237,10 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
 
         let response: string | undefined = undefined
         if (autoeditsProviderConfig.isMockResponseFromCurrentDocumentTemplateEnabled) {
-            const responseMetadata = extractAutoEditResponseFromCurrentDocumentCommentTemplate()
+            const responseMetadata = extractAutoEditResponseFromCurrentDocumentCommentTemplate(
+                document,
+                position
+            )
 
             if (responseMetadata) {
                 response = shrinkReplacerTextToCodeToReplaceRange(responseMetadata, codeToReplace)
