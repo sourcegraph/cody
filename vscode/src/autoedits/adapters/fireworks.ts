@@ -1,10 +1,11 @@
+import { autoeditsProviderConfig } from '../autoedits-config'
 import { autoeditsLogger } from '../logger'
-import type { AutoeditsModelAdapter } from './base'
-import type { AutoeditModelOptions } from './base'
-import { getModelResponse } from './utils'
+
+import type { AutoeditModelOptions, AutoeditsModelAdapter } from './base'
 import {
     type FireworksCompatibleRequestParams,
     getMaxOutputTokensForAutoedits,
+    getModelResponse,
     getOpenaiCompatibleChatPrompt,
 } from './utils'
 
@@ -12,7 +13,13 @@ export class FireworksAdapter implements AutoeditsModelAdapter {
     async getModelResponse(option: AutoeditModelOptions): Promise<string> {
         const body = this.getMessageBody(option)
         try {
-            const response = await getModelResponse(option.url, body, option.apiKey)
+            const apiKey = autoeditsProviderConfig.experimentalAutoeditsConfigOverride?.apiKey
+
+            if (!apiKey) {
+                autoeditsLogger.logError('Autoedits', 'No api key provided in the config override')
+                throw new Error('No api key provided in the config override')
+            }
+            const response = await getModelResponse(option.url, body, apiKey)
             if (option.isChatModel) {
                 return response.choices[0].message.content
             }

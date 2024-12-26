@@ -12,7 +12,6 @@ describe('SourcegraphChatAdapter', () => {
     const options: AutoeditModelOptions = {
         url: 'https://sourcegraph.test/api/chat',
         model: 'anthropic/claude-2',
-        apiKey: 'test-key',
         prompt: {
             systemMessage: ps`system message`,
             userMessage: ps`user message`,

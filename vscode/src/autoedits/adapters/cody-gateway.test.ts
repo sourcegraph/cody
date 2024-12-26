@@ -1,5 +1,13 @@
-import { ps } from '@sourcegraph/cody-shared'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
+
+import {
+    CLIENT_CAPABILITIES_FIXTURE,
+    DOTCOM_URL,
+    mockClientCapabilities,
+    mockResolvedConfig,
+    ps,
+} from '@sourcegraph/cody-shared'
+
 import type { AutoeditModelOptions } from './base'
 import { CodyGatewayAdapter } from './cody-gateway'
 
@@ -9,7 +17,6 @@ describe('CodyGatewayAdapter', () => {
     const options: AutoeditModelOptions = {
         url: 'https://test-gateway.sourcegraph.com/v1/completions',
         model: 'anthropic/claude-2',
-        apiKey: 'test-key',
         prompt: {
             systemMessage: ps`system message`,
             userMessage: ps`user message`,
@@ -22,6 +29,14 @@ describe('CodyGatewayAdapter', () => {
     const mockFetch = vi.fn()
 
     beforeEach(() => {
+        mockClientCapabilities(CLIENT_CAPABILITIES_FIXTURE)
+        mockResolvedConfig({
+            configuration: {},
+            auth: {
+                accessToken: 'sgp_local_f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0',
+                serverEndpoint: DOTCOM_URL.toString(),
+            },
+        })
         global.fetch = mockFetch
         adapter = new CodyGatewayAdapter()
         mockFetch.mockReset()
@@ -45,7 +60,7 @@ describe('CodyGatewayAdapter', () => {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                Authorization: `Bearer ${options.apiKey}`,
+                Authorization: expect.stringContaining('sgd_'),
                 'X-Sourcegraph-Feature': 'code_completions',
             },
             body: expect.stringContaining('"model":"anthropic/claude-2"'),

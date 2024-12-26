@@ -1,21 +1,25 @@
+import { currentResolvedConfig, dotcomTokenToGatewayToken } from '@sourcegraph/cody-shared'
+
 import { autoeditsLogger } from '../logger'
+
 import type { AutoeditModelOptions, AutoeditsModelAdapter } from './base'
-import { getModelResponse } from './utils'
 import {
     type FireworksCompatibleRequestParams,
     getMaxOutputTokensForAutoedits,
+    getModelResponse,
     getOpenaiCompatibleChatPrompt,
 } from './utils'
 
 export class CodyGatewayAdapter implements AutoeditsModelAdapter {
-    async getModelResponse(option: AutoeditModelOptions): Promise<string> {
+    public async getModelResponse(options: AutoeditModelOptions): Promise<string> {
         const headers = {
             'X-Sourcegraph-Feature': 'code_completions',
         }
-        const body = this.getMessageBody(option)
+        const body = this.getMessageBody(options)
         try {
-            const response = await getModelResponse(option.url, body, option.apiKey, headers)
-            if (option.isChatModel) {
+            const apiKey = await this.getApiKey()
+            const response = await getModelResponse(options.url, body, apiKey, headers)
+            if (options.isChatModel) {
                 return response.choices[0].message.content
             }
             return response.choices[0].text
@@ -23,6 +27,16 @@ export class CodyGatewayAdapter implements AutoeditsModelAdapter {
             autoeditsLogger.logDebug('AutoEdits', 'Error calling Cody Gateway:', error)
             throw error
         }
+    }
+
+    private async getApiKey(): Promise<string> {
+        const resolvedConfig = await currentResolvedConfig()
+        const fastPathAccessToken = dotcomTokenToGatewayToken(resolvedConfig.auth.accessToken)
+        if (!fastPathAccessToken) {
+            autoeditsLogger.logError('Autoedits', 'FastPath access token is not available')
+            throw new Error('FastPath access token is not available')
+        }
+        return fastPathAccessToken
     }
 
     private getMessageBody(options: AutoeditModelOptions): string {

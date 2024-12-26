@@ -1,5 +1,9 @@
-import { ps } from '@sourcegraph/cody-shared'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
+
+import { ps } from '@sourcegraph/cody-shared'
+
+import * as autoeditsConfig from '../autoedits-config'
+
 import type { AutoeditModelOptions } from './base'
 import { FireworksAdapter } from './fireworks'
 
@@ -9,7 +13,6 @@ describe('FireworksAdapter', () => {
     const options: AutoeditModelOptions = {
         url: 'https://api.fireworks.ai/v1/completions',
         model: 'accounts/fireworks/models/llama-v2-7b',
-        apiKey: 'test-key',
         prompt: {
             systemMessage: ps`system message`,
             userMessage: ps`user message`,
@@ -17,6 +20,14 @@ describe('FireworksAdapter', () => {
         codeToRewrite: 'const x = 1',
         userId: 'test-user',
         isChatModel: true,
+    }
+
+    const apiKey = 'test-api-key'
+    autoeditsConfig.autoeditsProviderConfig.experimentalAutoeditsConfigOverride = {
+        provider: 'fireworks',
+        apiKey,
+        tokenLimit: {} as any,
+        ...options,
     }
 
     const mockFetch = vi.fn()
@@ -43,7 +54,7 @@ describe('FireworksAdapter', () => {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                Authorization: `Bearer ${options.apiKey}`,
+                Authorization: `Bearer ${apiKey}`,
             },
             body: expect.stringContaining('"model":"accounts/fireworks/models/llama-v2-7b"'),
         })

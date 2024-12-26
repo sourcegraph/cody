@@ -1,17 +1,26 @@
+import { autoeditsProviderConfig } from '../autoedits-config'
 import { autoeditsLogger } from '../logger'
+
 import type { AutoeditModelOptions, AutoeditsModelAdapter } from './base'
 import { getModelResponse, getOpenaiCompatibleChatPrompt } from './utils'
 
 export class OpenAIAdapter implements AutoeditsModelAdapter {
-    async getModelResponse(option: AutoeditModelOptions): Promise<string> {
+    async getModelResponse(options: AutoeditModelOptions): Promise<string> {
         try {
+            const apiKey = autoeditsProviderConfig.experimentalAutoeditsConfigOverride?.apiKey
+
+            if (!apiKey) {
+                autoeditsLogger.logError('Autoedits', 'No api key provided in the config override')
+                throw new Error('No api key provided in the config override')
+            }
+
             const response = await getModelResponse(
-                option.url,
+                options.url,
                 JSON.stringify({
-                    model: option.model,
+                    model: options.model,
                     messages: getOpenaiCompatibleChatPrompt({
-                        systemMessage: option.prompt.systemMessage,
-                        userMessage: option.prompt.userMessage,
+                        systemMessage: options.prompt.systemMessage,
+                        userMessage: options.prompt.userMessage,
                     }),
                     temperature: 0.5,
                     max_tokens: 256,
@@ -19,7 +28,7 @@ export class OpenAIAdapter implements AutoeditsModelAdapter {
                         type: 'text',
                     },
                 }),
-                option.apiKey
+                apiKey
             )
             return response.choices[0].message.content
         } catch (error) {
