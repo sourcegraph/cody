@@ -56,6 +56,7 @@ export class RecentEditsRetriever implements vscode.Disposable, ContextRetriever
         for (const diff of diffs) {
             const content = diff.diff.toString()
             const autocompleteSnippet: AutocompleteContextSnippet = {
+                type: 'base',
                 uri: diff.uri,
                 identifier: this.identifier,
                 content,

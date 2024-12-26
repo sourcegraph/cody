@@ -11,11 +11,15 @@ import {
     getTextFromNotebookCells,
 } from './notebook-utils'
 
+interface TrackViewPortLines {
+    startLine: number
+    endLine: number
+}
+
 interface TrackedViewPort {
     uri: vscode.Uri
     content: string
-    startLine?: number
-    endLine?: number
+    lines?: TrackViewPortLines
     languageId: string
     lastAccessTimestamp: number
 }
@@ -66,16 +70,25 @@ export class RecentViewPortRetriever implements vscode.Disposable, ContextRetrie
         const sortedViewPorts = this.getValidViewPorts(document)
 
         const snippetPromises = sortedViewPorts.map(async viewPort => {
-            const snippet: AutocompleteContextSnippet = {
+            const baseSnippetData = {
                 uri: viewPort.uri,
                 content: viewPort.content,
                 identifier: this.identifier,
-                startLine: viewPort.startLine,
-                endLine: viewPort.endLine,
                 metadata: {
                     timeSinceActionMs: Date.now() - viewPort.lastAccessTimestamp,
                 },
             }
+            const snippet: AutocompleteContextSnippet =
+                viewPort.lines !== undefined
+                    ? {
+                          type: 'file',
+                          ...viewPort.lines,
+                          ...baseSnippetData,
+                      }
+                    : {
+                          type: 'base',
+                          ...baseSnippetData,
+                      }
             return snippet
         })
         return Promise.all(snippetPromises)
@@ -197,8 +210,12 @@ export class RecentViewPortRetriever implements vscode.Disposable, ContextRetrie
             content: params.content,
             languageId: params.languageId,
             lastAccessTimestamp: now,
-            startLine: params.startLine,
-            endLine: params.endLine,
+            ...(params.startLine !== undefined || params.endLine !== undefined
+                ? {
+                      startLine: params.startLine,
+                      endLine: params.endLine,
+                  }
+                : undefined),
         })
     }
 

@@ -131,7 +131,7 @@ export class DefaultCompletionsContextRanker implements CompletionsContextRanker
         const fusedResults = fuseResults(
             results.map(r => r.snippets),
             result => {
-                if (result.startLine === undefined || result.endLine === undefined) {
+                if (result.type === 'base') {
                     return [result.uri.toString()]
                 }
                 const lineIds = []

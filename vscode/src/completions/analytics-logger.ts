@@ -11,7 +11,6 @@ import {
     isDotCom,
     isNetworkError,
     telemetryRecorder,
-    AutocompleteFileContextSnippet
 } from '@sourcegraph/cody-shared'
 import type { KnownString, TelemetryEventParameters } from '@sourcegraph/telemetry'
 
@@ -768,16 +767,16 @@ function getInlineContextItemContext(
         suffix: docContext.completeSuffix.slice(0, MAX_PREFIX_SUFFIX_SIZE_BYTES),
         triggerLine: position.line,
         triggerCharacter: position.character,
-        context: inlineContextParams.context.map(
-            snippet => ({
-                identifier: snippet.identifier,
-                content: snippet.content,
-                filePath: displayPathWithoutWorkspaceFolderPrefix(snippet.uri),
-                metadata: snippet.metadata,
-                startLine: typeof snippet === 'AutocompleteFileContextSnippet' ? snippet.startLine : undefined,
-                endLine: typeof snippet === 'AutocompleteFileContextSnippet' ? snippet.endLine : undefined,
-            })
-        ),
+        context: inlineContextParams.context.map(snippet => ({
+            identifier: snippet.identifier,
+            content: snippet.content,
+            filePath: displayPathWithoutWorkspaceFolderPrefix(snippet.uri),
+            metadata: snippet.metadata,
+            ...(snippet.type !== 'base' && {
+                startLine: snippet.startLine,
+                endLine: snippet.endLine,
+            }),
+        })),
     }
 }
 function suggestionDocumentDiffTracker(

@@ -17,6 +17,7 @@ interface AutocompleteContextSnippetMetadata {
 }
 
 export interface AutocompleteBaseContextSnippet {
+    type: 'base'
     identifier: string
     uri: URI
     content: string
@@ -28,14 +29,17 @@ export interface AutocompleteBaseContextSnippet {
     metadata?: AutocompleteContextSnippetMetadata
 }
 
-export interface AutocompleteFileContextSnippet extends AutocompleteBaseContextSnippet {
+export interface AutocompleteFileContextSnippet extends Omit<AutocompleteBaseContextSnippet, 'type'> {
+    type: 'file'
     startLine: number
     endLine: number
 }
 
-export interface AutocompleteSymbolContextSnippet extends AutocompleteFileContextSnippet {
+export interface AutocompleteSymbolContextSnippet extends Omit<AutocompleteFileContextSnippet, 'type'> {
+    type: 'symbol'
     symbol: string
 }
+
 export type AutocompleteContextSnippet =
     | AutocompleteFileContextSnippet
     | AutocompleteSymbolContextSnippet

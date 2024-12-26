@@ -464,6 +464,7 @@ describe('getCurrentFileContext', () => {
 
 describe('getContextItemsInTokenBudget', () => {
     const getContextItem = (content: string, identifier: string): AutocompleteContextSnippet => ({
+        type: 'file',
         content,
         identifier,
         uri: testFileUri('foo.ts'),
@@ -537,6 +538,7 @@ describe('getLintErrorsPrompt', () => {
         identifier: string,
         fileName = 'foo.ts'
     ): AutocompleteContextSnippet => ({
+        type: 'file',
         content,
         identifier,
         uri: testFileUri(fileName),
@@ -615,6 +617,7 @@ describe('getRecentCopyPrompt', () => {
         identifier: string,
         fileName = 'foo.ts'
     ): AutocompleteContextSnippet => ({
+        type: 'file',
         content,
         identifier,
         uri: testFileUri(fileName),
@@ -673,6 +676,7 @@ describe('getRecentEditsPrompt', () => {
         identifier: string,
         fileName = 'foo.ts'
     ): AutocompleteContextSnippet => ({
+        type: 'file',
         content,
         identifier,
         uri: testFileUri(fileName),
@@ -755,6 +759,7 @@ describe('getRecentlyViewedSnippetsPrompt', () => {
         identifier: string,
         fileName = 'foo.ts'
     ): AutocompleteContextSnippet => ({
+        type: 'file',
         content,
         identifier,
         uri: testFileUri(fileName),
@@ -833,6 +838,7 @@ describe('getJaccardSimilarityPrompt', () => {
         identifier: string,
         fileName = 'foo.ts'
     ): AutocompleteContextSnippet => ({
+        type: 'file',
         content,
         identifier,
         uri: testFileUri(fileName),

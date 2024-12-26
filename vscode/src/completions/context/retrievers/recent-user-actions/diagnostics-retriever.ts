@@ -98,6 +98,7 @@ export class DiagnosticsRetriever implements vscode.Disposable, ContextRetriever
         )
         return Promise.all(
             diagnosticInfos.map(async info => ({
+                type: 'file',
                 identifier: this.identifier,
                 content: await this.getDiagnosticPromptMessage(info),
                 uri: document.uri,
