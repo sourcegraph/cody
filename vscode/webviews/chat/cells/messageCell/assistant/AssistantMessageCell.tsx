@@ -23,7 +23,7 @@ import {
     ChatMessageContent,
     type CodeBlockActionsProps,
 } from '../../../ChatMessageContent/ChatMessageContent'
-import { ErrorItem, RequestErrorItem } from '../../../ErrorItem'
+import { ErrorItem } from '../../../ErrorItem'
 import { type Interaction, editHumanMessage } from '../../../Transcript'
 import { FeedbackButtons } from '../../../components/FeedbackButtons'
 import { LoadingDots } from '../../../components/LoadingDots'
@@ -109,17 +109,15 @@ export const AssistantMessageCell: FunctionComponent<{
                 }
                 content={
                     <>
-                        {message.error && !isAborted ? (
-                            typeof message.error === 'string' ? (
-                                <RequestErrorItem error={message.error} />
-                            ) : (
-                                <ErrorItem
-                                    error={message.error}
-                                    userInfo={userInfo}
-                                    postMessage={postMessage}
-                                />
-                            )
-                        ) : null}
+                        <ErrorItem
+                            userInfo={userInfo}
+                            postMessage={postMessage}
+                        />
+                        {isSearchIntent && isLoading && (
+                            <div className="tw-flex">
+                                <LoadingDots /> Searching...
+                            </div>
+                        )}
                         {experimentalOneBoxEnabled && !isLoading && message.search && (
                             <SearchResults
                                 message={message as ChatMessageWithSearch}
