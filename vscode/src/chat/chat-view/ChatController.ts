@@ -102,7 +102,6 @@ import { executeCodyCommand } from '../../commands/CommandsController'
 import { getContextFileFromUri } from '../../commands/context/file-path'
 import { getContextFileFromCursor } from '../../commands/context/selection'
 import { escapeRegExp } from '../../context/openctx/remoteFileSearch'
-import { getEditor } from '../../editor/active-editor'
 import { resolveContextItems } from '../../editor/utils/editor-context'
 import type { VSCodeEditor } from '../../editor/vscode-editor'
 import type { ExtensionClient } from '../../extension-client'
@@ -822,14 +821,30 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         }
         console.log('# model', model)
 
-        const agent = getAgent(model, {
+        const { intent } = await this.getIntentAndScores({
+            requestID,
+            input: editorState
+                ? inputTextWithMappedContextChipsFromPromptEditorState(editorState)
+                : inputText.toString(),
+            detectedIntent,
+            detectedIntentScores,
+            signal,
+        })
+        signal.throwIfAborted()
+        this.chatBuilder.setLastMessageIntent(intent)
+        this.postEmptyMessageInProgress(model)
+
+        const agentName = intent === 'search' ? 'search' : model
+
+        const agent = getAgent(agentName, {
             contextRetriever: this.contextRetriever,
             editor: this.editor,
             chatClient: this.chatClient,
             codyToolProvider: this.toolProvider,
         })
-        let lastContent: PromptString = ps``
         this.postEmptyMessageInProgress(model)
+        let messageInProgress: ChatMessage | undefined = undefined
+
         await agent.handle(
             {
                 requestID,
@@ -840,22 +855,26 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 chatBuilder: this.chatBuilder,
             },
             {
-                postStatusUpdate: (id: number, type: string, statusMessage: string): void => {
-                    console.error('# postStatusUpdated not implemented', id, type, statusMessage)
-                },
                 postError: (error: Error, type?: MessageErrorType): void => {
                     this.postError(error, type)
                 },
-                postStatement: (id: number, message: PromptString): void => {
-                    lastContent = message
-                    this.postViewTranscript({
-                        speaker: 'assistant',
-                        text: message,
-                        model,
-                    })
+                postMessageInProgress: (message?: ChatMessage): void => {
+                    messageInProgress = message
+                    this.postViewTranscript(message)
                 },
                 postDone: (): void => {
-                    this.addBotMessage(requestID, lastContent, model)
+                    // TODO(beyang): handle abort
+
+                    // HACK(beyang): should unify behavior in posting new messages
+                    // to the transcript
+                    if (messageInProgress?.search || messageInProgress?.error) {
+                        this.chatBuilder.addBotMessage(messageInProgress, model)
+                    } else if (messageInProgress?.text) {
+                        this.addBotMessage(requestID, messageInProgress.text, model)
+                    }
+
+                    this.saveSession()
+                    this.postViewTranscript()
                 },
             }
         )

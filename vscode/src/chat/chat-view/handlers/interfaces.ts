@@ -1,4 +1,9 @@
-import type { ContextItem, PromptString, SerializedPromptEditorState } from '@sourcegraph/cody-shared'
+import type {
+    ChatMessage,
+    ContextItem,
+    PromptString,
+    SerializedPromptEditorState,
+} from '@sourcegraph/cody-shared'
 import type { MessageErrorType } from '../../MessageProvider'
 import type { CodyToolProvider } from '../../agentic/CodyToolProvider'
 import type { ChatBuilder } from '../ChatBuilder'
@@ -16,10 +21,9 @@ export interface AgentTools {
  * Interface for the agent to post messages back to the user
  */
 export interface AgentHandlerDelegate {
-    postStatusUpdate(id: number, type: string, statusMessage: string): void
     postError(error: Error, type?: MessageErrorType): void
-    postStatement(id: number, message: PromptString): void
-    postDone(ops?: { abort: boolean }): void
+    postMessageInProgress(message: ChatMessage): void
+    postDone(ops?: { abort?: boolean; finalMessage?: ChatMessage }): void
 }
 
 export interface AgentRequest {

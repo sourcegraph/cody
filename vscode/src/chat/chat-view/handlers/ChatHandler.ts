@@ -149,7 +149,11 @@ export class ChatHandler implements AgentHandler {
             chatBuilder,
             {
                 update: content => {
-                    delegate.postStatement(0, PromptString.unsafe_fromLLMResponse(content))
+                    delegate.postMessageInProgress({
+                        speaker: 'assistant',
+                        text: PromptString.unsafe_fromLLMResponse(content),
+                        model: this.modelId,
+                    })
                 },
                 close: content => {
                     delegate.postDone()
@@ -191,10 +195,6 @@ export class ChatHandler implements AgentHandler {
         return { prompt, context }
     }
 
-    private postError(error: Error): void {
-        throw new Error('Method not implemented.')
-    }
-
     // Overridable by subclasses that want to customize context computation
     protected async computeContext(
         requestID: string,
@@ -218,8 +218,7 @@ export class ChatHandler implements AgentHandler {
                 return { contextItems: contextAlternatives[0].items }
             })
         } catch (e) {
-            this.postError(new Error(`Unexpected error computing context, no context was used: ${e}`))
-            return { contextItems: [] }
+            return { error: new Error(`Unexpected error computing context, no context was used: ${e}`) }
         }
     }
 
@@ -249,8 +248,7 @@ export class ChatHandler implements AgentHandler {
         const [priorityContext, retrievedContext, openCtxContext] = await Promise.all([
             priorityContextPromise,
             retrievedContextPromise.catch(e => {
-                this.postError(new Error(`Failed to retrieve search context: ${e}`))
-                return []
+                throw new Error(`Failed to retrieve search context: ${e}`)
             }),
             openCtxContextPromise,
         ])

@@ -1,5 +1,6 @@
 import { ChatHandler } from './ChatHandler'
 import { ContextAgentHandler } from './ContextAgentHandler'
+import { SearchHandler } from './SearchHandler'
 import type { AgentHandler, AgentTools } from './interfaces'
 
 const agentRegister = new Map<string, (id: string, tools: AgentTools) => AgentHandler>()
@@ -21,3 +22,4 @@ registerAgent(
     (id: string, { contextRetriever, editor, chatClient, codyToolProvider }: AgentTools) =>
         new ContextAgentHandler(id, contextRetriever, editor, chatClient, codyToolProvider)
 )
+registerAgent('search', (_id: string, _tools: AgentTools) => new SearchHandler())
