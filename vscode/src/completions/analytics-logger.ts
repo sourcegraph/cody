@@ -11,6 +11,7 @@ import {
     isDotCom,
     isNetworkError,
     telemetryRecorder,
+    AutocompleteFileContextSnippet
 } from '@sourcegraph/cody-shared'
 import type { KnownString, TelemetryEventParameters } from '@sourcegraph/telemetry'
 
@@ -768,13 +769,13 @@ function getInlineContextItemContext(
         triggerLine: position.line,
         triggerCharacter: position.character,
         context: inlineContextParams.context.map(
-            ({ identifier, content, startLine, endLine, uri, metadata }) => ({
-                identifier,
-                content,
-                startLine,
-                endLine,
-                filePath: displayPathWithoutWorkspaceFolderPrefix(uri),
-                metadata,
+            snippet => ({
+                identifier: snippet.identifier,
+                content: snippet.content,
+                filePath: displayPathWithoutWorkspaceFolderPrefix(snippet.uri),
+                metadata: snippet.metadata,
+                startLine: typeof snippet === 'AutocompleteFileContextSnippet' ? snippet.startLine : undefined,
+                endLine: typeof snippet === 'AutocompleteFileContextSnippet' ? snippet.endLine : undefined,
             })
         ),
     }

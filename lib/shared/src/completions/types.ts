@@ -16,11 +16,9 @@ interface AutocompleteContextSnippetMetadata {
     retrieverMetadata?: AutocompleteContextSnippetMetadataFields
 }
 
-export interface AutocompleteFileContextSnippet {
+export interface AutocompleteBaseContextSnippet {
     identifier: string
     uri: URI
-    startLine?: number
-    endLine?: number
     content: string
     /**
      * Metadata populated by the context retriever.
@@ -30,12 +28,18 @@ export interface AutocompleteFileContextSnippet {
     metadata?: AutocompleteContextSnippetMetadata
 }
 
+export interface AutocompleteFileContextSnippet extends AutocompleteBaseContextSnippet {
+    startLine: number
+    endLine: number
+}
+
 export interface AutocompleteSymbolContextSnippet extends AutocompleteFileContextSnippet {
     symbol: string
 }
 export type AutocompleteContextSnippet =
     | AutocompleteFileContextSnippet
     | AutocompleteSymbolContextSnippet
+    | AutocompleteBaseContextSnippet
 
 export interface DocumentContext extends DocumentDependentContext, LinesContext {
     position: vscode.Position

@@ -926,7 +926,7 @@ function mockActiveNotebookEditor(notebook: vscode.NotebookDocument | undefined)
     )
 }
 
-describe.only('getPrefixAndSuffixForAreaForNotebook', () => {
+describe('getPrefixAndSuffixForAreaForNotebook', () => {
     beforeEach(() => {
         // Clear all mocks before each test
         vi.restoreAllMocks()

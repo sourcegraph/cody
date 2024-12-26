@@ -14,6 +14,8 @@ import {
 interface TrackedViewPort {
     uri: vscode.Uri
     content: string
+    startLine?: number
+    endLine?: number
     languageId: string
     lastAccessTimestamp: number
 }
@@ -68,13 +70,15 @@ export class RecentViewPortRetriever implements vscode.Disposable, ContextRetrie
                 uri: viewPort.uri,
                 content: viewPort.content,
                 identifier: this.identifier,
+                startLine: viewPort.startLine,
+                endLine: viewPort.endLine,
                 metadata: {
                     timeSinceActionMs: Date.now() - viewPort.lastAccessTimestamp,
                 },
             }
             return snippet
         })
-        return await Promise.all(snippetPromises)
+        return Promise.all(snippetPromises)
     }
 
     private getValidViewPorts(document: vscode.TextDocument): TrackedViewPort[] {
@@ -114,11 +118,13 @@ export class RecentViewPortRetriever implements vscode.Disposable, ContextRetrie
         if (this.activeTextEditor) {
             // Update the previous editor which was active before this one
             // Most of the property would remain same, but lastAccessTimestamp would be updated on the update
-            this.updateTrackedViewPort(
-                this.activeTextEditor.document.uri,
-                this.activeTextEditor.document.getText(this.activeTextEditor.visibleRanges[0]),
-                this.activeTextEditor.document.languageId
-            )
+            this.updateTrackedViewPort({
+                uri: this.activeTextEditor.document.uri,
+                content: this.activeTextEditor.document.getText(this.activeTextEditor.visibleRanges[0]),
+                languageId: this.activeTextEditor.document.languageId,
+                startLine: this.activeTextEditor.visibleRanges.at(-1)?.start.line,
+                endLine: this.activeTextEditor.visibleRanges.at(-1)?.end.line,
+            })
         }
         if (!editor) {
             return
@@ -147,11 +153,13 @@ export class RecentViewPortRetriever implements vscode.Disposable, ContextRetrie
         if (visibleRanges.length === 0) {
             return
         }
-        this.updateTrackedViewPort(
-            editor.document.uri,
-            editor.document.getText(visibleRanges?.at(-1)),
-            editor.document.languageId
-        )
+        this.updateTrackedViewPort({
+            uri: editor.document.uri,
+            content: editor.document.getText(visibleRanges?.at(-1)),
+            languageId: editor.document.languageId,
+            startLine: visibleRanges?.at(-1)?.start.line,
+            endLine: visibleRanges?.at(-1)?.end.line,
+        })
     }
 
     private updateNotebookEditor(
@@ -164,25 +172,33 @@ export class RecentViewPortRetriever implements vscode.Disposable, ContextRetrie
         const visibleCells = notebookEditor.notebook.getCells(visibleRanges?.at(-1))
         const content = getTextFromNotebookCells(notebookEditor.notebook, visibleCells).toString()
 
-        this.updateTrackedViewPort(
-            notebookEditor.notebook.uri,
+        this.updateTrackedViewPort({
+            uri: notebookEditor.notebook.uri,
             content,
-            getNotebookLanguageId(notebookEditor.notebook)
-        )
+            languageId: getNotebookLanguageId(notebookEditor.notebook),
+        })
     }
 
-    private updateTrackedViewPort(uri: vscode.Uri, content: string, languageId: string): void {
-        if (uri.scheme !== 'file') {
+    private updateTrackedViewPort(params: {
+        uri: vscode.Uri
+        content: string
+        languageId: string
+        startLine?: number
+        endLine?: number
+    }): void {
+        if (params.uri.scheme !== 'file') {
             return
         }
         const now = Date.now()
-        const key = uri.toString()
+        const key = params.uri.toString()
 
         this.viewportsByDocumentUri.set(key, {
-            uri,
-            content,
-            languageId,
+            uri: params.uri,
+            content: params.content,
+            languageId: params.languageId,
             lastAccessTimestamp: now,
+            startLine: params.startLine,
+            endLine: params.endLine,
         })
     }
 
