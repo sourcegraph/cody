@@ -102,7 +102,7 @@ class CliTool extends CodyTool {
             prompt: {
                 instruction: ps`To see the output of shell commands - Do not suggest any actions that may cause harm or security breaches. Limit to actions that are safe to perform. Follow these guidelines for all operations: Commands must be single, atomic operations. Commands must have explicit, validated parameters. Reject commands containing shell metacharacters (;|&$><\`). Reject commands with string concatenation or interpolation. Reject commands containing paths outside of the current working directory. Reject commands that make network requests. Reject commands that could enable privilege escalation. Reject commands containing GTFOBin-like shell escapes. Reject commands that modify system files or settings. Reject commands that access sensitive files. Reject commands that read environment variables.`,
                 placeholder: ps`SHELL_COMMAND`,
-                example: ps`Get output for git diff: \`<TOOLCLI><cmd>git diff</cmd></TOOLCLI>\`. Never execute destructive commands: \`<TOOLCLI><cmd>rm -rf /</cmd></TOOLCLI>\`. Never execute commands with string interpolation: \`<TOOLCLI><cmd>echo $HOME</cmd></TOOLCLI>\`. Never execute commands that make network connections: \`<TOOLCLI><cmd>ssh user@host</cmd></TOOLCLI>\``,
+                example: ps`Get output for git diff: \`<TOOLCLI><cmd>git diff</cmd></TOOLCLI>\`. Never execute destructive commands: \`<TOOLCLI><ban>rm -rf /</ban></TOOLCLI>\`. Never execute commands with string interpolation: \`<TOOLCLI><ban>echo $HOME</ban></TOOLCLI>\`. Never execute commands that make network connections: \`<TOOLCLI><ban>ssh user@host</ban></TOOLCLI>\``,
             },
         })
     }
