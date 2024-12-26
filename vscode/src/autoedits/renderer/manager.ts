@@ -129,6 +129,7 @@ export class AutoEditsDefaultRendererManager implements AutoEditsRendererManager
             decorator.dispose()
         }
         this.activeEdit = null
+        await vscode.commands.executeCommand('editor.action.inlineSuggest.hide')
         await vscode.commands.executeCommand('setContext', 'cody.supersuggest.active', false)
     }
 
