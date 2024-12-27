@@ -363,6 +363,9 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     viewColumn: vscode.ViewColumn.Beside,
                 })
                 break
+            case 'openRemoteFile':
+                this.openRemoteFile(message.uri)
+                break
             case 'newFile':
                 await handleCodeFromSaveToNewFile(message.text, this.editor)
                 break
@@ -926,6 +929,16 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         }
 
         return
+    }
+
+    private async openRemoteFile(uri: vscode.Uri) {
+        const json = uri.toJSON()
+        json.scheme = 'sourcegraph'
+        const sourcegraphSchemaURI = vscode.Uri.from(json)
+
+        vscode.workspace
+            .openTextDocument(sourcegraphSchemaURI)
+            .then(doc => vscode.window.showTextDocument(doc))
     }
 
     private submitOrEditOperation: AbortController | undefined
