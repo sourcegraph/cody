@@ -8,8 +8,10 @@ import { getFileMatchUrl } from '../utils'
 
 import { CodeExcerpt } from './CodeExcerpt'
 
+import { CodyIDE } from '@sourcegraph/cody-shared'
 import type { NLSSearchFileMatch } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 import { getVSCodeAPI } from '../../../utils/VSCodeApi'
+import { useConfig } from '../../../utils/useConfig'
 import resultStyles from '../CodeSnippet.module.css'
 import styles from './FileMatchChildren.module.css'
 
@@ -17,10 +19,11 @@ interface FileMatchProps {
     result: NLSSearchFileMatch
     grouped: MatchGroup[]
     serverEndpoint: string
+    onLineClick?: () => void
 }
 
 export const FileMatchChildren: FC<PropsWithChildren<FileMatchProps>> = props => {
-    const { result, grouped, serverEndpoint } = props
+    const { result, grouped, serverEndpoint, onLineClick } = props
 
     const createCodeExcerptLink = (group: MatchGroup): string => {
         const urlBuilder = SourcegraphURL.from(getFileMatchUrl(serverEndpoint, result))
@@ -39,15 +42,24 @@ export const FileMatchChildren: FC<PropsWithChildren<FileMatchProps>> = props =>
         return urlBuilder.toString()
     }
 
+    const {
+        clientCapabilities: { agentIDE },
+    } = useConfig()
+
     const navigateToFile = useCallback(
         (line: number) => {
+            if (agentIDE === CodyIDE.VSCode && onLineClick) {
+                onLineClick()
+                return
+            }
+
             // TODO: this does not work on web as opening links from within a web worker does not work.
             getVSCodeAPI().postMessage({
                 command: 'links',
                 value: `${getFileMatchUrl(serverEndpoint, result)}?L${line}`,
             })
         },
-        [serverEndpoint, result]
+        [serverEndpoint, result, onLineClick, agentIDE]
     )
 
     return (
