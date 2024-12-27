@@ -98,7 +98,7 @@ export abstract class CodyChatAgent {
             id: string,
             stepNum: number,
             status: ChatMessageStep['status']
-        ) => ({
+        ): ChatMessageStep => ({
             content,
             id,
             step: stepNum,
