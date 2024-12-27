@@ -236,7 +236,10 @@ export class AutoEditsDefaultRendererManager implements AutoEditsRendererManager
             )
             return { inlineCompletions: [inlineCompletionItem], updatedDecorationInfo: decorationInfo }
         }
-
+        autoeditsOutputChannelLogger.logDebug(
+            'maybeRenderDecorationsAndTryMakeInlineCompletionResponse',
+            'Rendering a diff view for auto-edits.'
+        )
         await this.showEdit({
             document,
             range: codeToReplaceData.range,

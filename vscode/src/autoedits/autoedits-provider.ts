@@ -74,6 +74,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
     })
 
     constructor(chatClient: ChatClient) {
+        autoeditsOutputChannelLogger.logDebug('Constructor', 'Constructing AutoEditsProvider')
         this.modelAdapter = createAutoeditsModelAdapter({
             providerName: autoeditsProviderConfig.provider,
             isChatModel: autoeditsProviderConfig.isChatModel,
@@ -145,9 +146,17 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
 
         await new Promise(resolve => setTimeout(resolve, INLINE_COMPLETION_DEFAULT_DEBOUNCE_INTERVAL_MS))
         if (abortSignal.aborted) {
+            autoeditsOutputChannelLogger.logDebug(
+                'provideInlineCompletionItems',
+                'debounce aborted before calculating getCurrentDocContext'
+            )
             return null
         }
 
+        autoeditsOutputChannelLogger.logDebug(
+            'provideInlineCompletionItems',
+            'Calculating getCurrentDocContext...'
+        )
         const docContext = getCurrentDocContext({
             document,
             position,
@@ -155,6 +164,10 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             maxSuffixLength: tokensToChars(autoeditsProviderConfig.tokenLimit.suffixTokens),
         })
 
+        autoeditsOutputChannelLogger.logDebug(
+            'provideInlineCompletionItems',
+            'Calculating context from contextMixer...'
+        )
         const { context } = await this.contextMixer.getContext({
             document,
             position,
@@ -162,9 +175,17 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             maxChars: 32_000,
         })
         if (abortSignal.aborted) {
+            autoeditsOutputChannelLogger.logDebug(
+                'provideInlineCompletionItems',
+                'aborted in getContext'
+            )
             return null
         }
 
+        autoeditsOutputChannelLogger.logDebug(
+            'provideInlineCompletionItems',
+            'Calculating prompt from promptStrategy...'
+        )
         const { codeToReplaceData, prompt } = this.promptStrategy.getPromptForModelType({
             document,
             position,
@@ -174,6 +195,10 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             isChatModel: autoeditsProviderConfig.isChatModel,
         })
 
+        autoeditsOutputChannelLogger.logDebug(
+            'provideInlineCompletionItems',
+            'Calculating prediction from getPrediction...'
+        )
         const initialPrediction = await this.getPrediction({
             document,
             position,
@@ -181,6 +206,10 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             codeToReplaceData,
         })
         if (abortSignal?.aborted || !initialPrediction) {
+            autoeditsOutputChannelLogger.logDebug(
+                'provideInlineCompletionItems',
+                'aborted after getPrediction'
+            )
             return null
         }
 

@@ -2,6 +2,7 @@ import type { AutocompleteContextSnippet } from '@sourcegraph/cody-shared'
 import { isDefined } from '@sourcegraph/cody-shared'
 import { XMLBuilder } from 'fast-xml-parser'
 import * as vscode from 'vscode'
+import { autocompleteOutputChannelLogger } from '../../../output-channel-logger'
 import type { ContextRetriever, ContextRetrieverOptions } from '../../../types'
 import { RetrieverIdentifier } from '../../utils'
 import { getCellIndexInActiveNotebookEditor, getNotebookCells } from './notebook-utils'
@@ -41,15 +42,25 @@ export class DiagnosticsRetriever implements vscode.Disposable, ContextRetriever
         this.useCaretToIndicateErrorLocation = options.useCaretToIndicateErrorLocation ?? true
     }
 
-    public retrieve({
+    public async retrieve({
         document,
         position,
     }: ContextRetrieverOptions): Promise<AutocompleteContextSnippet[]> {
-        if (getCellIndexInActiveNotebookEditor(document) !== -1) {
-            // Handle the diagnostic error for the notebook
-            return this.getDiagnosticsForNotebook(position)
-        }
-        return this.getDiagnosticsForDocument(document, position)
+        autocompleteOutputChannelLogger.logDebug(
+            'diagnostics retriever',
+            'Retrieving diagnostics context'
+        )
+
+        const diagnosticsSnippets =
+            getCellIndexInActiveNotebookEditor(document) !== -1
+                ? await this.getDiagnosticsForNotebook(position)
+                : await this.getDiagnosticsForDocument(document, position)
+
+        autocompleteOutputChannelLogger.logDebug(
+            'diagnostics retriever',
+            `Retrieved ${diagnosticsSnippets.length} diagnostics context`
+        )
+        return diagnosticsSnippets
     }
 
     private async getDiagnosticsForNotebook(
