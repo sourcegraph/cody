@@ -631,6 +631,6 @@ export class AutoeditAnalyticsLogger {
 
 export const autoeditAnalyticsLogger = new AutoeditAnalyticsLogger()
 
-function getTimeNowInMillis(): number {
+export function getTimeNowInMillis(): number {
     return Math.floor(performance.now())
 }

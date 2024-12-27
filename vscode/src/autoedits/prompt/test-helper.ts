@@ -29,9 +29,6 @@ export function createCodeToReplaceDataForTest(
         docContext,
         position,
         document,
-        maxPrefixLinesInArea: options.maxPrefixLinesInArea,
-        maxSuffixLinesInArea: options.maxSuffixLinesInArea,
-        codeToRewritePrefixLines: options.codeToRewritePrefixLines,
-        codeToRewriteSuffixLines: options.codeToRewriteSuffixLines,
+        tokenBudget: options,
     }).codeToReplaceData
 }

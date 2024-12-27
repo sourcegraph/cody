@@ -5,6 +5,7 @@ import { RetrieverIdentifier } from '../../completions/context/utils'
 import { getCurrentDocContext } from '../../completions/get-current-doc-context'
 import { documentAndPosition } from '../../completions/test-helpers'
 import {
+    type CurrentFilePromptOptions,
     getCompletionsPromptWithSystemPrompt,
     getContextItemsInTokenBudget,
     getContextPromptWithPath,
@@ -16,7 +17,7 @@ import {
     getRecentEditsContextPromptWithPath,
     getRecentEditsPrompt,
     getRecentlyViewedSnippetsPrompt,
-    joinPromptsWithNewlineSeperator,
+    joinPromptsWithNewlineSeparator,
 } from '../prompt/prompt-utils'
 
 describe('getContextPromptWithPath', () => {
@@ -60,14 +61,16 @@ describe('getCurrentFilePromptComponents', () => {
             maxSuffixLength: 100,
         })
 
-        const options = {
+        const options: CurrentFilePromptOptions = {
             docContext,
             document,
             position,
-            maxPrefixLinesInArea: 1,
-            maxSuffixLinesInArea: 1,
-            codeToRewritePrefixLines: 1,
-            codeToRewriteSuffixLines: 1,
+            tokenBudget: {
+                maxPrefixLinesInArea: 1,
+                maxSuffixLinesInArea: 1,
+                codeToRewritePrefixLines: 1,
+                codeToRewriteSuffixLines: 1,
+            },
         }
 
         const result = getCurrentFilePromptComponents(options)
@@ -122,14 +125,16 @@ describe('getCurrentFilePromptComponents', () => {
             maxSuffixLength: 30,
         })
 
-        const options = {
+        const options: CurrentFilePromptOptions = {
             docContext,
             document,
             position,
-            maxPrefixLinesInArea: 1,
-            maxSuffixLinesInArea: 1,
-            codeToRewritePrefixLines: 1,
-            codeToRewriteSuffixLines: 1,
+            tokenBudget: {
+                maxPrefixLinesInArea: 1,
+                maxSuffixLinesInArea: 1,
+                codeToRewritePrefixLines: 1,
+                codeToRewriteSuffixLines: 1,
+            },
         }
 
         const result = getCurrentFilePromptComponents(options)
@@ -169,14 +174,16 @@ describe('getCurrentFileContext', () => {
             maxSuffixLength: 100,
         })
 
-        const options = {
+        const options: CurrentFilePromptOptions = {
             docContext,
             document,
             position,
-            maxPrefixLinesInArea: 1,
-            maxSuffixLinesInArea: 1,
-            codeToRewritePrefixLines: 1,
-            codeToRewriteSuffixLines: 1,
+            tokenBudget: {
+                maxPrefixLinesInArea: 1,
+                maxSuffixLinesInArea: 1,
+                codeToRewritePrefixLines: 1,
+                codeToRewriteSuffixLines: 1,
+            },
         }
 
         const result = getCurrentFileContext(options)
@@ -203,14 +210,16 @@ describe('getCurrentFileContext', () => {
             maxSuffixLength: 100,
         })
 
-        const options = {
+        const options: CurrentFilePromptOptions = {
             docContext,
             document,
             position,
-            maxPrefixLinesInArea: 1,
-            maxSuffixLinesInArea: 1,
-            codeToRewritePrefixLines: 1,
-            codeToRewriteSuffixLines: 1,
+            tokenBudget: {
+                maxPrefixLinesInArea: 1,
+                maxSuffixLinesInArea: 1,
+                codeToRewritePrefixLines: 1,
+                codeToRewriteSuffixLines: 1,
+            },
         }
 
         const result = getCurrentFileContext(options)
@@ -233,14 +242,16 @@ describe('getCurrentFileContext', () => {
             maxSuffixLength: 100,
         })
 
-        const options = {
+        const options: CurrentFilePromptOptions = {
             docContext,
             document,
             position,
-            maxPrefixLinesInArea: 1,
-            maxSuffixLinesInArea: 1,
-            codeToRewritePrefixLines: 1,
-            codeToRewriteSuffixLines: 1,
+            tokenBudget: {
+                maxPrefixLinesInArea: 1,
+                maxSuffixLinesInArea: 1,
+                codeToRewritePrefixLines: 1,
+                codeToRewriteSuffixLines: 1,
+            },
         }
 
         const result = getCurrentFileContext(options)
@@ -264,14 +275,16 @@ describe('getCurrentFileContext', () => {
             maxSuffixLength: 100,
         })
 
-        const options = {
+        const options: CurrentFilePromptOptions = {
             docContext,
             document,
             position,
-            maxPrefixLinesInArea: 1,
-            maxSuffixLinesInArea: 1,
-            codeToRewritePrefixLines: 1,
-            codeToRewriteSuffixLines: 1,
+            tokenBudget: {
+                maxPrefixLinesInArea: 1,
+                maxSuffixLinesInArea: 1,
+                codeToRewritePrefixLines: 1,
+                codeToRewriteSuffixLines: 1,
+            },
         }
 
         const result = getCurrentFileContext(options)
@@ -295,14 +308,16 @@ describe('getCurrentFileContext', () => {
             maxSuffixLength: 100,
         })
 
-        const options = {
+        const options: CurrentFilePromptOptions = {
             docContext,
             document,
             position,
-            maxPrefixLinesInArea: 1,
-            maxSuffixLinesInArea: 1,
-            codeToRewritePrefixLines: 1,
-            codeToRewriteSuffixLines: 1,
+            tokenBudget: {
+                maxPrefixLinesInArea: 1,
+                maxSuffixLinesInArea: 1,
+                codeToRewritePrefixLines: 1,
+                codeToRewriteSuffixLines: 1,
+            },
         }
 
         const result = getCurrentFileContext(options)
@@ -328,14 +343,16 @@ describe('getCurrentFileContext', () => {
             maxSuffixLength: 100,
         })
 
-        const options = {
+        const options: CurrentFilePromptOptions = {
             docContext,
             document,
             position,
-            maxPrefixLinesInArea: 1,
-            maxSuffixLinesInArea: 1,
-            codeToRewritePrefixLines: 3, // Increased prefix lines
-            codeToRewriteSuffixLines: 1,
+            tokenBudget: {
+                maxPrefixLinesInArea: 1,
+                maxSuffixLinesInArea: 1,
+                codeToRewritePrefixLines: 3, // Increased prefix lines
+                codeToRewriteSuffixLines: 1,
+            },
         }
 
         const result = getCurrentFileContext(options)
@@ -364,14 +381,16 @@ describe('getCurrentFileContext', () => {
             maxSuffixLength: 30,
         })
 
-        const options = {
+        const options: CurrentFilePromptOptions = {
             docContext,
             document,
             position,
-            maxPrefixLinesInArea: 1,
-            maxSuffixLinesInArea: 1,
-            codeToRewritePrefixLines: 1,
-            codeToRewriteSuffixLines: 1,
+            tokenBudget: {
+                maxPrefixLinesInArea: 1,
+                maxSuffixLinesInArea: 1,
+                codeToRewritePrefixLines: 1,
+                codeToRewriteSuffixLines: 1,
+            },
         }
 
         const result = getCurrentFileContext(options)
@@ -401,14 +420,16 @@ describe('getCurrentFileContext', () => {
             maxSuffixLength: 20,
         })
 
-        const options = {
+        const options: CurrentFilePromptOptions = {
             docContext,
             document,
             position,
-            maxPrefixLinesInArea: 2,
-            maxSuffixLinesInArea: 2,
-            codeToRewritePrefixLines: 2,
-            codeToRewriteSuffixLines: 2,
+            tokenBudget: {
+                maxPrefixLinesInArea: 2,
+                maxSuffixLinesInArea: 2,
+                codeToRewritePrefixLines: 2,
+                codeToRewriteSuffixLines: 2,
+            },
         }
 
         const result = getCurrentFileContext(options)
@@ -433,14 +454,16 @@ describe('getCurrentFileContext', () => {
             maxSuffixLength: 100,
         })
 
-        const options = {
+        const options: CurrentFilePromptOptions = {
             docContext,
             document,
             position,
-            maxPrefixLinesInArea: 5, // Larger than file
-            maxSuffixLinesInArea: 5, // Larger than file
-            codeToRewritePrefixLines: 3, // Larger than file
-            codeToRewriteSuffixLines: 3, // Larger than file
+            tokenBudget: {
+                maxPrefixLinesInArea: 5, // Larger than file
+                maxSuffixLinesInArea: 5, // Larger than file
+                codeToRewritePrefixLines: 3, // Larger than file
+                codeToRewriteSuffixLines: 3, // Larger than file
+            },
         }
 
         const result = getCurrentFileContext(options)
@@ -902,7 +925,7 @@ describe('getJaccardSimilarityPrompt', () => {
 
 describe('joinPromptsWithNewlineSeperator', () => {
     it('joins multiple prompt strings with a new line separator', () => {
-        const prompt = joinPromptsWithNewlineSeperator(ps`foo`, ps`bar`)
+        const prompt = joinPromptsWithNewlineSeparator(ps`foo`, ps`bar`)
         expect(prompt.toString()).toBe(dedent`
             foo
             bar

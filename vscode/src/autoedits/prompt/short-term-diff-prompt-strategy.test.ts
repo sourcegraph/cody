@@ -7,6 +7,7 @@ import { RetrieverIdentifier } from '../../completions/context/utils'
 import { getCurrentDocContext } from '../../completions/get-current-doc-context'
 import { documentAndPosition } from '../../completions/test-helpers'
 import type { UserPromptArgs } from './base'
+import { getCurrentFilePromptComponents } from './prompt-utils'
 import { ShortTermPromptStrategy } from './short-term-diff-prompt-strategy'
 
 describe('ShortTermPromptStrategy', () => {
@@ -61,6 +62,12 @@ describe('ShortTermPromptStrategy', () => {
                     [RetrieverIdentifier.DiagnosticsRetriever]: 100,
                 },
             }
+            const { fileWithMarkerPrompt, areaPrompt } = getCurrentFilePromptComponents({
+                docContext,
+                document,
+                position,
+                tokenBudget,
+            })
             const context: AutocompleteContextSnippet[] = shouldIncludeContext
                 ? [
                       getContextItem(
@@ -167,9 +174,8 @@ describe('ShortTermPromptStrategy', () => {
                 : []
 
             return {
-                docContext,
-                document,
-                position,
+                fileWithMarkerPrompt,
+                areaPrompt,
                 context,
                 tokenBudget,
             }
@@ -179,7 +185,7 @@ describe('ShortTermPromptStrategy', () => {
 
         it('correct prompt rendering with context', () => {
             const userPromptData = getUserPromptData({ shouldIncludeContext: false })
-            const { prompt } = strategy.getUserPrompt(userPromptData)
+            const prompt = strategy.getUserPrompt(userPromptData)
             expect(prompt.toString()).toEqual(dedent`
                 Help me finish a coding change. In particular, you will see a series of snippets from current open files in my editor, files I have recently viewed, the file I am editing, then a history of my recent codebase changes, then current compiler and linter errors, content I copied from my codebase. You will then rewrite the <code_to_rewrite>, to match what you think I would do next in the codebase. Note: I might have stopped in the middle of typing.
 
@@ -239,7 +245,7 @@ describe('ShortTermPromptStrategy', () => {
 
         it('correct prompt rendering with context', () => {
             const userPromptData = getUserPromptData({ shouldIncludeContext: true })
-            const { prompt } = strategy.getUserPrompt(userPromptData)
+            const prompt = strategy.getUserPrompt(userPromptData)
             expect(prompt.toString()).toEqual(dedent`
                 Help me finish a coding change. In particular, you will see a series of snippets from current open files in my editor, files I have recently viewed, the file I am editing, then a history of my recent codebase changes, then current compiler and linter errors, content I copied from my codebase. You will then rewrite the <code_to_rewrite>, to match what you think I would do next in the codebase. Note: I might have stopped in the middle of typing.
 

@@ -1,13 +1,12 @@
-import { ps } from '@sourcegraph/cody-shared'
+import { type PromptString, ps } from '@sourcegraph/cody-shared'
 
 import { RetrieverIdentifier } from '../../completions/context/utils'
 import { autoeditsOutputChannelLogger } from '../output-channel-logger'
 
-import { AutoeditsUserPromptStrategy, type UserPromptArgs, type UserPromptResponse } from './base'
+import { AutoeditsUserPromptStrategy, type UserPromptArgs } from './base'
 import * as constants from './constants'
 import {
     getContextItemMappingWithTokenLimit,
-    getCurrentFilePromptComponents,
     getJaccardSimilarityPrompt,
     getLintErrorsPrompt,
     getPromptForTheContextSource,
@@ -15,30 +14,20 @@ import {
     getRecentCopyPrompt,
     getRecentEditsPrompt,
     getRecentlyViewedSnippetsPrompt,
-    joinPromptsWithNewlineSeperator,
+    joinPromptsWithNewlineSeparator,
 } from './prompt-utils'
 
 export class DefaultUserPromptStrategy extends AutoeditsUserPromptStrategy {
     getUserPrompt({
-        docContext,
-        document,
-        position,
         context,
         tokenBudget,
-    }: UserPromptArgs): UserPromptResponse {
+        fileWithMarkerPrompt,
+        areaPrompt,
+    }: UserPromptArgs): PromptString {
         const contextItemMapping = getContextItemMappingWithTokenLimit(
             context,
             tokenBudget.contextSpecificTokenLimit
         )
-        const { fileWithMarkerPrompt, areaPrompt, codeToReplaceData } = getCurrentFilePromptComponents({
-            docContext,
-            document,
-            position,
-            maxPrefixLinesInArea: tokenBudget.maxPrefixLinesInArea,
-            maxSuffixLinesInArea: tokenBudget.maxSuffixLinesInArea,
-            codeToRewritePrefixLines: tokenBudget.codeToRewritePrefixLines,
-            codeToRewriteSuffixLines: tokenBudget.codeToRewriteSuffixLines,
-        })
         const recentViewsPrompt = getPromptForTheContextSource(
             contextItemMapping.get(RetrieverIdentifier.RecentViewPortRetriever) || [],
             constants.LONG_TERM_SNIPPET_VIEWS_INSTRUCTION,
@@ -71,7 +60,7 @@ export class DefaultUserPromptStrategy extends AutoeditsUserPromptStrategy {
 
         const currentFilePrompt = ps`${constants.CURRENT_FILE_INSTRUCTION}${fileWithMarkerPrompt}`
 
-        const finalPrompt = joinPromptsWithNewlineSeperator(
+        const finalPrompt = joinPromptsWithNewlineSeparator(
             getPromptWithNewline(constants.BASE_USER_PROMPT),
             getPromptWithNewline(jaccardSimilarityPrompt),
             getPromptWithNewline(recentViewsPrompt),
@@ -84,9 +73,6 @@ export class DefaultUserPromptStrategy extends AutoeditsUserPromptStrategy {
         )
 
         autoeditsOutputChannelLogger.logDebug('getUserPrompt', 'Prompt\n', finalPrompt)
-        return {
-            codeToReplaceData,
-            prompt: finalPrompt,
-        }
+        return finalPrompt
     }
 }
