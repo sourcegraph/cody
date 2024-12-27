@@ -712,8 +712,14 @@ function registerAutoEdits(chatClient: ChatClient, disposables: vscode.Disposabl
                 )
             )
                 .pipe(
-                    map(([config, authStatus, autoeditEnabled]) => {
-                        if (shouldEnableExperimentalAutoedits(config, autoeditEnabled, authStatus)) {
+                    map(([config, authStatus, autoeditFeatureFlagEnabled]) => {
+                        if (
+                            shouldEnableExperimentalAutoedits(
+                                config,
+                                autoeditFeatureFlagEnabled,
+                                authStatus
+                            )
+                        ) {
                             const provider = new AutoeditsProvider(chatClient)
                             const completionRegistration =
                                 vscode.languages.registerInlineCompletionItemProvider(
