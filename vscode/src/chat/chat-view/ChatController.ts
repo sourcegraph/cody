@@ -771,6 +771,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         if (!model) {
             throw new Error('No model selected, and no default chat model is available')
         }
+
         this.chatBuilder.setSelectedModel(model)
 
         const recorder = await OmniboxTelemetry.create({
@@ -794,12 +795,13 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             signal,
         })
         signal.throwIfAborted()
-
         this.chatBuilder.setLastMessageIntent(intent)
+
         this.postEmptyMessageInProgress(model)
 
-        const agentName = intent === 'search' ? 'search' : model
-
+        const agentName = ['search', 'edit', 'insert'].includes(intent ?? '')
+            ? (intent as string)
+            : model
         const agent = getAgent(agentName, {
             contextRetriever: this.contextRetriever,
             editor: this.editor,

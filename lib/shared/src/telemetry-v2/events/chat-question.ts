@@ -185,6 +185,8 @@ export const events = [
                 auto: 1,
                 chat: 2,
                 search: 3,
+                edit: 4,
+                insert: 5,
             } satisfies Record<
                 typeof fallbackValue | 'auto' | Exclude<ChatMessage['intent'], null | undefined>,
                 number

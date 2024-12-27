@@ -1,5 +1,6 @@
 import { ChatHandler } from './ChatHandler'
 import { DeepCodyHandler } from './DeepCodyHandler'
+import { EditHandler } from './EditHandler'
 import { SearchHandler } from './SearchHandler'
 import type { AgentHandler, AgentTools } from './interfaces'
 
@@ -28,3 +29,13 @@ registerAgent(
         new DeepCodyHandler(id, contextRetriever, editor, chatClient, codyToolProvider)
 )
 registerAgent('search', (_id: string, _tools: AgentTools) => new SearchHandler())
+registerAgent(
+    'edit',
+    (_id: string, { contextRetriever, editor }: AgentTools) =>
+        new EditHandler('edit', contextRetriever, editor)
+)
+registerAgent(
+    'insert',
+    (_id: string, { contextRetriever, editor }: AgentTools) =>
+        new EditHandler('insert', contextRetriever, editor)
+)

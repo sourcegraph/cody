@@ -215,7 +215,7 @@ export class ChatHandler implements AgentHandler {
 
     // Overridable by subclasses that want to customize context computation
     protected async computeContext(
-        requestID: string,
+        _requestID: string,
         { text, mentions }: HumanInput,
         editorState: SerializedPromptEditorState | null,
         _chatBuilder: ChatBuilder,
@@ -227,7 +227,9 @@ export class ChatHandler implements AgentHandler {
     }> {
         try {
             return wrapInActiveSpan('chat.computeContext', async span => {
-                const contextAlternatives = await this.computeContextAlternatives(
+                const contextAlternatives = await computeContextAlternatives(
+                    this.contextRetriever,
+                    this.editor,
                     { text, mentions },
                     editorState,
                     span,
@@ -239,57 +241,59 @@ export class ChatHandler implements AgentHandler {
             return { error: new Error(`Unexpected error computing context, no context was used: ${e}`) }
         }
     }
+}
 
-    private async computeContextAlternatives(
-        { text, mentions }: HumanInput,
-        editorState: SerializedPromptEditorState | null,
-        span: Span,
-        signal?: AbortSignal
-    ): Promise<RankedContext[]> {
-        // Remove context chips (repo, @-mentions) from the input text for context retrieval.
-        const inputTextWithoutContextChips = editorState
-            ? PromptString.unsafe_fromUserQuery(
-                  inputTextWithoutContextChipsFromPromptEditorState(editorState)
-              )
-            : text
-        const structuredMentions = toStructuredMentions(mentions)
-        const retrievedContextPromise = this.contextRetriever.retrieveContext(
-            structuredMentions,
-            inputTextWithoutContextChips,
-            span,
-            signal
-        )
-        const priorityContextPromise = retrievedContextPromise
-            .then(p => getPriorityContext(text, this.editor, p))
-            .catch(() => getPriorityContext(text, this.editor, []))
-        const openCtxContextPromise = getContextForChatMessage(text.toString(), signal)
-        const [priorityContext, retrievedContext, openCtxContext] = await Promise.all([
-            priorityContextPromise,
-            retrievedContextPromise.catch(e => {
-                throw new Error(`Failed to retrieve search context: ${e}`)
-            }),
-            openCtxContextPromise,
-        ])
+export async function computeContextAlternatives(
+    contextRetriever: Pick<ContextRetriever, 'retrieveContext'>,
+    editor: ChatControllerOptions['editor'],
+    { text, mentions }: HumanInput,
+    editorState: SerializedPromptEditorState | null,
+    span: Span,
+    signal?: AbortSignal
+): Promise<RankedContext[]> {
+    // Remove context chips (repo, @-mentions) from the input text for context retrieval.
+    const inputTextWithoutContextChips = editorState
+        ? PromptString.unsafe_fromUserQuery(
+              inputTextWithoutContextChipsFromPromptEditorState(editorState)
+          )
+        : text
+    const structuredMentions = toStructuredMentions(mentions)
+    const retrievedContextPromise = contextRetriever.retrieveContext(
+        structuredMentions,
+        inputTextWithoutContextChips,
+        span,
+        signal
+    )
+    const priorityContextPromise = retrievedContextPromise
+        .then(p => getPriorityContext(text, editor, p))
+        .catch(() => getPriorityContext(text, editor, []))
+    const openCtxContextPromise = getContextForChatMessage(text.toString(), signal)
+    const [priorityContext, retrievedContext, openCtxContext] = await Promise.all([
+        priorityContextPromise,
+        retrievedContextPromise.catch(e => {
+            throw new Error(`Failed to retrieve search context: ${e}`)
+        }),
+        openCtxContextPromise,
+    ])
 
-        const resolvedExplicitMentionsPromise = resolveContextItems(
-            this.editor,
-            [structuredMentions.symbols, structuredMentions.files, structuredMentions.openCtx].flat(),
-            text,
-            signal
-        )
+    const resolvedExplicitMentionsPromise = resolveContextItems(
+        editor,
+        [structuredMentions.symbols, structuredMentions.files, structuredMentions.openCtx].flat(),
+        text,
+        signal
+    )
 
-        return [
-            {
-                strategy: 'local+remote',
-                items: combineContext(
-                    await resolvedExplicitMentionsPromise,
-                    openCtxContext,
-                    priorityContext,
-                    retrievedContext
-                ),
-            },
-        ]
-    }
+    return [
+        {
+            strategy: 'local+remote',
+            items: combineContext(
+                await resolvedExplicitMentionsPromise,
+                openCtxContext,
+                priorityContext,
+                retrievedContext
+            ),
+        },
+    ]
 }
 
 // This is the manual ordering of the different retrieved and explicit context sources
