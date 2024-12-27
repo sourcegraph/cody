@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
+import { getDecorationInfo } from './renderer/diff-utils'
 import * as utils from './utils'
 
 describe('fixFirstLineIndentation', () => {
@@ -645,5 +646,44 @@ describe('countNewLineCharsStart', () => {
     it('handles no line endings', () => {
         expect(utils.countNewLineCharsStart('text')).toBe(0)
         expect(utils.countNewLineCharsStart('')).toBe(0)
+    })
+})
+
+describe('isPredictedTextAlreadyInSuffix', () => {
+    it('should return false when there are no added lines', () => {
+        const codeToRewrite = 'const x = 1;\nconst y = 2;'
+        const prediction = 'const x = 1;\nconst y = 2;'
+
+        const result = utils.isPredictedTextAlreadyInSuffix({
+            codeToRewrite,
+            decorationInfo: getDecorationInfo(codeToRewrite, prediction),
+            suffix: '',
+        })
+        expect(result).toBe(false)
+    })
+
+    it('should return false when predicted text is different from suffix', () => {
+        const codeToRewrite = 'function test() {\n    \n}'
+        const prediction = 'function test() {\n    console.log("hello");\n}'
+
+        const result = utils.isPredictedTextAlreadyInSuffix({
+            codeToRewrite,
+            decorationInfo: getDecorationInfo(codeToRewrite, prediction),
+            suffix: 'return true;\n}',
+        })
+        expect(result).toBe(false)
+    })
+
+    it('should handle multiline predictions correctly', () => {
+        const codeToRewrite = 'function test() {\n'
+        const prediction =
+            'function test() {\n    const a = 1;\n    const b = 2;\n    console.log(a + b);\n}\n'
+
+        const result = utils.isPredictedTextAlreadyInSuffix({
+            codeToRewrite,
+            decorationInfo: getDecorationInfo(codeToRewrite, prediction),
+            suffix: '    const a = 1;\n    const b = 2;\n    console.log(a + b);\n}\n',
+        })
+        expect(result).toBe(true)
     })
 })

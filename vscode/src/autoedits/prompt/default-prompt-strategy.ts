@@ -1,7 +1,9 @@
 import { ps } from '@sourcegraph/cody-shared'
+
 import { RetrieverIdentifier } from '../../completions/context/utils'
 import { autoeditsLogger } from '../logger'
-import type { AutoeditsUserPromptStrategy, UserPromptArgs, UserPromptResponse } from './base'
+
+import { AutoeditsUserPromptStrategy, type UserPromptArgs, type UserPromptResponse } from './base'
 import * as constants from './constants'
 import {
     getContextItemMappingWithTokenLimit,
@@ -16,7 +18,7 @@ import {
     joinPromptsWithNewlineSeperator,
 } from './prompt-utils'
 
-export class DefaultUserPromptStrategy implements AutoeditsUserPromptStrategy {
+export class DefaultUserPromptStrategy extends AutoeditsUserPromptStrategy {
     getUserPrompt({
         docContext,
         document,

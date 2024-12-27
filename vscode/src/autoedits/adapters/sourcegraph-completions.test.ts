@@ -12,7 +12,6 @@ describe('SourcegraphCompletionsAdapter', () => {
     const options: AutoeditModelOptions = {
         url: 'https://sourcegraph.test/api/completions',
         model: 'anthropic/claude-2',
-        apiKey: 'test-key',
         prompt: {
             userMessage: ps`user message`,
         },

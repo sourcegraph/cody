@@ -1,21 +1,25 @@
+import { currentResolvedConfig, dotcomTokenToGatewayToken } from '@sourcegraph/cody-shared'
+
 import { autoeditsLogger } from '../logger'
+
 import type { AutoeditModelOptions, AutoeditsModelAdapter } from './base'
-import { getModelResponse } from './utils'
 import {
     type FireworksCompatibleRequestParams,
     getMaxOutputTokensForAutoedits,
+    getModelResponse,
     getOpenaiCompatibleChatPrompt,
 } from './utils'
 
 export class CodyGatewayAdapter implements AutoeditsModelAdapter {
-    async getModelResponse(option: AutoeditModelOptions): Promise<string> {
+    public async getModelResponse(options: AutoeditModelOptions): Promise<string> {
         const headers = {
             'X-Sourcegraph-Feature': 'code_completions',
         }
-        const body = this.getMessageBody(option)
+        const body = this.getMessageBody(options)
         try {
-            const response = await getModelResponse(option.url, body, option.apiKey, headers)
-            if (option.isChatModel) {
+            const apiKey = await this.getApiKey()
+            const response = await getModelResponse(options.url, body, apiKey, headers)
+            if (options.isChatModel) {
                 return response.choices[0].message.content
             }
             return response.choices[0].text
@@ -25,11 +29,21 @@ export class CodyGatewayAdapter implements AutoeditsModelAdapter {
         }
     }
 
-    private getMessageBody(option: AutoeditModelOptions): string {
-        const maxTokens = getMaxOutputTokensForAutoedits(option.codeToRewrite)
+    private async getApiKey(): Promise<string> {
+        const resolvedConfig = await currentResolvedConfig()
+        const fastPathAccessToken = dotcomTokenToGatewayToken(resolvedConfig.auth.accessToken)
+        if (!fastPathAccessToken) {
+            autoeditsLogger.logError('Autoedits', 'FastPath access token is not available')
+            throw new Error('FastPath access token is not available')
+        }
+        return fastPathAccessToken
+    }
+
+    private getMessageBody(options: AutoeditModelOptions): string {
+        const maxTokens = getMaxOutputTokensForAutoedits(options.codeToRewrite)
         const body: FireworksCompatibleRequestParams = {
             stream: false,
-            model: option.model,
+            model: options.model,
             temperature: 0,
             max_tokens: maxTokens,
             response_format: {
@@ -37,20 +51,20 @@ export class CodyGatewayAdapter implements AutoeditsModelAdapter {
             },
             prediction: {
                 type: 'content',
-                content: option.codeToRewrite,
+                content: options.codeToRewrite,
             },
             rewrite_speculation: true,
-            user: option.userId || undefined,
+            user: options.userId || undefined,
         }
-        const request = option.isChatModel
+        const request = options.isChatModel
             ? {
                   ...body,
                   messages: getOpenaiCompatibleChatPrompt({
-                      systemMessage: option.prompt.systemMessage,
-                      userMessage: option.prompt.userMessage,
+                      systemMessage: options.prompt.systemMessage,
+                      userMessage: options.prompt.userMessage,
                   }),
               }
-            : { ...body, prompt: option.prompt.userMessage }
+            : { ...body, prompt: options.prompt.userMessage }
         return JSON.stringify(request)
     }
 }

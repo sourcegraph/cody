@@ -937,7 +937,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 corpusContext
             )
             agent.setStatusCallback(model => this.postEmptyMessageInProgress(model))
-            const agenticContext = await agent.getContext(signal)
+            const agenticContext = await agent.getContext(requestID, signal)
             corpusContext.push(...agenticContext)
         }
 
@@ -1031,7 +1031,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         this.chatBuilder.setLastMessageIntent('search')
         const scopes: string[] = await this.getSearchScopesFromMentions(mentions)
 
-        const currentFile = getEditor()?.active?.document?.uri
+        const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri
+        const currentFile = getEditor()?.active?.document?.uri || workspaceRoot
         const repoName = currentFile ? await getFirstRepoNameContainingUri(currentFile) : undefined
         const boostParameter = repoName ? `boost:repo(${repoName})` : ''
 
@@ -1683,6 +1684,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
             this.sendLLMRequest(
                 prompt,
+                requestID,
                 model,
                 {
                     update: content => {
@@ -1736,6 +1738,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
      */
     private async sendLLMRequest(
         prompt: Message[],
+        requestID: string,
         model: ChatModel,
         callbacks: {
             update: (response: string) => void
@@ -1773,7 +1776,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 params.stream = false
             }
 
-            const stream = await this.chatClient.chat(prompt, params, abortSignal)
+            const stream = await this.chatClient.chat(prompt, params, abortSignal, requestID)
             for await (const message of stream) {
                 switch (message.type) {
                     case 'change': {

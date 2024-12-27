@@ -1,8 +1,10 @@
 import { type AutocompleteContextSnippet, type PromptString, ps } from '@sourcegraph/cody-shared'
+
 import { groupConsecutiveItemsByPredicate } from '../../completions/context/retrievers/recent-user-actions/recent-edits-diff-helpers/utils'
 import { RetrieverIdentifier } from '../../completions/context/utils'
 import { autoeditsLogger } from '../logger'
-import type { AutoeditsUserPromptStrategy, UserPromptArgs, UserPromptResponse } from './base'
+
+import { AutoeditsUserPromptStrategy, type UserPromptArgs, type UserPromptResponse } from './base'
 import * as constants from './constants'
 import {
     getContextItemMappingWithTokenLimit,
@@ -18,7 +20,7 @@ import {
     joinPromptsWithNewlineSeperator,
 } from './prompt-utils'
 
-export class ShortTermPromptStrategy implements AutoeditsUserPromptStrategy {
+export class ShortTermPromptStrategy extends AutoeditsUserPromptStrategy {
     private readonly SHORT_TERM_SNIPPET_VIEW_TIME_MS = 60 * 1000 // 1 minute
 
     getUserPrompt({
