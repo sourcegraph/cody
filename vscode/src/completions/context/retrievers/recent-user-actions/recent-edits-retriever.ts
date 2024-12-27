@@ -2,6 +2,7 @@ import { type PromptString, contextFiltersProvider } from '@sourcegraph/cody-sha
 import type { AutocompleteContextSnippet } from '@sourcegraph/cody-shared'
 import type { AutocompleteContextSnippetMetadataFields } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
+import { autocompleteOutputChannelLogger } from '../../../output-channel-logger'
 import type { ContextRetriever, ContextRetrieverOptions } from '../../../types'
 import { RetrieverIdentifier, type ShouldUseContextParams, shouldBeUsedAsContext } from '../../utils'
 import type {
@@ -46,6 +47,11 @@ export class RecentEditsRetriever implements vscode.Disposable, ContextRetriever
     }
 
     public async retrieve(options: ContextRetrieverOptions): Promise<AutocompleteContextSnippet[]> {
+        autocompleteOutputChannelLogger.logDebug(
+            'recent edits retrieve',
+            'Retrieving recent edits context'
+        )
+
         const rawDiffs = await this.getDiffAcrossDocuments()
         const diffs = this.filterCandidateDiffs(rawDiffs, options.document)
         // Heuristics ordering by timestamp, taking the most recent diffs first.
@@ -67,6 +73,10 @@ export class RecentEditsRetriever implements vscode.Disposable, ContextRetriever
             }
             autocompleteContextSnippets.push(autocompleteSnippet)
         }
+        autocompleteOutputChannelLogger.logDebug(
+            'recent edits retrieve',
+            `Retrieved ${autocompleteContextSnippets.length} recent edits context`
+        )
         return autocompleteContextSnippets
     }
 
