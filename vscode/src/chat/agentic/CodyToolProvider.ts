@@ -15,6 +15,12 @@ interface CodyShellConfig {
     client?: boolean
 }
 
+export interface ToolStatusCallback {
+    onStart(): void
+    onStream(tool: string, content: string): void
+    onComplete(tool?: string, error?: Error): void
+}
+
 /**
  * CodyToolProvider is a singleton class responsible for managing and providing access to various Cody tools.
  * It handles both default tools and OpenContext-based tools (like web and Linear integrations).
@@ -75,6 +81,7 @@ export class CodyToolProvider {
     private async buildOpenCtxCodyTools(): Promise<CodyTool[]> {
         const OPENCTX_CONFIG = {
             'internal-web-provider': {
+                title: 'Web (via OpenCtx)',
                 tags: {
                     tag: ps`TOOLWEB`,
                     subTag: ps`link`,
@@ -86,6 +93,7 @@ export class CodyToolProvider {
                 },
             },
             'internal-linear-issues': {
+                title: 'Linear (via OpenCtx)',
                 tags: {
                     tag: ps`TOOLLINEAR`,
                     subTag: ps`issue`,

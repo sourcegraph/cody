@@ -9,6 +9,7 @@ import type {
     ContextItem,
     ContextItemSource,
     NLSSearchDynamicFilter,
+    ProcessingStep,
     PromptMode,
     RangeData,
     RequestMessage,
@@ -214,6 +215,7 @@ export interface WebviewSubmitMessage extends WebviewContextMessage {
     intentScores?: { intent: string; score: number }[] | undefined | null
     manuallySelectedIntent?: boolean | undefined | null
     traceparent?: string | undefined | null
+    steps?: ProcessingStep[] | undefined | null
 }
 
 interface WebviewEditMessage extends WebviewContextMessage {
@@ -225,6 +227,7 @@ interface WebviewEditMessage extends WebviewContextMessage {
     intent?: ChatMessage['intent'] | undefined | null
     intentScores?: { intent: string; score: number }[] | undefined | null
     manuallySelectedIntent?: boolean | undefined | null
+    steps?: ProcessingStep[] | undefined | null
 }
 
 interface WebviewContextMessage {

@@ -6,6 +6,8 @@ import {
     type ContextItem,
     type Message,
     type ModelContextWindow,
+    type ProcessingStep,
+    type RankedContext,
     type SerializedChatInteraction,
     type SerializedChatTranscript,
     distinctUntilChanged,
@@ -19,7 +21,6 @@ import {
     toRangeData,
 } from '@sourcegraph/cody-shared'
 
-import type { RankedContext } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { Observable, Subject, map } from 'observable-fns'
 import { getChatPanelTitle } from './chat-helpers'
 
@@ -220,6 +221,18 @@ export class ChatBuilder {
             speaker: 'assistant',
             error: errorToChatError(error),
         })
+        this.changeNotifications.next()
+    }
+
+    public setLastMessageProcesses(processes: ProcessingStep[]): void {
+        const lastMessage = this.messages.at(-1)
+        if (!lastMessage) {
+            throw new Error('no last message')
+        }
+        if (lastMessage.speaker !== 'human') {
+            throw new Error('Cannot set processes for bot message')
+        }
+        lastMessage.processes = processes
         this.changeNotifications.next()
     }
 

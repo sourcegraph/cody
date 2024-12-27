@@ -39,6 +39,42 @@ export interface ChatMessage extends Message {
     intent?: 'search' | 'chat' | 'edit' | 'insert' | undefined | null
     manuallySelectedIntent?: 'search' | 'chat' | 'edit' | 'insert' | undefined | null
     search?: ChatMessageSearch | undefined | null
+    processes?: ProcessingStep[] | undefined | null
+}
+
+/**
+ * Represents an individual step in a chat message processing pipeline, typically used
+ * to track and display the progress of context fetching and analysis operations.
+ */
+export interface ProcessingStep {
+    /**
+     * Unique identifier or name for the processing step
+     */
+    id: string
+
+    /**
+     * Description of what the step is doing or has completed
+     */
+    content: string
+
+    /**
+     * Current state of the step
+     * - 'pending': Step is currently in progress
+     * - 'success': Step completed successfully
+     * - 'error': Step failed to complete
+     */
+    status: 'pending' | 'success' | 'error'
+
+    /**
+     * Optional numerical order of the step in the sequence.
+     * Used to display the steps in the correct order.
+     */
+    step?: number
+
+    /**
+     * Error information if the step failed
+     */
+    error?: ChatError
 }
 
 export type ChatMessageWithSearch = ChatMessage & { search: ChatMessageSearch }
@@ -65,6 +101,7 @@ export interface SerializedChatMessage {
     intent?: ChatMessage['intent']
     manuallySelectedIntent?: ChatMessage['manuallySelectedIntent']
     search?: ChatMessage['search']
+    processes?: ChatMessage['processes']
 }
 
 export interface ChatError {
@@ -153,5 +190,14 @@ export function errorToChatError(error: Error): ChatError {
         ...error,
         message: error.message,
         name: error.name,
+    }
+}
+
+export function createProcessingStep(data: Partial<ProcessingStep>): ProcessingStep {
+    return {
+        id: data.id ?? '',
+        content: data.content ?? '',
+        status: data.status ?? 'pending',
+        step: data.step ?? 0,
     }
 }

@@ -147,6 +147,7 @@ describe('ChatController', () => {
                     error: undefined,
                     editorState: null,
                     contextFiles: [],
+                    processes: undefined,
                 },
                 {
                     speaker: 'assistant',
@@ -158,6 +159,7 @@ describe('ChatController', () => {
                     editorState: undefined,
                     text: undefined,
                     contextFiles: undefined,
+                    processes: undefined,
                 },
             ],
         })
@@ -182,6 +184,7 @@ describe('ChatController', () => {
                     search: undefined,
                     editorState: null,
                     contextFiles: [],
+                    processes: undefined,
                 },
                 {
                     speaker: 'assistant',
@@ -193,6 +196,7 @@ describe('ChatController', () => {
                     text: 'Test reply 1',
                     search: undefined,
                     contextFiles: undefined,
+                    processes: undefined,
                 },
             ],
         })
@@ -233,6 +237,7 @@ describe('ChatController', () => {
                     search: undefined,
                     editorState: null,
                     contextFiles: [],
+                    processes: undefined,
                 },
                 {
                     speaker: 'assistant',
@@ -244,6 +249,7 @@ describe('ChatController', () => {
                     text: 'Test reply 1',
                     search: undefined,
                     contextFiles: undefined,
+                    processes: undefined,
                 },
                 {
                     speaker: 'human',
@@ -255,6 +261,7 @@ describe('ChatController', () => {
                     error: undefined,
                     editorState: null,
                     contextFiles: [],
+                    processes: undefined,
                 },
                 {
                     speaker: 'assistant',
@@ -266,6 +273,7 @@ describe('ChatController', () => {
                     text: 'Test reply 2',
                     contextFiles: undefined,
                     search: undefined,
+                    processes: undefined,
                 },
             ],
         })
@@ -305,6 +313,7 @@ describe('ChatController', () => {
                     search: undefined,
                     editorState: null,
                     contextFiles: [],
+                    processes: undefined,
                 },
                 {
                     speaker: 'assistant',
@@ -316,6 +325,7 @@ describe('ChatController', () => {
                     text: 'Test reply 1',
                     search: undefined,
                     contextFiles: undefined,
+                    processes: undefined,
                 },
                 {
                     speaker: 'human',
@@ -327,6 +337,7 @@ describe('ChatController', () => {
                     error: undefined,
                     editorState: null,
                     contextFiles: [],
+                    processes: undefined,
                 },
                 {
                     speaker: 'assistant',
@@ -338,6 +349,7 @@ describe('ChatController', () => {
                     editorState: undefined,
                     text: 'Test reply 3',
                     contextFiles: undefined,
+                    processes: undefined,
                 },
             ],
         })
@@ -386,6 +398,7 @@ describe('ChatController', () => {
                     intent: 'chat',
                     manuallySelectedIntent: undefined,
                     search: undefined,
+                    processes: undefined,
                 },
                 {
                     speaker: 'assistant',
@@ -397,6 +410,7 @@ describe('ChatController', () => {
                     text: undefined,
                     contextFiles: undefined,
                     search: undefined,
+                    processes: undefined,
                 },
             ],
         })

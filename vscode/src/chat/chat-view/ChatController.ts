@@ -930,12 +930,14 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
         // Experimental Feature: Deep Cody
         if (isDeepCodyEnabled) {
-            const agenticContext = await new DeepCodyAgent(
+            const agent = new DeepCodyAgent(
                 this.chatBuilder,
                 this.chatClient,
                 this.toolProvider.getTools(),
                 corpusContext
-            ).getContext(requestID, signal)
+            )
+            agent.setStatusCallback(model => this.postEmptyMessageInProgress(model))
+            const agenticContext = await agent.getContext(requestID, signal)
             corpusContext.push(...agenticContext)
         }
 

@@ -76,6 +76,7 @@ export type {
     RankedContext,
     ChatMessageWithSearch,
     ChatMessageSearch,
+    ProcessingStep,
 } from './chat/transcript/messages'
 export {
     CODY_PASSTHROUGH_VSCODE_OPEN_COMMAND_ID,
