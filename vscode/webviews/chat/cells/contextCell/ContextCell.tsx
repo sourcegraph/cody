@@ -309,41 +309,51 @@ export const ContextCell: FunctionComponent<{
                                                     </span>
                                                 </span>
                                             )}
-                                            {!isContextLoading && (
+                                            {!isContextLoading && isDeepCodyEnabled && steps?.length && (
                                                 <li>
                                                     <Tooltip>
                                                         <TooltipTrigger asChild>
                                                             <span
                                                                 className={clsx(
                                                                     styles.contextItem,
-                                                                    'tw-flex tw-items-center tw-gap-2'
+                                                                    'tw-flex tw-items-center tw-gap-2 tw-text-muted-foreground'
                                                                 )}
                                                             >
                                                                 <BrainIcon
                                                                     size={14}
                                                                     className="tw-ml-1"
                                                                 />
-                                                                <span>
-                                                                    {isDeepCodyEnabled
-                                                                        ? 'Reviewed by Deep Cody'
-                                                                        : 'Public knowledge'}
-                                                                </span>
+                                                                <span>Reviewed by context agent</span>
                                                             </span>
                                                         </TooltipTrigger>
                                                         <TooltipContent side="bottom">
-                                                            {isDeepCodyEnabled ? (
-                                                                <span>
-                                                                    Deep Cody fetches additional context
-                                                                    to improve response quality when
-                                                                    needed
-                                                                </span>
-                                                            ) : (
-                                                                <span>
-                                                                    Information and general reasoning
-                                                                    capabilities trained into the model{' '}
-                                                                    {model && <code>{model}</code>}
-                                                                </span>
-                                                            )}
+                                                            Deep Cody fetches additional context to
+                                                            improve response quality when needed
+                                                        </TooltipContent>
+                                                    </Tooltip>
+                                                </li>
+                                            )}
+                                            {!isContextLoading && !steps?.length && (
+                                                <li>
+                                                    <Tooltip>
+                                                        <TooltipTrigger asChild>
+                                                            <span
+                                                                className={clsx(
+                                                                    styles.contextItem,
+                                                                    'tw-flex tw-items-center tw-gap-2 tw-text-muted-foreground'
+                                                                )}
+                                                            >
+                                                                <BrainIcon
+                                                                    size={14}
+                                                                    className="tw-ml-1"
+                                                                />
+                                                                <span>Public knowledge</span>
+                                                            </span>
+                                                        </TooltipTrigger>
+                                                        <TooltipContent side="bottom">
+                                                            Information and general reasoning
+                                                            capabilities trained into the model{' '}
+                                                            {model && <code>{model}</code>}
                                                         </TooltipContent>
                                                     </Tooltip>
                                                 </li>
@@ -468,8 +478,8 @@ const ProcessingStepItem: FC<{ step: ProcessingStep; isContextLoading: boolean }
     }
 
     return (
-        <div className="tw-border-l-4 tw-border-slate-500 tw-px-4" role="status">
-            <div className="tw-bg-muted-transparent tw-mx-4 tw-my-2 tw-py-2 tw-flex tw-items-center tw-rounded-md">
+        <div className="tw-border-l-4 tw-border-muted-foreground tw-pl-2">
+            <div className="tw-border tw-border-border tw-bg-input-background tw-ml-2 tw-my-2 tw-py-2 tw-flex tw-items-center tw-rounded-md tw-shadow-sm tw-opacity-80 hover:tw-opacity-100">
                 <div className="tw-mx-4">
                     {step.status === 'pending' && isContextLoading ? (
                         <Loader2Icon
@@ -478,14 +488,24 @@ const ProcessingStepItem: FC<{ step: ProcessingStep; isContextLoading: boolean }
                             className="tw-mr-2 tw-h-6 tw-w-6 tw-animate-spin"
                         />
                     ) : step.status === 'error' ? (
-                        <CircleXIcon strokeWidth={2} size={14} className="tw-text-red-400" />
+                        <CircleXIcon
+                            strokeWidth={2}
+                            size={14}
+                            className="high-contrast-dark:tw-text-red-500"
+                        />
                     ) : (
-                        <CheckCircle strokeWidth={2} size={14} className="tw-text-green-400" />
+                        <CheckCircle
+                            strokeWidth={2}
+                            size={14}
+                            className="tw-text-green-500 tw-drop-shadow-md tw-shadow-md"
+                        />
                     )}
                 </div>
                 <div className="tw-flex-grow tw-min-w-0">
-                    <div className="tw-truncate tw-max-w-full tw-font-semibold">Running {step.id}</div>
-                    <div className="tw-truncate tw-max-w-full tw-text-xs tw-opacity-80">
+                    <div className="tw-truncate tw-max-w-full tw-font-semibold tw-text-sm">
+                        Running {step.id}
+                    </div>
+                    <div className="tw-truncate tw-max-w-full tw-text-xs tw-muted-foreground tw-opacity-80">
                         {step.content}
                     </div>
                 </div>
