@@ -175,7 +175,7 @@ export const WithSteps: Story = {
         contextItems: [{ type: 'file', uri: URI.file('/foo/bar.go') }],
         isForFirstMessage: true,
         model: 'deep-cody',
-        steps: [
+        processes: [
             {
                 id: 'Code Search',
                 status: 'success',
@@ -201,7 +201,7 @@ export const LoadingWithSteps: Story = {
         contextItems: [{ type: 'file', uri: URI.file('/foo/bar.go') }],
         isForFirstMessage: true,
         model: 'deep-cody',
-        steps: [
+        processes: [
             {
                 id: 'Code Search',
                 status: 'success',

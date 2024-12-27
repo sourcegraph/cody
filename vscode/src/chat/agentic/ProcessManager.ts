@@ -1,12 +1,12 @@
 import { type ProcessingStep, errorToChatError } from '@sourcegraph/cody-shared'
 
 export class ProcessManager {
-    private steps: ProcessingStep[] = []
+    private processes: ProcessingStep[] = []
 
-    constructor(private readonly onChange: (steps: ProcessingStep[]) => void) {}
+    constructor(private readonly onChange: (processes: ProcessingStep[]) => void) {}
 
     public initializeStep(): void {
-        this.steps = [
+        this.processes = [
             {
                 content: '',
                 id: '',
@@ -18,10 +18,10 @@ export class ProcessManager {
     }
 
     public addStep(toolName: string, content: string): void {
-        this.steps.push({
+        this.processes.push({
             content,
             id: toolName,
-            step: this.steps.length,
+            step: this.processes.length,
             status: 'pending',
         })
         this.notifyChange()
@@ -30,7 +30,7 @@ export class ProcessManager {
     public completeStep(toolName?: string, error?: Error): void {
         if (toolName) {
             // Update specific tool
-            this.steps = this.steps.map(step =>
+            this.processes = this.processes.map(step =>
                 step.id === toolName
                     ? {
                           ...step,
@@ -40,8 +40,8 @@ export class ProcessManager {
                     : step
             )
         } else {
-            // Complete all pending steps
-            this.steps = this.steps.map(step => ({
+            // Complete all pending processes
+            this.processes = this.processes.map(step => ({
                 ...step,
                 status: step.status === 'error' ? step.status : 'success',
             }))
@@ -50,6 +50,6 @@ export class ProcessManager {
     }
 
     private notifyChange(): void {
-        this.onChange(this.steps)
+        this.onChange(this.processes)
     }
 }

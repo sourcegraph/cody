@@ -34,6 +34,6 @@ export function serializeChatMessage(chatMessage: ChatMessage): SerializedChatMe
         intent: chatMessage.intent,
         manuallySelectedIntent: chatMessage.manuallySelectedIntent,
         search: chatMessage.search,
-        steps: chatMessage.steps,
+        processes: chatMessage.processes,
     }
 }

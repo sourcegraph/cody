@@ -65,7 +65,7 @@ export const ContextCell: FunctionComponent<{
     onManuallyEditContext: () => void
     editContextNode: React.ReactNode
     experimentalOneBoxEnabled?: boolean
-    steps?: ProcessingStep[]
+    processes?: ProcessingStep[]
 }> = memo(
     ({
         contextItems,
@@ -81,7 +81,7 @@ export const ContextCell: FunctionComponent<{
         editContextNode,
         intent,
         experimentalOneBoxEnabled,
-        steps,
+        processes,
     }) => {
         const __storybook__initialOpen = useContext(__ContextCellStorybookContext)?.initialOpen ?? false
 
@@ -187,7 +187,7 @@ export const ContextCell: FunctionComponent<{
                                     onClick={triggerAccordion}
                                     title={itemCountLabel}
                                     className="tw-flex tw-items-center tw-gap-4"
-                                    disabled={isContextLoading && steps === undefined}
+                                    disabled={isContextLoading && processes === undefined}
                                 >
                                     <SourcegraphLogo
                                         width={NON_HUMAN_CELL_AVATAR_SIZE}
@@ -213,8 +213,8 @@ export const ContextCell: FunctionComponent<{
                                 <>
                                     <AccordionContent className="tw-ml-6" overflow={false}>
                                         {isDeepCodyEnabled && (
-                                            <ProcessingStepList
-                                                steps={steps ?? []}
+                                            <ProcessList
+                                                processes={processes ?? []}
                                                 isContextLoading={isContextLoading}
                                             />
                                         )}
@@ -309,31 +309,35 @@ export const ContextCell: FunctionComponent<{
                                                     </span>
                                                 </span>
                                             )}
-                                            {!isContextLoading && isDeepCodyEnabled && steps?.length && (
-                                                <li>
-                                                    <Tooltip>
-                                                        <TooltipTrigger asChild>
-                                                            <span
-                                                                className={clsx(
-                                                                    styles.contextItem,
-                                                                    'tw-flex tw-items-center tw-gap-2 tw-text-muted-foreground'
-                                                                )}
-                                                            >
-                                                                <BrainIcon
-                                                                    size={14}
-                                                                    className="tw-ml-1"
-                                                                />
-                                                                <span>Reviewed by context agent</span>
-                                                            </span>
-                                                        </TooltipTrigger>
-                                                        <TooltipContent side="bottom">
-                                                            Deep Cody fetches additional context to
-                                                            improve response quality when needed
-                                                        </TooltipContent>
-                                                    </Tooltip>
-                                                </li>
-                                            )}
-                                            {!isContextLoading && !steps?.length && (
+                                            {!isContextLoading &&
+                                                isDeepCodyEnabled &&
+                                                processes?.length && (
+                                                    <li>
+                                                        <Tooltip>
+                                                            <TooltipTrigger asChild>
+                                                                <span
+                                                                    className={clsx(
+                                                                        styles.contextItem,
+                                                                        'tw-flex tw-items-center tw-gap-2 tw-text-muted-foreground'
+                                                                    )}
+                                                                >
+                                                                    <BrainIcon
+                                                                        size={14}
+                                                                        className="tw-ml-1"
+                                                                    />
+                                                                    <span>
+                                                                        Reviewed by context agent
+                                                                    </span>
+                                                                </span>
+                                                            </TooltipTrigger>
+                                                            <TooltipContent side="bottom">
+                                                                Deep Cody fetches additional context to
+                                                                improve response quality when needed
+                                                            </TooltipContent>
+                                                        </Tooltip>
+                                                    </li>
+                                                )}
+                                            {!isContextLoading && !processes?.length && (
                                                 <li>
                                                     <Tooltip>
                                                         <TooltipTrigger asChild>
@@ -446,15 +450,19 @@ export const EditContextButtonChat = (
     </>
 )
 
-const ProcessingStepList: FC<{ steps: ProcessingStep[]; isContextLoading: boolean }> = ({
-    steps,
+const ProcessList: FC<{ processes: ProcessingStep[]; isContextLoading: boolean }> = ({
+    processes,
     isContextLoading,
 }) => {
     return (
         <div className="tw-flex tw-flex-col tw-mb-2">
             <div className="tw-flex tw-flex-col tw-mb-2">
-                {steps.map(step => (
-                    <ProcessingStepItem key={step.id} step={step} isContextLoading={isContextLoading} />
+                {processes.map(process => (
+                    <ProcessItem
+                        key={process.id}
+                        process={process}
+                        isContextLoading={isContextLoading}
+                    />
                 ))}
             </div>
             {isContextLoading && (
@@ -469,11 +477,11 @@ const ProcessingStepList: FC<{ steps: ProcessingStep[]; isContextLoading: boolea
     )
 }
 
-const ProcessingStepItem: FC<{ step: ProcessingStep; isContextLoading: boolean }> = ({
-    step,
+const ProcessItem: FC<{ process: ProcessingStep; isContextLoading: boolean }> = ({
+    process,
     isContextLoading,
 }) => {
-    if (!step.id && !step.content) {
+    if (!process.id && !process.content) {
         return null
     }
 
@@ -481,13 +489,13 @@ const ProcessingStepItem: FC<{ step: ProcessingStep; isContextLoading: boolean }
         <div className="tw-border-l-4 tw-border-muted-foreground tw-pl-2">
             <div className="tw-border tw-border-border tw-bg-input-background tw-ml-2 tw-my-2 tw-py-2 tw-flex tw-items-center tw-rounded-md tw-shadow-sm tw-opacity-80 hover:tw-opacity-100">
                 <div className="tw-mx-4">
-                    {step.status === 'pending' && isContextLoading ? (
+                    {process.status === 'pending' && isContextLoading ? (
                         <Loader2Icon
                             strokeWidth={2}
                             size={14}
                             className="tw-mr-2 tw-h-6 tw-w-6 tw-animate-spin"
                         />
-                    ) : step.status === 'error' ? (
+                    ) : process.status === 'error' ? (
                         <CircleXIcon
                             strokeWidth={2}
                             size={14}
@@ -503,10 +511,10 @@ const ProcessingStepItem: FC<{ step: ProcessingStep; isContextLoading: boolean }
                 </div>
                 <div className="tw-flex-grow tw-min-w-0">
                     <div className="tw-truncate tw-max-w-full tw-font-semibold tw-text-sm">
-                        Running {step.id}
+                        Running {process.id}...
                     </div>
                     <div className="tw-truncate tw-max-w-full tw-text-xs tw-muted-foreground tw-opacity-80">
-                        {step.content}
+                        {process.content}
                     </div>
                 </div>
             </div>

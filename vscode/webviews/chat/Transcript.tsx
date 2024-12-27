@@ -645,7 +645,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                         assistantMessage?.model?.includes('deep-cody') &&
                         humanMessage.index < 3
                     } // Open the context cell for the first 2 human messages when Deep Cody is run.
-                    steps={humanMessage?.steps ?? undefined}
+                    processes={humanMessage?.processes ?? undefined}
                 />
             )}
             {assistantMessage && !isContextLoading && (

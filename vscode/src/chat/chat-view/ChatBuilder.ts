@@ -224,26 +224,15 @@ export class ChatBuilder {
         this.changeNotifications.next()
     }
 
-    public getLastMessageSteps(): ProcessingStep[] | undefined {
+    public setLastMessageProcesses(processes: ProcessingStep[]): void {
         const lastMessage = this.messages.at(-1)
         if (!lastMessage) {
             throw new Error('no last message')
         }
         if (lastMessage.speaker !== 'human') {
-            throw new Error('Cannot set steps for bot message')
+            throw new Error('Cannot set processes for bot message')
         }
-        return lastMessage.steps || undefined
-    }
-
-    public setLastMessageSteps(steps: ProcessingStep[]): void {
-        const lastMessage = this.messages.at(-1)
-        if (!lastMessage) {
-            throw new Error('no last message')
-        }
-        if (lastMessage.speaker !== 'human') {
-            throw new Error('Cannot set steps for bot message')
-        }
-        lastMessage.steps = steps
+        lastMessage.processes = processes
         this.changeNotifications.next()
     }
 

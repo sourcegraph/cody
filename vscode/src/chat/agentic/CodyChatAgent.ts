@@ -92,7 +92,7 @@ export abstract class CodyChatAgent {
 
         // Create a steps manager to handle state updates efficiently
         const stepsManager = new ProcessManager(steps => {
-            this.chatBuilder.setLastMessageSteps(steps)
+            this.chatBuilder.setLastMessageProcesses(steps)
             this.postMessageCallback?.(model)
         })
 
