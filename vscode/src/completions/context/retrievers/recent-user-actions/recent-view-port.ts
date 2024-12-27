@@ -2,6 +2,7 @@ import type { AutocompleteContextSnippet } from '@sourcegraph/cody-shared'
 import debounce from 'lodash/debounce'
 import { LRUCache } from 'lru-cache'
 import * as vscode from 'vscode'
+import { autocompleteOutputChannelLogger } from '../../../output-channel-logger'
 import type { ContextRetriever, ContextRetrieverOptions } from '../../../types'
 import { RetrieverIdentifier, type ShouldUseContextParams, shouldBeUsedAsContext } from '../../utils'
 import {
@@ -67,6 +68,11 @@ export class RecentViewPortRetriever implements vscode.Disposable, ContextRetrie
     }
 
     public async retrieve({ document }: ContextRetrieverOptions): Promise<AutocompleteContextSnippet[]> {
+        autocompleteOutputChannelLogger.logDebug(
+            'recent view port retrieve',
+            'Retrieving recent view port context'
+        )
+
         const sortedViewPorts = this.getValidViewPorts(document)
 
         const snippetPromises = sortedViewPorts.map(async viewPort => {
@@ -91,7 +97,12 @@ export class RecentViewPortRetriever implements vscode.Disposable, ContextRetrie
                       }
             return snippet
         })
-        return Promise.all(snippetPromises)
+        const viewPortSnippets = await Promise.all(snippetPromises)
+        autocompleteOutputChannelLogger.logDebug(
+            'recent view port retrieve',
+            `Retrieved ${viewPortSnippets.length} recent view port context`
+        )
+        return viewPortSnippets
     }
 
     private getValidViewPorts(document: vscode.TextDocument): TrackedViewPort[] {
