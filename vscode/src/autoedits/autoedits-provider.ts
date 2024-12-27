@@ -14,12 +14,13 @@ import { ContextMixer } from '../completions/context/context-mixer'
 import { DefaultContextStrategyFactory } from '../completions/context/context-strategy'
 import { getCurrentDocContext } from '../completions/get-current-doc-context'
 
-import type { AutoeditsModelAdapter } from './adapters/base'
+import type { AutoeditsModelAdapter, AutoeditsPrompt } from './adapters/base'
 import { createAutoeditsModelAdapter } from './adapters/create-adapter'
+import { getTimeNowInMillis } from './analytics-logger'
 import { autoeditsProviderConfig } from './autoedits-config'
 import { FilterPredictionBasedOnRecentEdits } from './filter-prediction-edits'
-import { autoeditsLogger } from './logger'
-import type { CodeToReplaceData } from './prompt/prompt-utils'
+import { autoeditsOutputChannelLogger } from './output-channel-logger'
+import { type CodeToReplaceData, getCurrentFilePromptComponents } from './prompt/prompt-utils'
 import { ShortTermPromptStrategy } from './prompt/short-term-diff-prompt-strategy'
 import type { DecorationInfo } from './renderer/decorators/base'
 import { DefaultDecorator } from './renderer/decorators/default-decorator'
@@ -59,21 +60,22 @@ export interface AutoeditsPrediction {
  */
 export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, vscode.Disposable {
     private readonly disposables: vscode.Disposable[] = []
-    private readonly onSelectionChangeDebounced: DebouncedFunc<typeof this.onSelectionChange>
     /** Keeps track of the last time the text was changed in the editor. */
     private lastTextChangeTimeStamp: number | undefined
+    private readonly onSelectionChangeDebounced: DebouncedFunc<typeof this.onSelectionChange>
+    public readonly rendererManager: AutoEditsRendererManager
     private readonly modelAdapter: AutoeditsModelAdapter
+
     private readonly promptStrategy = new ShortTermPromptStrategy()
+    public readonly filterPrediction = new FilterPredictionBasedOnRecentEdits()
     private readonly contextMixer = new ContextMixer({
         strategyFactory: new DefaultContextStrategyFactory(Observable.of(AUTOEDITS_CONTEXT_STRATEGY)),
         contextRankingStrategy: ContextRankingStrategy.TimeBased,
         dataCollectionEnabled: false,
     })
 
-    public readonly rendererManager: AutoEditsRendererManager
-    public readonly filterPrediction = new FilterPredictionBasedOnRecentEdits()
-
     constructor(chatClient: ChatClient) {
+        autoeditsOutputChannelLogger.logDebug('Constructor', 'Constructing AutoEditsProvider')
         this.modelAdapter = createAutoeditsModelAdapter({
             providerName: autoeditsProviderConfig.provider,
             isChatModel: autoeditsProviderConfig.isChatModel,
@@ -135,18 +137,27 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
     public async provideInlineCompletionItems(
         document: vscode.TextDocument,
         position: vscode.Position,
-        context: vscode.InlineCompletionContext,
+        inlineCompletionContext: vscode.InlineCompletionContext,
         token?: vscode.CancellationToken
     ): Promise<vscode.InlineCompletionItem[] | vscode.InlineCompletionList | null> {
+        const start = getTimeNowInMillis()
         const controller = new AbortController()
         const abortSignal = controller.signal
         token?.onCancellationRequested(() => controller.abort())
 
         await new Promise(resolve => setTimeout(resolve, INLINE_COMPLETION_DEFAULT_DEBOUNCE_INTERVAL_MS))
         if (abortSignal.aborted) {
+            autoeditsOutputChannelLogger.logDebug(
+                'provideInlineCompletionItems',
+                'debounce aborted before calculating getCurrentDocContext'
+            )
             return null
         }
 
+        autoeditsOutputChannelLogger.logDebug(
+            'provideInlineCompletionItems',
+            'Calculating getCurrentDocContext...'
+        )
         const docContext = getCurrentDocContext({
             document,
             position,
@@ -154,39 +165,89 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             maxSuffixLength: tokensToChars(autoeditsProviderConfig.tokenLimit.suffixTokens),
         })
 
-        const autoeditResponse = await this.inferEdit({
+        const { fileWithMarkerPrompt, areaPrompt, codeToReplaceData } = getCurrentFilePromptComponents({
+            docContext,
+            document,
+            position,
+            tokenBudget: autoeditsProviderConfig.tokenLimit,
+        })
+
+        autoeditsOutputChannelLogger.logDebug(
+            'provideInlineCompletionItems',
+            'Calculating context from contextMixer...'
+        )
+        const { context } = await this.contextMixer.getContext({
             document,
             position,
             docContext,
-            abortSignal,
+            maxChars: 32_000,
         })
-
-        if (abortSignal.aborted || !autoeditResponse) {
-            return null
-        }
-
-        let { prediction, codeToReplaceData } = autoeditResponse
-        const { codeToRewrite } = codeToReplaceData
-
-        const shouldFilterPredictionBasedRecentEdits = this.filterPrediction.shouldFilterPrediction(
-            document.uri,
-            prediction,
-            codeToRewrite
-        )
-
-        if (shouldFilterPredictionBasedRecentEdits) {
-            autoeditsLogger.logDebug('Autoedits', 'Skipping autoedit - based on recent edits')
-            return null
-        }
-
-        prediction = shrinkPredictionUntilSuffix(prediction, codeToReplaceData)
-        if (prediction === codeToRewrite) {
-            autoeditsLogger.logDebug(
-                'Autoedits',
-                'Skipping autoedit - prediction equals to code to rewrite'
+        if (abortSignal.aborted) {
+            autoeditsOutputChannelLogger.logDebug(
+                'provideInlineCompletionItems',
+                'aborted in getContext'
             )
             return null
         }
+
+        autoeditsOutputChannelLogger.logDebug(
+            'provideInlineCompletionItems',
+            'Calculating prompt from promptStrategy...'
+        )
+        const prompt = this.promptStrategy.getPromptForModelType({
+            fileWithMarkerPrompt,
+            areaPrompt,
+            context,
+            tokenBudget: autoeditsProviderConfig.tokenLimit,
+            isChatModel: autoeditsProviderConfig.isChatModel,
+        })
+
+        autoeditsOutputChannelLogger.logDebug(
+            'provideInlineCompletionItems',
+            'Calculating prediction from getPrediction...'
+        )
+        const initialPrediction = await this.getPrediction({
+            document,
+            position,
+            prompt,
+            codeToReplaceData,
+        })
+        if (abortSignal?.aborted || !initialPrediction) {
+            autoeditsOutputChannelLogger.logDebug(
+                'provideInlineCompletionItems',
+                'aborted after getPrediction'
+            )
+            return null
+        }
+
+        autoeditsOutputChannelLogger.logDebug(
+            'provideInlineCompletionItems',
+            `========================== Response:\n${initialPrediction}\n` +
+                `========================== Time Taken: ${getTimeNowInMillis() - start}ms`
+        )
+
+        const prediction = shrinkPredictionUntilSuffix({
+            prediction: initialPrediction,
+            codeToReplaceData,
+        })
+
+        const { codeToRewrite } = codeToReplaceData
+        if (prediction === codeToRewrite) {
+            autoeditsOutputChannelLogger.logDebug('skip', 'prediction equals to code to rewrite')
+            return null
+        }
+
+        const shouldFilterPredictionBasedRecentEdits = this.filterPrediction.shouldFilterPrediction({
+            uri: document.uri,
+            prediction,
+            codeToRewrite,
+        })
+
+        if (shouldFilterPredictionBasedRecentEdits) {
+            autoeditsOutputChannelLogger.logDebug('skip', 'based on recent edits')
+            return null
+        }
+
         const decorationInfo = getDecorationInfoFromPrediction(document, prediction, codeToReplaceData)
 
         if (
@@ -196,10 +257,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 suffix: codeToReplaceData.suffixInArea + codeToReplaceData.suffixAfterArea,
             })
         ) {
-            autoeditsLogger.logDebug(
-                'Autoedits',
-                'Skipping autoedit - predicted text already exists in suffix'
-            )
+            autoeditsOutputChannelLogger.logDebug('skip', 'prediction equals to code to rewrite')
             return null
         }
 
@@ -212,30 +270,21 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 docContext,
                 decorationInfo,
             })
+
         return inlineCompletions
     }
 
-    private async inferEdit(options: AutoEditsProviderOptions): Promise<AutoeditsPrediction | null> {
-        const start = Date.now()
-        const { document, position, docContext, abortSignal } = options
-
-        const { context } = await this.contextMixer.getContext({
-            document,
-            position,
-            docContext,
-            maxChars: 32_000,
-        })
-
-        const { codeToReplace, prompt } = this.promptStrategy.getPromptForModelType({
-            document,
-            position,
-            docContext,
-            context,
-            tokenBudget: autoeditsProviderConfig.tokenLimit,
-            isChatModel: autoeditsProviderConfig.isChatModel,
-        })
-
-        let response: string | undefined = undefined
+    private async getPrediction({
+        document,
+        position,
+        codeToReplaceData,
+        prompt,
+    }: {
+        document: vscode.TextDocument
+        position: vscode.Position
+        codeToReplaceData: CodeToReplaceData
+        prompt: AutoeditsPrompt
+    }): Promise<string | undefined> {
         if (autoeditsProviderConfig.isMockResponseFromCurrentDocumentTemplateEnabled) {
             const responseMetadata = extractAutoEditResponseFromCurrentDocumentCommentTemplate(
                 document,
@@ -243,39 +292,25 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             )
 
             if (responseMetadata) {
-                response = shrinkReplacerTextToCodeToReplaceRange(responseMetadata, codeToReplace)
+                const prediction = shrinkReplacerTextToCodeToReplaceRange(
+                    responseMetadata,
+                    codeToReplaceData
+                )
+
+                if (prediction) {
+                    return prediction
+                }
             }
         }
 
-        if (response === undefined) {
-            response = await this.modelAdapter.getModelResponse({
-                url: autoeditsProviderConfig.url,
-                model: autoeditsProviderConfig.model,
-                prompt,
-                codeToRewrite: codeToReplace.codeToRewrite,
-                userId: (await currentResolvedConfig()).clientState.anonymousUserID,
-                isChatModel: autoeditsProviderConfig.isChatModel,
-            })
-        }
-
-        if (abortSignal?.aborted || !response) {
-            return null
-        }
-
-        autoeditsLogger.logDebug(
-            'Autoedits',
-            '========================== Response:\n',
-            response,
-            '\n',
-            '========================== Time Taken For LLM (Msec): ',
-            (Date.now() - start).toString(),
-            '\n'
-        )
-
-        return {
-            codeToReplaceData: codeToReplace,
-            prediction: response,
-        }
+        return this.modelAdapter.getModelResponse({
+            url: autoeditsProviderConfig.url,
+            model: autoeditsProviderConfig.model,
+            prompt,
+            codeToRewrite: codeToReplaceData.codeToRewrite,
+            userId: (await currentResolvedConfig()).clientState.anonymousUserID,
+            isChatModel: autoeditsProviderConfig.isChatModel,
+        })
     }
 
     public dispose(): void {

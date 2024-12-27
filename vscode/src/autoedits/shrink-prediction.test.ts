@@ -33,7 +33,7 @@ describe('shrinkPredictionUntilSuffix', () => {
             pred_line_2\n
         `
 
-        const result = shrinkPredictionUntilSuffix(prediction, codeToReplaceData)
+        const result = shrinkPredictionUntilSuffix({ prediction, codeToReplaceData })
         expect(result).toBe(prediction)
     })
 
@@ -56,7 +56,7 @@ describe('shrinkPredictionUntilSuffix', () => {
             this.recentEditsTracker = recentEditsTracker
         }\n\n`
 
-        const result = shrinkPredictionUntilSuffix(prediction, codeToReplaceData)
+        const result = shrinkPredictionUntilSuffix({ prediction, codeToReplaceData })
         expect(result).toBe(prediction)
     })
 
@@ -76,7 +76,7 @@ describe('shrinkPredictionUntilSuffix', () => {
                 self.email = email
         `
 
-        const result = shrinkPredictionUntilSuffix(prediction, codeToReplaceData)
+        const result = shrinkPredictionUntilSuffix({ prediction, codeToReplaceData })
         // We expect that last line to be removed (overlap is 1 line).
         expect(result.trimEnd()).toBe(withoutLastLines(prediction, 1))
     })
@@ -93,7 +93,7 @@ describe('shrinkPredictionUntilSuffix', () => {
             extra_line3
         `
 
-        const result = shrinkPredictionUntilSuffix(prediction, codeToReplaceData)
+        const result = shrinkPredictionUntilSuffix({ prediction, codeToReplaceData })
         // No overlap to remove, so the prediction remains.
         expect(result.trimEnd()).toBe(prediction.trimEnd())
     })
@@ -113,7 +113,7 @@ describe('shrinkPredictionUntilSuffix', () => {
             console.log("end")
         `
 
-        const result = shrinkPredictionUntilSuffix(prediction, codeToReplaceData)
+        const result = shrinkPredictionUntilSuffix({ prediction, codeToReplaceData })
         expect(result.trimEnd()).toBe(withoutLastLines(prediction, 1))
     })
 
@@ -130,7 +130,7 @@ describe('shrinkPredictionUntilSuffix', () => {
             console.log(a + b);
         }`
 
-        const result = shrinkPredictionUntilSuffix(prediction, codeToReplaceData)
+        const result = shrinkPredictionUntilSuffix({ prediction, codeToReplaceData })
         expect(result).toBe(codeToReplaceData.codeToRewrite)
     })
 
@@ -141,7 +141,7 @@ describe('shrinkPredictionUntilSuffix', () => {
             more lines\n
         `
 
-        const result = shrinkPredictionUntilSuffix(prediction, codeToReplaceData)
+        const result = shrinkPredictionUntilSuffix({ prediction, codeToReplaceData })
         expect(result).toBe(prediction)
     })
 
@@ -153,7 +153,7 @@ describe('shrinkPredictionUntilSuffix', () => {
 
         const prediction = ''
 
-        const result = shrinkPredictionUntilSuffix(prediction, codeToReplaceData)
+        const result = shrinkPredictionUntilSuffix({ prediction, codeToReplaceData })
         expect(result).toBe(prediction)
     })
 
@@ -167,7 +167,7 @@ describe('shrinkPredictionUntilSuffix', () => {
             console.log("barbaz")\n
         `
 
-        const result = shrinkPredictionUntilSuffix(prediction, codeToReplaceData)
+        const result = shrinkPredictionUntilSuffix({ prediction, codeToReplaceData })
         expect(result).toBe(prediction)
     })
 
@@ -187,7 +187,7 @@ describe('shrinkPredictionUntilSuffix', () => {
             line2\n
         `
 
-        const result = shrinkPredictionUntilSuffix(prediction, codeToReplaceData)
+        const result = shrinkPredictionUntilSuffix({ prediction, codeToReplaceData })
         // Entire prediction is removed => only a single newline remains.
         expect(result).toBe('\n')
     })
@@ -209,7 +209,7 @@ describe('shrinkPredictionUntilSuffix', () => {
             line4\n
         `
 
-        const result = shrinkPredictionUntilSuffix(prediction, codeToReplaceData)
+        const result = shrinkPredictionUntilSuffix({ prediction, codeToReplaceData })
         expect(result).toBe(withoutLastLines(prediction, 3))
     })
 })

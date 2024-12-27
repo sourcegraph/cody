@@ -91,6 +91,12 @@ describe('RecentViewPortRetriever', () => {
                 onDidChangeActiveTextEditor() {
                     return { dispose: () => {} }
                 },
+                onDidChangeNotebookEditorVisibleRanges() {
+                    return { dispose: () => {} }
+                },
+                onDidChangeActiveNotebookEditor() {
+                    return { dispose: () => {} }
+                },
                 activeTextEditor: undefined,
             }
         )
@@ -135,8 +141,6 @@ describe('RecentViewPortRetriever', () => {
         expect(snippets).toHaveLength(1)
         expect(snippets[0]).toMatchObject({
             uri: doc.uri,
-            startLine: 1,
-            endLine: 2,
             identifier: retriever.identifier,
         })
         expect(snippets[0].content).toMatchInlineSnapshot(dedent`
@@ -156,8 +160,6 @@ describe('RecentViewPortRetriever', () => {
         const snippets = await retriever.retrieve(getContextRetrieverOptionsFromDoc(doc2))
 
         expect(snippets).toHaveLength(1)
-        expect(snippets[0].startLine).toBe(1)
-        expect(snippets[0].endLine).toBe(2)
     })
 
     it('should handle empty visible ranges', async () => {

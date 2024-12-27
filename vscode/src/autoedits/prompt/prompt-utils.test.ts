@@ -1,10 +1,15 @@
-import { type AutocompleteContextSnippet, ps, testFileUri } from '@sourcegraph/cody-shared'
 import dedent from 'dedent'
-import { describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import * as vscode from 'vscode'
+import { NotebookCellKind } from 'vscode-languageserver-protocol'
+
+import { type AutocompleteContextSnippet, ps, testFileUri } from '@sourcegraph/cody-shared'
+
 import { RetrieverIdentifier } from '../../completions/context/utils'
 import { getCurrentDocContext } from '../../completions/get-current-doc-context'
-import { documentAndPosition } from '../../completions/test-helpers'
+import { documentAndPosition, mockNotebookAndPosition } from '../../completions/test-helpers'
 import {
+    type CurrentFilePromptOptions,
     getCompletionsPromptWithSystemPrompt,
     getContextItemsInTokenBudget,
     getContextPromptWithPath,
@@ -16,8 +21,19 @@ import {
     getRecentEditsContextPromptWithPath,
     getRecentEditsPrompt,
     getRecentlyViewedSnippetsPrompt,
-    joinPromptsWithNewlineSeperator,
-} from '../prompt/prompt-utils'
+    joinPromptsWithNewlineSeparator,
+} from './prompt-utils'
+
+// A helper to set up your global "activeNotebookEditor" mock.
+function mockActiveNotebookEditor(notebook: vscode.NotebookDocument | undefined) {
+    vi.spyOn(vscode.window, 'activeNotebookEditor', 'get').mockReturnValue(
+        notebook
+            ? ({
+                  notebook,
+              } as vscode.NotebookEditor)
+            : undefined
+    )
+}
 
 describe('getContextPromptWithPath', () => {
     it('correct prompt with path', () => {
@@ -52,22 +68,26 @@ describe('getCurrentFilePromptComponents', () => {
         const content = `${longPrefix}\ncursor█line\n${longSuffix}`
 
         const { document, position } = documentAndPosition(content)
+        const maxPrefixLength = 100
+        const maxSuffixLength = 100
 
         const docContext = getCurrentDocContext({
             document,
             position,
-            maxPrefixLength: 100,
-            maxSuffixLength: 100,
+            maxPrefixLength,
+            maxSuffixLength,
         })
 
-        const options = {
+        const options: CurrentFilePromptOptions = {
             docContext,
             document,
             position,
-            maxPrefixLinesInArea: 1,
-            maxSuffixLinesInArea: 1,
-            codeToRewritePrefixLines: 1,
-            codeToRewriteSuffixLines: 1,
+            tokenBudget: {
+                maxPrefixLinesInArea: 1,
+                maxSuffixLinesInArea: 1,
+                codeToRewritePrefixLines: 1,
+                codeToRewriteSuffixLines: 1,
+            },
         }
 
         const result = getCurrentFilePromptComponents(options)
@@ -122,14 +142,16 @@ describe('getCurrentFilePromptComponents', () => {
             maxSuffixLength: 30,
         })
 
-        const options = {
+        const options: CurrentFilePromptOptions = {
             docContext,
             document,
             position,
-            maxPrefixLinesInArea: 1,
-            maxSuffixLinesInArea: 1,
-            codeToRewritePrefixLines: 1,
-            codeToRewriteSuffixLines: 1,
+            tokenBudget: {
+                maxPrefixLinesInArea: 1,
+                maxSuffixLinesInArea: 1,
+                codeToRewritePrefixLines: 1,
+                codeToRewriteSuffixLines: 1,
+            },
         }
 
         const result = getCurrentFilePromptComponents(options)
@@ -159,6 +181,128 @@ describe('getCurrentFilePromptComponents', () => {
 })
 
 describe('getCurrentFileContext', () => {
+    beforeEach(() => {
+        vi.restoreAllMocks()
+        vi.clearAllMocks()
+    })
+
+    it('correctly handles the notebook document with only code cells', async () => {
+        const { notebookDoc, position } = mockNotebookAndPosition({
+            uri: 'file://test.ipynb',
+            cells: [
+                {
+                    kind: NotebookCellKind.Code,
+                    text: 'console.log("cell0 code")',
+                    languageId: 'python',
+                },
+                {
+                    kind: NotebookCellKind.Code,
+                    text: 'console.log("cell1█ code")',
+                    languageId: 'python',
+                },
+                {
+                    kind: NotebookCellKind.Code,
+                    text: 'console.log("cell2 code")',
+                    languageId: 'python',
+                },
+            ],
+        })
+        mockActiveNotebookEditor(notebookDoc)
+        const document = notebookDoc.cellAt(1).document
+
+        const docContext = getCurrentDocContext({
+            document,
+            position,
+            maxPrefixLength: 100,
+            maxSuffixLength: 100,
+        })
+
+        const options: CurrentFilePromptOptions = {
+            docContext,
+            document,
+            position,
+            tokenBudget: {
+                maxPrefixLinesInArea: 1,
+                maxSuffixLinesInArea: 1,
+                codeToRewritePrefixLines: 1,
+                codeToRewriteSuffixLines: 1,
+            },
+        }
+
+        const result = getCurrentFileContext(options)
+
+        // Verify the results
+        expect(result.codeToRewrite.toString()).toBe('console.log("cell1 code")')
+        expect(result.codeToRewritePrefix.toString()).toBe('console.log("cell1')
+        expect(result.codeToRewriteSuffix.toString()).toBe(' code")')
+        expect(result.prefixInArea.toString()).toBe('')
+        expect(result.suffixInArea.toString()).toBe('')
+        expect(result.prefixBeforeArea.toString()).toBe('console.log("cell0 code")\n')
+        expect(result.suffixAfterArea.toString()).toBe('\nconsole.log("cell2 code")')
+    })
+
+    it('correctly handles the notebook document and relevant context', async () => {
+        const { notebookDoc, position } = mockNotebookAndPosition({
+            uri: 'file://test.ipynb',
+            cells: [
+                {
+                    kind: NotebookCellKind.Code,
+                    text: 'console.log("cell0 code")',
+                    languageId: 'python',
+                },
+                {
+                    kind: NotebookCellKind.Code,
+                    text: 'console.log("cell1█ code")',
+                    languageId: 'python',
+                },
+                {
+                    kind: NotebookCellKind.Markup,
+                    text: '# This is a markdown cell',
+                    languageId: 'markdown',
+                },
+                {
+                    kind: NotebookCellKind.Code,
+                    text: 'console.log("cell2 code")',
+                    languageId: 'python',
+                },
+            ],
+        })
+        mockActiveNotebookEditor(notebookDoc)
+        const document = notebookDoc.cellAt(1).document
+
+        const docContext = getCurrentDocContext({
+            document,
+            position,
+            maxPrefixLength: 100,
+            maxSuffixLength: 100,
+        })
+
+        const options = {
+            docContext,
+            document,
+            position,
+            tokenBudget: {
+                maxPrefixLinesInArea: 1,
+                maxSuffixLinesInArea: 1,
+                codeToRewritePrefixLines: 1,
+                codeToRewriteSuffixLines: 1,
+            },
+        }
+
+        const result = getCurrentFileContext(options)
+
+        // Verify the results
+        expect(result.codeToRewrite.toString()).toBe('console.log("cell1 code")')
+        expect(result.codeToRewritePrefix.toString()).toBe('console.log("cell1')
+        expect(result.codeToRewriteSuffix.toString()).toBe(' code")')
+        expect(result.prefixInArea.toString()).toBe('')
+        expect(result.suffixInArea.toString()).toBe('')
+        expect(result.prefixBeforeArea.toString()).toBe('console.log("cell0 code")\n')
+        expect(result.suffixAfterArea.toString()).toBe(
+            '\n# # This is a markdown cell\n\nconsole.log("cell2 code")'
+        )
+    })
+
     it('correctly splits content into different areas based on cursor position', () => {
         const { document, position } = documentAndPosition('line1\nline2\nline3█line4\nline5\nline6')
 
@@ -173,10 +317,12 @@ describe('getCurrentFileContext', () => {
             docContext,
             document,
             position,
-            maxPrefixLinesInArea: 1,
-            maxSuffixLinesInArea: 1,
-            codeToRewritePrefixLines: 1,
-            codeToRewriteSuffixLines: 1,
+            tokenBudget: {
+                maxPrefixLinesInArea: 1,
+                maxSuffixLinesInArea: 1,
+                codeToRewritePrefixLines: 1,
+                codeToRewriteSuffixLines: 1,
+            },
         }
 
         const result = getCurrentFileContext(options)
@@ -203,14 +349,16 @@ describe('getCurrentFileContext', () => {
             maxSuffixLength: 100,
         })
 
-        const options = {
+        const options: CurrentFilePromptOptions = {
             docContext,
             document,
             position,
-            maxPrefixLinesInArea: 1,
-            maxSuffixLinesInArea: 1,
-            codeToRewritePrefixLines: 1,
-            codeToRewriteSuffixLines: 1,
+            tokenBudget: {
+                maxPrefixLinesInArea: 1,
+                maxSuffixLinesInArea: 1,
+                codeToRewritePrefixLines: 1,
+                codeToRewriteSuffixLines: 1,
+            },
         }
 
         const result = getCurrentFileContext(options)
@@ -233,14 +381,16 @@ describe('getCurrentFileContext', () => {
             maxSuffixLength: 100,
         })
 
-        const options = {
+        const options: CurrentFilePromptOptions = {
             docContext,
             document,
             position,
-            maxPrefixLinesInArea: 1,
-            maxSuffixLinesInArea: 1,
-            codeToRewritePrefixLines: 1,
-            codeToRewriteSuffixLines: 1,
+            tokenBudget: {
+                maxPrefixLinesInArea: 1,
+                maxSuffixLinesInArea: 1,
+                codeToRewritePrefixLines: 1,
+                codeToRewriteSuffixLines: 1,
+            },
         }
 
         const result = getCurrentFileContext(options)
@@ -264,14 +414,16 @@ describe('getCurrentFileContext', () => {
             maxSuffixLength: 100,
         })
 
-        const options = {
+        const options: CurrentFilePromptOptions = {
             docContext,
             document,
             position,
-            maxPrefixLinesInArea: 1,
-            maxSuffixLinesInArea: 1,
-            codeToRewritePrefixLines: 1,
-            codeToRewriteSuffixLines: 1,
+            tokenBudget: {
+                maxPrefixLinesInArea: 1,
+                maxSuffixLinesInArea: 1,
+                codeToRewritePrefixLines: 1,
+                codeToRewriteSuffixLines: 1,
+            },
         }
 
         const result = getCurrentFileContext(options)
@@ -295,14 +447,16 @@ describe('getCurrentFileContext', () => {
             maxSuffixLength: 100,
         })
 
-        const options = {
+        const options: CurrentFilePromptOptions = {
             docContext,
             document,
             position,
-            maxPrefixLinesInArea: 1,
-            maxSuffixLinesInArea: 1,
-            codeToRewritePrefixLines: 1,
-            codeToRewriteSuffixLines: 1,
+            tokenBudget: {
+                maxPrefixLinesInArea: 1,
+                maxSuffixLinesInArea: 1,
+                codeToRewritePrefixLines: 1,
+                codeToRewriteSuffixLines: 1,
+            },
         }
 
         const result = getCurrentFileContext(options)
@@ -328,14 +482,16 @@ describe('getCurrentFileContext', () => {
             maxSuffixLength: 100,
         })
 
-        const options = {
+        const options: CurrentFilePromptOptions = {
             docContext,
             document,
             position,
-            maxPrefixLinesInArea: 1,
-            maxSuffixLinesInArea: 1,
-            codeToRewritePrefixLines: 3, // Increased prefix lines
-            codeToRewriteSuffixLines: 1,
+            tokenBudget: {
+                maxPrefixLinesInArea: 1,
+                maxSuffixLinesInArea: 1,
+                codeToRewritePrefixLines: 3, // Increased prefix lines
+                codeToRewriteSuffixLines: 1,
+            },
         }
 
         const result = getCurrentFileContext(options)
@@ -364,14 +520,16 @@ describe('getCurrentFileContext', () => {
             maxSuffixLength: 30,
         })
 
-        const options = {
+        const options: CurrentFilePromptOptions = {
             docContext,
             document,
             position,
-            maxPrefixLinesInArea: 1,
-            maxSuffixLinesInArea: 1,
-            codeToRewritePrefixLines: 1,
-            codeToRewriteSuffixLines: 1,
+            tokenBudget: {
+                maxPrefixLinesInArea: 1,
+                maxSuffixLinesInArea: 1,
+                codeToRewritePrefixLines: 1,
+                codeToRewriteSuffixLines: 1,
+            },
         }
 
         const result = getCurrentFileContext(options)
@@ -401,14 +559,16 @@ describe('getCurrentFileContext', () => {
             maxSuffixLength: 20,
         })
 
-        const options = {
+        const options: CurrentFilePromptOptions = {
             docContext,
             document,
             position,
-            maxPrefixLinesInArea: 2,
-            maxSuffixLinesInArea: 2,
-            codeToRewritePrefixLines: 2,
-            codeToRewriteSuffixLines: 2,
+            tokenBudget: {
+                maxPrefixLinesInArea: 2,
+                maxSuffixLinesInArea: 2,
+                codeToRewritePrefixLines: 2,
+                codeToRewriteSuffixLines: 2,
+            },
         }
 
         const result = getCurrentFileContext(options)
@@ -433,14 +593,16 @@ describe('getCurrentFileContext', () => {
             maxSuffixLength: 100,
         })
 
-        const options = {
+        const options: CurrentFilePromptOptions = {
             docContext,
             document,
             position,
-            maxPrefixLinesInArea: 5, // Larger than file
-            maxSuffixLinesInArea: 5, // Larger than file
-            codeToRewritePrefixLines: 3, // Larger than file
-            codeToRewriteSuffixLines: 3, // Larger than file
+            tokenBudget: {
+                maxPrefixLinesInArea: 5, // Larger than file
+                maxSuffixLinesInArea: 5, // Larger than file
+                codeToRewritePrefixLines: 3, // Larger than file
+                codeToRewriteSuffixLines: 3, // Larger than file
+            },
         }
 
         const result = getCurrentFileContext(options)
@@ -459,6 +621,7 @@ describe('getCurrentFileContext', () => {
 
 describe('getContextItemsInTokenBudget', () => {
     const getContextItem = (content: string, identifier: string): AutocompleteContextSnippet => ({
+        type: 'file',
         content,
         identifier,
         uri: testFileUri('foo.ts'),
@@ -532,6 +695,7 @@ describe('getLintErrorsPrompt', () => {
         identifier: string,
         fileName = 'foo.ts'
     ): AutocompleteContextSnippet => ({
+        type: 'file',
         content,
         identifier,
         uri: testFileUri(fileName),
@@ -610,6 +774,7 @@ describe('getRecentCopyPrompt', () => {
         identifier: string,
         fileName = 'foo.ts'
     ): AutocompleteContextSnippet => ({
+        type: 'file',
         content,
         identifier,
         uri: testFileUri(fileName),
@@ -668,6 +833,7 @@ describe('getRecentEditsPrompt', () => {
         identifier: string,
         fileName = 'foo.ts'
     ): AutocompleteContextSnippet => ({
+        type: 'file',
         content,
         identifier,
         uri: testFileUri(fileName),
@@ -750,6 +916,7 @@ describe('getRecentlyViewedSnippetsPrompt', () => {
         identifier: string,
         fileName = 'foo.ts'
     ): AutocompleteContextSnippet => ({
+        type: 'file',
         content,
         identifier,
         uri: testFileUri(fileName),
@@ -828,6 +995,7 @@ describe('getJaccardSimilarityPrompt', () => {
         identifier: string,
         fileName = 'foo.ts'
     ): AutocompleteContextSnippet => ({
+        type: 'file',
         content,
         identifier,
         uri: testFileUri(fileName),
@@ -900,9 +1068,9 @@ describe('getJaccardSimilarityPrompt', () => {
     })
 })
 
-describe('joinPromptsWithNewlineSeperator', () => {
+describe('joinPromptsWithNewlineSeparator', () => {
     it('joins multiple prompt strings with a new line separator', () => {
-        const prompt = joinPromptsWithNewlineSeperator(ps`foo`, ps`bar`)
+        const prompt = joinPromptsWithNewlineSeparator(ps`foo`, ps`bar`)
         expect(prompt.toString()).toBe(dedent`
             foo
             bar

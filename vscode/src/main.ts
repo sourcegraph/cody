@@ -69,7 +69,6 @@ import {
     executeTestCaseEditCommand,
     executeTestEditCommand,
 } from './commands/execute'
-import { executeAutoEditCommand } from './commands/execute/auto-edit'
 import { executeDocChatCommand } from './commands/execute/doc'
 import { executeTestChatCommand } from './commands/execute/test-chat'
 import { CodySourceControl } from './commands/scm/source-control'
@@ -464,9 +463,6 @@ async function registerCodyCommands(
             ({ configuration }) => configuration.experimentalAutoeditsRendererTesting !== false,
             () => registerAutoEditTestRenderCommand()
         )
-    )
-    disposables.push(
-        vscode.commands.registerCommand('cody.command.auto-edit', a => executeAutoEditCommand(a))
     )
 
     disposables.push(

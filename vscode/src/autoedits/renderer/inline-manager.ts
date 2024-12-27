@@ -2,7 +2,7 @@ import { isFileURI } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import { completionMatchesSuffix } from '../../completions/is-completion-visible'
 import { getNewLineChar } from '../../completions/text-processing'
-import { autoeditsLogger } from '../logger'
+import { autoeditsOutputChannelLogger } from '../output-channel-logger'
 import type { AutoeditRendererManagerArgs } from './manager'
 
 import type {
@@ -86,7 +86,11 @@ export class AutoEditsInlineRendererManager
                 ),
             ]
 
-            autoeditsLogger.logDebug('Autocomplete Inline Response: ', completionText)
+            autoeditsOutputChannelLogger.logDebug(
+                'maybeRenderDecorationsAndTryMakeInlineCompletionResponse',
+                'Autocomplete Inline Response: ',
+                completionText
+            )
         }
 
         function withoutUsedChanges<T extends { id: string }>(array: T[]): T[] {

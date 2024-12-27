@@ -446,8 +446,10 @@ export class ChatsController implements vscode.Disposable {
             return
         }
 
+        // For single chat deletion
         await chatHistory.deleteChat(authStatus, chatID)
-        this.disposeChat(chatID, true)
+        // Don't save the session when disposing after delete
+        this.disposeChat(chatID, true, { skipSave: true })
     }
 
     /**
@@ -535,7 +537,11 @@ export class ChatsController implements vscode.Disposable {
         })
     }
 
-    private disposeChat(chatID: string, includePanel: boolean): void {
+    private disposeChat(
+        chatID: string,
+        includePanel: boolean,
+        options: { skipSave?: boolean } = {}
+    ): void {
         if (chatID === this.activeEditor?.sessionID) {
             this.activeEditor = undefined
         }
@@ -549,7 +555,7 @@ export class ChatsController implements vscode.Disposable {
             removedProvider.dispose()
         }
 
-        if (includePanel && chatID === this.panel?.sessionID) {
+        if (includePanel && chatID === this.panel?.sessionID && !options.skipSave) {
             this.panel.clearAndRestartSession()
         }
     }

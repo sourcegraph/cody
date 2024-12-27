@@ -2,6 +2,7 @@ import { type PromptString, contextFiltersProvider } from '@sourcegraph/cody-sha
 import type { AutocompleteContextSnippet } from '@sourcegraph/cody-shared'
 import type { AutocompleteContextSnippetMetadataFields } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
+import { autocompleteOutputChannelLogger } from '../../../output-channel-logger'
 import type { ContextRetriever, ContextRetrieverOptions } from '../../../types'
 import { RetrieverIdentifier, type ShouldUseContextParams, shouldBeUsedAsContext } from '../../utils'
 import type {
@@ -46,6 +47,11 @@ export class RecentEditsRetriever implements vscode.Disposable, ContextRetriever
     }
 
     public async retrieve(options: ContextRetrieverOptions): Promise<AutocompleteContextSnippet[]> {
+        autocompleteOutputChannelLogger.logDebug(
+            'recent edits retrieve',
+            'Retrieving recent edits context'
+        )
+
         const rawDiffs = await this.getDiffAcrossDocuments()
         const diffs = this.filterCandidateDiffs(rawDiffs, options.document)
         // Heuristics ordering by timestamp, taking the most recent diffs first.
@@ -55,7 +61,8 @@ export class RecentEditsRetriever implements vscode.Disposable, ContextRetriever
         const retrievalTriggerTime = Date.now()
         for (const diff of diffs) {
             const content = diff.diff.toString()
-            const autocompleteSnippet = {
+            const autocompleteSnippet: AutocompleteContextSnippet = {
+                type: 'base',
                 uri: diff.uri,
                 identifier: this.identifier,
                 content,
@@ -63,12 +70,13 @@ export class RecentEditsRetriever implements vscode.Disposable, ContextRetriever
                     timeSinceActionMs: retrievalTriggerTime - diff.latestChangeTimestamp,
                     retrieverMetadata: diff.diffStrategyMetadata,
                 },
-            } satisfies Omit<AutocompleteContextSnippet, 'startLine' | 'endLine'>
+            }
             autocompleteContextSnippets.push(autocompleteSnippet)
         }
-        // remove the startLine and endLine from the response similar to how we did
-        // it for BFG.
-        // @ts-ignore
+        autocompleteOutputChannelLogger.logDebug(
+            'recent edits retrieve',
+            `Retrieved ${autocompleteContextSnippets.length} recent edits context`
+        )
         return autocompleteContextSnippets
     }
 

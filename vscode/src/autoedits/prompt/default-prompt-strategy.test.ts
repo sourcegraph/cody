@@ -7,6 +7,7 @@ import { getCurrentDocContext } from '../../completions/get-current-doc-context'
 import { documentAndPosition } from '../../completions/test-helpers'
 import type { UserPromptArgs } from './base'
 import { DefaultUserPromptStrategy } from './default-prompt-strategy'
+import { getCurrentFilePromptComponents } from './prompt-utils'
 
 describe('DefaultUserPromptStrategy', () => {
     const promptProvider = new DefaultUserPromptStrategy()
@@ -17,6 +18,7 @@ describe('DefaultUserPromptStrategy', () => {
         identifier: string,
         filePath = 'foo.ts'
     ): AutocompleteContextSnippet => ({
+        type: 'file',
         content,
         identifier,
         uri: testFileUri(filePath),
@@ -41,7 +43,6 @@ describe('DefaultUserPromptStrategy', () => {
             maxPrefixLength: 100,
             maxSuffixLength: 100,
         })
-
         const tokenBudget: AutoEditsTokenLimit = {
             prefixTokens: 10,
             suffixTokens: 10,
@@ -57,6 +58,14 @@ describe('DefaultUserPromptStrategy', () => {
                 [RetrieverIdentifier.DiagnosticsRetriever]: 100,
             },
         }
+
+        const { fileWithMarkerPrompt, areaPrompt } = getCurrentFilePromptComponents({
+            docContext,
+            document,
+            position,
+            tokenBudget,
+        })
+
         const context: AutocompleteContextSnippet[] = shouldIncludeContext
             ? [
                   getContextItem(
@@ -163,17 +172,16 @@ describe('DefaultUserPromptStrategy', () => {
             : []
 
         return {
-            docContext,
-            document,
-            position,
             context,
+            fileWithMarkerPrompt,
+            areaPrompt,
             tokenBudget,
         }
     }
 
     it('creates prompt with the context source with context', () => {
         const userPromptData = getUserPromptData({ shouldIncludeContext: true })
-        const { prompt } = promptProvider.getUserPrompt(userPromptData)
+        const prompt = promptProvider.getUserPrompt(userPromptData)
 
         expect(prompt.toString()).toEqual(dedent`
             Help me finish a coding change. In particular, you will see a series of snippets from current open files in my editor, files I have recently viewed, the file I am editing, then a history of my recent codebase changes, then current compiler and linter errors, content I copied from my codebase. You will then rewrite the <code_to_rewrite>, to match what you think I would do next in the codebase. Note: I might have stopped in the middle of typing.
@@ -303,7 +311,7 @@ describe('DefaultUserPromptStrategy', () => {
 
     it('creates a prompt in the correct format', () => {
         const userPromptData = getUserPromptData({ shouldIncludeContext: false })
-        const { prompt } = promptProvider.getUserPrompt(userPromptData)
+        const prompt = promptProvider.getUserPrompt(userPromptData)
 
         const expectedPrompt = dedent`
             Help me finish a coding change. In particular, you will see a series of snippets from current open files in my editor, files I have recently viewed, the file I am editing, then a history of my recent codebase changes, then current compiler and linter errors, content I copied from my codebase. You will then rewrite the <code_to_rewrite>, to match what you think I would do next in the codebase. Note: I might have stopped in the middle of typing.

@@ -88,16 +88,15 @@ export class RecentEditsTracker implements vscode.Disposable {
     }
 
     private trackDocument(document: vscode.TextDocument): void {
-        if (document.uri.scheme !== 'file') {
-            return
+        if (document.uri.scheme === 'file' || document.uri.scheme === 'vscode-notebook-cell') {
+            const trackedDocument: TrackedDocument = {
+                content: document.getText(),
+                languageId: document.languageId,
+                uri: document.uri,
+                changes: [],
+            }
+            this.trackedDocuments.set(document.uri.toString(), trackedDocument)
         }
-        const trackedDocument: TrackedDocument = {
-            content: document.getText(),
-            languageId: document.languageId,
-            uri: document.uri,
-            changes: [],
-        }
-        this.trackedDocuments.set(document.uri.toString(), trackedDocument)
     }
 
     private reconcileOutdatedChanges(): void {

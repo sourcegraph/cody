@@ -19,12 +19,14 @@ import { type ContextRetriever, toStructuredMentions } from '../chat-view/Contex
 import { getChatContextItemsForMention } from '../context/chatContext'
 import { getCorpusContextItemsForEditorState } from '../initialContext'
 import { CodyChatMemory } from './CodyChatMemory'
-import type { ToolFactory, ToolRegistry } from './CodyToolProvider'
+import type { ToolFactory, ToolRegistry, ToolStatusCallback } from './CodyToolProvider'
 
 /**
  * Configuration interface for CodyTool instances.
  */
 export interface CodyToolConfig {
+    // The title of the tool. For UI display purposes.
+    title: string
     tags: {
         tag: PromptString
         subTag: PromptString
@@ -41,6 +43,8 @@ export interface CodyToolConfig {
  */
 export abstract class CodyTool {
     constructor(public readonly config: CodyToolConfig) {}
+
+    private static readonly EXECUTION_TIMEOUT_MS = 30000 // 30 seconds
     /**
      * Generates and returns the instruction prompt string for the tool.
      */
@@ -86,7 +90,33 @@ export abstract class CodyTool {
      *
      * Abstract method to be implemented by subclasses for executing the tool.
      */
-    public abstract execute(span: Span): Promise<ContextItem[]>
+    protected abstract execute(span: Span, queries: string[]): Promise<ContextItem[]>
+    public async run(span: Span, callback?: ToolStatusCallback): Promise<ContextItem[]> {
+        try {
+            const queries = this.parse()
+            if (queries.length) {
+                callback?.onStream(this.config.title, queries.join(', '))
+                // Create a timeout promise
+                const timeoutPromise = new Promise<ContextItem[]>((_, reject) => {
+                    setTimeout(() => {
+                        reject(
+                            new Error(
+                                `${this.config.title} execution timed out after ${CodyTool.EXECUTION_TIMEOUT_MS}ms`
+                            )
+                        )
+                    }, CodyTool.EXECUTION_TIMEOUT_MS)
+                })
+                // Race between execution and timeout
+                const results = await Promise.race([this.execute(span, queries), timeoutPromise])
+                // Notify that tool execution is complete
+                callback?.onComplete(this.config.title)
+                return results
+            }
+        } catch (error) {
+            callback?.onComplete(this.config.title, error as Error)
+        }
+        return Promise.resolve([])
+    }
 }
 
 /**
@@ -95,6 +125,7 @@ export abstract class CodyTool {
 class CliTool extends CodyTool {
     constructor() {
         super({
+            title: 'Terminal',
             tags: {
                 tag: ps`TOOLCLI`,
                 subTag: ps`cmd`,
@@ -107,9 +138,8 @@ class CliTool extends CodyTool {
         })
     }
 
-    public async execute(span: Span): Promise<ContextItem[]> {
+    public async execute(span: Span, commands: string[]): Promise<ContextItem[]> {
         span.addEvent('executeCliTool')
-        const commands = this.parse()
         if (commands.length === 0) return []
         logDebug('CodyTool', `executing ${commands.length} commands...`)
         return Promise.all(commands.map(getContextFileFromShell)).then(results => results.flat())
@@ -122,6 +152,7 @@ class CliTool extends CodyTool {
 class FileTool extends CodyTool {
     constructor() {
         super({
+            title: 'Codebase File',
             tags: {
                 tag: ps`TOOLFILE`,
                 subTag: ps`name`,
@@ -134,9 +165,8 @@ class FileTool extends CodyTool {
         })
     }
 
-    public async execute(span: Span): Promise<ContextItem[]> {
+    public async execute(span: Span, filePaths: string[]): Promise<ContextItem[]> {
         span.addEvent('executeFileTool')
-        const filePaths = this.parse()
         if (filePaths.length === 0) return []
         logDebug('CodyTool', `requesting ${filePaths.length} files`)
         return Promise.all(filePaths.map(getContextFromRelativePath)).then(results =>
@@ -153,6 +183,7 @@ class SearchTool extends CodyTool {
 
     constructor(private contextRetriever: Pick<ContextRetriever, 'retrieveContext'>) {
         super({
+            title: 'Code Search',
             tags: {
                 tag: ps`TOOLSEARCH`,
                 subTag: ps`query`,
@@ -165,9 +196,8 @@ class SearchTool extends CodyTool {
         })
     }
 
-    public async execute(span: Span): Promise<ContextItem[]> {
+    public async execute(span: Span, queries: string[]): Promise<ContextItem[]> {
         span.addEvent('executeSearchTool')
-        const queries = this.parse()
         const query = queries.find(q => !this.performedSearch.has(q))
         if (!this.contextRetriever || !query) {
             return []
@@ -216,9 +246,8 @@ export class OpenCtxTool extends CodyTool {
         super(config)
     }
 
-    async execute(span: Span): Promise<ContextItem[]> {
+    async execute(span: Span, queries: string[]): Promise<ContextItem[]> {
         span.addEvent('executeOpenCtxTool')
-        const queries = this.parse()
         if (!queries?.length) {
             return []
         }
@@ -256,6 +285,7 @@ class MemoryTool extends CodyTool {
     constructor() {
         CodyChatMemory.initialize()
         super({
+            title: 'Cody Memory',
             tags: {
                 tag: ps`TOOLMEMORY`,
                 subTag: ps`store`,

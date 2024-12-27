@@ -3,7 +3,7 @@ import * as vscode from 'vscode'
 import { getNewLineChar } from '../../completions/text-processing'
 import type { CodeToReplaceData } from '../prompt/prompt-utils'
 
-import { autoeditsLogger } from '../logger'
+import { autoeditsOutputChannelLogger } from '../output-channel-logger'
 import { DefaultDecorator } from './decorators/default-decorator'
 import { getDecorationInfo } from './diff-utils'
 
@@ -59,9 +59,9 @@ export function shrinkReplacerTextToCodeToReplaceRange(
     const rewriteStartLineNumber = offsetToLineNumber(initial.text, rewriteStartOffset)
 
     if (rewriteStartLineNumber === -1) {
-        autoeditsLogger.logError(
-            'Autoedits',
-            '`shrinkReplacerTextToCodeToReplaceRange` unable to find `codeToRewrite` start offset'
+        autoeditsOutputChannelLogger.logError(
+            'shrinkReplacerTextToCodeToReplaceRange',
+            'unable to find `codeToRewrite` start offset'
         )
         return undefined
     }

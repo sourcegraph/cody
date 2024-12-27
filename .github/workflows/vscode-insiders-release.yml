@@ -44,6 +44,12 @@ jobs:
           service_account: 'bundle-size-tracker@cody-core-dev.iam.gserviceaccount.com'
           create_credentials_file: true
           export_environment_variables: true
+      - run: CODY_RELEASE_TYPE=insiders pnpm -C vscode run release
+        id: create_release
+        if: github.repository == 'sourcegraph/cody'
+        env:
+          VSCODE_MARKETPLACE_TOKEN: ${{ secrets.VSCODE_MARKETPLACE_TOKEN }}
+          VSCODE_OPENVSX_TOKEN: ${{ secrets.VSCODE_OPENVSX_TOKEN }}
       - name: Insert data into BigQuery
         run: |
           # Compute the current date
@@ -59,12 +65,6 @@ jobs:
         env:
           EXTENSION_BUNDLE_SIZE_MB: ${{ env.EXTENSION_BUNDLE_SIZE_MB }}
           WEBVIEW_BUNDLE_SIZE_MB: ${{ env.WEBVIEW_BUNDLE_SIZE_MB }}
-      - run: CODY_RELEASE_TYPE=insiders pnpm -C vscode run release
-        id: create_release
-        if: github.repository == 'sourcegraph/cody'
-        env:
-          VSCODE_MARKETPLACE_TOKEN: ${{ secrets.VSCODE_MARKETPLACE_TOKEN }}
-          VSCODE_OPENVSX_TOKEN: ${{ secrets.VSCODE_OPENVSX_TOKEN }}
       - name: Tag insiders release
         uses: actions/github-script@v6
         with:

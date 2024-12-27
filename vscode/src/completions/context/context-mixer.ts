@@ -8,6 +8,7 @@ import {
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
 import type { LastInlineCompletionCandidate } from '../get-inline-completions'
+import { autocompleteOutputChannelLogger } from '../output-channel-logger'
 import type { ContextRetriever } from '../types'
 import {
     DefaultCompletionsContextRanker,
@@ -152,6 +153,11 @@ export class ContextMixer implements vscode.Disposable {
 
         // Extract back the context results for the original retrievers
         const results = this.extractOriginalRetrieverResults(resultsWithDataLogging, retrievers)
+        autocompleteOutputChannelLogger.logDebug(
+            'ContextMixer',
+            `Extracted ${results.length} contexts from the retrievers`
+        )
+
         const contextLoggingSnippets =
             this.contextDataCollector?.getDataLoggingContextFromRetrievers(resultsWithDataLogging) ?? []
 
@@ -171,8 +177,13 @@ export class ContextMixer implements vscode.Disposable {
             }
         }
 
+        autocompleteOutputChannelLogger.logDebug(
+            'ContextMixer',
+            `Fusing ${results.length} context results with ${this.contextRankingStrategy}`
+        )
         const contextRanker = new DefaultCompletionsContextRanker(this.contextRankingStrategy)
         const fusedResults = contextRanker.rankAndFuseContext(results)
+        autocompleteOutputChannelLogger.logDebug('ContextMixer', 'Fused context results')
 
         // The total chars size hint is inclusive of the prefix and suffix sizes, so we seed the
         // total chars with the prefix and suffix sizes.

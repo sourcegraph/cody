@@ -3,7 +3,7 @@ import * as vscode from 'vscode'
 import type { DocumentContext } from '@sourcegraph/cody-shared'
 
 import { completionMatchesSuffix } from '../../completions/is-completion-visible'
-import { autoeditsLogger } from '../logger'
+import { autoeditsOutputChannelLogger } from '../output-channel-logger'
 import type { CodeToReplaceData } from '../prompt/prompt-utils'
 import {
     adjustPredictionIfInlineCompletionPossible,
@@ -138,6 +138,7 @@ export class AutoEditsDefaultRendererManager implements AutoEditsRendererManager
             decorator.dispose()
         }
         this.activeEdit = null
+        await vscode.commands.executeCommand('editor.action.inlineSuggest.hide')
         await vscode.commands.executeCommand('setContext', 'cody.supersuggest.active', false)
     }
 
@@ -228,10 +229,17 @@ export class AutoEditsDefaultRendererManager implements AutoEditsRendererManager
                     document.lineAt(position).range.end
                 )
             )
-            autoeditsLogger.logDebug('Autocomplete Inline Response: ', autocompleteResponse)
+            autoeditsOutputChannelLogger.logDebug(
+                'maybeRenderDecorationsAndTryMakeInlineCompletionResponse',
+                'Autocomplete Inline Response: ',
+                autocompleteResponse
+            )
             return { inlineCompletions: [inlineCompletionItem], updatedDecorationInfo: decorationInfo }
         }
-
+        autoeditsOutputChannelLogger.logDebug(
+            'maybeRenderDecorationsAndTryMakeInlineCompletionResponse',
+            'Rendering a diff view for auto-edits.'
+        )
         await this.showEdit({
             document,
             range: codeToReplaceData.range,

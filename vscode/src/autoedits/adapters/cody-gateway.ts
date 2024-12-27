@@ -1,6 +1,6 @@
 import { currentResolvedConfig, dotcomTokenToGatewayToken } from '@sourcegraph/cody-shared'
 
-import { autoeditsLogger } from '../logger'
+import { autoeditsOutputChannelLogger } from '../output-channel-logger'
 
 import type { AutoeditModelOptions, AutoeditsModelAdapter } from './base'
 import {
@@ -24,7 +24,11 @@ export class CodyGatewayAdapter implements AutoeditsModelAdapter {
             }
             return response.choices[0].text
         } catch (error) {
-            autoeditsLogger.logDebug('AutoEdits', 'Error calling Cody Gateway:', error)
+            autoeditsOutputChannelLogger.logError(
+                'getModelResponse',
+                'Error calling Cody Gateway:',
+                error
+            )
             throw error
         }
     }
@@ -33,7 +37,7 @@ export class CodyGatewayAdapter implements AutoeditsModelAdapter {
         const resolvedConfig = await currentResolvedConfig()
         const fastPathAccessToken = dotcomTokenToGatewayToken(resolvedConfig.auth.accessToken)
         if (!fastPathAccessToken) {
-            autoeditsLogger.logError('Autoedits', 'FastPath access token is not available')
+            autoeditsOutputChannelLogger.logError('getApiKey', 'FastPath access token is not available')
             throw new Error('FastPath access token is not available')
         }
         return fastPathAccessToken
