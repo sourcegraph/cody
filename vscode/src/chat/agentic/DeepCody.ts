@@ -4,6 +4,7 @@ import {
     type ContextItem,
     PromptString,
     clientCapabilities,
+    getClientPromptString,
     isDefined,
     logDebug,
     ps,
@@ -32,7 +33,10 @@ export class DeepCodyAgent extends CodyChatAgent {
         return CODYAGENT_PROMPTS.review
             .replace('{{CODY_TOOLS_PLACEHOLDER}}', join(toolInstructions))
             .replace('{{CODY_TOOLS_EXAMPLES_PLACEHOLDER}}', join(toolExamples))
-            .replace('{{CODY_IDE}}', fromAgentClientIDE(clientCapabilities().agentIDE || CodyIDE.VSCode))
+            .replace(
+                '{{CODY_IDE}}',
+                getClientPromptString(clientCapabilities().agentIDE || CodyIDE.VSCode)
+            )
     }
 
     /**
@@ -61,7 +65,7 @@ export class DeepCodyAgent extends CodyChatAgent {
         maxLoops = 2
     ): Promise<ContextItem[]> {
         span.setAttribute('sampled', true)
-        this.statusCallback?.onToolsStart()
+        this.statusCallback?.onStart()
 
         const startTime = performance.now()
         const count = await this.reviewLoop(requestID, span, chatAbortSignal, maxLoops)
@@ -78,7 +82,9 @@ export class DeepCodyAgent extends CodyChatAgent {
                 category: 'billable',
             },
         })
-        this.statusCallback?.onToolsComplete()
+
+        this.statusCallback?.onComplete()
+
         return this.context
     }
 
@@ -89,23 +95,21 @@ export class DeepCodyAgent extends CodyChatAgent {
         maxLoops: number
     ): Promise<{ context: number; loop: number }> {
         span.addEvent('reviewLoop')
-        let context = 0
-        let loop = 0
+        const stats = { context: 0, loop: 0 }
         for (let i = 0; i < maxLoops && !chatAbortSignal.aborted; i++) {
-            if (chatAbortSignal.aborted) {
-                break
-            }
             const newContext = await this.review(requestID, span, chatAbortSignal)
             if (!newContext.length) break
-            // Remove the TOOL context item that is only used during the review process.
-            this.context.push(...newContext.filter(c => c.title !== 'TOOLCONTEXT'))
-            context += newContext.length
-            loop++
-            if (newContext.every(c => isUserAddedItem(c))) {
-                break
-            }
+
+            // Filter and add new context items in one pass
+            const validItems = newContext.filter(c => c.title !== 'TOOLCONTEXT')
+            this.context.push(...validItems)
+
+            stats.context += validItems.length
+            stats.loop++
+
+            if (newContext.every(isUserAddedItem)) break
         }
-        return { context, loop }
+        return stats
     }
 
     /**
@@ -136,18 +140,18 @@ export class DeepCodyAgent extends CodyChatAgent {
             }
             const results = await Promise.all(
                 Array.from(this.toolHandlers.entries()).map(async ([name, tool]) => {
-                    // Check abort signal before each tool run
-                    if (chatAbortSignal.aborted) {
-                        return []
-                    }
                     try {
+                        // Check abort signal before each tool run
+                        if (chatAbortSignal.aborted) {
+                            return []
+                        }
                         return await tool.run(span, this.statusCallback)
                     } catch (error) {
+                        this.statusCallback?.onComplete(name, error as Error)
                         return []
                     }
                 })
             )
-
             return results.flat().filter(isDefined)
         } catch (error) {
             await this.multiplexer.notifyTurnComplete()
@@ -156,25 +160,5 @@ export class DeepCodyAgent extends CodyChatAgent {
             })
             return []
         }
-    }
-}
-
-// TODO: move to shared
-function fromAgentClientIDE(client: CodyIDE) {
-    switch (client) {
-        case CodyIDE.Web:
-            return ps`Sourcegraph Web`
-        case CodyIDE.VisualStudio:
-            return ps`Visual Studio`
-        case CodyIDE.JetBrains:
-            return ps`JetBrains`
-        case CodyIDE.Eclipse:
-            return ps`Eclipse`
-        case CodyIDE.Emacs:
-            return ps`Emacs`
-        case CodyIDE.Neovim:
-            return ps`Neovim`
-        default:
-            return ps`VS Code`
     }
 }

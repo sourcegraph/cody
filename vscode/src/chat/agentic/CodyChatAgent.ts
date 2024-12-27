@@ -3,10 +3,8 @@ import {
     type ChatClient,
     type ContextItem,
     type Message,
-    type ProcessingStep,
     type PromptMixin,
     type PromptString,
-    errorToChatError,
     newPromptMixin,
 } from '@sourcegraph/cody-shared'
 import { getCategorizedMentions } from '../../prompt-builder/utils'
@@ -14,6 +12,7 @@ import type { ChatBuilder } from '../chat-view/ChatBuilder'
 import { DefaultPrompter } from '../chat-view/prompt'
 import type { CodyTool } from './CodyTool'
 import type { ToolStatusCallback } from './CodyToolProvider'
+import { ProcessManager } from './ProcessManager'
 
 export abstract class CodyChatAgent {
     protected readonly multiplexer = new BotResponseMultiplexer()
@@ -55,27 +54,30 @@ export abstract class CodyChatAgent {
     ): Promise<string> {
         const stream = await this.chatClient.chat(
             message,
-            { model: model, maxTokensToSample: 4000 },
+            { model, maxTokensToSample: 4000 },
             new AbortController().signal,
             requestID
         )
+        const accumulated = new StringBuilder()
+        try {
+            for await (const msg of stream) {
+                if (signal?.aborted) break
+                if (msg.type === 'change') {
+                    const newText = msg.text.slice(accumulated.length)
+                    accumulated.append(newText)
+                    await this.processResponseText(newText)
+                }
 
-        let accumulated = ''
-        for await (const msg of stream) {
-            if (signal?.aborted) break
-
-            if (msg.type === 'change') {
-                const newText = msg.text.slice(accumulated.length)
-                accumulated += newText
-                await this.processResponseText(newText)
-            } else if (msg.type === 'complete' || msg.type === 'error') {
-                await this.multiplexer.notifyTurnComplete()
-                if (msg.type === 'error') throw new Error('Error while streaming')
-                break
+                if (msg.type === 'complete' || msg.type === 'error') {
+                    if (msg.type === 'error') throw new Error('Error while streaming')
+                    break
+                }
             }
+        } finally {
+            await this.multiplexer.notifyTurnComplete()
         }
 
-        return accumulated
+        return accumulated.toString()
     }
 
     protected getPrompter(items: ContextItem[]): DefaultPrompter {
@@ -84,56 +86,45 @@ export abstract class CodyChatAgent {
         return new DefaultPrompter(explicitMentions, implicitMentions.slice(-MAX_SEARCH_ITEMS))
     }
 
-    // Abstract methods that must be implemented by derived classes
-    protected abstract buildPrompt(): PromptString
-
     public setStatusCallback(postMessage: (model: string) => void): void {
         this.postMessageCallback = postMessage
-
         const model = this.chatBuilder.selectedModel ?? ''
-        let steps = this.chatBuilder.getLastMessageSteps() ?? []
 
-        const createStep = (data: Partial<ProcessingStep>): ProcessingStep => ({
-            content: data.content ?? '',
-            id: data.id ?? '',
-            step: data.step ?? 0,
-            status: data.status ?? 'pending',
+        // Create a steps manager to handle state updates efficiently
+        const stepsManager = new ProcessManager(steps => {
+            this.chatBuilder.setLastMessageSteps(steps)
+            this.postMessageCallback?.(model)
         })
 
         this.statusCallback = {
-            onToolsStart: () => {
-                // Initialize steps array with an empty pending step
-                steps = [createStep({ status: 'pending', step: 0 })]
-                this.updateStepsAndNotify(steps, model)
+            onStart: () => {
+                stepsManager.initializeStep()
             },
-            onToolStream: (toolName, content) => {
-                steps.push(createStep({ content, id: toolName, step: 1 }))
-                this.updateStepsAndNotify(steps, model)
+            onStream: (toolName, content) => {
+                stepsManager.addStep(toolName, content)
             },
-            onToolExecuted: toolName => {
-                steps = steps.map(step => (step.id === toolName ? { ...step, status: 'success' } : step))
-                this.updateStepsAndNotify(steps, model)
-            },
-            onToolsComplete: () => {
-                steps = steps.map(step => ({
-                    ...step,
-                    status: step.status === 'error' ? step.status : 'success',
-                }))
-                this.updateStepsAndNotify(steps, model)
-            },
-            onToolError: (toolName, error) => {
-                steps = steps.map(step =>
-                    step.id === toolName && step.status === 'pending'
-                        ? { ...step, status: 'error', error: errorToChatError(error) }
-                        : step
-                )
-                this.updateStepsAndNotify(steps, model)
+            onComplete: (toolName, error) => {
+                stepsManager.completeStep(toolName, error)
             },
         }
     }
 
-    private updateStepsAndNotify(steps: ProcessingStep[], model: string): void {
-        this.chatBuilder.setLastMessageSteps(steps)
-        this.postMessageCallback?.(model)
+    // Abstract methods that must be implemented by derived classes
+    protected abstract buildPrompt(): PromptString
+}
+
+class StringBuilder {
+    private parts: string[] = []
+
+    append(str: string): void {
+        this.parts.push(str)
+    }
+
+    toString(): string {
+        return this.parts.join('')
+    }
+
+    get length(): number {
+        return this.parts.reduce((acc, part) => acc + part.length, 0)
     }
 }

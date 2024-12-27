@@ -95,7 +95,7 @@ export abstract class CodyTool {
         try {
             const queries = this.parse()
             if (queries.length) {
-                callback?.onToolStream(this.config.title, queries.join(', '))
+                callback?.onStream(this.config.title, queries.join(', '))
                 // Create a timeout promise
                 const timeoutPromise = new Promise<ContextItem[]>((_, reject) => {
                     setTimeout(() => {
@@ -109,11 +109,11 @@ export abstract class CodyTool {
                 // Race between execution and timeout
                 const results = await Promise.race([this.execute(span, queries), timeoutPromise])
                 // Notify that tool execution is complete
-                callback?.onToolExecuted(this.config.title)
+                callback?.onComplete(this.config.title)
                 return results
             }
         } catch (error) {
-            callback?.onToolError(this.config.title, error as Error)
+            callback?.onComplete(this.config.title, error as Error)
         }
         return Promise.resolve([])
     }
@@ -152,7 +152,7 @@ class CliTool extends CodyTool {
 class FileTool extends CodyTool {
     constructor() {
         super({
-            title: 'File',
+            title: 'Codebase File',
             tags: {
                 tag: ps`TOOLFILE`,
                 subTag: ps`name`,
