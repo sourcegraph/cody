@@ -740,15 +740,19 @@ function registerAutoEdits(chatClient: ChatClient, disposables: vscode.Disposabl
 
 function shouldEnableExperimentalAutoedits(
     config: ResolvedConfiguration,
-    autoeditExperimentFlag: boolean,
+    autoeditFeatureFlagEnabled: boolean,
     authStatus: AuthStatus
 ): boolean {
+    // If running inside agent don't enable experimental autoedits
+    if (isRunningInsideAgent()) {
+        return false
+    }
     // If the config is explicitly set in the vscode settings, use the setting instead of the feature flag.
     if (config.configuration.experimentalAutoeditsEnabled !== undefined) {
         return config.configuration.experimentalAutoeditsEnabled
     }
-    // If the feature flag is enabled, use the flag instead of the config.
-    return autoeditExperimentFlag && isS2(authStatus) && isRunningInsideAgent() === false
+    // Feature flag should only control S2, use the flag instead of the config.
+    return autoeditFeatureFlagEnabled && isS2(authStatus)
 }
 
 /**
@@ -788,9 +792,15 @@ function registerAutocomplete(
                             isEqual(a[2], b[2])
                         )
                     }),
-                    switchMap(([config, authStatus, autoeditEnabled]) => {
+                    switchMap(([config, authStatus, autoeditFeatureFlagEnabled]) => {
                         // If the auto-edit experiment is enabled, we don't need to load the completion provider
-                        if (shouldEnableExperimentalAutoedits(config, autoeditEnabled, authStatus)) {
+                        if (
+                            shouldEnableExperimentalAutoedits(
+                                config,
+                                autoeditFeatureFlagEnabled,
+                                authStatus
+                            )
+                        ) {
                             finishLoading()
                             return NEVER
                         }
@@ -820,7 +830,7 @@ function registerAutocomplete(
                     })
                 )
                 .subscribe({})
-        ),
+        )
     )
 }
 
