@@ -6,6 +6,8 @@ import {
     type ContextItem,
     type Message,
     type ModelContextWindow,
+    type ProcessingStep,
+    type RankedContext,
     type SerializedChatInteraction,
     type SerializedChatTranscript,
     distinctUntilChanged,
@@ -19,10 +21,6 @@ import {
     toRangeData,
 } from '@sourcegraph/cody-shared'
 
-import type {
-    ChatMessageStep,
-    RankedContext,
-} from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { Observable, Subject, map } from 'observable-fns'
 import { getChatPanelTitle } from './chat-helpers'
 
@@ -226,7 +224,7 @@ export class ChatBuilder {
         this.changeNotifications.next()
     }
 
-    public getLastMessageSteps(): ChatMessageStep[] | undefined {
+    public getLastMessageSteps(): ProcessingStep[] | undefined {
         const lastMessage = this.messages.at(-1)
         if (!lastMessage) {
             throw new Error('no last message')
@@ -237,7 +235,7 @@ export class ChatBuilder {
         return lastMessage.steps || undefined
     }
 
-    public setLastMessageSteps(steps: ChatMessageStep[]): void {
+    public setLastMessageSteps(steps: ProcessingStep[]): void {
         const lastMessage = this.messages.at(-1)
         if (!lastMessage) {
             throw new Error('no last message')

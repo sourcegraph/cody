@@ -3,12 +3,12 @@ import {
     type ChatClient,
     type ContextItem,
     type Message,
+    type ProcessingStep,
     type PromptMixin,
     type PromptString,
     errorToChatError,
     newPromptMixin,
 } from '@sourcegraph/cody-shared'
-import type { ChatMessageStep } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { getCategorizedMentions } from '../../prompt-builder/utils'
 import type { ChatBuilder } from '../chat-view/ChatBuilder'
 import { DefaultPrompter } from '../chat-view/prompt'
@@ -93,26 +93,21 @@ export abstract class CodyChatAgent {
         const model = this.chatBuilder.selectedModel ?? ''
         let steps = this.chatBuilder.getLastMessageSteps() ?? []
 
-        const createStep = (
-            content: string,
-            id: string,
-            stepNum: number,
-            status: ChatMessageStep['status']
-        ): ChatMessageStep => ({
-            content,
-            id,
-            step: stepNum,
-            status,
+        const createStep = (data: Partial<ProcessingStep>): ProcessingStep => ({
+            content: data.content ?? '',
+            id: data.id ?? '',
+            step: data.step ?? 0,
+            status: data.status ?? 'pending',
         })
 
         this.statusCallback = {
             onToolsStart: () => {
                 // Initialize steps array with an empty pending step
-                steps = [createStep('', '', 0, 'pending')]
+                steps = [createStep({ status: 'pending', step: 0 })]
                 this.updateStepsAndNotify(steps, model)
             },
             onToolStream: (toolName, content) => {
-                steps.push(createStep(content, toolName, 1, 'pending'))
+                steps.push(createStep({ content, id: toolName, step: 1 }))
                 this.updateStepsAndNotify(steps, model)
             },
             onToolExecuted: toolName => {
@@ -137,7 +132,7 @@ export abstract class CodyChatAgent {
         }
     }
 
-    private updateStepsAndNotify(steps: ChatMessageStep[], model: string): void {
+    private updateStepsAndNotify(steps: ProcessingStep[], model: string): void {
         this.chatBuilder.setLastMessageSteps(steps)
         this.postMessageCallback?.(model)
     }

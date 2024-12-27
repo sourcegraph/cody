@@ -1,10 +1,11 @@
-import type { ContextItem, Model } from '@sourcegraph/cody-shared'
-import { pluralize } from '@sourcegraph/cody-shared'
 import type {
     ChatMessage,
-    ChatMessageStep,
+    ContextItem,
+    Model,
+    ProcessingStep,
     RankedContext,
-} from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+} from '@sourcegraph/cody-shared'
+import { pluralize } from '@sourcegraph/cody-shared'
 import { MENTION_CLASS_NAME } from '@sourcegraph/prompt-editor'
 import { clsx } from 'clsx'
 import {
@@ -64,7 +65,7 @@ export const ContextCell: FunctionComponent<{
     onManuallyEditContext: () => void
     editContextNode: React.ReactNode
     experimentalOneBoxEnabled?: boolean
-    steps?: ChatMessageStep[]
+    steps?: ProcessingStep[]
 }> = memo(
     ({
         contextItems,
@@ -212,7 +213,7 @@ export const ContextCell: FunctionComponent<{
                                 <>
                                     <AccordionContent className="tw-ml-6" overflow={false}>
                                         {isDeepCodyEnabled && (
-                                            <ChatMessageStepList
+                                            <ProcessingStepList
                                                 steps={steps ?? []}
                                                 isContextLoading={isContextLoading}
                                             />
@@ -435,7 +436,7 @@ export const EditContextButtonChat = (
     </>
 )
 
-const ChatMessageStepList: FC<{ steps: ChatMessageStep[]; isContextLoading: boolean }> = ({
+const ProcessingStepList: FC<{ steps: ProcessingStep[]; isContextLoading: boolean }> = ({
     steps,
     isContextLoading,
 }) => {
@@ -443,7 +444,7 @@ const ChatMessageStepList: FC<{ steps: ChatMessageStep[]; isContextLoading: bool
         <div className="tw-flex tw-flex-col tw-mb-2">
             <div className="tw-flex tw-flex-col tw-mb-2">
                 {steps.map(step => (
-                    <ChatMessageStepItem key={step.id} step={step} isContextLoading={isContextLoading} />
+                    <ProcessingStepItem key={step.id} step={step} isContextLoading={isContextLoading} />
                 ))}
             </div>
             {isContextLoading && (
@@ -458,7 +459,7 @@ const ChatMessageStepList: FC<{ steps: ChatMessageStep[]; isContextLoading: bool
     )
 }
 
-const ChatMessageStepItem: FC<{ step: ChatMessageStep; isContextLoading: boolean }> = ({
+const ProcessingStepItem: FC<{ step: ProcessingStep; isContextLoading: boolean }> = ({
     step,
     isContextLoading,
 }) => {

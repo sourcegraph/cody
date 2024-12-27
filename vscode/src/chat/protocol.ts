@@ -9,6 +9,7 @@ import type {
     ContextItem,
     ContextItemSource,
     NLSSearchDynamicFilter,
+    ProcessingStep,
     PromptMode,
     RangeData,
     RequestMessage,
@@ -21,7 +22,6 @@ import type { BillingCategory, BillingProduct } from '@sourcegraph/cody-shared/s
 
 import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
 
-import type { ChatMessageStep } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import type { Uri } from 'vscode'
 import type { View } from '../../webviews/tabs/types'
 import type { FixupTaskID } from '../non-stop/FixupTask'
@@ -215,7 +215,7 @@ export interface WebviewSubmitMessage extends WebviewContextMessage {
     intentScores?: { intent: string; score: number }[] | undefined | null
     manuallySelectedIntent?: boolean | undefined | null
     traceparent?: string | undefined | null
-    steps?: ChatMessageStep[] | undefined | null
+    steps?: ProcessingStep[] | undefined | null
 }
 
 interface WebviewEditMessage extends WebviewContextMessage {
@@ -227,7 +227,7 @@ interface WebviewEditMessage extends WebviewContextMessage {
     intent?: ChatMessage['intent'] | undefined | null
     intentScores?: { intent: string; score: number }[] | undefined | null
     manuallySelectedIntent?: boolean | undefined | null
-    steps?: ChatMessageStep[] | undefined | null
+    steps?: ProcessingStep[] | undefined | null
 }
 
 interface WebviewContextMessage {
