@@ -55,7 +55,8 @@ export class RecentEditsRetriever implements vscode.Disposable, ContextRetriever
         const retrievalTriggerTime = Date.now()
         for (const diff of diffs) {
             const content = diff.diff.toString()
-            const autocompleteSnippet = {
+            const autocompleteSnippet: AutocompleteContextSnippet = {
+                type: 'base',
                 uri: diff.uri,
                 identifier: this.identifier,
                 content,
@@ -63,12 +64,9 @@ export class RecentEditsRetriever implements vscode.Disposable, ContextRetriever
                     timeSinceActionMs: retrievalTriggerTime - diff.latestChangeTimestamp,
                     retrieverMetadata: diff.diffStrategyMetadata,
                 },
-            } satisfies Omit<AutocompleteContextSnippet, 'startLine' | 'endLine'>
+            }
             autocompleteContextSnippets.push(autocompleteSnippet)
         }
-        // remove the startLine and endLine from the response similar to how we did
-        // it for BFG.
-        // @ts-ignore
         return autocompleteContextSnippets
     }
 

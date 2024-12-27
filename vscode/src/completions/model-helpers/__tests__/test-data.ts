@@ -1,4 +1,4 @@
-import { testFileUri } from '@sourcegraph/cody-shared'
+import { type AutocompleteContextSnippet, testFileUri } from '@sourcegraph/cody-shared'
 
 import { paramsWithInlinedCompletion } from '../../get-inline-completions-tests/helpers'
 
@@ -18,8 +18,9 @@ export const completionParams = paramsWithInlinedCompletion(
     { documentUri: testFileUri('codebase/test.ts') }
 )!
 
-export const contextSnippets = [
+export const contextSnippets: AutocompleteContextSnippet[] = [
     {
+        type: 'file',
         identifier: 'jaccard-similarity',
         uri: testFileUri('codebase/context1.ts'),
         content: 'function contextSnippetOne() {}',
@@ -27,6 +28,7 @@ export const contextSnippets = [
         endLine: 2,
     },
     {
+        type: 'file',
         identifier: 'jaccard-similarity',
         uri: testFileUri('codebase/context2.ts'),
         content: 'const contextSnippet2 = {}',
@@ -34,6 +36,7 @@ export const contextSnippets = [
         endLine: 2,
     },
     {
+        type: 'symbol',
         identifier: 'jaccard-similarity',
         uri: testFileUri('codebase/context3.ts'),
         content: 'interface ContextParams {}',

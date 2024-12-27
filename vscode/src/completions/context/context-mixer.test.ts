@@ -96,6 +96,7 @@ describe('ContextMixer', () => {
                 strategyFactory: createMockStrategy([
                     [
                         {
+                            type: 'file',
                             identifier: 'jaccard-similarity',
                             uri: testFileUri('foo.ts'),
                             content: 'function foo() {}',
@@ -103,6 +104,7 @@ describe('ContextMixer', () => {
                             endLine: 0,
                         },
                         {
+                            type: 'file',
                             identifier: 'jaccard-similarity',
                             uri: testFileUri('bar.ts'),
                             content: 'function bar() {}',
@@ -121,6 +123,7 @@ describe('ContextMixer', () => {
                     identifier: 'jaccard-similarity',
                     startLine: 0,
                     endLine: 0,
+                    type: 'file',
                 },
                 {
                     fileName: 'bar.ts',
@@ -128,6 +131,7 @@ describe('ContextMixer', () => {
                     identifier: 'jaccard-similarity',
                     startLine: 0,
                     endLine: 0,
+                    type: 'file',
                 },
             ])
             expect(logSummary).toEqual({
@@ -155,6 +159,7 @@ describe('ContextMixer', () => {
                 strategyFactory: createMockStrategy([
                     [
                         {
+                            type: 'file',
                             identifier: 'retriever1',
                             uri: testFileUri('foo.ts'),
                             content: 'function foo1() {}',
@@ -162,6 +167,7 @@ describe('ContextMixer', () => {
                             endLine: 0,
                         },
                         {
+                            type: 'file',
                             identifier: 'retriever1',
                             uri: testFileUri('bar.ts'),
                             content: 'function bar1() {}',
@@ -172,6 +178,7 @@ describe('ContextMixer', () => {
 
                     [
                         {
+                            type: 'file',
                             identifier: 'retriever2',
                             uri: testFileUri('foo.ts'),
                             content: 'function foo3() {}',
@@ -179,6 +186,7 @@ describe('ContextMixer', () => {
                             endLine: 10,
                         },
                         {
+                            type: 'file',
                             identifier: 'retriever2',
                             uri: testFileUri('foo.ts'),
                             content: 'function foo1() {}\nfunction foo2() {}',
@@ -186,6 +194,7 @@ describe('ContextMixer', () => {
                             endLine: 1,
                         },
                         {
+                            type: 'file',
                             identifier: 'retriever2',
                             uri: testFileUri('bar.ts'),
                             content: 'function bar1() {}\nfunction bar2() {}',
@@ -209,6 +218,7 @@ describe('ContextMixer', () => {
                   "fileName": "foo.ts",
                   "identifier": "retriever1",
                   "startLine": 0,
+                  "type": "file",
                 },
                 {
                   "content": "function foo1() {}
@@ -217,6 +227,7 @@ describe('ContextMixer', () => {
                   "fileName": "foo.ts",
                   "identifier": "retriever2",
                   "startLine": 0,
+                  "type": "file",
                 },
                 {
                   "content": "function bar1() {}",
@@ -224,6 +235,7 @@ describe('ContextMixer', () => {
                   "fileName": "bar.ts",
                   "identifier": "retriever1",
                   "startLine": 0,
+                  "type": "file",
                 },
                 {
                   "content": "function bar1() {}
@@ -232,6 +244,7 @@ describe('ContextMixer', () => {
                   "fileName": "bar.ts",
                   "identifier": "retriever2",
                   "startLine": 0,
+                  "type": "file",
                 },
                 {
                   "content": "function foo3() {}",
@@ -239,6 +252,7 @@ describe('ContextMixer', () => {
                   "fileName": "foo.ts",
                   "identifier": "retriever2",
                   "startLine": 10,
+                  "type": "file",
                 },
               ]
             `)
@@ -283,6 +297,7 @@ describe('ContextMixer', () => {
                     strategyFactory: createMockStrategy([
                         [
                             {
+                                type: 'file',
                                 identifier: 'retriever1',
                                 uri: testFileUri('foo.ts'),
                                 content: 'function foo1() {}',
@@ -290,6 +305,7 @@ describe('ContextMixer', () => {
                                 endLine: 0,
                             },
                             {
+                                type: 'file',
                                 identifier: 'retriever1',
                                 uri: testFileUri('foo/bar.ts'),
                                 content: 'function bar1() {}',
@@ -299,6 +315,7 @@ describe('ContextMixer', () => {
                         ],
                         [
                             {
+                                type: 'file',
                                 identifier: 'retriever2',
                                 uri: testFileUri('test/foo.ts'),
                                 content: 'function foo3() {}',
@@ -306,6 +323,7 @@ describe('ContextMixer', () => {
                                 endLine: 10,
                             },
                             {
+                                type: 'file',
                                 identifier: 'retriever2',
                                 uri: testFileUri('foo.ts'),
                                 content: 'function foo1() {}\nfunction foo2() {}',
@@ -313,6 +331,7 @@ describe('ContextMixer', () => {
                                 endLine: 1,
                             },
                             {
+                                type: 'file',
                                 identifier: 'retriever2',
                                 uri: testFileUri('example/bar.ts'),
                                 content: 'function bar1() {}\nfunction bar2() {}',

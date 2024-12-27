@@ -21,6 +21,7 @@ describe('ShortTermPromptStrategy', () => {
             identifier: string,
             filePath = 'foo.ts'
         ): AutocompleteContextSnippet => ({
+            type: 'file',
             content,
             identifier,
             uri: testFileUri(filePath),
@@ -385,6 +386,7 @@ describe('ShortTermPromptStrategy', () => {
             filePath = 'foo.ts',
             identifier: string = RetrieverIdentifier.RecentViewPortRetriever
         ): AutocompleteContextSnippet => ({
+            type: 'file',
             content,
             identifier,
             uri: testFileUri(filePath),
@@ -451,6 +453,7 @@ describe('ShortTermPromptStrategy', () => {
             filePath = 'foo.ts',
             identifier: string = RetrieverIdentifier.RecentEditsRetriever
         ): AutocompleteContextSnippet => ({
+            type: 'file',
             content,
             identifier,
             uri: testFileUri(filePath),

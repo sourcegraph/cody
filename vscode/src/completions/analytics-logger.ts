@@ -71,8 +71,8 @@ interface InlineCompletionItemRetrievedContext {
     identifier: string
     content: string
     filePath: string
-    startLine: number
-    endLine: number
+    startLine?: number
+    endLine?: number
 }
 
 interface InlineContextItemsParams extends GitIdentifiersForFile {
@@ -767,19 +767,18 @@ function getInlineContextItemContext(
         suffix: docContext.completeSuffix.slice(0, MAX_PREFIX_SUFFIX_SIZE_BYTES),
         triggerLine: position.line,
         triggerCharacter: position.character,
-        context: inlineContextParams.context.map(
-            ({ identifier, content, startLine, endLine, uri, metadata }) => ({
-                identifier,
-                content,
-                startLine,
-                endLine,
-                filePath: displayPathWithoutWorkspaceFolderPrefix(uri),
-                metadata,
-            })
-        ),
+        context: inlineContextParams.context.map(snippet => ({
+            identifier: snippet.identifier,
+            content: snippet.content,
+            filePath: displayPathWithoutWorkspaceFolderPrefix(snippet.uri),
+            metadata: snippet.metadata,
+            ...(snippet.type !== 'base' && {
+                startLine: snippet.startLine,
+                endLine: snippet.endLine,
+            }),
+        })),
     }
 }
-
 function suggestionDocumentDiffTracker(
     interactionId: CompletionAnalyticsID,
     document: vscode.TextDocument,
