@@ -627,7 +627,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     /**
      * Handles user input text for both new and edit submissions
      */
-    // MARK 1
     public async handleUserMessage({
         requestID,
         inputText,
@@ -653,7 +652,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         manuallySelectedIntent?: boolean | undefined | null
         traceparent?: string | undefined | null
     }): Promise<void> {
-        console.log('### editorState', JSON.parse(JSON.stringify(editorState)), 'command', command)
         return context.with(extractContextFromTraceparent(traceparent), () => {
             return tracer.startActiveSpan('chat.handleUserMessage', async (span): Promise<void> => {
                 span.setAttribute('sampled', true)
