@@ -443,7 +443,7 @@ const ChatMessageStepList: FC<{ steps: ChatMessageStep[]; isContextLoading: bool
         <div className="tw-flex tw-flex-col tw-mb-2">
             <div className="tw-flex tw-flex-col tw-mb-2">
                 {steps.map(step => (
-                    <ChatMessageStepItem key={step.id} step={step} />
+                    <ChatMessageStepItem key={step.id} step={step} isContextLoading={isContextLoading} />
                 ))}
             </div>
             {isContextLoading && (
@@ -458,7 +458,10 @@ const ChatMessageStepList: FC<{ steps: ChatMessageStep[]; isContextLoading: bool
     )
 }
 
-const ChatMessageStepItem: FC<{ step: ChatMessageStep }> = ({ step }) => {
+const ChatMessageStepItem: FC<{ step: ChatMessageStep; isContextLoading: boolean }> = ({
+    step,
+    isContextLoading,
+}) => {
     if (!step.id && !step.content) {
         return null
     }
@@ -467,14 +470,14 @@ const ChatMessageStepItem: FC<{ step: ChatMessageStep }> = ({ step }) => {
         <div className="tw-border-l-4 tw-border-slate-500 tw-px-4" role="status">
             <div className="tw-bg-muted-transparent tw-mx-4 tw-my-2 tw-py-2 tw-flex tw-items-center tw-rounded-md">
                 <div className="tw-mx-4">
-                    {step.status === 'pending' ? (
+                    {step.status === 'pending' && isContextLoading ? (
                         <Loader2Icon
                             strokeWidth={2}
                             size={14}
                             className="tw-mr-2 tw-h-6 tw-w-6 tw-animate-spin"
                         />
                     ) : step.status === 'error' ? (
-                        <CircleXIcon strokeWidth={2} size={14} />
+                        <CircleXIcon strokeWidth={2} size={14} className="tw-text-red-400" />
                     ) : (
                         <CheckCircle strokeWidth={2} size={14} className="tw-text-green-400" />
                     )}

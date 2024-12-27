@@ -177,19 +177,19 @@ export const WithSteps: Story = {
         model: 'deep-cody',
         steps: [
             {
-                id: 'Search Step',
+                id: 'Code Search',
                 status: 'success',
                 content: 'Found relevant code in repository',
             },
             {
-                id: 'Analysis Step',
+                id: 'Linear',
                 status: 'pending',
-                content: 'Analyzing code structure and dependencies',
+                content: 'github',
             },
             {
-                id: 'Final Step',
+                id: 'Terminal',
                 status: 'error',
-                content: 'Error processing some files',
+                content: 'git clone',
             },
         ],
         isContextLoading: false,
@@ -203,14 +203,14 @@ export const LoadingWithSteps: Story = {
         model: 'deep-cody',
         steps: [
             {
-                id: 'Initial Search',
+                id: 'Code Search',
                 status: 'success',
-                content: 'Initialized search process',
+                content: 'function processer',
             },
             {
-                id: 'Code Analysis',
+                id: 'Terminal',
                 status: 'pending',
-                content: 'Processing repository contents',
+                content: 'git diff',
             },
         ],
         isContextLoading: true,
