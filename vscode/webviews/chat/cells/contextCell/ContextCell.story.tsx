@@ -169,3 +169,50 @@ export const NoContextFound: Story = {
         isForFirstMessage: true,
     },
 }
+
+export const WithSteps: Story = {
+    args: {
+        contextItems: [{ type: 'file', uri: URI.file('/foo/bar.go') }],
+        isForFirstMessage: true,
+        model: 'deep-cody',
+        steps: [
+            {
+                id: 'Search Step',
+                status: 'success',
+                content: 'Found relevant code in repository',
+            },
+            {
+                id: 'Analysis Step',
+                status: 'pending',
+                content: 'Analyzing code structure and dependencies',
+            },
+            {
+                id: 'Final Step',
+                status: 'error',
+                content: 'Error processing some files',
+            },
+        ],
+        isContextLoading: false,
+    },
+}
+
+export const LoadingWithSteps: Story = {
+    args: {
+        contextItems: [{ type: 'file', uri: URI.file('/foo/bar.go') }],
+        isForFirstMessage: true,
+        model: 'deep-cody',
+        steps: [
+            {
+                id: 'Initial Search',
+                status: 'success',
+                content: 'Initialized search process',
+            },
+            {
+                id: 'Code Analysis',
+                status: 'pending',
+                content: 'Processing repository contents',
+            },
+        ],
+        isContextLoading: true,
+    },
+}
