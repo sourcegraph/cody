@@ -3,6 +3,7 @@ import {
     type ChatModel,
     type CompletionParameters,
     type ContextItem,
+    ContextItemSource,
     type Message,
     PromptString,
     type RankedContext,
@@ -46,6 +47,10 @@ export class ChatHandler implements AgentHandler {
         }: AgentRequest,
         delegate: AgentHandlerDelegate
     ): Promise<void> {
+        // All mentions we receive are either source=initial or source=user. If the caller
+        // forgot to set the source, assume it's from the user.
+        mentions = mentions.map(m => (m.source ? m : { ...m, source: ContextItemSource.User }))
+
         const contextResult = await this.computeContext(
             requestID,
             { text: inputText, mentions },
@@ -62,6 +67,7 @@ export class ChatHandler implements AgentHandler {
         }
         const corpusContext = contextResult.contextItems ?? []
         signal.throwIfAborted()
+
         const { explicitMentions, implicitMentions } = getCategorizedMentions(corpusContext)
         const prompter = new DefaultPrompter(explicitMentions, implicitMentions, false)
 

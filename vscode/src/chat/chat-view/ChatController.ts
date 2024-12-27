@@ -890,8 +890,11 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     messageInProgress = message
                     this.postViewTranscript(message)
                 },
-                postDone: (): void => {
-                    // TODO(beyang): handle abort
+                postDone: (op?: { abort: boolean }): void => {
+                    if (op?.abort) {
+                        this.handleAbort()
+                        return
+                    }
 
                     // HACK(beyang): should unify behavior in posting new messages
                     // to the transcript

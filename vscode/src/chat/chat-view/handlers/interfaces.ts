@@ -25,7 +25,7 @@ export interface AgentTools {
 export interface AgentHandlerDelegate {
     postError(error: Error, type?: MessageErrorType): void
     postMessageInProgress(message: ChatMessage): void
-    postDone(ops?: { abort?: boolean; finalMessage?: ChatMessage }): void
+    postDone(ops?: { abort: boolean }): void
 }
 
 export interface AgentRequest {
