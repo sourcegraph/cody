@@ -8,14 +8,14 @@ import {
 import * as vscode from 'vscode'
 import { isRunningInsideAgent } from './../jsonrpc/isRunningInsideAgent'
 
-export async function showAutoeditOnboarding(): Promise<void> {
+export async function showAutoeditOnboardingIfEligible(): Promise<void> {
     // Determine if we should show the onboarding popup
     if (!shouldShowAutoeditsOnboardingPopup()) {
         return
     }
 
     const selection = await vscode.window.showInformationMessage(
-        '✨ Try Cody Autoedits - An alternative to autocomplete that helps you edit code more efficiently',
+        '✨ Try Cody Autoedits - experimental feature which suggest smarter code edits as you type.',
         'Enable Autoedits'
     )
 

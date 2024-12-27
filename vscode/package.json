@@ -1079,7 +1079,7 @@
         "cody.experimental.autoedits.enabled": {
           "order": 99,
           "type": "boolean",
-          "markdownDescription": "Enable Autoedit, an experimental feature that automatically applies suggested edits.",
+          "markdownDescription": "Enable Autoedit, an experimental feature which suggest smarter code edits as you type.",
           "default": false
         },
         "cody.experimental.tracing": {
