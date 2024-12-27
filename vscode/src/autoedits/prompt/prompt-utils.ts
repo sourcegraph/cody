@@ -8,7 +8,7 @@ import {
 import { Uri } from 'vscode'
 import * as vscode from 'vscode'
 import { RetrieverIdentifier } from '../../completions/context/utils'
-import { autoeditsLogger } from '../logger'
+import { autoeditsOutputChannelLogger } from '../output-channel-logger'
 import { clip, splitLinesKeepEnds } from '../utils'
 import * as constants from './constants'
 
@@ -36,7 +36,7 @@ export interface CodeToReplaceData {
 export interface CurrentFilePromptResponse {
     fileWithMarkerPrompt: PromptString
     areaPrompt: PromptString
-    codeToReplace: CodeToReplaceData
+    codeToReplaceData: CodeToReplaceData
 }
 
 interface CurrentFileContext {
@@ -82,7 +82,7 @@ export function getCurrentFilePromptComponents(
     options: CurrentFilePromptOptions
 ): CurrentFilePromptResponse {
     const currentFileContext = getCurrentFileContext(options)
-    const codeToReplace = {
+    const codeToReplaceData = {
         codeToRewrite: currentFileContext.codeToRewrite.toString(),
         range: currentFileContext.range,
         codeToRewritePrefix: currentFileContext.codeToRewritePrefix.toString(),
@@ -118,7 +118,7 @@ export function getCurrentFilePromptComponents(
         constants.AREA_FOR_CODE_MARKER_CLOSE
     )
 
-    return { fileWithMarkerPrompt: filePrompt, areaPrompt: areaPrompt, codeToReplace: codeToReplace }
+    return { fileWithMarkerPrompt: filePrompt, areaPrompt, codeToReplaceData }
 }
 
 export function getCurrentFileContext(options: CurrentFilePromptOptions): CurrentFileContext {
@@ -350,7 +350,10 @@ export function getContextItemMappingWithTokenLimit(
         if (tokenLimit !== undefined) {
             contextItemMapping.set(identifier, getContextItemsInTokenBudget(items, tokenLimit))
         } else {
-            autoeditsLogger.logDebug('AutoEdits', `No token limit for ${identifier}`)
+            autoeditsOutputChannelLogger.logDebug(
+                'getContextItemMappingWithTokenLimit',
+                `No token limit for ${identifier}`
+            )
             contextItemMapping.set(identifier, [])
         }
     }

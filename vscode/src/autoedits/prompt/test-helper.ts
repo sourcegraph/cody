@@ -33,5 +33,5 @@ export function createCodeToReplaceDataForTest(
         maxSuffixLinesInArea: options.maxSuffixLinesInArea,
         codeToRewritePrefixLines: options.codeToRewritePrefixLines,
         codeToRewriteSuffixLines: options.codeToRewriteSuffixLines,
-    }).codeToReplace
+    }).codeToReplaceData
 }

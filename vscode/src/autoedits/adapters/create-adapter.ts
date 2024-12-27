@@ -1,6 +1,6 @@
 import type { AutoEditsModelConfig, ChatClient } from '@sourcegraph/cody-shared'
 
-import { autoeditsLogger } from '../logger'
+import { autoeditsOutputChannelLogger } from '../output-channel-logger'
 
 import type { AutoeditsModelAdapter } from './base'
 import { CodyGatewayAdapter } from './cody-gateway'
@@ -30,7 +30,10 @@ export function createAutoeditsModelAdapter({
                 ? new SourcegraphChatAdapter(chatClient)
                 : new SourcegraphCompletionsAdapter()
         default:
-            autoeditsLogger.logDebug('Config', `Provider ${providerName} not supported`)
+            autoeditsOutputChannelLogger.logDebug(
+                'createAutoeditsModelAdapter',
+                `Provider ${providerName} not supported`
+            )
             throw new Error(`Provider ${providerName} not supported`)
     }
 }

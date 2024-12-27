@@ -37,13 +37,18 @@ describe('FilterPredictionBasedOnRecentEdits', () => {
         filterStrategy.dispose()
     })
 
-    const assertShouldFilterPrediction = (param: {
+    const assertShouldFilterPrediction = ({
+        documentTextWithChanges,
+        codeToRewrite,
+        prediction,
+        expectedFilterValue,
+    }: {
         documentTextWithChanges: string
         codeToRewrite: string
         prediction: string
         expectedFilterValue: boolean
     }) => {
-        const { originalText, changes } = getTextDocumentChangesForText(param.documentTextWithChanges)
+        const { originalText, changes } = getTextDocumentChangesForText(documentTextWithChanges)
         const doc = document(originalText)
 
         onDidOpenTextDocument(doc)
@@ -55,12 +60,12 @@ describe('FilterPredictionBasedOnRecentEdits', () => {
                 reason: undefined,
             })
         }
-        const result = filterStrategy.shouldFilterPrediction(
-            doc.uri,
-            param.prediction,
-            param.codeToRewrite
-        )
-        expect(result).toBe(param.expectedFilterValue)
+        const result = filterStrategy.shouldFilterPrediction({
+            uri: doc.uri,
+            prediction,
+            codeToRewrite,
+        })
+        expect(result).toBe(expectedFilterValue)
     }
 
     it('should filter prediction if most recent addition is predicted for deletion', () => {

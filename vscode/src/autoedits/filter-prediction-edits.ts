@@ -2,7 +2,7 @@ import { createTwoFilesPatch } from 'diff'
 import * as vscode from 'vscode'
 import { applyTextDocumentChanges } from '../completions/context/retrievers/recent-user-actions/recent-edits-diff-helpers/utils'
 import { RecentEditsTracker } from '../completions/context/retrievers/recent-user-actions/recent-edits-tracker'
-import { autoeditsLogger } from './logger'
+import { autoeditsOutputChannelLogger } from './output-channel-logger'
 
 const MAX_FILTER_AGE_MS = 1000 * 30 // 30 seconds
 
@@ -23,7 +23,11 @@ export class FilterPredictionBasedOnRecentEdits implements vscode.Disposable {
      * The function compares diffs between document states and the prediction vs code to re-write
      * to determine if the same edit was recently reverted.
      */
-    public shouldFilterPrediction(uri: vscode.Uri, prediction: string, codeToRewrite: string): boolean {
+    public shouldFilterPrediction({
+        uri,
+        prediction,
+        codeToRewrite,
+    }: { uri: vscode.Uri; prediction: string; codeToRewrite: string }): boolean {
         const trackedDocument = this.recentEditsTracker.getTrackedDocumentForUri(uri)
         if (!trackedDocument) {
             return false
@@ -72,8 +76,8 @@ export class FilterPredictionBasedOnRecentEdits implements vscode.Disposable {
         const diff2 = this.createGitDiffForSnapshotComparison(prediction, codeToRewrite)
         if (diff1 === diff2) {
             if (diff1.length > 0) {
-                autoeditsLogger.logDebug(
-                    'Autoedits',
+                autoeditsOutputChannelLogger.logDebug(
+                    'isTextDocumentChangeReverted',
                     'Filtered the prediction based on recent edits match',
                     'Diff calculated for filtering based on recent edits\n',
                     diff1
