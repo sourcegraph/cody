@@ -65,7 +65,6 @@ test.extend<ExpectedV2Events>({
 
     const newHistoryItem = sidebarChat.getByRole('button', { name: 'Hey' })
     await expect(newHistoryItem).toBeVisible()
-    await newHistoryItem.click()
 
     const deleteButton = sidebarChat.getByRole('button', { name: 'Delete chat' })
     await expect(deleteButton).toBeVisible()
