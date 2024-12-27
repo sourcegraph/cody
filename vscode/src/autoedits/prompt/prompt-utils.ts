@@ -1,12 +1,14 @@
+import * as vscode from 'vscode'
+
 import {
+    type AutoEditsTokenLimit,
     type AutocompleteContextSnippet,
     type DocumentContext,
     PromptString,
     ps,
     tokensToChars,
 } from '@sourcegraph/cody-shared'
-import { Uri } from 'vscode'
-import * as vscode from 'vscode'
+
 import { getTextFromNotebookCells } from '../../completions/context/retrievers/recent-user-actions/notebook-utils'
 import {
     getActiveNotebookUri,
@@ -16,16 +18,20 @@ import {
 import { RetrieverIdentifier } from '../../completions/context/utils'
 import { autoeditsOutputChannelLogger } from '../output-channel-logger'
 import { clip, splitLinesKeepEnds } from '../utils'
+
 import * as constants from './constants'
 
 export interface CurrentFilePromptOptions {
     docContext: DocumentContext
     document: vscode.TextDocument
     position: vscode.Position
-    maxPrefixLinesInArea: number
-    maxSuffixLinesInArea: number
-    codeToRewritePrefixLines: number
-    codeToRewriteSuffixLines: number
+    tokenBudget: Pick<
+        AutoEditsTokenLimit,
+        | 'codeToRewritePrefixLines'
+        | 'codeToRewriteSuffixLines'
+        | 'maxPrefixLinesInArea'
+        | 'maxSuffixLinesInArea'
+    >
 }
 
 export interface CodeToReplaceData {
@@ -39,7 +45,7 @@ export interface CodeToReplaceData {
     range: vscode.Range
 }
 
-export interface CurrentFilePromptResponse {
+export interface CurrentFilePromptComponents {
     fileWithMarkerPrompt: PromptString
     areaPrompt: PromptString
     codeToReplaceData: CodeToReplaceData
@@ -87,7 +93,7 @@ export function getPromptForTheContextSource(
 //  Prompt components helper functions
 export function getCurrentFilePromptComponents(
     options: CurrentFilePromptOptions
-): CurrentFilePromptResponse {
+): CurrentFilePromptComponents {
     const currentFileContext = getCurrentFileContext(options)
     const codeToReplaceData = {
         codeToRewrite: currentFileContext.codeToRewrite.toString(),
@@ -100,7 +106,7 @@ export function getCurrentFilePromptComponents(
         suffixInArea: currentFileContext.suffixInArea.toString(),
     } satisfies CodeToReplaceData
 
-    const fileWithMarker = joinPromptsWithNewlineSeperator(
+    const fileWithMarker = joinPromptsWithNewlineSeparator(
         currentFileContext.prefixBeforeArea,
         constants.AREA_FOR_CODE_MARKER,
         currentFileContext.suffixAfterArea
@@ -108,14 +114,14 @@ export function getCurrentFilePromptComponents(
 
     const filePrompt = getCurrentFileContextPromptWithPath(
         currentFileContext.filePath,
-        joinPromptsWithNewlineSeperator(
+        joinPromptsWithNewlineSeparator(
             constants.FILE_TAG_OPEN,
             fileWithMarker,
             constants.FILE_TAG_CLOSE
         )
     )
 
-    const areaPrompt = joinPromptsWithNewlineSeperator(
+    const areaPrompt = joinPromptsWithNewlineSeparator(
         constants.AREA_FOR_CODE_MARKER_OPEN,
         currentFileContext.prefixInArea,
         constants.CODE_TO_REWRITE_TAG_OPEN,
@@ -130,7 +136,17 @@ export function getCurrentFilePromptComponents(
 
 export function getCurrentFileContext(options: CurrentFilePromptOptions): CurrentFileContext {
     // Calculate line numbers for different sections
-    const { position, document, docContext } = options
+    const {
+        position,
+        document,
+        docContext,
+        tokenBudget: {
+            codeToRewritePrefixLines,
+            codeToRewriteSuffixLines,
+            maxPrefixLinesInArea,
+            maxSuffixLinesInArea,
+        },
+    } = options
 
     const numContextLines = splitLinesKeepEnds(docContext.prefix + docContext.suffix).length
     const numPrefixLines = splitLinesKeepEnds(docContext.prefix).length
@@ -139,15 +155,15 @@ export function getCurrentFileContext(options: CurrentFilePromptOptions): Curren
     const minLine = clip(position.line - numPrefixLines + adjustment, 0, document.lineCount - 1)
     const maxLine = clip(minLine + numContextLines - 1, 0, document.lineCount - 1)
 
-    const codeToRewriteStart = clip(position.line - options.codeToRewritePrefixLines, minLine, maxLine)
-    const codeToRewriteEnd = clip(position.line + options.codeToRewriteSuffixLines, minLine, maxLine)
+    const codeToRewriteStart = clip(position.line - codeToRewritePrefixLines, minLine, maxLine)
+    const codeToRewriteEnd = clip(position.line + codeToRewriteSuffixLines, minLine, maxLine)
     const areaStart = clip(
-        position.line - options.maxPrefixLinesInArea - options.codeToRewritePrefixLines,
+        position.line - maxPrefixLinesInArea - codeToRewritePrefixLines,
         minLine,
         maxLine
     )
     const areaEnd = clip(
-        position.line + options.maxSuffixLinesInArea + options.codeToRewriteSuffixLines,
+        position.line + maxSuffixLinesInArea + codeToRewriteSuffixLines,
         minLine,
         maxLine
     )
@@ -278,7 +294,7 @@ export function getLintErrorsPrompt(contextItems: AutocompleteContextSnippet[]):
     // Combine snippets for each URI
     const combinedPrompts: PromptString[] = []
     for (const [uriString, snippets] of uriToSnippetsMap) {
-        const uri = Uri.parse(uriString)
+        const uri = vscode.Uri.parse(uriString)
         const snippetContents = snippets.map(
             item => PromptString.fromAutocompleteContextSnippet(item).content
         )
@@ -291,7 +307,7 @@ export function getLintErrorsPrompt(contextItems: AutocompleteContextSnippet[]):
     }
 
     const lintErrorsPrompt = PromptString.join(combinedPrompts, ps`\n\n`)
-    return joinPromptsWithNewlineSeperator(
+    return joinPromptsWithNewlineSeparator(
         constants.LINT_ERRORS_TAG_OPEN,
         lintErrorsPrompt,
         constants.LINT_ERRORS_TAG_CLOSE
@@ -313,7 +329,7 @@ export function getRecentCopyPrompt(contextItems: AutocompleteContextSnippet[]):
         )
     )
     const recentCopyPrompt = PromptString.join(recentCopyPrompts, ps`\n\n`)
-    return joinPromptsWithNewlineSeperator(
+    return joinPromptsWithNewlineSeparator(
         constants.RECENT_COPY_TAG_OPEN,
         recentCopyPrompt,
         constants.RECENT_COPY_TAG_CLOSE
@@ -336,7 +352,7 @@ export function getRecentEditsPrompt(contextItems: AutocompleteContextSnippet[])
         )
     )
     const recentEditsPrompt = PromptString.join(recentEditsPrompts, ps`\n`)
-    return joinPromptsWithNewlineSeperator(
+    return joinPromptsWithNewlineSeparator(
         constants.RECENT_EDITS_TAG_OPEN,
         recentEditsPrompt,
         constants.RECENT_EDITS_TAG_CLOSE
@@ -355,7 +371,7 @@ export function getRecentlyViewedSnippetsPrompt(
         return ps``
     }
     const recentViewedSnippetPrompts = recentViewedSnippets.map(item =>
-        joinPromptsWithNewlineSeperator(
+        joinPromptsWithNewlineSeparator(
             constants.SNIPPET_TAG_OPEN,
             getContextPromptWithPath(
                 PromptString.fromDisplayPath(item.uri),
@@ -366,7 +382,7 @@ export function getRecentlyViewedSnippetsPrompt(
     )
 
     const snippetsPrompt = PromptString.join(recentViewedSnippetPrompts, ps`\n`)
-    return joinPromptsWithNewlineSeperator(
+    return joinPromptsWithNewlineSeparator(
         constants.RECENT_SNIPPET_VIEWS_TAG_OPEN,
         snippetsPrompt,
         constants.RECENT_SNIPPET_VIEWS_TAG_CLOSE
@@ -382,7 +398,7 @@ export function getJaccardSimilarityPrompt(contextItems: AutocompleteContextSnip
         return ps``
     }
     const jaccardSimilarityPrompts = jaccardSimilarity.map(item =>
-        joinPromptsWithNewlineSeperator(
+        joinPromptsWithNewlineSeparator(
             constants.SNIPPET_TAG_OPEN,
             getContextPromptWithPath(
                 PromptString.fromDisplayPath(item.uri),
@@ -394,7 +410,7 @@ export function getJaccardSimilarityPrompt(contextItems: AutocompleteContextSnip
 
     const snippetsPrompt = PromptString.join(jaccardSimilarityPrompts, ps`\n`)
 
-    return joinPromptsWithNewlineSeperator(
+    return joinPromptsWithNewlineSeparator(
         constants.EXTRACTED_CODE_SNIPPETS_TAG_OPEN,
         snippetsPrompt,
         constants.EXTRACTED_CODE_SNIPPETS_TAG_CLOSE
@@ -476,6 +492,6 @@ export function getRecentEditsContextPromptWithPath(
     return ps`${filePath}\n${content}`
 }
 
-export function joinPromptsWithNewlineSeperator(...args: PromptString[]): PromptString {
+export function joinPromptsWithNewlineSeparator(...args: PromptString[]): PromptString {
     return PromptString.join(args, ps`\n`)
 }

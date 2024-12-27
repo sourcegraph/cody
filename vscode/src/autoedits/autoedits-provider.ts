@@ -16,10 +16,11 @@ import { getCurrentDocContext } from '../completions/get-current-doc-context'
 
 import type { AutoeditsModelAdapter, AutoeditsPrompt } from './adapters/base'
 import { createAutoeditsModelAdapter } from './adapters/create-adapter'
+import { getTimeNowInMillis } from './analytics-logger'
 import { autoeditsProviderConfig } from './autoedits-config'
 import { FilterPredictionBasedOnRecentEdits } from './filter-prediction-edits'
 import { autoeditsOutputChannelLogger } from './output-channel-logger'
-import type { CodeToReplaceData } from './prompt/prompt-utils'
+import { type CodeToReplaceData, getCurrentFilePromptComponents } from './prompt/prompt-utils'
 import { ShortTermPromptStrategy } from './prompt/short-term-diff-prompt-strategy'
 import type { DecorationInfo } from './renderer/decorators/base'
 import { DefaultDecorator } from './renderer/decorators/default-decorator'
@@ -139,7 +140,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         inlineCompletionContext: vscode.InlineCompletionContext,
         token?: vscode.CancellationToken
     ): Promise<vscode.InlineCompletionItem[] | vscode.InlineCompletionList | null> {
-        const start = Date.now()
+        const start = getTimeNowInMillis()
         const controller = new AbortController()
         const abortSignal = controller.signal
         token?.onCancellationRequested(() => controller.abort())
@@ -164,6 +165,13 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             maxSuffixLength: tokensToChars(autoeditsProviderConfig.tokenLimit.suffixTokens),
         })
 
+        const { fileWithMarkerPrompt, areaPrompt, codeToReplaceData } = getCurrentFilePromptComponents({
+            docContext,
+            document,
+            position,
+            tokenBudget: autoeditsProviderConfig.tokenLimit,
+        })
+
         autoeditsOutputChannelLogger.logDebug(
             'provideInlineCompletionItems',
             'Calculating context from contextMixer...'
@@ -186,10 +194,9 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             'provideInlineCompletionItems',
             'Calculating prompt from promptStrategy...'
         )
-        const { codeToReplaceData, prompt } = this.promptStrategy.getPromptForModelType({
-            document,
-            position,
-            docContext,
+        const prompt = this.promptStrategy.getPromptForModelType({
+            fileWithMarkerPrompt,
+            areaPrompt,
             context,
             tokenBudget: autoeditsProviderConfig.tokenLimit,
             isChatModel: autoeditsProviderConfig.isChatModel,
@@ -216,7 +223,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         autoeditsOutputChannelLogger.logDebug(
             'provideInlineCompletionItems',
             `========================== Response:\n${initialPrediction}\n` +
-                `========================== Time Taken: ${Date.now() - start}ms`
+                `========================== Time Taken: ${getTimeNowInMillis() - start}ms`
         )
 
         const prediction = shrinkPredictionUntilSuffix({

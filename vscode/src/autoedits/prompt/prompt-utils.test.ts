@@ -9,6 +9,7 @@ import { RetrieverIdentifier } from '../../completions/context/utils'
 import { getCurrentDocContext } from '../../completions/get-current-doc-context'
 import { documentAndPosition, mockNotebookAndPosition } from '../../completions/test-helpers'
 import {
+    type CurrentFilePromptOptions,
     getCompletionsPromptWithSystemPrompt,
     getContextItemsInTokenBudget,
     getContextPromptWithPath,
@@ -20,7 +21,7 @@ import {
     getRecentEditsContextPromptWithPath,
     getRecentEditsPrompt,
     getRecentlyViewedSnippetsPrompt,
-    joinPromptsWithNewlineSeperator,
+    joinPromptsWithNewlineSeparator,
 } from './prompt-utils'
 
 // A helper to set up your global "activeNotebookEditor" mock.
@@ -77,14 +78,16 @@ describe('getCurrentFilePromptComponents', () => {
             maxSuffixLength,
         })
 
-        const options = {
+        const options: CurrentFilePromptOptions = {
             docContext,
             document,
             position,
-            maxPrefixLinesInArea: 1,
-            maxSuffixLinesInArea: 1,
-            codeToRewritePrefixLines: 1,
-            codeToRewriteSuffixLines: 1,
+            tokenBudget: {
+                maxPrefixLinesInArea: 1,
+                maxSuffixLinesInArea: 1,
+                codeToRewritePrefixLines: 1,
+                codeToRewriteSuffixLines: 1,
+            },
         }
 
         const result = getCurrentFilePromptComponents(options)
@@ -132,26 +135,23 @@ describe('getCurrentFilePromptComponents', () => {
 
         const { document, position } = documentAndPosition(content)
 
-        const maxPrefixLength = 30
-        const maxSuffixLength = 30
-
         const docContext = getCurrentDocContext({
             document,
             position,
-            maxPrefixLength,
-            maxSuffixLength,
+            maxPrefixLength: 30,
+            maxSuffixLength: 30,
         })
 
-        const options = {
+        const options: CurrentFilePromptOptions = {
             docContext,
             document,
             position,
-            maxPrefixLinesInArea: 1,
-            maxSuffixLinesInArea: 1,
-            codeToRewritePrefixLines: 1,
-            codeToRewriteSuffixLines: 1,
-            maxPrefixLength,
-            maxSuffixLength,
+            tokenBudget: {
+                maxPrefixLinesInArea: 1,
+                maxSuffixLinesInArea: 1,
+                codeToRewritePrefixLines: 1,
+                codeToRewriteSuffixLines: 1,
+            },
         }
 
         const result = getCurrentFilePromptComponents(options)
@@ -210,26 +210,23 @@ describe('getCurrentFileContext', () => {
         mockActiveNotebookEditor(notebookDoc)
         const document = notebookDoc.cellAt(1).document
 
-        const maxPrefixLength = 100
-        const maxSuffixLength = 100
-
         const docContext = getCurrentDocContext({
             document,
             position,
-            maxPrefixLength,
-            maxSuffixLength,
+            maxPrefixLength: 100,
+            maxSuffixLength: 100,
         })
 
-        const options = {
+        const options: CurrentFilePromptOptions = {
             docContext,
             document,
             position,
-            maxPrefixLinesInArea: 1,
-            maxSuffixLinesInArea: 1,
-            codeToRewritePrefixLines: 1,
-            codeToRewriteSuffixLines: 1,
-            maxPrefixLength,
-            maxSuffixLength,
+            tokenBudget: {
+                maxPrefixLinesInArea: 1,
+                maxSuffixLinesInArea: 1,
+                codeToRewritePrefixLines: 1,
+                codeToRewriteSuffixLines: 1,
+            },
         }
 
         const result = getCurrentFileContext(options)
@@ -273,26 +270,23 @@ describe('getCurrentFileContext', () => {
         mockActiveNotebookEditor(notebookDoc)
         const document = notebookDoc.cellAt(1).document
 
-        const maxPrefixLength = 100
-        const maxSuffixLength = 100
-
         const docContext = getCurrentDocContext({
             document,
             position,
-            maxPrefixLength,
-            maxSuffixLength,
+            maxPrefixLength: 100,
+            maxSuffixLength: 100,
         })
 
         const options = {
             docContext,
             document,
             position,
-            maxPrefixLinesInArea: 1,
-            maxSuffixLinesInArea: 1,
-            codeToRewritePrefixLines: 1,
-            codeToRewriteSuffixLines: 1,
-            maxPrefixLength,
-            maxSuffixLength,
+            tokenBudget: {
+                maxPrefixLinesInArea: 1,
+                maxSuffixLinesInArea: 1,
+                codeToRewritePrefixLines: 1,
+                codeToRewriteSuffixLines: 1,
+            },
         }
 
         const result = getCurrentFileContext(options)
@@ -312,26 +306,23 @@ describe('getCurrentFileContext', () => {
     it('correctly splits content into different areas based on cursor position', () => {
         const { document, position } = documentAndPosition('line1\nline2\nline3█line4\nline5\nline6')
 
-        const maxPrefixLength = 100
-        const maxSuffixLength = 100
-
         const docContext = getCurrentDocContext({
             document,
             position,
-            maxPrefixLength,
-            maxSuffixLength,
+            maxPrefixLength: 100,
+            maxSuffixLength: 100,
         })
 
         const options = {
             docContext,
             document,
             position,
-            maxPrefixLinesInArea: 1,
-            maxSuffixLinesInArea: 1,
-            codeToRewritePrefixLines: 1,
-            codeToRewriteSuffixLines: 1,
-            maxPrefixLength,
-            maxSuffixLength,
+            tokenBudget: {
+                maxPrefixLinesInArea: 1,
+                maxSuffixLinesInArea: 1,
+                codeToRewritePrefixLines: 1,
+                codeToRewriteSuffixLines: 1,
+            },
         }
 
         const result = getCurrentFileContext(options)
@@ -351,26 +342,23 @@ describe('getCurrentFileContext', () => {
     it('handles cursor at start of line', () => {
         const { document, position } = documentAndPosition('line1\nline2\n█line3\nline4\nline5')
 
-        const maxPrefixLength = 100
-        const maxSuffixLength = 100
-
         const docContext = getCurrentDocContext({
             document,
             position,
-            maxPrefixLength,
-            maxSuffixLength,
+            maxPrefixLength: 100,
+            maxSuffixLength: 100,
         })
 
-        const options = {
+        const options: CurrentFilePromptOptions = {
             docContext,
             document,
             position,
-            maxPrefixLinesInArea: 1,
-            maxSuffixLinesInArea: 1,
-            codeToRewritePrefixLines: 1,
-            codeToRewriteSuffixLines: 1,
-            maxPrefixLength,
-            maxSuffixLength,
+            tokenBudget: {
+                maxPrefixLinesInArea: 1,
+                maxSuffixLinesInArea: 1,
+                codeToRewritePrefixLines: 1,
+                codeToRewriteSuffixLines: 1,
+            },
         }
 
         const result = getCurrentFileContext(options)
@@ -386,26 +374,23 @@ describe('getCurrentFileContext', () => {
     it('handles single line content', () => {
         const { document, position } = documentAndPosition('const foo = █bar')
 
-        const maxPrefixLength = 100
-        const maxSuffixLength = 100
-
         const docContext = getCurrentDocContext({
             document,
             position,
-            maxPrefixLength,
-            maxSuffixLength,
+            maxPrefixLength: 100,
+            maxSuffixLength: 100,
         })
 
-        const options = {
+        const options: CurrentFilePromptOptions = {
             docContext,
             document,
             position,
-            maxPrefixLinesInArea: 1,
-            maxSuffixLinesInArea: 1,
-            codeToRewritePrefixLines: 1,
-            codeToRewriteSuffixLines: 1,
-            maxPrefixLength,
-            maxSuffixLength,
+            tokenBudget: {
+                maxPrefixLinesInArea: 1,
+                maxSuffixLinesInArea: 1,
+                codeToRewritePrefixLines: 1,
+                codeToRewriteSuffixLines: 1,
+            },
         }
 
         const result = getCurrentFileContext(options)
@@ -422,26 +407,23 @@ describe('getCurrentFileContext', () => {
     it('handles cursor at start of file', () => {
         const { document, position } = documentAndPosition('█line1\nline2\nline3')
 
-        const maxPrefixLength = 100
-        const maxSuffixLength = 100
-
         const docContext = getCurrentDocContext({
             document,
             position,
-            maxPrefixLength,
-            maxSuffixLength,
+            maxPrefixLength: 100,
+            maxSuffixLength: 100,
         })
 
-        const options = {
+        const options: CurrentFilePromptOptions = {
             docContext,
             document,
             position,
-            maxPrefixLinesInArea: 1,
-            maxSuffixLinesInArea: 1,
-            codeToRewritePrefixLines: 1,
-            codeToRewriteSuffixLines: 1,
-            maxPrefixLength,
-            maxSuffixLength,
+            tokenBudget: {
+                maxPrefixLinesInArea: 1,
+                maxSuffixLinesInArea: 1,
+                codeToRewritePrefixLines: 1,
+                codeToRewriteSuffixLines: 1,
+            },
         }
 
         const result = getCurrentFileContext(options)
@@ -458,26 +440,23 @@ describe('getCurrentFileContext', () => {
     it('handles cursor at end of file', () => {
         const { document, position } = documentAndPosition('line1\nline2\nline3█')
 
-        const maxPrefixLength = 100
-        const maxSuffixLength = 100
-
         const docContext = getCurrentDocContext({
             document,
             position,
-            maxPrefixLength,
-            maxSuffixLength,
+            maxPrefixLength: 100,
+            maxSuffixLength: 100,
         })
 
-        const options = {
+        const options: CurrentFilePromptOptions = {
             docContext,
             document,
             position,
-            maxPrefixLinesInArea: 1,
-            maxSuffixLinesInArea: 1,
-            codeToRewritePrefixLines: 1,
-            codeToRewriteSuffixLines: 1,
-            maxPrefixLength,
-            maxSuffixLength,
+            tokenBudget: {
+                maxPrefixLinesInArea: 1,
+                maxSuffixLinesInArea: 1,
+                codeToRewritePrefixLines: 1,
+                codeToRewriteSuffixLines: 1,
+            },
         }
 
         const result = getCurrentFileContext(options)
@@ -496,26 +475,23 @@ describe('getCurrentFileContext', () => {
             'line1\nline2\nline3\nline4\nline5\n█line6\nline7'
         )
 
-        const maxPrefixLength = 100
-        const maxSuffixLength = 100
-
         const docContext = getCurrentDocContext({
             document,
             position,
-            maxPrefixLength,
-            maxSuffixLength,
+            maxPrefixLength: 100,
+            maxSuffixLength: 100,
         })
 
-        const options = {
+        const options: CurrentFilePromptOptions = {
             docContext,
             document,
             position,
-            maxPrefixLinesInArea: 1,
-            maxSuffixLinesInArea: 1,
-            codeToRewritePrefixLines: 3, // Increased prefix lines
-            codeToRewriteSuffixLines: 1,
-            maxPrefixLength,
-            maxSuffixLength,
+            tokenBudget: {
+                maxPrefixLinesInArea: 1,
+                maxSuffixLinesInArea: 1,
+                codeToRewritePrefixLines: 3, // Increased prefix lines
+                codeToRewriteSuffixLines: 1,
+            },
         }
 
         const result = getCurrentFileContext(options)
@@ -537,26 +513,23 @@ describe('getCurrentFileContext', () => {
 
         const { document, position } = documentAndPosition(content)
 
-        const maxPrefixLength = 30
-        const maxSuffixLength = 30
-
         const docContext = getCurrentDocContext({
             document,
             position,
-            maxPrefixLength,
-            maxSuffixLength,
+            maxPrefixLength: 30,
+            maxSuffixLength: 30,
         })
 
-        const options = {
+        const options: CurrentFilePromptOptions = {
             docContext,
             document,
             position,
-            maxPrefixLinesInArea: 1,
-            maxSuffixLinesInArea: 1,
-            codeToRewritePrefixLines: 1,
-            codeToRewriteSuffixLines: 1,
-            maxPrefixLength,
-            maxSuffixLength,
+            tokenBudget: {
+                maxPrefixLinesInArea: 1,
+                maxSuffixLinesInArea: 1,
+                codeToRewritePrefixLines: 1,
+                codeToRewriteSuffixLines: 1,
+            },
         }
 
         const result = getCurrentFileContext(options)
@@ -579,26 +552,23 @@ describe('getCurrentFileContext', () => {
 
         const { document, position } = documentAndPosition(content)
 
-        const maxPrefixLength = 20
-        const maxSuffixLength = 20
-
         const docContext = getCurrentDocContext({
             document,
             position,
-            maxPrefixLength,
-            maxSuffixLength,
+            maxPrefixLength: 20,
+            maxSuffixLength: 20,
         })
 
-        const options = {
+        const options: CurrentFilePromptOptions = {
             docContext,
             document,
             position,
-            maxPrefixLinesInArea: 2,
-            maxSuffixLinesInArea: 2,
-            codeToRewritePrefixLines: 2,
-            codeToRewriteSuffixLines: 2,
-            maxPrefixLength,
-            maxSuffixLength,
+            tokenBudget: {
+                maxPrefixLinesInArea: 2,
+                maxSuffixLinesInArea: 2,
+                codeToRewritePrefixLines: 2,
+                codeToRewriteSuffixLines: 2,
+            },
         }
 
         const result = getCurrentFileContext(options)
@@ -616,26 +586,23 @@ describe('getCurrentFileContext', () => {
     it('handles file shorter than requested ranges', () => {
         const { document, position } = documentAndPosition('line1\n█line2\nline3\n')
 
-        const maxPrefixLength = 100
-        const maxSuffixLength = 100
-
         const docContext = getCurrentDocContext({
             document,
             position,
-            maxPrefixLength,
-            maxSuffixLength,
+            maxPrefixLength: 100,
+            maxSuffixLength: 100,
         })
 
-        const options = {
+        const options: CurrentFilePromptOptions = {
             docContext,
             document,
             position,
-            maxPrefixLinesInArea: 5, // Larger than file
-            maxSuffixLinesInArea: 5, // Larger than file
-            codeToRewritePrefixLines: 3, // Larger than file
-            codeToRewriteSuffixLines: 3, // Larger than file
-            maxPrefixLength,
-            maxSuffixLength,
+            tokenBudget: {
+                maxPrefixLinesInArea: 5, // Larger than file
+                maxSuffixLinesInArea: 5, // Larger than file
+                codeToRewritePrefixLines: 3, // Larger than file
+                codeToRewriteSuffixLines: 3, // Larger than file
+            },
         }
 
         const result = getCurrentFileContext(options)
@@ -1101,9 +1068,9 @@ describe('getJaccardSimilarityPrompt', () => {
     })
 })
 
-describe('joinPromptsWithNewlineSeperator', () => {
+describe('joinPromptsWithNewlineSeparator', () => {
     it('joins multiple prompt strings with a new line separator', () => {
-        const prompt = joinPromptsWithNewlineSeperator(ps`foo`, ps`bar`)
+        const prompt = joinPromptsWithNewlineSeparator(ps`foo`, ps`bar`)
         expect(prompt.toString()).toBe(dedent`
             foo
             bar
