@@ -1,6 +1,5 @@
 import dedent from 'dedent'
 import type * as vscode from 'vscode'
-import { CodyIDE } from '..'
 import type { ChatMessage, SerializedChatMessage } from '../chat/transcript/messages'
 import type { ContextItem } from '../codebase-context/messages'
 import type { ContextFiltersProvider } from '../cody-ignore/context-filters-provider'
@@ -512,23 +511,4 @@ function internal_toReferences(s: PromptString): readonly StringReference[] {
 // Validate that an input is indeed a PromptString and not just typecast to it.
 export function isValidPromptString(promptString: PromptString) {
     return pocket.has(promptString)
-}
-
-export function getClientPromptString(client: CodyIDE): PromptString {
-    switch (client) {
-        case CodyIDE.Web:
-            return ps`Sourcegraph Web`
-        case CodyIDE.VisualStudio:
-            return ps`Visual Studio`
-        case CodyIDE.JetBrains:
-            return ps`JetBrains`
-        case CodyIDE.Eclipse:
-            return ps`Eclipse`
-        case CodyIDE.Emacs:
-            return ps`Emacs`
-        case CodyIDE.Neovim:
-            return ps`Neovim`
-        default:
-            return ps`VS Code`
-    }
 }
