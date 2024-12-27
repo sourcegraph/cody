@@ -83,7 +83,7 @@ export class CodyToolProvider {
     private async buildOpenCtxCodyTools(): Promise<CodyTool[]> {
         const OPENCTX_CONFIG = {
             'internal-web-provider': {
-                title: 'Web (OpenCtx)',
+                title: 'Web (via OpenCtx)',
                 tags: {
                     tag: ps`TOOLWEB`,
                     subTag: ps`link`,
@@ -95,7 +95,7 @@ export class CodyToolProvider {
                 },
             },
             'internal-linear-issues': {
-                title: 'Linear (OpenCtx)',
+                title: 'Linear (via OpenCtx)',
                 tags: {
                     tag: ps`TOOLLINEAR`,
                     subTag: ps`issue`,

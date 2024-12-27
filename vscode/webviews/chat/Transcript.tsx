@@ -49,11 +49,8 @@ import {
 import { HumanMessageCell } from './cells/messageCell/human/HumanMessageCell'
 
 import { type Context, type Span, context, trace } from '@opentelemetry/api'
-import type { ChatMessageStep } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
-import { CheckCircle, CircleXIcon, Loader2Icon } from 'lucide-react'
 import { TELEMETRY_INTENT } from '../../src/telemetry/onebox'
 import { SwitchIntent } from './cells/messageCell/assistant/SwitchIntent'
-import { LoadingDots } from './components/LoadingDots'
 import { LastEditorContext } from './context'
 
 interface TranscriptProps {
@@ -622,9 +619,6 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                     }
                 />
             )}
-            {humanMessage?.steps && (
-                <ChatMessageStepList steps={humanMessage?.steps} isContextLoading={isContextLoading} />
-            )}
             {(humanMessage.contextFiles || assistantMessage || isContextLoading) && !isSearchIntent && (
                 <ContextCell
                     experimentalOneBoxEnabled={experimentalOneBoxEnabled}
@@ -646,6 +640,8 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                             ? EditContextButtonSearch
                             : EditContextButtonChat
                     }
+                    defaultOpen={isContextLoading && assistantMessage?.model?.includes('deep-cody')}
+                    steps={humanMessage?.steps ?? undefined}
                 />
             )}
             {assistantMessage && !isContextLoading && (
@@ -758,63 +754,4 @@ function reevaluateSearchWithSelectedFilters({
         index: messageIndexInTranscript,
         selectedFilters,
     })
-}
-
-const ChatMessageStepList: FC<{ steps: ChatMessageStep[]; isContextLoading: boolean }> = ({
-    steps,
-    isContextLoading,
-}) => {
-    if (!steps.length) {
-        return null
-    }
-    return (
-        <div className="tw-flex tw-flex-col tw-gap-1">
-            {steps.map(step => (
-                <ChatMessageStepItem key={step.id} step={step} isContextLoading={isContextLoading} />
-            ))}
-        </div>
-    )
-}
-
-const ChatMessageStepItem: FC<{ step: ChatMessageStep; isContextLoading: boolean }> = ({
-    step,
-    isContextLoading,
-}) => {
-    if (step.step === 0) {
-        return (
-            <div className="tw-flex tw-items-center tw-rounded-md tw-bg-muted-transparent tw-p-4">
-                {isContextLoading && <LoadingDots />}
-                <div className="tw-ml-4 tw-text-sm">{step.content}</div>
-            </div>
-        )
-    }
-
-    return (
-        <div
-            className="tw-bg-muted-transparent tw-border-l-4 tw-border-slate-500 tw-rounded-b tw-px-4 tw-py-3 tw-shadow-md tw-ml-6"
-            role="status"
-        >
-            <div className="tw-flex tw-items-center">
-                <div>
-                    {step.status === 'pending' ? (
-                        <Loader2Icon
-                            strokeWidth={3}
-                            size={14}
-                            className="tw-mr-2 tw-h-6 tw-w-6 tw-animate-spin"
-                        />
-                    ) : step.status === 'error' ? (
-                        <CircleXIcon strokeWidth={3} size={14} />
-                    ) : (
-                        <CheckCircle strokeWidth={3} size={14} />
-                    )}
-                </div>
-                <div className="tw-flex-grow tw-min-w-0 tw-ml-2">
-                    <p className="tw-text-xs tw-truncate tw-max-w-full">
-                        <span className="tw-font-bold">{step.id}: </span>
-                        {step.content}
-                    </p>
-                </div>
-            </div>
-        </div>
-    )
 }

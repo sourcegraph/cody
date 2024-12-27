@@ -10,6 +10,7 @@ import {
     telemetryRecorder,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
+import { isUserAddedItem } from '../../prompt-builder/utils'
 import { CodyChatAgent } from './CodyChatAgent'
 import { CODYAGENT_PROMPTS } from './prompts'
 
@@ -100,6 +101,9 @@ export class DeepCodyAgent extends CodyChatAgent {
             this.context.push(...newContext.filter(c => c.title !== 'TOOLCONTEXT'))
             context += newContext.length
             loop++
+            if (newContext.every(c => isUserAddedItem(c))) {
+                break
+            }
         }
         return { context, loop }
     }

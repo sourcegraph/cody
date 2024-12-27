@@ -89,9 +89,10 @@ export abstract class CodyChatAgent {
 
     public setStatusCallback(postMessage: (model: string) => void): void {
         this.postMessageCallback = postMessage
-        const model = this.chatBuilder.selectedModel ?? ''
 
-        // Create steps array once
+        const model = this.chatBuilder.selectedModel ?? ''
+        let steps = this.chatBuilder.getLastMessageSteps() ?? []
+
         const createStep = (
             content: string,
             id: string,
@@ -104,18 +105,10 @@ export abstract class CodyChatAgent {
             status,
         })
 
-        let steps = this.chatBuilder.getStepsFromLastMessage() ?? []
-
         this.statusCallback = {
             onToolsStart: () => {
-                steps = [
-                    createStep(
-                        'Fetching relevant context to improve response quality',
-                        'agent',
-                        0,
-                        'pending'
-                    ),
-                ]
+                // Initialize steps array with an empty pending step
+                steps = [createStep('', '', 0, 'pending')]
                 this.updateStepsAndNotify(steps, model)
             },
             onToolStream: (toolName, content) => {
@@ -127,33 +120,25 @@ export abstract class CodyChatAgent {
                 this.updateStepsAndNotify(steps, model)
             },
             onToolsComplete: () => {
-                steps = steps.map(step =>
-                    step.step === 0
-                        ? {
-                              ...step,
-                              content: 'Fetched relevant context to improve response quality',
-                              status: 'success',
-                          }
-                        : {
-                              ...step,
-                              status: step.status === 'error' ? step.status : 'success',
-                          }
-                )
+                steps = steps.map(step => ({
+                    ...step,
+                    status: step.status === 'error' ? step.status : 'success',
+                }))
                 this.updateStepsAndNotify(steps, model)
             },
             onToolError: (toolName, error) => {
                 steps = steps.map(step =>
-                    step.id === toolName
+                    step.id === toolName && step.status === 'pending'
                         ? { ...step, status: 'error', error: errorToChatError(error) }
                         : step
                 )
-                this.postMessageCallback?.(model)
+                this.updateStepsAndNotify(steps, model)
             },
         }
     }
 
     private updateStepsAndNotify(steps: ChatMessageStep[], model: string): void {
-        this.chatBuilder.setStepsToLastMessage(steps)
+        this.chatBuilder.setLastMessageSteps(steps)
         this.postMessageCallback?.(model)
     }
 }

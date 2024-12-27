@@ -1,10 +1,22 @@
 import type { ContextItem, Model } from '@sourcegraph/cody-shared'
 import { pluralize } from '@sourcegraph/cody-shared'
-import type { ChatMessage, RankedContext } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import type {
+    ChatMessage,
+    ChatMessageStep,
+    RankedContext,
+} from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { MENTION_CLASS_NAME } from '@sourcegraph/prompt-editor'
 import { clsx } from 'clsx'
-import { BrainIcon, FilePenLine, MessagesSquareIcon } from 'lucide-react'
 import {
+    BrainIcon,
+    CheckCircle,
+    CircleXIcon,
+    FilePenLine,
+    Loader2Icon,
+    MessagesSquareIcon,
+} from 'lucide-react'
+import {
+    type FC,
     type FunctionComponent,
     createContext,
     memo,
@@ -52,6 +64,7 @@ export const ContextCell: FunctionComponent<{
     onManuallyEditContext: () => void
     editContextNode: React.ReactNode
     experimentalOneBoxEnabled?: boolean
+    steps?: ChatMessageStep[]
 }> = memo(
     ({
         contextItems,
@@ -67,6 +80,7 @@ export const ContextCell: FunctionComponent<{
         editContextNode,
         intent,
         experimentalOneBoxEnabled,
+        steps,
     }) => {
         const __storybook__initialOpen = useContext(__ContextCellStorybookContext)?.initialOpen ?? false
 
@@ -172,7 +186,7 @@ export const ContextCell: FunctionComponent<{
                                     onClick={triggerAccordion}
                                     title={itemCountLabel}
                                     className="tw-flex tw-items-center tw-gap-4"
-                                    disabled={isContextLoading}
+                                    disabled={isContextLoading && steps === undefined}
                                 >
                                     <SourcegraphLogo
                                         width={NON_HUMAN_CELL_AVATAR_SIZE}
@@ -192,13 +206,17 @@ export const ContextCell: FunctionComponent<{
                             contentClassName="tw-flex tw-flex-col tw-gap-4 tw-max-w-full"
                             data-testid="context"
                         >
-                            {isContextLoading ? (
-                                isDeepCodyEnabled ? null : (
-                                    <LoadingDots />
-                                )
+                            {isContextLoading && !isDeepCodyEnabled ? (
+                                <LoadingDots />
                             ) : (
                                 <>
-                                    <AccordionContent overflow={false}>
+                                    <AccordionContent className="tw-ml-6" overflow={false}>
+                                        {isDeepCodyEnabled && (
+                                            <ChatMessageStepList
+                                                steps={steps ?? []}
+                                                isContextLoading={isContextLoading}
+                                            />
+                                        )}
                                         <div className={styles.contextSuggestedActions}>
                                             {contextItems && contextItems.length > 0 && (
                                                 <Button
@@ -290,39 +308,45 @@ export const ContextCell: FunctionComponent<{
                                                     </span>
                                                 </span>
                                             )}
-                                            <li>
-                                                <Tooltip>
-                                                    <TooltipTrigger asChild>
-                                                        <span
-                                                            className={clsx(
-                                                                styles.contextItem,
-                                                                'tw-flex tw-items-center tw-gap-2'
+                                            {!isContextLoading && (
+                                                <li>
+                                                    <Tooltip>
+                                                        <TooltipTrigger asChild>
+                                                            <span
+                                                                className={clsx(
+                                                                    styles.contextItem,
+                                                                    'tw-flex tw-items-center tw-gap-2'
+                                                                )}
+                                                            >
+                                                                <BrainIcon
+                                                                    size={14}
+                                                                    className="tw-ml-1"
+                                                                />
+                                                                <span>
+                                                                    {isDeepCodyEnabled
+                                                                        ? 'Reviewed by Deep Cody'
+                                                                        : 'Public knowledge'}
+                                                                </span>
+                                                            </span>
+                                                        </TooltipTrigger>
+                                                        <TooltipContent side="bottom">
+                                                            {isDeepCodyEnabled ? (
+                                                                <span>
+                                                                    Deep Cody fetches additional context
+                                                                    to improve response quality when
+                                                                    needed
+                                                                </span>
+                                                            ) : (
+                                                                <span>
+                                                                    Information and general reasoning
+                                                                    capabilities trained into the model{' '}
+                                                                    {model && <code>{model}</code>}
+                                                                </span>
                                                             )}
-                                                        >
-                                                            <BrainIcon size={14} className="tw-ml-1" />
-                                                            <span>
-                                                                {isDeepCodyEnabled
-                                                                    ? 'Reviewed by Deep Cody'
-                                                                    : 'Public knowledge'}
-                                                            </span>
-                                                        </span>
-                                                    </TooltipTrigger>
-                                                    <TooltipContent side="bottom">
-                                                        {isDeepCodyEnabled ? (
-                                                            <span>
-                                                                Deep Cody fetches additional context to
-                                                                improve response quality when needed
-                                                            </span>
-                                                        ) : (
-                                                            <span>
-                                                                Information and general reasoning
-                                                                capabilities trained into the model{' '}
-                                                                {model && <code>{model}</code>}
-                                                            </span>
-                                                        )}
-                                                    </TooltipContent>
-                                                </Tooltip>
-                                            </li>
+                                                        </TooltipContent>
+                                                    </Tooltip>
+                                                </li>
+                                            )}
                                         </ul>
                                     </AccordionContent>
                                 </>
@@ -410,3 +434,58 @@ export const EditContextButtonChat = (
         <div>Edit context</div>
     </>
 )
+
+const ChatMessageStepList: FC<{ steps: ChatMessageStep[]; isContextLoading: boolean }> = ({
+    steps,
+    isContextLoading,
+}) => {
+    return (
+        <div className="tw-flex tw-flex-col tw-mb-2">
+            <div className="tw-flex tw-flex-col tw-mb-2">
+                {steps.map(step => (
+                    <ChatMessageStepItem key={step.id} step={step} />
+                ))}
+            </div>
+            {isContextLoading && (
+                <div className="tw-flex tw-items-center tw-rounded-md tw-bg-muted-transparent tw-p-4">
+                    {isContextLoading && <LoadingDots />}
+                    <div className="tw-ml-4 tw-text-sm">
+                        May take a few seconds to fetch relevant context to improve response quality
+                    </div>
+                </div>
+            )}{' '}
+        </div>
+    )
+}
+
+const ChatMessageStepItem: FC<{ step: ChatMessageStep }> = ({ step }) => {
+    if (!step.id && !step.content) {
+        return null
+    }
+
+    return (
+        <div className="tw-border-l-4 tw-border-slate-500 tw-px-4" role="status">
+            <div className="tw-bg-muted-transparent tw-mx-4 tw-my-2 tw-py-2 tw-flex tw-items-center tw-rounded-md">
+                <div className="tw-mx-4">
+                    {step.status === 'pending' ? (
+                        <Loader2Icon
+                            strokeWidth={2}
+                            size={14}
+                            className="tw-mr-2 tw-h-6 tw-w-6 tw-animate-spin"
+                        />
+                    ) : step.status === 'error' ? (
+                        <CircleXIcon strokeWidth={2} size={14} />
+                    ) : (
+                        <CheckCircle strokeWidth={2} size={14} className="tw-text-green-400" />
+                    )}
+                </div>
+                <div className="tw-flex-grow tw-min-w-0">
+                    <div className="tw-truncate tw-max-w-full tw-font-semibold">Running {step.id}</div>
+                    <div className="tw-truncate tw-max-w-full tw-text-xs tw-opacity-80">
+                        {step.content}
+                    </div>
+                </div>
+            </div>
+        </div>
+    )
+}

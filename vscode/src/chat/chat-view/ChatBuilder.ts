@@ -226,7 +226,7 @@ export class ChatBuilder {
         this.changeNotifications.next()
     }
 
-    public getStepsFromLastMessage(): ChatMessageStep[] | undefined {
+    public getLastMessageSteps(): ChatMessageStep[] | undefined {
         const lastMessage = this.messages.at(-1)
         if (!lastMessage) {
             throw new Error('no last message')
@@ -237,7 +237,7 @@ export class ChatBuilder {
         return lastMessage.steps || undefined
     }
 
-    public setStepsToLastMessage(steps: ChatMessageStep[]): void {
+    public setLastMessageSteps(steps: ChatMessageStep[]): void {
         const lastMessage = this.messages.at(-1)
         if (!lastMessage) {
             throw new Error('no last message')
