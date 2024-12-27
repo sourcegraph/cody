@@ -21,6 +21,7 @@ import { autocompleteStageCounterLogger } from '../services/autocomplete-stage-c
 import { recordExposedExperimentsToSpan } from '../services/open-telemetry/utils'
 import { isInTutorial } from '../tutorial/helpers'
 
+import { showAutoeditOnboarding } from '../autoedits/autoedit-onboarding'
 import { ContextRankingStrategy } from '../completions/context/completions-context-ranker'
 import type { CompletionBookkeepingEvent, CompletionItemID, CompletionLogID } from './analytics-logger'
 import * as CompletionAnalyticsLogger from './analytics-logger'
@@ -61,7 +62,6 @@ import {
 } from './suggested-autocomplete-items-cache'
 import { indentation } from './text-processing'
 import type { ProvideInlineCompletionItemsTracer, ProvideInlineCompletionsItemTraceData } from './tracer'
-import { showAutoeditOnboarding } from '../autoedits/autoedit-onboarding'
 
 interface AutocompleteResult extends vscode.InlineCompletionList {
     logId: CompletionLogID
@@ -139,7 +139,6 @@ export class InlineCompletionItemProvider
         tracer = null,
         ...config
     }: CodyCompletionItemProviderConfig) {
-
         // Show the onboarding if the user has not enabled autoedits and want to use that instead of autocomplete
         showAutoeditOnboarding()
 
