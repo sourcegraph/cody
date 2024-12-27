@@ -124,7 +124,7 @@ import { CodyChatEditorViewType } from './ChatsController'
 import type { ContextRetriever } from './ContextRetriever'
 import { InitDoer } from './InitDoer'
 import { getChatPanelTitle } from './chat-helpers'
-import { AgentTelemetry } from './handlers/AgentTelemetry'
+import { OmniboxTelemetry } from './handlers/OmniboxTelemetry'
 import { getAgent } from './handlers/registry'
 import { getPromptsMigrationInfo, startPromptsMigration } from './prompts-migration'
 
@@ -774,7 +774,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         }
         this.chatBuilder.setSelectedModel(model)
 
-        const recorder = await AgentTelemetry.create({
+        const recorder = await OmniboxTelemetry.create({
             requestID,
             chatModel: model,
             source,
@@ -847,8 +847,10 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                             return
                         }
 
-                        // HACK(beyang): should unify behavior in posting new messages
-                        // to the transcript
+                        // HACK(beyang): This conditional preserves the behavior from when
+                        // all the response generation logic was handled in this method.
+                        // In future work, we should remove this special-casing and unify
+                        // how new messages are posted to the transcript.
                         if (messageInProgress?.search || messageInProgress?.error) {
                             this.chatBuilder.addBotMessage(messageInProgress, model)
                         } else if (messageInProgress?.text) {

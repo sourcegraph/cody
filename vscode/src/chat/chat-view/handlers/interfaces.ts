@@ -10,7 +10,7 @@ import type { CodyToolProvider } from '../../agentic/CodyToolProvider'
 import type { ChatBuilder } from '../ChatBuilder'
 import type { ChatControllerOptions } from '../ChatController'
 import type { ContextRetriever } from '../ContextRetriever'
-import type { AgentTelemetry } from './AgentTelemetry'
+import type { OmniboxTelemetry } from './OmniboxTelemetry'
 
 export interface AgentTools {
     contextRetriever: Pick<ContextRetriever, 'retrieveContext'>
@@ -36,7 +36,7 @@ export interface AgentRequest {
     chatBuilder: ChatBuilder
     signal: AbortSignal
     span: Span
-    recorder: AgentTelemetry
+    recorder: OmniboxTelemetry
 }
 
 export interface AgentHandler {

@@ -25,7 +25,10 @@ interface IntentInfo {
         | undefined
 }
 
-export class AgentTelemetry {
+/**
+ * Utility class for encapsulating omnibox telemetry events
+ */
+export class OmniboxTelemetry {
     private intentInfo?: IntentInfo
     constructor(
         private baseProperties: SharedProperties,
@@ -34,7 +37,7 @@ export class AgentTelemetry {
 
     public static async create(
         baseProperties: Omit<SharedProperties, 'repoMetadata' | 'repoIsPublic' | 'authStatus'>
-    ): Promise<AgentTelemetry> {
+    ): Promise<OmniboxTelemetry> {
         const tokenCounterUtils = wrapInActiveSpan('chat.getTokenCounterUtils', () =>
             getTokenCounterUtils()
         )
@@ -43,7 +46,7 @@ export class AgentTelemetry {
             () => firstResultFromOperation(publicRepoMetadataIfAllWorkspaceReposArePublic)
         )
 
-        return new AgentTelemetry(
+        return new OmniboxTelemetry(
             {
                 ...baseProperties,
                 authStatus: currentAuthStatusAuthed(),

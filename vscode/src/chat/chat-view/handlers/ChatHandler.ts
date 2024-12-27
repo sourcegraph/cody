@@ -172,24 +172,25 @@ export class ChatHandler implements AgentHandler {
                     })
                 },
                 close: content => {
+                    delegate.postMessageInProgress({
+                        speaker: 'assistant',
+                        text: PromptString.unsafe_fromLLMResponse(content),
+                        model: this.modelId,
+                    })
                     delegate.postDone()
                 },
                 error: (partialResponse, error) => {
                     delegate.postError(error, 'transcript')
+                    // We should still add the partial response if there was an error
+                    // This'd throw an error if one has already been added
+                    delegate.postMessageInProgress({
+                        speaker: 'assistant',
+                        text: PromptString.unsafe_fromLLMResponse(partialResponse),
+                        model: this.modelId,
+                    })
                     if (isAbortErrorOrSocketHangUp(error)) {
                         abortSignal.throwIfAborted()
                     }
-                    // try {
-                    //     // We should still add the partial response if there was an error
-                    //     // This'd throw an error if one has already been added
-                    //     this.addBotMessage(
-                    //         requestID,
-                    //         PromptString.unsafe_fromLLMResponse(partialResponse),
-                    //         model
-                    //     )
-                    // } catch {
-                    //     console.error('Streaming Error', error)
-                    // }
                 },
             },
             abortSignal
