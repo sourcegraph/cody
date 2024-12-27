@@ -16,6 +16,7 @@ import {
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import { escapeRegExp } from '../../../context/openctx/remoteFileSearch'
+import { getEditor } from '../../../editor/active-editor'
 import { getFirstRepoNameContainingUri } from '../../../repository/repo-name-resolver'
 import type { AgentHandler, AgentHandlerDelegate, AgentRequest } from './interfaces'
 
@@ -36,11 +37,9 @@ export class SearchHandler implements AgentHandler {
         chatBuilder.setLastMessageIntent('search')
         const scopes: string[] = await getSearchScopesFromMentions(mentions)
 
-        // DEBUG-LOCAL
-        // const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri
-        // const currentFile = getEditor()?.active?.document?.uri || workspaceRoot
-        // const repoName = currentFile ? await getFirstRepoNameContainingUri(currentFile) : undefined
-        const repoName = 'github.com/sourcegraph/cody'
+        const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri
+        const currentFile = getEditor()?.active?.document?.uri || workspaceRoot
+        const repoName = currentFile ? await getFirstRepoNameContainingUri(currentFile) : undefined
 
         const boostParameter = repoName ? `boost:repo(${repoName})` : ''
 
