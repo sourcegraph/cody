@@ -5,7 +5,6 @@ import {
     type ContextItemFile,
     type ContextItemOpenCtx,
     type ContextItemRepository,
-    PromptString,
     REMOTE_DIRECTORY_PROVIDER_URI,
     REMOTE_FILE_PROVIDER_URI,
     REMOTE_REPOSITORY_PROVIDER_URI,
@@ -25,12 +24,9 @@ export class SearchHandler implements AgentHandler {
         { editorState, inputText, mentions, chatBuilder, signal }: AgentRequest,
         delegate: AgentHandlerDelegate
     ): Promise<void> {
-        const inputTextWithoutContextChipsPromptString = editorState
-            ? PromptString.unsafe_fromUserQuery(
-                  inputTextWithoutContextChipsFromPromptEditorState(editorState)
-              )
-            : inputText
-        const inputTextWithoutContextChips = inputTextWithoutContextChipsPromptString.toString()
+        const inputTextWithoutContextChips = editorState
+            ? inputTextWithoutContextChipsFromPromptEditorState(editorState)
+            : inputText.toString()
 
         signal.throwIfAborted()
 
