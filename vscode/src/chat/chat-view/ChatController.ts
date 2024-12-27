@@ -681,7 +681,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 await this.saveSession()
                 signal.throwIfAborted()
 
-                return this.sendChat2(
+                return this.sendChat(
                     {
                         requestID,
                         inputText,
@@ -750,7 +750,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         return { intent: 'chat', intentScores: [] }
     }
 
-    public async sendChat2(
+    private async sendChat(
         {
             requestID,
             inputText,
