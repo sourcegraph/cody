@@ -59,19 +59,19 @@ export interface AutoeditsPrediction {
  */
 export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, vscode.Disposable {
     private readonly disposables: vscode.Disposable[] = []
-    private readonly onSelectionChangeDebounced: DebouncedFunc<typeof this.onSelectionChange>
     /** Keeps track of the last time the text was changed in the editor. */
     private lastTextChangeTimeStamp: number | undefined
+    private readonly onSelectionChangeDebounced: DebouncedFunc<typeof this.onSelectionChange>
+    public readonly rendererManager: AutoEditsRendererManager
     private readonly modelAdapter: AutoeditsModelAdapter
+
     private readonly promptStrategy = new ShortTermPromptStrategy()
+    public readonly filterPrediction = new FilterPredictionBasedOnRecentEdits()
     private readonly contextMixer = new ContextMixer({
         strategyFactory: new DefaultContextStrategyFactory(Observable.of(AUTOEDITS_CONTEXT_STRATEGY)),
         contextRankingStrategy: ContextRankingStrategy.TimeBased,
         dataCollectionEnabled: false,
     })
-
-    public readonly rendererManager: AutoEditsRendererManager
-    public readonly filterPrediction = new FilterPredictionBasedOnRecentEdits()
 
     constructor(chatClient: ChatClient) {
         this.modelAdapter = createAutoeditsModelAdapter({
