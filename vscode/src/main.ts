@@ -47,7 +47,7 @@ import type { CommandResult } from './CommandResult'
 import { showAccountMenu } from './auth/account-menu'
 import { showSignInMenu, showSignOutMenu, tokenCallbackHandler } from './auth/auth'
 import { AutoeditsProvider } from './autoedits/autoedits-provider'
-import { registerAutoEditTestRenderCommand } from './autoedits/renderer/renderer-testing'
+import { registerAutoEditTestRenderCommand } from './autoedits/renderer/mock-renderer'
 import type { MessageProviderOptions } from './chat/MessageProvider'
 import { ChatsController, CodyChatEditorViewType } from './chat/chat-view/ChatsController'
 import { ContextRetriever } from './chat/chat-view/ContextRetriever'
@@ -69,7 +69,6 @@ import {
     executeTestCaseEditCommand,
     executeTestEditCommand,
 } from './commands/execute'
-import { executeAutoEditCommand } from './commands/execute/auto-edit'
 import { executeDocChatCommand } from './commands/execute/doc'
 import { executeTestChatCommand } from './commands/execute/test-chat'
 import { CodySourceControl } from './commands/scm/source-control'
@@ -465,9 +464,6 @@ async function registerCodyCommands(
             () => registerAutoEditTestRenderCommand()
         )
     )
-    disposables.push(
-        vscode.commands.registerCommand('cody.command.auto-edit', a => executeAutoEditCommand(a))
-    )
 
     disposables.push(
         subscriptionDisposable(
@@ -719,13 +715,24 @@ function registerAutoEdits(chatClient: ChatClient, disposables: vscode.Disposabl
                     map(([config, authStatus, autoeditEnabled]) => {
                         if (shouldEnableExperimentalAutoedits(config, autoeditEnabled, authStatus)) {
                             const provider = new AutoeditsProvider(chatClient)
-
                             const completionRegistration =
                                 vscode.languages.registerInlineCompletionItemProvider(
                                     [{ scheme: 'file', language: '*' }, { notebookType: '*' }],
                                     provider
                                 )
 
+                            // Command used to trigger autoedits manually via command palette and is also used by e2e test
+                            vscode.commands.registerCommand(
+                                'cody.command.autoedits-manual-trigger',
+                                async () => {
+                                    await vscode.commands.executeCommand(
+                                        'editor.action.inlineSuggest.hide'
+                                    )
+                                    await vscode.commands.executeCommand(
+                                        'editor.action.inlineSuggest.trigger'
+                                    )
+                                }
+                            )
                             return vscode.Disposable.from(provider, completionRegistration)
                         }
                         return []

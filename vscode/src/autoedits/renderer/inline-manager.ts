@@ -1,11 +1,9 @@
+import { isFileURI } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
-
-import { type DocumentContext, isFileURI } from '@sourcegraph/cody-shared'
-
 import { completionMatchesSuffix } from '../../completions/is-completion-visible'
 import { getNewLineChar } from '../../completions/text-processing'
 import { autoeditsLogger } from '../logger'
-import type { CodeToReplaceData } from '../prompt/prompt-utils'
+import type { AutoeditRendererManagerArgs } from './manager'
 
 import type {
     AddedLineInfo,
@@ -53,14 +51,14 @@ export class AutoEditsInlineRendererManager
         }
     }
 
-    async maybeRenderDecorationsAndTryMakeInlineCompletionResponse(
-        prediction: string,
-        codeToReplaceData: CodeToReplaceData,
-        document: vscode.TextDocument,
-        position: vscode.Position,
-        docContext: DocumentContext,
-        decorationInfo: DecorationInfo
-    ): Promise<{
+    async maybeRenderDecorationsAndTryMakeInlineCompletionResponse({
+        prediction,
+        codeToReplaceData,
+        document,
+        position,
+        docContext,
+        decorationInfo,
+    }: AutoeditRendererManagerArgs): Promise<{
         inlineCompletions: vscode.InlineCompletionItem[] | null
         updatedDecorationInfo: DecorationInfo
     }> {

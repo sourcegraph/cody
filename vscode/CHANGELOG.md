@@ -12,6 +12,41 @@ This is a log of all notable changes to Cody for VS Code.
 
 ### Uncategorized
 
+## 1.54.0
+
+### Added
+
+- Auto Edit: recent edit based [pull/6383](https://github.com/sourcegraph/cody/pull/6383)
+- Auto Edit: add heuristic to filter suggestion [pull/6396](https://github.com/sourcegraph/cody/pull/6396)
+- Prompt Library: add keyboard nav for prompts library [pull/6388](https://github.com/sourcegraph/cody/pull/6388)
+- Accounts: prevent PLG login methods for enterprise users [pull/6182](https://github.com/sourcegraph/cody/pull/6182)
+
+### Fixed
+
+- Omnibox: remove trailing spaces from extracted query [pull/6440](https://github.com/sourcegraph/cody/pull/6440)
+- Cody Web: Fixes paper cuts for Cody Web 0.20.0 cut [pull/6412](https://github.com/sourcegraph/cody/pull/6412)
+- Omnibox: Hide header labels in narrow chat [pull/6407](https://github.com/sourcegraph/cody/pull/6407)
+- Prompt Library: Styling updates to prompt list [pull/6409](https://github.com/sourcegraph/cody/pull/6409)
+- Omnibox: Do not focus editor when inserting/updating search results context [pull/6385](https://github.com/sourcegraph/cody/pull/6385)
+- Webviews: Fix small screen filters panel opening & change sticky intent behaviour [pull/6434](https://github.com/sourcegraph/cody/pull/6434)
+- Auto Edit: do not render removal decorations twice [pull/6405](https://github.com/sourcegraph/cody/pull/6405)
+- Auto Edit: fix inline completion extraction when deletion [pull/6381](https://github.com/sourcegraph/cody/pull/6381)
+
+### Changed
+
+- Omnibox: Enable repo boost for inactive editor [pull/6444](https://github.com/sourcegraph/cody/pull/6444)
+- Omnibox: include symbol matches in search results [pull/6442](https://github.com/sourcegraph/cody/pull/6442)
+- Omnibox: Use omnibox ff for intent detector [pull/6421](https://github.com/sourcegraph/cody/pull/6421)
+- Omnibox: boost current repo [pull/6402](https://github.com/sourcegraph/cody/pull/6402)
+- Cody Web: Filters layout for Cody Web [pull/6382](https://github.com/sourcegraph/cody/pull/6382)
+- Auto Edit: dismiss suggestions on selection change [pull/6406](https://github.com/sourcegraph/cody/pull/6406)
+- Auto Edit: disable shrink suffix logic [pull/6398](https://github.com/sourcegraph/cody/pull/6398)
+
+#### Tracing & Logging
+
+- Telemetry: update `billingMetadata` [pull/6367](https://github.com/sourcegraph/cody/pull/6367)
+- Omnibox: Collect telemetry [pull/6394](https://github.com/sourcegraph/cody/pull/6394)
+
 ## 1.52.0
 
 ### Added
@@ -19,47 +54,56 @@ This is a log of all notable changes to Cody for VS Code.
 ### Fixed
 
 ### Changed
-- disable command execution by default  [pull/6296](https://github.com/sourcegraph/cody/pull/6296)
+
+- disable command execution by default [pull/6296](https://github.com/sourcegraph/cody/pull/6296)
 
 #### Tracing & Logging
-- Remove legacy back-compat (#6265)  [pull/6276](https://github.com/sourcegraph/cody/pull/6276)
-- Adding Distributed Tracing and Smart Apply to cody  [pull/6178](https://github.com/sourcegraph/cody/pull/6178)
+
+- Remove legacy back-compat (#6265) [pull/6276](https://github.com/sourcegraph/cody/pull/6276)
+- Adding Distributed Tracing and Smart Apply to cody [pull/6178](https://github.com/sourcegraph/cody/pull/6178)
 
 ### Experimental Features
+
 - Deep Cody: remove setting Deep Cody as default model. [pull/6308](https://github.com/sourcegraph/cody/pull/6308)
-  
+
 ## 1.50.0
 
 ### Added
-- Webviews: add new CTA for Sourcegraph Teams  [pull/6245](https://github.com/sourcegraph/cody/pull/6245)
-- "Explain command" in context (existing conversation)  [pull/5986](https://github.com/sourcegraph/cody/pull/5986)
+
+- Webviews: add new CTA for Sourcegraph Teams [pull/6245](https://github.com/sourcegraph/cody/pull/6245)
+- "Explain command" in context (existing conversation) [pull/5986](https://github.com/sourcegraph/cody/pull/5986)
 
 ### Fixed
-- fix detecting the fireworks model  [pull/6239](https://github.com/sourcegraph/cody/pull/6239)
-- Fix prompt execution in existing chat  [pull/6226](https://github.com/sourcegraph/cody/pull/6226)
-- suppress emission of characters on emacs keybindings  [pull/6210](https://github.com/sourcegraph/cody/pull/6210)
-- use local storage to save repo accessibility  [pull/6193](https://github.com/sourcegraph/cody/pull/6193)
+
+- fix detecting the fireworks model [pull/6239](https://github.com/sourcegraph/cody/pull/6239)
+- Fix prompt execution in existing chat [pull/6226](https://github.com/sourcegraph/cody/pull/6226)
+- suppress emission of characters on emacs keybindings [pull/6210](https://github.com/sourcegraph/cody/pull/6210)
+- use local storage to save repo accessibility [pull/6193](https://github.com/sourcegraph/cody/pull/6193)
 
 ### Experimental Features
-- Deep Cody: wildcard should not be ignored in allow list for shell context  [pull/6256](https://github.com/sourcegraph/cody/pull/6256)
-- Deep Cody: loading message for context fetching step  [pull/6241](https://github.com/sourcegraph/cody/pull/6241)
-- Deep Cody: remove setting user model preferences  [pull/6211](https://github.com/sourcegraph/cody/pull/6211)
+
+- Deep Cody: wildcard should not be ignored in allow list for shell context [pull/6256](https://github.com/sourcegraph/cody/pull/6256)
+- Deep Cody: loading message for context fetching step [pull/6241](https://github.com/sourcegraph/cody/pull/6241)
+- Deep Cody: remove setting user model preferences [pull/6211](https://github.com/sourcegraph/cody/pull/6211)
 
 ### Changed
-- Auth: new enterprise sign-in flow and improve auth UI  [pull/6198](https://github.com/sourcegraph/cody/pull/6198)
-- Make signout as non-blocking as possible  [pull/6207](https://github.com/sourcegraph/cody/pull/6207)
-- use chat client for s2  [pull/6219](https://github.com/sourcegraph/cody/pull/6219)
+
+- Auth: new enterprise sign-in flow and improve auth UI [pull/6198](https://github.com/sourcegraph/cody/pull/6198)
+- Make signout as non-blocking as possible [pull/6207](https://github.com/sourcegraph/cody/pull/6207)
+- use chat client for s2 [pull/6219](https://github.com/sourcegraph/cody/pull/6219)
 
 #### Tracing & Logging
-- Telemetry support for Sourcegraph versions older than [5.2.5 (released 12/2023)](https://github.com/sourcegraph/sourcegraph-public-snapshot/releases/tag/v5.2.5) has been removed  [pull/6265](https://github.com/sourcegraph/cody/pull/6265)
-- Update tracing for chat  [pull/6230](https://github.com/sourcegraph/cody/pull/6230)
+
+- Telemetry support for Sourcegraph versions older than [5.2.5 (released 12/2023)](https://github.com/sourcegraph/sourcegraph-public-snapshot/releases/tag/v5.2.5) has been removed [pull/6265](https://github.com/sourcegraph/cody/pull/6265)
+- Update tracing for chat [pull/6230](https://github.com/sourcegraph/cody/pull/6230)
 
 #### Build & Release
-- [Backport vscode-v1.50.x] fix(release): remove brackets around version number  [pull/6311](https://github.com/sourcegraph/cody/pull/6311)
-- chore/build: Merge sourcegraph/jetbrains into the Cody repo  [pull/6247](https://github.com/sourcegraph/cody/pull/6247)
-- Improve release process with slack notifications and automated branching  [pull/6218](https://github.com/sourcegraph/cody/pull/6218)
-- Add separate command to run cody web in standalone mode  [pull/6227](https://github.com/sourcegraph/cody/pull/6227)
-- Update changelog.sh instructions and add cody-core to backports  [pull/6217](https://github.com/sourcegraph/cody/pull/6217)
+
+- [Backport vscode-v1.50.x] fix(release): remove brackets around version number [pull/6311](https://github.com/sourcegraph/cody/pull/6311)
+- chore/build: Merge sourcegraph/jetbrains into the Cody repo [pull/6247](https://github.com/sourcegraph/cody/pull/6247)
+- Improve release process with slack notifications and automated branching [pull/6218](https://github.com/sourcegraph/cody/pull/6218)
+- Add separate command to run cody web in standalone mode [pull/6227](https://github.com/sourcegraph/cody/pull/6227)
+- Update changelog.sh instructions and add cody-core to backports [pull/6217](https://github.com/sourcegraph/cody/pull/6217)
 
 ## 1.48.1
 
@@ -67,7 +111,7 @@ This is a log of all notable changes to Cody for VS Code.
 
 ### Fixed
 
-- backport/vscode/1.48: chore(telemetry): remove legacy back-compat (#6265)  [pull/6275](https://github.com/sourcegraph/cody/pull/6275)
+- backport/vscode/1.48: chore(telemetry): remove legacy back-compat (#6265) [pull/6275](https://github.com/sourcegraph/cody/pull/6275)
 
 ### Changed
 
@@ -76,46 +120,55 @@ This is a log of all notable changes to Cody for VS Code.
 ## 1.48.0
 
 ### Added
-- Add account switcher component in the Accounts webview tab  [pull/6159](https://github.com/sourcegraph/cody/pull/6159)
-- Prompts Picker  [pull/6160](https://github.com/sourcegraph/cody/pull/6160)
-- Add Sourcegraph CLI installation description to README.md  [pull/6170](https://github.com/sourcegraph/cody/pull/6170)
-- Fetch standard prompts from remote prompts API  [pull/6150](https://github.com/sourcegraph/cody/pull/6150)
+
+- Add account switcher component in the Accounts webview tab [pull/6159](https://github.com/sourcegraph/cody/pull/6159)
+- Prompts Picker [pull/6160](https://github.com/sourcegraph/cody/pull/6160)
+- Add Sourcegraph CLI installation description to README.md [pull/6170](https://github.com/sourcegraph/cody/pull/6170)
+- Fetch standard prompts from remote prompts API [pull/6150](https://github.com/sourcegraph/cody/pull/6150)
 
 #### Autoedits
-- feat(autoedit): combine inline completion provider and selection change  [pull/6147](https://github.com/sourcegraph/cody/pull/6147)
-- feat(autoedit): use code completion feature for auto edits  [pull/6161](https://github.com/sourcegraph/cody/pull/6161)
-- add 10 sec diff for autoedit experiments  [pull/6191](https://github.com/sourcegraph/cody/pull/6191)
-- adding line level diff strategy for the recent edits diff calculation  [pull/6188](https://github.com/sourcegraph/cody/pull/6188)
-- Hitesh/add diff stratagies  [pull/6190](https://github.com/sourcegraph/cody/pull/6190)
-- Hitesh/add diff strategies logging  [pull/6189](https://github.com/sourcegraph/cody/pull/6189)
+
+- feat(autoedit): combine inline completion provider and selection change [pull/6147](https://github.com/sourcegraph/cody/pull/6147)
+- feat(autoedit): use code completion feature for auto edits [pull/6161](https://github.com/sourcegraph/cody/pull/6161)
+- add 10 sec diff for autoedit experiments [pull/6191](https://github.com/sourcegraph/cody/pull/6191)
+- adding line level diff strategy for the recent edits diff calculation [pull/6188](https://github.com/sourcegraph/cody/pull/6188)
+- Hitesh/add diff stratagies [pull/6190](https://github.com/sourcegraph/cody/pull/6190)
+- Hitesh/add diff strategies logging [pull/6189](https://github.com/sourcegraph/cody/pull/6189)
 
 ### Fixed
-- [Backport vscode-v1.48.x] Make signout as non-blocking as possible  [pull/6213](https://github.com/sourcegraph/cody/pull/6213)
-- do not block chat panel initialization or human message handling on current session save  [pull/6186](https://github.com/sourcegraph/cody/pull/6186)
-- patch highlight.js to address memory leak  [pull/6146](https://github.com/sourcegraph/cody/pull/6146)
-- fix(api): Set API identifying headers on all HTTP requests (CODY-4209)  [pull/6102](https://github.com/sourcegraph/cody/pull/6102)
+
+- [Backport vscode-v1.48.x] Make signout as non-blocking as possible [pull/6213](https://github.com/sourcegraph/cody/pull/6213)
+- do not block chat panel initialization or human message handling on current session save [pull/6186](https://github.com/sourcegraph/cody/pull/6186)
+- patch highlight.js to address memory leak [pull/6146](https://github.com/sourcegraph/cody/pull/6146)
+- fix(api): Set API identifying headers on all HTTP requests (CODY-4209) [pull/6102](https://github.com/sourcegraph/cody/pull/6102)
+
 #### Autoedits
-- feat(autoedit): fix cursor jumping issue  [pull/6156](https://github.com/sourcegraph/cody/pull/6156)
-- fix(autoedit): fix suffix matching logic  [pull/6171](https://github.com/sourcegraph/cody/pull/6171)
-- fix(audoedit): fix the scrollbar issue  [pull/6158](https://github.com/sourcegraph/cody/pull/6158)
-- fix added lines sorting in autoedits  [pull/6155](https://github.com/sourcegraph/cody/pull/6155)
+
+- feat(autoedit): fix cursor jumping issue [pull/6156](https://github.com/sourcegraph/cody/pull/6156)
+- fix(autoedit): fix suffix matching logic [pull/6171](https://github.com/sourcegraph/cody/pull/6171)
+- fix(audoedit): fix the scrollbar issue [pull/6158](https://github.com/sourcegraph/cody/pull/6158)
+- fix added lines sorting in autoedits [pull/6155](https://github.com/sourcegraph/cody/pull/6155)
 
 ### Changed
-- Add default value for 'search.useIgnoreFiles' in agent config  [pull/6202](https://github.com/sourcegraph/cody/pull/6202)
-- Deep Cody: Move shell context behind feature flag  [pull/6199](https://github.com/sourcegraph/cody/pull/6199)
-- Add built-in prompts related fields to prompt select analytic event  [pull/6180](https://github.com/sourcegraph/cody/pull/6180)
+
+- Add default value for 'search.useIgnoreFiles' in agent config [pull/6202](https://github.com/sourcegraph/cody/pull/6202)
+- Deep Cody: Move shell context behind feature flag [pull/6199](https://github.com/sourcegraph/cody/pull/6199)
+- Add built-in prompts related fields to prompt select analytic event [pull/6180](https://github.com/sourcegraph/cody/pull/6180)
+
 #### Autoedits
-- feat(autoedit): restrict autoedit to vscode  [pull/6184](https://github.com/sourcegraph/cody/pull/6184)
-- chore(audoedit): test diff logic with different new line chars  [pull/6176](https://github.com/sourcegraph/cody/pull/6176)
-- chore(audoedit): simplify diff utils and renderer data structures  [pull/6172](https://github.com/sourcegraph/cody/pull/6172)
-- feat(autoedit): refactor renderer code to simplify iteration on decor…  [pull/6163](https://github.com/sourcegraph/cody/pull/6163)
+
+- feat(autoedit): restrict autoedit to vscode [pull/6184](https://github.com/sourcegraph/cody/pull/6184)
+- chore(audoedit): test diff logic with different new line chars [pull/6176](https://github.com/sourcegraph/cody/pull/6176)
+- chore(audoedit): simplify diff utils and renderer data structures [pull/6172](https://github.com/sourcegraph/cody/pull/6172)
+- feat(autoedit): refactor renderer code to simplify iteration on decor… [pull/6163](https://github.com/sourcegraph/cody/pull/6163)
 
 ### Build & Test
-- [Backport vscode-v1.48.x] remove last line in backport GHA  [pull/6205](https://github.com/sourcegraph/cody/pull/6205)
-- remove last line in backport GHA  [pull/6204](https://github.com/sourcegraph/cody/pull/6204)
-- add changelog templating and tooling  [pull/6195](https://github.com/sourcegraph/cody/pull/6195)
-- Bench: make sure to respect CODY_RECORDING_MODE  [pull/6167](https://github.com/sourcegraph/cody/pull/6167)
-- Revert "Update backport.yml (#6137)"  [pull/6164](https://github.com/sourcegraph/cody/pull/6164)
+
+- [Backport vscode-v1.48.x] remove last line in backport GHA [pull/6205](https://github.com/sourcegraph/cody/pull/6205)
+- remove last line in backport GHA [pull/6204](https://github.com/sourcegraph/cody/pull/6204)
+- add changelog templating and tooling [pull/6195](https://github.com/sourcegraph/cody/pull/6195)
+- Bench: make sure to respect CODY_RECORDING_MODE [pull/6167](https://github.com/sourcegraph/cody/pull/6167)
+- Revert "Update backport.yml (#6137)" [pull/6164](https://github.com/sourcegraph/cody/pull/6164)
 
 ## 1.46.0
 
@@ -130,28 +183,29 @@ This is a log of all notable changes to Cody for VS Code.
   - Updated `Shift+Alt+L` to create a new chat when the focus is not in the editor. When the focus is in the editor, the behavior remains unchanged (the current selection is added to the chat context).
 
 ### Uncategorized
-- [Backport vscode-v1.46.x] Add built-in prompts related fields to prompt select analytic event  [pull/6181](https://github.com/sourcegraph/cody/pull/6181)
-- [Backport vscode-v1.46.x] Fetch standard prompts from remote prompts API  [pull/6166](https://github.com/sourcegraph/cody/pull/6166)
-- [Backport vscode-v1.46.x] Prompts Picker  [pull/6168](https://github.com/sourcegraph/cody/pull/6168)
-- [Backport vscode-v1.46.x] VS Code: Release v1.44.0  [pull/6169](https://github.com/sourcegraph/cody/pull/6169)
-- feat(autoedit): fix cursor jumping issue  [pull/6156](https://github.com/sourcegraph/cody/pull/6156)
-- only activate autoedits command when experimental setting is enabled  [pull/6157](https://github.com/sourcegraph/cody/pull/6157)
-- Chat: ensure ScrollDown button only takes it's width  [pull/6143](https://github.com/sourcegraph/cody/pull/6143)
-- autoedit: Add feature flag to enable/disable autoedit feature  [pull/6145](https://github.com/sourcegraph/cody/pull/6145)
-- remove ctrl+shift+L shortcut and update shift+alt+L shortcut  [pull/6148](https://github.com/sourcegraph/cody/pull/6148)
-- Fix various JetBrains styling issues  [pull/6153](https://github.com/sourcegraph/cody/pull/6153)
-- Autoedits Context Improvements  [pull/6141](https://github.com/sourcegraph/cody/pull/6141)
-- Better rendering for auto edits  [pull/6132](https://github.com/sourcegraph/cody/pull/6132)
-- Chat: context cell improvements  [pull/6115](https://github.com/sourcegraph/cody/pull/6115)
-- Fix inline-edit prompts chat building  [pull/6003](https://github.com/sourcegraph/cody/pull/6003)
-- Cody Web: Polish cody web Prompts  [pull/6135](https://github.com/sourcegraph/cody/pull/6135)
-- Simplify protocol's TelemetryEvent  [pull/6144](https://github.com/sourcegraph/cody/pull/6144)
-- Use font size variable providd by JetBrains in webview  [pull/6134](https://github.com/sourcegraph/cody/pull/6134)
-- Update backport.yml  [pull/6137](https://github.com/sourcegraph/cody/pull/6137)
-- fix(release): Update backport action to override team_reviews  [pull/6136](https://github.com/sourcegraph/cody/pull/6136)
-- autoedit: add speculative decoding  [pull/6130](https://github.com/sourcegraph/cody/pull/6130)
-- Fix for VSCode Marketplace description getting cut-off  [pull/6098](https://github.com/sourcegraph/cody/pull/6098)
-- Fix prompt name generation during prompts/commands migration  [pull/6126](https://github.com/sourcegraph/cody/pull/6126)
+
+- [Backport vscode-v1.46.x] Add built-in prompts related fields to prompt select analytic event [pull/6181](https://github.com/sourcegraph/cody/pull/6181)
+- [Backport vscode-v1.46.x] Fetch standard prompts from remote prompts API [pull/6166](https://github.com/sourcegraph/cody/pull/6166)
+- [Backport vscode-v1.46.x] Prompts Picker [pull/6168](https://github.com/sourcegraph/cody/pull/6168)
+- [Backport vscode-v1.46.x] VS Code: Release v1.44.0 [pull/6169](https://github.com/sourcegraph/cody/pull/6169)
+- feat(autoedit): fix cursor jumping issue [pull/6156](https://github.com/sourcegraph/cody/pull/6156)
+- only activate autoedits command when experimental setting is enabled [pull/6157](https://github.com/sourcegraph/cody/pull/6157)
+- Chat: ensure ScrollDown button only takes it's width [pull/6143](https://github.com/sourcegraph/cody/pull/6143)
+- autoedit: Add feature flag to enable/disable autoedit feature [pull/6145](https://github.com/sourcegraph/cody/pull/6145)
+- remove ctrl+shift+L shortcut and update shift+alt+L shortcut [pull/6148](https://github.com/sourcegraph/cody/pull/6148)
+- Fix various JetBrains styling issues [pull/6153](https://github.com/sourcegraph/cody/pull/6153)
+- Autoedits Context Improvements [pull/6141](https://github.com/sourcegraph/cody/pull/6141)
+- Better rendering for auto edits [pull/6132](https://github.com/sourcegraph/cody/pull/6132)
+- Chat: context cell improvements [pull/6115](https://github.com/sourcegraph/cody/pull/6115)
+- Fix inline-edit prompts chat building [pull/6003](https://github.com/sourcegraph/cody/pull/6003)
+- Cody Web: Polish cody web Prompts [pull/6135](https://github.com/sourcegraph/cody/pull/6135)
+- Simplify protocol's TelemetryEvent [pull/6144](https://github.com/sourcegraph/cody/pull/6144)
+- Use font size variable providd by JetBrains in webview [pull/6134](https://github.com/sourcegraph/cody/pull/6134)
+- Update backport.yml [pull/6137](https://github.com/sourcegraph/cody/pull/6137)
+- fix(release): Update backport action to override team_reviews [pull/6136](https://github.com/sourcegraph/cody/pull/6136)
+- autoedit: add speculative decoding [pull/6130](https://github.com/sourcegraph/cody/pull/6130)
+- Fix for VSCode Marketplace description getting cut-off [pull/6098](https://github.com/sourcegraph/cody/pull/6098)
+- Fix prompt name generation during prompts/commands migration [pull/6126](https://github.com/sourcegraph/cody/pull/6126)
 
 ## 1.44.0
 

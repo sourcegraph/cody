@@ -86,6 +86,27 @@ describe('ChatController', () => {
         })
     })
 
+    test('verifies interactionId is passed through chat requests', async () => {
+        const mockRequestID = '0'
+        mockContextRetriever.retrieveContext.mockResolvedValue([])
+
+        await chatController.handleUserMessage({
+            requestID: mockRequestID,
+            inputText: ps`Test input`,
+            mentions: [],
+            editorState: null,
+            signal: new AbortController().signal,
+            source: 'chat',
+        })
+        await vi.runOnlyPendingTimersAsync()
+
+        expect(mockChatClient.chat).toHaveBeenCalledWith(
+            expect.any(Array),
+            expect.any(Object),
+            expect.any(AbortSignal),
+            mockRequestID
+        )
+    })
     test('send, followup, and edit', { timeout: 1500 }, async () => {
         const postMessageSpy = vi
             .spyOn(chatController as any, 'postMessage')

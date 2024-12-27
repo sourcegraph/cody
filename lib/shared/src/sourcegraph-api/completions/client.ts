@@ -33,6 +33,7 @@ export interface CompletionLogger {
 
 export interface CompletionRequestParameters {
     apiVersion: number
+    interactionId?: string
     customHeaders?: Record<string, string>
 }
 
@@ -87,15 +88,23 @@ export abstract class SourcegraphCompletionsClient {
     protected async prepareRequest(
         params: CompletionParameters,
         requestParams: CompletionRequestParameters
-    ): Promise<{ url: URL; serializedParams: SerializedCompletionParameters }> {
-        const { apiVersion } = requestParams
+    ): Promise<{
+        url: URL
+        serializedParams: SerializedCompletionParameters
+        headerParams: Record<string, string>
+    }> {
+        const { apiVersion, interactionId } = requestParams
         const serializedParams = await getSerializedParams(params)
+        const headerParams: Record<string, string> = {}
+        if (interactionId) {
+            headerParams['X-Sourcegraph-Interaction-ID'] = interactionId
+        }
         const url = new URL(await this.completionsEndpoint())
         if (apiVersion >= 1) {
             url.searchParams.append('api-version', '' + apiVersion)
         }
         addClientInfoParams(url.searchParams)
-        return { url, serializedParams }
+        return { url, serializedParams, headerParams }
     }
 
     protected abstract _fetchWithCallbacks(

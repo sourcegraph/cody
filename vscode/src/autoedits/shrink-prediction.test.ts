@@ -1,15 +1,12 @@
 import dedent from 'dedent'
 import { describe, expect, it } from 'vitest'
-
-import { getCurrentDocContext } from '../completions/get-current-doc-context'
-import { documentAndPosition } from '../completions/test-helpers'
-
-import { type CodeToReplaceData, getCurrentFilePromptComponents } from './prompt/prompt-utils'
+import type { CodeToReplaceData } from './prompt/prompt-utils'
+import { createCodeToReplaceDataForTest } from './prompt/test-helper'
 import { shrinkPredictionUntilSuffix } from './shrink-prediction'
 
 describe('shrinkPredictionUntilSuffix', () => {
     it('does not trim the prediction lines that start with the same indentation as the following suffix empty lines', () => {
-        const codeToReplaceData = createCodeToReplaceData`
+        const codeToReplaceData = getCodeToReplaceForShrinkPrediction`
             import { RecentEditsTracker } from '../completions/context/retrievers/recent-user-actions/recent-edits-tracker'
 
             export class FilterPredictionEditsBasedOnRecentEdits {
@@ -41,7 +38,7 @@ describe('shrinkPredictionUntilSuffix', () => {
     })
 
     it('returns code to rewrite if the prediction does not change anything', () => {
-        const codeToReplaceData = createCodeToReplaceData`
+        const codeToReplaceData = getCodeToReplaceForShrinkPrediction`
             import { RecentEditsTracker } from '../completions/context/retrievers/recent-user-actions/recent-edits-tracker'
 
             export class FilterPredictionEditsBasedOnRecentEdits {
@@ -64,7 +61,7 @@ describe('shrinkPredictionUntilSuffix', () => {
     })
 
     it('if prediction suggests line additions which duplicate the existing document suffix, remove them from prediction', () => {
-        const codeToReplaceData = createCodeToReplaceData`class ContactForm:
+        const codeToReplaceData = getCodeToReplaceForShrinkPrediction`class ContactForm:
             def __init__(self█, name, message):
                 pass
                 pass
@@ -85,7 +82,7 @@ describe('shrinkPredictionUntilSuffix', () => {
     })
 
     it('cursor at end of file, no overlap, 4-line prediction', () => {
-        const codeToReplaceData = createCodeToReplaceData`line1
+        const codeToReplaceData = getCodeToReplaceForShrinkPrediction`line1
             line2
             line3█
         `
@@ -102,7 +99,7 @@ describe('shrinkPredictionUntilSuffix', () => {
     })
 
     it('cursor near start, partial overlap, 4-line prediction', () => {
-        const codeToReplaceData = createCodeToReplaceData`console.log("start")█
+        const codeToReplaceData = getCodeToReplaceForShrinkPrediction`console.log("start")█
             let value = 123
             console.log(value)
             console.log("end")
@@ -121,7 +118,7 @@ describe('shrinkPredictionUntilSuffix', () => {
     })
 
     it('returns the original text in case of full match with the suffix', () => {
-        const codeToReplaceData = createCodeToReplaceData`function test() {
+        const codeToReplaceData = getCodeToReplaceForShrinkPrediction`function test() {
             █const a = 1;
             const b = 2;
             console.log(a + b);
@@ -138,7 +135,7 @@ describe('shrinkPredictionUntilSuffix', () => {
     })
 
     it('handles empty suffix (no overlap possible)', () => {
-        const codeToReplaceData = createCodeToReplaceData`test code█`
+        const codeToReplaceData = getCodeToReplaceForShrinkPrediction`test code█`
         const prediction = dedent`
             test code changed
             more lines\n
@@ -149,7 +146,7 @@ describe('shrinkPredictionUntilSuffix', () => {
     })
 
     it('handles empty prediction', () => {
-        const codeToReplaceData = createCodeToReplaceData`some code█
+        const codeToReplaceData = getCodeToReplaceForShrinkPrediction`some code█
             suffix line1
             suffix line2
         `
@@ -161,7 +158,7 @@ describe('shrinkPredictionUntilSuffix', () => {
     })
 
     it('handles partial line mismatch properly (no partial/startsWith overlap)', () => {
-        const codeToReplaceData = createCodeToReplaceData`console.log("foo")█
+        const codeToReplaceData = getCodeToReplaceForShrinkPrediction`console.log("foo")█
             console.log("bar")
         `
 
@@ -176,7 +173,7 @@ describe('shrinkPredictionUntilSuffix', () => {
 
     it('removes all lines if prediction fully matches suffix line-by-line', () => {
         // codeToRewrite is a single line; suffix has 2 lines; the prediction is exactly those 2 lines.
-        const codeToReplaceData = createCodeToReplaceData`
+        const codeToReplaceData = getCodeToReplaceForShrinkPrediction`
             foo█
 
 
@@ -196,7 +193,7 @@ describe('shrinkPredictionUntilSuffix', () => {
     })
 
     it('removes overlapping lines even if they are empty', () => {
-        const codeToReplaceData = createCodeToReplaceData`line1█
+        const codeToReplaceData = getCodeToReplaceForShrinkPrediction`line1█
             line2
 
 
@@ -217,24 +214,22 @@ describe('shrinkPredictionUntilSuffix', () => {
     })
 })
 
-function createCodeToReplaceData(code: TemplateStringsArray, ...values: unknown[]): CodeToReplaceData {
-    const { document, position } = documentAndPosition(dedent(code, values))
-    const docContext = getCurrentDocContext({
-        document,
-        position,
-        maxPrefixLength: 1000,
-        maxSuffixLength: 1000,
-    })
-
-    return getCurrentFilePromptComponents({
-        docContext,
-        position,
-        document,
-        maxPrefixLinesInArea: 5,
-        maxSuffixLinesInArea: 5,
-        codeToRewritePrefixLines: 1,
-        codeToRewriteSuffixLines: 2,
-    }).codeToReplace
+function getCodeToReplaceForShrinkPrediction(
+    code: TemplateStringsArray,
+    ...values: unknown[]
+): CodeToReplaceData {
+    return createCodeToReplaceDataForTest(
+        code,
+        {
+            maxPrefixLength: 1000,
+            maxSuffixLength: 1000,
+            maxPrefixLinesInArea: 5,
+            maxSuffixLinesInArea: 5,
+            codeToRewritePrefixLines: 1,
+            codeToRewriteSuffixLines: 2,
+        },
+        ...values
+    )
 }
 
 function withoutLastLines(text: string, n: number): string {
