@@ -9,30 +9,19 @@ import {
     type ClientActionBroadcast,
     ClientConfigSingleton,
     type CodyClientConfig,
-    type CompletionParameters,
     type ContextItem,
-    type ContextItemFile,
-    type ContextItemOpenCtx,
-    type ContextItemRepository,
     ContextItemSource,
     DOTCOM_URL,
     type DefaultChatCommands,
-    DefaultEditCommands,
     type EventSource,
     FeatureFlag,
     type Guardrails,
-    type Message,
     ModelUsage,
     type NLSSearchDynamicFilter,
     PromptString,
-    REMOTE_DIRECTORY_PROVIDER_URI,
-    REMOTE_FILE_PROVIDER_URI,
-    REMOTE_REPOSITORY_PROVIDER_URI,
-    type RankedContext,
     type SerializedChatInteraction,
     type SerializedChatTranscript,
     type SerializedPromptEditorState,
-    Typewriter,
     addMessageListenersForExtensionAPI,
     authStatus,
     cenv,
@@ -41,18 +30,15 @@ import {
     currentAuthStatus,
     currentAuthStatusAuthed,
     currentResolvedConfig,
-    currentSiteVersion,
     currentUserProductSubscription,
     distinctUntilChanged,
     extractContextFromTraceparent,
     featureFlagProvider,
     firstResultFromOperation,
     forceHydration,
-    getContextForChatMessage,
     graphqlClient,
     hydrateAfterPostMessage,
     inputTextWithMappedContextChipsFromPromptEditorState,
-    inputTextWithoutContextChipsFromPromptEditorState,
     isAbortErrorOrSocketHangUp,
     isContextWindowLimitError,
     isDefined,
@@ -74,7 +60,6 @@ import {
     startWith,
     storeLastValue,
     subscriptionDisposable,
-    telemetryEvents,
     telemetryRecorder,
     tracer,
     truncatePromptString,
@@ -86,7 +71,6 @@ import * as vscode from 'vscode'
 
 import { type Span, context } from '@opentelemetry/api'
 import { captureException } from '@sentry/core'
-import { getTokenCounterUtils } from '@sourcegraph/cody-shared/src/token/counter'
 import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
 import { Subject, map } from 'observable-fns'
 import type { URI } from 'vscode-uri'
@@ -98,27 +82,19 @@ import {
 } from '../../auth/auth-progress-indicator'
 import type { startTokenReceiver } from '../../auth/token-receiver'
 import { getCurrentUserId } from '../../auth/user'
-import { executeCodyCommand } from '../../commands/CommandsController'
 import { getContextFileFromUri } from '../../commands/context/file-path'
 import { getContextFileFromCursor } from '../../commands/context/selection'
-import { escapeRegExp } from '../../context/openctx/remoteFileSearch'
-import { getEditor } from '../../editor/active-editor'
-import { resolveContextItems } from '../../editor/utils/editor-context'
 import type { VSCodeEditor } from '../../editor/vscode-editor'
 import type { ExtensionClient } from '../../extension-client'
 import { migrateAndNotifyForOutdatedModels } from '../../models/modelMigrator'
 import { logDebug, outputChannelLogger } from '../../output-channel-logger'
-import { getCategorizedMentions } from '../../prompt-builder/utils'
 import { hydratePromptText } from '../../prompts/prompt-hydration'
 import { listPromptTags, mergedPromptsAndLegacyCommands } from '../../prompts/prompts'
-import { publicRepoMetadataIfAllWorkspaceReposArePublic } from '../../repository/githubRepoMetadata'
-import { getFirstRepoNameContainingUri } from '../../repository/repo-name-resolver'
 import { authProvider } from '../../services/AuthProvider'
 import { AuthProviderSimplified } from '../../services/AuthProviderSimplified'
 import { localStorage } from '../../services/LocalStorageProvider'
 import { secretStorage } from '../../services/SecretStorageProvider'
 import { TraceSender } from '../../services/open-telemetry/trace-sender'
-import { recordExposedExperimentsToSpan } from '../../services/open-telemetry/utils'
 import {
     handleCodeFromInsertAtCursor,
     handleCodeFromSaveToNewFile,
@@ -129,8 +105,6 @@ import { openExternalLinks } from '../../services/utils/workspace-action'
 import { TestSupport } from '../../test-support'
 import type { MessageErrorType } from '../MessageProvider'
 import { CodyToolProvider } from '../agentic/CodyToolProvider'
-import { DeepCodyAgent } from '../agentic/DeepCody'
-import { DeepCodyRateLimiter } from '../agentic/DeepCodyRateLimiter'
 import { getMentionMenuData } from '../context/chatContext'
 import type { ChatIntentAPIClient } from '../context/chatIntentAPIClient'
 import { observeDefaultContext } from '../initialContext'
@@ -146,11 +120,11 @@ import { countGeneratedCode } from '../utils'
 import { ChatBuilder, prepareChatMessage } from './ChatBuilder'
 import { chatHistory } from './ChatHistoryManager'
 import { CodyChatEditorViewType } from './ChatsController'
-import { type ContextRetriever, toStructuredMentions } from './ContextRetriever'
+import type { ContextRetriever } from './ContextRetriever'
 import { InitDoer } from './InitDoer'
 import { getChatPanelTitle } from './chat-helpers'
-import { type HumanInput, getPriorityContext } from './context'
-import { DefaultPrompter, type PromptInfo } from './prompt'
+import { OmniboxTelemetry } from './handlers/OmniboxTelemetry'
+import { getAgent } from './handlers/registry'
 import { getPromptsMigrationInfo, startPromptsMigration } from './prompts-migration'
 
 export interface ChatControllerOptions {
@@ -562,12 +536,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     private featureDeepCodyShellContext = storeLastValue(
         featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.DeepCodyShellContext)
     )
-    private featureDeepCodyRateLimitBase = storeLastValue(
-        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.DeepCodyRateLimitBase)
-    )
-    private featureDeepCodyRateLimitMultiplier = storeLastValue(
-        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.DeepCodyRateLimitMultiplier)
-    )
 
     private async getConfigForWebview(): Promise<ConfigurationSubsetForWebview & LocalEnv> {
         const { configuration, auth } = await currentResolvedConfig()
@@ -779,7 +747,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         return { intent: 'chat', intentScores: [] }
     }
 
-    public async sendChat(
+    private async sendChat(
         {
             requestID,
             inputText,
@@ -795,7 +763,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         span: Span
     ): Promise<void> {
         span.addEvent('ChatController.sendChat')
-        const authStatus = currentAuthStatusAuthed()
 
         // Use default model if no model is selected.
         const model = await wrapInActiveSpan('chat.resolveModel', () =>
@@ -804,59 +771,19 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         if (!model) {
             throw new Error('No model selected, and no default chat model is available')
         }
+
         this.chatBuilder.setSelectedModel(model)
 
-        const isDeepCodyModel = model?.includes('deep-cody')
-        // Deep Cody is only invoked for the first 2 submitted messages.
-        const isDeepCodyEnabled = isDeepCodyModel && this.chatBuilder.getMessages().length < 4
-        // The limit could be 0, 50 * 1 (50), 50 * 2 (100)
-        const deepCodyRateLimiter = new DeepCodyRateLimiter(
-            this.featureDeepCodyRateLimitBase.value.last ? 50 : 0,
-            this.featureDeepCodyRateLimitMultiplier.value.last ? 2 : 1
-        )
-        const deepCodyLimit = deepCodyRateLimiter.isAtLimit()
-        if (isDeepCodyEnabled && deepCodyLimit) {
-            this.postError(deepCodyRateLimiter.getRateLimitError(deepCodyLimit), 'transcript')
-            this.handleAbort()
-            return
-        }
-
-        const { isPublic: repoIsPublic, repoMetadata } = await wrapInActiveSpan(
-            'chat.getRepoMetadata',
-            () => firstResultFromOperation(publicRepoMetadataIfAllWorkspaceReposArePublic)
-        )
-
-        const telemetryProperties = {
+        const recorder = await OmniboxTelemetry.create({
             requestID,
             chatModel: model,
-            authStatus,
             source,
             command,
             sessionID: this.chatBuilder.sessionID,
-            repoMetadata,
-            repoIsPublic,
             traceId: span.spanContext().traceId,
             promptText: inputText,
-        } as const
-        const tokenCounterUtils = await wrapInActiveSpan('chat.getTokenCounterUtils', () =>
-            getTokenCounterUtils()
-        )
-
-        telemetryEvents['cody.chat-question/submitted'].record(
-            {
-                ...telemetryProperties,
-                mentions,
-            },
-            tokenCounterUtils
-        )
-
-        this.postEmptyMessageInProgress(model)
-
-        const inputTextWithoutContextChips = editorState
-            ? PromptString.unsafe_fromUserQuery(
-                  inputTextWithoutContextChipsFromPromptEditorState(editorState)
-              )
-            : inputText
+        })
+        recorder.recordChatQuestionSubmitted(mentions)
 
         const { intent, intentScores } = await this.getIntentAndScores({
             requestID,
@@ -867,114 +794,80 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             detectedIntentScores,
             signal,
         })
-
         signal.throwIfAborted()
         this.chatBuilder.setLastMessageIntent(intent)
+
         this.postEmptyMessageInProgress(model)
 
-        if (intent === 'search') {
-            return await this.handleSearchIntent({
-                inputTextWithoutContextChips: inputTextWithoutContextChips.toString(),
-                mentions,
-                signal,
-            })
-        }
+        const agentName = ['search', 'edit', 'insert'].includes(intent ?? '')
+            ? (intent as string)
+            : model
+        const agent = getAgent(agentName, {
+            contextRetriever: this.contextRetriever,
+            editor: this.editor,
+            chatClient: this.chatClient,
+            codyToolProvider: this.toolProvider,
+        })
 
-        // All mentions we receive are either source=initial or source=user. If the caller
-        // forgot to set the source, assume it's from the user.
-        mentions = mentions.map(m => (m.source ? m : { ...m, source: ContextItemSource.User }))
+        recorder.setIntentInfo({
+            userSpecifiedIntent:
+                manuallySelectedIntent && detectedIntent
+                    ? detectedIntent
+                    : this.featureCodyExperimentalOneBox
+                      ? 'auto'
+                      : 'chat',
+            detectedIntent: intent,
+            detectedIntentScores: intentScores,
+        })
 
-        const contextAlternatives = await this.computeContext(
-            { text: inputText, mentions },
-            requestID,
-            editorState,
-            span,
-            signal
-        )
-        signal.throwIfAborted()
-        const corpusContext = contextAlternatives[0].items
-
-        const userSpecifiedIntent =
-            manuallySelectedIntent && detectedIntent
-                ? detectedIntent
-                : this.featureCodyExperimentalOneBox
-                  ? 'auto'
-                  : 'chat'
-
-        signal.throwIfAborted()
-
-        if (['edit', 'insert'].includes(intent || '')) {
-            telemetryEvents['cody.chat-question/executed'].record(
-                {
-                    ...telemetryProperties,
-                    context: corpusContext,
-                    userSpecifiedIntent,
-                    detectedIntent: intent,
-                    detectedIntentScores: intentScores,
-                },
-                { current: span, addMetadata: true },
-                tokenCounterUtils
-            )
-        }
-
-        if (intent === 'edit' || intent === 'insert') {
-            return await this.handleEditMode({
-                requestID,
-                mode: intent,
-                instruction: inputTextWithoutContextChips,
-                context: corpusContext,
-                signal,
-                contextAlternatives,
-            })
-        }
-
-        // Experimental Feature: Deep Cody
-        if (isDeepCodyEnabled) {
-            const agent = new DeepCodyAgent(
-                this.chatBuilder,
-                this.chatClient,
-                this.toolProvider.getTools(),
-                corpusContext
-            )
-            agent.setStatusCallback(model => this.postEmptyMessageInProgress(model))
-            const agenticContext = await agent.getContext(requestID, signal)
-            corpusContext.push(...agenticContext)
-        }
-
-        const { explicitMentions, implicitMentions } = getCategorizedMentions(corpusContext)
-
-        const prompter = new DefaultPrompter(explicitMentions, implicitMentions, command !== undefined)
-
+        this.postEmptyMessageInProgress(model)
+        let messageInProgress: ChatMessage | undefined = undefined
         try {
-            const versions = await currentSiteVersion()
-            if (!versions) {
-                throw new Error('unable to determine site version')
-            }
-            const { prompt, context } = await this.buildPrompt(
-                prompter,
-                signal,
-                requestID,
-                versions.codyAPIVersion,
-                contextAlternatives
-            )
-
-            telemetryEvents['cody.chat-question/executed'].record(
+            await agent.handle(
                 {
-                    ...telemetryProperties,
-                    context,
-                    userSpecifiedIntent,
-                    detectedIntent: intent,
-                    detectedIntentScores: intentScores,
+                    requestID,
+                    inputText,
+                    mentions,
+                    editorState,
+                    signal,
+                    chatBuilder: this.chatBuilder,
+                    span,
+                    recorder,
                 },
                 {
-                    addMetadata: true,
-                    current: span,
-                },
-                tokenCounterUtils
-            )
+                    postError: (error: Error, type?: MessageErrorType): void => {
+                        this.postError(error, type)
+                    },
+                    postMessageInProgress: (message?: ChatMessage): void => {
+                        messageInProgress = message
+                        this.postViewTranscript(message)
+                    },
+                    postDone: (op?: { abort: boolean }): void => {
+                        if (op?.abort) {
+                            this.handleAbort()
+                            return
+                        }
 
-            signal.throwIfAborted()
-            this.streamAssistantResponse(requestID, prompt, model, span, signal)
+                        // HACK(beyang): This conditional preserves the behavior from when
+                        // all the response generation logic was handled in this method.
+                        // In future work, we should remove this special-casing and unify
+                        // how new messages are posted to the transcript.
+                        if (
+                            messageInProgress &&
+                            (['search', 'insert', 'edit'].includes(messageInProgress?.intent ?? '') ||
+                                messageInProgress?.search ||
+                                messageInProgress?.error)
+                        ) {
+                            this.chatBuilder.addBotMessage(messageInProgress, model)
+                        } else if (messageInProgress?.text) {
+                            this.addBotMessage(requestID, messageInProgress.text, model)
+                        }
+
+                        this.saveSession()
+                        this.postViewTranscript()
+                    },
+                }
+            )
         } catch (error) {
             if (isAbortErrorOrSocketHangUp(error as Error)) {
                 return
@@ -1015,310 +908,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         }
 
         return
-    }
-
-    private async handleSearchIntent({
-        inputTextWithoutContextChips,
-        mentions,
-        signal,
-    }: {
-        inputTextWithoutContextChips: string
-        mentions: ContextItem[]
-        signal: AbortSignal
-    }): Promise<void> {
-        signal.throwIfAborted()
-
-        this.chatBuilder.setLastMessageIntent('search')
-        const scopes: string[] = await this.getSearchScopesFromMentions(mentions)
-
-        const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri
-        const currentFile = getEditor()?.active?.document?.uri || workspaceRoot
-        const repoName = currentFile ? await getFirstRepoNameContainingUri(currentFile) : undefined
-        const boostParameter = repoName ? `boost:repo(${repoName})` : ''
-
-        const query = `content:"${inputTextWithoutContextChips.replaceAll(
-            '"',
-            '\\"'
-        )}" ${boostParameter} ${scopes.length ? `(${scopes.join(' OR ')})` : ''}`
-
-        try {
-            const response = await graphqlClient.nlsSearchQuery({
-                query,
-                signal,
-            })
-
-            this.chatBuilder.addSearchResultAsBotMessage({
-                query,
-                response,
-            })
-
-            void this.saveSession()
-            this.postViewTranscript()
-        } catch (err) {
-            this.chatBuilder.addErrorAsBotMessage(err as Error, ChatBuilder.NO_MODEL)
-            void this.saveSession()
-            this.postViewTranscript()
-        }
-    }
-
-    private async getSearchScopesFromMentions(mentions: ContextItem[]): Promise<string[]> {
-        const validMentions = mentions.reduce(
-            (groups, mention) => {
-                switch (mention.type) {
-                    case 'repository':
-                        groups.repository.push(mention)
-                        break
-                    case 'file':
-                        groups[mention.type].push(mention)
-                        break
-                    case 'openctx':
-                        if (mention.providerUri === REMOTE_REPOSITORY_PROVIDER_URI) {
-                            groups.repository.push(mention)
-                        } else {
-                            groups.openctx.push(mention)
-                        }
-                }
-
-                return groups
-            },
-            { repository: [], file: [], openctx: [] } as {
-                repository: (ContextItemRepository | ContextItemOpenCtx)[]
-                file: ContextItemFile[]
-                openctx: ContextItemOpenCtx[]
-            }
-        )
-
-        const scopes: string[] = []
-
-        // Convert all repo mentions to a single search filter.
-        // Example: repo:^(github\.com/sourcegraph/sourcegraph|github\.com/sourcegraph/cody)$
-        if (validMentions.repository.length > 0) {
-            const escapedRepoNames = validMentions.repository
-                .filter(({ repoName }) => !!repoName)
-                .map(({ repoName }) => escapeRegExp(repoName || ''))
-                .join('|')
-            scopes.push(`(repo:^(${escapedRepoNames})$)`)
-        }
-
-        // Convert all local file mentions to combination of file & repo filters.
-        // Example: (repo:a file:myfile)
-        await Promise.all(
-            validMentions.file.map(async mention => {
-                const repoName =
-                    (mention as ContextItemFile).remoteRepositoryName ||
-                    (await getFirstRepoNameContainingUri(mention.uri))
-
-                const workspace = vscode.workspace.getWorkspaceFolder(mention.uri)
-                if (!repoName || !workspace) {
-                    return
-                }
-
-                const filePath = escapeRegExp(
-                    mention.uri.toString().split(`${workspace.name}/`)[1] || ''
-                )
-
-                if (!filePath || !repoName) {
-                    return
-                }
-
-                return scopes.push(`(file:^${filePath}$ repo:^${repoName}$)`)
-            })
-        )
-
-        // Convert all remote file & directory mentions to combination of file & repo filters.
-        // Example: (repo:a file:mydir)
-        // biome-ignore lint/complexity/noForEach: <explanation>
-        validMentions.openctx.forEach(mention => {
-            switch ((mention as ContextItemOpenCtx).providerUri) {
-                case REMOTE_FILE_PROVIDER_URI:
-                    {
-                        const filePath = escapeRegExp(mention.mention?.data?.filepath || '')
-                        const repoName = escapeRegExp(mention.mention?.data?.reponame || '')
-                        if (!filePath || !repoName) {
-                            return
-                        }
-                        scopes.push(`(file:^${filePath}$ repo:^${repoName}$)`)
-                    }
-                    break
-                case REMOTE_DIRECTORY_PROVIDER_URI: {
-                    const filePath = escapeRegExp(mention.mention?.data?.directoryPath || '')
-                    const repoName = escapeRegExp(mention.mention?.data?.repoName || '')
-                    if (!filePath || !repoName) {
-                        return
-                    }
-
-                    scopes.push(`(file:^${filePath} repo:^${repoName}$)`)
-                }
-            }
-        })
-
-        return scopes
-    }
-
-    private async handleEditMode({
-        requestID,
-        mode,
-        instruction,
-        context,
-        signal,
-        contextAlternatives,
-    }: {
-        requestID: string
-        instruction: PromptString
-        mode: 'edit' | 'insert'
-        context: ContextItem[]
-        signal: AbortSignal
-        contextAlternatives: RankedContext[]
-    }): Promise<void> {
-        signal.throwIfAborted()
-
-        this.chatBuilder.setLastMessageContext(context, contextAlternatives)
-        this.chatBuilder.setLastMessageIntent(mode)
-
-        const result = await executeCodyCommand(DefaultEditCommands.Edit, {
-            requestID,
-            runInChatMode: true,
-            userContextFiles: context,
-            configuration: {
-                instruction,
-                mode,
-                // Only document code uses non-edit (insert mode), set doc intent for Document code prompt
-                // to specialize cody command runner for document code case.
-                intent: mode === 'edit' ? 'edit' : 'doc',
-            },
-        })
-
-        if (result?.type !== 'edit' || !result.task) {
-            this.postError(new Error('Failed to execute edit command'), 'transcript')
-            return
-        }
-
-        const task = result.task
-
-        let responseMessage = `Here is the response for the ${task.intent} instruction:\n`
-
-        if (!task.diff && task.replacement) {
-            task.diff = [
-                {
-                    type: 'insertion',
-                    text: task.replacement,
-                    range: task.originalRange,
-                },
-            ]
-        }
-
-        task.diff?.map(diff => {
-            responseMessage += '\n```diff\n'
-            if (diff.type === 'deletion') {
-                responseMessage += task.document
-                    .getText(diff.range)
-                    .split('\n')
-                    .map(line => `- ${line}`)
-                    .join('\n')
-            }
-            if (diff.type === 'decoratedReplacement') {
-                responseMessage += diff.oldText
-                    .split('\n')
-                    .map(line => `- ${line}`)
-                    .join('\n')
-                responseMessage += diff.text
-                    .split('\n')
-                    .map(line => `+ ${line}`)
-                    .join('\n')
-            }
-            if (diff.type === 'insertion') {
-                responseMessage += diff.text
-                    .split('\n')
-                    .map(line => `+ ${line}`)
-                    .join('\n')
-            }
-            responseMessage += '\n```'
-        })
-
-        this.chatBuilder.addBotMessage(
-            {
-                text: ps`${PromptString.unsafe_fromLLMResponse(responseMessage)}`,
-            },
-            this.chatBuilder.selectedModel || ChatBuilder.NO_MODEL
-        )
-
-        void this.saveSession()
-        this.postViewTranscript()
-    }
-
-    private async computeContext(
-        { text, mentions }: HumanInput,
-        requestID: string,
-        editorState: SerializedPromptEditorState | null,
-        span: Span,
-        signal?: AbortSignal
-    ): Promise<RankedContext[]> {
-        try {
-            return wrapInActiveSpan('chat.computeContext', span => {
-                return this._computeContext({ text, mentions }, requestID, editorState, span, signal)
-            })
-        } catch (e) {
-            this.postError(new Error(`Unexpected error computing context, no context was used: ${e}`))
-            return [
-                {
-                    strategy: 'none',
-                    items: [],
-                },
-            ]
-        }
-    }
-
-    private async _computeContext(
-        { text, mentions }: HumanInput,
-        requestID: string,
-        editorState: SerializedPromptEditorState | null,
-        span: Span,
-        signal?: AbortSignal
-    ): Promise<RankedContext[]> {
-        // Remove context chips (repo, @-mentions) from the input text for context retrieval.
-        const inputTextWithoutContextChips = editorState
-            ? PromptString.unsafe_fromUserQuery(
-                  inputTextWithoutContextChipsFromPromptEditorState(editorState)
-              )
-            : text
-        const structuredMentions = toStructuredMentions(mentions)
-        const retrievedContextPromise = this.contextRetriever.retrieveContext(
-            structuredMentions,
-            inputTextWithoutContextChips,
-            span,
-            signal
-        )
-        const priorityContextPromise = retrievedContextPromise
-            .then(p => getPriorityContext(text, this.editor, p))
-            .catch(() => getPriorityContext(text, this.editor, []))
-        const openCtxContextPromise = getContextForChatMessage(text.toString(), signal)
-        const [priorityContext, retrievedContext, openCtxContext] = await Promise.all([
-            priorityContextPromise,
-            retrievedContextPromise.catch(e => {
-                this.postError(new Error(`Failed to retrieve search context: ${e}`))
-                return []
-            }),
-            openCtxContextPromise,
-        ])
-
-        const resolvedExplicitMentionsPromise = resolveContextItems(
-            this.editor,
-            [structuredMentions.symbols, structuredMentions.files, structuredMentions.openCtx].flat(),
-            text,
-            signal
-        )
-
-        return [
-            {
-                strategy: 'local+remote',
-                items: combineContext(
-                    await resolvedExplicitMentionsPromise,
-                    openCtxContext,
-                    priorityContext,
-                    retrievedContext
-                ),
-            },
-        ]
     }
 
     private submitOrEditOperation: AbortController | undefined
@@ -1639,166 +1228,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     // =======================================================================
     // #region chat request lifecycle methods
     // =======================================================================
-
-    /**
-     * Constructs the prompt and updates the UI with the context used in the prompt.
-     */
-    private async buildPrompt(
-        prompter: DefaultPrompter,
-        abortSignal: AbortSignal,
-        requestID: string,
-        codyApiVersion: number,
-        contextAlternatives?: RankedContext[]
-    ): Promise<PromptInfo> {
-        const { prompt, context } = await prompter.makePrompt(this.chatBuilder, codyApiVersion)
-        abortSignal.throwIfAborted()
-
-        // Update UI based on prompt construction. Includes the excluded context items to display in the UI
-        this.chatBuilder.setLastMessageContext(
-            [...context.used, ...context.ignored],
-            contextAlternatives
-        )
-
-        return { prompt, context }
-    }
-
-    private streamAssistantResponse(
-        requestID: string,
-        prompt: Message[],
-        model: ChatModel,
-        chatSpan: Span,
-        abortSignal: AbortSignal
-    ): void {
-        abortSignal.throwIfAborted()
-        this.postEmptyMessageInProgress(model)
-
-        tracer.startActiveSpan('chat.streamResponse', llmSpan => {
-            let firstTokenMeasured = false
-            function measureFirstToken() {
-                if (firstTokenMeasured) {
-                    return
-                }
-                firstTokenMeasured = true
-                llmSpan.addEvent('firstToken')
-            }
-
-            this.sendLLMRequest(
-                prompt,
-                requestID,
-                model,
-                {
-                    update: content => {
-                        measureFirstToken()
-                        this.postViewTranscript({
-                            speaker: 'assistant',
-                            text: PromptString.unsafe_fromLLMResponse(content),
-                            model,
-                        })
-                    },
-                    close: content => {
-                        measureFirstToken()
-                        recordExposedExperimentsToSpan(chatSpan)
-                        llmSpan.end()
-                        this.addBotMessage(
-                            requestID,
-                            PromptString.unsafe_fromLLMResponse(content),
-                            model
-                        ).finally(() => {
-                            chatSpan.end()
-                        })
-                    },
-                    error: (partialResponse, error) => {
-                        this.postError(error, 'transcript')
-                        if (isAbortErrorOrSocketHangUp(error)) {
-                            abortSignal.throwIfAborted()
-                        }
-                        try {
-                            // We should still add the partial response if there was an error
-                            // This'd throw an error if one has already been added
-                            this.addBotMessage(
-                                requestID,
-                                PromptString.unsafe_fromLLMResponse(partialResponse),
-                                model
-                            )
-                        } catch {
-                            console.error('Streaming Error', error)
-                        }
-                        recordErrorToSpan(llmSpan, error)
-                        chatSpan.end()
-                    },
-                },
-                abortSignal
-            )
-        })
-    }
-
-    /**
-     * Issue the chat request and stream the results back, updating the model and view
-     * with the response.
-     */
-    private async sendLLMRequest(
-        prompt: Message[],
-        requestID: string,
-        model: ChatModel,
-        callbacks: {
-            update: (response: string) => void
-            close: (finalResponse: string) => void
-            error: (completedResponse: string, error: Error) => void
-        },
-        abortSignal: AbortSignal
-    ): Promise<void> {
-        let lastContent = ''
-        const typewriter = new Typewriter({
-            update: content => {
-                lastContent = content
-                callbacks.update(content)
-            },
-            close: () => {
-                callbacks.close(lastContent)
-            },
-            error: error => {
-                callbacks.error(lastContent, error)
-            },
-        })
-
-        try {
-            const contextWindow = await firstResultFromOperation(
-                ChatBuilder.contextWindowForChat(this.chatBuilder)
-            )
-
-            const params = {
-                model,
-                maxTokensToSample: contextWindow.output,
-            } as CompletionParameters
-
-            // Set stream param only when the model is disabled for streaming.
-            if (model && modelsService.isStreamDisabled(model)) {
-                params.stream = false
-            }
-
-            const stream = await this.chatClient.chat(prompt, params, abortSignal, requestID)
-            for await (const message of stream) {
-                switch (message.type) {
-                    case 'change': {
-                        typewriter.update(message.text)
-                        break
-                    }
-                    case 'complete': {
-                        typewriter.close()
-                        typewriter.stop()
-                        break
-                    }
-                    case 'error': {
-                        typewriter.close()
-                        typewriter.stop(message.error)
-                    }
-                }
-            }
-        } catch (error: unknown) {
-            typewriter.close()
-            typewriter.stop(isAbortErrorOrSocketHangUp(error as Error) ? undefined : (error as Error))
-        }
-    }
 
     /**
      * Finalizes adding a bot message to the chat model and triggers an update to the view.
@@ -2256,18 +1685,6 @@ export function manipulateWebviewHTML(html: string, options: TransformHTMLOption
     }
 
     return html
-}
-
-// This is the manual ordering of the different retrieved and explicit context sources
-// It should be equivalent to the ordering of things in
-// ChatController:legacyComputeContext > context.ts:resolveContext
-function combineContext(
-    explicitMentions: ContextItem[],
-    openCtxContext: ContextItemOpenCtx[],
-    priorityContext: ContextItem[],
-    retrievedContext: ContextItem[]
-): ContextItem[] {
-    return [explicitMentions, openCtxContext, priorityContext, retrievedContext].flat()
 }
 
 async function joinModelWaitlist(): Promise<void> {
