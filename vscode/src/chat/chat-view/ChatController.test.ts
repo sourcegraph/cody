@@ -130,7 +130,7 @@ describe('ChatController', () => {
             signal: new AbortController().signal,
             source: 'chat',
         })
-        expect(postMessageSpy.mock.calls.at(5)?.at(0)).toStrictEqual<
+        expect(postMessageSpy.mock.calls.at(4)?.at(0)).toStrictEqual<
             Extract<ExtensionMessage, { type: 'transcript' }>
         >({
             type: 'transcript',
@@ -146,7 +146,7 @@ describe('ChatController', () => {
                     search: undefined,
                     error: undefined,
                     editorState: null,
-                    contextFiles: [],
+                    contextFiles: undefined,
                 },
                 {
                     speaker: 'assistant',
@@ -165,7 +165,7 @@ describe('ChatController', () => {
         await vi.runOnlyPendingTimersAsync()
         expect(mockChatClient.chat).toBeCalledTimes(1)
         expect(addBotMessageSpy).toHaveBeenCalledWith('1', ps`Test reply 1`, 'my-model')
-        expect(postMessageSpy.mock.calls.at(6)?.at(0)).toStrictEqual<
+        expect(postMessageSpy.mock.calls.at(5)?.at(0)).toStrictEqual<
             Extract<ExtensionMessage, { type: 'transcript' }>
         >({
             type: 'transcript',
@@ -369,7 +369,7 @@ describe('ChatController', () => {
         await vi.runOnlyPendingTimersAsync()
         expect(mockChatClient.chat).toBeCalledTimes(1)
         expect(addBotMessageSpy).toHaveBeenCalledWith('1', ps`Test partial reply`, 'my-model')
-        expect(postMessageSpy.mock.calls.at(7)?.at(0)).toStrictEqual<
+        expect(postMessageSpy.mock.calls.at(8)?.at(0)).toStrictEqual<
             Extract<ExtensionMessage, { type: 'transcript' }>
         >({
             type: 'transcript',
@@ -389,12 +389,12 @@ describe('ChatController', () => {
                 },
                 {
                     speaker: 'assistant',
-                    model: undefined,
+                    model: FIXTURE_MODEL.id,
                     error: errorToChatError(new Error('my-error')),
                     intent: undefined,
                     manuallySelectedIntent: undefined,
                     editorState: undefined,
-                    text: undefined,
+                    text: 'Test partial reply',
                     contextFiles: undefined,
                     search: undefined,
                 },

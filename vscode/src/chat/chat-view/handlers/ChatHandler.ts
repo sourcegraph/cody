@@ -81,7 +81,7 @@ export class ChatHandler implements AgentHandler {
         recorder.recordChatQuestionExecuted(corpusContext, { addMetadata: true, current: span })
 
         signal.throwIfAborted()
-        this.streamAssistantResponse(prompt, this.modelId, signal, chatBuilder, delegate)
+        this.streamAssistantResponse(requestID, prompt, this.modelId, signal, chatBuilder, delegate)
     }
 
     /**
@@ -89,6 +89,7 @@ export class ChatHandler implements AgentHandler {
      * with the response.
      */
     private async sendLLMRequest(
+        requestID: string,
         prompt: Message[],
         model: ChatModel,
         chatBuilder: ChatBuilder,
@@ -128,7 +129,7 @@ export class ChatHandler implements AgentHandler {
                 params.stream = false
             }
 
-            const stream = await this.chatClient.chat(prompt, params, abortSignal)
+            const stream = await this.chatClient.chat(prompt, params, abortSignal, requestID)
             for await (const message of stream) {
                 switch (message.type) {
                     case 'change': {
@@ -153,6 +154,7 @@ export class ChatHandler implements AgentHandler {
     }
 
     private streamAssistantResponse(
+        requestID: string,
         prompt: Message[],
         model: ChatModel,
         abortSignal: AbortSignal,
@@ -161,6 +163,7 @@ export class ChatHandler implements AgentHandler {
     ): void {
         abortSignal.throwIfAborted()
         this.sendLLMRequest(
+            requestID,
             prompt,
             model,
             chatBuilder,
@@ -189,6 +192,7 @@ export class ChatHandler implements AgentHandler {
                         text: PromptString.unsafe_fromLLMResponse(partialResponse),
                         model: this.modelId,
                     })
+                    delegate.postDone()
                     if (isAbortErrorOrSocketHangUp(error)) {
                         abortSignal.throwIfAborted()
                     }

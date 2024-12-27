@@ -852,7 +852,12 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                         // all the response generation logic was handled in this method.
                         // In future work, we should remove this special-casing and unify
                         // how new messages are posted to the transcript.
-                        if (messageInProgress?.search || messageInProgress?.error) {
+                        if (
+                            messageInProgress &&
+                            (['search', 'insert', 'edit'].includes(messageInProgress?.intent ?? '') ||
+                                messageInProgress?.search ||
+                                messageInProgress?.error)
+                        ) {
                             this.chatBuilder.addBotMessage(messageInProgress, model)
                         } else if (messageInProgress?.text) {
                             this.addBotMessage(requestID, messageInProgress.text, model)
