@@ -352,14 +352,6 @@
         "when": "cody.activated && cody.isGeneratingCommit"
       },
       {
-        "command": "cody.command.auto-edit",
-        "category": "Cody Command",
-        "group": "Cody Command",
-        "title": "Auto Edit Code at Cursor",
-        "icon": "$(surround-with)",
-        "enablement": "cody.activated && config.cody.internal.unstable"
-      },
-      {
         "command": "cody.auth.signout",
         "category": "Cody",
         "title": "Sign Out",
@@ -676,11 +668,6 @@
         "command": "cody.command.edit-code",
         "key": "alt+k",
         "when": "cody.activated && !editorReadonly"
-      },
-      {
-        "command": "cody.command.auto-edit",
-        "key": "alt+tab",
-        "when": "cody.activated && !editorReadonly && config.cody.internal.unstable"
       },
       {
         "command": "cody.command.execute-prompt",
