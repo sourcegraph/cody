@@ -21,7 +21,7 @@ export interface UserPromptArgs {
 }
 
 export interface UserPromptResponse {
-    codeToReplace: CodeToReplaceData
+    codeToReplaceData: CodeToReplaceData
     prompt: PromptString
 }
 
@@ -30,7 +30,7 @@ export interface UserPromptForModelArgs extends UserPromptArgs {
 }
 
 export interface UserPromptForModelResponse {
-    codeToReplace: CodeToReplaceData
+    codeToReplaceData: CodeToReplaceData
     prompt: AutoeditsPrompt
 }
 
@@ -45,14 +45,14 @@ export abstract class AutoeditsUserPromptStrategy {
         isChatModel,
         ...userPromptArgs
     }: UserPromptForModelArgs): UserPromptForModelResponse {
-        const { codeToReplace, prompt } = this.getUserPrompt(userPromptArgs)
+        const { codeToReplaceData, prompt } = this.getUserPrompt(userPromptArgs)
 
         const adjustedPrompt: AutoeditsPrompt = isChatModel
             ? { systemMessage: SYSTEM_PROMPT, userMessage: prompt }
             : { userMessage: getCompletionsPromptWithSystemPrompt(SYSTEM_PROMPT, prompt) }
 
         return {
-            codeToReplace,
+            codeToReplaceData,
             prompt: adjustedPrompt,
         }
     }

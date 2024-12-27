@@ -1,5 +1,5 @@
 import type { ChatClient, Message } from '@sourcegraph/cody-shared'
-import { autoeditsLogger } from '../logger'
+import { autoeditsOutputChannelLogger } from '../output-channel-logger'
 import type { AutoeditModelOptions, AutoeditsModelAdapter } from './base'
 import { getMaxOutputTokensForAutoedits, getSourcegraphCompatibleChatPrompt } from './utils'
 
@@ -38,7 +38,11 @@ export class SourcegraphChatAdapter implements AutoeditsModelAdapter {
             }
             return accumulated
         } catch (error) {
-            autoeditsLogger.logDebug('AutoEdits', 'Error calling Sourcegraph Chat:', error)
+            autoeditsOutputChannelLogger.logError(
+                'getModelResponse',
+                'Error calling Sourcegraph Chat:',
+                error
+            )
             throw error
         }
     }

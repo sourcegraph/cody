@@ -5,7 +5,7 @@ import type {
     ModelRefStr,
 } from '@sourcegraph/cody-shared'
 import { defaultCodeCompletionsClient } from '../../completions/default-client'
-import { autoeditsLogger } from '../logger'
+import { autoeditsOutputChannelLogger } from '../output-channel-logger'
 import type { AutoeditModelOptions, AutoeditsModelAdapter } from './base'
 import { getMaxOutputTokensForAutoedits, getSourcegraphCompatibleChatPrompt } from './utils'
 
@@ -48,7 +48,11 @@ export class SourcegraphCompletionsAdapter implements AutoeditsModelAdapter {
             }
             return accumulated
         } catch (error) {
-            autoeditsLogger.logDebug('AutoEdits', 'Error calling Sourcegraph Completions:', error)
+            autoeditsOutputChannelLogger.logError(
+                'getModelResponse',
+                'Error calling Sourcegraph Completions:',
+                error
+            )
             throw error
         }
     }

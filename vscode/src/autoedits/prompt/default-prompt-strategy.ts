@@ -1,7 +1,7 @@
 import { ps } from '@sourcegraph/cody-shared'
 
 import { RetrieverIdentifier } from '../../completions/context/utils'
-import { autoeditsLogger } from '../logger'
+import { autoeditsOutputChannelLogger } from '../output-channel-logger'
 
 import { AutoeditsUserPromptStrategy, type UserPromptArgs, type UserPromptResponse } from './base'
 import * as constants from './constants'
@@ -30,7 +30,7 @@ export class DefaultUserPromptStrategy extends AutoeditsUserPromptStrategy {
             context,
             tokenBudget.contextSpecificTokenLimit
         )
-        const { fileWithMarkerPrompt, areaPrompt, codeToReplace } = getCurrentFilePromptComponents({
+        const { fileWithMarkerPrompt, areaPrompt, codeToReplaceData } = getCurrentFilePromptComponents({
             docContext,
             document,
             position,
@@ -83,9 +83,9 @@ export class DefaultUserPromptStrategy extends AutoeditsUserPromptStrategy {
             constants.FINAL_USER_PROMPT
         )
 
-        autoeditsLogger.logDebug('AutoEdits', 'Prompt\n', finalPrompt)
+        autoeditsOutputChannelLogger.logDebug('getUserPrompt', 'Prompt\n', finalPrompt)
         return {
-            codeToReplace: codeToReplace,
+            codeToReplaceData,
             prompt: finalPrompt,
         }
     }

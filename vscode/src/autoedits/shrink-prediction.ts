@@ -5,10 +5,13 @@ import type { CodeToReplaceData } from './prompt/prompt-utils'
 /**
  * Shrinks the prediction by removing overlapping lines with the suffix.
  */
-export function shrinkPredictionUntilSuffix(
-    prediction: string,
-    { suffixInArea, suffixAfterArea, codeToRewrite }: CodeToReplaceData
-): string {
+export function shrinkPredictionUntilSuffix({
+    prediction,
+    codeToReplaceData: { suffixInArea, suffixAfterArea, codeToRewrite },
+}: {
+    prediction: string
+    codeToReplaceData: CodeToReplaceData
+}): string {
     if (prediction.length === 0) {
         return prediction
     }

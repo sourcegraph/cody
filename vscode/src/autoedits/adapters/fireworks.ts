@@ -1,5 +1,5 @@
 import { autoeditsProviderConfig } from '../autoedits-config'
-import { autoeditsLogger } from '../logger'
+import { autoeditsOutputChannelLogger } from '../output-channel-logger'
 
 import type { AutoeditModelOptions, AutoeditsModelAdapter } from './base'
 import {
@@ -16,7 +16,10 @@ export class FireworksAdapter implements AutoeditsModelAdapter {
             const apiKey = autoeditsProviderConfig.experimentalAutoeditsConfigOverride?.apiKey
 
             if (!apiKey) {
-                autoeditsLogger.logError('Autoedits', 'No api key provided in the config override')
+                autoeditsOutputChannelLogger.logError(
+                    'getModelResponse',
+                    'No api key provided in the config override'
+                )
                 throw new Error('No api key provided in the config override')
             }
             const response = await getModelResponse(option.url, body, apiKey)
@@ -25,7 +28,11 @@ export class FireworksAdapter implements AutoeditsModelAdapter {
             }
             return response.choices[0].text
         } catch (error) {
-            autoeditsLogger.logDebug('AutoEdits', 'Error calling Fireworks API:', error)
+            autoeditsOutputChannelLogger.logError(
+                'getModelResponse',
+                'Error calling Fireworks API:',
+                error
+            )
             throw error
         }
     }
