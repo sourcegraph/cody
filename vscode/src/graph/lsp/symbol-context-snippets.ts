@@ -127,6 +127,7 @@ async function getSnippetForLocationGetter(
     }
 
     const symbolContextSnippet = {
+        type: 'symbol',
         identifier: RetrieverIdentifier.LspLightRetriever,
         key: `${definitionUri}::${definitionRange.start.line}:${definitionRange.start.character}`,
         uri: definitionUri,

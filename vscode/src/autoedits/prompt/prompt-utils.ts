@@ -9,6 +9,12 @@ import {
     tokensToChars,
 } from '@sourcegraph/cody-shared'
 
+import { getTextFromNotebookCells } from '../../completions/context/retrievers/recent-user-actions/notebook-utils'
+import {
+    getActiveNotebookUri,
+    getCellIndexInActiveNotebookEditor,
+    getNotebookCells,
+} from '../../completions/context/retrievers/recent-user-actions/notebook-utils'
 import { RetrieverIdentifier } from '../../completions/context/utils'
 import { autoeditsOutputChannelLogger } from '../output-channel-logger'
 import { clip, splitLinesKeepEnds } from '../utils'
@@ -46,6 +52,7 @@ export interface CurrentFilePromptComponents {
 }
 
 interface CurrentFileContext {
+    filePath: PromptString
     codeToRewrite: PromptString
     codeToRewritePrefix: PromptString
     codeToRewriteSuffix: PromptString
@@ -106,7 +113,7 @@ export function getCurrentFilePromptComponents(
     )
 
     const filePrompt = getCurrentFileContextPromptWithPath(
-        PromptString.fromDisplayPath(options.document.uri),
+        currentFileContext.filePath,
         joinPromptsWithNewlineSeparator(
             constants.FILE_TAG_OPEN,
             fileWithMarker,
@@ -187,16 +194,81 @@ export function getCurrentFileContext(options: CurrentFilePromptOptions): Curren
         prefixBeforeArea: new vscode.Range(positionAtLineStart(minLine), positionAtLineStart(areaStart)),
         suffixAfterArea: new vscode.Range(positionAtLineEnd(areaEnd), positionAtLineEnd(maxLine)),
     }
+    const { prefixBeforeArea, suffixAfterArea } = getUpdatedCurrentFilePrefixAndSuffixOutsideArea(
+        document,
+        ranges.prefixBeforeArea,
+        ranges.suffixAfterArea
+    )
+
     // Convert ranges to PromptStrings
     return {
+        filePath: getCurrentFilePath(document),
         codeToRewrite: PromptString.fromDocumentText(document, ranges.codeToRewrite),
         codeToRewritePrefix: PromptString.fromDocumentText(document, ranges.codeToRewritePrefix),
         codeToRewriteSuffix: PromptString.fromDocumentText(document, ranges.codeToRewriteSuffix),
         prefixInArea: PromptString.fromDocumentText(document, ranges.prefixInArea),
         suffixInArea: PromptString.fromDocumentText(document, ranges.suffixInArea),
-        prefixBeforeArea: PromptString.fromDocumentText(document, ranges.prefixBeforeArea),
-        suffixAfterArea: PromptString.fromDocumentText(document, ranges.suffixAfterArea),
+        prefixBeforeArea,
+        suffixAfterArea,
         range: ranges.codeToRewrite,
+    }
+}
+
+export function getCurrentFilePath(document: vscode.TextDocument): PromptString {
+    const uri =
+        document.uri.scheme === 'vscode-notebook-cell'
+            ? getActiveNotebookUri() ?? document.uri
+            : document.uri
+    return PromptString.fromDisplayPath(uri)
+}
+
+export function getUpdatedCurrentFilePrefixAndSuffixOutsideArea(
+    document: vscode.TextDocument,
+    rangePrefixBeforeArea: vscode.Range,
+    rangeSuffixAfterArea: vscode.Range
+): {
+    prefixBeforeArea: PromptString
+    suffixAfterArea: PromptString
+} {
+    const { prefixBeforeAreaForNotebook, suffixAfterAreaForNotebook } =
+        getPrefixAndSuffixForAreaForNotebook(document)
+
+    const prefixBeforeArea = ps`${prefixBeforeAreaForNotebook}${PromptString.fromDocumentText(
+        document,
+        rangePrefixBeforeArea
+    )}`
+
+    const suffixAfterArea = ps`${PromptString.fromDocumentText(
+        document,
+        rangeSuffixAfterArea
+    )}${suffixAfterAreaForNotebook}`
+
+    return {
+        prefixBeforeArea,
+        suffixAfterArea,
+    }
+}
+
+export function getPrefixAndSuffixForAreaForNotebook(document: vscode.TextDocument): {
+    prefixBeforeAreaForNotebook: PromptString
+    suffixAfterAreaForNotebook: PromptString
+} {
+    const currentCellIndex = getCellIndexInActiveNotebookEditor(document)
+    if (currentCellIndex === -1) {
+        return {
+            prefixBeforeAreaForNotebook: ps``,
+            suffixAfterAreaForNotebook: ps``,
+        }
+    }
+    const activeNotebook = vscode.window.activeNotebookEditor?.notebook!
+    const notebookCells = getNotebookCells(activeNotebook)
+    const cellsBeforeCurrentCell = notebookCells.slice(0, currentCellIndex)
+    const cellsAfterCurrentCell = notebookCells.slice(currentCellIndex + 1)
+    const beforeContent = getTextFromNotebookCells(activeNotebook, cellsBeforeCurrentCell)
+    const afterContent = getTextFromNotebookCells(activeNotebook, cellsAfterCurrentCell)
+    return {
+        prefixBeforeAreaForNotebook: ps`${beforeContent}\n`,
+        suffixAfterAreaForNotebook: ps`\n${afterContent}`,
     }
 }
 

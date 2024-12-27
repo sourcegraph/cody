@@ -4,6 +4,7 @@ import { XMLBuilder } from 'fast-xml-parser'
 import * as vscode from 'vscode'
 import type { ContextRetriever, ContextRetrieverOptions } from '../../../types'
 import { RetrieverIdentifier } from '../../utils'
+import { getCellIndexInActiveNotebookEditor, getNotebookCells } from './notebook-utils'
 
 // XML builder instance for formatting diagnostic messages
 const XML_BUILDER = new XMLBuilder({ format: true })
@@ -40,12 +41,48 @@ export class DiagnosticsRetriever implements vscode.Disposable, ContextRetriever
         this.useCaretToIndicateErrorLocation = options.useCaretToIndicateErrorLocation ?? true
     }
 
-    public async retrieve({
+    public retrieve({
         document,
         position,
     }: ContextRetrieverOptions): Promise<AutocompleteContextSnippet[]> {
+        if (getCellIndexInActiveNotebookEditor(document) !== -1) {
+            // Handle the diagnostic error for the notebook
+            return this.getDiagnosticsForNotebook(position)
+        }
+        return this.getDiagnosticsForDocument(document, position)
+    }
+
+    private async getDiagnosticsForNotebook(
+        position: vscode.Position
+    ): Promise<AutocompleteContextSnippet[]> {
+        const activeNotebook = vscode.window.activeNotebookEditor?.notebook
+        if (!activeNotebook) {
+            return []
+        }
+        const notebookCells = getNotebookCells(activeNotebook)
+        const diagnostics = await Promise.all(
+            notebookCells.map(cell => {
+                const diagnostics = vscode.languages.getDiagnostics(cell.document.uri)
+                return this.getDiagnosticsPromptFromInformation(cell.document, position, diagnostics)
+            })
+        )
+        return diagnostics.flat().map(snippet => ({
+            ...snippet,
+            uri: activeNotebook!.uri,
+        }))
+    }
+
+    private async getDiagnosticsForDocument(
+        document: vscode.TextDocument,
+        position: vscode.Position
+    ): Promise<AutocompleteContextSnippet[]> {
         const diagnostics = vscode.languages.getDiagnostics(document.uri)
-        return this.getDiagnosticsPromptFromInformation(document, position, diagnostics)
+        const diagnosticsSnippets = await this.getDiagnosticsPromptFromInformation(
+            document,
+            position,
+            diagnostics
+        )
+        return diagnosticsSnippets
     }
 
     public async getDiagnosticsPromptFromInformation(
@@ -61,6 +98,7 @@ export class DiagnosticsRetriever implements vscode.Disposable, ContextRetriever
         )
         return Promise.all(
             diagnosticInfos.map(async info => ({
+                type: 'file',
                 identifier: this.identifier,
                 content: await this.getDiagnosticPromptMessage(info),
                 uri: document.uri,

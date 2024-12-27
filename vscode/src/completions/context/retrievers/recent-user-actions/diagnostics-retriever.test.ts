@@ -426,9 +426,15 @@ describe('DiagnosticsRetriever', () => {
                 diagnostics
             )
             expect(snippets).toHaveLength(3)
-            expect(snippets[0].startLine).toBe(9)
-            expect(snippets[1].startLine).toBe(13)
-            expect(snippets[2].startLine).toBe(5)
+            const expectedStartLines: number[] = [9, 13, 5]
+            for (const [index, snippet] of snippets.entries()) {
+                expect(snippet.type).toBe('file')
+                expect(snippet).toHaveProperty('startLine')
+                expect(snippet).toHaveProperty('endLine')
+                if (snippet.type === 'file') {
+                    expect(snippet.startLine).toBe(expectedStartLines[index])
+                }
+            }
         })
     })
 

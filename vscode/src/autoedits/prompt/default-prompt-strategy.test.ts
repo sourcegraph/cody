@@ -18,6 +18,7 @@ describe('DefaultUserPromptStrategy', () => {
         identifier: string,
         filePath = 'foo.ts'
     ): AutocompleteContextSnippet => ({
+        type: 'file',
         content,
         identifier,
         uri: testFileUri(filePath),

@@ -89,7 +89,7 @@ export class JaccardSimilarityRetriever extends CachedRetriever implements Conte
                     continue
                 }
 
-                matches.push({ ...match, uri })
+                matches.push({ type: 'file', uri, ...match })
             }
         }
 
@@ -245,6 +245,7 @@ export class JaccardSimilarityRetriever extends CachedRetriever implements Conte
 }
 
 interface JaccardMatchWithFilename extends JaccardMatch {
+    type: 'file'
     uri: URI
 }
 

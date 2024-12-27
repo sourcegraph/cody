@@ -536,6 +536,7 @@ class SymbolCollector {
                 // Skip module declarations because they can be too large.
                 // We still format them to queue the referenced types.
                 const snippet: AutocompleteContextSnippet = {
+                    type: 'symbol',
                     identifier: RetrieverIdentifier.TscRetriever,
                     symbol: sym.name,
                     content,
