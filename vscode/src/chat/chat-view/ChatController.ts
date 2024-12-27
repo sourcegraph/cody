@@ -17,7 +17,6 @@ import {
     ContextItemSource,
     DOTCOM_URL,
     type DefaultChatCommands,
-    DefaultEditCommands,
     type EventSource,
     FeatureFlag,
     type Guardrails,
@@ -98,7 +97,6 @@ import {
 } from '../../auth/auth-progress-indicator'
 import type { startTokenReceiver } from '../../auth/token-receiver'
 import { getCurrentUserId } from '../../auth/user'
-import { executeCodyCommand } from '../../commands/CommandsController'
 import { getContextFileFromUri } from '../../commands/context/file-path'
 import { getContextFileFromCursor } from '../../commands/context/selection'
 import { escapeRegExp } from '../../context/openctx/remoteFileSearch'
@@ -1050,17 +1048,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             )
         }
 
-        if (intent === 'edit' || intent === 'insert') {
-            return await this.handleEditMode({
-                requestID,
-                mode: intent,
-                instruction: inputTextWithoutContextChips,
-                context: corpusContext,
-                signal,
-                contextAlternatives,
-            })
-        }
-
         // Experimental Feature: Deep Cody
         if (isDeepCodyEnabled) {
             const agenticContext = await new DeepCodyAgent(
@@ -1287,97 +1274,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         })
 
         return scopes
-    }
-
-    private async handleEditMode({
-        requestID,
-        mode,
-        instruction,
-        context,
-        signal,
-        contextAlternatives,
-    }: {
-        requestID: string
-        instruction: PromptString
-        mode: 'edit' | 'insert'
-        context: ContextItem[]
-        signal: AbortSignal
-        contextAlternatives: RankedContext[]
-    }): Promise<void> {
-        signal.throwIfAborted()
-
-        this.chatBuilder.setLastMessageContext(context, contextAlternatives)
-        this.chatBuilder.setLastMessageIntent(mode)
-
-        const result = await executeCodyCommand(DefaultEditCommands.Edit, {
-            requestID,
-            runInChatMode: true,
-            userContextFiles: context,
-            configuration: {
-                instruction,
-                mode,
-                // Only document code uses non-edit (insert mode), set doc intent for Document code prompt
-                // to specialize cody command runner for document code case.
-                intent: mode === 'edit' ? 'edit' : 'doc',
-            },
-        })
-
-        if (result?.type !== 'edit' || !result.task) {
-            this.postError(new Error('Failed to execute edit command'), 'transcript')
-            return
-        }
-
-        const task = result.task
-
-        let responseMessage = `Here is the response for the ${task.intent} instruction:\n`
-
-        if (!task.diff && task.replacement) {
-            task.diff = [
-                {
-                    type: 'insertion',
-                    text: task.replacement,
-                    range: task.originalRange,
-                },
-            ]
-        }
-
-        task.diff?.map(diff => {
-            responseMessage += '\n```diff\n'
-            if (diff.type === 'deletion') {
-                responseMessage += task.document
-                    .getText(diff.range)
-                    .split('\n')
-                    .map(line => `- ${line}`)
-                    .join('\n')
-            }
-            if (diff.type === 'decoratedReplacement') {
-                responseMessage += diff.oldText
-                    .split('\n')
-                    .map(line => `- ${line}`)
-                    .join('\n')
-                responseMessage += diff.text
-                    .split('\n')
-                    .map(line => `+ ${line}`)
-                    .join('\n')
-            }
-            if (diff.type === 'insertion') {
-                responseMessage += diff.text
-                    .split('\n')
-                    .map(line => `+ ${line}`)
-                    .join('\n')
-            }
-            responseMessage += '\n```'
-        })
-
-        this.chatBuilder.addBotMessage(
-            {
-                text: ps`${PromptString.unsafe_fromLLMResponse(responseMessage)}`,
-            },
-            this.chatBuilder.selectedModel || ChatBuilder.NO_MODEL
-        )
-
-        void this.saveSession()
-        this.postViewTranscript()
     }
 
     private async computeContext(
