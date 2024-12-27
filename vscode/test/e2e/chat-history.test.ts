@@ -34,3 +34,42 @@ test.extend<ExpectedV2Events>({
     await expect(newHistoryItem).toBeVisible()
     await newHistoryItem.click()
 })
+
+test.extend<ExpectedV2Events>({
+    // list of events we expect this test to log, add to this list as needed
+    expectedV2Events: [
+        'cody.extension:installed',
+        'cody.auth.login:clicked',
+        'cody.auth.login:firstEver',
+        'cody.auth.login.token:clicked',
+        'cody.auth:connected',
+        'cody.chat-question:submitted',
+        'cody.chat-question:executed',
+        'cody.chatResponse:noCode',
+    ],
+})('delete chat from sidebar history view', async ({ page, sidebar }) => {
+    await sidebarSignin(page, sidebar)
+
+    const sidebarChat = getChatSidebarPanel(page)
+
+    const sidebarTabHistoryButton = sidebarChat.getByTestId('tab-history')
+
+    // Ensure the chat view is ready before we start typing
+    await expect(sidebarTabHistoryButton).toBeVisible()
+
+    const chatInput = getChatInputs(sidebarChat).first()
+    await chatInput.fill('Hey')
+    await chatInput.press('Enter')
+
+    await sidebarTabHistoryButton.click()
+
+    const newHistoryItem = sidebarChat.getByRole('button', { name: 'Hey' })
+    await expect(newHistoryItem).toBeVisible()
+    await newHistoryItem.click()
+
+    const deleteButton = sidebarChat.getByRole('button', { name: 'Delete chat' })
+    await expect(deleteButton).toBeVisible()
+    await deleteButton.click()
+
+    await expect(newHistoryItem).not.toBeVisible()
+})
