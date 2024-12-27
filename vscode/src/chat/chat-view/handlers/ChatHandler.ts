@@ -34,7 +34,16 @@ export class ChatHandler implements AgentHandler {
     ) {}
 
     public async handle(
-        { requestID, inputText, mentions, editorState, signal, chatBuilder }: AgentRequest,
+        {
+            requestID,
+            inputText,
+            mentions,
+            editorState,
+            signal,
+            chatBuilder,
+            recorder,
+            span,
+        }: AgentRequest,
         delegate: AgentHandlerDelegate
     ): Promise<void> {
         const contextResult = await this.computeContext(
@@ -62,8 +71,9 @@ export class ChatHandler implements AgentHandler {
         }
         const { prompt } = await this.buildPrompt(prompter, chatBuilder, signal, versions.codyAPIVersion)
 
-        signal.throwIfAborted()
+        recorder.recordChatQuestionExecuted(corpusContext, { addMetadata: true, current: span })
 
+        signal.throwIfAborted()
         this.streamAssistantResponse(prompt, this.modelId, signal, chatBuilder, delegate)
     }
 

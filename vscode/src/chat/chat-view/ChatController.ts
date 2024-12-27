@@ -149,6 +149,7 @@ import { type ContextRetriever, toStructuredMentions } from './ContextRetriever'
 import { InitDoer } from './InitDoer'
 import { getChatPanelTitle } from './chat-helpers'
 import { type HumanInput, getPriorityContext } from './context'
+import { AgentTelemetry } from './handlers/AgentTelemetry'
 import { getAgent } from './handlers/registry'
 import { DefaultPrompter, type PromptInfo } from './prompt'
 import { getPromptsMigrationInfo, startPromptsMigration } from './prompts-migration'
@@ -812,16 +813,29 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         }: Parameters<typeof this.handleUserMessage>[0],
         span: Span
     ): Promise<void> {
-        // const authStatus = currentAuthStatusAuthed()
+        span.addEvent('ChatController.sendChat')
 
         // Use default model if no model is selected.
-        const model = await firstResultFromOperation(ChatBuilder.resolvedModelForChat(this.chatBuilder))
+        const model = await wrapInActiveSpan('chat.resolveModel', () =>
+            firstResultFromOperation(ChatBuilder.resolvedModelForChat(this.chatBuilder))
+        )
         if (!model) {
-            return
+            throw new Error('No model selected, and no default chat model is available')
         }
-        console.log('# model', model)
+        this.chatBuilder.setSelectedModel(model)
 
-        const { intent } = await this.getIntentAndScores({
+        const recorder = await AgentTelemetry.create({
+            requestID,
+            chatModel: model,
+            source,
+            command,
+            sessionID: this.chatBuilder.sessionID,
+            traceId: span.spanContext().traceId,
+            promptText: inputText,
+        })
+        recorder.recordChatQuestionSubmitted(mentions)
+
+        const { intent, intentScores } = await this.getIntentAndScores({
             requestID,
             input: editorState
                 ? inputTextWithMappedContextChipsFromPromptEditorState(editorState)
@@ -831,6 +845,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             signal,
         })
         signal.throwIfAborted()
+
         this.chatBuilder.setLastMessageIntent(intent)
         this.postEmptyMessageInProgress(model)
 
@@ -842,9 +857,20 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             chatClient: this.chatClient,
             codyToolProvider: this.toolProvider,
         })
+
+        recorder.setIntentInfo({
+            userSpecifiedIntent:
+                manuallySelectedIntent && detectedIntent
+                    ? detectedIntent
+                    : this.featureCodyExperimentalOneBox
+                      ? 'auto'
+                      : 'chat',
+            detectedIntent: intent,
+            detectedIntentScores: intentScores,
+        })
+
         this.postEmptyMessageInProgress(model)
         let messageInProgress: ChatMessage | undefined = undefined
-
         await agent.handle(
             {
                 requestID,
@@ -853,6 +879,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 editorState,
                 signal,
                 chatBuilder: this.chatBuilder,
+                span,
+                recorder,
             },
             {
                 postError: (error: Error, type?: MessageErrorType): void => {
@@ -903,7 +931,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         const model = await wrapInActiveSpan('chat.resolveModel', () =>
             firstResultFromOperation(ChatBuilder.resolvedModelForChat(this.chatBuilder))
         )
-        console.log('# model', model)
         if (!model) {
             throw new Error('No model selected, and no default chat model is available')
         }
@@ -1051,7 +1078,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             if (!versions) {
                 throw new Error('unable to determine site version')
             }
-            const { prompt, context } = await this.buildPrompt(
+            const { prompt } = await this.buildPrompt(
                 prompter,
                 signal,
                 requestID,
@@ -1062,7 +1089,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             telemetryEvents['cody.chat-question/executed'].record(
                 {
                     ...telemetryProperties,
-                    context,
+                    context: corpusContext,
                     userSpecifiedIntent,
                     detectedIntent: intent,
                     detectedIntentScores: intentScores,
