@@ -278,6 +278,6 @@ export class KotlinFormatter extends Formatter {
     }
 
     public listSyntax(value: string): string {
-        return `List<${value}>`
+        return `List<${value || 'Any'}>`
     }
 }
