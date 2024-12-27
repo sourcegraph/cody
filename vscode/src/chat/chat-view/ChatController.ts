@@ -10,7 +10,6 @@ import {
     ClientConfigSingleton,
     type CodyClientConfig,
     type ContextItem,
-    type ContextItemOpenCtx,
     ContextItemSource,
     DOTCOM_URL,
     type DefaultChatCommands,
@@ -1679,18 +1678,6 @@ export function manipulateWebviewHTML(html: string, options: TransformHTMLOption
     }
 
     return html
-}
-
-// This is the manual ordering of the different retrieved and explicit context sources
-// It should be equivalent to the ordering of things in
-// ChatController:legacyComputeContext > context.ts:resolveContext
-export function combineContext(
-    explicitMentions: ContextItem[],
-    openCtxContext: ContextItemOpenCtx[],
-    priorityContext: ContextItem[],
-    retrievedContext: ContextItem[]
-): ContextItem[] {
-    return [explicitMentions, openCtxContext, priorityContext, retrievedContext].flat()
 }
 
 async function joinModelWaitlist(): Promise<void> {

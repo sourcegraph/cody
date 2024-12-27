@@ -3,6 +3,7 @@ import {
     type ChatModel,
     type CompletionParameters,
     type ContextItem,
+    type ContextItemOpenCtx,
     ContextItemSource,
     type Message,
     PromptString,
@@ -20,7 +21,7 @@ import {
 import { resolveContextItems } from '../../../editor/utils/editor-context'
 import { getCategorizedMentions } from '../../../prompt-builder/utils'
 import { ChatBuilder } from '../ChatBuilder'
-import { type ChatControllerOptions, combineContext } from '../ChatController'
+import type { ChatControllerOptions } from '../ChatController'
 import { type ContextRetriever, toStructuredMentions } from '../ContextRetriever'
 import { type HumanInput, getPriorityContext } from '../context'
 import { DefaultPrompter, type PromptInfo } from '../prompt'
@@ -289,4 +290,16 @@ export class ChatHandler implements AgentHandler {
             },
         ]
     }
+}
+
+// This is the manual ordering of the different retrieved and explicit context sources
+// It should be equivalent to the ordering of things in
+// ChatController:legacyComputeContext > context.ts:resolveContext
+function combineContext(
+    explicitMentions: ContextItem[],
+    openCtxContext: ContextItemOpenCtx[],
+    priorityContext: ContextItem[],
+    retrievedContext: ContextItem[]
+): ContextItem[] {
+    return [explicitMentions, openCtxContext, priorityContext, retrievedContext].flat()
 }

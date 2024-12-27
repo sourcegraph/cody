@@ -15,7 +15,7 @@ import type { HumanInput } from '../context'
 import { ChatHandler } from './ChatHandler'
 import type { AgentHandler } from './interfaces'
 
-export class ContextAgentHandler extends ChatHandler implements AgentHandler {
+export class DeepCodyHandler extends ChatHandler implements AgentHandler {
     constructor(
         modelId: string,
         contextRetriever: Pick<ContextRetriever, 'retrieveContext'>,

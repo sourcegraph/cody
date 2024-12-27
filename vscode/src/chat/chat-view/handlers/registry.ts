@@ -1,25 +1,30 @@
 import { ChatHandler } from './ChatHandler'
-import { ContextAgentHandler } from './ContextAgentHandler'
+import { DeepCodyHandler } from './DeepCodyHandler'
 import { SearchHandler } from './SearchHandler'
 import type { AgentHandler, AgentTools } from './interfaces'
 
-const agentRegister = new Map<string, (id: string, tools: AgentTools) => AgentHandler>()
+/**
+ * The agentRegistry registers agent handlers under IDs which can then be invoked
+ * at query time to retrieve the appropriate handler for a user request.
+ */
+const agentRegistry = new Map<string, (id: string, tools: AgentTools) => AgentHandler>()
 
-export const registerAgent = (id: string, ctr: (id: string, tools: AgentTools) => AgentHandler) =>
-    agentRegister.set(id, ctr)
+function registerAgent(id: string, ctr: (id: string, tools: AgentTools) => AgentHandler) {
+    agentRegistry.set(id, ctr)
+}
 
 export function getAgent(id: string, tools: AgentTools): AgentHandler {
-    if (!agentRegister.has(id)) {
+    if (!agentRegistry.has(id)) {
         // If id is not found, assume it's a base model
         const { contextRetriever, editor, chatClient } = tools
         return new ChatHandler(id, contextRetriever, editor, chatClient)
     }
-    return agentRegister.get(id)!(id, tools)
+    return agentRegistry.get(id)!(id, tools)
 }
 
 registerAgent(
     'sourcegraph::2023-06-01::deep-cody',
     (id: string, { contextRetriever, editor, chatClient, codyToolProvider }: AgentTools) =>
-        new ContextAgentHandler(id, contextRetriever, editor, chatClient, codyToolProvider)
+        new DeepCodyHandler(id, contextRetriever, editor, chatClient, codyToolProvider)
 )
 registerAgent('search', (_id: string, _tools: AgentTools) => new SearchHandler())
