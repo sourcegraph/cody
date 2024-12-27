@@ -15,7 +15,7 @@ const DEFAULT_SERVER_ENDPOINT = 'https://sourcegraph.sourcegraph.com'
 
 // To set:
 //
-localStorage.setItem('serverEndpoint', 'https://sourcegraph.sourcegraph.com')
+// localStorage.setItem('serverEndpoint', 'https://sourcegraph.test:3443')
 const serverEndpoint = localStorage.getItem('serverEndpoint') || DEFAULT_SERVER_ENDPOINT
 
 const accessTokenStorageKey = `accessToken:${serverEndpoint}`
