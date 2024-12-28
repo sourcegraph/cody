@@ -13,7 +13,7 @@ import type { ChatControllerOptions } from '../ChatController'
 import type { ContextRetriever } from '../ContextRetriever'
 import type { HumanInput } from '../context'
 import { ChatHandler } from './ChatHandler'
-import type { AgentHandler } from './interfaces'
+import type { AgentHandler, AgentHandlerDelegate } from './interfaces'
 
 export class DeepCodyHandler extends ChatHandler implements AgentHandler {
     constructor(
@@ -21,8 +21,7 @@ export class DeepCodyHandler extends ChatHandler implements AgentHandler {
         contextRetriever: Pick<ContextRetriever, 'retrieveContext'>,
         editor: ChatControllerOptions['editor'],
         chatClient: ChatControllerOptions['chatClient'],
-        private toolProvider: CodyToolProvider,
-        private postMessageCallback: (model: string) => void
+        private toolProvider: CodyToolProvider
     ) {
         super(modelId, contextRetriever, editor, chatClient)
     }
@@ -39,6 +38,7 @@ export class DeepCodyHandler extends ChatHandler implements AgentHandler {
         { text, mentions }: HumanInput,
         editorState: SerializedPromptEditorState | null,
         chatBuilder: ChatBuilder,
+        delegate: AgentHandlerDelegate,
         signal: AbortSignal
     ): Promise<{
         contextItems?: ContextItem[]
@@ -50,6 +50,7 @@ export class DeepCodyHandler extends ChatHandler implements AgentHandler {
             { text, mentions },
             editorState,
             chatBuilder,
+            delegate,
             signal
         )
         const isEnabled = chatBuilder.getMessages().length < 4
@@ -73,7 +74,10 @@ export class DeepCodyHandler extends ChatHandler implements AgentHandler {
             this.toolProvider.getTools(),
             baseContext
         )
-        agent.setStatusCallback(model => this.postMessageCallback(model))
+        // Use delegate instead of callback
+        agent.setStatusCallback(model => {
+            delegate.postMessageInProgress({ speaker: 'assistant', model })
+        })
         const agenticContext = await agent.getContext(requestID, signal)
         return { contextItems: [...baseContext, ...agenticContext] }
     }

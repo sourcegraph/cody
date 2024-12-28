@@ -57,6 +57,7 @@ export class ChatHandler implements AgentHandler {
             { text: inputText, mentions },
             editorState,
             chatBuilder,
+            delegate,
             signal
         )
         if (contextResult.error) {
@@ -223,6 +224,7 @@ export class ChatHandler implements AgentHandler {
         { text, mentions }: HumanInput,
         editorState: SerializedPromptEditorState | null,
         _chatBuilder: ChatBuilder,
+        _delegate: AgentHandlerDelegate,
         signal?: AbortSignal
     ): Promise<{
         contextItems?: ContextItem[]
