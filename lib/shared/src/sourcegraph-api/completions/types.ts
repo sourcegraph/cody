@@ -25,6 +25,17 @@ export interface Message {
 export interface CompletionResponse {
     completion: string
     stopReason?: string
+    metrics?: {
+        networkLatency?: number
+        processingTime?: number
+        totalTime?: number
+        usage?: {
+            input_tokens?: number // -1 if not available
+            output_tokens?: number // -1 if not available
+            cache_creation_input_tokens?: number
+            cache_read_input_tokens?: number
+        }
+    }
 }
 
 export interface CompletionParameters {

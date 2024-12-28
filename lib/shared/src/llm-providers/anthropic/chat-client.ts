@@ -119,35 +119,22 @@ export async function anthropicChatClient({
 
                     if (messageStreamEvent.type === 'message_stop') {
                         finalMessage = messageStreamEvent
+                        result.metrics = {
+                            networkLatency: networkStart - requestStart,
+                            processingTime: requestEnd - networkStart,
+                            totalTime: requestEnd - requestStart,
+                            usage: {
+                                input_tokens: finalMessage?.usage?.input_tokens ?? 0,
+                                output_tokens: finalMessage?.usage?.output_tokens ?? 0,
+                                cache_creation_input_tokens:
+                                    finalMessage?.usage?.cache_creation_input_tokens,
+                                cache_read_input_tokens: finalMessage?.usage?.cache_read_input_tokens,
+                            },
+                        }
+                        log?.onComplete(result)
                         break
                     }
                 }
-                // Track metrics
-                const metrics = {
-                    networkLatency: networkStart - requestStart,
-                    processingTime: requestEnd - networkStart,
-                    totalTime: requestEnd - requestStart,
-                    usage: {
-                        input_tokens: finalMessage.usage.input_tokens ?? -1,
-                        output_tokens: finalMessage.usage.output_tokens ?? -1,
-                        cache_creation_input_tokens: (finalMessage.usage as any)
-                            .cache_creation_input_tokens,
-                        cache_read_input_tokens: (finalMessage.usage as any).cache_read_input_tokens,
-                    },
-                }
-
-                result.metrics = {
-                    networkLatency: networkStart - requestStart,
-                    processingTime: requestEnd - networkStart,
-                    totalTime: requestEnd - requestStart,
-                    usage: {
-                        input_tokens: finalMessage?.usage?.input_tokens ?? 0,
-                        output_tokens: finalMessage?.usage?.output_tokens ?? 0,
-                        cache_creation_input_tokens: finalMessage?.usage?.cache_creation_input_tokens,
-                        cache_read_input_tokens: finalMessage?.usage?.cache_read_input_tokens,
-                    },
-                }
-
                 // Continue with existing stream handling
                 onAbort(signal, () => stream.controller.abort())
                 cb.onComplete()
