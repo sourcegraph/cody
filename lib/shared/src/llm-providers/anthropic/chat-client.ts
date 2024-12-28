@@ -1,6 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk'
 import type { ChatNetworkClientParams } from '..'
 import { CompletionStopReason, contextFiltersProvider, getCompletionsModelConfig, onAbort } from '../..'
+// import { logDebug } from '../../logger'
 
 export async function anthropicChatClient({
     params,
@@ -28,6 +29,7 @@ export async function anthropicChatClient({
     const result = {
         completion: '',
         stopReason: CompletionStopReason.StreamingChunk,
+        metrics: {},
     }
 
     try {
@@ -134,20 +136,17 @@ export async function anthropicChatClient({
                     },
                 }
 
-                // Log metrics
-                console.log('Cache Performance Metrics:')
-                console.log('Input Tokens:', metrics.usage.input_tokens)
-                console.log('Output Tokens:', metrics.usage.output_tokens)
-                if (metrics.usage.cache_creation_input_tokens !== undefined) {
-                    console.log('Cache Creation Tokens:', metrics.usage.cache_creation_input_tokens)
+                result.metrics = {
+                    networkLatency: networkStart - requestStart,
+                    processingTime: requestEnd - networkStart,
+                    totalTime: requestEnd - requestStart,
+                    usage: {
+                        input_tokens: finalMessage?.usage?.input_tokens ?? 0,
+                        output_tokens: finalMessage?.usage?.output_tokens ?? 0,
+                        cache_creation_input_tokens: finalMessage?.usage?.cache_creation_input_tokens,
+                        cache_read_input_tokens: finalMessage?.usage?.cache_read_input_tokens,
+                    },
                 }
-                if (metrics.usage.cache_read_input_tokens !== undefined) {
-                    console.log('Cache Read Tokens:', metrics.usage.cache_read_input_tokens)
-                }
-                console.log('networkLatency:', metrics.networkLatency)
-                console.log('processingTime:', metrics.processingTime)
-                console.log('totalTime:', metrics.totalTime)
-                console.log('---\n')
 
                 // Continue with existing stream handling
                 onAbort(signal, () => stream.controller.abort())
