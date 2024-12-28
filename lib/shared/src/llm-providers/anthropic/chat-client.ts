@@ -1,5 +1,4 @@
 import Anthropic from '@anthropic-ai/sdk'
-import type { MessageParam } from '@anthropic-ai/sdk/resources/messages.mjs'
 import type { ChatNetworkClientParams } from '..'
 import { CompletionStopReason, contextFiltersProvider, getCompletionsModelConfig, onAbort } from '../..'
 
@@ -32,25 +31,59 @@ export async function anthropicChatClient({
     }
 
     try {
-        const messages = (await Promise.all(
-            params.messages.map(async msg => ({
-                role: msg.speaker === 'human' ? 'user' : 'assistant',
-                content: [
-                    {
-                        type: 'text',
-                        text: (await msg.text?.toFilteredString(contextFiltersProvider)) ?? '',
-                        cache_control: { type: 'ephemeral' },
-                    },
-                ],
-            }))
-        )) as MessageParam[]
-        // Turns the first assistant message into a system prompt
+        const messages = await (async () => {
+            const rawMessages = await Promise.all(
+                params.messages.map(async msg => ({
+                    role: msg.speaker === 'human' ? 'user' : 'assistant',
+                    content: [
+                        {
+                            type: 'text',
+                            text: (await msg.text?.toFilteredString(contextFiltersProvider)) ?? '',
+                            cache_control: { type: 'ephemeral' },
+                        },
+                    ],
+                }))
+            )
+
+            const firstRole = rawMessages[0]?.role
+            const groupedMessages = {
+                user: [],
+                assistant: [],
+            } as Record<string, string[]>
+
+            // Collect non-empty texts by role
+            // biome-ignore lint/complexity/noForEach: <explanation>
+            rawMessages.forEach(msg => {
+                if (msg.content[0].text.trim()) {
+                    groupedMessages[msg.role].push(msg.content[0].text)
+                }
+            })
+
+            // Create array in the correct order based on first role
+            const orderedRoles =
+                firstRole === 'assistant' ? ['assistant', 'user'] : ['user', 'assistant']
+
+            const ret = orderedRoles
+                .filter(role => groupedMessages[role].length > 0)
+                .map(role => ({
+                    role,
+                    content: [
+                        {
+                            type: 'text',
+                            text: groupedMessages[role].join('\n\n'),
+                            cache_control: { type: 'ephemeral' },
+                        },
+                    ],
+                }))
+
+            return ret
+        })()
         const systemPrompt = messages[0]?.role !== 'user' ? messages.shift()?.content : ''
 
         anthropic.beta.tools.messages
             .create({
                 model,
-                messages,
+                messages: messages as any,
                 max_tokens: params.maxTokensToSample,
                 temperature: params.temperature,
                 top_k: params.topK,
@@ -87,17 +120,14 @@ export async function anthropicChatClient({
                         break
                     }
                 }
-
-                cb.onComplete()
-                log?.onComplete(result)
                 // Track metrics
                 const metrics = {
                     networkLatency: networkStart - requestStart,
                     processingTime: requestEnd - networkStart,
                     totalTime: requestEnd - requestStart,
                     usage: {
-                        input_tokens: finalMessage.usage.input_tokens,
-                        output_tokens: finalMessage.usage.output_tokens,
+                        input_tokens: finalMessage.usage.input_tokens ?? -1,
+                        output_tokens: finalMessage.usage.output_tokens ?? -1,
                         cache_creation_input_tokens: (finalMessage.usage as any)
                             .cache_creation_input_tokens,
                         cache_read_input_tokens: (finalMessage.usage as any).cache_read_input_tokens,
@@ -121,6 +151,8 @@ export async function anthropicChatClient({
 
                 // Continue with existing stream handling
                 onAbort(signal, () => stream.controller.abort())
+                cb.onComplete()
+                log?.onComplete(result)
             })
     } catch (e) {
         const error = new Error(`Anthropic Client Failed: ${e}`)

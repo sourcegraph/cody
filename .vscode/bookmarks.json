@@ -9,6 +9,21 @@
 					"label": ""
 				}
 			]
+		},
+		{
+			"path": "lib/shared/src/llm-providers/anthropic/chat-client.ts",
+			"bookmarks": [
+				{
+					"line": 137,
+					"column": 16,
+					"label": ""
+				},
+				{
+					"line": 138,
+					"column": 16,
+					"label": ""
+				}
+			]
 		}
 	]
 }
