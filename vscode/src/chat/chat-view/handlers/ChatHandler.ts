@@ -82,8 +82,6 @@ export class ChatHandler implements AgentHandler {
         recorder.recordChatQuestionExecuted(corpusContext, { addMetadata: true, current: span })
 
         signal.throwIfAborted()
-        // Display context in webview before sending the request.
-        delegate.postMessageInProgress({ speaker: 'assistant', model: this.modelId })
         this.streamAssistantResponse(requestID, prompt, this.modelId, signal, chatBuilder, delegate)
     }
 
