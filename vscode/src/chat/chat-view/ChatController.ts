@@ -807,6 +807,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             editor: this.editor,
             chatClient: this.chatClient,
             codyToolProvider: this.toolProvider,
+            postMessageCallback: model => this.postEmptyMessageInProgress(model),
         })
 
         recorder.setIntentInfo({

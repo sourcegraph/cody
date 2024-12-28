@@ -25,8 +25,18 @@ export function getAgent(id: string, tools: AgentTools): AgentHandler {
 
 registerAgent(
     'sourcegraph::2023-06-01::deep-cody',
-    (id: string, { contextRetriever, editor, chatClient, codyToolProvider }: AgentTools) =>
-        new DeepCodyHandler(id, contextRetriever, editor, chatClient, codyToolProvider)
+    (
+        id: string,
+        { contextRetriever, editor, chatClient, codyToolProvider, postMessageCallback }: AgentTools
+    ) =>
+        new DeepCodyHandler(
+            id,
+            contextRetriever,
+            editor,
+            chatClient,
+            codyToolProvider,
+            postMessageCallback
+        )
 )
 registerAgent('search', (_id: string, _tools: AgentTools) => new SearchHandler())
 registerAgent(

@@ -21,7 +21,8 @@ export class DeepCodyHandler extends ChatHandler implements AgentHandler {
         contextRetriever: Pick<ContextRetriever, 'retrieveContext'>,
         editor: ChatControllerOptions['editor'],
         chatClient: ChatControllerOptions['chatClient'],
-        private toolProvider: CodyToolProvider
+        private toolProvider: CodyToolProvider,
+        private postMessageCallback: (model: string) => void
     ) {
         super(modelId, contextRetriever, editor, chatClient)
     }
@@ -66,13 +67,14 @@ export class DeepCodyHandler extends ChatHandler implements AgentHandler {
         }
 
         const baseContext = baseContextResult.contextItems ?? []
-        const codyAgent = new DeepCodyAgent(
+        const agent = new DeepCodyAgent(
             chatBuilder,
             this.chatClient,
             this.toolProvider.getTools(),
             baseContext
         )
-        const agenticContext = await codyAgent.getContext(requestID, signal)
+        agent.setStatusCallback(model => this.postMessageCallback(model))
+        const agenticContext = await agent.getContext(requestID, signal)
         return { contextItems: [...baseContext, ...agenticContext] }
     }
 }

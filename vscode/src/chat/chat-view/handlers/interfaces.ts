@@ -17,6 +17,7 @@ export interface AgentTools {
     editor: ChatControllerOptions['editor']
     chatClient: ChatControllerOptions['chatClient']
     codyToolProvider: CodyToolProvider
+    postMessageCallback: (model: string) => void
 }
 
 /**
