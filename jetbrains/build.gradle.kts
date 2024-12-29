@@ -29,7 +29,7 @@ val isForceCodeSearchBuild = properties("forceCodeSearchBuild") == "true"
 // add it to this list. Remove unsupported old versions from this list.
 // Update gradle.properties pluginSinceBuild, pluginUntilBuild
 // to match the min, max versions in this list.
-val versionsOfInterest = listOf("2023.2", "2023.3", "2024.1", "2024.2.4").sorted()
+val versionsOfInterest = listOf("2023.2", "2023.3", "2024.1", "2024.2.4", "2024.3").sorted()
 val versionsToValidate =
     when (project.properties["validation"]?.toString()) {
       "lite" -> listOf(versionsOfInterest.first(), versionsOfInterest.last())

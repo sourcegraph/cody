@@ -182,8 +182,9 @@ class LocalStorage implements LocalStorageForModelPreferences {
     public getChatHistory(
         authStatus: Pick<AuthenticatedAuthStatus, 'endpoint' | 'username'>
     ): UserLocalHistory {
-        const history = this.storage.get<AccountKeyedChatHistory | null>(this.KEY_LOCAL_HISTORY, null)
         const accountKey = getKeyForAuthStatus(authStatus)
+        console.log('Getting chat history for account key:', accountKey)
+        const history = this.storage.get<AccountKeyedChatHistory | null>(this.KEY_LOCAL_HISTORY, null)
         return history?.[accountKey] ?? { chat: {} }
     }
 
@@ -191,25 +192,15 @@ class LocalStorage implements LocalStorageForModelPreferences {
         authStatus: Pick<AuthenticatedAuthStatus, 'endpoint' | 'username'>,
         history: UserLocalHistory
     ): Promise<void> {
-        try {
-            const key = getKeyForAuthStatus(authStatus)
-            let fullHistory = this.storage.get<AccountKeyedChatHistory | null>(
-                this.KEY_LOCAL_HISTORY,
-                null
-            )
-
-            if (fullHistory) {
-                fullHistory[key] = history
-            } else {
-                fullHistory = {
-                    [key]: history,
-                }
-            }
-
-            await this.set(this.KEY_LOCAL_HISTORY, fullHistory)
-        } catch (error) {
-            console.error(error)
+        const accountKey = getKeyForAuthStatus(authStatus)
+        console.log('Setting chat history for account key:', accountKey)
+        let fullHistory = this.storage.get<AccountKeyedChatHistory | null>(this.KEY_LOCAL_HISTORY, null)
+        if (fullHistory) {
+            fullHistory[accountKey] = history
+        } else {
+            fullHistory = { [accountKey]: history }
         }
+        await this.set(this.KEY_LOCAL_HISTORY, fullHistory)
     }
 
     public async importChatHistory(
@@ -217,15 +208,12 @@ class LocalStorage implements LocalStorageForModelPreferences {
         shouldMerge: boolean
     ): Promise<void> {
         if (shouldMerge) {
-            const fullHistory = this.storage.get<AccountKeyedChatHistory | null>(
-                this.KEY_LOCAL_HISTORY,
-                null
-            )
-
-            merge(history, fullHistory)
+            const fullHistory =
+                this.storage.get<AccountKeyedChatHistory | null>(this.KEY_LOCAL_HISTORY, null) ?? {}
+            await this.storage.update(this.KEY_LOCAL_HISTORY, merge({}, fullHistory, history))
+        } else {
+            await this.storage.update(this.KEY_LOCAL_HISTORY, history)
         }
-
-        await this.storage.update(this.KEY_LOCAL_HISTORY, history)
     }
 
     public async deleteChatHistory(authStatus: AuthenticatedAuthStatus, chatID: string): Promise<void> {
@@ -297,13 +285,15 @@ class LocalStorage implements LocalStorageForModelPreferences {
      * {@link LocalStorage.checkIfCreatedAnonymousUserID} to see if a new anonymous ID was created.
      */
     public anonymousUserID(): string {
-        let id = this.storage.get<string>(this.ANONYMOUS_USER_ID_KEY)
+        let id = this.storage.get<string>(this.ANONYMOUS_USER_ID_KEY);
         if (!id) {
-            this.createdAnonymousUserID = true
-            id = uuid.v4()
-            this.set(this.ANONYMOUS_USER_ID_KEY, id).catch(error => console.error(error))
+            this.createdAnonymousUserID = true;
+            id = uuid.v4();
+            console.log('Generated new anonymous user ID:', id);
+            this.set(this.ANONYMOUS_USER_ID_KEY, id).catch(error => console.error(error));
         }
-        return id
+        console.log('Retrieved anonymous user ID:', id);
+        return id;
     }
 
     private createdAnonymousUserID = false
@@ -389,6 +379,12 @@ export const localStorage = new LocalStorage()
 function getKeyForAuthStatus(
     authStatus: Pick<AuthenticatedAuthStatus, 'endpoint' | 'username'>
 ): ChatHistoryKey {
+    console.log(
+        'Generating key for endpoint:',
+        authStatus.endpoint,
+        'and username:',
+        authStatus.username
+    )
     return `${authStatus.endpoint}-${authStatus.username}`
 }
 

@@ -48,6 +48,10 @@ class ChatHistoryManager implements vscode.Disposable {
     ): Promise<void> {
         const history = localStorage.getChatHistory(authStatus)
         history.chat[chat.id] = chat
+        for (const chat of Object.values(history.chat)) {
+            console.log("chat.id: ", chat.id)
+            console.log("chat.interactions[0].humanMessage: ", chat.interactions[0].humanMessage.text)
+        }
         await localStorage.setChatHistory(authStatus, history)
         this.changeNotifications.next()
     }

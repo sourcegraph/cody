@@ -1912,9 +1912,11 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         })
     }
 
-    public async clearAndRestartSession(chatMessages?: ChatMessage[]): Promise<void> {
+    public async clearAndRestartSession(chatMessages?: ChatMessage[], shouldSave = true): Promise<void> {
         this.cancelSubmitOrEditOperation()
-        void this.saveSession()
+        if (shouldSave) {
+            void this.saveSession()
+        }
 
         this.chatBuilder = new ChatBuilder(this.chatBuilder.selectedModel, undefined, chatMessages)
         this.postViewTranscript()
