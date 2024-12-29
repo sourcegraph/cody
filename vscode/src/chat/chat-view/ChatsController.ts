@@ -81,8 +81,10 @@ export class ChatsController implements vscode.Disposable {
                     const hasSwitchedAccount =
                         this.currentAuthAccount &&
                         this.currentAuthAccount.endpoint !== authStatus.endpoint
-                    if (hasLoggedOut || hasSwitchedAccount) {
-
+                    if (hasLoggedOut) {
+                        this.disposeAllChats()
+                    }
+                    if (hasSwitchedAccount) {
                         // Update account reference before disposing
                         this.currentAuthAccount = authStatus.authenticated
                             ? { ...authStatus }
@@ -101,7 +103,7 @@ export class ChatsController implements vscode.Disposable {
 
                         // Clear panel without saving
                         if (this.panel) {
-                            this.panel.clearAndRestartSession([], false) // Add parameter to skip saving
+                            this.panel.clearAndRestartSession([], false)
                         }
                     }
                 })
