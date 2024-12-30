@@ -197,19 +197,26 @@ object CodyEditorUtil {
 
   fun findFileOrScratch(project: Project, uriString: String): VirtualFile? {
     try {
-      val uri = URI.create(uriString)
-
+      val normalizedUri = if (uriString.matches(Regex("^[A-Za-z]:.+"))) {
+        "file:///" + uriString.replace('\\', '/')
+      } else {
+        uriString
+      }
+      val uri = URI.create(normalizedUri)
       if (ConfigUtil.isIntegrationTestModeEnabled()) {
         return TempFileSystem.getInstance().refreshAndFindFileByPath(uri.path)
       } else {
-        val fixedUri = if (uriString.startsWith("untitled")) uri.withScheme("file") else uri
-        return LocalFileSystem.getInstance().refreshAndFindFileByNioFile(fixedUri.toPath())
+        val fixedUri = if (uriString.startsWith("untitled")) {
+        uri.withScheme("file")
+      } else uri
+        val path = fixedUri.toPath()
+        return LocalFileSystem.getInstance().refreshAndFindFileByNioFile(path)
       }
     } catch (e: URISyntaxException) {
       // Let's try scratch files
       val fileName = uriString.substringAfterLast(':').trimStart('/', '\\')
       return ScratchRootType.getInstance()
-          .findFile(project, fileName, ScratchFileService.Option.existing_only)
+        .findFile(project, fileName, ScratchFileService.Option.existing_only)
     }
   }
 
@@ -219,7 +226,12 @@ object CodyEditorUtil {
       content: String? = null
   ): VirtualFile? {
     try {
-      val uri = URI.create(uriString)
+      val normalizedUri = if (uriString.matches(Regex("^[A-Za-z]:.+"))) {
+        "file:///" + uriString.replace('\\', '/')
+      } else {
+        uriString
+      }
+      val uri = URI.create(normalizedUri)
 
       val fileUri = uri.withScheme("file")
       if (!fileUri.toPath().exists()) {

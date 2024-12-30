@@ -232,9 +232,15 @@ class CodyAgentClient(private val project: Project, private val webview: NativeW
     var fileName = "Untitled.$ext".removeSuffix(".")
     var outputDir: VirtualFile? =
         if (params.defaultUri != null) {
-          val defaultUriPath = Paths.get(params.defaultUri)
-          fileName = defaultUriPath.fileName.toString()
-          VfsUtil.findFile(defaultUriPath.parent, true)
+            try {
+                val defaultUriPath = Paths.get(params.defaultUri)
+                fileName = defaultUriPath.fileName.toString()
+                val parentDir = VfsUtil.findFile(defaultUriPath.parent, true)
+                parentDir
+            } catch (e: Exception) {
+                logger.error("code222: Error processing defaultUri", e)
+                null
+            }
         } else {
           project.guessProjectDir()
         }
@@ -248,9 +254,14 @@ class CodyAgentClient(private val project: Project, private val webview: NativeW
 
     val saveFileFuture = CompletableFuture<String>()
     runInEdt {
-      val dialog = FileChooserFactory.getInstance().createSaveFileDialog(descriptor, project)
-      val result = dialog.save(outputDir, fileName)
-      saveFileFuture.complete(result?.file?.path)
+        try {
+            val dialog = FileChooserFactory.getInstance().createSaveFileDialog(descriptor, project)
+            val result = dialog.save(outputDir, fileName)
+            saveFileFuture.complete(result?.file?.path)
+        } catch (e: Exception) {
+            logger.error("code222: Error in save dialog", e)
+            saveFileFuture.completeExceptionally(e)
+        }
     }
 
     return saveFileFuture
