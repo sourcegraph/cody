@@ -1,6 +1,7 @@
 import {
     type ContextItem,
     FeatureFlag,
+    type ProcessingStep,
     type SerializedPromptEditorState,
     featureFlagProvider,
     storeLastValue,
@@ -13,7 +14,7 @@ import type { ChatControllerOptions } from '../ChatController'
 import type { ContextRetriever } from '../ContextRetriever'
 import type { HumanInput } from '../context'
 import { ChatHandler } from './ChatHandler'
-import type { AgentHandler } from './interfaces'
+import type { AgentHandler, AgentHandlerDelegate } from './interfaces'
 
 export class DeepCodyHandler extends ChatHandler implements AgentHandler {
     constructor(
@@ -38,6 +39,7 @@ export class DeepCodyHandler extends ChatHandler implements AgentHandler {
         { text, mentions }: HumanInput,
         editorState: SerializedPromptEditorState | null,
         chatBuilder: ChatBuilder,
+        delegate: AgentHandlerDelegate,
         signal: AbortSignal
     ): Promise<{
         contextItems?: ContextItem[]
@@ -49,6 +51,7 @@ export class DeepCodyHandler extends ChatHandler implements AgentHandler {
             { text, mentions },
             editorState,
             chatBuilder,
+            delegate,
             signal
         )
         const isEnabled = chatBuilder.getMessages().length < 4
@@ -66,13 +69,14 @@ export class DeepCodyHandler extends ChatHandler implements AgentHandler {
         }
 
         const baseContext = baseContextResult.contextItems ?? []
-        const codyAgent = new DeepCodyAgent(
+        const agent = new DeepCodyAgent(
             chatBuilder,
             this.chatClient,
             this.toolProvider.getTools(),
-            baseContext
+            baseContext,
+            (steps: ProcessingStep[]) => delegate.postStatuses(steps)
         )
-        const agenticContext = await codyAgent.getContext(requestID, signal)
+        const agenticContext = await agent.getContext(requestID, signal)
         return { contextItems: [...baseContext, ...agenticContext] }
     }
 }

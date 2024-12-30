@@ -3,6 +3,7 @@ import {
     type ChatClient,
     type ContextItem,
     type Message,
+    type ProcessingStep,
     type PromptMixin,
     type PromptString,
     newPromptMixin,
@@ -19,18 +20,34 @@ export abstract class CodyChatAgent {
     protected readonly promptMixins: PromptMixin[] = []
     protected readonly toolHandlers: Map<string, CodyTool>
     protected statusCallback?: ToolStatusCallback
-    protected postMessageCallback?: (model: string) => void
+    private stepsManager?: ProcessManager
 
     constructor(
         protected readonly chatBuilder: ChatBuilder,
         protected readonly chatClient: Pick<ChatClient, 'chat'>,
         protected readonly tools: CodyTool[],
-        protected context: ContextItem[] = []
+        protected context: ContextItem[],
+        statusUpdateCallback?: (steps: ProcessingStep[]) => void
     ) {
         // Initialize handlers and mixins in constructor
         this.toolHandlers = new Map(tools.map(tool => [tool.config.tags.tag.toString(), tool]))
         this.initializeMultiplexer()
         this.promptMixins.push(newPromptMixin(this.buildPrompt()))
+
+        this.stepsManager = new ProcessManager(steps => {
+            statusUpdateCallback?.(steps)
+        })
+        this.statusCallback = {
+            onStart: () => {
+                this.stepsManager?.initializeStep()
+            },
+            onStream: (toolName, content) => {
+                this.stepsManager?.addStep(toolName, content)
+            },
+            onComplete: (toolName, error) => {
+                this.stepsManager?.completeStep(toolName, error)
+            },
+        }
     }
 
     protected initializeMultiplexer(): void {
@@ -84,29 +101,6 @@ export abstract class CodyChatAgent {
         const { explicitMentions, implicitMentions } = getCategorizedMentions(items)
         const MAX_SEARCH_ITEMS = 30
         return new DefaultPrompter(explicitMentions, implicitMentions.slice(-MAX_SEARCH_ITEMS))
-    }
-
-    public setStatusCallback(postMessage: (model: string) => void): void {
-        this.postMessageCallback = postMessage
-        const model = this.chatBuilder.selectedModel ?? ''
-
-        // Create a steps manager to handle state updates efficiently
-        const stepsManager = new ProcessManager(steps => {
-            this.chatBuilder.setLastMessageProcesses(steps)
-            this.postMessageCallback?.(model)
-        })
-
-        this.statusCallback = {
-            onStart: () => {
-                stepsManager.initializeStep()
-            },
-            onStream: (toolName, content) => {
-                stepsManager.addStep(toolName, content)
-            },
-            onComplete: (toolName, error) => {
-                stepsManager.completeStep(toolName, error)
-            },
-        }
     }
 
     // Abstract methods that must be implemented by derived classes

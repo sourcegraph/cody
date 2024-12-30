@@ -2,6 +2,7 @@ import type { Span } from '@opentelemetry/api'
 import type {
     ChatMessage,
     ContextItem,
+    ProcessingStep,
     PromptString,
     SerializedPromptEditorState,
 } from '@sourcegraph/cody-shared'
@@ -24,6 +25,7 @@ export interface AgentTools {
  */
 export interface AgentHandlerDelegate {
     postError(error: Error, type?: MessageErrorType): void
+    postStatuses(steps: ProcessingStep[]): void
     postMessageInProgress(message: ChatMessage): void
     postDone(ops?: { abort: boolean }): void
 }
