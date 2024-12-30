@@ -18,6 +18,7 @@ import {
     type Guardrails,
     ModelUsage,
     type NLSSearchDynamicFilter,
+    type ProcessingStep,
     PromptString,
     type SerializedChatInteraction,
     type SerializedChatTranscript,
@@ -841,6 +842,9 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     postMessageInProgress: (message?: ChatMessage): void => {
                         messageInProgress = message
                         this.postViewTranscript(message)
+                    },
+                    postStatuses: (steps: ProcessingStep[]): void => {
+                        this.chatBuilder.setLastMessageProcesses(steps)
                     },
                     postDone: (op?: { abort: boolean }): void => {
                         if (op?.abort) {

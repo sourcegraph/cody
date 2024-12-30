@@ -1,6 +1,7 @@
 import {
     type ContextItem,
     FeatureFlag,
+    type ProcessingStep,
     type SerializedPromptEditorState,
     featureFlagProvider,
     storeLastValue,
@@ -72,12 +73,9 @@ export class DeepCodyHandler extends ChatHandler implements AgentHandler {
             chatBuilder,
             this.chatClient,
             this.toolProvider.getTools(),
-            baseContext
+            baseContext,
+            (steps: ProcessingStep[]) => delegate.postStatuses(steps)
         )
-        // Use delegate instead of callback
-        agent.setStatusCallback(model => {
-            delegate.postMessageInProgress({ speaker: 'assistant', model })
-        })
         const agenticContext = await agent.getContext(requestID, signal)
         return { contextItems: [...baseContext, ...agenticContext] }
     }
