@@ -101,7 +101,7 @@ export interface SerializedChatMessage {
     intent?: ChatMessage['intent']
     manuallySelectedIntent?: ChatMessage['manuallySelectedIntent']
     search?: ChatMessage['search']
-    processes?: ChatMessage['processes']
+    processes?: ProcessingStep[] | undefined | null
 }
 
 export interface ChatError {
