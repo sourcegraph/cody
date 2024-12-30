@@ -1,12 +1,24 @@
 from aiohttp import web, ClientSession
+from urllib.parse import urlparse
 import asyncio
 
+target_url = ''
+port = 5050
+
 async def proxy_handler(request):
-    async with ClientSession() as session:
+    async with ClientSession(auto_decompress=False) as session:
         # Modify headers here
         headers = dict(request.headers)
-        del headers['Host']
 
+        # Reset the Host header to use target server host instead of the proxy host
+        if 'Host' in headers:
+            headers['Host'] = urlparse(target_url).netloc.split(':')[0]
+
+        # 'chunked' encoding results in error 400 from Cloudflare, removing it still keeps response chunked anyway
+        if 'Transfer-Encoding' in headers:
+            del headers['Transfer-Encoding']
+
+        # Use value of 'Authorization: Bearer' to fill 'X-Forwarded-User' and remove 'Authorization' header
         if 'Authorization' in headers:
             values = headers['Authorization'].split()
             if values and values[0] == 'Bearer':
@@ -20,23 +32,23 @@ async def proxy_handler(request):
             headers=headers,
             data=await request.read()
         ) as response:
-            # Stream the response back
             proxy_response = web.StreamResponse(
                 status=response.status,
                 headers=response.headers
             )
+
             await proxy_response.prepare(request)
 
-            async for chunk in response.content.iter_any():
-                await proxy_response.write(chunk)
+            # Stream the response back
+            async for chunk in response.content.iter_chunks():
+                await proxy_response.write(chunk[0])
 
+            await proxy_response.write_eof()
             return proxy_response
 
 app = web.Application()
 app.router.add_route('*', '/{path_info:.*}', proxy_handler)
 
-target_url = ''
-port = 5050
 
 if __name__ == '__main__':
     print('Usage:  python reverse_proxy.py [target_url] [proxy_port]')

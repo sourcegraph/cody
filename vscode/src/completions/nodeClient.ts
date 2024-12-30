@@ -88,13 +88,13 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
 
             const builder = new CompletionsResponseBuilder(apiVersion)
 
-            const { auth, configuration } = await currentResolvedConfig()
+            const { configuration } = await currentResolvedConfig()
             const headers = new Headers({
                 'Content-Type': 'application/json',
                 // Disable gzip compression since the sg instance will start to batch
                 // responses afterwards.
                 'Accept-Encoding': 'gzip;q=0',
-                ...(auth.accessToken ? { Authorization: `token ${auth.accessToken}` } : null),
+                Authorization: 'Bearer pkukielka',
                 ...configuration?.customHeaders,
                 ...requestParams.customHeaders,
                 ...getTraceparentHeaders(),
@@ -294,11 +294,11 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                 model: params.model,
             })
             try {
-                const { auth, configuration } = await currentResolvedConfig()
+                const { configuration } = await currentResolvedConfig()
                 const headers = new Headers({
                     'Content-Type': 'application/json',
                     'Accept-Encoding': 'gzip;q=0',
-                    ...(auth.accessToken ? { Authorization: `token ${auth.accessToken}` } : null),
+                    Authorization: 'Bearer pkukielka',
                     ...configuration.customHeaders,
                     ...requestParams.customHeaders,
                     ...getTraceparentHeaders(),

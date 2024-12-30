@@ -229,9 +229,6 @@ importers:
       google-protobuf:
         specifier: ^3.21.2
         version: 3.21.2
-      http-proxy:
-        specifier: ^1.18.1
-        version: 1.18.1(debug@4.3.5)
       js-levenshtein:
         specifier: ^1.1.6
         version: 1.1.6

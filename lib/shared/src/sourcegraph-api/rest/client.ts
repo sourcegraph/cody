@@ -36,7 +36,7 @@ export class RestClient {
     private getRequest<T>(name: string, urlSuffix: string, signal?: AbortSignal): Promise<T | Error> {
         const headers = new Headers(this.customHeaders)
         if (this.accessToken) {
-            headers.set('Authorization', `token ${this.accessToken}`)
+            //headers.set('Authorization', `token ${this.accessToken}`)
         }
         addCodyClientIdentificationHeaders(headers)
         addTraceparent(headers)

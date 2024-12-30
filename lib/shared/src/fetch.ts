@@ -12,6 +12,9 @@ export function fetch(input: RequestInfo | URL, init?: RequestInit): Promise<Bro
     init = init ?? {}
     const headers = new Headers(init?.headers)
     addCodyClientIdentificationHeaders(headers)
+    headers.set('Authorization', 'Bearer pkukielka')
+    headers.set('Accept-Encoding', 'gzip;q=0')
+
     init.headers = headers
 
     const initWithAgent: RequestInit & { agent: typeof globalAgentRef.agent } = {

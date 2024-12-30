@@ -1553,7 +1553,7 @@ export class SourcegraphGraphQLAPIClient {
         const headers = new Headers(config.configuration?.customHeaders as HeadersInit | undefined)
         headers.set('Content-Type', 'application/json; charset=utf-8')
         if (config.auth.accessToken) {
-            headers.set('Authorization', `token ${config.auth.accessToken}`)
+            //headers.set('Authorization', `token ${config.auth.accessToken}`)
         }
         if (config.clientState.anonymousUserID && !process.env.CODY_WEB_DONT_SET_SOME_HEADERS) {
             headers.set('X-Sourcegraph-Actor-Anonymous-UID', config.clientState.anonymousUserID)
@@ -1606,7 +1606,7 @@ export class SourcegraphGraphQLAPIClient {
         const headers = new Headers(config.configuration?.customHeaders as HeadersInit | undefined)
         headers.set('Content-Type', 'application/json; charset=utf-8')
         if (config.auth.accessToken) {
-            headers.set('Authorization', `token ${config.auth.accessToken}`)
+            //headers.set('Authorization', `token ${config.auth.accessToken}`)
         }
         if (config.clientState.anonymousUserID && !process.env.CODY_WEB_DONT_SET_SOME_HEADERS) {
             headers.set('X-Sourcegraph-Actor-Anonymous-UID', config.clientState.anonymousUserID)

@@ -70,7 +70,7 @@ class DefaultCodeCompletionsClient implements CodeCompletionsClient {
                 // c.f. https://github.com/microsoft/vscode/issues/173861
                 headers.set('Content-Type', 'application/json; charset=utf-8')
                 if (auth.accessToken) {
-                    headers.set('Authorization', `token ${auth.accessToken}`)
+                    //headers.set('Authorization', `token ${auth.accessToken}`)
                 }
 
                 if (tracingFlagEnabled) {
