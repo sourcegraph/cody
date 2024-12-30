@@ -106,7 +106,8 @@ describe('ChatController', () => {
             expect.any(AbortSignal),
             mockRequestID
         )
-    })
+    }, 1500)
+
     test('send, followup, and edit', { timeout: 1500 }, async () => {
         const postMessageSpy = vi
             .spyOn(chatController as any, 'postMessage')
