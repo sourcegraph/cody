@@ -1619,6 +1619,18 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                             startWith([]),
                             map(models => (models === pendingOperation ? [] : models))
                         ),
+                    agents: () =>
+                        modelsService.getModels(ModelUsage.Chat).pipe(
+                            startWith([]),
+                            map(models =>
+                                models === pendingOperation
+                                    ? []
+                                    : models.map(model => ({
+                                          id: model.id,
+                                          model,
+                                      }))
+                            )
+                        ),
                     highlights: parameters =>
                         promiseFactoryToObservable(() =>
                             graphqlClient.getHighlightedFileChunk(parameters)
@@ -1637,6 +1649,11 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                         return promiseFactoryToObservable(async () => {
                             this.chatBuilder.setSelectedModel(model)
                             await modelsService.setSelectedModel(ModelUsage.Chat, model)
+                        })
+                    },
+                    setAgent: agentID => {
+                        return promiseFactoryToObservable(async () => {
+                            // TODO(beyang)
                         })
                     },
                     defaultContext: () => defaultContext.pipe(skipPendingOperation()),
