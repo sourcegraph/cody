@@ -1,11 +1,8 @@
 import path from 'node:path'
-import { PromptString, graphqlClient, isError } from '@sourcegraph/cody-shared'
-import { SourcegraphNodeCompletionsClient } from '../../../../vscode/src/completions/nodeClient'
-import { rewriteKeywordQuery } from '../../../../vscode/src/local-context/rewrite-keyword-query'
+import { graphqlClient, isError } from '@sourcegraph/cody-shared'
 import { version } from '../../../package.json'
 import type { CodyBenchOptions } from './command-bench'
 import {
-    type ClientOptions,
     type EvalContextItem,
     type Example,
     type ExampleOutput,
@@ -14,7 +11,7 @@ import {
     writeYAMLMetadata,
 } from './strategy-chat-context-types'
 
-export async function evaluateChatContextStrategy(options: CodyBenchOptions): Promise<void> {
+export async function evaluateNLSStrategy(options: CodyBenchOptions): Promise<void> {
     const inputFilename = options.fixture.customConfiguration?.['cody-bench.chatContext.inputFile']
     if (options.insecureTls) {
         process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'
@@ -25,14 +22,6 @@ export async function evaluateChatContextStrategy(options: CodyBenchOptions): Pr
         )
     }
     const inputBasename = path.basename(inputFilename).replace(/\.csv$/, '')
-
-    const clientOptions: ClientOptions = options.fixture.customConfiguration?.[
-        'cody-bench.chatContext.clientOptions'
-    ] ?? {
-        rewrite: false,
-        codeResultsCount: 15,
-        textResultsCount: 5,
-    }
 
     const siteVersion = await graphqlClient.getSiteVersion()
     if (isError(siteVersion)) {
@@ -62,12 +51,11 @@ export async function evaluateChatContextStrategy(options: CodyBenchOptions): Pr
 
     const examples = await readExamplesFromCSV(inputFile)
 
-    const outputs = await runContextCommand(clientOptions, examples)
+    const outputs = await runNLSSearch(examples)
     const codyClientVersion = process.env.CODY_COMMIT ?? version
     await writeExamplesToCSV(outputCSVFile, outputs)
     await writeYAMLMetadata(outputYAMLFile, {
         evaluatedAt: currentTimestamp,
-        clientOptions,
         codyClientVersion,
         siteUserMetadata: {
             url: options.srcEndpoint,
@@ -79,73 +67,62 @@ export async function evaluateChatContextStrategy(options: CodyBenchOptions): Pr
     })
 }
 
-async function runContextCommand(
-    clientOpts: ClientOptions,
-    examples: Example[]
-): Promise<ExampleOutput[]> {
-    const completionsClient = new SourcegraphNodeCompletionsClient()
+async function runNLSSearch(examples: Example[]): Promise<ExampleOutput[]> {
     const exampleOutputs: ExampleOutput[] = []
 
     for (const example of examples) {
-        const { targetRepoRevs, query: origQuery } = example
+        const { targetRepoRevs, query } = example
         const repoNames = targetRepoRevs.map(repoRev => repoRev.repoName)
-        const repoIDNames = await graphqlClient.getRepoIds(repoNames, repoNames.length + 10)
-        if (isError(repoIDNames)) {
-            throw new Error(`getRepoIds failed for [${repoNames.join(',')}]: ${repoIDNames}`)
-        }
-        if (repoIDNames.length !== repoNames.length) {
-            throw new Error(
-                `repoIDs.length (${repoIDNames.length}) !== repoNames.length (${
-                    repoNames.length
-                }), repoNames were (${repoNames.join(', ')})`
-            )
-        }
-        const repoIDs = repoIDNames.map(repoIDName => repoIDName.id)
+        const repoFilter = 'repo:' + repoNames.join('|')
 
-        let query = origQuery
-        if (clientOpts.rewrite) {
-            query = await rewriteKeywordQuery(
-                completionsClient,
-                PromptString.unsafe_fromUserQuery(origQuery)
-            )
-        }
-
-        const resultsResp = await graphqlClient.contextSearchEvalDebug({
-            repoIDs,
-            query,
-            filePatterns: [],
-            codeResultsCount: clientOpts.codeResultsCount,
-            textResultsCount: clientOpts.textResultsCount,
+        const fullQuery = repoFilter + ' ' + query
+        const resultsResp = await graphqlClient.nlsSearchQuery({
+            query: fullQuery,
         })
 
         if (isError(resultsResp)) {
             throw new Error(
-                `contextSearch failed for repos [${repoNames.join(
+                `NLS search failed for repos [${repoNames.join(
                     ','
                 )}] and query "${query}": ${resultsResp}`
             )
         }
-        if (resultsResp === null) {
-            throw new Error(
-                `contextSearch failed for repos [${repoNames.join(
-                    ','
-                )}] and query "${query}": null results`
-            )
-        }
 
-        const results = resultsResp ?? []
+        const results = resultsResp.results.results
         const actualContext: EvalContextItem[] = []
-        for (const contextList of results) {
-            actualContext.push(
-                ...contextList.contextList.map(result => ({
-                    repoName: result.repoName.replace(/^github\.com\//, ''),
-                    path: result.path,
-                    startLine: result.startLine,
-                    endLine: result.endLine,
-                    content: result.content,
-                    retriever: contextList.name,
-                }))
-            )
+        for (const result of results) {
+            if (result.__typename === 'unknown') {
+                throw new Error('NLS search returned a result with unknown type')
+            }
+
+            const chunkMatches = result.chunkMatches ?? []
+            const symbols = result.symbols ?? []
+            let startLine = 0
+            let endLine = 0
+            let content = ''
+
+            // Convert the chunk and symbol matches to the benchmark result format. We add 1 to all line numbers
+            // because the eval annotations use 1-based line indexing.
+            if (chunkMatches.length > 0) {
+                startLine = chunkMatches[0].contentStart.line + 1
+                endLine = startLine + chunkMatches[0].content.split('\n').length
+                content = chunkMatches[0].content
+            } else if (symbols.length > 0) {
+                startLine = symbols[0].location.range.start.line + 1
+                // Make sure the match is at least 3 lines long, because the eval framework requires an overlap of 3
+                // for a match to be 'correct'. This is a bit arbitrary, but is necessary until we refine the evals.
+                endLine = startLine + 3
+                content = symbols[0].name
+            }
+
+            actualContext.push({
+                repoName: result.repository.name.replace(/^github\.com\//, ''),
+                path: result.file.path,
+                startLine: startLine,
+                endLine: endLine,
+                content: content,
+                retriever: 'default',
+            })
         }
         exampleOutputs.push({
             ...example,
