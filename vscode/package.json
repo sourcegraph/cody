@@ -469,21 +469,6 @@
         "icon": "$(layout-sidebar-left)"
       },
       {
-        "command": "cody.minion.panel.new",
-        "category": "Cody",
-        "title": "New Minion Panel",
-        "when": "cody.activated",
-        "group": "Cody",
-        "icon": "$(new-comment-icon)"
-      },
-      {
-        "command": "cody.minion.new-terminal",
-        "category": "Cody",
-        "title": "Minion new terminal - temporary test command",
-        "when": "cody.activated",
-        "group": "Cody"
-      },
-      {
         "command": "cody.chat.view.popOut",
         "category": "Cody",
         "title": "Pop out",
