@@ -1,7 +1,6 @@
 import {
     type ChatMessage,
     FAST_CHAT_INPUT_TOKEN_BUDGET,
-    FIXTURE_MODEL,
     FeatureFlag,
     type Model,
     ModelTag,
@@ -37,7 +36,7 @@ import { useExperimentalOneBox } from '../../../../../utils/useExperimentalOneBo
 import { useFeatureFlag } from '../../../../../utils/useFeatureFlags'
 import styles from './HumanMessageEditor.module.css'
 import type { SubmitButtonState } from './toolbar/SubmitButton'
-import { Toolbar } from './toolbar/Toolbar'
+import { Toolbar2 } from './toolbar/Toolbar2'
 
 /**
  * A component to compose and edit human chat messages and the settings associated with them.
@@ -455,7 +454,7 @@ export const HumanMessageEditor: FunctionComponent<{
                 contentEditableClassName={styles.editorContentEditable}
             />
             {!disabled && (
-                <Toolbar
+                <Toolbar2
                     models={models}
                     userInfo={userInfo}
                     isEditorFocused={focused}

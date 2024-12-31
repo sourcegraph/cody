@@ -7,7 +7,7 @@ import type { CodyCommand } from '../../commands/types'
 import type { FeatureFlag } from '../../experimentation/FeatureFlagProvider'
 import type { ContextMentionProviderMetadata } from '../../mentions/api'
 import type { MentionQuery } from '../../mentions/query'
-import type { Model } from '../../models/model'
+import type { Model, OmniboxAgent } from '../../models/model'
 import type {
     FetchHighlightFileParameters,
     Prompt,
@@ -56,6 +56,11 @@ export interface WebviewToExtensionAPI {
      */
     chatModels(): Observable<Model[]>
 
+    /**
+     * List of available agents. Replaces `chatModels`.
+     */
+    agents(): Observable<OmniboxAgent[]>
+
     highlights(query: FetchHighlightFileParameters): Observable<string[][]>
 
     hydratePromptMessage(
@@ -67,6 +72,11 @@ export interface WebviewToExtensionAPI {
      * Set the chat model.
      */
     setChatModel(model: Model['id']): Observable<void>
+
+    /**
+     * Sets the agent ID. Replaces setChatModel.
+     */
+    setAgent(agentID: string): Observable<void>
 
     /**
      * Observe the default context that should be populated in the chat message input field and suggestions.
@@ -123,10 +133,12 @@ export function createExtensionAPI(
         clientActionBroadcast: proxyExtensionAPI(messageAPI, 'clientActionBroadcast'),
         models: proxyExtensionAPI(messageAPI, 'models'),
         chatModels: proxyExtensionAPI(messageAPI, 'chatModels'),
+        agents: proxyExtensionAPI(messageAPI, 'agents'),
         highlights: proxyExtensionAPI(messageAPI, 'highlights'),
         hydratePromptMessage: promptText =>
             hydratePromptMessage(promptText, staticDefaultContext?.initialContext),
         setChatModel: proxyExtensionAPI(messageAPI, 'setChatModel'),
+        setAgent: proxyExtensionAPI(messageAPI, 'setAgent'),
         defaultContext: staticDefaultContext
             ? () => Observable.of(staticDefaultContext)
             : proxyExtensionAPI(messageAPI, 'defaultContext'),
