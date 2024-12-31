@@ -1,4 +1,4 @@
-import { type Model, OmniboxAgent, type ServerModel, createModelFromServerModel } from './model'
+import { type Model, type OmniboxAgent, type ServerModel, createModelFromServerModel } from './model'
 import type { ServerModelConfiguration } from './modelsService'
 import type { ModelTag } from './tags'
 

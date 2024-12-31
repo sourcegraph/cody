@@ -1,9 +1,10 @@
 import type { Action, ChatMessage, Model } from '@sourcegraph/cody-shared'
+import type { OmniboxAgent } from '@sourcegraph/cody-shared/src/models/model'
 import { useExtensionAPI, useObservable } from '@sourcegraph/prompt-editor'
 import clsx from 'clsx'
 import { type FunctionComponent, useCallback, useMemo } from 'react'
 import type { UserAccountInfo } from '../../../../../../Chat'
-import { ModelSelectField } from '../../../../../../components/modelSelectField/ModelSelectField'
+import { AgentSelectField } from '../../../../../../components/modelSelectField/AgentSelectField'
 import { PromptSelectField } from '../../../../../../components/promptSelectField/PromptSelectField'
 import toolbarStyles from '../../../../../../components/shadcn/ui/toolbar.module.css'
 import { useActionSelect } from '../../../../../../prompts/PromptsTab'
@@ -139,7 +140,7 @@ const ModelSelectFieldToolbarItem: FunctionComponent<{
     console.log('# agents', agents)
 
     const onModelSelect = useCallback(
-        (model: Model) => {
+        (model: OmniboxAgent) => {
             // api.setChatModel(model.id).subscribe({
             //     error: error => console.error('setChatModel:', error),
             // })
@@ -151,7 +152,7 @@ const ModelSelectFieldToolbarItem: FunctionComponent<{
     return (
         !!models?.length &&
         (userInfo.isDotComUser || serverSentModelsEnabled) && (
-            <ModelSelectField
+            <AgentSelectField
                 models={models}
                 onModelSelect={onModelSelect}
                 serverSentModelsEnabled={serverSentModelsEnabled}
