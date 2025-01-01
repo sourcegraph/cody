@@ -1,6 +1,7 @@
 import type Anthropic from '@anthropic-ai/sdk'
 import type { ContentBlock, MessageParam, Tool, ToolResultBlockParam } from '@anthropic-ai/sdk/resources'
 import { PromptString } from '@sourcegraph/cody-shared'
+import type { MessagePiece } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import * as vscode from 'vscode'
 import type { AgentHandler, AgentHandlerDelegate, AgentRequest } from './interfaces'
 
@@ -77,10 +78,11 @@ export class ToolHandler implements AgentHandler {
                 content: inputText.toString(),
             },
         ]
+        const subViewTranscript: MessagePiece[] = []
+        let messageInProgress: MessagePiece | undefined
         while (true) {
             const toolCalls: ToolCall[] = []
             await new Promise<void>((resolve, reject) => {
-                console.log('# sending request', subTranscript)
                 this.anthropicAPI.messages
                     .stream(
                         {
@@ -96,11 +98,13 @@ export class ToolHandler implements AgentHandler {
                         }
                     )
                     .on('text', (_textDelta, textSnapshot) => {
-                        console.log('stream: ', textSnapshot)
-                        delegate.postMessageInProgress({
-                            speaker: 'assistant',
-                            text: PromptString.unsafe_fromUserQuery(textSnapshot),
-                        })
+                        messageInProgress = {
+                            message: {
+                                speaker: 'assistant',
+                                text: PromptString.unsafe_fromUserQuery(textSnapshot),
+                            },
+                        }
+                        delegate.postAgentMessageInProgress([...subViewTranscript, messageInProgress])
                     })
                     .on('contentBlock', (contentBlock: ContentBlock) => {
                         switch (contentBlock.type) {
@@ -110,6 +114,27 @@ export class ToolHandler implements AgentHandler {
                                     name: contentBlock.name,
                                     input: contentBlock.input,
                                 })
+                                subViewTranscript.push(
+                                    messageInProgress || {
+                                        step: {
+                                            id: contentBlock.name,
+                                            content: `Invoking tool ${
+                                                contentBlock.name
+                                            }(${JSON.stringify(contentBlock.input)})`,
+                                            status: 'pending',
+                                        },
+                                    }
+                                )
+                                messageInProgress = undefined
+                                break
+                            case 'text':
+                                subViewTranscript.push({
+                                    message: {
+                                        speaker: 'assistant',
+                                        text: PromptString.unsafe_fromUserQuery(contentBlock.text),
+                                    },
+                                })
+                                messageInProgress = undefined
                                 break
                         }
                     })
@@ -141,7 +166,7 @@ export class ToolHandler implements AgentHandler {
                 }
                 console.log('# using tool', toolCall)
                 const output = await tool.invoke(toolCall.input)
-                console.log('# tool output', output)
+                // console.log('# tool output', output)
                 toolResults.push({
                     type: 'tool_result',
                     tool_use_id: toolCall.id,

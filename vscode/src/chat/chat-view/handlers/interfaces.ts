@@ -6,6 +6,7 @@ import type {
     PromptString,
     SerializedPromptEditorState,
 } from '@sourcegraph/cody-shared'
+import type { MessagePiece } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import type { MessageErrorType } from '../../MessageProvider'
 import type { CodyToolProvider } from '../../agentic/CodyToolProvider'
 import type { ChatBuilder } from '../ChatBuilder'
@@ -27,6 +28,9 @@ export interface AgentHandlerDelegate {
     postError(error: Error, type?: MessageErrorType): void
     postStatuses(steps: ProcessingStep[]): void
     postMessageInProgress(message: ChatMessage): void
+
+    postAgentMessageInProgress(pieces: MessagePiece[]): void
+
     postDone(ops?: { abort: boolean }): void
 }
 

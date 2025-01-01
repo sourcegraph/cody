@@ -15,6 +15,7 @@ import {
 } from '@sourcegraph/cody-shared'
 import type { PromptEditorRefAPI } from '@sourcegraph/prompt-editor'
 import isEqual from 'lodash/isEqual'
+import { WrenchIcon } from 'lucide-react'
 import { type FunctionComponent, type RefObject, memo, useMemo } from 'react'
 import type { ApiPostMessage, UserAccountInfo } from '../../../../Chat'
 import { chatModelIconComponent } from '../../../../components/ChatModelIcon'
@@ -141,7 +142,8 @@ export const AssistantMessageCell: FunctionComponent<{
                                 smartApply={smartApply}
                             />
                         ) : (
-                            isLoading && (
+                            isLoading &&
+                            message.pieces === undefined && (
                                 <div>
                                     {hasLongerResponseTime && (
                                         <p className="tw-m-4 tw-mt-0 tw-text-muted-foreground">
@@ -152,6 +154,29 @@ export const AssistantMessageCell: FunctionComponent<{
                                     <LoadingDots />
                                 </div>
                             )
+                        )}
+                        {message.pieces && message.pieces.length > 0 && (
+                            <div>
+                                {message.pieces.map((piece, i) => (
+                                    // biome-ignore lint/suspicious/noArrayIndexKey:
+                                    <div key={`piece-${i}`}>
+                                        {piece.message?.text && (
+                                            <ChatMessageContent
+                                                displayMarkdown={piece.message.text.toString()}
+                                                isMessageLoading={false}
+                                                humanMessage={null}
+                                            />
+                                        )}
+
+                                        {piece.step && (
+                                            <div className="tw-flex tw-items-center tw-gap-2">
+                                                <WrenchIcon className="tw-w-8 tw-h-8" />
+                                                {piece.step.content}
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
                         )}
                     </>
                 }

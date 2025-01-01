@@ -14,6 +14,11 @@ export type RankedContext = {
     items: ContextItem[]
 }
 
+export interface MessagePiece {
+    message?: ChatMessage
+    step?: ProcessingStep
+}
+
 export interface ChatMessage extends Message {
     contextFiles?: ContextItem[]
 
@@ -40,6 +45,8 @@ export interface ChatMessage extends Message {
     manuallySelectedIntent?: 'search' | 'chat' | 'edit' | 'insert' | undefined | null
     search?: ChatMessageSearch | undefined | null
     processes?: ProcessingStep[] | undefined | null
+
+    pieces?: MessagePiece[]
 }
 
 /**
@@ -102,6 +109,7 @@ export interface SerializedChatMessage {
     manuallySelectedIntent?: ChatMessage['manuallySelectedIntent']
     search?: ChatMessage['search']
     processes?: ProcessingStep[] | undefined | null
+    pieces?: MessagePiece[]
 }
 
 export interface ChatError {
