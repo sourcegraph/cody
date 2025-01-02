@@ -8,7 +8,7 @@ import { telemetryRecorder } from '@sourcegraph/cody-shared'
 import { showActionNotification } from '.'
 
 export const showSetupNotification = async (auth: AuthCredentials): Promise<void> => {
-    if (auth.serverEndpoint && auth.accessToken) {
+    if (auth.serverEndpoint && auth.accessTokenOrHeaders) {
         // User has already attempted to configure Cody.
         // Regardless of if they are authenticated or not, we don't want to prompt them.
         return

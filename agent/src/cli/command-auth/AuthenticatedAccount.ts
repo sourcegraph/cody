@@ -42,7 +42,7 @@ export class AuthenticatedAccount {
     ): Promise<AuthenticatedAccount | Error> {
         const graphqlClient = SourcegraphGraphQLAPIClient.withStaticConfig({
             configuration: { telemetryLevel: 'agent' },
-            auth: { accessToken: options.accessToken, serverEndpoint: options.endpoint },
+            auth: { accessTokenOrHeaders: options.accessToken, serverEndpoint: options.endpoint },
             clientState: { anonymousUserID: null },
         })
         const userInfo = await graphqlClient.getCurrentUserInfo()

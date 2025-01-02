@@ -12,12 +12,14 @@ import {
     cenv,
     clientCapabilities,
     currentAuthStatus,
+    currentResolvedConfig,
     getAuthErrorMessage,
     getCodyAuthReferralCode,
     graphqlClient,
     isDotCom,
     isError,
     isNetworkLikeError,
+    resolveAuth,
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
 import { isSourcegraphToken } from '../chat/protocol'
@@ -83,16 +85,15 @@ export async function showSignInMenu(
             break
         }
         default: {
-            // Auto log user if token for the selected instance was found in secret
+            // Auto log user if token for the selected instance was found in secret or custom provider is configured
             const selectedEndpoint = item.uri
-            const token = await secretStorage.getToken(selectedEndpoint)
-            const tokenSource = await secretStorage.getTokenSource(selectedEndpoint)
-            let authStatus = token
-                ? await authProvider.validateAndStoreCredentials(
-                      { serverEndpoint: selectedEndpoint, accessToken: token, tokenSource },
-                      'store-if-valid'
-                  )
+            const { configuration } = await currentResolvedConfig()
+            const auth = await resolveAuth(selectedEndpoint, configuration, secretStorage)
+
+            let authStatus = auth.accessTokenOrHeaders
+                ? await authProvider.validateAndStoreCredentials(auth, 'store-if-valid')
                 : undefined
+
             if (!authStatus?.authenticated) {
                 const newToken = await showAccessTokenInputBox(selectedEndpoint)
                 if (!newToken) {
@@ -101,7 +102,7 @@ export async function showSignInMenu(
                 authStatus = await authProvider.validateAndStoreCredentials(
                     {
                         serverEndpoint: selectedEndpoint,
-                        accessToken: newToken,
+                        accessTokenOrHeaders: newToken,
                         tokenSource: 'paste',
                     },
                     'store-if-valid'
@@ -233,7 +234,7 @@ async function signinMenuForInstanceUrl(instanceUrl: string): Promise<void> {
         return
     }
     const authStatus = await authProvider.validateAndStoreCredentials(
-        { serverEndpoint: instanceUrl, accessToken: accessToken, tokenSource: 'paste' },
+        { serverEndpoint: instanceUrl, accessTokenOrHeaders: accessToken, tokenSource: 'paste' },
         'store-if-valid'
     )
     telemetryRecorder.recordEvent('cody.auth.signin.token', 'clicked', {
@@ -312,7 +313,7 @@ export async function tokenCallbackHandler(uri: vscode.Uri): Promise<void> {
     }
 
     const authStatus = await authProvider.validateAndStoreCredentials(
-        { serverEndpoint: endpoint, accessToken: token, tokenSource: 'redirect' },
+        { serverEndpoint: endpoint, accessTokenOrHeaders: token, tokenSource: 'redirect' },
         'store-if-valid'
     )
     telemetryRecorder.recordEvent('cody.auth.fromCallback.web', 'succeeded', {
@@ -410,7 +411,7 @@ export async function validateCredentials(
     clientConfig?: CodyClientConfig
 ): Promise<AuthStatus> {
     // An access token is needed except for Cody Web, which uses cookies.
-    if (!config.auth.accessToken && !clientCapabilities().isCodyWeb) {
+    if (!config.auth.accessTokenOrHeaders && !clientCapabilities().isCodyWeb) {
         return { authenticated: false, endpoint: config.auth.serverEndpoint, pendingValidation: false }
     }
 

@@ -4,6 +4,7 @@ import path from 'node:path'
 import type { Polly, Request } from '@pollyjs/core'
 import {
     type AccountKeyedChatHistory,
+    AuthCredentials,
     type ChatHistoryKey,
     type ClientCapabilities,
     type CodyCommand,
@@ -14,6 +15,7 @@ import {
     currentAuthStatusAuthed,
     firstNonPendingAuthStatus,
     firstResultFromOperation,
+    resolveAuth,
     resolvedConfig,
     telemetryRecorder,
     waitUntilComplete,
@@ -70,6 +72,7 @@ import type { FixupActor, FixupFileCollection } from '../../vscode/src/non-stop/
 import type { FixupControlApplicator } from '../../vscode/src/non-stop/strategies'
 import { authProvider } from '../../vscode/src/services/AuthProvider'
 import { localStorage } from '../../vscode/src/services/LocalStorageProvider'
+import { secretStorage } from '../../vscode/src/services/SecretStorageProvider'
 import { AgentWorkspaceEdit } from '../../vscode/src/testutils/AgentWorkspaceEdit'
 import { AgentAuthHandler } from './AgentAuthHandler'
 import { AgentFixupControls } from './AgentFixupControls'
@@ -1482,6 +1485,11 @@ export class Agent extends MessageHandler implements ExtensionClient {
         return this.clientInfo?.capabilities ?? undefined
     }
 
+    private async resolveAuthCredentials(extCfg: ExtensionConfiguration): Promise<AuthCredentials> {
+        const config = JSON.parse(extCfg.customConfigurationJson ?? '{}')
+        return resolveAuth(extCfg.serverEndpoint, config, secretStorage)
+    }
+
     private async handleConfigChanges(
         config: ExtensionConfiguration,
         params?: { forceAuthentication: boolean }
@@ -1500,7 +1508,9 @@ export class Agent extends MessageHandler implements ExtensionClient {
                         },
                         auth: {
                             serverEndpoint: config.serverEndpoint,
-                            accessToken: config.accessToken ?? null,
+                            accessTokenOrHeaders:
+                                config.accessToken ??
+                                (await this.resolveAuthCredentials(config)).accessTokenOrHeaders,
                         },
                         clientState: {
                             anonymousUserID: config.anonymousUserID ?? null,

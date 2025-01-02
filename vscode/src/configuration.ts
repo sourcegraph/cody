@@ -98,6 +98,8 @@ export function getConfiguration(
         agenticContextExperimentalShell: config.get(CONFIG_KEY.agenticContextExperimentalShell, false),
         agenticContextExperimentalOptions: config.get(CONFIG_KEY.agenticContextExperimentalOptions, {}),
 
+        authExternalProviders: config.get(CONFIG_KEY.authExternalProviders, undefined),
+
         /**
          * Hidden settings for internal use only.
          */

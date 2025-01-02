@@ -141,9 +141,15 @@ export function isAuthenticationChange(newConfig: ExtensionConfiguration): boole
         return true
     }
 
+    function getExternalAuthProvidersConfig(cfg: ExtensionConfiguration) {
+        return JSON.parse(cfg.customConfigurationJson ?? '{}')?.cody?.auth?.externalProviders
+    }
+
     return (
         extensionConfiguration.accessToken !== newConfig.accessToken ||
-        extensionConfiguration.serverEndpoint !== newConfig.serverEndpoint
+        extensionConfiguration.serverEndpoint !== newConfig.serverEndpoint ||
+        getExternalAuthProvidersConfig(extensionConfiguration) !==
+            getExternalAuthProvidersConfig(newConfig)
     )
 }
 

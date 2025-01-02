@@ -81,7 +81,7 @@ describe('AuthProvider', () => {
         const { values, clearValues } = readValuesFrom(authStatus)
         resolvedConfig.next({
             configuration: {},
-            auth: { serverEndpoint: 'https://example.com/', accessToken: 't' },
+            auth: { serverEndpoint: 'https://example.com/', accessTokenOrHeaders: 't' },
             clientState: { anonymousUserID: '123' },
         } satisfies PartialDeep<ResolvedConfiguration> as ResolvedConfiguration)
 
@@ -108,7 +108,7 @@ describe('AuthProvider', () => {
         validateCredentialsMock.mockReturnValue(asyncValue(authedAuthStatusBob, 10))
         resolvedConfig.next({
             configuration: {},
-            auth: { serverEndpoint: 'https://other.example.com/', accessToken: 't2' },
+            auth: { serverEndpoint: 'https://other.example.com/', accessTokenOrHeaders: 't2' },
             clientState: { anonymousUserID: '123' },
         } satisfies PartialDeep<ResolvedConfiguration> as ResolvedConfiguration)
         await vi.advanceTimersByTimeAsync(1)
@@ -156,7 +156,7 @@ describe('AuthProvider', () => {
         const { values, clearValues } = readValuesFrom(authStatus)
         resolvedConfig.next({
             configuration: {},
-            auth: { serverEndpoint: 'https://example.com/', accessToken: 't' },
+            auth: { serverEndpoint: 'https://example.com/', accessTokenOrHeaders: 't' },
             clientState: { anonymousUserID: '123' },
         } satisfies PartialDeep<ResolvedConfiguration> as ResolvedConfiguration)
 
@@ -176,7 +176,7 @@ describe('AuthProvider', () => {
         const promise = authProvider.validateAndStoreCredentials(
             {
                 configuration: {},
-                auth: { serverEndpoint: 'https://other.example.com/', accessToken: 't2' },
+                auth: { serverEndpoint: 'https://other.example.com/', accessTokenOrHeaders: 't2' },
                 clientState: { anonymousUserID: '123' },
             },
             'always-store'
@@ -212,7 +212,7 @@ describe('AuthProvider', () => {
         const { values, clearValues } = readValuesFrom(authStatus)
         resolvedConfig.next({
             configuration: {},
-            auth: { serverEndpoint: 'https://example.com/', accessToken: 't' },
+            auth: { serverEndpoint: 'https://example.com/', accessTokenOrHeaders: 't' },
             clientState: { anonymousUserID: '123' },
         } satisfies PartialDeep<ResolvedConfiguration> as ResolvedConfiguration)
 

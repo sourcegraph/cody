@@ -42,5 +42,13 @@
   "[typescriptreact]": {
     "editor.defaultFormatter": "biomejs.biome"
   },
-  "rust-analyzer.procMacro.ignored": { "napi-derive": ["napi"] }
+  "rust-analyzer.procMacro.ignored": {
+    "napi-derive": [
+      "napi"
+    ]
+  },
+  "debug.javascript.defaultRuntimeExecutable": {
+    "pwa-node": "/Users/pkukielka/.local/share/mise/shims/node"
+  },
+  "python.defaultInterpreterPath": "/Users/pkukielka/.local/share/mise/shims/python"
 }

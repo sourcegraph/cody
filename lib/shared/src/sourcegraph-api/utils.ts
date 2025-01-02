@@ -2,6 +2,9 @@
 // of a character, returns the remaining bytes of the partial character in a
 // new buffer. Note! This assumes that the prefix of buf *is* valid UTF8--it
 // only examines the bytes of the last character in the buffer and assumes it
+
+import type { AuthCredentials } from '..'
+
 // will find an initial byte before the start of the buffer.
 export function toPartialUtf8String(buf: Buffer): { str: string; buf: Buffer } {
     if (buf.length === 0) {
@@ -30,5 +33,19 @@ export function toPartialUtf8String(buf: Buffer): { str: string; buf: Buffer } {
     return {
         str: buf.slice(0, lastValidByteOffsetExclusive).toString('utf8'),
         buf: Buffer.from(buf.slice(lastValidByteOffsetExclusive)),
+    }
+}
+
+export function addAuthHeaders(auth: AuthCredentials, headers: Headers, url: URL): void {
+    // We want to be sure we sent authorization headers only to the valid endpoint
+    if (auth.accessTokenOrHeaders && url.host === new URL(auth.serverEndpoint).host) {
+        if (typeof auth.accessTokenOrHeaders === 'string') {
+            headers.set('Authorization', `token ${auth.accessTokenOrHeaders}`)
+        } else {
+            // Add headers as-is when accessTokenOrHeaders is a record of headers
+            for (const [key, value] of Object.entries(auth.accessTokenOrHeaders)) {
+                headers.set(key, value)
+            }
+        }
     }
 }

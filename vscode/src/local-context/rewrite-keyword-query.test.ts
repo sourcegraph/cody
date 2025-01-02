@@ -30,7 +30,7 @@ describe('rewrite-query', () => {
         mockResolvedConfig({
             configuration: { customHeaders: {} },
             auth: {
-                accessToken:
+                accessTokenOrHeaders:
                     TESTING_CREDENTIALS.dotcom.token ?? TESTING_CREDENTIALS.dotcom.redactedToken,
                 serverEndpoint: TESTING_CREDENTIALS.dotcom.serverEndpoint,
             },
