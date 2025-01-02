@@ -172,7 +172,17 @@ export const NoContextFound: Story = {
 
 export const WithSteps: Story = {
     args: {
-        contextItems: [{ type: 'file', uri: URI.file('/foo/bar.go') }],
+        contextItems: [
+            { type: 'file', uri: URI.file('/foo/bar.go'), source: ContextItemSource.Search },
+            {
+                type: 'openctx',
+                uri: URI.file('https://linear.com/issue/openctx-issue'),
+                source: ContextItemSource.Agentic,
+                provider: 'openctx',
+                title: 'Linear Issue',
+                providerUri: '',
+            },
+        ],
         isForFirstMessage: true,
         model: 'deep-cody',
         processes: [
@@ -198,7 +208,10 @@ export const WithSteps: Story = {
 
 export const LoadingWithSteps: Story = {
     args: {
-        contextItems: [{ type: 'file', uri: URI.file('/foo/bar.go') }],
+        contextItems: [
+            { type: 'file', uri: URI.file('/foo/bar.go'), source: ContextItemSource.Search },
+            { type: 'file', uri: URI.file('git clone'), source: ContextItemSource.Terminal },
+        ],
         isForFirstMessage: true,
         model: 'deep-cody',
         processes: [
