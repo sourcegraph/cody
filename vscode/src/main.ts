@@ -87,6 +87,7 @@ import { isRunningInsideAgent } from './jsonrpc/isRunningInsideAgent'
 import type { SymfRunner } from './local-context/symf'
 import { MinionOrchestrator } from './minion/MinionOrchestrator'
 import { PoorMansBash } from './minion/environment'
+import { FixupController } from './non-stop/FixupController'
 import { CodyProExpirationNotifications } from './notifications/cody-pro-expiration'
 import { showSetupNotification } from './notifications/setup-notification'
 import { logDebug, logError } from './output-channel-logger'
@@ -897,8 +898,10 @@ function registerChat(
     )
     chatsController.registerViewsAndCommands()
 
-    const ghostHintDecorator = new GhostHintDecorator()
+    const fixupController = new FixupController(platform.extensionClient)
+    const ghostHintDecorator = new GhostHintDecorator({ fixupController })
     const editorManager = new EditManager({
+        controller: fixupController,
         chat: chatClient,
         editor,
         ghostHintDecorator,
