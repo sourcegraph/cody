@@ -57,19 +57,7 @@ const allTools: CodyTool[] = [
 export class ExperimentalToolHandler implements AgentHandler {
     constructor(private anthropicAPI: Anthropic) {}
 
-    public async handle(
-        {
-            requestID,
-            inputText,
-            mentions,
-            editorState,
-            signal,
-            chatBuilder,
-            recorder,
-            span,
-        }: AgentRequest,
-        delegate: AgentHandlerDelegate
-    ): Promise<void> {
+    public async handle({ inputText }: AgentRequest, delegate: AgentHandlerDelegate): Promise<void> {
         const maxTurns = 10
         let turns = 0
         const subTranscript: Array<MessageParam> = [
@@ -101,7 +89,7 @@ export class ExperimentalToolHandler implements AgentHandler {
                         messageInProgress = {
                             message: {
                                 speaker: 'assistant',
-                                text: PromptString.unsafe_fromUserQuery(textSnapshot),
+                                text: PromptString.unsafe_fromLLMResponse(textSnapshot),
                             },
                         }
                         delegate.experimentalPostMessageInProgress([
@@ -134,7 +122,7 @@ export class ExperimentalToolHandler implements AgentHandler {
                                 subViewTranscript.push({
                                     message: {
                                         speaker: 'assistant',
-                                        text: PromptString.unsafe_fromUserQuery(contentBlock.text),
+                                        text: PromptString.unsafe_fromLLMResponse(contentBlock.text),
                                     },
                                 })
                                 messageInProgress = undefined
