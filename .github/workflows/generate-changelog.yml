@@ -1,12 +1,21 @@
 name: vscode-generate-changelog
 
 on:
-  workflow_dispatch
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch to generate the changlog for'
+        required: true
+        default: 'main'
+        type: string
 
 jobs:
   changelog:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.branch }}
       - name: Generate changelog
         env:
           DEVX_SERVICE_GH_TOKEN: ${{ secrets.DEVX_SERVICE_GH_TOKEN }}
@@ -21,7 +30,7 @@ jobs:
           export RELEASE_LATEST_RELEASE=$(git rev-parse $PREV_TAG)
 
           # Get current release commit
-          export RELEASE_LATEST_COMMIT=$GITHUB_SHA
+          export RELEASE_LATEST_COMMIT=$(git rev-parse HEAD)
 
           # Download and run changelog generator
           tagName=$(gh release -R sourcegraph/devx-service list --exclude-drafts --exclude-pre-releases -L 1 --json tagName -q '.[] | .tagName')
