@@ -1,7 +1,7 @@
 name: vscode-generate-changelog
 
 on:
-  workflow_trigger
+  workflow_dispatch
 
 jobs:
   changelog:
