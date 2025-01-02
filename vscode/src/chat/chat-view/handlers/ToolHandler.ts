@@ -1,7 +1,7 @@
 import type Anthropic from '@anthropic-ai/sdk'
 import type { ContentBlock, MessageParam, Tool, ToolResultBlockParam } from '@anthropic-ai/sdk/resources'
 import { PromptString } from '@sourcegraph/cody-shared'
-import type { MessagePiece } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import type { SubMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import * as vscode from 'vscode'
 import type { AgentHandler, AgentHandlerDelegate, AgentRequest } from './interfaces'
 
@@ -54,7 +54,7 @@ const allTools: CodyTool[] = [
     },
 ]
 
-export class ToolHandler implements AgentHandler {
+export class ExperimentalToolHandler implements AgentHandler {
     constructor(private anthropicAPI: Anthropic) {}
 
     public async handle(
@@ -78,8 +78,8 @@ export class ToolHandler implements AgentHandler {
                 content: inputText.toString(),
             },
         ]
-        const subViewTranscript: MessagePiece[] = []
-        let messageInProgress: MessagePiece | undefined
+        const subViewTranscript: SubMessage[] = []
+        let messageInProgress: SubMessage | undefined
         while (true) {
             const toolCalls: ToolCall[] = []
             await new Promise<void>((resolve, reject) => {
@@ -104,7 +104,10 @@ export class ToolHandler implements AgentHandler {
                                 text: PromptString.unsafe_fromUserQuery(textSnapshot),
                             },
                         }
-                        delegate.postAgentMessageInProgress([...subViewTranscript, messageInProgress])
+                        delegate.experimentalPostMessageInProgress([
+                            ...subViewTranscript,
+                            messageInProgress,
+                        ])
                     })
                     .on('contentBlock', (contentBlock: ContentBlock) => {
                         switch (contentBlock.type) {
@@ -161,12 +164,9 @@ export class ToolHandler implements AgentHandler {
             for (const toolCall of toolCalls) {
                 const tool = allTools.find(tool => tool.spec.name === toolCall.name)
                 if (!tool) {
-                    console.error('# tool not found', toolCall)
                     continue
                 }
-                console.log('# using tool', toolCall)
                 const output = await tool.invoke(toolCall.input)
-                // console.log('# tool output', output)
                 toolResults.push({
                     type: 'tool_result',
                     tool_use_id: toolCall.id,
@@ -179,7 +179,7 @@ export class ToolHandler implements AgentHandler {
             })
             turns++
             if (turns > maxTurns) {
-                console.log('Max turns reached')
+                console.error('Max turns reached')
                 break
             }
         }

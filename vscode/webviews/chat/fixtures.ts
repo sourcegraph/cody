@@ -189,7 +189,7 @@ export const FIXTURE_TRANSCRIPT: Record<
         },
         {
             speaker: 'assistant',
-            pieces: [
+            subMessages: [
                 {
                     message: {
                         speaker: 'assistant',

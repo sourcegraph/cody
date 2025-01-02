@@ -14,7 +14,7 @@ export type RankedContext = {
     items: ContextItem[]
 }
 
-export interface MessagePiece {
+export interface SubMessage {
     message?: ChatMessage
     step?: ProcessingStep
 }
@@ -46,7 +46,13 @@ export interface ChatMessage extends Message {
     search?: ChatMessageSearch | undefined | null
     processes?: ProcessingStep[] | undefined | null
 
-    pieces?: MessagePiece[]
+    /**
+     * An experimental field intended to enable assistant messages to be broken down
+     * into an array of sub-messages and status updates, to enable a better UI for
+     * responses that incorporate tool use. For now, this should not be used by
+     * non-experimental functionality.
+     */
+    subMessages?: SubMessage[]
 }
 
 /**
@@ -109,7 +115,7 @@ export interface SerializedChatMessage {
     manuallySelectedIntent?: ChatMessage['manuallySelectedIntent']
     search?: ChatMessage['search']
     processes?: ProcessingStep[] | undefined | null
-    pieces?: MessagePiece[]
+    subMessages?: SubMessage[]
 }
 
 export interface ChatError {

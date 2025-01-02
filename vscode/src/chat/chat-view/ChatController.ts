@@ -72,7 +72,7 @@ import * as vscode from 'vscode'
 
 import { type Span, context } from '@opentelemetry/api'
 import { captureException } from '@sentry/core'
-import type { MessagePiece } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import type { SubMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
 import { Subject, map } from 'observable-fns'
 import type { URI } from 'vscode-uri'
@@ -848,8 +848,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                         this.chatBuilder.setLastMessageProcesses(steps)
                         this.postViewTranscript(messageInProgress)
                     },
-                    postAgentMessageInProgress: (pieces: MessagePiece[]): void => {
-                        messageInProgress.pieces = pieces
+                    experimentalPostMessageInProgress: (subMessages: SubMessage[]): void => {
+                        messageInProgress.subMessages = subMessages
                         this.postViewTranscript(messageInProgress)
                     },
                     postDone: (op?: { abort: boolean }): void => {
@@ -869,7 +869,10 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                                 messageInProgress?.error)
                         ) {
                             this.chatBuilder.addBotMessage(messageInProgress, model)
-                        } else if (messageInProgress.pieces && messageInProgress.pieces.length > 0) {
+                        } else if (
+                            messageInProgress.subMessages &&
+                            messageInProgress.subMessages.length > 0
+                        ) {
                             this.chatBuilder.addBotMessage(messageInProgress, model)
                         } else if (messageInProgress?.text) {
                             this.addBotMessage(requestID, messageInProgress.text, model)

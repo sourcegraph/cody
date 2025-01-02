@@ -143,7 +143,7 @@ export const AssistantMessageCell: FunctionComponent<{
                             />
                         ) : (
                             isLoading &&
-                            message.pieces === undefined && (
+                            message.subMessages === undefined && (
                                 <div>
                                     {hasLongerResponseTime && (
                                         <p className="tw-m-4 tw-mt-0 tw-text-muted-foreground">
@@ -155,9 +155,9 @@ export const AssistantMessageCell: FunctionComponent<{
                                 </div>
                             )
                         )}
-                        {message.pieces?.length &&
-                            message.pieces.length > 0 &&
-                            message.pieces.map((piece, i) => (
+                        {message.subMessages?.length &&
+                            message.subMessages.length > 0 &&
+                            message.subMessages.map((piece, i) => (
                                 // biome-ignore lint/suspicious/noArrayIndexKey:
                                 <SubMessageCell key={`piece-${i}`} piece={piece} />
                             ))}

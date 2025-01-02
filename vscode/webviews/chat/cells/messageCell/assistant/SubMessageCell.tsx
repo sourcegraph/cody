@@ -1,11 +1,11 @@
-import type { MessagePiece } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import type { SubMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { WrenchIcon } from 'lucide-react'
 import type { FunctionComponent } from 'react'
 import { ChatMessageContent } from '../../../ChatMessageContent/ChatMessageContent'
 import styles from './SubMessageCell.module.css'
 
 export const SubMessageCell: FunctionComponent<{
-    piece: MessagePiece
+    piece: SubMessage
 }> = ({ piece }) => {
     return (
         <>

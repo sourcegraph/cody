@@ -389,7 +389,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
             humanMessage.contextFiles === undefined &&
             isLastSentInteraction &&
             assistantMessage?.text === undefined &&
-            assistantMessage?.pieces === undefined
+            assistantMessage?.subMessages === undefined
     )
     const spanManager = new SpanManager('cody-webview')
     const renderSpan = useRef<Span>()
@@ -588,8 +588,6 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
         [humanMessage.index]
     )
 
-    console.log('# rendering interaction', humanMessage, assistantMessage)
-
     return (
         <>
             <HumanMessageCell
@@ -653,7 +651,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
             )}
             {assistantMessage &&
                 (!isContextLoading ||
-                    (assistantMessage.pieces && assistantMessage.pieces.length > 0)) && (
+                    (assistantMessage.subMessages && assistantMessage.subMessages.length > 0)) && (
                     <AssistantMessageCell
                         key={assistantMessage.index}
                         userInfo={userInfo}
