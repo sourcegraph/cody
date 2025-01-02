@@ -1,7 +1,6 @@
 import {
     type ChatMessage,
     FAST_CHAT_INPUT_TOKEN_BUDGET,
-    FIXTURE_MODEL,
     FeatureFlag,
     type Model,
     ModelTag,
