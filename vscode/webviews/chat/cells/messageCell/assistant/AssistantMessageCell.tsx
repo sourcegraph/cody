@@ -15,7 +15,6 @@ import {
 } from '@sourcegraph/cody-shared'
 import type { PromptEditorRefAPI } from '@sourcegraph/prompt-editor'
 import isEqual from 'lodash/isEqual'
-import { WrenchIcon } from 'lucide-react'
 import { type FunctionComponent, type RefObject, memo, useMemo } from 'react'
 import type { ApiPostMessage, UserAccountInfo } from '../../../../Chat'
 import { chatModelIconComponent } from '../../../../components/ChatModelIcon'
@@ -31,6 +30,7 @@ import { LoadingDots } from '../../../components/LoadingDots'
 import { BaseMessageCell, MESSAGE_CELL_AVATAR_SIZE } from '../BaseMessageCell'
 import { ContextFocusActions } from './ContextFocusActions'
 import { SearchResults } from './SearchResults'
+import { SubMessageCell } from './SubMessageCell'
 
 /**
  * A component that displays a chat message from the assistant.
@@ -155,29 +155,12 @@ export const AssistantMessageCell: FunctionComponent<{
                                 </div>
                             )
                         )}
-                        {message.pieces && message.pieces.length > 0 && (
-                            <div>
-                                {message.pieces.map((piece, i) => (
-                                    // biome-ignore lint/suspicious/noArrayIndexKey:
-                                    <div key={`piece-${i}`}>
-                                        {piece.message?.text && (
-                                            <ChatMessageContent
-                                                displayMarkdown={piece.message.text.toString()}
-                                                isMessageLoading={false}
-                                                humanMessage={null}
-                                            />
-                                        )}
-
-                                        {piece.step && (
-                                            <div className="tw-flex tw-items-center tw-gap-2">
-                                                <WrenchIcon className="tw-w-8 tw-h-8" />
-                                                {piece.step.content}
-                                            </div>
-                                        )}
-                                    </div>
-                                ))}
-                            </div>
-                        )}
+                        {message.pieces?.length &&
+                            message.pieces.length > 0 &&
+                            message.pieces.map((piece, i) => (
+                                // biome-ignore lint/suspicious/noArrayIndexKey:
+                                <SubMessageCell key={`piece-${i}`} piece={piece} />
+                            ))}
                     </>
                 }
                 footer={
