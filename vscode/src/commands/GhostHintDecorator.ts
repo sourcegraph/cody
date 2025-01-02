@@ -381,7 +381,6 @@ export class GhostHintDecorator implements vscode.Disposable {
 
     private hasConflictingDecorations(editor: vscode.TextEditor, position: vscode.Position): boolean {
         const existingFixupFile = this.options.fixupController.maybeFileForUri(editor.document.uri)
-
         if (!existingFixupFile) {
             // No edits in this file, no conflicts
             return false
