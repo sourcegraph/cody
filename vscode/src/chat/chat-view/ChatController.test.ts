@@ -149,6 +149,7 @@ describe('ChatController', () => {
                     editorState: null,
                     contextFiles: undefined,
                     processes: undefined,
+                    subMessages: undefined,
                 },
                 {
                     speaker: 'assistant',
@@ -161,6 +162,7 @@ describe('ChatController', () => {
                     text: undefined,
                     contextFiles: undefined,
                     processes: undefined,
+                    subMessages: undefined,
                 },
             ],
         })
@@ -186,6 +188,7 @@ describe('ChatController', () => {
                     editorState: null,
                     contextFiles: [],
                     processes: undefined,
+                    subMessages: undefined,
                 },
                 {
                     speaker: 'assistant',
@@ -198,6 +201,7 @@ describe('ChatController', () => {
                     search: undefined,
                     contextFiles: undefined,
                     processes: undefined,
+                    subMessages: undefined,
                 },
             ],
         })
@@ -239,6 +243,7 @@ describe('ChatController', () => {
                     editorState: null,
                     contextFiles: [],
                     processes: undefined,
+                    subMessages: undefined,
                 },
                 {
                     speaker: 'assistant',
@@ -251,6 +256,7 @@ describe('ChatController', () => {
                     search: undefined,
                     contextFiles: undefined,
                     processes: undefined,
+                    subMessages: undefined,
                 },
                 {
                     speaker: 'human',
@@ -263,6 +269,7 @@ describe('ChatController', () => {
                     editorState: null,
                     contextFiles: [],
                     processes: undefined,
+                    subMessages: undefined,
                 },
                 {
                     speaker: 'assistant',
@@ -275,6 +282,7 @@ describe('ChatController', () => {
                     contextFiles: undefined,
                     search: undefined,
                     processes: undefined,
+                    subMessages: undefined,
                 },
             ],
         })
@@ -315,6 +323,7 @@ describe('ChatController', () => {
                     editorState: null,
                     contextFiles: [],
                     processes: undefined,
+                    subMessages: undefined,
                 },
                 {
                     speaker: 'assistant',
@@ -327,6 +336,7 @@ describe('ChatController', () => {
                     search: undefined,
                     contextFiles: undefined,
                     processes: undefined,
+                    subMessages: undefined,
                 },
                 {
                     speaker: 'human',
@@ -339,6 +349,7 @@ describe('ChatController', () => {
                     editorState: null,
                     contextFiles: [],
                     processes: undefined,
+                    subMessages: undefined,
                 },
                 {
                     speaker: 'assistant',
@@ -351,6 +362,7 @@ describe('ChatController', () => {
                     text: 'Test reply 3',
                     contextFiles: undefined,
                     processes: undefined,
+                    subMessages: undefined,
                 },
             ],
         })
@@ -400,6 +412,7 @@ describe('ChatController', () => {
                     manuallySelectedIntent: undefined,
                     search: undefined,
                     processes: undefined,
+                    subMessages: undefined,
                 },
                 {
                     speaker: 'assistant',
@@ -412,6 +425,7 @@ describe('ChatController', () => {
                     contextFiles: undefined,
                     search: undefined,
                     processes: undefined,
+                    subMessages: undefined,
                 },
             ],
         })
