@@ -1,42 +1,102 @@
 import type { Span } from '@opentelemetry/api'
 import {
+    BotResponseMultiplexer,
+    type ChatClient,
     CodyIDE,
     type ContextItem,
+    type Message,
+    type ProcessingStep,
+    type PromptMixin,
     PromptString,
     clientCapabilities,
     getClientPromptString,
     isDefined,
     logDebug,
+    newPromptMixin,
     ps,
     telemetryRecorder,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
-import { isUserAddedItem } from '../../prompt-builder/utils'
-import { CodyChatAgent } from './CodyChatAgent'
-import { CODYAGENT_PROMPTS } from './prompts'
+import { getCategorizedMentions, isUserAddedItem } from '../../prompt-builder/utils'
+import type { ChatBuilder } from '../chat-view/ChatBuilder'
+import { DefaultPrompter } from '../chat-view/prompt'
+import type { CodyTool } from './CodyTool'
+import type { CodyToolProvider, ToolStatusCallback } from './CodyToolProvider'
+import { ProcessManager } from './ProcessManager'
+import { ACTIONS_TAGS, CODYAGENT_PROMPTS } from './prompts'
 
 /**
  * A DeepCodyAgent is created for each chat submitted by the user.
  *
  * It is responsible for reviewing the retrieved context, and perform agentic context retrieval for the chat request.
  */
-export class DeepCodyAgent extends CodyChatAgent {
-    private models = {
-        review: this.chatBuilder.selectedModel,
+export class DeepCodyAgent {
+    public static readonly id = 'sourcegraph::2023-06-01::deep-cody'
+
+    protected readonly multiplexer = new BotResponseMultiplexer()
+    protected readonly promptMixins: PromptMixin[] = []
+    protected readonly tools: CodyTool[]
+    protected statusCallback: ToolStatusCallback
+    private stepsManager: ProcessManager
+    private models: { review?: string } = { review: '' }
+
+    protected context: ContextItem[] = []
+
+    constructor(
+        protected readonly chatBuilder: ChatBuilder,
+        protected readonly chatClient: Pick<ChatClient, 'chat'>,
+        protected readonly toolProvider: CodyToolProvider,
+        statusUpdateCallback: (steps: ProcessingStep[]) => void
+    ) {
+        // Initialize tools, handlers and mixins in constructor
+        this.tools = this.toolProvider.getTools()
+
+        this.initializeMultiplexer(this.tools)
+        this.buildPrompt(this.tools)
+
+        this.models.review = this.chatBuilder.selectedModel
+
+        this.stepsManager = new ProcessManager(steps => statusUpdateCallback(steps))
+
+        this.statusCallback = {
+            onStart: () => {
+                this.stepsManager.initializeStep()
+            },
+            onStream: (toolName, content) => {
+                this.stepsManager.addStep(toolName, content)
+            },
+            onComplete: (toolName, error) => {
+                this.stepsManager.completeStep(toolName, error)
+            },
+        }
     }
 
-    protected buildPrompt(): PromptString {
-        const toolInstructions = this.tools.map(t => t.getInstruction())
-        const toolExamples = this.tools.map(t => t.config.prompt.example)
-        const join = (prompts: PromptString[]) => PromptString.join(prompts, ps`\n- `)
+    /**
+     * Register the tools with the multiplexer.
+     */
+    protected initializeMultiplexer(tools: CodyTool[]): void {
+        for (const tool of tools) {
+            this.multiplexer.sub(tool.config.tags.tag.toString(), {
+                onResponse: async (content: string) => tool.stream(content),
+                onTurnComplete: async () => {},
+            })
+        }
+    }
 
-        return CODYAGENT_PROMPTS.review
+    /**
+     * Construct the prompt based on the tools available.
+     */
+    protected buildPrompt(tools: CodyTool[]): void {
+        const toolInstructions = tools.map(t => t.getInstruction())
+        const join = (prompts: PromptString[]) => PromptString.join(prompts, ps`\n- `)
+        const prompt = CODYAGENT_PROMPTS.review
             .replace('{{CODY_TOOLS_PLACEHOLDER}}', join(toolInstructions))
-            .replace('{{CODY_TOOLS_EXAMPLES_PLACEHOLDER}}', join(toolExamples))
             .replace(
                 '{{CODY_IDE}}',
                 getClientPromptString(clientCapabilities().agentIDE || CodyIDE.VSCode)
             )
+        // logDebug('Deep Cody', 'buildPrompt', { verbose: prompt })
+        this.promptMixins.push(newPromptMixin(prompt))
     }
 
     /**
@@ -51,8 +111,10 @@ export class DeepCodyAgent extends CodyChatAgent {
     public async getContext(
         requestID: string,
         chatAbortSignal: AbortSignal,
+        context: ContextItem[],
         maxLoops = 2
     ): Promise<ContextItem[]> {
+        this.context = context
         return wrapInActiveSpan('DeepCody.getContext', span =>
             this._getContext(requestID, span, chatAbortSignal, maxLoops)
         )
@@ -131,27 +193,40 @@ export class DeepCodyAgent extends CodyChatAgent {
                 this.models.review
             )
             // If the response is empty or contains the CONTEXT_SUFFICIENT token, the context is sufficient.
-            if (!res || res?.includes('CONTEXT_SUFFICIENT')) {
-                // Process the response without generating any context items.
-                for (const tool of this.toolHandlers.values()) {
-                    tool.processResponse?.()
-                }
-                return []
-            }
+            if (!res) return []
             const results = await Promise.all(
-                Array.from(this.toolHandlers.entries()).map(async ([name, tool]) => {
+                this.tools.map(async tool => {
                     try {
-                        // Check abort signal before each tool run
-                        if (chatAbortSignal.aborted) {
-                            return []
-                        }
+                        if (chatAbortSignal.aborted) return []
                         return await tool.run(span, this.statusCallback)
                     } catch (error) {
-                        this.statusCallback?.onComplete(name, error as Error)
+                        this.statusCallback.onComplete(tool.config.tags.tag.toString(), error as Error)
                         return []
                     }
                 })
             )
+
+            // If the response is empty or contains the known token, the context is sufficient.
+            if (res?.includes(ACTIONS_TAGS.ANSWER.toString())) {
+                // Process the response without generating any context items.
+                for (const tool of this.tools) {
+                    tool.processResponse?.()
+                }
+            }
+
+            // Extract all the strings from between tags.
+            const contextListTag = ACTIONS_TAGS.CONTEXT.toString()
+            const validatedContext = PromptStringBuilder.extractTagContents(res, contextListTag)
+
+            const reviewed = [...this.context.filter(c => isUserAddedItem(c))]
+            for (const contextName of validatedContext || []) {
+                const found = this.context.find(c => c.uri.path.includes(contextName))
+                if (found) {
+                    reviewed.push(found)
+                }
+            }
+
+            this.context = reviewed
             return results.flat().filter(isDefined)
         } catch (error) {
             await this.multiplexer.notifyTurnComplete()
@@ -160,5 +235,80 @@ export class DeepCodyAgent extends CodyChatAgent {
             })
             return []
         }
+    }
+
+    protected async processStream(
+        requestID: string,
+        message: Message[],
+        signal?: AbortSignal,
+        model?: string
+    ): Promise<string> {
+        const stream = await this.chatClient.chat(
+            message,
+            { model, maxTokensToSample: 4000 },
+            new AbortController().signal,
+            requestID
+        )
+        const accumulated = new PromptStringBuilder()
+        try {
+            for await (const msg of stream) {
+                if (signal?.aborted) break
+                if (msg.type === 'change') {
+                    const newText = msg.text.slice(accumulated.length)
+                    accumulated.append(newText)
+                    await this.multiplexer.publish(newText)
+                }
+
+                if (msg.type === 'complete' || msg.type === 'error') {
+                    if (msg.type === 'error') throw new Error('Error while streaming')
+                    break
+                }
+            }
+        } finally {
+            await this.multiplexer.notifyTurnComplete()
+        }
+
+        return accumulated.toString()
+    }
+
+    protected getPrompter(items: ContextItem[]): DefaultPrompter {
+        const { explicitMentions, implicitMentions } = getCategorizedMentions(items)
+        const MAX_SEARCH_ITEMS = 30
+        return new DefaultPrompter(explicitMentions, implicitMentions.slice(-MAX_SEARCH_ITEMS))
+    }
+}
+
+export class PromptStringBuilder {
+    private parts: string[] = []
+
+    public append(str: string): void {
+        this.parts.push(str)
+    }
+
+    public toString(): string {
+        const joined = this.parts.join('')
+        this.reset()
+        return joined
+    }
+
+    public get length(): number {
+        return this.parts.reduce((acc, part) => acc + part.length, 0)
+    }
+
+    private reset(): void {
+        this.parts = []
+    }
+
+    public static extractTagContents(response: string, tag: string): string[] {
+        const tagLength = tag.length
+        return (
+            response
+                .match(new RegExp(`<${tag}>(.*?)<\/${tag}>`, 'g'))
+                ?.map(m => m.slice(tagLength + 2, -(tagLength + 3))) || []
+        )
+    }
+
+    public static join(prompts: PromptString[], connector = ps`\n`) {
+        return PromptString.join(prompts, connector)
     }
 }

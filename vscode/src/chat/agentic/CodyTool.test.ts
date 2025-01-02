@@ -2,8 +2,9 @@ import type { Span } from '@opentelemetry/api'
 import { type ContextItem, ContextItemSource, ps } from '@sourcegraph/cody-shared'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { URI } from 'vscode-uri'
-import { CodyTool, OpenCtxTool, getDefaultCodyTools, registerDefaultTools } from './CodyTool'
-import { ToolFactory, ToolRegistry, type ToolStatusCallback } from './CodyToolProvider'
+import { mockLocalStorage } from '../../services/LocalStorageProvider'
+import { CodyTool, OpenCtxTool } from './CodyTool'
+import { CodyToolProvider, ToolFactory, type ToolStatusCallback } from './CodyToolProvider'
 
 const mockCallback: ToolStatusCallback = {
     onStart: vi.fn(),
@@ -35,7 +36,6 @@ describe('CodyTool', () => {
     beforeEach(() => {
         vi.clearAllMocks()
         factory = new ToolFactory()
-        registerDefaultTools(factory.registry)
         mockSpan = {}
         factory.registry.register({
             name: 'TestTool', // Add this line to match ToolConfiguration interface
@@ -47,7 +47,7 @@ describe('CodyTool', () => {
             prompt: {
                 instruction: ps`To test the CodyTool class`,
                 placeholder: ps`TEST_CONTENT`,
-                example: ps`Test the tool: \`<TOOLTEST><test>sample content</test></TOOLTEST>\``,
+                examples: [ps`Test the tool: \`<TESTTOOL><test>sample content</test></TESTTOOL>\``],
             },
             createInstance: config => new TestTool(config),
         })
@@ -63,7 +63,7 @@ describe('CodyTool', () => {
         const testTool = factory.createTool('TestTool')
         const instruction = testTool?.getInstruction()
         expect(instruction).toEqual(
-            ps`To test the CodyTool class: \`<TOOLTEST><test>TEST_CONTENT</test></TOOLTEST>\``
+            ps`\`<TOOLTEST><test>TEST_CONTENT</test></TOOLTEST>\`: To test the CodyTool class.\n\t- Test the tool: \`<TESTTOOL><test>sample content</test></TESTTOOL>\``
         )
     })
 
@@ -167,7 +167,7 @@ describe('CodyTool', () => {
             prompt: {
                 instruction: ps`Test OpenCtx provider`,
                 placeholder: ps`CTX_QUERY`,
-                example: ps`Test query: \`<TOOLCTX><ctx>query</ctx></TOOLCTX>\``,
+                examples: [ps`Test query: \`<TOOLCTX><ctx>query</ctx></TOOLCTX>\``],
             },
         }
 
@@ -187,24 +187,21 @@ describe('CodyTool', () => {
             },
         }))
 
+        const provider = CodyToolProvider.instance({ retrieveContext: vi.fn() })
+
         it('should register all default tools', () => {
-            const registry = new ToolRegistry()
-            registerDefaultTools(registry)
-
-            expect(registry.get('MemoryTool')).toBeDefined()
-            expect(registry.get('SearchTool')).toBeDefined()
-            expect(registry.get('CliTool')).toBeDefined()
-            expect(registry.get('FileTool')).toBeDefined()
-        })
-
-        it('should create default tools based on shell context', () => {
-            const contextRetriever = { retrieveContext: vi.fn() }
-
-            const toolsWithShell = getDefaultCodyTools(true, contextRetriever, factory)
-            expect(toolsWithShell.length).toBeGreaterThan(0)
-
-            const toolsWithoutShell = getDefaultCodyTools(false, contextRetriever, factory)
-            expect(toolsWithoutShell.length).toBeLessThan(toolsWithShell.length)
+            const localStorageData: { [key: string]: unknown } = {}
+            mockLocalStorage({
+                get: (key: string) => localStorageData[key],
+                update: (key: string, value: unknown) => {
+                    localStorageData[key] = value
+                },
+            } as any)
+            const tools = provider.getTools()
+            expect(tools.some(t => t.config.title.includes('Cody Memory'))).toBeDefined()
+            expect(tools.some(t => t.config.title.includes('Code Search'))).toBeDefined()
+            expect(tools.some(t => t.config.title.includes('Terminal'))).toBeDefined()
+            expect(tools.some(t => t.config.title.includes('Codebase File'))).toBeDefined()
         })
     })
 })

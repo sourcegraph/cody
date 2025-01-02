@@ -6,6 +6,7 @@ import {
     type ContextItem,
     ContextItemSource,
     DOTCOM_URL,
+    type ProcessingStep,
     featureFlagProvider,
     mockAuthStatus,
     mockClientCapabilities,
@@ -20,7 +21,6 @@ import { mockLocalStorage } from '../../services/LocalStorageProvider'
 import { ChatBuilder } from '../chat-view/ChatBuilder'
 import type { ContextRetriever } from '../chat-view/ContextRetriever'
 import * as initialContext from '../initialContext'
-import type { CodyTool } from './CodyTool'
 import { CodyToolProvider } from './CodyToolProvider'
 import { DeepCodyAgent } from './DeepCody'
 
@@ -35,8 +35,10 @@ describe('DeepCody', () => {
     let mockChatClient: ChatClient
     let mockContextRetriever: ContextRetriever
     let mockCurrentContext: ContextItem[]
-    let mockCodyTools: CodyTool[]
+    let mockCodyToolProvider: CodyToolProvider
     let localStorageData: { [key: string]: unknown } = {}
+    let mockStatusCallback: (steps: ProcessingStep[]) => void
+
     mockLocalStorage({
         get: (key: string) => localStorageData[key],
         update: (key: string, value: unknown) => {
@@ -74,7 +76,7 @@ describe('DeepCody', () => {
             retrieveContext: vi.fn(),
         } as unknown as ContextRetriever
 
-        mockCodyTools = CodyToolProvider.instance(mockContextRetriever).getTools()
+        mockCodyToolProvider = CodyToolProvider.instance(mockContextRetriever)
 
         mockCurrentContext = [
             {
@@ -85,6 +87,8 @@ describe('DeepCody', () => {
                 content: 'const example = "test";',
             },
         ]
+
+        mockStatusCallback = vi.fn()
 
         vi.spyOn(featureFlagProvider, 'evaluatedFeatureFlag').mockReturnValue(Observable.of(false))
         vi.spyOn(modelsService, 'isStreamDisabled').mockReturnValue(false)
@@ -105,8 +109,8 @@ describe('DeepCody', () => {
         const agent = new DeepCodyAgent(
             mockChatBuilder,
             mockChatClient,
-            mockCodyTools,
-            mockCurrentContext
+            mockCodyToolProvider,
+            mockStatusCallback
         )
 
         expect(agent).toBeDefined()
@@ -145,17 +149,20 @@ describe('DeepCody', () => {
         const agent = new DeepCodyAgent(
             mockChatBuilder,
             mockChatClient,
-            mockCodyTools,
+            mockCodyToolProvider,
+            mockStatusCallback
+        )
+
+        const result = await agent.getContext(
+            'deep-cody-test-interaction-id',
+            { aborted: false } as AbortSignal,
             mockCurrentContext
         )
 
-        const result = await agent.getContext('deep-cody-test-interaction-id', {
-            aborted: false,
-        } as AbortSignal)
-
+        const mockTools = mockCodyToolProvider.getTools()
         expect(mockChatClient.chat).toHaveBeenCalled()
-        expect(mockCodyTools).toHaveLength(3)
-        expect(mockCodyTools.some(tool => tool.config.tags.tag === ps`TOOLCLI`)).toBeFalsy()
+        expect(mockCodyToolProvider).toHaveLength(3)
+        expect(mockTools.some(tool => tool.config.tags.tag === ps`TOOLCLI`)).toBeFalsy()
         expect(mockContextRetriever.retrieveContext).toHaveBeenCalled()
         expect(result).toHaveLength(2)
         expect(result[0].content).toBe('const example = "test";')

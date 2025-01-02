@@ -1,3 +1,4 @@
+import { DeepCodyAgent } from '../../agentic/DeepCody'
 import { ChatHandler } from './ChatHandler'
 import { DeepCodyHandler } from './DeepCodyHandler'
 import { EditHandler } from './EditHandler'
@@ -24,7 +25,7 @@ export function getAgent(id: string, tools: AgentTools): AgentHandler {
 }
 
 registerAgent(
-    'sourcegraph::2023-06-01::deep-cody',
+    DeepCodyAgent.id,
     (id: string, { contextRetriever, editor, chatClient, codyToolProvider }: AgentTools) =>
         new DeepCodyHandler(id, contextRetriever, editor, chatClient, codyToolProvider)
 )

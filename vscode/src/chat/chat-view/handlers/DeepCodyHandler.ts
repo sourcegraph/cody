@@ -72,11 +72,10 @@ export class DeepCodyHandler extends ChatHandler implements AgentHandler {
         const agent = new DeepCodyAgent(
             chatBuilder,
             this.chatClient,
-            this.toolProvider.getTools(),
-            baseContext,
+            this.toolProvider,
             (steps: ProcessingStep[]) => delegate.postStatuses(steps)
         )
-        const agenticContext = await agent.getContext(requestID, signal)
-        return { contextItems: [...baseContext, ...agenticContext] }
+
+        return { contextItems: await agent.getContext(requestID, signal, baseContext) }
     }
 }
