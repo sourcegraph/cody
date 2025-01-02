@@ -10,6 +10,7 @@ import {
 import { walkLexicalNodes } from './lexicalUtils'
 import { $createContextItemMentionNode, ContextItemMentionNode } from './nodes/ContextItemMentionNode'
 
+
 export function lexicalNodesForContextItems(
     items: (ContextItem | SerializedContextItem)[],
     {

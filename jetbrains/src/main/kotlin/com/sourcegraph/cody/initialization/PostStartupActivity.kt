@@ -22,6 +22,9 @@ import com.sourcegraph.cody.telemetry.TelemetryV2
 import com.sourcegraph.config.CodyAuthNotificationActivity
 import com.sourcegraph.config.ConfigUtil
 
+import com.intellij.openapi.diagnostic.Logger
+
+
 class PostStartupActivity : ProjectActivity {
 
   // TODO(olafurpg): this activity is taking ~2.5s to run during tests, which indicates that we're

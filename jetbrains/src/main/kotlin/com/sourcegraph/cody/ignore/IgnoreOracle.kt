@@ -64,6 +64,7 @@ class IgnoreOracle(private val project: Project) {
         focusedPolicy = policy
 
         // Update the status bar.
+        logger.info("code222: CodyStatusService.resetApplication(project)")
         CodyStatusService.resetApplication(project)
 
         val listeners = synchronized(fileListeners) { fileListeners.toList() }

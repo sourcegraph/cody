@@ -54,6 +54,7 @@ class CodySettingChangeListener(project: Project) : ChangeListener(project) {
               toolWindow?.setAvailable(true, null)
             }
 
+            logger.info("code222: CodyStatusService.resetApplication(project)")
             CodyStatusService.resetApplication(project)
 
             // Rerender autocompletions when custom autocomplete color changed

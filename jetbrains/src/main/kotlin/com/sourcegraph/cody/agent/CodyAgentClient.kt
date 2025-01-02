@@ -260,10 +260,12 @@ class CodyAgentClient(private val project: Project, private val webview: NativeW
   fun window_didChangeContext(params: Window_DidChangeContextParams) {
     if (params.key == "cody.activated") {
       CodyAccount.setActivated(params.value?.toBoolean() ?: false)
+      logger.info("code222: window/didChangeContext: Cody activated: ${params.value}")
       CodyStatusService.notifyApplication(project, CodyStatus.CodyNotSignedIn)
     }
     if (params.key == "cody.serverEndpoint") {
       val endpoint = params.value ?: return
+      logger.info("code222: window/didChangeContext: Cody server endpoint: ${endpoint}")
       CodyAccount.setActiveAccount(CodyAccount(SourcegraphServerPath(endpoint)))
       CodyStatusService.resetApplication(project)
     }

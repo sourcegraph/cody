@@ -2,6 +2,7 @@ package com.sourcegraph.cody.statusbar
 
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
@@ -12,6 +13,7 @@ import com.sourcegraph.cody.auth.CodyAccount
 import com.sourcegraph.cody.ignore.IgnoreOracle
 import com.sourcegraph.common.UpgradeToCodyProNotification
 import com.sourcegraph.config.ConfigUtil
+import com.intellij.openapi.diagnostic.Logger
 
 @Service(Service.Level.PROJECT)
 class CodyStatusService(val project: Project) : Disposable {
@@ -31,13 +33,16 @@ class CodyStatusService(val project: Project) : Disposable {
   }
 
   fun onCodyAutocompleteStatusReset() {
-    ApplicationManager.getApplication().executeOnPooledThread {
+    ApplicationManager.getApplication().invokeLater {
       if (!project.isDisposed) {
         val notify = didStatusChange(project)
         if (notify) {
+          logger.info("code222: Cody status changed to: ${status.getPresentableText()}")
           updateCodyStatusBarIcons()
+          CodyStatusBarWidget.update(project)
         }
       }
+       ModalityState.any()
     }
   }
 
@@ -72,11 +77,22 @@ class CodyStatusService(val project: Project) : Disposable {
   }
 
   private fun updateCodyStatusBarIcons() {
-    UIUtil.invokeLaterIfNeeded {
-      val openProjects = ProjectManager.getInstance().openProjects
-      openProjects.forEach { project ->
-        project.takeIf { !it.isDisposed }?.let { CodyStatusBarWidget.update(it) }
-      }
+    ApplicationManager.getApplication().invokeLater {
+        doUpdateStatusBarIcons()
+        // Force UI refresh
+        UIUtil.dispatchAllInvocationEvents()
+    }
+  }
+
+  private fun doUpdateStatusBarIcons() {
+    val openProjects = ProjectManager.getInstance().openProjects
+    openProjects.forEach { project ->
+        project.takeIf { !it.isDisposed }?.let {
+            logger.info("code222: Forcing immediate status bar update for project: ${project.name}")
+            CodyStatusBarWidget.update(it)
+            // Force UI refresh for each project
+            UIUtil.dispatchAllInvocationEvents()
+        }
     }
   }
 
@@ -90,7 +106,9 @@ class CodyStatusService(val project: Project) : Disposable {
 
   companion object {
 
+    private val logger = Logger.getInstance(CodyStatusService::class.java)
     fun getInstance(project: Project): CodyStatusService {
+      logger.info("code222: CodyStatusService.getInstance(project)")
       return project.service<CodyStatusService>()
     }
 

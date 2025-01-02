@@ -9,6 +9,8 @@ import com.sourcegraph.common.CodyBundle.fmt
 import com.sourcegraph.common.UpgradeToCodyProNotification
 import com.sourcegraph.config.ConfigUtil
 
+import com.intellij.openapi.diagnostic.Logger
+
 class CodyStatusBarActionGroup : DefaultActionGroup() {
 
   override fun getActionUpdateThread(): ActionUpdateThread {

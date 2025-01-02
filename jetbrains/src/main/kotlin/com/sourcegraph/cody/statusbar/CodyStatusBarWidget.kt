@@ -13,6 +13,8 @@ import com.intellij.openapi.wm.WindowManager
 import com.intellij.openapi.wm.impl.status.EditorBasedStatusBarPopup
 import com.intellij.util.ui.GraphicsUtil
 
+import com.intellij.openapi.diagnostic.Logger
+
 class CodyStatusBarWidget(project: Project) : EditorBasedStatusBarPopup(project, false) {
   override fun ID(): String = CodyWidgetFactory.ID
 
