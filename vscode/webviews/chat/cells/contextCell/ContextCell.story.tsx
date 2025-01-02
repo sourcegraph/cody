@@ -210,7 +210,7 @@ export const LoadingWithSteps: Story = {
     args: {
         contextItems: [
             { type: 'file', uri: URI.file('/foo/bar.go'), source: ContextItemSource.Search },
-            { type: 'file', uri: URI.file('git clone'), source: ContextItemSource.Terminal },
+            { type: 'file', uri: URI.file('git diff'), source: ContextItemSource.Terminal },
         ],
         isForFirstMessage: true,
         model: 'deep-cody',
@@ -222,8 +222,13 @@ export const LoadingWithSteps: Story = {
             },
             {
                 id: 'Terminal',
-                status: 'pending',
+                status: 'success',
                 content: 'git diff',
+            },
+            {
+                id: 'Terminal',
+                status: 'pending',
+                content: 'git clone',
             },
         ],
         isContextLoading: true,
