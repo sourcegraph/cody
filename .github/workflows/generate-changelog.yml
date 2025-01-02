@@ -29,11 +29,10 @@ jobs:
           chmod +x changelog
 
           ./changelog write \
-          --output-file="raw-changelog.md" \
+          --output-file="vscode/CHANGELOG.md" \
+          --output.changelog.marker='{/* CHANGELOG_START */}' \
           --releaseregistry.version=$EXT_VERSION
 
-          cat vscode/CHANGELOG.md >> raw-changelog.md
-          mv raw-changelog.md vscode/CHANGELOG.md
           git checkout -b release/vscode-v$EXT_VERSION
           git add vscode/CHANGELOG.md
           git commit -m "Automated release and changelog for VS code Cody"
