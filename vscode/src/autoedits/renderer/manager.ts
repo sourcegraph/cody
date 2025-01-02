@@ -10,6 +10,8 @@ import {
     extractInlineCompletionFromRewrittenCode,
 } from '../utils'
 
+import { FixupController } from '../../non-stop/FixupController'
+import { CodyTaskState } from '../../non-stop/state'
 import type { AutoEditsDecorator, DecorationInfo } from './decorators/base'
 
 /**
@@ -92,7 +94,10 @@ export class AutoEditsDefaultRendererManager implements AutoEditsRendererManager
     protected activeEdit: ProposedChange | null = null
     protected disposables: vscode.Disposable[] = []
 
-    constructor(protected createDecorator: (editor: vscode.TextEditor) => AutoEditsDecorator) {
+    constructor(
+        protected createDecorator: (editor: vscode.TextEditor) => AutoEditsDecorator,
+        protected fixupController: FixupController
+    ) {
         this.disposables.push(
             vscode.commands.registerCommand('cody.supersuggest.accept', () => this.acceptEdit()),
             vscode.commands.registerCommand('cody.supersuggest.dismiss', () => this.dismissEdit()),
@@ -120,6 +125,9 @@ export class AutoEditsDefaultRendererManager implements AutoEditsRendererManager
         await this.dismissEdit()
         const editor = vscode.window.activeTextEditor
         if (!editor || document !== editor.document) {
+            return
+        }
+        if (this.hasConflictingDecorations(document, range)) {
             return
         }
         this.activeEdit = {
@@ -248,6 +256,25 @@ export class AutoEditsDefaultRendererManager implements AutoEditsRendererManager
         })
 
         return { inlineCompletions: null, updatedDecorationInfo: decorationInfo }
+    }
+
+    private hasConflictingDecorations(document: vscode.TextDocument, range: vscode.Range): boolean {
+        const existingFixupFile = this.fixupController.maybeFileForUri(document.uri)
+        if (!existingFixupFile) {
+            // No Edits in this file, no conflicts
+            return false
+        }
+
+        const existingFixupTasks = this.fixupController.tasksForFile(existingFixupFile)
+        if (existingFixupTasks.length === 0) {
+            // No Edits in this file, no conflicts
+            return false
+        }
+
+        // Validate that the decoration position does not conflict with an existing Edit diff
+        return existingFixupTasks.some(
+            task => task.state === CodyTaskState.Applied && task.selectionRange.intersection(range)
+        )
     }
 
     public dispose(): void {
