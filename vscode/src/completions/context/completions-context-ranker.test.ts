@@ -7,6 +7,7 @@ import type { RetrievedContextResults } from './completions-context-ranker'
 describe('DefaultCompletionsContextRanker', () => {
     describe('getContextSnippetsAsPerTimeBasedStrategy', () => {
         const getContextSnippet = (time?: number): AutocompleteContextSnippet => ({
+            type: 'file',
             identifier: 'test',
             uri: vscode.Uri.parse('file:///test'),
             startLine: 1,

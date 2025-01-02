@@ -4,21 +4,17 @@ import * as Tabs from '@radix-ui/react-tabs'
 import clsx from 'clsx'
 import {
     BookTextIcon,
-    CircleUserIcon,
     DownloadIcon,
-    ExternalLink,
     HistoryIcon,
     type LucideProps,
     MessageSquarePlusIcon,
     MessagesSquareIcon,
-    PlusCircle,
-    SettingsIcon,
     Trash2Icon,
 } from 'lucide-react'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
 import { View } from './types'
 
-import { CodyIDE, isDefined } from '@sourcegraph/cody-shared'
+import { type AuthenticatedAuthStatus, CodyIDE, isDefined } from '@sourcegraph/cody-shared'
 import { type FC, Fragment, forwardRef, memo, useCallback, useMemo, useState } from 'react'
 import { Kbd } from '../components/Kbd'
 import { Tooltip, TooltipContent, TooltipTrigger } from '../components/shadcn/ui/tooltip'
@@ -26,15 +22,18 @@ import { useConfig } from '../utils/useConfig'
 
 import { useExtensionAPI } from '@sourcegraph/prompt-editor'
 import { isEqual } from 'lodash'
+import type { UserAccountInfo } from '../Chat'
 import { downloadChatHistory } from '../chat/downloadChatHistory'
+import { UserMenu } from '../components/UserMenu'
 import { Button } from '../components/shadcn/ui/button'
 import styles from './TabsBar.module.css'
 import { getCreateNewChatCommand } from './utils'
 
 interface TabsBarProps {
-    IDE: CodyIDE
+    user: UserAccountInfo
     currentView: View
     setView: (view: View) => void
+    endpointHistory: string[]
 }
 
 type IconComponent = React.ForwardRefExoticComponent<
@@ -69,8 +68,9 @@ interface TabConfig {
 }
 
 export const TabsBar = memo<TabsBarProps>(props => {
-    const { currentView, setView, IDE } = props
-    const tabItems = useTabs({ IDE })
+    const { currentView, setView, user, endpointHistory } = props
+    const { isCodyProUser, IDE } = user
+    const tabItems = useTabs({ user })
     const {
         config: { webviewType, multipleWebviewsEnabled },
     } = useConfig()
@@ -124,7 +124,7 @@ export const TabsBar = memo<TabsBarProps>(props => {
                         </Tabs.Trigger>
                     ))}
 
-                    <div className="tw-ml-auto">
+                    <div className="tw-flex tw-ml-auto">
                         <TabButton
                             prominent
                             Icon={MessageSquarePlusIcon}
@@ -150,6 +150,15 @@ export const TabsBar = memo<TabsBarProps>(props => {
                                 })
                             }
                         />
+                        {IDE !== CodyIDE.Web && (
+                            <UserMenu
+                                authStatus={user.user as AuthenticatedAuthStatus}
+                                isProUser={isCodyProUser}
+                                endpointHistory={endpointHistory}
+                                setView={setView}
+                                className="!tw-opacity-100"
+                            />
+                        )}
                     </div>
                 </div>
                 <div className={styles.subTabs}>
@@ -305,16 +314,21 @@ const TabButton = forwardRef<HTMLButtonElement, TabButtonProps>((props, ref) => 
                     rel="noopener noreferrer"
                     ref={ref as any}
                     className={clsx(
-                        'tw-flex tw-gap-3 tw-items-center !tw-font-normal !tw-text-inherit tw-leading-none tw-py-3 tw-px-2 tw-opacity-80 hover:tw-opacity-100 tw-border-b-[1px] tw-border-transparent tw-transition tw-translate-y-[1px]',
+                        'tw-flex tw-gap-2 tw-items-center !tw-font-normal !tw-text-inherit tw-leading-none tw-p-2 tw-opacity-80 hover:tw-opacity-100 tw-border-transparent tw-transition tw-translate-y-[1px] tw-text-sm',
                         {
-                            '!tw-opacity-100 !tw-border-[var(--vscode-tab-activeBorderTop)]': isActive,
+                            '!tw-opacity-100 !tw-border-[var(--vscode-tab-activeBorderTop)] tw-border-b-[1px]':
+                                isActive,
                             '!tw-opacity-100': prominent,
                         }
                     )}
                     data-testid={dataTestId}
                 >
                     <Icon size={16} strokeWidth={1.25} className="tw-w-8 tw-h-8" />
-                    <span className={alwaysShowTitle ? '' : styles.tabActionLabel}>{title}</span>
+                    {alwaysShowTitle ? (
+                        <span>{title}</span>
+                    ) : (
+                        <span className={styles.tabActionLabel}>{title}</span>
+                    )}
                 </Component>
             </TooltipTrigger>
             <TooltipContent portal={IDE === CodyIDE.Web}>
@@ -330,11 +344,8 @@ TabButton.displayName = 'TabButton'
  * Returns list of tabs and its sub-action buttons, used later as configuration for
  * tabs rendering in chat header.
  */
-function useTabs(input: Pick<TabsBarProps, 'IDE'>): TabConfig[] {
-    const { IDE } = input
-    const {
-        config: { multipleWebviewsEnabled, serverEndpoint },
-    } = useConfig()
+function useTabs(input: Pick<TabsBarProps, 'user'>): TabConfig[] {
+    const IDE = input.user.IDE
 
     const extensionAPI = useExtensionAPI<'userHistory'>()
 
@@ -390,40 +401,9 @@ function useTabs(input: Pick<TabsBarProps, 'IDE'>): TabConfig[] {
                         title: 'Prompts',
                         Icon: BookTextIcon,
                         changesView: true,
-                        subActions: [
-                            {
-                                title: 'Create Prompt',
-                                Icon: PlusCircle,
-                                command: '',
-                                uri: `${serverEndpoint}prompts/new`,
-                            },
-                            {
-                                title: 'Prompts Library',
-                                Icon: ExternalLink,
-                                command: '',
-                                uri: `${serverEndpoint}prompts`,
-                            },
-                        ],
                     },
-                    multipleWebviewsEnabled
-                        ? {
-                              view: View.Settings,
-                              title: 'Settings',
-                              Icon: SettingsIcon,
-                              command: 'cody.status-bar.interacted',
-                          }
-                        : null,
-                    IDE !== CodyIDE.Web
-                        ? {
-                              view: View.Account,
-                              title: 'Account',
-                              Icon: CircleUserIcon,
-                              command: 'cody.auth.account',
-                              changesView: IDE !== CodyIDE.VSCode,
-                          }
-                        : null,
                 ] as (TabConfig | null)[]
             ).filter(isDefined),
-        [IDE, multipleWebviewsEnabled, extensionAPI, serverEndpoint]
+        [IDE, extensionAPI]
     )
 }

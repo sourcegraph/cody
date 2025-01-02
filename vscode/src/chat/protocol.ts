@@ -4,9 +4,12 @@ import type {
     ChatMessage,
     ClientCapabilitiesWithLegacyFields,
     ClientConfiguration,
+    CodyClientConfig,
     CodyIDE,
     ContextItem,
     ContextItemSource,
+    NLSSearchDynamicFilter,
+    ProcessingStep,
     PromptMode,
     RangeData,
     RequestMessage,
@@ -96,6 +99,12 @@ export type WebviewMessage =
           code: string
           instruction?: string | undefined | null
           fileName?: string | undefined | null
+          traceparent?: string | undefined | null
+      }
+    | {
+          command: 'trace-export'
+          // The traceSpan is a JSON-encoded string representing the trace data.
+          traceSpanEncodedJson: string
       }
     | {
           command: 'smartApplyAccept'
@@ -133,6 +142,11 @@ export type WebviewMessage =
           filterLabel: string
           message: string
       }
+    | {
+          command: 'reevaluateSearchWithSelectedFilters'
+          index: number
+          selectedFilters: NLSSearchDynamicFilter[]
+      }
 
 export interface SmartApplyResult {
     taskId: FixupTaskID
@@ -149,13 +163,12 @@ export type ExtensionMessage =
           clientCapabilities: ClientCapabilitiesWithLegacyFields
           authStatus: AuthStatus
           userProductSubscription?: UserProductSubscription | null | undefined
-          configFeatures: {
-              chat: boolean
-              attribution: boolean
-              serverSentModels: boolean
-          }
           isDotComUser: boolean
           workspaceFolderUris: string[]
+      }
+    | {
+          type: 'clientConfig'
+          clientConfig?: CodyClientConfig | null | undefined
       }
     | {
           /** Used by JetBrains and not VS Code. */
@@ -201,6 +214,8 @@ export interface WebviewSubmitMessage extends WebviewContextMessage {
     intent?: ChatMessage['intent'] | undefined | null
     intentScores?: { intent: string; score: number }[] | undefined | null
     manuallySelectedIntent?: boolean | undefined | null
+    traceparent?: string | undefined | null
+    steps?: ProcessingStep[] | undefined | null
 }
 
 interface WebviewEditMessage extends WebviewContextMessage {
@@ -212,6 +227,7 @@ interface WebviewEditMessage extends WebviewContextMessage {
     intent?: ChatMessage['intent'] | undefined | null
     intentScores?: { intent: string; score: number }[] | undefined | null
     manuallySelectedIntent?: boolean | undefined | null
+    steps?: ProcessingStep[] | undefined | null
 }
 
 interface WebviewContextMessage {
@@ -263,6 +279,9 @@ export const ACCOUNT_LIMITS_INFO_URL = new URL(
 )
 // TODO: Update this URL to the correct one when the Cody model waitlist is available
 export const CODY_BLOG_URL_o1_WAITLIST = new URL('https://sourcegraph.com/blog/openai-o1-for-cody')
+
+// TODO: Update to live link https://linear.app/sourcegraph/issue/CORE-535/cody-clients-migrate-ctas-to-live-links
+export const DOTCOM_WORKSPACE_LEARN_MORE_URL = new URL('https://sourcegraph.com/docs')
 
 /** The local environment of the editor. */
 export interface LocalEnv {

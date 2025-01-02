@@ -23,7 +23,8 @@ export class ChatClient {
     public async chat(
         messages: Message[],
         params: Partial<ChatParameters> & Pick<ChatParameters, 'maxTokensToSample'>,
-        abortSignal?: AbortSignal
+        abortSignal?: AbortSignal,
+        interactionId?: string
     ): Promise<AsyncGenerator<CompletionGeneratorValue>> {
         // Replace internal models used for wrapper models with the actual model ID.
         if (params.model?.includes('deep-cody')) {
@@ -77,6 +78,7 @@ export class ChatClient {
             completionParams,
             {
                 apiVersion: useApiV1 ? versions.codyAPIVersion : 0,
+                interactionId: interactionId,
                 customHeaders,
             },
             abortSignal

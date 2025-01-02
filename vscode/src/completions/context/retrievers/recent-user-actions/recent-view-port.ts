@@ -2,12 +2,25 @@ import type { AutocompleteContextSnippet } from '@sourcegraph/cody-shared'
 import debounce from 'lodash/debounce'
 import { LRUCache } from 'lru-cache'
 import * as vscode from 'vscode'
+import { autocompleteOutputChannelLogger } from '../../../output-channel-logger'
 import type { ContextRetriever, ContextRetrieverOptions } from '../../../types'
 import { RetrieverIdentifier, type ShouldUseContextParams, shouldBeUsedAsContext } from '../../utils'
+import {
+    getActiveNotebookUri,
+    getCellIndexInActiveNotebookEditor,
+    getNotebookLanguageId,
+    getTextFromNotebookCells,
+} from './notebook-utils'
+
+interface TrackViewPortLines {
+    startLine: number
+    endLine: number
+}
 
 interface TrackedViewPort {
     uri: vscode.Uri
-    visibleRange: vscode.Range
+    content: string
+    lines?: TrackViewPortLines
     languageId: string
     lastAccessTimestamp: number
 }
@@ -29,7 +42,11 @@ export class RecentViewPortRetriever implements vscode.Disposable, ContextRetrie
         options: RecentViewPortRetrieverOptions,
         readonly window: Pick<
             typeof vscode.window,
-            'onDidChangeTextEditorVisibleRanges' | 'onDidChangeActiveTextEditor' | 'activeTextEditor'
+            | 'onDidChangeTextEditorVisibleRanges'
+            | 'onDidChangeActiveTextEditor'
+            | 'activeTextEditor'
+            | 'onDidChangeNotebookEditorVisibleRanges'
+            | 'onDidChangeActiveNotebookEditor'
         > = vscode.window
     ) {
         this.maxTrackedViewPorts = options.maxTrackedViewPorts
@@ -42,33 +59,54 @@ export class RecentViewPortRetriever implements vscode.Disposable, ContextRetrie
             window.onDidChangeTextEditorVisibleRanges(
                 debounce(this.onDidChangeTextEditorVisibleRanges.bind(this), 300)
             ),
-            window.onDidChangeActiveTextEditor(this.onDidChangeActiveTextEditor.bind(this))
+            window.onDidChangeNotebookEditorVisibleRanges(
+                debounce(this.onDidChangeNotebookEditorVisibleRanges.bind(this), 300)
+            ),
+            window.onDidChangeActiveTextEditor(this.onDidChangeActiveTextEditor.bind(this)),
+            window.onDidChangeActiveNotebookEditor(this.onDidChangeActiveNotebookEditor.bind(this))
         )
     }
 
     public async retrieve({ document }: ContextRetrieverOptions): Promise<AutocompleteContextSnippet[]> {
+        autocompleteOutputChannelLogger.logDebug(
+            'recent view port retrieve',
+            'Retrieving recent view port context'
+        )
+
         const sortedViewPorts = this.getValidViewPorts(document)
 
         const snippetPromises = sortedViewPorts.map(async viewPort => {
-            const document = await vscode.workspace.openTextDocument(viewPort.uri)
-            const content = document.getText(viewPort.visibleRange)
-
-            return {
+            const baseSnippetData = {
                 uri: viewPort.uri,
-                content,
-                startLine: viewPort.visibleRange.start.line,
-                endLine: viewPort.visibleRange.end.line,
+                content: viewPort.content,
                 identifier: this.identifier,
                 metadata: {
                     timeSinceActionMs: Date.now() - viewPort.lastAccessTimestamp,
                 },
             }
+            const snippet: AutocompleteContextSnippet =
+                viewPort.lines !== undefined
+                    ? {
+                          type: 'file',
+                          ...viewPort.lines,
+                          ...baseSnippetData,
+                      }
+                    : {
+                          type: 'base',
+                          ...baseSnippetData,
+                      }
+            return snippet
         })
-        return Promise.all(snippetPromises)
+        const viewPortSnippets = await Promise.all(snippetPromises)
+        autocompleteOutputChannelLogger.logDebug(
+            'recent view port retrieve',
+            `Retrieved ${viewPortSnippets.length} recent view port context`
+        )
+        return viewPortSnippets
     }
 
     private getValidViewPorts(document: vscode.TextDocument): TrackedViewPort[] {
-        const currentFileUri = document.uri.toString()
+        const currentFileUri = this.getCurrentDocumentUri(document).toString()
         const currentLanguageId = document.languageId
         const viewPorts = Array.from(this.viewportsByDocumentUri.entries())
             .map(([_, value]) => value)
@@ -89,6 +127,13 @@ export class RecentViewPortRetriever implements vscode.Disposable, ContextRetrie
         return sortedViewPorts
     }
 
+    private getCurrentDocumentUri(document: vscode.TextDocument): vscode.Uri {
+        if (getCellIndexInActiveNotebookEditor(document) !== -1) {
+            return getActiveNotebookUri() ?? document.uri
+        }
+        return document.uri
+    }
+
     public isSupportedForLanguageId(): boolean {
         return true
     }
@@ -97,43 +142,91 @@ export class RecentViewPortRetriever implements vscode.Disposable, ContextRetrie
         if (this.activeTextEditor) {
             // Update the previous editor which was active before this one
             // Most of the property would remain same, but lastAccessTimestamp would be updated on the update
-            this.updateTrackedViewPort(
-                this.activeTextEditor.document,
-                this.activeTextEditor.visibleRanges[0],
-                this.activeTextEditor.document.languageId
-            )
+            this.updateTrackedViewPort({
+                uri: this.activeTextEditor.document.uri,
+                content: this.activeTextEditor.document.getText(this.activeTextEditor.visibleRanges[0]),
+                languageId: this.activeTextEditor.document.languageId,
+                startLine: this.activeTextEditor.visibleRanges.at(-1)?.start.line,
+                endLine: this.activeTextEditor.visibleRanges.at(-1)?.end.line,
+            })
         }
-        this.activeTextEditor = editor
-        if (!editor?.visibleRanges?.[0]) {
+        if (!editor) {
             return
         }
-        this.updateTrackedViewPort(editor.document, editor.visibleRanges[0], editor.document.languageId)
+        this.updateTextEditor(editor, editor.visibleRanges)
+    }
+
+    private onDidChangeActiveNotebookEditor(editor: vscode.NotebookEditor | undefined): void {
+        if (!editor?.notebook) {
+            return
+        }
+        this.updateNotebookEditor(editor, editor.visibleRanges)
     }
 
     private onDidChangeTextEditorVisibleRanges(event: vscode.TextEditorVisibleRangesChangeEvent): void {
-        const { textEditor, visibleRanges } = event
+        this.updateTextEditor(event.textEditor, event.visibleRanges)
+    }
+
+    private onDidChangeNotebookEditorVisibleRanges(
+        event: vscode.NotebookEditorVisibleRangesChangeEvent
+    ) {
+        this.updateNotebookEditor(event.notebookEditor, event.visibleRanges)
+    }
+
+    private updateTextEditor(editor: vscode.TextEditor, visibleRanges: readonly vscode.Range[]): void {
         if (visibleRanges.length === 0) {
             return
         }
-        this.updateTrackedViewPort(textEditor.document, visibleRanges[0], textEditor.document.languageId)
+        this.updateTrackedViewPort({
+            uri: editor.document.uri,
+            content: editor.document.getText(visibleRanges?.at(-1)),
+            languageId: editor.document.languageId,
+            startLine: visibleRanges?.at(-1)?.start.line,
+            endLine: visibleRanges?.at(-1)?.end.line,
+        })
     }
 
-    private updateTrackedViewPort(
-        document: vscode.TextDocument,
-        visibleRange: vscode.Range,
-        languageId: string
+    private updateNotebookEditor(
+        notebookEditor: vscode.NotebookEditor,
+        visibleRanges: readonly vscode.NotebookRange[]
     ): void {
-        if (document.uri.scheme !== 'file') {
+        if (!notebookEditor.notebook || visibleRanges.length === 0) {
+            return
+        }
+        const visibleCells = notebookEditor.notebook.getCells(visibleRanges?.at(-1))
+        const content = getTextFromNotebookCells(notebookEditor.notebook, visibleCells).toString()
+
+        this.updateTrackedViewPort({
+            uri: notebookEditor.notebook.uri,
+            content,
+            languageId: getNotebookLanguageId(notebookEditor.notebook),
+        })
+    }
+
+    private updateTrackedViewPort(params: {
+        uri: vscode.Uri
+        content: string
+        languageId: string
+        startLine?: number
+        endLine?: number
+    }): void {
+        if (params.uri.scheme !== 'file') {
             return
         }
         const now = Date.now()
-        const key = document.uri.toString()
+        const key = params.uri.toString()
 
         this.viewportsByDocumentUri.set(key, {
-            uri: document.uri,
-            visibleRange,
-            languageId,
+            uri: params.uri,
+            content: params.content,
+            languageId: params.languageId,
             lastAccessTimestamp: now,
+            ...(params.startLine !== undefined || params.endLine !== undefined
+                ? {
+                      startLine: params.startLine,
+                      endLine: params.endLine,
+                  }
+                : undefined),
         })
     }
 

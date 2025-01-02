@@ -41,6 +41,8 @@ class LocalStorage implements LocalStorageForModelPreferences {
     public readonly keys = {
         // LLM waitlist for the 09/12/2024 openAI o1 models
         waitlist_o1: 'CODY_WAITLIST_LLM_09122024',
+        deepCodyLastUsedDate: 'DEEP_CODY_LAST_USED_DATE',
+        deepCodyDailyUsageCount: 'DEEP_CODY_DAILY_CHAT_USAGE',
     }
 
     /**
@@ -341,8 +343,20 @@ class LocalStorage implements LocalStorageForModelPreferences {
         return this.get<string[]>(this.CODY_CHAT_MEMORY) ?? null
     }
 
-    public async setChatMemory(memories: string[]): Promise<void> {
+    public async setChatMemory(memories: string[] | null): Promise<void> {
         await this.set(this.CODY_CHAT_MEMORY, memories)
+    }
+
+    public getDeepCodyUsage(): { quota: number | undefined; lastUsed: string | undefined } {
+        const quota = this.get<number>(this.keys.deepCodyDailyUsageCount) ?? undefined
+        const lastUsed = this.get<string>(this.keys.deepCodyLastUsedDate) ?? undefined
+
+        return { quota, lastUsed }
+    }
+
+    public async setDeepCodyUsage(newQuota: number, lastUsed: string): Promise<void> {
+        await this.set(this.keys.deepCodyDailyUsageCount, newQuota)
+        await this.set(this.keys.deepCodyLastUsedDate, lastUsed)
     }
 
     public get<T>(key: string): T | null {
@@ -383,7 +397,7 @@ const noopLocalStorage = {
     update: () => Promise.resolve(undefined),
 } as any as Memento
 
-export function mockLocalStorage(storage: Memento = noopLocalStorage) {
+export function mockLocalStorage(storage: Memento | 'noop' | 'inMemory' = noopLocalStorage) {
     localStorage.setStorage(storage)
 }
 

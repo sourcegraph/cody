@@ -2,12 +2,17 @@ import * as vscode from 'vscode'
 
 import {
     type AuthStatus,
+    ClientConfigSingleton,
+    type CodyClientConfig,
     DOTCOM_URL,
+    type GraphQLAPIClientConfig,
     type PickResolvedConfiguration,
     SourcegraphGraphQLAPIClient,
+    type UnauthenticatedAuthStatus,
     cenv,
     clientCapabilities,
     currentAuthStatus,
+    getAuthErrorMessage,
     getCodyAuthReferralCode,
     graphqlClient,
     isDotCom,
@@ -82,27 +87,25 @@ export async function showSignInMenu(
             const selectedEndpoint = item.uri
             const token = await secretStorage.getToken(selectedEndpoint)
             const tokenSource = await secretStorage.getTokenSource(selectedEndpoint)
-            let { authStatus } = token
+            let authStatus = token
                 ? await authProvider.validateAndStoreCredentials(
                       { serverEndpoint: selectedEndpoint, accessToken: token, tokenSource },
                       'store-if-valid'
                   )
-                : { authStatus: undefined }
+                : undefined
             if (!authStatus?.authenticated) {
                 const newToken = await showAccessTokenInputBox(selectedEndpoint)
                 if (!newToken) {
                     return
                 }
-                authStatus = (
-                    await authProvider.validateAndStoreCredentials(
-                        {
-                            serverEndpoint: selectedEndpoint,
-                            accessToken: newToken,
-                            tokenSource: 'paste',
-                        },
-                        'store-if-valid'
-                    )
-                ).authStatus
+                authStatus = await authProvider.validateAndStoreCredentials(
+                    {
+                        serverEndpoint: selectedEndpoint,
+                        accessToken: newToken,
+                        tokenSource: 'paste',
+                    },
+                    'store-if-valid'
+                )
             }
             await showAuthResultMessage(selectedEndpoint, authStatus)
             logDebug('AuthProvider:signinMenu', mode, selectedEndpoint)
@@ -229,7 +232,7 @@ async function signinMenuForInstanceUrl(instanceUrl: string): Promise<void> {
     if (!accessToken) {
         return
     }
-    const { authStatus } = await authProvider.validateAndStoreCredentials(
+    const authStatus = await authProvider.validateAndStoreCredentials(
         { serverEndpoint: instanceUrl, accessToken: accessToken, tokenSource: 'paste' },
         'store-if-valid'
     )
@@ -282,17 +285,18 @@ async function showAuthResultMessage(
         const authority = vscode.Uri.parse(endpoint).authority
         await vscode.window.showInformationMessage(`Signed in to ${authority || endpoint}`)
     } else {
-        await showAuthFailureMessage(endpoint)
+        await showAuthFailureMessage(endpoint, authStatus)
     }
 }
 
-async function showAuthFailureMessage(endpoint: string): Promise<void> {
-    const authority = vscode.Uri.parse(endpoint).authority
-    await vscode.window.showErrorMessage(
-        `Authentication failed. Please ensure Cody is enabled for ${authority} and verify your email address if required.`
-    )
+export async function showAuthFailureMessage(
+    endpoint: string,
+    authStatus: UnauthenticatedAuthStatus | undefined
+): Promise<void> {
+    if (authStatus?.error) {
+        await vscode.window.showErrorMessage(getAuthErrorMessage(authStatus.error).message)
+    }
 }
-
 /**
  * Register URI Handler (vscode://sourcegraph.cody-ai) for resolving token sending back from
  * sourcegraph.com.
@@ -307,7 +311,7 @@ export async function tokenCallbackHandler(uri: vscode.Uri): Promise<void> {
         return
     }
 
-    const { authStatus } = await authProvider.validateAndStoreCredentials(
+    const authStatus = await authProvider.validateAndStoreCredentials(
         { serverEndpoint: endpoint, accessToken: token, tokenSource: 'redirect' },
         'store-if-valid'
     )
@@ -323,7 +327,7 @@ export async function tokenCallbackHandler(uri: vscode.Uri): Promise<void> {
     if (authStatus?.authenticated) {
         await vscode.window.showInformationMessage(`Signed in to ${endpoint}`)
     } else {
-        await showAuthFailureMessage(endpoint)
+        await showAuthFailureMessage(endpoint, authStatus)
     }
 }
 
@@ -402,7 +406,8 @@ export type ResolvedConfigurationCredentialsOnly = PickResolvedConfiguration<{
  */
 export async function validateCredentials(
     config: ResolvedConfigurationCredentialsOnly,
-    signal?: AbortSignal
+    signal?: AbortSignal,
+    clientConfig?: CodyClientConfig
 ): Promise<AuthStatus> {
     // An access token is needed except for Cody Web, which uses cookies.
     if (!config.auth.accessToken && !clientCapabilities().isCodyWeb) {
@@ -411,51 +416,83 @@ export async function validateCredentials(
 
     logDebug('auth', `Authenticating to ${config.auth.serverEndpoint}...`)
 
-    // Check if credentials are valid and if Cody is enabled for the credentials and endpoint.
-    using client = SourcegraphGraphQLAPIClient.withStaticConfig({
+    const apiClientConfig: GraphQLAPIClientConfig = {
         configuration: {
             customHeaders: config.configuration.customHeaders,
             telemetryLevel: 'off',
         },
         auth: config.auth,
         clientState: config.clientState,
-    })
-
-    const userInfo = await client.getCurrentUserInfo(signal)
-    signal?.throwIfAborted()
-
-    if (isError(userInfo) && isNetworkLikeError(userInfo)) {
-        logDebug(
-            'auth',
-            `Failed to authenticate to ${config.auth.serverEndpoint} due to likely network error`,
-            userInfo.message
-        )
-        return {
-            authenticated: false,
-            showNetworkError: true,
-            endpoint: config.auth.serverEndpoint,
-            pendingValidation: false,
-        }
-    }
-    if (!userInfo || isError(userInfo)) {
-        logDebug(
-            'auth',
-            `Failed to authenticate to ${config.auth.serverEndpoint} due to invalid credentials or other endpoint error`,
-            userInfo?.message
-        )
-        return {
-            authenticated: false,
-            endpoint: config.auth.serverEndpoint,
-            showInvalidAccessTokenError: true,
-            pendingValidation: false,
-        }
     }
 
-    logDebug('auth', `Authentication succeed to endpoint ${config.auth.serverEndpoint}`)
-    return newAuthStatus({
-        ...userInfo,
-        endpoint: config.auth.serverEndpoint,
-        authenticated: true,
-        hasVerifiedEmail: false,
-    })
+    // Check if credentials are valid and if Cody is enabled for the credentials and endpoint.
+    const client = SourcegraphGraphQLAPIClient.withStaticConfig(apiClientConfig)
+
+    try {
+        const userInfo = await client.getCurrentUserInfo(signal)
+        signal?.throwIfAborted()
+
+        if (isError(userInfo) && isNetworkLikeError(userInfo)) {
+            logDebug(
+                'auth',
+                `Failed to authenticate to ${config.auth.serverEndpoint} due to likely network error`,
+                userInfo.message
+            )
+            return {
+                authenticated: false,
+                error: { type: 'network-error' },
+                endpoint: config.auth.serverEndpoint,
+                pendingValidation: false,
+            }
+        }
+        if (!userInfo || isError(userInfo)) {
+            logDebug(
+                'auth',
+                `Failed to authenticate to ${config.auth.serverEndpoint} due to invalid credentials or other endpoint error`,
+                userInfo?.message
+            )
+            return {
+                authenticated: false,
+                endpoint: config.auth.serverEndpoint,
+                error: { type: 'invalid-access-token' },
+                pendingValidation: false,
+            }
+        }
+
+        if (isDotCom(config.auth.serverEndpoint)) {
+            if (!clientConfig) {
+                clientConfig = await ClientConfigSingleton.getInstance().fetchConfigWithToken(
+                    apiClientConfig,
+                    signal
+                )
+            }
+            if (clientConfig?.userShouldUseEnterprise) {
+                return {
+                    authenticated: false,
+                    endpoint: config.auth.serverEndpoint,
+                    pendingValidation: false,
+                    error: {
+                        type: 'enterprise-user-logged-into-dotcom',
+                        enterprise: getEnterpriseName(userInfo.primaryEmail?.email || ''),
+                    },
+                }
+            }
+        }
+
+        logDebug('auth', `Authentication succeed to endpoint ${config.auth.serverEndpoint}`)
+        return newAuthStatus({
+            ...userInfo,
+            endpoint: config.auth.serverEndpoint,
+            authenticated: true,
+            hasVerifiedEmail: false,
+        })
+    } finally {
+        client.dispose()
+    }
+}
+
+function getEnterpriseName(email: string): string {
+    const domain = email.split('@')[1]
+    const name = domain.split('.')[0]
+    return name.charAt(0).toUpperCase() + name.slice(1)
 }

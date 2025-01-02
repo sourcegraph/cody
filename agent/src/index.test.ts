@@ -11,6 +11,7 @@ import {
     type SerializedChatTranscript,
 } from '@sourcegraph/cody-shared'
 
+import { getMockedDotComServerModelConfiguration } from '@sourcegraph/cody-shared/dist/models/dotcom'
 import * as uuid from 'uuid'
 import { ResponseError } from 'vscode-jsonrpc'
 import { CodyJsonRpcErrorCode } from '../../vscode/src/jsonrpc/CodyJsonRpcErrorCode'
@@ -129,7 +130,7 @@ describe('Agent', () => {
         // JetBrains client does and there was a bug where everything worked
         // fine as long as we didn't send the second unauthenticated config
         // change.
-        const initModelName = 'anthropic::2023-06-01::claude-3.5-sonnet'
+        const initModelName = getMockedDotComServerModelConfiguration().defaultModels.chat
         const { models } = await client.request('chat/models', { modelUsage: ModelUsage.Chat })
         expect(models[0].model.id).toStrictEqual(initModelName)
 
@@ -196,8 +197,8 @@ describe('Agent', () => {
         expect(currentUserCodySubscription).toMatchInlineSnapshot(`
           {
             "applyProRateLimits": true,
-            "currentPeriodEndAt": "2024-10-14T22:11:32Z",
-            "currentPeriodStartAt": "2024-09-14T22:11:32Z",
+            "currentPeriodEndAt": "2025-01-14T22:11:32Z",
+            "currentPeriodStartAt": "2024-12-14T22:11:32Z",
             "plan": "PRO",
             "status": "ACTIVE",
           }
@@ -209,7 +210,7 @@ describe('Agent', () => {
 
     describe('Chat', () => {
         it('chat/submitMessage (short message)', async () => {
-            await setChatModel('anthropic::2023-06-01::claude-3.5-sonnet')
+            await setChatModel(getMockedDotComServerModelConfiguration().defaultModels.chat)
             const lastMessage = await client.sendSingleMessageToNewChat('Hello!')
             expect(lastMessage).toMatchSnapshot()
             // telemetry assertion, to validate the expected events fired during the test run
@@ -437,7 +438,7 @@ describe('Agent', () => {
                     'cody.chatResponse:noCode',
                 ])
             )
-        })
+        }, 30_000)
 
         describe('chat/editMessage', () => {
             it(
@@ -526,10 +527,7 @@ describe('Agent', () => {
                     expect.arrayContaining([
                         'cody.chat-question:submitted',
                         'cody.chat-question:executed',
-                        'cody.chatResponse:noCode',
-                        'cody.chat-question:submitted',
-                        'cody.chat-question:executed',
-                        'cody.chatResponse:noCode',
+                        'cody.editChatButton:clicked',
                     ])
                 )
             }, 30_000)
@@ -556,7 +554,7 @@ describe('Agent', () => {
                     'cody.command.explain:executed',
                     'cody.chat-question:submitted',
                     'cody.chat-question:executed',
-                    'cody.chatResponse:hasCode',
+                    'cody.chatResponse:noCode',
                 ])
             )
         }, 30_000)

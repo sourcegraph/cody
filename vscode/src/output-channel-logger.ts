@@ -136,7 +136,9 @@ function formatMessage({
     debugVerbose: boolean
 }): string {
     const featureLabel = feature ? `${feature}:` : ''
-    const messageParts: string[] = [`${prefix}${featureLabel}${filterLabel} ${text}:`]
+    const messageParts: string[] = [
+        `${prefix}${featureLabel}${filterLabel} ${text}${args.length > 0 ? ':' : ''}`,
+    ]
 
     if (args.length > 0) {
         const lastArg = args.at(-1)

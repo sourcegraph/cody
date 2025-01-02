@@ -56,7 +56,7 @@ jobs:
         with:
           workload_identity_provider: ${{ secrets.DATA_TEAM_PROVIDER_NAME }}
           service_account: ${{ secrets.DATA_TEAM_SA_EMAIL }}
-      - uses: google-github-actions/setup-gcloud@v0
+      - uses: google-github-actions/setup-gcloud@v2
       - run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
         shell: bash
         id: pnpm-cache
@@ -176,7 +176,9 @@ jobs:
         if: ${{ failure() }}
         with:
           name: playwright-recordings ${{ matrix.runner }}
-          path: playwright/
+          path: |
+            playwright/
+            vscode/test-results/
 
   build:
     runs-on: ubuntu-latest
@@ -217,4 +219,9 @@ jobs:
         shell: bash
       - run: pnpm run build
       - run: pnpm -C vscode run build
+      - name: Check bundle sizes
+        run: |
+          cd vscode
+          pnpm ts-node ./scripts/measure-bundle-size.ts
+          cd ..
       - run: CODY_RELEASE_TYPE=stable pnpm -C vscode run release:dry-run

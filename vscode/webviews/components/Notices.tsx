@@ -1,4 +1,5 @@
-import { CodyIDE } from '@sourcegraph/cody-shared'
+import { CodyIDE, type CodyNotice, FeatureFlag } from '@sourcegraph/cody-shared'
+import { DOTCOM_WORKSPACE_UPGRADE_URL } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 import { S2_URL } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 import {
     ArrowLeftRightIcon,
@@ -12,10 +13,13 @@ import {
 } from 'lucide-react'
 import { type FunctionComponent, type ReactNode, useCallback, useMemo, useState } from 'react'
 import SourcegraphIcon from '../../resources/sourcegraph-mark.svg'
+import { DOTCOM_WORKSPACE_LEARN_MORE_URL } from '../../src/chat/protocol'
 import type { UserAccountInfo } from '../Chat'
 import { CodyLogo } from '../icons/CodyLogo'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
 import { useTelemetryRecorder } from '../utils/telemetry'
+import { useFeatureFlag } from '../utils/useFeatureFlags'
+import { MarkdownFromCody } from './MarkdownFromCody'
 import { useLocalStorage } from './hooks'
 import { Button } from './shadcn/ui/button'
 
@@ -26,18 +30,23 @@ interface Notice {
 }
 
 type NoticeVariants = 'default' | 'warning'
-type NoticeIDs = 'DogfoodS2' | 'TeamsUpgrade'
+type NoticeIDs = 'DogfoodS2' | 'TeamsUpgrade' | 'DeepCodyDotCom' | 'DeepCodyEnterprise'
 
 interface NoticesProps {
     user: UserAccountInfo
     // Whether to show the Sourcegraph Teams upgrade CTA or not.
     isTeamsUpgradeCtaEnabled?: boolean
+    instanceNotices: CodyNotice[]
 }
 
 const storageKey = 'DismissedWelcomeNotices'
 
-export const Notices: React.FC<NoticesProps> = ({ user, isTeamsUpgradeCtaEnabled }) => {
+export const Notices: React.FC<NoticesProps> = ({ user, isTeamsUpgradeCtaEnabled, instanceNotices }) => {
     const telemetryRecorder = useTelemetryRecorder()
+
+    const isDeepCodyEnabled = useFeatureFlag(FeatureFlag.DeepCody)
+    const isDeepCodyShellContextSupported = useFeatureFlag(FeatureFlag.DeepCodyShellContext)
+
     // dismissed notices from local storage
     const [dismissedNotices, setDismissedNotices] = useLocalStorage(storageKey, '')
     // session-only dismissal - for notices we want to show if the user logs out and logs back in.
@@ -59,8 +68,52 @@ export const Notices: React.FC<NoticesProps> = ({ user, isTeamsUpgradeCtaEnabled
         [telemetryRecorder, setDismissedNotices]
     )
 
+    const settingsNameByIDE =
+        user.IDE === CodyIDE.JetBrains
+            ? 'Settings Editor'
+            : user.IDE === CodyIDE.VSCode
+              ? 'settings.json'
+              : 'Extension Settings'
+
     const notices: Notice[] = useMemo(
         () => [
+            ...instanceNotices.map(notice => ({
+                id: notice.key,
+                isVisible: true,
+                content: (
+                    <MarkdownNotice
+                        title={notice.title}
+                        content={notice.message}
+                        onDismiss={() => dismissNotice(notice.key)}
+                    />
+                ),
+            })),
+            {
+                id: 'DeepCody',
+                isVisible: (isDeepCodyEnabled || user.isCodyProUser) && user.IDE !== CodyIDE.Web,
+                content: (
+                    <NoticeContent
+                        id={user.isCodyProUser ? 'DeepCodyDotCom' : 'DeepCodyEnterprise'}
+                        variant="default"
+                        title="Deep Cody (Experimental)"
+                        message={
+                            "An early preview of agentic experience powered by Claude 3.5 Sonnet and other models to enrich context and leverage different tools for better quality responses. Deep Cody does this by searching your codebase, browsing the web, and running terminal commands (once enabled)! To enable terminal commands, set 'cody.agentic.context.experimentalShell' to true in your " +
+                            settingsNameByIDE +
+                            '.'
+                        }
+                        onDismiss={() =>
+                            dismissNotice(user.isCodyProUser ? 'DeepCodyDotCom' : 'DeepCodyEnterprise')
+                        }
+                        info="Usage limits apply during the experimental phase."
+                        footer={
+                            !isDeepCodyShellContextSupported
+                                ? 'Contact admins to enable Command Execution'
+                                : ''
+                        }
+                        actions={[]}
+                    />
+                ),
+            },
             /**
              * Notifies users that they are eligible for a free upgrade to Sourcegraph Teams.
              * TODO: Update to live link https://linear.app/sourcegraph/issue/CORE-535/cody-clients-migrate-ctas-to-live-links
@@ -79,7 +132,7 @@ export const Notices: React.FC<NoticesProps> = ({ user, isTeamsUpgradeCtaEnabled
                             {
                                 // TODO: Update to live link https://linear.app/sourcegraph/issue/CORE-535/cody-clients-migrate-ctas-to-live-links
                                 label: 'Upgrade to Teams',
-                                href: 'https://sourcegraph.com/cody/manage',
+                                href: DOTCOM_WORKSPACE_UPGRADE_URL.href,
                                 variant: 'default',
                                 icon: <Users2Icon size={14} />,
                                 iconPosition: 'start',
@@ -87,7 +140,7 @@ export const Notices: React.FC<NoticesProps> = ({ user, isTeamsUpgradeCtaEnabled
                             {
                                 // TODO: Update to live link https://linear.app/sourcegraph/issue/CORE-535/cody-clients-migrate-ctas-to-live-links
                                 label: 'Learn More',
-                                href: 'https://sourcegraph.com/docs',
+                                href: DOTCOM_WORKSPACE_LEARN_MORE_URL.href,
                                 variant: 'ghost',
                                 icon: <ExternalLinkIcon size={14} />,
                                 iconPosition: 'end',
@@ -135,7 +188,15 @@ export const Notices: React.FC<NoticesProps> = ({ user, isTeamsUpgradeCtaEnabled
                 ),
             },
         ],
-        [user, dismissNotice, isTeamsUpgradeCtaEnabled]
+        [
+            user,
+            dismissNotice,
+            isTeamsUpgradeCtaEnabled,
+            isDeepCodyEnabled,
+            isDeepCodyShellContextSupported,
+            settingsNameByIDE,
+            instanceNotices,
+        ]
     )
 
     // First, modify the activeNotice useMemo to add conditional logic for DogfoodS2
@@ -155,7 +216,7 @@ export const Notices: React.FC<NoticesProps> = ({ user, isTeamsUpgradeCtaEnabled
     }
 
     return (
-        <div className="tw-flex tw-flex-col tw-mx-4 tw-my-2 tw-p-4 tw-gap-2">{activeNotice.content}</div>
+        <div className="tw-flex tw-flex-col tw-mx-2 tw-my-2 tw-p-2 tw-gap-2">{activeNotice.content}</div>
     )
 }
 
@@ -173,6 +234,8 @@ interface NoticeContentProps {
         iconPosition?: 'start' | 'end'
     }>
     onDismiss: () => void
+    info?: string
+    footer?: string
 }
 
 const NoticeContent: FunctionComponent<NoticeContentProps> = ({
@@ -181,6 +244,8 @@ const NoticeContent: FunctionComponent<NoticeContentProps> = ({
     message,
     actions,
     id,
+    info,
+    footer,
     onDismiss,
 }) => {
     const telemetryRecorder = useTelemetryRecorder()
@@ -191,6 +256,16 @@ const NoticeContent: FunctionComponent<NoticeContentProps> = ({
     }[variant]
 
     const header = {
+        DeepCodyDotCom: (
+            <>
+                <CodyLogo size={16} />
+            </>
+        ),
+        DeepCodyEnterprise: (
+            <>
+                <CodyLogo size={16} />
+            </>
+        ),
         DogfoodS2: (
             <>
                 <EyeIcon />
@@ -213,6 +288,7 @@ const NoticeContent: FunctionComponent<NoticeContentProps> = ({
         >
             <div className="tw-flex tw-gap-3 tw-mb-2">{header}</div>
             {title && <h1 className="tw-text-lg tw-font-semibold">{title}</h1>}
+            {info && <p className="tw-mb-2">ⓘ {info}</p>}
             <p>{message}</p>
             <div className="tw-mt-3 tw-flex tw-gap-3">
                 {actions.map((action, _index) => (
@@ -245,10 +321,41 @@ const NoticeContent: FunctionComponent<NoticeContentProps> = ({
                     </Button>
                 ))}
             </div>
+            {footer && <p className="tw-mt-2">{footer}</p>}
             {/* Dismiss button. */}
             <Button variant="ghost" onClick={onDismiss} className="tw-absolute tw-top-2 tw-right-2">
                 <XIcon size="14" />
             </Button>
         </aside>
+    )
+}
+
+interface MarkdownNotice {
+    title: string
+    content: string
+    onDismiss: () => void
+}
+
+const MarkdownNotice: FunctionComponent<MarkdownNotice> = props => {
+    const { title, content, onDismiss } = props
+    const message = content.length > 240 ? `${content.slice(0, 240)}...` : content
+
+    return (
+        <div
+            className="tw-bg-subtle tw-ml-2 tw-mr-2 tw-border tw-border-border tw-relative tw-rounded-lg tw-flex tw-flex-col tw-gap-2 tw-pt-4 tw-pb-6 tw-px-6"
+            data-markdown-notice=""
+        >
+            {title && (
+                <h1 className="tw-text-md tw-font-semibold tw-text-title tw-flex tw-flex-row tw-items-center tw-gap-3 tw-mt-1 tw-mb-2">
+                    {title}
+                </h1>
+            )}
+
+            <MarkdownFromCody className="tw-text-subtle tw-leading-tight">{message}</MarkdownFromCody>
+
+            <Button variant="ghost" onClick={onDismiss} className="tw-absolute tw-top-3 tw-right-2">
+                <XIcon size="14" />
+            </Button>
+        </div>
     )
 }

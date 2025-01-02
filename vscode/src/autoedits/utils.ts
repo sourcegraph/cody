@@ -1,6 +1,6 @@
 import { getNewLineChar, lines } from '../completions/text-processing'
 
-import { getDecorationInfo } from './renderer/diff-utils'
+import type { DecorationInfo } from './renderer/decorators/base'
 
 export function fixFirstLineIndentation(source: string, target: string): string {
     // Check the first line indentation of source string and replaces in target string.
@@ -60,21 +60,19 @@ function getNumberOfNewLineCharsAtSuffix(text: string): number {
 
 export function isPredictedTextAlreadyInSuffix({
     codeToRewrite,
-    prediction,
+    decorationInfo: { addedLines },
     suffix,
 }: {
     codeToRewrite: string
-    prediction: string
+    decorationInfo: DecorationInfo
     suffix: string
 }): boolean {
-    const { addedLines } = getDecorationInfo(codeToRewrite, prediction)
-
     if (addedLines.length === 0) {
         return false
     }
 
     const allAddedLinesText = addedLines
-        .sort((a, b) => a.lineNumber - b.lineNumber)
+        .sort((a, b) => a.modifiedLineNumber - b.modifiedLineNumber)
         .map(line => line.text)
         .join(getNewLineChar(codeToRewrite))
 
@@ -109,7 +107,11 @@ export function adjustPredictionIfInlineCompletionPossible(
 
     const indexPrefix = originalPrediction.indexOf(prefixWithoutNewLine)
     const indexSuffix = originalPrediction.lastIndexOf(suffixWithoutNewLine)
-    if (indexPrefix === -1 || indexSuffix === -1) {
+    if (
+        indexPrefix === -1 ||
+        indexSuffix === -1 ||
+        indexPrefix + prefixWithoutNewLine.length > indexSuffix
+    ) {
         return originalPrediction
     }
 

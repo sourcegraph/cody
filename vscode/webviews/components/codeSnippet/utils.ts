@@ -1,5 +1,5 @@
+import type { NLSSearchFileMatch } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 import type * as React from 'react'
-import type { ContentMatch } from './types'
 
 // biome-ignore lint/complexity/noBannedTypes:
 type Merge<P1 = {}, P2 = {}> = Omit<P1, keyof P2> & P2
@@ -51,10 +51,12 @@ export const formatRepositoryStarCount = (repoStars?: number): string | undefine
     return undefined
 }
 
-export function getFileMatchUrl(base: string, fileMatch: ContentMatch): string {
-    const revision = getRevision(fileMatch.branches, fileMatch.commit)
-    const encodedFilePath = fileMatch.path.split('/').map(encodeURIComponent).join('/')
-    return `${base}${fileMatch.repository}${revision ? '@' + revision : ''}/-/blob/${encodedFilePath}`
+export function getFileMatchUrl(base: string, fileMatch: NLSSearchFileMatch): string {
+    const revision = getRevision([], fileMatch.file.commit?.oid)
+    const encodedFilePath = fileMatch.file.path.split('/').map(encodeURIComponent).join('/')
+    return `${base}${fileMatch.repository.name}${
+        revision ? '@' + revision : ''
+    }/-/blob/${encodedFilePath}`
 }
 
 export function getRevision(branches?: string[], version?: string): string {

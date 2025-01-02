@@ -1,6 +1,7 @@
 import type * as vscode from 'vscode'
 
 import type {
+    AuthenticationError,
     ClientCapabilities,
     CodyCommand,
     ContextFilters,
@@ -9,7 +10,6 @@ import type {
     ModelAvailabilityStatus,
     ModelUsage,
     SerializedChatTranscript,
-    event,
 } from '@sourcegraph/cody-shared'
 import type { TelemetryEventMarketingTrackingInput } from '@sourcegraph/telemetry'
 
@@ -155,10 +155,6 @@ export type ClientRequests = {
     'featureFlags/getFeatureFlag': [{ flagName: string }, boolean | null]
 
     'graphql/getCurrentUserCodySubscription': [null, CurrentUserCodySubscription | null]
-    /**
-     * @deprecated use 'telemetry/recordEvent' instead.
-     */
-    'graphql/logEvent': [event, null]
     /**
      * Record telemetry events.
      */
@@ -582,13 +578,6 @@ export interface ExtensionConfiguration {
     codebase?: string | undefined | null
 
     /**
-     * When passed, the Agent will handle recording events.
-     * If not passed, client must send `graphql/logEvent` requests manually.
-     * @deprecated This is only used for the legacy logEvent - use `telemetry` instead.
-     */
-    eventProperties?: EventProperties | undefined | null
-
-    /**
      * @deprecated use 'customConfigurationJson' instead, it supports nested objects
      */
     customConfiguration?: Record<string, any> | undefined | null
@@ -631,25 +620,6 @@ interface TelemetryEvent {
             | undefined
             | null
     }
-}
-
-/**
- * @deprecated EventProperties are no longer referenced.
- */
-interface EventProperties {
-    /**
-     * @deprecated Use (ExtensionConfiguration).anonymousUserID instead
-     */
-    anonymousUserID: string
-
-    /** Event prefix, like 'CodyNeovimPlugin' */
-    prefix: string
-
-    /** Name of client, like 'NEOVIM_CODY_EXTENSION' */
-    client: string
-
-    /** Source type enum*/
-    source: 'IDEEXTENSION'
 }
 
 export interface Position {
@@ -705,9 +675,7 @@ export interface ProtocolUnauthenticatedAuthStatus {
     status: 'unauthenticated'
     authenticated: boolean
     endpoint: string
-    showNetworkError?: boolean | null | undefined
-
-    showInvalidAccessTokenError?: boolean | null | undefined
+    error?: AuthenticationError | null | undefined
     pendingValidation: boolean
 }
 

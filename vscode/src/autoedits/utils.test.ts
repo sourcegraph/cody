@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest'
+
+import { getDecorationInfo } from './renderer/diff-utils'
 import * as utils from './utils'
 
 describe('fixFirstLineIndentation', () => {
@@ -298,6 +300,18 @@ describe('isAllNewLineChars', () => {
 })
 
 describe('adjustPredictionIfInlineCompletionPossible', () => {
+    it('prediction when the prefix matches partially with suffix', () => {
+        const originalPrediction = '\n    private async func {\n'
+        const prefix = '\n    private '
+        const suffix = '\n\n    private async func {\n'
+        const result = utils.adjustPredictionIfInlineCompletionPossible(
+            originalPrediction,
+            prefix,
+            suffix
+        )
+        expect(result).toBe(originalPrediction)
+    })
+
     it('returns original prediction if prefix or suffix not found', () => {
         const originalPrediction = 'some code'
         const prefix = 'prefix'
@@ -637,28 +651,37 @@ describe('countNewLineCharsStart', () => {
 
 describe('isPredictedTextAlreadyInSuffix', () => {
     it('should return false when there are no added lines', () => {
+        const codeToRewrite = 'const x = 1;\nconst y = 2;'
+        const prediction = 'const x = 1;\nconst y = 2;'
+
         const result = utils.isPredictedTextAlreadyInSuffix({
-            codeToRewrite: 'const x = 1;\nconst y = 2;',
-            prediction: 'const x = 1;\nconst y = 2;',
+            codeToRewrite,
+            decorationInfo: getDecorationInfo(codeToRewrite, prediction),
             suffix: '',
         })
         expect(result).toBe(false)
     })
 
     it('should return false when predicted text is different from suffix', () => {
+        const codeToRewrite = 'function test() {\n    \n}'
+        const prediction = 'function test() {\n    console.log("hello");\n}'
+
         const result = utils.isPredictedTextAlreadyInSuffix({
-            codeToRewrite: 'function test() {\n    \n}',
-            prediction: 'function test() {\n    console.log("hello");\n}',
+            codeToRewrite,
+            decorationInfo: getDecorationInfo(codeToRewrite, prediction),
             suffix: 'return true;\n}',
         })
         expect(result).toBe(false)
     })
 
     it('should handle multiline predictions correctly', () => {
+        const codeToRewrite = 'function test() {\n'
+        const prediction =
+            'function test() {\n    const a = 1;\n    const b = 2;\n    console.log(a + b);\n}\n'
+
         const result = utils.isPredictedTextAlreadyInSuffix({
-            codeToRewrite: 'function test() {\n',
-            prediction:
-                'function test() {\n    const a = 1;\n    const b = 2;\n    console.log(a + b);\n}\n',
+            codeToRewrite,
+            decorationInfo: getDecorationInfo(codeToRewrite, prediction),
             suffix: '    const a = 1;\n    const b = 2;\n    console.log(a + b);\n}\n',
         })
         expect(result).toBe(true)

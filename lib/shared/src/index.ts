@@ -74,6 +74,9 @@ export type {
     UserLocalHistory,
     SerializedChatMessage,
     RankedContext,
+    ChatMessageWithSearch,
+    ChatMessageSearch,
+    ProcessingStep,
 } from './chat/transcript/messages'
 export {
     CODY_PASSTHROUGH_VSCODE_OPEN_COMMAND_ID,
@@ -233,6 +236,7 @@ export * from './sourcegraph-api/completions/types'
 export {
     DOTCOM_URL,
     isDotCom,
+    DOTCOM_WORKSPACE_UPGRADE_URL,
 } from './sourcegraph-api/environments'
 export {
     AbortError,
@@ -252,20 +256,29 @@ export {
     SourcegraphGraphQLAPIClient,
     graphqlClient,
 } from './sourcegraph-api/graphql'
-export { ClientConfigSingleton, type CodyClientConfig } from './sourcegraph-api/clientConfig'
+export {
+    ClientConfigSingleton,
+    type CodyClientConfig,
+    type CodyNotice,
+} from './sourcegraph-api/clientConfig'
 export {
     isNodeResponse,
     INCLUDE_EVERYTHING_CONTEXT_FILTERS,
     EXCLUDE_EVERYTHING_CONTEXT_FILTERS,
     PromptMode,
     type BrowserOrNodeResponse,
-    type LogEventMode,
     type ContextFilters,
     type CodyContextFilterItem,
     type RepoListResponse,
     type SuggestionsRepo,
     type RepoSuggestionsSearchResponse,
     type ChatIntentResult,
+    type NLSSearchResult,
+    type NLSSearchResponse,
+    type NLSSearchFileMatch,
+    type NLSSearchDynamicFilter,
+    type NLSSearchDynamicFilterKind,
+    type GraphQLAPIClientConfig,
 } from './sourcegraph-api/graphql/client'
 export type {
     CodyLLMSiteConfiguration,
@@ -345,6 +358,10 @@ export {
     REMOTE_DIRECTORY_PROVIDER_URI,
     WEB_PROVIDER_URI,
     GIT_OPENCTX_PROVIDER_URI,
+    CODE_SEARCH_PROVIDER_URI,
+    WORKSPACE_REPOSITORY_PROVIDER_URI,
+    WORKSPACE_DIRECTORY_PROVIDER_URI,
+    isRemoteWorkspaceProvider,
 } from './context/openctx/api'
 export * from './context/openctx/context'
 export * from './lexicalEditor/editorState'
@@ -378,6 +395,7 @@ export { fetchLocalOllamaModels } from './llm-providers/ollama/utils'
 export * from './editor/editorState'
 export {
     currentUserProductSubscription,
+    checkIfEnterpriseUser,
     type UserProductSubscription,
     cachedUserProductSubscription,
     userProductSubscription,
@@ -389,3 +407,5 @@ export {
     checkVersion,
 } from './sourcegraph-api/siteVersion'
 export { configOverwrites } from './models/configOverwrites'
+export { isS2 } from './sourcegraph-api/environments'
+export { createGitDiff } from './editor/create-git-diff'

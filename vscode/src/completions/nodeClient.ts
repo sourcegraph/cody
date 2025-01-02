@@ -37,7 +37,7 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
         cb: CompletionCallbacks,
         signal?: AbortSignal
     ): Promise<void> {
-        const { apiVersion } = requestParams
+        const { apiVersion, interactionId } = requestParams
 
         const url = new URL(await this.completionsEndpoint())
         if (apiVersion >= 1) {
@@ -94,6 +94,7 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                 // Disable gzip compression since the sg instance will start to batch
                 // responses afterwards.
                 'Accept-Encoding': 'gzip;q=0',
+                'X-Sourcegraph-Interaction-ID': interactionId || '',
                 ...(auth.accessToken ? { Authorization: `token ${auth.accessToken}` } : null),
                 ...configuration?.customHeaders,
                 ...requestParams.customHeaders,
@@ -220,7 +221,6 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                         this.sendEvents(parseResult.events, cb, span)
                         bufferText = parseResult.remainingBuffer
                     })
-
                     res.on('error', e => handleError(e))
                 }
             )
@@ -283,7 +283,7 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
         cb: CompletionCallbacks,
         signal?: AbortSignal
     ): Promise<void> {
-        const { url, serializedParams } = await this.prepareRequest(params, requestParams)
+        const { url, serializedParams, headerParams } = await this.prepareRequest(params, requestParams)
         const log = this.logger?.startCompletion(params, url.toString())
         return tracer.startActiveSpan(`POST ${url.toString()}`, async span => {
             span.setAttributes({
@@ -303,6 +303,7 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                     ...configuration.customHeaders,
                     ...requestParams.customHeaders,
                     ...getTraceparentHeaders(),
+                    ...headerParams,
                 })
 
                 addCodyClientIdentificationHeaders(headers)

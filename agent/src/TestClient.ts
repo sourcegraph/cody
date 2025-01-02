@@ -21,6 +21,7 @@ import type { ExtensionMessage, ExtensionTranscriptMessage } from '../../vscode/
 import { doesFileExist } from '../../vscode/src/commands/utils/workspace-files'
 import { ProtocolTextDocumentWithUri } from '../../vscode/src/jsonrpc/TextDocumentWithUri'
 import { CodyTaskState } from '../../vscode/src/non-stop/state'
+import { mockLocalStorage } from '../../vscode/src/services/LocalStorageProvider'
 import {
     TESTING_CREDENTIALS,
     type TestingCredentials,
@@ -85,28 +86,11 @@ interface TestClientParams {
     readonly credentials: TestingCredentials
     bin?: string
     telemetryExporter?: 'testing' | 'graphql' // defaults to testing, which doesn't send telemetry
-    logEventMode?: 'connected-instance-only' | 'all' | 'dotcom-only'
     onWindowRequest?: (params: ShowWindowMessageParams) => Promise<string>
     extraConfiguration?: Record<string, any>
 }
 
-let isBuilt = false
-export function buildAgentBinary(): void {
-    if (isBuilt) {
-        return
-    }
-    isBuilt = true
-    // Bundle the agent. When running `pnpm run test`, vitest doesn't re-run this step.
-    //
-    // ! If this line fails when running unit tests, chances are that the error is being swallowed.
-    // To see the full error, run this file in isolation:
-    //
-    //   pnpm test agent/src/index.test.ts
-    execSync('pnpm run build:for-tests ', {
-        cwd: getAgentDir(),
-        stdio: 'inherit',
-    })
-
+export function setupRecording(): void {
     const mayRecord =
         process.env.CODY_RECORDING_MODE === 'record' || process.env.CODY_RECORD_IF_MISSING === 'true'
     if (mayRecord) {
@@ -135,7 +119,7 @@ export class TestClient extends MessageHandler {
     private secrets = new AgentStatelessSecretStorage()
     private extensionConfigurationDuringInitialization: ExtensionConfiguration | undefined
     public static create({ bin = 'node', ...params }: TestClientParams): TestClient {
-        buildAgentBinary()
+        setupRecording()
         const agentDir = getAgentDir()
         const recordingDirectory = path.join(agentDir, 'recordings')
         const agentScript = path.join(agentDir, 'dist', 'index.js')
@@ -166,7 +150,6 @@ export class TestClient extends MessageHandler {
                 CODY_TELEMETRY_EXPORTER: params.telemetryExporter ?? 'testing',
                 DISABLE_FEATURE_FLAGS: 'true',
                 DISABLE_UPSTREAM_HEALTH_PINGS: 'true',
-                CODY_LOG_EVENT_MODE: params.logEventMode,
                 ...process.env,
             },
         })
@@ -415,12 +398,14 @@ export class TestClient extends MessageHandler {
         // console.log(`${params.channel}: ${params.message}`)
     }
 
-    public openFile(uri: Uri, params?: TextDocumentEventParams): Promise<void> {
-        return this.textDocumentEvent(uri, 'textDocument/didOpen', params)
+    public async openFile(uri: Uri, params?: TextDocumentEventParams): Promise<null> {
+        await this.textDocumentEvent(uri, 'textDocument/didOpen', params)
+        return await this.request('testing/awaitPendingPromises', null)
     }
 
-    public changeFile(uri: Uri, params?: TextDocumentEventParams): Promise<void> {
-        return this.textDocumentEvent(uri, 'textDocument/didChange', params)
+    public async changeFile(uri: Uri, params?: TextDocumentEventParams): Promise<null> {
+        await this.textDocumentEvent(uri, 'textDocument/didChange', params)
+        return await this.request('testing/awaitPendingPromises', null)
     }
 
     public async textDocumentEvent(
@@ -882,6 +867,7 @@ ${patch}`
         additionalConfig?: Partial<ExtensionConfiguration>,
         { expectAuthenticated = true }: { expectAuthenticated?: boolean } = {}
     ) {
+        mockLocalStorage('inMemory')
         const info = await this.initialize(additionalConfig)
         if (expectAuthenticated && !info.authStatus?.authenticated) {
             throw new Error('Could not log in')

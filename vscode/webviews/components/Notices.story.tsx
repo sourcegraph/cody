@@ -1,10 +1,18 @@
 import { CodyIDE } from '@sourcegraph/cody-shared'
+import { ExtensionAPIProviderForTestsOnly, MOCK_API } from '@sourcegraph/prompt-editor'
 import type { Meta, StoryObj } from '@storybook/react'
+import { TelemetryRecorderContext } from '../utils/telemetry'
 import { Notices } from './Notices'
 
 const meta: Meta<typeof Notices> = {
     title: 'cody/Notices',
-    component: Notices,
+    component: props => (
+        <TelemetryRecorderContext.Provider value={{ recordEvent: () => {} }}>
+            <ExtensionAPIProviderForTestsOnly value={MOCK_API}>
+                <Notices {...props} />
+            </ExtensionAPIProviderForTestsOnly>
+        </TelemetryRecorderContext.Provider>
+    ),
     parameters: {
         layout: 'centered',
     },

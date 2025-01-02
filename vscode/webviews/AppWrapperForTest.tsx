@@ -7,6 +7,7 @@ import {
     type ContextItemSymbol,
     EMPTY,
     FILE_CONTEXT_MENTION_PROVIDER,
+    FeatureFlag,
     type ModelsData,
     type ResolvedConfiguration,
     SYMBOL_CONTEXT_MENTION_PROVIDER,
@@ -79,11 +80,21 @@ export const AppWrapperForTest: FunctionComponent<{ children: ReactNode }> = ({ 
                                             ].filter(f => f.uri.path.includes(queryTextLower)),
                             }
                         }),
-                    evaluatedFeatureFlag: _flag => Observable.of(true),
+                    evaluatedFeatureFlag: flag => {
+                        switch (flag) {
+                            case FeatureFlag.CodyExperimentalPromptEditor:
+                                // Do not enable the experimental prompt editor in tests (yet).
+                                return Observable.of(false)
+                            default:
+                                return Observable.of(true)
+                        }
+                    },
                     prompts: makePromptsAPIWithData({
                         prompts: FIXTURE_PROMPTS,
                         commands: FIXTURE_COMMANDS,
                     }),
+                    promptTags: () => Observable.of([]),
+                    getCurrentUserId: () => Observable.of(null),
                     highlights: () => Observable.of([]),
                     clientActionBroadcast: () => Observable.of(),
                     models: () =>
@@ -139,11 +150,6 @@ export const AppWrapperForTest: FunctionComponent<{ children: ReactNode }> = ({ 
                         userProductSubscription: null,
                         config: {} as any,
                         clientCapabilities: CLIENT_CAPABILITIES_FIXTURE,
-                        configFeatures: {
-                            chat: true,
-                            serverSentModels: true,
-                            attribution: true,
-                        },
                         isDotComUser: true,
                     },
                 },

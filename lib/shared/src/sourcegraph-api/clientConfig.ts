@@ -13,13 +13,19 @@ import {
     switchMap,
 } from '../misc/observable'
 import {
-    type pendingOperation,
+    pendingOperation,
     skipPendingOperation,
     switchMapReplayOperation,
 } from '../misc/observableOperation'
 import { isError } from '../utils'
 import { isAbortError } from './errors'
-import { type CodyConfigFeatures, graphqlClient } from './graphql/client'
+import { type CodyConfigFeatures, type GraphQLAPIClientConfig, graphqlClient } from './graphql/client'
+
+export interface CodyNotice {
+    key: string
+    title: string
+    message: string
+}
 
 // The client configuration describing all of the features that are currently available.
 //
@@ -46,6 +52,24 @@ export interface CodyClientConfig {
     // Whether the new Sourcegraph backend LLM models API endpoint should be used to query which
     // models are available.
     modelsAPIEnabled: boolean
+
+    // Whether the user should sign in to an enterprise instance.
+    userShouldUseEnterprise: boolean
+
+    // List of global instance-level cody notice/banners (set only by admins in global
+    // instance configuration file
+    notices: CodyNotice[]
+}
+
+export const dummyClientConfigForTest: CodyClientConfig = {
+    chatEnabled: true,
+    autoCompleteEnabled: true,
+    customCommandsEnabled: true,
+    attributionEnabled: true,
+    smartContextWindowEnabled: true,
+    modelsAPIEnabled: true,
+    userShouldUseEnterprise: false,
+    notices: [],
 }
 
 /**
@@ -55,7 +79,10 @@ export interface CodyClientConfig {
 export class ClientConfigSingleton {
     private static instance: ClientConfigSingleton
 
-    public static readonly REFETCH_INTERVAL = 60 * 1000
+    // REFETCH_INTERVAL is only updated via process.env during test execution, otherwise it is 60 seconds.
+    public static REFETCH_INTERVAL = process.env.CODY_CLIENT_CONFIG_SINGLETON_REFETCH_INTERVAL
+        ? Number.parseInt(process.env.CODY_CLIENT_CONFIG_SINGLETON_REFETCH_INTERVAL, 10)
+        : 60 * 1000
 
     // Default values for the legacy GraphQL features API, used when a Sourcegraph instance
     // does not support even the legacy GraphQL API.
@@ -90,6 +117,11 @@ export class ClientConfigSingleton {
             map(value => (isError(value) ? undefined : value)),
             distinctUntilChanged()
         )
+
+    public readonly updates: Observable<CodyClientConfig> = this.changes.pipe(
+        filter(value => value !== undefined && value !== pendingOperation),
+        distinctUntilChanged()
+    )
 
     private constructor() {}
 
@@ -153,25 +185,31 @@ export class ClientConfigSingleton {
                     return this.fetchClientConfigLegacy(signal)
                 }
 
-                return graphqlClient
-                    .fetchHTTP<CodyClientConfig>(
-                        'client-config',
-                        'GET',
-                        '/.api/client-config',
-                        undefined,
-                        signal
-                    )
-                    .then(clientConfig => {
-                        if (isError(clientConfig)) {
-                            throw clientConfig
-                        }
-                        return clientConfig
-                    })
+                return this.fetchConfigEndpoint(signal)
             })
             .then(clientConfig => {
                 signal?.throwIfAborted()
                 logDebug('ClientConfigSingleton', 'refreshed', JSON.stringify(clientConfig))
-                return clientConfig
+                return graphqlClient.viewerSettings(signal).then(viewerSettings => {
+                    // Don't fail the whole chat because of viewer setting (used only to show banners)
+                    if (isError(viewerSettings)) {
+                        return { ...clientConfig, notices: [] }
+                    }
+
+                    return {
+                        ...clientConfig,
+                        // Make sure that notice object will have all important field (notices come from
+                        // instance global JSONC configuration so they can have any arbitrary field values.
+                        notices: Array.from<Partial<CodyNotice>, CodyNotice>(
+                            viewerSettings['cody.notices'] ?? [],
+                            (notice, index) => ({
+                                key: notice?.key ?? index.toString(),
+                                title: notice?.title ?? '',
+                                message: notice?.message ?? '',
+                            })
+                        ),
+                    }
+                })
             })
             .catch(e => {
                 if (!isAbortError(e)) {
@@ -198,6 +236,8 @@ export class ClientConfigSingleton {
 
             // Things that did not exist before logically default to disabled.
             modelsAPIEnabled: false,
+            userShouldUseEnterprise: false,
+            notices: [],
         }
     }
 
@@ -214,5 +254,34 @@ export class ClientConfigSingleton {
             return defaultErrorValue
         }
         return features
+    }
+
+    private async fetchConfigEndpoint(
+        signal?: AbortSignal,
+        config?: GraphQLAPIClientConfig
+    ): Promise<CodyClientConfig> {
+        return graphqlClient
+            .fetchHTTP<CodyClientConfig>(
+                'client-config',
+                'GET',
+                '/.api/client-config',
+                undefined,
+                signal,
+                config
+            )
+            .then(clientConfig => {
+                if (isError(clientConfig)) {
+                    throw clientConfig
+                }
+                return clientConfig
+            })
+    }
+
+    // Fetches the config with token, this method is used for fetching config before the user is logged in.
+    public async fetchConfigWithToken(
+        config: GraphQLAPIClientConfig,
+        signal?: AbortSignal
+    ): Promise<CodyClientConfig | undefined> {
+        return this.fetchConfigEndpoint(signal, config)
     }
 }

@@ -59,6 +59,9 @@ export enum FeatureFlag {
     // Enables gpt-4o-mini as a default Edit model
     CodyEditDefaultToGpt4oMini = 'cody-edit-default-to-gpt-4o-mini',
 
+    // Enables Claude 3.5 Haiku as a default Chat model
+    CodyChatDefaultToClaude35Haiku = 'cody-chat-default-to-claude-3-5-haiku',
+
     // use-ssc-for-cody-subscription is a feature flag that enables the use of SSC as the source of truth for Cody subscription data.
     UseSscForCodySubscription = 'use-ssc-for-cody-subscription',
 
@@ -69,13 +72,17 @@ export enum FeatureFlag {
     /** Interactive tutorial, primarily for onboarding */
     CodyInteractiveTutorial = 'cody-interactive-tutorial',
 
-    /** Whether to use intent detection API. */
-    CodyIntentDetectionAPI = 'cody-intent-detection-api',
-
     GitMentionProvider = 'git-mention-provider',
 
     /** Enable experimental One Box feature in Cody */
     CodyExperimentalOneBox = 'cody-experimental-one-box',
+    /** Enable debug mode for One Box feature in Cody */
+    CodyExperimentalOneBoxDebug = 'cody-experimental-one-box-debug',
+    /** Enable use of new prosemirror prompt editor */
+    CodyExperimentalPromptEditor = 'cody-experimental-prompt-editor',
+
+    /** Show Edit Code option in the Cody message submit dropdown */
+    CodyExperimentalShowEditCodeIntent = 'cody-experimental-show-edit-code-intent',
 
     /** Whether user has access to early-acess models. */
     CodyEarlyAccess = 'cody-early-access',
@@ -99,6 +106,10 @@ export enum FeatureFlag {
 
     /** Enable Shell Context for Deep Cody */
     DeepCodyShellContext = 'deep-cody-shell-context',
+
+    /** Enable Rate Limit for Deep Cody */
+    DeepCodyRateLimitBase = 'deep-cody-experimental-rate-limit',
+    DeepCodyRateLimitMultiplier = 'deep-cody-experimental-rate-limit-multiplier',
 
     /**
      * Whether the current repo context chip is shown in the chat input by default

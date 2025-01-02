@@ -3,7 +3,6 @@ import { PromptString, graphqlClient, isError } from '@sourcegraph/cody-shared'
 import { SourcegraphNodeCompletionsClient } from '../../../../vscode/src/completions/nodeClient'
 import { rewriteKeywordQuery } from '../../../../vscode/src/local-context/rewrite-keyword-query'
 import { version } from '../../../package.json'
-import type { RpcMessageHandler } from '../../jsonrpc-alias'
 import type { CodyBenchOptions } from './command-bench'
 import {
     type ClientOptions,
@@ -15,10 +14,7 @@ import {
     writeYAMLMetadata,
 } from './strategy-chat-context-types'
 
-export async function evaluateChatContextStrategy(
-    client: RpcMessageHandler,
-    options: CodyBenchOptions
-): Promise<void> {
+export async function evaluateChatContextStrategy(options: CodyBenchOptions): Promise<void> {
     const inputFilename = options.fixture.customConfiguration?.['cody-bench.chatContext.inputFile']
     if (options.insecureTls) {
         process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'

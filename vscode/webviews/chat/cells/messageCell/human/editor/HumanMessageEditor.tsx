@@ -1,6 +1,7 @@
 import {
     type ChatMessage,
     FAST_CHAT_INPUT_TOKEN_BUDGET,
+    FeatureFlag,
     type Model,
     ModelTag,
     type SerializedPromptEditorState,
@@ -12,6 +13,7 @@ import {
 import {
     PromptEditor,
     type PromptEditorRefAPI,
+    PromptEditorV2,
     useDefaultContextForChat,
     useExtensionAPI,
 } from '@sourcegraph/prompt-editor'
@@ -31,6 +33,7 @@ import { type ClientActionListener, useClientActionListener } from '../../../../
 import { promptModeToIntent } from '../../../../../prompts/PromptsTab'
 import { useTelemetryRecorder } from '../../../../../utils/telemetry'
 import { useExperimentalOneBox } from '../../../../../utils/useExperimentalOneBox'
+import { useFeatureFlag } from '../../../../../utils/useFeatureFlags'
 import styles from './HumanMessageEditor.module.css'
 import type { SubmitButtonState } from './toolbar/SubmitButton'
 import { Toolbar } from './toolbar/Toolbar'
@@ -58,7 +61,7 @@ export const HumanMessageEditor: FunctionComponent<{
 
     onEditorFocusChange?: (focused: boolean) => void
     onChange?: (editorState: SerializedPromptEditorValue) => void
-    onSubmit: (editorValue: SerializedPromptEditorValue, intent?: ChatMessage['intent']) => void
+    onSubmit: (intent?: ChatMessage['intent']) => void
     onStop: () => void
 
     isFirstInteraction?: boolean
@@ -118,6 +121,7 @@ export const HumanMessageEditor: FunctionComponent<{
           ? 'emptyEditorValue'
           : 'submittable'
 
+    const experimentalPromptEditorEnabled = useFeatureFlag(FeatureFlag.CodyExperimentalPromptEditor)
     const experimentalOneBoxEnabled = useExperimentalOneBox()
     const [submitIntent, setSubmitIntent] = useState<ChatMessage['intent'] | undefined>(
         initialIntent || (experimentalOneBoxEnabled ? undefined : 'chat')
@@ -151,7 +155,7 @@ export const HumanMessageEditor: FunctionComponent<{
             }
 
             const value = editorRef.current.getSerializedValue()
-            parentOnSubmit(value, intent)
+            parentOnSubmit(intent)
 
             telemetryRecorder.recordEvent('cody.humanMessageEditor', 'submit', {
                 metadata: {
@@ -348,6 +352,7 @@ export const HumanMessageEditor: FunctionComponent<{
                 if (setPromptAsInput) {
                     // set the intent
                     promptIntent = promptModeToIntent(setPromptAsInput.mode)
+                    setSubmitIntent(promptIntent)
 
                     updates.push(
                         // biome-ignore lint/suspicious/noAsyncPromiseExecutor: <explanation>
@@ -416,6 +421,7 @@ export const HumanMessageEditor: FunctionComponent<{
         currentChatModel?.contextWindow?.context?.user ||
         currentChatModel?.contextWindow?.input ||
         FAST_CHAT_INPUT_TOKEN_BUDGET
+    const Editor = experimentalPromptEditorEnabled ? PromptEditorV2 : PromptEditor
 
     return (
         // biome-ignore lint/a11y/useKeyWithClickEvents: only relevant to click areas
@@ -435,7 +441,7 @@ export const HumanMessageEditor: FunctionComponent<{
             onFocus={onFocus}
             onBlur={onBlur}
         >
-            <PromptEditor
+            <Editor
                 seamless={true}
                 placeholder={placeholder}
                 initialEditorState={initialEditorState}

@@ -3,7 +3,7 @@
   "name": "cody-ai",
   "private": true,
   "displayName": "Cody: AI Coding Assistant with Autocomplete & Chat",
-  "version": "1.48.0",
+  "version": "1.56.0",
   "publisher": "sourcegraph",
   "license": "Apache-2.0",
   "icon": "resources/cody.png",
@@ -19,7 +19,7 @@
     "dev:web": "pnpm run -s build:dev:web && pnpm run -s _dev:vscode-test-web --browserType none",
     "watch:dev:web": "concurrently \"pnpm run -s watch:build:dev:web\" \"pnpm run -s _dev:vscode-test-web --browserType none\"",
     "_dev:vscode-test-web": "vscode-test-web --extensionDevelopmentPath=. ${WORKSPACE-test/fixtures/workspace}",
-    "build": "pnpm run -s check:build && tsc --build && pnpm run -s _build:esbuild:desktop && pnpm run -s _build:esbuild:web && pnpm run -s _build:webviews --mode production",
+    "build": "pnpm run -s check:build && tsc --build && pnpm run -s _build:esbuild:desktop && pnpm run -s _build:esbuild:web && pnpm run -s _build:webviews --mode production && pnpm run measure-bundle-size",
     "check:build": "pnpm run -s check:typehacks && pnpm run -s check:manifest",
     "check:typehacks": "ts-node-transpile-only ./scripts/enable-typehacks.ts && tsc -p tsconfig.typehacks.json",
     "check:manifest": "ts-node-transpile-only ./scripts/validate-package-json.ts",
@@ -55,7 +55,8 @@
     "github-changelog": "ts-node-transpile-only ./scripts/github-changelog.ts",
     "version-bump:minor": "RELEASE_TYPE=minor ts-node-transpile-only ./scripts/version-bump.ts",
     "version-bump:patch": "RELEASE_TYPE=patch ts-node-transpile-only ./scripts/version-bump.ts",
-    "version-bump:dry-run": "RELEASE_TYPE=prerelease ts-node-transpile-only ./scripts/version-bump.ts"
+    "version-bump:dry-run": "RELEASE_TYPE=prerelease ts-node-transpile-only ./scripts/version-bump.ts",
+    "measure-bundle-size": "LOG_BUNDLE_SIZE=true ts-node-transpile-only ./scripts/measure-bundle-size.ts"
   },
   "categories": ["AI", "Chat", "Programming Languages", "Machine Learning", "Snippets", "Education"],
   "keywords": [
@@ -351,14 +352,6 @@
         "when": "cody.activated && cody.isGeneratingCommit"
       },
       {
-        "command": "cody.command.auto-edit",
-        "category": "Cody Command",
-        "group": "Cody Command",
-        "title": "Auto Edit Code at Cursor",
-        "icon": "$(surround-with)",
-        "enablement": "cody.activated && config.cody.internal.unstable"
-      },
-      {
         "command": "cody.auth.signout",
         "category": "Cody",
         "title": "Sign Out",
@@ -596,6 +589,11 @@
         "command": "cody.command.insertCodeToNewFile",
         "title": "Save Code to New File...",
         "enablement": "cody.activated"
+      },
+      {
+        "command": "cody.command.autoedits-manual-trigger",
+        "title": "Autoedits Manual Trigger",
+        "enablement": "cody.activated && config.cody.experimental.autoedits.enabled"
       }
     ],
     "keybindings": [
@@ -670,11 +668,6 @@
         "command": "cody.command.edit-code",
         "key": "alt+k",
         "when": "cody.activated && !editorReadonly"
-      },
-      {
-        "command": "cody.command.auto-edit",
-        "key": "alt+tab",
-        "when": "cody.activated && !editorReadonly && config.cody.internal.unstable"
       },
       {
         "command": "cody.command.execute-prompt",
@@ -757,11 +750,6 @@
         "command": "cody.supersuggest.dismiss",
         "key": "escape",
         "when": "editorTextFocus && cody.activated && cody.supersuggest.active"
-      },
-      {
-        "command": "cody.experimental.suggest",
-        "key": "ctrl+shift+enter",
-        "when": "cody.activated && config.cody.experimental.autoedits.enabled"
       },
       {
         "command": "cody.supersuggest.testExample",
@@ -1290,52 +1278,35 @@
           "type": "boolean",
           "default": false
         },
-        "cody.agentic.context": {
+        "cody.agentic.context.experimentalShell": {
+          "type": "boolean",
+          "markdownDescription": "Enable Agents like Deep Cody to autonomously execute shell commands in your environment for context. Enable with caution as mistakes are possible.",
+          "default": false
+        },
+        "cody.agentic.context.experimentalOptions": {
           "type": "object",
           "properties": {
             "shell": {
-              "allow": "array",
-              "block": "array"
+              "allow": {
+                "type": "array",
+                "default": []
+              },
+              "block": {
+                "type": "array",
+                "default": []
+              }
             }
           },
-          "default": {
-            "shell": {
-              "allow": ["*"],
-              "block": [
-                "rm",
-                "chmod",
-                "shutdown",
-                "history",
-                "user",
-                "sudo",
-                "su",
-                "passwd",
-                "chown",
-                "chgrp",
-                "kill",
-                "reboot",
-                "poweroff",
-                "init",
-                "systemctl",
-                "journalctl",
-                "dmesg",
-                "lsblk",
-                "lsmod",
-                "modprobe",
-                "insmod",
-                "rmmod",
-                "lsusb",
-                "lspci"
-              ]
+          "default": {},
+          "examples": [
+            {
+              "shell": {
+                "allow": ["git", "ls", "find"],
+                "block": ["history", "sudo", "rm"]
+              }
             }
-          },
-          "examples": {
-            "shell": {
-              "allow": ["git", "gh"],
-              "block": ["history", "sudo", "rm"]
-            }
-          },
-          "markdownDescription": "Configures shell command execution for Cody Agent when terminal context is enabled (feature flag required). The 'allow' property can be either ['*'] for all commands or an array of allowed command prefixes. The 'block' property is an array of blocked commands that will be combined with built-in safety blocklist. Commands in the blocklist take precedence over allowed commands. When a command is executed, its output will be used as context. If no 'allow' list is specified, the feature will be disabled."
+          ],
+          "markdownDescription": "'shell' field is used to configure shell command execution for agents (like Deep Cody) when terminal context is enabled. The 'shell' field has two properties:\n\n- 'allow': Accepts either [] to allow all commands or an array of specific command prefixes\n- 'block': An array of command prefixes to block, which combines with built-in safety blocklist\n\nBlocked commands take precedence over allowed commands. Command outputs are used as context. Remove the 'shell' field to allow all commands."
         },
         "cody.net.proxy.cacert": {
           "markdownDescription": "Either the PEM-encoded CA certificate the proxy uses (replace newlines with `\\n`), or the path (absolute or tilde) to the file containing that certificate.\n\nExamples:\n- `~/.mitmproxy/mitmproxy-ca-cert.pem`\n- `-----BEGIN CERTIFICATE-----\\n...\\n-----END CERTIFICATE-----`",
@@ -1441,10 +1412,12 @@
     "@opentelemetry/sdk-trace-base": "^1.18.1",
     "@opentelemetry/sdk-trace-node": "^1.18.1",
     "@opentelemetry/semantic-conventions": "^1.18.1",
+    "@pollyjs/adapter-fetch": "^6.0.6",
     "@radix-ui/react-accordion": "^1.2.0",
     "@radix-ui/react-collapsible": "^1.1.0",
     "@radix-ui/react-dialog": "^1.0.5",
     "@radix-ui/react-form": "^0.1.0",
+    "@radix-ui/react-label": "^2.1.1",
     "@radix-ui/react-popover": "^1.0.7",
     "@radix-ui/react-progress": "^1.1.0",
     "@radix-ui/react-slot": "^1.0.2",
@@ -1462,16 +1435,17 @@
     "@types/react": "18.2.79",
     "@types/react-dom": "18.2.25",
     "@vscode/codicons": "^0.0.35",
-    "@vscode/webview-ui-toolkit": "^1.2.2",
     "agent-base": "^7.1.1",
     "async-mutex": "^0.4.0",
     "axios": "^1.3.6",
     "class-variance-authority": "^0.7.0",
+    "classnames": "^2.5.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.0.0",
     "crypto-js": "^4.2.0",
     "detect-indent": "7.0.0",
     "diff": "^5.2.0",
+    "fast-myers-diff": "^3.2.0",
     "fast-xml-parser": "^4.3.2",
     "fzf": "^0.5.2",
     "glob": "^7.2.3",
@@ -1508,10 +1482,10 @@
     "unist-util-visit": "^5.0.0",
     "unzipper": "^0.10.14",
     "uuid": "^9.0.0",
+    "valibot": "1.0.0-beta.9",
     "vscode-languageserver-textdocument": "^1.0.8",
     "vscode-uri": "^3.0.8",
-    "wink-nlp-utils": "^2.1.0",
-    "fast-myers-diff": "^3.2.0"
+    "wink-nlp-utils": "^2.1.0"
   },
   "devDependencies": {
     "7zip-min": "^1.4.5",
@@ -1521,10 +1495,12 @@
     "@jgoz/esbuild-plugin-typecheck": "^4.0.1",
     "@npmcli/promise-spawn": "^7.0.2",
     "@playwright/test": "1.47.2",
+    "@pollyjs/adapter": "^6.0.6",
     "@pollyjs/adapter-node-http": "^6.0.6",
     "@pollyjs/core": "^6.0.6",
     "@pollyjs/persister": "^6.0.6",
     "@pollyjs/persister-fs": "^6.0.6",
+    "@pollyjs/utils": "^6.0.6",
     "@storybook/preview-api": "^8.0.5",
     "@types/7zip-min": "^1.3.3",
     "@types/crypto-js": "^4.2.2",
@@ -1578,6 +1554,7 @@
     "keytar": "^7.9.0",
     "kill-sync": "^1.0.3",
     "mocha": "^10.2.0",
+    "nock": "^13.5.4",
     "node-fetch": "^2.6.4",
     "normalize-url": "5.3.1",
     "on-headers": "^1.0.2",

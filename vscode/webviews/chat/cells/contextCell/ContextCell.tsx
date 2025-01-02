@@ -1,9 +1,23 @@
-import type { ContextItem, Model } from '@sourcegraph/cody-shared'
+import type {
+    ChatMessage,
+    ContextItem,
+    Model,
+    ProcessingStep,
+    RankedContext,
+} from '@sourcegraph/cody-shared'
 import { pluralize } from '@sourcegraph/cody-shared'
-import type { RankedContext } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { MENTION_CLASS_NAME } from '@sourcegraph/prompt-editor'
 import { clsx } from 'clsx'
-import { BrainIcon, FilePenLine, MessagesSquareIcon } from 'lucide-react'
 import {
+    BrainIcon,
+    CheckCircle,
+    CircleXIcon,
+    FilePenLine,
+    Loader2Icon,
+    MessagesSquareIcon,
+} from 'lucide-react'
+import {
+    type FC,
     type FunctionComponent,
     createContext,
     memo,
@@ -12,7 +26,7 @@ import {
     useMemo,
     useState,
 } from 'react'
-import { FileContextItem } from '../../../components/FileContextItem'
+import { FileLink } from '../../../components/FileLink'
 import {
     Accordion,
     AccordionContent,
@@ -24,8 +38,6 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '../../../components/sha
 import { SourcegraphLogo } from '../../../icons/SourcegraphLogo'
 import { useTelemetryRecorder } from '../../../utils/telemetry'
 import { useConfig } from '../../../utils/useConfig'
-import { useExperimentalOneBox } from '../../../utils/useExperimentalOneBox'
-import { CodyIcon } from '../../components/CodyIcon'
 import { LoadingDots } from '../../components/LoadingDots'
 import { Cell } from '../Cell'
 import { NON_HUMAN_CELL_AVATAR_SIZE } from '../messageCell/assistant/AssistantMessageCell'
@@ -48,18 +60,12 @@ export const ContextCell: FunctionComponent<{
     className?: string
 
     defaultOpen?: boolean
-    showSnippets?: boolean
-
-    reSubmitWithChatIntent?: () => void
-
-    onAddToFollowupChat?: (props: {
-        repoName: string
-        filePath: string
-        fileURL: string
-    }) => void
+    intent: ChatMessage['intent']
 
     onManuallyEditContext: () => void
     editContextNode: React.ReactNode
+    experimentalOneBoxEnabled?: boolean
+    processes?: ProcessingStep[]
 }> = memo(
     ({
         contextItems,
@@ -70,12 +76,12 @@ export const ContextCell: FunctionComponent<{
         isForFirstMessage,
         className,
         defaultOpen,
-        reSubmitWithChatIntent,
-        showSnippets = false,
         isContextLoading,
-        onAddToFollowupChat,
         onManuallyEditContext,
         editContextNode,
+        intent,
+        experimentalOneBoxEnabled,
+        processes,
     }) => {
         const __storybook__initialOpen = useContext(__ContextCellStorybookContext)?.initialOpen ?? false
 
@@ -140,43 +146,37 @@ export const ContextCell: FunctionComponent<{
         } = useConfig()
 
         const telemetryRecorder = useTelemetryRecorder()
-        const oneboxEnabled = useExperimentalOneBox()
-        const logValueChange = useCallback(
-            (value: string | undefined) => {
-                if (oneboxEnabled) {
-                    telemetryRecorder.recordEvent('onebox.contextDrawer', 'clicked', {
-                        [value ? 'expanded' : 'collapsed']: 1,
-                    })
-                }
-            },
-            [telemetryRecorder, oneboxEnabled]
-        )
-
-        const [showAllResults, setShowAllResults] = useState(false)
 
         const isDeepCodyEnabled = useMemo(() => model?.includes('deep-cody'), [model])
 
         // Text for top header text
         const headerText: { main: string; sub?: string } = {
-            main: isContextLoading ? 'Fetching context' : 'Context',
-            sub: isContextLoading
-                ? isDeepCodyEnabled
-                    ? 'Thinking…'
-                    : 'Retrieving codebase files…'
-                : contextItems === undefined
-                  ? 'none requested'
-                  : contextItems.length === 0
-                    ? 'none fetched'
-                    : itemCountLabel,
+            main:
+                experimentalOneBoxEnabled && !intent
+                    ? 'Reviewing query'
+                    : isContextLoading
+                      ? 'Fetching context'
+                      : 'Context',
+            sub:
+                experimentalOneBoxEnabled && !intent
+                    ? 'Figuring out query intent...'
+                    : isContextLoading
+                      ? isDeepCodyEnabled
+                          ? 'Thinking…'
+                          : 'Retrieving codebase files…'
+                      : contextItems === undefined
+                        ? 'none requested'
+                        : contextItems.length === 0
+                          ? 'none fetched'
+                          : itemCountLabel,
         }
 
         return (
             <div>
                 <Accordion
                     type="single"
-                    collapsible={!showSnippets}
+                    collapsible={true}
                     defaultValue={((__storybook__initialOpen || defaultOpen) && 'item-1') || undefined}
-                    onValueChange={logValueChange}
                     asChild={true}
                     value={accordionValue}
                 >
@@ -187,7 +187,7 @@ export const ContextCell: FunctionComponent<{
                                     onClick={triggerAccordion}
                                     title={itemCountLabel}
                                     className="tw-flex tw-items-center tw-gap-4"
-                                    disabled={isContextLoading}
+                                    disabled={isContextLoading && processes === undefined}
                                 >
                                     <SourcegraphLogo
                                         width={NON_HUMAN_CELL_AVATAR_SIZE}
@@ -207,21 +207,17 @@ export const ContextCell: FunctionComponent<{
                             contentClassName="tw-flex tw-flex-col tw-gap-4 tw-max-w-full"
                             data-testid="context"
                         >
-                            {isContextLoading ? (
-                                isDeepCodyEnabled ? (
-                                    <div className="tw-flex tw-items-center tw-rounded-md tw-bg-muted-transparent tw-p-4">
-                                        <LoadingDots />
-                                        <div className="tw-ml-4 tw-text-sm">
-                                            May take a few seconds to fetch relevant context to improve
-                                            response quality
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <LoadingDots />
-                                )
+                            {isContextLoading && !isDeepCodyEnabled ? (
+                                <LoadingDots />
                             ) : (
                                 <>
-                                    <AccordionContent overflow={showSnippets}>
+                                    <AccordionContent className="tw-ml-6" overflow={false}>
+                                        {isDeepCodyEnabled && (
+                                            <ProcessList
+                                                processes={processes ?? []}
+                                                isContextLoading={isContextLoading}
+                                            />
+                                        )}
                                         <div className={styles.contextSuggestedActions}>
                                             {contextItems && contextItems.length > 0 && (
                                                 <Button
@@ -267,56 +263,38 @@ export const ContextCell: FunctionComponent<{
                                             </div>
                                         )}
                                         <ul className="tw-list-none tw-flex tw-flex-col tw-gap-2 tw-pt-2">
-                                            {contextItemsToDisplay?.map((item, i) =>
-                                                !showSnippets || showAllResults || i < 5 ? (
-                                                    <li
-                                                        // biome-ignore lint/correctness/useJsxKeyInIterable:
-                                                        // biome-ignore lint/suspicious/noArrayIndexKey: stable order
-                                                        key={i}
-                                                        data-testid="context-item"
-                                                    >
-                                                        <FileContextItem
-                                                            item={item}
-                                                            showSnippets={showSnippets}
-                                                            onAddToFollowupChat={onAddToFollowupChat}
-                                                        />
-                                                        {internalDebugContext &&
-                                                            item.metadata &&
-                                                            item.metadata.length > 0 && (
-                                                                <span
-                                                                    className={
-                                                                        styles.contextItemMetadata
-                                                                    }
-                                                                >
-                                                                    {item.metadata.join(', ')}
-                                                                </span>
-                                                            )}
-                                                    </li>
-                                                ) : null
-                                            )}
-                                            {showSnippets &&
-                                            !showAllResults &&
-                                            contextItemsToDisplay &&
-                                            contextItemsToDisplay.length > 5 ? (
-                                                <div className="tw-flex tw-justify-between">
-                                                    <Button
-                                                        variant="link"
-                                                        onClick={() => setShowAllResults(true)}
-                                                    >
-                                                        Show {contextItemsToDisplay.length - 5} more
-                                                        results
-                                                    </Button>
-                                                    <Button
-                                                        size="sm"
-                                                        variant="outline"
-                                                        className="tw-text-prmary tw-flex tw-gap-2 tw-items-center"
-                                                        onClick={reSubmitWithChatIntent}
-                                                    >
-                                                        <CodyIcon className="tw-text-link" />
-                                                        Ask the LLM
-                                                    </Button>
-                                                </div>
-                                            ) : null}
+                                            {contextItemsToDisplay?.map((item, i) => (
+                                                <li
+                                                    // biome-ignore lint/correctness/useJsxKeyInIterable:
+                                                    // biome-ignore lint/suspicious/noArrayIndexKey: stable order
+                                                    key={i}
+                                                    data-testid="context-item"
+                                                >
+                                                    <FileLink
+                                                        uri={item.uri}
+                                                        repoName={item.repoName}
+                                                        revision={item.revision}
+                                                        source={item.source}
+                                                        range={item.range}
+                                                        title={item.title}
+                                                        isTooLarge={item.isTooLarge}
+                                                        isTooLargeReason={item.isTooLargeReason}
+                                                        isIgnored={item.isIgnored}
+                                                        linkClassName={styles.contextItemLink}
+                                                        className={clsx(
+                                                            styles.linkContainer,
+                                                            MENTION_CLASS_NAME
+                                                        )}
+                                                    />
+                                                    {internalDebugContext &&
+                                                        item.metadata &&
+                                                        item.metadata.length > 0 && (
+                                                            <span className={styles.contextItemMetadata}>
+                                                                {item.metadata.join(', ')}
+                                                            </span>
+                                                        )}
+                                                </li>
+                                            ))}
 
                                             {!isForFirstMessage && (
                                                 <span
@@ -331,39 +309,59 @@ export const ContextCell: FunctionComponent<{
                                                     </span>
                                                 </span>
                                             )}
-                                            <li>
-                                                <Tooltip>
-                                                    <TooltipTrigger asChild>
-                                                        <span
-                                                            className={clsx(
-                                                                styles.contextItem,
-                                                                'tw-flex tw-items-center tw-gap-2'
-                                                            )}
-                                                        >
-                                                            <BrainIcon size={14} className="tw-ml-1" />
-                                                            <span>
-                                                                {isDeepCodyEnabled
-                                                                    ? 'Reviewed by Deep Cody'
-                                                                    : 'Public knowledge'}
-                                                            </span>
-                                                        </span>
-                                                    </TooltipTrigger>
-                                                    <TooltipContent side="bottom">
-                                                        {isDeepCodyEnabled ? (
-                                                            <span>
+                                            {!isContextLoading &&
+                                                isDeepCodyEnabled &&
+                                                processes?.length && (
+                                                    <li>
+                                                        <Tooltip>
+                                                            <TooltipTrigger asChild>
+                                                                <span
+                                                                    className={clsx(
+                                                                        styles.contextItem,
+                                                                        'tw-flex tw-items-center tw-gap-2 tw-text-muted-foreground'
+                                                                    )}
+                                                                >
+                                                                    <BrainIcon
+                                                                        size={14}
+                                                                        className="tw-ml-1"
+                                                                    />
+                                                                    <span>
+                                                                        Reviewed by context agent
+                                                                    </span>
+                                                                </span>
+                                                            </TooltipTrigger>
+                                                            <TooltipContent side="bottom">
                                                                 Deep Cody fetches additional context to
                                                                 improve response quality when needed
+                                                            </TooltipContent>
+                                                        </Tooltip>
+                                                    </li>
+                                                )}
+                                            {!isContextLoading && !processes?.length && (
+                                                <li>
+                                                    <Tooltip>
+                                                        <TooltipTrigger asChild>
+                                                            <span
+                                                                className={clsx(
+                                                                    styles.contextItem,
+                                                                    'tw-flex tw-items-center tw-gap-2 tw-text-muted-foreground'
+                                                                )}
+                                                            >
+                                                                <BrainIcon
+                                                                    size={14}
+                                                                    className="tw-ml-1"
+                                                                />
+                                                                <span>Public knowledge</span>
                                                             </span>
-                                                        ) : (
-                                                            <span>
-                                                                Information and general reasoning
-                                                                capabilities trained into the model{' '}
-                                                                {model && <code>{model}</code>}
-                                                            </span>
-                                                        )}
-                                                    </TooltipContent>
-                                                </Tooltip>
-                                            </li>
+                                                        </TooltipTrigger>
+                                                        <TooltipContent side="bottom">
+                                                            Information and general reasoning
+                                                            capabilities trained into the model{' '}
+                                                            {model && <code>{model}</code>}
+                                                        </TooltipContent>
+                                                    </Tooltip>
+                                                </li>
+                                            )}
                                         </ul>
                                     </AccordionContent>
                                 </>
@@ -451,3 +449,75 @@ export const EditContextButtonChat = (
         <div>Edit context</div>
     </>
 )
+
+const ProcessList: FC<{ processes: ProcessingStep[]; isContextLoading: boolean }> = ({
+    processes,
+    isContextLoading,
+}) => {
+    return (
+        <div className="tw-flex tw-flex-col tw-mb-2">
+            <div className="tw-flex tw-flex-col tw-mb-2">
+                {processes.map(process => (
+                    <ProcessItem
+                        key={process.id}
+                        process={process}
+                        isContextLoading={isContextLoading}
+                    />
+                ))}
+            </div>
+            {isContextLoading && (
+                <div className="tw-flex tw-items-center tw-rounded-md tw-bg-muted-transparent tw-p-4">
+                    {isContextLoading && <LoadingDots />}
+                    <div className="tw-ml-4 tw-text-sm">
+                        May take a few seconds to fetch relevant context to improve response quality
+                    </div>
+                </div>
+            )}{' '}
+        </div>
+    )
+}
+
+const ProcessItem: FC<{ process: ProcessingStep; isContextLoading: boolean }> = ({
+    process,
+    isContextLoading,
+}) => {
+    if (!process.id && !process.content) {
+        return null
+    }
+
+    return (
+        <div className="tw-border-l-4 tw-border-muted-foreground tw-pl-2">
+            <div className="tw-border tw-border-border tw-bg-input-background tw-ml-2 tw-my-2 tw-py-2 tw-flex tw-items-center tw-rounded-md tw-shadow-sm tw-opacity-80 hover:tw-opacity-100">
+                <div className="tw-mx-4">
+                    {process.status === 'pending' && isContextLoading ? (
+                        <Loader2Icon
+                            strokeWidth={2}
+                            size={14}
+                            className="tw-mr-2 tw-h-6 tw-w-6 tw-animate-spin"
+                        />
+                    ) : process.status === 'error' ? (
+                        <CircleXIcon
+                            strokeWidth={2}
+                            size={14}
+                            className="high-contrast-dark:tw-text-red-500"
+                        />
+                    ) : (
+                        <CheckCircle
+                            strokeWidth={2}
+                            size={14}
+                            className="tw-text-green-500 tw-drop-shadow-md tw-shadow-md"
+                        />
+                    )}
+                </div>
+                <div className="tw-flex-grow tw-min-w-0">
+                    <div className="tw-truncate tw-max-w-full tw-font-semibold tw-text-sm">
+                        Running {process.id}...
+                    </div>
+                    <div className="tw-truncate tw-max-w-full tw-text-xs tw-muted-foreground tw-opacity-80">
+                        {process.content}
+                    </div>
+                </div>
+            </div>
+        </div>
+    )
+}

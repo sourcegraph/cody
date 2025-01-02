@@ -3,11 +3,16 @@ import { type Frame, type FrameLocator, type Locator, type Page, expect } from '
 import { SERVER_URL, VALID_TOKEN } from '../fixtures/mock-server'
 import { executeCommandInPalette } from './helpers'
 
+interface SidebarSigninOptions {
+    enableNotifications: boolean
+    skipAssertions: boolean
+}
+
 // Sign into Cody with valid auth from the sidebar
 export const sidebarSignin = async (
     page: Page,
     sidebar: Frame | null,
-    enableNotifications = false
+    options: Partial<SidebarSigninOptions> = {}
 ): Promise<void> => {
     if (sidebar === null) {
         throw new Error('Sidebar is null, likely because preAuthenticate is `true`')
@@ -25,11 +30,13 @@ export const sidebarSignin = async (
     await sidebar.getByPlaceholder('Access token...').press('Enter')
 
     // Turn off notification
-    if (!enableNotifications) {
+    if (!options.enableNotifications) {
         await disableNotifications(page)
     }
 
-    await expectAuthenticated(page)
+    if (!options.skipAssertions) {
+        await expectAuthenticated(page)
+    }
 
     // Wait very briefly to let the authStatus changes propagate.
     await page.waitForTimeout(500)
@@ -60,6 +67,17 @@ export async function expectAuthenticated(page: Page) {
     await focusSidebar(page)
     // Expect the sign in button to be gone.
     await expect(page.getByLabel('Sign in to Sourcegraph')).not.toBeVisible()
+}
+
+export async function expectSignInPage(page: Page) {
+    await focusSidebar(page)
+    // Makes sure the sign in page is loaded in the sidebar view with Cody: Chat as the heading
+    // instead of the chat panel.
+    const sidebarFrame = getChatSidebarPanel(page)
+    await expect(sidebarFrame.getByText('Sign in to Sourcegraph')).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Cody: Chat' })).toBeVisible()
+    // Expect status bar to show the sign in button.
+    await expect(page.getByRole('button', { name: /cody-logo-heavy Sign In/ })).toBeVisible()
 }
 
 // Selector for the Explorer button in the sidebar that would match on Mac and Linux

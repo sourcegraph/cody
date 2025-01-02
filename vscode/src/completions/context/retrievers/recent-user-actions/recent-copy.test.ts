@@ -85,6 +85,7 @@ describe('RecentCopyRetriever', () => {
 
         expect(snippets).toHaveLength(1)
         expect(snippets[0]).toEqual({
+            type: 'file',
             content: mockClipboardContent,
             uri: testDocument.uri,
             startLine: selection.start.line,

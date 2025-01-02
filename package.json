@@ -31,7 +31,7 @@
     "generate-agent-kotlin-bindings": "./agent/scripts/generate-agent-kotlin-bindings.sh",
     "update-agent-recordings": "pnpm build && CODY_KEEP_UNUSED_RECORDINGS=false CODY_RECORD_IF_MISSING=true vitest agent/src",
     "update-agent-recordings-windows": "PowerShell -ExecutionPolicy Bypass -Command \"pnpm build; if ($?) { $Env:CODY_KEEP_UNUSED_RECORDINGS='false'; $Env:CODY_RECORD_IF_MISSING='true'; vitest agent/src }\"",
-    "update-rewrite-recordings": "rm -rf recordings && CODY_RECORD_IF_MISSING=true vitest vscode/src/local-context/rewrite-keyword-query.test.ts",
+    "update-rewrite-recordings": "rm -rf recordings && CODY_RECORD_IF_MISSING=true CODY_RECORDING_MODE=record vitest vscode/src/local-context/rewrite-keyword-query.test.ts",
     "openctx:link": "cd ../openctx && pnpm -C lib/client link --global && pnpm -C lib/schema link --global && pnpm -C lib/protocol link --global && pnpm -C client/vscode-lib link --global && cd ../cody && pnpm link --global @openctx/client && pnpm link --global @openctx/schema &&  pnpm link --global @openctx/protocol && cd vscode && pnpm link --global @openctx/vscode-lib",
     "openctx:unlink": "pnpm unlink --global @openctx/client && pnpm unlink --global @openctx/schema &&  pnpm unlink --global @openctx/protocol && cd vscode && pnpm unlink --global @openctx/vscode-lib",
     "vsce-version-bump": "pnpm -C vscode version-bump:minor"
@@ -64,6 +64,7 @@
   },
   "dependencies": {
     "@openctx/client": "^0.0.30",
+    "@opentelemetry/sdk-trace-web": "^1.18.1",
     "@sourcegraph/telemetry": "^0.18.0",
     "observable-fns": "^0.6.1",
     "react": "18.2.0",
@@ -78,15 +79,8 @@
   },
   "pnpm": {
     "overrides": {
+      "tslib": "2.1.0",
       "@lexical/react": "https://storage.googleapis.com/sourcegraph-assets/npm/lexical-react-sourcegraph-fork-31065486.tgz"
-    },
-    "packageExtensions": {
-      "@vscode/webview-ui-toolkit": {
-        "dependencies": {
-          "@microsoft/fast-web-utilities": "^6.0.0",
-          "tslib": "^2.1.0"
-        }
-      }
     },
     "neverBuiltDependencies": ["deasync", "playwright"],
     "patchedDependencies": {

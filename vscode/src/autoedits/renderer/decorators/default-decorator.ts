@@ -1,6 +1,7 @@
 import * as vscode from 'vscode'
-import { ThemeColor } from 'vscode'
+
 import { GHOST_TEXT_COLOR } from '../../../commands/GhostHintDecorator'
+
 import type { AutoEditsDecorator, DecorationInfo, ModifiedLineInfo } from './base'
 
 interface AddedLinesDecorationInfo {
@@ -23,10 +24,10 @@ export class DefaultDecorator implements AutoEditsDecorator {
         this.editor = editor
         // Initialize decoration types
         this.removedTextDecorationType = vscode.window.createTextEditorDecorationType({
-            backgroundColor: new ThemeColor('diffEditor.removedTextBackground'),
+            backgroundColor: new vscode.ThemeColor('diffEditor.removedTextBackground'),
         })
         this.modifiedTextDecorationType = vscode.window.createTextEditorDecorationType({
-            backgroundColor: new ThemeColor('diffEditor.removedTextBackground'),
+            backgroundColor: new vscode.ThemeColor('diffEditor.removedTextBackground'),
         })
         this.suggesterType = vscode.window.createTextEditorDecorationType({
             before: { color: GHOST_TEXT_COLOR },
@@ -75,7 +76,9 @@ export class DefaultDecorator implements AutoEditsDecorator {
     public setDecorations(decorationInfo: DecorationInfo): void {
         const { modifiedLines, removedLines, addedLines } = decorationInfo
 
-        const removedLinesRanges = removedLines.map(line => this.createFullLineRange(line.lineNumber))
+        const removedLinesRanges = removedLines.map(line =>
+            this.createFullLineRange(line.originalLineNumber)
+        )
         this.editor.setDecorations(this.removedTextDecorationType, removedLinesRanges)
 
         if (addedLines.length > 0 || !isOnlyAddingTextForModifiedLines(modifiedLines)) {
@@ -92,11 +95,6 @@ export class DefaultDecorator implements AutoEditsDecorator {
         const removedRanges: vscode.Range[] = []
         const addedLinesInfo: AddedLinesDecorationInfo[] = []
 
-        let firstModifiedLineMatch: {
-            beforeLine: number
-            afterLine: number
-        } | null = null
-
         // Handle modified lines - collect removed ranges and added decorations
         for (const modifiedLine of modifiedLines) {
             const changes = modifiedLine.changes
@@ -104,21 +102,18 @@ export class DefaultDecorator implements AutoEditsDecorator {
             const addedRanges: [number, number][] = []
             for (const change of changes) {
                 if (change.type === 'delete') {
-                    removedRanges.push(change.range)
+                    removedRanges.push(change.originalRange)
                 } else if (change.type === 'insert') {
-                    addedRanges.push([change.range.start.character, change.range.end.character])
+                    addedRanges.push([
+                        change.modifiedRange.start.character,
+                        change.modifiedRange.end.character,
+                    ])
                 }
             }
             if (addedRanges.length > 0) {
-                if (!firstModifiedLineMatch) {
-                    firstModifiedLineMatch = {
-                        beforeLine: modifiedLine.lineNumber,
-                        afterLine: modifiedLine.lineNumber,
-                    }
-                }
                 addedLinesInfo.push({
                     ranges: addedRanges,
-                    afterLine: modifiedLine.lineNumber,
+                    afterLine: modifiedLine.modifiedLineNumber,
                     lineText: modifiedLine.newText,
                 })
             }
@@ -129,7 +124,7 @@ export class DefaultDecorator implements AutoEditsDecorator {
         for (const addedLine of addedLines) {
             addedLinesInfo.push({
                 ranges: [],
-                afterLine: addedLine.lineNumber,
+                afterLine: addedLine.modifiedLineNumber,
                 lineText: addedLine.text,
             })
         }
@@ -138,32 +133,29 @@ export class DefaultDecorator implements AutoEditsDecorator {
         const lineNumbers = addedLinesInfo.map(d => d.afterLine)
         const min = Math.min(...lineNumbers)
         const max = Math.max(...lineNumbers)
-        for (const unchangedLine of unchangedLines) {
-            const lineNumber = unchangedLine.lineNumber
-            if (lineNumber < min || lineNumber > max) {
+        const addedLineNumbers = new Set(addedLinesInfo.map(d => d.afterLine))
+
+        for (const line of [...unchangedLines, ...modifiedLines]) {
+            const lineNumber = line.modifiedLineNumber
+            if (lineNumber < min || lineNumber > max || addedLineNumbers.has(lineNumber)) {
                 continue
             }
             addedLinesInfo.push({
                 ranges: [],
                 afterLine: lineNumber,
-                lineText: unchangedLine.text,
+                lineText: line.type === 'modified' ? line.newText : line.text,
             })
+            addedLineNumbers.add(lineNumber)
         }
         // Sort addedLinesInfo by line number in ascending order
         addedLinesInfo.sort((a, b) => a.afterLine - b.afterLine)
         if (addedLinesInfo.length === 0) {
             return
         }
-        let startLine = this.editor.selection.active.line
-        if (firstModifiedLineMatch) {
-            startLine =
-                firstModifiedLineMatch.beforeLine -
-                (firstModifiedLineMatch.afterLine - addedLinesInfo[0].afterLine)
-        }
-
         // todo (hitesh): handle case when too many lines to fit in the editor
         const oldLines = addedLinesInfo.map(info => this.editor.document.lineAt(info.afterLine))
         const replacerCol = Math.max(...oldLines.map(line => line.range.end.character))
+        const startLine = Math.min(...oldLines.map(line => line.lineNumber))
         this.renderAddedLinesDecorations(addedLinesInfo, startLine, replacerCol)
     }
 
@@ -245,7 +237,7 @@ export class DefaultDecorator implements AutoEditsDecorator {
             .filter(change => change.type === 'insert')
             .map(change => {
                 return {
-                    range: change.range,
+                    range: change.originalRange,
                     renderOptions: {
                         before: {
                             contentText: change.text,

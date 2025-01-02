@@ -115,7 +115,9 @@ class CodyFixHighlightPass(val file: PsiFile, val editor: Editor) :
   @RequiresEdt
   override fun doApplyInformationToEditor() {
     for (highlight in myHighlights) {
-      highlight.unregisterQuickFix { it.familyName == CodeActionQuickFix.FAMILY_NAME }
+      highlight.unregisterQuickFix {
+        (it as? CodeActionQuickFix)?.familyName == CodeActionQuickFix.FAMILY_NAME
+      }
 
       if (highlight.startOffset > document.textLength ||
           highlight.endOffset > document.textLength ||

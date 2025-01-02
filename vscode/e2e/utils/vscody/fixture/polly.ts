@@ -7,8 +7,8 @@ import * as path from 'node:path'
 import NodeHttpAdapter from '@pollyjs/adapter-node-http'
 import normalizeUrl from 'normalize-url'
 import type { TestContext, WorkerContext } from '.'
-import { redactAuthorizationHeader } from '../../../../src/testutils/CodyPersisterV2'
-import { CodyPersister } from '../../../../src/testutils/CodyPersisterV2'
+import { redactAuthorizationHeader } from '../../../../src/testutils/CodyPersister'
+import { CodyPersister } from '../../../../src/testutils/CodyPersister'
 import {
     MITM_PROXY_AUTH_AVAILABLE_HEADER,
     MITM_PROXY_AUTH_TOKEN_NAME_HEADER,
@@ -156,22 +156,6 @@ export const pollyFixture = _test.extend<TestContext, WorkerContext>({
                         //TODO(rnauta): forward this to a local otlp server & include with attachments
                         // ideally combined with local or even remote sourcegraph traces too
                         res.status(201).json({ partialSuccess: {} })
-                    })
-
-                polly.server
-                    .any()
-                    .filter(req => {
-                        return (
-                            !!getFirstOrValue(req.getHeader(MITM_PROXY_SERVICE_NAME_HEADER))?.startsWith(
-                                'sourcegraph'
-                            ) &&
-                            req.pathname.startsWith('/.api/graphql') &&
-                            'LogEventMutation' in req.query
-                        )
-                    })
-                    .intercept((req, res) => {
-                        //TODO: Implement this
-                        res.status(200).json({ data: { logEvent: null } })
                     })
 
                 polly.server

@@ -9,9 +9,12 @@ import {
     type CodyCommand,
     CodyIDE,
     ModelUsage,
+    checkIfEnterpriseUser,
     currentAuthStatus,
     currentAuthStatusAuthed,
+    firstNonPendingAuthStatus,
     firstResultFromOperation,
+    resolvedConfig,
     telemetryRecorder,
     waitUntilComplete,
 } from '@sourcegraph/cody-shared'
@@ -19,6 +22,9 @@ import * as vscode from 'vscode'
 import { StreamMessageReader, StreamMessageWriter, createMessageConnection } from 'vscode-jsonrpc/node'
 import packageJson from '../../vscode/package.json'
 
+import { mkdirSync, statSync } from 'node:fs'
+import { PassThrough } from 'node:stream'
+import type { Har } from '@pollyjs/persister'
 import {
     type AuthStatus,
     type BillingCategory,
@@ -36,14 +42,6 @@ import {
     logError,
     modelsService,
 } from '@sourcegraph/cody-shared'
-import { chatHistory } from '../../vscode/src/chat/chat-view/ChatHistoryManager'
-import type { ExtensionMessage, WebviewMessage } from '../../vscode/src/chat/protocol'
-import { ProtocolTextDocumentWithUri } from '../../vscode/src/jsonrpc/TextDocumentWithUri'
-import type * as agent_protocol from '../../vscode/src/jsonrpc/agent-protocol'
-
-import { mkdirSync, statSync } from 'node:fs'
-import { PassThrough } from 'node:stream'
-import type { Har } from '@pollyjs/persister'
 import { codyPaths } from '@sourcegraph/cody-shared'
 import { TESTING_TELEMETRY_EXPORTER } from '@sourcegraph/cody-shared/src/telemetry-v2/TelemetryRecorderProvider'
 import { type TelemetryEventParameters, TestTelemetryExporter } from '@sourcegraph/telemetry'
@@ -53,6 +51,8 @@ import * as uuid from 'uuid'
 import type { MessageConnection } from 'vscode-jsonrpc'
 import type { CommandResult } from '../../vscode/src/CommandResult'
 import { formatURL } from '../../vscode/src/auth/auth'
+import { chatHistory } from '../../vscode/src/chat/chat-view/ChatHistoryManager'
+import type { ExtensionMessage, WebviewMessage } from '../../vscode/src/chat/protocol'
 import { executeExplainCommand, executeSmellCommand } from '../../vscode/src/commands/execute'
 import type { CodyCommandArgs } from '../../vscode/src/commands/types'
 import type { CompletionItemID } from '../../vscode/src/completions/analytics-logger'
@@ -63,10 +63,13 @@ import type { QuickPickInput } from '../../vscode/src/edit/input/get-input'
 import { getModelOptionItems } from '../../vscode/src/edit/input/get-items/model'
 import { getEditSmartSelection } from '../../vscode/src/edit/utils/edit-selection'
 import type { ExtensionClient } from '../../vscode/src/extension-client'
+import { ProtocolTextDocumentWithUri } from '../../vscode/src/jsonrpc/TextDocumentWithUri'
+import type * as agent_protocol from '../../vscode/src/jsonrpc/agent-protocol'
 import { IndentationBasedFoldingRangeProvider } from '../../vscode/src/lsp/foldingRanges'
 import type { FixupActor, FixupFileCollection } from '../../vscode/src/non-stop/roles'
 import type { FixupControlApplicator } from '../../vscode/src/non-stop/strategies'
 import { authProvider } from '../../vscode/src/services/AuthProvider'
+import { localStorage } from '../../vscode/src/services/LocalStorageProvider'
 import { AgentWorkspaceEdit } from '../../vscode/src/testutils/AgentWorkspaceEdit'
 import { AgentAuthHandler } from './AgentAuthHandler'
 import { AgentFixupControls } from './AgentFixupControls'
@@ -77,10 +80,7 @@ import { AgentWorkspaceConfiguration } from './AgentWorkspaceConfiguration'
 import { AgentWorkspaceDocuments } from './AgentWorkspaceDocuments'
 import { registerNativeWebviewHandlers, resolveWebviewView } from './NativeWebview'
 import type { PollyRequestError } from './cli/command-jsonrpc-stdio'
-import {
-    currentProtocolAuthStatus,
-    currentProtocolAuthStatusOrNotReadyYet,
-} from './currentProtocolAuthStatus'
+import { toProtocolAuthStatus } from './currentProtocolAuthStatus'
 import { AgentGlobalState } from './global-state/AgentGlobalState'
 import {
     MessageHandler,
@@ -358,7 +358,6 @@ export class Agent extends MessageHandler implements ExtensionClient {
     public webviewViewProviders = new Map<string, vscode.WebviewViewProvider>()
 
     public authenticationHandler: AgentAuthHandler | null = null
-    private authenticationPromise: Promise<void> = Promise.resolve()
 
     private clientInfo: ClientInfo | null = null
 
@@ -455,14 +454,9 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
                 const ideType = AgentWorkspaceConfiguration.clientNameToIDE(this.clientInfo?.name ?? '')
 
-                this.authenticationPromise =
-                    clientInfo.extensionConfiguration &&
-                    (clientInfo.extensionConfiguration?.accessToken || ideType === CodyIDE.Web)
-                        ? this.handleConfigChanges(clientInfo.extensionConfiguration, {
-                              forceAuthentication: true,
-                          })
-                        : Promise.resolve()
-                await this.authenticationPromise
+                const forceAuthentication =
+                    !!clientInfo.extensionConfiguration &&
+                    (!!clientInfo.extensionConfiguration?.accessToken || ideType === CodyIDE.Web)
 
                 const webviewKind = clientInfo.capabilities?.webview || 'agentic'
                 const nativeWebviewConfig = clientInfo.capabilities?.webviewNativeConfig
@@ -481,11 +475,16 @@ export class Agent extends MessageHandler implements ExtensionClient {
                     this.registerWebviewHandlers()
                 }
 
-                const authStatus = currentProtocolAuthStatusOrNotReadyYet()
+                const status = clientInfo.extensionConfiguration
+                    ? await this.handleConfigChanges(clientInfo.extensionConfiguration, {
+                          forceAuthentication,
+                      })
+                    : await firstNonPendingAuthStatus()
+
                 return {
                     name: 'cody-agent',
-                    authenticated: authStatus?.authenticated ?? false,
-                    authStatus,
+                    authenticated: status.authenticated,
+                    authStatus: toProtocolAuthStatus(status),
                 }
             } catch (error) {
                 console.error(
@@ -557,8 +556,9 @@ export class Agent extends MessageHandler implements ExtensionClient {
         this.registerRequest('textDocument/change', async document => {
             // We don't await the promise here, as it's got a fragile implicit contract.
             // Call testing/awaitPendingPromises if you want to wait for changes to settle.
-            this.handleDocumentChange(document)
-            return { success: true }
+            return this.handleDocumentChange(document).then(() => {
+                return { success: true }
+            })
         })
 
         this.registerNotification('textDocument/didClose', document => {
@@ -578,18 +578,15 @@ export class Agent extends MessageHandler implements ExtensionClient {
         })
 
         this.registerNotification('extensionConfiguration/didChange', config => {
-            this.authenticationPromise = this.handleConfigChanges(config)
+            this.handleConfigChanges(config)
         })
 
         this.registerRequest('extensionConfiguration/change', async config => {
-            this.authenticationPromise = this.handleConfigChanges(config)
-            await this.authenticationPromise
-            return currentProtocolAuthStatus()
+            return this.handleConfigChanges(config).then(toProtocolAuthStatus)
         })
 
         this.registerRequest('extensionConfiguration/status', async () => {
-            await this.authenticationPromise
-            return currentProtocolAuthStatus()
+            return firstNonPendingAuthStatus().then(toProtocolAuthStatus)
         })
 
         this.registerRequest('extensionConfiguration/getSettingsSchema', async () => {
@@ -1071,20 +1068,6 @@ export class Agent extends MessageHandler implements ExtensionClient {
             return Promise.resolve(null)
         })
 
-        /**
-         * @deprecated use 'telemetry/recordEvent' instead.
-         */
-        this.registerAuthenticatedRequest('graphql/logEvent', async event => {
-            if (typeof event.argument === 'object') {
-                event.argument = JSON.stringify(event.argument)
-            }
-            if (typeof event.publicArgument === 'object') {
-                event.publicArgument = JSON.stringify(event.publicArgument)
-            }
-            await graphqlClient.logEvent(event, 'connected-instance-only')
-            return null
-        })
-
         this.registerRequest('graphql/getRepoIdIfEmbeddingExists', () => {
             return Promise.resolve(null)
         })
@@ -1155,7 +1138,8 @@ export class Agent extends MessageHandler implements ExtensionClient {
             const instruction = PromptString.unsafe_fromUserQuery(params.instruction)
             const models = getModelOptionItems(
                 await firstResultFromOperation(modelsService.getModels(ModelUsage.Edit)),
-                true
+                true,
+                await checkIfEnterpriseUser()
             )
             const previousInput: QuickPickInput = {
                 instruction: instruction,
@@ -1501,13 +1485,14 @@ export class Agent extends MessageHandler implements ExtensionClient {
     private async handleConfigChanges(
         config: ExtensionConfiguration,
         params?: { forceAuthentication: boolean }
-    ): Promise<void> {
+    ): Promise<AuthStatus> {
         const isAuthChange = vscode_shim.isAuthenticationChange(config)
         vscode_shim.setExtensionConfiguration(config)
+
         // If this is an authentication change we need to reauthenticate prior to firing events
         // that update the clients
-        if (isAuthChange || params?.forceAuthentication) {
-            try {
+        try {
+            if (isAuthChange || params?.forceAuthentication) {
                 await authProvider.validateAndStoreCredentials(
                     {
                         configuration: {
@@ -1523,21 +1508,25 @@ export class Agent extends MessageHandler implements ExtensionClient {
                     },
                     'always-store'
                 )
-
-                // Critical: we need to await for the handling of `onDidChangeConfiguration` to
-                // let the new credentials propagate. If we remove the statement below, then
-                // autocomplete may return empty results because we can't await for the updated
-                // `InlineCompletionItemProvider` to register.
-                await vscode_shim.onDidChangeConfiguration.cody_fireAsync({
-                    affectsConfiguration: () =>
-                        // assuming the return value below only impacts performance (not
-                        // functionality), we return true to always triggger the callback.
-                        true,
-                })
-            } catch (error) {
-                console.log('Authentication failed', error)
+                await firstResultFromOperation(localStorage.clientStateChanges)
             }
+        } catch (error) {
+            console.log('Authentication failed', error)
         }
+
+        // Critical: we need to await for the handling of `onDidChangeConfiguration` to
+        // let the new credentials propagate. If we remove the statement below, then
+        // autocomplete may return empty results because we can't await for the updated
+        // `InlineCompletionItemProvider` to register.
+        await vscode_shim.onDidChangeConfiguration.cody_fireAsync({
+            affectsConfiguration: () =>
+                // assuming the return value below only impacts performance (not
+                // functionality), we return true to always trigger the callback.
+                true,
+        })
+        await firstResultFromOperation(resolvedConfig)
+
+        return firstNonPendingAuthStatus()
     }
 
     private async handleDocumentChange(document: ProtocolTextDocument) {
@@ -1719,7 +1708,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
         callback: RequestCallback<M>
     ): void {
         this.registerRequest(method, async (params, token) => {
-            await this.authenticationPromise
+            await firstNonPendingAuthStatus()
             if (vscode_shim.isTesting) {
                 await Promise.all(this.pendingPromises.values())
             }

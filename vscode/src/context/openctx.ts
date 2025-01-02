@@ -1,5 +1,6 @@
 import {
     type AuthStatus,
+    CODE_SEARCH_PROVIDER_URI,
     type ClientConfiguration,
     FeatureFlag,
     GIT_OPENCTX_PROVIDER_URI,
@@ -30,11 +31,16 @@ import type {
 import type { createController } from '@openctx/vscode-lib'
 import { Observable, map } from 'observable-fns'
 import { logDebug } from '../output-channel-logger'
+import { createCodeSearchProvider } from './openctx/codeSearch'
 import { gitMentionsProvider } from './openctx/git'
 import LinearIssuesProvider from './openctx/linear-issues'
 import RemoteDirectoryProvider, { createRemoteDirectoryProvider } from './openctx/remoteDirectorySearch'
 import RemoteFileProvider, { createRemoteFileProvider } from './openctx/remoteFileSearch'
 import RemoteRepositorySearch, { createRemoteRepositoryProvider } from './openctx/remoteRepositorySearch'
+import {
+    RemoteWorkspaceDirectoryProvider,
+    RemoteWorkspaceRepositoryProvider,
+} from './openctx/remoteSourcegraphTeams'
 import { createWebProvider } from './openctx/web'
 
 export function exposeOpenCtxClient(
@@ -89,7 +95,7 @@ export function exposeOpenCtxClient(
                     outputChannel: openctxOutputChannel!,
                     features: clientCapabilities().isVSCode ? { annotations: true } : {},
                     providers: clientCapabilities().isCodyWeb
-                        ? Observable.of(getCodyWebOpenCtxProviders())
+                        ? getCodyWebOpenCtxProviders()
                         : getOpenCtxProviders(authStatus, isValidSiteVersion),
                     mergeConfiguration,
                 })
@@ -116,11 +122,15 @@ export function getOpenCtxProviders(
     return combineLatest(
         resolvedConfig.pipe(pluck('configuration'), distinctUntilChanged()),
         authStatusChanges,
-        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.GitMentionProvider)
+        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.GitMentionProvider),
+        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyExperimentalOneBox),
+        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.SourcegraphTeamsUpgradeCTA)
     ).map(
-        ([config, authStatus, gitMentionProvider]: [
+        ([config, authStatus, gitMentionProvider, enableOneBox, showRemoteWorkspaceUpgrade]: [
             ClientConfiguration,
             Pick<AuthStatus, 'endpoint'>,
+            boolean | undefined,
+            boolean | undefined,
             boolean | undefined,
         ]) => {
             const providers: ImportedProviderConfiguration[] = [
@@ -131,9 +141,22 @@ export function getOpenCtxProviders(
                 },
             ]
 
-            // Remote repository and remote files should be available only for
-            // non-dotcom users
-            if (!isDotCom(authStatus)) {
+            if (isDotCom(authStatus)) {
+                // Add providers for dotcom users with upgrade flag
+                if (showRemoteWorkspaceUpgrade) {
+                    providers.push({
+                        settings: false,
+                        provider: RemoteWorkspaceRepositoryProvider,
+                        providerUri: RemoteWorkspaceRepositoryProvider.providerUri,
+                    })
+                    providers.push({
+                        settings: false,
+                        provider: RemoteWorkspaceDirectoryProvider,
+                        providerUri: RemoteWorkspaceDirectoryProvider.providerUri,
+                    })
+                }
+            } else {
+                // Remote repository and remote files should be available for non-dotcom users.
                 providers.push({
                     settings: true,
                     provider: RemoteRepositorySearch,
@@ -171,34 +194,56 @@ export function getOpenCtxProviders(
                 })
             }
 
+            if (enableOneBox) {
+                providers.push({
+                    settings: true,
+                    provider: createCodeSearchProvider(),
+                    providerUri: CODE_SEARCH_PROVIDER_URI,
+                })
+            }
+
             return providers
         }
     )
 }
 
-function getCodyWebOpenCtxProviders(): ImportedProviderConfiguration[] {
-    return [
-        {
-            settings: true,
-            providerUri: RemoteRepositorySearch.providerUri,
-            provider: createRemoteRepositoryProvider('Repositories'),
-        },
-        {
-            settings: true,
-            providerUri: RemoteFileProvider.providerUri,
-            provider: createRemoteFileProvider('Files'),
-        },
-        {
-            settings: true,
-            providerUri: RemoteDirectoryProvider.providerUri,
-            provider: createRemoteDirectoryProvider('Directories'),
-        },
-        {
-            settings: true,
-            providerUri: WEB_PROVIDER_URI,
-            provider: createWebProvider(true),
-        },
-    ]
+function getCodyWebOpenCtxProviders(): Observable<ImportedProviderConfiguration[]> {
+    return combineLatest(
+        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyExperimentalOneBox)
+    ).map(([enableOneBox]: [boolean | undefined]) => {
+        const providers = [
+            {
+                settings: true,
+                providerUri: RemoteRepositorySearch.providerUri,
+                provider: createRemoteRepositoryProvider('Repositories'),
+            },
+            {
+                settings: true,
+                providerUri: RemoteFileProvider.providerUri,
+                provider: createRemoteFileProvider('Files'),
+            },
+            {
+                settings: true,
+                providerUri: RemoteDirectoryProvider.providerUri,
+                provider: createRemoteDirectoryProvider('Directories'),
+            },
+            {
+                settings: true,
+                providerUri: WEB_PROVIDER_URI,
+                provider: createWebProvider(true),
+            },
+        ]
+
+        if (enableOneBox) {
+            providers.push({
+                settings: true,
+                provider: createCodeSearchProvider(),
+                providerUri: CODE_SEARCH_PROVIDER_URI,
+            })
+        }
+
+        return providers
+    })
 }
 
 function getMergeConfigurationFunction(): Parameters<typeof createController>[0]['mergeConfiguration'] {

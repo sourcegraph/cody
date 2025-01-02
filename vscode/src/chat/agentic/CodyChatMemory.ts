@@ -1,4 +1,4 @@
-import { type ContextItem, ContextItemSource } from '@sourcegraph/cody-shared'
+import { type ContextItem, ContextItemSource, logDebug } from '@sourcegraph/cody-shared'
 import { URI } from 'vscode-uri'
 import { localStorage } from '../../services/LocalStorageProvider'
 
@@ -37,10 +37,11 @@ export class CodyChatMemory {
         // If store exceeds the max, remove oldest items
         if (CodyChatMemory.Store.size > CodyChatMemory.MAX_MEMORY_ITEMS) {
             const storeArray = Array.from(CodyChatMemory.Store)
-            CodyChatMemory.Store = new Set(storeArray.slice(-5))
+            CodyChatMemory.Store = new Set(storeArray.slice(-CodyChatMemory.MAX_MEMORY_ITEMS))
         }
         // TODO - persist to local file system
         localStorage?.setChatMemory(Array.from(CodyChatMemory.Store))
+        logDebug('CodyChatMemory', 'memory added', { verbose: memory })
     }
 
     public static retrieve(): ContextItem | undefined {
@@ -58,10 +59,14 @@ export class CodyChatMemory {
     public static unload(): ContextItem | undefined {
         const stored = CodyChatMemory.retrieve()
         CodyChatMemory.Store = new Set<string>()
+        localStorage?.setChatMemory(null)
+        logDebug('CodyChatMemory', 'memory reset')
         return stored
     }
 
     private getChatMemory(): string[] {
-        return localStorage?.getChatMemory() || []
+        const memory = localStorage?.getChatMemory() || []
+        logDebug('CodyChatMemory', 'memory retrieved', { verbose: memory })
+        return memory
     }
 }

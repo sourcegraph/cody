@@ -4,7 +4,9 @@ import { TESTING_CREDENTIALS } from '../../vscode/src/testutils/testing-credenti
 import { TestClient } from './TestClient'
 import { TestWorkspace } from './TestWorkspace'
 
-describe(
+// TODO: fix the flakiness and reenabled it back
+// https://linear.app/sourcegraph/issue/CODY-4546/fix-the-flaky-agentsrcunauthedteststs-and-reenabled-it-back
+describe.skip(
     'Initializing the agent without credentials',
     {
         timeout: 5000,

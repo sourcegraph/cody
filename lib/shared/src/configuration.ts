@@ -31,12 +31,27 @@ export interface AutoEditsTokenLimit {
     contextSpecificTokenLimit: Record<string, number>
 }
 
+/**
+ * Configuration for the auto-edits model provider.
+ * Used to configure the model provider for auto-edits functionality in the VS Code extension.
+ */
 export interface AutoEditsModelConfig {
-    provider: 'openai' | 'fireworks' | 'cody-gateway-fastpath-chat' | 'sourcegraph-chat'
+    /** The provider service to use for auto-edits. Can be 'openai', 'fireworks', 'cody-gateway', or 'sourcegraph' */
+    provider: 'openai' | 'fireworks' | 'cody-gateway' | 'sourcegraph'
+    /** The specific model identifier to use for auto-edits */
     model: string
+    /** The endpoint URL for the provider's API */
     url: string
+    /** API key for authentication with the provider */
     apiKey: string
+    /** Token limits configuration for the model's context window */
     tokenLimit: AutoEditsTokenLimit
+    /** Whether the model is a chat-based model (true) or completions model (false)
+     *  Depending on this variable:
+     *   - The request is directed either to chat or completions endpoint
+     *   - The prompt is formatted accordingly
+     */
+    isChatModel: boolean
 }
 
 export interface NetConfiguration {
@@ -72,7 +87,8 @@ interface RawClientConfiguration {
     commandCodeLenses: boolean
 
     // Deep Cody
-    agenticContext?: AgenticContextConfiguration
+    agenticContextExperimentalShell?: boolean
+    agenticContextExperimentalOptions?: AgenticContextConfiguration
 
     //#region Autocomplete
     autocomplete: boolean

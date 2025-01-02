@@ -1,0 +1,33 @@
+.mention {
+    --mention-color-opacity: 70%;
+
+    color: color-mix(in lch, var(--vscode-inputOption-activeForeground) calc(1.2*var(--mention-color-opacity)), transparent);
+    background-color: color-mix(in lch, var(--vscode-inputOption-activeBackground) var(--mention-color-opacity), transparent);
+    border-radius: 2px;
+    white-space: normal;
+    padding: 0 3px;
+    display: inline-flex;
+    align-items: baseline;
+    outline-offset: -1px;
+    cursor: pointer;
+
+    &--focused {
+        --mention-color-opacity: 100%;
+        outline: solid 1px var(--vscode-inputOption-activeBorder);
+    }
+
+    svg {
+        display: inline-flex;
+        align-self: center;
+        height: 14px;
+        width: 14px;
+        margin-right: 2px;
+        opacity: 0.8;
+        transform: translateY(-1px);
+    }
+}
+
+.is-too-large-or-ignored {
+    text-decoration: line-through;
+    color: var(--vscode-editorWarning-foreground);
+}

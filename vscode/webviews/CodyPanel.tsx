@@ -3,6 +3,7 @@ import {
     type ChatMessage,
     type ClientCapabilitiesWithLegacyFields,
     CodyIDE,
+    type CodyNotice,
     FeatureFlag,
     type Guardrails,
     type UserProductSubscription,
@@ -37,6 +38,7 @@ interface CodyPanelProps {
     errorMessages: string[]
     attributionEnabled: boolean
     chatEnabled: boolean
+    instanceNotices: CodyNotice[]
     messageInProgress: ChatMessage | null
     transcript: ChatMessage[]
     vscodeAPI: Pick<VSCodeWrapper, 'postMessage' | 'onMessage'>
@@ -59,6 +61,7 @@ export const CodyPanel: FunctionComponent<CodyPanelProps> = ({
     setErrorMessages,
     attributionEnabled,
     chatEnabled,
+    instanceNotices,
     messageInProgress,
     transcript,
     vscodeAPI,
@@ -105,10 +108,19 @@ export const CodyPanel: FunctionComponent<CodyPanelProps> = ({
                 orientation="vertical"
                 className={styles.outerContainer}
             >
-                <Notices user={user} isTeamsUpgradeCtaEnabled={isTeamsUpgradeCtaEnabled} />
+                <Notices
+                    user={user}
+                    instanceNotices={instanceNotices}
+                    isTeamsUpgradeCtaEnabled={isTeamsUpgradeCtaEnabled}
+                />
                 {/* Hide tab bar in editor chat panels. */}
                 {(clientCapabilities.agentIDE === CodyIDE.Web || config.webviewType !== 'editor') && (
-                    <TabsBar currentView={view} setView={setView} IDE={clientCapabilities.agentIDE} />
+                    <TabsBar
+                        user={user}
+                        currentView={view}
+                        setView={setView}
+                        endpointHistory={config.endpointHistory ?? []}
+                    />
                 )}
                 {errorMessages && <ErrorBanner errors={errorMessages} setErrors={setErrorMessages} />}
                 <TabContainer value={view} ref={tabContainerRef}>

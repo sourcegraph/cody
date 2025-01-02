@@ -10,11 +10,6 @@ import { AppWrapperForTest } from '../../../../../AppWrapperForTest'
 import { FIXTURE_USER_ACCOUNT_INFO } from '../../../../fixtures'
 import { HumanMessageEditor } from './HumanMessageEditor'
 
-vi.mock('@vscode/webview-ui-toolkit/react', () => ({
-    VSCodeButton: vi.fn(),
-    VSCodeCheckbox: vi.fn(),
-}))
-
 const MOCK_MODELS = getMockedDotComClientModels()
 
 const ENTER_KEYBOARD_EVENT_DATA: Pick<KeyboardEvent, 'key' | 'code' | 'keyCode'> = {

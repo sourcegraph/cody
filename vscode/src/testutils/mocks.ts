@@ -12,7 +12,6 @@ import type {
 import { type ClientConfiguration, OLLAMA_DEFAULT_URL } from '@sourcegraph/cody-shared'
 
 import path from 'node:path'
-import { DefaultShellContextConfig } from '../commands/context/config'
 import { AgentEventEmitter as EventEmitter } from './AgentEventEmitter'
 import { AgentWorkspaceEdit as WorkspaceEdit } from './AgentWorkspaceEdit'
 import { Uri } from './uri'
@@ -229,6 +228,10 @@ export class CodeActionKind {
     static readonly SourceFixAll = new CodeActionKind('SourceFixAll')
 
     constructor(public readonly value: string) {}
+}
+export enum NotebookCellKind {
+    Markup = 1,
+    Code = 2,
 }
 // biome-ignore lint/complexity/noStaticOnlyClass: mock
 export class QuickInputButtons {
@@ -794,6 +797,7 @@ export const vsCodeMocks = {
         showErrorMessage(message: string) {
             console.error(message)
         },
+        activeNotebookEditor: undefined,
         activeTextEditor: {
             document: { uri: { scheme: 'not-cody' } },
             options: { tabSize: 4 },
@@ -868,6 +872,7 @@ export const vsCodeMocks = {
     FoldingRange,
     FoldingRangeKind,
     CodeActionKind,
+    NotebookCellKind,
     DiagnosticSeverity,
     ViewColumn,
     TextDocumentChangeReason,
@@ -913,7 +918,8 @@ export const DEFAULT_VSCODE_SETTINGS = {
     internalUnstable: false,
     internalDebugContext: false,
     internalDebugState: false,
-    agenticContext: { shell: DefaultShellContextConfig },
+    agenticContextExperimentalShell: false,
+    agenticContextExperimentalOptions: {},
     autocompleteAdvancedProvider: 'default',
     autocompleteAdvancedModel: null,
     autocompleteCompleteSuggestWidgetSelection: true,

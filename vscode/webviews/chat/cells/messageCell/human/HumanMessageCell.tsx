@@ -35,7 +35,7 @@ interface HumanMessageCellProps {
 
     onEditorFocusChange?: (focused: boolean) => void
     onChange?: (editorState: SerializedPromptEditorValue) => void
-    onSubmit: (editorValue: SerializedPromptEditorValue) => void
+    onSubmit: (intent?: ChatMessage['intent']) => void
     onStop: () => void
 
     isFirstInteraction?: boolean
@@ -64,7 +64,7 @@ export const HumanMessageCell: FC<HumanMessageCellProps> = ({ message, ...otherP
         <HumanMessageCellContent
             {...otherProps}
             initialEditorState={initialEditorState}
-            intent={message.intent}
+            intent={message.manuallySelectedIntent}
         />
     )
 }
@@ -157,7 +157,7 @@ const OpenInNewEditorAction = () => {
                             id: 'cody.chat.moveToEditor',
                         })
                     }}
-                    className="tw-flex tw-gap-3 tw-items-center tw-leading-none tw-opacity-80 hover:tw-opacity-100 tw-border-b-[1px] tw-border-transparent tw-transition tw-translate-y-[1px]"
+                    className="tw-flex tw-gap-3 tw-items-center tw-leading-none tw-transition"
                 >
                     <ColumnsIcon size={16} strokeWidth={1.25} className="tw-w-8 tw-h-8" />
                 </button>

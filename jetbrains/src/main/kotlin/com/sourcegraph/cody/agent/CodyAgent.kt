@@ -12,6 +12,7 @@ import com.sourcegraph.cody.agent.protocol.*
 import com.sourcegraph.cody.agent.protocol_extensions.ProtocolTextDocumentExt
 import com.sourcegraph.cody.agent.protocol_generated.ClientCapabilities
 import com.sourcegraph.cody.agent.protocol_generated.ClientInfo
+import com.sourcegraph.cody.agent.protocol_generated.CodyAgentServer
 import com.sourcegraph.cody.agent.protocol_generated.ProtocolTypeAdapters
 import com.sourcegraph.cody.agent.protocol_generated.WebviewNativeConfig
 import com.sourcegraph.cody.ui.web.WebUIServiceWebviewProvider
@@ -142,6 +143,7 @@ private constructor(
                               ignore = ClientCapabilities.IgnoreEnum.Enabled,
                               untitledDocuments = ClientCapabilities.UntitledDocumentsEnum.Enabled,
                               codeActions = ClientCapabilities.CodeActionsEnum.Enabled,
+                              shell = ClientCapabilities.ShellEnum.Enabled,
                               globalState = ClientCapabilities.GlobalStateEnum.`Server-managed`,
                               secrets = ClientCapabilities.SecretsEnum.`Client-managed`,
                               webview = ClientCapabilities.WebviewEnum.Native,

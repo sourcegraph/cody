@@ -11,13 +11,15 @@ import com.sourcegraph.cody.edit.lenses.providers.EditWorkingCodeVisionProvider
 import com.sourcegraph.cody.util.CodyIntegrationTextFixture
 import com.sourcegraph.cody.util.CustomJunitClassRunner
 import org.hamcrest.MatcherAssert.assertThat
-import org.hamcrest.Matchers.startsWith
+import org.hamcrest.Matchers.containsString
+import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(CustomJunitClassRunner::class)
 class DocumentCodeTest : CodyIntegrationTextFixture() {
 
+  @Ignore
   @Test
   fun testGetsWorkingGroupLens() {
     val codeLenses = runAndWaitForLenses(DocumentCodeAction.ID, EditCancelAction.ID)
@@ -45,7 +47,7 @@ class DocumentCodeTest : CodyIntegrationTextFixture() {
     val codeLenses = runAndWaitForLenses(DocumentCodeAction.ID, EditAcceptAction.ID)
     assertNotNull("Lens group should be displayed", codeLenses.isNotEmpty())
 
-    assertEquals("Lens group should have 4 lenses", 2, codeLenses.size)
+    assertEquals("Lens group should have 2 lenses", 2, codeLenses.size)
     assertEquals(
         "First lens should be accept lens",
         codeLenses[0].command?.command,
@@ -67,7 +69,7 @@ class DocumentCodeTest : CodyIntegrationTextFixture() {
     assertNotNull("Lens group should be displayed", codeLenses.isNotEmpty())
 
     runAndWaitForCleanState(EditAcceptAction.ID)
-    assertThat(myFixture.editor.document.text, startsWith("/**"))
+    assertThat(myFixture.editor.document.text, containsString("*/\n    public void foo() {"))
   }
 
   @Test

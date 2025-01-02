@@ -32,5 +32,8 @@ export function serializeChatMessage(chatMessage: ChatMessage): SerializedChatMe
         error: chatMessage.error,
         text: chatMessage.text ? chatMessage.text.toString() : undefined,
         intent: chatMessage.intent,
+        manuallySelectedIntent: chatMessage.manuallySelectedIntent,
+        search: chatMessage.search,
+        processes: chatMessage.processes,
     }
 }

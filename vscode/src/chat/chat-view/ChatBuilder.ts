@@ -6,19 +6,21 @@ import {
     type ContextItem,
     type Message,
     type ModelContextWindow,
+    type ProcessingStep,
+    type RankedContext,
     type SerializedChatInteraction,
     type SerializedChatTranscript,
     distinctUntilChanged,
     errorToChatError,
     modelsService,
     pendingOperation,
+    ps,
     serializeChatMessage,
     startWith,
     switchMap,
     toRangeData,
 } from '@sourcegraph/cody-shared'
 
-import type { RankedContext } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { Observable, Subject, map } from 'observable-fns'
 import { getChatPanelTitle } from './chat-helpers'
 
@@ -188,6 +190,25 @@ export class ChatBuilder {
         this.changeNotifications.next()
     }
 
+    public addSearchResultAsBotMessage(search: ChatMessage['search']): void {
+        const lastMessage = this.messages.at(-1)
+        let error: any
+        // If there is no text, it could be a placeholder message for an error
+        if (lastMessage?.speaker === 'assistant') {
+            if (lastMessage?.text) {
+                throw new Error('Cannot add a bot message after a bot message')
+            }
+            error = this.messages.pop()?.error
+        }
+        this.messages.push({
+            search,
+            speaker: 'assistant',
+            error,
+            text: ps`Search found ${search?.response?.results.results.length || 0} results`,
+        })
+        this.changeNotifications.next()
+    }
+
     public addErrorAsBotMessage(error: Error, model: ChatModel | typeof ChatBuilder.NO_MODEL): void {
         const lastMessage = this.messages.at(-1)
         // Remove the last assistant message if any
@@ -200,6 +221,18 @@ export class ChatBuilder {
             speaker: 'assistant',
             error: errorToChatError(error),
         })
+        this.changeNotifications.next()
+    }
+
+    public setLastMessageProcesses(processes: ProcessingStep[]): void {
+        const lastMessage = this.messages.at(-1)
+        if (!lastMessage) {
+            throw new Error('no last message')
+        }
+        if (lastMessage.speaker !== 'human') {
+            throw new Error('Cannot set processes for bot message')
+        }
+        lastMessage.processes = processes
         this.changeNotifications.next()
     }
 
@@ -231,6 +264,20 @@ export class ChatBuilder {
 
         // Removes everything from the index to the last element
         this.messages.splice(index)
+        this.changeNotifications.next()
+    }
+
+    public updateAssistantMessageAtIndex(index: number, update: Omit<ChatMessage, 'speaker'>): void {
+        const message = this.messages.at(index)
+        if (!message) {
+            throw new Error('invalid index')
+        }
+        if (message.speaker !== 'assistant') {
+            throw new Error('Cannot set selected filters for human message')
+        }
+
+        Object.assign(message, { ...update, speaker: 'assistant' })
+
         this.changeNotifications.next()
     }
 
