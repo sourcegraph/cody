@@ -83,79 +83,174 @@ export async function evaluateChatContextStrategy(
     })
 }
 
+// async function runContextCommand(
+//     clientOpts: ClientOptions,
+//     examples: Example[]
+// ): Promise<ExampleOutput[]> {
+//     const completionsClient = new SourcegraphNodeCompletionsClient()
+//     const exampleOutputs: ExampleOutput[] = []
+
+//     for (const example of examples) {
+//         const { targetRepoRevs, query: origQuery } = example
+//         const repoNames = targetRepoRevs.map(repoRev => repoRev.repoName)
+//         const repoIDNames = await graphqlClient.getRepoIds(repoNames, repoNames.length + 10)
+//         if (isError(repoIDNames)) {
+//             throw new Error(`getRepoIds failed for [${repoNames.join(',')}]: ${repoIDNames}`)
+//         }
+//         if (repoIDNames.length !== repoNames.length) {
+//             throw new Error(
+//                 `repoIDs.length (${repoIDNames.length}) !== repoNames.length (${
+//                     repoNames.length
+//                 }), repoNames were (${repoNames.join(', ')})`
+//             )
+//         }
+//         const repoIDs = repoIDNames.map(repoIDName => repoIDName.id)
+
+//         let query = origQuery
+//         if (clientOpts.rewrite) {
+//             query = await rewriteKeywordQuery(
+//                 completionsClient,
+//                 PromptString.unsafe_fromUserQuery(origQuery)
+//             )
+//         }
+
+//         const resultsResp = await graphqlClient.contextSearchEvalDebug({
+//             repoIDs,
+//             query,
+//             filePatterns: [],
+//             codeResultsCount: clientOpts.codeResultsCount,
+//             textResultsCount: clientOpts.textResultsCount,
+//         })
+
+//         if (isError(resultsResp)) {
+//             throw new Error(
+//                 `contextSearch failed for repos [${repoNames.join(
+//                     ','
+//                 )}] and query "${query}": ${resultsResp}`
+//             )
+//         }
+//         if (resultsResp === null) {
+//             throw new Error(
+//                 `contextSearch failed for repos [${repoNames.join(
+//                     ','
+//                 )}] and query "${query}": null results`
+//             )
+//         }
+
+//         const results = resultsResp ?? []
+//         const actualContext: EvalContextItem[] = []
+//         for (const contextList of results) {
+//             actualContext.push(
+//                 ...contextList.contextList.map(result => ({
+//                     repoName: result.repoName.replace(/^github\.com\//, ''),
+//                     path: result.path,
+//                     startLine: result.startLine,
+//                     endLine: result.endLine,
+//                     content: result.content,
+//                     retriever: contextList.name,
+//                 }))
+//             )
+//         }
+//         exampleOutputs.push({
+//             ...example,
+//             actualContext,
+//         })
+//     }
+
+//     return exampleOutputs
+// }
+
+async function sleep(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 async function runContextCommand(
     clientOpts: ClientOptions,
     examples: Example[]
 ): Promise<ExampleOutput[]> {
-    const completionsClient = new SourcegraphNodeCompletionsClient()
-    const exampleOutputs: ExampleOutput[] = []
+    const completionsClient = new SourcegraphNodeCompletionsClient();
+    const exampleOutputs: ExampleOutput[] = [];
 
     for (const example of examples) {
-        const { targetRepoRevs, query: origQuery } = example
-        const repoNames = targetRepoRevs.map(repoRev => repoRev.repoName)
-        const repoIDNames = await graphqlClient.getRepoIds(repoNames, repoNames.length + 10)
-        if (isError(repoIDNames)) {
-            throw new Error(`getRepoIds failed for [${repoNames.join(',')}]: ${repoIDNames}`)
-        }
-        if (repoIDNames.length !== repoNames.length) {
-            throw new Error(
-                `repoIDs.length (${repoIDNames.length}) !== repoNames.length (${
-                    repoNames.length
-                }), repoNames were (${repoNames.join(', ')})`
-            )
-        }
-        const repoIDs = repoIDNames.map(repoIDName => repoIDName.id)
+        const { targetRepoRevs, query: origQuery } = example;
+        const repoNames = targetRepoRevs.map(repoRev => repoRev.repoName);
+        let success = false;
+        let attempt = 0;
 
-        let query = origQuery
-        if (clientOpts.rewrite) {
-            query = await rewriteKeywordQuery(
-                completionsClient,
-                PromptString.unsafe_fromUserQuery(origQuery)
-            )
+        while (!success && attempt < 3) { // Retry up to 3 times
+            try {
+                const repoIDNames = await graphqlClient.getRepoIds(repoNames, repoNames.length + 10);
+                if (isError(repoIDNames)) {
+                    throw new Error(`getRepoIds failed for [${repoNames.join(',')}]: ${repoIDNames}`);
+                }
+                if (repoIDNames.length !== repoNames.length) {
+                    throw new Error(
+                        `repoIDs.length (${repoIDNames.length}) !== repoNames.length (${repoNames.length}), repoNames were (${repoNames.join(', ')})`
+                    );
+                }
+                const repoIDs = repoIDNames.map(repoIDName => repoIDName.id);
+
+                let query = origQuery;
+                if (clientOpts.rewrite) {
+                    query = await rewriteKeywordQuery(
+                        completionsClient,
+                        PromptString.unsafe_fromUserQuery(origQuery)
+                    );
+                }
+
+                const resultsResp = await graphqlClient.contextSearchEvalDebug({
+                    repoIDs,
+                    query,
+                    filePatterns: [],
+                    codeResultsCount: clientOpts.codeResultsCount,
+                    textResultsCount: clientOpts.textResultsCount,
+                });
+
+                if (isError(resultsResp)) {
+                    throw new Error(
+                        `contextSearch failed for repos [${repoNames.join(',')}] and query "${query}": ${resultsResp}`
+                    );
+                }
+                if (resultsResp === null) {
+                    throw new Error(
+                        `contextSearch failed for repos [${repoNames.join(',')}] and query "${query}": null results`
+                    );
+                }
+
+                const results = resultsResp ?? [];
+                const actualContext: EvalContextItem[] = [];
+                for (const contextList of results) {
+                    actualContext.push(
+                        ...contextList.contextList.map(result => ({
+                            repoName: result.repoName.replace(/^github\.com\//, ''),
+                            path: result.path,
+                            startLine: result.startLine,
+                            endLine: result.endLine,
+                            content: result.content,
+                            retriever: contextList.name,
+                        }))
+                    );
+                }
+                exampleOutputs.push({
+                    ...example,
+                    actualContext,
+                });
+
+                success = true;
+            } catch (error) {
+                console.error(`Attempt ${attempt + 1} failed: ${error.message}`);
+                if (attempt < 2) {
+                    await sleep(1000);
+                }
+                attempt++;
+            }
         }
 
-        const resultsResp = await graphqlClient.contextSearchEvalDebug({
-            repoIDs,
-            query,
-            filePatterns: [],
-            codeResultsCount: clientOpts.codeResultsCount,
-            textResultsCount: clientOpts.textResultsCount,
-        })
-
-        if (isError(resultsResp)) {
-            throw new Error(
-                `contextSearch failed for repos [${repoNames.join(
-                    ','
-                )}] and query "${query}": ${resultsResp}`
-            )
-        }
-        if (resultsResp === null) {
-            throw new Error(
-                `contextSearch failed for repos [${repoNames.join(
-                    ','
-                )}] and query "${query}": null results`
-            )
+        if (!success) {
+            throw new Error(`Failed to process example after 3 attempts: ${JSON.stringify(example)}`);
         }
 
-        const results = resultsResp ?? []
-        const actualContext: EvalContextItem[] = []
-        for (const contextList of results) {
-            actualContext.push(
-                ...contextList.contextList.map(result => ({
-                    repoName: result.repoName.replace(/^github\.com\//, ''),
-                    path: result.path,
-                    startLine: result.startLine,
-                    endLine: result.endLine,
-                    content: result.content,
-                    retriever: contextList.name,
-                }))
-            )
-        }
-        exampleOutputs.push({
-            ...example,
-            actualContext,
-        })
+        await sleep(1000);
     }
-
-    return exampleOutputs
+    return exampleOutputs;
 }
