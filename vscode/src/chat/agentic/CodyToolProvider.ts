@@ -164,16 +164,8 @@ export class CodyToolProvider {
 
         CodyToolProvider.openCtxSubscription = openCtx.controller
             .metaChanges({}, {})
-            .pipe(
-                map(providers => {
-                    console.log(providers, 'providers')
-                    return providers.filter(p => !!p.mentions).map(openCtxProviderMetadata)
-                })
-            )
-            .subscribe(providerMeta => {
-                console.log(providerMeta, 'providerMeta')
-                return CodyToolProvider.toolFactory.buildOpenCtxCodyTools(providerMeta)
-            })
+            .pipe(map(providers => providers.filter(p => !!p.mentions).map(openCtxProviderMetadata)))
+            .subscribe(providerMeta => CodyToolProvider.toolFactory.buildOpenCtxCodyTools(providerMeta))
     }
 
     private initializeToolInstances(): void {

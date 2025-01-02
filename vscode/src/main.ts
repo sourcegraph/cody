@@ -49,6 +49,7 @@ import { showSignInMenu, showSignOutMenu, tokenCallbackHandler } from './auth/au
 import { AutoeditsProvider } from './autoedits/autoedits-provider'
 import { registerAutoEditTestRenderCommand } from './autoedits/renderer/mock-renderer'
 import type { MessageProviderOptions } from './chat/MessageProvider'
+import { toolboxSettings } from './chat/agentic/ToolboxManager'
 import { ChatsController, CodyChatEditorViewType } from './chat/chat-view/ChatsController'
 import { ContextRetriever } from './chat/chat-view/ContextRetriever'
 import type { ChatIntentAPIClient } from './chat/context/chatIntentAPIClient'
@@ -310,6 +311,9 @@ const register = async (
         subscriptionDisposable(
             resolvedConfig.subscribe(config => {
                 localStorage.setConfig(config)
+                toolboxSettings.updateUserTerminalSetting(
+                    config.configuration.agenticContextExperimentalShell
+                )
             })
         )
     )
