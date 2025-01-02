@@ -14,7 +14,7 @@ import { ContextMixer } from '../completions/context/context-mixer'
 import { DefaultContextStrategyFactory } from '../completions/context/context-strategy'
 import { getCurrentDocContext } from '../completions/get-current-doc-context'
 
-import { FixupController } from '../non-stop/FixupController'
+import type { FixupController } from '../non-stop/FixupController'
 import type { AutoeditsModelAdapter, AutoeditsPrompt } from './adapters/base'
 import { createAutoeditsModelAdapter } from './adapters/create-adapter'
 import { getTimeNowInMillis } from './analytics-logger'
@@ -89,9 +89,13 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
 
         this.rendererManager =
             enabledRenderer === 'inline'
-                ? new AutoEditsInlineRendererManager(editor => new InlineDiffDecorator(editor))
+                ? new AutoEditsInlineRendererManager(
+                      editor => new InlineDiffDecorator(editor),
+                      fixupController
+                  )
                 : new AutoEditsDefaultRendererManager(
-                      (editor: vscode.TextEditor) => new DefaultDecorator(editor)
+                      (editor: vscode.TextEditor) => new DefaultDecorator(editor),
+                      fixupController
                   )
 
         this.onSelectionChangeDebounced = debounce(

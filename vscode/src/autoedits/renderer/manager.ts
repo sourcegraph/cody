@@ -10,7 +10,7 @@ import {
     extractInlineCompletionFromRewrittenCode,
 } from '../utils'
 
-import { FixupController } from '../../non-stop/FixupController'
+import type { FixupController } from '../../non-stop/FixupController'
 import { CodyTaskState } from '../../non-stop/state'
 import type { AutoEditsDecorator, DecorationInfo } from './decorators/base'
 

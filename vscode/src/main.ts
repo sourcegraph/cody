@@ -716,7 +716,7 @@ async function tryRegisterTutorial(
 
 function registerAutoEdits(
     chatClient: ChatClient,
-    fixupController,
+    fixupController: FixupController,
     disposables: vscode.Disposable[]
 ): void {
     disposables.push(
@@ -731,7 +731,7 @@ function registerAutoEdits(
                 .pipe(
                     map(([config, authStatus, autoeditEnabled]) => {
                         if (shouldEnableExperimentalAutoedits(config, autoeditEnabled, authStatus)) {
-                            const provider = new AutoeditsProvider(chatClient)
+                            const provider = new AutoeditsProvider(chatClient, fixupController)
                             const completionRegistration =
                                 vscode.languages.registerInlineCompletionItemProvider(
                                     [{ scheme: 'file', language: '*' }, { notebookType: '*' }],

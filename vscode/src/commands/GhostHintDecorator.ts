@@ -12,7 +12,7 @@ import { telemetryRecorder } from '@sourcegraph/cody-shared'
 import { type DebouncedFunc, throttle } from 'lodash'
 import * as vscode from 'vscode'
 import type { SyntaxNode } from 'web-tree-sitter'
-import { FixupController } from '../non-stop/FixupController'
+import type { FixupController } from '../non-stop/FixupController'
 import { CodyTaskState } from '../non-stop/state'
 import { execQueryWrapper } from '../tree-sitter/query-sdk'
 
