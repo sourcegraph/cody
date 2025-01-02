@@ -14,6 +14,7 @@ import { ContextMixer } from '../completions/context/context-mixer'
 import { DefaultContextStrategyFactory } from '../completions/context/context-strategy'
 import { getCurrentDocContext } from '../completions/get-current-doc-context'
 
+import { FixupController } from '../non-stop/FixupController'
 import type { AutoeditsModelAdapter, AutoeditsPrompt } from './adapters/base'
 import { createAutoeditsModelAdapter } from './adapters/create-adapter'
 import { getTimeNowInMillis } from './analytics-logger'
@@ -74,7 +75,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         dataCollectionEnabled: false,
     })
 
-    constructor(chatClient: ChatClient) {
+    constructor(chatClient: ChatClient, fixupController: FixupController) {
         autoeditsOutputChannelLogger.logDebug('Constructor', 'Constructing AutoEditsProvider')
         this.modelAdapter = createAutoeditsModelAdapter({
             providerName: autoeditsProviderConfig.provider,
