@@ -204,10 +204,16 @@ export function syncModels({
                                         featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.DeepCody),
                                         featureFlagProvider.evaluatedFeatureFlag(
                                             FeatureFlag.CodyChatDefaultToClaude35Haiku
-                                        )
+                                        ),
+                                        resolvedConfig
                                     ).pipe(
                                         switchMap(
-                                            ([hasEarlyAccess, hasDeepCodyFlag, defaultToHaiku]) => {
+                                            ([
+                                                hasEarlyAccess,
+                                                hasDeepCodyFlag,
+                                                defaultToHaiku,
+                                                resolvedConfig,
+                                            ]) => {
                                                 // TODO(sqs): remove waitlist from localStorage when user has access
                                                 const isOnWaitlist = config.clientState.waitlist_o1
                                                 if (isDotComUser && (hasEarlyAccess || isOnWaitlist)) {
@@ -255,11 +261,14 @@ export function syncModels({
                                                         ]).map(createModelFromServerModel)
                                                     )
 
-                                                    // TODO(beyang): hack
-                                                    console.log('#### TOOL_CODY_MODEL')
-                                                    data.primaryModels.push(
-                                                        createModelFromServerModel(TOOL_CODY_MODEL)
-                                                    )
+                                                    if (
+                                                        resolvedConfig.configuration
+                                                            .experimentalMinionAnthropicKey
+                                                    ) {
+                                                        data.primaryModels.push(
+                                                            createModelFromServerModel(TOOL_CODY_MODEL)
+                                                        )
+                                                    }
                                                 }
 
                                                 // set the default model to Haiku for free users
