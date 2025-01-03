@@ -87,10 +87,7 @@ export class ExperimentalToolHandler implements AgentHandler {
                     )
                     .on('text', (_textDelta, textSnapshot) => {
                         messageInProgress = {
-                            message: {
-                                speaker: 'assistant',
-                                text: PromptString.unsafe_fromLLMResponse(textSnapshot),
-                            },
+                            text: PromptString.unsafe_fromLLMResponse(textSnapshot),
                         }
                         delegate.experimentalPostMessageInProgress([
                             ...subViewTranscript,
@@ -120,10 +117,7 @@ export class ExperimentalToolHandler implements AgentHandler {
                                 break
                             case 'text':
                                 subViewTranscript.push({
-                                    message: {
-                                        speaker: 'assistant',
-                                        text: PromptString.unsafe_fromLLMResponse(contentBlock.text),
-                                    },
+                                    text: PromptString.unsafe_fromLLMResponse(contentBlock.text),
                                 })
                                 messageInProgress = undefined
                                 break

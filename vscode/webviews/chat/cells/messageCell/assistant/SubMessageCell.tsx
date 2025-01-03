@@ -9,9 +9,9 @@ export const SubMessageCell: FunctionComponent<{
 }> = ({ piece }) => {
     return (
         <>
-            {piece.message?.text && (
+            {piece.text && (
                 <ChatMessageContent
-                    displayMarkdown={piece.message.text.toString()}
+                    displayMarkdown={piece.text.toString()}
                     isMessageLoading={false}
                     humanMessage={null}
                 />

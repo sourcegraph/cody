@@ -14,6 +14,7 @@ data class SerializedChatMessage(
   val manuallySelectedIntent: ManuallySelectedIntentEnum? = null, // Oneof: search, chat, edit, insert
   val search: Any? = null,
   val processes: List<ProcessingStep>? = null,
+  val subMessages: List<SubMessage>? = null,
 ) {
 
   enum class SpeakerEnum {

@@ -2,6 +2,7 @@ import type { ContextItem } from '../../codebase-context/messages'
 import type { Message } from '../../sourcegraph-api'
 
 import type { SerializedChatTranscript } from '.'
+import type { PromptString } from '../../prompt/prompt-string'
 import type { NLSSearchDynamicFilter, NLSSearchResponse } from '../../sourcegraph-api/graphql/client'
 
 /**
@@ -15,7 +16,7 @@ export type RankedContext = {
 }
 
 export interface SubMessage {
-    message?: ChatMessage
+    text?: PromptString
     step?: ProcessingStep
 }
 

@@ -191,10 +191,7 @@ export const FIXTURE_TRANSCRIPT: Record<
             speaker: 'assistant',
             subMessages: [
                 {
-                    message: {
-                        speaker: 'assistant',
-                        text: ps`I will read the file foo.ts.`,
-                    },
+                    text: ps`I will read the file foo.ts.`,
                 },
                 {
                     step: {
@@ -204,10 +201,7 @@ export const FIXTURE_TRANSCRIPT: Record<
                     },
                 },
                 {
-                    message: {
-                        speaker: 'assistant',
-                        text: ps`According to the contents of the file, foo.ts contains the function bar.`,
-                    },
+                    text: ps`According to the contents of the file, foo.ts contains the function bar.`,
                 },
             ],
         },
