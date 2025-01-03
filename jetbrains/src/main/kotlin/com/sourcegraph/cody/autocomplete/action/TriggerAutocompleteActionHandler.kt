@@ -13,7 +13,8 @@ class TriggerAutocompleteActionHandler : EditorActionHandler() {
   val logger = Logger.getInstance(TriggerAutocompleteActionHandler::class.java)
 
   override fun isEnabledForCaret(editor: Editor, caret: Caret, dataContext: DataContext): Boolean =
-      CodyEditorUtil.isEditorInstanceSupported(editor)
+      CodyEditorUtil.isEditorInstanceSupported(editor) &&
+      CodyEditorUtil.isImplicitAutocompleteEnabledForEditor(editor)
 
   override fun doExecute(editor: Editor, caret: Caret?, dataContext: DataContext) {
     val offset = caret?.offset ?: editor.caretModel.currentCaret.offset
