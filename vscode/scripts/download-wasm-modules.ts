@@ -14,6 +14,7 @@ const TREE_SITTER_WASM_FILE = 'tree-sitter.wasm'
 const TREE_SITTER_WASM_PATH = require.resolve(`web-tree-sitter/${TREE_SITTER_WASM_FILE}`)
 const JS_GRAMMAR_PATH = require.resolve('@sourcegraph/tree-sitter-wasms/out/tree-sitter-javascript.wasm')
 const GRAMMARS_PATH = path.dirname(JS_GRAMMAR_PATH)
+const CANVASKIT_WASM_PATH = require.resolve('canvaskit-wasm/bin/canvaskit.wasm')
 
 export async function main(): Promise<void> {
     const hasStoreDir = existsSync(WASM_DIRECTORY)
@@ -50,4 +51,5 @@ function copyFilesToDistDir(): void {
     }
 
     copyFileSync(TREE_SITTER_WASM_PATH, path.join(DIST_DIRECTORY, TREE_SITTER_WASM_FILE))
+    copyFileSync(CANVASKIT_WASM_PATH, path.join(DIST_DIRECTORY, 'canvaskit.wasm'))
 }
