@@ -12,6 +12,8 @@ import { telemetryRecorder } from '@sourcegraph/cody-shared'
 import { type DebouncedFunc, throttle } from 'lodash'
 import * as vscode from 'vscode'
 import type { SyntaxNode } from 'web-tree-sitter'
+import type { FixupController } from '../non-stop/FixupController'
+import { CodyTaskState } from '../non-stop/state'
 import { execQueryWrapper } from '../tree-sitter/query-sdk'
 
 const EDIT_SHORTCUT_LABEL = isMacOS() ? 'Opt+K' : 'Alt+K'
@@ -176,7 +178,7 @@ export class GhostHintDecorator implements vscode.Disposable {
     /** Store the last line that the user typed on, we want to avoid showing the text here */
     private lastLineTyped: number | null = null
 
-    constructor() {
+    constructor(private options: { fixupController: FixupController }) {
         this.setThrottledGhostText = throttle(this.setGhostText.bind(this), GHOST_TEXT_THROTTLE, {
             leading: false,
             trailing: true,
@@ -358,6 +360,11 @@ export class GhostHintDecorator implements vscode.Disposable {
             return
         }
 
+        if (this.hasConflictingDecorations(editor, position)) {
+            // Decoration will conflict, so do nothing
+            return
+        }
+
         this.fireThrottledDisplayEvent(variant)
 
         const decorationHint = HINT_DECORATIONS[variant]
@@ -370,6 +377,25 @@ export class GhostHintDecorator implements vscode.Disposable {
                 renderOptions: { after: { contentText: decorationText } },
             },
         ])
+    }
+
+    private hasConflictingDecorations(editor: vscode.TextEditor, position: vscode.Position): boolean {
+        const existingFixupFile = this.options.fixupController.maybeFileForUri(editor.document.uri)
+        if (!existingFixupFile) {
+            // No Edits in this file, no conflicts
+            return false
+        }
+
+        const existingFixupTasks = this.options.fixupController.tasksForFile(existingFixupFile)
+        if (existingFixupTasks.length === 0) {
+            // No Edits in this file, no conflicts
+            return false
+        }
+
+        // Validate that the decoration position does not conflict with an existing Edit diff
+        return existingFixupTasks.some(
+            task => task.state === CodyTaskState.Applied && task.selectionRange.contains(position)
+        )
     }
 
     private getDocumentableSymbol(
