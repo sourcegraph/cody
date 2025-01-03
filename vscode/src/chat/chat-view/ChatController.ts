@@ -263,15 +263,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         )
     }
 
-    public isFocused(): boolean {
-        if (!this.webviewPanelOrView) {
-            return false
-        }
-        return 'active' in this.webviewPanelOrView
-            ? this.webviewPanelOrView.active
-            : this.webviewPanelOrView.visible
-    }
-
     /**
      * onDidReceiveMessage handles all user actions sent from the chat panel view.
      * @param message is the message from the view.
