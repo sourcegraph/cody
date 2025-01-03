@@ -85,4 +85,5 @@ export interface DecorationInfo {
     removedLines: RemovedLineInfo[]
     addedLines: AddedLineInfo[]
     unchangedLines: UnchangedLineInfo[]
+    img?: string
 }
