@@ -608,7 +608,7 @@
         "when": "!cody.activated"
       },
       {
-        "command": "cody.chat.simpleToggle",
+        "command": "cody.chat.simpleNewChat",
         "key": "alt+l",
         "mac": "alt+l",
         "when": "cody.activated"
