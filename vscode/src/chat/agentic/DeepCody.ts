@@ -12,7 +12,6 @@ import {
     getClientPromptString,
     isDefined,
     logDebug,
-    modelsService,
     newPromptMixin,
     ps,
     telemetryRecorder,
@@ -33,13 +32,13 @@ import { ACTIONS_TAGS, CODYAGENT_PROMPTS } from './prompts'
  */
 export class DeepCodyAgent {
     public static readonly id = 'deep-cody'
+    public static model: string | undefined = undefined
 
     protected readonly multiplexer = new BotResponseMultiplexer()
     protected readonly promptMixins: PromptMixin[] = []
     protected readonly tools: CodyTool[]
     protected statusCallback: ToolStatusCallback
     private stepsManager: ProcessManager
-    private models: { review?: string } = { review: '' }
 
     protected context: ContextItem[] = []
 
@@ -54,8 +53,6 @@ export class DeepCodyAgent {
 
         this.initializeMultiplexer(this.tools)
         this.buildPrompt(this.tools)
-
-        this.models.review = modelsService.getAllModelsWithSubstring('5-haiku')?.[0]?.id || undefined
 
         this.stepsManager = new ProcessManager(steps => statusUpdateCallback(steps))
 
@@ -137,7 +134,7 @@ export class DeepCodyAgent {
             privateMetadata: {
                 durationMs: performance.now() - startTime,
                 ...stats,
-                model: this.models.review,
+                model: DeepCodyAgent.model,
                 traceId: span.spanContext().traceId,
             },
             billingMetadata: {
@@ -191,7 +188,7 @@ export class DeepCodyAgent {
                 requestID,
                 promptData.prompt,
                 chatAbortSignal,
-                this.models.review
+                DeepCodyAgent.model
             )
             // If the response is empty or contains the CONTEXT_SUFFICIENT token, the context is sufficient.
             if (!res) return []

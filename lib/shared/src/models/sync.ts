@@ -200,7 +200,6 @@ export function syncModels({
                                         featureFlagProvider.evaluatedFeatureFlag(
                                             FeatureFlag.CodyEarlyAccess
                                         ),
-                                        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.DeepCody),
                                         featureFlagProvider.evaluatedFeatureFlag(
                                             FeatureFlag.CodyChatDefaultToClaude35Haiku
                                         )

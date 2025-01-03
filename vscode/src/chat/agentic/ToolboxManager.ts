@@ -8,51 +8,41 @@ import {
     modelsService,
     pendingOperation,
     startWith,
-    storeLastValue,
     userProductSubscription,
 } from '@sourcegraph/cody-shared'
 import { type Observable, Subject, map } from 'observable-fns'
 import { env } from 'vscode'
 import { localStorage } from '../../services/LocalStorageProvider'
+import { DeepCodyAgent } from './DeepCody'
 
 // Using a readonly interface improves performance by preventing mutations
-interface ReadonlyShellConfig {
-    readonly user: boolean
-    instance: boolean
-    readonly client: boolean
-}
+const DEFAULT_SHELL_CONFIG = Object.freeze({
+    user: false,
+    instance: false,
+    client: Boolean(env.shell),
+})
 
-interface StoredToolboxSettings {
-    agent: string | undefined
-    shell: boolean
+type StoredToolboxSettings = {
+    readonly agent: string | undefined
+    readonly shell: boolean
 }
 
 export class ToolboxManager {
     private static readonly STORAGE_KEY = 'CODY_CHATAGENTS_TOOLBOX_SETTINGS'
     private static instance?: ToolboxManager
 
-    private isEnabled = false
+    private constructor() {
+        // Using private constructor for singleton pattern
+    }
 
-    // Singleton pattern with lazy initialization
+    private isEnabled = false
+    private readonly changeNotifications = new Subject<void>()
+    private shellConfig = { ...DEFAULT_SHELL_CONFIG }
+
     public static getInstance(): ToolboxManager {
+        // Singleton pattern with lazy initialization
         return ToolboxManager.instance ? ToolboxManager.instance : new ToolboxManager()
     }
-
-    private readonly changeNotifications = new Subject<void>()
-
-    // Initialize shell config with immutable defaults
-    private readonly shellConfig: ReadonlyShellConfig = {
-        user: false,
-        instance: false,
-        client: Boolean(env.shell),
-    }
-
-    /**
-     * Check if instance has the Feature Flag enabled.
-     */
-    private readonly featureDeepCodyShellContext = storeLastValue(
-        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.DeepCodyShellContext)
-    )
 
     private getStoredUserSettings(): StoredToolboxSettings {
         return (
@@ -67,12 +57,11 @@ export class ToolboxManager {
         if (!this.isEnabled) {
             return null
         }
-        const stored = this.getStoredUserSettings()
+        const { agent, shell } = this.getStoredUserSettings()
         return {
-            agent: stored.agent,
-            shell: Boolean(
-                this.featureDeepCodyShellContext.value?.last && this.shellConfig.client && stored.shell
-            ),
+            agent,
+            // Only show shell option if it's supported by instance and client.
+            shell: this.shellConfig.instance && this.shellConfig.client ? shell : undefined,
         }
     }
 
@@ -82,7 +71,10 @@ export class ToolboxManager {
         this.changeNotifications.next()
     }
 
-    public settings: Observable<AgentToolboxSettings | null> = combineLatest(
+    public readonly settings: Observable<AgentToolboxSettings | null> = combineLatest(
+        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.DeepCody),
+        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.ContextAgentDefaultChatModel),
+        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.DeepCodyShellContext),
         userProductSubscription.pipe(distinctUntilChanged()),
         modelsService.modelsChanges.pipe(
             map(models => (models === pendingOperation ? null : models)),
@@ -90,13 +82,20 @@ export class ToolboxManager {
         ),
         this.changeNotifications.pipe(startWith(undefined))
     ).pipe(
-        map(([subscription, models]) => {
+        map(([deepCodyEnabled, useDefaultChatModel, instanceShellContextFlag, sub, models]) => {
             // Return null if subscription is pending or user can upgrade (free user)
-            if (subscription === pendingOperation || subscription?.userCanUpgrade || !models) {
+            if (sub === pendingOperation || sub?.userCanUpgrade || !models || !deepCodyEnabled) {
                 this.isEnabled = false
                 return null
             }
-            this.isEnabled = models.primaryModels.some(model => model.id.includes('3-5-haiku'))
+
+            // TODO (bee): Remove once A/B test is over - 3.5 Haiku vs default chat model.
+            const haikuModel = models.primaryModels.find(model => model.id.includes('5-haiku'))
+            DeepCodyAgent.model = useDefaultChatModel ? models.preferences.defaults.chat : haikuModel?.id
+            this.isEnabled = Boolean(DeepCodyAgent.model)
+
+            Object.assign(this.shellConfig, { instance: instanceShellContextFlag })
+
             return this.getSettings()
         })
     )
