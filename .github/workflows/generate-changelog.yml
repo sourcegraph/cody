@@ -26,7 +26,8 @@ jobs:
           EXT_VERSION: ${{ env.EXT_VERSION }}
         run: |
           # Get previous tag's commit
-          PREV_TAG=$( git tag --sort=-v:refname | grep '^vscode-v' |  head -n 2 | tail -n 1)
+          git fetch --tags origin
+          PREV_TAG=$(git tag --sort=-v:refname | grep '^vscode-v' |  head -n 2 | tail -n 1)
           export RELEASE_LATEST_RELEASE=$(git rev-parse $PREV_TAG)
 
           # Get current release commit
