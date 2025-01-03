@@ -764,6 +764,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         }: Parameters<typeof this.handleUserMessage>[0],
         span: Span
     ): Promise<void> {
+        console.log('# sendChat')
         span.addEvent('ChatController.sendChat')
 
         // Use default model if no model is selected.
@@ -824,6 +825,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
         this.postEmptyMessageInProgress(model)
         let messageInProgress: ChatMessage = { speaker: 'assistant', model }
+        console.log('#### got agent', agent)
         try {
             await agent.handle(
                 {
@@ -1527,6 +1529,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                             })
                         ),
                     setChatModel: model => {
+                        console.log('### ChatController::setChatModel')
                         // Because this was a user action to change the model we will set that
                         // as a global default for chat
                         return promiseFactoryToObservable(async () => {

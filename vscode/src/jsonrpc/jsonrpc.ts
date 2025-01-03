@@ -128,7 +128,10 @@ export class MessageHandler {
         }
         // Strangely enough: the tests will fail with a cryptic error if we pass
         // an undefined `token` variable as the third parameter to `sendRequest`.
-        return await this.conn.sendRequest(method, params)
+        console.log('----->', method, params)
+        const result = await this.conn.sendRequest(method, params)
+        console.log('<-----', method, '()', result)
+        return result
     }
 
     public notify<M extends NotificationMethodName>(method: M, params: ParamsOf<M>): void {

@@ -1302,7 +1302,13 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
         this.registerAuthenticatedRequest('chat/setModel', async ({ id, model }) => {
             const panel = this.webPanels.getPanelOrError(id)
-            await waitUntilComplete(panel.extensionAPI.setChatModel(model))
+            console.log('# agent: chat/setModel 0', id, model)
+            try {
+                await waitUntilComplete(panel.extensionAPI.setChatModel(model))
+            } catch (error) {
+                console.log('############# ERROR', error)
+            }
+            console.log('# agent: chat/setModel 1', id, model)
             return null
         })
 

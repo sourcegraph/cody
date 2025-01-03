@@ -462,7 +462,9 @@ export class ModelsService {
     }
 
     public async setSelectedModel(type: ModelUsage, model: Model | string): Promise<void> {
+        console.log('# setSelectedModel 0')
         const modelsData = await firstResultFromOperation(this.modelsChanges)
+        console.log('# setSelectedModel 1')
         const resolved = this.resolveModel(modelsData, model)
         if (!resolved) {
             throw new Error(`Model not found: ${typeof model === 'string' ? model : model.id}`)
@@ -480,7 +482,9 @@ export class ModelsService {
             currentPrefs[serverEndpoint] = modelsData.preferences
         }
         currentPrefs[serverEndpoint].selected[type] = resolved.id
+        console.log('# setSelectedModel 2')
         await this.storage.setModelPreferences(currentPrefs)
+        console.log('# setSelectedModel 3')
     }
 
     public isModelAvailable(model: string | Model): Observable<boolean | typeof pendingOperation> {

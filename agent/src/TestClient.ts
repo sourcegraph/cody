@@ -162,6 +162,8 @@ export class TestClient extends MessageHandler {
         child.stderr.on('data', data => {
             console.error(`----stderr----\n${data}--------------`)
         })
+
+        // NEXT: figure out where the message is getting stuck (does client ever receive response?)
         const conn = createMessageConnection(
             new StreamMessageReader(child.stdout),
             new StreamMessageWriter(child.stdin)
