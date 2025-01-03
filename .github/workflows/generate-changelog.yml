@@ -19,6 +19,7 @@ jobs:
       - name: Generate changelog
         env:
           DEVX_SERVICE_GH_TOKEN: ${{ secrets.DEVX_SERVICE_GH_TOKEN }}
+          GH_TOKEN: ${{ secrets.DEVX_SERVICE_GH_TOKEN }} 
           GH_REPO: "sourcegraph/cody"
           CHANGELOG_SKIP_NO_CHANGELOG: "true"
           CHANGELOG_COMPACT: "true"
