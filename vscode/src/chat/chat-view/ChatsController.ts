@@ -81,11 +81,31 @@ export class ChatsController implements vscode.Disposable {
                     const hasSwitchedAccount =
                         this.currentAuthAccount &&
                         this.currentAuthAccount.endpoint !== authStatus.endpoint
-                    if (hasLoggedOut || hasSwitchedAccount) {
+                    if (hasLoggedOut) {
                         this.disposeAllChats()
                     }
+                    if (hasSwitchedAccount) {
+                        // Update account reference before disposing
+                        this.currentAuthAccount = authStatus.authenticated
+                            ? { ...authStatus }
+                            : undefined
 
-                    this.currentAuthAccount = authStatus.authenticated ? { ...authStatus } : undefined
+                        // Dispose chats without saving to storage
+                        this.activeEditor = undefined
+                        const oldEditors = this.editors
+                        this.editors = []
+                        for (const editor of oldEditors) {
+                            if (editor.webviewPanelOrView) {
+                                disposeWebviewViewOrPanel(editor.webviewPanelOrView)
+                            }
+                            editor.dispose()
+                        }
+
+                        // Clear panel without saving
+                        if (this.panel) {
+                            this.panel.clearAndRestartSession([], false)
+                        }
+                    }
                 })
             )
         )
