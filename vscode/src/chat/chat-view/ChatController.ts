@@ -105,7 +105,7 @@ import {
 import { openExternalLinks } from '../../services/utils/workspace-action'
 import { TestSupport } from '../../test-support'
 import type { MessageErrorType } from '../MessageProvider'
-import { CodyToolProvider } from '../agentic/CodyToolProvider'
+import { toolboxSettings } from '../agentic/ToolboxManager'
 import { getMentionMenuData } from '../context/chatContext'
 import type { ChatIntentAPIClient } from '../context/chatIntentAPIClient'
 import { observeDefaultContext } from '../initialContext'
@@ -180,7 +180,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     private readonly chatClient: ChatControllerOptions['chatClient']
 
     private readonly contextRetriever: ChatControllerOptions['contextRetriever']
-    private readonly toolProvider: CodyToolProvider
 
     private readonly editor: ChatControllerOptions['editor']
     private readonly extensionClient: ChatControllerOptions['extensionClient']
@@ -214,7 +213,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         this.editor = editor
         this.extensionClient = extensionClient
         this.contextRetriever = contextRetriever
-        this.toolProvider = CodyToolProvider.instance(this.contextRetriever)
 
         this.chatBuilder = new ChatBuilder(undefined)
 
@@ -534,10 +532,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyExperimentalOneBox)
     )
 
-    private featureDeepCodyShellContext = storeLastValue(
-        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.DeepCodyShellContext)
-    )
-
     private async getConfigForWebview(): Promise<ConfigurationSubsetForWebview & LocalEnv> {
         const { configuration, auth } = await currentResolvedConfig()
         const sidebarViewOnly = this.extensionClient.capabilities?.webviewNativeConfig?.view === 'single'
@@ -545,11 +539,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         const webviewType = isEditorViewType && !sidebarViewOnly ? 'editor' : 'sidebar'
         const uiKindIsWeb = (cenv.CODY_OVERRIDE_UI_KIND ?? vscode.env.uiKind) === vscode.UIKind.Web
         const endpoints = localStorage.getEndpointHistory() ?? []
-        this.toolProvider.setShellConfig({
-            instance: this.featureDeepCodyShellContext.value?.last,
-            user: Boolean(configuration.agenticContextExperimentalShell),
-            client: Boolean(vscode.env.shell),
-        })
 
         return {
             uiKindIsWeb,
@@ -673,6 +662,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     editorState,
                     intent: detectedIntent,
                     manuallySelectedIntent: manuallySelectedIntent ? detectedIntent : undefined,
+                    agent: toolboxSettings.getSettings()?.agent,
                 })
                 this.postViewTranscript({ speaker: 'assistant' })
 
@@ -802,12 +792,11 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
         const agentName = ['search', 'edit', 'insert'].includes(intent ?? '')
             ? (intent as string)
-            : model
-        const agent = getAgent(agentName, {
+            : this.chatBuilder.getLastHumanMessage()?.agent ?? 'chat'
+        const agent = getAgent(agentName, model, {
             contextRetriever: this.contextRetriever,
             editor: this.editor,
             chatClient: this.chatClient,
-            codyToolProvider: this.toolProvider,
         })
 
         recorder.setIntentInfo({
@@ -845,6 +834,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     },
                     postStatuses: (steps: ProcessingStep[]): void => {
                         this.chatBuilder.setLastMessageProcesses(steps)
+                        this.postEmptyMessageInProgress(model)
                     },
                     postDone: (op?: { abort: boolean }): void => {
                         if (op?.abort) {
@@ -1544,6 +1534,12 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                         userProductSubscription.pipe(
                             map(value => (value === pendingOperation ? null : value))
                         ),
+                    toolboxSettings: () => toolboxSettings.settings,
+                    updateToolboxSettings: settings => {
+                        return promiseFactoryToObservable(async () => {
+                            await toolboxSettings.updatetoolboxSettings(settings)
+                        })
+                    },
                 }
             )
         )

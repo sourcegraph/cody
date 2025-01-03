@@ -13,6 +13,7 @@ data class SerializedChatMessage(
   val intent: IntentEnum? = null, // Oneof: search, chat, edit, insert
   val manuallySelectedIntent: ManuallySelectedIntentEnum? = null, // Oneof: search, chat, edit, insert
   val search: Any? = null,
+  val agent: String? = null,
   val processes: List<ProcessingStep>? = null,
 ) {
 

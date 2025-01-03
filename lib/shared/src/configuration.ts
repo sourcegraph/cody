@@ -463,3 +463,15 @@ export interface FireworksCodeCompletionParams {
     languageId: string
     user: string | null
 }
+
+export interface AgentToolboxSettings {
+    /**
+     * The agent ID that they user has currently enabled..
+     */
+    agent?: string
+    /**
+     * Whether the user has enabled terminal context.
+     * Defaulted to undefined if shell context is not enabled by site admin via feature flag.
+     */
+    shell?: boolean
+}

@@ -43,9 +43,8 @@ export class PromptMixin {
             mixins.push(PromptMixin.hedging)
         }
 
-        // Handle Deep Cody specific prompts
-        const isDeepCodyEnabled = modelID?.includes('deep-cody')
-        if (isDeepCodyEnabled && !newMixins.length) {
+        // Handle Agent specific prompts
+        if (humanMessage.agent === 'deep-cody' && !newMixins.length) {
             mixins.push(new PromptMixin(HEDGES_PREVENTION.concat(DEEP_CODY)))
         }
 
@@ -53,7 +52,7 @@ export class PromptMixin {
         mixins.push(...newMixins)
 
         const prompt = PromptMixin.buildPrompt(mixins)
-        return PromptMixin.mixedMessage(humanMessage, prompt, mixins, isDeepCodyEnabled)
+        return PromptMixin.mixedMessage(humanMessage, prompt, mixins)
     }
 
     private static buildPrompt(mixins: PromptMixin[]): PromptString {
@@ -67,17 +66,16 @@ export class PromptMixin {
     private static mixedMessage(
         humanMessage: ChatMessage,
         prompt: PromptString,
-        mixins: PromptMixin[],
-        isDeepCodyEnabled = false
+        mixins: PromptMixin[]
     ): ChatMessage {
         if (!mixins.length || !humanMessage.text) {
             return humanMessage
         }
 
-        if (isDeepCodyEnabled) {
+        if (humanMessage.agent === 'deep-cody' && prompt.includes('{{USER_INPUT_TEXT}}')) {
             return {
                 ...humanMessage,
-                text: ps`${prompt}\n\n[QUESTION]\n`.concat(humanMessage.text),
+                text: prompt.replace('{{USER_INPUT_TEXT}}', humanMessage.text),
             }
         }
 

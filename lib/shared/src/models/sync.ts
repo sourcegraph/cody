@@ -27,7 +27,6 @@ import { RestClient } from '../sourcegraph-api/rest/client'
 import type { UserProductSubscription } from '../sourcegraph-api/userProductSubscription'
 import { CHAT_INPUT_TOKEN_BUDGET } from '../token/constants'
 import { isError } from '../utils'
-import { getExperimentalClientModelByFeatureFlag } from './client'
 import { type Model, type ServerModel, createModel, createModelFromServerModel } from './model'
 import type {
     DefaultsAndUserPreferencesForEndpoint,
@@ -201,74 +200,42 @@ export function syncModels({
                                         featureFlagProvider.evaluatedFeatureFlag(
                                             FeatureFlag.CodyEarlyAccess
                                         ),
-                                        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.DeepCody),
                                         featureFlagProvider.evaluatedFeatureFlag(
                                             FeatureFlag.CodyChatDefaultToClaude35Haiku
                                         )
                                     ).pipe(
-                                        switchMap(
-                                            ([hasEarlyAccess, hasDeepCodyFlag, defaultToHaiku]) => {
-                                                // TODO(sqs): remove waitlist from localStorage when user has access
-                                                const isOnWaitlist = config.clientState.waitlist_o1
-                                                if (isDotComUser && (hasEarlyAccess || isOnWaitlist)) {
-                                                    data.primaryModels = data.primaryModels.map(
-                                                        model => {
-                                                            if (model.tags.includes(ModelTag.Waitlist)) {
-                                                                const newTags = model.tags.filter(
-                                                                    tag => tag !== ModelTag.Waitlist
-                                                                )
-                                                                newTags.push(
-                                                                    hasEarlyAccess
-                                                                        ? ModelTag.EarlyAccess
-                                                                        : ModelTag.OnWaitlist
-                                                                )
-                                                                return { ...model, tags: newTags }
-                                                            }
-                                                            return model
-                                                        }
-                                                    )
-                                                }
-
-                                                // Replace user's current sonnet model with deep-cody model.
-                                                const sonnetModel = data.primaryModels.find(m =>
-                                                    m.id.includes('sonnet')
-                                                )
-                                                // DEEP CODY is enabled for all PLG users.
-                                                // Enterprise users need to have the feature flag enabled.
-                                                const isDeepCodyEnabled =
-                                                    (isDotComUser && !isCodyFreeUser) || hasDeepCodyFlag
-                                                if (
-                                                    isDeepCodyEnabled &&
-                                                    sonnetModel &&
-                                                    // Ensure the deep-cody model is only added once.
-                                                    !data.primaryModels.some(m =>
-                                                        m.id.includes('deep-cody')
-                                                    )
-                                                ) {
-                                                    const DEEPCODY_MODEL =
-                                                        getExperimentalClientModelByFeatureFlag(
-                                                            FeatureFlag.DeepCody
-                                                        )!
-                                                    data.primaryModels.push(
-                                                        ...maybeAdjustContextWindows([
-                                                            DEEPCODY_MODEL,
-                                                        ]).map(createModelFromServerModel)
-                                                    )
-                                                }
-
-                                                // set the default model to Haiku for free users
-                                                if (isDotComUser && isCodyFreeUser && defaultToHaiku) {
-                                                    const haikuModel = data.primaryModels.find(m =>
-                                                        m.id.includes('claude-3-5-haiku')
-                                                    )
-                                                    if (haikuModel) {
-                                                        data.preferences!.defaults.chat = haikuModel.id
+                                        switchMap(([hasEarlyAccess, defaultToHaiku]) => {
+                                            // TODO(sqs): remove waitlist from localStorage when user has access
+                                            const isOnWaitlist = config.clientState.waitlist_o1
+                                            if (isDotComUser && (hasEarlyAccess || isOnWaitlist)) {
+                                                data.primaryModels = data.primaryModels.map(model => {
+                                                    if (model.tags.includes(ModelTag.Waitlist)) {
+                                                        const newTags = model.tags.filter(
+                                                            tag => tag !== ModelTag.Waitlist
+                                                        )
+                                                        newTags.push(
+                                                            hasEarlyAccess
+                                                                ? ModelTag.EarlyAccess
+                                                                : ModelTag.OnWaitlist
+                                                        )
+                                                        return { ...model, tags: newTags }
                                                     }
-                                                }
-
-                                                return Observable.of(data)
+                                                    return model
+                                                })
                                             }
-                                        )
+
+                                            // set the default model to Haiku for free users
+                                            if (isDotComUser && isCodyFreeUser && defaultToHaiku) {
+                                                const haikuModel = data.primaryModels.find(m =>
+                                                    m.id.includes('claude-3-5-haiku')
+                                                )
+                                                if (haikuModel) {
+                                                    data.preferences!.defaults.chat = haikuModel.id
+                                                }
+                                            }
+
+                                            return Observable.of(data)
+                                        })
                                     )
                                 })
                             )

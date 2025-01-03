@@ -107,6 +107,9 @@ export enum FeatureFlag {
     /** Enable Shell Context for Deep Cody */
     DeepCodyShellContext = 'deep-cody-shell-context',
 
+    /** Whether Context Agent (Deep Cody) should use the default chat model or 3.5 Haiku */
+    ContextAgentDefaultChatModel = 'context-agent-use-default-chat-model',
+
     /** Enable Rate Limit for Deep Cody */
     DeepCodyRateLimitBase = 'deep-cody-experimental-rate-limit',
     DeepCodyRateLimitMultiplier = 'deep-cody-experimental-rate-limit-multiplier',
