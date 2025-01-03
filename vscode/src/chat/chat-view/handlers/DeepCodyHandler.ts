@@ -6,27 +6,15 @@ import {
     featureFlagProvider,
     storeLastValue,
 } from '@sourcegraph/cody-shared'
-import type { CodyToolProvider } from '../../agentic/CodyToolProvider'
+import { CodyToolProvider } from '../../agentic/CodyToolProvider'
 import { DeepCodyAgent } from '../../agentic/DeepCody'
 import { DeepCodyRateLimiter } from '../../agentic/DeepCodyRateLimiter'
 import type { ChatBuilder } from '../ChatBuilder'
-import type { ChatControllerOptions } from '../ChatController'
-import type { ContextRetriever } from '../ContextRetriever'
 import type { HumanInput } from '../context'
 import { ChatHandler } from './ChatHandler'
 import type { AgentHandler, AgentHandlerDelegate } from './interfaces'
 
 export class DeepCodyHandler extends ChatHandler implements AgentHandler {
-    constructor(
-        modelId: string,
-        contextRetriever: Pick<ContextRetriever, 'retrieveContext'>,
-        editor: ChatControllerOptions['editor'],
-        chatClient: ChatControllerOptions['chatClient'],
-        private toolProvider: CodyToolProvider
-    ) {
-        super(modelId, contextRetriever, editor, chatClient)
-    }
-
     private featureDeepCodyRateLimitBase = storeLastValue(
         featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.DeepCodyRateLimitBase)
     )
@@ -46,7 +34,9 @@ export class DeepCodyHandler extends ChatHandler implements AgentHandler {
         error?: Error
         abort?: boolean
     }> {
-        // Skip query rewrite for deep-cody models as it will be reviewed by the agent.
+        CodyToolProvider.initialize(this.contextRetriever)
+
+        // NOTE: Skip query rewrite for deep-cody as the agent will reviewed and rewrite the query.
         const skipQueryRewrite = true
         const baseContextResult = await super.computeContext(
             requestID,
@@ -72,11 +62,8 @@ export class DeepCodyHandler extends ChatHandler implements AgentHandler {
         }
 
         const baseContext = baseContextResult.contextItems ?? []
-        const agent = new DeepCodyAgent(
-            chatBuilder,
-            this.chatClient,
-            this.toolProvider,
-            (steps: ProcessingStep[]) => delegate.postStatuses(steps)
+        const agent = new DeepCodyAgent(chatBuilder, this.chatClient, (steps: ProcessingStep[]) =>
+            delegate.postStatuses(steps)
         )
 
         return { contextItems: await agent.getContext(requestID, signal, baseContext) }

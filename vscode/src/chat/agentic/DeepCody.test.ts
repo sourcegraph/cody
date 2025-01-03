@@ -44,7 +44,7 @@ describe('DeepCody', () => {
     let mockChatClient: ChatClient
     let mockContextRetriever: ContextRetriever
     let mockCurrentContext: ContextItem[]
-    let mockCodyToolProvider: CodyToolProvider
+    let mockCodyToolProvider: typeof CodyToolProvider
     let localStorageData: { [key: string]: unknown } = {}
     let mockStatusCallback: (steps: ProcessingStep[]) => void
 
@@ -85,7 +85,8 @@ describe('DeepCody', () => {
             retrieveContext: vi.fn().mockResolvedValue(mockRretrievedResult),
         } as unknown as ContextRetriever
 
-        mockCodyToolProvider = CodyToolProvider.instance(mockContextRetriever)
+        CodyToolProvider.initialize(mockContextRetriever)
+        mockCodyToolProvider = CodyToolProvider
 
         mockCurrentContext = [
             {
@@ -129,12 +130,7 @@ describe('DeepCody', () => {
     })
 
     it('initializes correctly when invoked', async () => {
-        const agent = new DeepCodyAgent(
-            mockChatBuilder,
-            mockChatClient,
-            mockCodyToolProvider,
-            mockStatusCallback
-        )
+        const agent = new DeepCodyAgent(mockChatBuilder, mockChatClient, mockStatusCallback)
 
         expect(agent).toBeDefined()
     })
@@ -163,12 +159,7 @@ describe('DeepCody', () => {
             ])
         )
 
-        const agent = new DeepCodyAgent(
-            mockChatBuilder,
-            mockChatClient,
-            mockCodyToolProvider,
-            mockStatusCallback
-        )
+        const agent = new DeepCodyAgent(mockChatBuilder, mockChatClient, mockStatusCallback)
 
         const result = await agent.getContext(
             'deep-cody-test-interaction-id',
@@ -209,12 +200,7 @@ describe('DeepCody', () => {
             ])
         )
 
-        const agent = new DeepCodyAgent(
-            mockChatBuilder,
-            mockChatClient,
-            mockCodyToolProvider,
-            mockStatusCallback
-        )
+        const agent = new DeepCodyAgent(mockChatBuilder, mockChatClient, mockStatusCallback)
 
         const result = await agent.getContext(
             'deep-cody-test-interaction-id',

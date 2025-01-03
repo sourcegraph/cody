@@ -1,15 +1,11 @@
-import { type ContextItem, openCtx, ps } from '@sourcegraph/cody-shared'
+import { type ContextItem, ContextItemSource, openCtx, ps } from '@sourcegraph/cody-shared'
 import { Observable } from 'observable-fns'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { URI } from 'vscode-uri'
 import { mockLocalStorage } from '../../services/LocalStorageProvider'
 import type { ContextRetriever } from '../chat-view/ContextRetriever'
 import { CodyTool, type CodyToolConfig } from './CodyTool'
-import {
-    CodyToolProvider,
-    type ToolConfiguration,
-    ToolFactory,
-    type ToolRegistry,
-} from './CodyToolProvider'
+import { CodyToolProvider, type ToolConfiguration, ToolFactory } from './CodyToolProvider'
 import { toolboxSettings } from './ToolboxManager'
 
 const localStorageData: { [key: string]: unknown } = {}
@@ -25,9 +21,6 @@ const mockContextRetriever = {
 } as unknown as Pick<ContextRetriever, 'retrieveContext'>
 
 describe('CodyToolProvider', () => {
-    let provider: CodyToolProvider
-    let factory: ToolFactory
-
     // Create a mock controller before tests
     const mockController = {
         meta: vi.fn(),
@@ -68,96 +61,51 @@ describe('CodyToolProvider', () => {
 
     beforeEach(() => {
         vi.clearAllMocks()
-        provider = CodyToolProvider.instance(mockContextRetriever)
-        factory = CodyToolProvider.toolFactory
-
-        // Directly set the controller property on openCtx
+        CodyToolProvider.initialize(mockContextRetriever)
         openCtx.controller = mockController
     })
 
-    it('should create a singleton instance', () => {
-        const provider2 = CodyToolProvider.instance(mockContextRetriever)
-        expect(provider).toStrictEqual(provider2)
-    })
-
     it('should register default tools on initialization', () => {
-        const tools = factory.getAllTools()
-        expect(tools.length).toBeGreaterThan(0)
-        expect(tools.some(tool => tool.name === 'SearchTool')).toBe(true)
-        expect(tools.some(tool => tool.name === 'MemoryTool')).toBe(true)
-    })
-
-    it('should build default tool instances', () => {
-        const tools = provider.getTools()
+        const tools = CodyToolProvider.getTools()
         expect(tools.length).toBeGreaterThan(0)
         expect(tools.some(tool => tool.config.title.includes('Code Search'))).toBe(true)
         expect(tools.some(tool => tool.config.title.includes('Cody Memory'))).toBe(true)
     })
 
-    it('should handle no OpenCtx providers', async () => {
-        // Do not invoke setupOpenCtxProviderListener
-        const tools = provider.getTools()
-        expect(tools.some(tool => tool.config.title === 'Test Provider')).toBe(false)
-    })
-
-    it('should set up OpenCtx provider listener', () => {
+    it('should set up OpenCtx provider listener and build OpenCtx tools from provider metadata', async () => {
+        openCtx.controller = mockController
         CodyToolProvider.setupOpenCtxProviderListener()
         expect(openCtx.controller?.metaChanges).toHaveBeenCalled()
-    })
-
-    it('should build OpenCtx tools from provider metadata', async () => {
-        openCtx.controller = mockController
-
-        CodyToolProvider.setupOpenCtxProviderListener()
         // Wait for the observable to emit
         await new Promise(resolve => setTimeout(resolve, 0))
 
-        const tools = provider.getTools()
-        console.log(tools, 'tools')
-        expect(tools.some(tool => tool.config.title === 'Test Provider')).toBe(true)
-        expect(tools.some(tool => tool.config.title === 'Test Provider MCP')).toBe(true)
-        expect(tools.some(tool => tool.config.tags.tag.toString() === 'TOOLTESTPROVIDER')).toBe(true)
-        expect(tools.some(tool => tool.config.tags.tag.toString() === 'TOOLTESTPROVIDERMCP')).toBe(true)
+        const tools = CodyToolProvider.getTools()
+        expect(tools.some(tool => tool.config.title === 'Test Provider')).toBeTruthy()
+        expect(tools.some(tool => tool.config.title === 'Test Provider MCP')).toBeTruthy()
+        expect(tools.some(tool => tool.config.tags.tag.toString() === 'TOOLTESTPROVIDER')).toBeTruthy()
+        expect(
+            tools.some(tool => tool.config.tags.tag.toString() === 'TOOLTESTPROVIDERMCP')
+        ).toBeTruthy()
     })
 
-    it('should not register CLI tool if shell is disabled', () => {
-        const mockGetSettings = vi.fn()
-        mockGetSettings.mockReturnValue({ agent: true, shell: false })
-        vi.spyOn(toolboxSettings, 'getSettings').mockImplementation(mockGetSettings)
-
-        const tools = provider.getTools()
+    it('should not include CLI tool if shell is disabled', () => {
+        vi.spyOn(toolboxSettings, 'getSettings').mockReturnValue({ agent: 'deep-cody', shell: false })
+        const tools = CodyToolProvider.getTools()
         expect(tools.some(tool => tool.config.title === 'Terminal')).toBe(false)
     })
 
-    it('should register CLI tool if shell is enabled', () => {
-        const mockGetSettings = vi.fn()
-        mockGetSettings.mockReturnValue({ agent: true, shell: true })
-        vi.spyOn(toolboxSettings, 'getSettings').mockImplementation(mockGetSettings)
-
-        const tools = provider.getTools()
+    it('should include CLI tool if shell is enabled', () => {
+        vi.spyOn(toolboxSettings, 'getSettings').mockReturnValue({ agent: 'deep-cody', shell: true })
+        const tools = CodyToolProvider.getTools()
         expect(tools.some(tool => tool.config.title === 'Terminal')).toBe(true)
-    })
-
-    it('should create a tool instance using the factory', () => {
-        const testTool = factory.createTool('SearchTool')
-        expect(testTool).toBeDefined()
-        expect(testTool).toBeInstanceOf(CodyTool)
-    })
-
-    it('should return undefined for unregistered tools', () => {
-        const unknownTool = factory.createTool('UnknownTool')
-        expect(unknownTool).toBeUndefined()
     })
 })
 
 describe('ToolFactory', () => {
     let factory: ToolFactory
-    let registry: ToolRegistry
 
-    // Create a concrete test class that extends CodyTool
     class TestCodyTool extends CodyTool {
         protected async execute(): Promise<ContextItem[]> {
-            // Implement the abstract method
             return Promise.resolve([])
         }
     }
@@ -178,19 +126,22 @@ describe('ToolFactory', () => {
     } satisfies ToolConfiguration
 
     beforeEach(() => {
-        factory = new ToolFactory()
-        registry = factory.registry
+        const mockRretrievedResult = [
+            {
+                type: 'file',
+                uri: URI.file('/path/to/repo/newfile.ts'),
+                content: 'const newExample = "test result";',
+                source: ContextItemSource.Search,
+            },
+        ] satisfies ContextItem[]
+        const mockContextRetriever = {
+            retrieveContext: vi.fn().mockResolvedValue(mockRretrievedResult),
+        } as unknown as ContextRetriever
+        factory = new ToolFactory(mockContextRetriever)
     })
 
-    it('should register and retrieve tools correctly', () => {
-        factory.registerTool(testToolConfig)
-        const toolConfig = registry.get('TestTool')
-        expect(toolConfig).toBeDefined()
-        expect(toolConfig?.name).toBe('TestTool')
-    })
-
-    it('should create tool instances using the factory', () => {
-        factory.registerTool(testToolConfig)
+    it('should register and create tools correctly', () => {
+        factory.register(testToolConfig)
         const testTool = factory.createTool('TestTool')
         expect(testTool).toBeDefined()
         expect(testTool).toBeInstanceOf(CodyTool)
@@ -201,40 +152,15 @@ describe('ToolFactory', () => {
         expect(unknownTool).toBeUndefined()
     })
 
-    it('should return all registered tools', () => {
-        const testToolConfig1 = {
-            name: 'TestTool1',
-            title: 'Test Tool 1',
-            tags: {
-                tag: ps`TOOLTEST1`,
-                subTag: ps`test`,
-            },
-            prompt: {
-                instruction: ps`To test the ToolFactory class`,
-                placeholder: ps`TEST_CONTENT`,
-                examples: [],
-            },
-            createInstance: config => new TestCodyTool(config),
-        } satisfies ToolConfiguration
-        const testToolConfig2 = {
-            name: 'TestTool2',
-            title: 'Test Tool 2',
-            tags: {
-                tag: ps`TOOLTEST2`,
-                subTag: ps`test`,
-            },
-            prompt: {
-                instruction: ps`To test the ToolFactory class`,
-                placeholder: ps`TEST_CONTENT`,
-                examples: [],
-            },
-            createInstance: config => new TestCodyTool(config),
-        } satisfies ToolConfiguration
-        factory.registerTool(testToolConfig1)
-        factory.registerTool(testToolConfig2)
-        const tools = factory.getAllTools()
+    it('should return all registered tool instances', () => {
+        const testToolConfig1 = { ...testToolConfig, name: 'TestTool1' }
+        const testToolConfig2 = { ...testToolConfig, name: 'TestTool2' }
+
+        factory.register(testToolConfig1)
+        factory.register(testToolConfig2)
+
+        const tools = factory.getInstances()
         expect(tools.length).toBe(2)
-        expect(tools.some(tool => tool.name === 'TestTool1')).toBe(true)
-        expect(tools.some(tool => tool.name === 'TestTool2')).toBe(true)
+        expect(tools.every(tool => tool instanceof TestCodyTool)).toBe(true)
     })
 })

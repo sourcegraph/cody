@@ -24,94 +24,76 @@ export interface ToolConfiguration extends CodyToolConfig {
 }
 
 export class ToolFactory {
-    public readonly registry = new ToolRegistry()
-    private toolInstances: Map<string, CodyTool> = new Map()
+    private tools: Map<string, ToolConfiguration> = new Map()
+
+    constructor(private contextRetriever: Pick<ContextRetriever, 'retrieveContext'>) {}
+
+    public register(toolConfig: ToolConfiguration): void {
+        this.tools.set(toolConfig.name, toolConfig)
+    }
 
     public createTool(name: string, ...args: any[]): CodyTool | undefined {
-        const config = this.registry.get(name)
+        const config = this.tools.get(name)
         if (!config) {
             return undefined
         }
         const instance = config.createInstance(config, ...args)
-        if (instance) {
-            this.toolInstances.set(name, instance)
-        }
         return instance
     }
 
-    public registerTool(toolConfig: ToolConfiguration): void {
-        this.registry.register(toolConfig)
+    public getInstances(): CodyTool[] {
+        // Create fresh instances of all registered tools
+        return Array.from(this.tools.entries())
+            .filter(([name]) => name !== 'CliTool' || toolboxSettings.getSettings()?.shell)
+            .map(([_, config]) => config.createInstance(config, this.contextRetriever))
+            .filter(Boolean) as CodyTool[]
     }
 
-    public getAllTools(): ToolConfiguration[] {
-        return this.registry.getAllTools()
-    }
-
-    public getAllToolInstances(): CodyTool[] {
-        if (!toolboxSettings.getSettings()?.shell ?? false) {
-            this.toolInstances.delete('CliTool')
-        }
-        return Array.from(this.toolInstances.values())
-    }
-
-    public buildDefaultCodyTools(
-        contextRetriever?: Pick<ContextRetriever, 'retrieveContext'>
-    ): CodyTool[] {
+    public createDefaultTools(contextRetriever?: Pick<ContextRetriever, 'retrieveContext'>): CodyTool[] {
         return Object.entries(TOOL_CONFIGS)
             .map(([name]) => this.createTool(name, contextRetriever))
             .filter(Boolean) as CodyTool[]
     }
 
-    public buildOpenCtxCodyTools(providers: ContextMentionProviderMetadata[]): CodyTool[] {
+    public createOpenCtxTools(providers: ContextMentionProviderMetadata[]): CodyTool[] {
         return providers
             .map(provider => {
-                const suffix = provider.id.includes('modelcontextprotocol') ? 'MCP' : ''
-                const toolTitle = suffix + provider.title.replace(' ', '').split('/').at(-1)
-                // Remove all special characters from the tool name.
-                const toolName = 'TOOL' + toolTitle.toUpperCase().replace(/[^a-zA-Z0-9]/g, '')
-                const defaultOpenCtxConfig = Object.entries(OPENCTX_TOOL_CONFIG).find(
-                    c =>
-                        provider.id.toLowerCase().includes(c[0]) ||
-                        provider.title.toLowerCase().includes(c[0])
-                )
-                const genericConfig = {
-                    title: provider.title,
-                    tags: {
-                        tag: PromptString.unsafe_fromUserQuery(toolName),
-                        subTag: ps`get`,
-                    },
-                    prompt: {
-                        instruction: PromptString.unsafe_fromUserQuery(provider.queryLabel),
-                        placeholder: ps`QUERY`,
-                    },
-                } as CodyToolConfig
-
-                const config = defaultOpenCtxConfig?.[1] ?? genericConfig
-                const name = config.tags.tag.toString()
-                this.registerTool({
-                    name,
+                const toolName = this.generateToolName(provider)
+                const config = this.getToolConfig(provider)
+                this.register({
+                    name: toolName,
                     ...config,
-                    createInstance: toolConfig => new OpenCtxTool(provider, toolConfig),
+                    createInstance: cfg => new OpenCtxTool(provider, cfg),
                 })
-                return this.createTool(name)
+                return this.createTool(toolName)
             })
             .filter(Boolean) as CodyTool[]
     }
-}
 
-export class ToolRegistry {
-    private tools: Map<string, ToolConfiguration> = new Map()
-
-    register(toolConfig: ToolConfiguration): void {
-        this.tools.set(toolConfig.name, toolConfig)
+    private generateToolName(provider: ContextMentionProviderMetadata): string {
+        const suffix = provider.id.includes('modelcontextprotocol') ? 'MCP' : ''
+        const title = provider.title.replace(' ', '').split('/').at(-1)
+        return 'TOOL' + title?.toUpperCase().replace(/[^a-zA-Z0-9]/g, '') + suffix
     }
 
-    get(name: string): ToolConfiguration | undefined {
-        return this.tools.get(name)
-    }
-
-    getAllTools(): ToolConfiguration[] {
-        return Array.from(this.tools.values())
+    private getToolConfig(provider: ContextMentionProviderMetadata): CodyToolConfig {
+        const defaultConfig = Object.entries(OPENCTX_TOOL_CONFIG).find(
+            c => provider.id.toLowerCase().includes(c[0]) || provider.title.toLowerCase().includes(c[0])
+        )
+        return (
+            defaultConfig?.[1] ?? {
+                title: provider.title,
+                tags: {
+                    tag: PromptString.unsafe_fromUserQuery(this.generateToolName(provider)),
+                    subTag: ps`get`,
+                },
+                prompt: {
+                    instruction: PromptString.unsafe_fromUserQuery(provider.queryLabel),
+                    placeholder: ps`QUERY`,
+                    examples: [],
+                },
+            }
+        )
     }
 }
 
@@ -125,24 +107,37 @@ export class ToolRegistry {
  * - Manages OpenContext tools for external integrations
  * - Provides a unified interface to access all available tools
  */
-export class CodyToolProvider {
-    public static readonly toolFactory = new ToolFactory()
+export namespace CodyToolProvider {
+    export let factory: ToolFactory
+    let openCtxSubscription: Unsubscribable
 
-    private static openCtxSubscription: Unsubscribable | undefined
-
-    private constructor(private contextRetriever: Pick<ContextRetriever, 'retrieveContext'>) {
-        this.initializeToolRegistry()
+    export function initialize(contextRetriever: Pick<ContextRetriever, 'retrieveContext'>): void {
+        factory = new ToolFactory(contextRetriever)
+        initializeRegistry()
     }
 
-    public static instance(
-        contextRetriever: Pick<ContextRetriever, 'retrieveContext'>
-    ): CodyToolProvider {
-        return new CodyToolProvider(contextRetriever)
+    export function getTools(): CodyTool[] {
+        const instances = factory.getInstances()
+        return instances
     }
 
-    private initializeToolRegistry(): void {
+    export function setupOpenCtxProviderListener(): void {
+        if (!openCtx.controller) {
+            console.error('OpenCtx controller not available')
+        }
+        if (openCtxSubscription || !openCtx.controller) {
+            return
+        }
+
+        openCtxSubscription = openCtx.controller
+            .metaChanges({}, {})
+            .pipe(map(providers => providers.filter(p => !!p.mentions).map(openCtxProviderMetadata)))
+            .subscribe(providerMeta => factory.createOpenCtxTools(providerMeta))
+    }
+
+    function initializeRegistry(): void {
         for (const [name, { tool, useContextRetriever }] of Object.entries(TOOL_CONFIGS)) {
-            CodyToolProvider.toolFactory.registry.register({
+            factory.register({
                 name,
                 ...tool.prototype.config,
                 createInstance: useContextRetriever
@@ -150,27 +145,5 @@ export class CodyToolProvider {
                     : () => new tool(),
             })
         }
-    }
-
-    public static setupOpenCtxProviderListener(): void {
-        if (CodyToolProvider.openCtxSubscription || !openCtx.controller) {
-            // If the controller is not available yet, we don't subscribe.
-            // It will be called again when the controller is set up.
-            return
-        }
-
-        CodyToolProvider.openCtxSubscription = openCtx.controller
-            .metaChanges({}, {})
-            .pipe(map(providers => providers.filter(p => !!p.mentions).map(openCtxProviderMetadata)))
-            .subscribe(providerMeta => CodyToolProvider.toolFactory.buildOpenCtxCodyTools(providerMeta))
-    }
-
-    private initializeToolInstances(): void {
-        CodyToolProvider.toolFactory.buildDefaultCodyTools(this.contextRetriever)
-    }
-
-    public getTools(): CodyTool[] {
-        this.initializeToolInstances()
-        return CodyToolProvider.toolFactory.getAllToolInstances()
     }
 }

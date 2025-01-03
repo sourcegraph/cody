@@ -128,14 +128,14 @@ export const ToolboxButton: FC<ToolboxButtonProps> = memo(({ settings, api }) =>
                             </CommandGroup>
                         </CommandList>
                         <footer className="tw-flex tw-justify-end tw-px-6 tw-py-2 tw-border-t tw-border-border tw-bg-muted tw-w-full">
-                            <Button onClick={close} variant="secondary" size="sm" disabled={isLoading}>
+                            <Button onClick={close} variant="secondary" size="xs" disabled={isLoading}>
                                 Cancel
                             </Button>
                             <Button
                                 onClick={() => onSubmit(close)}
                                 variant="default"
                                 disabled={isLoading}
-                                size="sm"
+                                size="xs"
                                 className="tw-ml-4"
                             >
                                 {isLoading ? 'Saving...' : 'Save'}

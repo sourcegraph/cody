@@ -16,9 +16,9 @@ function registerAgent(id: string, ctr: (id: string, tools: AgentTools) => Agent
 }
 
 export function getAgent(id: string, modelId: string, tools: AgentTools): AgentHandler {
-    const { contextRetriever, editor, chatClient, codyToolProvider } = tools
+    const { contextRetriever, editor, chatClient } = tools
     if (id === DeepCodyAgent.id) {
-        return new DeepCodyHandler(modelId, contextRetriever, editor, chatClient, codyToolProvider)
+        return new DeepCodyHandler(modelId, contextRetriever, editor, chatClient)
     }
     if (agentRegistry.has(id)) {
         return agentRegistry.get(id)!(id, tools)

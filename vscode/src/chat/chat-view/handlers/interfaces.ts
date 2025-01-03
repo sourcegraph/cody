@@ -7,7 +7,6 @@ import type {
     SerializedPromptEditorState,
 } from '@sourcegraph/cody-shared'
 import type { MessageErrorType } from '../../MessageProvider'
-import type { CodyToolProvider } from '../../agentic/CodyToolProvider'
 import type { ChatBuilder } from '../ChatBuilder'
 import type { ChatControllerOptions } from '../ChatController'
 import type { ContextRetriever } from '../ContextRetriever'
@@ -17,7 +16,6 @@ export interface AgentTools {
     contextRetriever: Pick<ContextRetriever, 'retrieveContext'>
     editor: ChatControllerOptions['editor']
     chatClient: ChatControllerOptions['chatClient']
-    codyToolProvider: CodyToolProvider
 }
 
 /**

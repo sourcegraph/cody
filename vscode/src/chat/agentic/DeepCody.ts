@@ -22,7 +22,7 @@ import { getCategorizedMentions, isUserAddedItem } from '../../prompt-builder/ut
 import type { ChatBuilder } from '../chat-view/ChatBuilder'
 import { DefaultPrompter } from '../chat-view/prompt'
 import type { CodyTool } from './CodyTool'
-import type { CodyToolProvider, ToolStatusCallback } from './CodyToolProvider'
+import { CodyToolProvider, type ToolStatusCallback } from './CodyToolProvider'
 import { ProcessManager } from './ProcessManager'
 import { ACTIONS_TAGS, CODYAGENT_PROMPTS } from './prompts'
 
@@ -46,11 +46,10 @@ export class DeepCodyAgent {
     constructor(
         protected readonly chatBuilder: ChatBuilder,
         protected readonly chatClient: Pick<ChatClient, 'chat'>,
-        protected readonly toolProvider: CodyToolProvider,
         statusUpdateCallback: (steps: ProcessingStep[]) => void
     ) {
         // Initialize tools, handlers and mixins in constructor
-        this.tools = this.toolProvider.getTools()
+        this.tools = CodyToolProvider.getTools()
 
         this.initializeMultiplexer(this.tools)
         this.buildPrompt(this.tools)
@@ -225,7 +224,7 @@ export class DeepCodyAgent {
             }
 
             // Replace the current context list with the reviewed context.
-            if (reviewed.length) {
+            if (valid.length + reviewed.length > 0) {
                 reviewed.push(...this.context.filter(c => isUserAddedItem(c)))
                 this.context = reviewed
             }
