@@ -1,6 +1,6 @@
 import { type Model, ModelTag, isCodyProModel, isWaitlistModel } from '@sourcegraph/cody-shared'
 import { clsx } from 'clsx'
-import { BookOpenIcon, BuildingIcon, ExternalLinkIcon, FlaskConicalIcon } from 'lucide-react'
+import { BookOpenIcon, BuildingIcon, ExternalLinkIcon } from 'lucide-react'
 import { type FunctionComponent, type ReactNode, useCallback, useMemo } from 'react'
 import type { UserAccountInfo } from '../../Chat'
 import { getVSCodeAPI } from '../../utils/VSCodeApi'
@@ -60,8 +60,6 @@ export const ModelSelectField: React.FunctionComponent<{
                     metadata: {
                         modelIsCodyProOnly: isCodyProModel(model) ? 1 : 0,
                         isCodyProUser: isCodyProUser ? 1 : 0,
-                        // Log event when user switches to a different model from Deep Cody.
-                        isSwitchedFromDeepCody: selectedModel.id.includes('deep-cody') ? 1 : 0,
                     },
                     privateMetadata: {
                         modelId: model.id,
@@ -305,9 +303,6 @@ function modelAvailability(
 }
 
 function getTooltip(model: Model, availability: string): string {
-    if (model.id.includes('deep-cody')) {
-        return 'An agent powered by Claude 3.5 Sonnet (New) and other models with tool-use capabilities to gather contextual information for better responses. It can search your codebase, browse the web, execute shell commands in your terminal (when enabled), and utilize any configured tools to retrieve necessary context. To enable shell commands, set the "cody.agentic.context.experimentalShell" option to true in your settings.'
-    }
     if (model.tags.includes(ModelTag.Waitlist)) {
         return 'Request access to this new model'
     }
@@ -358,13 +353,7 @@ const ModelTitleWithIcon: React.FC<{
 
     return (
         <span className={clsx(styles.modelTitleWithIcon, { [styles.disabled]: isDisabled })}>
-            {showIcon ? (
-                model.id.includes('deep-cody') ? (
-                    <FlaskConicalIcon size={16} className={styles.modelIcon} />
-                ) : (
-                    <ChatModelIcon model={model.provider} className={styles.modelIcon} />
-                )
-            ) : null}
+            {showIcon ? <ChatModelIcon model={model.provider} className={styles.modelIcon} /> : null}
             <span className={clsx('tw-flex-grow', styles.modelName)}>{model.title}</span>
             {modelBadge && (
                 <Badge
@@ -390,7 +379,6 @@ const ChatModelIcon: FunctionComponent<{ model: string; className?: string }> = 
 
 /** Common {@link ModelsService.uiGroup} values. */
 const ModelUIGroup: Record<string, string> = {
-    DeepCody: 'Agent, extensive context fetching',
     Power: 'More powerful models',
     Balanced: 'Balanced for power and speed',
     Speed: 'Faster models',
@@ -399,7 +387,6 @@ const ModelUIGroup: Record<string, string> = {
 }
 
 const getModelDropDownUIGroup = (model: Model): string => {
-    if (model.id.includes('deep-cody')) return ModelUIGroup.DeepCody
     if (model.tags.includes(ModelTag.Power)) return ModelUIGroup.Power
     if (model.tags.includes(ModelTag.Balanced)) return ModelUIGroup.Balanced
     if (model.tags.includes(ModelTag.Speed)) return ModelUIGroup.Speed

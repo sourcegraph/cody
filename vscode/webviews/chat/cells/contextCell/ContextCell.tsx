@@ -23,7 +23,6 @@ import {
     memo,
     useCallback,
     useContext,
-    useMemo,
     useState,
 } from 'react'
 import { FileLink } from '../../../components/FileLink'
@@ -66,6 +65,7 @@ export const ContextCell: FunctionComponent<{
     editContextNode: React.ReactNode
     experimentalOneBoxEnabled?: boolean
     processes?: ProcessingStep[]
+    agent?: string
 }> = memo(
     ({
         contextItems,
@@ -82,6 +82,7 @@ export const ContextCell: FunctionComponent<{
         intent,
         experimentalOneBoxEnabled,
         processes,
+        agent,
     }) => {
         const __storybook__initialOpen = useContext(__ContextCellStorybookContext)?.initialOpen ?? false
 
@@ -147,7 +148,7 @@ export const ContextCell: FunctionComponent<{
 
         const telemetryRecorder = useTelemetryRecorder()
 
-        const isDeepCodyEnabled = useMemo(() => model?.includes('deep-cody'), [model])
+        const isDeepCodyEnabled = agent === 'deep-cody'
 
         // Text for top header text
         const headerText: { main: string; sub?: string } = {

@@ -105,7 +105,6 @@ import {
 import { openExternalLinks } from '../../services/utils/workspace-action'
 import { TestSupport } from '../../test-support'
 import type { MessageErrorType } from '../MessageProvider'
-import { CodyToolProvider } from '../agentic/CodyToolProvider'
 import { toolboxSettings } from '../agentic/ToolboxManager'
 import { getMentionMenuData } from '../context/chatContext'
 import type { ChatIntentAPIClient } from '../context/chatIntentAPIClient'
@@ -181,7 +180,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     private readonly chatClient: ChatControllerOptions['chatClient']
 
     private readonly contextRetriever: ChatControllerOptions['contextRetriever']
-    private readonly toolProvider: CodyToolProvider
 
     private readonly editor: ChatControllerOptions['editor']
     private readonly extensionClient: ChatControllerOptions['extensionClient']
@@ -215,7 +213,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         this.editor = editor
         this.extensionClient = extensionClient
         this.contextRetriever = contextRetriever
-        this.toolProvider = CodyToolProvider.instance(this.contextRetriever)
 
         this.chatBuilder = new ChatBuilder(undefined)
 
@@ -542,7 +539,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         const webviewType = isEditorViewType && !sidebarViewOnly ? 'editor' : 'sidebar'
         const uiKindIsWeb = (cenv.CODY_OVERRIDE_UI_KIND ?? vscode.env.uiKind) === vscode.UIKind.Web
         const endpoints = localStorage.getEndpointHistory() ?? []
-        toolboxSettings.updateUserTerminalSetting(configuration.agenticContextExperimentalShell)
 
         return {
             uiKindIsWeb,
@@ -666,6 +662,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     editorState,
                     intent: detectedIntent,
                     manuallySelectedIntent: manuallySelectedIntent ? detectedIntent : undefined,
+                    agent: toolboxSettings.getSettings()?.agent,
                 })
                 this.postViewTranscript({ speaker: 'assistant' })
 
@@ -795,12 +792,11 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
         const agentName = ['search', 'edit', 'insert'].includes(intent ?? '')
             ? (intent as string)
-            : model
-        const agent = getAgent(agentName, {
+            : this.chatBuilder.getLastHumanMessage()?.agent ?? 'chat'
+        const agent = getAgent(agentName, model, {
             contextRetriever: this.contextRetriever,
             editor: this.editor,
             chatClient: this.chatClient,
-            codyToolProvider: this.toolProvider,
         })
 
         recorder.setIntentInfo({
@@ -1538,6 +1534,12 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                         userProductSubscription.pipe(
                             map(value => (value === pendingOperation ? null : value))
                         ),
+                    toolboxSettings: () => toolboxSettings.settings,
+                    updateToolboxSettings: settings => {
+                        return promiseFactoryToObservable(async () => {
+                            await toolboxSettings.updatetoolboxSettings(settings)
+                        })
+                    },
                 }
             )
         )

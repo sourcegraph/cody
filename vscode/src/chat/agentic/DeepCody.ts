@@ -22,40 +22,45 @@ import { getCategorizedMentions, isUserAddedItem } from '../../prompt-builder/ut
 import type { ChatBuilder } from '../chat-view/ChatBuilder'
 import { DefaultPrompter } from '../chat-view/prompt'
 import type { CodyTool } from './CodyTool'
-import type { CodyToolProvider, ToolStatusCallback } from './CodyToolProvider'
+import { CodyToolProvider, type ToolStatusCallback } from './CodyToolProvider'
 import { ProcessManager } from './ProcessManager'
 import { ACTIONS_TAGS, CODYAGENT_PROMPTS } from './prompts'
 
 /**
- * A DeepCodyAgent is created for each chat submitted by the user.
+ * A DeepCodyAgent handles advanced context retrieval and analysis for chat interactions.
+ * It uses a multi-step process to:
+ * 1. Review and analyze existing context
+ * 2. Dynamically retrieve additional relevant context using configured tools
+ * 3. Filter and validate context items for improved chat responses
  *
- * It is responsible for reviewing the retrieved context, and perform agentic context retrieval for the chat request.
+ * Key features:
+ * - Integrates with multiple CodyTools for context gathering
+ * - Uses BotResponseMultiplexer for handling tool responses
+ * - Supports telemetry and tracing
+ * - Implements iterative context review with configurable max loops
  */
 export class DeepCodyAgent {
-    public static readonly id = 'sourcegraph::2023-06-01::deep-cody'
+    public static readonly id = 'deep-cody'
+    public static model: string | undefined = undefined
 
     protected readonly multiplexer = new BotResponseMultiplexer()
     protected readonly promptMixins: PromptMixin[] = []
     protected readonly tools: CodyTool[]
     protected statusCallback: ToolStatusCallback
     private stepsManager: ProcessManager
-    private models: { review?: string } = { review: '' }
 
     protected context: ContextItem[] = []
 
     constructor(
         protected readonly chatBuilder: ChatBuilder,
         protected readonly chatClient: Pick<ChatClient, 'chat'>,
-        protected readonly toolProvider: CodyToolProvider,
         statusUpdateCallback: (steps: ProcessingStep[]) => void
     ) {
         // Initialize tools, handlers and mixins in constructor
-        this.tools = this.toolProvider.getTools()
+        this.tools = CodyToolProvider.getTools()
 
         this.initializeMultiplexer(this.tools)
         this.buildPrompt(this.tools)
-
-        this.models.review = this.chatBuilder.selectedModel
 
         this.stepsManager = new ProcessManager(steps => statusUpdateCallback(steps))
 
@@ -89,9 +94,8 @@ export class DeepCodyAgent {
      */
     protected buildPrompt(tools: CodyTool[]): void {
         const toolInstructions = tools.map(t => t.getInstruction())
-        const join = (prompts: PromptString[]) => PromptString.join(prompts, ps`\n- `)
         const prompt = CODYAGENT_PROMPTS.review
-            .replace('{{CODY_TOOLS_PLACEHOLDER}}', join(toolInstructions))
+            .replace('{{CODY_TOOLS_PLACEHOLDER}}', RawTextProcessor.join(toolInstructions, ps`\n- `))
             .replace(
                 '{{CODY_IDE}}',
                 getClientPromptString(clientCapabilities().agentIDE || CodyIDE.VSCode)
@@ -101,13 +105,18 @@ export class DeepCodyAgent {
     }
 
     /**
-     * Retrieves the context for the current chat, by iteratively reviewing the context and adding new items
-     * until the maximum number of loops is reached or the chat is aborted.
+     * Retrieves and refines context for the current chat through an iterative review process.
+     * The process continues until either:
+     * - Maximum loop count is reached
+     * - Chat is aborted
+     * - No new context items are found
+     * - All new items are user-added
      *
-     * @param span - The OpenTelemetry span for the current chat.
-     * @param chatAbortSignal - The abort signal for the current chat.
-     * @param maxLoops - The maximum number of loops to perform when retrieving the context.
-     * @returns The context items retrieved for the current chat.
+     * @param requestID - Unique identifier for the chat request
+     * @param chatAbortSignal - Signal to abort the context retrieval
+     * @param context - Initial context items
+     * @param maxLoops - Maximum number of review iterations (default: 2)
+     * @returns Refined and expanded context items for the chat
      */
     public async getContext(
         requestID: string,
@@ -137,7 +146,7 @@ export class DeepCodyAgent {
             privateMetadata: {
                 durationMs: performance.now() - startTime,
                 ...stats,
-                model: this.models.review,
+                model: DeepCodyAgent.model,
                 traceId: span.spanContext().traceId,
             },
             billingMetadata: {
@@ -176,7 +185,14 @@ export class DeepCodyAgent {
     }
 
     /**
-     * Performs a review of the current context and generates new context items based on the review outcome.
+     * Reviews current context and generates new context items using configured tools.
+     * The review process:
+     * 1. Builds a prompt using current context
+     * 2. Processes the prompt through chat client
+     * 3. Executes relevant tools based on the response
+     * 4. Validates and filters the resulting context items
+     *
+     * @returns Array of new context items from the review
      */
     private async review(
         requestID: string,
@@ -191,7 +207,7 @@ export class DeepCodyAgent {
                 requestID,
                 promptData.prompt,
                 chatAbortSignal,
-                this.models.review
+                DeepCodyAgent.model
             )
             // If the response is empty or contains the CONTEXT_SUFFICIENT token, the context is sufficient.
             if (!res) return []
@@ -218,7 +234,7 @@ export class DeepCodyAgent {
             const reviewed = []
 
             // Extract all the strings from between tags.
-            const valid = PromptStringBuilder.extractTagContents(res, ACTIONS_TAGS.CONTEXT.toString())
+            const valid = RawTextProcessor.extract(res, ACTIONS_TAGS.CONTEXT.toString())
             for (const contextName of valid || []) {
                 const foundValidatedItems = this.context.filter(c => c.uri.path.endsWith(contextName))
                 for (const found of foundValidatedItems) {
@@ -227,7 +243,7 @@ export class DeepCodyAgent {
             }
 
             // Replace the current context list with the reviewed context.
-            if (reviewed.length) {
+            if (valid.length + reviewed.length > 0) {
                 reviewed.push(...this.context.filter(c => isUserAddedItem(c)))
                 this.context = reviewed
             }
@@ -254,7 +270,7 @@ export class DeepCodyAgent {
             new AbortController().signal,
             requestID
         )
-        const accumulated = new PromptStringBuilder()
+        const accumulated = new RawTextProcessor()
         try {
             for await (const msg of stream) {
                 if (signal?.aborted) break
@@ -283,7 +299,14 @@ export class DeepCodyAgent {
     }
 }
 
-export class PromptStringBuilder {
+/**
+ * Handles building and managing raw text returned by LLM with support for:
+ * - Incremental string building
+ * - XML-style tag content extraction
+ * - Length tracking
+ * - String joining with custom connectors
+ */
+export class RawTextProcessor {
     private parts: string[] = []
 
     public append(str: string): void {
@@ -304,7 +327,7 @@ export class PromptStringBuilder {
         this.parts = []
     }
 
-    public static extractTagContents(response: string, tag: string): string[] {
+    public static extract(response: string, tag: string): string[] {
         const tagLength = tag.length
         return (
             response

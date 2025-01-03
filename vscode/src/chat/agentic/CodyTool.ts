@@ -20,7 +20,7 @@ import { getChatContextItemsForMention } from '../context/chatContext'
 import { getCorpusContextItemsForEditorState } from '../initialContext'
 import { CodyChatMemory } from './CodyChatMemory'
 import type { ToolStatusCallback } from './CodyToolProvider'
-import { PromptStringBuilder } from './DeepCody'
+import { RawTextProcessor } from './DeepCody'
 
 /**
  * Configuration interface for CodyTool instances.
@@ -43,7 +43,10 @@ export interface CodyToolConfig {
  * Abstract base class for Cody tools.
  */
 export abstract class CodyTool {
-    constructor(public readonly config: CodyToolConfig) {}
+    protected readonly performedQueries: Set<string>
+    constructor(public readonly config: CodyToolConfig) {
+        this.performedQueries = new Set()
+    }
 
     private static readonly EXECUTION_TIMEOUT_MS = 30000 // 30 seconds
     /**
@@ -57,7 +60,7 @@ export abstract class CodyTool {
             if (!examples?.length) {
                 return prompt
             }
-            return ps`${prompt}\n\t- ${PromptStringBuilder.join(examples, ps`\n\t- `)}`
+            return ps`${prompt}\n\t- ${RawTextProcessor.join(examples, ps`\n\t- `)}`
         } catch (error) {
             logDebug('Cody Tool', `failed to getInstruction for ${tag}`, { verbose: { error } })
             return ps``
@@ -72,8 +75,13 @@ export abstract class CodyTool {
         const parsed = (this.unprocessedText.match(new RegExp(regex, 'g')) || [])
             .map(match => regex.exec(match)?.[1].trim())
             .filter(Boolean) as string[]
+        const filtered = parsed.filter(q => !this.performedQueries.has(q))
+        // Store the search query to avoid running the same query again.
+        for (const query of filtered) {
+            this.performedQueries.add(query)
+        }
         this.reset()
-        return parsed
+        return filtered
     }
     /**
      * The raw text input stream.
@@ -195,8 +203,6 @@ class FileTool extends CodyTool {
  * Tool for performing searches within the codebase.
  */
 class SearchTool extends CodyTool {
-    private performedSearch = new Set<string>()
-
     constructor(private contextRetriever: Pick<ContextRetriever, 'retrieveContext'>) {
         super({
             title: 'Code Search',
@@ -217,7 +223,8 @@ class SearchTool extends CodyTool {
 
     public async execute(span: Span, queries: string[]): Promise<ContextItem[]> {
         span.addEvent('executeSearchTool')
-        const query = queries.find(q => !this.performedSearch.has(q))
+        // TODO: Check if it makes sense to do a search on all queries or just the first one.
+        const query = queries[0]
         if (!this.contextRetriever || !query) {
             return []
         }
@@ -239,12 +246,10 @@ class SearchTool extends CodyTool {
             undefined,
             true
         )
-        // Store the search query to avoid running the same query again.
-        this.performedSearch.add(query)
         const maxSearchItems = 30 // Keep the latest n items and remove the rest.
         const searchQueryItem = {
             type: 'file',
-            content: 'Queries performed: ' + Array.from(this.performedSearch).join(', '),
+            content: 'Queries performed: ' + Array.from(this.performedQueries).join(', '),
             uri: URI.file('search-history'),
             source: ContextItemSource.Agentic,
             title: 'TOOLCONTEXT',

@@ -3,8 +3,10 @@ import { type ContextItem, ContextItemSource, ps } from '@sourcegraph/cody-share
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { URI } from 'vscode-uri'
 import { mockLocalStorage } from '../../services/LocalStorageProvider'
+import type { ContextRetriever } from '../chat-view/ContextRetriever'
 import { CodyTool, OpenCtxTool } from './CodyTool'
 import { CodyToolProvider, ToolFactory, type ToolStatusCallback } from './CodyToolProvider'
+import { toolboxSettings } from './ToolboxManager'
 
 const mockCallback: ToolStatusCallback = {
     onStart: vi.fn(),
@@ -32,13 +34,27 @@ class TestTool extends CodyTool {
 describe('CodyTool', () => {
     let factory: ToolFactory
     let mockSpan: any
+    let mockContextRetriever: ContextRetriever
 
     beforeEach(() => {
         vi.clearAllMocks()
-        factory = new ToolFactory()
+
+        const mockRretrievedResult = [
+            {
+                type: 'file',
+                uri: URI.file('/path/to/repo/newfile.ts'),
+                content: 'const newExample = "test result";',
+                source: ContextItemSource.Search,
+            },
+        ] satisfies ContextItem[]
+        mockContextRetriever = {
+            retrieveContext: vi.fn().mockResolvedValue(mockRretrievedResult),
+        } as unknown as ContextRetriever
+
+        factory = new ToolFactory(mockContextRetriever)
         mockSpan = {}
-        factory.registry.register({
-            name: 'TestTool', // Add this line to match ToolConfiguration interface
+        factory.register({
+            name: 'TestTool',
             title: 'TestTool',
             tags: {
                 tag: ps`TOOLTEST`,
@@ -114,9 +130,9 @@ describe('CodyTool', () => {
     })
 
     it('should register and retrieve tools correctly', () => {
-        const toolConfig = factory.registry.get('TestTool')
-        expect(toolConfig).toBeDefined()
-        expect(toolConfig?.name).toBe('TestTool')
+        const tools = factory.getInstances()
+        expect(tools.length).toBeGreaterThan(0)
+        expect(tools.some(t => t.config.title === 'TestTool')).toBeTruthy()
     })
 
     it('should create tool instances using the factory', () => {
@@ -187,9 +203,14 @@ describe('CodyTool', () => {
             },
         }))
 
-        const provider = CodyToolProvider.instance({ retrieveContext: vi.fn() })
+        // Update to use namespace-based approach
+        beforeEach(() => {
+            CodyToolProvider.initialize({ retrieveContext: vi.fn() })
+        })
 
-        it('should register all default tools', () => {
+        it('should register all default tools based on toolbox settings', () => {
+            const mockedToolboxSettings = { agent: 'mock-agent', shell: true }
+            vi.spyOn(toolboxSettings, 'getSettings').mockReturnValue(mockedToolboxSettings)
             const localStorageData: { [key: string]: unknown } = {}
             mockLocalStorage({
                 get: (key: string) => localStorageData[key],
@@ -197,11 +218,19 @@ describe('CodyTool', () => {
                     localStorageData[key] = value
                 },
             } as any)
-            const tools = provider.getTools()
-            expect(tools.some(t => t.config.title.includes('Cody Memory'))).toBeDefined()
-            expect(tools.some(t => t.config.title.includes('Code Search'))).toBeDefined()
-            expect(tools.some(t => t.config.title.includes('Terminal'))).toBeDefined()
-            expect(tools.some(t => t.config.title.includes('Codebase File'))).toBeDefined()
+
+            const tools = CodyToolProvider.getTools()
+            expect(tools.some(t => t.config.title.includes('Cody Memory'))).toBeTruthy()
+            expect(tools.some(t => t.config.title.includes('Code Search'))).toBeTruthy()
+            expect(tools.some(t => t.config.title.includes('Codebase File'))).toBeTruthy()
+            expect(tools.some(t => t.config.title.includes('Terminal'))).toBeTruthy()
+
+            // Disable shell and check if terminal tool is removed.
+            mockedToolboxSettings.shell = false
+            vi.spyOn(toolboxSettings, 'getSettings').mockReturnValue(mockedToolboxSettings)
+            const newTools = CodyToolProvider.getTools()
+            expect(newTools.some(t => t.config.title.includes('Terminal'))).toBeFalsy()
+            expect(newTools.length).toBe(tools.length - 1)
         })
     })
 })
