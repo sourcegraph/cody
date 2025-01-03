@@ -31,7 +31,7 @@ export function endsWithBlockStart(text: string, languageId: string): string | n
 
 // Languages with more than 100 multiline completions in the last month and CAR > 20%:
 // https://sourcegraph.looker.com/explore/sourcegraph/cody?qid=JBItVt6VFMlCtMa9KOBmjh&origin_space=562
-const LANGUAGES_WITH_MULTILINE_SUPPORT = [
+export const LANGUAGES_WITH_MULTILINE_SUPPORT = [
     'astro',
     'c',
     'cpp',
@@ -52,13 +52,17 @@ const LANGUAGES_WITH_MULTILINE_SUPPORT = [
     'typescript',
     'typescriptreact',
     'vue',
-]
+] as const
+
+export type MultiLineSupportedLanguage = (typeof LANGUAGES_WITH_MULTILINE_SUPPORT)[number]
 
 export function detectMultiline(params: DetectMultilineParams): DetectMultilineResult {
     const { docContext, languageId, position } = params
     const { prefix, prevNonEmptyLine, nextNonEmptyLine, currentLinePrefix, currentLineSuffix } =
         docContext
-    const isMultilineSupported = LANGUAGES_WITH_MULTILINE_SUPPORT.includes(languageId)
+    const isMultilineSupported = LANGUAGES_WITH_MULTILINE_SUPPORT.includes(
+        languageId as MultiLineSupportedLanguage
+    )
 
     const blockStart = endsWithBlockStart(prefix, languageId)
     const isBlockStartActive = Boolean(blockStart)
