@@ -795,8 +795,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
         const agentName = ['search', 'edit', 'insert'].includes(intent ?? '')
             ? (intent as string)
-            : this.chatBuilder.getLastHumanMessage()?.agent ?? model
-        const agent = getAgent(agentName, {
+            : this.chatBuilder.getLastHumanMessage()?.agent ?? 'chat'
+        const agent = getAgent(agentName, model, {
             contextRetriever: this.contextRetriever,
             editor: this.editor,
             chatClient: this.chatClient,

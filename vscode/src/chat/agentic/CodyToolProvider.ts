@@ -32,9 +32,6 @@ export class ToolFactory {
         if (!config) {
             return undefined
         }
-        if (this.toolInstances.has(name)) {
-            return this.toolInstances.get(name)
-        }
         const instance = config.createInstance(config, ...args)
         if (instance) {
             this.toolInstances.set(name, instance)

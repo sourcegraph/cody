@@ -227,7 +227,8 @@ export class ChatHandler implements AgentHandler {
         editorState: SerializedPromptEditorState | null,
         _chatBuilder: ChatBuilder,
         _delegate: AgentHandlerDelegate,
-        signal?: AbortSignal
+        signal?: AbortSignal,
+        skipQueryRewrite = false
     ): Promise<{
         contextItems?: ContextItem[]
         error?: Error
@@ -235,8 +236,6 @@ export class ChatHandler implements AgentHandler {
     }> {
         try {
             return wrapInActiveSpan('chat.computeContext', async span => {
-                // Skip query rewrite for deep-cody models as it will be reviewed by the agent.
-                const skipQueryRewrite = this.modelId.includes('deep-cody')
                 const contextAlternatives = await computeContextAlternatives(
                     this.contextRetriever,
                     this.editor,

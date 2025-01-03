@@ -46,13 +46,16 @@ export class DeepCodyHandler extends ChatHandler implements AgentHandler {
         error?: Error
         abort?: boolean
     }> {
+        // Skip query rewrite for deep-cody models as it will be reviewed by the agent.
+        const skipQueryRewrite = true
         const baseContextResult = await super.computeContext(
             requestID,
             { text, mentions },
             editorState,
             chatBuilder,
             delegate,
-            signal
+            signal,
+            skipQueryRewrite
         )
         const isEnabled = chatBuilder.getMessages().length < 4
         if (!isEnabled || baseContextResult.error || baseContextResult.abort) {
