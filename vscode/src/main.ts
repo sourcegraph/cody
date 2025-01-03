@@ -84,9 +84,6 @@ import { VSCodeEditor } from './editor/vscode-editor'
 import type { PlatformContext } from './extension.common'
 import { configureExternalServices } from './external-services'
 import { isRunningInsideAgent } from './jsonrpc/isRunningInsideAgent'
-import type { SymfRunner } from './local-context/symf'
-import { MinionOrchestrator } from './minion/MinionOrchestrator'
-import { PoorMansBash } from './minion/environment'
 import { CodyProExpirationNotifications } from './notifications/cody-pro-expiration'
 import { showSetupNotification } from './notifications/setup-notification'
 import { logDebug, logError } from './output-channel-logger'
@@ -313,8 +310,6 @@ const register = async (
             })
         )
     )
-
-    disposables.push(registerMinion(context, symfRunner))
 
     await tutorialSetup
 
@@ -825,31 +820,6 @@ function registerAutocomplete(
                 )
                 .subscribe({})
         )
-    )
-}
-
-function registerMinion(
-    context: vscode.ExtensionContext,
-
-    symfRunner: SymfRunner | undefined
-): vscode.Disposable {
-    return enableFeature(
-        config => !!config.configuration.experimentalMinionAnthropicKey,
-        () => {
-            const disposables: vscode.Disposable[] = []
-            const minionOrchestrator = new MinionOrchestrator(context.extensionUri, symfRunner)
-            disposables.push(
-                minionOrchestrator,
-                vscode.commands.registerCommand('cody.minion.panel.new', () =>
-                    minionOrchestrator.createNewMinionPanel()
-                ),
-                vscode.commands.registerCommand('cody.minion.new-terminal', async () => {
-                    const t = new PoorMansBash()
-                    await t.run('hello world')
-                })
-            )
-            return vscode.Disposable.from(...disposables)
-        }
     )
 }
 

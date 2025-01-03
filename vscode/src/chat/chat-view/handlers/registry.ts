@@ -1,7 +1,10 @@
+import Anthropic from '@anthropic-ai/sdk'
+import { getConfiguration } from '../../../configuration'
 import { ChatHandler } from './ChatHandler'
 import { DeepCodyHandler } from './DeepCodyHandler'
 import { EditHandler } from './EditHandler'
 import { SearchHandler } from './SearchHandler'
+import { ExperimentalToolHandler } from './ToolHandler'
 import type { AgentHandler, AgentTools } from './interfaces'
 
 /**
@@ -39,3 +42,10 @@ registerAgent(
     (_id: string, { contextRetriever, editor }: AgentTools) =>
         new EditHandler('insert', contextRetriever, editor)
 )
+registerAgent('sourcegraph::2024-12-31::tool-cody', (_id: string) => {
+    const config = getConfiguration()
+    const anthropicAPI = new Anthropic({
+        apiKey: config.experimentalMinionAnthropicKey,
+    })
+    return new ExperimentalToolHandler(anthropicAPI)
+})

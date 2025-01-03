@@ -27,7 +27,7 @@ import { RestClient } from '../sourcegraph-api/rest/client'
 import type { UserProductSubscription } from '../sourcegraph-api/userProductSubscription'
 import { CHAT_INPUT_TOKEN_BUDGET } from '../token/constants'
 import { isError } from '../utils'
-import { getExperimentalClientModelByFeatureFlag } from './client'
+import { TOOL_CODY_MODEL, getExperimentalClientModelByFeatureFlag } from './client'
 import { type Model, type ServerModel, createModel, createModelFromServerModel } from './model'
 import type {
     DefaultsAndUserPreferencesForEndpoint,
@@ -197,6 +197,10 @@ export function syncModels({
                                     data.primaryModels.push(...getModelsFromVSCodeConfiguration(config))
 
                                     // For DotCom users with early access or on the waitlist, replace the waitlist tag with the appropriate tags.
+                                    const enableToolCody: Observable<boolean> = resolvedConfig.pipe(
+                                        map(c => !!c.configuration.experimentalMinionAnthropicKey),
+                                        distinctUntilChanged()
+                                    )
                                     return combineLatest(
                                         featureFlagProvider.evaluatedFeatureFlag(
                                             FeatureFlag.CodyEarlyAccess
@@ -204,10 +208,16 @@ export function syncModels({
                                         featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.DeepCody),
                                         featureFlagProvider.evaluatedFeatureFlag(
                                             FeatureFlag.CodyChatDefaultToClaude35Haiku
-                                        )
+                                        ),
+                                        enableToolCody
                                     ).pipe(
                                         switchMap(
-                                            ([hasEarlyAccess, hasDeepCodyFlag, defaultToHaiku]) => {
+                                            ([
+                                                hasEarlyAccess,
+                                                hasDeepCodyFlag,
+                                                defaultToHaiku,
+                                                enableToolCody,
+                                            ]) => {
                                                 // TODO(sqs): remove waitlist from localStorage when user has access
                                                 const isOnWaitlist = config.clientState.waitlist_o1
                                                 if (isDotComUser && (hasEarlyAccess || isOnWaitlist)) {
@@ -254,6 +264,12 @@ export function syncModels({
                                                             DEEPCODY_MODEL,
                                                         ]).map(createModelFromServerModel)
                                                     )
+
+                                                    if (enableToolCody) {
+                                                        data.primaryModels.push(
+                                                            createModelFromServerModel(TOOL_CODY_MODEL)
+                                                        )
+                                                    }
                                                 }
 
                                                 // set the default model to Haiku for free users

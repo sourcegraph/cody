@@ -388,7 +388,8 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
         !isSearchIntent &&
             humanMessage.contextFiles === undefined &&
             isLastSentInteraction &&
-            assistantMessage?.text === undefined
+            assistantMessage?.text === undefined &&
+            assistantMessage?.subMessages === undefined
     )
     const spanManager = new SpanManager('cody-webview')
     const renderSpan = useRef<Span>()
@@ -648,29 +649,33 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                     processes={humanMessage?.processes ?? undefined}
                 />
             )}
-            {assistantMessage && !isContextLoading && (
-                <AssistantMessageCell
-                    key={assistantMessage.index}
-                    userInfo={userInfo}
-                    models={models}
-                    chatEnabled={chatEnabled}
-                    message={assistantMessage}
-                    feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
-                    copyButtonOnSubmit={copyButtonOnSubmit}
-                    insertButtonOnSubmit={insertButtonOnSubmit}
-                    postMessage={postMessage}
-                    guardrails={guardrails}
-                    humanMessage={humanMessageInfo}
-                    isLoading={assistantMessage.isLoading}
-                    showFeedbackButtons={
-                        !assistantMessage.isLoading && !assistantMessage.error && isLastSentInteraction
-                    }
-                    smartApply={smartApply}
-                    smartApplyEnabled={smartApplyEnabled}
-                    onSelectedFiltersUpdate={onSelectedFiltersUpdate}
-                    isLastSentInteraction={isLastSentInteraction}
-                />
-            )}
+            {assistantMessage &&
+                (!isContextLoading ||
+                    (assistantMessage.subMessages && assistantMessage.subMessages.length > 0)) && (
+                    <AssistantMessageCell
+                        key={assistantMessage.index}
+                        userInfo={userInfo}
+                        models={models}
+                        chatEnabled={chatEnabled}
+                        message={assistantMessage}
+                        feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
+                        copyButtonOnSubmit={copyButtonOnSubmit}
+                        insertButtonOnSubmit={insertButtonOnSubmit}
+                        postMessage={postMessage}
+                        guardrails={guardrails}
+                        humanMessage={humanMessageInfo}
+                        isLoading={assistantMessage.isLoading}
+                        showFeedbackButtons={
+                            !assistantMessage.isLoading &&
+                            !assistantMessage.error &&
+                            isLastSentInteraction
+                        }
+                        smartApply={smartApply}
+                        smartApplyEnabled={smartApplyEnabled}
+                        onSelectedFiltersUpdate={onSelectedFiltersUpdate}
+                        isLastSentInteraction={isLastSentInteraction}
+                    />
+                )}
         </>
     )
 }, isEqual)

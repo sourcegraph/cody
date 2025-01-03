@@ -399,7 +399,7 @@ const ModelUIGroup: Record<string, string> = {
 }
 
 const getModelDropDownUIGroup = (model: Model): string => {
-    if (model.id.includes('deep-cody')) return ModelUIGroup.DeepCody
+    if (['deep-cody', 'tool-cody'].some(id => model.id.includes(id))) return ModelUIGroup.DeepCody
     if (model.tags.includes(ModelTag.Power)) return ModelUIGroup.Power
     if (model.tags.includes(ModelTag.Balanced)) return ModelUIGroup.Balanced
     if (model.tags.includes(ModelTag.Speed)) return ModelUIGroup.Speed

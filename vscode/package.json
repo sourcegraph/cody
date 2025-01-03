@@ -458,21 +458,6 @@
         "icon": "$(layout-sidebar-left)"
       },
       {
-        "command": "cody.minion.panel.new",
-        "category": "Cody",
-        "title": "New Minion Panel",
-        "when": "cody.activated",
-        "group": "Cody",
-        "icon": "$(new-comment-icon)"
-      },
-      {
-        "command": "cody.minion.new-terminal",
-        "category": "Cody",
-        "title": "Minion new terminal - temporary test command",
-        "when": "cody.activated",
-        "group": "Cody"
-      },
-      {
         "command": "cody.chat.view.popOut",
         "category": "Cody",
         "title": "Pop out",
@@ -1400,7 +1385,7 @@
     }
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.20.8",
+    "@anthropic-ai/sdk": "^0.33.1",
     "@openctx/provider-linear-issues": "^0.0.9",
     "@openctx/vscode-lib": "^0.0.26",
     "@opentelemetry/api": "^1.7.0",

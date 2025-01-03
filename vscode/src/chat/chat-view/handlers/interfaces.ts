@@ -6,6 +6,7 @@ import type {
     PromptString,
     SerializedPromptEditorState,
 } from '@sourcegraph/cody-shared'
+import type { SubMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import type { MessageErrorType } from '../../MessageProvider'
 import type { CodyToolProvider } from '../../agentic/CodyToolProvider'
 import type { ChatBuilder } from '../ChatBuilder'
@@ -28,6 +29,14 @@ export interface AgentHandlerDelegate {
     postStatuses(steps: ProcessingStep[]): void
     postMessageInProgress(message: ChatMessage): void
     postDone(ops?: { abort: boolean }): void
+
+    /**
+     * An experimental way to post updates to the message in progress.
+     *
+     * NOTE: A given AgentHandler implementation should use either this
+     * method or `postMessageInProgress` but not both.
+     */
+    experimentalPostMessageInProgress(subMessages: SubMessage[]): void
 }
 
 export interface AgentRequest {
