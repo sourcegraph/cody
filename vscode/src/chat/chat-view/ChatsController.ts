@@ -194,7 +194,7 @@ export class ChatsController implements vscode.Disposable {
                 }
             }),
 
-            vscode.commands.registerCommand('cody.chat.simpleToggle', async () => {
+            vscode.commands.registerCommand('cody.chat.simpleNewChat', async () => {
                 await this.panel.clearAndRestartSession()
                 await vscode.commands.executeCommand('cody.chat.focus')
             }),
