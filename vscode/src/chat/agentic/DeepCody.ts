@@ -4,6 +4,7 @@ import {
     type ChatClient,
     CodyIDE,
     type ContextItem,
+    ContextItemSource,
     type Message,
     type ProcessingStep,
     type PromptMixin,
@@ -212,20 +213,20 @@ export class DeepCodyAgent {
                 }
             }
 
-            // Extract all the strings from between tags.
-            const contextListTag = ACTIONS_TAGS.CONTEXT.toString()
-            const validatedContext = PromptStringBuilder.extractTagContents(res, contextListTag)
+            const reviewed = []
 
-            const reviewed = [...this.context.filter(c => isUserAddedItem(c))]
-            for (const contextName of validatedContext || []) {
-                const foundValidatedItems = this.context.filter(c => c.uri.path.includes(contextName))
+            // Extract all the strings from between tags.
+            const valid = PromptStringBuilder.extractTagContents(res, ACTIONS_TAGS.CONTEXT.toString())
+            for (const contextName of valid || []) {
+                const foundValidatedItems = this.context.filter(c => c.uri.path.endsWith(contextName))
                 for (const found of foundValidatedItems) {
-                    reviewed.push(found)
+                    reviewed.push({ ...found, source: ContextItemSource.Agentic })
                 }
             }
 
             // Replace the current context list with the reviewed context.
             if (reviewed.length) {
+                reviewed.push(...this.context.filter(c => isUserAddedItem(c)))
                 this.context = reviewed
             }
 
