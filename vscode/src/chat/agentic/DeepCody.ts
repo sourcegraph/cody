@@ -12,6 +12,7 @@ import {
     getClientPromptString,
     isDefined,
     logDebug,
+    modelsService,
     newPromptMixin,
     ps,
     telemetryRecorder,
@@ -54,7 +55,7 @@ export class DeepCodyAgent {
         this.initializeMultiplexer(this.tools)
         this.buildPrompt(this.tools)
 
-        this.models.review = this.chatBuilder.selectedModel
+        this.models.review = modelsService.getAllModelsWithSubstring('5-haiku')?.[0]?.id || undefined
 
         this.stepsManager = new ProcessManager(steps => statusUpdateCallback(steps))
 

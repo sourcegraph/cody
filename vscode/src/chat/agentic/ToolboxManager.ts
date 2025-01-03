@@ -5,6 +5,7 @@ import {
     distinctUntilChanged,
     featureFlagProvider,
     logDebug,
+    modelsService,
     pendingOperation,
     startWith,
     storeLastValue,
@@ -14,29 +15,36 @@ import { type Observable, Subject, map } from 'observable-fns'
 import { env } from 'vscode'
 import { localStorage } from '../../services/LocalStorageProvider'
 
-interface ShellConfiguration {
+// Using a readonly interface improves performance by preventing mutations
+interface ReadonlyShellConfig {
     user: boolean
     instance: boolean
-    client: boolean
+    readonly client: boolean
+}
+
+interface StoredToolboxSettings {
+    agent: string | undefined
+    shell: boolean
 }
 
 export class ToolboxManager {
-    public static STORAGE_KEY = 'CODY_CHATAGENTS_TOOLBOX_SETTINGS'
-    private static instance: ToolboxManager
+    private static readonly STORAGE_KEY = 'CODY_CHATAGENTS_TOOLBOX_SETTINGS'
+    private static instance?: ToolboxManager
 
+    private isEnabled = false
+
+    // Singleton pattern with lazy initialization
     public static getInstance(): ToolboxManager {
         return ToolboxManager.instance ? ToolboxManager.instance : new ToolboxManager()
     }
 
-    private changeNotifications = new Subject<void>()
+    private readonly changeNotifications = new Subject<void>()
 
-    /**
-     * Terminal/Shell context is only available if instance has the Feature Flag enabled.
-     */
-    private readonly shellConfig: ShellConfiguration = {
+    // Initialize shell config with immutable defaults
+    private readonly shellConfig: ReadonlyShellConfig = {
         user: false,
         instance: false,
-        client: Boolean(env.shell) ?? false,
+        client: Boolean(env.shell),
     }
 
     /**
@@ -46,50 +54,27 @@ export class ToolboxManager {
         featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.DeepCodyShellContext)
     )
 
-    private get isTerminalContextEnabled(): boolean | undefined {
-        const isEnabledByInstance = this.featureDeepCodyShellContext.value?.last
-        const isEnabledByClient = this.shellConfig.client
-        const isEnabledByUser = this.shellConfig.user
-
-        this.shellConfig.instance = isEnabledByInstance ?? this.shellConfig.instance
-
-        return Boolean(isEnabledByInstance && isEnabledByClient && isEnabledByUser)
+    private getStoredUserSettings(): StoredToolboxSettings {
+        const stored = localStorage.get<StoredToolboxSettings>(ToolboxManager.STORAGE_KEY) ?? {
+            agent: undefined,
+            shell: this.shellConfig.user,
+        }
+        this.updateUserTerminalSetting(stored?.shell)
+        return stored
     }
 
-    private getStoredSettings(): { agent: string | undefined; shell: boolean } {
-        return (
-            localStorage.get(ToolboxManager.STORAGE_KEY) ?? {
-                agent: undefined,
-                shell: this.shellConfig.user,
-            }
-        )
-    }
-
-    // Separate method to just get settings without side effects
-    public getSettings(): AgentToolboxSettings {
-        const storedSettings = this.getStoredSettings()
-        this.updateUserTerminalSetting(storedSettings.shell)
+    public getSettings(): AgentToolboxSettings | null {
+        if (!this.isEnabled) {
+            return null
+        }
+        const stored = this.getStoredUserSettings()
         return {
-            agent: storedSettings.agent,
-            shell: this.isTerminalContextEnabled,
+            agent: stored.agent,
+            shell: Boolean(
+                this.featureDeepCodyShellContext.value?.last && this.shellConfig.client && stored.shell
+            ),
         }
     }
-
-    public settings: Observable<AgentToolboxSettings | null> = combineLatest(
-        userProductSubscription.pipe(
-            map(subscription => subscription),
-            distinctUntilChanged()
-        ),
-        this.changeNotifications.pipe(startWith(undefined))
-    ).pipe(
-        map(([subscription]) => {
-            // Return null if subscription is pending or user can upgrade (free user)
-            if (subscription === pendingOperation || subscription?.userCanUpgrade) {
-                return null
-            }
-            return this.getSettings()
-        })
-    )
 
     public async updatetoolboxSettings(settings: AgentToolboxSettings): Promise<void> {
         logDebug('ToolboxManager', 'Updating toolbox settings', { verbose: settings })
@@ -99,12 +84,30 @@ export class ToolboxManager {
 
     // Updates the user shell config and triggers a change notification
     public updateUserTerminalSetting(newValue = false): void {
-        const current = this.shellConfig.user
-        if (current !== newValue) {
-            this.shellConfig.user = newValue
+        if (this.shellConfig.user !== newValue) {
+            Object.assign(this.shellConfig, { user: newValue })
             this.changeNotifications.next()
         }
     }
+
+    public settings: Observable<AgentToolboxSettings | null> = combineLatest(
+        userProductSubscription.pipe(distinctUntilChanged()),
+        modelsService.modelsChanges.pipe(
+            map(models => (models === pendingOperation ? null : models)),
+            distinctUntilChanged()
+        ),
+        this.changeNotifications.pipe(startWith(undefined))
+    ).pipe(
+        map(([subscription, models]) => {
+            // Return null if subscription is pending or user can upgrade (free user)
+            if (subscription === pendingOperation || subscription?.userCanUpgrade || !models) {
+                this.isEnabled = false
+                return null
+            }
+            this.isEnabled = models.primaryModels.some(model => model.id.includes('3-5-haiku'))
+            return this.getSettings()
+        })
+    )
 
     public get changes(): Observable<void> {
         return this.changeNotifications
