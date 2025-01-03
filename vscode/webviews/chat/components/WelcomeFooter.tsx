@@ -11,6 +11,7 @@ interface ChatViewLink {
     url: string
 }
 
+
 const chatLinks: ChatViewLink[] = [
     {
         icon: BookOpenText,

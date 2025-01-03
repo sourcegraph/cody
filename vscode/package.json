@@ -604,21 +604,6 @@
         "when": "cody.activated && editorTextFocus && editorHasSelection"
       },
       {
-        "command": "cody.mention.selection",
-        "key": "shift+alt+/",
-        "when": "cody.activated && editorTextFocus && editorHasSelection"
-      },
-      {
-        "command": "cody.chat.new",
-        "key": "shift+alt+l",
-        "when": "cody.activated && !editorTextFocus"
-      },
-      {
-        "command": "cody.chat.new",
-        "key": "shift+alt+/",
-        "when": "cody.activated && !editorTextFocus"
-      },
-      {
         "command": "cody.tutorial.chat",
         "key": "alt+l",
         "when": "cody.activated && cody.tutorialActive"
