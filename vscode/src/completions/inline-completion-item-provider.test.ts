@@ -128,7 +128,8 @@ describe('InlineCompletionItemProvider', () => {
 
         // Check if the trigger delay is respected
         const elapsedTime = Date.now() - startTime
-        expect(elapsedTime).toBeGreaterThanOrEqual(triggerDelay)
+        // Note: we add 1.0 here for some buffer to reduce flakiness (https://github.com/sourcegraph/cody/actions/runs/12587968355/job/35084898262?pr=6492)
+        expect(elapsedTime + 1.0).toBeGreaterThanOrEqual(triggerDelay)
         // We only check for greater than because a less than would vary depending on the CI machine
 
         // Switch to fake timers for precise control
