@@ -90,7 +90,7 @@ export class DefaultDecorator implements AutoEditsDecorator {
         if (addedLines.length > 0 || !isOnlyAddingTextForModifiedLines(modifiedLines)) {
             this.renderDiffDecorations(decorationInfo)
         } else {
-            this.renderInlineGhostTextDecorations(modifiedLines, decorationInfo)
+            this.renderInlineGhostTextDecorations(modifiedLines)
         }
     }
 

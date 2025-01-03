@@ -1,4 +1,5 @@
 import { createCanvas } from 'canvas'
+import { createHighlighter } from 'shiki'
 import type { DecorationLineInfo } from './renderer/decorators/base'
 
 interface DiffToImageOptions {
@@ -107,6 +108,83 @@ export function diffToImg(diffLines: DecorationLineInfo[], options: DiffToImageO
     })
 
     return canvas.toDataURL('image/png')
+}
+
+export async function diffToHighlightedImg(
+    code = `console.log("Hello world")`,
+    lang = 'typescript' as const
+): Promise<{ uri: string; width: number; height: number }> {
+    // 1. Initialize the highlighter with a theme
+    const highlighter = await createHighlighter({
+        themes: ['vitesse-dark'],
+        langs: [lang],
+    })
+
+    const { tokens } = highlighter.codeToTokens(code, {
+        theme: 'vitesse-dark',
+        lang,
+    })
+    highlighter.dispose()
+
+    // Default size measurements. TODO: Revisit these
+    const fontSize = 12
+    const lineHeight = 14 // a bit bigger than fontSize for spacing
+    const padding = 4
+    const maxWidth = 600
+
+    const tempCanvas = createCanvas(10, 10)
+    const tempCtx = tempCanvas.getContext('2d')
+    tempCtx.font = `${fontSize}px monospace`
+
+    /**
+     * Determine the correct width and height that the canvas will be
+     */
+    let yPos = padding
+    let requiredWidth = 0
+    for (const lineTokens of tokens) {
+        let xPos = padding
+        for (const token of lineTokens) {
+            const measure = tempCtx.measureText(token.content)
+            xPos += measure.width
+            if (xPos > requiredWidth) {
+                requiredWidth = xPos
+            }
+        }
+        yPos += lineHeight
+    }
+    const totalWidth = Math.min(requiredWidth + padding, maxWidth)
+    const totalHeight = yPos + padding
+
+    // Create the canvas, ready to start painting text
+    // Pixel ratio for sharper text on high-DPI screens
+    const pixelRatio = 2
+    const canvas = createCanvas(totalWidth * pixelRatio, totalHeight * pixelRatio)
+    const ctx = canvas.getContext('2d')
+
+    // Scale so drawing in logical coords is upsampled
+    ctx.scale(pixelRatio, pixelRatio)
+
+    // Start drawing the text into the canvas
+    ctx.font = `${fontSize}px monospace`
+    ctx.textBaseline = 'top'
+
+    yPos = padding
+    for (const lineTokens of tokens) {
+        let xPos = padding
+        for (const token of lineTokens) {
+            // token.color from Shiki is e.g. '#81A1C1'
+            ctx.fillStyle = token.color || '#ffffff'
+            ctx.fillText(token.content, xPos, yPos)
+            xPos += ctx.measureText(token.content).width
+        }
+        yPos += lineHeight
+    }
+
+    return {
+        uri: canvas.toDataURL('image/png'),
+        width: totalWidth,
+        height: totalHeight,
+    }
 }
 
 function trimUnchangedLines(lines: DecorationLineInfo[]): DecorationLineInfo[] {
