@@ -139,6 +139,7 @@ describe('ChatController', () => {
             chatID: mockNowDate.toUTCString(),
             messages: [
                 {
+                    agent: undefined,
                     speaker: 'human',
                     text: 'Test input',
                     intent: 'chat',
@@ -151,6 +152,7 @@ describe('ChatController', () => {
                     processes: undefined,
                 },
                 {
+                    agent: undefined,
                     speaker: 'assistant',
                     model: 'my-model',
                     intent: undefined,
@@ -176,6 +178,7 @@ describe('ChatController', () => {
             chatID: mockNowDate.toUTCString(),
             messages: [
                 {
+                    agent: undefined,
                     speaker: 'human',
                     text: 'Test input',
                     intent: 'chat',
@@ -188,6 +191,7 @@ describe('ChatController', () => {
                     processes: undefined,
                 },
                 {
+                    agent: undefined,
                     speaker: 'assistant',
                     intent: undefined,
                     manuallySelectedIntent: undefined,
@@ -229,6 +233,7 @@ describe('ChatController', () => {
             chatID: mockNowDate.toUTCString(),
             messages: [
                 {
+                    agent: undefined,
                     speaker: 'human',
                     text: 'Test input',
                     intent: 'chat',
@@ -241,6 +246,7 @@ describe('ChatController', () => {
                     processes: undefined,
                 },
                 {
+                    agent: undefined,
                     speaker: 'assistant',
                     model: 'my-model',
                     intent: undefined,
@@ -253,6 +259,7 @@ describe('ChatController', () => {
                     processes: undefined,
                 },
                 {
+                    agent: undefined,
                     speaker: 'human',
                     text: 'Test followup',
                     intent: 'chat',
@@ -265,6 +272,7 @@ describe('ChatController', () => {
                     processes: undefined,
                 },
                 {
+                    agent: undefined,
                     speaker: 'assistant',
                     model: 'my-model',
                     intent: undefined,
@@ -305,6 +313,7 @@ describe('ChatController', () => {
             chatID: mockNowDate.toUTCString(),
             messages: [
                 {
+                    agent: undefined,
                     speaker: 'human',
                     text: 'Test input',
                     intent: 'chat',
@@ -317,6 +326,7 @@ describe('ChatController', () => {
                     processes: undefined,
                 },
                 {
+                    agent: undefined,
                     speaker: 'assistant',
                     model: 'my-model',
                     intent: undefined,
@@ -329,6 +339,7 @@ describe('ChatController', () => {
                     processes: undefined,
                 },
                 {
+                    agent: undefined,
                     speaker: 'human',
                     text: 'Test edit',
                     intent: 'chat',
@@ -341,6 +352,7 @@ describe('ChatController', () => {
                     processes: undefined,
                 },
                 {
+                    agent: undefined,
                     speaker: 'assistant',
                     model: 'my-model',
                     intent: undefined,
@@ -390,6 +402,7 @@ describe('ChatController', () => {
             chatID: mockNowDate.toUTCString(),
             messages: [
                 {
+                    agent: undefined,
                     speaker: 'human',
                     text: 'Test input',
                     model: undefined,
@@ -402,6 +415,7 @@ describe('ChatController', () => {
                     processes: undefined,
                 },
                 {
+                    agent: undefined,
                     speaker: 'assistant',
                     model: FIXTURE_MODEL.id,
                     error: errorToChatError(new Error('my-error')),
