@@ -194,20 +194,6 @@ export class ChatsController implements vscode.Disposable {
             }),
 
             vscode.commands.registerCommand('cody.chat.simpleToggle', async () => {
-                // Case 1: Sidebar is not visible - show it
-                if (!this.panel.isVisible()) {
-                    await vscode.commands.executeCommand('cody.chat.focus')
-                    return
-                }
-
-                // Case 2: Sidebar is focused with empty input - hide it
-                if (this.panel.isVisible() && this.panel.isFocused() && this.panel.isEmpty()) {
-                    await this.panel.clearAndRestartSession()
-                    await vscode.commands.executeCommand('cody.chat.focus')
-                    return
-                }
-
-                // Case 3: Sidebar is visible - start new chat
                 await this.panel.clearAndRestartSession()
                 await vscode.commands.executeCommand('cody.chat.focus')
             }),
