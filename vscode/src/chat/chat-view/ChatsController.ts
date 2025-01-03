@@ -202,7 +202,8 @@ export class ChatsController implements vscode.Disposable {
 
                 // Case 2: Sidebar is focused with empty input - hide it
                 if (this.panel.isVisible() && this.panel.isFocused() && this.panel.isEmpty()) {
-                    await vscode.commands.executeCommand('workbench.action.closeSidebar')
+                    await this.panel.clearAndRestartSession()
+                    await vscode.commands.executeCommand('cody.chat.focus')
                     return
                 }
 
