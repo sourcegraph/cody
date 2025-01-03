@@ -12,17 +12,34 @@ import { type CodyTool, type CodyToolConfig, OpenCtxTool, TOOL_CONFIGS } from '.
 import { toolboxSettings } from './ToolboxManager'
 import { OPENCTX_TOOL_CONFIG } from './config'
 
+/**
+ * Interface for tool execution status callbacks.
+ * Used to track and report tool execution progress.
+ */
 export interface ToolStatusCallback {
     onStart(): void
     onStream(tool: string, content: string): void
     onComplete(tool?: string, error?: Error): void
 }
 
+/**
+ * Configuration interface for registering new tools.
+ * Extends CodyToolConfig with name and instance creation function.
+ */
 export interface ToolConfiguration extends CodyToolConfig {
     name: string
     createInstance: (config: CodyToolConfig, ...args: any[]) => CodyTool
 }
 
+/**
+ * ToolFactory manages the creation and registration of Cody tools.
+ *
+ * Responsibilities:
+ * - Maintains a registry of tool configurations
+ * - Creates tool instances on demand
+ * - Handles both default tools (Search, File, CLI, Memory) and OpenCtx tools
+ * - Manages tool configuration and instantiation with proper context
+ */
 export class ToolFactory {
     private tools: Map<string, ToolConfiguration> = new Map()
 
@@ -98,14 +115,25 @@ export class ToolFactory {
 }
 
 /**
- * CodyToolProvider is a singleton class responsible for managing and providing access to various Cody tools.
- * It handles both default tools and OpenContext-based tools (like web and Linear integrations).
+ * CodyToolProvider serves as the central manager for all Cody tool functionality.
  *
- * Key responsibilities:
- * - Maintains a registry of available tools through ToolFactory
- * - Initializes and manages default Cody tools
- * - Manages OpenContext tools for external integrations
- * - Provides a unified interface to access all available tools
+ * Key Features:
+ * 1. Tool Management
+ *    - Initializes and maintains the ToolFactory instance
+ *    - Provides access to all available tools through getTools()
+ *
+ * 2. OpenCtx Integration
+ *    - Sets up listeners for OpenCtx providers (e.g., web and Linear integrations)
+ *    - Dynamically creates tools based on available OpenCtx providers
+ *
+ * 3. Tool Registry
+ *    - Manages registration of default tools (Search, File, CLI, Memory)
+ *    - Handles tool configuration and initialization with proper context
+ *
+ * Usage:
+ * - Initialize with context retriever using initialize()
+ * - Access tools using getTools()
+ * - Set up OpenCtx integration using setupOpenCtxProviderListener()
  */
 export namespace CodyToolProvider {
     export let factory: ToolFactory

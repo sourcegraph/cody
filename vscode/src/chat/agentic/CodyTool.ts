@@ -20,7 +20,7 @@ import { getChatContextItemsForMention } from '../context/chatContext'
 import { getCorpusContextItemsForEditorState } from '../initialContext'
 import { CodyChatMemory } from './CodyChatMemory'
 import type { ToolStatusCallback } from './CodyToolProvider'
-import { PromptStringBuilder } from './DeepCody'
+import { RawTextProcessor } from './DeepCody'
 
 /**
  * Configuration interface for CodyTool instances.
@@ -60,7 +60,7 @@ export abstract class CodyTool {
             if (!examples?.length) {
                 return prompt
             }
-            return ps`${prompt}\n\t- ${PromptStringBuilder.join(examples, ps`\n\t- `)}`
+            return ps`${prompt}\n\t- ${RawTextProcessor.join(examples, ps`\n\t- `)}`
         } catch (error) {
             logDebug('Cody Tool', `failed to getInstruction for ${tag}`, { verbose: { error } })
             return ps``
