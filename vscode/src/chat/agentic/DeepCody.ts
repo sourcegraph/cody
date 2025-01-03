@@ -4,6 +4,7 @@ import {
     type ChatClient,
     CodyIDE,
     type ContextItem,
+    ContextItemSource,
     type Message,
     type ProcessingStep,
     type PromptMixin,
@@ -222,11 +223,15 @@ export class DeepCodyAgent {
             for (const contextName of validatedContext || []) {
                 const foundValidatedItems = this.context.filter(c => c.uri.path.includes(contextName))
                 for (const found of foundValidatedItems) {
-                    reviewed.push(found)
+                    reviewed.push({ ...found, source: ContextItemSource.Agentic })
                 }
             }
 
-            this.context = reviewed
+            // Replace the current context list with the reviewed context.
+            if (reviewed.length) {
+                this.context = reviewed
+            }
+
             return results.flat().filter(isDefined)
         } catch (error) {
             await this.multiplexer.notifyTurnComplete()
