@@ -139,7 +139,7 @@ describe('DeepCody', () => {
         expect(agent).toBeDefined()
     })
 
-    it.only('retrieves additional context when response contains tool tags', async () => {
+    it('retrieves additional context when response contains tool tags', async () => {
         const mockStreamResponse = [
             {
                 type: 'change',
