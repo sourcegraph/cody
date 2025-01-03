@@ -74,6 +74,7 @@ export type WebviewMessage =
     | { command: 'restoreHistory'; chatID: string }
     | { command: 'links'; value: string }
     | { command: 'openURI'; uri: Uri }
+    | { command: 'openRemoteFile'; uri: Uri }
     | {
           command: 'openFileLink'
           uri: Uri
