@@ -193,33 +193,23 @@ export class ChatsController implements vscode.Disposable {
                 }
             }),
 
-            vscode.commands.registerCommand(
-                'cody.chat.toggle',
-                async (ops: { editorFocus: boolean }) => {
-                    const modality = getNewChatLocation()
-
-                    if (ops.editorFocus) {
-                        if (modality === 'sidebar') {
-                            await vscode.commands.executeCommand('cody.chat.focus')
-                        } else {
-                            const editorView = this.activeEditor?.webviewPanelOrView
-                            if (editorView) {
-                                revealWebviewViewOrPanel(editorView)
-                            } else {
-                                vscode.commands.executeCommand('cody.chat.newEditorPanel')
-                            }
-                        }
-                    } else {
-                        if (modality === 'sidebar') {
-                            await vscode.commands.executeCommand(
-                                'workbench.action.focusActiveEditorGroup'
-                            )
-                        } else {
-                            await vscode.commands.executeCommand('workbench.action.navigateEditorGroups')
-                        }
-                    }
+            vscode.commands.registerCommand('cody.chat.simpleToggle', async () => {
+                // Case 1: Sidebar is not visible - show it
+                if (!this.panel.isVisible()) {
+                    await vscode.commands.executeCommand('cody.chat.focus')
+                    return
                 }
-            ),
+
+                // Case 2: Sidebar is focused with empty input - hide it
+                if (this.panel.isVisible() && this.panel.isFocused() && this.panel.isEmpty()) {
+                    await vscode.commands.executeCommand('workbench.action.closeSidebar')
+                    return
+                }
+
+                // Case 3: Sidebar is visible - start new chat
+                await this.panel.clearAndRestartSession()
+                await vscode.commands.executeCommand('cody.chat.focus')
+            }),
             vscode.commands.registerCommand('cody.chat.history.export', () => this.exportHistory()),
             vscode.commands.registerCommand('cody.chat.history.clear', arg => this.clearHistory(arg)),
             vscode.commands.registerCommand('cody.chat.history.delete', item => this.clearHistory(item)),

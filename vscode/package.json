@@ -608,36 +608,10 @@
         "when": "!cody.activated"
       },
       {
-        "command": "cody.chat.toggle",
+        "command": "cody.chat.simpleToggle",
         "key": "alt+l",
-        "when": "cody.activated && editorTextFocus",
-        "args": {
-          "editorFocus": true
-        }
-      },
-      {
-        "command": "cody.chat.toggle",
-        "key": "alt+l",
-        "when": "cody.activated && !editorTextFocus",
-        "args": {
-          "editorFocus": false
-        }
-      },
-      {
-        "command": "cody.chat.toggle",
-        "key": "alt+/",
-        "when": "cody.activated && editorTextFocus",
-        "args": {
-          "editorFocus": true
-        }
-      },
-      {
-        "command": "cody.chat.toggle",
-        "key": "alt+/",
-        "when": "cody.activated && !editorTextFocus",
-        "args": {
-          "editorFocus": false
-        }
+        "mac": "alt+l",
+        "when": "cody.activated"
       },
       {
         "command": "cody.mention.selection",
