@@ -101,6 +101,7 @@ export const ToolboxButton: FC<ToolboxButtonProps> = memo(({ settings, api }) =>
                                                     </h3>
                                                     <Switch
                                                         checked={settingsForm.shell}
+                                                        disabled={settingsForm.agent === undefined}
                                                         onChange={() =>
                                                             setSettingsForm({
                                                                 ...settingsForm,
@@ -123,7 +124,7 @@ export const ToolboxButton: FC<ToolboxButtonProps> = memo(({ settings, api }) =>
                                             </>
                                         )}
                                     </div>
-                                </div>{' '}
+                                </div>
                             </CommandGroup>
                         </CommandList>
                         <footer className="tw-flex tw-justify-end tw-px-6 tw-py-2 tw-border-t tw-border-border tw-bg-muted tw-w-full">
@@ -173,8 +174,8 @@ export const ToolboxButton: FC<ToolboxButtonProps> = memo(({ settings, api }) =>
     )
 })
 
-const Switch: FC<{ checked?: boolean; onChange?: (checked: boolean) => void }> = memo(
-    ({ checked = false, onChange }) => {
+const Switch: FC<{ checked?: boolean; onChange?: (checked: boolean) => void; disabled?: boolean }> =
+    memo(({ checked = false, onChange, disabled = false }) => {
         return (
             <button
                 onClick={e => {
@@ -182,13 +183,14 @@ const Switch: FC<{ checked?: boolean; onChange?: (checked: boolean) => void }> =
                     onChange?.(!checked)
                 }}
                 className={`tw-relative tw-flex tw-items-center tw-justify-center tw-w-11 tw-h-6 tw-rounded-full tw-ease tw-transform focus:tw-outline-offset-1 focus:tw-outline-2 tw-ring-1 ${
-                    checked
+                    checked && !disabled
                         ? 'tw-bg-green-700 tw-ring-green-400'
                         : 'tw-bg-gray-300 tw-ring-gray-400 tw-shadow-sm'
                 }`}
                 type="button"
                 role="switch"
                 aria-checked={checked}
+                disabled={disabled}
             >
                 <div
                     className={`
@@ -199,5 +201,4 @@ const Switch: FC<{ checked?: boolean; onChange?: (checked: boolean) => void }> =
                 />
             </button>
         )
-    }
-)
+    })

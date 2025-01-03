@@ -542,7 +542,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         const webviewType = isEditorViewType && !sidebarViewOnly ? 'editor' : 'sidebar'
         const uiKindIsWeb = (cenv.CODY_OVERRIDE_UI_KIND ?? vscode.env.uiKind) === vscode.UIKind.Web
         const endpoints = localStorage.getEndpointHistory() ?? []
-        toolboxSettings.updateUserTerminalSetting(configuration.agenticContextExperimentalShell)
 
         return {
             uiKindIsWeb,

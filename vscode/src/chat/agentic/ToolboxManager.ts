@@ -17,7 +17,7 @@ import { localStorage } from '../../services/LocalStorageProvider'
 
 // Using a readonly interface improves performance by preventing mutations
 interface ReadonlyShellConfig {
-    user: boolean
+    readonly user: boolean
     instance: boolean
     readonly client: boolean
 }
@@ -55,12 +55,12 @@ export class ToolboxManager {
     )
 
     private getStoredUserSettings(): StoredToolboxSettings {
-        const stored = localStorage.get<StoredToolboxSettings>(ToolboxManager.STORAGE_KEY) ?? {
-            agent: undefined,
-            shell: this.shellConfig.user,
-        }
-        this.updateUserTerminalSetting(stored?.shell)
-        return stored
+        return (
+            localStorage.get<StoredToolboxSettings>(ToolboxManager.STORAGE_KEY) ?? {
+                agent: undefined,
+                shell: this.shellConfig.user,
+            }
+        )
     }
 
     public getSettings(): AgentToolboxSettings | null {
@@ -80,14 +80,6 @@ export class ToolboxManager {
         logDebug('ToolboxManager', 'Updating toolbox settings', { verbose: settings })
         await localStorage.set(ToolboxManager.STORAGE_KEY, settings)
         this.changeNotifications.next()
-    }
-
-    // Updates the user shell config and triggers a change notification
-    public updateUserTerminalSetting(newValue = false): void {
-        if (this.shellConfig.user !== newValue) {
-            Object.assign(this.shellConfig, { user: newValue })
-            this.changeNotifications.next()
-        }
     }
 
     public settings: Observable<AgentToolboxSettings | null> = combineLatest(
