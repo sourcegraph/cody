@@ -27,7 +27,7 @@
   },
   "devDependencies": {
     "@napi-rs/cli": "2.18.4",
-    "@types/bun": "^1.1.13"
+    "@types/bun": "1.1.13"
   },
   "scripts": {
     "build": "napi build --platform --js=false --dts=types.ts node",
