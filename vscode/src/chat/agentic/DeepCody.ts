@@ -218,10 +218,9 @@ export class DeepCodyAgent {
             // Extract all the strings from between tags.
             const contextListTag = ACTIONS_TAGS.CONTEXT.toString()
             const validatedContext = PromptStringBuilder.extractTagContents(res, contextListTag)
-
             const reviewed = [...this.context.filter(c => isUserAddedItem(c))]
             for (const contextName of validatedContext || []) {
-                const foundValidatedItems = this.context.filter(c => c.uri.path.includes(contextName))
+                const foundValidatedItems = this.context.filter(c => c.uri.path.endsWith(contextName))
                 for (const found of foundValidatedItems) {
                     reviewed.push({ ...found, source: ContextItemSource.Agentic })
                 }
