@@ -31,7 +31,7 @@ import { ACTIONS_TAGS, CODYAGENT_PROMPTS } from './prompts'
  * It is responsible for reviewing the retrieved context, and perform agentic context retrieval for the chat request.
  */
 export class DeepCodyAgent {
-    public static readonly id = 'sourcegraph::2023-06-01::deep-cody'
+    public static readonly id = 'deep-cody'
 
     protected readonly multiplexer = new BotResponseMultiplexer()
     protected readonly promptMixins: PromptMixin[] = []
@@ -226,7 +226,11 @@ export class DeepCodyAgent {
                 }
             }
 
-            this.context = reviewed
+            // Replace the current context list with the reviewed context.
+            if (reviewed.length) {
+                this.context = reviewed
+            }
+
             return results.flat().filter(isDefined)
         } catch (error) {
             await this.multiplexer.notifyTurnComplete()

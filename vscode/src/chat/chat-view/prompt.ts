@@ -50,7 +50,7 @@ export class DefaultPrompter {
             const promptBuilder = await PromptBuilder.create(contextWindow)
             const preInstruction = (await currentResolvedConfig()).configuration.chatPreInstruction
 
-            const isDeepCodyEnabled = chat.selectedModel?.includes('deep-cody')
+            const isAgentEnabled = chat.getLastHumanMessage()?.agent !== undefined
 
             // Add preamble messages
             const chatModel = await firstResultFromOperation(ChatBuilder.resolvedModelForChat(chat))
@@ -73,7 +73,7 @@ export class DefaultPrompter {
             // It also allows adding the preamble only when there is context to display, without wasting tokens on the same preamble repeatedly.
             if (
                 !this.isCommand &&
-                !isDeepCodyEnabled &&
+                !isAgentEnabled &&
                 Boolean(this.explicitContext.length || historyItems.length || this.corpusContext.length)
             ) {
                 mixins.push(PromptMixin.getContextMixin())

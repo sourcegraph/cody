@@ -51,7 +51,7 @@ export class ToolFactory {
     }
 
     public getAllToolInstances(): CodyTool[] {
-        if (!toolboxSettings.getSettings().shell ?? false) {
+        if (!toolboxSettings.getSettings()?.shell ?? false) {
             this.toolInstances.delete('CliTool')
         }
         return Array.from(this.toolInstances.values())

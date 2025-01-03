@@ -56,10 +56,10 @@ export class ToolboxManager {
         return Boolean(isEnabledByInstance && isEnabledByClient && isEnabledByUser)
     }
 
-    private getStoredSettings(): { agent: boolean; shell: boolean } {
+    private getStoredSettings(): { agent: string | undefined; shell: boolean } {
         return (
             localStorage.get(ToolboxManager.STORAGE_KEY) ?? {
-                agent: false,
+                agent: undefined,
                 shell: this.shellConfig.user,
             }
         )
@@ -70,7 +70,7 @@ export class ToolboxManager {
         const storedSettings = this.getStoredSettings()
         this.updateUserTerminalSetting(storedSettings.shell)
         return {
-            ...storedSettings,
+            agent: storedSettings.agent,
             shell: this.isTerminalContextEnabled,
         }
     }
