@@ -838,6 +838,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     },
                     postStatuses: (steps: ProcessingStep[]): void => {
                         this.chatBuilder.setLastMessageProcesses(steps)
+                        this.postEmptyMessageInProgress(model)
                     },
                     postDone: (op?: { abort: boolean }): void => {
                         if (op?.abort) {
