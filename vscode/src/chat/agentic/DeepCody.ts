@@ -130,12 +130,12 @@ export class DeepCodyAgent {
         this.statusCallback?.onStart()
 
         const startTime = performance.now()
-        const count = await this.reviewLoop(requestID, span, chatAbortSignal, maxLoops)
+        const { stats, contextItems } = await this.reviewLoop(requestID, span, chatAbortSignal, maxLoops)
 
         telemetryRecorder.recordEvent('cody.deep-cody.context', 'reviewed', {
             privateMetadata: {
                 durationMs: performance.now() - startTime,
-                ...count,
+                ...stats,
                 model: this.models.review,
                 traceId: span.spanContext().traceId,
             },
@@ -147,7 +147,7 @@ export class DeepCodyAgent {
 
         this.statusCallback?.onComplete()
 
-        return this.context
+        return contextItems
     }
 
     private async reviewLoop(
@@ -155,7 +155,7 @@ export class DeepCodyAgent {
         span: Span,
         chatAbortSignal: AbortSignal,
         maxLoops: number
-    ): Promise<{ context: number; loop: number }> {
+    ): Promise<{ stats: { context: number; loop: number }; contextItems: ContextItem[] }> {
         span.addEvent('reviewLoop')
         const stats = { context: 0, loop: 0 }
         for (let i = 0; i < maxLoops && !chatAbortSignal.aborted; i++) {
@@ -171,7 +171,7 @@ export class DeepCodyAgent {
 
             if (newContext.every(isUserAddedItem)) break
         }
-        return stats
+        return { stats, contextItems: this.context }
     }
 
     /**
@@ -220,8 +220,8 @@ export class DeepCodyAgent {
 
             const reviewed = [...this.context.filter(c => isUserAddedItem(c))]
             for (const contextName of validatedContext || []) {
-                const found = this.context.find(c => c.uri.path.includes(contextName))
-                if (found) {
+                const foundValidatedItems = this.context.filter(c => c.uri.path.includes(contextName))
+                for (const found of foundValidatedItems) {
                     reviewed.push(found)
                 }
             }

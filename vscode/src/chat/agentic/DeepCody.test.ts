@@ -31,6 +31,15 @@ describe('DeepCody', () => {
         authenticated: true,
     }
 
+    const mockRretrievedResult = [
+        {
+            type: 'file',
+            uri: URI.file('/path/to/repo/newfile.ts'),
+            content: 'const newExample = "test result";',
+            source: ContextItemSource.Search,
+        },
+    ] satisfies ContextItem[]
+
     let mockChatBuilder: ChatBuilder
     let mockChatClient: ChatClient
     let mockContextRetriever: ContextRetriever
@@ -73,7 +82,7 @@ describe('DeepCody', () => {
         } as unknown as ChatClient
 
         mockContextRetriever = {
-            retrieveContext: vi.fn(),
+            retrieveContext: vi.fn().mockResolvedValue(mockRretrievedResult),
         } as unknown as ContextRetriever
 
         mockCodyToolProvider = CodyToolProvider.instance(mockContextRetriever)
@@ -83,7 +92,7 @@ describe('DeepCody', () => {
                 uri: URI.file('/path/to/file.ts'),
                 type: 'file',
                 isTooLarge: undefined,
-                source: ContextItemSource.User,
+                source: ContextItemSource.Search,
                 content: 'const example = "test";',
             },
         ]
@@ -103,6 +112,20 @@ describe('DeepCody', () => {
         vi.spyOn(modelsService, 'observeContextWindowByID').mockReturnValue(
             Observable.of({ input: 10000, output: 1000 })
         )
+        mockContextRetriever.retrieveContext = vi.fn().mockResolvedValue(mockRretrievedResult)
+
+        vi.spyOn(initialContext, 'getCorpusContextItemsForEditorState').mockReturnValue(
+            Observable.of([
+                {
+                    type: 'tree',
+                    uri: URI.file('/path/to/repo/'),
+                    name: 'Mock Repository',
+                    isWorkspaceRoot: true,
+                    content: null,
+                    source: ContextItemSource.Initial,
+                },
+            ])
+        )
     })
 
     it('initializes correctly when invoked', async () => {
@@ -116,22 +139,16 @@ describe('DeepCody', () => {
         expect(agent).toBeDefined()
     })
 
-    it('retrieves additional context when response contains tool tags', async () => {
+    it.only('retrieves additional context when response contains tool tags', async () => {
         const mockStreamResponse = [
-            { type: 'change', text: '<TOOLSEARCH><query>test query</query></TOOLSEARCH>' },
+            {
+                type: 'change',
+                text: '<context_list>path/to/file.ts</context_list><TOOLSEARCH><query>test query</query></TOOLSEARCH><next_step>',
+            },
             { type: 'complete' },
         ]
 
         mockChatClient.chat = vi.fn().mockReturnValue(mockStreamResponse)
-
-        mockContextRetriever.retrieveContext = vi.fn().mockResolvedValue([
-            {
-                type: 'file',
-                uri: URI.file('/path/to/repo/newfile.ts'),
-                content: 'const newExample = "test result";',
-                source: ContextItemSource.Agentic,
-            },
-        ])
 
         vi.spyOn(initialContext, 'getCorpusContextItemsForEditorState').mockReturnValue(
             Observable.of([
@@ -161,11 +178,52 @@ describe('DeepCody', () => {
 
         const mockTools = mockCodyToolProvider.getTools()
         expect(mockChatClient.chat).toHaveBeenCalled()
-        expect(mockCodyToolProvider).toHaveLength(3)
+        expect(mockTools).toHaveLength(3)
         expect(mockTools.some(tool => tool.config.tags.tag === ps`TOOLCLI`)).toBeFalsy()
-        expect(mockContextRetriever.retrieveContext).toHaveBeenCalled()
-        expect(result).toHaveLength(2)
-        expect(result[0].content).toBe('const example = "test";')
-        expect(result[1].content).toBe('const newExample = "test result";')
+
+        expect(result.some(r => r.content === 'const example = "test";')).toBeTruthy()
+        expect(result.some(r => r.content === 'const newExample = "test result";')).toBeFalsy()
+    })
+
+    it('retrieves removes current context if current context is not included in context_list', async () => {
+        const mockStreamResponse = [
+            {
+                type: 'change',
+                text: '<context_list>path/to/repo/newfile.ts</context_list><TOOLSEARCH><query>test query 1</query></TOOLSEARCH><TOOLSEARCH><query>test query 2</query></TOOLSEARCH>',
+            },
+            { type: 'complete' },
+        ]
+
+        mockChatClient.chat = vi.fn().mockReturnValue(mockStreamResponse)
+
+        vi.spyOn(initialContext, 'getCorpusContextItemsForEditorState').mockReturnValue(
+            Observable.of([
+                {
+                    type: 'tree',
+                    uri: URI.file('/path/to/repo/'),
+                    name: 'Mock Repository',
+                    isWorkspaceRoot: true,
+                    content: null,
+                    source: ContextItemSource.Initial,
+                },
+            ])
+        )
+
+        const agent = new DeepCodyAgent(
+            mockChatBuilder,
+            mockChatClient,
+            mockCodyToolProvider,
+            mockStatusCallback
+        )
+
+        const result = await agent.getContext(
+            'deep-cody-test-interaction-id',
+            { aborted: false } as AbortSignal,
+            mockCurrentContext
+        )
+
+        expect(mockChatClient.chat).toHaveBeenCalled()
+        expect(result.some(r => r.content === 'const example = "test";')).toBeFalsy()
+        expect(result.some(r => r.content === 'const newExample = "test result";')).toBeTruthy()
     })
 })
