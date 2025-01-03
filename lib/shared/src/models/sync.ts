@@ -197,6 +197,10 @@ export function syncModels({
                                     data.primaryModels.push(...getModelsFromVSCodeConfiguration(config))
 
                                     // For DotCom users with early access or on the waitlist, replace the waitlist tag with the appropriate tags.
+                                    const enableToolCody: Observable<boolean> = resolvedConfig.pipe(
+                                        map(c => !!c.configuration.experimentalMinionAnthropicKey),
+                                        distinctUntilChanged()
+                                    )
                                     return combineLatest(
                                         featureFlagProvider.evaluatedFeatureFlag(
                                             FeatureFlag.CodyEarlyAccess
@@ -205,14 +209,14 @@ export function syncModels({
                                         featureFlagProvider.evaluatedFeatureFlag(
                                             FeatureFlag.CodyChatDefaultToClaude35Haiku
                                         ),
-                                        resolvedConfig
+                                        enableToolCody
                                     ).pipe(
                                         switchMap(
                                             ([
                                                 hasEarlyAccess,
                                                 hasDeepCodyFlag,
                                                 defaultToHaiku,
-                                                resolvedConfig,
+                                                enableToolCody,
                                             ]) => {
                                                 // TODO(sqs): remove waitlist from localStorage when user has access
                                                 const isOnWaitlist = config.clientState.waitlist_o1
@@ -261,10 +265,7 @@ export function syncModels({
                                                         ]).map(createModelFromServerModel)
                                                     )
 
-                                                    if (
-                                                        resolvedConfig.configuration
-                                                            .experimentalMinionAnthropicKey
-                                                    ) {
+                                                    if (enableToolCody) {
                                                         data.primaryModels.push(
                                                             createModelFromServerModel(TOOL_CODY_MODEL)
                                                         )
