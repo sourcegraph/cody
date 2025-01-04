@@ -8,7 +8,7 @@ import type { CodeToReplaceData } from '../prompt/prompt-utils'
 import { createCodeToReplaceDataForTest } from '../prompt/test-helper'
 import { AutoEditsDefaultRendererManager } from '../renderer/manager'
 import { DefaultDecorator } from './decorators/default-decorator'
-import type { AutoeditRendererManagerArgs } from './manager'
+import type { TryMakeInlineCompletionsArgs } from './manager'
 
 function getCodeToReplaceForManager(
     code: TemplateStringsArray,
@@ -32,7 +32,7 @@ describe('AutoEditsDefaultRendererManager', () => {
     const getAutoeditRendererManagerArgs = (
         documentText: string,
         prediction: string
-    ): AutoeditRendererManagerArgs => {
+    ): TryMakeInlineCompletionsArgs => {
         const { document, position } = documentAndPosition(documentText)
         const docContext = getCurrentDocContext({
             document,
@@ -52,7 +52,7 @@ describe('AutoEditsDefaultRendererManager', () => {
         }
     }
 
-    describe('maybeRenderDecorationsAndTryMakeInlineCompletionResponse', () => {
+    describe('tryMakeInlineCompletions', () => {
         let manager: AutoEditsDefaultRendererManager
 
         beforeEach(() => {
@@ -84,10 +84,10 @@ describe('AutoEditsDefaultRendererManager', () => {
                 function greet() { console.log("Hello") }
             `
             const args = getAutoeditRendererManagerArgs(documentText, prediction)
-            const result = await manager.maybeRenderDecorationsAndTryMakeInlineCompletionResponse(args)
+            const result = manager.tryMakeInlineCompletions(args)
             expect(result).toBeDefined()
             assertInlineCompletionItems(
-                result.inlineCompletions!,
+                result.inlineCompletionItems!,
                 dedent`
                 console.log(a, b, c)
             `
@@ -111,10 +111,10 @@ describe('AutoEditsDefaultRendererManager', () => {
                 function greet() { console.log("Hello") }
             `
             const args = getAutoeditRendererManagerArgs(documentText, prediction)
-            const result = await manager.maybeRenderDecorationsAndTryMakeInlineCompletionResponse(args)
+            const result = manager.tryMakeInlineCompletions(args)
             expect(result).toBeDefined()
             assertInlineCompletionItems(
-                result.inlineCompletions!,
+                result.inlineCompletionItems!,
                 dedent`
                 console.log(a, b, c)
                 const d = 10
@@ -138,10 +138,10 @@ describe('AutoEditsDefaultRendererManager', () => {
                 function greet() { console.log("Hello") }
             `
             const args = getAutoeditRendererManagerArgs(documentText, prediction)
-            const result = await manager.maybeRenderDecorationsAndTryMakeInlineCompletionResponse(args)
+            const result = manager.tryMakeInlineCompletions(args)
             expect(result).toBeDefined()
             assertInlineCompletionItems(
-                result.inlineCompletions!,
+                result.inlineCompletionItems!,
                 dedent`
                 console.log(a, b, c)
             `

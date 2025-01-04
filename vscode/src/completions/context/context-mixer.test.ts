@@ -76,10 +76,10 @@ describe('ContextMixer', () => {
                 strategyFactory: createMockStrategy([]),
                 contextRankingStrategy: ContextRankingStrategy.Default,
             })
-            const { context, logSummary } = await mixer.getContext(defaultOptions)
+            const { context, contextSummary } = await mixer.getContext(defaultOptions)
 
             expect(normalize(context)).toEqual([])
-            expect(logSummary).toEqual({
+            expect(contextSummary).toEqual({
                 duration: 0,
                 retrieverStats: {},
                 strategy: 'none',
@@ -115,7 +115,7 @@ describe('ContextMixer', () => {
                 ]),
                 contextRankingStrategy: ContextRankingStrategy.Default,
             })
-            const { context, logSummary } = await mixer.getContext(defaultOptions)
+            const { context, contextSummary } = await mixer.getContext(defaultOptions)
             expect(normalize(context)).toEqual([
                 {
                     fileName: 'foo.ts',
@@ -134,7 +134,7 @@ describe('ContextMixer', () => {
                     type: 'file',
                 },
             ])
-            expect(logSummary).toEqual({
+            expect(contextSummary).toEqual({
                 duration: expect.any(Number),
                 retrieverStats: {
                     'jaccard-similarity': {
@@ -205,7 +205,7 @@ describe('ContextMixer', () => {
                 ]),
                 contextRankingStrategy: ContextRankingStrategy.Default,
             })
-            const { context, logSummary } = await mixer.getContext(defaultOptions)
+            const { context, contextSummary } = await mixer.getContext(defaultOptions)
 
             // The results have overlaps in `foo.ts` and `bar.ts`. `foo.ts` is ranked higher in both
             // result sets, thus we expect the overlapping `foo.ts` ranges to appear first.
@@ -256,7 +256,7 @@ describe('ContextMixer', () => {
                 },
               ]
             `)
-            expect(logSummary).toEqual({
+            expect(contextSummary).toEqual({
                 duration: expect.any(Number),
                 retrieverStats: {
                     retriever1: {
@@ -422,7 +422,7 @@ describe('ContextMixer', () => {
             ]
 
             setupTest(primaryRetrievers, loggingRetrievers)
-            const { context, logSummary, contextLoggingSnippets } =
+            const { context, contextSummary, contextLoggingSnippets } =
                 await mixer.getContext(defaultOptions)
 
             expect(normalize(context)).toEqual([
@@ -441,7 +441,7 @@ describe('ContextMixer', () => {
                     endLine: 0,
                 },
             ])
-            expect(logSummary).toEqual({
+            expect(contextSummary).toEqual({
                 duration: expect.any(Number),
                 retrieverStats: {
                     retriever1: {
