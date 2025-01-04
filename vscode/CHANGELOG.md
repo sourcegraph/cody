@@ -14,6 +14,8 @@ This is a log of all notable changes to Cody for VS Code.
 
 ### Uncategorized
 
+## 1.56.0
+
 ### Added
 - autoedits e2e tests  [pull/6425](https://github.com/sourcegraph/cody/pull/6425)
 - feat(audoedit): extract autoedits config from the provider  [pull/6460](https://github.com/sourcegraph/cody/pull/6460)
