@@ -188,6 +188,21 @@ export enum CodyIDE {
     StandaloneWeb = 'StandaloneWeb',
 }
 
+export enum CodyAutoSuggestionMode {
+    /**
+     * The suggestion mode where suggestions come from the OpenAI completions API. This is the default mode.
+     */
+    Autocomplete = 'autocomplete',
+    /**
+     * The suggestion mode where suggestions come from the Cody AI agent chat API.
+     */
+    SuggestionAgent = 'suggestion agent',
+    /**
+     * Disable Cody suggestions altogether.
+     */
+    Off = 'off',
+}
+
 export type AutocompleteProviderID = keyof typeof AUTOCOMPLETE_PROVIDER_ID
 
 export const AUTOCOMPLETE_PROVIDER_ID = {

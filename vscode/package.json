@@ -409,13 +409,13 @@
         "command": "cody.autocomplete.openTraceView",
         "category": "Cody",
         "title": "Open Autocomplete Trace View",
-        "enablement": "cody.activated && config.cody.autocomplete.enabled"
+        "enablement": "cody.activated && config.cody.suggestions.mode === 'autocomplete'"
       },
       {
         "command": "cody.autocomplete.manual-trigger",
         "category": "Cody",
         "title": "Trigger Autocomplete at Cursor",
-        "enablement": "cody.activated && config.cody.autocomplete.enabled && !editorReadonly && !editorHasSelection && !inlineSuggestionsVisible"
+        "enablement": "cody.activated && config.cody.suggestions.mode === 'autocomplete' && !editorReadonly && !editorHasSelection && !inlineSuggestionsVisible"
       },
       {
         "command": "cody.chat.signIn",
@@ -578,7 +578,7 @@
       {
         "command": "cody.command.autoedits-manual-trigger",
         "title": "Autoedits Manual Trigger",
-        "enablement": "cody.activated && config.cody.experimental.autoedits.enabled"
+        "enablement": "cody.activated && config.cody.suggestions.mode == 'suggestion agent'"
       }
     ],
     "keybindings": [
@@ -687,7 +687,7 @@
       {
         "command": "cody.autocomplete.manual-trigger",
         "key": "alt+\\",
-        "when": "editorTextFocus && !editorHasSelection && config.cody.autocomplete.enabled && !inlineSuggestionsVisible"
+        "when": "editorTextFocus && !editorHasSelection && config.cody.suggestions.mode === 'autocomplete' && !inlineSuggestionsVisible"
       },
       {
         "command": "cody.fixup.acceptNearest",
@@ -739,7 +739,7 @@
       {
         "command": "cody.supersuggest.testExample",
         "key": "ctrl+alt+enter",
-        "when": "cody.activated && config.cody.experimental.autoedits.enabled"
+        "when": "cody.activated && config.cody.suggestions.mode == 'suggestion agent'"
       }
     ],
     "submenus": [
@@ -1001,11 +1001,16 @@
             }
           ]
         },
-        "cody.autocomplete.enabled": {
-          "order": 5,
-          "type": "boolean",
-          "markdownDescription": "Enables code autocompletions.",
-          "default": true
+        "cody.suggestions.mode": {
+          "type": "string",
+          "enum": ["autocomplete", "suggestion agent", "off"],
+          "enumDescriptions": [
+            "Enable standard autocomplete mode",
+            "Enable suggestion agent mode",
+            "Disable all suggestions"
+          ],
+          "default": "autocomplete",
+          "markdownDescription": "Controls the suggestion mode for Cody"
         },
         "cody.autocomplete.triggerDelay": {
           "order": 5,

@@ -2,6 +2,7 @@ import * as vscode from 'vscode'
 
 import {
     type ClientConfiguration,
+    CodyAutoSuggestionMode,
     type CodyIDE,
     OLLAMA_DEFAULT_URL,
     type PickResolvedConfiguration,
@@ -46,6 +47,11 @@ export function getConfiguration(
         debugRegex = /.*/
     }
 
+    const codyAutoSuggestionsMode = config.get<string>(
+        CONFIG_KEY.suggestionsMode,
+        CodyAutoSuggestionMode.Autocomplete
+    )
+
     return {
         net: {
             mode: config.get<string | null | undefined>(CONFIG_KEY.netMode, undefined),
@@ -68,7 +74,7 @@ export function getConfiguration(
         debugVerbose: config.get<boolean>(CONFIG_KEY.debugVerbose, false),
         debugFilter: debugRegex,
         telemetryLevel: config.get<'all' | 'off'>(CONFIG_KEY.telemetryLevel, 'all'),
-        autocomplete: config.get(CONFIG_KEY.autocompleteEnabled, true),
+        autocomplete: codyAutoSuggestionsMode === CodyAutoSuggestionMode.Autocomplete,
         autocompleteLanguages: config.get(CONFIG_KEY.autocompleteLanguages, {
             '*': true,
         }),
@@ -119,7 +125,7 @@ export function getConfiguration(
         experimentalTracing: getHiddenSetting('experimental.tracing', false),
 
         experimentalSupercompletions: getHiddenSetting('experimental.supercompletions', false),
-        experimentalAutoeditsEnabled: getHiddenSetting('experimental.autoedits.enabled', undefined),
+        experimentalAutoeditsEnabled: codyAutoSuggestionsMode === CodyAutoSuggestionMode.SuggestionAgent,
         experimentalAutoeditsConfigOverride: getHiddenSetting(
             'experimental.autoedits.config.override',
             undefined
