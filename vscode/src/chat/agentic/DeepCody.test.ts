@@ -56,7 +56,7 @@ describe('DeepCody', () => {
     } as any)
 
     beforeEach(async () => {
-        mockResolvedConfig({ configuration: {} })
+        mockResolvedConfig({ configuration: {}, auth: { serverEndpoint: DOTCOM_URL.toString() } })
         mockClientCapabilities(CLIENT_CAPABILITIES_FIXTURE)
         mockAuthStatus(codyProAuthStatus)
         localStorageData = {}

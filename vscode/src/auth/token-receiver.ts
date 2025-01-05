@@ -14,7 +14,7 @@ const FIVE_MINUTES = 5 * 60 * 1000
 // the user follow a redirect.
 export function startTokenReceiver(
     endpoint: string,
-    onNewToken: (credentials: Pick<AuthCredentials, 'serverEndpoint' | 'accessToken'>) => void,
+    onNewToken: (credentials: Pick<AuthCredentials, 'serverEndpoint' | 'accessTokenOrHeaders'>) => void,
     timeout = FIVE_MINUTES
 ): Promise<string> {
     const endpointUrl = new URL(endpoint)
@@ -46,7 +46,10 @@ export function startTokenReceiver(
                             'accessToken' in json &&
                             typeof json.accessToken === 'string'
                         ) {
-                            onNewToken({ serverEndpoint: endpoint, accessToken: json.accessToken })
+                            onNewToken({
+                                serverEndpoint: endpoint,
+                                accessTokenOrHeaders: json.accessToken,
+                            })
 
                             res.writeHead(200, headers)
                             res.write('ok')

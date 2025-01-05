@@ -116,7 +116,7 @@ class LocalStorage implements LocalStorageForModelPreferences {
      * would give an inconsistent view of the state.
      */
     public async saveEndpointAndToken(
-        credentials: Pick<AuthCredentials, 'serverEndpoint' | 'accessToken' | 'tokenSource'>
+        credentials: Pick<AuthCredentials, 'serverEndpoint' | 'accessTokenOrHeaders' | 'tokenSource'>
     ): Promise<void> {
         if (!credentials.serverEndpoint) {
             return
@@ -131,10 +131,10 @@ class LocalStorage implements LocalStorageForModelPreferences {
         // Pass `false` to avoid firing the change event until we've stored all of the values.
         await this.set(this.LAST_USED_ENDPOINT, serverEndpoint, false)
         await this.addEndpointHistory(serverEndpoint, false)
-        if (credentials.accessToken) {
+        if (credentials.accessTokenOrHeaders && typeof credentials.accessTokenOrHeaders === 'string') {
             await secretStorage.storeToken(
                 serverEndpoint,
-                credentials.accessToken,
+                credentials.accessTokenOrHeaders,
                 credentials.tokenSource
             )
         }

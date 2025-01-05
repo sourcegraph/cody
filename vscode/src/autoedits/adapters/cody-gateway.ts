@@ -33,7 +33,12 @@ export class CodyGatewayAdapter implements AutoeditsModelAdapter {
 
     private async getApiKey(): Promise<string> {
         const resolvedConfig = await currentResolvedConfig()
-        const fastPathAccessToken = dotcomTokenToGatewayToken(resolvedConfig.auth.accessToken)
+        // TODO (pkukielka): Check if fastpath should support custom auth providers and how
+        const accessToken =
+            typeof resolvedConfig.auth.accessTokenOrHeaders === 'string'
+                ? resolvedConfig.auth.accessTokenOrHeaders
+                : null
+        const fastPathAccessToken = dotcomTokenToGatewayToken(accessToken)
         if (!fastPathAccessToken) {
             autoeditsOutputChannelLogger.logError('getApiKey', 'FastPath access token is not available')
             throw new Error('FastPath access token is not available')

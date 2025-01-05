@@ -9,7 +9,9 @@ import type { ReadonlyDeep } from './utils'
  * A redirect flow is initiated by the user clicking a link in the browser, while a paste flow is initiated by the user
  * manually entering the access from into the VsCode App.
  */
-export type TokenSource = 'redirect' | 'paste'
+export type TokenSource = 'redirect' | 'paste' | 'custom-auth-provider'
+
+export type AuthHeaders = Record<string, string>
 
 /**
  * The user's authentication credentials, which are stored separately from the rest of the
@@ -17,8 +19,8 @@ export type TokenSource = 'redirect' | 'paste'
  */
 export interface AuthCredentials {
     serverEndpoint: string
-    accessToken: string | null
     tokenSource?: TokenSource | undefined
+    accessTokenOrHeaders: string | AuthHeaders | null
 }
 
 export interface AutoEditsTokenLimit {
@@ -69,6 +71,20 @@ export interface AgenticContextConfiguration {
         allow?: string[] | undefined | null
         block?: string[] | undefined | null
     }
+}
+
+export interface ExternalAuthCommand {
+    commandLine: string[]
+    environment?: Record<string, string>
+    workingDir?: string
+    shell?: string
+    timeout?: number
+    windowsHide?: boolean
+}
+
+export interface ExternalAuthProvider {
+    endpoint: string
+    executable: ExternalAuthCommand
 }
 
 interface RawClientConfiguration {
@@ -165,6 +181,9 @@ interface RawClientConfiguration {
      */
     overrideServerEndpoint?: string | undefined
     overrideAuthToken?: string | undefined
+
+    // External auth providers
+    authExternalProviders?: ExternalAuthProvider[]
 }
 
 /**

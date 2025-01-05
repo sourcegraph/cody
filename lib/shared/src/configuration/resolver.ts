@@ -1,5 +1,10 @@
 import { Observable, map } from 'observable-fns'
-import type { AuthCredentials, ClientConfiguration } from '../configuration'
+import type {
+    AuthCredentials,
+    ClientConfiguration,
+    ExternalAuthCommand,
+    TokenSource,
+} from '../configuration'
 import { logError } from '../logger'
 import {
     distinctUntilChanged,
@@ -27,6 +32,7 @@ export interface ConfigurationInput {
 
 export interface ClientSecrets {
     getToken(endpoint: string): Promise<string | undefined>
+    getTokenSource(endpoint: string): Promise<TokenSource | undefined>
 }
 
 export interface ClientState {
@@ -72,39 +78,110 @@ export type PickResolvedConfiguration<Keys extends KeysSpec> = {
           : undefined
 }
 
-async function resolveConfiguration({
-    clientConfiguration,
-    clientSecrets,
-    clientState,
-    reinstall: { isReinstalling, onReinstall },
-}: ConfigurationInput): Promise<ResolvedConfiguration> {
-    const isReinstall = await isReinstalling()
-    if (isReinstall) {
-        await onReinstall()
+async function executeCommand(cmd: ExternalAuthCommand): Promise<string> {
+    if (typeof process === 'undefined' || !process.version) {
+        throw new Error('Command execution is only supported in Node.js environments')
     }
-    // we allow for overriding the server endpoint from config if we haven't
-    // manually signed in somewhere else
+
+    const { exec } = await import('node:child_process')
+    const { promisify } = await import('node:util')
+    const execAsync = promisify(exec)
+
+    const command = cmd.commandLine.join(' ')
+    const options = {
+        ...cmd,
+        env: cmd.environment ? { ...process.env, ...cmd.environment } : process.env,
+    }
+
+    const { stdout, stderr } = await execAsync(command, options)
+    if (stderr) {
+        throw new Error(`External auth command error: ${stderr}`)
+    }
+    return stdout.trim()
+}
+
+async function getExternalProviderAuthHeaders(
+    serverEndpoint: string,
+    clientConfiguration: ClientConfiguration
+): Promise<Record<string, string> | undefined> {
+    // Check for external auth provider for this endpoint
+    const externalProvider = clientConfiguration.authExternalProviders?.find(
+        provider => normalizeServerEndpointURL(provider.endpoint) === serverEndpoint
+    )
+
+    if (externalProvider) {
+        const result = await executeCommand(externalProvider.executable)
+        return JSON.parse(result)
+    }
+
+    return undefined
+}
+
+export async function resolveAuth(
+    endpoint: string,
+    clientConfiguration: ClientConfiguration,
+    clientSecrets: ClientSecrets
+): Promise<AuthCredentials> {
+    let accessTokenOrHeaders = null
+    let tokenSource: TokenSource | undefined = undefined
+
     const serverEndpoint = normalizeServerEndpointURL(
-        clientConfiguration.overrideServerEndpoint ||
-            (clientState.lastUsedEndpoint ?? DOTCOM_URL.toString())
+        clientConfiguration.overrideServerEndpoint || endpoint
     )
 
     // We must not throw here, because that would result in the `resolvedConfig` observable
     // terminating and all callers receiving no further config updates.
     const loadTokenFn = () =>
         clientSecrets.getToken(serverEndpoint).catch(error => {
-            logError(
-                'resolveConfiguration',
-                `Failed to get access token for endpoint ${serverEndpoint}: ${error}`
+            throw new Error(
+                `Failed to get access token for endpoint ${serverEndpoint}: ${error.message || error}`
             )
-            return null
         })
-    const accessToken = clientConfiguration.overrideAuthToken || ((await loadTokenFn()) ?? null)
-    return {
-        configuration: clientConfiguration,
-        clientState,
-        auth: { accessToken, serverEndpoint },
-        isReinstall,
+
+    if (clientConfiguration.overrideAuthToken) {
+        accessTokenOrHeaders = clientConfiguration.overrideAuthToken
+    } else
+        try {
+            const authHeaders = await getExternalProviderAuthHeaders(serverEndpoint, clientConfiguration)
+            if (authHeaders) {
+                accessTokenOrHeaders = authHeaders
+                tokenSource = 'custom-auth-provider'
+            } else {
+                accessTokenOrHeaders = (await loadTokenFn()) || null
+                tokenSource = await clientSecrets.getTokenSource(serverEndpoint).catch(_ => undefined)
+            }
+        } catch (error) {
+            throw new Error(`Failed to execute external auth command: ${error}`)
+        }
+
+    return { accessTokenOrHeaders, serverEndpoint, tokenSource }
+}
+
+async function resolveConfiguration({
+    clientConfiguration,
+    clientSecrets,
+    clientState,
+    reinstall: { isReinstalling, onReinstall },
+}: ConfigurationInput): Promise<ResolvedConfiguration | Error> {
+    const isReinstall = await isReinstalling()
+    if (isReinstall) {
+        await onReinstall()
+    }
+
+    const serverEndpoint =
+        clientConfiguration.overrideServerEndpoint ||
+        clientState.lastUsedEndpoint ||
+        DOTCOM_URL.toString()
+
+    try {
+        const auth = await resolveAuth(serverEndpoint, clientConfiguration, clientSecrets)
+        return { configuration: clientConfiguration, clientState, auth, isReinstall }
+    } catch (error) {
+        // We don't want to throw here, because that would cause the observable to terminate and
+        // all callers receiving no further config updates.
+        logError('resolveConfiguration', `Error resolving configuration: ${error}`)
+        const auth = { accessTokenOrHeaders: null, serverEndpoint, tokenSource: undefined }
+        return { configuration: clientConfiguration, clientState, auth, isReinstall }
     }
 }
 

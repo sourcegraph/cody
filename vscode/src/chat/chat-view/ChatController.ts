@@ -23,6 +23,7 @@ import {
     type SerializedChatInteraction,
     type SerializedChatTranscript,
     type SerializedPromptEditorState,
+    type TokenSource,
     addMessageListenersForExtensionAPI,
     authStatus,
     cenv,
@@ -53,6 +54,7 @@ import {
     ps,
     recordErrorToSpan,
     reformatBotMessageForChat,
+    resolveAuth,
     resolvedConfig,
     serializeChatMessage,
     shareReplay,
@@ -408,10 +410,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 )
                 break
             case 'auth': {
-                if (message.authKind === 'callback' && message.endpoint) {
-                    redirectToEndpointLogin(message.endpoint)
-                    break
-                }
                 if (message.authKind === 'simplified-onboarding') {
                     const endpoint = DOTCOM_URL.href
 
@@ -451,19 +449,36 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     }
                     break
                 }
-                if (message.authKind === 'signin' && message.endpoint) {
+                if (
+                    (message.authKind === 'signin' || message.authKind === 'callback') &&
+                    message.endpoint
+                ) {
                     try {
                         const { endpoint, value: token } = message
+                        let accessTokenOrHeaders = null
+                        let tokenSource: TokenSource | undefined = undefined
+
+                        if (token) {
+                            accessTokenOrHeaders = token
+                            tokenSource = 'paste'
+                        } else {
+                            const { configuration } = await currentResolvedConfig()
+                            const auth = await resolveAuth(endpoint, configuration, secretStorage)
+                            accessTokenOrHeaders = auth.accessTokenOrHeaders
+                            tokenSource = auth.tokenSource
+                        }
+
                         const credentials = {
                             serverEndpoint: endpoint,
-                            accessToken: token || (await secretStorage.getToken(endpoint)) || null,
-                            tokenSource: token ? 'paste' : await secretStorage.getTokenSource(endpoint),
+                            accessTokenOrHeaders,
+                            tokenSource: tokenSource,
                         }
-                        if (!credentials.accessToken) {
+                        if (!credentials.accessTokenOrHeaders) {
                             return redirectToEndpointLogin(credentials.serverEndpoint)
                         }
                         await authProvider.validateAndStoreCredentials(credentials, 'always-store')
                     } catch (error) {
+                        void vscode.window.showErrorMessage(`Authentication failed: ${error}`)
                         this.postError(new Error(`Authentication failed: ${error}`))
                     }
                     break
@@ -499,7 +514,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                             const authStatus = await authProvider.validateAndStoreCredentials(
                                 {
                                     serverEndpoint: DOTCOM_URL.href,
-                                    accessToken: token,
+                                    accessTokenOrHeaders: token,
                                 },
                                 'store-if-valid'
                             )
