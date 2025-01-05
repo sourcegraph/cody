@@ -596,11 +596,11 @@
         "command": "cody.chat.simpleNewChat",
         "key": "alt+l",
         "mac": "alt+l",
-        "when": "cody.activated"
+        "when": "cody.activated && !editorHasSelection"
       },
       {
         "command": "cody.mention.selection",
-        "key": "shift+alt+l",
+        "key": "alt+l",
         "when": "cody.activated && editorTextFocus && editorHasSelection"
       },
       {

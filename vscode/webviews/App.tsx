@@ -79,6 +79,18 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                         vscodeAPI.setState(message.chatID)
                         break
                     }
+                    case 'clearchat': {
+                        setTranscript([])
+                        setMessageInProgress(null)
+                        vscodeAPI.setState(null)
+                        // Clear the editor state
+                        const editor = document.querySelector('[contenteditable="true"]') as HTMLElement
+                        if (editor) {
+                            editor.innerHTML = ''
+                        }
+                        debugger
+                        break
+                    }
                     case 'config':
                         setConfig(message)
                         updateDisplayPathEnvInfoForWebview(message.workspaceFolderUris)
