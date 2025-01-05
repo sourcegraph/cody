@@ -125,17 +125,15 @@ export class ChatsController implements vscode.Disposable {
     }
 
     public async clearEditorText(): Promise<void> {
-        const webviewPanelOrView =
-            this.panel.webviewPanelOrView || (await this.panel.createWebviewViewOrPanel())
+        const webviewPanelOrView = this.panel.webviewPanelOrView
+        if (!webviewPanelOrView) {
+            return
+        }
 
-        setTimeout(
-            () =>
-                webviewPanelOrView.webview.postMessage({
-                    type: 'clientAction',
-                    clearEditorText: true,
-                }),
-            1000
-        )
+        webviewPanelOrView.webview.postMessage({
+            type: 'clientAction',
+            clearEditorText: true,
+        })
     }
 
     public registerViewsAndCommands() {
@@ -206,15 +204,18 @@ export class ChatsController implements vscode.Disposable {
                         return vscode.commands.executeCommand('cody.chat.newPanel', args)
                 }
             }),
-            vscode.commands.registerCommand('cody.chat.toggle', async (uri: URI) => {
-                if (this.panel.isEmpty()) {
-                    await this.clearEditorText()
-                } else {
-                    vscode.commands.executeCommand('cody.chat.newPanel')
+            vscode.commands.registerCommand(
+                'cody.chat.toggle',
+                async (args: { uri: URI; editorFocus: boolean }) => {
+                    if (this.panel.isEmpty() && !args.editorFocus) {
+                        await this.clearEditorText()
+                    } else {
+                        vscode.commands.executeCommand('cody.chat.newPanel')
+                    }
+                    await vscode.commands.executeCommand('cody.chat.focus')
+                    this.sendEditorContextToChat(args.uri)
                 }
-                await vscode.commands.executeCommand('cody.chat.focus')
-                this.sendEditorContextToChat(uri)
-            }),
+            ),
             vscode.commands.registerCommand('cody.chat.history.export', () => this.exportHistory()),
             vscode.commands.registerCommand('cody.chat.history.clear', arg => this.clearHistory(arg)),
             vscode.commands.registerCommand('cody.chat.history.delete', item => this.clearHistory(item)),

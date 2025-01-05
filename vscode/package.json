@@ -596,7 +596,19 @@
         "command": "cody.chat.toggle",
         "key": "alt+l",
         "mac": "alt+l",
-        "when": "cody.activated && !editorHasSelection"
+        "when": "cody.activated && editorHasSelection",
+        "args": {
+          "editorFocus": true
+        }
+      },
+      {
+        "command": "cody.chat.toggle",
+        "key": "alt+l",
+        "mac": "alt+l",
+        "when": "cody.activated && !editorHasSelection",
+        "args": {
+          "editorFocus": true
+        }
       },
       {
         "command": "cody.chat.toggle",
@@ -628,14 +640,14 @@
         "when": "cody.activated && editorTextFocus && editorHasSelection"
       },
       {
-        "command": "cody.chat.new",	
-        "key": "shift+alt+l",	
-        "when": "cody.activated && !editorTextFocus"	
-      },	
-      {	
-        "command": "cody.chat.new",	
-        "key": "shift+alt+/",	
-        "when": "cody.activated && !editorTextFocus"	
+        "command": "cody.chat.new",
+        "key": "shift+alt+l",
+        "when": "cody.activated && !editorTextFocus"
+      },
+      {
+        "command": "cody.chat.new",
+        "key": "shift+alt+/",
+        "when": "cody.activated && !editorTextFocus"
       },
       {
         "command": "cody.tutorial.chat",
