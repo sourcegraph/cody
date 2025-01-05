@@ -656,12 +656,7 @@
       },
       {
         "command": "cody.chat.new",
-        "key": "shift+alt+l",
-        "when": "cody.activated && !editorTextFocus"
-      },
-      {
-        "command": "cody.chat.new",
-        "key": "shift+alt+/",
+        "key": "alt+l",
         "when": "cody.activated && !editorTextFocus"
       },
       {

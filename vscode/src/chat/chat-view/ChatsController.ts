@@ -200,19 +200,19 @@ export class ChatsController implements vscode.Disposable {
                     case 'editor':
                         return vscode.commands.executeCommand('cody.chat.newEditorPanel', args)
                     case 'sidebar':
-                        return vscode.commands.executeCommand('cody.chat.newPanel', args)
+                        return vscode.commands.executeCommand('cody.chat.toggle', args)
                 }
             }),
             vscode.commands.registerCommand(
                 'cody.chat.toggle',
                 async (args: { uri: URI; editorFocus: boolean }) => {
-                    if (this.panel.isEmpty() && !args.editorFocus) {
+                    if (this.panel.isEmpty() && !args?.editorFocus) {
                         await this.clearEditorText()
                     } else {
                         vscode.commands.executeCommand('cody.chat.newPanel')
                     }
                     await vscode.commands.executeCommand('cody.chat.focus')
-                    this.sendEditorContextToChat(args.uri)
+                    this.sendEditorContextToChat(args?.uri)
                 }
             ),
             vscode.commands.registerCommand('cody.chat.history.export', () => this.exportHistory()),
