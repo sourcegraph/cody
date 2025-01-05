@@ -352,17 +352,20 @@ export const HumanMessageEditor: FunctionComponent<{
 
                 if (clearEditorText) {
                     updates.push(
-                        new Promise<void>(async resolve => {
-                            const { initialContext } = await firstValueFrom(
+                        new Promise<void>(resolve => {
+                            firstValueFrom(
                                 extensionAPI.defaultContext().pipe(skipPendingOperation())
-                            )
-                            const emptyState = await firstValueFrom(
-                                extensionAPI.hydratePromptMessage('', initialContext)
-                            )
-                            if (editorRef.current) {
-                                editorRef.current.setEditorState(emptyState)
-                            }
-                            resolve()
+                            ).then(({ initialContext }) => {
+                                firstValueFrom(
+                                    extensionAPI.hydratePromptMessage('', initialContext)
+                                ).then(emptyState => {
+                                    if (editorRef.current) {
+                                        editorRef.current.setEditorState(emptyState)
+                                        editorRef.current.setFocus(true)
+                                    }
+                                    resolve()
+                                })
+                            })
                         })
                     )
                 }
