@@ -123,6 +123,7 @@ export class ChatsController implements vscode.Disposable {
         )
     }
 
+
     public registerViewsAndCommands() {
         this.disposables.push(
             vscode.window.registerWebviewViewProvider('cody.chat', this.panel, {
@@ -141,7 +142,6 @@ export class ChatsController implements vscode.Disposable {
                 return undefined
             }
         }
-
         this.disposables.push(
             vscode.commands.registerCommand('cody.chat.moveToEditor', async () => {
                 localStorage.setLastUsedChatModality('editor')
@@ -192,9 +192,15 @@ export class ChatsController implements vscode.Disposable {
                         return vscode.commands.executeCommand('cody.chat.newPanel', args)
                 }
             }),
-            vscode.commands.registerCommand('cody.chat.simpleNewChat', async () => {
-                await this.executePrompt({ text: '', mode: PromptMode.CHAT, autoSubmit: false })
+            vscode.commands.registerCommand('cody.chat.toggle', async (uri: URI) => {
+                if (this.panel.isEmpty()) {
+                    await this.executePrompt({ text: '', mode: PromptMode.CHAT, autoSubmit: false })
+                }
+                else {
+                    vscode.commands.executeCommand('cody.chat.newPanel')
+                }
                 await vscode.commands.executeCommand('cody.chat.focus')
+                this.sendEditorContextToChat(uri)
             }),
             vscode.commands.registerCommand('cody.chat.history.export', () => this.exportHistory()),
             vscode.commands.registerCommand('cody.chat.history.clear', arg => this.clearHistory(arg)),
