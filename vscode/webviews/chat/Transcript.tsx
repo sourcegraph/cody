@@ -301,6 +301,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
 
         // Serialize the editor value after starting the span
         const editorValue = humanEditorRef.current?.getSerializedValue()
+        
         if (!editorValue) {
             console.error('Failed to serialize editor value')
             return
@@ -535,6 +536,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
     const { corpusContext: corpusContextItems } = useDefaultContextForChat()
     const resubmitWithRepoContext = useCallback(async () => {
         const editorState = humanEditorRef.current?.getSerializedValue()
+        debugger
         if (editorState) {
             const editor = humanEditorRef.current
             if (corpusContextItems.length === 0 || !editor) {

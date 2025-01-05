@@ -7,7 +7,7 @@ import {
     type ChatClient,
     DEFAULT_EVENT_SOURCE,
     type Guardrails,
-    type PromptMode,
+     PromptMode,
     authStatus,
     currentAuthStatus,
     currentAuthStatusAuthed,
@@ -192,9 +192,8 @@ export class ChatsController implements vscode.Disposable {
                         return vscode.commands.executeCommand('cody.chat.newPanel', args)
                 }
             }),
-
             vscode.commands.registerCommand('cody.chat.simpleNewChat', async () => {
-                await this.panel.clearAndRestartSession()
+                await this.executePrompt({ text: '', mode: PromptMode.CHAT, autoSubmit: false })
                 await vscode.commands.executeCommand('cody.chat.focus')
             }),
             vscode.commands.registerCommand('cody.chat.history.export', () => this.exportHistory()),
