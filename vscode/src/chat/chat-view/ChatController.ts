@@ -1302,12 +1302,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         this.syncPanelTitle()
     }
 
-
-    public postClearChat(): void {
-        void this.postMessage({
-            type: 'clearchat',
-        })
-    }
     private syncPanelTitle() {
         // Update webview panel title if we're in an editor panel
         if (this._webviewPanelOrView && 'reveal' in this._webviewPanelOrView) {
@@ -1701,7 +1695,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     }
 
     public isEmpty(): boolean {
-        this.chatBuilder.getMessages()
         return this.chatBuilder.isEmpty()
     }
 
