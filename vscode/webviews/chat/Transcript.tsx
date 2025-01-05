@@ -536,7 +536,6 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
     const { corpusContext: corpusContextItems } = useDefaultContextForChat()
     const resubmitWithRepoContext = useCallback(async () => {
         const editorState = humanEditorRef.current?.getSerializedValue()
-        debugger
         if (editorState) {
             const editor = humanEditorRef.current
             if (corpusContextItems.length === 0 || !editor) {

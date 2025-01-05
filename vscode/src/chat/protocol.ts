@@ -177,7 +177,6 @@ export type ExtensionMessage =
           cssVariables: CodyIDECssVariables
       }
     | ({ type: 'transcript' } & ExtensionTranscriptMessage)
-    | { type: 'clearchat' }
     | { type: 'view'; view: View }
     | { type: 'errors'; errors: string }
     | {
