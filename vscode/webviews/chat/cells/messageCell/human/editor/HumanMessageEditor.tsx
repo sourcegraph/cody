@@ -299,6 +299,7 @@ export const HumanMessageEditor: FunctionComponent<{
                 submitHumanInput,
                 setLastHumanInputIntent,
                 setPromptAsInput,
+                clearEditorText,
             }) => {
                 const updates: Promise<unknown>[] = []
 
@@ -348,6 +349,23 @@ export const HumanMessageEditor: FunctionComponent<{
                 }
 
                 let promptIntent = undefined
+
+                if (clearEditorText) {
+                    updates.push(
+                        new Promise<void>(async resolve => {
+                            const { initialContext } = await firstValueFrom(
+                                extensionAPI.defaultContext().pipe(skipPendingOperation())
+                            )
+                            const emptyState = await firstValueFrom(
+                                extensionAPI.hydratePromptMessage('', initialContext)
+                            )
+                            if (editorRef.current) {
+                                editorRef.current.setEditorState(emptyState)
+                            }
+                            resolve()
+                        })
+                    )
+                }
 
                 if (setPromptAsInput) {
                     // set the intent

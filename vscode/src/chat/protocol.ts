@@ -190,6 +190,7 @@ export type ExtensionMessage =
               | { text: string; mode?: PromptMode | undefined | null; autoSubmit: boolean }
               | undefined
               | null
+          clearEditorText?: boolean | undefined | null
       }
     | ({ type: 'attribution' } & ExtensionAttributionMessage)
     | { type: 'rpc/response'; message: ResponseMessage }

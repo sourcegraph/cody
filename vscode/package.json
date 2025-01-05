@@ -639,7 +639,7 @@
       },
       {
         "command": "cody.mention.selection",
-        "key": "alt+l",
+        "key": "alt+shift+l",
         "when": "cody.activated && editorTextFocus && editorHasSelection"
       },
       {
