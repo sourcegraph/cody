@@ -17,7 +17,7 @@ import { CodyTaskState } from '../non-stop/state'
 import { execQueryWrapper } from '../tree-sitter/query-sdk'
 
 const EDIT_SHORTCUT_LABEL = isMacOS() ? 'Opt+K' : 'Alt+K'
-const CHAT_SHORTCUT_LABEL = isMacOS() ? 'Shift+Opt+L' : 'Shift+Alt+L'
+const CHAT_SHORTCUT_LABEL = isMacOS() ? 'Opt+L' : 'Alt+L'
 const DOC_SHORTCUT_LABEL = isMacOS() ? 'Opt+D' : 'Alt+D'
 
 /**
@@ -132,7 +132,7 @@ const HINT_DECORATIONS: Record<
     { text: string; decoration: vscode.TextEditorDecorationType }
 > = {
     EditOrChat: {
-        text: `${EDIT_SHORTCUT_LABEL} to Edit, ${CHAT_SHORTCUT_LABEL} to Add to Chat`,
+        text: `${EDIT_SHORTCUT_LABEL} to Edit, ${CHAT_SHORTCUT_LABEL} to Chat`,
         decoration: vscode.window.createTextEditorDecorationType({
             isWholeLine: true,
             after: {

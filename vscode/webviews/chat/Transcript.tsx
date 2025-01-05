@@ -307,7 +307,6 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
 
         // Serialize the editor value after starting the span
         const editorValue = humanEditorRef.current?.getSerializedValue()
-        
         if (!editorValue) {
             console.error('Failed to serialize editor value')
             return

@@ -7,7 +7,7 @@ import {
     type ChatClient,
     DEFAULT_EVENT_SOURCE,
     type Guardrails,
-     PromptMode,
+    type PromptMode,
     authStatus,
     currentAuthStatus,
     currentAuthStatusAuthed,
@@ -124,6 +124,19 @@ export class ChatsController implements vscode.Disposable {
         )
     }
 
+    public async clearEditorText(): Promise<void> {
+        const webviewPanelOrView =
+            this.panel.webviewPanelOrView || (await this.panel.createWebviewViewOrPanel())
+
+        setTimeout(
+            () =>
+                webviewPanelOrView.webview.postMessage({
+                    type: 'clientAction',
+                    clearEditorText: true,
+                }),
+            1000
+        )
+    }
 
     public registerViewsAndCommands() {
         this.disposables.push(
@@ -195,9 +208,8 @@ export class ChatsController implements vscode.Disposable {
             }),
             vscode.commands.registerCommand('cody.chat.toggle', async (uri: URI) => {
                 if (this.panel.isEmpty()) {
-                    await this.executePrompt({ text: '', mode: PromptMode.CHAT, autoSubmit: false })
-                }
-                else {
+                    await this.clearEditorText()
+                } else {
                     vscode.commands.executeCommand('cody.chat.newPanel')
                 }
                 await vscode.commands.executeCommand('cody.chat.focus')
