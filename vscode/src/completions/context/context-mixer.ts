@@ -64,7 +64,7 @@ export interface ContextSummary {
 
 export interface GetContextResult {
     context: AutocompleteContextSnippet[]
-    logSummary: ContextSummary
+    contextSummary: ContextSummary
     contextLoggingSnippets: AutocompleteContextSnippet[]
 }
 
@@ -114,7 +114,7 @@ export class ContextMixer implements vscode.Disposable {
         if (retrieversWithDataLogging.length === 0) {
             return {
                 context: [],
-                logSummary: {
+                contextSummary: {
                     strategy: 'none',
                     totalChars: options.docContext.prefix.length + options.docContext.suffix.length,
                     prefixChars: options.docContext.prefix.length,
@@ -165,7 +165,7 @@ export class ContextMixer implements vscode.Disposable {
         if (results.length === 0) {
             return {
                 context: [],
-                logSummary: {
+                contextSummary: {
                     strategy: 'none',
                     totalChars: options.docContext.prefix.length + options.docContext.suffix.length,
                     prefixChars: options.docContext.prefix.length,
@@ -225,7 +225,7 @@ export class ContextMixer implements vscode.Disposable {
             position++
         }
 
-        const logSummary: ContextSummary = {
+        const contextSummary: ContextSummary = {
             strategy,
             duration: performance.now() - start,
             totalChars,
@@ -236,7 +236,7 @@ export class ContextMixer implements vscode.Disposable {
 
         return {
             context: mixedContext,
-            logSummary,
+            contextSummary,
             contextLoggingSnippets,
         }
     }
