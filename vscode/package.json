@@ -1076,12 +1076,6 @@
           "markdownDescription": "Enable hints for Cody commands such as \"Opt+K to Edit\" or \"Opt+D to Document\"",
           "default": true
         },
-        "cody.experimental.autoedits.enabled": {
-          "order": 99,
-          "type": "boolean",
-          "markdownDescription": "Enable Autoedit, an experimental feature which suggest smarter code edits as you type.",
-          "default": false
-        },
         "cody.experimental.tracing": {
           "order": 99,
           "type": "boolean",
