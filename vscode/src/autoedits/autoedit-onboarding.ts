@@ -1,68 +1,89 @@
 import {
     FeatureFlag,
     currentAuthStatus,
+    currentResolvedConfig,
+    currentUserProductSubscription,
     featureFlagProvider,
-    isDotComAuthed,
-    isS2,
+    storeLastValue,
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
-import { isRunningInsideAgent } from './../jsonrpc/isRunningInsideAgent'
+import { localStorage } from '../services/LocalStorageProvider'
+import { isUserEligibleForAutoeditsFeature } from './create-autoedits-provider'
 
-export async function showAutoeditOnboardingIfEligible(): Promise<void> {
-    // Determine if we should show the onboarding popup
-    if (!shouldShowAutoeditsOnboardingPopup()) {
-        return
-    }
+export class AutoeditsOnboarding implements vscode.Disposable {
+    private readonly MAX_AUTO_EDITS_ONBOARDING_NOTIFICATIONS = 3
 
-    const selection = await vscode.window.showInformationMessage(
-        '✨ Try Cody Autoedits - experimental feature which suggest smarter code edits as you type.',
-        'Enable Autoedits'
+    private featureFlagAutoeditsExperimental = storeLastValue(
+        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyAutoeditExperimentEnabledFeatureFlag)
     )
 
-    if (selection === 'Enable Autoedits') {
-        // Enable the setting programmatically
-        await vscode.workspace
-            .getConfiguration()
-            .update('cody.experimental.autoedits.enabled', true, vscode.ConfigurationTarget.Global)
+    private async showAutoeditOnboardingIfEligible(): Promise<void> {
+        const shouldShowOnboardingPopup = await this.shouldShowAutoeditsOnboardingPopup()
+        if (shouldShowOnboardingPopup) {
+            await this.showAutoeditsOnboardingPopup()
+            await this.incrementAutoEditsOnboardingNotificationCount()
+        }
+    }
 
-        // Open VS Code settings UI and focus on the Cody Autoedits setting
-        await vscode.commands.executeCommand(
-            'workbench.action.openSettings',
-            'cody.experimental.autoedits'
+    private async showAutoeditsOnboardingPopup(): Promise<void> {
+        const selection = await vscode.window.showInformationMessage(
+            '✨ Try Cody auto-edits. Experimental feature which suggests advanced context-aware code edits as you navigate the codebase',
+            'Enable auto-edits'
+        )
+
+        if (selection === 'Enable auto-edits') {
+            // Enable the setting programmatically
+            await vscode.workspace
+                .getConfiguration()
+                .update('cody.suggestions.mode', true, vscode.ConfigurationTarget.Global)
+
+            // Open VS Code settings UI and focus on the Cody Autoedits setting
+            await vscode.commands.executeCommand(
+                'workbench.action.openSettings',
+                'cody.suggestions.mode'
+            )
+        }
+    }
+
+    private async shouldShowAutoeditsOnboardingPopup(): Promise<boolean> {
+        const isUserEligible = await this.isUserEligibleForAutoeditsOnboarding()
+        const isAutoeditsDisabled = await this.isAutoeditsDisabled()
+        const isUnderNotificationLimit =
+            (await this.getAutoEditsOnboardingNotificationCount()) <
+            this.MAX_AUTO_EDITS_ONBOARDING_NOTIFICATIONS
+        return isUserEligible && isAutoeditsDisabled && isUnderNotificationLimit
+    }
+
+    private async incrementAutoEditsOnboardingNotificationCount(): Promise<void> {
+        const count = await this.getAutoEditsOnboardingNotificationCount()
+        await localStorage.setAutoEditsOnboardingNotificationCount(count + 1)
+    }
+
+    private async isAutoeditsDisabled(): Promise<boolean> {
+        const config = await currentResolvedConfig()
+        return !config.configuration.experimentalAutoeditsEnabled
+    }
+
+    private async getAutoEditsOnboardingNotificationCount(): Promise<number> {
+        return localStorage.getAutoEditsOnboardingNotificationCount()
+    }
+
+    private async isUserEligibleForAutoeditsOnboarding(): Promise<boolean> {
+        const authStatus = currentAuthStatus()
+        const productSubsubscription = await currentUserProductSubscription()
+        const autoeditsFeatureFlag = this.isAutoeditsFeatureFlagEnabled()
+        return isUserEligibleForAutoeditsFeature(
+            autoeditsFeatureFlag,
+            authStatus,
+            productSubsubscription
         )
     }
-}
 
-function shouldShowAutoeditsOnboardingPopup(): boolean {
-    const isAutoeditsConfigEnabled = vscode.workspace
-        .getConfiguration()
-        .get<boolean>('cody.experimental.autoedits.enabled', false)
-
-    // Do not show the onboarding popup if the feature is already enabled or any other editor than vscode.
-    if (isRunningInsideAgent() || isAutoeditsConfigEnabled) {
-        return false
+    private isAutoeditsFeatureFlagEnabled(): boolean {
+        return !!this.featureFlagAutoeditsExperimental.value.last
     }
 
-    if (isDotComAuthed()) {
-        return shouldShowAutoeditsOnboardingPopupForDotComUser()
+    dispose(): void {
+        this.featureFlagAutoeditsExperimental.subscription.unsubscribe()
     }
-
-    const authStatus = currentAuthStatus()
-    if (isS2(authStatus)) {
-        // All the S2 users should see the onboarding popup for dogfooding
-        return true
-    }
-
-    // Decide later if we want to show the pop-up for the enterprise
-    return false
-}
-
-function shouldShowAutoeditsOnboardingPopupForDotComUser(): boolean {
-    const isUserEligibleForFeature = featureFlagProvider.evaluatedFeatureFlag(
-        FeatureFlag.CodyAutoeditExperimentEnabledFeatureFlag
-    )
-    if (!isUserEligibleForFeature) {
-        return false
-    }
-    return true
 }

@@ -36,6 +36,9 @@ class LocalStorage implements LocalStorageForModelPreferences {
     public readonly LAST_USED_ENDPOINT = 'SOURCEGRAPH_CODY_ENDPOINT'
     private readonly MODEL_PREFERENCES_KEY = 'cody-model-preferences'
     private readonly CODY_CHAT_MEMORY = 'cody-chat-memory'
+    private readonly AUTO_EDITS_ONBOARDING_NOTIFICATION_COUNT =
+        'cody-auto-edits-onboarding-notification-count'
+
     public readonly keys = {
         // LLM waitlist for the 09/12/2024 openAI o1 models
         waitlist_o1: 'CODY_WAITLIST_LLM_09122024',
@@ -236,6 +239,14 @@ class LocalStorage implements LocalStorageForModelPreferences {
                 console.error(error)
             }
         }
+    }
+
+    public async getAutoEditsOnboardingNotificationCount(): Promise<number> {
+        return this.get(this.AUTO_EDITS_ONBOARDING_NOTIFICATION_COUNT) ?? 0
+    }
+
+    public async setAutoEditsOnboardingNotificationCount(count: number): Promise<void> {
+        await this.set(this.AUTO_EDITS_ONBOARDING_NOTIFICATION_COUNT, count)
     }
 
     public async setGitHubRepoAccessibility(data: GitHubDotComRepoMetaData[]): Promise<void> {
