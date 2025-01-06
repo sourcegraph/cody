@@ -1006,7 +1006,7 @@
           "enum": ["autocomplete", "auto-edits (Experimental)", "off"],
           "enumDescriptions": [
             "Enables standard autocomplete mode for suggestions.",
-            "Offers advanced context-aware suggestions by integrating autocompletion with inline editing, surpassing traditional autocomplete. Experimental feature for Pro and Enterprise users.",
+            "Offers advanced context-aware suggestions by integrating autocompletion with inline editing. Experimental feature for Pro and Enterprise users.",
             "Disables all suggestions."
           ],
           "default": "autocomplete",
