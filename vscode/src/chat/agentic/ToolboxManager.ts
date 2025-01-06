@@ -65,7 +65,7 @@ export class ToolboxManager {
         }
     }
 
-    public async updatetoolboxSettings(settings: AgentToolboxSettings): Promise<void> {
+    public async updateToolboxSettings(settings: AgentToolboxSettings): Promise<void> {
         logDebug('ToolboxManager', 'Updating toolbox settings', { verbose: settings })
         await localStorage.set(ToolboxManager.STORAGE_KEY, settings)
         this.changeNotifications.next()
@@ -105,4 +105,4 @@ export class ToolboxManager {
     }
 }
 
-export const toolboxSettings = ToolboxManager.getInstance()
+export const toolboxManager = ToolboxManager.getInstance()

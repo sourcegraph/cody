@@ -466,7 +466,7 @@ export interface FireworksCodeCompletionParams {
 
 export interface AgentToolboxSettings {
     /**
-     * The agent ID that they user has currently enabled..
+     * The agent ID that user has currently enabled.
      */
     agent?: string
     /**

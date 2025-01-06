@@ -43,10 +43,8 @@ export interface CodyToolConfig {
  * Abstract base class for Cody tools.
  */
 export abstract class CodyTool {
-    protected readonly performedQueries: Set<string>
-    constructor(public readonly config: CodyToolConfig) {
-        this.performedQueries = new Set()
-    }
+    protected readonly performedQueries = new Set<string>()
+    constructor(public readonly config: CodyToolConfig) {}
 
     private static readonly EXECUTION_TIMEOUT_MS = 30000 // 30 seconds
     /**
