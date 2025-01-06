@@ -375,7 +375,7 @@ export class GhostHintDecorator implements vscode.Disposable {
         const codeToHighlight = editor.document.getText(fullSelectionLineRange)
 
         console.log(position)
-        const { uri } = await diffToHighlightedImg(codeToHighlight)
+        const uri = diffToHighlightedImg(codeToHighlight)
         const contentIconPath = vscode.Uri.parse(uri)
 
         editor.setDecorations(HINT_DECORATIONS[variant].decoration, [

@@ -19,6 +19,7 @@ export function getDecorationInfo(originalText: string, modifiedText: string): D
     const modifiedLines = modifiedText.split(getNewLineChar(modifiedText))
 
     const lineInfos = computeDiffOperations(originalLines, modifiedLines)
+    console.log('GOT LINE INFOS:', lineInfos)
     const decorationPng = diffToImg(lineInfos, {
         fontSize: 12,
         padding: 0,

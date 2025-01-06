@@ -1,5 +1,5 @@
 import { createCanvas } from 'canvas'
-import { createHighlighter } from 'shiki'
+import { type Highlighter, createHighlighter } from 'shiki'
 import type { DecorationLineInfo } from './renderer/decorators/base'
 
 interface DiffToImageOptions {
@@ -110,21 +110,36 @@ export function diffToImg(diffLines: DecorationLineInfo[], options: DiffToImageO
     return canvas.toDataURL('image/png')
 }
 
-export async function diffToHighlightedImg(
+let _highlighter: Highlighter | null = null
+
+export async function initHighlighter(): Promise<void> {
+    if (!_highlighter) {
+        _highlighter = await createHighlighter({
+            themes: ['vitesse-dark'],
+            langs: ['typescript'],
+        })
+    }
+}
+
+function ensureHighlighterReady(): Highlighter {
+    if (!_highlighter) {
+        throw new Error(
+            'Shiki highlighter is not initialized. ' +
+                'Call initHighlighter() and await it before using highlightSync().'
+        )
+    }
+    return _highlighter
+}
+
+export function diffToHighlightedImg(
     code = `console.log("Hello world")`,
     lang = 'typescript' as const
-): Promise<{ uri: string; width: number; height: number }> {
-    // 1. Initialize the highlighter with a theme
-    const highlighter = await createHighlighter({
-        themes: ['vitesse-dark'],
-        langs: [lang],
-    })
-
+): string {
+    const highlighter = ensureHighlighterReady()
     const { tokens } = highlighter.codeToTokens(code, {
         theme: 'vitesse-dark',
         lang,
     })
-    highlighter.dispose()
 
     // Default size measurements. TODO: Revisit these
     const fontSize = 12
@@ -172,7 +187,6 @@ export async function diffToHighlightedImg(
     for (const lineTokens of tokens) {
         let xPos = padding
         for (const token of lineTokens) {
-            // token.color from Shiki is e.g. '#81A1C1'
             ctx.fillStyle = token.color || '#ffffff'
             ctx.fillText(token.content, xPos, yPos)
             xPos += ctx.measureText(token.content).width
@@ -180,11 +194,7 @@ export async function diffToHighlightedImg(
         yPos += lineHeight
     }
 
-    return {
-        uri: canvas.toDataURL('image/png'),
-        width: totalWidth,
-        height: totalHeight,
-    }
+    return canvas.toDataURL('image/png')
 }
 
 function trimUnchangedLines(lines: DecorationLineInfo[]): DecorationLineInfo[] {

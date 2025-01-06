@@ -2,6 +2,7 @@ import * as vscode from 'vscode'
 
 import { GHOST_TEXT_COLOR } from '../../../commands/GhostHintDecorator'
 
+import { diffToHighlightedImg } from '../../diffToImg'
 import type { AutoEditsDecorator, DecorationInfo, ModifiedLineInfo } from './base'
 
 interface AddedLinesDecorationInfo {
@@ -38,7 +39,7 @@ export class DefaultDecorator implements AutoEditsDecorator {
             opacity: '0',
         })
         this.addedLinesDecorationType = vscode.window.createTextEditorDecorationType({
-            backgroundColor: 'red', // SENTINEL (should not actually appear)
+            // backgroundColor: 'red', // SENTINEL (should not actually appear)
             before: {
                 backgroundColor: 'rgba(100, 255, 100, 0.1)',
                 color: GHOST_TEXT_COLOR,
@@ -100,29 +101,6 @@ export class DefaultDecorator implements AutoEditsDecorator {
         // Display the removed range decorations
         const removedRanges: vscode.Range[] = []
         const addedLinesInfo: AddedLinesDecorationInfo[] = []
-
-        if (5 > 1 && modifiedLines[0]) {
-            const firstLine = modifiedLines[0].modifiedLineNumber
-            const range = this.createFullLineRange(firstLine).end
-            const endPos = new vscode.Range(range, range)
-            const contentIconPath = decorationInfo.img ? vscode.Uri.parse(decorationInfo.img) : undefined
-            console.log('SETTING DEOCRATIONS NOW...')
-            this.editor.setDecorations(this.imgTextDecorationType, [
-                {
-                    range: endPos,
-                    renderOptions: {
-                        before: {
-                            textDecoration: 'none; position: absolute; z-index: 99999; left: 125%;',
-                            color: new vscode.ThemeColor('editor.foreground'),
-                            backgroundColor: new vscode.ThemeColor('editor.background'),
-                            border: '1px solid white',
-                            contentIconPath,
-                        },
-                    },
-                },
-            ])
-            return
-        }
 
         // Handle modified lines - collect removed ranges and added decorations
         for (const modifiedLine of modifiedLines) {
@@ -194,62 +172,71 @@ export class DefaultDecorator implements AutoEditsDecorator {
         replacerCol: number
     ): void {
         blockify(addedLinesInfo)
-        const replacerDecorations: vscode.DecorationOptions[] = []
-        for (let i = 0; i < addedLinesInfo.length; i++) {
-            const j = i + startLine
-            const line = this.editor.document.lineAt(j)
-            const decoration = addedLinesInfo[i]
 
-            if (replacerCol >= line.range.end.character) {
-                replacerDecorations.push({
-                    range: new vscode.Range(j, line.range.end.character, j, line.range.end.character),
-                    renderOptions: {
-                        // Show the suggested code but keep it positioned absolute to ensure
-                        // the cursor does not jump there.
-                        before: {
-                            contentText:
-                                '\u00A0'.repeat(3) +
-                                _replaceLeadingTrailingChars(decoration.lineText, ' ', '\u00A0'),
-                            margin: `0 0 0 ${replacerCol - line.range.end.character}ch`,
-                            textDecoration: 'none; position: absolute;',
-                        },
-                        // Create an empty HTML element with the width required to show the suggested code.
-                        // Required to make the viewport scrollable to view the suggestion if it's outside.
-                        after: {
-                            contentText:
-                                '\u00A0'.repeat(3) +
-                                _replaceLeadingTrailingChars(
-                                    decoration.lineText.replace(/\S/g, '\u00A0'),
-                                    ' ',
-                                    '\u00A0'
-                                ),
-                            margin: `0 0 0 ${replacerCol - line.range.end.character}ch`,
-                        },
-                    },
-                })
-            } else {
-                replacerDecorations.push({
-                    range: new vscode.Range(j, replacerCol, j, replacerCol),
-                    renderOptions: {
-                        before: {
-                            contentText:
-                                '\u00A0' +
-                                _replaceLeadingTrailingChars(decoration.lineText, ' ', '\u00A0'),
-                            textDecoration: 'none; position: absolute;',
-                        },
-                        after: {
-                            contentText:
-                                '\u00A0'.repeat(3) +
-                                _replaceLeadingTrailingChars(
-                                    decoration.lineText.replace(/\S/g, '\u00A0'),
-                                    ' ',
-                                    '\u00A0'
-                                ),
-                        },
-                    },
-                })
-            }
+        let codeBlock = ''
+        for (const { lineText } of addedLinesInfo) {
+            codeBlock += `${lineText}\n`
         }
+
+        // TODO: Generate image here
+        const img = diffToHighlightedImg(codeBlock)
+        console.log('ADDED LINES INFO', addedLinesInfo)
+        const replacerDecorations: vscode.DecorationOptions[] = []
+        // for (let i = 0; i < addedLinesInfo.length; i++) {
+        //     const j = i + startLine
+        //     const line = this.editor.document.lineAt(j)
+        //     const decoration = addedLinesInfo[i]
+
+        //     if (replacerCol >= line.range.end.character) {
+        //         replacerDecorations.push({
+        //             range: new vscode.Range(j, line.range.end.character, j, line.range.end.character),
+        //             renderOptions: {
+        //                 // Show the suggested code but keep it positioned absolute to ensure
+        //                 // the cursor does not jump there.
+        //                 before: {
+        //                     contentText:
+        //                         '\u00A0'.repeat(3) +
+        //                         _replaceLeadingTrailingChars(decoration.lineText, ' ', '\u00A0'),
+        //                     margin: `0 0 0 ${replacerCol - line.range.end.character}ch`,
+        //                     textDecoration: 'none; position: absolute;',
+        //                 },
+        //                 // Create an empty HTML element with the width required to show the suggested code.
+        //                 // Required to make the viewport scrollable to view the suggestion if it's outside.
+        //                 after: {
+        //                     contentText:
+        //                         '\u00A0'.repeat(3) +
+        //                         _replaceLeadingTrailingChars(
+        //                             decoration.lineText.replace(/\S/g, '\u00A0'),
+        //                             ' ',
+        //                             '\u00A0'
+        //                         ),
+        //                     margin: `0 0 0 ${replacerCol - line.range.end.character}ch`,
+        //                 },
+        //             },
+        //         })
+        //     } else {
+        //         replacerDecorations.push({
+        //             range: new vscode.Range(j, replacerCol, j, replacerCol),
+        //             renderOptions: {
+        //                 before: {
+        //                     contentText:
+        //                         '\u00A0' +
+        //                         _replaceLeadingTrailingChars(decoration.lineText, ' ', '\u00A0'),
+        //                     textDecoration: 'none; position: absolute;',
+        //                 },
+        //                 after: {
+        //                     contentText:
+        //                         '\u00A0'.repeat(3) +
+        //                         _replaceLeadingTrailingChars(
+        //                             decoration.lineText.replace(/\S/g, '\u00A0'),
+        //                             ' ',
+        //                             '\u00A0'
+        //                         ),
+        //                 },
+        //             },
+        //         })
+        //     }
+        // }
 
         const startLineLength = this.editor.document.lineAt(startLine).range.end.character
         this.editor.setDecorations(this.insertMarkerDecorationType, [
@@ -257,7 +244,24 @@ export class DefaultDecorator implements AutoEditsDecorator {
                 range: new vscode.Range(startLine, 0, startLine, startLineLength),
             },
         ])
-        this.editor.setDecorations(this.addedLinesDecorationType, replacerDecorations)
+
+        console.log('replacer decorations', replacerDecorations)
+        this.editor.setDecorations(this.addedLinesDecorationType, [
+            {
+                range: new vscode.Range(startLine, 0, startLine, startLineLength),
+                renderOptions: {
+                    // Show the suggested code but keep it positioned absolute to ensure
+                    // the cursor does not jump there.
+                    before: {
+                        color: new vscode.ThemeColor('editor.foreground'),
+                        backgroundColor: new vscode.ThemeColor('editor.background'),
+                        border: '1px solid white',
+                        contentIconPath: vscode.Uri.parse(img),
+                        textDecoration: 'none; position: absolute; z-index: 99999; scale: 0.5',
+                    },
+                },
+            },
+        ])
     }
 
     private renderInlineGhostTextDecorations(decorationLines: ModifiedLineInfo[]): void {
