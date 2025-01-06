@@ -17,7 +17,7 @@ export class AutoeditsOnboarding implements vscode.Disposable {
         featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyAutoeditExperimentEnabledFeatureFlag)
     )
 
-    private async showAutoeditOnboardingIfEligible(): Promise<void> {
+    public async showAutoeditsOnboardingIfEligible(): Promise<void> {
         const shouldShowOnboardingPopup = await this.shouldShowAutoeditsOnboardingPopup()
         if (shouldShowOnboardingPopup) {
             await this.showAutoeditsOnboardingPopup()
@@ -27,7 +27,7 @@ export class AutoeditsOnboarding implements vscode.Disposable {
 
     private async showAutoeditsOnboardingPopup(): Promise<void> {
         const selection = await vscode.window.showInformationMessage(
-            '✨ Try Cody auto-edits. Experimental feature which suggests advanced context-aware code edits as you navigate the codebase',
+            '✨ Try Cody auto-edits: Experimental feature which suggests advanced context-aware code edits as you navigate the codebase',
             'Enable auto-edits'
         )
 
@@ -35,7 +35,11 @@ export class AutoeditsOnboarding implements vscode.Disposable {
             // Enable the setting programmatically
             await vscode.workspace
                 .getConfiguration()
-                .update('cody.suggestions.mode', true, vscode.ConfigurationTarget.Global)
+                .update(
+                    'cody.suggestions.mode',
+                    'auto-edits (Experimental)',
+                    vscode.ConfigurationTarget.Global
+                )
 
             // Open VS Code settings UI and focus on the Cody Autoedits setting
             await vscode.commands.executeCommand(
@@ -48,9 +52,7 @@ export class AutoeditsOnboarding implements vscode.Disposable {
     private async shouldShowAutoeditsOnboardingPopup(): Promise<boolean> {
         const isUserEligible = await this.isUserEligibleForAutoeditsOnboarding()
         const isAutoeditsDisabled = await this.isAutoeditsDisabled()
-        const isUnderNotificationLimit =
-            (await this.getAutoEditsOnboardingNotificationCount()) <
-            this.MAX_AUTO_EDITS_ONBOARDING_NOTIFICATIONS
+        const isUnderNotificationLimit = await this.isAutoeditsNotificationsUnderLimit()
         return isUserEligible && isAutoeditsDisabled && isUnderNotificationLimit
     }
 
@@ -64,8 +66,13 @@ export class AutoeditsOnboarding implements vscode.Disposable {
         return !config.configuration.experimentalAutoeditsEnabled
     }
 
+    private async isAutoeditsNotificationsUnderLimit(): Promise<boolean> {
+        const count = await this.getAutoEditsOnboardingNotificationCount()
+        return count < this.MAX_AUTO_EDITS_ONBOARDING_NOTIFICATIONS
+    }
+
     private async getAutoEditsOnboardingNotificationCount(): Promise<number> {
-        return localStorage.getAutoEditsOnboardingNotificationCount()
+        return await localStorage.getAutoEditsOnboardingNotificationCount()
     }
 
     private async isUserEligibleForAutoeditsOnboarding(): Promise<boolean> {

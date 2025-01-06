@@ -21,7 +21,7 @@ import { autocompleteStageCounterLogger } from '../services/autocomplete-stage-c
 import { recordExposedExperimentsToSpan } from '../services/open-telemetry/utils'
 import { isInTutorial } from '../tutorial/helpers'
 
-import { showAutoeditOnboardingIfEligible } from '../autoedits/autoedit-onboarding'
+import { AutoeditsOnboarding } from '../autoedits/autoedit-onboarding'
 import { ContextRankingStrategy } from '../completions/context/completions-context-ranker'
 import type { CompletionBookkeepingEvent, CompletionItemID, CompletionLogID } from './analytics-logger'
 import * as CompletionAnalyticsLogger from './analytics-logger'
@@ -141,7 +141,9 @@ export class InlineCompletionItemProvider
     }: CodyCompletionItemProviderConfig) {
         // Show the autoedits onboarding message if the user hasn't enabled autoedits
         // but is eligible to use them as an alternative to autocomplete
-        showAutoeditOnboardingIfEligible()
+        const autoeditsOnboarding = new AutoeditsOnboarding()
+        autoeditsOnboarding.showAutoeditsOnboardingIfEligible()
+        this.disposables.push(autoeditsOnboarding)
 
         // This is a static field to allow for easy access in the static `configuration` getter.
         // There must only be one instance of this class at a time.
