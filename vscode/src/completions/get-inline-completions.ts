@@ -501,7 +501,7 @@ async function doGetInlineCompletions(
         ],
     })
 
-    CompletionAnalyticsLogger.networkRequestStarted(logId, contextResult?.logSummary)
+    CompletionAnalyticsLogger.networkRequestStarted(logId, contextResult?.contextSummary)
     stageRecorder.record('preNetworkRequest')
 
     // Get the processed completions from providers
