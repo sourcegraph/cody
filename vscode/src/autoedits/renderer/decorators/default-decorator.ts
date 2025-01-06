@@ -167,20 +167,38 @@ export class DefaultDecorator implements AutoEditsDecorator {
     ): void {
         blockify(addedLinesInfo)
         const img = diffToHighlightedImg(addedLinesInfo)
-        const startLineLength = this.editor.document.lineAt(startLine).range.end.character
+        const startLineRef = this.editor.document.lineAt(startLine)
+        const startLineLength = startLineRef.range.end.character
+
+        // The padding in which to offset the decoration image away from neighbouring code
+        const decorationPadding = 4
+        // The margin position where the decoration image should render.
+        // Ensuring it does not conflict with the visibility of existing code.
+        const decorationMargin = replacerCol - startLineLength + decorationPadding
+
         this.editor.setDecorations(this.addedLinesDecorationType, [
             {
-                range: new vscode.Range(startLine, 0, startLine, 0),
+                range: new vscode.Range(startLine, startLineLength, startLine, startLineLength),
                 renderOptions: {
-                    after: {
+                    before: {
                         color: new vscode.ThemeColor('editor.foreground'),
                         backgroundColor: new vscode.ThemeColor('editor.background'),
                         border: '1px solid white',
                         contentIconPath: vscode.Uri.parse(img),
                         textDecoration:
-                            'none; position: absolute; z-index: 99999; scale: 0.5; transform-origin: 0px 0px;',
-                        //  Push the image 4 chars past the replacement column (padding)
-                        margin: `0 0 0 ${replacerCol + 4}ch`,
+                            'none; position: absolute; z-index: 99999; scale: 0.5; transform-origin: 0px 0px; height: auto;',
+                        margin: `0 0 0 ${decorationMargin}ch`,
+                    },
+                    after: {
+                        contentText:
+                            '\u00A0'.repeat(3) +
+                            _replaceLeadingTrailingChars(
+                                addedLinesInfo[0].lineText.replace(/\S/g, '\u00A0'),
+                                ' ',
+                                '\u00A0'
+                            ),
+                        // We include an additional margin to account for the padding of text in the decoration image
+                        margin: `0 0 0 ${decorationMargin}ch`,
                     },
                 },
             },
