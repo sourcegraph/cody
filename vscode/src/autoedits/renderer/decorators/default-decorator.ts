@@ -168,23 +168,26 @@ export class DefaultDecorator implements AutoEditsDecorator {
         blockify(addedLinesInfo)
         const img = diffToHighlightedImg(addedLinesInfo)
         const startLineLength = this.editor.document.lineAt(startLine).range.end.character
-        this.editor.setDecorations(this.insertMarkerDecorationType, [
-            {
-                range: new vscode.Range(startLine, 0, startLine, startLineLength),
-            },
-        ])
         this.editor.setDecorations(this.addedLinesDecorationType, [
             {
-                range: new vscode.Range(startLine, replacerCol, startLine, replacerCol),
+                range: new vscode.Range(startLine, 0, startLine, 0),
                 renderOptions: {
                     after: {
                         color: new vscode.ThemeColor('editor.foreground'),
                         backgroundColor: new vscode.ThemeColor('editor.background'),
                         border: '1px solid white',
                         contentIconPath: vscode.Uri.parse(img),
-                        textDecoration: 'none; position: absolute; z-index: 99999; scale: 0.5;',
+                        textDecoration:
+                            'none; position: absolute; z-index: 99999; scale: 0.5; transform-origin: 0px 0px;',
+                        //  Push the image 4 chars past the replacement column (padding)
+                        margin: `0 0 0 ${replacerCol + 4}ch`,
                     },
                 },
+            },
+        ])
+        this.editor.setDecorations(this.insertMarkerDecorationType, [
+            {
+                range: new vscode.Range(startLine, 0, startLine, startLineLength),
             },
         ])
     }
