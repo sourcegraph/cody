@@ -6,7 +6,7 @@ import { mockLocalStorage } from '../../services/LocalStorageProvider'
 import type { ContextRetriever } from '../chat-view/ContextRetriever'
 import { CodyTool, OpenCtxTool } from './CodyTool'
 import { CodyToolProvider, ToolFactory, type ToolStatusCallback } from './CodyToolProvider'
-import { toolboxSettings } from './ToolboxManager'
+import { toolboxManager } from './ToolboxManager'
 
 const mockCallback: ToolStatusCallback = {
     onStart: vi.fn(),
@@ -210,7 +210,7 @@ describe('CodyTool', () => {
 
         it('should register all default tools based on toolbox settings', () => {
             const mockedToolboxSettings = { agent: 'mock-agent', shell: true }
-            vi.spyOn(toolboxSettings, 'getSettings').mockReturnValue(mockedToolboxSettings)
+            vi.spyOn(toolboxManager, 'getSettings').mockReturnValue(mockedToolboxSettings)
             const localStorageData: { [key: string]: unknown } = {}
             mockLocalStorage({
                 get: (key: string) => localStorageData[key],
@@ -227,7 +227,7 @@ describe('CodyTool', () => {
 
             // Disable shell and check if terminal tool is removed.
             mockedToolboxSettings.shell = false
-            vi.spyOn(toolboxSettings, 'getSettings').mockReturnValue(mockedToolboxSettings)
+            vi.spyOn(toolboxManager, 'getSettings').mockReturnValue(mockedToolboxSettings)
             const newTools = CodyToolProvider.getTools()
             expect(newTools.some(t => t.config.title.includes('Terminal'))).toBeFalsy()
             expect(newTools.length).toBe(tools.length - 1)

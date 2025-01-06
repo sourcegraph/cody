@@ -1,5 +1,5 @@
 import type { AgentToolboxSettings, WebviewToExtensionAPI } from '@sourcegraph/cody-shared'
-import { BotIcon, BotOffIcon } from 'lucide-react'
+import { BrainIcon } from 'lucide-react'
 import { type FC, memo, useCallback, useEffect, useState } from 'react'
 import { Badge } from '../../../../../../components/shadcn/ui/badge'
 import { Button } from '../../../../../../components/shadcn/ui/button'
@@ -151,22 +151,12 @@ export const ToolboxButton: FC<ToolboxButtonProps> = memo(({ settings, api }) =>
                     },
                 }}
             >
-                <Button variant="ghost" className="!tw-p-1 !tw-opacity-100 tw-relative">
+                <Button variant="ghost" className="!tw-p-2 tw-relative">
+                    <BrainIcon size={16} strokeWidth={1.25} className="tw-w-8 tw-h-8" />
                     {settings.agent ? (
-                        <>
-                            <BotIcon
-                                size={16}
-                                strokeWidth={1.25}
-                                className="!tw-opacity-100 tw-w-8 tw-h-8"
-                            />
-                            <span className="tw-absolute tw-top-0 tw-right-0 tw-w-2 tw-h-2 tw-rounded-full tw-bg-green-500 tw-animate-[pulse_5s_ease-in-out_infinite]" />
-                        </>
+                        <span className="tw-absolute tw-top-0 tw-right-0 tw-w-2 tw-h-2 tw-rounded-full tw-bg-green-500 tw-animate-[pulse_5s_ease-in-out_infinite]" />
                     ) : (
-                        <BotOffIcon
-                            size={16}
-                            strokeWidth={1.25}
-                            className="!tw-opacity-100 tw-w-8 tw-h-8"
-                        />
+                        <span className="tw-absolute tw-top-0 tw-right-0 tw-w-2 tw-h-2 tw-rounded-full tw-bg-red-500 tw-animate-[pulse_5s_ease-in-out_infinite]" />
                     )}
                 </Button>
             </ToolbarPopoverItem>

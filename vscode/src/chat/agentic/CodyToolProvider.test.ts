@@ -6,7 +6,7 @@ import { mockLocalStorage } from '../../services/LocalStorageProvider'
 import type { ContextRetriever } from '../chat-view/ContextRetriever'
 import { CodyTool, type CodyToolConfig } from './CodyTool'
 import { CodyToolProvider, type ToolConfiguration, ToolFactory } from './CodyToolProvider'
-import { toolboxSettings } from './ToolboxManager'
+import { toolboxManager } from './ToolboxManager'
 
 const localStorageData: { [key: string]: unknown } = {}
 mockLocalStorage({
@@ -89,13 +89,13 @@ describe('CodyToolProvider', () => {
     })
 
     it('should not include CLI tool if shell is disabled', () => {
-        vi.spyOn(toolboxSettings, 'getSettings').mockReturnValue({ agent: 'deep-cody', shell: false })
+        vi.spyOn(toolboxManager, 'getSettings').mockReturnValue({ agent: 'deep-cody', shell: false })
         const tools = CodyToolProvider.getTools()
         expect(tools.some(tool => tool.config.title === 'Terminal')).toBe(false)
     })
 
     it('should include CLI tool if shell is enabled', () => {
-        vi.spyOn(toolboxSettings, 'getSettings').mockReturnValue({ agent: 'deep-cody', shell: true })
+        vi.spyOn(toolboxManager, 'getSettings').mockReturnValue({ agent: 'deep-cody', shell: true })
         const tools = CodyToolProvider.getTools()
         expect(tools.some(tool => tool.config.title === 'Terminal')).toBe(true)
     })

@@ -2,6 +2,7 @@ import {
     type ContextMentionProviderMetadata,
     PromptString,
     type Unsubscribable,
+    isDefined,
     openCtx,
     openCtxProviderMetadata,
     ps,
@@ -9,7 +10,7 @@ import {
 import { map } from 'observable-fns'
 import type { ContextRetriever } from '../chat-view/ContextRetriever'
 import { type CodyTool, type CodyToolConfig, OpenCtxTool, TOOL_CONFIGS } from './CodyTool'
-import { toolboxSettings } from './ToolboxManager'
+import { toolboxManager } from './ToolboxManager'
 import { OPENCTX_TOOL_CONFIG } from './config'
 
 /**
@@ -61,15 +62,15 @@ export class ToolFactory {
     public getInstances(): CodyTool[] {
         // Create fresh instances of all registered tools
         return Array.from(this.tools.entries())
-            .filter(([name]) => name !== 'CliTool' || toolboxSettings.getSettings()?.shell)
+            .filter(([name]) => name !== 'CliTool' || toolboxManager.getSettings()?.shell)
             .map(([_, config]) => config.createInstance(config, this.contextRetriever))
-            .filter(Boolean) as CodyTool[]
+            .filter(isDefined) as CodyTool[]
     }
 
     public createDefaultTools(contextRetriever?: Pick<ContextRetriever, 'retrieveContext'>): CodyTool[] {
         return Object.entries(TOOL_CONFIGS)
             .map(([name]) => this.createTool(name, contextRetriever))
-            .filter(Boolean) as CodyTool[]
+            .filter(isDefined) as CodyTool[]
     }
 
     public createOpenCtxTools(providers: ContextMentionProviderMetadata[]): CodyTool[] {
@@ -137,7 +138,7 @@ export class ToolFactory {
  */
 export namespace CodyToolProvider {
     export let factory: ToolFactory
-    let openCtxSubscription: Unsubscribable
+    let openCtxSubscription: Unsubscribable | undefined
 
     export function initialize(contextRetriever: Pick<ContextRetriever, 'retrieveContext'>): void {
         factory = new ToolFactory(contextRetriever)
@@ -172,6 +173,13 @@ export namespace CodyToolProvider {
                     ? (_, contextRetriever) => new tool(contextRetriever)
                     : () => new tool(),
             })
+        }
+    }
+
+    export function dispose(): void {
+        if (openCtxSubscription) {
+            openCtxSubscription.unsubscribe()
+            openCtxSubscription = undefined
         }
     }
 }

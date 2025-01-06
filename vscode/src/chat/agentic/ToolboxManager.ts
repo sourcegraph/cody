@@ -27,12 +27,16 @@ type StoredToolboxSettings = {
     readonly shell: boolean
 }
 
-export class ToolboxManager {
+/**
+ * ToolboxManager manages the toolbox settings for the Cody chat agents.
+ * NOTE: This is a Singleton class.
+ */
+class ToolboxManager {
     private static readonly STORAGE_KEY = 'CODY_CHATAGENTS_TOOLBOX_SETTINGS'
     private static instance?: ToolboxManager
 
     private constructor() {
-        // Using private constructor for singleton pattern
+        // Using private constructor for Singleton pattern
     }
 
     private isEnabled = false
@@ -99,10 +103,6 @@ export class ToolboxManager {
             return this.getSettings()
         })
     )
-
-    public get changes(): Observable<void> {
-        return this.changeNotifications
-    }
 }
 
 export const toolboxManager = ToolboxManager.getInstance()

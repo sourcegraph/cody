@@ -105,7 +105,7 @@ import {
 import { openExternalLinks } from '../../services/utils/workspace-action'
 import { TestSupport } from '../../test-support'
 import type { MessageErrorType } from '../MessageProvider'
-import { toolboxSettings } from '../agentic/ToolboxManager'
+import { toolboxManager } from '../agentic/ToolboxManager'
 import { getMentionMenuData } from '../context/chatContext'
 import type { ChatIntentAPIClient } from '../context/chatIntentAPIClient'
 import { observeDefaultContext } from '../initialContext'
@@ -662,7 +662,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     editorState,
                     intent: detectedIntent,
                     manuallySelectedIntent: manuallySelectedIntent ? detectedIntent : undefined,
-                    agent: toolboxSettings.getSettings()?.agent,
+                    agent: toolboxManager.getSettings()?.agent,
                 })
                 this.postViewTranscript({ speaker: 'assistant' })
 
@@ -1534,10 +1534,10 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                         userProductSubscription.pipe(
                             map(value => (value === pendingOperation ? null : value))
                         ),
-                    toolboxSettings: () => toolboxSettings.settings,
+                    toolboxSettings: () => toolboxManager.settings,
                     updateToolboxSettings: settings => {
                         return promiseFactoryToObservable(async () => {
-                            await toolboxSettings.updatetoolboxSettings(settings)
+                            await toolboxManager.updateToolboxSettings(settings)
                         })
                     },
                 }
