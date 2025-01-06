@@ -69,17 +69,17 @@ export abstract class CodyTool {
      */
     protected parse(): string[] {
         const { subTag } = this.config.tags
-        const regex = new RegExp(`<${subTag}>(.+?)</?${subTag}>`, 's')
-        const parsed = (this.unprocessedText.match(new RegExp(regex, 'g')) || [])
-            .map(match => regex.exec(match)?.[1].trim())
-            .filter(Boolean) as string[]
-        const filtered = parsed.filter(q => !this.performedQueries.has(q))
-        // Store the search query to avoid running the same query again.
-        for (const query of filtered) {
+        const regex = new RegExp(`<${subTag}>(.+?)</?${subTag}>`, 'gs')
+        // Use matchAll for more efficient iteration and destructuring
+        const newQueries = [...this.unprocessedText.matchAll(regex)]
+            .map(([, group]) => group?.trim())
+            .filter(query => query && !this.performedQueries.has(query))
+        // Add all new queries to the set at once
+        for (const query of newQueries) {
             this.performedQueries.add(query)
         }
         this.reset()
-        return filtered
+        return newQueries
     }
     /**
      * The raw text input stream.

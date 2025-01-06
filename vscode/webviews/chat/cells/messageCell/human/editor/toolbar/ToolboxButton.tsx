@@ -79,13 +79,15 @@ export const ToolboxButton: FC<ToolboxButtonProps> = memo(({ settings, api }) =>
                                         <div className="tw-flex tw-flex-1 tw-w-full tw-items-center tw-justify-between">
                                             <h3 className="tw-text-sm">Self-Reflection Context Agent</h3>
                                             <Switch
-                                                checked={!!settingsForm.agent}
+                                                checked={!!settingsForm.agent?.name}
                                                 onChange={() =>
                                                     setSettingsForm({
                                                         ...settingsForm,
-                                                        agent: settingsForm.agent
-                                                            ? undefined
-                                                            : 'deep-cody',
+                                                        agent: {
+                                                            name: settingsForm.agent?.name
+                                                                ? undefined
+                                                                : 'deep-cody', // TODO: update name when finalized.
+                                                        },
                                                     })
                                                 }
                                             />
@@ -93,36 +95,32 @@ export const ToolboxButton: FC<ToolboxButtonProps> = memo(({ settings, api }) =>
                                         <div className="tw-text-sm tw-mb-4 tw-text-muted-foreground">
                                             {ToolboxOptionText.agentic}
                                         </div>
-                                        {settings.shell !== undefined && (
-                                            <>
-                                                <div className="tw-flex tw-flex-1 tw-w-full tw-items-center tw-justify-between">
-                                                    <h3 className="tw-text-sm">
-                                                        Terminal Context Agent
-                                                    </h3>
-                                                    <Switch
-                                                        checked={settingsForm.shell}
-                                                        disabled={settingsForm.agent === undefined}
-                                                        onChange={() =>
-                                                            setSettingsForm({
-                                                                ...settingsForm,
-                                                                shell:
-                                                                    !!settingsForm.agent &&
-                                                                    !settingsForm.shell,
-                                                            })
-                                                        }
-                                                    />
-                                                </div>
-                                                <div
-                                                    className="tw-text-sm tw-bg-red-100 tw-border tw-border-red-400 tw-text-red-700 tw-px-2 tw-py-1 tw-rounded"
-                                                    role="alert"
-                                                >
-                                                    Enable with caution as mistakes are possible.
-                                                </div>
-                                                <div className="tw-text-sm tw-mb-4 tw-text-muted-foreground">
-                                                    {ToolboxOptionText.terminal}
-                                                </div>
-                                            </>
-                                        )}
+                                        <div className="tw-flex tw-flex-1 tw-w-full tw-items-center tw-justify-between">
+                                            <h3 className="tw-text-sm">Terminal Context Agent</h3>
+                                            <Switch
+                                                checked={settingsForm.shell?.enabled}
+                                                disabled={settingsForm.agent?.name === undefined}
+                                                onChange={() =>
+                                                    setSettingsForm({
+                                                        ...settingsForm,
+                                                        shell: {
+                                                            enabled:
+                                                                !!settingsForm.agent?.name &&
+                                                                !settingsForm.shell?.enabled,
+                                                        },
+                                                    })
+                                                }
+                                            />
+                                        </div>
+                                        <div
+                                            className="tw-text-sm tw-bg-red-100 tw-border tw-border-red-400 tw-text-red-700 tw-px-2 tw-py-1 tw-rounded"
+                                            role="alert"
+                                        >
+                                            Enable with caution as mistakes are possible.
+                                        </div>
+                                        <div className="tw-text-sm tw-mb-4 tw-text-muted-foreground">
+                                            {ToolboxOptionText.terminal}
+                                        </div>
                                     </div>
                                 </div>
                             </CommandGroup>
@@ -153,7 +151,7 @@ export const ToolboxButton: FC<ToolboxButtonProps> = memo(({ settings, api }) =>
             >
                 <Button variant="ghost" className="!tw-p-2 tw-relative">
                     <BrainIcon size={16} strokeWidth={1.25} className="tw-w-8 tw-h-8" />
-                    {settings.agent ? (
+                    {settings.agent?.name ? (
                         <span className="tw-absolute tw-top-0 tw-right-0 tw-w-2 tw-h-2 tw-rounded-full tw-bg-green-500 tw-animate-[pulse_5s_ease-in-out_infinite]" />
                     ) : (
                         <span className="tw-absolute tw-top-0 tw-right-0 tw-w-2 tw-h-2 tw-rounded-full tw-bg-red-500 tw-animate-[pulse_5s_ease-in-out_infinite]" />

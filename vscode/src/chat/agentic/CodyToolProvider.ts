@@ -13,6 +13,8 @@ import { type CodyTool, type CodyToolConfig, OpenCtxTool, TOOL_CONFIGS } from '.
 import { toolboxManager } from './ToolboxManager'
 import { OPENCTX_TOOL_CONFIG } from './config'
 
+type Retriever = Pick<ContextRetriever, 'retrieveContext'>
+
 /**
  * Interface for tool execution status callbacks.
  * Used to track and report tool execution progress.
@@ -29,7 +31,7 @@ export interface ToolStatusCallback {
  */
 export interface ToolConfiguration extends CodyToolConfig {
     name: string
-    createInstance: (config: CodyToolConfig, ...args: any[]) => CodyTool
+    createInstance: (config: CodyToolConfig, retriever?: Retriever) => CodyTool
 }
 
 /**
@@ -44,30 +46,30 @@ export interface ToolConfiguration extends CodyToolConfig {
 export class ToolFactory {
     private tools: Map<string, ToolConfiguration> = new Map()
 
-    constructor(private contextRetriever: Pick<ContextRetriever, 'retrieveContext'>) {}
+    constructor(private contextRetriever: Retriever) {}
 
     public register(toolConfig: ToolConfiguration): void {
         this.tools.set(toolConfig.name, toolConfig)
     }
 
-    public createTool(name: string, ...args: any[]): CodyTool | undefined {
+    public createTool(name: string, retriever?: Retriever): CodyTool | undefined {
         const config = this.tools.get(name)
         if (!config) {
             return undefined
         }
-        const instance = config.createInstance(config, ...args)
+        const instance = config.createInstance(config, retriever)
         return instance
     }
 
     public getInstances(): CodyTool[] {
         // Create fresh instances of all registered tools
         return Array.from(this.tools.entries())
-            .filter(([name]) => name !== 'CliTool' || toolboxManager.getSettings()?.shell)
+            .filter(([name]) => name !== 'CliTool' || toolboxManager.getSettings()?.shell?.enabled)
             .map(([_, config]) => config.createInstance(config, this.contextRetriever))
             .filter(isDefined) as CodyTool[]
     }
 
-    public createDefaultTools(contextRetriever?: Pick<ContextRetriever, 'retrieveContext'>): CodyTool[] {
+    public createDefaultTools(contextRetriever?: Retriever): CodyTool[] {
         return Object.entries(TOOL_CONFIGS)
             .map(([name]) => this.createTool(name, contextRetriever))
             .filter(isDefined) as CodyTool[]
@@ -90,8 +92,16 @@ export class ToolFactory {
 
     private generateToolName(provider: ContextMentionProviderMetadata): string {
         const suffix = provider.id.includes('modelcontextprotocol') ? 'MCP' : ''
-        const title = provider.title.replace(' ', '').split('/').at(-1)
-        return 'TOOL' + title?.toUpperCase().replace(/[^a-zA-Z0-9]/g, '') + suffix
+        return (
+            'TOOL' +
+            provider.title
+                .split('/')
+                .pop()
+                ?.replace(/\s+/g, '')
+                ?.toUpperCase()
+                ?.replace(/[^A-Z0-9]/g, '') +
+            suffix
+        )
     }
 
     private getToolConfig(provider: ContextMentionProviderMetadata): CodyToolConfig {
@@ -140,7 +150,7 @@ export namespace CodyToolProvider {
     export let factory: ToolFactory
     let openCtxSubscription: Unsubscribable | undefined
 
-    export function initialize(contextRetriever: Pick<ContextRetriever, 'retrieveContext'>): void {
+    export function initialize(contextRetriever: Retriever): void {
         factory = new ToolFactory(contextRetriever)
         initializeRegistry()
     }
@@ -151,17 +161,12 @@ export namespace CodyToolProvider {
     }
 
     export function setupOpenCtxProviderListener(): void {
-        if (!openCtx.controller) {
-            console.error('OpenCtx controller not available')
+        if (!openCtxSubscription && factory && openCtx.controller) {
+            openCtxSubscription = openCtx.controller
+                .metaChanges({}, {})
+                .pipe(map(providers => providers.filter(p => !!p.mentions).map(openCtxProviderMetadata)))
+                .subscribe(providerMeta => factory?.createOpenCtxTools(providerMeta))
         }
-        if (openCtxSubscription || !openCtx.controller) {
-            return
-        }
-
-        openCtxSubscription = openCtx.controller
-            .metaChanges({}, {})
-            .pipe(map(providers => providers.filter(p => !!p.mentions).map(openCtxProviderMetadata)))
-            .subscribe(providerMeta => factory.createOpenCtxTools(providerMeta))
     }
 
     function initializeRegistry(): void {
@@ -170,7 +175,12 @@ export namespace CodyToolProvider {
                 name,
                 ...tool.prototype.config,
                 createInstance: useContextRetriever
-                    ? (_, contextRetriever) => new tool(contextRetriever)
+                    ? (_, contextRetriever) => {
+                          if (!contextRetriever) {
+                              throw new Error(`Context retriever required for ${name}`)
+                          }
+                          return new tool(contextRetriever)
+                      }
                     : () => new tool(),
             })
         }

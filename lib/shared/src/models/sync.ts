@@ -205,47 +205,52 @@ export function syncModels({
                                         featureFlagProvider.evaluatedFeatureFlag(
                                             FeatureFlag.CodyEarlyAccess
                                         ),
+                                        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.DeepCody),
                                         featureFlagProvider.evaluatedFeatureFlag(
                                             FeatureFlag.CodyChatDefaultToClaude35Haiku
                                         ),
                                         enableToolCody
                                     ).pipe(
-                                        switchMap(([hasEarlyAccess, defaultToHaiku]) => {
-                                            // TODO(sqs): remove waitlist from localStorage when user has access
-                                            const isOnWaitlist = config.clientState.waitlist_o1
-                                            if (isDotComUser && (hasEarlyAccess || isOnWaitlist)) {
-                                                data.primaryModels = data.primaryModels.map(model => {
-                                                    if (model.tags.includes(ModelTag.Waitlist)) {
-                                                        const newTags = model.tags.filter(
-                                                            tag => tag !== ModelTag.Waitlist
-                                                        )
-                                                        newTags.push(
-                                                            hasEarlyAccess
-                                                                ? ModelTag.EarlyAccess
-                                                                : ModelTag.OnWaitlist
-                                                        )
-                                                        return { ...model, tags: newTags }
-                                                    }
-                                                    return model
-                                                })
-                                            }
-                                            if (enableToolCody) {
-                                                data.primaryModels.push(
-                                                    createModelFromServerModel(TOOL_CODY_MODEL)
-                                                )
-                                            }
-                                            // set the default model to Haiku for free users
-                                            if (isDotComUser && isCodyFreeUser && defaultToHaiku) {
-                                                const haikuModel = data.primaryModels.find(m =>
-                                                    m.id.includes('claude-3-5-haiku')
-                                                )
-                                                if (haikuModel) {
-                                                    data.preferences!.defaults.chat = haikuModel.id
+                                        switchMap(
+                                            ([hasEarlyAccess, isDeepCodyEnabled, defaultToHaiku]) => {
+                                                // TODO(sqs): remove waitlist from localStorage when user has access
+                                                const isOnWaitlist = config.clientState.waitlist_o1
+                                                if (isDotComUser && (hasEarlyAccess || isOnWaitlist)) {
+                                                    data.primaryModels = data.primaryModels.map(
+                                                        model => {
+                                                            if (model.tags.includes(ModelTag.Waitlist)) {
+                                                                const newTags = model.tags.filter(
+                                                                    tag => tag !== ModelTag.Waitlist
+                                                                )
+                                                                newTags.push(
+                                                                    hasEarlyAccess
+                                                                        ? ModelTag.EarlyAccess
+                                                                        : ModelTag.OnWaitlist
+                                                                )
+                                                                return { ...model, tags: newTags }
+                                                            }
+                                                            return model
+                                                        }
+                                                    )
                                                 }
-                                            }
+                                                if (isDeepCodyEnabled && enableToolCody) {
+                                                    data.primaryModels.push(
+                                                        createModelFromServerModel(TOOL_CODY_MODEL)
+                                                    )
+                                                }
+                                                // set the default model to Haiku for free users
+                                                if (isDotComUser && isCodyFreeUser && defaultToHaiku) {
+                                                    const haikuModel = data.primaryModels.find(m =>
+                                                        m.id.includes('claude-3-5-haiku')
+                                                    )
+                                                    if (haikuModel) {
+                                                        data.preferences!.defaults.chat = haikuModel.id
+                                                    }
+                                                }
 
-                                            return Observable.of(data)
-                                        })
+                                                return Observable.of(data)
+                                            }
+                                        )
                                     )
                                 })
                             )

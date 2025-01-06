@@ -663,7 +663,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     editorState,
                     intent: detectedIntent,
                     manuallySelectedIntent: manuallySelectedIntent ? detectedIntent : undefined,
-                    agent: toolboxManager.getSettings()?.agent,
+                    agent: toolboxManager.getSettings()?.agent?.name,
                 })
                 this.postViewTranscript({ speaker: 'assistant' })
 
@@ -1544,10 +1544,10 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                         userProductSubscription.pipe(
                             map(value => (value === pendingOperation ? null : value))
                         ),
-                    toolboxSettings: () => toolboxManager.settings,
+                    toolboxSettings: () => toolboxManager.observable,
                     updateToolboxSettings: settings => {
                         return promiseFactoryToObservable(async () => {
-                            await toolboxManager.updateToolboxSettings(settings)
+                            await toolboxManager.updateSettings(settings)
                         })
                     },
                 }

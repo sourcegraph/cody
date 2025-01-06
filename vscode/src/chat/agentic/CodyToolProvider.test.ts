@@ -89,13 +89,19 @@ describe('CodyToolProvider', () => {
     })
 
     it('should not include CLI tool if shell is disabled', () => {
-        vi.spyOn(toolboxManager, 'getSettings').mockReturnValue({ agent: 'deep-cody', shell: false })
+        vi.spyOn(toolboxManager, 'getSettings').mockReturnValue({
+            agent: { name: 'deep-cody' },
+            shell: { enabled: false },
+        })
         const tools = CodyToolProvider.getTools()
         expect(tools.some(tool => tool.config.title === 'Terminal')).toBe(false)
     })
 
     it('should include CLI tool if shell is enabled', () => {
-        vi.spyOn(toolboxManager, 'getSettings').mockReturnValue({ agent: 'deep-cody', shell: true })
+        vi.spyOn(toolboxManager, 'getSettings').mockReturnValue({
+            agent: { name: 'deep-cody' },
+            shell: { enabled: true },
+        })
         const tools = CodyToolProvider.getTools()
         expect(tools.some(tool => tool.config.title === 'Terminal')).toBe(true)
     })

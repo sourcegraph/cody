@@ -209,7 +209,7 @@ describe('CodyTool', () => {
         })
 
         it('should register all default tools based on toolbox settings', () => {
-            const mockedToolboxSettings = { agent: 'mock-agent', shell: true }
+            const mockedToolboxSettings = { agent: { name: 'deep-cody' }, shell: { enabled: true } }
             vi.spyOn(toolboxManager, 'getSettings').mockReturnValue(mockedToolboxSettings)
             const localStorageData: { [key: string]: unknown } = {}
             mockLocalStorage({
@@ -226,7 +226,7 @@ describe('CodyTool', () => {
             expect(tools.some(t => t.config.title.includes('Terminal'))).toBeTruthy()
 
             // Disable shell and check if terminal tool is removed.
-            mockedToolboxSettings.shell = false
+            mockedToolboxSettings.shell.enabled = false
             vi.spyOn(toolboxManager, 'getSettings').mockReturnValue(mockedToolboxSettings)
             const newTools = CodyToolProvider.getTools()
             expect(newTools.some(t => t.config.title.includes('Terminal'))).toBeFalsy()

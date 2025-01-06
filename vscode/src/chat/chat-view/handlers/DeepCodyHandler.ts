@@ -6,7 +6,6 @@ import {
     featureFlagProvider,
     storeLastValue,
 } from '@sourcegraph/cody-shared'
-import { CodyToolProvider } from '../../agentic/CodyToolProvider'
 import { DeepCodyAgent } from '../../agentic/DeepCody'
 import { DeepCodyRateLimiter } from '../../agentic/DeepCodyRateLimiter'
 import type { ChatBuilder } from '../ChatBuilder'
@@ -34,8 +33,6 @@ export class DeepCodyHandler extends ChatHandler implements AgentHandler {
         error?: Error
         abort?: boolean
     }> {
-        CodyToolProvider.initialize(this.contextRetriever)
-
         // NOTE: Skip query rewrite for deep-cody as the agent will reviewed and rewrite the query.
         const skipQueryRewrite = true
         const baseContextResult = await super.computeContext(

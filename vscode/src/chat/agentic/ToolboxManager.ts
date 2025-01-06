@@ -32,7 +32,7 @@ type StoredToolboxSettings = {
  * NOTE: This is a Singleton class.
  */
 class ToolboxManager {
-    private static readonly STORAGE_KEY = 'CODY_CHATAGENTS_TOOLBOX_SETTINGS'
+    private static readonly STORAGE_KEY = 'CODYAGENT_TOOLBOX_SETTINGS'
     private static instance?: ToolboxManager
 
     private constructor() {
@@ -51,8 +51,8 @@ class ToolboxManager {
     private getStoredUserSettings(): StoredToolboxSettings {
         return (
             localStorage.get<StoredToolboxSettings>(ToolboxManager.STORAGE_KEY) ?? {
-                agent: undefined,
-                shell: this.shellConfig.user,
+                agent: this.isEnabled ? 'deep-cody' : undefined,
+                shell: false,
             }
         )
     }
@@ -62,20 +62,31 @@ class ToolboxManager {
             return null
         }
         const { agent, shell } = this.getStoredUserSettings()
+        const isShellEnabled = this.shellConfig.instance && this.shellConfig.client ? shell : undefined
         return {
-            agent,
+            agent: { name: agent },
             // Only show shell option if it's supported by instance and client.
-            shell: this.shellConfig.instance && this.shellConfig.client ? shell : undefined,
+            shell: { enabled: isShellEnabled ?? false },
         }
     }
 
-    public async updateToolboxSettings(settings: AgentToolboxSettings): Promise<void> {
+    public async updateSettings(settings: AgentToolboxSettings): Promise<void> {
         logDebug('ToolboxManager', 'Updating toolbox settings', { verbose: settings })
-        await localStorage.set(ToolboxManager.STORAGE_KEY, settings)
+        await localStorage.set(ToolboxManager.STORAGE_KEY, {
+            agent: settings.agent?.name,
+            shell: settings.shell?.enabled ?? false,
+        })
         this.changeNotifications.next()
     }
-
-    public readonly settings: Observable<AgentToolboxSettings | null> = combineLatest(
+    /**
+     * Returns a real-time Observable stream of toolbox settings that updates when any of the following changes:
+     * - Feature flags
+     * - User subscription
+     * - Available models
+     * - Manual settings updates
+     * Use this when you need to react to settings changes over time.
+     */
+    public readonly observable: Observable<AgentToolboxSettings | null> = combineLatest(
         featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.DeepCody),
         featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.ContextAgentDefaultChatModel),
         featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.DeepCodyShellContext),
