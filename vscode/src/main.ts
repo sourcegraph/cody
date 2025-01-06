@@ -1,7 +1,6 @@
 import * as vscode from 'vscode'
 
 import {
-    type AuthStatus,
     type ChatClient,
     ClientConfigSingleton,
     type ConfigurationInput,
@@ -25,7 +24,6 @@ import {
     fromVSCodeEvent,
     graphqlClient,
     isDotCom,
-    isS2,
     modelsService,
     resolvedConfig,
     setClientCapabilities,
@@ -718,14 +716,12 @@ function registerAutoEdits(chatClient: ChatClient, disposables: vscode.Disposabl
                             isEqual(a[2], b[2])
                         )
                     }),
-                    switchMap(([config, authStatus, autoeditEnabled]) => {
-                        if (!shouldEnableExperimentalAutoedits(config, autoeditEnabled, authStatus)) {
-                            return NEVER
-                        }
+                    switchMap(([config, authStatus, autoeditsFeatureFlagEnabled]) => {
                         return createAutoEditsProvider({
                             config,
                             authStatus,
                             chatClient,
+                            autoeditsFeatureFlagEnabled,
                         })
                     }),
                     catchError(error => {
@@ -736,23 +732,6 @@ function registerAutoEdits(chatClient: ChatClient, disposables: vscode.Disposabl
                 .subscribe({})
         )
     )
-}
-
-function shouldEnableExperimentalAutoedits(
-    config: ResolvedConfiguration,
-    autoeditFeatureFlagEnabled: boolean,
-    authStatus: AuthStatus
-): boolean {
-    // If running inside agent don't enable experimental autoedits
-    if (isRunningInsideAgent()) {
-        return false
-    }
-    // If the config is explicitly set in the vscode settings, use the setting instead of the feature flag.
-    if (config.configuration.experimentalAutoeditsEnabled !== undefined) {
-        return config.configuration.experimentalAutoeditsEnabled
-    }
-    // Feature flag should only control S2, use the flag instead of the config.
-    return autoeditFeatureFlagEnabled && isS2(authStatus)
 }
 
 /**
@@ -775,35 +754,14 @@ function registerAutocomplete(
 
     disposables.push(
         subscriptionDisposable(
-            combineLatest(
-                resolvedConfig,
-                authStatus,
-                featureFlagProvider.evaluatedFeatureFlag(
-                    FeatureFlag.CodyAutoeditExperimentEnabledFeatureFlag
-                )
-            )
+            combineLatest(resolvedConfig, authStatus)
                 .pipe(
                     //TODO(@rnauta -> @sqs): It feels yuk to handle the invalidation outside of
                     //where the state is picked. It's also very tedious
                     distinctUntilChanged((a, b) => {
-                        return (
-                            isEqual(a[0].configuration, b[0].configuration) &&
-                            isEqual(a[1], b[1]) &&
-                            isEqual(a[2], b[2])
-                        )
+                        return isEqual(a[0].configuration, b[0].configuration) && isEqual(a[1], b[1])
                     }),
-                    switchMap(([config, authStatus, autoeditFeatureFlagEnabled]) => {
-                        // If the auto-edit experiment is enabled, we don't need to load the completion provider
-                        if (
-                            shouldEnableExperimentalAutoedits(
-                                config,
-                                autoeditFeatureFlagEnabled,
-                                authStatus
-                            )
-                        ) {
-                            finishLoading()
-                            return NEVER
-                        }
+                    switchMap(([config, authStatus]) => {
                         if (!authStatus.pendingValidation && !statusBarLoader) {
                             statusBarLoader = statusBar.addLoader({
                                 title: 'Completion Provider is starting',

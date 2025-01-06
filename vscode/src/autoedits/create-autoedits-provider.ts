@@ -2,27 +2,32 @@ import { Observable, map } from 'observable-fns'
 import * as vscode from 'vscode'
 
 import {
-    type AuthenticatedAuthStatus,
+    type AuthStatus,
     type ChatClient,
     NEVER,
     type PickResolvedConfiguration,
-    type UnauthenticatedAuthStatus,
+    type UserProductSubscription,
+    combineLatest,
     createDisposables,
     skipPendingOperation,
 } from '@sourcegraph/cody-shared'
+import { isFreeUser } from '@sourcegraph/cody-shared/src/auth/types'
+import { isRunningInsideAgent } from '../jsonrpc/isRunningInsideAgent'
 import { AutoeditsProvider } from './autoedits-provider'
 import { autoeditsOutputChannelLogger } from './output-channel-logger'
 
 interface AutoeditsItemProviderArgs {
     config: PickResolvedConfiguration<{ configuration: true }>
-    authStatus: UnauthenticatedAuthStatus | Pick<AuthenticatedAuthStatus, 'authenticated' | 'endpoint'>
+    authStatus: AuthStatus
     chatClient: ChatClient
+    autoeditsFeatureFlagEnabled: boolean
 }
 
 export function createAutoEditsProvider({
     config: { configuration },
     authStatus,
     chatClient,
+    autoeditsFeatureFlagEnabled,
 }: AutoeditsItemProviderArgs): Observable<void> {
     if (!configuration.experimentalAutoeditsEnabled) {
         return NEVER
