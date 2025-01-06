@@ -124,7 +124,7 @@ export class DefaultDecorator implements AutoEditsDecorator {
         // Handle fully added lines
         for (const addedLine of addedLines) {
             addedLinesInfo.push({
-                ranges: [],
+                ranges: [[0, addedLine.text.length]],
                 afterLine: addedLine.modifiedLineNumber,
                 lineText: addedLine.text,
             })

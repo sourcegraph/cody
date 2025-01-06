@@ -47,7 +47,8 @@ export function diffToHighlightedImg(
     // Default size measurements. TODO: Revisit these
     const fontSize = 12
     const lineHeight = 14 // a bit bigger than fontSize for spacing
-    const padding = 4
+    const yPadding = 2
+    const xPadding = 6
     const maxWidth = 600
 
     const tempCanvas = createCanvas(10, 10)
@@ -57,10 +58,10 @@ export function diffToHighlightedImg(
     /**
      * Determine the correct width and height that the canvas will be
      */
-    let yPos = padding
+    let yPos = yPadding
     let requiredWidth = 0
     for (const lineTokens of tokens) {
-        let xPos = padding
+        let xPos = xPadding
         for (const token of lineTokens) {
             const measure = tempCtx.measureText(token.content)
             xPos += measure.width
@@ -70,8 +71,8 @@ export function diffToHighlightedImg(
         }
         yPos += lineHeight
     }
-    const totalWidth = Math.min(requiredWidth + padding, maxWidth)
-    const totalHeight = yPos + padding
+    const totalWidth = Math.min(requiredWidth + xPadding, maxWidth)
+    const totalHeight = yPos + yPadding
 
     // Create the canvas, ready to start painting text
     // Pixel ratio for sharper text on high-DPI screens
@@ -97,10 +98,10 @@ export function diffToHighlightedImg(
         decorationsByLine.set(afterLine, lineDecorations)
     }
 
-    yPos = padding
+    yPos = yPadding
     for (let lineIndex = 0; lineIndex < tokens.length; lineIndex++) {
         const lineTokens = tokens[lineIndex]
-        let xPos = padding
+        let xPos = xPadding
 
         // Get the actual line number from addedLinesInfo
         const actualLineNumber = addedLinesInfo[lineIndex].afterLine
@@ -108,9 +109,9 @@ export function diffToHighlightedImg(
 
         // Draw highlight backgrounds first
         for (const decoration of lineDecorations) {
-            let highlightStartX = padding
+            let highlightStartX = xPadding
             let highlightWidth = 0
-            let currentX = padding
+            let currentX = xPadding
             let currentCharPos = 0
 
             for (const token of lineTokens) {
