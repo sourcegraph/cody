@@ -5,31 +5,41 @@ import {
     type AuthenticatedAuthStatus,
     type ChatClient,
     NEVER,
+    type PickResolvedConfiguration,
     type UnauthenticatedAuthStatus,
     createDisposables,
     promiseFactoryToObservable,
+    skipPendingOperation,
 } from '@sourcegraph/cody-shared'
 import { AutoeditsProvider } from './autoedits-provider'
 import { autoeditsOutputChannelLogger } from './output-channel-logger'
 
 interface AutoeditsItemProviderArgs {
+    config: PickResolvedConfiguration<{ configuration: true }>
     authStatus: UnauthenticatedAuthStatus | Pick<AuthenticatedAuthStatus, 'authenticated' | 'endpoint'>
     chatClient: ChatClient
 }
 
 export function createAutoEditsProvider({
+    config: { configuration },
     authStatus,
     chatClient,
 }: AutoeditsItemProviderArgs): Observable<void> {
+    if (!configuration.experimentalAutoeditsEnabled) {
+        return NEVER
+    }
+
     if (!authStatus.authenticated) {
         if (!authStatus.pendingValidation) {
             autoeditsOutputChannelLogger.logDebug('createProvider', 'You are not signed in.')
         }
         return NEVER
     }
+
     return promiseFactoryToObservable(async () => {
         return await getAutoeditsProviderDocumentFilters()
     }).pipe(
+        skipPendingOperation(),
         createDisposables(documentFilters => {
             const provider = new AutoeditsProvider(chatClient)
             return [

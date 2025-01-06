@@ -718,11 +718,11 @@ function registerAutoEdits(chatClient: ChatClient, disposables: vscode.Disposabl
                         if (!shouldEnableExperimentalAutoedits(config, autoeditEnabled, authStatus)) {
                             return NEVER
                         }
-                        const res = createAutoEditsProvider({
+                        return createAutoEditsProvider({
+                            config,
                             authStatus,
                             chatClient,
                         })
-                        return res
                     }),
                     catchError(error => {
                         logError('registerAutoedits', 'Error', error)
