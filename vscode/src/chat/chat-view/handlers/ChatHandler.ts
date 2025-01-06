@@ -233,13 +233,17 @@ export class ChatHandler implements AgentHandler {
     }> {
         try {
             return wrapInActiveSpan('chat.computeContext', async span => {
+                // Skip query rewrite for deep-cody agent as that is done
+                // during the reflection/review step.
+                const isDeepCody = this.modelId.includes('deep-cody')
                 const contextAlternatives = await computeContextAlternatives(
                     this.contextRetriever,
                     this.editor,
                     { text, mentions },
                     editorState,
                     span,
-                    signal
+                    signal,
+                    isDeepCody
                 )
                 return { contextItems: contextAlternatives[0].items }
             })
@@ -255,7 +259,8 @@ export async function computeContextAlternatives(
     { text, mentions }: HumanInput,
     editorState: SerializedPromptEditorState | null,
     span: Span,
-    signal?: AbortSignal
+    signal?: AbortSignal,
+    skipQueryRewrite = false
 ): Promise<RankedContext[]> {
     // Remove context chips (repo, @-mentions) from the input text for context retrieval.
     const inputTextWithoutContextChips = editorState
@@ -268,7 +273,8 @@ export async function computeContextAlternatives(
         structuredMentions,
         inputTextWithoutContextChips,
         span,
-        signal
+        signal,
+        skipQueryRewrite
     )
     const priorityContextPromise = retrievedContextPromise
         .then(p => getPriorityContext(text, editor, p))
