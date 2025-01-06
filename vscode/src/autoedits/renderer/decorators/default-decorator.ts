@@ -197,7 +197,6 @@ export class DefaultDecorator implements AutoEditsDecorator {
                                 ' ',
                                 '\u00A0'
                             ),
-                        // We include an additional margin to account for the padding of text in the decoration image
                         margin: `0 0 0 ${decorationMargin}ch`,
                     },
                 },
