@@ -19,7 +19,6 @@ export class DefaultDecorator implements AutoEditsDecorator {
     private readonly hideRemainderDecorationType: vscode.TextEditorDecorationType
     private readonly addedLinesDecorationType: vscode.TextEditorDecorationType
     private readonly insertMarkerDecorationType: vscode.TextEditorDecorationType
-    private readonly imgTextDecorationType: vscode.TextEditorDecorationType
     private readonly editor: vscode.TextEditor
 
     constructor(editor: vscode.TextEditor) {
@@ -39,7 +38,7 @@ export class DefaultDecorator implements AutoEditsDecorator {
             opacity: '0',
         })
         this.addedLinesDecorationType = vscode.window.createTextEditorDecorationType({
-            // backgroundColor: 'red', // SENTINEL (should not actually appear)
+            backgroundColor: 'red', // SENTINEL (should not actually appear)
             before: {
                 backgroundColor: 'rgba(100, 255, 100, 0.1)',
                 color: GHOST_TEXT_COLOR,
@@ -50,9 +49,6 @@ export class DefaultDecorator implements AutoEditsDecorator {
             border: '1px dashed rgba(100, 255, 100, 0.5)',
             borderWidth: '1px 1px 0 0',
         })
-        this.imgTextDecorationType = vscode.window.createTextEditorDecorationType({
-            textDecoration: 'none; position: absolute; z-index: 99999',
-        })
 
         // Track all decoration types for disposal
         this.decorationTypes = [
@@ -62,7 +58,6 @@ export class DefaultDecorator implements AutoEditsDecorator {
             this.hideRemainderDecorationType,
             this.addedLinesDecorationType,
             this.insertMarkerDecorationType,
-            this.imgTextDecorationType,
         ]
     }
 
@@ -82,7 +77,6 @@ export class DefaultDecorator implements AutoEditsDecorator {
     public setDecorations(decorationInfo: DecorationInfo): void {
         const { modifiedLines, removedLines, addedLines } = decorationInfo
 
-        console.log(this.imgTextDecorationType)
         const removedLinesRanges = removedLines.map(line =>
             this.createFullLineRange(line.originalLineNumber)
         )
@@ -172,20 +166,13 @@ export class DefaultDecorator implements AutoEditsDecorator {
         replacerCol: number
     ): void {
         blockify(addedLinesInfo)
-
         const img = diffToHighlightedImg(addedLinesInfo)
-        const replacerDecorations: vscode.DecorationOptions[] = []
-
-        const startLineRef = this.editor.document.lineAt(startLine)
-        const startLineLength = startLineRef.range.end.character
-
+        const startLineLength = this.editor.document.lineAt(startLine).range.end.character
         this.editor.setDecorations(this.insertMarkerDecorationType, [
             {
                 range: new vscode.Range(startLine, 0, startLine, startLineLength),
             },
         ])
-
-        console.log('replacer decorations', replacerDecorations)
         this.editor.setDecorations(this.addedLinesDecorationType, [
             {
                 range: new vscode.Range(startLine, replacerCol, startLine, replacerCol),

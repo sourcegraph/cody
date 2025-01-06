@@ -88,7 +88,6 @@ export function diffToHighlightedImg(
 
     const highlightColor = 'rgba(35, 134, 54, 0.2)'
 
-    // Create a map of line numbers to their decorations for faster lookup
     const decorationsByLine = new Map<number, typeof decorations>()
     for (const { afterLine, ranges } of addedLinesInfo) {
         const lineDecorations = ranges.map(([start, end]) => ({
