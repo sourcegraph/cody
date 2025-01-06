@@ -607,7 +607,7 @@
         "mac": "alt+l",
         "when": "cody.activated && !editorHasSelection",
         "args": {
-          "editorFocus": true
+          "editorFocus": false
         }
       },
       {

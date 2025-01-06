@@ -20,6 +20,6 @@ export function getCreateNewChatCommand(options: NewChatCommandInput): string {
     return IDE === CodyIDE.Web
         ? 'cody.chat.new'
         : webviewType === 'sidebar' || !multipleWebviewsEnabled
-          ? 'cody.chat.newPanel'
+          ? 'cody.chat.toggle'
           : 'cody.chat.newEditorPanel'
 }
