@@ -1,7 +1,7 @@
 export function getChatPanelTitle(lastHumanText?: string, truncateTitle = true): string {
     let text = lastHumanText?.trim()?.split('\n')[0]
     if (!text) {
-        return 'New Chat'
+        return 'New Chat meadow'
     }
 
     // Regex to remove the markdown formatted links with this format: '[_@FILENAME_]()'

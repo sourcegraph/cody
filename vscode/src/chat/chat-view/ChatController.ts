@@ -925,7 +925,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             this.submitOrEditOperation.abort()
             this.submitOrEditOperation = undefined
         }
-        void this.saveSession()
     }
 
     private async reevaluateSearchWithSelectedFilters({
@@ -1350,8 +1349,13 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     public async clearAndRestartSession(chatMessages?: ChatMessage[]): Promise<void> {
         this.cancelSubmitOrEditOperation()
         void this.saveSession()
-
-        this.chatBuilder = new ChatBuilder(this.chatBuilder.selectedModel, undefined, chatMessages)
+         this.postMessage({
+            type: 'transcript',
+            messages: [],
+            isMessageInProgress: false,
+            chatID: this.chatBuilder.sessionID,
+        })
+        this.chatBuilder = new ChatBuilder(this.chatBuilder.selectedModel, undefined, chatMessages)  
         this.postViewTranscript()
     }
 

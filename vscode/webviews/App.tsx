@@ -57,6 +57,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
             vscodeAPI.onMessage(message => {
                 switch (message.type) {
                     case 'ui/theme': {
+                        debugger
                         document.documentElement.dataset.ide = message.agentIDE
                         const rootStyle = document.documentElement.style
                         for (const [name, value] of Object.entries(message.cssVariables || {})) {
@@ -73,6 +74,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                             setTranscript(deserializedMessages.slice(0, msgLength))
                             setMessageInProgress(deserializedMessages[msgLength])
                         } else {
+                            debugger
                             setTranscript(deserializedMessages)
                             setMessageInProgress(null)
                         }
@@ -80,6 +82,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                         break
                     }
                     case 'config':
+                        debugger
                         setConfig(message)
                         updateDisplayPathEnvInfoForWebview(message.workspaceFolderUris)
                         // Reset to the default view (Chat) for unauthenticated users.
@@ -88,20 +91,25 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                         }
                         break
                     case 'clientConfig':
+                        debugger
                         if (message.clientConfig) {
                             setClientConfig(message.clientConfig)
                         }
                         break
                     case 'clientAction':
+                        debugger
                         dispatchClientAction(message)
                         break
                     case 'errors':
+                        debugger
                         setErrorMessages(prev => [...prev, message.errors].slice(-5))
                         break
                     case 'view':
+                        debugger
                         setView(message.view)
                         break
                     case 'attribution':
+                        debugger
                         if (message.attribution) {
                             guardrails.notifyAttributionSuccess(message.snippet, {
                                 repositories: message.attribution.repositoryNames.map(name => {
