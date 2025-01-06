@@ -578,7 +578,7 @@
       {
         "command": "cody.command.autoedits-manual-trigger",
         "title": "Autoedits Manual Trigger",
-        "enablement": "cody.activated && config.cody.suggestions.mode == 'suggestion agent'"
+        "enablement": "cody.activated && config.cody.suggestions.mode == 'auto-edits (Experimental)'"
       }
     ],
     "keybindings": [
@@ -739,7 +739,7 @@
       {
         "command": "cody.supersuggest.testExample",
         "key": "ctrl+alt+enter",
-        "when": "cody.activated && config.cody.suggestions.mode == 'suggestion agent'"
+        "when": "cody.activated && config.cody.suggestions.mode == 'auto-edits (Experimental)'"
       }
     ],
     "submenus": [
@@ -1003,11 +1003,11 @@
         },
         "cody.suggestions.mode": {
           "type": "string",
-          "enum": ["autocomplete", "suggestion agent", "off"],
+          "enum": ["autocomplete", "auto-edits (Experimental)", "off"],
           "enumDescriptions": [
-            "Enable standard autocomplete mode",
-            "Enable suggestion agent mode",
-            "Disable all suggestions"
+            "Enables standard autocomplete mode for suggestions.",
+            "Offers advanced context-aware suggestions by integrating autocompletion with inline editing, surpassing traditional autocomplete. Experimental feature for Pro and Enterprise users.",
+            "Disables all suggestions."
           ],
           "default": "autocomplete",
           "markdownDescription": "Controls the suggestion mode for Cody"

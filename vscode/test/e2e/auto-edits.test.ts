@@ -67,7 +67,7 @@ const test = baseTest
     .extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL })
     .extend<ExtraWorkspaceSettings>({
         extraWorkspaceSettings: {
-            'cody.suggestions.mode': CodyAutoSuggestionMode.SuggestionAgent,
+            'cody.suggestions.mode': CodyAutoSuggestionMode.Autoedits,
             'cody.experimental.autoedits.use-mock-responses': true,
         },
     })

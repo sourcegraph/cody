@@ -125,7 +125,7 @@ export function getConfiguration(
         experimentalTracing: getHiddenSetting('experimental.tracing', false),
 
         experimentalSupercompletions: getHiddenSetting('experimental.supercompletions', false),
-        experimentalAutoeditsEnabled: codyAutoSuggestionsMode === CodyAutoSuggestionMode.SuggestionAgent,
+        experimentalAutoeditsEnabled: codyAutoSuggestionsMode === CodyAutoSuggestionMode.Autoedits,
         experimentalAutoeditsConfigOverride: getHiddenSetting(
             'experimental.autoedits.config.override',
             undefined
