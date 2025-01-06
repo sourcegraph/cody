@@ -1,114 +1,6 @@
 import { createCanvas } from 'canvas'
 import { type Highlighter, createHighlighter } from 'shiki'
-import type { DecorationLineInfo } from './renderer/decorators/base'
-
-interface DiffToImageOptions {
-    width?: number
-    height?: number
-    fontSize?: number
-    padding?: number
-    lineHeight?: number
-    colors?: {
-        added: string
-        removed: string
-        modified: string
-        unchanged: string
-    }
-}
-
-export function diffToImg(diffLines: DecorationLineInfo[], options: DiffToImageOptions = {}) {
-    // First, trim unnecessary unchanged lines
-    const trimmedDiffLines = trimUnchangedLines(diffLines)
-
-    const {
-        fontSize = 14,
-        padding = 10,
-        lineHeight = 1.2,
-        colors = {
-            added: '#28a745',
-            removed: '#dc3545',
-            modified: '#0366d6',
-            unchanged: '#24292e',
-        },
-    } = options
-
-    // Calculate dimensions
-    const longestLine = Math.max(
-        ...trimmedDiffLines.map(line => {
-            switch (line.type) {
-                case 'modified':
-                    return Math.max(line.oldText.length, line.newText.length)
-                default:
-                    return line.text.length
-            }
-        })
-    )
-
-    // Calculate total lines needed (accounting for modified lines taking 2 spaces)
-    const totalLines = trimmedDiffLines.reduce((count, line) => {
-        return count + (line.type === 'modified' ? 2 : 1)
-    }, 0)
-
-    const width = longestLine * (fontSize * 0.6) + padding * 2
-    const height = totalLines * (fontSize * lineHeight) + padding * 2
-
-    // Create canvas
-    const canvas = createCanvas(width, height)
-    const ctx = canvas.getContext('2d')
-
-    // Configure base text settings
-    ctx.font = `${fontSize}px monospace`
-
-    // Draw diff lines
-    let currentY = padding + fontSize
-
-    // biome-ignore lint/complexity/noForEach: <explanation>
-    trimmedDiffLines.forEach(line => {
-        switch (line.type) {
-            case 'added':
-                ctx.fillStyle = colors.added
-                ctx.fillText(`+ ${line.text}`, padding, currentY)
-                currentY += fontSize * lineHeight
-                break
-
-            case 'removed':
-                ctx.fillStyle = colors.removed
-                ctx.fillText(`- ${line.text}`, padding, currentY)
-                currentY += fontSize * lineHeight
-                break
-
-            case 'modified':
-                ctx.fillStyle = colors.removed
-                ctx.fillText(`- ${line.oldText}`, padding, currentY)
-                currentY += fontSize * lineHeight
-
-                ctx.fillStyle = colors.added
-                ctx.fillText(`+ ${line.newText}`, padding, currentY)
-                currentY += fontSize * lineHeight
-
-                // if (line.changes) {
-                //     // biome-ignore lint/complexity/noForEach: <explanation>
-                //     line.changes.forEach(change => {
-                //         if (change.type === 'insert') {
-                //             // const textWidth = ctx.measureText(change.text).width
-                //             // const textX = padding + fontSize * 0.6 * change.modifiedRange.start.character
-                //             // // ctx.fillStyle = 'rgba(40, 167, 69, 0.2)'
-                //             // ctx.fillRect(textX, currentY - fontSize, textWidth, fontSize)
-                //         }
-                //     })
-                // }
-                break
-
-            case 'unchanged':
-                ctx.fillStyle = colors.unchanged
-                ctx.fillText(`  ${line.text}`, padding, currentY)
-                currentY += fontSize * lineHeight
-                break
-        }
-    })
-
-    return canvas.toDataURL('image/png')
-}
+import type { AddedLinesDecorationInfo } from './renderer/decorators/default-decorator'
 
 let _highlighter: Highlighter | null = null
 
@@ -132,14 +24,25 @@ function ensureHighlighterReady(): Highlighter {
 }
 
 export function diffToHighlightedImg(
-    code = `console.log("Hello world")`,
+    addedLinesInfo: AddedLinesDecorationInfo[],
     lang = 'typescript' as const
 ): string {
+    const codeBlock = addedLinesInfo.reduce(
+        (acc, { lineText }, i) => acc + lineText + (i < addedLinesInfo.length - 1 ? '\n' : ''),
+        ''
+    )
     const highlighter = ensureHighlighterReady()
-    const { tokens } = highlighter.codeToTokens(code, {
+    const { tokens } = highlighter.codeToTokens(codeBlock, {
         theme: 'vitesse-dark',
         lang,
     })
+
+    const decorations = addedLinesInfo.flatMap(({ ranges, afterLine }) =>
+        ranges.map(([start, end]) => ({
+            start: { line: afterLine, character: start },
+            end: { line: afterLine, character: end },
+        }))
+    )
 
     // Default size measurements. TODO: Revisit these
     const fontSize = 12
@@ -183,26 +86,75 @@ export function diffToHighlightedImg(
     ctx.font = `${fontSize}px monospace`
     ctx.textBaseline = 'top'
 
+    const highlightColor = 'rgba(35, 134, 54, 0.2)'
+
+    // Create a map of line numbers to their decorations for faster lookup
+    const decorationsByLine = new Map<number, typeof decorations>()
+    for (const { afterLine, ranges } of addedLinesInfo) {
+        const lineDecorations = ranges.map(([start, end]) => ({
+            start: { line: afterLine, character: start },
+            end: { line: afterLine, character: end },
+        }))
+        decorationsByLine.set(afterLine, lineDecorations)
+    }
+
     yPos = padding
-    for (const lineTokens of tokens) {
+    for (let lineIndex = 0; lineIndex < tokens.length; lineIndex++) {
+        const lineTokens = tokens[lineIndex]
         let xPos = padding
+
+        // Get the actual line number from addedLinesInfo
+        const actualLineNumber = addedLinesInfo[lineIndex].afterLine
+        const lineDecorations = decorationsByLine.get(actualLineNumber) || []
+
+        // Draw highlight backgrounds first
+        for (const decoration of lineDecorations) {
+            let highlightStartX = padding
+            let highlightWidth = 0
+            let currentX = padding
+            let currentCharPos = 0
+
+            for (const token of lineTokens) {
+                const tokenWidth = ctx.measureText(token.content).width
+                const tokenLength = token.content.length
+
+                // Check if this token contains the start position
+                if (
+                    currentCharPos <= decoration.start.character &&
+                    currentCharPos + tokenLength >= decoration.start.character
+                ) {
+                    const charsBeforeStart = decoration.start.character - currentCharPos
+                    const startOffsetWidth = ctx.measureText(
+                        token.content.slice(0, charsBeforeStart)
+                    ).width
+                    highlightStartX = currentX + startOffsetWidth
+                }
+
+                // Check if this token contains the end position
+                if (
+                    currentCharPos <= decoration.end.character &&
+                    currentCharPos + tokenLength >= decoration.end.character
+                ) {
+                    const charsBeforeEnd = decoration.end.character - currentCharPos
+                    const endOffsetWidth = ctx.measureText(token.content.slice(0, charsBeforeEnd)).width
+                    highlightWidth = currentX + endOffsetWidth - highlightStartX
+                }
+
+                currentX += tokenWidth
+                currentCharPos += tokenLength
+            }
+
+            ctx.fillStyle = highlightColor
+            ctx.fillRect(highlightStartX, yPos, highlightWidth, lineHeight)
+        }
+        // Draw the text on top
         for (const token of lineTokens) {
             ctx.fillStyle = token.color || '#ffffff'
             ctx.fillText(token.content, xPos, yPos)
             xPos += ctx.measureText(token.content).width
         }
+
         yPos += lineHeight
     }
-
     return canvas.toDataURL('image/png')
-}
-
-function trimUnchangedLines(lines: DecorationLineInfo[]): DecorationLineInfo[] {
-    const firstChangedIndex = lines.findIndex(line => line.type !== 'unchanged')
-    if (firstChangedIndex === -1) return []
-
-    const reversedLastChangedIndex = [...lines].reverse().findIndex(line => line.type !== 'unchanged')
-    const lastChangedIndex = lines.length - reversedLastChangedIndex - 1
-
-    return lines.slice(firstChangedIndex, lastChangedIndex + 1)
 }

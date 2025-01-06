@@ -4,7 +4,6 @@ import * as vscode from 'vscode'
 
 import { getNewLineChar } from '../../completions/text-processing'
 
-import { diffToImg } from '../diffToImg'
 import type { DecorationInfo, DecorationLineInfo, LineChange, ModifiedLineInfo } from './decorators/base'
 
 /**
@@ -19,24 +18,12 @@ export function getDecorationInfo(originalText: string, modifiedText: string): D
     const modifiedLines = modifiedText.split(getNewLineChar(modifiedText))
 
     const lineInfos = computeDiffOperations(originalLines, modifiedLines)
-    console.log('GOT LINE INFOS:', lineInfos)
-    const decorationPng = diffToImg(lineInfos, {
-        fontSize: 12,
-        padding: 0,
-        colors: {
-            added: '#28a745',
-            removed: '#dc3545',
-            modified: '#0366d6',
-            unchanged: '#24292e',
-        },
-    })
 
     const decorationInfo: DecorationInfo = {
         modifiedLines: [],
         removedLines: [],
         addedLines: [],
         unchangedLines: [],
-        img: decorationPng,
     }
 
     for (const lineInfo of lineInfos) {

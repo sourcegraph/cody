@@ -5,7 +5,7 @@ import { GHOST_TEXT_COLOR } from '../../../commands/GhostHintDecorator'
 import { diffToHighlightedImg } from '../../diffToImg'
 import type { AutoEditsDecorator, DecorationInfo, ModifiedLineInfo } from './base'
 
-interface AddedLinesDecorationInfo {
+export interface AddedLinesDecorationInfo {
     ranges: [number, number][]
     afterLine: number
     lineText: string
@@ -173,72 +173,12 @@ export class DefaultDecorator implements AutoEditsDecorator {
     ): void {
         blockify(addedLinesInfo)
 
-        let codeBlock = ''
-        for (const { lineText } of addedLinesInfo) {
-            codeBlock += `${lineText}\n`
-        }
-
-        // TODO: Generate image here
-        const img = diffToHighlightedImg(codeBlock)
-        console.log('ADDED LINES INFO', addedLinesInfo)
+        const img = diffToHighlightedImg(addedLinesInfo)
         const replacerDecorations: vscode.DecorationOptions[] = []
-        // for (let i = 0; i < addedLinesInfo.length; i++) {
-        //     const j = i + startLine
-        //     const line = this.editor.document.lineAt(j)
-        //     const decoration = addedLinesInfo[i]
 
-        //     if (replacerCol >= line.range.end.character) {
-        //         replacerDecorations.push({
-        //             range: new vscode.Range(j, line.range.end.character, j, line.range.end.character),
-        //             renderOptions: {
-        //                 // Show the suggested code but keep it positioned absolute to ensure
-        //                 // the cursor does not jump there.
-        //                 before: {
-        //                     contentText:
-        //                         '\u00A0'.repeat(3) +
-        //                         _replaceLeadingTrailingChars(decoration.lineText, ' ', '\u00A0'),
-        //                     margin: `0 0 0 ${replacerCol - line.range.end.character}ch`,
-        //                     textDecoration: 'none; position: absolute;',
-        //                 },
-        //                 // Create an empty HTML element with the width required to show the suggested code.
-        //                 // Required to make the viewport scrollable to view the suggestion if it's outside.
-        //                 after: {
-        //                     contentText:
-        //                         '\u00A0'.repeat(3) +
-        //                         _replaceLeadingTrailingChars(
-        //                             decoration.lineText.replace(/\S/g, '\u00A0'),
-        //                             ' ',
-        //                             '\u00A0'
-        //                         ),
-        //                     margin: `0 0 0 ${replacerCol - line.range.end.character}ch`,
-        //                 },
-        //             },
-        //         })
-        //     } else {
-        //         replacerDecorations.push({
-        //             range: new vscode.Range(j, replacerCol, j, replacerCol),
-        //             renderOptions: {
-        //                 before: {
-        //                     contentText:
-        //                         '\u00A0' +
-        //                         _replaceLeadingTrailingChars(decoration.lineText, ' ', '\u00A0'),
-        //                     textDecoration: 'none; position: absolute;',
-        //                 },
-        //                 after: {
-        //                     contentText:
-        //                         '\u00A0'.repeat(3) +
-        //                         _replaceLeadingTrailingChars(
-        //                             decoration.lineText.replace(/\S/g, '\u00A0'),
-        //                             ' ',
-        //                             '\u00A0'
-        //                         ),
-        //                 },
-        //             },
-        //         })
-        //     }
-        // }
+        const startLineRef = this.editor.document.lineAt(startLine)
+        const startLineLength = startLineRef.range.end.character
 
-        const startLineLength = this.editor.document.lineAt(startLine).range.end.character
         this.editor.setDecorations(this.insertMarkerDecorationType, [
             {
                 range: new vscode.Range(startLine, 0, startLine, startLineLength),
@@ -248,16 +188,14 @@ export class DefaultDecorator implements AutoEditsDecorator {
         console.log('replacer decorations', replacerDecorations)
         this.editor.setDecorations(this.addedLinesDecorationType, [
             {
-                range: new vscode.Range(startLine, 0, startLine, startLineLength),
+                range: new vscode.Range(startLine, replacerCol, startLine, replacerCol),
                 renderOptions: {
-                    // Show the suggested code but keep it positioned absolute to ensure
-                    // the cursor does not jump there.
-                    before: {
+                    after: {
                         color: new vscode.ThemeColor('editor.foreground'),
                         backgroundColor: new vscode.ThemeColor('editor.background'),
                         border: '1px solid white',
                         contentIconPath: vscode.Uri.parse(img),
-                        textDecoration: 'none; position: absolute; z-index: 99999; scale: 0.5',
+                        textDecoration: 'none; position: absolute; z-index: 99999; scale: 0.5;',
                     },
                 },
             },
@@ -355,14 +293,18 @@ function removeLeadingWhitespaceBlock(addedLines: AddedLinesDecorationInfo[]) {
             leastCommonWhitespacePrefix = leadingWhitespace
             continue
         }
-        // get common prefix of leastCommonWhitespacePrefix and leadingWhitespace
         leastCommonWhitespacePrefix = getCommonPrefix(leastCommonWhitespacePrefix, leadingWhitespace)
     }
     if (!leastCommonWhitespacePrefix) {
         return
     }
+    const prefixLength = leastCommonWhitespacePrefix.length
     for (const addedLine of addedLines) {
         addedLine.lineText = addedLine.lineText.replace(leastCommonWhitespacePrefix, '')
+        addedLine.ranges = addedLine.ranges.map(([start, end]) => [
+            Math.max(0, start - prefixLength),
+            Math.max(0, end - prefixLength),
+        ])
     }
 }
 

@@ -12,7 +12,6 @@ import { telemetryRecorder } from '@sourcegraph/cody-shared'
 import { type DebouncedFunc, throttle } from 'lodash'
 import * as vscode from 'vscode'
 import type { SyntaxNode } from 'web-tree-sitter'
-import { diffToHighlightedImg } from '../autoedits/diffToImg'
 import { execQueryWrapper } from '../tree-sitter/query-sdk'
 
 const EDIT_SHORTCUT_LABEL = isMacOS() ? 'Opt+K' : 'Alt+K'
@@ -363,33 +362,12 @@ export class GhostHintDecorator implements vscode.Disposable {
 
         const decorationHint = HINT_DECORATIONS[variant]
         const decorationText = UNICODE_SPACE.repeat(textPadding) + decorationHint.text
-        console.log(decorationText)
         this.activeDecorationRange = new vscode.Range(position, position)
-
-        const fullSelectionLineRange = new vscode.Range(
-            editor.selection.start.line,
-            0,
-            editor.selection.end.line,
-            Number.MAX_SAFE_INTEGER
-        )
-        const codeToHighlight = editor.document.getText(fullSelectionLineRange)
-
-        console.log(position)
-        const uri = diffToHighlightedImg(codeToHighlight)
-        const contentIconPath = vscode.Uri.parse(uri)
 
         editor.setDecorations(HINT_DECORATIONS[variant].decoration, [
             {
                 range: this.activeDecorationRange,
-                renderOptions: {
-                    after: {
-                        color: new vscode.ThemeColor('editor.foreground'),
-                        backgroundColor: new vscode.ThemeColor('editor.background'),
-                        border: '1px solid white',
-                        contentIconPath,
-                        textDecoration: 'none; position: absolute; z-index: 99999; scale: 0.5',
-                    },
-                },
+                renderOptions: { after: { contentText: decorationText } },
             },
         ])
     }
