@@ -312,12 +312,12 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
                         <CommandList>
                             <CommandGroup title="Main Account Menu">
                                 <CommandItem>
-                                    <div className="tw-flex tw-w-full tw-justify-start tw-gap-4 tw-align-middle">
+                                    <div className="tw-flex tw-w-full tw-justify-start tw-gap-4 tw-align-middle tw-max-h-9">
                                         <UserAvatar
                                             user={authStatus}
                                             size={USER_MENU_AVATAR_SIZE}
                                             sourcegraphGradientBorder={!!isProUser}
-                                            className="tw-inline-flex tw-self-center tw-items-center tw-w-auto tw-flex-none"
+                                            className="tw-inline-flex tw-self-center tw-items-center tw-w-auto tw-flex-none tw-max-h-9"
                                         />
                                         <div className="tw-flex tw-self-stretch tw-flex-col tw-w-full tw-items-start tw-justify-center tw-flex-auto tw-overflow-hidden">
                                             <p
@@ -438,7 +438,7 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
                 user={authStatus}
                 size={USER_MENU_AVATAR_SIZE}
                 sourcegraphGradientBorder={!!isProUser}
-                className="tw-w-10 tw-h-10"
+                className="tw-max-h-full tw-width-auto"
             />
         </ToolbarPopoverItem>
     )

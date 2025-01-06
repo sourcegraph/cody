@@ -36,5 +36,6 @@ export function serializeChatMessage(chatMessage: ChatMessage): SerializedChatMe
         search: chatMessage.search,
         processes: chatMessage.processes,
         agent: chatMessage.agent,
+        subMessages: chatMessage.subMessages,
     }
 }

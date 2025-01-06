@@ -32,3 +32,17 @@ function getDeepCodyServerModel(): ServerModel {
         },
     }
 }
+
+export const TOOL_CODY_MODEL: ServerModel = {
+    modelRef: 'sourcegraph::2024-12-31::tool-cody',
+    displayName: 'Tool Cody',
+    modelName: 'tool-cody',
+    capabilities: ['chat'],
+    category: 'accuracy',
+    status: 'experimental' as ModelTag.Experimental,
+    tier: 'pro' as ModelTag.Pro,
+    contextWindow: {
+        maxInputTokens: 45000,
+        maxOutputTokens: 4000,
+    },
+}

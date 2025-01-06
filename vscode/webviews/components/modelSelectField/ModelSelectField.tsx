@@ -379,6 +379,7 @@ const ChatModelIcon: FunctionComponent<{ model: string; className?: string }> = 
 
 /** Common {@link ModelsService.uiGroup} values. */
 const ModelUIGroup: Record<string, string> = {
+    Agents: 'Agents with tools',
     Power: 'More powerful models',
     Balanced: 'Balanced for power and speed',
     Speed: 'Faster models',
@@ -387,6 +388,7 @@ const ModelUIGroup: Record<string, string> = {
 }
 
 const getModelDropDownUIGroup = (model: Model): string => {
+    if (['deep-cody', 'tool-cody'].some(id => model.id.includes(id))) return ModelUIGroup.Agents
     if (model.tags.includes(ModelTag.Power)) return ModelUIGroup.Power
     if (model.tags.includes(ModelTag.Balanced)) return ModelUIGroup.Balanced
     if (model.tags.includes(ModelTag.Speed)) return ModelUIGroup.Speed

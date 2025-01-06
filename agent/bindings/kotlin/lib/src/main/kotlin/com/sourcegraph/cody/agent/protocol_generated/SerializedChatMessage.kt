@@ -15,6 +15,7 @@ data class SerializedChatMessage(
   val search: Any? = null,
   val agent: String? = null,
   val processes: List<ProcessingStep>? = null,
+  val subMessages: List<SubMessage>? = null,
 ) {
 
   enum class SpeakerEnum {

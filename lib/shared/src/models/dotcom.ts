@@ -32,7 +32,7 @@ const MOCKED_SERVER_MODELS_CONFIG = {
     ],
     models: [
         {
-            modelRef: 'aanthropic::2024-10-22::claude-3-5-sonnet-latest',
+            modelRef: 'anthropic::2024-10-22::claude-3-5-sonnet-latest',
             displayName: 'Claude 3.5 Sonnet',
             modelName: 'claude-3-5-sonnet-20241022',
             capabilities: ['edit', 'chat'],

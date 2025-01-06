@@ -72,6 +72,7 @@ import * as vscode from 'vscode'
 
 import { type Span, context } from '@opentelemetry/api'
 import { captureException } from '@sentry/core'
+import type { SubMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
 import { Subject, map } from 'observable-fns'
 import type { URI } from 'vscode-uri'
@@ -811,7 +812,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         })
 
         this.postEmptyMessageInProgress(model)
-        let messageInProgress: ChatMessage | undefined = undefined
+        let messageInProgress: ChatMessage = { speaker: 'assistant', model }
         try {
             await agent.handle(
                 {
@@ -828,13 +829,17 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     postError: (error: Error, type?: MessageErrorType): void => {
                         this.postError(error, type)
                     },
-                    postMessageInProgress: (message?: ChatMessage): void => {
+                    postMessageInProgress: (message: ChatMessage): void => {
                         messageInProgress = message
                         this.postViewTranscript(message)
                     },
                     postStatuses: (steps: ProcessingStep[]): void => {
                         this.chatBuilder.setLastMessageProcesses(steps)
-                        this.postEmptyMessageInProgress(model)
+                        this.postViewTranscript(messageInProgress)
+                    },
+                    experimentalPostMessageInProgress: (subMessages: SubMessage[]): void => {
+                        messageInProgress.subMessages = subMessages
+                        this.postViewTranscript(messageInProgress)
                     },
                     postDone: (op?: { abort: boolean }): void => {
                         if (op?.abort) {
@@ -851,6 +856,11 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                             (['search', 'insert', 'edit'].includes(messageInProgress?.intent ?? '') ||
                                 messageInProgress?.search ||
                                 messageInProgress?.error)
+                        ) {
+                            this.chatBuilder.addBotMessage(messageInProgress, model)
+                        } else if (
+                            messageInProgress.subMessages &&
+                            messageInProgress.subMessages.length > 0
                         ) {
                             this.chatBuilder.addBotMessage(messageInProgress, model)
                         } else if (messageInProgress?.text) {

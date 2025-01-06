@@ -89,3 +89,17 @@ export const LongEmail: Story = {
         },
     },
 }
+
+export const LargeUserAvatarImage: Story = {
+    args: {
+        isProUser: false,
+        authStatus: {
+            ...AUTH_STATUS_FIXTURE_AUTHED,
+            username: 'ara',
+            primaryEmail: '',
+            endpoint: 'https://sourcegraph.com',
+            avatarURL:
+                'https://lh3.googleusercontent.com/a/ACg8ocLFLnpSkpj-ZEhngxhMMD-BZGmFBsIObP8rin6oTuPs',
+        },
+    },
+}

@@ -2,6 +2,7 @@ import type { ContextItem } from '../../codebase-context/messages'
 import type { Message } from '../../sourcegraph-api'
 
 import type { SerializedChatTranscript } from '.'
+import type { PromptString } from '../../prompt/prompt-string'
 import type { NLSSearchDynamicFilter, NLSSearchResponse } from '../../sourcegraph-api/graphql/client'
 
 /**
@@ -12,6 +13,11 @@ import type { NLSSearchDynamicFilter, NLSSearchResponse } from '../../sourcegrap
 export type RankedContext = {
     strategy: string
     items: ContextItem[]
+}
+
+export interface SubMessage {
+    text?: PromptString
+    step?: ProcessingStep
 }
 
 export interface ChatMessage extends Message {
@@ -41,6 +47,14 @@ export interface ChatMessage extends Message {
     search?: ChatMessageSearch | undefined | null
     agent?: string
     processes?: ProcessingStep[] | undefined | null
+
+    /**
+     * An experimental field intended to enable assistant messages to be broken down
+     * into an array of sub-messages and status updates, to enable a better UI for
+     * responses that incorporate tool use. For now, this should not be used by
+     * non-experimental functionality.
+     */
+    subMessages?: SubMessage[]
 }
 
 /**
@@ -104,6 +118,7 @@ export interface SerializedChatMessage {
     search?: ChatMessage['search']
     agent?: string
     processes?: ProcessingStep[] | undefined | null
+    subMessages?: SubMessage[]
 }
 
 export interface ChatError {

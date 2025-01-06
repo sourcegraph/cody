@@ -2,6 +2,8 @@
 
 This is a log of all notable changes to Cody for VS Code.
 
+{/* CHANGELOG_START */}
+
 ## Unreleased
 
 ### Added
@@ -11,6 +13,36 @@ This is a log of all notable changes to Cody for VS Code.
 ### Changed
 
 ### Uncategorized
+
+## 1.56.0
+
+### Added
+- autoedits e2e tests  [pull/6425](https://github.com/sourcegraph/cody/pull/6425)
+- feat(audoedit): extract autoedits config from the provider  [pull/6460](https://github.com/sourcegraph/cody/pull/6460)
+- autoedit: address dogfooding feedback  [pull/6454](https://github.com/sourcegraph/cody/pull/6454)
+- feat(audoedit): implement basic analytics logger  [pull/6430](https://github.com/sourcegraph/cody/pull/6430)
+- feat(onebox): Use new prompt editor when onebox is enabled  [pull/6288](https://github.com/sourcegraph/cody/pull/6288)
+
+
+### Fixed
+- feat(logging): Add interactionId to header of Cody Client requests (CODY-4117)  [pull/6450](https://github.com/sourcegraph/cody/pull/6450)
+- fix(autoedit): fix shrink prediction logic  [pull/6404](https://github.com/sourcegraph/cody/pull/6404)
+- fix(modelSelectField): missing overflow scrollbar when there isn't space to show entire list  [pull/6423](https://github.com/sourcegraph/cody/pull/6423)
+- fix: remove trailing spaces from extracted query  [pull/6432](https://github.com/sourcegraph/cody/pull/6432)
+- Fix small screen filters panel opening  [pull/6420](https://github.com/sourcegraph/cody/pull/6420)
+- fix diff rendering for autoedits  [pull/6410](https://github.com/sourcegraph/cody/pull/6410)
+- chore(agent): disable flaky test  [pull/6429](https://github.com/sourcegraph/cody/pull/6429)
+- fix: Prevent style leaks in cody web  [pull/6427](https://github.com/sourcegraph/cody/pull/6427)
+- chore(onebox/telemetry): add `billingMetadata`   [pull/6426](https://github.com/sourcegraph/cody/pull/6426)
+- fix(audoedit): fix renderer testing command  [pull/6408](https://github.com/sourcegraph/cody/pull/6408)
+- chore/release: Bump package version and update changelog for 1.52  [pull/6414](https://github.com/sourcegraph/cody/pull/6414)
+
+### Changed
+- feat(prompt-editor): Add new ProseMirror-based implementation  [pull/6272](https://github.com/sourcegraph/cody/pull/6272)
+- refactor(user-menu): improve display of user menu  [pull/6389](https://github.com/sourcegraph/cody/pull/6389)
+- Use omnibox ff for intent detector  [pull/6419](https://github.com/sourcegraph/cody/pull/6419)
+- Enable repo boost for inactive editor  [pull/6443](https://github.com/sourcegraph/cody/pull/6443)
+- include symbol matches in search results  [pull/6441](https://github.com/sourcegraph/cody/pull/6441)
 
 ## 1.54.0
 

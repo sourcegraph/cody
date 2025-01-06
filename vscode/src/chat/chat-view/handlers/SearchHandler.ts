@@ -11,6 +11,7 @@ import {
     errorToChatError,
     graphqlClient,
     inputTextWithoutContextChipsFromPromptEditorState,
+    isValidVersion,
     ps,
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
@@ -21,9 +22,11 @@ import type { AgentHandler, AgentHandlerDelegate, AgentRequest } from './interfa
 
 export class SearchHandler implements AgentHandler {
     async handle(
-        { editorState, inputText, mentions, chatBuilder, signal }: AgentRequest,
+        { editorState, inputText, mentions, chatBuilder, signal, recorder, span }: AgentRequest,
         delegate: AgentHandlerDelegate
     ): Promise<void> {
+        recorder.recordChatQuestionExecuted(mentions, { addMetadata: true, current: span })
+
         const inputTextWithoutContextChips = editorState
             ? inputTextWithoutContextChipsFromPromptEditorState(editorState)
             : inputText.toString()
@@ -37,12 +40,15 @@ export class SearchHandler implements AgentHandler {
         const currentFile = getEditor()?.active?.document?.uri || workspaceRoot
         const repoName = currentFile ? await getFirstRepoNameContainingUri(currentFile) : undefined
 
-        const boostParameter = repoName ? `boost:repo(${repoName})` : ''
+        const currentRepoBoost = repoName ? `boost:repo(${repoName})` : ''
+        const myProjectsBoost = (await isValidVersion({ minimumVersion: '6.0.0' }))
+            ? 'boost:relevant.repos()'
+            : ''
 
         const query = `content:"${inputTextWithoutContextChips.replaceAll(
             '"',
             '\\"'
-        )}" ${boostParameter} ${scopes.length ? `(${scopes.join(' OR ')})` : ''}`
+        )}" ${currentRepoBoost} ${myProjectsBoost} ${scopes.length ? `(${scopes.join(' OR ')})` : ''}`
 
         try {
             const response = await graphqlClient.nlsSearchQuery({
