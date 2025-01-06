@@ -33,7 +33,10 @@ describe('AutoeditsProvider', () => {
 
     beforeAll(() => {
         vi.useFakeTimers()
-        vi.spyOn(vscode.commands, 'registerCommand').mockImplementation((command, callback) => {
+        vi.spyOn(vscode.commands, 'registerCommand').mockImplementation(((
+            command: string,
+            callback: () => Promise<void>
+        ) => {
             if (command === 'cody.supersuggest.accept') {
                 acceptSuggestionCommand = callback
             }
@@ -42,7 +45,10 @@ describe('AutoeditsProvider', () => {
             }
 
             return { dispose: () => {} }
-        })
+            // TODO(valery): remove `any` type casting. For some reason
+            // `pnpm -C vscode run build` fails wit the type error
+            // despite `pnpm tsc --build --watch --force` being happy.
+        }) as any)
 
         vi.spyOn(vscode.commands, 'executeCommand').mockImplementation((...args) => {
             executedCommands.push(args)
