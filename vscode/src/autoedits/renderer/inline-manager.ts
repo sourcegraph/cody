@@ -1,9 +1,12 @@
-import { isFileURI } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
+
+import { isFileURI } from '@sourcegraph/cody-shared'
+
 import { completionMatchesSuffix } from '../../completions/is-completion-visible'
 import { getNewLineChar } from '../../completions/text-processing'
+import { autoeditAnalyticsLogger } from '../analytics-logger'
 import { autoeditsOutputChannelLogger } from '../output-channel-logger'
-import type { AutoeditRendererManagerArgs } from './manager'
+import { areSameUriDocs } from '../utils'
 
 import type {
     AddedLineInfo,
@@ -11,11 +14,15 @@ import type {
     ModifiedLineInfo,
     UnchangedLineInfo,
 } from './decorators/base'
-import { AutoEditsDefaultRendererManager, type AutoEditsRendererManager } from './manager'
+import {
+    AutoEditsDefaultRendererManager,
+    type AutoEditsRendererManager,
+    type TryMakeInlineCompletionsArgs,
+} from './manager'
 
 /**
- * For now AutoEditsInlineRendererManager is the same as AutoEditsDefaultRendererManager and the
- * only major difference is in `maybeRenderDecorationsAndTryMakeInlineCompletionResponse` implementation.
+ * For now `AutoEditsInlineRendererManager` is the same as `AutoEditsDefaultRendererManager` and the
+ * only major difference is in `tryMakeInlineCompletionResponse` implementation.
  *
  * This extra manager will be removed once we won't have a need to maintain two diff renderers.
  * Currently, it is used to enable the experimental usage of the `InlineDiffDecorator`.
@@ -26,17 +33,22 @@ export class AutoEditsInlineRendererManager
 {
     protected async acceptEdit(): Promise<void> {
         const editor = vscode.window.activeTextEditor
-        if (!this.activeEdit || !editor || editor.document.uri.toString() !== this.activeEdit.uri) {
-            await this.dismissEdit()
-            return
+        const { activeRequest } = this
+        if (
+            !editor ||
+            !activeRequest ||
+            !areSameUriDocs(editor.document, this.activeRequest?.document)
+        ) {
+            return this.rejectEdit()
         }
 
         await vscode.commands.executeCommand('editor.action.inlineSuggest.hide')
         await editor.edit(editBuilder => {
-            editBuilder.replace(this.activeEdit!.range, this.activeEdit!.prediction)
+            editBuilder.replace(activeRequest.codeToReplaceData.range, activeRequest.prediction)
         })
 
-        await this.dismissEdit()
+        await this.handleDidHideSuggestion()
+        autoeditAnalyticsLogger.markAsAccepted(activeRequest.requestId)
     }
 
     protected async onDidChangeTextEditorSelection(
@@ -47,21 +59,21 @@ export class AutoEditsInlineRendererManager
         // rendered as inline completion ghost text, which is hidden by default
         // whenever the cursor moves.
         if (isFileURI(event.textEditor.document.uri)) {
-            this.dismissEdit()
+            this.rejectEdit()
         }
     }
 
-    async maybeRenderDecorationsAndTryMakeInlineCompletionResponse({
+    tryMakeInlineCompletions({
         prediction,
-        codeToReplaceData,
         document,
         position,
         docContext,
         decorationInfo,
-    }: AutoeditRendererManagerArgs): Promise<{
-        inlineCompletions: vscode.InlineCompletionItem[] | null
-        updatedDecorationInfo: DecorationInfo
-    }> {
+    }: TryMakeInlineCompletionsArgs): {
+        inlineCompletionItems: vscode.InlineCompletionItem[] | null
+        updatedDecorationInfo: DecorationInfo | null
+        updatedPrediction: string
+    } {
         const { insertText, usedChangeIds } = getCompletionText({
             prediction,
             cursorPosition: position,
@@ -71,12 +83,12 @@ export class AutoEditsInlineRendererManager
         // The current line suffix should not require any char removals to render the completion.
         const isSuffixMatch = completionMatchesSuffix({ insertText }, docContext.currentLineSuffix)
 
-        let inlineCompletions: vscode.InlineCompletionItem[] | null = null
+        let inlineCompletionItems: vscode.InlineCompletionItem[] | null = null
 
         if (isSuffixMatch) {
             const completionText = docContext.currentLinePrefix + insertText
 
-            inlineCompletions = [
+            inlineCompletionItems = [
                 new vscode.InlineCompletionItem(
                     completionText,
                     new vscode.Range(
@@ -87,7 +99,7 @@ export class AutoEditsInlineRendererManager
             ]
 
             autoeditsOutputChannelLogger.logDebug(
-                'maybeRenderDecorationsAndTryMakeInlineCompletionResponse',
+                'tryMakeInlineCompletions',
                 'Autocomplete Inline Response: ',
                 completionText
             )
@@ -108,14 +120,11 @@ export class AutoEditsInlineRendererManager
             unchangedLines: withoutUsedChanges(decorationInfo.unchangedLines),
         }
 
-        await this.showEdit({
-            document,
-            range: codeToReplaceData.range,
-            prediction,
-            decorationInfo: decorationInfoWithoutUsedChanges,
-        })
-
-        return { inlineCompletions, updatedDecorationInfo: decorationInfo }
+        return {
+            inlineCompletionItems,
+            updatedDecorationInfo: decorationInfoWithoutUsedChanges,
+            updatedPrediction: prediction,
+        }
     }
 }
 

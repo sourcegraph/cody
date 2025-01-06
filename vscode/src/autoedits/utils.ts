@@ -1,3 +1,5 @@
+import type * as vscode from 'vscode'
+
 import { getNewLineChar, lines } from '../completions/text-processing'
 
 import type { DecorationInfo } from './renderer/decorators/base'
@@ -173,4 +175,8 @@ export function trimNewLineCharsFromString(text: string): string {
  */
 export function clip(line: number, min: number, max: number) {
     return Math.max(Math.min(line, max), min)
+}
+
+export function areSameUriDocs(a?: vscode.TextDocument, b?: vscode.TextDocument): boolean {
+    return Boolean(a && b && a.uri.toString() === b.uri.toString())
 }
