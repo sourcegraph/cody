@@ -54,6 +54,12 @@ export class DeepCodyAgent {
     private stepsManager: ProcessManager
 
     protected context: ContextItem[] = []
+    /**
+     * Context stats during the review:
+     * - context: how many context was fetched via tools.
+     * - loop: how many loop was run.
+     */
+    private stats = { context: 0, loop: 0 }
 
     constructor(
         protected readonly chatBuilder: ChatBuilder,
@@ -62,12 +68,9 @@ export class DeepCodyAgent {
     ) {
         // Initialize tools, handlers and mixins in constructor
         this.tools = CodyToolProvider.getTools()
-
         this.initializeMultiplexer(this.tools)
         this.buildPrompt(this.tools)
-
         this.stepsManager = new ProcessManager(steps => statusUpdateCallback(steps))
-
         this.statusCallback = {
             onStart: () => {
                 this.stepsManager.initializeStep()
@@ -143,16 +146,17 @@ export class DeepCodyAgent {
         span.setAttribute('sampled', true)
         this.statusCallback?.onStart()
         const startTime = performance.now()
-        const { stats, contextItems } = await this.reviewLoop(requestID, span, chatAbortSignal, maxLoops)
-
+        await this.reviewLoop(requestID, span, chatAbortSignal, maxLoops)
         telemetryRecorder.recordEvent('cody.deep-cody.context', 'reviewed', {
             privateMetadata: {
+                requestID,
                 model: DeepCodyAgent.model,
                 traceId: span.spanContext().traceId,
             },
             metadata: {
-                context: stats.context,
-                loop: stats.loop,
+                loop: this.stats.loop, // Number of loops run.
+                fetched: this.stats.context, // Number of context fetched.
+                context: this.context.length, // Number of context used.
                 durationMs: performance.now() - startTime,
             },
             billingMetadata: {
@@ -160,10 +164,8 @@ export class DeepCodyAgent {
                 category: 'billable',
             },
         })
-
         this.statusCallback?.onComplete()
-
-        return contextItems
+        return this.context
     }
 
     private async reviewLoop(
@@ -171,23 +173,19 @@ export class DeepCodyAgent {
         span: Span,
         chatAbortSignal: AbortSignal,
         maxLoops: number
-    ): Promise<{ stats: { context: number; loop: number }; contextItems: ContextItem[] }> {
+    ): Promise<void> {
         span.addEvent('reviewLoop')
-        const stats = { context: 0, loop: 0 }
         for (let i = 0; i < maxLoops && !chatAbortSignal.aborted; i++) {
-            stats.loop++
+            this.stats.loop++
             const newContext = await this.review(requestID, span, chatAbortSignal)
             if (!newContext.length) break
 
             // Filter and add new context items in one pass
             const validItems = newContext.filter(c => c.title !== 'TOOLCONTEXT')
             this.context.push(...validItems)
-
-            stats.context += validItems.length
-
+            this.stats.context += validItems.length
             if (newContext.every(isUserAddedItem)) break
         }
-        return { stats, contextItems: this.context }
     }
 
     /**
@@ -261,7 +259,9 @@ export class DeepCodyAgent {
                 return reviewed
             }
 
-            return results.flat().filter(isDefined)
+            const newContextFetched = results.flat().filter(isDefined)
+            this.stats.context = this.stats.context + newContextFetched.length
+            return newContextFetched
         } catch (error) {
             await this.multiplexer.notifyTurnComplete()
             logDebug('Deep Cody', `context review failed: ${error}`, {
