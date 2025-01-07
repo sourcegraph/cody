@@ -21,6 +21,7 @@ import { upstreamHealthProvider } from '../../services/UpstreamHealthProvider'
 import { captureException, shouldErrorBeReported } from '../../services/sentry/sentry'
 import { splitSafeMetadata } from '../../services/telemetry-v2'
 import type { AutoeditsPrompt } from '../adapters/base'
+import { autoeditsOutputChannelLogger } from '../output-channel-logger'
 import type { CodeToReplaceData } from '../prompt/prompt-utils'
 import type { DecorationInfo } from '../renderer/decorators/base'
 
@@ -545,8 +546,6 @@ export class AutoeditAnalyticsLogger {
         if (result?.updatedRequest) {
             this.writeAutoeditRequestEvent('suggested', result.updatedRequest)
             this.writeAutoeditRequestEvent('accepted', result.updatedRequest)
-
-            this.activeRequests.delete(result.updatedRequest.requestId)
         }
     }
 
@@ -576,7 +575,6 @@ export class AutoeditAnalyticsLogger {
 
         if (result?.updatedRequest) {
             this.writeAutoeditRequestEvent('discarded', result.updatedRequest)
-            this.activeRequests.delete(result.updatedRequest.requestId)
         }
     }
 
@@ -666,6 +664,17 @@ export class AutoeditAnalyticsLogger {
         action: AutoeditEventAction,
         params?: TelemetryEventParameters<{ [key: string]: number }, BillingProduct, BillingCategory>
     ): void {
+        autoeditsOutputChannelLogger.logDebug(
+            'writeAutoeditEvent',
+            `${action} id: "${params?.interactionID ?? 'n/a'}"`,
+            {
+                verbose: {
+                    latency: params?.metadata?.latency,
+                    prediction: params?.privateMetadata?.prediction,
+                    codeToRewrite: params?.privateMetadata?.codeToRewrite,
+                },
+            }
+        )
         telemetryRecorder.recordEvent('cody.autoedit', action, params)
     }
 
