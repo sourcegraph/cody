@@ -10,8 +10,14 @@ import * as vscode from 'vscode'
 import { localStorage } from '../services/LocalStorageProvider'
 import { isUserEligibleForAutoeditsFeature } from './create-autoedits-provider'
 
+export interface AutoeditsNotificationInfo {
+    lastNotifiedTime: number
+    timesShown: number
+}
+
 export class AutoeditsOnboarding implements vscode.Disposable {
     private readonly MAX_AUTO_EDITS_ONBOARDING_NOTIFICATIONS = 3
+    private readonly MIN_TIME_DIFF_AUTO_EDITS_BETWEEN_NOTIFICATIONS_MS = 60 * 60 * 1000 // 1 hour
 
     private featureFlagAutoeditsExperimental = storeLastValue(
         featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyAutoeditExperimentEnabledFeatureFlag)
@@ -57,8 +63,11 @@ export class AutoeditsOnboarding implements vscode.Disposable {
     }
 
     private async incrementAutoEditsOnboardingNotificationCount(): Promise<void> {
-        const count = await this.getAutoEditsOnboardingNotificationCount()
-        await localStorage.setAutoEditsOnboardingNotificationCount(count + 1)
+        const info = await this.getAutoEditsOnboardingNotificationInfo()
+        await localStorage.setAutoEditsOnboardingNotificationInfo({
+            timesShown: info.timesShown + 1,
+            lastNotifiedTime: Date.now(),
+        })
     }
 
     private async isAutoeditsDisabled(): Promise<boolean> {
@@ -67,23 +76,22 @@ export class AutoeditsOnboarding implements vscode.Disposable {
     }
 
     private async isAutoeditsNotificationsUnderLimit(): Promise<boolean> {
-        const count = await this.getAutoEditsOnboardingNotificationCount()
-        return count < this.MAX_AUTO_EDITS_ONBOARDING_NOTIFICATIONS
+        const info = await this.getAutoEditsOnboardingNotificationInfo()
+        return (
+            info.timesShown < this.MAX_AUTO_EDITS_ONBOARDING_NOTIFICATIONS &&
+            Date.now() - info.lastNotifiedTime > this.MIN_TIME_DIFF_AUTO_EDITS_BETWEEN_NOTIFICATIONS_MS
+        )
     }
 
-    private async getAutoEditsOnboardingNotificationCount(): Promise<number> {
-        return await localStorage.getAutoEditsOnboardingNotificationCount()
+    private async getAutoEditsOnboardingNotificationInfo(): Promise<AutoeditsNotificationInfo> {
+        return localStorage.getAutoEditsOnboardingNotificationInfo()
     }
 
     private async isUserEligibleForAutoeditsOnboarding(): Promise<boolean> {
         const authStatus = currentAuthStatus()
-        const productSubsubscription = await currentUserProductSubscription()
+        const productSubscription = await currentUserProductSubscription()
         const autoeditsFeatureFlag = this.isAutoeditsFeatureFlagEnabled()
-        return isUserEligibleForAutoeditsFeature(
-            autoeditsFeatureFlag,
-            authStatus,
-            productSubsubscription
-        )
+        return isUserEligibleForAutoeditsFeature(autoeditsFeatureFlag, authStatus, productSubscription)
     }
 
     private isAutoeditsFeatureFlagEnabled(): boolean {
