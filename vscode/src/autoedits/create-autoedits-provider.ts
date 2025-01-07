@@ -1,4 +1,4 @@
-import { type Observable, map } from 'observable-fns'
+import { Observable, map } from 'observable-fns'
 import * as vscode from 'vscode'
 
 import {
@@ -8,7 +8,6 @@ import {
     type PickResolvedConfiguration,
     type UnauthenticatedAuthStatus,
     createDisposables,
-    promiseFactoryToObservable,
     skipPendingOperation,
 } from '@sourcegraph/cody-shared'
 import { AutoeditsProvider } from './autoedits-provider'
@@ -36,25 +35,22 @@ export function createAutoEditsProvider({
         return NEVER
     }
 
-    return promiseFactoryToObservable(async () => {
-        return await getAutoeditsProviderDocumentFilters()
-    }).pipe(
+    return Observable.of(undefined).pipe(
         skipPendingOperation(),
-        createDisposables(documentFilters => {
+        createDisposables(() => {
             const provider = new AutoeditsProvider(chatClient)
             return [
                 vscode.commands.registerCommand('cody.command.autoedits-manual-trigger', async () => {
                     await vscode.commands.executeCommand('editor.action.inlineSuggest.hide')
                     await vscode.commands.executeCommand('editor.action.inlineSuggest.trigger')
                 }),
-                vscode.languages.registerInlineCompletionItemProvider(documentFilters, provider),
+                vscode.languages.registerInlineCompletionItemProvider(
+                    [{ scheme: 'file', language: '*' }, { notebookType: '*' }],
+                    provider
+                ),
                 provider,
             ]
         }),
         map(() => undefined)
     )
-}
-
-export async function getAutoeditsProviderDocumentFilters(): Promise<vscode.DocumentFilter[]> {
-    return [{ scheme: 'file', language: '*' }, { notebookType: '*' }]
 }

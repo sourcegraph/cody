@@ -47,6 +47,7 @@ import type { CommandResult } from './CommandResult'
 import { showAccountMenu } from './auth/account-menu'
 import { showSignInMenu, showSignOutMenu, tokenCallbackHandler } from './auth/auth'
 import { createAutoEditsProvider } from './autoedits/create-autoedits-provider'
+import { autoeditsOutputChannelLogger } from './autoedits/output-channel-logger'
 import { registerAutoEditTestRenderCommand } from './autoedits/renderer/mock-renderer'
 import type { MessageProviderOptions } from './chat/MessageProvider'
 import { ChatsController, CodyChatEditorViewType } from './chat/chat-view/ChatsController'
@@ -725,7 +726,7 @@ function registerAutoEdits(chatClient: ChatClient, disposables: vscode.Disposabl
                         })
                     }),
                     catchError(error => {
-                        logError('registerAutoedits', 'Error', error)
+                        autoeditsOutputChannelLogger.logError('registerAutoedits', 'Error', error)
                         return NEVER
                     })
                 )
