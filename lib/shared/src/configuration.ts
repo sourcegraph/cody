@@ -188,6 +188,24 @@ export enum CodyIDE {
     StandaloneWeb = 'StandaloneWeb',
 }
 
+/**
+ * These values must match the enum values in cody.suggestions.mode in vscode/package.json
+ */
+export enum CodyAutoSuggestionMode {
+    /**
+     * The suggestion mode where suggestions come from the OpenAI completions API. This is the default mode.
+     */
+    Autocomplete = 'autocomplete',
+    /**
+     * The suggestion mode where suggestions come from the Cody AI agent chat API.
+     */
+    Autoedits = 'auto-edits (Experimental)',
+    /**
+     * Disable Cody suggestions altogether.
+     */
+    Off = 'off',
+}
+
 export type AutocompleteProviderID = keyof typeof AUTOCOMPLETE_PROVIDER_ID
 
 export const AUTOCOMPLETE_PROVIDER_ID = {

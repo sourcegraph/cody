@@ -72,7 +72,7 @@ describe('AgentWorkspaceConfiguration', () => {
             expect(config.get('cody.telemetry.level')).toBe('agent')
             // clientName undefined because custom JSON specified telemetry with level alone.
             expect(config.get('cody.telemetry.clientName')).toBe('test-client')
-            expect(config.get('cody.autocomplete.enabled')).toBe(true)
+            expect(config.get('cody.suggestions.mode')).toBe('autocomplete')
             expect(config.get('cody.autocomplete.advanced.provider')).toBe('anthropic')
             expect(config.get('cody.autocomplete.advanced.model')).toBe('claude-2')
             expect(config.get('cody.advanced.agent.running')).toBe(true)

@@ -906,7 +906,7 @@ export const DEFAULT_VSCODE_SETTINGS = {
     },
     commandCodeLenses: false,
     experimentalSupercompletions: false,
-    experimentalAutoeditsEnabled: undefined,
+    experimentalAutoeditsEnabled: false,
     experimentalAutoeditsRendererTesting: false,
     experimentalAutoeditsConfigOverride: undefined,
     experimentalMinionAnthropicKey: undefined,
