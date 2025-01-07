@@ -65,14 +65,14 @@ class LensesService(val project: Project) {
       if (project.isDisposed) return@runInEdt
       // Find the specific editor matching the file
       CodyEditorUtil.getAllOpenEditors()
-        .find { editor -> editor.virtualFile == vf }
-        ?.let { matchingEditor ->
-          CodeVisionInitializer.getInstance(project)
-              .getCodeVisionHost()
-              .invalidateProvider(
-                  CodeVisionHost.LensInvalidateSignal(
-                      matchingEditor, EditCodeVisionProvider.allEditProviders().map { it.id }))
-        }
+          .find { editor -> editor.virtualFile == vf }
+          ?.let { matchingEditor ->
+            CodeVisionInitializer.getInstance(project)
+                .getCodeVisionHost()
+                .invalidateProvider(
+                    CodeVisionHost.LensInvalidateSignal(
+                        matchingEditor, EditCodeVisionProvider.allEditProviders().map { it.id }))
+          }
     }
     listeners.forEach { it.onLensesUpdate(vf, codeLens) }
   }
