@@ -252,7 +252,7 @@ export class AutoEditsDefaultRendererManager implements AutoEditsRendererManager
             autoeditsOutputChannelLogger.logDebug(
                 'tryMakeInlineCompletions',
                 'Autocomplete Inline Response: ',
-                autocompleteResponse
+                { verbose: autocompleteResponse }
             )
             return {
                 inlineCompletionItems: [inlineCompletionItem],
@@ -260,7 +260,7 @@ export class AutoEditsDefaultRendererManager implements AutoEditsRendererManager
                 updatedPrediction,
             }
         }
-        autoeditsOutputChannelLogger.logDebug(
+        autoeditsOutputChannelLogger.logDebugIfVerbose(
             'tryMakeInlineCompletions',
             'Rendering a diff view for auto-edits.'
         )

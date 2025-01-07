@@ -24,11 +24,9 @@ export class CodyGatewayAdapter implements AutoeditsModelAdapter {
             }
             return response.choices[0].text
         } catch (error) {
-            autoeditsOutputChannelLogger.logError(
-                'getModelResponse',
-                'Error calling Cody Gateway:',
-                error
-            )
+            autoeditsOutputChannelLogger.logError('getModelResponse', 'Error calling Cody Gateway:', {
+                verbose: error,
+            })
             throw error
         }
     }

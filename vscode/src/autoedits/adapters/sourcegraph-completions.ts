@@ -51,7 +51,7 @@ export class SourcegraphCompletionsAdapter implements AutoeditsModelAdapter {
             autoeditsOutputChannelLogger.logError(
                 'getModelResponse',
                 'Error calling Sourcegraph Completions:',
-                error
+                { verbose: error }
             )
             throw error
         }

@@ -28,11 +28,9 @@ export class FireworksAdapter implements AutoeditsModelAdapter {
             }
             return response.choices[0].text
         } catch (error) {
-            autoeditsOutputChannelLogger.logError(
-                'getModelResponse',
-                'Error calling Fireworks API:',
-                error
-            )
+            autoeditsOutputChannelLogger.logError('getModelResponse', 'Error calling Fireworks API:', {
+                verbose: error,
+            })
             throw error
         }
     }

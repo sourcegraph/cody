@@ -79,8 +79,7 @@ export class FilterPredictionBasedOnRecentEdits implements vscode.Disposable {
                 autoeditsOutputChannelLogger.logDebug(
                     'isTextDocumentChangeReverted',
                     'Filtered the prediction based on recent edits match',
-                    'Diff calculated for filtering based on recent edits\n',
-                    diff1
+                    { verbose: diff1 }
                 )
             }
             return true
