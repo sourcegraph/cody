@@ -16,6 +16,22 @@ import { isRunningInsideAgent } from '../jsonrpc/isRunningInsideAgent'
 import { AutoeditsProvider } from './autoedits-provider'
 import { autoeditsOutputChannelLogger } from './output-channel-logger'
 
+/**
+ * Information about a user's eligibility for auto-edits functionality.
+ */
+export interface AutoeditsUserEligibilityInfo {
+    /**
+     * Whether the user is eligible to use auto-edits.
+     */
+    isUserEligible: boolean
+
+    /**
+     * The reason why the user is not eligible for auto-edits, if applicable.
+     * The message can be shown to the user, why auto-edits are not available to them.
+     */
+    nonEligibilityReason?: string
+}
+
 interface AutoeditsItemProviderArgs {
     config: PickResolvedConfiguration<{ configuration: true }>
     authStatus: AuthStatus

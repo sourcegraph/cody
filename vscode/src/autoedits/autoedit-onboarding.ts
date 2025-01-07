@@ -56,10 +56,16 @@ export class AutoeditsOnboarding implements vscode.Disposable {
     }
 
     private async shouldShowAutoeditsOnboardingPopup(): Promise<boolean> {
+        const isAutoeditsEnabled = await this.isAutoeditsEnabled()
+        if (isAutoeditsEnabled) {
+            return false
+        }
         const isUserEligible = await this.isUserEligibleForAutoeditsOnboarding()
-        const isAutoeditsDisabled = await this.isAutoeditsDisabled()
+        if (!isUserEligible) {
+            return false
+        }
         const isUnderNotificationLimit = await this.isAutoeditsNotificationsUnderLimit()
-        return isUserEligible && isAutoeditsDisabled && isUnderNotificationLimit
+        return isUnderNotificationLimit
     }
 
     private async incrementAutoEditsOnboardingNotificationCount(): Promise<void> {
@@ -70,9 +76,9 @@ export class AutoeditsOnboarding implements vscode.Disposable {
         })
     }
 
-    private async isAutoeditsDisabled(): Promise<boolean> {
+    private async isAutoeditsEnabled(): Promise<boolean> {
         const config = await currentResolvedConfig()
-        return !config.configuration.experimentalAutoeditsEnabled
+        return config.configuration.experimentalAutoeditsEnabled
     }
 
     private async isAutoeditsNotificationsUnderLimit(): Promise<boolean> {
@@ -91,7 +97,12 @@ export class AutoeditsOnboarding implements vscode.Disposable {
         const authStatus = currentAuthStatus()
         const productSubscription = await currentUserProductSubscription()
         const autoeditsFeatureFlag = this.isAutoeditsFeatureFlagEnabled()
-        return isUserEligibleForAutoeditsFeature(autoeditsFeatureFlag, authStatus, productSubscription)
+        const { isUserEligible } = isUserEligibleForAutoeditsFeature(
+            autoeditsFeatureFlag,
+            authStatus,
+            productSubscription
+        )
+        return isUserEligible
     }
 
     private isAutoeditsFeatureFlagEnabled(): boolean {
