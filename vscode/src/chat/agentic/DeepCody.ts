@@ -142,16 +142,18 @@ export class DeepCodyAgent {
     ): Promise<ContextItem[]> {
         span.setAttribute('sampled', true)
         this.statusCallback?.onStart()
-
         const startTime = performance.now()
         const { stats, contextItems } = await this.reviewLoop(requestID, span, chatAbortSignal, maxLoops)
 
         telemetryRecorder.recordEvent('cody.deep-cody.context', 'reviewed', {
             privateMetadata: {
-                durationMs: performance.now() - startTime,
-                ...stats,
                 model: DeepCodyAgent.model,
                 traceId: span.spanContext().traceId,
+            },
+            metadata: {
+                context: stats.context,
+                loop: stats.loop,
+                durationMs: performance.now() - startTime,
             },
             billingMetadata: {
                 product: 'cody',
@@ -173,6 +175,7 @@ export class DeepCodyAgent {
         span.addEvent('reviewLoop')
         const stats = { context: 0, loop: 0 }
         for (let i = 0; i < maxLoops && !chatAbortSignal.aborted; i++) {
+            stats.loop++
             const newContext = await this.review(requestID, span, chatAbortSignal)
             if (!newContext.length) break
 
@@ -181,7 +184,6 @@ export class DeepCodyAgent {
             this.context.push(...validItems)
 
             stats.context += validItems.length
-            stats.loop++
 
             if (newContext.every(isUserAddedItem)) break
         }
@@ -233,14 +235,6 @@ export class DeepCodyAgent {
                 })
             )
 
-            // If the response is empty or contains the known token, the context is sufficient.
-            if (res?.includes(ACTIONS_TAGS.ANSWER.toString())) {
-                // Process the response without generating any context items.
-                for (const tool of this.tools) {
-                    tool.processResponse?.()
-                }
-            }
-
             const reviewed = []
 
             // Extract all the strings from between tags.
@@ -256,6 +250,15 @@ export class DeepCodyAgent {
             if (valid.length + reviewed.length > 0) {
                 reviewed.push(...this.context.filter(c => isUserAddedItem(c)))
                 this.context = reviewed
+            }
+
+            // If the response is empty or contains the known token, the context is sufficient.
+            if (res?.includes(ACTIONS_TAGS.ANSWER.toString())) {
+                // Process the response without generating any context items.
+                for (const tool of this.tools) {
+                    tool.processResponse?.()
+                }
+                return reviewed
             }
 
             return results.flat().filter(isDefined)

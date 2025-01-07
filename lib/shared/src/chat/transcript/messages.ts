@@ -45,7 +45,7 @@ export interface ChatMessage extends Message {
     intent?: 'search' | 'chat' | 'edit' | 'insert' | undefined | null
     manuallySelectedIntent?: 'search' | 'chat' | 'edit' | 'insert' | undefined | null
     search?: ChatMessageSearch | undefined | null
-    agent?: string
+    agent?: string | undefined | null
     processes?: ProcessingStep[] | undefined | null
 
     /**
