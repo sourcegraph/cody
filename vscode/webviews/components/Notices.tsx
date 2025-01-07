@@ -1,4 +1,4 @@
-import { CodyIDE, type CodyNotice, FeatureFlag } from '@sourcegraph/cody-shared'
+import { CodyIDE, type CodyNotice } from '@sourcegraph/cody-shared'
 import { DOTCOM_WORKSPACE_UPGRADE_URL } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 import { S2_URL } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 import {
@@ -18,7 +18,6 @@ import type { UserAccountInfo } from '../Chat'
 import { CodyLogo } from '../icons/CodyLogo'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
 import { useTelemetryRecorder } from '../utils/telemetry'
-import { useFeatureFlag } from '../utils/useFeatureFlags'
 import { MarkdownFromCody } from './MarkdownFromCody'
 import { useLocalStorage } from './hooks'
 import { Button } from './shadcn/ui/button'
@@ -44,9 +43,6 @@ const storageKey = 'DismissedWelcomeNotices'
 export const Notices: React.FC<NoticesProps> = ({ user, isTeamsUpgradeCtaEnabled, instanceNotices }) => {
     const telemetryRecorder = useTelemetryRecorder()
 
-    const isDeepCodyEnabled = useFeatureFlag(FeatureFlag.DeepCody)
-    const isDeepCodyShellContextSupported = useFeatureFlag(FeatureFlag.DeepCodyShellContext)
-
     // dismissed notices from local storage
     const [dismissedNotices, setDismissedNotices] = useLocalStorage(storageKey, '')
     // session-only dismissal - for notices we want to show if the user logs out and logs back in.
@@ -68,13 +64,6 @@ export const Notices: React.FC<NoticesProps> = ({ user, isTeamsUpgradeCtaEnabled
         [telemetryRecorder, setDismissedNotices]
     )
 
-    const settingsNameByIDE =
-        user.IDE === CodyIDE.JetBrains
-            ? 'Settings Editor'
-            : user.IDE === CodyIDE.VSCode
-              ? 'settings.json'
-              : 'Extension Settings'
-
     const notices: Notice[] = useMemo(
         () => [
             ...instanceNotices.map(notice => ({
@@ -88,32 +77,6 @@ export const Notices: React.FC<NoticesProps> = ({ user, isTeamsUpgradeCtaEnabled
                     />
                 ),
             })),
-            {
-                id: 'DeepCody',
-                isVisible: (isDeepCodyEnabled || user.isCodyProUser) && user.IDE !== CodyIDE.Web,
-                content: (
-                    <NoticeContent
-                        id={user.isCodyProUser ? 'DeepCodyDotCom' : 'DeepCodyEnterprise'}
-                        variant="default"
-                        title="Deep Cody (Experimental)"
-                        message={
-                            "An early preview of agentic experience powered by Claude 3.5 Sonnet and other models to enrich context and leverage different tools for better quality responses. Deep Cody does this by searching your codebase, browsing the web, and running terminal commands (once enabled)! To enable terminal commands, set 'cody.agentic.context.experimentalShell' to true in your " +
-                            settingsNameByIDE +
-                            '.'
-                        }
-                        onDismiss={() =>
-                            dismissNotice(user.isCodyProUser ? 'DeepCodyDotCom' : 'DeepCodyEnterprise')
-                        }
-                        info="Usage limits apply during the experimental phase."
-                        footer={
-                            !isDeepCodyShellContextSupported
-                                ? 'Contact admins to enable Command Execution'
-                                : ''
-                        }
-                        actions={[]}
-                    />
-                ),
-            },
             /**
              * Notifies users that they are eligible for a free upgrade to Sourcegraph Teams.
              * TODO: Update to live link https://linear.app/sourcegraph/issue/CORE-535/cody-clients-migrate-ctas-to-live-links
@@ -188,15 +151,7 @@ export const Notices: React.FC<NoticesProps> = ({ user, isTeamsUpgradeCtaEnabled
                 ),
             },
         ],
-        [
-            user,
-            dismissNotice,
-            isTeamsUpgradeCtaEnabled,
-            isDeepCodyEnabled,
-            isDeepCodyShellContextSupported,
-            settingsNameByIDE,
-            instanceNotices,
-        ]
+        [user, dismissNotice, isTeamsUpgradeCtaEnabled, instanceNotices]
     )
 
     // First, modify the activeNotice useMemo to add conditional logic for DogfoodS2
