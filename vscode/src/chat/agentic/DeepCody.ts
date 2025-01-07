@@ -212,7 +212,6 @@ export class DeepCodyAgent {
                 chatAbortSignal,
                 DeepCodyAgent.model
             )
-            // If the response is empty or contains the CONTEXT_SUFFICIENT token, the context is sufficient.
             if (!res) return []
             const results = await Promise.all(
                 this.tools.map(async tool => {
@@ -271,19 +270,23 @@ export class DeepCodyAgent {
     protected async processStream(
         requestID: string,
         message: Message[],
-        signal?: AbortSignal,
+        parentSignal?: AbortSignal,
         model?: string
     ): Promise<string> {
+        // Create a new controller that will be triggered when the parent signal aborts
+        const controller = new AbortController()
+        // Listen to parent signal and abort new controller when it aborts
+        parentSignal?.addEventListener('abort', () => controller.abort())
         const stream = await this.chatClient.chat(
             message,
             { model, maxTokensToSample: 4000 },
-            new AbortController().signal,
+            controller.signal,
             requestID
         )
         const accumulated = new RawTextProcessor()
         try {
             for await (const msg of stream) {
-                if (signal?.aborted) break
+                if (parentSignal?.aborted) break
                 if (msg.type === 'change') {
                     const newText = msg.text.slice(accumulated.length)
                     accumulated.append(newText)
