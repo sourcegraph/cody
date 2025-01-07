@@ -153,7 +153,7 @@ export class ContextMixer implements vscode.Disposable {
 
         // Extract back the context results for the original retrievers
         const results = this.extractOriginalRetrieverResults(resultsWithDataLogging, retrievers)
-        autoeditsOutputChannelLogger.logDebug(
+        autoeditsOutputChannelLogger.logDebugIfVerbose(
             'ContextMixer',
             `Extracted ${results.length} contexts from the retrievers`
         )
@@ -177,13 +177,13 @@ export class ContextMixer implements vscode.Disposable {
             }
         }
 
-        autoeditsOutputChannelLogger.logDebug(
+        autoeditsOutputChannelLogger.logDebugIfVerbose(
             'ContextMixer',
             `Fusing ${results.length} context results with ${this.contextRankingStrategy}`
         )
         const contextRanker = new DefaultCompletionsContextRanker(this.contextRankingStrategy)
         const fusedResults = contextRanker.rankAndFuseContext(results)
-        autoeditsOutputChannelLogger.logDebug('ContextMixer', 'Fused context results')
+        autoeditsOutputChannelLogger.logDebugIfVerbose('ContextMixer', 'Fused context results')
 
         // The total chars size hint is inclusive of the prefix and suffix sizes, so we seed the
         // total chars with the prefix and suffix sizes.
