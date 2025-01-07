@@ -163,7 +163,7 @@ describe('DeepCody', () => {
 
         const result = await agent.getContext(
             'deep-cody-test-interaction-id',
-            { aborted: false } as AbortSignal,
+            new AbortController().signal,
             mockCurrentContext
         )
 
@@ -204,7 +204,7 @@ describe('DeepCody', () => {
 
         const result = await agent.getContext(
             'deep-cody-test-interaction-id',
-            { aborted: false } as AbortSignal,
+            new AbortController().signal,
             mockCurrentContext
         )
 

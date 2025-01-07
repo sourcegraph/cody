@@ -18,6 +18,7 @@ import {
     telemetryRecorder,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
+import { forkSignal } from '../../completions/utils'
 import { getCategorizedMentions, isUserAddedItem } from '../../prompt-builder/utils'
 import type { ChatBuilder } from '../chat-view/ChatBuilder'
 import { DefaultPrompter } from '../chat-view/prompt'
@@ -270,17 +271,14 @@ export class DeepCodyAgent {
     protected async processStream(
         requestID: string,
         message: Message[],
-        parentSignal?: AbortSignal,
+        parentSignal: AbortSignal,
         model?: string
     ): Promise<string> {
-        // Create a new controller that will be triggered when the parent signal aborts
-        const controller = new AbortController()
-        // Listen to parent signal and abort new controller when it aborts
-        parentSignal?.addEventListener('abort', () => controller.abort())
+        const abortController = forkSignal(parentSignal || new AbortController().signal)
         const stream = await this.chatClient.chat(
             message,
             { model, maxTokensToSample: 4000 },
-            controller.signal,
+            abortController.signal,
             requestID
         )
         const accumulated = new RawTextProcessor()
