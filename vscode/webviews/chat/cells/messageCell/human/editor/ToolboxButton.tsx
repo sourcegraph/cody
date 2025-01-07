@@ -1,11 +1,11 @@
 import type { AgentToolboxSettings, WebviewToExtensionAPI } from '@sourcegraph/cody-shared'
 import { BrainIcon } from 'lucide-react'
 import { type FC, memo, useCallback, useEffect, useState } from 'react'
-import { Badge } from '../../../../../../components/shadcn/ui/badge'
-import { Button } from '../../../../../../components/shadcn/ui/button'
-import { Command, CommandGroup, CommandList } from '../../../../../../components/shadcn/ui/command'
-import { ToolbarPopoverItem } from '../../../../../../components/shadcn/ui/toolbar'
-import { useTelemetryRecorder } from '../../../../../../utils/telemetry'
+import { Badge } from '../../../../../components/shadcn/ui/badge'
+import { Button } from '../../../../../components/shadcn/ui/button'
+import { Command, CommandGroup, CommandList } from '../../../../../components/shadcn/ui/command'
+import { ToolbarPopoverItem } from '../../../../../components/shadcn/ui/toolbar'
+import { useTelemetryRecorder } from '../../../../../utils/telemetry'
 
 interface ToolboxButtonProps {
     api: WebviewToExtensionAPI
@@ -14,7 +14,7 @@ interface ToolboxButtonProps {
 
 const ToolboxOptionText = {
     agentic:
-        'An agent with tool-use capabilities to gather contextual information for better responses. It can search your codebase, browse the web, execute shell commands in your terminal (when enabled), and utilize any configured tools to retrieve necessary context.',
+        'Enhances responses by searching your codebase and using available tools to gather relevant context.',
     terminal: 'Allow agents to execute terminal command automatically.',
 }
 
@@ -69,20 +69,21 @@ export const ToolboxButton: FC<ToolboxButtonProps> = memo(({ settings, api }) =>
             <ToolbarPopoverItem
                 role="combobox"
                 iconEnd={null}
-                tooltip="Agent Settings"
-                aria-label="Agent Settings"
+                className="tw-opacity-100"
+                tooltip="Agentic Chat Settings"
+                aria-label="Agentic Chat Settings"
                 popoverContent={close => (
                     <Command>
                         <CommandList>
                             <header className="tw-flex tw-justify-between tw-px-6 tw-py-3 tw-border-t tw-border-border tw-bg-muted tw-w-full">
-                                <h2 className="tw-text-md tw-font-semibold">Agent Settings</h2>
+                                <h2 className="tw-text-md tw-font-semibold">Agentic Chat Settings</h2>
                                 <Badge variant="secondary">Experimental</Badge>
                             </header>
                             <CommandGroup className="tw-p-6">
                                 <div className="tw-container tw-flex tw-gap-2 tw-align-baseline">
                                     <div className="tw-flex tw-flex-1 tw-flex-col tw-gap-2 tw-w-full">
                                         <div className="tw-flex tw-flex-1 tw-w-full tw-items-center tw-justify-between">
-                                            <h3 className="tw-text-sm">Self-Reflection Context Agent</h3>
+                                            <h3 className="tw-text-sm">Agentic Chat</h3>
                                             <Switch
                                                 checked={!!settingsForm.agent?.name}
                                                 onChange={() =>
@@ -101,7 +102,7 @@ export const ToolboxButton: FC<ToolboxButtonProps> = memo(({ settings, api }) =>
                                             {ToolboxOptionText.agentic}
                                         </div>
                                         <div className="tw-flex tw-flex-1 tw-w-full tw-items-center tw-justify-between">
-                                            <h3 className="tw-text-sm">Terminal Context Agent</h3>
+                                            <h3 className="tw-text-sm">Terminal Context</h3>
                                             <Switch
                                                 checked={settingsForm.shell?.enabled}
                                                 disabled={settingsForm.agent?.name === undefined}

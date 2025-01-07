@@ -17,7 +17,7 @@ import { HumanMessageEditor } from './editor/HumanMessageEditor'
 import { Tooltip, TooltipContent, TooltipTrigger } from '../../../../components/shadcn/ui/tooltip'
 import { getVSCodeAPI } from '../../../../utils/VSCodeApi'
 import { useConfig } from '../../../../utils/useConfig'
-import { ToolboxButton } from './editor/toolbar/ToolboxButton'
+import { ToolboxButton } from './editor/ToolboxButton'
 
 interface HumanMessageCellProps {
     message: ChatMessage
