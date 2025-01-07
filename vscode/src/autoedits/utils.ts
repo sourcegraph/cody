@@ -76,7 +76,7 @@ export function isPredictedTextAlreadyInSuffix({
         .map(line => line.text)
         .join(getNewLineChar(codeToRewrite))
 
-    return suffix.startsWith(allAddedLinesText)
+    return suffix.length > 0 && suffix.startsWith(allAddedLinesText)
 }
 
 /**
