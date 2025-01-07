@@ -19,7 +19,7 @@ import { DeepCodyAgent } from './DeepCody'
 const DEFAULT_SHELL_CONFIG = Object.freeze({
     user: false,
     instance: false,
-    client: Boolean(env.shell),
+    client: false,
 })
 
 type StoredToolboxSettings = {
@@ -109,7 +109,10 @@ class ToolboxManager {
             DeepCodyAgent.model = useDefaultChatModel ? models.preferences.defaults.chat : haikuModel?.id
             this.isEnabled = Boolean(DeepCodyAgent.model)
 
-            Object.assign(this.shellConfig, { instance: instanceShellContextFlag })
+            Object.assign(this.shellConfig, {
+                instance: instanceShellContextFlag,
+                client: Boolean(env.shell),
+            })
 
             return this.getSettings()
         })
