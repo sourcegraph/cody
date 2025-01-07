@@ -5,7 +5,7 @@ import { URI } from 'vscode-uri'
 import { mockLocalStorage } from '../../services/LocalStorageProvider'
 import type { ContextRetriever } from '../chat-view/ContextRetriever'
 import { CodyTool, type CodyToolConfig } from './CodyTool'
-import { CodyToolProvider, type ToolConfiguration, ToolFactory } from './CodyToolProvider'
+import { CodyToolProvider, TestToolFactory, type ToolConfiguration } from './CodyToolProvider'
 import { toolboxManager } from './ToolboxManager'
 
 const localStorageData: { [key: string]: unknown } = {}
@@ -108,7 +108,7 @@ describe('CodyToolProvider', () => {
 })
 
 describe('ToolFactory', () => {
-    let factory: ToolFactory
+    let factory: TestToolFactory
 
     class TestCodyTool extends CodyTool {
         protected async execute(): Promise<ContextItem[]> {
@@ -143,7 +143,7 @@ describe('ToolFactory', () => {
         const mockContextRetriever = {
             retrieveContext: vi.fn().mockResolvedValue(mockRretrievedResult),
         } as unknown as ContextRetriever
-        factory = new ToolFactory(mockContextRetriever)
+        factory = new TestToolFactory(mockContextRetriever)
     })
 
     it('should register and create tools correctly', () => {
@@ -158,7 +158,7 @@ describe('ToolFactory', () => {
         expect(unknownTool).toBeUndefined()
     })
 
-    it('should return all registered tool instances', () => {
+    it('should return all registered tool instances including default tools', () => {
         const testToolConfig1 = { ...testToolConfig, name: 'TestTool1' }
         const testToolConfig2 = { ...testToolConfig, name: 'TestTool2' }
 
@@ -166,7 +166,7 @@ describe('ToolFactory', () => {
         factory.register(testToolConfig2)
 
         const tools = factory.getInstances()
-        expect(tools.length).toBe(2)
-        expect(tools.every(tool => tool instanceof TestCodyTool)).toBe(true)
+        expect(tools.length).toBeGreaterThan(2)
+        expect(tools.filter(tool => tool instanceof TestCodyTool).length).toBe(2)
     })
 })

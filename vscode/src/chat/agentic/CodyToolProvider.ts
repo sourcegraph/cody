@@ -43,10 +43,26 @@ export interface ToolConfiguration extends CodyToolConfig {
  * - Handles both default tools (Search, File, CLI, Memory) and OpenCtx tools
  * - Manages tool configuration and instantiation with proper context
  */
-export class ToolFactory {
+class ToolFactory {
     private tools: Map<string, ToolConfiguration> = new Map()
 
-    constructor(private contextRetriever: Retriever) {}
+    constructor(private contextRetriever: Retriever) {
+        // Register default tools
+        for (const [name, { tool, useContextRetriever }] of Object.entries(TOOL_CONFIGS)) {
+            this.register({
+                name,
+                ...tool.prototype.config,
+                createInstance: useContextRetriever
+                    ? (_, contextRetriever) => {
+                          if (!contextRetriever) {
+                              throw new Error(`Context retriever required for ${name}`)
+                          }
+                          return new tool(contextRetriever)
+                      }
+                    : () => new tool(),
+            })
+        }
+    }
 
     public register(toolConfig: ToolConfiguration): void {
         this.tools.set(toolConfig.name, toolConfig)
@@ -146,50 +162,40 @@ export class ToolFactory {
  * - Access tools using getTools()
  * - Set up OpenCtx integration using setupOpenCtxProviderListener()
  */
-export namespace CodyToolProvider {
-    export let factory: ToolFactory
-    let openCtxSubscription: Unsubscribable | undefined
+export class CodyToolProvider {
+    public factory: ToolFactory
 
-    export function initialize(contextRetriever: Retriever): void {
-        factory = new ToolFactory(contextRetriever)
-        initializeRegistry()
+    private static instance: CodyToolProvider | undefined
+    public static openCtxSubscription: Unsubscribable | undefined
+
+    private constructor(contextRetriever: Retriever) {
+        this.factory = new ToolFactory(contextRetriever)
     }
 
-    export function getTools(): CodyTool[] {
-        const instances = factory.getInstances()
-        return instances
+    public static initialize(contextRetriever: Retriever): void {
+        CodyToolProvider.instance = new CodyToolProvider(contextRetriever)
     }
 
-    export function setupOpenCtxProviderListener(): void {
-        if (!openCtxSubscription && factory && openCtx.controller) {
-            openCtxSubscription = openCtx.controller
+    public static getTools(): CodyTool[] {
+        return CodyToolProvider.instance?.factory.getInstances() ?? []
+    }
+
+    public static setupOpenCtxProviderListener(): void {
+        const provider = CodyToolProvider.instance
+        if (provider && !CodyToolProvider.openCtxSubscription && openCtx.controller) {
+            CodyToolProvider.openCtxSubscription = openCtx.controller
                 .metaChanges({}, {})
                 .pipe(map(providers => providers.filter(p => !!p.mentions).map(openCtxProviderMetadata)))
-                .subscribe(providerMeta => factory?.createOpenCtxTools(providerMeta))
+                .subscribe(providerMeta => provider.factory.createOpenCtxTools(providerMeta))
         }
     }
 
-    function initializeRegistry(): void {
-        for (const [name, { tool, useContextRetriever }] of Object.entries(TOOL_CONFIGS)) {
-            factory.register({
-                name,
-                ...tool.prototype.config,
-                createInstance: useContextRetriever
-                    ? (_, contextRetriever) => {
-                          if (!contextRetriever) {
-                              throw new Error(`Context retriever required for ${name}`)
-                          }
-                          return new tool(contextRetriever)
-                      }
-                    : () => new tool(),
-            })
-        }
-    }
-
-    export function dispose(): void {
-        if (openCtxSubscription) {
-            openCtxSubscription.unsubscribe()
-            openCtxSubscription = undefined
+    public static dispose(): void {
+        if (CodyToolProvider.openCtxSubscription) {
+            CodyToolProvider.openCtxSubscription.unsubscribe()
+            CodyToolProvider.openCtxSubscription = undefined
         }
     }
 }
+
+export class TestToolFactory extends ToolFactory {}

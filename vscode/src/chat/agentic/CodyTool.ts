@@ -209,7 +209,7 @@ class SearchTool extends CodyTool {
                 subTag: ps`query`,
             },
             prompt: {
-                instruction: ps`Perform a symbol query search in the codebase-Do not support nature language search`,
+                instruction: ps`Perform a symbol query search in the codebase-Do not support natural language search`,
                 placeholder: ps`SEARCH_QUERY`,
                 examples: [
                     ps`Locate a function found in an error log: \`<TOOLSEARCH><query>function name</query></TOOLSEARCH>\``,
@@ -277,6 +277,8 @@ export class OpenCtxTool extends CodyTool {
         const results: ContextItem[] = []
         const idObject: Pick<ContextMentionProviderMetadata, 'id'> = { id: this.provider.id }
         try {
+            // TODO: Investigate if we can batch queries for better performance.
+            // For example, would it cause issues if we fire 10 requests to a OpenCtx provider for fetching Linear?
             for (const query of queries) {
                 const mention = parseMentionQuery(query, idObject)
                 // First get the items without content

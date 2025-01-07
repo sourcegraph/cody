@@ -5,7 +5,7 @@ import { URI } from 'vscode-uri'
 import { mockLocalStorage } from '../../services/LocalStorageProvider'
 import type { ContextRetriever } from '../chat-view/ContextRetriever'
 import { CodyTool, OpenCtxTool } from './CodyTool'
-import { CodyToolProvider, ToolFactory, type ToolStatusCallback } from './CodyToolProvider'
+import { CodyToolProvider, TestToolFactory, type ToolStatusCallback } from './CodyToolProvider'
 import { toolboxManager } from './ToolboxManager'
 
 const mockCallback: ToolStatusCallback = {
@@ -32,7 +32,7 @@ class TestTool extends CodyTool {
 }
 
 describe('CodyTool', () => {
-    let factory: ToolFactory
+    let factory: TestToolFactory
     let mockSpan: any
     let mockContextRetriever: ContextRetriever
 
@@ -51,7 +51,7 @@ describe('CodyTool', () => {
             retrieveContext: vi.fn().mockResolvedValue(mockRretrievedResult),
         } as unknown as ContextRetriever
 
-        factory = new ToolFactory(mockContextRetriever)
+        factory = new TestToolFactory(mockContextRetriever)
         mockSpan = {}
         factory.register({
             name: 'TestTool',
