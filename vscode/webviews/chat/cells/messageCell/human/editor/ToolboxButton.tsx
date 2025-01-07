@@ -1,5 +1,5 @@
 import type { AgentToolboxSettings, WebviewToExtensionAPI } from '@sourcegraph/cody-shared'
-import { BrainIcon } from 'lucide-react'
+import { FlaskConicalIcon, FlaskConicalOffIcon } from 'lucide-react'
 import { type FC, memo, useCallback, useEffect, useState } from 'react'
 import { Badge } from '../../../../../components/shadcn/ui/badge'
 import { Button } from '../../../../../components/shadcn/ui/button'
@@ -70,13 +70,13 @@ export const ToolboxButton: FC<ToolboxButtonProps> = memo(({ settings, api }) =>
                 role="combobox"
                 iconEnd={null}
                 className="tw-opacity-100"
-                tooltip="Agentic Chat Settings"
-                aria-label="Agentic Chat Settings"
+                tooltip="Chat Settings"
+                aria-label="Chat Settings"
                 popoverContent={close => (
                     <Command>
                         <CommandList>
                             <header className="tw-flex tw-justify-between tw-px-6 tw-py-3 tw-border-t tw-border-border tw-bg-muted tw-w-full">
-                                <h2 className="tw-text-md tw-font-semibold">Agentic Chat Settings</h2>
+                                <h2 className="tw-text-md tw-font-semibold">Agentic Chat</h2>
                                 <Badge variant="secondary">Experimental</Badge>
                             </header>
                             <CommandGroup className="tw-p-6">
@@ -149,20 +149,26 @@ export const ToolboxButton: FC<ToolboxButtonProps> = memo(({ settings, api }) =>
                 )}
                 popoverRootProps={{ onOpenChange }}
                 popoverContentProps={{
-                    className: 'tw-w-[350px] !tw-p-0',
+                    className: 'tw-w-[350px] !tw-p-0 tw-mr-2',
                     onCloseAutoFocus: event => {
                         event.preventDefault()
                     },
                 }}
             >
                 <Button variant="ghost" size="none">
-                    <BrainIcon
-                        size={16}
-                        strokeWidth={1.25}
-                        className={`tw-w-8 tw-h-8 ${
-                            settings.agent?.name ? 'tw-text-green-500' : 'tw-text-muted-foreground'
-                        }`}
-                    />
+                    {settings.agent?.name ? (
+                        <FlaskConicalIcon
+                            size={16}
+                            strokeWidth={1.25}
+                            className="tw-w-8 tw-h-8 tw-text-green-500"
+                        />
+                    ) : (
+                        <FlaskConicalOffIcon
+                            size={16}
+                            strokeWidth={1.25}
+                            className="tw-w-8 tw-h-8 tw-text-muted-foreground"
+                        />
+                    )}
                 </Button>
             </ToolbarPopoverItem>
         </div>
