@@ -10,7 +10,6 @@ import { useTelemetryRecorder } from '../../../../../../utils/telemetry'
 interface ToolboxButtonProps {
     api: WebviewToExtensionAPI
     settings: AgentToolboxSettings
-    className?: string
 }
 
 const ToolboxOptionText = {
@@ -44,7 +43,7 @@ export const ToolboxButton: FC<ToolboxButtonProps> = memo(({ settings, api }) =>
     const onSubmit = useCallback(
         (close: () => void) => {
             setIsLoading(true)
-            api.updateToolboxSettings(settingsForm).subscribe({
+            const subscription = api.updateToolboxSettings(settingsForm).subscribe({
                 next: () => {
                     setIsLoading(false)
                     close()
@@ -54,7 +53,13 @@ export const ToolboxButton: FC<ToolboxButtonProps> = memo(({ settings, api }) =>
                     setSettingsForm(settings)
                     setIsLoading(false)
                 },
+                complete: () => {
+                    setIsLoading(false)
+                },
             })
+            return () => {
+                subscription.unsubscribe()
+            }
         },
         [api.updateToolboxSettings, settingsForm, settings]
     )
@@ -149,13 +154,14 @@ export const ToolboxButton: FC<ToolboxButtonProps> = memo(({ settings, api }) =>
                     },
                 }}
             >
-                <Button variant="ghost" className="!tw-p-2 tw-relative">
-                    <BrainIcon size={16} strokeWidth={1.25} className="tw-w-8 tw-h-8" />
-                    {settings.agent?.name ? (
-                        <span className="tw-absolute tw-top-0 tw-right-0 tw-w-2 tw-h-2 tw-rounded-full tw-bg-green-500 tw-animate-[pulse_5s_ease-in-out_infinite]" />
-                    ) : (
-                        <span className="tw-absolute tw-top-0 tw-right-0 tw-w-2 tw-h-2 tw-rounded-full tw-bg-red-500 tw-animate-[pulse_5s_ease-in-out_infinite]" />
-                    )}
+                <Button variant="ghost" size="none">
+                    <BrainIcon
+                        size={16}
+                        strokeWidth={1.25}
+                        className={`tw-w-8 tw-h-8 ${
+                            settings.agent?.name ? 'tw-text-green-500' : 'tw-text-muted-foreground'
+                        }`}
+                    />
                 </Button>
             </ToolbarPopoverItem>
         </div>

@@ -41,6 +41,9 @@ import { ACTIONS_TAGS, CODYAGENT_PROMPTS } from './prompts'
  */
 export class DeepCodyAgent {
     public static readonly id = 'deep-cody'
+    /**
+     * NOTE: Currently A/B test to default to 3.5 Haiku / 3.5 Sonnet for the review step.
+     */
     public static model: string | undefined = undefined
 
     protected readonly multiplexer = new BotResponseMultiplexer()
@@ -217,7 +220,14 @@ export class DeepCodyAgent {
                         if (chatAbortSignal.aborted) return []
                         return await tool.run(span, this.statusCallback)
                     } catch (error) {
-                        this.statusCallback.onComplete(tool.config.tags.tag.toString(), error as Error)
+                        const errorMessage =
+                            error instanceof Error
+                                ? error.message
+                                : typeof error === 'object' && error !== null
+                                  ? JSON.stringify(error)
+                                  : String(error)
+                        const errorObject = error instanceof Error ? error : new Error(errorMessage)
+                        this.statusCallback.onComplete(tool.config.tags.tag.toString(), errorObject)
                         return []
                     }
                 })
@@ -279,17 +289,18 @@ export class DeepCodyAgent {
                     accumulated.append(newText)
                     await this.multiplexer.publish(newText)
                 }
-
-                if (msg.type === 'complete' || msg.type === 'error') {
-                    if (msg.type === 'error') throw new Error('Error while streaming')
+                if (msg.type === 'complete') {
                     break
+                }
+                if (msg.type === 'error') {
+                    throw msg.error
                 }
             }
         } finally {
             await this.multiplexer.notifyTurnComplete()
         }
 
-        return accumulated.toString()
+        return accumulated.consumeAndClear()
     }
 
     protected getPrompter(items: ContextItem[]): DefaultPrompter {
@@ -313,7 +324,8 @@ export class RawTextProcessor {
         this.parts.push(str)
     }
 
-    public toString(): string {
+    // Destructive read that clears state
+    public consumeAndClear(): string {
         const joined = this.parts.join('')
         this.reset()
         return joined

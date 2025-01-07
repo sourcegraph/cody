@@ -82,13 +82,13 @@ class ToolFactory {
         return Array.from(this.tools.entries())
             .filter(([name]) => name !== 'CliTool' || toolboxManager.getSettings()?.shell?.enabled)
             .map(([_, config]) => config.createInstance(config, this.contextRetriever))
-            .filter(isDefined) as CodyTool[]
+            .filter(isDefined)
     }
 
     public createDefaultTools(contextRetriever?: Retriever): CodyTool[] {
         return Object.entries(TOOL_CONFIGS)
             .map(([name]) => this.createTool(name, contextRetriever))
-            .filter(isDefined) as CodyTool[]
+            .filter(isDefined)
     }
 
     public createOpenCtxTools(providers: ContextMentionProviderMetadata[]): CodyTool[] {
@@ -103,7 +103,7 @@ class ToolFactory {
                 })
                 return this.createTool(toolName)
             })
-            .filter(Boolean) as CodyTool[]
+            .filter(isDefined)
     }
 
     private generateToolName(provider: ContextMentionProviderMetadata): string {
