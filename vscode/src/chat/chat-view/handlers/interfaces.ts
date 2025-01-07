@@ -8,7 +8,6 @@ import type {
 } from '@sourcegraph/cody-shared'
 import type { SubMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import type { MessageErrorType } from '../../MessageProvider'
-import type { CodyToolProvider } from '../../agentic/CodyToolProvider'
 import type { ChatBuilder } from '../ChatBuilder'
 import type { ChatControllerOptions } from '../ChatController'
 import type { ContextRetriever } from '../ContextRetriever'
@@ -18,7 +17,6 @@ export interface AgentTools {
     contextRetriever: Pick<ContextRetriever, 'retrieveContext'>
     editor: ChatControllerOptions['editor']
     chatClient: ChatControllerOptions['chatClient']
-    codyToolProvider: CodyToolProvider
 }
 
 /**

@@ -45,6 +45,7 @@ export interface ChatMessage extends Message {
     intent?: 'search' | 'chat' | 'edit' | 'insert' | undefined | null
     manuallySelectedIntent?: 'search' | 'chat' | 'edit' | 'insert' | undefined | null
     search?: ChatMessageSearch | undefined | null
+    agent?: string
     processes?: ProcessingStep[] | undefined | null
 
     /**
@@ -115,6 +116,7 @@ export interface SerializedChatMessage {
     intent?: ChatMessage['intent']
     manuallySelectedIntent?: ChatMessage['manuallySelectedIntent']
     search?: ChatMessage['search']
+    agent?: string
     processes?: ProcessingStep[] | undefined | null
     subMessages?: SubMessage[]
 }

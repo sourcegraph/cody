@@ -82,6 +82,8 @@ export class ChatHandler implements AgentHandler {
         recorder.recordChatQuestionExecuted(corpusContext, { addMetadata: true, current: span })
 
         signal.throwIfAborted()
+        // Send context to webview for display before sending the request.
+        delegate.postMessageInProgress({ speaker: 'assistant', model: this.modelId })
         this.streamAssistantResponse(requestID, prompt, this.modelId, signal, chatBuilder, delegate)
     }
 
@@ -225,7 +227,8 @@ export class ChatHandler implements AgentHandler {
         editorState: SerializedPromptEditorState | null,
         _chatBuilder: ChatBuilder,
         _delegate: AgentHandlerDelegate,
-        signal?: AbortSignal
+        signal?: AbortSignal,
+        skipQueryRewrite = false
     ): Promise<{
         contextItems?: ContextItem[]
         error?: Error
@@ -233,9 +236,6 @@ export class ChatHandler implements AgentHandler {
     }> {
         try {
             return wrapInActiveSpan('chat.computeContext', async span => {
-                // Skip query rewrite for deep-cody agent as that is done
-                // during the reflection/review step.
-                const isDeepCody = this.modelId.includes('deep-cody')
                 const contextAlternatives = await computeContextAlternatives(
                     this.contextRetriever,
                     this.editor,
@@ -243,7 +243,7 @@ export class ChatHandler implements AgentHandler {
                     editorState,
                     span,
                     signal,
-                    isDeepCody
+                    skipQueryRewrite
                 )
                 return { contextItems: contextAlternatives[0].items }
             })
@@ -276,9 +276,11 @@ export async function computeContextAlternatives(
         signal,
         skipQueryRewrite
     )
-    const priorityContextPromise = retrievedContextPromise
-        .then(p => getPriorityContext(text, editor, p))
-        .catch(() => getPriorityContext(text, editor, []))
+    const priorityContextPromise = skipQueryRewrite
+        ? Promise.resolve([])
+        : retrievedContextPromise
+              .then(p => getPriorityContext(text, editor, p))
+              .catch(() => getPriorityContext(text, editor, []))
     const openCtxContextPromise = getContextForChatMessage(text.toString(), signal)
     const [priorityContext, retrievedContext, openCtxContext] = await Promise.all([
         priorityContextPromise,

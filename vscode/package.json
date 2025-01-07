@@ -1270,8 +1270,9 @@
         },
         "cody.agentic.context.experimentalShell": {
           "type": "boolean",
-          "markdownDescription": "Enable Agents like Deep Cody to autonomously execute shell commands in your environment for context. Enable with caution as mistakes are possible.",
-          "default": false
+          "value": false,
+          "markdownDeprecationMessage": "**Deprecated** Enable Agents like Deep Cody to autonomously execute shell commands in your environment for context. Enable with caution as mistakes are possible.",
+          "deprecationMessage": "Deprecated. Now configurable via UI."
         },
         "cody.agentic.context.experimentalOptions": {
           "type": "object",
