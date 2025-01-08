@@ -3,6 +3,7 @@ import * as vscode from 'vscode'
 import { GHOST_TEXT_COLOR } from '../../../commands/GhostHintDecorator'
 
 import type { AutoEditsDecorator, DecorationInfo, ModifiedLineInfo } from './base'
+import { cssPropertiesToString } from './utils'
 
 interface AddedLinesDecorationInfo {
     ranges: [number, number][]
@@ -170,6 +171,13 @@ export class DefaultDecorator implements AutoEditsDecorator {
             const j = i + startLine
             const line = this.editor.document.lineAt(j)
             const decoration = addedLinesInfo[i]
+            const decorationStyle = cssPropertiesToString({
+                // Absolutely position the suggested code so that the cursor does not jump there
+                position: 'absolute',
+                // Due the the absolute position, the decoration may interfere with other decorations (e.g. GitLens)
+                // Apply a background blur to avoid interference
+                'backdrop-filter': 'blur(5px)',
+            })
 
             if (replacerCol >= line.range.end.character) {
                 replacerDecorations.push({
@@ -182,7 +190,7 @@ export class DefaultDecorator implements AutoEditsDecorator {
                                 '\u00A0'.repeat(3) +
                                 _replaceLeadingTrailingChars(decoration.lineText, ' ', '\u00A0'),
                             margin: `0 0 0 ${replacerCol - line.range.end.character}ch`,
-                            textDecoration: 'none; position: absolute;',
+                            textDecoration: `none;${decorationStyle}`,
                         },
                         // Create an empty HTML element with the width required to show the suggested code.
                         // Required to make the viewport scrollable to view the suggestion if it's outside.
@@ -206,7 +214,7 @@ export class DefaultDecorator implements AutoEditsDecorator {
                             contentText:
                                 '\u00A0' +
                                 _replaceLeadingTrailingChars(decoration.lineText, ' ', '\u00A0'),
-                            textDecoration: 'none; position: absolute;',
+                            textDecoration: `none;${decorationStyle}`,
                         },
                         after: {
                             contentText:
