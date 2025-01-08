@@ -89,7 +89,7 @@ export class RepoNameResolver {
                 logError('RepoNameResolver:getRemoteUrlsInfoCached', 'error', {
                     verbose: error,
                 })
-                return []
+                return [pendingOperation.toString()]
             })
             this.fsPathToRemoteUrlsInfo.set(key, remoteUrlsInfo)
         }
