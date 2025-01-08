@@ -15,6 +15,7 @@ import com.sourcegraph.cody.agent.protocol_generated.ClientInfo
 import com.sourcegraph.cody.agent.protocol_generated.CodyAgentServer
 import com.sourcegraph.cody.agent.protocol_generated.ProtocolTypeAdapters
 import com.sourcegraph.cody.agent.protocol_generated.WebviewNativeConfig
+import com.sourcegraph.cody.auth.SourcegraphServerPath
 import com.sourcegraph.cody.ui.web.WebUIServiceWebviewProvider
 import com.sourcegraph.cody.vscode.CancellationToken
 import com.sourcegraph.config.ConfigUtil
@@ -114,7 +115,11 @@ private constructor(
           else -> Debuggability.NotDebuggable
         }
 
-    fun create(project: Project): CompletableFuture<CodyAgent> {
+    fun create(
+        project: Project,
+        endpoint: SourcegraphServerPath?,
+        token: String?,
+    ): CompletableFuture<CodyAgent> {
       try {
         val conn = startAgentProcess()
         val client = CodyAgentClient(project, WebUIServiceWebviewProvider(project))
@@ -131,7 +136,8 @@ private constructor(
                       workspaceRootUri =
                           ProtocolTextDocumentExt.normalizeUriOrPath(
                               ConfigUtil.getWorkspaceRootPath(project).toUri().toString()),
-                      extensionConfiguration = ConfigUtil.getAgentConfiguration(project),
+                      extensionConfiguration =
+                          ConfigUtil.getAgentConfiguration(project, endpoint, token),
                       capabilities =
                           ClientCapabilities(
                               authentication = ClientCapabilities.AuthenticationEnum.Enabled,
@@ -314,15 +320,13 @@ private constructor(
                   // undefined fields.
                   .serializeNulls()
                   // TODO: Once all protocols have migrated we can remove these
-                  // legacy enum
-                  // conversions
+                  // legacy enum conversions
                   .registerTypeAdapter(URI::class.java, uriDeserializer)
                   .registerTypeAdapter(URI::class.java, uriSerializer)
 
               ProtocolTypeAdapters.register(gsonBuilder)
               // This ensures that by default all enums are always serialized to their
-              // string
-              // equivalents
+              // string equivalents string equivalents
               gsonBuilder.registerTypeAdapterFactory(EnumTypeAdapterFactory())
             }
           }
@@ -385,10 +389,9 @@ private constructor(
       return try {
         binaryTarget?.toFile()?.deleteOnExit()
         token.onFinished {
-          // Important: delete the file from disk after the process exists
-          // Ideally, we should eventually replace this temporary file with a permanent
-          // location
-          // in the plugin directory.
+          // Important: delete the file from disk after the process exists Ideally, we
+          // should eventually replace this temporary file with a permanent location in
+          // the plugin directory.
           Files.deleteIfExists(binaryTarget)
         }
         logger.info("Extracting Node binary to " + binaryTarget.toAbsolutePath())

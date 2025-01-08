@@ -1,7 +1,7 @@
 package com.sourcegraph.cody.statusbar
 
 import com.intellij.openapi.actionSystem.AnActionEvent
-import com.sourcegraph.cody.auth.CodyAccount
+import com.sourcegraph.cody.auth.CodyAuthService
 import com.sourcegraph.cody.autocomplete.CodyAutocompleteManager
 import com.sourcegraph.cody.config.CodyApplicationSettings
 import com.sourcegraph.common.ui.DumbAwareEDTAction
@@ -25,12 +25,14 @@ class CodyDisableLanguageForAutocompleteAction : DumbAwareEDTAction() {
     val isLanguageBlacklisted =
         languageForFocusedEditor?.let { CodyLanguageUtil.isLanguageBlacklisted(it) } ?: false
     val languageName = languageForFocusedEditor?.displayName ?: ""
+    val project = e.project
     e.presentation.isEnabledAndVisible =
         languageForFocusedEditor != null &&
             ConfigUtil.isCodyEnabled() &&
             ConfigUtil.isCodyAutocompleteEnabled() &&
+            project != null &&
             !isLanguageBlacklisted &&
-            CodyAccount.hasActiveAccount()
+            CodyAuthService.getInstance(project).isActivated()
     e.presentation.text = "Disable Cody Autocomplete for $languageName"
   }
 }

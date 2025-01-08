@@ -12,9 +12,9 @@ import com.intellij.openapi.fileEditor.TextEditor
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
 import com.sourcegraph.cody.agent.protocol_generated.ExtensionConfiguration
-import com.sourcegraph.cody.auth.CodyAccount
+import com.sourcegraph.cody.auth.CodyAuthService
+import com.sourcegraph.cody.auth.CodySecureStore
 import com.sourcegraph.cody.auth.SourcegraphServerPath
-import com.sourcegraph.cody.auth.SourcegraphServerPath.Companion.from
 import com.sourcegraph.cody.config.CodyApplicationSettings
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigRenderOptions
@@ -90,14 +90,15 @@ object ConfigUtil {
   @JvmStatic
   fun getAgentConfiguration(
       project: Project,
+      endpoint: SourcegraphServerPath? = null,
+      token: String? = null,
       customConfigContent: String? = null
   ): ExtensionConfiguration {
-    val account = CodyAccount.getActiveAccount()
 
     return ExtensionConfiguration(
         anonymousUserID = CodyApplicationSettings.instance.anonymousUserId,
-        serverEndpoint = account?.server?.url ?: "",
-        accessToken = account?.getToken() ?: "",
+        serverEndpoint = endpoint?.url ?: "",
+        accessToken = token,
         customHeaders = emptyMap(),
         proxy = UserLevelConfig.getProxy(),
         autocompleteAdvancedProvider =
@@ -109,21 +110,15 @@ object ConfigUtil {
   }
 
   @JvmStatic
-  fun getConfigAsJson(): JsonObject {
-    val account = CodyAccount.getActiveAccount()
+  fun getConfigAsJson(project: Project): JsonObject {
+    val endpoint = CodyAuthService.getInstance(project).getEndpoint()
     return JsonObject().apply {
-      addProperty("instanceURL", account?.server?.url)
-      addProperty("accessToken", account?.getToken())
+      addProperty("instanceURL", endpoint.url)
+      addProperty("accessToken", CodySecureStore.getFromSecureStore(endpoint.url.toString()))
       addProperty("customRequestHeadersAsString", "")
       addProperty("pluginVersion", getPluginVersion())
       addProperty("anonymousUserId", CodyApplicationSettings.instance.anonymousUserId)
     }
-  }
-
-  @JvmStatic
-  fun getServerPath(): SourcegraphServerPath {
-    val activeAccount = CodyAccount.getActiveAccount()
-    return activeAccount?.server ?: from(DOTCOM_URL, "")
   }
 
   @JvmStatic fun shouldConnectToDebugAgent() = System.getenv("CODY_AGENT_DEBUG_REMOTE") == "true"
@@ -206,9 +201,9 @@ object ConfigUtil {
 
   @JvmStatic
   fun getWorkspaceRoot(project: Project): String {
-    // The base path should only be null for the default project. The agent server assumes that the
-    // workspace root is not null, so we have to provide some default value. Feel free to change to
-    // something else than the home directory if this is causing problems.
+    // The base path should only be null for the default project. The agent server assumes that
+    // the workspace root is not null, so we have to provide some default value. Feel free to
+    // change to something else than the home directory if this is causing problems.
     return project.basePath ?: System.getProperty("user.home")
   }
 

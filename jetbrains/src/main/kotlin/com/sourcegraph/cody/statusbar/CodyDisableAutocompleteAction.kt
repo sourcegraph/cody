@@ -1,7 +1,7 @@
 package com.sourcegraph.cody.statusbar
 
 import com.intellij.openapi.actionSystem.AnActionEvent
-import com.sourcegraph.cody.auth.CodyAccount
+import com.sourcegraph.cody.auth.CodyAuthService
 import com.sourcegraph.cody.autocomplete.CodyAutocompleteManager
 import com.sourcegraph.cody.config.CodyApplicationSettings
 import com.sourcegraph.common.ui.DumbAwareEDTAction
@@ -15,9 +15,11 @@ class CodyDisableAutocompleteAction : DumbAwareEDTAction("Disable Cody Autocompl
 
   override fun update(e: AnActionEvent) {
     super.update(e)
+    val project = e.project
     e.presentation.isEnabledAndVisible =
         ConfigUtil.isCodyEnabled() &&
+            project != null &&
             ConfigUtil.isCodyAutocompleteEnabled() &&
-            CodyAccount.hasActiveAccount()
+            CodyAuthService.getInstance(project).isActivated()
   }
 }
