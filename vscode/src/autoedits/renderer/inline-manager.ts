@@ -3,6 +3,7 @@ import * as vscode from 'vscode'
 import { isFileURI } from '@sourcegraph/cody-shared'
 
 import { completionMatchesSuffix } from '../../completions/is-completion-visible'
+import { shortenPromptForOutputChannel } from '../../completions/output-channel-logger'
 import { getNewLineChar } from '../../completions/text-processing'
 import { autoeditsOutputChannelLogger } from '../output-channel-logger'
 
@@ -86,10 +87,10 @@ export class AutoEditsInlineRendererManager
                 ),
             ]
 
-            autoeditsOutputChannelLogger.logDebug(
+            autoeditsOutputChannelLogger.logDebugIfVerbose(
                 'tryMakeInlineCompletions',
                 'Autocomplete Inline Response: ',
-                completionText
+                { verbose: shortenPromptForOutputChannel(completionText, []) }
             )
         }
 

@@ -159,14 +159,14 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
 
         await new Promise(resolve => setTimeout(resolve, INLINE_COMPLETION_DEFAULT_DEBOUNCE_INTERVAL_MS))
         if (abortSignal.aborted) {
-            autoeditsOutputChannelLogger.logDebug(
+            autoeditsOutputChannelLogger.logDebugIfVerbose(
                 'provideInlineCompletionItems',
                 'debounce aborted before calculating getCurrentDocContext'
             )
             return null
         }
 
-        autoeditsOutputChannelLogger.logDebug(
+        autoeditsOutputChannelLogger.logDebugIfVerbose(
             'provideInlineCompletionItems',
             'Calculating getCurrentDocContext...'
         )
@@ -189,7 +189,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             tokenBudget: autoeditsProviderConfig.tokenLimit,
         })
 
-        autoeditsOutputChannelLogger.logDebug(
+        autoeditsOutputChannelLogger.logDebugIfVerbose(
             'provideInlineCompletionItems',
             'Calculating context from contextMixer...'
         )
@@ -220,14 +220,14 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             },
         })
         if (abortSignal.aborted) {
-            autoeditsOutputChannelLogger.logDebug(
+            autoeditsOutputChannelLogger.logDebugIfVerbose(
                 'provideInlineCompletionItems',
                 'aborted in getContext'
             )
             return null
         }
 
-        autoeditsOutputChannelLogger.logDebug(
+        autoeditsOutputChannelLogger.logDebugIfVerbose(
             'provideInlineCompletionItems',
             'Calculating prompt from promptStrategy...'
         )
@@ -239,7 +239,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             isChatModel: autoeditsProviderConfig.isChatModel,
         })
 
-        autoeditsOutputChannelLogger.logDebug(
+        autoeditsOutputChannelLogger.logDebugIfVerbose(
             'provideInlineCompletionItems',
             'Calculating prediction from getPrediction...'
         )
@@ -250,7 +250,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             codeToReplaceData,
         })
         if (abortSignal?.aborted || !initialPrediction) {
-            autoeditsOutputChannelLogger.logDebug(
+            autoeditsOutputChannelLogger.logDebugIfVerbose(
                 'provideInlineCompletionItems',
                 'aborted after getPrediction'
             )
@@ -279,7 +279,10 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         })
 
         if (prediction === codeToRewrite) {
-            autoeditsOutputChannelLogger.logDebug('skip', 'prediction equals to code to rewrite')
+            autoeditsOutputChannelLogger.logDebugIfVerbose(
+                'provideInlineCompletionItems',
+                'prediction equals to code to rewrite'
+            )
             return null
         }
 
@@ -290,7 +293,10 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         })
 
         if (shouldFilterPredictionBasedRecentEdits) {
-            autoeditsOutputChannelLogger.logDebug('skip', 'based on recent edits')
+            autoeditsOutputChannelLogger.logDebugIfVerbose(
+                'provideInlineCompletionItems',
+                'based on recent edits'
+            )
             return null
         }
 
@@ -303,7 +309,10 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 suffix: codeToReplaceData.suffixInArea + codeToReplaceData.suffixAfterArea,
             })
         ) {
-            autoeditsOutputChannelLogger.logDebug('skip', 'prediction equals to code to rewrite')
+            autoeditsOutputChannelLogger.logDebugIfVerbose(
+                'provideInlineCompletionItems',
+                'skip because the prediction equals to code to rewrite'
+            )
             return null
         }
 
@@ -319,13 +328,19 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             })
 
         if (inlineCompletionItems === null && updatedDecorationInfo === null) {
-            autoeditsOutputChannelLogger.logDebug('skip', 'no suggestion to render')
+            autoeditsOutputChannelLogger.logDebugIfVerbose(
+                'provideInlineCompletionItems',
+                'no suggestion to render'
+            )
             return null
         }
 
         const editor = vscode.window.activeTextEditor
         if (!editor || !areSameUriDocs(document, editor.document)) {
-            autoeditsOutputChannelLogger.logDebug('skip', 'no active editor')
+            autoeditsOutputChannelLogger.logDebugIfVerbose(
+                'provideInlineCompletionItems',
+                'no active editor'
+            )
             return null
         }
 

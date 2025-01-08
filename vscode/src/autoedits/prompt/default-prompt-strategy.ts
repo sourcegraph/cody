@@ -3,6 +3,7 @@ import { type PromptString, ps } from '@sourcegraph/cody-shared'
 import { RetrieverIdentifier } from '../../completions/context/utils'
 import { autoeditsOutputChannelLogger } from '../output-channel-logger'
 
+import { shortenPromptForOutputChannel } from '../../../src/completions/output-channel-logger'
 import { AutoeditsUserPromptStrategy, type UserPromptArgs } from './base'
 import * as constants from './constants'
 import {
@@ -72,7 +73,9 @@ export class DefaultUserPromptStrategy extends AutoeditsUserPromptStrategy {
             constants.FINAL_USER_PROMPT
         )
 
-        autoeditsOutputChannelLogger.logDebug('getUserPrompt', 'Prompt\n', finalPrompt)
+        autoeditsOutputChannelLogger.logDebugIfVerbose('DefaultUserPromptStrategy', 'getUserPrompt', {
+            verbose: shortenPromptForOutputChannel(finalPrompt.toString(), []),
+        })
         return finalPrompt
     }
 }
