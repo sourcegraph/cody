@@ -121,7 +121,7 @@ export const autocompleteLifecycleOutputChannelLogger = {
 // Maximum length of a segment before it gets compacted
 const MAX_SEGMENT_LENGTH = 200
 
-function shortenPromptForOutputChannel(prompt: string, stopSequences: string[]): string {
+export function shortenPromptForOutputChannel(prompt: string, stopSequences: string[]): string {
     const stopSequencesWithoutNewLines = stopSequences.filter(seq => !isNewlineSequence(seq))
     const escapedSeparators = stopSequencesWithoutNewLines.map(escapeRegExp)
 

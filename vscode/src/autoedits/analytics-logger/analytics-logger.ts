@@ -21,6 +21,7 @@ import { upstreamHealthProvider } from '../../services/UpstreamHealthProvider'
 import { captureException, shouldErrorBeReported } from '../../services/sentry/sentry'
 import { splitSafeMetadata } from '../../services/telemetry-v2'
 import type { AutoeditsPrompt } from '../adapters/base'
+import { autoeditsOutputChannelLogger } from '../output-channel-logger'
 import type { CodeToReplaceData } from '../prompt/prompt-utils'
 import type { DecorationInfo } from '../renderer/decorators/base'
 
@@ -462,7 +463,7 @@ export class AutoeditAnalyticsLogger {
                     source,
                     isFuzzyMatch,
                     responseHeaders,
-                    latency: loadedAt - request.startedAt,
+                    latency: Math.floor(loadedAt - request.startedAt),
                 },
             }
         })
@@ -545,8 +546,6 @@ export class AutoeditAnalyticsLogger {
         if (result?.updatedRequest) {
             this.writeAutoeditRequestEvent('suggested', result.updatedRequest)
             this.writeAutoeditRequestEvent('accepted', result.updatedRequest)
-
-            this.activeRequests.delete(result.updatedRequest.requestId)
         }
     }
 
@@ -576,7 +575,6 @@ export class AutoeditAnalyticsLogger {
 
         if (result?.updatedRequest) {
             this.writeAutoeditRequestEvent('discarded', result.updatedRequest)
-            this.activeRequests.delete(result.updatedRequest.requestId)
         }
     }
 
@@ -620,9 +618,10 @@ export class AutoeditAnalyticsLogger {
             !request ||
             !(validRequestTransitions[request.phase] as readonly Phase[]).includes(nextPhase)
         ) {
-            this.writeDebugBookkeepingEvent(
-                `invalidTransitionTo${capitalize(nextPhase) as Capitalize<Phase>}`
-            )
+            this.writeAutoeditEvent({
+                action: `invalidTransitionTo${capitalize(nextPhase) as Capitalize<Phase>}`,
+                logDebugArgs: [request ? `from: "${request.phase}"` : 'missing request'],
+            })
 
             return null
         }
@@ -644,29 +643,44 @@ export class AutoeditAnalyticsLogger {
         state.suggestionLoggedAt = getTimeNowInMillis()
 
         const { metadata, privateMetadata } = splitSafeMetadata(payload)
-        this.writeAutoeditEvent(action, {
-            version: 0,
-            // Extract `id` from payload into the first-class `interactionId` field.
-            interactionID: 'id' in payload ? payload.id : undefined,
-            metadata: {
-                ...metadata,
-                recordsPrivateMetadataTranscript: 'prediction' in privateMetadata ? 1 : 0,
-            },
-            privateMetadata,
-            billingMetadata: {
-                product: 'cody',
-                // TODO: double check with the analytics team
-                // whether we should be categorizing the different completion event types.
-                category: action === 'suggested' ? 'billable' : 'core',
+
+        this.writeAutoeditEvent({
+            action,
+            logDebugArgs: terminalStateToLogDebugArgs(action, state),
+            telemetryParams: {
+                version: 0,
+                // Extract `id` from payload into the first-class `interactionId` field.
+                interactionID: 'id' in payload ? payload.id : undefined,
+                metadata: {
+                    ...metadata,
+                    recordsPrivateMetadataTranscript: 'prediction' in privateMetadata ? 1 : 0,
+                },
+                privateMetadata,
+                billingMetadata: {
+                    product: 'cody',
+                    // TODO: double check with the analytics team
+                    // whether we should be categorizing the different completion event types.
+                    category: action === 'suggested' ? 'billable' : 'core',
+                },
             },
         })
     }
 
-    private writeAutoeditEvent(
-        action: AutoeditEventAction,
-        params?: TelemetryEventParameters<{ [key: string]: number }, BillingProduct, BillingCategory>
-    ): void {
-        telemetryRecorder.recordEvent('cody.autoedit', action, params)
+    private writeAutoeditEvent({
+        action,
+        logDebugArgs,
+        telemetryParams,
+    }: {
+        action: AutoeditEventAction
+        logDebugArgs: readonly [string, ...unknown[]]
+        telemetryParams?: TelemetryEventParameters<
+            { [key: string]: number },
+            BillingProduct,
+            BillingCategory
+        >
+    }): void {
+        autoeditsOutputChannelLogger.logDebug('writeAutoeditEvent', action, ...logDebugArgs)
+        telemetryRecorder.recordEvent('cody.autoedit', action, telemetryParams)
     }
 
     /**
@@ -682,21 +696,30 @@ export class AutoeditAnalyticsLogger {
         const traceId = isNetworkError(error) ? error.traceId : undefined
 
         const currentCount = this.errorCounts.get(messageKey) ?? 0
+        const logDebugArgs = [error.name, { verbose: { message: error.message } }] as const
         if (currentCount === 0) {
-            this.writeAutoeditEvent('error', {
-                version: 0,
-                metadata: { count: 1 },
-                privateMetadata: { message: error.message, traceId },
+            this.writeAutoeditEvent({
+                action: 'error',
+                logDebugArgs,
+                telemetryParams: {
+                    version: 0,
+                    metadata: { count: 1 },
+                    privateMetadata: { message: error.message, traceId },
+                },
             })
 
             // After the interval, flush repeated errors
             setTimeout(() => {
                 const finalCount = this.errorCounts.get(messageKey) ?? 0
                 if (finalCount > 0) {
-                    this.writeAutoeditEvent('error', {
-                        version: 0,
-                        metadata: { count: finalCount },
-                        privateMetadata: { message: error.message, traceId },
+                    this.writeAutoeditEvent({
+                        action: 'error',
+                        logDebugArgs,
+                        telemetryParams: {
+                            version: 0,
+                            metadata: { count: finalCount },
+                            privateMetadata: { message: error.message, traceId },
+                        },
                     })
                 }
                 this.errorCounts.set(messageKey, 0)
@@ -704,14 +727,21 @@ export class AutoeditAnalyticsLogger {
         }
         this.errorCounts.set(messageKey, currentCount + 1)
     }
-
-    private writeDebugBookkeepingEvent(action: `invalidTransitionTo${Capitalize<Phase>}`): void {
-        this.writeAutoeditEvent(action)
-    }
 }
 
 export const autoeditAnalyticsLogger = new AutoeditAnalyticsLogger()
 
 export function getTimeNowInMillis(): number {
     return Math.floor(performance.now())
+}
+
+function terminalStateToLogDebugArgs(
+    action: AutoeditEventAction,
+    { requestId, phase, payload }: AcceptedState | RejectedState | DiscardedState
+): readonly [string, ...unknown[]] {
+    if (action === 'suggested' && (phase === 'rejected' || phase === 'accepted')) {
+        return [`"${requestId}" latency:"${payload.latency}ms" isRead:"${payload.isRead}"`]
+    }
+
+    return [`"${requestId}"`]
 }

@@ -31,6 +31,7 @@ export interface SharedProperties {
     sessionID: string
     repoIsPublic: boolean
     repoMetadata?: { commit?: string; remoteID?: string }[]
+    chatAgent?: string | undefined | null
 }
 export const events = [
     event(
@@ -76,6 +77,7 @@ export const events = [
                               )
                             : undefined,
                         gitMetadata,
+                        chatAgent: params.chatAgent,
                     },
                     billingMetadata: {
                         product: 'cody',

@@ -44,7 +44,7 @@ export class DeepCodyHandler extends ChatHandler implements AgentHandler {
             signal,
             skipQueryRewrite
         )
-        const isEnabled = chatBuilder.getMessages().length < 4
+        const isEnabled = chatBuilder.getLastHumanMessage()?.agent === 'deep-cody'
         if (!isEnabled || baseContextResult.error || baseContextResult.abort) {
             return baseContextResult
         }

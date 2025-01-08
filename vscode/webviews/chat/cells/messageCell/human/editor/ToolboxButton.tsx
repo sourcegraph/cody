@@ -31,7 +31,9 @@ export const ToolboxButton: FC<ToolboxButtonProps> = memo(({ settings, api }) =>
     const onOpenChange = useCallback(
         (open: boolean): void => {
             if (open) {
-                telemetryRecorder.recordEvent('cody.toolboxSettings', 'open', {})
+                telemetryRecorder.recordEvent('cody.toolboxSettings', 'opened', {
+                    billingMetadata: { product: 'cody', category: 'billable' },
+                })
             } else {
                 // Reset form to original settings when closing
                 setSettingsForm(settings)
@@ -43,6 +45,17 @@ export const ToolboxButton: FC<ToolboxButtonProps> = memo(({ settings, api }) =>
     const onSubmit = useCallback(
         (close: () => void) => {
             setIsLoading(true)
+
+            if (settings !== settingsForm) {
+                telemetryRecorder.recordEvent('cody.toolboxSettings', 'updated', {
+                    billingMetadata: { product: 'cody', category: 'billable' },
+                    metadata: {
+                        agent: settingsForm.agent?.name ? 1 : 0,
+                        shell: settingsForm.shell?.enabled ? 1 : 0,
+                    },
+                })
+            }
+
             const subscription = api.updateToolboxSettings(settingsForm).subscribe({
                 next: () => {
                     setIsLoading(false)
@@ -61,7 +74,7 @@ export const ToolboxButton: FC<ToolboxButtonProps> = memo(({ settings, api }) =>
                 subscription.unsubscribe()
             }
         },
-        [api.updateToolboxSettings, settingsForm, settings]
+        [api.updateToolboxSettings, settingsForm, settings, telemetryRecorder]
     )
 
     return (

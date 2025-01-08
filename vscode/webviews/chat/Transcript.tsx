@@ -643,7 +643,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                     }
                     defaultOpen={isContextLoading && humanMessage.agent === 'deep-cody'}
                     processes={humanMessage?.processes ?? undefined}
-                    agent={humanMessage?.agent}
+                    agent={humanMessage?.agent ?? undefined}
                 />
             )}
             {assistantMessage &&
