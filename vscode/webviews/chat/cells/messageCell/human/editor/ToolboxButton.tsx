@@ -168,12 +168,12 @@ export const ToolboxButton: FC<ToolboxButtonProps> = memo(({ settings, api }) =>
                     },
                 }}
             >
-                <Button variant="ghost" size="none">
+                <Button variant="ghost" size="none" className="hover:!tw-bg-transparent">
                     {settings.agent?.name ? (
                         <FlaskConicalIcon
                             size={16}
                             strokeWidth={1.25}
-                            className="tw-w-8 tw-h-8 tw-text-green-500"
+                            className="tw-w-8 tw-h-8 tw-text-green-600 tw-drop-shadow-md"
                         />
                     ) : (
                         <FlaskConicalOffIcon

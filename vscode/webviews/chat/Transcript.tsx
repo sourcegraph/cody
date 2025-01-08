@@ -655,9 +655,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                             ? EditContextButtonSearch
                             : EditContextButtonChat
                     }
-                    defaultOpen={
-                        isContextLoading && humanMessage.agent === 'deep-cody' && humanMessage.index < 3
-                    } // Open the context cell for the first 2 human messages when Deep Cody is run.
+                    defaultOpen={isContextLoading && humanMessage.agent === 'deep-cody'}
                     processes={humanMessage?.processes ?? undefined}
                     agent={humanMessage?.agent ?? undefined}
                 />
