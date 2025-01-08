@@ -1,4 +1,5 @@
 import {
+    CodyAutoSuggestionMode,
     FeatureFlag,
     currentAuthStatus,
     currentResolvedConfig,
@@ -44,7 +45,7 @@ export class AutoeditsOnboarding implements vscode.Disposable {
                 .getConfiguration()
                 .update(
                     'cody.suggestions.mode',
-                    'auto-edits (Experimental)',
+                    CodyAutoSuggestionMode.Autoedits,
                     vscode.ConfigurationTarget.Global
                 )
 

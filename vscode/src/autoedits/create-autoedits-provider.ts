@@ -4,6 +4,7 @@ import * as vscode from 'vscode'
 import {
     type AuthStatus,
     type ChatClient,
+    CodyAutoSuggestionMode,
     NEVER,
     type PickResolvedConfiguration,
     type UserProductSubscription,
@@ -17,6 +18,13 @@ import { isFreeUser } from '@sourcegraph/cody-shared/src/auth/types'
 import { isRunningInsideAgent } from '../jsonrpc/isRunningInsideAgent'
 import { AutoeditsProvider } from './autoedits-provider'
 import { autoeditsOutputChannelLogger } from './output-channel-logger'
+
+const AUTOEDITS_NON_ELIGIBILITY_MESSAGES = {
+    ONLY_VSCODE_SUPPORT: 'Auto-Edits is currently only supported in VS Code.',
+    PRO_USER_ONLY: 'Auto-Edits requires Cody Pro subscription.',
+    FEATURE_FLAG_NOT_ELIGIBLE:
+        'Auto-Edits is an experimental feature and currently not enabled for your account. Please check back later.',
+}
 
 /**
  * Information about a user's eligibility for auto-edits functionality.
@@ -69,9 +77,7 @@ export function createAutoEditsProvider({
                 userProductSubscription
             )
             if (!userEligibilityInfo.isUserEligible) {
-                if (userEligibilityInfo.nonEligibilityReason) {
-                    vscode.window.showInformationMessage(userEligibilityInfo.nonEligibilityReason)
-                }
+                handleAutoeditsNotificationForNonEligibleUser(userEligibilityInfo.nonEligibilityReason)
                 return []
             }
 
@@ -92,6 +98,26 @@ export function createAutoEditsProvider({
     )
 }
 
+export async function handleAutoeditsNotificationForNonEligibleUser(
+    nonEligibilityReason?: string
+): Promise<void> {
+    const switchToAutocompleteText = 'Switch to autocomplete'
+
+    const selection = await vscode.window.showErrorMessage(
+        `Error: ${nonEligibilityReason ?? AUTOEDITS_NON_ELIGIBILITY_MESSAGES.FEATURE_FLAG_NOT_ELIGIBLE}`,
+        switchToAutocompleteText
+    )
+    if (selection === switchToAutocompleteText) {
+        await vscode.workspace
+            .getConfiguration()
+            .update(
+                'cody.suggestions.mode',
+                CodyAutoSuggestionMode.Autocomplete,
+                vscode.ConfigurationTarget.Global
+            )
+    }
+}
+
 export function isUserEligibleForAutoeditsFeature(
     autoeditsFeatureFlagEnabled: boolean,
     authStatus: AuthStatus,
@@ -101,14 +127,14 @@ export function isUserEligibleForAutoeditsFeature(
     if (isRunningInsideAgent()) {
         return {
             isUserEligible: false,
-            nonEligibilityReason: 'auto-edits is currently only supported in VS Code.',
+            nonEligibilityReason: AUTOEDITS_NON_ELIGIBILITY_MESSAGES.ONLY_VSCODE_SUPPORT,
         }
     }
     // Free users are not eligible for auto-edits
     if (isFreeUser(authStatus, productSubscription)) {
         return {
             isUserEligible: false,
-            nonEligibilityReason: 'auto-edits requires Cody Pro subscription.',
+            nonEligibilityReason: AUTOEDITS_NON_ELIGIBILITY_MESSAGES.PRO_USER_ONLY,
         }
     }
 
@@ -117,6 +143,6 @@ export function isUserEligibleForAutoeditsFeature(
         isUserEligible: autoeditsFeatureFlagEnabled,
         nonEligibilityReason: autoeditsFeatureFlagEnabled
             ? undefined
-            : 'auto-edits is an experimental feature and currently not enabled for your account. Please check back later.',
+            : AUTOEDITS_NON_ELIGIBILITY_MESSAGES.FEATURE_FLAG_NOT_ELIGIBLE,
     }
 }
