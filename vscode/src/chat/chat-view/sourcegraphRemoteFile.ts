@@ -3,7 +3,7 @@ import { LRUCache } from 'lru-cache'
 import * as vscode from 'vscode'
 
 export class SourcegraphRemoteFileProvider implements vscode.FileSystemProvider, vscode.Disposable {
-    private cache = new LRUCache<string, string>({ max: 128 })
+    private cache = new LRUCache<string, Promise<Uint8Array>>({ max: 128 })
     private disposables: vscode.Disposable[] = []
 
     constructor() {
@@ -12,14 +12,20 @@ export class SourcegraphRemoteFileProvider implements vscode.FileSystemProvider,
         )
     }
 
-    async readFile(uri: vscode.Uri): Promise<Uint8Array<ArrayBufferLike>> {
-        const content =
-            this.cache.get(uri.toString()) ||
-            (await SourcegraphRemoteFileProvider.getFileContentsFromURL(uri))
+    async readFile(uri: vscode.Uri): Promise<Uint8Array> {
+        const cachedResult = this.cache.get(uri.toString())
 
-        this.cache.set(uri.toString(), content)
+        if (cachedResult) {
+            return cachedResult
+        }
 
-        return new TextEncoder().encode(content)
+        const contentPromise = getFileContentsFromURL(uri).then(content =>
+            new TextEncoder().encode(content)
+        )
+
+        this.cache.set(uri.toString(), contentPromise)
+
+        return contentPromise
     }
 
     public dispose(): void {
@@ -28,31 +34,6 @@ export class SourcegraphRemoteFileProvider implements vscode.FileSystemProvider,
             disposable.dispose()
         }
         this.disposables = []
-    }
-
-    private static async getFileContentsFromURL(URL: vscode.Uri): Promise<string> {
-        const path = URL.path
-        const [repoRev = '', filePath] = path.split('/-/blob/')
-        let [repoName, rev = 'HEAD'] = repoRev.split('@')
-        repoName = repoName.replace(/^\/+/, '')
-
-        if (!repoName || !filePath) {
-            throw new Error('Invalid URI')
-        }
-
-        const dataOrError = await graphqlClient.getFileContents(repoName, filePath, rev)
-
-        if (isError(dataOrError)) {
-            throw new Error(dataOrError.message)
-        }
-
-        const content = dataOrError.repository?.commit?.file?.content
-
-        if (!content) {
-            throw new Error('File not found')
-        }
-
-        return content
     }
 
     // Below methods are unused
@@ -93,4 +74,29 @@ export class SourcegraphRemoteFileProvider implements vscode.FileSystemProvider,
     delete() {
         throw new Error('Method not implemented.')
     }
+}
+
+async function getFileContentsFromURL(URL: vscode.Uri): Promise<string> {
+    const path = URL.path
+    const [repoRev = '', filePath] = path.split('/-/blob/')
+    let [repoName, rev = 'HEAD'] = repoRev.split('@')
+    repoName = repoName.replace(/^\/+/, '')
+
+    if (!repoName || !filePath) {
+        throw new Error('Invalid URI')
+    }
+
+    const dataOrError = await graphqlClient.getFileContents(repoName, filePath, rev)
+
+    if (isError(dataOrError)) {
+        throw new Error(dataOrError.message)
+    }
+
+    const content = dataOrError.repository?.commit?.file?.content
+
+    if (!content) {
+        throw new Error('File not found')
+    }
+
+    return content
 }
