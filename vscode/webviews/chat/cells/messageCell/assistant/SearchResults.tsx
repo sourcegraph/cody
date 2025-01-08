@@ -2,6 +2,7 @@ import {
     CODE_SEARCH_PROVIDER_URI,
     type ChatMessageWithSearch,
     type NLSSearchDynamicFilter,
+    NLSSearchFileMatch,
     type NLSSearchResult,
     isDefined,
 } from '@sourcegraph/cody-shared'
@@ -66,9 +67,7 @@ export const SearchResults = ({
     const totalResults = useMemo(
         () =>
             message.search.response?.results.results.filter(
-                result =>
-                    result.__typename === 'FileMatch' &&
-                    (result.chunkMatches?.length || result.symbols?.length)
+                (result): result is NLSSearchFileMatch => result.__typename === 'FileMatch'
             ) || [],
         [message.search.response]
     )
