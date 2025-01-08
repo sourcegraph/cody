@@ -505,13 +505,13 @@ const ProcessItem: FC<{ process: ProcessingStep; isContextLoading: boolean }> = 
                         <CircleXIcon
                             strokeWidth={2}
                             size={14}
-                            className="high-contrast-dark:tw-text-red-500"
+                            className="tw-text-red-500 tw-drop-shadow-md"
                         />
                     ) : (
                         <CheckCircle
                             strokeWidth={2}
                             size={14}
-                            className="tw-text-green-500 tw-drop-shadow-md tw-shadow-md"
+                            className="tw-text-green-500 tw-drop-shadow-md"
                         />
                     )}
                 </div>

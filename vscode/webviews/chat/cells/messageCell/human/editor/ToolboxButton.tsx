@@ -173,7 +173,7 @@ export const ToolboxButton: FC<ToolboxButtonProps> = memo(({ settings, api }) =>
                         <FlaskConicalIcon
                             size={16}
                             strokeWidth={1.25}
-                            className="tw-w-8 tw-h-8 tw-text-green-700"
+                            className="tw-w-8 tw-h-8 tw-text-green-600 tw-drop-shadow-md"
                         />
                     ) : (
                         <FlaskConicalOffIcon
