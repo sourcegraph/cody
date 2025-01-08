@@ -1,4 +1,4 @@
-import { Observable, map } from 'observable-fns'
+import { type Observable, map } from 'observable-fns'
 import * as vscode from 'vscode'
 
 import {
@@ -9,6 +9,8 @@ import {
     type UserProductSubscription,
     combineLatest,
     createDisposables,
+    currentUserProductSubscription,
+    promiseFactoryToObservable,
     skipPendingOperation,
 } from '@sourcegraph/cody-shared'
 import { isFreeUser } from '@sourcegraph/cody-shared/src/auth/types'
@@ -56,9 +58,23 @@ export function createAutoEditsProvider({
         return NEVER
     }
 
-    return Observable.of(undefined).pipe(
+    return combineLatest(
+        promiseFactoryToObservable(async () => await currentUserProductSubscription())
+    ).pipe(
         skipPendingOperation(),
-        createDisposables(() => {
+        createDisposables(([userProductSubscription]) => {
+            const userEligibilityInfo = isUserEligibleForAutoeditsFeature(
+                autoeditsFeatureFlagEnabled,
+                authStatus,
+                userProductSubscription
+            )
+            if (!userEligibilityInfo.isUserEligible) {
+                if (userEligibilityInfo.nonEligibilityReason) {
+                    vscode.window.showInformationMessage(userEligibilityInfo.nonEligibilityReason)
+                }
+                return []
+            }
+
             const provider = new AutoeditsProvider(chatClient)
             return [
                 vscode.commands.registerCommand('cody.command.autoedits-manual-trigger', async () => {
@@ -74,4 +90,33 @@ export function createAutoEditsProvider({
         }),
         map(() => undefined)
     )
+}
+
+export function isUserEligibleForAutoeditsFeature(
+    autoeditsFeatureFlagEnabled: boolean,
+    authStatus: AuthStatus,
+    productSubscription: UserProductSubscription | null
+): AutoeditsUserEligibilityInfo {
+    // Editors other than vscode are not eligible for auto-edits
+    if (isRunningInsideAgent()) {
+        return {
+            isUserEligible: false,
+            nonEligibilityReason: 'auto-edits is currently only supported in VS Code.',
+        }
+    }
+    // Free users are not eligible for auto-edits
+    if (isFreeUser(authStatus, productSubscription)) {
+        return {
+            isUserEligible: false,
+            nonEligibilityReason: 'auto-edits requires Cody Pro subscription.',
+        }
+    }
+
+    // Users with autoedits feature flag enabled are eligible for auto-edits
+    return {
+        isUserEligible: autoeditsFeatureFlagEnabled,
+        nonEligibilityReason: autoeditsFeatureFlagEnabled
+            ? undefined
+            : 'auto-edits is an experimental feature and currently not enabled for your account. Please check back later.',
+    }
 }
