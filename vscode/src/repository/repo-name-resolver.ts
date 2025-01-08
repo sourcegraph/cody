@@ -51,6 +51,11 @@ export class RepoNameResolver {
                     )
                 }
 
+                // stop here early so combine latest won't be in pending with empty list of streams
+                if (remoteUrls.length === 0) {
+                    return Observable.of([])
+                }
+
                 return combineLatest(
                     ...remoteUrls.map(remoteUrl => this.getRepoNameCached(remoteUrl))
                 ).pipe(
@@ -89,7 +94,7 @@ export class RepoNameResolver {
                 logError('RepoNameResolver:getRemoteUrlsInfoCached', 'error', {
                     verbose: error,
                 })
-                return [pendingOperation.toString()]
+                return []
             })
             this.fsPathToRemoteUrlsInfo.set(key, remoteUrlsInfo)
         }
