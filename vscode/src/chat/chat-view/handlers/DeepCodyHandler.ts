@@ -44,10 +44,16 @@ export class DeepCodyHandler extends ChatHandler implements AgentHandler {
             signal,
             skipQueryRewrite
         )
-        const isEnabled = chatBuilder.getLastHumanMessage()?.agent === 'deep-cody'
+        const isEnabled = chatBuilder.selectedAgent === 'deep-cody'
         if (!isEnabled || baseContextResult.error || baseContextResult.abort) {
             return baseContextResult
         }
+
+        const wordsCount = text.split(' ').length
+        if (wordsCount < 3) {
+            return baseContextResult
+        }
+
         const deepCodyRateLimiter = new DeepCodyRateLimiter(
             this.featureDeepCodyRateLimitBase.value.last ? 50 : 0,
             this.featureDeepCodyRateLimitMultiplier.value.last ? 4 : 2
@@ -55,6 +61,7 @@ export class DeepCodyHandler extends ChatHandler implements AgentHandler {
 
         const deepCodyLimit = deepCodyRateLimiter.isAtLimit()
         if (isEnabled && deepCodyLimit) {
+            chatBuilder.setSelectedAgent(undefined)
             return { error: deepCodyRateLimiter.getRateLimitError(deepCodyLimit), abort: true }
         }
 

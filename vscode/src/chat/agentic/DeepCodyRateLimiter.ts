@@ -1,4 +1,4 @@
-import { RateLimitError } from '@sourcegraph/cody-shared'
+import { RateLimitError, telemetryRecorder } from '@sourcegraph/cody-shared'
 import { localStorage } from './../../services/LocalStorageProvider'
 
 /**
@@ -43,6 +43,14 @@ export class DeepCodyRateLimiter {
         // If we have at least 1 quota available
         if (newQuota >= 1) {
             localStorage.setDeepCodyUsage(newQuota - 1, now.toISOString())
+            if (newQuota === 1) {
+                telemetryRecorder.recordEvent('cody.context-agent.limit', 'hit', {
+                    billingMetadata: {
+                        product: 'cody',
+                        category: 'core',
+                    },
+                })
+            }
             return undefined
         }
 
