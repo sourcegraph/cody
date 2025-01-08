@@ -339,7 +339,8 @@ export const benchCommand = new commander.Command('bench')
         const recordingMode =
             process.env.CODY_RECORDING_MODE === 'passthrough' ? 'passthrough' : 'replay'
         const recordingDirectory = path.join(path.dirname(options.evaluationConfig), 'recordings')
-        const polly = startPollyRecording({
+        const polly = process.env.DISABLE_POLLY === 'true' ?
+            null : startPollyRecording({
             recordingName: 'cody-bench',
             recordingMode: recordingMode,
             recordIfMissing: true,
@@ -352,7 +353,7 @@ export const benchCommand = new commander.Command('bench')
                 workspacesToRun.map(workspace => evaluateWorkspace(workspace, recordingDirectory))
             )
         } finally {
-            await polly.stop()
+            await polly?.stop()
         }
         process.exit(0)
     })
