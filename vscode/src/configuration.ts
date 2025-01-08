@@ -47,10 +47,14 @@ export function getConfiguration(
         debugRegex = /.*/
     }
 
-    const codyAutoSuggestionsMode = config.get<string>(
-        CONFIG_KEY.suggestionsMode,
-        CodyAutoSuggestionMode.Autocomplete
-    )
+    // Ensure backward compatibility with the older config. If autocomplete was turned off - override the suggestion mode to "off"
+    // TODO (Hitesh): Remove the manual override once the updated config is communicated after experimental release
+    const isAutocompleteDisabledAsPerOlderConfig =
+        vscode.workspace.getConfiguration().get<boolean>('cody.autocomplete.enabled', true) === false
+
+    const codyAutoSuggestionsMode = isAutocompleteDisabledAsPerOlderConfig
+        ? CodyAutoSuggestionMode.Off
+        : config.get<string>(CONFIG_KEY.suggestionsMode, CodyAutoSuggestionMode.Autocomplete)
 
     return {
         net: {
