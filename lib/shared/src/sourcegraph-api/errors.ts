@@ -24,7 +24,7 @@ export class RateLimitError extends Error {
     public readonly retryMessage: string | undefined
 
     constructor(
-        public readonly feature: 'autocompletions' | 'chat messages and commands' | 'Deep Cody',
+        public readonly feature: 'autocompletions' | 'chat messages and commands' | 'Agentic Chat',
         public readonly message: string,
         /* Whether an upgrade is available that would increase rate limits. */
         public readonly upgradeIsAvailable: boolean,
@@ -34,8 +34,8 @@ export class RateLimitError extends Error {
     ) {
         super(message)
         this.userMessage =
-            feature === 'Deep Cody'
-                ? `You've reached the daily limit for Deep Cody. Please select another model and try again.`
+            feature === 'Agentic Chat'
+                ? `You've reached the daily limit for Agentic Chat. Please select another model and try again.`
                 : `You've used all of your ${feature} for ${upgradeIsAvailable ? 'the month' : 'today'}.`
         this.retryAfterDate = retryAfter
             ? /^\d+$/.test(retryAfter)

@@ -50,7 +50,7 @@ export class DeepCodyHandler extends ChatHandler implements AgentHandler {
         }
         const deepCodyRateLimiter = new DeepCodyRateLimiter(
             this.featureDeepCodyRateLimitBase.value.last ? 50 : 0,
-            this.featureDeepCodyRateLimitMultiplier.value.last ? 2 : 1
+            this.featureDeepCodyRateLimitMultiplier.value.last ? 4 : 2
         )
 
         const deepCodyLimit = deepCodyRateLimiter.isAtLimit()

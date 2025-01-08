@@ -155,10 +155,10 @@ export const ContextCell: FunctionComponent<{
             main:
                 experimentalOneBoxEnabled && !intent
                     ? 'Reviewing query'
-                    : isContextLoading
-                      ? 'Fetching context'
-                      : isDeepCodyEnabled
-                        ? 'Agentic Context'
+                    : isDeepCodyEnabled
+                      ? 'Agentic Context'
+                      : isContextLoading
+                        ? 'Fetching context'
                         : 'Context',
             sub:
                 experimentalOneBoxEnabled && !intent

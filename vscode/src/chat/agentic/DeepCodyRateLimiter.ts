@@ -52,6 +52,6 @@ export class DeepCodyRateLimiter {
     }
 
     public getRateLimitError(retryAfter: string): RateLimitError {
-        return new RateLimitError('Deep Cody', 'daily limit', false, undefined, retryAfter)
+        return new RateLimitError('Agentic Chat', 'daily limit', false, undefined, retryAfter)
     }
 }
