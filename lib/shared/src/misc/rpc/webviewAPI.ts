@@ -42,6 +42,11 @@ export interface WebviewToExtensionAPI {
     getCurrentUserId(): Observable<string | null | Error>
 
     /**
+     * List repositories that match the given query for the repository filter in search results.
+     */
+    repos(input: ReposInput): Observable<ReposResults>
+
+    /**
      * Stream with actions from cody agent service, serves as transport for any client
      * based actions/effects.
      */
@@ -155,6 +160,7 @@ export function createExtensionAPI(
         userProductSubscription: proxyExtensionAPI(messageAPI, 'userProductSubscription'),
         toolboxSettings: proxyExtensionAPI(messageAPI, 'toolboxSettings'),
         updateToolboxSettings: proxyExtensionAPI(messageAPI, 'updateToolboxSettings'),
+        repos: proxyExtensionAPI(messageAPI, 'repos'),
     }
 }
 
@@ -168,6 +174,13 @@ export interface MentionMenuData {
      */
     error?: string
 }
+
+export interface ReposInput {
+    query?: string
+    first: number
+}
+
+export type ReposResults = { name: string; id: string }[]
 
 export interface PromptAction extends Prompt {
     actionType: 'prompt'

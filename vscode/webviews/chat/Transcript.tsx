@@ -612,6 +612,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
             {experimentalOneBoxEnabled && (
                 <SwitchIntent
                     intent={humanMessage?.intent}
+                    disabled={!!assistantMessage?.isLoading}
                     manuallySelected={!!humanMessage.manuallySelectedIntent}
                     onSwitch={
                         humanMessage?.intent === 'search'
