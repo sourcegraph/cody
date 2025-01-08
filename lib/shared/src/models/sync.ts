@@ -27,7 +27,7 @@ import { RestClient } from '../sourcegraph-api/rest/client'
 import type { UserProductSubscription } from '../sourcegraph-api/userProductSubscription'
 import { CHAT_INPUT_TOKEN_BUDGET } from '../token/constants'
 import { isError } from '../utils'
-import { TOOL_CODY_MODEL, getExperimentalClientModelByFeatureFlag } from './client'
+import { TOOL_CODY_MODEL } from './client'
 import { type Model, type ServerModel, createModel, createModelFromServerModel } from './model'
 import type {
     DefaultsAndUserPreferencesForEndpoint,
@@ -212,12 +212,7 @@ export function syncModels({
                                         enableToolCody
                                     ).pipe(
                                         switchMap(
-                                            ([
-                                                hasEarlyAccess,
-                                                hasDeepCodyFlag,
-                                                defaultToHaiku,
-                                                enableToolCody,
-                                            ]) => {
+                                            ([hasEarlyAccess, isDeepCodyEnabled, defaultToHaiku]) => {
                                                 // TODO(sqs): remove waitlist from localStorage when user has access
                                                 const isOnWaitlist = config.clientState.waitlist_o1
                                                 if (isDotComUser && (hasEarlyAccess || isOnWaitlist)) {
@@ -238,40 +233,11 @@ export function syncModels({
                                                         }
                                                     )
                                                 }
-
-                                                // Replace user's current sonnet model with deep-cody model.
-                                                const sonnetModel = data.primaryModels.find(m =>
-                                                    m.id.includes('sonnet')
-                                                )
-                                                // DEEP CODY is enabled for all PLG users.
-                                                // Enterprise users need to have the feature flag enabled.
-                                                const isDeepCodyEnabled =
-                                                    (isDotComUser && !isCodyFreeUser) || hasDeepCodyFlag
-                                                if (
-                                                    isDeepCodyEnabled &&
-                                                    sonnetModel &&
-                                                    // Ensure the deep-cody model is only added once.
-                                                    !data.primaryModels.some(m =>
-                                                        m.id.includes('deep-cody')
-                                                    )
-                                                ) {
-                                                    const DEEPCODY_MODEL =
-                                                        getExperimentalClientModelByFeatureFlag(
-                                                            FeatureFlag.DeepCody
-                                                        )!
+                                                if (isDeepCodyEnabled && enableToolCody) {
                                                     data.primaryModels.push(
-                                                        ...maybeAdjustContextWindows([
-                                                            DEEPCODY_MODEL,
-                                                        ]).map(createModelFromServerModel)
+                                                        createModelFromServerModel(TOOL_CODY_MODEL)
                                                     )
-
-                                                    if (enableToolCody) {
-                                                        data.primaryModels.push(
-                                                            createModelFromServerModel(TOOL_CODY_MODEL)
-                                                        )
-                                                    }
                                                 }
-
                                                 // set the default model to Haiku for free users
                                                 if (isDotComUser && isCodyFreeUser && defaultToHaiku) {
                                                     const haikuModel = data.primaryModels.find(m =>

@@ -2,7 +2,7 @@ import type { AutocompleteContextSnippet } from '@sourcegraph/cody-shared'
 import { isDefined } from '@sourcegraph/cody-shared'
 import { XMLBuilder } from 'fast-xml-parser'
 import * as vscode from 'vscode'
-import { autocompleteOutputChannelLogger } from '../../../output-channel-logger'
+import { autoeditsOutputChannelLogger } from '../../../../autoedits/output-channel-logger'
 import type { ContextRetriever, ContextRetrieverOptions } from '../../../types'
 import { RetrieverIdentifier } from '../../utils'
 import { getCellIndexInActiveNotebookEditor, getNotebookCells } from './notebook-utils'
@@ -46,7 +46,7 @@ export class DiagnosticsRetriever implements vscode.Disposable, ContextRetriever
         document,
         position,
     }: ContextRetrieverOptions): Promise<AutocompleteContextSnippet[]> {
-        autocompleteOutputChannelLogger.logDebug(
+        autoeditsOutputChannelLogger.logDebugIfVerbose(
             'diagnostics retriever',
             'Retrieving diagnostics context'
         )
@@ -56,7 +56,7 @@ export class DiagnosticsRetriever implements vscode.Disposable, ContextRetriever
                 ? await this.getDiagnosticsForNotebook(position)
                 : await this.getDiagnosticsForDocument(document, position)
 
-        autocompleteOutputChannelLogger.logDebug(
+        autoeditsOutputChannelLogger.logDebugIfVerbose(
             'diagnostics retriever',
             `Retrieved ${diagnosticsSnippets.length} diagnostics context`
         )

@@ -3,6 +3,7 @@ import * as vscode from 'vscode'
 import {
     type AutoEditsModelConfig,
     type AutoEditsTokenLimit,
+    authStatus,
     isDotComAuthed,
 } from '@sourcegraph/cody-shared'
 
@@ -85,6 +86,10 @@ export function getAutoeditsProviderConfig(): AutoeditsProviderConfig {
 
 /**
  * A singleton for the static autoedits provider config.
- * TODO: make it reactive to VS Code settings changes.
  */
-export const autoeditsProviderConfig = getAutoeditsProviderConfig()
+export let autoeditsProviderConfig = getAutoeditsProviderConfig()
+
+// Recompute autoedits config on auth status change.
+authStatus.subscribe(() => {
+    autoeditsProviderConfig = getAutoeditsProviderConfig()
+})

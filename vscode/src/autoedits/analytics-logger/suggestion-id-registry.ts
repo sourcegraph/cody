@@ -1,7 +1,7 @@
 import { LRUCache } from 'lru-cache'
 import * as uuid from 'uuid'
 
-import type { AutoeditModelOptions } from '../adapters/base'
+import type { AutoeditsPrompt } from '../adapters/base'
 import type { AutoeditSuggestionID } from './analytics-logger'
 
 /**
@@ -20,8 +20,8 @@ export class AutoeditSuggestionIdRegistry {
      * Produce a stable suggestion ID for the given context + text, reusing
      * previously generated IDs for duplicates.
      */
-    public getOrCreate(options: AutoeditModelOptions, prediction: string): AutoeditSuggestionID {
-        const key = this.getAutoeditSuggestionKey(options, prediction)
+    public getOrCreate(prompt: AutoeditsPrompt, prediction: string): AutoeditSuggestionID {
+        const key = this.getAutoeditSuggestionKey(prompt, prediction)
         let stableId = this.suggestionIdCache.get(key)
         if (!stableId) {
             stableId = uuid.v4() as AutoeditSuggestionID
@@ -34,10 +34,10 @@ export class AutoeditSuggestionIdRegistry {
      * Creates a stable string key that identifies the same suggestion across repeated displays.
      */
     private getAutoeditSuggestionKey(
-        params: AutoeditModelOptions,
+        prompt: AutoeditsPrompt,
         prediction: string
     ): AutoeditSuggestionKey {
-        const key = `${params.prompt.systemMessage}█${params.prompt.userMessage}█${prediction}`
+        const key = `${prompt.systemMessage}█${prompt.userMessage}█${prediction}`
         return key as AutoeditSuggestionKey
     }
 
@@ -55,3 +55,8 @@ export class AutoeditSuggestionIdRegistry {
         }
     }
 }
+
+/**
+ * Encapsulates the logic for reusing stable suggestion IDs for repeated text/context.
+ */
+export const autoeditIdRegistry = new AutoeditSuggestionIdRegistry()

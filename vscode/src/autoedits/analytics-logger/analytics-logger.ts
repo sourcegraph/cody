@@ -1,11 +1,12 @@
 import capitalize from 'lodash/capitalize'
 import { LRUCache } from 'lru-cache'
 import * as uuid from 'uuid'
-import * as vscode from 'vscode'
+import type * as vscode from 'vscode'
 
 import {
     type BillingCategory,
     type BillingProduct,
+    type DocumentContext,
     isDotComAuthed,
     isNetworkError,
     telemetryRecorder,
@@ -19,9 +20,12 @@ import { type CodeGenEventMetadata, charactersLogger } from '../../services/Char
 import { upstreamHealthProvider } from '../../services/UpstreamHealthProvider'
 import { captureException, shouldErrorBeReported } from '../../services/sentry/sentry'
 import { splitSafeMetadata } from '../../services/telemetry-v2'
+import type { AutoeditsPrompt } from '../adapters/base'
+import { autoeditsOutputChannelLogger } from '../output-channel-logger'
+import type { CodeToReplaceData } from '../prompt/prompt-utils'
+import type { DecorationInfo } from '../renderer/decorators/base'
 
-import type { AutoeditModelOptions } from '../adapters/base'
-import { AutoeditSuggestionIdRegistry } from './suggestion-id-registry'
+import { autoeditIdRegistry } from './suggestion-id-registry'
 
 /**
  * This file implements a state machine to manage the lifecycle of an autoedit request.
@@ -56,8 +60,17 @@ type Phase =
     | 'contextLoaded'
     /** The autoedit suggestion has been loaded — we have a prediction string. */
     | 'loaded'
+    /**
+     * The suggestion is not discard during post processing and we have all the data to render the suggestion.
+     * This intermediate step is required for the agent API. We cannot graduate the request to the suggested
+     * state right away. We first need to save requests metadata to the analytics logger cache, so that
+     * agent can access it using the request ID only in `unstable_handleDidShowCompletionItem` calls.
+     */
+    | 'postProcessed'
     /** The autoedit suggestion has been suggested to the user. */
     | 'suggested'
+    /** The autoedit suggestion is marked as read is it's still visible to the user after a hardcoded timeout. */
+    | 'read'
     /** The user has accepted the suggestion. */
     | 'accepted'
     /** The user has rejected the suggestion. */
@@ -71,8 +84,10 @@ type Phase =
 const validRequestTransitions = {
     started: ['contextLoaded', 'discarded'],
     contextLoaded: ['loaded', 'discarded'],
-    loaded: ['suggested', 'discarded'],
-    suggested: ['accepted', 'rejected'],
+    loaded: ['postProcessed', 'discarded'],
+    postProcessed: ['suggested'],
+    suggested: ['read', 'accepted', 'rejected'],
+    read: ['accepted', 'rejected'],
     accepted: [],
     rejected: [],
     discarded: [],
@@ -103,7 +118,7 @@ interface AutoeditStartedMetadata {
     model: string
 
     /** Optional trace ID for cross-service correlation, if your environment provides it. */
-    traceId: string
+    traceId?: string
 
     /** Describes how the autoedit request was triggered by the user. */
     triggerKind: AutoeditTriggerKindMetadata
@@ -185,9 +200,21 @@ interface AutoeditLoadedMetadata extends AutoeditContextLoadedMetadata {
 
 interface AutoEditFinalMetadata extends AutoeditLoadedMetadata {
     /** Displayed to the user for this many milliseconds. */
-    displayDuration: number
+    timeFromSuggestedAt: number
     /** True if the suggestion was explicitly/intentionally accepted. */
     isAccepted: boolean
+    /**
+     * True if the suggestion was visible for a certain time
+     * Required to correctly calculate CAR and other metrics where we
+     * want to account only for suggestions visible for a certain time.
+     *
+     * `timeFromSuggestedAt` is not a reliable source of truth for
+     * this case because a user could have rejected a suggestion without
+     * triggering `accepted` or `discarded` immediately. This is related to
+     * limited VS Code APIs which do not provide a reliable way to know
+     * if a suggestion is really visible.
+     */
+    isRead: boolean
     /** The number of the auto-edits started since the last suggestion was shown. */
     suggestionsStartedSinceLastSuggestion: number
 }
@@ -214,49 +241,77 @@ interface AutoeditBaseState {
     phase: Phase
 }
 
-interface StartedState extends AutoeditBaseState {
+export interface StartedState extends AutoeditBaseState {
     phase: 'started'
     /** Time (ms) when we started computing or requesting the suggestion. */
     startedAt: number
+
+    /** Metadata required to show a suggestion based on `requestId` only. */
+    codeToReplaceData: CodeToReplaceData
+    document: vscode.TextDocument
+    position: vscode.Position
+    docContext: DocumentContext
+
     /** Partial payload for this phase. Will be augmented with more info as we progress. */
     payload: AutoeditStartedMetadata
 }
 
-interface ContextLoadedState extends Omit<StartedState, 'phase'> {
+export interface ContextLoadedState extends Omit<StartedState, 'phase'> {
     phase: 'contextLoaded'
     payload: AutoeditContextLoadedMetadata
 }
 
-interface LoadedState extends Omit<ContextLoadedState, 'phase'> {
+export interface LoadedState extends Omit<ContextLoadedState, 'phase'> {
     phase: 'loaded'
     /** Timestamp when the suggestion completed generation/loading. */
     loadedAt: number
     payload: AutoeditLoadedMetadata
 }
 
-interface SuggestedState extends Omit<LoadedState, 'phase'> {
+export interface PostProcessedState extends Omit<LoadedState, 'phase'> {
+    phase: 'postProcessed'
+
+    /** Metadata required to show a suggestion based on `requestId` only. */
+    prediction: string
+    decorationInfo: DecorationInfo | null
+    inlineCompletionItems: vscode.InlineCompletionItem[] | null
+
+    payload: AutoeditLoadedMetadata
+}
+
+export interface SuggestedState extends Omit<PostProcessedState, 'phase'> {
     phase: 'suggested'
     /** Timestamp when the suggestion was first shown to the user. */
     suggestedAt: number
 }
 
-interface AcceptedState extends Omit<SuggestedState, 'phase'> {
+export interface ReadState extends Omit<SuggestedState, 'phase'> {
+    phase: 'read'
+    /** Timestamp when the suggestion was marked as visible to the user. */
+    readAt: number
+}
+
+export interface AcceptedState extends Omit<SuggestedState, 'phase'> {
     phase: 'accepted'
     /** Timestamp when the user accepted the suggestion. */
     acceptedAt: number
     /** Timestamp when the suggestion was logged to our analytics backend. This is to avoid double-logging. */
     suggestionLoggedAt?: number
+    /** Optional because it might be accepted before the read timeout */
+    readAt?: number
     payload: AutoeditAcceptedEventPayload
 }
 
-interface RejectedState extends Omit<SuggestedState, 'phase'> {
+export interface RejectedState extends Omit<SuggestedState, 'phase'> {
     phase: 'rejected'
     /** Timestamp when the suggestion was logged to our analytics backend. This is to avoid double-logging. */
     suggestionLoggedAt?: number
+    /** Optional because it might be accepted before the read timeout */
+    readAt?: number
     payload: AutoeditRejectedEventPayload
 }
 
-interface DiscardedState extends Omit<StartedState, 'phase'> {
+export interface DiscardedState extends Omit<StartedState, 'phase'> {
     phase: 'discarded'
     /** Timestamp when the suggestion was logged to our analytics backend. This is to avoid double-logging. */
     suggestionLoggedAt?: number
@@ -267,7 +322,9 @@ interface PhaseStates {
     started: StartedState
     contextLoaded: ContextLoadedState
     loaded: LoadedState
+    postProcessed: PostProcessedState
     suggested: SuggestedState
+    read: ReadState
     accepted: AcceptedState
     rejected: RejectedState
     discarded: DiscardedState
@@ -281,7 +338,7 @@ type PreviousPossiblePhaseFrom<T extends Phase> = {
     [F in Phase]: T extends (typeof validRequestTransitions)[F][number] ? PhaseStates[F] : never
 }[Phase]
 
-type AutoeditRequestState = PhaseStates[Phase]
+export type AutoeditRequestState = PhaseStates[Phase]
 
 type AutoeditEventAction =
     | 'suggested'
@@ -302,11 +359,6 @@ export class AutoeditAnalyticsLogger {
     private activeRequests = new LRUCache<AutoeditRequestID, AutoeditRequestState>({ max: 20 })
 
     /**
-     * Encapsulates the logic for reusing stable suggestion IDs for repeated text/context.
-     */
-    private suggestionIdRegistry = new AutoeditSuggestionIdRegistry()
-
-    /**
      * Tracks repeated errors via their message key to avoid spamming logs.
      */
     private errorCounts = new Map<AutoeditErrorMessage, number>()
@@ -316,14 +368,23 @@ export class AutoeditAnalyticsLogger {
     /**
      * Creates a new ephemeral request with initial metadata. At this stage, we do not have the prediction yet.
      */
-    public createRequest(
+    public createRequest({
+        startedAt,
+        payload,
+        codeToReplaceData,
+        document,
+        position,
+        docContext,
+    }: {
+        startedAt: number
+        codeToReplaceData: CodeToReplaceData
+        document: vscode.TextDocument
+        position: vscode.Position
+        docContext: DocumentContext
         payload: Required<
-            Pick<
-                AutoeditStartedMetadata,
-                'languageId' | 'model' | 'traceId' | 'triggerKind' | 'codeToRewrite'
-            >
+            Pick<AutoeditStartedMetadata, 'languageId' | 'model' | 'triggerKind' | 'codeToRewrite'>
         >
-    ): AutoeditRequestID {
+    }): AutoeditRequestID {
         const { codeToRewrite, ...restPayload } = payload
         const requestId = uuid.v4() as AutoeditRequestID
         const otherCompletionProviders = getOtherCompletionProvider()
@@ -331,7 +392,11 @@ export class AutoeditAnalyticsLogger {
         const request: StartedState = {
             requestId,
             phase: 'started',
-            startedAt: getTimeNowInMillis(),
+            startedAt,
+            codeToReplaceData,
+            document,
+            position,
+            docContext,
             payload: {
                 otherCompletionProviderEnabled: otherCompletionProviders.length > 0,
                 otherCompletionProviders,
@@ -371,34 +436,51 @@ export class AutoeditAnalyticsLogger {
      */
     public markAsLoaded({
         requestId,
-        modelOptions,
+        prompt,
         payload,
     }: {
         requestId: AutoeditRequestID
-        modelOptions: AutoeditModelOptions
+        prompt: AutoeditsPrompt
         payload: Required<
             Pick<AutoeditLoadedMetadata, 'source' | 'isFuzzyMatch' | 'responseHeaders' | 'prediction'>
         >
     }): void {
         const { prediction, source, isFuzzyMatch, responseHeaders } = payload
-        const stableId = this.suggestionIdRegistry.getOrCreate(modelOptions, prediction)
+        const stableId = autoeditIdRegistry.getOrCreate(prompt, prediction)
         const loadedAt = getTimeNowInMillis()
 
-        this.tryTransitionTo(requestId, 'loaded', request => ({
-            ...request,
-            loadedAt,
-            payload: {
-                ...request.payload,
-                id: stableId,
-                lineCount: lines(prediction).length,
-                charCount: prediction.length,
-                // 🚨 SECURITY: included only for DotCom users.
-                prediction: isDotComAuthed() && prediction.length < 300 ? prediction : undefined,
-                source,
-                isFuzzyMatch,
-                responseHeaders,
-                latency: loadedAt - request.startedAt,
-            },
+        this.tryTransitionTo(requestId, 'loaded', request => {
+            return {
+                ...request,
+                loadedAt,
+                payload: {
+                    ...request.payload,
+                    id: stableId,
+                    lineCount: lines(prediction).length,
+                    charCount: prediction.length,
+                    // 🚨 SECURITY: included only for DotCom users.
+                    prediction: isDotComAuthed() && prediction.length < 300 ? prediction : undefined,
+                    source,
+                    isFuzzyMatch,
+                    responseHeaders,
+                    latency: Math.floor(loadedAt - request.startedAt),
+                },
+            }
+        })
+    }
+
+    public markAsPostProcessed({
+        requestId,
+        ...state
+    }: {
+        requestId: AutoeditRequestID
+        prediction: string
+        decorationInfo: DecorationInfo | null
+        inlineCompletionItems: vscode.InlineCompletionItem[] | null
+    }) {
+        this.tryTransitionTo(requestId, 'postProcessed', currentRequest => ({
+            ...currentRequest,
+            ...state,
         }))
     }
 
@@ -412,33 +494,27 @@ export class AutoeditAnalyticsLogger {
             return null
         }
 
-        // Reset the number of the auto-edits started since the last suggestion.
-        this.autoeditsStartedSinceLastSuggestion = 0
-
         return result.updatedRequest
     }
 
-    public markAsAccepted({
-        requestId,
-        trackedRange,
-        position,
-        document,
-        prediction,
-    }: {
-        requestId: AutoeditRequestID
-        trackedRange?: vscode.Range
-        position: vscode.Position
-        document: vscode.TextDocument
-        prediction: string
-    }): void {
+    public markAsRead(requestId: AutoeditRequestID): void {
+        this.tryTransitionTo(requestId, 'read', currentRequest => ({
+            ...currentRequest,
+            readAt: getTimeNowInMillis(),
+        }))
+    }
+
+    public markAsAccepted(requestId: AutoeditRequestID): void {
         const acceptedAt = getTimeNowInMillis()
 
         const result = this.tryTransitionTo(requestId, 'accepted', request => {
+            const { codeToReplaceData, document, prediction, payload } = request
+
             // Ensure the AutoeditSuggestionID is never reused by removing it from the suggestion id registry
-            this.suggestionIdRegistry.deleteEntryIfValueExists(request.payload.id)
+            autoeditIdRegistry.deleteEntryIfValueExists(payload.id)
 
             // Calculate metadata required for PCW.
-            const rangeForCharacterMetadata = trackedRange || new vscode.Range(position, position)
+            const rangeForCharacterMetadata = codeToReplaceData.range
             const { charsDeleted, charsInserted, ...charactersLoggerMetadata } =
                 charactersLogger.getChangeEventMetadataForCodyCodeGenEvents({
                     document,
@@ -460,7 +536,8 @@ export class AutoeditAnalyticsLogger {
                     ...request.payload,
                     ...charactersLoggerMetadata,
                     isAccepted: true,
-                    displayDuration: acceptedAt - request.suggestedAt,
+                    isRead: true,
+                    timeFromSuggestedAt: acceptedAt - request.suggestedAt,
                     suggestionsStartedSinceLastSuggestion: this.autoeditsStartedSinceLastSuggestion,
                 },
             }
@@ -469,8 +546,6 @@ export class AutoeditAnalyticsLogger {
         if (result?.updatedRequest) {
             this.writeAutoeditRequestEvent('suggested', result.updatedRequest)
             this.writeAutoeditRequestEvent('accepted', result.updatedRequest)
-
-            this.activeRequests.delete(result.updatedRequest.requestId)
         }
     }
 
@@ -480,7 +555,8 @@ export class AutoeditAnalyticsLogger {
             payload: {
                 ...request.payload,
                 isAccepted: false,
-                displayDuration: getTimeNowInMillis() - request.suggestedAt,
+                isRead: 'readAt' in request,
+                timeFromSuggestedAt: getTimeNowInMillis() - request.suggestedAt,
                 suggestionsStartedSinceLastSuggestion: this.autoeditsStartedSinceLastSuggestion,
             },
         }))
@@ -499,8 +575,11 @@ export class AutoeditAnalyticsLogger {
 
         if (result?.updatedRequest) {
             this.writeAutoeditRequestEvent('discarded', result.updatedRequest)
-            this.activeRequests.delete(result.updatedRequest.requestId)
         }
+    }
+
+    public getRequest(requestId: AutoeditRequestID): AutoeditRequestState | undefined {
+        return this.activeRequests.get(requestId)
     }
 
     private tryTransitionTo<P extends Phase>(
@@ -539,9 +618,10 @@ export class AutoeditAnalyticsLogger {
             !request ||
             !(validRequestTransitions[request.phase] as readonly Phase[]).includes(nextPhase)
         ) {
-            this.writeDebugBookkeepingEvent(
-                `invalidTransitionTo${capitalize(nextPhase) as Capitalize<Phase>}`
-            )
+            this.writeAutoeditEvent({
+                action: `invalidTransitionTo${capitalize(nextPhase) as Capitalize<Phase>}`,
+                logDebugArgs: [request ? `from: "${request.phase}"` : 'missing request'],
+            })
 
             return null
         }
@@ -563,29 +643,44 @@ export class AutoeditAnalyticsLogger {
         state.suggestionLoggedAt = getTimeNowInMillis()
 
         const { metadata, privateMetadata } = splitSafeMetadata(payload)
-        this.writeAutoeditEvent(action, {
-            version: 0,
-            // Extract `id` from payload into the first-class `interactionId` field.
-            interactionID: 'id' in payload ? payload.id : undefined,
-            metadata: {
-                ...metadata,
-                recordsPrivateMetadataTranscript: 'prediction' in privateMetadata ? 1 : 0,
-            },
-            privateMetadata,
-            billingMetadata: {
-                product: 'cody',
-                // TODO: double check with the analytics team
-                // whether we should be categorizing the different completion event types.
-                category: action === 'suggested' ? 'billable' : 'core',
+
+        this.writeAutoeditEvent({
+            action,
+            logDebugArgs: terminalStateToLogDebugArgs(action, state),
+            telemetryParams: {
+                version: 0,
+                // Extract `id` from payload into the first-class `interactionId` field.
+                interactionID: 'id' in payload ? payload.id : undefined,
+                metadata: {
+                    ...metadata,
+                    recordsPrivateMetadataTranscript: 'prediction' in privateMetadata ? 1 : 0,
+                },
+                privateMetadata,
+                billingMetadata: {
+                    product: 'cody',
+                    // TODO: double check with the analytics team
+                    // whether we should be categorizing the different completion event types.
+                    category: action === 'suggested' ? 'billable' : 'core',
+                },
             },
         })
     }
 
-    private writeAutoeditEvent(
-        action: AutoeditEventAction,
-        params?: TelemetryEventParameters<{ [key: string]: number }, BillingProduct, BillingCategory>
-    ): void {
-        telemetryRecorder.recordEvent('cody.autoedit', action, params)
+    private writeAutoeditEvent({
+        action,
+        logDebugArgs,
+        telemetryParams,
+    }: {
+        action: AutoeditEventAction
+        logDebugArgs: readonly [string, ...unknown[]]
+        telemetryParams?: TelemetryEventParameters<
+            { [key: string]: number },
+            BillingProduct,
+            BillingCategory
+        >
+    }): void {
+        autoeditsOutputChannelLogger.logDebug('writeAutoeditEvent', action, ...logDebugArgs)
+        telemetryRecorder.recordEvent('cody.autoedit', action, telemetryParams)
     }
 
     /**
@@ -601,21 +696,30 @@ export class AutoeditAnalyticsLogger {
         const traceId = isNetworkError(error) ? error.traceId : undefined
 
         const currentCount = this.errorCounts.get(messageKey) ?? 0
+        const logDebugArgs = [error.name, { verbose: { message: error.message } }] as const
         if (currentCount === 0) {
-            this.writeAutoeditEvent('error', {
-                version: 0,
-                metadata: { count: 1 },
-                privateMetadata: { message: error.message, traceId },
+            this.writeAutoeditEvent({
+                action: 'error',
+                logDebugArgs,
+                telemetryParams: {
+                    version: 0,
+                    metadata: { count: 1 },
+                    privateMetadata: { message: error.message, traceId },
+                },
             })
 
             // After the interval, flush repeated errors
             setTimeout(() => {
                 const finalCount = this.errorCounts.get(messageKey) ?? 0
                 if (finalCount > 0) {
-                    this.writeAutoeditEvent('error', {
-                        version: 0,
-                        metadata: { count: finalCount },
-                        privateMetadata: { message: error.message, traceId },
+                    this.writeAutoeditEvent({
+                        action: 'error',
+                        logDebugArgs,
+                        telemetryParams: {
+                            version: 0,
+                            metadata: { count: finalCount },
+                            privateMetadata: { message: error.message, traceId },
+                        },
                     })
                 }
                 this.errorCounts.set(messageKey, 0)
@@ -623,14 +727,21 @@ export class AutoeditAnalyticsLogger {
         }
         this.errorCounts.set(messageKey, currentCount + 1)
     }
-
-    private writeDebugBookkeepingEvent(action: `invalidTransitionTo${Capitalize<Phase>}`): void {
-        this.writeAutoeditEvent(action)
-    }
 }
 
 export const autoeditAnalyticsLogger = new AutoeditAnalyticsLogger()
 
 export function getTimeNowInMillis(): number {
     return Math.floor(performance.now())
+}
+
+function terminalStateToLogDebugArgs(
+    action: AutoeditEventAction,
+    { requestId, phase, payload }: AcceptedState | RejectedState | DiscardedState
+): readonly [string, ...unknown[]] {
+    if (action === 'suggested' && (phase === 'rejected' || phase === 'accepted')) {
+        return [`"${requestId}" latency:"${payload.latency}ms" isRead:"${payload.isRead}"`]
+    }
+
+    return [`"${requestId}"`]
 }

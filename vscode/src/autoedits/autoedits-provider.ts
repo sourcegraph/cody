@@ -13,10 +13,17 @@ import { ContextRankingStrategy } from '../completions/context/completions-conte
 import { ContextMixer } from '../completions/context/context-mixer'
 import { DefaultContextStrategyFactory } from '../completions/context/context-strategy'
 import { getCurrentDocContext } from '../completions/get-current-doc-context'
+import { isRunningInsideAgent } from '../jsonrpc/isRunningInsideAgent'
 
 import type { AutoeditsModelAdapter, AutoeditsPrompt } from './adapters/base'
 import { createAutoeditsModelAdapter } from './adapters/create-adapter'
-import { getTimeNowInMillis } from './analytics-logger'
+import {
+    type AutoeditRequestID,
+    autoeditAnalyticsLogger,
+    autoeditSource,
+    autoeditTriggerKind,
+    getTimeNowInMillis,
+} from './analytics-logger'
 import { autoeditsProviderConfig } from './autoedits-config'
 import { FilterPredictionBasedOnRecentEdits } from './filter-prediction-edits'
 import { autoeditsOutputChannelLogger } from './output-channel-logger'
@@ -33,10 +40,10 @@ import {
     shrinkReplacerTextToCodeToReplaceRange,
 } from './renderer/mock-renderer'
 import { shrinkPredictionUntilSuffix } from './shrink-prediction'
-import { isPredictedTextAlreadyInSuffix } from './utils'
+import { areSameUriDocs, isPredictedTextAlreadyInSuffix } from './utils'
 
 const AUTOEDITS_CONTEXT_STRATEGY = 'auto-edits'
-const INLINE_COMPLETION_DEFAULT_DEBOUNCE_INTERVAL_MS = 150
+export const INLINE_COMPLETION_DEFAULT_DEBOUNCE_INTERVAL_MS = 150
 const ON_SELECTION_CHANGE_DEFAULT_DEBOUNCE_INTERVAL_MS = 150
 const RESET_SUGGESTION_ON_CURSOR_CHANGE_AFTER_INTERVAL_MS = 60 * 1000
 
@@ -47,9 +54,16 @@ export interface AutoEditsProviderOptions {
     abortSignal?: AbortSignal
 }
 
-export interface AutoeditsPrediction {
+export interface AutoeditsSuggestion {
     codeToReplaceData: CodeToReplaceData
     prediction: string
+}
+
+export interface AutoeditsResult extends vscode.InlineCompletionList {
+    requestId: AutoeditRequestID
+    prediction: string
+    /** temporary data structure, will need to update before integrating with the agent API */
+    decorationInfo: DecorationInfo
 }
 
 /**
@@ -65,6 +79,9 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
     private readonly onSelectionChangeDebounced: DebouncedFunc<typeof this.onSelectionChange>
     public readonly rendererManager: AutoEditsRendererManager
     private readonly modelAdapter: AutoeditsModelAdapter
+    private readonly enabledRenderer = vscode.workspace
+        .getConfiguration()
+        .get<'default' | 'inline'>('cody.experimental.autoedits.renderer', 'default')
 
     private readonly promptStrategy = new ShortTermPromptStrategy()
     public readonly filterPrediction = new FilterPredictionBasedOnRecentEdits()
@@ -82,12 +99,8 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             chatClient: chatClient,
         })
 
-        const enabledRenderer = vscode.workspace
-            .getConfiguration()
-            .get<'default' | 'inline'>('cody.experimental.autoedits.renderer', 'default')
-
         this.rendererManager =
-            enabledRenderer === 'inline'
+            this.enabledRenderer === 'inline'
                 ? new AutoEditsInlineRendererManager(editor => new InlineDiffDecorator(editor))
                 : new AutoEditsDefaultRendererManager(
                       (editor: vscode.TextEditor) => new DefaultDecorator(editor)
@@ -109,10 +122,9 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
     }
 
     private onDidChangeTextDocument(event: vscode.TextDocumentChangeEvent): void {
-        if (event.document.uri.scheme !== 'file') {
-            return
+        if (event.document.uri.scheme === 'file') {
+            this.lastTextChangeTimeStamp = Date.now()
         }
-        this.lastTextChangeTimeStamp = Date.now()
     }
 
     private async onSelectionChange(event: vscode.TextEditorSelectionChangeEvent): Promise<void> {
@@ -139,7 +151,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         position: vscode.Position,
         inlineCompletionContext: vscode.InlineCompletionContext,
         token?: vscode.CancellationToken
-    ): Promise<vscode.InlineCompletionItem[] | vscode.InlineCompletionList | null> {
+    ): Promise<AutoeditsResult | null> {
         const start = getTimeNowInMillis()
         const controller = new AbortController()
         const abortSignal = controller.signal
@@ -147,14 +159,14 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
 
         await new Promise(resolve => setTimeout(resolve, INLINE_COMPLETION_DEFAULT_DEBOUNCE_INTERVAL_MS))
         if (abortSignal.aborted) {
-            autoeditsOutputChannelLogger.logDebug(
+            autoeditsOutputChannelLogger.logDebugIfVerbose(
                 'provideInlineCompletionItems',
                 'debounce aborted before calculating getCurrentDocContext'
             )
             return null
         }
 
-        autoeditsOutputChannelLogger.logDebug(
+        autoeditsOutputChannelLogger.logDebugIfVerbose(
             'provideInlineCompletionItems',
             'Calculating getCurrentDocContext...'
         )
@@ -165,32 +177,57 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             maxSuffixLength: tokensToChars(autoeditsProviderConfig.tokenLimit.suffixTokens),
         })
 
-        const { fileWithMarkerPrompt, areaPrompt, codeToReplaceData } = getCurrentFilePromptComponents({
+        const {
+            fileWithMarkerPrompt,
+            areaPrompt,
+            codeToReplaceData,
+            codeToReplaceData: { codeToRewrite },
+        } = getCurrentFilePromptComponents({
             docContext,
             document,
             position,
             tokenBudget: autoeditsProviderConfig.tokenLimit,
         })
 
-        autoeditsOutputChannelLogger.logDebug(
+        autoeditsOutputChannelLogger.logDebugIfVerbose(
             'provideInlineCompletionItems',
             'Calculating context from contextMixer...'
         )
-        const { context } = await this.contextMixer.getContext({
+        const requestId = autoeditAnalyticsLogger.createRequest({
+            startedAt: performance.now(),
+            codeToReplaceData,
+            position,
+            docContext,
+            document,
+            payload: {
+                languageId: document.languageId,
+                model: autoeditsProviderConfig.model,
+                codeToRewrite,
+                triggerKind: autoeditTriggerKind.automatic,
+            },
+        })
+
+        const { context, contextSummary } = await this.contextMixer.getContext({
             document,
             position,
             docContext,
             maxChars: 32_000,
         })
+        autoeditAnalyticsLogger.markAsContextLoaded({
+            requestId,
+            payload: {
+                contextSummary,
+            },
+        })
         if (abortSignal.aborted) {
-            autoeditsOutputChannelLogger.logDebug(
+            autoeditsOutputChannelLogger.logDebugIfVerbose(
                 'provideInlineCompletionItems',
                 'aborted in getContext'
             )
             return null
         }
 
-        autoeditsOutputChannelLogger.logDebug(
+        autoeditsOutputChannelLogger.logDebugIfVerbose(
             'provideInlineCompletionItems',
             'Calculating prompt from promptStrategy...'
         )
@@ -202,7 +239,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             isChatModel: autoeditsProviderConfig.isChatModel,
         })
 
-        autoeditsOutputChannelLogger.logDebug(
+        autoeditsOutputChannelLogger.logDebugIfVerbose(
             'provideInlineCompletionItems',
             'Calculating prediction from getPrediction...'
         )
@@ -213,17 +250,27 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             codeToReplaceData,
         })
         if (abortSignal?.aborted || !initialPrediction) {
-            autoeditsOutputChannelLogger.logDebug(
+            autoeditsOutputChannelLogger.logDebugIfVerbose(
                 'provideInlineCompletionItems',
                 'aborted after getPrediction'
             )
             return null
         }
 
+        autoeditAnalyticsLogger.markAsLoaded({
+            requestId,
+            prompt,
+            payload: {
+                source: autoeditSource.network,
+                isFuzzyMatch: false,
+                responseHeaders: {},
+                prediction: initialPrediction,
+            },
+        })
         autoeditsOutputChannelLogger.logDebug(
             'provideInlineCompletionItems',
-            `========================== Response:\n${initialPrediction}\n` +
-                `========================== Time Taken: ${getTimeNowInMillis() - start}ms`
+            `"${requestId}" ============= Response:\n${initialPrediction}\n` +
+                `============= Time Taken: ${getTimeNowInMillis() - start}ms`
         )
 
         const prediction = shrinkPredictionUntilSuffix({
@@ -231,9 +278,11 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             codeToReplaceData,
         })
 
-        const { codeToRewrite } = codeToReplaceData
         if (prediction === codeToRewrite) {
-            autoeditsOutputChannelLogger.logDebug('skip', 'prediction equals to code to rewrite')
+            autoeditsOutputChannelLogger.logDebugIfVerbose(
+                'provideInlineCompletionItems',
+                'prediction equals to code to rewrite'
+            )
             return null
         }
 
@@ -244,7 +293,10 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         })
 
         if (shouldFilterPredictionBasedRecentEdits) {
-            autoeditsOutputChannelLogger.logDebug('skip', 'based on recent edits')
+            autoeditsOutputChannelLogger.logDebugIfVerbose(
+                'provideInlineCompletionItems',
+                'based on recent edits'
+            )
             return null
         }
 
@@ -257,12 +309,16 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 suffix: codeToReplaceData.suffixInArea + codeToReplaceData.suffixAfterArea,
             })
         ) {
-            autoeditsOutputChannelLogger.logDebug('skip', 'prediction equals to code to rewrite')
+            autoeditsOutputChannelLogger.logDebugIfVerbose(
+                'provideInlineCompletionItems',
+                'skip because the prediction equals to code to rewrite'
+            )
             return null
         }
 
-        const { inlineCompletions } =
-            await this.rendererManager.maybeRenderDecorationsAndTryMakeInlineCompletionResponse({
+        const { inlineCompletionItems, updatedDecorationInfo, updatedPrediction } =
+            this.rendererManager.tryMakeInlineCompletions({
+                requestId,
                 prediction,
                 codeToReplaceData,
                 document,
@@ -271,7 +327,64 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 decorationInfo,
             })
 
-        return inlineCompletions
+        if (inlineCompletionItems === null && updatedDecorationInfo === null) {
+            autoeditsOutputChannelLogger.logDebugIfVerbose(
+                'provideInlineCompletionItems',
+                'no suggestion to render'
+            )
+            return null
+        }
+
+        const editor = vscode.window.activeTextEditor
+        if (!editor || !areSameUriDocs(document, editor.document)) {
+            autoeditsOutputChannelLogger.logDebugIfVerbose(
+                'provideInlineCompletionItems',
+                'no active editor'
+            )
+            return null
+        }
+
+        // Save metadata required for the agent API calls.
+        // `this.unstable_handleDidShowCompletionItem` can't receive anything apart from the `requestId`
+        // because the agent does not know anything about our internal state.
+        // We need to ensure all the relevant metadata can be retrieved from `requestId` only.
+        autoeditAnalyticsLogger.markAsPostProcessed({
+            requestId,
+            prediction: updatedPrediction,
+            decorationInfo: updatedDecorationInfo,
+            inlineCompletionItems,
+        })
+
+        if (!isRunningInsideAgent()) {
+            // Since VS Code has no callback as to when a completion is shown, we assume
+            // that if we pass the above visibility tests, the completion is going to be
+            // rendered in the UI
+            await this.unstable_handleDidShowCompletionItem(requestId)
+        }
+
+        if (updatedDecorationInfo) {
+            await this.rendererManager.renderInlineDecorations(updatedDecorationInfo)
+        }
+
+        // The data structure returned to the agent's from the `autoedits/execute` calls.
+        // Note: this is subject to change later once we start working on the agent API.
+        const result: AutoeditsResult = {
+            items: inlineCompletionItems || [],
+            requestId,
+            prediction,
+            decorationInfo,
+        }
+
+        return result
+    }
+
+    /**
+     * Called when a suggestion is shown. This API is inspired by the proposed VS Code API of the
+     * same name, it's prefixed with `unstable_` to avoid a clash when the new API goes GA.
+     */
+    public async unstable_handleDidShowCompletionItem(requestId: AutoeditRequestID): Promise<void> {
+        autoeditsOutputChannelLogger.logDebug('handleDidShowSuggestion', `"${requestId}"`)
+        return this.rendererManager.handleDidShowSuggestion(requestId)
     }
 
     private async getPrediction({

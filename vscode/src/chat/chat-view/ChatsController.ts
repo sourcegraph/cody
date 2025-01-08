@@ -28,6 +28,7 @@ import {
     handleCodeFromInsertAtCursor,
     handleCodeFromSaveToNewFile,
 } from '../../services/utils/codeblock-action-tracker'
+import { CodyToolProvider } from '../agentic/CodyToolProvider'
 import type { ChatIntentAPIClient } from '../context/chatIntentAPIClient'
 import type { SmartApplyResult } from '../protocol'
 import {
@@ -579,6 +580,7 @@ export class ChatsController implements vscode.Disposable {
 
     public dispose(): void {
         this.disposeAllChats()
+        CodyToolProvider.dispose()
         vscode.Disposable.from(...this.disposables).dispose()
     }
 }

@@ -10,6 +10,7 @@ import {
 } from '@sourcegraph/cody-shared'
 import { logDebug } from '../../output-channel-logger'
 import { PromptBuilder } from '../../prompt-builder'
+import { DeepCodyAgent } from '../agentic/DeepCody'
 import { ChatBuilder } from './ChatBuilder'
 
 export interface PromptInfo {
@@ -50,8 +51,6 @@ export class DefaultPrompter {
             const promptBuilder = await PromptBuilder.create(contextWindow)
             const preInstruction = (await currentResolvedConfig()).configuration.chatPreInstruction
 
-            const isDeepCodyEnabled = chat.selectedModel?.includes('deep-cody')
-
             // Add preamble messages
             const chatModel = await firstResultFromOperation(ChatBuilder.resolvedModelForChat(chat))
             const preambleMessages = getSimplePreamble(chatModel, codyApiVersion, 'Chat', preInstruction)
@@ -65,6 +64,8 @@ export class DefaultPrompter {
                 .flatMap(m => (m.contextFiles ? [...m.contextFiles].reverse() : []))
                 .filter(isDefined)
 
+            const isContextAgentEnabled = reverseTranscript[0]?.agent === DeepCodyAgent.id
+
             // Apply the context preamble via the prompt mixin to the last open-ended human message that is not a command.
             // The context preamble provides additional instructions on how Cody should respond using the attached context items,
             // allowing Cody to provide more contextually relevant responses.
@@ -73,7 +74,7 @@ export class DefaultPrompter {
             // It also allows adding the preamble only when there is context to display, without wasting tokens on the same preamble repeatedly.
             if (
                 !this.isCommand &&
-                !isDeepCodyEnabled &&
+                !isContextAgentEnabled &&
                 Boolean(this.explicitContext.length || historyItems.length || this.corpusContext.length)
             ) {
                 mixins.push(PromptMixin.getContextMixin())

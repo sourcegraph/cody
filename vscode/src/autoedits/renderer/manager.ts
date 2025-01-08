@@ -3,49 +3,19 @@ import * as vscode from 'vscode'
 import type { DocumentContext } from '@sourcegraph/cody-shared'
 
 import { completionMatchesSuffix } from '../../completions/is-completion-visible'
+import { type AutoeditRequestID, autoeditAnalyticsLogger } from '../analytics-logger'
 import { autoeditsOutputChannelLogger } from '../output-channel-logger'
 import type { CodeToReplaceData } from '../prompt/prompt-utils'
 import {
     adjustPredictionIfInlineCompletionPossible,
+    areSameUriDocs,
     extractInlineCompletionFromRewrittenCode,
 } from '../utils'
 
 import type { AutoEditsDecorator, DecorationInfo } from './decorators/base'
 
-/**
- * Represents a proposed text change in the editor.
- */
-export interface ProposedChange {
-    // The URI of the document for which the change is proposed
-    uri: string
-
-    // The range in the document that will be modified
-    range: vscode.Range
-
-    // The text that will replace the content in the range if accepted
-    prediction: string
-
-    // The renderer responsible for decorating the proposed change
-    decorator: AutoEditsDecorator
-}
-
-/**
- * Options for rendering auto-edits in the editor.
- */
-export interface AutoEditsManagerOptions {
-    // The document where the auto-edit will be rendered
-    document: vscode.TextDocument
-
-    // The range in the document that will be modified with the predicted text
-    range: vscode.Range
-
-    // The predicted text that will replace the current text in the range
-    prediction: string
-
-    decorationInfo: DecorationInfo
-}
-
-export interface AutoeditRendererManagerArgs {
+export interface TryMakeInlineCompletionsArgs {
+    requestId: AutoeditRequestID
     prediction: string
     codeToReplaceData: CodeToReplaceData
     document: vscode.TextDocument
@@ -62,19 +32,32 @@ export interface AutoeditRendererManagerArgs {
 export interface AutoEditsRendererManager extends vscode.Disposable {
     /**
      * Tries to extract inline completions from the prediction data and returns them if they are available.
-     * Depending on the renderer type might also render line decoration.
      */
-    maybeRenderDecorationsAndTryMakeInlineCompletionResponse({
+    tryMakeInlineCompletions({
         prediction,
         codeToReplaceData,
         document,
         position,
         docContext,
         decorationInfo,
-    }: AutoeditRendererManagerArgs): Promise<{
-        inlineCompletions: vscode.InlineCompletionItem[] | null
-        updatedDecorationInfo: DecorationInfo
-    }>
+    }: TryMakeInlineCompletionsArgs): {
+        /**
+         * `null` if no inline completion items should be rendered
+         */
+        inlineCompletionItems: vscode.InlineCompletionItem[] | null
+        /**
+         * `null` if no inline decoration should be rendered
+         */
+        updatedDecorationInfo: DecorationInfo | null
+        updatedPrediction: string
+    }
+
+    handleDidShowSuggestion(requestId: AutoeditRequestID): Promise<void>
+
+    /**
+     * Renders the prediction as inline decorations.
+     */
+    renderInlineDecorations(decorationInfo: DecorationInfo): Promise<void>
 
     /**
      * Determines if we have a rendered autoedit suggested.
@@ -87,15 +70,22 @@ export interface AutoEditsRendererManager extends vscode.Disposable {
     dispose(): void
 }
 
+export const AUTOEDIT_VISIBLE_DELAY_MS = 750
+
 export class AutoEditsDefaultRendererManager implements AutoEditsRendererManager {
     // Keeps track of the current active edit (there can only be one active edit at a time)
-    protected activeEdit: ProposedChange | null = null
+    protected activeRequestId: AutoeditRequestID | null = null
     protected disposables: vscode.Disposable[] = []
+    protected decorator: AutoEditsDecorator | null = null
+    /**
+     * The amount of time before we consider a suggestion to be "visible" to the user.
+     */
+    private autoeditSuggestedTimeoutId: NodeJS.Timeout | undefined
 
     constructor(protected createDecorator: (editor: vscode.TextEditor) => AutoEditsDecorator) {
         this.disposables.push(
-            vscode.commands.registerCommand('cody.supersuggest.accept', () => this.acceptEdit()),
-            vscode.commands.registerCommand('cody.supersuggest.dismiss', () => this.dismissEdit()),
+            vscode.commands.registerCommand('cody.supersuggest.accept', () => this.acceptActiveEdit()),
+            vscode.commands.registerCommand('cody.supersuggest.dismiss', () => this.rejectActiveEdit()),
             vscode.workspace.onDidChangeTextDocument(event => this.onDidChangeTextDocument(event)),
             vscode.window.onDidChangeTextEditorSelection(event =>
                 this.onDidChangeTextEditorSelection(event)
@@ -107,99 +97,153 @@ export class AutoEditsDefaultRendererManager implements AutoEditsRendererManager
         )
     }
 
-    public hasActiveEdit(): boolean {
-        return this.activeEdit !== null
+    protected onDidChangeTextDocument(event: vscode.TextDocumentChangeEvent): void {
+        if (
+            // Only dismiss if there are inline decorations, as inline completion items rely on
+            // a native acceptance/rejection mechanism that we can't interfere with.
+            this.hasInlineDecorationOnly() &&
+            // Only dismiss if we have an active suggestion and the changed document matches
+            // else, we will falsely discard the suggestion on unrelated changes such as changes in output panel.
+            areSameUriDocs(event.document, this.activeRequest?.document)
+        ) {
+            this.rejectActiveEdit()
+        }
     }
 
-    async showEdit({
-        document,
-        range,
-        prediction,
-        decorationInfo,
-    }: AutoEditsManagerOptions): Promise<void> {
-        await this.dismissEdit()
+    protected onDidChangeActiveTextEditor(editor: vscode.TextEditor | undefined): void {
+        if (!editor || !areSameUriDocs(editor.document, this.activeRequest?.document)) {
+            this.rejectActiveEdit()
+        }
+    }
+
+    protected onDidCloseTextDocument(document: vscode.TextDocument): void {
+        if (areSameUriDocs(document, this.activeRequest?.document)) {
+            this.rejectActiveEdit()
+        }
+    }
+
+    protected onDidChangeTextEditorSelection(event: vscode.TextEditorSelectionChangeEvent): void {
+        if (
+            // Only dismiss if there are inline decorations, as inline completion items rely on
+            // a native acceptance/rejection mechanism that we can't interfere with.
+            //
+            // For instance, the acceptance command is triggered only after the document changes.
+            // This means we can't depend on document or selection changes to handle cases where
+            // inline completion items are accepted because they get rejected before the
+            // acceptance callback is fired by VS Code.
+            this.hasInlineDecorationOnly() &&
+            this.activeRequest &&
+            areSameUriDocs(event.textEditor.document, this.activeRequest?.document)
+        ) {
+            const currentSelectionRange = event.selections.at(-1)
+            if (!currentSelectionRange?.intersection(this.activeRequest.codeToReplaceData.range)) {
+                this.rejectActiveEdit()
+            }
+        }
+    }
+
+    protected get activeRequest() {
+        if (this.activeRequestId) {
+            const request = autoeditAnalyticsLogger.getRequest(this.activeRequestId)
+            if (request && 'decorationInfo' in request && this.decorator) {
+                return request
+            }
+        }
+        return undefined
+    }
+
+    public hasActiveEdit(): boolean {
+        return this.activeRequestId !== null
+    }
+
+    public hasInlineDecorationOnly(): boolean {
+        return !this.activeRequest?.inlineCompletionItems
+    }
+
+    public async handleDidShowSuggestion(requestId: AutoeditRequestID): Promise<void> {
+        await this.rejectActiveEdit()
+
+        this.activeRequestId = requestId
+        this.decorator = this.createDecorator(vscode.window.activeTextEditor!)
+
+        autoeditAnalyticsLogger.markAsSuggested(requestId)
+
+        // Clear any existing timeouts, only one suggestion can be shown at a time
+        clearTimeout(this.autoeditSuggestedTimeoutId)
+
+        // Mark suggestion as read after a delay if it's still visible.
+        this.autoeditSuggestedTimeoutId = setTimeout(() => {
+            // TODO: use `isCompletionVisible` logic or similar to account for cases
+            // where a partially accepted inline completion item is still visible.
+            if (this.activeRequest?.requestId === requestId) {
+                autoeditAnalyticsLogger.markAsRead(requestId)
+            }
+        }, AUTOEDIT_VISIBLE_DELAY_MS)
+    }
+
+    protected async handleDidHideSuggestion(decorator: AutoEditsDecorator | null): Promise<void> {
+        if (decorator) {
+            decorator.dispose()
+            // Hide inline decorations
+            await vscode.commands.executeCommand('setContext', 'cody.supersuggest.active', false)
+        }
+
+        // Hide inline completion provider item ghost text
+        await vscode.commands.executeCommand('editor.action.inlineSuggest.hide')
+
+        this.activeRequestId = null
+        this.decorator = null
+    }
+
+    protected async acceptActiveEdit(): Promise<void> {
         const editor = vscode.window.activeTextEditor
-        if (!editor || document !== editor.document) {
-            return
+        const { activeRequest, decorator } = this
+        if (
+            !editor ||
+            !activeRequest ||
+            !areSameUriDocs(editor.document, this.activeRequest?.document)
+        ) {
+            return this.rejectActiveEdit()
         }
-        this.activeEdit = {
-            uri: document.uri.toString(),
-            range: range,
-            prediction: prediction,
-            decorator: this.createDecorator(editor),
+
+        await this.handleDidHideSuggestion(decorator)
+        autoeditAnalyticsLogger.markAsAccepted(activeRequest.requestId)
+
+        await editor.edit(editBuilder => {
+            editBuilder.replace(activeRequest.codeToReplaceData.range, activeRequest.prediction)
+        })
+    }
+
+    protected async rejectActiveEdit(): Promise<void> {
+        const { activeRequest, decorator } = this
+
+        if (decorator) {
+            await this.handleDidHideSuggestion(decorator)
         }
-        this.activeEdit.decorator.setDecorations(decorationInfo)
+
+        if (activeRequest) {
+            autoeditAnalyticsLogger.markAsRejected(activeRequest.requestId)
+        }
+    }
+
+    public async renderInlineDecorations(decorationInfo: DecorationInfo): Promise<void> {
+        this.decorator?.setDecorations(decorationInfo)
         await vscode.commands.executeCommand('setContext', 'cody.supersuggest.active', true)
     }
 
-    protected async dismissEdit(): Promise<void> {
-        const decorator = this.activeEdit?.decorator
-        if (decorator) {
-            decorator.dispose()
-        }
-        this.activeEdit = null
-        await vscode.commands.executeCommand('editor.action.inlineSuggest.hide')
-        await vscode.commands.executeCommand('setContext', 'cody.supersuggest.active', false)
-    }
-
-    protected async acceptEdit(): Promise<void> {
-        const editor = vscode.window.activeTextEditor
-        if (!this.activeEdit || !editor || editor.document.uri.toString() !== this.activeEdit.uri) {
-            await this.dismissEdit()
-            return
-        }
-        // TODO: granularly handle acceptance for inline renreder, where part of the suggestion
-        // might be inserted by the inline completion item provider.
-        await editor.edit(editBuilder => {
-            editBuilder.replace(this.activeEdit!.range, this.activeEdit!.prediction)
-        })
-        await this.dismissEdit()
-    }
-
-    protected async onDidChangeTextDocument(event: vscode.TextDocumentChangeEvent): Promise<void> {
-        // Only dismiss if we have an active suggestion and the changed document matches
-        // else, we will falsely discard the suggestion on unrelated changes such as changes in output panel.
-        if (event.document.uri.toString() !== this.activeEdit?.uri) {
-            return
-        }
-        await this.dismissEdit()
-    }
-
-    protected async onDidChangeActiveTextEditor(editor: vscode.TextEditor | undefined): Promise<void> {
-        if (!editor || editor.document.uri.toString() !== this.activeEdit?.uri) {
-            await this.dismissEdit()
-        }
-    }
-
-    protected async onDidCloseTextDocument(document: vscode.TextDocument): Promise<void> {
-        if (document.uri.toString() === this.activeEdit?.uri) {
-            await this.dismissEdit()
-        }
-    }
-
-    protected async onDidChangeTextEditorSelection(
-        event: vscode.TextEditorSelectionChangeEvent
-    ): Promise<void> {
-        if (event.textEditor.document.uri.toString() !== this.activeEdit?.uri) {
-            return
-        }
-        const currentSelectionRange = event.selections.at(-1)
-        if (!currentSelectionRange?.intersection(this.activeEdit.range)) {
-            await this.dismissEdit()
-        }
-    }
-
-    async maybeRenderDecorationsAndTryMakeInlineCompletionResponse({
+    tryMakeInlineCompletions({
+        requestId,
         prediction,
         codeToReplaceData,
         document,
         position,
         docContext,
         decorationInfo,
-    }: AutoeditRendererManagerArgs): Promise<{
-        inlineCompletions: vscode.InlineCompletionItem[] | null
-        updatedDecorationInfo: DecorationInfo
-    }> {
+    }: TryMakeInlineCompletionsArgs): {
+        inlineCompletionItems: vscode.InlineCompletionItem[] | null
+        updatedDecorationInfo: DecorationInfo | null
+        updatedPrediction: string
+    } {
         const updatedPrediction = adjustPredictionIfInlineCompletionPossible(
             prediction,
             codeToReplaceData.codeToRewritePrefix,
@@ -227,31 +271,42 @@ export class AutoEditsDefaultRendererManager implements AutoEditsRendererManager
                 new vscode.Range(
                     document.lineAt(position).range.start,
                     document.lineAt(position).range.end
-                )
+                ),
+                {
+                    title: 'Autoedit accepted',
+                    command: 'cody.supersuggest.accept',
+                    arguments: [
+                        {
+                            requestId,
+                        },
+                    ],
+                }
             )
             autoeditsOutputChannelLogger.logDebug(
-                'maybeRenderDecorationsAndTryMakeInlineCompletionResponse',
+                'tryMakeInlineCompletions',
                 'Autocomplete Inline Response: ',
-                autocompleteResponse
+                { verbose: autocompleteResponse }
             )
-            return { inlineCompletions: [inlineCompletionItem], updatedDecorationInfo: decorationInfo }
+            return {
+                inlineCompletionItems: [inlineCompletionItem],
+                updatedDecorationInfo: null,
+                updatedPrediction,
+            }
         }
-        autoeditsOutputChannelLogger.logDebug(
-            'maybeRenderDecorationsAndTryMakeInlineCompletionResponse',
+        autoeditsOutputChannelLogger.logDebugIfVerbose(
+            'tryMakeInlineCompletions',
             'Rendering a diff view for auto-edits.'
         )
-        await this.showEdit({
-            document,
-            range: codeToReplaceData.range,
-            prediction: updatedPrediction,
-            decorationInfo,
-        })
 
-        return { inlineCompletions: null, updatedDecorationInfo: decorationInfo }
+        return {
+            inlineCompletionItems: null,
+            updatedDecorationInfo: decorationInfo,
+            updatedPrediction: updatedPrediction,
+        }
     }
 
     public dispose(): void {
-        this.dismissEdit()
+        this.rejectActiveEdit()
         for (const disposable of this.disposables) {
             disposable.dispose()
         }

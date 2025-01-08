@@ -740,6 +740,9 @@ const languages: Partial<typeof vscode_types.languages> = {
             'vimrc',
         ])
     },
+    getDiagnostics() {
+        return []
+    },
 }
 
 export enum TextDocumentChangeReason {
@@ -805,6 +808,9 @@ export const vsCodeMocks = {
         },
         onDidChangeActiveTextEditor() {},
         onDidChangeTextEditorSelection() {},
+        onDidChangeTextEditorVisibleRanges() {},
+        onDidChangeNotebookEditorVisibleRanges() {},
+        onDidChangeActiveNotebookEditor() {},
         onDidChangeWindowState() {},
         state: { focused: false },
         createTextEditorDecorationType: () => ({
@@ -826,6 +832,7 @@ export const vsCodeMocks = {
     },
     commands: {
         registerCommand: () => ({ dispose: () => {} }),
+        executeCommand: () => Promise.resolve(),
     },
     workspace: {
         fs: workspaceFs,
@@ -852,6 +859,7 @@ export const vsCodeMocks = {
             return path.toString()
         },
         onDidChangeTextDocument() {},
+        onDidOpenTextDocument() {},
         onDidCloseTextDocument() {},
         onDidRenameFiles() {},
         onDidDeleteFiles() {},
@@ -918,7 +926,6 @@ export const DEFAULT_VSCODE_SETTINGS = {
     internalUnstable: false,
     internalDebugContext: false,
     internalDebugState: false,
-    agenticContextExperimentalShell: false,
     agenticContextExperimentalOptions: {},
     autocompleteAdvancedProvider: 'default',
     autocompleteAdvancedModel: null,

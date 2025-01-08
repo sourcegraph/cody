@@ -50,6 +50,7 @@ import { createAutoEditsProvider } from './autoedits/create-autoedits-provider'
 import { autoeditsOutputChannelLogger } from './autoedits/output-channel-logger'
 import { registerAutoEditTestRenderCommand } from './autoedits/renderer/mock-renderer'
 import type { MessageProviderOptions } from './chat/MessageProvider'
+import { CodyToolProvider } from './chat/agentic/CodyToolProvider'
 import { ChatsController, CodyChatEditorViewType } from './chat/chat-view/ChatsController'
 import { ContextRetriever } from './chat/chat-view/ContextRetriever'
 import type { ChatIntentAPIClient } from './chat/context/chatIntentAPIClient'
@@ -261,6 +262,8 @@ const register = async (
         disposables
     )
     disposables.push(chatsController)
+
+    CodyToolProvider.initialize(contextRetriever)
 
     disposables.push(
         subscriptionDisposable(
