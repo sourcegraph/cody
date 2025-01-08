@@ -339,14 +339,16 @@ export const benchCommand = new commander.Command('bench')
         const recordingMode =
             process.env.CODY_RECORDING_MODE === 'passthrough' ? 'passthrough' : 'replay'
         const recordingDirectory = path.join(path.dirname(options.evaluationConfig), 'recordings')
-        const polly = process.env.DISABLE_POLLY === 'true' ?
-            null : startPollyRecording({
-            recordingName: 'cody-bench',
-            recordingMode: recordingMode,
-            recordIfMissing: true,
-            recordingDirectory,
-            keepUnusedRecordings: true,
-        })
+        const polly =
+            recordingMode === 'replay'
+                ? startPollyRecording({
+                      recordingName: 'cody-bench',
+                      recordingMode: recordingMode,
+                      recordIfMissing: true,
+                      recordingDirectory,
+                      keepUnusedRecordings: true,
+                  })
+                : null
 
         try {
             await Promise.all(
