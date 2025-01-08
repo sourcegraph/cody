@@ -46,7 +46,8 @@ import { isReinstalling } from '../uninstall/reinstall'
 import type { CommandResult } from './CommandResult'
 import { showAccountMenu } from './auth/account-menu'
 import { showSignInMenu, showSignOutMenu, tokenCallbackHandler } from './auth/auth'
-import { AutoeditsProvider } from './autoedits/autoedits-provider'
+import { createAutoEditsProvider } from './autoedits/create-autoedits-provider'
+import { autoeditsOutputChannelLogger } from './autoedits/output-channel-logger'
 import { registerAutoEditTestRenderCommand } from './autoedits/renderer/mock-renderer'
 import type { MessageProviderOptions } from './chat/MessageProvider'
 import { CodyToolProvider } from './chat/agentic/CodyToolProvider'
@@ -710,30 +711,26 @@ function registerAutoEdits(chatClient: ChatClient, disposables: vscode.Disposabl
                 )
             )
                 .pipe(
-                    map(([config, authStatus, autoeditEnabled]) => {
-                        if (shouldEnableExperimentalAutoedits(config, autoeditEnabled, authStatus)) {
-                            const provider = new AutoeditsProvider(chatClient)
-                            const completionRegistration =
-                                vscode.languages.registerInlineCompletionItemProvider(
-                                    [{ scheme: 'file', language: '*' }, { notebookType: '*' }],
-                                    provider
-                                )
-
-                            // Command used to trigger autoedits manually via command palette and is also used by e2e test
-                            vscode.commands.registerCommand(
-                                'cody.command.autoedits-manual-trigger',
-                                async () => {
-                                    await vscode.commands.executeCommand(
-                                        'editor.action.inlineSuggest.hide'
-                                    )
-                                    await vscode.commands.executeCommand(
-                                        'editor.action.inlineSuggest.trigger'
-                                    )
-                                }
-                            )
-                            return vscode.Disposable.from(provider, completionRegistration)
+                    distinctUntilChanged((a, b) => {
+                        return (
+                            isEqual(a[0].configuration, b[0].configuration) &&
+                            isEqual(a[1], b[1]) &&
+                            isEqual(a[2], b[2])
+                        )
+                    }),
+                    switchMap(([config, authStatus, autoeditEnabled]) => {
+                        if (!shouldEnableExperimentalAutoedits(config, autoeditEnabled, authStatus)) {
+                            return NEVER
                         }
-                        return []
+                        return createAutoEditsProvider({
+                            config,
+                            authStatus,
+                            chatClient,
+                        })
+                    }),
+                    catchError(error => {
+                        autoeditsOutputChannelLogger.logError('registerAutoedits', 'Error', error)
+                        return NEVER
                     })
                 )
                 .subscribe({})
