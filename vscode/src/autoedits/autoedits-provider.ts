@@ -269,8 +269,8 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         })
         autoeditsOutputChannelLogger.logDebug(
             'provideInlineCompletionItems',
-            `========================== Response:\n${initialPrediction}\n` +
-                `========================== Time Taken: ${getTimeNowInMillis() - start}ms`
+            `"${requestId}" ============= Response:\n${initialPrediction}\n` +
+                `============= Time Taken: ${getTimeNowInMillis() - start}ms`
         )
 
         const prediction = shrinkPredictionUntilSuffix({
@@ -383,6 +383,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
      * same name, it's prefixed with `unstable_` to avoid a clash when the new API goes GA.
      */
     public async unstable_handleDidShowCompletionItem(requestId: AutoeditRequestID): Promise<void> {
+        autoeditsOutputChannelLogger.logDebug('handleDidShowSuggestion', `"${requestId}"`)
         return this.rendererManager.handleDidShowSuggestion(requestId)
     }
 
