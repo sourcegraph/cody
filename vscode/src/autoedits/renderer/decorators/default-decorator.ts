@@ -160,20 +160,17 @@ export class DefaultDecorator implements AutoEditsDecorator {
         this.renderAddedLinesDecorations(addedLinesInfo, startLine, replacerCol)
     }
 
-    private renderAddedLinesDecorations(
+    private async renderAddedLinesDecorations(
         addedLinesInfo: AddedLinesDecorationInfo[],
         startLine: number,
         replacerCol: number
-    ): void {
+    ): Promise<void> {
         blockify(addedLinesInfo)
-        const img = diffToHighlightedImg(addedLinesInfo)
+        const img = await diffToHighlightedImg(addedLinesInfo)
         const startLineRef = this.editor.document.lineAt(startLine)
         const startLineLength = startLineRef.range.end.character
-
-        // The padding in which to offset the decoration image away from neighbouring code
         const decorationPadding = 4
-        // The margin position where the decoration image should render.
-        // Ensuring it does not conflict with the visibility of existing code.
+
         const decorationMargin = replacerCol - startLineLength + decorationPadding
 
         this.editor.setDecorations(this.addedLinesDecorationType, [
@@ -186,7 +183,7 @@ export class DefaultDecorator implements AutoEditsDecorator {
                         border: '1px solid white',
                         contentIconPath: vscode.Uri.parse(img),
                         textDecoration:
-                            'none; position: absolute; z-index: 99999; scale: 0.5; transform-origin: 0px 0px; height: auto;',
+                            'none; position: absolute; z-index: 99999; scale: 0.25; transform-origin: 0px 0px; height: auto;',
                         margin: `0 0 0 ${decorationMargin}ch`,
                     },
                     after: {
@@ -202,6 +199,7 @@ export class DefaultDecorator implements AutoEditsDecorator {
                 },
             },
         ])
+
         this.editor.setDecorations(this.insertMarkerDecorationType, [
             {
                 range: new vscode.Range(startLine, 0, startLine, startLineLength),

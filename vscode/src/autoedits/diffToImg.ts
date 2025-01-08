@@ -1,8 +1,11 @@
-import { createCanvas } from 'canvas'
+import path from 'node:path'
+import { Writable } from 'node:stream'
+import * as pureimage from 'pureimage'
 import { type Highlighter, createHighlighter } from 'shiki'
 import type { AddedLinesDecorationInfo } from './renderer/decorators/default-decorator'
 
 let _highlighter: Highlighter | null = null
+let _fontLoaded = false
 
 export async function initHighlighter(): Promise<void> {
     if (!_highlighter) {
@@ -10,6 +13,16 @@ export async function initHighlighter(): Promise<void> {
             themes: ['vitesse-dark'],
             langs: ['typescript'],
         })
+    }
+
+    if (!_fontLoaded) {
+        // Point this to an actual .ttf file on disk.
+        const font = pureimage.registerFont(
+            path.join(__dirname, 'SourceCodePro-Regular.ttf'),
+            'Source Code Pro' // the internal font name we’ll reference in ctx.font
+        )
+        await font.load()
+        _fontLoaded = true
     }
 }
 
@@ -26,7 +39,7 @@ function ensureHighlighterReady(): Highlighter {
 export function diffToHighlightedImg(
     addedLinesInfo: AddedLinesDecorationInfo[],
     lang = 'typescript' as const
-): string {
+): Promise<string> {
     const codeBlock = addedLinesInfo.reduce(
         (acc, { lineText }, i) => acc + lineText + (i < addedLinesInfo.length - 1 ? '\n' : ''),
         ''
@@ -37,27 +50,20 @@ export function diffToHighlightedImg(
         lang,
     })
 
-    const decorations = addedLinesInfo.flatMap(({ ranges, afterLine }) =>
-        ranges.map(([start, end]) => ({
-            start: { line: afterLine, character: start },
-            end: { line: afterLine, character: end },
-        }))
-    )
-
-    // Default size measurements. TODO: Revisit these
+    // Default size measurements
     const fontSize = 12
-    const lineHeight = 14 // a bit bigger than fontSize for spacing
+    const lineHeight = 14
     const yPadding = 2
     const xPadding = 6
     const maxWidth = 600
+    const pixelRatio = 4
 
-    const tempCanvas = createCanvas(10, 10)
-    const tempCtx = tempCanvas.getContext('2d')
-    tempCtx.font = `${fontSize}px monospace`
+    // Create a temporary bitmap for measurements
+    const tempImg = pureimage.make(10, 10)
+    const tempCtx = tempImg.getContext('2d')
+    tempCtx.font = `${fontSize}px 'Source Code Pro'`
 
-    /**
-     * Determine the correct width and height that the canvas will be
-     */
+    // Calculate dimensions
     let yPos = yPadding
     let requiredWidth = 0
     for (const lineTokens of tokens) {
@@ -71,25 +77,36 @@ export function diffToHighlightedImg(
         }
         yPos += lineHeight
     }
-    const totalWidth = Math.min(requiredWidth + xPadding, maxWidth)
-    const totalHeight = yPos + yPadding
 
-    // Create the canvas, ready to start painting text
-    // Pixel ratio for sharper text on high-DPI screens
-    const pixelRatio = 2
-    const canvas = createCanvas(totalWidth * pixelRatio, totalHeight * pixelRatio)
-    const ctx = canvas.getContext('2d')
+    const totalWidth = Math.min(requiredWidth + xPadding * 2, maxWidth) // Add extra padding
+    const totalHeight = yPos + yPadding * 2 // Add extra padding
 
-    // Scale so drawing in logical coords is upsampled
+    // Create the actual image with 1 extra pixel of space
+    const img = pureimage.make(
+        Math.ceil(totalWidth * pixelRatio) + 1,
+        Math.ceil(totalHeight * pixelRatio) + 1
+    )
+    const ctx = img.getContext('2d')
+    // Scale for high-DPI
     ctx.scale(pixelRatio, pixelRatio)
+    ctx.clearRect(0, 0, totalWidth * pixelRatio, totalHeight * pixelRatio)
 
-    // Start drawing the text into the canvas
-    ctx.font = `${fontSize}px monospace`
+    // Set text properties
+    ctx.textBaseline = 'middle'
+    ctx.textAlign = 'left'
+    ctx.font = `${fontSize}px "FiraCode"`
     ctx.textBaseline = 'top'
 
     const highlightColor = 'rgba(35, 134, 54, 0.2)'
 
-    const decorationsByLine = new Map<number, typeof decorations>()
+    const decorationsByLine = new Map<
+        number,
+        Array<{
+            start: { line: number; character: number }
+            end: { line: number; character: number }
+        }>
+    >()
+
     for (const { afterLine, ranges } of addedLinesInfo) {
         const lineDecorations = ranges.map(([start, end]) => ({
             start: { line: afterLine, character: start },
@@ -102,12 +119,9 @@ export function diffToHighlightedImg(
     for (let lineIndex = 0; lineIndex < tokens.length; lineIndex++) {
         const lineTokens = tokens[lineIndex]
         let xPos = xPadding
-
-        // Get the actual line number from addedLinesInfo
         const actualLineNumber = addedLinesInfo[lineIndex].afterLine
         const lineDecorations = decorationsByLine.get(actualLineNumber) || []
-
-        // Draw highlight backgrounds first
+        // Draw highlights
         for (const decoration of lineDecorations) {
             let highlightStartX = xPadding
             let highlightWidth = 0
@@ -117,8 +131,6 @@ export function diffToHighlightedImg(
             for (const token of lineTokens) {
                 const tokenWidth = ctx.measureText(token.content).width
                 const tokenLength = token.content.length
-
-                // Check if this token contains the start position
                 if (
                     currentCharPos <= decoration.start.character &&
                     currentCharPos + tokenLength >= decoration.start.character
@@ -129,8 +141,6 @@ export function diffToHighlightedImg(
                     ).width
                     highlightStartX = currentX + startOffsetWidth
                 }
-
-                // Check if this token contains the end position
                 if (
                     currentCharPos <= decoration.end.character &&
                     currentCharPos + tokenLength >= decoration.end.character
@@ -147,7 +157,7 @@ export function diffToHighlightedImg(
             ctx.fillStyle = highlightColor
             ctx.fillRect(highlightStartX, yPos, highlightWidth, lineHeight)
         }
-        // Draw the text on top
+        // Draw text
         for (const token of lineTokens) {
             ctx.fillStyle = token.color || '#ffffff'
             ctx.fillText(token.content, xPos, yPos)
@@ -156,5 +166,24 @@ export function diffToHighlightedImg(
 
         yPos += lineHeight
     }
-    return canvas.toDataURL('image/png')
+
+    // Convert to PNG data URL
+    return new Promise((resolve, reject) => {
+        const chunks: Uint8Array[] = []
+        const stream = new Writable({
+            write(chunk: Uint8Array, encoding: string, callback: () => void) {
+                chunks.push(chunk)
+                callback()
+            },
+        })
+
+        stream.on('finish', () => {
+            const buffer = Buffer.concat(chunks)
+            const base64 = buffer.toString('base64')
+            resolve(`data:image/png;base64,${base64}`)
+        })
+        stream.on('error', reject)
+
+        pureimage.encodePNGToStream(img, stream)
+    })
 }
