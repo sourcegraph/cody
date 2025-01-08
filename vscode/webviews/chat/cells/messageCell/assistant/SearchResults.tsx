@@ -1,5 +1,4 @@
 import {
-    CODE_SEARCH_PROVIDER_URI,
     type ChatMessageWithSearch,
     type NLSSearchDynamicFilter,
     type NLSSearchResult,
@@ -16,7 +15,10 @@ import {
     Search,
 } from 'lucide-react'
 import { useCallback, useContext, useLayoutEffect, useMemo, useReducer, useState } from 'react'
-import { createContextItem } from '../../../../../src/context/openctx/codeSearch'
+import {
+    createContextItem,
+    isCodeSearchContextItem,
+} from '../../../../../src/context/openctx/codeSearch'
 import { LastEditorContext } from '../../../../chat/context'
 import { NLSResultSnippet } from '../../../../components/NLSResultSnippet'
 import { Button } from '../../../../components/shadcn/ui/button'
@@ -116,9 +118,7 @@ export const SearchResults = ({
             )
             lastEditorRef.current?.upsertMentions([contextItem], 'before', ' ', false)
         } else {
-            lastEditorRef.current?.filterMentions(
-                mention => mention.type !== 'openctx' || mention.providerUri !== CODE_SEARCH_PROVIDER_URI
-            )
+            lastEditorRef.current?.filterMentions(mention => !isCodeSearchContextItem(mention))
         }
     }, [enableContextSelection, selectedFollowUpResults, lastEditorRef])
 

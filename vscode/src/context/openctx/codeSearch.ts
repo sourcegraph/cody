@@ -1,8 +1,10 @@
 import type { Item } from '@openctx/client'
 import {
     CODE_SEARCH_PROVIDER_URI,
+    type ContextItem,
     type ContextItemOpenCtx,
     ContextItemSource,
+    type SerializedContextItem,
     currentResolvedConfig,
     graphqlClient,
     isDefined,
@@ -113,4 +115,12 @@ export function createContextItem(results: Result[]): ContextItemOpenCtx {
         },
         source: ContextItemSource.User,
     }
+}
+
+/**
+ * @param item The context item to check.
+ * @returns True if the given context item is a code search context item.
+ */
+export function isCodeSearchContextItem(item: ContextItem | SerializedContextItem): boolean {
+    return item.type === 'openctx' && item.providerUri === CODE_SEARCH_PROVIDER_URI
 }
