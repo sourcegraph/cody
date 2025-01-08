@@ -27,17 +27,18 @@ export class AutoeditsOnboarding implements vscode.Disposable {
         const shouldShowOnboardingPopup = await this.shouldShowAutoeditsOnboardingPopup()
         if (shouldShowOnboardingPopup) {
             await this.showAutoeditsOnboardingPopup()
-            await this.incrementAutoEditsOnboardingNotificationCount()
         }
     }
 
     private async showAutoeditsOnboardingPopup(): Promise<void> {
         const selection = await vscode.window.showInformationMessage(
-            '✨ Try Cody auto-edits: Experimental feature which suggests advanced context-aware code edits as you navigate the codebase',
-            'Enable auto-edits'
+            'Try Cody Auto-Edits (experimental)? Cody will intelligently suggest next edits as you navigate the codebase.',
+            'Enable Auto-Edits',
+            "Don't Show Again"
         )
+        await this.incrementAutoEditsOnboardingNotificationCount({ incrementCount: 1 })
 
-        if (selection === 'Enable auto-edits') {
+        if (selection === 'Enable Auto-Edits') {
             // Enable the setting programmatically
             await vscode.workspace
                 .getConfiguration()
@@ -52,6 +53,12 @@ export class AutoeditsOnboarding implements vscode.Disposable {
                 'workbench.action.openSettings',
                 'cody.suggestions.mode'
             )
+        } else if (selection === "Don't Show Again") {
+            // If user doesn't want to see the notification again, increase number of shown notification by max limit + 1
+            // to prevent showing the notification again until the user restarts VS Code.
+            await this.incrementAutoEditsOnboardingNotificationCount({
+                incrementCount: this.MAX_AUTO_EDITS_ONBOARDING_NOTIFICATIONS + 1,
+            })
         }
     }
 
@@ -68,10 +75,12 @@ export class AutoeditsOnboarding implements vscode.Disposable {
         return isUnderNotificationLimit
     }
 
-    private async incrementAutoEditsOnboardingNotificationCount(): Promise<void> {
+    private async incrementAutoEditsOnboardingNotificationCount(param: {
+        incrementCount: number
+    }): Promise<void> {
         const info = await this.getAutoEditsOnboardingNotificationInfo()
         await localStorage.setAutoEditsOnboardingNotificationInfo({
-            timesShown: info.timesShown + 1,
+            timesShown: info.timesShown + param.incrementCount,
             lastNotifiedTime: Date.now(),
         })
     }
