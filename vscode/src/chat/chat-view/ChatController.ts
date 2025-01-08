@@ -934,11 +934,11 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     private async openRemoteFile(uri: vscode.Uri) {
         const json = uri.toJSON()
         json.scheme = 'codysourcegraph'
-        const sourcegraphSchemaURI = vscode.Uri.from(json)
+        const sourcegraphSchemaURI = vscode.Uri.from(json).with({ query: 'readonly' })
 
         vscode.workspace
             .openTextDocument(sourcegraphSchemaURI)
-            .then(doc => vscode.window.showTextDocument(doc))
+            .then(async doc => vscode.window.showTextDocument(doc))
     }
 
     private submitOrEditOperation: AbortController | undefined

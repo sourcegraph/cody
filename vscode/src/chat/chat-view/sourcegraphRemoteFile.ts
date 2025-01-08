@@ -2,26 +2,24 @@ import { graphqlClient, isError } from '@sourcegraph/cody-shared'
 import { LRUCache } from 'lru-cache'
 import * as vscode from 'vscode'
 
-export class SourcegraphRemoteFileProvider
-    implements vscode.TextDocumentContentProvider, vscode.Disposable
-{
+export class SourcegraphRemoteFileProvider implements vscode.FileSystemProvider, vscode.Disposable {
     private cache = new LRUCache<string, string>({ max: 128 })
     private disposables: vscode.Disposable[] = []
 
     constructor() {
         this.disposables.push(
-            vscode.workspace.registerTextDocumentContentProvider('codysourcegraph', this)
+            vscode.workspace.registerFileSystemProvider('codysourcegraph', this, { isReadonly: true })
         )
     }
 
-    async provideTextDocumentContent(uri: vscode.Uri): Promise<string> {
+    async readFile(uri: vscode.Uri): Promise<Uint8Array<ArrayBufferLike>> {
         const content =
             this.cache.get(uri.toString()) ||
             (await SourcegraphRemoteFileProvider.getFileContentsFromURL(uri))
 
         this.cache.set(uri.toString(), content)
 
-        return content
+        return new TextEncoder().encode(content)
     }
 
     public dispose(): void {
@@ -55,5 +53,44 @@ export class SourcegraphRemoteFileProvider
         }
 
         return content
+    }
+
+    // Below methods are unused
+
+    onDidChangeFile: vscode.Event<vscode.FileChangeEvent[]> = new vscode.EventEmitter<
+        vscode.FileChangeEvent[]
+    >().event
+
+    watch(): vscode.Disposable {
+        return new vscode.Disposable(() => {})
+    }
+
+    stat(uri: vscode.Uri): vscode.FileStat {
+        return {
+            type: vscode.FileType.File,
+            ctime: 0,
+            mtime: 0,
+            size: 0,
+        }
+    }
+
+    readDirectory() {
+        return []
+    }
+
+    createDirectory() {
+        throw new Error('Method not implemented.')
+    }
+
+    writeFile() {
+        throw new Error('Method not implemented.')
+    }
+
+    rename() {
+        throw new Error('Method not implemented.')
+    }
+
+    delete() {
+        throw new Error('Method not implemented.')
     }
 }

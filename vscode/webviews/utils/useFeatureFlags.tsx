@@ -3,6 +3,7 @@ import { useExtensionAPI, useObservable } from '@sourcegraph/prompt-editor'
 import { useMemo } from 'react'
 
 /**
+ *
  * React hook for getting a feature flag's value.
  *
  * @returns `true` or `false` if the flag is exposed by the server endpoint, has been fetched, and
