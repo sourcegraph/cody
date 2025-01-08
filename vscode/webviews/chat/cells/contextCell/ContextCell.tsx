@@ -157,7 +157,9 @@ export const ContextCell: FunctionComponent<{
                     ? 'Reviewing query'
                     : isContextLoading
                       ? 'Fetching context'
-                      : 'Context',
+                      : isDeepCodyEnabled
+                        ? 'Agentic Context'
+                        : 'Context',
             sub:
                 experimentalOneBoxEnabled && !intent
                     ? 'Figuring out query intent...'
@@ -188,7 +190,9 @@ export const ContextCell: FunctionComponent<{
                                     onClick={triggerAccordion}
                                     title={itemCountLabel}
                                     className="tw-flex tw-items-center tw-gap-4"
-                                    disabled={isContextLoading && processes === undefined}
+                                    disabled={
+                                        isContextLoading || (isDeepCodyEnabled && !contextItems?.length)
+                                    }
                                 >
                                     <SourcegraphLogo
                                         width={NON_HUMAN_CELL_AVATAR_SIZE}
@@ -212,27 +216,32 @@ export const ContextCell: FunctionComponent<{
                                 <LoadingDots />
                             ) : (
                                 <>
-                                    <AccordionContent className="tw-ml-6" overflow={false}>
-                                        {isDeepCodyEnabled && (
+                                    <AccordionContent
+                                        className="tw-ml-6 tw-flex tw-flex-col tw-gap-2"
+                                        overflow={false}
+                                    >
+                                        {isDeepCodyEnabled && processes && (
                                             <ProcessList
-                                                processes={processes ?? []}
+                                                processes={processes}
                                                 isContextLoading={isContextLoading}
                                             />
                                         )}
                                         <div className={styles.contextSuggestedActions}>
-                                            {contextItems && contextItems.length > 0 && (
-                                                <Button
-                                                    size="sm"
-                                                    variant="outline"
-                                                    className={clsx(
-                                                        'tw-pr-4',
-                                                        styles.contextItemEditButton
-                                                    )}
-                                                    onClick={onEditContext}
-                                                >
-                                                    {editContextNode}
-                                                </Button>
-                                            )}
+                                            {contextItems &&
+                                                contextItems.length > 0 &&
+                                                !isDeepCodyEnabled && (
+                                                    <Button
+                                                        size="sm"
+                                                        variant="outline"
+                                                        className={clsx(
+                                                            'tw-pr-4',
+                                                            styles.contextItemEditButton
+                                                        )}
+                                                        onClick={onEditContext}
+                                                    >
+                                                        {editContextNode}
+                                                    </Button>
+                                                )}
                                             {resubmitWithRepoContext && !isDeepCodyEnabled && (
                                                 <Button
                                                     size="sm"
@@ -263,7 +272,7 @@ export const ContextCell: FunctionComponent<{
                                                       })`}
                                             </div>
                                         )}
-                                        <ul className="tw-list-none tw-flex tw-flex-col tw-gap-2 tw-pt-2">
+                                        <ul className="tw-list-none tw-flex tw-flex-col tw-gap-2">
                                             {contextItemsToDisplay?.map((item, i) => (
                                                 <li
                                                     // biome-ignore lint/correctness/useJsxKeyInIterable:
@@ -310,35 +319,31 @@ export const ContextCell: FunctionComponent<{
                                                     </span>
                                                 </span>
                                             )}
-                                            {!isContextLoading &&
-                                                isDeepCodyEnabled &&
-                                                processes?.length && (
-                                                    <li>
-                                                        <Tooltip>
-                                                            <TooltipTrigger asChild>
-                                                                <span
-                                                                    className={clsx(
-                                                                        styles.contextItem,
-                                                                        'tw-flex tw-items-center tw-gap-2 tw-text-muted-foreground'
-                                                                    )}
-                                                                >
-                                                                    <BrainIcon
-                                                                        size={14}
-                                                                        className="tw-ml-1"
-                                                                    />
-                                                                    <span>
-                                                                        Reviewed by context agent
-                                                                    </span>
-                                                                </span>
-                                                            </TooltipTrigger>
-                                                            <TooltipContent side="bottom">
-                                                                Deep Cody fetches additional context to
-                                                                improve response quality when needed
-                                                            </TooltipContent>
-                                                        </Tooltip>
-                                                    </li>
-                                                )}
-                                            {!isContextLoading && !processes?.length && (
+                                            {!isContextLoading && isDeepCodyEnabled && (
+                                                <li>
+                                                    <Tooltip>
+                                                        <TooltipTrigger asChild>
+                                                            <span
+                                                                className={clsx(
+                                                                    styles.contextItem,
+                                                                    'tw-flex tw-items-center tw-gap-2 tw-text-muted-foreground'
+                                                                )}
+                                                            >
+                                                                <BrainIcon
+                                                                    size={14}
+                                                                    className="tw-ml-1"
+                                                                />
+                                                                <span>Reviewed by context agent</span>
+                                                            </span>
+                                                        </TooltipTrigger>
+                                                        <TooltipContent side="bottom">
+                                                            Fetches additional context to improve
+                                                            response quality when needed
+                                                        </TooltipContent>
+                                                    </Tooltip>
+                                                </li>
+                                            )}
+                                            {!isContextLoading && !isDeepCodyEnabled && (
                                                 <li>
                                                     <Tooltip>
                                                         <TooltipTrigger asChild>
@@ -456,8 +461,8 @@ const ProcessList: FC<{ processes: ProcessingStep[]; isContextLoading: boolean }
     isContextLoading,
 }) => {
     return (
-        <div className="tw-flex tw-flex-col tw-mb-2">
-            <div className="tw-flex tw-flex-col tw-mb-2">
+        <div className="tw-flex tw-flex-col tw-gap-2">
+            <div className="tw-flex tw-flex-col tw-gap-2">
                 {processes.map(process => (
                     <ProcessItem
                         key={process.id}
