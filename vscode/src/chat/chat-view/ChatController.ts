@@ -641,6 +641,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         intentScores?: { intent: string; score: number }[] | undefined | null
         manuallySelectedIntent?: boolean | undefined | null
         traceparent?: string | undefined | null
+        selectedAgent?: string | undefined | null
     }): Promise<void> {
         return context.with(extractContextFromTraceparent(traceparent), () => {
             return tracer.startActiveSpan('chat.handleUserMessage', async (span): Promise<void> => {
@@ -658,12 +659,14 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     return this.clearAndRestartSession()
                 }
 
+                const selectedAgent = this.chatBuilder.selectedAgent
+
                 this.chatBuilder.addHumanMessage({
                     text: inputText,
                     editorState,
                     intent: detectedIntent,
                     manuallySelectedIntent: manuallySelectedIntent ? detectedIntent : undefined,
-                    agent: toolboxManager.getSettings()?.agent?.name,
+                    agent: selectedAgent,
                 })
                 this.postViewTranscript({ speaker: 'assistant' })
 
@@ -682,6 +685,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                         intent: detectedIntent,
                         intentScores: detectedIntentScores,
                         manuallySelectedIntent,
+                        selectedAgent,
                     },
                     span
                 )
@@ -751,6 +755,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             intent: detectedIntent,
             intentScores: detectedIntentScores,
             manuallySelectedIntent,
+            selectedAgent,
         }: Parameters<typeof this.handleUserMessage>[0],
         span: Span
     ): Promise<void> {
@@ -774,6 +779,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             sessionID: this.chatBuilder.sessionID,
             traceId: span.spanContext().traceId,
             promptText: inputText,
+            chatAgent: selectedAgent,
         })
         recorder.recordChatQuestionSubmitted(mentions)
 
@@ -793,7 +799,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
         const agentName = ['search', 'edit', 'insert'].includes(intent ?? '')
             ? (intent as string)
-            : this.chatBuilder.getLastHumanMessage()?.agent ?? 'chat'
+            : selectedAgent ?? 'chat'
         const agent = getAgent(agentName, model, {
             contextRetriever: this.contextRetriever,
             editor: this.editor,
@@ -1547,6 +1553,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     toolboxSettings: () => toolboxManager.observable,
                     updateToolboxSettings: settings => {
                         return promiseFactoryToObservable(async () => {
+                            this.chatBuilder.setSelectedAgent(settings.agent?.name)
                             await toolboxManager.updateSettings(settings)
                         })
                     },
