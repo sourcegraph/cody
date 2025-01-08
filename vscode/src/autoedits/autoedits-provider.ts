@@ -309,6 +309,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
 
         const { inlineCompletionItems, updatedDecorationInfo, updatedPrediction } =
             this.rendererManager.tryMakeInlineCompletions({
+                requestId,
                 prediction,
                 codeToReplaceData,
                 document,

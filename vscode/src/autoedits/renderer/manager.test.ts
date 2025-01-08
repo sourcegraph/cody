@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import type * as vscode from 'vscode'
 import { getCurrentDocContext } from '../../completions/get-current-doc-context'
 import { documentAndPosition } from '../../completions/test-helpers'
+import type { AutoeditRequestID } from '../analytics-logger'
 import { getDecorationInfoFromPrediction } from '../autoedits-provider'
 import type { CodeToReplaceData } from '../prompt/prompt-utils'
 import { createCodeToReplaceDataForTest } from '../prompt/test-helper'
@@ -43,6 +44,7 @@ describe('AutoEditsDefaultRendererManager', () => {
         const codeToReplaceData = getCodeToReplaceForManager`${documentText}`
         const decorationInfo = getDecorationInfoFromPrediction(document, prediction, codeToReplaceData)
         return {
+            requestId: 'test-request-id' as AutoeditRequestID,
             prediction,
             codeToReplaceData,
             document,

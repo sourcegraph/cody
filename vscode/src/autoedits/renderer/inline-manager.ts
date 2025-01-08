@@ -4,9 +4,7 @@ import { isFileURI } from '@sourcegraph/cody-shared'
 
 import { completionMatchesSuffix } from '../../completions/is-completion-visible'
 import { getNewLineChar } from '../../completions/text-processing'
-import { autoeditAnalyticsLogger } from '../analytics-logger'
 import { autoeditsOutputChannelLogger } from '../output-channel-logger'
-import { areSameUriDocs } from '../utils'
 
 import type {
     AddedLineInfo,
@@ -31,26 +29,6 @@ export class AutoEditsInlineRendererManager
     extends AutoEditsDefaultRendererManager
     implements AutoEditsRendererManager
 {
-    protected async acceptEdit(): Promise<void> {
-        const editor = vscode.window.activeTextEditor
-        const { activeRequest } = this
-        if (
-            !editor ||
-            !activeRequest ||
-            !areSameUriDocs(editor.document, this.activeRequest?.document)
-        ) {
-            return this.rejectEdit()
-        }
-
-        await vscode.commands.executeCommand('editor.action.inlineSuggest.hide')
-        await editor.edit(editBuilder => {
-            editBuilder.replace(activeRequest.codeToReplaceData.range, activeRequest.prediction)
-        })
-
-        await this.handleDidHideSuggestion()
-        autoeditAnalyticsLogger.markAsAccepted(activeRequest.requestId)
-    }
-
     protected async onDidChangeTextEditorSelection(
         event: vscode.TextEditorSelectionChangeEvent
     ): Promise<void> {
@@ -59,11 +37,12 @@ export class AutoEditsInlineRendererManager
         // rendered as inline completion ghost text, which is hidden by default
         // whenever the cursor moves.
         if (isFileURI(event.textEditor.document.uri)) {
-            this.rejectEdit()
+            this.rejectActiveEdit()
         }
     }
 
     tryMakeInlineCompletions({
+        requestId,
         prediction,
         document,
         position,
@@ -94,7 +73,16 @@ export class AutoEditsInlineRendererManager
                     new vscode.Range(
                         document.lineAt(position).range.start,
                         document.lineAt(position).range.end
-                    )
+                    ),
+                    {
+                        title: 'Autoedit accepted',
+                        command: 'cody.supersuggest.accept',
+                        arguments: [
+                            {
+                                requestId,
+                            },
+                        ],
+                    }
                 ),
             ]
 
