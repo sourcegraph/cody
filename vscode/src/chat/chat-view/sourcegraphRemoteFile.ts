@@ -9,7 +9,9 @@ export class SourcegraphRemoteFileProvider
     private disposables: vscode.Disposable[] = []
 
     constructor() {
-        this.disposables.push(vscode.workspace.registerTextDocumentContentProvider('sourcegraph', this))
+        this.disposables.push(
+            vscode.workspace.registerTextDocumentContentProvider('codysourcegraph', this)
+        )
     }
 
     async provideTextDocumentContent(uri: vscode.Uri): Promise<string> {
