@@ -56,7 +56,7 @@ export function getConfiguration(
     // TODO (Hitesh): Remove the manual override once the updated config is communicated after experimental release
     if (
         codyAutoSuggestionsMode === CodyAutoSuggestionMode.Autocomplete &&
-        vscode.workspace.getConfiguration().get<boolean>('cody.autocomplete.enabled', true)
+        vscode.workspace.getConfiguration().get<boolean>('cody.autocomplete.enabled') === false
     ) {
         codyAutoSuggestionsMode = CodyAutoSuggestionMode.Off
     }
