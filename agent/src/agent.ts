@@ -1368,7 +1368,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
             await this.receiveWebviewMessage(id, message)
             return null
         })
-        this.registerAuthenticatedRequest(
+        this.registerRequest(
             'webview/receiveMessageStringEncoded',
             async ({ id, messageStringEncoded }) => {
                 await this.receiveWebviewMessage(id, JSON.parse(messageStringEncoded))
