@@ -15,6 +15,7 @@ import {
     distinctUntilChanged,
     firstValueFrom,
     globalAgentRef,
+    logDebug,
     logError,
     resolvedConfig,
     shareReplay,
@@ -148,22 +149,37 @@ export class DelegatingAgent extends AgentBase implements vscode.Disposable {
 
         const { proxyServer, proxyPath } = config
 
-        const agentId = `${proxyPath ?? proxyServer?.protocol ?? 'direct'}+${
-            options.secureEndpoint ? 'https:' : 'http:'
-        }`
+        // This technically isn't optimal as we're creating different agents for different
+        // endpoints. However, given that our own application only uses a few endpoints
+        // this not only simplifies the logic, it aslo makes it less likely that things like
+        // fast-paths, which have different TTL & connection parameters can start interfering with
+        // connection reliability for other domains.
+        const reqProto = `${options.protocol || options.secureEndpoint ? 'https:' : 'http:'}`
+        const reqId = `${reqProto}//${options.host ?? ''}:${options.port ?? ''}`
+        const agentId = `${proxyPath ?? proxyServer?.protocol ?? 'direct'}+${reqId}`
+
+        const defaultAgent = options.secureEndpoint ? https.Agent : http.Agent
+
         const cachedAgent = this.agentCache.get(agentId)
         let agent = cachedAgent
         if (!agent) {
-            if (proxyPath) {
+            if (!shouldProxy(options, config.noProxyString)) {
+                logDebug(
+                    'Delegating Agent',
+                    `Initialized new agent <${agentId}> as [default] due to NO_PROXY rule`
+                )
+                agent = new defaultAgent(reqOptions)
+            } else if (proxyPath) {
+                logDebug('Delegating Agent', `Initialized new agent <${agentId}> as [path]`)
                 agent = new ProxyAgent({
                     ...reqOptions,
                     socketPath: proxyPath,
                 })
-            }
-            if (proxyServer) {
+            } else if (proxyServer) {
                 switch (proxyServer.protocol) {
                     case 'http:':
                     case 'https:':
+                        logDebug('Delegating Agent', `Initialized new agent <${agentId}> as [http]`)
                         if (options.secureEndpoint) {
                             agent = new HttpsProxyAgent({
                                 ...(reqOptions as WritableDeep<typeof reqOptions>),
@@ -190,6 +206,7 @@ export class DelegatingAgent extends AgentBase implements vscode.Disposable {
                     case 'socks4:':
                     case 'socks4a:':
                     case 'socks5:':
+                        logDebug('Delegating Agent', `Initialized new agent <${agentId}> as [sock]`)
                         agent = new SocksProxyAgent(proxyServer.href, reqOptions)
                         break
                     default:
@@ -202,10 +219,8 @@ export class DelegatingAgent extends AgentBase implements vscode.Disposable {
                 }
             }
         }
-
         if (!agent) {
-            const ctor = options.secureEndpoint ? https.Agent : http.Agent
-            agent = new ctor(reqOptions)
+            agent = new defaultAgent(reqOptions)
         }
         if (agent !== cachedAgent) {
             this.agentCache.set(agentId, agent)
@@ -225,6 +240,7 @@ export class DelegatingAgent extends AgentBase implements vscode.Disposable {
                 proxyServer: null,
                 skipCertValidation: false,
                 vscode: null,
+                noProxyString: null,
             } satisfies ResolvedSettings
         }
         let proxyPath: string | null = null
@@ -255,6 +271,7 @@ export class DelegatingAgent extends AgentBase implements vscode.Disposable {
             error: err,
             proxyServer: settings.proxyServer || null,
             proxyPath,
+            noProxyString: settings.noProxyString,
             ca,
             skipCertValidation: settings.skipCertValidation,
             bypassVSCode: settings.bypassVSCode,
@@ -329,6 +346,7 @@ type NormalizedSettings = {
     proxyServer: URL | null
     proxyCACert: string | null
     proxyCACertPath: string | null
+    noProxyString: string | null
     skipCertValidation: boolean
     vscode: string | null
 }
@@ -338,15 +356,27 @@ function normalizeSettings(raw: NetConfiguration): [Error, null] | [null, Normal
             ? ({ proxyCACert: raw.proxy?.cacert ?? null, proxyCACertPath: null } as const)
             : ({ proxyCACert: null, proxyCACertPath: normalizePath(raw.proxy?.cacert) } as const)
 
-        const proxyEndpointString = raw.proxy?.endpoint?.trim() || cenv.CODY_NODE_DEFAULT_PROXY || null
-        const proxyServer =
-            proxyEndpointString &&
-            /^(http|https|socks|socks4|socks4a|socks5|socks5h):\/\/[^:]+:\d+/i.test(proxyEndpointString)
-                ? new url.URL(proxyEndpointString)
-                : null
+        let noProxyString: string | null = null
+        let proxyEndpointString = raw.proxy?.endpoint?.trim() || null
+        if (!proxyEndpointString) {
+            proxyEndpointString = cenv.CODY_NODE_DEFAULT_PROXY?.trim() || null
+            noProxyString = cenv.CODY_NODE_NO_PROXY?.trim() || null
+        }
+
+        //TODO: named pipes on Windows won't use unix://
+        let proxyServer: URL | null = null
         const proxyPath = proxyEndpointString?.startsWith('unix://')
             ? normalizePath(proxyEndpointString.slice(7))
             : null
+        try {
+            if (proxyEndpointString && !proxyPath) {
+                proxyServer = new url.URL(proxyEndpointString)
+            }
+        } catch (e) {
+            const errorMessage = `Proxy endpoint URL isn't valid ${proxyEndpointString}`
+            logError('DelegatingProxy', `${errorMessage}:\n${e}`)
+            throw new Error(`${errorMessage}:\n${e}`)
+        }
 
         // TODO: For all other nullish types like `skipCertValidation` we try to
         // have the overrides be priority based and only apply if they're set.
@@ -368,10 +398,12 @@ function normalizeSettings(raw: NetConfiguration): [Error, null] | [null, Normal
                 ...caCertConfig,
                 proxyPath,
                 proxyServer,
+                noProxyString,
                 vscode: raw.vscode ?? null,
             },
         ]
     } catch (e: any) {
+        logError('DelegatingProxy', 'Network settings could not be resolved', { error: e })
         return [e, null]
     }
 }
@@ -380,6 +412,7 @@ type ResolvedSettings = {
     error: Error | null
     proxyServer: URL | null
     proxyPath: string | null
+    noProxyString: string | null
     ca: string[]
     skipCertValidation: boolean
     bypassVSCode: boolean
@@ -444,4 +477,69 @@ function normalizePath(filePath: string | null | undefined): string | null {
     }
 
     return normalizedPath
+}
+
+const DEFAULT_PORTS: Record<string, number> = {
+    ftp: 21,
+    gopher: 70,
+    http: 80,
+    https: 443,
+    ws: 80,
+    wss: 443,
+}
+
+/**
+ * Determines whether a given URL should be proxied.
+ *
+ * @param {string} hostname - The host name of the URL.
+ * @param {number} port - The effective port of the URL.
+ * @returns {boolean} Whether the given URL should be proxied.
+ * @private
+ */
+function shouldProxy(
+    req: { host?: string; protocol?: string; port?: number; secureEndpoint?: boolean },
+    noProxy: string | null | undefined
+) {
+    let reqProto = req.protocol ?? (req.secureEndpoint ? 'https:' : 'http:')
+    let reqHostname = req.host
+    if (typeof reqHostname !== 'string' || !reqHostname || typeof reqProto !== 'string') {
+        return false // Don't proxy URLs without a valid scheme or host.
+    }
+
+    reqProto = reqProto.split(':', 1)[0]
+    // Stripping ports in this way instead of using parsedUrl.hostname to make
+    // sure that the brackets around IPv6 addresses are kept.
+    reqHostname = reqHostname.replace(/:\d*$/, '')
+    const port = req.port || DEFAULT_PORTS[reqProto] || 0
+
+    if (!noProxy) {
+        return true // Always proxy if NO_PROXY is not set.
+    }
+    if (noProxy === '*') {
+        return false // Never proxy if wildcard is set.
+    }
+
+    return noProxy?.split(/[,\s]/).every(proxy => {
+        if (!proxy) {
+            return true // Skip zero-length hosts.
+        }
+        const parsedProxy = proxy.match(/^(.+):(\d+)$/)
+        let parsedProxyHostname = parsedProxy ? parsedProxy[1] : proxy
+        const parsedProxyPort = parsedProxy ? Number.parseInt(parsedProxy[2]) : 0
+        if (parsedProxyPort && parsedProxyPort !== port) {
+            return true // Skip if ports don't match.
+        }
+
+        if (!/^[.*]/.test(parsedProxyHostname)) {
+            // No wildcards, so stop proxying if there is an exact match.
+            return reqHostname !== parsedProxyHostname
+        }
+
+        if (parsedProxyHostname.charAt(0) === '*') {
+            // Remove leading wildcard.
+            parsedProxyHostname = parsedProxyHostname.slice(1)
+        }
+        // Stop proxying if the hostname ends with the no_proxy host.
+        return !reqHostname.endsWith(parsedProxyHostname)
+    })
 }
