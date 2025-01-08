@@ -20,7 +20,7 @@ This is a log of all notable changes to Cody for VS Code.
 - autoedit: address dogfooding feedback  [pull/6454](https://github.com/sourcegraph/cody/pull/6454)
 - feat(audoedit): implement basic analytics logger  [pull/6430](https://github.com/sourcegraph/cody/pull/6430)
 - feat(onebox): Use new prompt editor when onebox is enabled  [pull/6288](https://github.com/sourcegraph/cody/pull/6288)
-
+- feat(network): Support for NO_PROXY (CODY_NODE_NO_PROXY) environment variable [pull/6555](https://github.com/sourcegraph/cody/pull/6555)
 
 ### Fixed
 - feat(logging): Add interactionId to header of Cody Client requests (CODY-4117)  [pull/6450](https://github.com/sourcegraph/cody/pull/6450)
@@ -34,6 +34,8 @@ This is a log of all notable changes to Cody for VS Code.
 - chore(onebox/telemetry): add `billingMetadata`   [pull/6426](https://github.com/sourcegraph/cody/pull/6426)
 - fix(audoedit): fix renderer testing command  [pull/6408](https://github.com/sourcegraph/cody/pull/6408)
 - chore/release: Bump package version and update changelog for 1.52  [pull/6414](https://github.com/sourcegraph/cody/pull/6414)
+- fix(logging): removed unecessary logging when requests are aborted [pull/6555](https://github.com/sourcegraph/cody/pull/6555)
+- fix(network): removed dangling request handlers on network requests which could potentially cause memory leaks [pull/6555](https://github.com/sourcegraph/cody/pull/6555)
 
 ### Changed
 - feat(prompt-editor): Add new ProseMirror-based implementation  [pull/6272](https://github.com/sourcegraph/cody/pull/6272)
@@ -41,6 +43,7 @@ This is a log of all notable changes to Cody for VS Code.
 - Use omnibox ff for intent detector  [pull/6419](https://github.com/sourcegraph/cody/pull/6419)
 - Enable repo boost for inactive editor  [pull/6443](https://github.com/sourcegraph/cody/pull/6443)
 - include symbol matches in search results  [pull/6441](https://github.com/sourcegraph/cody/pull/6441)
+- improved network logging with less verbose output [pull/6555](https://github.com/sourcegraph/cody/pull/6555)
 
 ## 1.54.0
 
