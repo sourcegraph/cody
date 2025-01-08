@@ -66,9 +66,7 @@ export const SearchResults = ({
     const totalResults = useMemo(
         () =>
             message.search.response?.results.results.filter(
-                result =>
-                    result.__typename === 'FileMatch' &&
-                    (result.chunkMatches?.length || result.symbols?.length)
+                (result): result is NLSSearchResult => result.__typename === 'FileMatch'
             ) || [],
         [message.search.response]
     )
