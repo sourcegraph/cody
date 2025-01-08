@@ -42,6 +42,7 @@ class ToolboxManager {
     }
 
     private isEnabled = false
+    private isRateLimited = false
     private readonly changeNotifications = new Subject<void>()
     private shellConfig = { ...DEFAULT_SHELL_CONFIG }
 
@@ -66,9 +67,16 @@ class ToolboxManager {
         const { agent, shell } = this.getStoredUserSettings()
         const isShellEnabled = this.shellConfig.instance && this.shellConfig.client ? shell : undefined
         return {
-            agent: { name: agent },
+            agent: { name: this.isRateLimited ? undefined : agent },
             // Only show shell option if it's supported by instance and client.
             shell: { enabled: isShellEnabled ?? false },
+        }
+    }
+
+    public setIsRateLimited(hasHitLimit: boolean): void {
+        if (this.isEnabled && this.isRateLimited !== hasHitLimit) {
+            this.isRateLimited = hasHitLimit
+            this.changeNotifications.next()
         }
     }
 
