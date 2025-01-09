@@ -157,7 +157,9 @@ private constructor(
                               webviewMessages =
                                   ClientCapabilities.WebviewMessagesEnum.`String-encoded`,
                               accountSwitchingInWebview =
-                                  ClientCapabilities.AccountSwitchingInWebviewEnum.Enabled)))
+                                  ClientCapabilities.AccountSwitchingInWebviewEnum.Enabled,
+                              showWindowMessage =
+                                  ClientCapabilities.ShowWindowMessageEnum.Request)))
               .thenApply { info ->
                 logger.warn("Connected to Cody agent " + info.name)
                 server.initialized(null)

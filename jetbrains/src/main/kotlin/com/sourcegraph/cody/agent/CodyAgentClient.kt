@@ -1,5 +1,8 @@
 package com.sourcegraph.cody.agent
 
+import com.intellij.notification.Notification
+import com.intellij.notification.NotificationType
+import com.intellij.notification.Notifications
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.diagnostic.Logger
@@ -21,6 +24,7 @@ import com.sourcegraph.cody.agent.protocol_generated.SaveDialogOptionsParams
 import com.sourcegraph.cody.agent.protocol_generated.Secrets_DeleteParams
 import com.sourcegraph.cody.agent.protocol_generated.Secrets_GetParams
 import com.sourcegraph.cody.agent.protocol_generated.Secrets_StoreParams
+import com.sourcegraph.cody.agent.protocol_generated.ShowWindowMessageParams
 import com.sourcegraph.cody.agent.protocol_generated.TextDocumentEditParams
 import com.sourcegraph.cody.agent.protocol_generated.TextDocument_ShowParams
 import com.sourcegraph.cody.agent.protocol_generated.UntitledTextDocument
@@ -36,6 +40,8 @@ import com.sourcegraph.cody.statusbar.CodyStatus
 import com.sourcegraph.cody.statusbar.CodyStatusService
 import com.sourcegraph.cody.ui.web.NativeWebviewProvider
 import com.sourcegraph.common.BrowserOpener
+import com.sourcegraph.common.NotificationGroups
+import com.sourcegraph.common.ui.SimpleDumbAwareEDTAction
 import com.sourcegraph.utils.CodyEditorUtil
 import java.nio.file.Paths
 import java.util.concurrent.CompletableFuture
@@ -152,6 +158,85 @@ class CodyAgentClient(private val project: Project, private val webview: NativeW
     return CompletableFuture.completedFuture(null)
   }
 
+  @JsonRequest("window/showSaveDialog")
+  fun window_showSaveDialog(params: SaveDialogOptionsParams): CompletableFuture<String> {
+    // Let's use the first possible extension as default.
+    val ext = params.filters?.firstOrNull()?.value?.firstOrNull() ?: ""
+    var fileName = "Untitled.$ext".removeSuffix(".")
+    var outputDir: VirtualFile? =
+        if (params.defaultUri != null) {
+          val defaultUriPath = Paths.get(params.defaultUri)
+          fileName = defaultUriPath.fileName.toString()
+          VfsUtil.findFile(defaultUriPath.parent, true)
+        } else {
+          project.guessProjectDir()
+        }
+
+    if (outputDir == null || !outputDir.exists()) {
+      outputDir = VfsUtil.getUserHomeDir()
+    }
+
+    val title = params.title ?: "Cody: Save as New File"
+    val descriptor = FileSaverDescriptor(title, "Save file")
+
+    val saveFileFuture = CompletableFuture<String>()
+    runInEdt {
+      val dialog = FileChooserFactory.getInstance().createSaveFileDialog(descriptor, project)
+      val result = dialog.save(outputDir, fileName)
+      saveFileFuture.complete(result?.file?.path)
+    }
+
+    return saveFileFuture
+  }
+
+  @JsonNotification("window/didChangeContext")
+  fun window_didChangeContext(params: Window_DidChangeContextParams) {
+    if (params.key == "cody.activated") {
+      CodyAccount.setActivated(params.value?.toBoolean() ?: false)
+      CodyStatusService.notifyApplication(project, CodyStatus.CodyNotSignedIn)
+    }
+    if (params.key == "cody.serverEndpoint") {
+      val endpoint = params.value ?: return
+      CodyAccount.setActiveAccount(CodyAccount(SourcegraphServerPath(endpoint)))
+      CodyStatusService.resetApplication(project)
+    }
+  }
+
+  @JsonRequest("window/showMessage")
+  fun window_showMessage(params: ShowWindowMessageParams): CompletableFuture<String?> {
+    val severity =
+        when (params.severity) {
+          ShowWindowMessageParams.SeverityEnum.Error -> NotificationType.ERROR
+          ShowWindowMessageParams.SeverityEnum.Warning -> NotificationType.WARNING
+          ShowWindowMessageParams.SeverityEnum.Information -> NotificationType.INFORMATION
+        }
+    val notification =
+        if (params.options?.detail != null)
+            Notification(
+                NotificationGroups.SOURCEGRAPH_ERRORS,
+                params.message,
+                params.options.detail,
+                severity)
+        else {
+          Notification(NotificationGroups.SOURCEGRAPH_ERRORS, params.message, severity)
+        }
+
+    val selectedItem: CompletableFuture<String?> = CompletableFuture()
+    params.items?.map { item ->
+      notification.addAction(SimpleDumbAwareEDTAction(item) { selectedItem.complete(item) })
+    }
+    notification.addAction(
+        SimpleDumbAwareEDTAction("Dismiss") {
+          notification.expire()
+          selectedItem.complete(null)
+        })
+
+    Notifications.Bus.notify(notification)
+    notification.notify(project)
+
+    return selectedItem
+  }
+
   // =============
   // Notifications
   // =============
@@ -223,49 +308,5 @@ class CodyAgentClient(private val project: Project, private val webview: NativeW
   fun webviewDispose(params: WebviewDisposeParams) {
     // TODO: Implement this.
     println("TODO, implement webview/dispose")
-  }
-
-  @JsonRequest("window/showSaveDialog")
-  fun window_showSaveDialog(params: SaveDialogOptionsParams): CompletableFuture<String> {
-    // Let's use the first possible extension as default.
-    val ext = params.filters?.firstOrNull()?.value?.firstOrNull() ?: ""
-    var fileName = "Untitled.$ext".removeSuffix(".")
-    var outputDir: VirtualFile? =
-        if (params.defaultUri != null) {
-          val defaultUriPath = Paths.get(params.defaultUri)
-          fileName = defaultUriPath.fileName.toString()
-          VfsUtil.findFile(defaultUriPath.parent, true)
-        } else {
-          project.guessProjectDir()
-        }
-
-    if (outputDir == null || !outputDir.exists()) {
-      outputDir = VfsUtil.getUserHomeDir()
-    }
-
-    val title = params.title ?: "Cody: Save as New File"
-    val descriptor = FileSaverDescriptor(title, "Save file")
-
-    val saveFileFuture = CompletableFuture<String>()
-    runInEdt {
-      val dialog = FileChooserFactory.getInstance().createSaveFileDialog(descriptor, project)
-      val result = dialog.save(outputDir, fileName)
-      saveFileFuture.complete(result?.file?.path)
-    }
-
-    return saveFileFuture
-  }
-
-  @JsonNotification("window/didChangeContext")
-  fun window_didChangeContext(params: Window_DidChangeContextParams) {
-    if (params.key == "cody.activated") {
-      CodyAccount.setActivated(params.value?.toBoolean() ?: false)
-      CodyStatusService.notifyApplication(project, CodyStatus.CodyNotSignedIn)
-    }
-    if (params.key == "cody.serverEndpoint") {
-      val endpoint = params.value ?: return
-      CodyAccount.setActiveAccount(CodyAccount(SourcegraphServerPath(endpoint)))
-      CodyStatusService.resetApplication(project)
-    }
   }
 }
