@@ -191,6 +191,7 @@ export class AutoEditsDefaultRendererManager implements AutoEditsRendererManager
         ) {
             // If the decorator cannot render the decoration properly, dispose of it and return early.
             this.decorator.dispose()
+            this.decorator = null
             return
         }
 
