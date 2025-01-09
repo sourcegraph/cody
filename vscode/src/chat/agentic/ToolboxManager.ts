@@ -65,11 +65,13 @@ class ToolboxManager {
             return null
         }
         const { agent, shell } = this.getStoredUserSettings()
-        const isShellEnabled = this.shellConfig.instance && this.shellConfig.client ? shell : undefined
+        const shellError = this.getFeatureError('shell')
         return {
             agent: { name: this.isRateLimited ? undefined : agent },
-            // Only show shell option if it's supported by instance and client.
-            shell: { enabled: isShellEnabled ?? false },
+            shell: {
+                enabled: !!agent && !!shell && !shellError,
+                error: shellError,
+            },
         }
     }
 
@@ -136,6 +138,20 @@ class ToolboxManager {
             return this.getSettings()
         })
     )
+
+    private getFeatureError(feature: string): string | undefined {
+        switch (feature) {
+            case 'shell':
+                if (!this.shellConfig.instance) {
+                    return 'Not supported by the instance.'
+                }
+                if (!this.shellConfig.client) {
+                    return 'Not supported by the client.'
+                }
+                break
+        }
+        return undefined
+    }
 }
 
 export const toolboxManager = ToolboxManager.getInstance()
