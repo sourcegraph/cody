@@ -48,7 +48,7 @@ export class DeepCodyRateLimiter {
                 telemetryRecorder.recordEvent('cody.context-agent.limit', 'hit', {
                     billingMetadata: {
                         product: 'cody',
-                        category: 'core',
+                        category: 'billable',
                     },
                 })
             }
