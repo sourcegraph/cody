@@ -184,6 +184,16 @@ export class AutoEditsDefaultRendererManager implements AutoEditsRendererManager
         this.activeRequestId = requestId
         this.decorator = this.createDecorator(vscode.window.activeTextEditor!)
 
+        if (
+            'decorationInfo' in request &&
+            request.decorationInfo &&
+            !this.decorator.canRenderDecoration(request.decorationInfo)
+        ) {
+            // If the decorator cannot render the decoration properly, dispose of it and return early.
+            this.decorator.dispose()
+            return
+        }
+
         autoeditAnalyticsLogger.markAsSuggested(requestId)
 
         // Clear any existing timeouts, only one suggestion can be shown at a time
