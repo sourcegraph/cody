@@ -281,9 +281,11 @@ export class AutoEditsDefaultRendererManager implements AutoEditsRendererManager
         await this.handleDidHideSuggestion(decorator)
         autoeditAnalyticsLogger.markAsAccepted(activeRequest.requestId)
 
-        await editor.edit(editBuilder => {
-            editBuilder.replace(activeRequest.codeToReplaceData.range, activeRequest.prediction)
-        })
+        if (this.activeRequest && this.hasInlineDecorationOnly()) {
+            await editor.edit(editBuilder => {
+                editBuilder.replace(activeRequest.codeToReplaceData.range, activeRequest.prediction)
+            })
+        }
     }
 
     protected async rejectActiveEdit(): Promise<void> {
