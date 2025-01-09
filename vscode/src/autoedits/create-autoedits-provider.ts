@@ -127,6 +127,11 @@ export function isUserEligibleForAutoeditsFeature(
     authStatus: AuthStatus,
     productSubscription: UserProductSubscription | null
 ): AutoeditsUserEligibilityInfo {
+    // Always enable auto-edits when testing
+    if (process.env.CODY_TESTING === 'true') {
+        return { isUserEligible: true }
+    }
+
     // Editors other than vscode are not eligible for auto-edits
     if (isRunningInsideAgent()) {
         return {
@@ -134,6 +139,7 @@ export function isUserEligibleForAutoeditsFeature(
             nonEligibilityReason: AUTOEDITS_NON_ELIGIBILITY_MESSAGES.ONLY_VSCODE_SUPPORT,
         }
     }
+
     // Free users are not eligible for auto-edits
     if (isFreeUser(authStatus, productSubscription)) {
         return {
