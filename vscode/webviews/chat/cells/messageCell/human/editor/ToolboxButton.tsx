@@ -15,7 +15,7 @@ interface ToolboxButtonProps {
 const ToolboxOptionText = {
     agentic:
         'Enhances responses by searching your codebase and using available tools to gather relevant context.',
-    terminal: 'Enable terminal command automatically. Enable with Caution as mistakes are possible.',
+    terminal: 'Execute command automatically for context. Enable with caution as mistakes are possible.',
 }
 
 export const ToolboxButton: FC<ToolboxButtonProps> = memo(({ settings, api }) => {
