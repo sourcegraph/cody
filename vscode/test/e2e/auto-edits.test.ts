@@ -229,9 +229,11 @@ test('autoedits: triggers inline decorations when multiple separate insertions a
 })
 
 /**
- * TODO: This case is currently bugged. We show the deletion decorations (bad) and hide the suffix decorations (good).
- * We cannot render suffix decorations that span further than the end of the file.
- * We must ensure that we do not suggest anything in this case.
+ * BUG: We need to fix our logic to display decorations at the end of a file.
+ * Linear issue:
+ * Expected behaviour: We do not show any suggestion, as there is not enough room in the file to show the full decorations..
+ * Actual behaviour: We *do* hide the suffix decorations, but we still show the deletion decorations.
+ *
  * Note: This should not be a problem when we move towards image based decorations/
  */
 test('autoedits: does not show any suggestion if the suffix decoration spans further than the end of the file', async ({
