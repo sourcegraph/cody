@@ -181,9 +181,7 @@ export class AutoEditsDefaultRendererManager implements AutoEditsRendererManager
             return
         }
 
-        this.activeRequestId = requestId
         this.decorator = this.createDecorator(vscode.window.activeTextEditor!)
-
         if (
             'decorationInfo' in request &&
             request.decorationInfo &&
@@ -195,6 +193,7 @@ export class AutoEditsDefaultRendererManager implements AutoEditsRendererManager
             return
         }
 
+        this.activeRequestId = requestId
         autoeditAnalyticsLogger.markAsSuggested(requestId)
 
         // Clear any existing timeouts, only one suggestion can be shown at a time
