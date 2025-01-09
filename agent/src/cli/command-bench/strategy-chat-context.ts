@@ -104,9 +104,14 @@ async function runContextCommand(
         }
 
         if (uncachedRepoNames.length > 0) {
-            const fetchedRepoIDNames = await graphqlClient.getRepoIds(uncachedRepoNames, uncachedRepoNames.length + 10)
+            const fetchedRepoIDNames = await graphqlClient.getRepoIds(
+                uncachedRepoNames,
+                uncachedRepoNames.length + 10
+            )
             if (isError(fetchedRepoIDNames)) {
-                throw new Error(`getRepoIds failed for [${uncachedRepoNames.join(',')}]: ${fetchedRepoIDNames}`)
+                throw new Error(
+                    `getRepoIds failed for [${uncachedRepoNames.join(',')}]: ${fetchedRepoIDNames}`
+                )
             }
             // Add fetched IDs to cache and results
             for (const repo of fetchedRepoIDNames) {
