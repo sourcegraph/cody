@@ -31,7 +31,7 @@ import {
 import { URI } from 'vscode-uri'
 import { getOpenTabsUris } from '.'
 import { toVSCodeRange } from '../../common/range'
-import { RepoNameResolver } from '../../repository/repo-name-resolver'
+import { repoNameResolver } from '../../repository/repo-name-resolver'
 import { findWorkspaceFiles } from './findWorkspaceFiles'
 
 // Some matches we don't want to ignore because they might be valid code (for example `bin/` in Dart)
@@ -319,7 +319,6 @@ async function createContextFileFromUri(
     symbolName?: string
 ): Promise<ContextItem[]> {
     const range = toRangeData(selectionRange)
-    const repoNameResolver = new RepoNameResolver()
     const repoNames = await firstValueFrom(repoNameResolver.getRepoNamesContainingUri(uri))
     const repoName: string = Array.isArray(repoNames) ? repoNames[0] : repoNames.toString()
 
