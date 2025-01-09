@@ -253,6 +253,7 @@ export interface ConfigurationSubsetForWebview
     // Whether support running multiple webviews (e.g. sidebar w/ multiple editor panels).
     multipleWebviewsEnabled?: boolean | undefined | null
     endpointHistory?: string[] | undefined | null
+    allowEndpointChange: boolean
 }
 
 /**

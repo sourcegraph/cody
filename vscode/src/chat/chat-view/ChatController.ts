@@ -551,6 +551,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             webviewType,
             multipleWebviewsEnabled: !sidebarViewOnly,
             internalDebugContext: configuration.internalDebugContext,
+            allowEndpointChange: configuration.overrideServerEndpoint === undefined,
         }
     }
 

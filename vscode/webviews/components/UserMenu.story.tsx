@@ -1,7 +1,6 @@
 import { AUTH_STATUS_FIXTURE_AUTHED } from '@sourcegraph/cody-shared'
 import type { Meta, StoryObj } from '@storybook/react'
 import { VSCodeStandaloneComponent } from '../storybook/VSCodeStoryDecorator'
-import type { View } from '../tabs'
 import { UserMenu } from './UserMenu'
 
 const meta: Meta<typeof UserMenu> = {
@@ -9,7 +8,6 @@ const meta: Meta<typeof UserMenu> = {
     component: UserMenu,
     decorators: [story => <div className="tw-m-5">{story()}</div>, VSCodeStandaloneComponent],
     args: {
-        setView: (view: View) => console.log('View changed to:', view),
         endpointHistory: ['https://sourcegraph.com', 'https://sourcegraph.example.com'],
         __storybook__open: true, // Keep menu open for story display
     },

@@ -15,7 +15,6 @@ import {
 import { useCallback, useState } from 'react'
 import { URI } from 'vscode-uri'
 import { ACCOUNT_USAGE_URL, isSourcegraphToken } from '../../src/chat/protocol'
-import type { View } from '../tabs'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
 import { useTelemetryRecorder } from '../utils/telemetry'
 import { UserAvatar } from './UserAvatar'
@@ -31,9 +30,9 @@ interface UserMenuProps {
     isProUser: boolean
     authStatus: AuthenticatedAuthStatus
     endpointHistory: string[]
-    setView: (view: View) => void
     className?: string
     onCloseByEscape?: () => void
+    allowEndpointChange: boolean
     __storybook__open?: boolean
 }
 
@@ -44,8 +43,8 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
     authStatus,
     endpointHistory,
     className,
-    setView,
     onCloseByEscape,
+    allowEndpointChange,
     __storybook__open,
 }) => {
     const telemetryRecorder = useTelemetryRecorder()
@@ -388,20 +387,23 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
                             </CommandGroup>
 
                             <CommandGroup>
-                                <CommandItem onSelect={() => onMenuViewChange('switch')}>
-                                    <ArrowLeftRightIcon
-                                        size={16}
-                                        strokeWidth={1.25}
-                                        className="tw-mr-2"
-                                    />
-                                    <span className="tw-flex-grow">Switch Account</span>
-                                    <ChevronRightIcon size={16} strokeWidth={1.25} />
-                                </CommandItem>
+                                {allowEndpointChange && (
+                                    <CommandItem onSelect={() => onMenuViewChange('switch')}>
+                                        <ArrowLeftRightIcon
+                                            size={16}
+                                            strokeWidth={1.25}
+                                            className="tw-mr-2"
+                                        />
+                                        <span className="tw-flex-grow">Switch Account</span>
+                                        <ChevronRightIcon size={16} strokeWidth={1.25} />
+                                    </CommandItem>
+                                )}
                                 <CommandItem onSelect={() => onSignOutClick(endpoint)}>
                                     <LogOutIcon size={16} strokeWidth={1.25} className="tw-mr-2" />
                                     <span className="tw-flex-grow">Sign Out</span>
                                 </CommandItem>
                             </CommandGroup>
+
                             <CommandGroup>
                                 <CommandLink
                                     href="https://community.sourcegraph.com/"
