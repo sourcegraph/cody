@@ -204,19 +204,18 @@ export const FileMatchSearchResult: FC<PropsWithChildren<FileMatchSearchResultPr
         triggerOnce: true,
     })
 
-    const actions = (
+    const actions = onSelectForContext ? (
         <div>
             <input
                 type="checkbox"
                 id="search-results.select-all"
                 checked={selectedForContext}
-                disabled={!onSelectForContext}
                 onChange={event => {
                     onSelectForContext?.(event.target.checked, result)
                 }}
             />
         </div>
-    )
+    ) : null
 
     return (
         <ResultContainer
