@@ -164,6 +164,19 @@ export const autoeditSource = {
 /** We use numeric keys to send these to the analytics backend */
 type AutoeditSourceMetadata = (typeof autoeditSource)[keyof typeof autoeditSource]
 
+export const autoeditDiscardReason = {
+    clientAborted: 1,
+    emptyPrediction: 2,
+    predictionEqualsCodeToRewrite: 3,
+    recentEdits: 4,
+    suffixOverlap: 5,
+    emptyPredictionAfterInlineCompletionExtraction: 6,
+    noActiveEditor: 7,
+} as const
+
+/** We use numeric keys to send these to the analytics backend */
+type AutoeditDiscardReasonMetadata = (typeof autoeditDiscardReason)[keyof typeof autoeditDiscardReason]
+
 interface AutoeditLoadedMetadata extends AutoeditContextLoadedMetadata {
     /**
      * An ID to uniquely identify a suggest autoedit. Note: It is possible for this ID to be part
@@ -224,7 +237,9 @@ interface AutoeditAcceptedEventPayload
         Omit<CodeGenEventMetadata, 'charsInserted' | 'charsDeleted'> {}
 
 interface AutoeditRejectedEventPayload extends AutoEditFinalMetadata {}
-interface AutoeditDiscardedEventPayload extends AutoeditContextLoadedMetadata {}
+interface AutoeditDiscardedEventPayload extends AutoeditContextLoadedMetadata {
+    discardReason: AutoeditDiscardReasonMetadata
+}
 
 /**
  * An ephemeral ID for a single “request” from creation to acceptance or rejection.
@@ -570,8 +585,22 @@ export class AutoeditAnalyticsLogger {
         }
     }
 
-    public markAsDiscarded(requestId: AutoeditRequestID): void {
-        const result = this.tryTransitionTo(requestId, 'discarded', currentRequest => currentRequest)
+    public markAsDiscarded({
+        requestId,
+        discardReason,
+    }: {
+        requestId: AutoeditRequestID
+        discardReason: AutoeditDiscardReasonMetadata
+    }): void {
+        const result = this.tryTransitionTo(requestId, 'discarded', request => {
+            return {
+                ...request,
+                payload: {
+                    ...request.payload,
+                    discardReason: discardReason,
+                },
+            }
+        })
 
         if (result?.updatedRequest) {
             this.writeAutoeditRequestEvent('discarded', result.updatedRequest)

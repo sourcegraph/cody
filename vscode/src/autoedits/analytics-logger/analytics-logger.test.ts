@@ -20,6 +20,7 @@ import { getDecorationInfo } from '../renderer/diff-utils'
 import {
     AutoeditAnalyticsLogger,
     type AutoeditRequestID,
+    autoeditDiscardReason,
     autoeditSource,
     autoeditTriggerKind,
 } from './analytics-logger'
@@ -286,10 +287,40 @@ describe('AutoeditAnalyticsLogger', () => {
     it('logs `discarded` if the suggestion was not suggested for any reason', () => {
         const requestId = autoeditLogger.createRequest(getRequestStartMetadata())
         autoeditLogger.markAsContextLoaded({ requestId, payload: { contextSummary: undefined } })
-        autoeditLogger.markAsDiscarded(requestId)
+        autoeditLogger.markAsDiscarded({
+            requestId,
+            discardReason: autoeditDiscardReason.emptyPrediction,
+        })
 
         expect(recordSpy).toHaveBeenCalledTimes(1)
         expect(recordSpy).toHaveBeenCalledWith('cody.autoedit', 'discarded', expect.any(Object))
+
+        const discardedEventPayload = recordSpy.mock.calls[0].at(2)
+        expect(discardedEventPayload).toMatchInlineSnapshot(`
+          {
+            "billingMetadata": {
+              "category": "core",
+              "product": "cody",
+            },
+            "interactionID": undefined,
+            "metadata": {
+              "discardReason": 2,
+              "otherCompletionProviderEnabled": 0,
+              "recordsPrivateMetadataTranscript": 0,
+              "triggerKind": 1,
+            },
+            "privateMetadata": {
+              "codeToRewrite": "Code to rewrite",
+              "contextSummary": undefined,
+              "gatewayLatency": undefined,
+              "languageId": "typescript",
+              "model": "autoedit-model",
+              "otherCompletionProviders": [],
+              "upstreamLatency": undefined,
+            },
+            "version": 0,
+          }
+        `)
     })
 
     it('handles invalid transitions by logging debug events (invalidTransitionToXYZ)', () => {
