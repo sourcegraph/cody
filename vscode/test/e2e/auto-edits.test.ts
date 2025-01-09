@@ -137,8 +137,8 @@ const autoeditsTestHelper = async ({
     // await sidebarExplorer(page).click()
 
     // Activate the zen mode to remove diffs from any other elements
-    await executeCommandInPalette(page, 'View: Toggle Zen Mode')
-    await executeCommandInPalette(page, 'Hide Custom Title Bar In Full Screen')
+    // await executeCommandInPalette(page, 'View: Toggle Zen Mode')
+    // await executeCommandInPalette(page, 'Hide Custom Title Bar In Full Screen')
 
     for (const { lineNumber, clip } of lineOptions) {
         const snapshotName = `${testCaseName}-${lineNumber}.png`
@@ -152,15 +152,15 @@ const autoeditsTestHelper = async ({
         const editor = await page.locator('.monaco-editor.focused')
         const editorBounds = await editor.boundingBox()
         if (editorBounds) {
-            // Click in the middle of the current line
-            await page.mouse.click(
-                editorBounds.x + editorBounds.width / 2,
-                editorBounds.y +
-                    lineNumber *
-                        Number.parseInt(
-                            await page.evaluate(() => getComputedStyle(document.body).lineHeight)
-                        )
-            )
+            // // Click in the middle of the current line
+            // await page.mouse.click(
+            //     editorBounds.x + editorBounds.width / 2,
+            //     editorBounds.y +
+            //         lineNumber *
+            //             Number.parseInt(
+            //                 await page.evaluate(() => getComputedStyle(document.body).lineHeight)
+            //             )
+            // )
         }
 
         await executeCommandInPalette(page, 'Cody: Autoedits Manual Trigger')
@@ -190,6 +190,21 @@ test('autoedits-multi-line-diff-view', async ({ page, sidebar }) => {
         sidebar,
         fileName: 'diff-view-example-1.py',
         testCaseName: 'autoedits-multi-line-diff-view',
+        lineOptions,
+    })
+})
+
+test.only('autoedits inline completion', async ({ page, sidebar }) => {
+    const lineOptions: LineOptions[] = [
+        {
+            lineNumber: 29,
+        },
+    ]
+    await autoeditsTestHelper({
+        page,
+        sidebar,
+        fileName: 'inline-completion-example-1.js',
+        testCaseName: 'autoedits-inline-completion',
         lineOptions,
     })
 })
