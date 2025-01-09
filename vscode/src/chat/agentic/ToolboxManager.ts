@@ -42,6 +42,7 @@ class ToolboxManager {
     }
 
     private isEnabled = false
+    private isRateLimited = false
     private readonly changeNotifications = new Subject<void>()
     private shellConfig = { ...DEFAULT_SHELL_CONFIG }
 
@@ -66,11 +67,18 @@ class ToolboxManager {
         const { agent, shell } = this.getStoredUserSettings()
         const shellError = this.getFeatureError('shell')
         return {
-            agent: { name: agent },
+            agent: { name: this.isRateLimited ? undefined : agent },
             shell: {
                 enabled: !!agent && !!shell && !shellError,
                 error: shellError,
             },
+        }
+    }
+
+    public setIsRateLimited(hasHitLimit: boolean): void {
+        if (this.isEnabled && this.isRateLimited !== hasHitLimit) {
+            this.isRateLimited = hasHitLimit
+            this.changeNotifications.next()
         }
     }
 

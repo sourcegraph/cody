@@ -277,46 +277,50 @@ export const SearchResults = ({
                                         </>
                                     )}
                                     <div className="tw-flex tw-items-center tw-gap-4">
-                                        <Label
-                                            htmlFor="search-results.select-all"
-                                            className={styles.searchResultsHeaderLabel}
-                                        >
-                                            Add to context:
-                                        </Label>
-                                        <input
-                                            type="checkbox"
-                                            id="search-results.select-all"
-                                            checked={
-                                                selectedFollowUpResults.size === resultsToShow.length
-                                            }
-                                            disabled={!enableContextSelection}
-                                            onChange={event => {
-                                                const checked = event.target.checked
-
-                                                telemetryRecorder.recordEvent(
-                                                    'onebox.results',
-                                                    checked ? 'selectAll' : 'deselectAll',
-                                                    {
-                                                        billingMetadata: {
-                                                            product: 'cody',
-                                                            category: 'billable',
-                                                        },
+                                        {enableContextSelection && (
+                                            <>
+                                                <Label
+                                                    htmlFor="search-results.select-all"
+                                                    className={styles.searchResultsHeaderLabel}
+                                                >
+                                                    Add to context:
+                                                </Label>
+                                                <input
+                                                    type="checkbox"
+                                                    id="search-results.select-all"
+                                                    checked={
+                                                        selectedFollowUpResults.size ===
+                                                        resultsToShow.length
                                                     }
-                                                )
+                                                    onChange={event => {
+                                                        const checked = event.target.checked
 
-                                                if (checked) {
-                                                    updateSelectedFollowUpResults({
-                                                        type: 'add',
-                                                        results: resultsToShow,
-                                                    })
-                                                } else {
-                                                    updateSelectedFollowUpResults({
-                                                        type: 'init',
-                                                        results: [],
-                                                    })
-                                                }
-                                            }}
-                                        />
+                                                        telemetryRecorder.recordEvent(
+                                                            'onebox.results',
+                                                            checked ? 'selectAll' : 'deselectAll',
+                                                            {
+                                                                billingMetadata: {
+                                                                    product: 'cody',
+                                                                    category: 'billable',
+                                                                },
+                                                            }
+                                                        )
+
+                                                        if (checked) {
+                                                            updateSelectedFollowUpResults({
+                                                                type: 'add',
+                                                                results: resultsToShow,
+                                                            })
+                                                        } else {
+                                                            updateSelectedFollowUpResults({
+                                                                type: 'init',
+                                                                results: [],
+                                                            })
+                                                        }
+                                                    }}
+                                                />
+                                            </>
+                                        )}
                                     </div>
                                 </div>
                             </div>

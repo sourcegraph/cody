@@ -76,7 +76,7 @@ describe('DeepCodyRateLimiter', () => {
             const error = rateLimiter.getRateLimitError('300')
 
             expect(error.name).toBe('RateLimitError')
-            expect(error.feature).toBe('Deep Cody')
+            expect(error.feature).toBe('Agentic Chat')
             expect(error.retryAfter).toBe('300')
         })
     })

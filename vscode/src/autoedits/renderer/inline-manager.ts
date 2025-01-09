@@ -61,7 +61,7 @@ export class AutoEditsInlineRendererManager
         })
 
         // The current line suffix should not require any char removals to render the completion.
-        const isSuffixMatch = completionMatchesSuffix({ insertText }, docContext.currentLineSuffix)
+        const isSuffixMatch = completionMatchesSuffix(insertText, docContext.currentLineSuffix)
 
         let inlineCompletionItems: vscode.InlineCompletionItem[] | null = null
 

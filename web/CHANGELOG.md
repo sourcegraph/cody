@@ -1,3 +1,6 @@
+## 0.22.0
+- New search filters and result types
+- Fix sticky chat intent
 ## 0.21.0
 - Fixes problem with Filters panel on small screens
 ## 0.20.0 

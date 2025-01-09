@@ -20,6 +20,7 @@ import { getDecorationInfo } from '../renderer/diff-utils'
 import {
     AutoeditAnalyticsLogger,
     type AutoeditRequestID,
+    autoeditDiscardReason,
     autoeditSource,
     autoeditTriggerKind,
 } from './analytics-logger'
@@ -182,11 +183,17 @@ describe('AutoeditAnalyticsLogger', () => {
             },
             "interactionID": "stable-id-for-tests-2",
             "metadata": {
-              "charCount": 27,
               "contextSummary.duration": 1.234,
               "contextSummary.prefixChars": 5,
               "contextSummary.suffixChars": 5,
               "contextSummary.totalChars": 10,
+              "decorationStats.addedChars": 0,
+              "decorationStats.addedLines": 0,
+              "decorationStats.modifiedLines": 0,
+              "decorationStats.removedChars": 0,
+              "decorationStats.removedLines": 0,
+              "decorationStats.unchangedChars": 27,
+              "decorationStats.unchangedLines": 1,
               "isAccepted": 1,
               "isDisjoint": 0,
               "isFullyOutsideOfVisibleRanges": 1,
@@ -195,7 +202,6 @@ describe('AutoeditAnalyticsLogger', () => {
               "isRead": 1,
               "isSelectionStale": 1,
               "latency": 300,
-              "lineCount": 1,
               "noActiveTextEditor": 0,
               "otherCompletionProviderEnabled": 0,
               "outsideOfActiveEditor": 1,
@@ -216,8 +222,18 @@ describe('AutoeditAnalyticsLogger', () => {
                 "suffixChars": 5,
                 "totalChars": 10,
               },
+              "decorationStats": {
+                "addedChars": 0,
+                "addedLines": 0,
+                "modifiedLines": 0,
+                "removedChars": 0,
+                "removedLines": 0,
+                "unchangedChars": 27,
+                "unchangedLines": 1,
+              },
               "gatewayLatency": undefined,
               "id": "stable-id-for-tests-2",
+              "inlineCompletionStats": undefined,
               "languageId": "typescript",
               "model": "autoedit-model",
               "otherCompletionProviders": [],
@@ -286,10 +302,40 @@ describe('AutoeditAnalyticsLogger', () => {
     it('logs `discarded` if the suggestion was not suggested for any reason', () => {
         const requestId = autoeditLogger.createRequest(getRequestStartMetadata())
         autoeditLogger.markAsContextLoaded({ requestId, payload: { contextSummary: undefined } })
-        autoeditLogger.markAsDiscarded(requestId)
+        autoeditLogger.markAsDiscarded({
+            requestId,
+            discardReason: autoeditDiscardReason.emptyPrediction,
+        })
 
         expect(recordSpy).toHaveBeenCalledTimes(1)
         expect(recordSpy).toHaveBeenCalledWith('cody.autoedit', 'discarded', expect.any(Object))
+
+        const discardedEventPayload = recordSpy.mock.calls[0].at(2)
+        expect(discardedEventPayload).toMatchInlineSnapshot(`
+          {
+            "billingMetadata": {
+              "category": "core",
+              "product": "cody",
+            },
+            "interactionID": undefined,
+            "metadata": {
+              "discardReason": 2,
+              "otherCompletionProviderEnabled": 0,
+              "recordsPrivateMetadataTranscript": 0,
+              "triggerKind": 1,
+            },
+            "privateMetadata": {
+              "codeToRewrite": "Code to rewrite",
+              "contextSummary": undefined,
+              "gatewayLatency": undefined,
+              "languageId": "typescript",
+              "model": "autoedit-model",
+              "otherCompletionProviders": [],
+              "upstreamLatency": undefined,
+            },
+            "version": 0,
+          }
+        `)
     })
 
     it('handles invalid transitions by logging debug events (invalidTransitionToXYZ)', () => {
