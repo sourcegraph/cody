@@ -2,7 +2,7 @@ import * as vscode from 'vscode'
 
 import { GHOST_TEXT_COLOR } from '../../../commands/GhostHintDecorator'
 
-import { diffToHighlightedImg } from '../../diffToImg'
+import { diffToPng } from '../diff-to-png'
 import type { AutoEditsDecorator, DecorationInfo, ModifiedLineInfo } from './base'
 
 export interface AddedLinesDecorationInfo {
@@ -166,7 +166,7 @@ export class DefaultDecorator implements AutoEditsDecorator {
         replacerCol: number
     ): void {
         blockify(addedLinesInfo)
-        const img = diffToHighlightedImg(addedLinesInfo)
+        const png = diffToPng(addedLinesInfo)
         const startLineRef = this.editor.document.lineAt(startLine)
         const startLineLength = startLineRef.range.end.character
 
@@ -184,7 +184,7 @@ export class DefaultDecorator implements AutoEditsDecorator {
                         color: new vscode.ThemeColor('editor.foreground'),
                         backgroundColor: new vscode.ThemeColor('editor.background'),
                         border: '1px solid white',
-                        contentIconPath: vscode.Uri.parse(img),
+                        contentIconPath: vscode.Uri.parse(png),
                         textDecoration:
                             'none; position: absolute; z-index: 99999; scale: 0.5; transform-origin: 0px 0px; height: auto;',
                         margin: `0 0 0 ${decorationMargin}ch`,

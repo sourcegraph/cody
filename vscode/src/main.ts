@@ -47,7 +47,7 @@ import type { CommandResult } from './CommandResult'
 import { showAccountMenu } from './auth/account-menu'
 import { showSignInMenu, showSignOutMenu, tokenCallbackHandler } from './auth/auth'
 import { AutoeditsProvider } from './autoedits/autoedits-provider'
-import { initHighlighter } from './autoedits/diffToImg'
+import { initDiffImageGenerator } from './autoedits/renderer/diff-to-png'
 import { registerAutoEditTestRenderCommand } from './autoedits/renderer/mock-renderer'
 import type { MessageProviderOptions } from './chat/MessageProvider'
 import { ChatsController, CodyChatEditorViewType } from './chat/chat-view/ChatsController'
@@ -271,8 +271,8 @@ const register = async (
         )
     )
 
-    // Init highlighter for AutoEdits. TODO, is this the best place?
-    await initHighlighter()
+    // Init image generator for AutoEdits. TODO, is this the best place?
+    await initDiffImageGenerator()
 
     const statusBar = CodyStatusBar.init()
     disposables.push(statusBar)

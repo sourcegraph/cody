@@ -596,6 +596,9 @@ importers:
       canvas:
         specifier: ^3.0.1
         version: 3.0.1
+      canvaskit-wasm:
+        specifier: ^0.39.1
+        version: 0.39.1
       class-variance-authority:
         specifier: ^0.7.0
         version: 0.7.0
@@ -7385,6 +7388,10 @@ packages:
       keytar: 7.9.0
     dev: true
 
+  /@webgpu/types@0.1.21:
+    resolution: {integrity: sha512-pUrWq3V5PiSGFLeLxoGqReTZmiiXwY3jRkIG5sLLKjyqNxrwm/04b4nw7LSmGWJcKk59XOM/YRTUwOzo4MMlow==}
+    dev: false
+
   /@xmldom/xmldom@0.7.13:
     resolution: {integrity: sha512-lm2GW5PkosIzccsaZIz7tp8cPADSIlIHWDFTR1N0SzfinhhYgeIQjFMz4rYzanCScr3DqQLeomUDArp6MWKm+g==}
     engines: {node: '>=10.0.0'}
@@ -8285,6 +8292,12 @@ packages:
       node-addon-api: 7.1.1
       prebuild-install: 7.1.2
       simple-get: 3.1.1
+    dev: false
+
+  /canvaskit-wasm@0.39.1:
+    resolution: {integrity: sha512-Gy3lCmhUdKq+8bvDrs9t8+qf7RvcjuQn+we7vTVVyqgOVO1UVfHpsnBxkTZw+R4ApEJ3D5fKySl9TU11hmjl/A==}
+    dependencies:
+      '@webgpu/types': 0.1.21
     dev: false
 
   /catharsis@0.9.0:
