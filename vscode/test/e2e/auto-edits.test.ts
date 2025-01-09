@@ -84,7 +84,10 @@ interface clipArgs {
 }
 
 interface LineOptions {
-    lineNumber: number
+    /* The line in which the autoedit should be triggered */
+    line: number
+    /* The column in which the autoedit should be triggered. Defaults to the end of the line */
+    column?: number
     clip?: clipArgs
 }
 
@@ -106,13 +109,10 @@ const autoeditsTestHelper = async ({
     const platform = process.platform
     const snapshotPlatform = platform === 'darwin' ? 'macos' : platform === 'linux' ? 'linux' : 'windows'
 
-    // Use a large number to go the end of the line
-    const maxColumnNumber = Number.MAX_SAFE_INTEGER
-
     // Fix the viewport size
     await page.setViewportSize({
-        width: 1024,
-        height: 741,
+        width: 1920,
+        height: 1080,
     })
 
     await page.evaluate(() => {
@@ -137,31 +137,14 @@ const autoeditsTestHelper = async ({
     // await sidebarExplorer(page).click()
 
     // Activate the zen mode to remove diffs from any other elements
-    // await executeCommandInPalette(page, 'View: Toggle Zen Mode')
-    // await executeCommandInPalette(page, 'Hide Custom Title Bar In Full Screen')
+    await executeCommandInPalette(page, 'View: Toggle Zen Mode')
+    await executeCommandInPalette(page, 'Hide Custom Title Bar In Full Screen')
 
-    for (const { lineNumber, clip } of lineOptions) {
-        const snapshotName = `${testCaseName}-${lineNumber}.png`
+    for (const { line, column = Number.MAX_SAFE_INTEGER, clip } of lineOptions) {
+        const snapshotName = `${testCaseName}-${line}.png`
         await executeCommandInPalette(page, 'Go to Line/Column')
-        await page.keyboard.type(`${lineNumber}:${maxColumnNumber}`)
+        await page.keyboard.type(`${line}:${column}`)
         await page.keyboard.press('Enter')
-
-        // Get the active text editor element and click at current position
-        // This helps make sure that no other element has the focus and snapshot diff is not affected by other elements
-        await page.waitForSelector('.monaco-editor.focused')
-        const editor = await page.locator('.monaco-editor.focused')
-        const editorBounds = await editor.boundingBox()
-        if (editorBounds) {
-            // // Click in the middle of the current line
-            // await page.mouse.click(
-            //     editorBounds.x + editorBounds.width / 2,
-            //     editorBounds.y +
-            //         lineNumber *
-            //             Number.parseInt(
-            //                 await page.evaluate(() => getComputedStyle(document.body).lineHeight)
-            //             )
-            // )
-        }
 
         await executeCommandInPalette(page, 'Cody: Autoedits Manual Trigger')
 
@@ -175,36 +158,92 @@ const autoeditsTestHelper = async ({
         })
     }
 }
-
-test('autoedits-multi-line-diff-view', async ({ page, sidebar }) => {
-    const lineOptions: LineOptions[] = [
-        {
-            lineNumber: 70,
-        },
-        {
-            lineNumber: 76,
-        },
-    ]
+test('autoedits: triggers a multi-line diff view when edit affects existing lines', async ({
+    page,
+    sidebar,
+}) => {
+    const lineOptions: LineOptions[] = [{ line: 70 }, { line: 76 }]
     await autoeditsTestHelper({
         page,
         sidebar,
-        fileName: 'diff-view-example-1.py',
-        testCaseName: 'autoedits-multi-line-diff-view',
+        fileName: 'suffix-decoration-example-1.py',
+        testCaseName: 'autoedits-suffix-decoration',
         lineOptions,
     })
 })
 
-test.only('autoedits inline completion', async ({ page, sidebar }) => {
-    const lineOptions: LineOptions[] = [
-        {
-            lineNumber: 29,
-        },
-    ]
+test('autoedits: triggers an inline completion when edit is an insertion immediately after the cursor', async ({
+    page,
+    sidebar,
+}) => {
+    const lineOptions: LineOptions[] = [{ line: 29 }]
     await autoeditsTestHelper({
         page,
         sidebar,
         fileName: 'inline-completion-example-1.js',
         testCaseName: 'autoedits-inline-completion',
+        lineOptions,
+    })
+})
+
+test('autoedits: triggers an inline decoration when an inline completion is desired, but the insertion position is before the cursor position', async ({
+    page,
+    sidebar,
+}) => {
+    const lineOptions: LineOptions[] = [{ line: 30 }]
+    await autoeditsTestHelper({
+        page,
+        sidebar,
+        fileName: 'inline-completion-example-1.js',
+        testCaseName: 'autoedits-inline-decoration-insertion',
+        lineOptions,
+    })
+})
+
+test('autoedits: triggers inline decorations when multiple insertions are required on different lines', async ({
+    page,
+    sidebar,
+}) => {
+    const lineOptions: LineOptions[] = [{ line: 44 }]
+    await autoeditsTestHelper({
+        page,
+        sidebar,
+        fileName: 'inline-decoration-example-1.rs',
+        testCaseName: 'autoedits-inline-decoration-multiple-insertions-different-lines',
+        lineOptions,
+    })
+})
+
+test('autoedits: triggers inline decorations when multiple separate insertions are required on the same line', async ({
+    page,
+    sidebar,
+}) => {
+    const lineOptions: LineOptions[] = [{ line: 78 }]
+    await autoeditsTestHelper({
+        page,
+        sidebar,
+        fileName: 'inline-decoration-example-2.ts',
+        testCaseName: 'autoedits-inline-decoration-multiple-insertions-same-line',
+        lineOptions,
+    })
+})
+
+/**
+ * TODO: This case is currently bugged. We show the deletion decorations (bad) and hide the suffix decorations (good).
+ * We cannot render suffix decorations that span further than the end of the file.
+ * We must ensure that we do not suggest anything in this case.
+ * Note: This should not be a problem when we move towards image based decorations/
+ */
+test('autoedits: does not show any suggestion if the suffix decoration spans further than the end of the file', async ({
+    page,
+    sidebar,
+}) => {
+    const lineOptions: LineOptions[] = [{ line: 38 }]
+    await autoeditsTestHelper({
+        page,
+        sidebar,
+        fileName: 'suffix-decoration-example-2.go',
+        testCaseName: 'autoedits-suffix-decoration-end-of-file',
         lineOptions,
     })
 })
