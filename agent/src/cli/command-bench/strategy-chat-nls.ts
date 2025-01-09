@@ -75,10 +75,7 @@ async function runNLSSearch(examples: Example[]): Promise<ExampleOutput[]> {
         const repoNames = targetRepoRevs.map(repoRev => repoRev.repoName)
         const repoFilter = 'repo:' + repoNames.join('|')
 
-        const fullQuery = `${repoFilter} content:"${query.replaceAll(
-            '"',
-            '\\"'
-        )}"`
+        const fullQuery = `${repoFilter} content:"${query.replaceAll('"', '\\"')}"`
         const resultsResp = await graphqlClient.nlsSearchQuery({
             query: fullQuery,
         })
