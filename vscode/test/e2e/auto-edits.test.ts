@@ -230,7 +230,7 @@ test('autoedits: triggers inline decorations when multiple separate insertions a
 
 /**
  * BUG: We need to fix our logic to display decorations at the end of a file.
- * Linear issue:
+ * Linear issue: https://linear.app/sourcegraph/issue/CODY-4650/fix-rendering-issues-with-suffix-suggestions-at-the-end-of-a-file
  * Expected behaviour: We do not show any suggestion, as there is not enough room in the file to show the full decorations..
  * Actual behaviour: We *do* hide the suffix decorations, but we still show the deletion decorations.
  *
