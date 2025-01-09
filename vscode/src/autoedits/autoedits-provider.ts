@@ -21,6 +21,7 @@ import { createAutoeditsModelAdapter } from './adapters/create-adapter'
 import {
     type AutoeditRequestID,
     autoeditAnalyticsLogger,
+    autoeditDiscardReason,
     autoeditSource,
     autoeditTriggerKind,
     getTimeNowInMillis,
@@ -254,11 +255,30 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             prompt,
             codeToReplaceData,
         })
-        if (abortSignal?.aborted || !initialPrediction) {
+
+        if (abortSignal?.aborted) {
             autoeditsOutputChannelLogger.logDebugIfVerbose(
                 'provideInlineCompletionItems',
-                'aborted after getPrediction'
+                'client aborted after getPrediction'
             )
+
+            autoeditAnalyticsLogger.markAsDiscarded({
+                requestId,
+                discardReason: autoeditDiscardReason.clientAborted,
+            })
+            return null
+        }
+
+        if (initialPrediction === undefined || initialPrediction.length === 0) {
+            autoeditsOutputChannelLogger.logDebugIfVerbose(
+                'provideInlineCompletionItems',
+                'received empty prediction'
+            )
+
+            autoeditAnalyticsLogger.markAsDiscarded({
+                requestId,
+                discardReason: autoeditDiscardReason.emptyPrediction,
+            })
             return null
         }
 
@@ -288,6 +308,10 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 'provideInlineCompletionItems',
                 'prediction equals to code to rewrite'
             )
+            autoeditAnalyticsLogger.markAsDiscarded({
+                requestId,
+                discardReason: autoeditDiscardReason.predictionEqualsCodeToRewrite,
+            })
             return null
         }
 
@@ -302,6 +326,10 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 'provideInlineCompletionItems',
                 'based on recent edits'
             )
+            autoeditAnalyticsLogger.markAsDiscarded({
+                requestId,
+                discardReason: autoeditDiscardReason.recentEdits,
+            })
             return null
         }
 
@@ -318,6 +346,10 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 'provideInlineCompletionItems',
                 'skip because the prediction equals to code to rewrite'
             )
+            autoeditAnalyticsLogger.markAsDiscarded({
+                requestId,
+                discardReason: autoeditDiscardReason.suffixOverlap,
+            })
             return null
         }
 
@@ -337,6 +369,10 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 'provideInlineCompletionItems',
                 'no suggestion to render'
             )
+            autoeditAnalyticsLogger.markAsDiscarded({
+                requestId,
+                discardReason: autoeditDiscardReason.emptyPredictionAfterInlineCompletionExtraction,
+            })
             return null
         }
 
@@ -346,6 +382,10 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 'provideInlineCompletionItems',
                 'no active editor'
             )
+            autoeditAnalyticsLogger.markAsDiscarded({
+                requestId,
+                discardReason: autoeditDiscardReason.noActiveEditor,
+            })
             return null
         }
 
