@@ -1,3 +1,6 @@
+import _ from 'lodash'
+import { isEqual } from 'lodash'
+import { filter, map } from 'observable-fns'
 import * as vscode from 'vscode'
 
 import {
@@ -39,10 +42,9 @@ import {
     take,
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
-import _ from 'lodash'
-import { isEqual } from 'lodash'
-import { filter, map } from 'observable-fns'
+
 import { isReinstalling } from '../uninstall/reinstall'
+
 import type { CommandResult } from './CommandResult'
 import { showAccountMenu } from './auth/account-menu'
 import { showSignInMenu, showSignOutMenu, tokenCallbackHandler } from './auth/auth'
@@ -86,6 +88,7 @@ import { VSCodeEditor } from './editor/vscode-editor'
 import type { PlatformContext } from './extension.common'
 import { configureExternalServices } from './external-services'
 import { isRunningInsideAgent } from './jsonrpc/isRunningInsideAgent'
+import { FixupController } from './non-stop/FixupController'
 import { CodyProExpirationNotifications } from './notifications/cody-pro-expiration'
 import { showSetupNotification } from './notifications/setup-notification'
 import { logDebug, logError } from './output-channel-logger'
@@ -261,11 +264,22 @@ const register = async (
         },
         disposables
     )
-    disposables.push(chatsController)
+    const fixupController = new FixupController(platform.extensionClient)
+    const ghostHintDecorator = new GhostHintDecorator({ fixupController })
+    const editManager = new EditManager({
+        controller: fixupController,
+        chat: chatClient,
+        editor,
+        ghostHintDecorator,
+        extensionClient: platform.extensionClient,
+    })
 
     CodyToolProvider.initialize(contextRetriever)
 
     disposables.push(
+        chatsController,
+        ghostHintDecorator,
+        editManager,
         subscriptionDisposable(
             exposeOpenCtxClient(context, platform.createOpenCtxController).subscribe({})
         )
@@ -285,7 +299,7 @@ const register = async (
     registerAutocomplete(platform, statusBar, disposables)
     const tutorialSetup = tryRegisterTutorial(context, disposables)
 
-    await registerCodyCommands(statusBar, chatClient, disposables)
+    await registerCodyCommands(statusBar, chatClient, fixupController, disposables)
     registerAuthCommands(disposables)
     registerChatCommands(disposables)
     disposables.push(...registerSidebarCommands())
@@ -409,6 +423,7 @@ async function registerOtherCommands(disposables: vscode.Disposable[]) {
 async function registerCodyCommands(
     statusBar: CodyStatusBar,
     chatClient: ChatClient,
+    fixupController: FixupController,
     disposables: vscode.Disposable[]
 ): Promise<void> {
     // Execute Cody Commands and Cody Custom Commands
@@ -454,7 +469,7 @@ async function registerCodyCommands(
     )
 
     // Initialize autoedit provider if experimental feature is enabled
-    registerAutoEdits(chatClient, disposables)
+    registerAutoEdits(chatClient, fixupController, disposables)
 
     // Initialize autoedit tester
     disposables.push(
@@ -700,7 +715,11 @@ async function tryRegisterTutorial(
     }
 }
 
-function registerAutoEdits(chatClient: ChatClient, disposables: vscode.Disposable[]): void {
+function registerAutoEdits(
+    chatClient: ChatClient,
+    fixupController: FixupController,
+    disposables: vscode.Disposable[]
+): void {
     disposables.push(
         subscriptionDisposable(
             combineLatest(
@@ -726,6 +745,7 @@ function registerAutoEdits(chatClient: ChatClient, disposables: vscode.Disposabl
                             config,
                             authStatus,
                             chatClient,
+                            fixupController,
                         })
                     }),
                     catchError(error => {
@@ -866,16 +886,8 @@ function registerChat(
         platform.extensionClient
     )
     chatsController.registerViewsAndCommands()
-
-    const ghostHintDecorator = new GhostHintDecorator()
-    const editorManager = new EditManager({
-        chat: chatClient,
-        editor,
-        ghostHintDecorator,
-        extensionClient: platform.extensionClient,
-    })
     const promptsManager = new PromptsManager({ chatsController })
-    disposables.push(ghostHintDecorator, editorManager, new CodeActionProvider(), promptsManager)
+    disposables.push(new CodeActionProvider(), promptsManager)
 
     // Register a serializer for reviving the chat panel on reload
     if (vscode.window.registerWebviewPanelSerializer) {
