@@ -41,21 +41,21 @@ export const NLSResultSnippet: FC<NLSResultSnippetProps> = ({
         }
     }, [telemetryRecorder, result])
 
-    if (result.__typename !== 'FileMatch') {
-        return null
+    if (result.__typename === 'FileMatch') {
+        return (
+            <FileMatchSearchResult
+                serverEndpoint={serverEndpoint}
+                result={result}
+                showAllMatches={false}
+                defaultExpanded={false}
+                fetchHighlightedFileLineRanges={fetchHighlights}
+                className={className}
+                onSelect={logSelection}
+                selectedForContext={selectedForContext}
+                onSelectForContext={onSelectForContext}
+            />
+        )
     }
 
-    return (
-        <FileMatchSearchResult
-            serverEndpoint={serverEndpoint}
-            result={result}
-            showAllMatches={false}
-            defaultExpanded={false}
-            fetchHighlightedFileLineRanges={fetchHighlights}
-            className={className}
-            onSelect={logSelection}
-            selectedForContext={selectedForContext}
-            onSelectForContext={onSelectForContext}
-        />
-    )
+    return null
 }

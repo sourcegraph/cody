@@ -1,9 +1,11 @@
 import {
     type AgentToolboxSettings,
     FeatureFlag,
+    authStatus,
     combineLatest,
     distinctUntilChanged,
     featureFlagProvider,
+    isDotCom,
     logDebug,
     modelsService,
     pendingOperation,
@@ -40,6 +42,7 @@ class ToolboxManager {
     }
 
     private isEnabled = false
+    private isRateLimited = false
     private readonly changeNotifications = new Subject<void>()
     private shellConfig = { ...DEFAULT_SHELL_CONFIG }
 
@@ -64,9 +67,16 @@ class ToolboxManager {
         const { agent, shell } = this.getStoredUserSettings()
         const isShellEnabled = this.shellConfig.instance && this.shellConfig.client ? shell : undefined
         return {
-            agent: { name: agent },
+            agent: { name: this.isRateLimited ? undefined : agent },
             // Only show shell option if it's supported by instance and client.
             shell: { enabled: isShellEnabled ?? false },
+        }
+    }
+
+    public setIsRateLimited(hasHitLimit: boolean): void {
+        if (this.isEnabled && this.isRateLimited !== hasHitLimit) {
+            this.isRateLimited = hasHitLimit
+            this.changeNotifications.next()
         }
     }
 
@@ -87,6 +97,7 @@ class ToolboxManager {
      * Use this when you need to react to settings changes over time.
      */
     public readonly observable: Observable<AgentToolboxSettings | null> = combineLatest(
+        authStatus,
         featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.DeepCody),
         featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.ContextAgentDefaultChatModel),
         featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.DeepCodyShellContext),
@@ -97,9 +108,17 @@ class ToolboxManager {
         ),
         this.changeNotifications.pipe(startWith(undefined))
     ).pipe(
-        map(([deepCodyEnabled, useDefaultChatModel, instanceShellContextFlag, sub, models]) => {
-            // Return null if subscription is pending or user can upgrade (free user)
-            if (sub === pendingOperation || sub?.userCanUpgrade || !models || !deepCodyEnabled) {
+        map(([auth, deepCodyEnabled, useDefaultChatModel, instanceShellContextFlag, sub, models]) => {
+            // Return null if:
+            // - Subscription is pending
+            // - Users can upgrade (free user)
+            // - Enterprise without deep-cody feature flag
+            if (
+                sub === pendingOperation ||
+                sub?.userCanUpgrade ||
+                !models ||
+                (!isDotCom(auth.endpoint) && !deepCodyEnabled)
+            ) {
                 this.isEnabled = false
                 return null
             }

@@ -11,11 +11,13 @@ import {
     combineLatest,
     createDisposables,
     currentUserProductSubscription,
+    isFreeUser,
     promiseFactoryToObservable,
     skipPendingOperation,
 } from '@sourcegraph/cody-shared'
-import { isFreeUser } from '@sourcegraph/cody-shared/src/auth/types'
 import { isRunningInsideAgent } from '../jsonrpc/isRunningInsideAgent'
+import type { FixupController } from '../non-stop/FixupController'
+
 import { AutoeditsProvider } from './autoedits-provider'
 import { autoeditsOutputChannelLogger } from './output-channel-logger'
 
@@ -47,6 +49,7 @@ interface AutoeditsItemProviderArgs {
     authStatus: AuthStatus
     chatClient: ChatClient
     autoeditsFeatureFlagEnabled: boolean
+    fixupController: FixupController
 }
 
 export function createAutoEditsProvider({
@@ -54,6 +57,7 @@ export function createAutoEditsProvider({
     authStatus,
     chatClient,
     autoeditsFeatureFlagEnabled,
+    fixupController,
 }: AutoeditsItemProviderArgs): Observable<void> {
     if (!configuration.experimentalAutoeditsEnabled) {
         return NEVER
@@ -81,7 +85,7 @@ export function createAutoEditsProvider({
                 return []
             }
 
-            const provider = new AutoeditsProvider(chatClient)
+            const provider = new AutoeditsProvider(chatClient, fixupController)
             return [
                 vscode.commands.registerCommand('cody.command.autoedits-manual-trigger', async () => {
                     await vscode.commands.executeCommand('editor.action.inlineSuggest.hide')

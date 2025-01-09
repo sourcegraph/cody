@@ -106,7 +106,7 @@ const RateLimitErrorItem: React.FunctionComponent<{
                     {canUpgrade && (
                         <Button onClick={() => onButtonClick('upgrade', 'upgrade')}>Upgrade</Button>
                     )}
-                    {error.feature !== 'Deep Cody' && (
+                    {error.feature !== 'Agentic Chat' && (
                         <Button
                             type="button"
                             onClick={() =>

@@ -4,6 +4,8 @@ import type * as vscode from 'vscode'
 import type { ChatClient } from '@sourcegraph/cody-shared'
 
 import { documentAndPosition } from '../completions/test-helpers'
+import { defaultVSCodeExtensionClient } from '../extension-client'
+import { FixupController } from '../non-stop/FixupController'
 import { WorkspaceEdit, vsCodeMocks } from '../testutils/mocks'
 
 import * as adapters from './adapters/utils'
@@ -64,12 +66,17 @@ export async function autoeditResultFor(
 
     vi.spyOn(vsCodeMocks.window, 'activeTextEditor', 'get').mockReturnValue({
         document,
+        selection: {
+            active: position,
+        },
         edit: (callback: any) => callback(editBuilder),
         setDecorations: () => {},
     } as any)
 
     const chatClient = null as unknown as ChatClient
-    const provider = existingProvider ?? new AutoeditsProvider(chatClient)
+    const extensionClient = defaultVSCodeExtensionClient()
+    const fixupController = new FixupController(extensionClient)
+    const provider = existingProvider ?? new AutoeditsProvider(chatClient, fixupController)
 
     let result: AutoeditsResult | null = null
 

@@ -1,5 +1,6 @@
-import { RateLimitError } from '@sourcegraph/cody-shared'
+import { RateLimitError, telemetryRecorder } from '@sourcegraph/cody-shared'
 import { localStorage } from './../../services/LocalStorageProvider'
+import { toolboxManager } from './ToolboxManager'
 
 /**
  * NOTE: This is a temporary rate limit for deep-cody models to prevent users from
@@ -43,6 +44,15 @@ export class DeepCodyRateLimiter {
         // If we have at least 1 quota available
         if (newQuota >= 1) {
             localStorage.setDeepCodyUsage(newQuota - 1, now.toISOString())
+            if (newQuota === 1) {
+                telemetryRecorder.recordEvent('cody.context-agent.limit', 'hit', {
+                    billingMetadata: {
+                        product: 'cody',
+                        category: 'billable',
+                    },
+                })
+            }
+            toolboxManager.setIsRateLimited(newQuota === 1)
             return undefined
         }
 
@@ -52,6 +62,6 @@ export class DeepCodyRateLimiter {
     }
 
     public getRateLimitError(retryAfter: string): RateLimitError {
-        return new RateLimitError('Deep Cody', 'daily limit', false, undefined, retryAfter)
+        return new RateLimitError('Agentic Chat', 'daily limit', false, undefined, retryAfter)
     }
 }

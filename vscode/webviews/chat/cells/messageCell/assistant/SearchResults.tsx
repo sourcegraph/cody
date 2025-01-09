@@ -1,5 +1,4 @@
 import {
-    CODE_SEARCH_PROVIDER_URI,
     type ChatMessageWithSearch,
     type NLSSearchDynamicFilter,
     type NLSSearchResult,
@@ -16,7 +15,10 @@ import {
     Search,
 } from 'lucide-react'
 import { useCallback, useContext, useLayoutEffect, useMemo, useReducer, useState } from 'react'
-import { createContextItem } from '../../../../../src/context/openctx/codeSearch'
+import {
+    createContextItem,
+    isCodeSearchContextItem,
+} from '../../../../../src/context/openctx/codeSearch'
 import { LastEditorContext } from '../../../../chat/context'
 import { NLSResultSnippet } from '../../../../components/NLSResultSnippet'
 import { Button } from '../../../../components/shadcn/ui/button'
@@ -114,9 +116,7 @@ export const SearchResults = ({
             )
             lastEditorRef.current?.upsertMentions([contextItem], 'before', ' ', false)
         } else {
-            lastEditorRef.current?.filterMentions(
-                mention => mention.type !== 'openctx' || mention.providerUri !== CODE_SEARCH_PROVIDER_URI
-            )
+            lastEditorRef.current?.filterMentions(mention => !isCodeSearchContextItem(mention))
         }
     }, [enableContextSelection, selectedFollowUpResults, lastEditorRef])
 
@@ -167,33 +167,36 @@ export const SearchResults = ({
                     'tw-flex tw-gap-8 tw-items-start tw-justify-between'
                 )}
             >
-                {showFiltersSidebar && !!message.search.response?.results.dynamicFilters?.length && (
-                    <div
-                        className={classNames(
-                            'tw-min-w-[250px] tw-w-[250px] tw-relative tw-mt-2 tw-p-4 tw-rounded-md',
-                            styles.filtersSidebar
-                        )}
-                    >
+                {showFiltersSidebar &&
+                    (!!message.search.response?.results.dynamicFilters?.length ||
+                        !!message.search.selectedFilters?.length) && (
                         <div
-                            className="tw-absolute tw-top-2 tw-right-2"
-                            onClick={onFilterSidebarClose}
-                            onKeyDown={onFilterSidebarClose}
-                            role="button"
+                            className={classNames(
+                                'tw-min-w-[250px] tw-w-[250px] tw-relative tw-mt-2 tw-p-4 tw-rounded-md',
+                                styles.filtersSidebar
+                            )}
                         >
-                            <PanelLeftClose className="tw-size-8" />
+                            <div
+                                className="tw-absolute tw-top-4 tw-right-4"
+                                onClick={onFilterSidebarClose}
+                                onKeyDown={onFilterSidebarClose}
+                                role="button"
+                            >
+                                <PanelLeftClose className="tw-size-8" />
+                            </div>
+                            <SearchFilters
+                                filters={message.search.response?.results.dynamicFilters || []}
+                                selectedFilters={message.search.selectedFilters || []}
+                                onSelectedFiltersUpdate={onSelectedFiltersUpdate}
+                            />
                         </div>
-                        <SearchFilters
-                            filters={message.search.response?.results.dynamicFilters || []}
-                            selectedFilters={message.search.selectedFilters || []}
-                            onSelectedFiltersUpdate={onSelectedFiltersUpdate}
-                        />
-                    </div>
-                )}
-                {!message.text && !!message.search.query ? (
+                    )}
+                {!message.text && !!message.search.query && !message.error ? (
                     <div className="tw-flex-1">
                         <LoadingDots />
                     </div>
-                ) : (
+                ) : null}
+                {!!message.text && !!message.search.query && (
                     <div
                         className={classNames('tw-flex-1', styles.resultsContainer, {
                             [styles.filtersSidebarHidden]:
@@ -213,7 +216,8 @@ export const SearchResults = ({
                                     Displaying {resultsToShow.length} code search results
                                 </div>
                                 <div className="tw-flex tw-gap-4">
-                                    {!!message.search.response?.results.dynamicFilters?.length && (
+                                    {(!!message.search.response?.results.dynamicFilters?.length ||
+                                        message.search.selectedFilters?.length) && (
                                         <>
                                             <Button
                                                 onClick={() => {

@@ -27,6 +27,11 @@ export const cenv = defineEnvBuilder({
     CODY_NODE_DEFAULT_PROXY: proxyStringWithNodeFallback,
 
     /**
+     * Endpoints for which the proxy should be ignored
+     */
+    CODY_NODE_NO_PROXY: (envValue, _) => str(envValue) || str(getEnv('NO_PROXY')),
+
+    /**
      * A setting that is similar (and falls back to) Node's NODE_TLS_REJECT_UNAUTHORIZED setting
      */
     CODY_NODE_TLS_REJECT_UNAUTHORIZED: (envValue, _) =>

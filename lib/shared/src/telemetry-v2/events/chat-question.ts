@@ -173,6 +173,7 @@ export const events = [
                                   tokenCounterUtils
                               )
                             : undefined,
+                        chatAgent: params.chatAgent,
                     },
                     billingMetadata: {
                         product: 'cody',
@@ -298,6 +299,7 @@ function publicContextSummary(globalPrefix: string, context: ContextItem[]) {
                 sortedSizes.length > 0 ? sizes.reduce((a, b) => a + b, 0) / sizes.length : undefined,
             [`${prefix}.size.median`]:
                 sortedSizes.length > 0 ? sortedSizes[Math.floor(sortedSizes.length / 2)] : undefined,
+            [`${prefix}.size.total`]: sortedSizes.reduce((a, b) => a + b, 0),
         } as const
     }
 

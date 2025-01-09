@@ -45,7 +45,7 @@ import {
     type InlineCompletionItemProviderConfig,
     InlineCompletionItemProviderConfigSingleton,
 } from './inline-completion-item-provider-config-singleton'
-import { isCompletionVisible } from './is-completion-visible'
+import { getLatestVisibilityContext, isCompletionVisible } from './is-completion-visible'
 import { autocompleteOutputChannelLogger } from './output-channel-logger'
 import { RequestManager, type RequestParams } from './request-manager'
 import {
@@ -567,7 +567,7 @@ export class InlineCompletionItemProvider
 
                 const visibleItems = autocompleteItems.filter(item =>
                     isCompletionVisible(
-                        item,
+                        item.insertText as string,
                         document,
                         { invokedPosition, latestPosition: position },
                         docContext,
@@ -790,7 +790,11 @@ export class InlineCompletionItemProvider
                 }
 
                 const { activeTextEditor } = vscode.window
-                const { document: invokedDocument, position: invokedPosition } = completion.requestParams
+                const {
+                    document: invokedDocument,
+                    position: invokedPosition,
+                    docContext,
+                } = completion.requestParams
 
                 if (
                     !activeTextEditor ||
@@ -800,49 +804,30 @@ export class InlineCompletionItemProvider
                     return
                 }
 
-                const latestCursorPosition = activeTextEditor.selection.active
-
-                // If the cursor position is the same as the position of the completion request, re-use the
-                // completion context. This ensures that we still use the suggestion widget to determine if the
-                // completion is still visible.
-                // We don't have a way of determining the contents of the suggestion widget if the cursor position is different,
-                // as this is only provided with `provideInlineCompletionItems` is called.
-                const latestContext = latestCursorPosition.isEqual(invokedPosition)
-                    ? completion.context
-                    : undefined
-
-                const takeSuggestWidgetSelectionIntoAccount = latestContext
-                    ? this.shouldTakeSuggestWidgetSelectionIntoAccount(
-                          {
-                              document: invokedDocument,
-                              position: invokedPosition,
-                              context: completion.context,
-                          },
-                          {
-                              document: activeTextEditor.document,
-                              position: latestCursorPosition,
-                              context: latestContext,
-                          }
-                      )
-                    : false
+                const visibilityContext = getLatestVisibilityContext({
+                    invokedPosition,
+                    invokedDocument,
+                    activeTextEditor,
+                    docContext,
+                    inlineCompletionContext: completion.context,
+                    maxPrefixLength: this.config.provider.contextSizeHints.prefixChars,
+                    maxSuffixLength: this.config.provider.contextSizeHints.suffixChars,
+                    shouldTakeSuggestWidgetSelectionIntoAccount:
+                        this.shouldTakeSuggestWidgetSelectionIntoAccount.bind(this),
+                })
 
                 // Confirm that the completion is still visible for the user given the latest
                 // cursor position, document and associated values.
                 const isStillVisible = isCompletionVisible(
-                    completion,
-                    activeTextEditor.document,
+                    completion.insertText as string,
+                    visibilityContext.document,
                     {
                         invokedPosition,
-                        latestPosition: activeTextEditor.selection.active,
+                        latestPosition: visibilityContext.position,
                     },
-                    this.getDocContext(
-                        activeTextEditor.document,
-                        activeTextEditor.selection.active,
-                        latestContext,
-                        takeSuggestWidgetSelectionIntoAccount
-                    ),
-                    latestContext,
-                    takeSuggestWidgetSelectionIntoAccount,
+                    visibilityContext.docContext,
+                    visibilityContext.inlineCompletionContext,
+                    visibilityContext.takeSuggestWidgetSelectionIntoAccount,
                     undefined
                 )
 

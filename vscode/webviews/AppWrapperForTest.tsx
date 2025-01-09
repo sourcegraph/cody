@@ -90,6 +90,7 @@ export const AppWrapperForTest: FunctionComponent<{ children: ReactNode }> = ({ 
                                 return Observable.of(true)
                         }
                     },
+                    repos: () => Observable.of([]),
                     prompts: makePromptsAPIWithData({
                         prompts: FIXTURE_PROMPTS,
                         commands: FIXTURE_COMMANDS,

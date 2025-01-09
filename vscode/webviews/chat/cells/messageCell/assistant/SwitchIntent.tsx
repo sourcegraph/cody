@@ -5,9 +5,10 @@ import { Button } from '../../../../components/shadcn/ui/button'
 interface SwitchIntentProps {
     intent: ChatMessage['intent']
     manuallySelected: boolean
+    disabled: boolean
     onSwitch?: () => void
 }
-export const SwitchIntent = ({ intent, manuallySelected, onSwitch }: SwitchIntentProps) => {
+export const SwitchIntent = ({ intent, manuallySelected, disabled, onSwitch }: SwitchIntentProps) => {
     if (!['chat', 'search'].includes(intent || '')) {
         return null
     }
@@ -25,6 +26,7 @@ export const SwitchIntent = ({ intent, manuallySelected, onSwitch }: SwitchInten
                     variant="outline"
                     className="tw-text-prmary tw-flex tw-gap-2 tw-items-center tw-whitespace-nowrap"
                     onClick={onSwitch}
+                    disabled={disabled}
                 >
                     {intent === 'search' ? (
                         <MessageSquare className="tw-size-8 tw-flex-shrink-0" />
