@@ -255,17 +255,30 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             prompt,
             codeToReplaceData,
         })
-        if (abortSignal?.aborted || initialPrediction === undefined || initialPrediction.length === 0) {
+
+        if (abortSignal?.aborted) {
             autoeditsOutputChannelLogger.logDebugIfVerbose(
                 'provideInlineCompletionItems',
-                'aborted after getPrediction'
+                'client aborted after getPrediction'
             )
 
-            const discardReason = abortSignal?.aborted
-                ? autoeditDiscardReason.clientAborted
-                : autoeditDiscardReason.emptyPrediction
+            autoeditAnalyticsLogger.markAsDiscarded({
+                requestId,
+                discardReason: autoeditDiscardReason.clientAborted,
+            })
+            return null
+        }
 
-            autoeditAnalyticsLogger.markAsDiscarded({ requestId, discardReason })
+        if (initialPrediction === undefined || initialPrediction.length === 0) {
+            autoeditsOutputChannelLogger.logDebugIfVerbose(
+                'provideInlineCompletionItems',
+                'received empty prediction'
+            )
+
+            autoeditAnalyticsLogger.markAsDiscarded({
+                requestId,
+                discardReason: autoeditDiscardReason.emptyPrediction,
+            })
             return null
         }
 
