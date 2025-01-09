@@ -35,7 +35,7 @@ export class RateLimitError extends Error {
         super(message)
         this.userMessage =
             feature === 'Agentic Chat'
-                ? `You've reached the daily limit for Agentic Chat. Please select another model and try again.`
+                ? `You've reached the daily limit for Agentic Chat.`
                 : `You've used all of your ${feature} for ${upgradeIsAvailable ? 'the month' : 'today'}.`
         this.retryAfterDate = retryAfter
             ? /^\d+$/.test(retryAfter)
