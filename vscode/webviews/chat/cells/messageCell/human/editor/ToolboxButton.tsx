@@ -15,7 +15,7 @@ interface ToolboxButtonProps {
 const ToolboxOptionText = {
     agentic:
         'Enhances responses by searching your codebase and using available tools to gather relevant context.',
-    terminal: 'Allow agents to execute terminal command automatically.',
+    terminal: 'Execute command automatically for context. Enable with caution as mistakes are possible.',
 }
 
 export const ToolboxButton: FC<ToolboxButtonProps> = memo(({ settings, api }) => {
@@ -89,7 +89,7 @@ export const ToolboxButton: FC<ToolboxButtonProps> = memo(({ settings, api }) =>
                     <Command>
                         <CommandList>
                             <header className="tw-flex tw-justify-between tw-px-6 tw-py-3 tw-border-t tw-border-border tw-bg-muted tw-w-full">
-                                <h2 className="tw-text-md tw-font-semibold">Agentic Chat</h2>
+                                <h2 className="tw-text-md tw-font-semibold">Agentic Context</h2>
                                 <Badge variant="secondary">Experimental</Badge>
                             </header>
                             <CommandGroup className="tw-p-6">
@@ -111,14 +111,22 @@ export const ToolboxButton: FC<ToolboxButtonProps> = memo(({ settings, api }) =>
                                                 }
                                             />
                                         </div>
-                                        <div className="tw-text-sm tw-mb-4 tw-text-muted-foreground">
-                                            {ToolboxOptionText.agentic}
-                                        </div>
                                         <div className="tw-flex tw-flex-1 tw-w-full tw-items-center tw-justify-between">
-                                            <h3 className="tw-text-sm">Terminal Context</h3>
+                                            <h3 className="tw-text-sm tw-inline-flex tw-gap-2">
+                                                Terminal Context
+                                                {settingsForm.shell?.error && (
+                                                    <Badge
+                                                        variant="info"
+                                                        className="tw-text-xs"
+                                                        title={settingsForm.shell?.error}
+                                                    >
+                                                        Unavailable
+                                                    </Badge>
+                                                )}
+                                            </h3>
                                             <Switch
                                                 checked={settingsForm.shell?.enabled}
-                                                disabled={settingsForm.agent?.name === undefined}
+                                                disabled={!!settings.shell?.error}
                                                 onChange={() =>
                                                     setSettingsForm({
                                                         ...settingsForm,
@@ -131,13 +139,7 @@ export const ToolboxButton: FC<ToolboxButtonProps> = memo(({ settings, api }) =>
                                                 }
                                             />
                                         </div>
-                                        <div
-                                            className="tw-text-sm tw-bg-red-100 tw-border tw-border-red-400 tw-text-red-700 tw-px-2 tw-py-1 tw-rounded"
-                                            role="alert"
-                                        >
-                                            Enable with caution as mistakes are possible.
-                                        </div>
-                                        <div className="tw-text-sm tw-mb-4 tw-text-muted-foreground">
+                                        <div className="tw-text-xs tw-mb-4 tw-text-muted-foreground">
                                             {ToolboxOptionText.terminal}
                                         </div>
                                     </div>
