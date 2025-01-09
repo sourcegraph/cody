@@ -17,7 +17,7 @@ import {
 import type { GhostHintDecorator } from '../commands/GhostHintDecorator'
 import { getEditor } from '../editor/active-editor'
 import type { VSCodeEditor } from '../editor/vscode-editor'
-import { FixupController } from '../non-stop/FixupController'
+import type { FixupController } from '../non-stop/FixupController'
 import type { FixupTask } from '../non-stop/FixupTask'
 
 import { context } from '@opentelemetry/api'
@@ -38,18 +38,17 @@ export interface EditManagerOptions {
     chat: ChatClient
     ghostHintDecorator: GhostHintDecorator
     extensionClient: ExtensionClient
+    controller: FixupController
 }
 
 // EditManager handles translating specific edit intents (document, edit) into
 // generic FixupTasks, and pairs a FixupTask with an EditProvider to generate
 // a completion.
 export class EditManager implements vscode.Disposable {
-    private readonly controller: FixupController
     private disposables: vscode.Disposable[] = []
     private editProviders = new WeakMap<FixupTask, EditProvider>()
 
     constructor(public options: EditManagerOptions) {
-        this.controller = new FixupController(options.extensionClient)
         /**
          * Entry point to triggering a new Edit.
          * Given a set or arguments, this will create a new LLM interaction
@@ -86,7 +85,7 @@ export class EditManager implements vscode.Disposable {
                 provider.startEdit()
             }
         )
-        this.disposables.push(this.controller, editCommand, smartApplyCommand, startCommand)
+        this.disposables.push(this.options.controller, editCommand, smartApplyCommand, startCommand)
     }
 
     public async executeEdit(args: ExecuteEditArguments = {}): Promise<FixupTask | undefined> {
@@ -148,7 +147,7 @@ export class EditManager implements vscode.Disposable {
 
         let task: FixupTask | null
         if (configuration.instruction && configuration.instruction.trim().length > 0) {
-            task = await this.controller.createTask(
+            task = await this.options.controller.createTask(
                 document,
                 configuration.instruction,
                 configuration.userContextFiles ?? [],
@@ -163,7 +162,7 @@ export class EditManager implements vscode.Disposable {
                 configuration.id
             )
         } else {
-            task = await this.controller.promptUserForTask(
+            task = await this.options.controller.promptUserForTask(
                 configuration.preInstruction,
                 document,
                 range,
@@ -184,7 +183,7 @@ export class EditManager implements vscode.Disposable {
          * Checks if there is already an active task for the given fixup file
          * that has the same instruction and selection range as the current task.
          */
-        const activeTask = this.controller.tasksForFile(task.fixupFile).find(activeTask => {
+        const activeTask = this.options.controller.tasksForFile(task.fixupFile).find(activeTask => {
             return (
                 ACTIVE_TASK_STATES.includes(activeTask.state) &&
                 activeTask.instruction.toString() === task.instruction.toString() &&
@@ -193,7 +192,7 @@ export class EditManager implements vscode.Disposable {
         })
 
         if (activeTask) {
-            this.controller.cancel(task)
+            this.options.controller.cancel(task)
             return
         }
 
@@ -273,7 +272,7 @@ export class EditManager implements vscode.Disposable {
                 if (args.configuration?.isNewFile) {
                     // We are creating a new file, this means we are only _adding_ new code and _inserting_ it into the document.
                     // We do not need to re-prompt the LLM for this, let's just add the code directly.
-                    const task = await this.controller.createTask(
+                    const task = await this.options.controller.createTask(
                         document,
                         configuration.instruction,
                         [],
@@ -384,7 +383,7 @@ export class EditManager implements vscode.Disposable {
                     // We determined a selection, but it was empty. This means that we will be _adding_ new code
                     // and _inserting_ it into the document. We do not need to re-prompt the LLM for this, let's just
                     // add the code directly.
-                    const task = await this.controller.createTask(
+                    const task = await this.options.controller.createTask(
                         document,
                         configuration.instruction,
                         [],
@@ -446,7 +445,7 @@ export class EditManager implements vscode.Disposable {
         let provider = this.editProviders.get(task)
 
         if (!provider) {
-            provider = new EditProvider({ task, controller: this.controller, ...this.options })
+            provider = new EditProvider({ task, ...this.options })
             this.editProviders.set(task, provider)
         }
 

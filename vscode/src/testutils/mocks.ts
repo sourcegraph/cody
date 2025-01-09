@@ -743,6 +743,9 @@ const languages: Partial<typeof vscode_types.languages> = {
     getDiagnostics() {
         return []
     },
+    registerCodeLensProvider() {
+        return { dispose: () => {} }
+    },
 }
 
 export enum TextDocumentChangeReason {
@@ -806,6 +809,7 @@ export const vsCodeMocks = {
             options: { tabSize: 4 },
             selection: {},
         },
+        onDidChangeVisibleTextEditors() {},
         onDidChangeActiveTextEditor() {},
         onDidChangeTextEditorSelection() {},
         onDidChangeTextEditorVisibleRanges() {},
@@ -858,6 +862,7 @@ export const vsCodeMocks = {
         asRelativePath(path: string | vscode_types.Uri) {
             return path.toString()
         },
+        registerTextDocumentContentProvider() {},
         onDidChangeTextDocument() {},
         onDidOpenTextDocument() {},
         onDidCloseTextDocument() {},
@@ -877,6 +882,8 @@ export const vsCodeMocks = {
     },
     InlineCompletionTriggerKind,
     SymbolKind,
+    QuickPickItemKind,
+    DecorationRangeBehavior,
     FoldingRange,
     FoldingRangeKind,
     CodeActionKind,

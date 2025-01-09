@@ -155,10 +155,10 @@ export const ContextCell: FunctionComponent<{
             main:
                 experimentalOneBoxEnabled && !intent
                     ? 'Reviewing query'
-                    : isContextLoading
-                      ? 'Fetching context'
-                      : isDeepCodyEnabled
-                        ? 'Agentic Context'
+                    : isDeepCodyEnabled
+                      ? 'Agentic Context'
+                      : isContextLoading
+                        ? 'Fetching context'
                         : 'Context',
             sub:
                 experimentalOneBoxEnabled && !intent
@@ -190,9 +190,7 @@ export const ContextCell: FunctionComponent<{
                                     onClick={triggerAccordion}
                                     title={itemCountLabel}
                                     className="tw-flex tw-items-center tw-gap-4"
-                                    disabled={
-                                        isContextLoading || (isDeepCodyEnabled && !contextItems?.length)
-                                    }
+                                    disabled={isContextLoading}
                                 >
                                     <SourcegraphLogo
                                         width={NON_HUMAN_CELL_AVATAR_SIZE}

@@ -3,6 +3,8 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import type * as vscode from 'vscode'
 import { getCurrentDocContext } from '../../completions/get-current-doc-context'
 import { documentAndPosition } from '../../completions/test-helpers'
+import { defaultVSCodeExtensionClient } from '../../extension-client'
+import { FixupController } from '../../non-stop/FixupController'
 import type { AutoeditRequestID } from '../analytics-logger'
 import { getDecorationInfoFromPrediction } from '../autoedits-provider'
 import type { CodeToReplaceData } from '../prompt/prompt-utils'
@@ -56,10 +58,13 @@ describe('AutoEditsDefaultRendererManager', () => {
 
     describe('tryMakeInlineCompletions', () => {
         let manager: AutoEditsDefaultRendererManager
+        const extensionClient = defaultVSCodeExtensionClient()
+        const fixupController = new FixupController(extensionClient)
 
         beforeEach(() => {
             manager = new AutoEditsDefaultRendererManager(
-                (editor: vscode.TextEditor) => new DefaultDecorator(editor)
+                (editor: vscode.TextEditor) => new DefaultDecorator(editor),
+                fixupController
             )
         })
 

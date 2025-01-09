@@ -1,9 +1,14 @@
 import * as vscode from 'vscode'
 
-import type { DocumentContext } from '@sourcegraph/cody-shared'
+import { type DocumentContext, tokensToChars } from '@sourcegraph/cody-shared'
 
-import { completionMatchesSuffix } from '../../completions/is-completion-visible'
+import {
+    completionMatchesSuffix,
+    getLatestVisibilityContext,
+    isCompletionVisible,
+} from '../../completions/is-completion-visible'
 import { type AutoeditRequestID, autoeditAnalyticsLogger } from '../analytics-logger'
+import { autoeditsProviderConfig } from '../autoedits-config'
 import { autoeditsOutputChannelLogger } from '../output-channel-logger'
 import type { CodeToReplaceData } from '../prompt/prompt-utils'
 import {
@@ -12,6 +17,8 @@ import {
     extractInlineCompletionFromRewrittenCode,
 } from '../utils'
 
+import type { FixupController } from '../../non-stop/FixupController'
+import { CodyTaskState } from '../../non-stop/state'
 import type { AutoEditsDecorator, DecorationInfo } from './decorators/base'
 
 export interface TryMakeInlineCompletionsArgs {
@@ -82,7 +89,10 @@ export class AutoEditsDefaultRendererManager implements AutoEditsRendererManager
      */
     private autoeditSuggestedTimeoutId: NodeJS.Timeout | undefined
 
-    constructor(protected createDecorator: (editor: vscode.TextEditor) => AutoEditsDecorator) {
+    constructor(
+        protected createDecorator: (editor: vscode.TextEditor) => AutoEditsDecorator,
+        protected fixupController: FixupController
+    ) {
         this.disposables.push(
             vscode.commands.registerCommand('cody.supersuggest.accept', () => this.acceptActiveEdit()),
             vscode.commands.registerCommand('cody.supersuggest.dismiss', () => this.rejectActiveEdit()),
@@ -163,6 +173,14 @@ export class AutoEditsDefaultRendererManager implements AutoEditsRendererManager
     public async handleDidShowSuggestion(requestId: AutoeditRequestID): Promise<void> {
         await this.rejectActiveEdit()
 
+        const request = autoeditAnalyticsLogger.getRequest(requestId)
+        if (
+            !request ||
+            this.hasConflictingDecorations(request.document, request.codeToReplaceData.range)
+        ) {
+            return
+        }
+
         this.activeRequestId = requestId
         this.decorator = this.createDecorator(vscode.window.activeTextEditor!)
 
@@ -173,10 +191,64 @@ export class AutoEditsDefaultRendererManager implements AutoEditsRendererManager
 
         // Mark suggestion as read after a delay if it's still visible.
         this.autoeditSuggestedTimeoutId = setTimeout(() => {
-            // TODO: use `isCompletionVisible` logic or similar to account for cases
-            // where a partially accepted inline completion item is still visible.
             if (this.activeRequest?.requestId === requestId) {
-                autoeditAnalyticsLogger.markAsRead(requestId)
+                const {
+                    document: invokedDocument,
+                    position: invokedPosition,
+                    docContext,
+                    inlineCompletionItems,
+                } = this.activeRequest
+
+                const { activeTextEditor } = vscode.window
+
+                if (!activeTextEditor || !areSameUriDocs(activeTextEditor.document, invokedDocument)) {
+                    // User is no longer in the same document as the completion
+                    return
+                }
+
+                // If a completion is rendered as an inline completion item we have to
+                // manually check if the visibility context for the item is still valid and
+                // it's still present in the document.
+                //
+                // If the invoked cursor position does not match the current cursor position
+                // we check if the items insert text matches the current document context.
+                // If a user continued typing as suggested the insert text is still present
+                // and we can a completion as read.
+                if (inlineCompletionItems?.[0]) {
+                    const visibilityContext = getLatestVisibilityContext({
+                        invokedPosition,
+                        invokedDocument,
+                        activeTextEditor,
+                        docContext,
+                        inlineCompletionContext: undefined,
+                        maxPrefixLength: tokensToChars(autoeditsProviderConfig.tokenLimit.prefixTokens),
+                        maxSuffixLength: tokensToChars(autoeditsProviderConfig.tokenLimit.suffixTokens),
+                        // TODO: implement suggest widget support
+                        shouldTakeSuggestWidgetSelectionIntoAccount: () => false,
+                    })
+
+                    const isStillVisible = isCompletionVisible(
+                        inlineCompletionItems[0].insertText as string,
+                        visibilityContext.document,
+                        {
+                            invokedPosition,
+                            latestPosition: visibilityContext.position,
+                        },
+                        visibilityContext.docContext,
+                        visibilityContext.inlineCompletionContext,
+                        visibilityContext.takeSuggestWidgetSelectionIntoAccount,
+                        undefined // abort signal
+                    )
+
+                    if (isStillVisible) {
+                        autoeditAnalyticsLogger.markAsRead(requestId)
+                    }
+                } else {
+                    // For suggestions rendered as inline decoration we can rely on our own dismissal
+                    // logic (document change/selection change callback). So having a truthy `this.activeRequest`
+                    // is enough to mark a suggestion as read.
+                    autoeditAnalyticsLogger.markAsRead(requestId)
+                }
             }
         }, AUTOEDIT_VISIBLE_DELAY_MS)
     }
@@ -255,7 +327,7 @@ export class AutoEditsDefaultRendererManager implements AutoEditsRendererManager
         const isPrefixMatch = updatedPrediction.startsWith(codeToReplaceData.codeToRewritePrefix)
         const isSuffixMatch =
             // The current line suffix should not require any char removals to render the completion.
-            completionMatchesSuffix({ insertText: updatedPrediction }, docContext.currentLineSuffix) &&
+            completionMatchesSuffix(updatedPrediction, docContext.currentLineSuffix) &&
             // The new lines suggested after the current line must be equal to the prediction.
             updatedPrediction.endsWith(codeToRewriteAfterCurrentLine)
 
@@ -265,9 +337,18 @@ export class AutoEditsDefaultRendererManager implements AutoEditsRendererManager
                 codeToReplaceData.codeToRewritePrefix,
                 codeToReplaceData.codeToRewriteSuffix
             )
-            const autocompleteResponse = docContext.currentLinePrefix + autocompleteInlineResponse
+
+            if (autocompleteInlineResponse.trimEnd().length === 0) {
+                return {
+                    inlineCompletionItems: null,
+                    updatedDecorationInfo: null,
+                    updatedPrediction,
+                }
+            }
+
+            const insertText = docContext.currentLinePrefix + autocompleteInlineResponse
             const inlineCompletionItem = new vscode.InlineCompletionItem(
-                autocompleteResponse,
+                insertText,
                 new vscode.Range(
                     document.lineAt(position).range.start,
                     document.lineAt(position).range.end
@@ -282,11 +363,9 @@ export class AutoEditsDefaultRendererManager implements AutoEditsRendererManager
                     ],
                 }
             )
-            autoeditsOutputChannelLogger.logDebug(
-                'tryMakeInlineCompletions',
-                'Autocomplete Inline Response: ',
-                { verbose: autocompleteResponse }
-            )
+            autoeditsOutputChannelLogger.logDebug('tryMakeInlineCompletions', 'insert text', {
+                verbose: insertText,
+            })
             return {
                 inlineCompletionItems: [inlineCompletionItem],
                 updatedDecorationInfo: null,
@@ -303,6 +382,25 @@ export class AutoEditsDefaultRendererManager implements AutoEditsRendererManager
             updatedDecorationInfo: decorationInfo,
             updatedPrediction: updatedPrediction,
         }
+    }
+
+    private hasConflictingDecorations(document: vscode.TextDocument, range: vscode.Range): boolean {
+        const existingFixupFile = this.fixupController.maybeFileForUri(document.uri)
+        if (!existingFixupFile) {
+            // No Edits in this file, no conflicts
+            return false
+        }
+
+        const existingFixupTasks = this.fixupController.tasksForFile(existingFixupFile)
+        if (existingFixupTasks.length === 0) {
+            // No Edits in this file, no conflicts
+            return false
+        }
+
+        // Validate that the decoration position does not conflict with an existing Edit diff
+        return existingFixupTasks.some(
+            task => task.state === CodyTaskState.Applied && task.selectionRange.intersection(range)
+        )
     }
 
     public dispose(): void {
