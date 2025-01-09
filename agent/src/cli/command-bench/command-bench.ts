@@ -336,19 +336,27 @@ export const benchCommand = new commander.Command('bench')
             },
         })
 
-        const recordingMode =
-            process.env.CODY_RECORDING_MODE === 'passthrough' ? 'passthrough' : 'replay'
+        const recordingMode = (() => {
+            switch (process.env.CODY_RECORDING_MODE) {
+                case 'passthrough':
+                    return 'passthrough'
+                case 'disabled':
+                    return 'disabled'
+                default:
+                    return 'replay'
+            }
+        })()
         const recordingDirectory = path.join(path.dirname(options.evaluationConfig), 'recordings')
         const polly =
-            recordingMode === 'replay'
-                ? startPollyRecording({
+            recordingMode === 'disabled'
+                ? null
+                : startPollyRecording({
                       recordingName: 'cody-bench',
                       recordingMode: recordingMode,
                       recordIfMissing: true,
                       recordingDirectory,
                       keepUnusedRecordings: true,
                   })
-                : null
 
         try {
             await Promise.all(
