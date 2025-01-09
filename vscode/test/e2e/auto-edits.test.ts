@@ -166,12 +166,7 @@ const autoeditsTestHelper = async ({
 }
 
 test.extend<ExpectedV2Events>({
-    expectedV2Events: [
-        'cody.autoedit:suggested',
-        'cody.autoedit:suggested',
-        'cody.autoedit:suggested',
-        'cody.autoedit:accepted',
-    ],
+    expectedV2Events: ['cody.autoedit:suggested', 'cody.autoedit:suggested', 'cody.autoedit:accepted'],
 })(
     'autoedits: triggers a multi-line diff view when edit affects existing lines',
     async ({ page, sidebar }) => {
