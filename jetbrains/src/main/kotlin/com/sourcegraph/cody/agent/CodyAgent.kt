@@ -201,7 +201,7 @@ private constructor(
       val processBuilder = ProcessBuilder(command)
       if (java.lang.Boolean.getBoolean("cody.accept-non-trusted-certificates-automatically") ||
           ConfigUtil.getShouldAcceptNonTrustedCertificatesAutomatically()) {
-        processBuilder.environment()["NODE_TLS_REJECT_UNAUTHORIZED"] = "0"
+        processBuilder.environment()["CODY_NODE_TLS_REJECT_UNAUTHORIZED"] = "0"
       }
 
       if (java.lang.Boolean.getBoolean("cody.log-events-to-connected-instance-only")) {
@@ -212,18 +212,34 @@ private constructor(
 
       val proxy = HttpConfigurable.getInstance()
       val proxyUrl = proxy.PROXY_HOST + ":" + proxy.PROXY_PORT
+      val proxyProto =
+          if (proxy.PROXY_TYPE_IS_SOCKS) {
+            "socks:"
+          } else {
+            "http:"
+          }
+      val proxyAuth =
+          if (proxy.PROXY_AUTHENTICATION) {
+            // TODO: we should maybe prompt the user here instead?
+            val password = proxy.plainProxyPassword
+            val username = proxy.proxyLogin
+            if (!password.isNullOrEmpty() && !username.isNullOrEmpty()) {
+              "${username}:${password}@"
+            } else {
+              ""
+            }
+          } else {
+            ""
+          }
       if (proxy.USE_HTTP_PROXY) {
-        if (proxy.PROXY_TYPE_IS_SOCKS) {
-          processBuilder.environment()["HTTP_PROXY"] = "socks://$proxyUrl"
-        } else {
-          processBuilder.environment()["HTTP_PROXY"] = "http://$proxyUrl"
-          processBuilder.environment()["HTTPS_PROXY"] = "http://$proxyUrl"
+        if (!proxy.PROXY_EXCEPTIONS.isNullOrEmpty()) {
+          processBuilder.environment()["CODY_NODE_NO_PROXY"] = proxy.PROXY_EXCEPTIONS
         }
+        processBuilder.environment()["CODY_NODE_DEFAULT_PROXY"] =
+            "${proxyProto}//${proxyAuth}${proxyUrl}"
       }
 
       logger.info("starting Cody agent ${command.joinToString(" ")}")
-      logger.info(
-          "Cody agent proxyUrl ${proxyUrl} PROXY_TYPE_IS_SOCKS ${proxy.PROXY_TYPE_IS_SOCKS}")
 
       val process =
           processBuilder
@@ -292,15 +308,18 @@ private constructor(
             run {
               gsonBuilder
                   // emit `null` instead of leaving fields undefined because Cody
-                  // VSC has many `=== null` checks that return false for undefined fields.
+                  // VSC has many `=== null` checks that return false for
+                  // undefined fields.
                   .serializeNulls()
-                  // TODO: Once all protocols have migrated we can remove these legacy enum
+                  // TODO: Once all protocols have migrated we can remove these
+                  // legacy enum
                   // conversions
                   .registerTypeAdapter(URI::class.java, uriDeserializer)
                   .registerTypeAdapter(URI::class.java, uriSerializer)
 
               ProtocolTypeAdapters.register(gsonBuilder)
-              // This ensures that by default all enums are always serialized to their string
+              // This ensures that by default all enums are always serialized to their
+              // string
               // equivalents
               gsonBuilder.registerTypeAdapterFactory(EnumTypeAdapterFactory())
             }
@@ -365,7 +384,8 @@ private constructor(
         binaryTarget?.toFile()?.deleteOnExit()
         token.onFinished {
           // Important: delete the file from disk after the process exists
-          // Ideally, we should eventually replace this temporary file with a permanent location
+          // Ideally, we should eventually replace this temporary file with a permanent
+          // location
           // in the plugin directory.
           Files.deleteIfExists(binaryTarget)
         }

@@ -1,15 +1,107 @@
 import type * as vscode from 'vscode'
 
 import type { DocumentContext } from '@sourcegraph/cody-shared'
-import type { AutocompleteItem } from './suggested-autocomplete-items-cache'
+
+import { getCurrentDocContext } from './get-current-doc-context'
 
 interface CompletionPositions {
     invokedPosition: vscode.Position
     latestPosition: vscode.Position
 }
 
+export function getLatestVisibilityContext({
+    invokedPosition,
+    invokedDocument,
+    inlineCompletionContext,
+    docContext,
+    activeTextEditor,
+    maxPrefixLength,
+    maxSuffixLength,
+    shouldTakeSuggestWidgetSelectionIntoAccount,
+}: {
+    activeTextEditor: vscode.TextEditor
+    docContext: DocumentContext
+    invokedDocument: vscode.TextDocument
+    invokedPosition: vscode.Position
+    inlineCompletionContext: vscode.InlineCompletionContext | undefined
+    maxPrefixLength: number
+    maxSuffixLength: number
+    shouldTakeSuggestWidgetSelectionIntoAccount(
+        lastRequest: {
+            document: vscode.TextDocument
+            position: vscode.Position
+            context: vscode.InlineCompletionContext
+        } | null,
+        latestRequest: {
+            document: vscode.TextDocument
+            position: vscode.Position
+            context?: vscode.InlineCompletionContext
+        }
+    ): boolean
+}): {
+    inlineCompletionContext: vscode.InlineCompletionContext | undefined
+    position: vscode.Position
+    document: vscode.TextDocument
+    docContext: DocumentContext
+    takeSuggestWidgetSelectionIntoAccount: boolean
+} {
+    const latestPosition = activeTextEditor.selection.active
+    const latestDocument = activeTextEditor.document
+
+    // If the cursor position is the same as the position of the completion request, we should use
+    // the provided context. This allows us to re-use useful information such as `selectedCompletionInfo`
+    const latestInlineCompletionContext = latestPosition.isEqual(invokedPosition)
+        ? inlineCompletionContext
+        : undefined
+
+    const takeSuggestWidgetSelectionIntoAccount = latestInlineCompletionContext
+        ? shouldTakeSuggestWidgetSelectionIntoAccount(
+              {
+                  document: invokedDocument,
+                  position: invokedPosition,
+                  context: latestInlineCompletionContext,
+              },
+              {
+                  document: latestDocument,
+                  position: latestPosition,
+                  context: latestInlineCompletionContext,
+              }
+          )
+        : false
+
+    if (latestPosition !== undefined && !latestPosition.isEqual(invokedPosition)) {
+        return {
+            // The cursor position has changed since the request was made.
+            // This is likely due to another completion request starting, and this request staying in-flight.
+            // We must update the `position`, `context` and associated values
+            position: latestPosition,
+            document: latestDocument,
+            inlineCompletionContext: latestInlineCompletionContext,
+            takeSuggestWidgetSelectionIntoAccount,
+            docContext: getCurrentDocContext({
+                document: latestDocument,
+                position: latestPosition,
+                maxPrefixLength,
+                maxSuffixLength,
+                // We ignore the current context selection if completeSuggestWidgetSelection is not enabled
+                context: takeSuggestWidgetSelectionIntoAccount
+                    ? latestInlineCompletionContext
+                    : undefined,
+            }),
+        }
+    }
+
+    return {
+        position: invokedPosition,
+        document: latestDocument,
+        inlineCompletionContext,
+        docContext,
+        takeSuggestWidgetSelectionIntoAccount,
+    }
+}
+
 export function isCompletionVisible(
-    completion: AutocompleteItem,
+    insertText: string,
     document: vscode.TextDocument,
     positions: CompletionPositions,
     docContext: DocumentContext,
@@ -40,9 +132,9 @@ export function isCompletionVisible(
     const isAborted = abortSignal ? abortSignal.aborted : false
     const isMatchingPopupItem = completeSuggestWidgetSelection
         ? true
-        : completionMatchesPopupItem(completion, document, context)
-    const isMatchingSuffix = completionMatchesSuffix(completion, docContext.currentLineSuffix)
-    const isMatchingPrefix = completionMatchesPrefix(completion, document, positions)
+        : completionMatchesPopupItem(insertText, document, context)
+    const isMatchingSuffix = completionMatchesSuffix(insertText, docContext.currentLineSuffix)
+    const isMatchingPrefix = completionMatchesPrefix(insertText, document, positions)
     const isVisible = !isAborted && isMatchingPopupItem && isMatchingSuffix && isMatchingPrefix
 
     return isVisible
@@ -53,7 +145,7 @@ export function isCompletionVisible(
 //
 // VS Code won't show a completion if it won't.
 function completionMatchesPopupItem(
-    completion: AutocompleteItem,
+    insertText: string,
     document: vscode.TextDocument,
     context?: vscode.InlineCompletionContext
 ): boolean {
@@ -61,7 +153,6 @@ function completionMatchesPopupItem(
         const currentText = document.getText(context.selectedCompletionInfo.range)
         const selectedText = context.selectedCompletionInfo.text
 
-        const insertText = completion.insertText
         if (typeof insertText !== 'string') {
             return true
         }
@@ -73,15 +164,12 @@ function completionMatchesPopupItem(
     return true
 }
 
-export function completionMatchesSuffix(
-    completion: Pick<AutocompleteItem, 'insertText'>,
-    currentLineSuffix: string
-): boolean {
-    if (typeof completion.insertText !== 'string') {
+export function completionMatchesSuffix(insertText: string, currentLineSuffix: string): boolean {
+    if (typeof insertText !== 'string') {
         return false
     }
 
-    const insertion = completion.insertText
+    const insertion = insertText
     let j = 0
     for (let i = 0; i < insertion.length; i++) {
         if (insertion[i] === currentLineSuffix[j]) {
@@ -100,15 +188,14 @@ export function completionMatchesSuffix(
  * using the users' current position.
  */
 function completionMatchesPrefix(
-    completion: Pick<AutocompleteItem, 'insertText'>,
+    insertText: string,
     document: vscode.TextDocument,
     positions: CompletionPositions
 ): boolean {
     // Derive the proposed completion text using the original position at the point when the request was made.
     const intendedLine = document.lineAt(positions.invokedPosition)
     const intendedCompletion =
-        document.getText(intendedLine.range.with({ end: positions.invokedPosition })) +
-        completion.insertText
+        document.getText(intendedLine.range.with({ end: positions.invokedPosition })) + insertText
 
     const latestLine = document.lineAt(positions.latestPosition)
     const latestPrefix = document.getText(latestLine.range.with({ end: positions.latestPosition }))

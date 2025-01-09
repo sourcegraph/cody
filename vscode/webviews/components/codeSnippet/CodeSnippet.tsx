@@ -192,6 +192,7 @@ export const FileMatchSearchResult: FC<PropsWithChildren<FileMatchSearchResultPr
             }
             className={styles.titleInner}
             collapsed={hidden}
+            collapsible={!!unhighlightedGroups?.length}
             onToggleCollapse={() => setHidden(current => !current)}
         />
     )

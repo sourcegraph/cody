@@ -23,6 +23,7 @@ import {
     type MutableRefObject,
     memo,
     useCallback,
+    useContext,
     useEffect,
     useImperativeHandle,
     useMemo,
@@ -49,6 +50,7 @@ import {
 import { HumanMessageCell } from './cells/messageCell/human/HumanMessageCell'
 
 import { type Context, type Span, context, trace } from '@opentelemetry/api'
+import { isCodeSearchContextItem } from '../../src/context/openctx/codeSearch'
 import { TELEMETRY_INTENT } from '../../src/telemetry/onebox'
 import { SwitchIntent } from './cells/messageCell/assistant/SwitchIntent'
 import { LastEditorContext } from './context'
@@ -275,6 +277,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
 
     const { activeChatContext, setActiveChatContext } = props
     const humanEditorRef = useRef<PromptEditorRefAPI | null>(null)
+    const lastEditorRef = useContext(LastEditorContext)
     useImperativeHandle(parentEditorRef, () => humanEditorRef.current)
 
     const onUserAction = (action: 'edit' | 'submit', intentFromSubmit?: ChatMessage['intent']) => {
@@ -315,6 +318,16 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
         }
 
         if (action === 'edit') {
+            // Remove search context chips from the next input so that the user cannot
+            // reference search results that don't exist anymore.
+            // This is a no-op if the input does not contain any search context chips.
+            // NOTE: Doing this for the penultimate input only seems to suffice because
+            // editing a message earlier in the transcript will clear the converstation
+            // and reset the last input anyway.
+            if (isLastSentInteraction) {
+                lastEditorRef.current?.filterMentions(item => !isCodeSearchContextItem(item))
+            }
+
             editHumanMessage({
                 messageIndexInTranscript: humanMessage.index,
                 ...commonProps,
@@ -388,7 +401,8 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
         !isSearchIntent &&
             humanMessage.contextFiles === undefined &&
             isLastSentInteraction &&
-            assistantMessage?.text === undefined
+            assistantMessage?.text === undefined &&
+            assistantMessage?.subMessages === undefined
     )
     const spanManager = new SpanManager('cody-webview')
     const renderSpan = useRef<Span>()
@@ -611,6 +625,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
             {experimentalOneBoxEnabled && (
                 <SwitchIntent
                     intent={humanMessage?.intent}
+                    disabled={!!assistantMessage?.isLoading}
                     manuallySelected={!!humanMessage.manuallySelectedIntent}
                     onSwitch={
                         humanMessage?.intent === 'search'
@@ -640,37 +655,38 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                             ? EditContextButtonSearch
                             : EditContextButtonChat
                     }
-                    defaultOpen={
-                        isContextLoading &&
-                        assistantMessage?.model?.includes('deep-cody') &&
-                        humanMessage.index < 3
-                    } // Open the context cell for the first 2 human messages when Deep Cody is run.
+                    defaultOpen={isContextLoading && humanMessage.agent === 'deep-cody'}
                     processes={humanMessage?.processes ?? undefined}
+                    agent={humanMessage?.agent ?? undefined}
                 />
             )}
-            {assistantMessage && !isContextLoading && (
-                <AssistantMessageCell
-                    key={assistantMessage.index}
-                    userInfo={userInfo}
-                    models={models}
-                    chatEnabled={chatEnabled}
-                    message={assistantMessage}
-                    feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
-                    copyButtonOnSubmit={copyButtonOnSubmit}
-                    insertButtonOnSubmit={insertButtonOnSubmit}
-                    postMessage={postMessage}
-                    guardrails={guardrails}
-                    humanMessage={humanMessageInfo}
-                    isLoading={assistantMessage.isLoading}
-                    showFeedbackButtons={
-                        !assistantMessage.isLoading && !assistantMessage.error && isLastSentInteraction
-                    }
-                    smartApply={smartApply}
-                    smartApplyEnabled={smartApplyEnabled}
-                    onSelectedFiltersUpdate={onSelectedFiltersUpdate}
-                    isLastSentInteraction={isLastSentInteraction}
-                />
-            )}
+            {assistantMessage &&
+                (!isContextLoading ||
+                    (assistantMessage.subMessages && assistantMessage.subMessages.length > 0)) && (
+                    <AssistantMessageCell
+                        key={assistantMessage.index}
+                        userInfo={userInfo}
+                        models={models}
+                        chatEnabled={chatEnabled}
+                        message={assistantMessage}
+                        feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
+                        copyButtonOnSubmit={copyButtonOnSubmit}
+                        insertButtonOnSubmit={insertButtonOnSubmit}
+                        postMessage={postMessage}
+                        guardrails={guardrails}
+                        humanMessage={humanMessageInfo}
+                        isLoading={assistantMessage.isLoading}
+                        showFeedbackButtons={
+                            !assistantMessage.isLoading &&
+                            !assistantMessage.error &&
+                            isLastSentInteraction
+                        }
+                        smartApply={smartApply}
+                        smartApplyEnabled={smartApplyEnabled}
+                        onSelectedFiltersUpdate={onSelectedFiltersUpdate}
+                        isLastSentInteraction={isLastSentInteraction}
+                    />
+                )}
         </>
     )
 }, isEqual)

@@ -124,7 +124,7 @@ ${markdownList({ ...otherOptions, completionIntent: completionIntent || 'unknown
             : `
 ## Context
 
-${data.context ? markdownList(data.context.logSummary) : ''}
+${data.context ? markdownList(data.context.contextSummary) : ''}
 
 ${
     data.context === null || data.context.context.length === 0

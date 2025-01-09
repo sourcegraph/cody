@@ -1,5 +1,6 @@
 import { expect } from '@playwright/test'
 import type { Frame, Page } from '@playwright/test'
+import { CodyAutoSuggestionMode } from '@sourcegraph/cody-shared'
 import * as mockServer from '../fixtures/mock-server'
 import { sidebarExplorer, sidebarSignin } from './common'
 import {
@@ -66,7 +67,7 @@ const test = baseTest
     .extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL })
     .extend<ExtraWorkspaceSettings>({
         extraWorkspaceSettings: {
-            'cody.experimental.autoedits.enabled': true,
+            'cody.suggestions.mode': CodyAutoSuggestionMode.Autoedits,
             'cody.experimental.autoedits.use-mock-responses': true,
         },
     })

@@ -87,7 +87,6 @@ interface RawClientConfiguration {
     commandCodeLenses: boolean
 
     // Deep Cody
-    agenticContextExperimentalShell?: boolean
     agenticContextExperimentalOptions?: AgenticContextConfiguration
 
     //#region Autocomplete
@@ -186,6 +185,24 @@ export enum CodyIDE {
      * The standalone web client in the Cody repository's `web/` tree.
      */
     StandaloneWeb = 'StandaloneWeb',
+}
+
+/**
+ * These values must match the enum values in cody.suggestions.mode in vscode/package.json
+ */
+export enum CodyAutoSuggestionMode {
+    /**
+     * The suggestion mode where suggestions come from the OpenAI completions API. This is the default mode.
+     */
+    Autocomplete = 'autocomplete',
+    /**
+     * The suggestion mode where suggestions come from the Cody AI agent chat API.
+     */
+    Autoedits = 'auto-edits (Experimental)',
+    /**
+     * Disable Cody suggestions altogether.
+     */
+    Off = 'off',
 }
 
 export type AutocompleteProviderID = keyof typeof AUTOCOMPLETE_PROVIDER_ID
@@ -462,4 +479,24 @@ export interface FireworksCodeCompletionParams {
     stream: boolean
     languageId: string
     user: string | null
+}
+
+export interface AgentToolboxSettings {
+    /**
+     * The agent that user has currently enabled.
+     */
+    agent?: {
+        /**
+         * The name of the agent that user has currently enabled. E.g. "deep-cody"
+         */
+        name?: string
+    }
+    /**
+     * Whether the user has enabled terminal context.
+     * Defaulted to undefined if shell context is not enabled by site admin via feature flag.
+     */
+    shell?: {
+        enabled: boolean
+        error?: string
+    }
 }

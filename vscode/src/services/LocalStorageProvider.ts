@@ -5,7 +5,6 @@ import type { Memento } from 'vscode'
 import {
     type AccountKeyedChatHistory,
     type AuthCredentials,
-    type AuthStatus,
     type AuthenticatedAuthStatus,
     type ChatHistoryKey,
     type ClientState,
@@ -29,7 +28,6 @@ class LocalStorage implements LocalStorageForModelPreferences {
     // Bump this on storage changes so we don't handle incorrectly formatted data
     protected readonly KEY_LOCAL_HISTORY = 'cody-local-chatHistory-v2'
     protected readonly KEY_CONFIG = 'cody-config'
-    protected readonly KEY_LOCAL_MINION_HISTORY = 'cody-local-minionHistory-v0'
     protected readonly CODY_ENDPOINT_HISTORY = 'SOURCEGRAPH_CODY_ENDPOINT_HISTORY'
     protected readonly CODY_ENROLLMENT_HISTORY = 'SOURCEGRAPH_CODY_ENROLLMENTS'
     protected readonly LAST_USED_CHAT_MODALITY = 'cody-last-used-chat-modality'
@@ -238,16 +236,6 @@ class LocalStorage implements LocalStorageForModelPreferences {
                 console.error(error)
             }
         }
-    }
-
-    public async setMinionHistory(authStatus: AuthStatus, serializedHistory: string): Promise<void> {
-        // TODO(beyang): SECURITY - use authStatus
-        await this.set(this.KEY_LOCAL_MINION_HISTORY, serializedHistory)
-    }
-
-    public getMinionHistory(authStatus: AuthStatus): string | null {
-        // TODO(beyang): SECURITY - use authStatus
-        return this.get<string | null>(this.KEY_LOCAL_MINION_HISTORY)
     }
 
     public async setGitHubRepoAccessibility(data: GitHubDotComRepoMetaData[]): Promise<void> {

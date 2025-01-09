@@ -41,7 +41,9 @@ export class SourcegraphChatAdapter implements AutoeditsModelAdapter {
             autoeditsOutputChannelLogger.logError(
                 'getModelResponse',
                 'Error calling Sourcegraph Chat:',
-                error
+                {
+                    verbose: error,
+                }
             )
             throw error
         }

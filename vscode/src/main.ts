@@ -1,3 +1,6 @@
+import _ from 'lodash'
+import { isEqual } from 'lodash'
+import { filter, map } from 'observable-fns'
 import * as vscode from 'vscode'
 
 import {
@@ -39,16 +42,17 @@ import {
     take,
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
-import _ from 'lodash'
-import { isEqual } from 'lodash'
-import { filter, map } from 'observable-fns'
+
 import { isReinstalling } from '../uninstall/reinstall'
+
 import type { CommandResult } from './CommandResult'
 import { showAccountMenu } from './auth/account-menu'
 import { showSignInMenu, showSignOutMenu, tokenCallbackHandler } from './auth/auth'
-import { AutoeditsProvider } from './autoedits/autoedits-provider'
+import { createAutoEditsProvider } from './autoedits/create-autoedits-provider'
+import { autoeditsOutputChannelLogger } from './autoedits/output-channel-logger'
 import { registerAutoEditTestRenderCommand } from './autoedits/renderer/mock-renderer'
 import type { MessageProviderOptions } from './chat/MessageProvider'
+import { CodyToolProvider } from './chat/agentic/CodyToolProvider'
 import { ChatsController, CodyChatEditorViewType } from './chat/chat-view/ChatsController'
 import { ContextRetriever } from './chat/chat-view/ContextRetriever'
 import type { ChatIntentAPIClient } from './chat/context/chatIntentAPIClient'
@@ -84,9 +88,6 @@ import { VSCodeEditor } from './editor/vscode-editor'
 import type { PlatformContext } from './extension.common'
 import { configureExternalServices } from './external-services'
 import { isRunningInsideAgent } from './jsonrpc/isRunningInsideAgent'
-import type { SymfRunner } from './local-context/symf'
-import { MinionOrchestrator } from './minion/MinionOrchestrator'
-import { PoorMansBash } from './minion/environment'
 import { FixupController } from './non-stop/FixupController'
 import { CodyProExpirationNotifications } from './notifications/cody-pro-expiration'
 import { showSetupNotification } from './notifications/setup-notification'
@@ -273,6 +274,8 @@ const register = async (
         extensionClient: platform.extensionClient,
     })
 
+    CodyToolProvider.initialize(contextRetriever)
+
     disposables.push(
         chatsController,
         ghostHintDecorator,
@@ -325,8 +328,6 @@ const register = async (
             })
         )
     )
-
-    disposables.push(registerMinion(context, symfRunner))
 
     await tutorialSetup
 
@@ -729,30 +730,27 @@ function registerAutoEdits(
                 )
             )
                 .pipe(
-                    map(([config, authStatus, autoeditEnabled]) => {
-                        if (shouldEnableExperimentalAutoedits(config, autoeditEnabled, authStatus)) {
-                            const provider = new AutoeditsProvider(chatClient, fixupController)
-                            const completionRegistration =
-                                vscode.languages.registerInlineCompletionItemProvider(
-                                    [{ scheme: 'file', language: '*' }, { notebookType: '*' }],
-                                    provider
-                                )
-
-                            // Command used to trigger autoedits manually via command palette and is also used by e2e test
-                            vscode.commands.registerCommand(
-                                'cody.command.autoedits-manual-trigger',
-                                async () => {
-                                    await vscode.commands.executeCommand(
-                                        'editor.action.inlineSuggest.hide'
-                                    )
-                                    await vscode.commands.executeCommand(
-                                        'editor.action.inlineSuggest.trigger'
-                                    )
-                                }
-                            )
-                            return vscode.Disposable.from(provider, completionRegistration)
+                    distinctUntilChanged((a, b) => {
+                        return (
+                            isEqual(a[0].configuration, b[0].configuration) &&
+                            isEqual(a[1], b[1]) &&
+                            isEqual(a[2], b[2])
+                        )
+                    }),
+                    switchMap(([config, authStatus, autoeditEnabled]) => {
+                        if (!shouldEnableExperimentalAutoedits(config, autoeditEnabled, authStatus)) {
+                            return NEVER
                         }
-                        return []
+                        return createAutoEditsProvider({
+                            config,
+                            authStatus,
+                            chatClient,
+                            fixupController,
+                        })
+                    }),
+                    catchError(error => {
+                        autoeditsOutputChannelLogger.logError('registerAutoedits', 'Error', error)
+                        return NEVER
                     })
                 )
                 .subscribe({})
@@ -842,31 +840,6 @@ function registerAutocomplete(
                 )
                 .subscribe({})
         )
-    )
-}
-
-function registerMinion(
-    context: vscode.ExtensionContext,
-
-    symfRunner: SymfRunner | undefined
-): vscode.Disposable {
-    return enableFeature(
-        config => !!config.configuration.experimentalMinionAnthropicKey,
-        () => {
-            const disposables: vscode.Disposable[] = []
-            const minionOrchestrator = new MinionOrchestrator(context.extensionUri, symfRunner)
-            disposables.push(
-                minionOrchestrator,
-                vscode.commands.registerCommand('cody.minion.panel.new', () =>
-                    minionOrchestrator.createNewMinionPanel()
-                ),
-                vscode.commands.registerCommand('cody.minion.new-terminal', async () => {
-                    const t = new PoorMansBash()
-                    await t.run('hello world')
-                })
-            )
-            return vscode.Disposable.from(...disposables)
-        }
     )
 }
 
