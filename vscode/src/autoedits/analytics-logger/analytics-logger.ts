@@ -24,6 +24,7 @@ import type { AutoeditsPrompt } from '../adapters/base'
 import { autoeditsOutputChannelLogger } from '../output-channel-logger'
 import type { CodeToReplaceData } from '../prompt/prompt-utils'
 import type { DecorationInfo } from '../renderer/decorators/base'
+import { type DecorationStats, getDecorationStats } from '../renderer/diff-utils'
 
 import { autoeditIdRegistry } from './suggestion-id-registry'
 
@@ -172,14 +173,8 @@ interface AutoeditLoadedMetadata extends AutoeditContextLoadedMetadata {
      */
     id: AutoeditSuggestionID
 
-    /** Total lines in the suggestion. */
-    lineCount: number
-
-    /** Total characters in the suggestion. */
-    charCount: number
-
     /**
-     * Prediction text snippet of the suggestion.
+     * Unmodified by the client prediction text snippet of the suggestion.
      * Might be `undefined` if too long.
      * 🚨 SECURITY: included only for DotCom users.
      */
@@ -198,7 +193,17 @@ interface AutoeditLoadedMetadata extends AutoeditContextLoadedMetadata {
     latency: number
 }
 
-interface AutoEditFinalMetadata extends AutoeditLoadedMetadata {
+interface AutoeditPostProcessedMetadata extends AutoeditLoadedMetadata {
+    /** The number of added, modified, removed lines and characters from suggestion. */
+    decorationStats?: DecorationStats
+    /** The number of lines and added chars attributed to an inline completion item. */
+    inlineCompletionStats?: {
+        lineCount: number
+        charCount: number
+    }
+}
+
+interface AutoEditFinalMetadata extends AutoeditPostProcessedMetadata {
     /** Displayed to the user for this many milliseconds. */
     timeFromSuggestedAt: number
     /** True if the suggestion was explicitly/intentionally accepted. */
@@ -276,7 +281,7 @@ export interface PostProcessedState extends Omit<LoadedState, 'phase'> {
     decorationInfo: DecorationInfo | null
     inlineCompletionItems: vscode.InlineCompletionItem[] | null
 
-    payload: AutoeditLoadedMetadata
+    payload: AutoeditPostProcessedMetadata
 }
 
 export interface SuggestedState extends Omit<PostProcessedState, 'phase'> {
@@ -456,8 +461,6 @@ export class AutoeditAnalyticsLogger {
                 payload: {
                     ...request.payload,
                     id: stableId,
-                    lineCount: lines(prediction).length,
-                    charCount: prediction.length,
                     // 🚨 SECURITY: included only for DotCom users.
                     prediction: isDotComAuthed() && prediction.length < 300 ? prediction : undefined,
                     source,
@@ -471,17 +474,39 @@ export class AutoeditAnalyticsLogger {
 
     public markAsPostProcessed({
         requestId,
-        ...state
+        decorationInfo,
+        inlineCompletionItems,
+        prediction,
     }: {
         requestId: AutoeditRequestID
         prediction: string
         decorationInfo: DecorationInfo | null
         inlineCompletionItems: vscode.InlineCompletionItem[] | null
     }) {
-        this.tryTransitionTo(requestId, 'postProcessed', currentRequest => ({
-            ...currentRequest,
-            ...state,
-        }))
+        this.tryTransitionTo(requestId, 'postProcessed', request => {
+            const insertText = inlineCompletionItems?.length
+                ? (inlineCompletionItems[0].insertText as string).slice(
+                      request.docContext.currentLinePrefix.length
+                  )
+                : undefined
+
+            return {
+                ...request,
+                prediction,
+                decorationInfo,
+                inlineCompletionItems,
+                payload: {
+                    ...request.payload,
+                    decorationStats: decorationInfo ? getDecorationStats(decorationInfo) : undefined,
+                    inlineCompletionStats: insertText
+                        ? {
+                              lineCount: lines(insertText).length,
+                              charCount: insertText.length,
+                          }
+                        : undefined,
+                },
+            }
+        })
     }
 
     public markAsSuggested(requestId: AutoeditRequestID): SuggestedState | null {
