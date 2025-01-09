@@ -64,6 +64,9 @@ export async function autoeditResultFor(
 
     vi.spyOn(vsCodeMocks.window, 'activeTextEditor', 'get').mockReturnValue({
         document,
+        selection: {
+            active: position,
+        },
         edit: (callback: any) => callback(editBuilder),
         setDecorations: () => {},
     } as any)

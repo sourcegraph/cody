@@ -1,9 +1,14 @@
 import * as vscode from 'vscode'
 
-import type { DocumentContext } from '@sourcegraph/cody-shared'
+import { type DocumentContext, tokensToChars } from '@sourcegraph/cody-shared'
 
-import { completionMatchesSuffix } from '../../completions/is-completion-visible'
+import {
+    completionMatchesSuffix,
+    getLatestVisibilityContext,
+    isCompletionVisible,
+} from '../../completions/is-completion-visible'
 import { type AutoeditRequestID, autoeditAnalyticsLogger } from '../analytics-logger'
+import { autoeditsProviderConfig } from '../autoedits-config'
 import { autoeditsOutputChannelLogger } from '../output-channel-logger'
 import type { CodeToReplaceData } from '../prompt/prompt-utils'
 import {
@@ -173,10 +178,64 @@ export class AutoEditsDefaultRendererManager implements AutoEditsRendererManager
 
         // Mark suggestion as read after a delay if it's still visible.
         this.autoeditSuggestedTimeoutId = setTimeout(() => {
-            // TODO: use `isCompletionVisible` logic or similar to account for cases
-            // where a partially accepted inline completion item is still visible.
             if (this.activeRequest?.requestId === requestId) {
-                autoeditAnalyticsLogger.markAsRead(requestId)
+                const {
+                    document: invokedDocument,
+                    position: invokedPosition,
+                    docContext,
+                    inlineCompletionItems,
+                } = this.activeRequest
+
+                const { activeTextEditor } = vscode.window
+
+                if (!activeTextEditor || !areSameUriDocs(activeTextEditor.document, invokedDocument)) {
+                    // User is no longer in the same document as the completion
+                    return
+                }
+
+                // If a completion is rendered as an inline completion item we have to
+                // manually check if the visibility context for the item is still valid and
+                // it's still present in the document.
+                //
+                // If the invoked cursor position does not match the current cursor position
+                // we check if the items insert text matches the current document context.
+                // If a user continued typing as suggested the insert text is still present
+                // and we can a completion as read.
+                if (inlineCompletionItems?.[0]) {
+                    const visibilityContext = getLatestVisibilityContext({
+                        invokedPosition,
+                        invokedDocument,
+                        activeTextEditor,
+                        docContext,
+                        inlineCompletionContext: undefined,
+                        maxPrefixLength: tokensToChars(autoeditsProviderConfig.tokenLimit.prefixTokens),
+                        maxSuffixLength: tokensToChars(autoeditsProviderConfig.tokenLimit.suffixTokens),
+                        // TODO: implement suggest widget support
+                        shouldTakeSuggestWidgetSelectionIntoAccount: () => false,
+                    })
+
+                    const isStillVisible = isCompletionVisible(
+                        inlineCompletionItems[0].insertText as string,
+                        visibilityContext.document,
+                        {
+                            invokedPosition,
+                            latestPosition: visibilityContext.position,
+                        },
+                        visibilityContext.docContext,
+                        visibilityContext.inlineCompletionContext,
+                        visibilityContext.takeSuggestWidgetSelectionIntoAccount,
+                        undefined // abort signal
+                    )
+
+                    if (isStillVisible) {
+                        autoeditAnalyticsLogger.markAsRead(requestId)
+                    }
+                } else {
+                    // For suggestions rendered as inline decoration we can rely on our own dismissal
+                    // logic (document change/selection change callback). So having a truthy `this.activeRequest`
+                    // is enough to mark a suggestion as read.
+                    autoeditAnalyticsLogger.markAsRead(requestId)
+                }
             }
         }, AUTOEDIT_VISIBLE_DELAY_MS)
     }
@@ -255,7 +314,7 @@ export class AutoEditsDefaultRendererManager implements AutoEditsRendererManager
         const isPrefixMatch = updatedPrediction.startsWith(codeToReplaceData.codeToRewritePrefix)
         const isSuffixMatch =
             // The current line suffix should not require any char removals to render the completion.
-            completionMatchesSuffix({ insertText: updatedPrediction }, docContext.currentLineSuffix) &&
+            completionMatchesSuffix(updatedPrediction, docContext.currentLineSuffix) &&
             // The new lines suggested after the current line must be equal to the prediction.
             updatedPrediction.endsWith(codeToRewriteAfterCurrentLine)
 
@@ -265,9 +324,18 @@ export class AutoEditsDefaultRendererManager implements AutoEditsRendererManager
                 codeToReplaceData.codeToRewritePrefix,
                 codeToReplaceData.codeToRewriteSuffix
             )
-            const autocompleteResponse = docContext.currentLinePrefix + autocompleteInlineResponse
+
+            if (autocompleteInlineResponse.trimEnd().length === 0) {
+                return {
+                    inlineCompletionItems: null,
+                    updatedDecorationInfo: null,
+                    updatedPrediction,
+                }
+            }
+
+            const insertText = docContext.currentLinePrefix + autocompleteInlineResponse
             const inlineCompletionItem = new vscode.InlineCompletionItem(
-                autocompleteResponse,
+                insertText,
                 new vscode.Range(
                     document.lineAt(position).range.start,
                     document.lineAt(position).range.end
@@ -282,11 +350,9 @@ export class AutoEditsDefaultRendererManager implements AutoEditsRendererManager
                     ],
                 }
             )
-            autoeditsOutputChannelLogger.logDebug(
-                'tryMakeInlineCompletions',
-                'Autocomplete Inline Response: ',
-                { verbose: autocompleteResponse }
-            )
+            autoeditsOutputChannelLogger.logDebug('tryMakeInlineCompletions', 'insert text', {
+                verbose: insertText,
+            })
             return {
                 inlineCompletionItems: [inlineCompletionItem],
                 updatedDecorationInfo: null,
