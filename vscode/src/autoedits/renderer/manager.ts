@@ -94,10 +94,7 @@ export class AutoEditsDefaultRendererManager implements AutoEditsRendererManager
         protected fixupController: FixupController
     ) {
         this.disposables.push(
-            vscode.commands.registerCommand('cody.supersuggest.accept', () => {
-                console.log('cody.supersuggest.accept')
-                this.acceptActiveEdit()
-            }),
+            vscode.commands.registerCommand('cody.supersuggest.accept', () => this.acceptActiveEdit()),
             vscode.commands.registerCommand('cody.supersuggest.dismiss', () => this.rejectActiveEdit()),
             vscode.workspace.onDidChangeTextDocument(event => this.onDidChangeTextDocument(event)),
             vscode.window.onDidChangeTextEditorSelection(event =>
