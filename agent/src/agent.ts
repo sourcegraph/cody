@@ -1499,7 +1499,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
                         },
                         auth: {
                             serverEndpoint: config.serverEndpoint,
-                            accessTokenOrHeaders: config.accessToken || null,
+                            accessTokenOrHeaders: config.accessToken ?? null,
                         },
                         clientState: {
                             anonymousUserID: config.anonymousUserID ?? null,

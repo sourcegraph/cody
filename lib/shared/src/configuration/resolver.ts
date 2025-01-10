@@ -104,8 +104,7 @@ async function getExternalProviderAuthHeaders(
     serverEndpoint: string,
     clientConfiguration: ClientConfiguration
 ): Promise<Record<string, string> | undefined> {
-    // Check for external auth provider for this endpoint
-    const externalProvider = clientConfiguration.authExternalProviders?.find(
+    const externalProvider = clientConfiguration.authExternalProviders.find(
         provider => normalizeServerEndpointURL(provider.endpoint) === serverEndpoint
     )
 
