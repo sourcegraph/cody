@@ -360,4 +360,20 @@ describe('AutoeditsProvider', () => {
             expect.arrayContaining(['setContext', 'cody.supersuggest.active', false])
         )
     })
+
+    it('do not trigger the editBuilder for inline completion items', async () => {
+        const prediction = 'const x = 1\n'
+        const { editBuilder } = await autoeditResultFor('const x = █\n', { prediction })
+
+        await acceptSuggestionCommand()
+        expect(editBuilder.size).toBe(0)
+    })
+
+    it('trigger the editBuilder for inline decorations items', async () => {
+        const prediction = 'const a = 1\n'
+        const { editBuilder } = await autoeditResultFor('const x = █\n', { prediction })
+
+        await acceptSuggestionCommand()
+        expect(editBuilder.size).toBe(1)
+    })
 })
