@@ -314,7 +314,7 @@ describe('AutoeditAnalyticsLogger', () => {
         expect(discardedEventPayload).toMatchInlineSnapshot(`
           {
             "billingMetadata": {
-              "category": "core",
+              "category": "billable",
               "product": "cody",
             },
             "interactionID": undefined,
