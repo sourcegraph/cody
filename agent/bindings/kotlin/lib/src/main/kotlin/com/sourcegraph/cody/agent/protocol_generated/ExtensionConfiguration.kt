@@ -2,7 +2,7 @@
 package com.sourcegraph.cody.agent.protocol_generated;
 
 data class ExtensionConfiguration(
-  val serverEndpoint: String,
+  val serverEndpoint: String? = null,
   val proxy: String? = null,
   val accessToken: String? = null,
   val customHeaders: Map<String, String>,

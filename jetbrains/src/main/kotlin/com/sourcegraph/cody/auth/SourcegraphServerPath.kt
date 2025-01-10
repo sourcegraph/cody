@@ -3,6 +3,7 @@ package com.sourcegraph.cody.auth
 import com.intellij.util.xmlb.annotations.Attribute
 import com.intellij.util.xmlb.annotations.Tag
 import com.sourcegraph.cody.config.SourcegraphParseException
+import com.sourcegraph.config.ConfigUtil
 import java.net.URI
 import java.util.regex.Pattern
 
@@ -24,6 +25,8 @@ data class SourcegraphServerPath(
 
   val displayName: String
     get() = URI.create(url).host
+
+  fun isDotcom(): Boolean = url.lowercase().startsWith(ConfigUtil.DOTCOM_URL)
 
   companion object {
 

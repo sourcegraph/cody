@@ -3,8 +3,8 @@ package com.sourcegraph.common
 import com.intellij.ide.BrowserUtil
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.project.Project
+import com.sourcegraph.cody.auth.CodyAuthService
 import com.sourcegraph.common.BrowserErrorNotification.show
-import com.sourcegraph.config.ConfigUtil.getServerPath
 import java.awt.Desktop
 import java.io.IOException
 import java.net.URI
@@ -12,7 +12,8 @@ import java.net.URISyntaxException
 
 object BrowserOpener {
   fun openRelativeUrlInBrowser(project: Project, relativeUrl: String) {
-    openInBrowser(project, getServerPath().url + "/" + relativeUrl)
+    openInBrowser(
+        project, CodyAuthService.getInstance(project).getEndpoint().url + "/" + relativeUrl)
   }
 
   fun openInBrowser(project: Project?, absoluteUrl: String) {
