@@ -367,6 +367,12 @@ type AutoeditEventAction =
     | 'error'
     | `invalidTransitionTo${Capitalize<Phase>}`
 
+const AUTOEDIT_EVENT_BILLING_CATEGORY: Partial<Record<AutoeditEventAction, BillingCategory>> = {
+    accepted: 'core',
+    discarded: 'billable',
+    suggested: 'billable',
+}
+
 /**
  * Specialized string type for referencing error messages in our rate-limiting map.
  */
@@ -697,6 +703,7 @@ export class AutoeditAnalyticsLogger {
         state.suggestionLoggedAt = getTimeNowInMillis()
 
         const { metadata, privateMetadata } = splitSafeMetadata(payload)
+        const billingCategory = AUTOEDIT_EVENT_BILLING_CATEGORY[action]
 
         this.writeAutoeditEvent({
             action,
@@ -710,12 +717,12 @@ export class AutoeditAnalyticsLogger {
                     recordsPrivateMetadataTranscript: 'prediction' in privateMetadata ? 1 : 0,
                 },
                 privateMetadata,
-                billingMetadata: {
-                    product: 'cody',
-                    // TODO: double check with the analytics team
-                    // whether we should be categorizing the different completion event types.
-                    category: action === 'suggested' ? 'billable' : 'core',
-                },
+                ...(billingCategory && {
+                    billingMetadata: {
+                        product: 'cody',
+                        category: billingCategory,
+                    },
+                }),
             },
         })
     }
