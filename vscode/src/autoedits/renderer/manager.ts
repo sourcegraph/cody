@@ -7,7 +7,11 @@ import {
     getLatestVisibilityContext,
     isCompletionVisible,
 } from '../../completions/is-completion-visible'
-import { type AutoeditRequestID, autoeditAnalyticsLogger } from '../analytics-logger'
+import {
+    type AutoeditRequestID,
+    autoeditAnalyticsLogger,
+    autoeditDiscardReason,
+} from '../analytics-logger'
 import { autoeditsProviderConfig } from '../autoedits-config'
 import { autoeditsOutputChannelLogger } from '../output-channel-logger'
 import type { CodeToReplaceData } from '../prompt/prompt-utils'
@@ -174,10 +178,14 @@ export class AutoEditsDefaultRendererManager implements AutoEditsRendererManager
         await this.rejectActiveEdit()
 
         const request = autoeditAnalyticsLogger.getRequest(requestId)
-        if (
-            !request ||
-            this.hasConflictingDecorations(request.document, request.codeToReplaceData.range)
-        ) {
+        if (!request) {
+            return
+        }
+        if (this.hasConflictingDecorations(request.document, request.codeToReplaceData.range)) {
+            autoeditAnalyticsLogger.markAsDiscarded({
+                requestId,
+                discardReason: autoeditDiscardReason.conflictingDecorationWithEdits,
+            })
             return
         }
 
@@ -190,6 +198,10 @@ export class AutoEditsDefaultRendererManager implements AutoEditsRendererManager
             // If the decorator cannot render the decoration properly, dispose of it and return early.
             this.decorator.dispose()
             this.decorator = null
+            autoeditAnalyticsLogger.markAsDiscarded({
+                requestId,
+                discardReason: autoeditDiscardReason.noEnoughLinesEditor,
+            })
             return
         }
 

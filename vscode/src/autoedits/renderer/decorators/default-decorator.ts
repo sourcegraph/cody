@@ -42,9 +42,8 @@ export class DefaultDecorator implements AutoEditsDecorator {
     private readonly insertMarkerDecorationType: vscode.TextEditorDecorationType
 
     /**
-     * Pre-computed information about diff decorations to be applied to lines in the editor
+     * Pre-computed information about diff decorations to be applied to lines in the editor.
      */
-
     private diffDecorationInfo: DiffDecorationInfo | undefined
 
     constructor(editor: vscode.TextEditor) {

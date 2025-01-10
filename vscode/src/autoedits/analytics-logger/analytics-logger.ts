@@ -173,6 +173,8 @@ export const autoeditDiscardReason = {
     suffixOverlap: 5,
     emptyPredictionAfterInlineCompletionExtraction: 6,
     noActiveEditor: 7,
+    conflictingDecorationWithEdits: 8,
+    noEnoughLinesEditor: 9,
 } as const
 
 /** We use numeric keys to send these to the analytics backend */
