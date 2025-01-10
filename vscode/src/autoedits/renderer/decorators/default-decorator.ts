@@ -90,7 +90,7 @@ export class DefaultDecorator implements AutoEditsDecorator {
         if (addedLinesInfo) {
             // Check if there are enough lines in the editor to render the diff decorations
             if (
-                addedLinesInfo.startLine + addedLinesInfo.addedLinesDecorationInfo.length >=
+                addedLinesInfo.startLine + addedLinesInfo.addedLinesDecorationInfo.length >
                 this.editor.document.lineCount
             ) {
                 return false
