@@ -33,7 +33,7 @@ describe('CodyGatewayAdapter', () => {
         mockResolvedConfig({
             configuration: {},
             auth: {
-                accessTokenOrHeaders: 'sgp_local_f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0',
+                credentials: { token: 'sgp_local_f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0' },
                 serverEndpoint: DOTCOM_URL.toString(),
             },
         })

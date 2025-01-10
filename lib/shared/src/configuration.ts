@@ -9,9 +9,12 @@ import type { ReadonlyDeep } from './utils'
  * A redirect flow is initiated by the user clicking a link in the browser, while a paste flow is initiated by the user
  * manually entering the access from into the VsCode App.
  */
-export type TokenSource = 'redirect' | 'paste' | 'custom-auth-provider'
+export type TokenSource = 'redirect' | 'paste'
 
-export type AuthHeaders = Record<string, string>
+const nonSerializableSymbol = Symbol('nonSerializable')
+export type NonSerializableRecord<K extends keyof any, T> = Record<K, T> & {
+    [nonSerializableSymbol]: never
+}
 
 /**
  * The user's authentication credentials, which are stored separately from the rest of the
@@ -19,8 +22,16 @@ export type AuthHeaders = Record<string, string>
  */
 export interface AuthCredentials {
     serverEndpoint: string
-    tokenSource?: TokenSource | undefined
-    accessTokenOrHeaders: string | AuthHeaders | null
+    credentials: HeaderCredential | TokenCredential | undefined
+}
+
+export interface HeaderCredential {
+    headers: NonSerializableRecord<string, string>
+}
+
+export interface TokenCredential {
+    token: string
+    source?: TokenSource
 }
 
 export interface AutoEditsTokenLimit {
@@ -84,6 +95,11 @@ export interface ExternalAuthCommand {
 export interface ExternalAuthProvider {
     endpoint: string
     executable: ExternalAuthCommand
+}
+
+export interface ExternalAuthProviderResult {
+    headers: NonSerializableRecord<string, string>
+    expiration: number
 }
 
 interface RawClientConfiguration {

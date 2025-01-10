@@ -135,8 +135,8 @@ class FireworksProvider extends Provider {
         if (canFastPathBeUsed) {
             // TODO (pkukielka): Check if fastpath should support custom auth providers and how
             const accessToken =
-                typeof config.auth.accessTokenOrHeaders === 'string'
-                    ? config.auth.accessTokenOrHeaders
+                config.auth.credentials && 'token' in config.auth.credentials
+                    ? config.auth.credentials.token
                     : null
             const fastPathAccessToken = dotcomTokenToGatewayToken(accessToken)
 

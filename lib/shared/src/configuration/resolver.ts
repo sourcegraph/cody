@@ -3,6 +3,7 @@ import type {
     AuthCredentials,
     ClientConfiguration,
     ExternalAuthCommand,
+    NonSerializableRecord,
     TokenSource,
 } from '../configuration'
 import { logError } from '../logger'
@@ -103,7 +104,7 @@ async function executeCommand(cmd: ExternalAuthCommand): Promise<string> {
 async function getExternalProviderAuthHeaders(
     serverEndpoint: string,
     clientConfiguration: ClientConfiguration
-): Promise<Record<string, string> | undefined> {
+): Promise<NonSerializableRecord<string, string> | undefined> {
     // Check for external auth provider for this endpoint
     const externalProvider = clientConfiguration.authExternalProviders.find(
         provider => normalizeServerEndpointURL(provider.endpoint) === serverEndpoint
@@ -122,39 +123,35 @@ export async function resolveAuth(
     clientConfiguration: ClientConfiguration,
     clientSecrets: ClientSecrets
 ): Promise<AuthCredentials> {
-    let accessTokenOrHeaders = null
-    let tokenSource: TokenSource | undefined = undefined
-
     const serverEndpoint = normalizeServerEndpointURL(
         clientConfiguration.overrideServerEndpoint || endpoint
     )
 
-    // We must not throw here, because that would result in the `resolvedConfig` observable
-    // terminating and all callers receiving no further config updates.
-    const loadTokenFn = () =>
-        clientSecrets.getToken(serverEndpoint).catch(error => {
-            throw new Error(
-                `Failed to get access token for endpoint ${serverEndpoint}: ${error.message || error}`
-            )
-        })
-
     if (clientConfiguration.overrideAuthToken) {
-        accessTokenOrHeaders = clientConfiguration.overrideAuthToken
-    } else
-        try {
-            const authHeaders = await getExternalProviderAuthHeaders(serverEndpoint, clientConfiguration)
-            if (authHeaders) {
-                accessTokenOrHeaders = authHeaders
-                tokenSource = 'custom-auth-provider'
-            } else {
-                accessTokenOrHeaders = (await loadTokenFn()) || null
-                tokenSource = await clientSecrets.getTokenSource(serverEndpoint).catch(_ => undefined)
-            }
-        } catch (error) {
+        return { credentials: { token: clientConfiguration.overrideAuthToken }, serverEndpoint }
+    }
+
+    const authHeaders = await getExternalProviderAuthHeaders(serverEndpoint, clientConfiguration).catch(
+        error => {
             throw new Error(`Failed to execute external auth command: ${error}`)
         }
+    )
+    if (authHeaders) {
+        return { credentials: { headers: authHeaders }, serverEndpoint }
+    }
 
-    return { accessTokenOrHeaders, serverEndpoint, tokenSource }
+    const token = await clientSecrets.getToken(serverEndpoint).catch(error => {
+        throw new Error(
+            `Failed to get access token for endpoint ${serverEndpoint}: ${error.message || error}`
+        )
+    })
+
+    return {
+        credentials: token
+            ? { token, source: await clientSecrets.getTokenSource(serverEndpoint) }
+            : undefined,
+        serverEndpoint,
+    }
 }
 
 async function resolveConfiguration({
@@ -180,7 +177,7 @@ async function resolveConfiguration({
         // We don't want to throw here, because that would cause the observable to terminate and
         // all callers receiving no further config updates.
         logError('resolveConfiguration', `Error resolving configuration: ${error}`)
-        const auth = { accessTokenOrHeaders: null, serverEndpoint, tokenSource: undefined }
+        const auth = { credentials: undefined, serverEndpoint }
         return { configuration: clientConfiguration, clientState, auth, isReinstall }
     }
 }

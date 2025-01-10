@@ -1,4 +1,5 @@
 import {
+    type AuthCredentials,
     type AuthStatus,
     type BillingCategory,
     type BillingProduct,
@@ -23,7 +24,6 @@ import {
     type SerializedChatInteraction,
     type SerializedChatTranscript,
     type SerializedPromptEditorState,
-    type TokenSource,
     addMessageListenersForExtensionAPI,
     authStatus,
     cenv,
@@ -455,28 +455,20 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 ) {
                     try {
                         const { endpoint, value: token } = message
-                        let accessTokenOrHeaders = null
-                        let tokenSource: TokenSource | undefined = undefined
+                        let auth: AuthCredentials | undefined = undefined
 
                         if (token) {
-                            accessTokenOrHeaders = token
-                            tokenSource = 'paste'
+                            auth = { credentials: { token, source: 'paste' }, serverEndpoint: endpoint }
                         } else {
                             const { configuration } = await currentResolvedConfig()
-                            const auth = await resolveAuth(endpoint, configuration, secretStorage)
-                            accessTokenOrHeaders = auth.accessTokenOrHeaders
-                            tokenSource = auth.tokenSource
+                            auth = await resolveAuth(endpoint, configuration, secretStorage)
                         }
 
-                        const credentials = {
-                            serverEndpoint: endpoint,
-                            accessTokenOrHeaders,
-                            tokenSource: tokenSource,
+                        if (!auth || !auth.credentials) {
+                            return redirectToEndpointLogin(endpoint)
                         }
-                        if (!credentials.accessTokenOrHeaders) {
-                            return redirectToEndpointLogin(credentials.serverEndpoint)
-                        }
-                        await authProvider.validateAndStoreCredentials(credentials, 'always-store')
+
+                        await authProvider.validateAndStoreCredentials(auth, 'always-store')
                     } catch (error) {
                         void vscode.window.showErrorMessage(`Authentication failed: ${error}`)
                         this.postError(new Error(`Authentication failed: ${error}`))
@@ -514,7 +506,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                             const authStatus = await authProvider.validateAndStoreCredentials(
                                 {
                                     serverEndpoint: DOTCOM_URL.href,
-                                    accessTokenOrHeaders: token,
+                                    credentials: { token },
                                 },
                                 'store-if-valid'
                             )

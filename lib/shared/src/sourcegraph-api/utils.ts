@@ -38,14 +38,15 @@ export function toPartialUtf8String(buf: Buffer): { str: string; buf: Buffer } {
 
 export function addAuthHeaders(auth: AuthCredentials, headers: Headers, url: URL): void {
     // We want to be sure we sent authorization headers only to the valid endpoint
-    if (auth.accessTokenOrHeaders && url.host === new URL(auth.serverEndpoint).host) {
-        if (typeof auth.accessTokenOrHeaders === 'string') {
-            headers.set('Authorization', `token ${auth.accessTokenOrHeaders}`)
-        } else {
-            // Add headers as-is when accessTokenOrHeaders is a record of headers
-            for (const [key, value] of Object.entries(auth.accessTokenOrHeaders)) {
+    if (auth.credentials && url.host === new URL(auth.serverEndpoint).host) {
+        if ('token' in auth.credentials) {
+            headers.set('Authorization', `token ${auth.credentials.token}`)
+        } else if ('headers' in auth.credentials) {
+            for (const [key, value] of Object.entries(auth.credentials.headers)) {
                 headers.set(key, value)
             }
+        } else {
+            console.error('Cannot add headers: neither token nor headers found')
         }
     }
 }

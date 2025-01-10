@@ -21,7 +21,7 @@ export const TraceSender = {
  */
 async function doSendTraceData(spanData: any): Promise<void> {
     const { auth } = await currentResolvedConfig()
-    if (!auth.accessTokenOrHeaders) {
+    if (!auth.credentials) {
         logError('TraceSender', 'Cannot send trace data: not authenticated')
         throw new Error('Not authenticated')
     }

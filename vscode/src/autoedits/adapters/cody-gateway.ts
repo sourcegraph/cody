@@ -35,8 +35,8 @@ export class CodyGatewayAdapter implements AutoeditsModelAdapter {
         const resolvedConfig = await currentResolvedConfig()
         // TODO (pkukielka): Check if fastpath should support custom auth providers and how
         const accessToken =
-            typeof resolvedConfig.auth.accessTokenOrHeaders === 'string'
-                ? resolvedConfig.auth.accessTokenOrHeaders
+            resolvedConfig.auth.credentials && 'token' in resolvedConfig.auth.credentials
+                ? resolvedConfig.auth.credentials.token
                 : null
         const fastPathAccessToken = dotcomTokenToGatewayToken(accessToken)
         if (!fastPathAccessToken) {
