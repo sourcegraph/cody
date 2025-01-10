@@ -3,7 +3,7 @@ import type {
     AuthCredentials,
     ClientConfiguration,
     ExternalAuthCommand,
-    NonSerializableRecord,
+    ExternalAuthProviderResult,
     TokenSource,
 } from '../configuration'
 import { logError } from '../logger'
@@ -101,10 +101,10 @@ async function executeCommand(cmd: ExternalAuthCommand): Promise<string> {
     return stdout.trim()
 }
 
-async function getExternalProviderAuthHeaders(
+async function getExternalProviderAuthResult(
     serverEndpoint: string,
     clientConfiguration: ClientConfiguration
-): Promise<NonSerializableRecord<string, string> | undefined> {
+): Promise<ExternalAuthProviderResult | undefined> {
     // Check for external auth provider for this endpoint
     const externalProvider = clientConfiguration.authExternalProviders.find(
         provider => normalizeServerEndpointURL(provider.endpoint) === serverEndpoint
@@ -131,11 +131,12 @@ export async function resolveAuth(
         return { credentials: { token: clientConfiguration.overrideAuthToken }, serverEndpoint }
     }
 
-    const authHeaders = await getExternalProviderAuthHeaders(serverEndpoint, clientConfiguration).catch(
-        error => {
+    const authHeaders = await getExternalProviderAuthResult(serverEndpoint, clientConfiguration)
+        .then(result => result?.headers)
+        .catch(error => {
             throw new Error(`Failed to execute external auth command: ${error}`)
-        }
-    )
+        })
+
     if (authHeaders) {
         return { credentials: { headers: authHeaders }, serverEndpoint }
     }

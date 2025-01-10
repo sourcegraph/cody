@@ -99,7 +99,7 @@ export interface ExternalAuthProvider {
 
 export interface ExternalAuthProviderResult {
     headers: NonSerializableRecord<string, string>
-    expiration: number
+    expiration?: number // Epoch Unix Timestamp (UTC) of the expiration date
 }
 
 interface RawClientConfiguration {
