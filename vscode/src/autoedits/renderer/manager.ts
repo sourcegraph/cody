@@ -270,6 +270,9 @@ export class AutoEditsDefaultRendererManager implements AutoEditsRendererManager
     protected async acceptActiveEdit(): Promise<void> {
         const editor = vscode.window.activeTextEditor
         const { activeRequest, decorator } = this
+        // Compute this variable before the `handleDidHideSuggestion` call which removes the active request.
+        const hasInlineDecorationOnly = this.hasInlineDecorationOnly()
+
         if (
             !editor ||
             !activeRequest ||
@@ -281,9 +284,13 @@ export class AutoEditsDefaultRendererManager implements AutoEditsRendererManager
         await this.handleDidHideSuggestion(decorator)
         autoeditAnalyticsLogger.markAsAccepted(activeRequest.requestId)
 
-        await editor.edit(editBuilder => {
-            editBuilder.replace(activeRequest.codeToReplaceData.range, activeRequest.prediction)
-        })
+        // We rely on the native VS Code functionality for accepting inline completions items.
+        // There's no need to manually edit the document.
+        if (hasInlineDecorationOnly) {
+            await editor.edit(editBuilder => {
+                editBuilder.replace(activeRequest.codeToReplaceData.range, activeRequest.prediction)
+            })
+        }
     }
 
     protected async rejectActiveEdit(): Promise<void> {
