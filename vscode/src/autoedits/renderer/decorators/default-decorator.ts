@@ -181,9 +181,10 @@ export class DefaultDecorator implements AutoEditsDecorator {
                 range: new vscode.Range(startLine, startLineLength, startLine, startLineLength),
                 renderOptions: {
                     before: {
-                        color: new vscode.ThemeColor('editor.foreground'),
-                        backgroundColor: new vscode.ThemeColor('editor.background'),
+                        color: new vscode.ThemeColor('editorSuggestWidget.foreground'),
+                        backgroundColor: new vscode.ThemeColor('editorSuggestWidget.background'),
                         border: '1px solid white',
+                        borderColor: new vscode.ThemeColor('editorSuggestWidget.border'),
                         contentIconPath: vscode.Uri.parse(png),
                         textDecoration:
                             'none; position: absolute; z-index: 99999; scale: 0.5; transform-origin: 0px 0px; height: auto;',
