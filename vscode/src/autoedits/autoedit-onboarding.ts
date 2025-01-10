@@ -6,14 +6,27 @@ import {
     currentUserProductSubscription,
     featureFlagProvider,
     storeLastValue,
+    telemetryRecorder,
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import { localStorage } from '../services/LocalStorageProvider'
 import { isUserEligibleForAutoeditsFeature } from './create-autoedits-provider'
+import { autoeditsOutputChannelLogger } from './output-channel-logger'
 
 export interface AutoeditsNotificationInfo {
     lastNotifiedTime: number
     timesShown: number
+}
+
+const userNotificationAction = {
+    notificationAccepted: 1,
+    notificationRejected: 2,
+    notificationIgnored: 3,
+} as const
+
+interface AutoeditsNotificationPayload {
+    timesNotified: number
+    actionTaken: (typeof userNotificationAction)[keyof typeof userNotificationAction]
 }
 
 export class AutoeditsOnboarding implements vscode.Disposable {
@@ -32,14 +45,19 @@ export class AutoeditsOnboarding implements vscode.Disposable {
     }
 
     private async showAutoeditsOnboardingPopup(): Promise<void> {
+        const { timesShown } = await this.getAutoEditsOnboardingNotificationInfo()
+
+        const enableAutoeditsText = 'Enable Auto-Edits'
+        const dontShowAgainText = "Don't Show Again"
+
         const selection = await vscode.window.showInformationMessage(
             'Try Cody Auto-Edits (experimental)? Cody will intelligently suggest next edits as you navigate the codebase.',
-            'Enable Auto-Edits',
-            "Don't Show Again"
+            enableAutoeditsText,
+            dontShowAgainText
         )
         await this.incrementAutoEditsOnboardingNotificationCount({ incrementCount: 1 })
 
-        if (selection === 'Enable Auto-Edits') {
+        if (selection === enableAutoeditsText) {
             // Enable the setting programmatically
             await vscode.workspace
                 .getConfiguration()
@@ -54,13 +72,36 @@ export class AutoeditsOnboarding implements vscode.Disposable {
                 'workbench.action.openSettings',
                 'cody.suggestions.mode'
             )
-        } else if (selection === "Don't Show Again") {
+        } else if (selection === dontShowAgainText) {
             // If user doesn't want to see the notification again, increase number of shown notification by max limit + 1
             // to prevent showing the notification again until the user restarts VS Code.
             await this.incrementAutoEditsOnboardingNotificationCount({
                 incrementCount: this.MAX_AUTO_EDITS_ONBOARDING_NOTIFICATIONS + 1,
             })
         }
+
+        const notificationPayload: AutoeditsNotificationPayload = {
+            timesNotified: timesShown,
+            actionTaken:
+                selection === enableAutoeditsText
+                    ? userNotificationAction.notificationAccepted
+                    : selection === dontShowAgainText
+                      ? userNotificationAction.notificationRejected
+                      : userNotificationAction.notificationIgnored,
+        }
+        this.writeAutoeditsNotificationEvent(notificationPayload)
+    }
+
+    private writeAutoeditsNotificationEvent(payload: AutoeditsNotificationPayload): void {
+        const action = 'notified'
+        autoeditsOutputChannelLogger.logDebug('autoeditsOnboardingEvent', action)
+        telemetryRecorder.recordEvent('cody.autoedit', action, {
+            version: 0,
+            metadata: {
+                timesNotified: payload.timesNotified,
+                userActionTaken: payload.actionTaken,
+            },
+        })
     }
 
     private async shouldShowAutoeditsOnboardingPopup(): Promise<boolean> {
