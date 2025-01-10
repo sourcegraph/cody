@@ -1,5 +1,6 @@
 import path from 'node:path'
 import { graphqlClient, isError } from '@sourcegraph/cody-shared'
+import { escapeNLSQuery } from '../../../../vscode/src/chat/chat-view/handlers/SearchHandler'
 import { version } from '../../../package.json'
 import type { CodyBenchOptions } from './command-bench'
 import {
@@ -75,7 +76,7 @@ async function runNLSSearch(examples: Example[]): Promise<ExampleOutput[]> {
         const repoNames = targetRepoRevs.map(repoRev => repoRev.repoName)
         const repoFilter = 'repo:' + repoNames.join('|')
 
-        const fullQuery = `${repoFilter} content:"${query.replaceAll('"', '\\"')}"`
+        const fullQuery = `${repoFilter} content:"${escapeNLSQuery(query)}"`
         const resultsResp = await graphqlClient.nlsSearchQuery({
             query: fullQuery,
         })
