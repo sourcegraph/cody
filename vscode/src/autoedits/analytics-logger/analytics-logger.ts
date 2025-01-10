@@ -86,7 +86,7 @@ const validRequestTransitions = {
     started: ['contextLoaded', 'discarded'],
     contextLoaded: ['loaded', 'discarded'],
     loaded: ['postProcessed', 'discarded'],
-    postProcessed: ['suggested'],
+    postProcessed: ['suggested', 'discarded'],
     suggested: ['read', 'accepted', 'rejected'],
     read: ['accepted', 'rejected'],
     accepted: [],

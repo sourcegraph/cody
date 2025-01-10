@@ -211,7 +211,9 @@ export class DefaultDecorator implements AutoEditsDecorator {
         if (addedLinesInfo.length === 0) {
             return { removedRangesInfo: removedRanges }
         }
-        const oldLines = addedLinesInfo.map(info => this.editor.document.lineAt(info.afterLine))
+        const oldLines = addedLinesInfo
+            .filter(info => info.afterLine < this.editor.document.lineCount)
+            .map(info => this.editor.document.lineAt(info.afterLine))
         const replacerCol = Math.max(...oldLines.map(line => line.range.end.character))
         const startLine = Math.min(...oldLines.map(line => line.lineNumber))
 
