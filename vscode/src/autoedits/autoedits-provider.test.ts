@@ -343,22 +343,34 @@ describe('AutoeditsProvider', () => {
     it('do not set the the cody.supersuggest.active context for inline completion items', async () => {
         const prediction = 'const x = 1\n'
         await autoeditResultFor('const x = █\n', { prediction })
-        expect(executedCommands).toMatchInlineSnapshot([])
+        expect(executedCommands).toMatchInlineSnapshot(`
+            []
+        `)
     })
 
     it('set the cody.supersuggest.active context for inline decoration items', async () => {
         const prediction = 'const a = 1\n'
         await autoeditResultFor('const x = █\n', { prediction })
-        expect(executedCommands).toMatchInlineSnapshot(
-            expect.arrayContaining([['setContext', 'cody.supersuggest.active', true]])
-        )
+        expect(executedCommands).toMatchInlineSnapshot(`
+            [
+              [
+                "setContext",
+                "cody.supersuggest.active",
+                true,
+              ],
+            ]
+        `)
         await acceptSuggestionCommand()
 
-        // Deactive the context after accepting the suggestion
+        // Deactives the context after accepting the suggestion
         expect(executedCommands.length).toBe(3)
-        expect(executedCommands[1]).toMatchInlineSnapshot(
-            expect.arrayContaining(['setContext', 'cody.supersuggest.active', false])
-        )
+        expect(executedCommands[1]).toMatchInlineSnapshot(`
+            [
+              "setContext",
+              "cody.supersuggest.active",
+              false,
+            ]
+        `)
     })
 
     it('do not trigger the editBuilder for inline completion items', async () => {
