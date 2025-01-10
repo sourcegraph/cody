@@ -45,9 +45,8 @@ export class SearchHandler implements AgentHandler {
             ? 'boost:relevant.repos()'
             : ''
 
-        const query = `content:"${inputTextWithoutContextChips.replaceAll(
-            '"',
-            '\\"'
+        const query = `content:"${escapeNLSQuery(
+            inputTextWithoutContextChips
         )}" ${currentRepoBoost} ${myProjectsBoost} ${scopes.length ? `(${scopes.join(' OR ')})` : ''}`
 
         try {
@@ -73,6 +72,16 @@ export class SearchHandler implements AgentHandler {
             delegate.postDone()
         }
     }
+}
+
+export function escapeNLSQuery(query: string): string {
+    return (
+        query
+            // first escape backslashes
+            .replaceAll('\\', '\\\\')
+            // then escape quotes
+            .replaceAll('"', '\\"')
+    )
 }
 
 async function getSearchScopesFromMentions(mentions: ContextItem[]): Promise<string[]> {
