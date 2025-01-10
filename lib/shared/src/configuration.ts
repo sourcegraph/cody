@@ -76,7 +76,6 @@ export interface AgenticContextConfiguration {
 export interface ExternalAuthCommand {
     commandLine: readonly string[]
     environment?: Record<string, string>
-    workingDir?: string
     shell?: string
     timeout?: number
     windowsHide?: boolean
@@ -182,7 +181,6 @@ interface RawClientConfiguration {
     overrideServerEndpoint?: string | undefined
     overrideAuthToken?: string | undefined
 
-    // External auth providers
     authExternalProviders: ExternalAuthProvider[]
 }
 

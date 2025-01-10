@@ -1337,17 +1337,13 @@
                     },
                     "description": "Environment variables to set when executing the command."
                   },
-                  "workingDir": {
-                    "type": "string",
-                    "description": "Working directory for executing the command."
-                  },
                   "shell": {
                     "type": "string",
                     "description": "If true, runs command inside of a shell. Uses '/bin/sh' on Unix, and process.env.ComSpec on Windows. A different shell can be specified as a string."
                   },
                   "timeout": {
                     "type": "number",
-                    "description": "Timeout for executing the command in miliseconds."
+                    "description": "Timeout for executing the command in milliseconds."
                   },
                   "windowsHide": {
                     "type": "boolean",

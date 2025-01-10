@@ -88,15 +88,15 @@ async function executeCommand(cmd: ExternalAuthCommand): Promise<string> {
     const execAsync = promisify(exec)
 
     const command = cmd.commandLine.join(' ')
-    const options = {
-        ...cmd,
-        env: cmd.environment ? { ...process.env, ...cmd.environment } : process.env,
-    }
 
-    const { stdout, stderr } = await execAsync(command, options)
-    if (stderr) {
-        throw new Error(`External auth command error: ${stderr}`)
-    }
+    // No need to check error code, promisify causes exec to throw in case of errors
+    const { stdout } = await execAsync(command, {
+        shell: cmd.shell,
+        timeout: cmd.timeout,
+        windowsHide: cmd.windowsHide,
+        env: cmd.environment ? { ...process.env, ...cmd.environment } : process.env,
+    })
+
     return stdout.trim()
 }
 
@@ -104,6 +104,7 @@ async function getExternalProviderAuthHeaders(
     serverEndpoint: string,
     clientConfiguration: ClientConfiguration
 ): Promise<Record<string, string> | undefined> {
+    // Check for external auth provider for this endpoint
     const externalProvider = clientConfiguration.authExternalProviders.find(
         provider => normalizeServerEndpointURL(provider.endpoint) === serverEndpoint
     )
