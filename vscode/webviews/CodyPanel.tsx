@@ -19,7 +19,7 @@ import { useClientActionDispatcher } from './client/clientState'
 import { Notices } from './components/Notices'
 import { StateDebugOverlay } from './components/StateDebugOverlay'
 import { TabContainer, TabRoot } from './components/shadcn/ui/tabs'
-import { AccountTab, HistoryTab, PromptsTab, SettingsTab, TabsBar, View } from './tabs'
+import { HistoryTab, PromptsTab, SettingsTab, TabsBar, View } from './tabs'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 import { useUserAccountInfo } from './utils/useConfig'
 import { useFeatureFlag } from './utils/useFeatureFlags'
@@ -153,15 +153,6 @@ export const CodyPanel: FunctionComponent<CodyPanelProps> = ({
                             IDE={clientCapabilities.agentIDE}
                             setView={setView}
                             isPromptsV2Enabled={isPromptsV2Enabled}
-                        />
-                    )}
-                    {view === View.Account && (
-                        <AccountTab
-                            config={config}
-                            clientCapabilities={clientCapabilities}
-                            authStatus={authStatus}
-                            isDotComUser={isDotComUser}
-                            userProductSubscription={userProductSubscription}
                         />
                     )}
                     {view === View.Settings && <SettingsTab />}

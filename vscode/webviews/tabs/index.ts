@@ -1,4 +1,3 @@
-export { AccountTab } from './AccountTab'
 export { PromptsTab } from '../prompts/PromptsTab'
 export { HistoryTab } from './HistoryTab'
 export { SettingsTab } from './SettingsTab'

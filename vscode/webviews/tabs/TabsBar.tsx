@@ -72,7 +72,7 @@ export const TabsBar = memo<TabsBarProps>(props => {
     const { isCodyProUser, IDE } = user
     const tabItems = useTabs({ user })
     const {
-        config: { webviewType, multipleWebviewsEnabled },
+        config: { webviewType, multipleWebviewsEnabled, allowEndpointChange },
     } = useConfig()
     const currentViewSubActions = tabItems.find(tab => tab.view === currentView)?.subActions ?? []
 
@@ -155,7 +155,7 @@ export const TabsBar = memo<TabsBarProps>(props => {
                                 authStatus={user.user as AuthenticatedAuthStatus}
                                 isProUser={isCodyProUser}
                                 endpointHistory={endpointHistory}
-                                setView={setView}
+                                allowEndpointChange={allowEndpointChange}
                                 className="!tw-opacity-100 tw-h-full"
                             />
                         )}

@@ -20,6 +20,7 @@ interface LoginProps {
     codyIDE: CodyIDE
     endpoints: string[]
     authStatus: AuthStatus
+    allowEndpointChange: boolean
 }
 
 interface SignInButtonProps {
@@ -38,9 +39,10 @@ export const AuthPage: React.FunctionComponent<React.PropsWithoutRef<LoginProps>
     uiKindIsWeb,
     vscodeAPI,
     authStatus,
+    allowEndpointChange,
 }) => {
     const telemetryRecorder = useTelemetryRecorder()
-    const [isEnterpriseSignin, setIsEnterpriseSignin] = useState(false)
+    const [isEnterpriseSignin, setIsEnterpriseSignin] = useState(!allowEndpointChange)
 
     // Extracted common button props and styles
     const commonButtonProps = {
@@ -127,25 +129,28 @@ export const AuthPage: React.FunctionComponent<React.PropsWithoutRef<LoginProps>
         () => (
             <section className="tw-bg-sidebar-background tw-text-sidebar-foreground tw-w-full tw-max-w-md">
                 <div className="tw-font-semibold tw-text-md tw-my-4 tw-text-muted-foreground">
-                    <Button
-                        onClick={() => setIsEnterpriseSignin(false)}
-                        className="tw-flex tw-justify-between"
-                        variant="ghost"
-                        title="Back to sign-in options list"
-                    >
-                        <ArrowLeftIcon className="tw-mr-3" size={16} />
-                        Back
-                    </Button>
+                    {allowEndpointChange && (
+                        <Button
+                            onClick={() => setIsEnterpriseSignin(false)}
+                            className="tw-flex tw-justify-between"
+                            variant="ghost"
+                            title="Back to sign-in options list"
+                        >
+                            <ArrowLeftIcon className="tw-mr-3" size={16} />
+                            Back
+                        </Button>
+                    )}
                     <ClientSignInForm
                         authStatus={authStatus}
                         vscodeAPI={vscodeAPI}
                         className="tw-mt-8"
                         telemetryRecorder={telemetryRecorder}
+                        allowEndpointChange={allowEndpointChange}
                     />
                 </div>
             </section>
         ),
-        [authStatus, vscodeAPI, telemetryRecorder]
+        [authStatus, vscodeAPI, telemetryRecorder, allowEndpointChange]
     )
 
     return (
@@ -265,6 +270,7 @@ const WebLogin: React.FunctionComponent<
 interface ClientSignInFormProps {
     vscodeAPI: VSCodeWrapper
     telemetryRecorder: TelemetryRecorder
+    allowEndpointChange: boolean
     authStatus?: AuthStatus
     className?: string
 }
@@ -273,7 +279,7 @@ interface ClientSignInFormProps {
  * The form allows users to input their Sourcegraph instance URL and access token manually.
  */
 const ClientSignInForm: React.FC<ClientSignInFormProps> = memo(
-    ({ className, authStatus, vscodeAPI, telemetryRecorder }) => {
+    ({ className, authStatus, vscodeAPI, telemetryRecorder, allowEndpointChange }) => {
         // Combine related state into a single object to reduce re-renders
         const [formState, setFormState] = useState({
             showAccessTokenField: false,
@@ -354,6 +360,7 @@ const ClientSignInForm: React.FC<ClientSignInFormProps> = memo(
                             className="tw-w-full tw-my-2 !tw-p-4"
                             required
                             onChange={handleInputChange}
+                            disabled={!allowEndpointChange}
                         />
                         <FormMessage match="typeMismatch">Invalid URL.</FormMessage>
                         <FormMessage match="valueMissing">URL is required.</FormMessage>
