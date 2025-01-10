@@ -97,7 +97,7 @@ object ConfigUtil {
 
     return ExtensionConfiguration(
         anonymousUserID = CodyApplicationSettings.instance.anonymousUserId,
-        serverEndpoint = endpoint?.url ?: "",
+        serverEndpoint = endpoint?.url,
         accessToken = token,
         customHeaders = emptyMap(),
         proxy = UserLevelConfig.getProxy(),

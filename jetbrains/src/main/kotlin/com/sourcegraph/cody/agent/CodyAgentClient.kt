@@ -157,7 +157,7 @@ class CodyAgentClient(private val project: Project, private val webview: NativeW
     return CompletableFuture.completedFuture(null)
   }
 
-    @JsonRequest("window/showSaveDialog")
+  @JsonRequest("window/showSaveDialog")
   fun window_showSaveDialog(params: SaveDialogOptionsParams): CompletableFuture<String> {
     // Let's use the first possible extension as default.
     val ext = params.filters?.firstOrNull()?.value?.firstOrNull() ?: ""
