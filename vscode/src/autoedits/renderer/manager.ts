@@ -299,7 +299,11 @@ export class AutoEditsDefaultRendererManager implements AutoEditsRendererManager
     }
 
     public async renderInlineDecorations(decorationInfo: DecorationInfo): Promise<void> {
-        this.decorator?.setDecorations(decorationInfo)
+        if (!this.decorator) {
+            // No decorator to render the decorations
+            return
+        }
+        this.decorator.setDecorations(decorationInfo)
         await vscode.commands.executeCommand('setContext', 'cody.supersuggest.active', true)
     }
 
