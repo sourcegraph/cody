@@ -373,6 +373,31 @@ describe('AutoeditsProvider', () => {
         `)
     })
 
+    it('unset the cody.supersuggest.active context for inline decoration rejection', async () => {
+        const prediction = 'const a = 1\n'
+        await autoeditResultFor('const x = █\n', { prediction })
+        expect(executedCommands).toMatchInlineSnapshot(`
+            [
+              [
+                "setContext",
+                "cody.supersuggest.active",
+                true,
+              ],
+            ]
+        `)
+        await rejectSuggestionCommand()
+
+        // Deactives the context after accepting the suggestion
+        expect(executedCommands.length).toBe(3)
+        expect(executedCommands[1]).toMatchInlineSnapshot(`
+            [
+              "setContext",
+              "cody.supersuggest.active",
+              false,
+            ]
+        `)
+    })
+
     it('do not trigger the editBuilder for inline completion items', async () => {
         const prediction = 'const x = 1\n'
         const { editBuilder } = await autoeditResultFor('const x = █\n', { prediction })
