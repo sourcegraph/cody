@@ -91,8 +91,7 @@ export const ToolboxButton: FC<ToolboxButtonProps> = memo(({ settings, api, isFi
                 popoverContent={_close => (
                     <div id="accordion-collapse" data-accordion="collapse" className="tw-w-full">
                         <h2 id="accordion-collapse-heading">
-                            <button
-                                type="button"
+                            <div
                                 className="tw-flex tw-items-center tw-justify-between tw-w-full tw-p-5 tw-font-medium tw-border tw-border-border tw-rounded-t-md tw-focus:ring-4 tw-focus:ring-gray-200 tw-gap-3 tw-bg-[color-mix(in_lch,currentColor_10%,transparent)]"
                                 title="Agentic Chat Context"
                             >
@@ -114,7 +113,7 @@ export const ToolboxButton: FC<ToolboxButtonProps> = memo(({ settings, api, isFi
                                         })
                                     }
                                 />
-                            </button>
+                            </div>
                         </h2>
                         <div
                             id="accordion-collapse-body"
