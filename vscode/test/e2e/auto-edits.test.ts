@@ -110,6 +110,7 @@ const autoeditsTestHelper = async ({
     const snapshotPlatform = platform === 'darwin' ? 'macos' : platform === 'linux' ? 'linux' : 'windows'
 
     // Fix the viewport size
+    // Note: Use a suitable viewport size that ensures that decorations are visible in the screenshot
     await page.setViewportSize({
         width: 1920,
         height: 1080,
@@ -152,6 +153,8 @@ const autoeditsTestHelper = async ({
         await page.waitForTimeout(500)
 
         await expect(page).toHaveScreenshot([snapshotPlatform, snapshotName], {
+            // Note: This values allow some a small amount of variation in the diff view
+            // Be mindful of this when adding new tests that have minor differences
             maxDiffPixelRatio: 0.02,
             maxDiffPixels: 500,
             clip,
