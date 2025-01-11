@@ -11,6 +11,7 @@ import {
     PlusIcon,
     Settings2Icon,
     UserCircleIcon,
+    ZapIcon,
 } from 'lucide-react'
 import { useCallback, useState } from 'react'
 import { URI } from 'vscode-uri'
@@ -389,6 +390,25 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
                             </CommandGroup>
 
                             <CommandGroup>
+                                {isDotComUser && !isProUser && (
+                                    <CommandLink
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        onSelect={() => {
+                                            telemetryRecorder.recordEvent(
+                                                'cody.userMenu.upgradePro',
+                                                'open',
+                                                {}
+                                            )
+                                            close()
+                                        }}
+                                        href="https://accounts.sourcegraph.com/cody/subscription"
+                                    >
+                                        <ZapIcon size={16} strokeWidth={1.25} className="tw-mr-2" />
+                                        <span className="tw-flex-grow">Upgrade to Pro</span>
+                                        <ExternalLinkIcon size={16} strokeWidth={1.25} />
+                                    </CommandLink>
+                                )}
                                 {isDotComUser && (
                                     <CommandItem
                                         onSelect={() => {
@@ -429,6 +449,28 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
                                     <Settings2Icon size={16} strokeWidth={1.25} className="tw-mr-2" />
                                     <span className="tw-flex-grow">Extension Settings</span>
                                 </CommandItem>
+
+                                {isProUser && isTeamsUpgradeCtaEnabled && (
+                                    <CommandLink
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        onSelect={() => {
+                                            telemetryRecorder.recordEvent(
+                                                'cody.userMenu.EnterprisePlen',
+                                                'open',
+                                                {}
+                                            )
+                                            close()
+                                        }}
+                                        // TODO: Update this link to the correct one
+                                        href="https://docs.sourcegraph.com"
+                                    >
+                                        {/* TODO: Update new logo */}
+                                        <SourcegraphLogo height={16} width={16} className="tw-mr-2" />
+                                        <span className="tw-flex-grow">Explore Enterprise Plan</span>
+                                        <ExternalLinkIcon size={16} strokeWidth={1.25} />
+                                    </CommandLink>
+                                )}
                             </CommandGroup>
 
                             <CommandGroup>
