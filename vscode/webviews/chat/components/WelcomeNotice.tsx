@@ -9,6 +9,7 @@ import { SourcegraphLogo } from '../../icons/SourcegraphLogo'
 import { useTelemetryRecorder } from '../../utils/telemetry'
 
 const WORKSPACES_URL = 'https://workspaces.sourcegraph.com'
+// TODO: Update to live link https://linear.app/sourcegraph/issue/CORE-535/
 const DOCS_URL = 'https://docs.sourcegraph.com'
 
 export function WelcomeNotice() {
