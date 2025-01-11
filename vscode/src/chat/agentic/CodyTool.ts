@@ -192,7 +192,10 @@ class FileTool extends CodyTool {
         if (filePaths.length === 0) return []
         logDebug('CodyTool', `requesting ${filePaths.length} files`)
         return Promise.all(filePaths.map(getContextFromRelativePath)).then(results =>
-            results.filter((item): item is ContextItem => item !== null)
+            results
+                .filter((item): item is ContextItem => item !== null)
+                // Mark the item as agentic instead of user selected.
+                .map(item => ({ ...item, source: ContextItemSource.Agentic }))
         )
     }
 }

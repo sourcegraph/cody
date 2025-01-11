@@ -18,6 +18,7 @@ import {
     telemetryRecorder,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
+import { getContextFromRelativePath } from '../../commands/context/file-path'
 import { forkSignal } from '../../completions/utils'
 import { getCategorizedMentions, isUserAddedItem } from '../../prompt-builder/utils'
 import type { ChatBuilder } from '../chat-view/ChatBuilder'
@@ -144,7 +145,6 @@ export class DeepCodyAgent {
         maxLoops = 2
     ): Promise<ContextItem[]> {
         span.setAttribute('sampled', true)
-        this.statusCallback?.onStart()
         const startTime = performance.now()
         await this.reviewLoop(requestID, span, chatAbortSignal, maxLoops)
         telemetryRecorder.recordEvent('cody.deep-cody.context', 'reviewed', {
@@ -164,7 +164,7 @@ export class DeepCodyAgent {
                 category: 'billable',
             },
         })
-        this.statusCallback?.onComplete()
+        this.statusCallback?.onStream('Sending final request', '')
         return this.context
     }
 
@@ -177,9 +177,12 @@ export class DeepCodyAgent {
         span.addEvent('reviewLoop')
         for (let i = 0; i < maxLoops && !chatAbortSignal.aborted; i++) {
             this.stats.loop++
+            this.statusCallback?.onStream('Agentic context reflection', '')
             const newContext = await this.review(requestID, span, chatAbortSignal)
-            if (!newContext.length) break
-
+            if (!newContext.length) {
+                this.statusCallback?.onComplete('Agentic context reflection')
+                break
+            }
             // Filter and add new context items in one pass
             const validItems = newContext.filter(c => c.title !== 'TOOLCONTEXT')
             this.context.push(...validItems)
@@ -204,16 +207,18 @@ export class DeepCodyAgent {
         chatAbortSignal: AbortSignal
     ): Promise<ContextItem[]> {
         const prompter = this.getPrompter(this.context)
-        const promptData = await prompter.makePrompt(this.chatBuilder, 1, this.promptMixins)
+        const { prompt } = await prompter.makePrompt(this.chatBuilder, 1, this.promptMixins)
         span.addEvent('sendReviewRequest')
         try {
-            const res = await this.processStream(
-                requestID,
-                promptData.prompt,
-                chatAbortSignal,
-                DeepCodyAgent.model
-            )
-            if (!res) return []
+            const res = await this.processStream(requestID, prompt, chatAbortSignal, DeepCodyAgent.model)
+            // If the response is empty or contains the known token, the context is sufficient.
+            if (!res || isReadyToAnswer(res)) {
+                // Process the response without generating any context items.
+                for (const tool of this.tools) {
+                    tool.processResponse?.()
+                }
+                return []
+            }
             const results = await Promise.all(
                 this.tools.map(async tool => {
                     try {
@@ -234,29 +239,31 @@ export class DeepCodyAgent {
             )
 
             const reviewed = []
+            const contextNames = RawTextProcessor.extract(res, ACTIONS_TAGS.CONTEXT.toString())
+            const currentContext = [
+                ...this.context,
+                ...this.chatBuilder
+                    .getDehydratedMessages()
+                    .flatMap(m => (m.contextFiles ? [...m.contextFiles].reverse() : []))
+                    .filter(isDefined),
+            ]
 
-            // Extract all the strings from between tags.
-            const valid = RawTextProcessor.extract(res, ACTIONS_TAGS.CONTEXT.toString())
-            for (const contextName of valid || []) {
-                const foundValidatedItems = this.context.filter(c => c.uri.path.endsWith(contextName))
-                for (const found of foundValidatedItems) {
-                    reviewed.push({ ...found, source: ContextItemSource.Agentic })
+            for (const contextName of contextNames) {
+                for (const item of currentContext) {
+                    if (item.uri.path.endsWith(contextName)) {
+                        const fullFile = await getContextFromRelativePath(contextName)
+                        reviewed.push({ ...(fullFile || item), source: ContextItemSource.Agentic })
+                    }
                 }
             }
 
-            // Replace the current context list with the reviewed context.
-            if (valid.length + reviewed.length > 0) {
-                reviewed.push(...this.context.filter(c => isUserAddedItem(c)))
+            if (reviewed.length > 0) {
+                const selected = this.context.filter(c => isUserAddedItem(c))
+                const total = this.context.length - reviewed.length
+                const status = total > 0 ? 'removed' : 'added'
+                this.statusCallback?.onStream('Filter', `${status} ${total} fetched context`)
+                reviewed.push(...selected)
                 this.context = reviewed
-            }
-
-            // If the response is empty or contains the known token, the context is sufficient.
-            if (res?.includes(ACTIONS_TAGS.ANSWER.toString())) {
-                // Process the response without generating any context items.
-                for (const tool of this.tools) {
-                    tool.processResponse?.()
-                }
-                return reviewed
             }
 
             const newContextFetched = results.flat().filter(isDefined)
@@ -264,9 +271,7 @@ export class DeepCodyAgent {
             return newContextFetched
         } catch (error) {
             await this.multiplexer.notifyTurnComplete()
-            logDebug('Deep Cody', `context review failed: ${error}`, {
-                verbose: { prompt: promptData.prompt, error },
-            })
+            logDebug('Deep Cody', `context review failed: ${error}`, { verbose: { prompt, error } })
             return []
         }
     }
@@ -356,3 +361,5 @@ export class RawTextProcessor {
         return PromptString.join(prompts, connector)
     }
 }
+
+const isReadyToAnswer = (text: string) => text === `<${ACTIONS_TAGS.ANSWER.toString()}>`
