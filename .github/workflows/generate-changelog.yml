@@ -16,6 +16,14 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.inputs.branch }}
+      - name: Update version
+        env:
+          EXT_VERSION: ${{ env.EXT_VERSION }}
+        run: |
+          sed -i 's/"version": "[0-9]\+\.[0-9]\+\.[0-9]\+"/"version": "'$EXT_VERSION'"/' package.json
+          # This will get tagged along with the changelog PR
+          git add package.json
+          git commit -m "Update version to $EXT_VERSION"
       - name: Generate changelog
         env:
           DEVX_SERVICE_GH_TOKEN: ${{ secrets.DEVX_SERVICE_GH_TOKEN }}
@@ -37,12 +45,18 @@ jobs:
           gh release -R sourcegraph/devx-service download ${tagName} --pattern changelog
           chmod +x changelog
 
-          ./changelog write \
-          --output-file="vscode/CHANGELOG.md" \
-          --output.changelog.marker='{/* CHANGELOG_START */}' \
-          --releaseregistry.version=$EXT_VERSION
+          ./changelog update-as-pr \
+            --github.repo=$GH_REPO \
+            --output.repo.base="main" \
+            --output.repo=$GH_REPO \
+            --output.pr.branch="release/vscode-%s" \
+            --output.pr.title="Changelog for %s" \
+            --output.pr.body="Automated release and changelog for VS code Cody %s" \
+            --output.changelog="vscode/CHANGELOG.md" \
+            --output.changelog.marker='{/* CHANGELOG_START */}' \
+            --releaseregistry.version=$EXT_VERSION
 
-          cat vscode/CHANGELOG.md
+          #cat vscode/CHANGELOG.md
           # git checkout -b release/vscode-v$EXT_VERSION
           # git add vscode/CHANGELOG.md
           # git commit -m "Automated release and changelog for VS code Cody"
