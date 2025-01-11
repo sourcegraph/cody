@@ -120,6 +120,7 @@ export const CodyPanel: FunctionComponent<CodyPanelProps> = ({
                         currentView={view}
                         setView={setView}
                         endpointHistory={config.endpointHistory ?? []}
+                        isTeamsUpgradeCtaEnabled={isTeamsUpgradeCtaEnabled}
                     />
                 )}
                 {errorMessages && <ErrorBanner errors={errorMessages} setErrors={setErrorMessages} />}

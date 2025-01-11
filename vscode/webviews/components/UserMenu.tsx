@@ -15,6 +15,7 @@ import {
 import { useCallback, useState } from 'react'
 import { URI } from 'vscode-uri'
 import { ACCOUNT_USAGE_URL, isSourcegraphToken } from '../../src/chat/protocol'
+import { SourcegraphLogo } from '../icons/SourcegraphLogo'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
 import { useTelemetryRecorder } from '../utils/telemetry'
 import { UserAvatar } from './UserAvatar'
@@ -34,6 +35,8 @@ interface UserMenuProps {
     onCloseByEscape?: () => void
     allowEndpointChange: boolean
     __storybook__open?: boolean
+    // Whether to show the Sourcegraph Teams upgrade CTA or not.
+    isTeamsUpgradeCtaEnabled?: boolean
 }
 
 type MenuView = 'main' | 'switch' | 'add' | 'remove'
@@ -46,6 +49,7 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
     onCloseByEscape,
     allowEndpointChange,
     __storybook__open,
+    isTeamsUpgradeCtaEnabled,
 }) => {
     const telemetryRecorder = useTelemetryRecorder()
     const { displayName, username, primaryEmail, endpoint } = authStatus
@@ -306,6 +310,49 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
                                     <span className="tw-flex-grow">Add another account</span>
                                 </CommandItem>
                             </CommandGroup>
+
+                            {isTeamsUpgradeCtaEnabled && (
+                                <CommandGroup>
+                                    <CommandItem className="tw-flex tw-w-full tw-justify-start tw-gap-4 tw-align-center tw-flex-col tw-bg-inherit">
+                                        <div className="tw-flex tw-w-full tw-justify-start tw-gap-4 tw-align-center">
+                                            {/* TODO: Replace with new logo */}
+                                            <SourcegraphLogo
+                                                width={16}
+                                                height={16}
+                                                className="tw-mr-2"
+                                            />
+                                            <Badge
+                                                variant="secondary"
+                                                className="tw-opacity-85 tw-text-xs tw-h-fit tw-self-center"
+                                            >
+                                                Enterprise Starter
+                                            </Badge>
+                                        </div>
+                                        <div className="tw-text-lg tw-font-semibold tw-text-left">
+                                            Unlock the Sourcegraph platform
+                                        </div>
+                                        <div className="tw-text-md tw-text-muted-foreground">
+                                            Create a workspace and connect GitHub repositories to unlock
+                                            Code Search, AI chat, autocompletes, inline edits and more
+                                            for your team.
+                                        </div>
+                                        <a
+                                            href="https://workspaces.sourcegraph.com"
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            className="tw-flex-grow tw-w-full tw-my-2"
+                                        >
+                                            <Button
+                                                key="workspace-create-button"
+                                                variant="outline"
+                                                className="tw-flex-grow tw-rounded-md tw-text-center tw-w-full  tw-text-foreground tw-cursor-pointer"
+                                            >
+                                                Create a workspace
+                                            </Button>
+                                        </a>
+                                    </CommandItem>
+                                </CommandGroup>
+                            )}
                         </CommandList>
                     ) : (
                         <CommandList>
