@@ -211,12 +211,8 @@ export class DeepCodyAgent {
         span.addEvent('sendReviewRequest')
         try {
             const res = await this.processStream(requestID, prompt, chatAbortSignal, DeepCodyAgent.model)
-            // If the response is empty or contains the known token, the context is sufficient.
+            // If the response is empty or only contains the answer token, it's ready to answer.
             if (!res || isReadyToAnswer(res)) {
-                // Process the response without generating any context items.
-                for (const tool of this.tools) {
-                    tool.processResponse?.()
-                }
                 return []
             }
             const results = await Promise.all(
@@ -239,7 +235,6 @@ export class DeepCodyAgent {
             )
 
             const reviewed = []
-            const contextNames = RawTextProcessor.extract(res, ACTIONS_TAGS.CONTEXT.toString())
             const currentContext = [
                 ...this.context,
                 ...this.chatBuilder
@@ -247,22 +242,30 @@ export class DeepCodyAgent {
                     .flatMap(m => (m.contextFiles ? [...m.contextFiles].reverse() : []))
                     .filter(isDefined),
             ]
-
+            // Extract context items that are enclosed with context tags from the response.
+            // We will validate the context items by checking if the context item is in the current context,
+            // which is a list of context that we have fetched in this round, and the ones from user's current
+            // chat session.
+            const contextNames = RawTextProcessor.extract(res, contextTag)
             for (const contextName of contextNames) {
                 for (const item of currentContext) {
                     if (item.uri.path.endsWith(contextName)) {
-                        const fullFile = await getContextFromRelativePath(contextName)
-                        reviewed.push({ ...(fullFile || item), source: ContextItemSource.Agentic })
+                        // Try getting the full content for the requested file.
+                        const file = (await getContextFromRelativePath(contextName)) || item
+                        reviewed.push({ ...file, source: ContextItemSource.Agentic })
                     }
                 }
             }
-
+            // When there are context items matched, we will replace the current context with
+            // the reviewed context list, but first we will make sure all the user added context
+            // items are nor removed from the updated context list. We will let the prompt builder
+            // at the final stage to do the unique context check.
             if (reviewed.length > 0) {
-                const selected = this.context.filter(c => isUserAddedItem(c))
                 const total = this.context.length - reviewed.length
                 const status = total > 0 ? 'removed' : 'added'
-                this.statusCallback?.onStream('Filter', `${status} ${total} fetched context`)
-                reviewed.push(...selected)
+                const processedTotal = total > 0 ? total : -total
+                this.statusCallback?.onStream('Filter', `${status} ${processedTotal} context`)
+                reviewed.push(...this.context.filter(c => isUserAddedItem(c)))
                 this.context = reviewed
             }
 
@@ -362,4 +365,6 @@ export class RawTextProcessor {
     }
 }
 
-const isReadyToAnswer = (text: string) => text === `<${ACTIONS_TAGS.ANSWER.toString()}>`
+const answerTag = ACTIONS_TAGS.ANSWER.toString()
+const contextTag = ACTIONS_TAGS.CONTEXT.toString()
+const isReadyToAnswer = (text: string) => text === `<${answerTag}>`
