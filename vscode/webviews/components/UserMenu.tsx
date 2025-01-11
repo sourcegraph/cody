@@ -311,7 +311,7 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
                                 </CommandItem>
                             </CommandGroup>
 
-                            {!isTeamsUpgradeCtaEnabled && (
+                            {isTeamsUpgradeCtaEnabled && (
                                 <CommandGroup>
                                     <CommandLink
                                         href="https://workspaces.sourcegraph.com"
