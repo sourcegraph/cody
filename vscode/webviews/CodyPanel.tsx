@@ -138,6 +138,7 @@ export const CodyPanel: FunctionComponent<CodyPanelProps> = ({
                             smartApplyEnabled={smartApplyEnabled}
                             isPromptsV2Enabled={isPromptsV2Enabled}
                             setView={setView}
+                            isTeamsUpgradeCtaEnabled={isTeamsUpgradeCtaEnabled}
                         />
                     )}
                     {view === View.History && (
