@@ -101,3 +101,38 @@ export const LargeUserAvatarImage: Story = {
         },
     },
 }
+
+export const ProUserWithWorkspacesUpgrade: Story = {
+    args: {
+        isProUser: true,
+        isTeamsUpgradeCtaEnabled: true,
+        authStatus: {
+            ...AUTH_STATUS_FIXTURE_AUTHED,
+            displayName: 'Tim Lucas',
+            username: 'tim',
+            avatarURL: 'https://avatars.githubusercontent.com/u/153?v=4',
+            authenticated: true,
+            hasVerifiedEmail: true,
+            requiresVerifiedEmail: false,
+            endpoint: 'https://sourcegraph.com',
+        },
+    },
+}
+
+export const FreeUserWithWorkspacesUpgrade: Story = {
+    args: {
+        isProUser: false,
+        isTeamsUpgradeCtaEnabled: true,
+        authStatus: {
+            ...AUTH_STATUS_FIXTURE_AUTHED,
+            displayName: 'Free Tim',
+            username: 'free-tim',
+            primaryEmail: 'free@example.com',
+            endpoint: 'https://sourcegraph.com',
+            avatarURL: 'https://avatars.githubusercontent.com/u/153?v=4',
+            authenticated: true,
+            hasVerifiedEmail: true,
+            requiresVerifiedEmail: false,
+        },
+    },
+}
