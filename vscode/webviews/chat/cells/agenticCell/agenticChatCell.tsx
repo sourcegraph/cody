@@ -1,0 +1,154 @@
+import type { ProcessingStep } from '@sourcegraph/cody-shared'
+import { BrainIcon, CircleXIcon, DotIcon, Loader2Icon } from 'lucide-react'
+import { type FC, type FunctionComponent, createContext, memo, useCallback, useState } from 'react'
+import {
+    Accordion,
+    AccordionContent,
+    AccordionItem,
+    AccordionTrigger,
+} from '../../../components/shadcn/ui/accordion'
+import { Cell } from '../Cell'
+import { NON_HUMAN_CELL_AVATAR_SIZE } from '../messageCell/assistant/AssistantMessageCell'
+
+export const __ProcessCellStorybookContext = createContext<{ initialOpen: boolean } | null>(null)
+
+const CELL_NAME = 'agentic-context-items'
+/**
+ * A component displaying the agentic chat status.
+ */
+export const AgenticChatCell: FunctionComponent<{
+    isContextLoading: boolean
+    className?: string
+    processes?: ProcessingStep[]
+}> = memo(({ className, isContextLoading, processes }) => {
+    const [accordionValue, setAccordionValue] = useState<string | undefined>(undefined)
+
+    const triggerAccordion = useCallback(() => {
+        setAccordionValue(prev => {
+            return prev ? '' : CELL_NAME
+        })
+    }, [])
+
+    const subHeader = !isContextLoading
+        ? 'context reviewed'
+        : processes?.some(p => p.content && p.status === 'pending')
+          ? 'fetching context using tools...'
+          : 'reviewing...'
+
+    return (
+        <div>
+            <Accordion
+                type="single"
+                collapsible={true}
+                defaultValue={undefined}
+                asChild={true}
+                value={accordionValue}
+            >
+                <AccordionItem value={CELL_NAME} asChild>
+                    <Cell
+                        header={
+                            <AccordionTrigger
+                                onClick={() => triggerAccordion()}
+                                title="Agentic Context"
+                                className="tw-flex tw-items-center tw-gap-4"
+                                disabled={!processes?.some(p => p.id)}
+                            >
+                                {isContextLoading ? (
+                                    <Loader2Icon
+                                        size={NON_HUMAN_CELL_AVATAR_SIZE}
+                                        className="tw-animate-spin"
+                                    />
+                                ) : (
+                                    <BrainIcon
+                                        size={NON_HUMAN_CELL_AVATAR_SIZE}
+                                        className="tw-text-green-500"
+                                    />
+                                )}
+                                <span className="tw-flex tw-items-baseline">
+                                    Agentic Context
+                                    <span className="tw-opacity-60 tw-text-sm tw-ml-2">
+                                        &mdash; {subHeader}
+                                    </span>
+                                </span>
+                            </AccordionTrigger>
+                        }
+                        containerClassName={className}
+                        contentClassName="tw-flex tw-flex-col tw-gap-4 tw-max-w-full"
+                        data-testid="context"
+                    >
+                        <AccordionContent
+                            className="tw-ml-6 tw-flex tw-flex-col tw-gap-2"
+                            overflow={false}
+                        >
+                            {processes && (
+                                <ProcessList processes={processes} isContextLoading={isContextLoading} />
+                            )}
+                        </AccordionContent>
+                    </Cell>
+                </AccordionItem>
+            </Accordion>
+        </div>
+    )
+})
+
+const ProcessList: FC<{ processes: ProcessingStep[]; isContextLoading: boolean }> = ({
+    processes,
+    isContextLoading,
+}) => {
+    return (
+        <div className="tw-flex tw-flex-col tw-gap-2">
+            <div className="tw-flex tw-flex-col tw-gap-2">
+                {processes.map(process => (
+                    <ProcessItem
+                        key={process.id}
+                        process={process}
+                        isContextLoading={isContextLoading}
+                    />
+                ))}
+            </div>
+        </div>
+    )
+}
+
+const ProcessItem: FC<{ process: ProcessingStep; isContextLoading: boolean }> = ({ process }) => {
+    if (!process.id) {
+        return null
+    }
+
+    return (
+        <div className="tw-flex tw-items-center">
+            <div className="tw-mr-3">
+                {process.status === 'error' ? (
+                    <CircleXIcon
+                        strokeWidth={1.25}
+                        size={14}
+                        className="tw-text-red-500 tw-drop-shadow-md"
+                    />
+                ) : process.content ? (
+                    <DotIcon strokeWidth={1.25} size={14} className="tw-text-transparent" />
+                ) : (
+                    <BrainIcon
+                        strokeWidth={1.25}
+                        size={14}
+                        className="tw-text-green-500 tw-drop-shadow-md"
+                    />
+                )}
+            </div>
+            <div className="tw-flex-grow tw-min-w-0">
+                <div className="tw-truncate tw-max-w-full tw-text-sm">
+                    <span className={process.content ? 'tw-font-normal' : 'tw-font-semibold'}>
+                        {process.id}
+                    </span>
+                    {process.content && (
+                        <span
+                            className="tw-font-normal tw-ml-1 tw-truncate tw-max-w-full tw-text-xs tw-muted-foreground tw-opacity-80"
+                            title="Query generated by agent"
+                        >
+                            ({process.content})
+                        </span>
+                    )}
+                </div>
+            </div>
+        </div>
+    )
+}
