@@ -9,6 +9,7 @@ import { PromptMigrationWidget } from './../../components/promptsMigration/Promp
 
 import { clsx } from 'clsx'
 import styles from './WelcomeMessage.module.css'
+import { WelcomeNotice } from './WelcomeNotice'
 
 const localStorageKey = 'chat.welcome-message-dismissed'
 
@@ -32,7 +33,7 @@ export const WelcomeMessage: FunctionComponent<WelcomeMessageProps> = ({
     }
 
     return (
-        <div className="tw-flex-1 tw-flex tw-flex-col tw-items-start tw-w-full tw-px-8 tw-gap-6 tw-transition-all">
+        <div className="tw-flex-1 tw-flex tw-flex-col tw-items-start tw-w-full tw-px-8 tw-gap-6 tw-transition-all tw-relative">
             {isPromptsV2Enabled && IDE !== CodyIDE.Web && (
                 <PromptMigrationWidget dismissible={true} className="tw-w-full" />
             )}
@@ -48,7 +49,9 @@ export const WelcomeMessage: FunctionComponent<WelcomeMessageProps> = ({
                     telemetryLocation="WelcomeAreaPrompts"
                     onSelect={item => runAction(item, setView)}
                 />
-
+                <div className="tw-absolute tw-bottom-0 tw-left-1/2 tw-transform tw--translate-x-1/2 tw-w-[95%] tw-z-2">
+                    <WelcomeNotice />
+                </div>
                 <div className={clsx(styles.actions, 'tw-flex tw-py-2 tw-gap-8 tw-justify-center')}>
                     <Button
                         variant="ghost"
