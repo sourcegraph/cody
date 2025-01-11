@@ -5,6 +5,7 @@ import {
     type ContextItemOpenCtx,
     ContextItemSource,
     type ContextMentionProviderMetadata,
+    MODEL_CONTEXT_PROVIDER_URI,
     PromptString,
     firstValueFrom,
     logDebug,
@@ -15,6 +16,7 @@ import {
 import { URI } from 'vscode-uri'
 import { getContextFromRelativePath } from '../../commands/context/file-path'
 import { getContextFileFromShell } from '../../commands/context/shell'
+import type { OpenCtxProvider } from '../../context/openctx/types'
 import { type ContextRetriever, toStructuredMentions } from '../chat-view/ContextRetriever'
 import { getChatContextItemsForMention } from '../context/chatContext'
 import { getCorpusContextItemsForEditorState } from '../initialContext'
@@ -78,7 +80,7 @@ export abstract class CodyTool {
     /**
      * Resets the raw text input stream.
      */
-    private reset(): void {
+    public reset(): void {
         this.unprocessedText = ''
     }
     /**
@@ -232,6 +234,56 @@ class SearchTool extends CodyTool {
         } satisfies ContextItem
         context.push(searchQueryItem)
         return context.slice(-maxSearchItems)
+    }
+}
+
+export class ModelContextProviderTool extends CodyTool {
+    constructor(
+        config: CodyToolConfig,
+        private modelContextProvider: OpenCtxProvider,
+        private toolName: string
+    ) {
+        super(config)
+    }
+
+    public parse(): string[] {
+        try {
+            JSON.parse(this.unprocessedText)
+        } catch {
+            return []
+        }
+        const unparsedText = this.unprocessedText
+        this.reset()
+        return [unparsedText]
+    }
+
+    public async execute(span: Span, queries: string[]): Promise<ContextItem[]> {
+        span.addEvent('executeModelContextProviderTool')
+
+        try {
+            const rawItems =
+                (await this.modelContextProvider.items?.(
+                    { mention: { title: this.toolName, data: JSON.parse('{}'), uri: '' } },
+                    {}
+                )) ?? []
+
+            return rawItems.map(item => ({
+                type: 'openctx',
+                provider: 'openctx',
+                title: item.title,
+                uri: URI.parse(''),
+                providerUri: MODEL_CONTEXT_PROVIDER_URI,
+                content: item.ai?.content || '',
+                mention: {
+                    uri: '',
+                    data: item.ai,
+                    description: item.ai?.content,
+                },
+            }))
+        } catch (error) {
+            console.error('ModelContextProviderTool execution failed:', error)
+            return []
+        }
     }
 }
 

@@ -1,14 +1,17 @@
-import { authStatus, firstValueFrom, isDefined, ps } from '@sourcegraph/cody-shared'
+import { PromptString, authStatus, firstValueFrom, isDefined, ps } from '@sourcegraph/cody-shared'
+import * as vscode from 'vscode'
 import { getOpenCtxProviders } from '../../context/openctx'
+import { createModelContextProvider } from '../../context/openctx/modelContextProvider'
+import type { OpenCtxProvider } from '../../context/openctx/types'
 import type { ContextRetriever } from '../chat-view/ContextRetriever'
 import {
     type CodyTool,
     type CodyToolConfig,
+    ModelContextProviderTool,
     OpenCtxTool,
     getDefaultCodyTools,
     registerDefaultTools,
 } from './CodyTool'
-
 interface CodyShellConfig {
     user?: boolean
     instance?: boolean
@@ -33,6 +36,7 @@ export interface ToolStatusCallback {
  */
 export class CodyToolProvider {
     private openCtxTools: CodyTool[] = []
+    private modelContextProviderTools: CodyTool[] = []
     private toolFactory = new ToolFactory()
     private shellConfig: CodyShellConfig = {
         user: false,
@@ -43,6 +47,7 @@ export class CodyToolProvider {
     private constructor(private contextRetriever: Pick<ContextRetriever, 'retrieveContext'>) {
         this.initializeToolRegistry()
         this.initializeOpenCtxTools()
+        this.initializeModelContextProviderTools()
     }
 
     public static instance(
@@ -71,11 +76,99 @@ export class CodyToolProvider {
             this.contextRetriever,
             this.toolFactory
         )
-        return [...defaultTools, ...this.openCtxTools]
+        return [...defaultTools, ...this.openCtxTools, ...this.modelContextProviderTools]
     }
 
     private async initializeOpenCtxTools(): Promise<void> {
         this.openCtxTools = await this.buildOpenCtxCodyTools()
+    }
+
+    private async initializeModelContextProviderTools(): Promise<void> {
+        const modelcontextprotocoltoolsEnabled = vscode.workspace
+            .getConfiguration()
+            .get<boolean>('openctx.mcp.enable')
+        const modelcontextprotocoltoolsURI = vscode.workspace
+            .getConfiguration()
+            .get<string>('openctx.mcp.uri')
+
+        const modelcontextprotocoltoolNameQuery =
+            vscode.workspace.getConfiguration().get<string>('openctx.mcp.nameQuery') || ''
+        if (!modelcontextprotocoltoolsEnabled || !modelcontextprotocoltoolsURI) {
+            return
+        }
+        const modelContextProvider = await createModelContextProvider(modelcontextprotocoltoolsURI)
+        await modelContextProvider.meta({}, {})
+        this.modelContextProviderTools = await this.buildModelContextProviderTools(
+            modelContextProvider,
+            modelcontextprotocoltoolNameQuery
+        )
+    }
+
+    private async buildModelContextProviderTools(
+        modelContextProvider: OpenCtxProvider,
+        modelcontextprotocoltoolNameQuery: string
+    ): Promise<CodyTool[]> {
+        const mentions = await modelContextProvider.mentions?.(
+            { query: modelcontextprotocoltoolNameQuery },
+            {}
+        )
+        if (!mentions?.length) {
+            return []
+        }
+
+        return mentions
+            .map(mention => {
+                const toolName = `MCP-${mention.title}`
+                const upperTitle = mention.title.toUpperCase()
+                const tagName = `${upperTitle}TOOL`
+
+                // Create config in OPENCTX_CONFIG format
+                const config = {
+                    title: `${mention.title} (via MCP)`,
+                    tags: {
+                        tag: PromptString.unsafe_fromUserQuery(tagName),
+                        subTag: ps`QUERY`, // This helps differentiate between them so I will add a subtag
+                    },
+                    prompt: {
+                        instruction: PromptString.unsafe_fromUserQuery(
+                            `Use ${mention.title} to ${mention.description || 'retrieve context'}. ` +
+                                `Input must follow this schema: ${JSON.stringify(
+                                    mention.data?.properties,
+                                    null,
+                                    2
+                                )}` +
+                                'Ensure all required properties are provided and types match the schema.'
+                        ),
+                        placeholder: PromptString.unsafe_fromUserQuery(
+                            `${mention.title.toUpperCase()}_INPUT`
+                        ),
+                        example: PromptString.unsafe_fromUserQuery(
+                            `To use ${mention.title} with valid schema: \`<${tagName}>${JSON.stringify({
+                                message: mention.data?.properties || 'example input',
+                            })}</${tagName}>\``
+                        ),
+                    },
+                }
+
+                // Register the tool
+                this.toolFactory.registry.register({
+                    name: toolName,
+                    ...config,
+                    createInstance: toolConfig =>
+                        new ModelContextProviderTool(
+                            toolConfig as CodyToolConfig,
+                            modelContextProvider,
+                            mention.title
+                        ),
+                })
+
+                const tool = this.toolFactory.createTool(toolName)
+                if (tool) {
+                    this.modelContextProviderTools.push(tool)
+                }
+                return tool
+            })
+            .filter(isDefined)
     }
 
     private async buildOpenCtxCodyTools(): Promise<CodyTool[]> {

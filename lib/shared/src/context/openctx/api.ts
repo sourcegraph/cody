@@ -33,6 +33,7 @@ export const REMOTE_DIRECTORY_PROVIDER_URI = 'internal-remote-directory-search'
 export const WEB_PROVIDER_URI = 'internal-web-provider'
 export const GIT_OPENCTX_PROVIDER_URI = 'internal-git-openctx-provider'
 export const CODE_SEARCH_PROVIDER_URI = 'internal-code-search-provider'
+export const MODEL_CONTEXT_PROVIDER_URI = 'internal-model-context-provider'
 export const WORKSPACE_DIRECTORY_PROVIDER_URI = DOTCOM_WORKSPACE_UPGRADE_URL.href + '?workspace=dir'
 export const WORKSPACE_REPOSITORY_PROVIDER_URI = DOTCOM_WORKSPACE_UPGRADE_URL.href + '?workspace=repo'
 

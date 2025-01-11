@@ -1249,6 +1249,16 @@
           "markdownDescription": "OpenCtx providers configuration.",
           "default": {}
         },
+        "openctx.mcp.enable": {
+          "type": "boolean",
+          "markdownDescription": "Enable OpenCtx providers for Cody.",
+          "default": true
+        },
+        "openctx.mcp.uri": {
+          "type": "string",
+          "markdownDescription": "URI for the MCP provider tools in OpenCtx.",
+          "default": ""
+        },
         "cody.internal.unstable": {
           "order": 999,
           "type": "boolean",
