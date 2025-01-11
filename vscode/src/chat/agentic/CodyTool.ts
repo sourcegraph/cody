@@ -5,6 +5,7 @@ import {
     type ContextItemWithContent,
     type ContextMentionProviderMetadata,
     ProcessType,
+    MODEL_CONTEXT_PROVIDER_URI,
     PromptString,
     firstValueFrom,
     logDebug,
@@ -17,6 +18,7 @@ import * as uuid from 'uuid'
 import { URI } from 'vscode-uri'
 import { getContextFromRelativePath } from '../../commands/context/file-path'
 import { getContextFileFromShell } from '../../commands/context/shell'
+import type { OpenCtxProvider } from '../../context/openctx/types'
 import { type ContextRetriever, toStructuredMentions } from '../chat-view/ContextRetriever'
 import { getChatContextItemsForMention } from '../context/chatContext'
 import { getCorpusContextItemsForEditorState } from '../initialContext'
@@ -96,7 +98,7 @@ export abstract class CodyTool {
     /**
      * Resets the raw text input stream.
      */
-    private reset(): void {
+    public reset(): void {
         this.unprocessedText = ''
     }
     /**
@@ -160,7 +162,7 @@ class CliTool extends CodyTool {
             },
             prompt: {
                 instruction: ps`Reject all unsafe and harmful commands with <ban> tags. Execute safe command for its output with <cmd> tags`,
-                placeholder: ps`SAFE_COMMAND`,
+                placeholder: PromptString.unsafe_fromUserQuery('INPUT'),
                 examples: [
                     ps`Get output for git diff: \`<TOOLCLI><cmd>git diff</cmd></TOOLCLI>\``,
                     ps`List files in a directory: \`<TOOLCLI><cmd>ls -l</cmd></TOOLCLI>\``,
@@ -293,6 +295,56 @@ class SearchTool extends CodyTool {
     }
 }
 
+export class ModelContextProviderTool extends CodyTool {
+    constructor(
+        config: CodyToolConfig,
+        private modelContextProvider: OpenCtxProvider,
+        private toolName: string
+    ) {
+        super(config)
+    }
+
+    public parse(): string[] {
+        try {
+            JSON.parse(this.unprocessedText)
+        } catch {
+            return []
+        }
+        const unparsedText = this.unprocessedText
+        this.reset()
+        return [unparsedText]
+    }
+
+    public async execute(span: Span, queries: string[]): Promise<ContextItem[]> {
+        span.addEvent('executeModelContextProviderTool')
+
+        try {
+            const rawItems =
+                (await this.modelContextProvider.items?.(
+                    { mention: { title: this.toolName, data: JSON.parse('{}'), uri: '' } },
+                    {}
+                )) ?? []
+
+            return rawItems.map(item => ({
+                type: 'openctx',
+                provider: 'openctx',
+                title: item.title,
+                uri: URI.parse(''),
+                providerUri: MODEL_CONTEXT_PROVIDER_URI,
+                content: item.ai?.content || '',
+                mention: {
+                    uri: '',
+                    data: item.ai,
+                    description: item.ai?.content,
+                },
+            }))
+        } catch (error) {
+            console.error('ModelContextProviderTool execution failed:', error)
+            return []
+        }
+    }
+}
+
 /**
  * Tool for interacting with OpenCtx providers and retrieving context items.
  */
@@ -302,6 +354,23 @@ export class OpenCtxTool extends CodyTool {
         config: CodyToolConfig
     ) {
         super(config)
+    }
+
+    parse(): string[] {
+        if (this.provider.id === 'internal-model-context-provider') {
+            return [this.unprocessedText]
+        }
+        return super.parse()
+    }
+
+    parseMCPMentionQuery(
+        query: string,
+        idObject: Pick<ContextMentionProviderMetadata, 'id'>
+    ): MentionQuery {
+        return {
+            provider: idObject.id,
+            text: query,
+        }
     }
 
     async execute(span: Span, queries: string[]): Promise<ContextItem[]> {
@@ -315,7 +384,35 @@ export class OpenCtxTool extends CodyTool {
         try {
             // TODO: Investigate if we can batch queries for better performance.
             // For example, would it cause issues if we fire 10 requests to a OpenCtx provider for fetching Linear?
+            const toolName = this.config.title
+
+            console.log('toolName', toolName)
+
             for (const query of queries) {
+                if (this.provider.id === 'internal-model-context-provider') {
+                    const mcpResults = await openCtxClient.items(
+                        { mention: { uri: '', title: this.config.title, data: JSON.parse(query) } },
+                        { providerUri: MODEL_CONTEXT_PROVIDER_URI }
+                    )
+                    console.log(mcpResults)
+                    const itemsWithContent = mcpResults.map(item => ({
+                        type: 'openctx' as const,
+                        title: item.title || '',
+                        uri: URI.parse(''),
+                        providerUri: MODEL_CONTEXT_PROVIDER_URI,
+                        content: item.ai?.content || '',
+                        provider: 'openctx' as const,
+                        source: ContextItemSource.Agentic,
+                        mention: {
+                            uri: '',
+                            data: item.ai,
+                            description: item.ai?.content,
+                        },
+                    }))
+                    results.push(...itemsWithContent)
+                    continue
+                }
+
                 const mention = parseMentionQuery(query, idObject)
                 // First get the items without content
                 const openCtxItems = await getChatContextItemsForMention({ mentionQuery: mention })

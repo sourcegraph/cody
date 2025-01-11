@@ -96,19 +96,63 @@ class ToolFactory {
             .filter(isDefined)
     }
 
-    public createOpenCtxTools(providers: ContextMentionProviderMetadata[]): CodyTool[] {
-        return providers
-            .map(provider => {
+    public async createOpenCtxTools(providers: ContextMentionProviderMetadata[]): Promise<CodyTool[]> {
+        const tools: CodyTool[] = []
+
+        for (const provider of providers) {
+            if (provider.id === 'internal-model-context-provider') {
+                // For MCP providers, get available tools through the mentions() function
+                // get the Vscode Regex Here for query
+                const mcpTools =
+                    (await openCtx.controller?.mentions(
+                        { query: 'echo' },
+                        { providerUri: provider.id }
+                    )) ?? []
+
+                for (const mcpTool of mcpTools) {
+                    const toolName = this.generateToolName({
+                        ...provider,
+                        title: mcpTool.title ?? provider.title,
+                    })
+                    const config = this.createModelContextConfig(
+                        {
+                            title: mcpTool.title ?? '',
+                            description: mcpTool.description ?? '',
+                            data: mcpTool.data,
+                        },
+                        toolName
+                    )
+
+                    this.register({
+                        name: toolName,
+                        ...config,
+                        createInstance: cfg => new OpenCtxTool(provider, cfg),
+                    })
+
+                    const tool = this.createTool(toolName)
+                    if (tool) {
+                        tools.push(tool)
+                    }
+                }
+            } else {
+                // For regular providers, create a single tool as before
                 const toolName = this.generateToolName(provider)
                 const config = this.getToolConfig(provider)
+
                 this.register({
                     name: toolName,
                     ...config,
                     createInstance: cfg => new OpenCtxTool(provider, cfg),
                 })
-                return this.createTool(toolName)
-            })
-            .filter(isDefined)
+
+                const tool = this.createTool(toolName)
+                if (tool) {
+                    tools.push(tool)
+                }
+            }
+        }
+
+        return tools
     }
 
     private generateToolName(provider: ContextMentionProviderMetadata): string {
@@ -129,20 +173,57 @@ class ToolFactory {
         const defaultConfig = Object.entries(OPENCTX_TOOL_CONFIG).find(
             c => provider.id.toLowerCase().includes(c[0]) || provider.title.toLowerCase().includes(c[0])
         )
-        return (
-            defaultConfig?.[1] ?? {
-                title: provider.title,
-                tags: {
-                    tag: PromptString.unsafe_fromUserQuery(this.generateToolName(provider)),
-                    subTag: ps`get`,
-                },
-                prompt: {
-                    instruction: PromptString.unsafe_fromUserQuery(provider.queryLabel),
-                    placeholder: ps`QUERY`,
-                    examples: [],
-                },
-            }
-        )
+        if (defaultConfig) {
+            return defaultConfig[1]
+        }
+        return {
+            title: provider.title,
+            tags: {
+                tag: PromptString.unsafe_fromUserQuery(this.generateToolName(provider)),
+                subTag: ps`get`,
+            },
+            prompt: {
+                instruction: PromptString.unsafe_fromUserQuery(provider.queryLabel),
+                placeholder: ps`QUERY`,
+                examples: [],
+            },
+        }
+    }
+    // TODO: Handles this in getToolConfig instead of
+    // having a separate function specific to model context protocol
+    private createModelContextConfig(
+        mention: {
+            title: string
+            description: string
+            data?: any
+        },
+        tagName: string
+    ): CodyToolConfig {
+        // Extract schema properties for better instruction formatting
+        const schemaProperties = mention.data?.properties || {}
+
+        return {
+            title: mention.title,
+            tags: {
+                tag: PromptString.unsafe_fromUserQuery(tagName),
+                subTag: ps`QUERY`,
+            },
+            prompt: {
+                instruction: PromptString.unsafe_fromUserQuery(
+                    `Use ${mention.title} to ${mention.description || 'retrieve context'}. ` +
+                        `Input must follow this schema::\n${JSON.stringify(schemaProperties, null, 2)}` +
+                        'Ensure all required properties are provided and types match the schema.'
+                ),
+                placeholder: PromptString.unsafe_fromUserQuery('INPUT'),
+                examples: [
+                    PromptString.unsafe_fromUserQuery(
+                        `To use ${mention.title} with valid schema: \`<${tagName}>${JSON.stringify({
+                            message: mention.data?.properties || 'example input',
+                        })}</${tagName}>\``
+                    ),
+                ],
+            },
+        }
     }
 }
 
@@ -190,8 +271,14 @@ export class CodyToolProvider {
         if (provider && !CodyToolProvider.openCtxSubscription && openCtx.controller) {
             CodyToolProvider.openCtxSubscription = openCtx.controller
                 .metaChanges({}, {})
-                .pipe(map(providers => providers.filter(p => !!p.mentions).map(openCtxProviderMetadata)))
-                .subscribe(providerMeta => provider.factory.createOpenCtxTools(providerMeta))
+                .pipe(
+                    map(providers =>
+                        providers.filter(p => !!p.mentions).map(p => openCtxProviderMetadata(p))
+                    )
+                )
+                .subscribe(async providers => {
+                    provider.factory.createOpenCtxTools(providers)
+                })
         }
     }
 
