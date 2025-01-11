@@ -311,9 +311,14 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
                                 </CommandItem>
                             </CommandGroup>
 
-                            {isTeamsUpgradeCtaEnabled && (
+                            {!isTeamsUpgradeCtaEnabled && (
                                 <CommandGroup>
-                                    <CommandItem className="tw-flex tw-w-full tw-justify-start tw-gap-4 tw-align-center tw-flex-col tw-bg-inherit">
+                                    <CommandLink
+                                        href="https://workspaces.sourcegraph.com"
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="tw-flex tw-w-full tw-justify-start tw-gap-4 tw-align-center tw-flex-col tw-bg-inherit tw-font-left"
+                                    >
                                         <div className="tw-flex tw-w-full tw-justify-start tw-gap-4 tw-align-center">
                                             {/* TODO: Replace with new logo */}
                                             <SourcegraphLogo
@@ -328,7 +333,7 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
                                                 Enterprise Starter
                                             </Badge>
                                         </div>
-                                        <div className="tw-text-lg tw-font-semibold tw-text-left">
+                                        <div className="tw-w-full tw-text-lg tw-font-semibold tw-text-left tw-mt-2">
                                             Unlock the Sourcegraph platform
                                         </div>
                                         <div className="tw-text-md tw-text-muted-foreground">
@@ -336,21 +341,14 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
                                             Code Search, AI chat, autocompletes, inline edits and more
                                             for your team.
                                         </div>
-                                        <a
-                                            href="https://workspaces.sourcegraph.com"
-                                            target="_blank"
-                                            rel="noreferrer"
-                                            className="tw-flex-grow tw-w-full tw-my-2"
+                                        <Button
+                                            key="workspace-create-button"
+                                            variant="outline"
+                                            className="tw-flex-grow tw-rounded-md tw-text-center tw-w-full tw-text-foreground tw-my-2"
                                         >
-                                            <Button
-                                                key="workspace-create-button"
-                                                variant="outline"
-                                                className="tw-flex-grow tw-rounded-md tw-text-center tw-w-full  tw-text-foreground tw-cursor-pointer"
-                                            >
-                                                Create a workspace
-                                            </Button>
-                                        </a>
-                                    </CommandItem>
+                                            Create a workspace
+                                        </Button>
+                                    </CommandLink>
                                 </CommandGroup>
                             )}
                         </CommandList>
@@ -476,7 +474,7 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
             )}
             popoverRootProps={{ onOpenChange }}
             popoverContentProps={{
-                className: '!tw-p-2',
+                className: '!tw-p-2 tw-mr-6',
                 onKeyDown: onKeyDown,
                 onCloseAutoFocus: event => {
                     event.preventDefault()
