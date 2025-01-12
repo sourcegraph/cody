@@ -85,7 +85,7 @@ describe.sequential('DelegatingAgent caching', () => {
 
     test('respects CODY_NODE_DEFAULT_PROXY and CODY_NODE_NO_PROXY', async () => {
         vi.stubEnv('CODY_NODE_DEFAULT_PROXY', 'http://proxy.example.com:8080')
-        vi.stubEnv('CODY_NODE_NO_PROXY', 'localhost,internal.example.com,*.other.com')
+        vi.stubEnv('CODY_NODE_NO_PROXY', 'localhost,internal.example.com,*.other.com,.other2.com')
 
         const agent = await DelegatingAgent.initialize({})
 
@@ -121,11 +121,25 @@ describe.sequential('DelegatingAgent caching', () => {
             secureEndpoint: true,
         }
 
+        const dotNoProxyRequest = {
+            host: 'subdomain.other2.com',
+            port: 443,
+            protocol: 'https:',
+            method: 'GET',
+            path: '/subpath',
+            headers: {},
+            secureEndpoint: true,
+        }
+
         const proxiedAgent = await agent.connect(https.request(proxyRequest), proxyRequest)
         const noProxiedAgent = await agent.connect(https.request(noProxyRequest), noProxyRequest)
         const wildcardNoProxyAgent = await agent.connect(
             https.request(wildcardNoProxyRequest),
             wildcardNoProxyRequest
+        )
+        const dotNoProxyAgent = await agent.connect(
+            https.request(dotNoProxyRequest),
+            dotNoProxyRequest
         )
 
         // Verify different agents are used
@@ -134,9 +148,12 @@ describe.sequential('DelegatingAgent caching', () => {
         // Check that these are normal https Agents (e.g. not a subclass)
         expect(noProxiedAgent.constructor).toBe(https.Agent)
         expect(wildcardNoProxyAgent.constructor).toBe(https.Agent)
+        expect(dotNoProxyAgent.constructor).toBe(https.Agent)
 
         // They shouldn't use the same agent
         expect(noProxiedAgent).not.toBe(wildcardNoProxyAgent)
+        expect(noProxiedAgent).not.toBe(dotNoProxyAgent)
+        expect(wildcardNoProxyAgent).not.toBe(dotNoProxyAgent)
 
         // Clean up
         agent.dispose()
