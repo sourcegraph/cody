@@ -339,4 +339,78 @@ describe('AutoeditsProvider', () => {
           ]
         `)
     })
+
+    it('do not set the the cody.supersuggest.active context for inline completion items', async () => {
+        const prediction = 'const x = 1\n'
+        await autoeditResultFor('const x = █\n', { prediction })
+        expect(executedCommands).toMatchInlineSnapshot(`
+            []
+        `)
+    })
+
+    it('set the cody.supersuggest.active context for inline decoration items', async () => {
+        const prediction = 'const a = 1\n'
+        await autoeditResultFor('const x = █\n', { prediction })
+        expect(executedCommands).toMatchInlineSnapshot(`
+            [
+              [
+                "setContext",
+                "cody.supersuggest.active",
+                true,
+              ],
+            ]
+        `)
+        await acceptSuggestionCommand()
+
+        // Deactives the context after accepting the suggestion
+        expect(executedCommands.length).toBe(3)
+        expect(executedCommands[1]).toMatchInlineSnapshot(`
+            [
+              "setContext",
+              "cody.supersuggest.active",
+              false,
+            ]
+        `)
+    })
+
+    it('unset the cody.supersuggest.active context for inline decoration rejection', async () => {
+        const prediction = 'const a = 1\n'
+        await autoeditResultFor('const x = █\n', { prediction })
+        expect(executedCommands).toMatchInlineSnapshot(`
+            [
+              [
+                "setContext",
+                "cody.supersuggest.active",
+                true,
+              ],
+            ]
+        `)
+        await rejectSuggestionCommand()
+
+        // Deactives the context after accepting the suggestion
+        expect(executedCommands.length).toBe(3)
+        expect(executedCommands[1]).toMatchInlineSnapshot(`
+            [
+              "setContext",
+              "cody.supersuggest.active",
+              false,
+            ]
+        `)
+    })
+
+    it('do not trigger the editBuilder for inline completion items', async () => {
+        const prediction = 'const x = 1\n'
+        const { editBuilder } = await autoeditResultFor('const x = █\n', { prediction })
+
+        await acceptSuggestionCommand()
+        expect(editBuilder.size).toBe(0)
+    })
+
+    it('trigger the editBuilder for inline decorations items', async () => {
+        const prediction = 'const a = 1\n'
+        const { editBuilder } = await autoeditResultFor('const x = █\n', { prediction })
+
+        await acceptSuggestionCommand()
+        expect(editBuilder.size).toBe(1)
+    })
 })
