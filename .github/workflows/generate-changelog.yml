@@ -1,0 +1,54 @@
+name: vscode-generate-changelog
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch to generate the changelog for'
+        required: true
+        default: 'main'
+        type: string
+
+jobs:
+  changelog:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.branch }}
+      - name: Generate changelog
+        env:
+          DEVX_SERVICE_GH_TOKEN: ${{ secrets.DEVX_SERVICE_GH_TOKEN }}
+          GH_TOKEN: ${{ secrets.DEVX_SERVICE_GH_TOKEN }} 
+          GH_REPO: "sourcegraph/cody"
+          CHANGELOG_SKIP_NO_CHANGELOG: "true"
+          CHANGELOG_COMPACT: "true"
+          EXT_VERSION: ${{ env.EXT_VERSION }}
+        run: |
+          # Get previous tag's commit
+          git fetch --tags origin
+          PREV_TAG=$(git tag --sort=-v:refname | grep '^vscode-v' |  head -n 2 | tail -n 1)
+          export RELEASE_LATEST_RELEASE=$(git rev-parse $PREV_TAG)
+
+          # Get current release commit
+          export RELEASE_LATEST_COMMIT=$(git rev-parse HEAD)
+
+          # Download and run changelog generator
+          tagName=$(gh release -R sourcegraph/devx-service list --exclude-drafts --exclude-pre-releases -L 1 --json tagName -q '.[] | .tagName')
+          gh release -R sourcegraph/devx-service download ${tagName} --pattern changelog
+          chmod +x changelog
+
+          ./changelog write \
+          --output-file="vscode/CHANGELOG.md" \
+          --output.changelog.marker='{/* CHANGELOG_START */}' \
+          --releaseregistry.version=$EXT_VERSION
+
+          cat vscode/CHANGELOG.md
+          # git checkout -b release/vscode-v$EXT_VERSION
+          # git add vscode/CHANGELOG.md
+          # git commit -m "Automated release and changelog for VS code Cody"
+          # git push -u origin release/vscode-v$EXT_VERSION
+          # gh pr create \
+          #   --title "VS Code: Release v$EXT_VERSION" \
+          #   --body "Automated release and changelog for VS code Cody" \
+          #   --base main --head release/vscode-v$EXT_VERSION

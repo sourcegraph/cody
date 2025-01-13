@@ -30,7 +30,7 @@ export function createAutoeditsModelAdapter({
                 ? new SourcegraphChatAdapter(chatClient)
                 : new SourcegraphCompletionsAdapter()
         default:
-            autoeditsOutputChannelLogger.logDebug(
+            autoeditsOutputChannelLogger.logError(
                 'createAutoeditsModelAdapter',
                 `Provider ${providerName} not supported`
             )

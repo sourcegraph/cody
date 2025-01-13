@@ -1368,7 +1368,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
             await this.receiveWebviewMessage(id, message)
             return null
         })
-        this.registerAuthenticatedRequest(
+        this.registerRequest(
             'webview/receiveMessageStringEncoded',
             async ({ id, messageStringEncoded }) => {
                 await this.receiveWebviewMessage(id, JSON.parse(messageStringEncoded))
@@ -1492,7 +1492,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
         // If this is an authentication change we need to reauthenticate prior to firing events
         // that update the clients
         try {
-            if (isAuthChange || params?.forceAuthentication) {
+            if ((isAuthChange || params?.forceAuthentication) && config.serverEndpoint) {
                 await authProvider.validateAndStoreCredentials(
                     {
                         configuration: {

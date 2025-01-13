@@ -5,7 +5,6 @@ import type { Memento } from 'vscode'
 import {
     type AccountKeyedChatHistory,
     type AuthCredentials,
-    type AuthStatus,
     type AuthenticatedAuthStatus,
     type ChatHistoryKey,
     type ClientState,
@@ -18,6 +17,7 @@ import {
     startWith,
 } from '@sourcegraph/cody-shared'
 import { type Observable, map } from 'observable-fns'
+import type { AutoEditNotificationInfo } from '../../src/autoedits/autoedit-onboarding'
 import { isSourcegraphToken } from '../chat/protocol'
 import type { GitHubDotComRepoMetaData } from '../repository/githubRepoMetadata'
 import { EventEmitter } from '../testutils/mocks'
@@ -29,7 +29,6 @@ class LocalStorage implements LocalStorageForModelPreferences {
     // Bump this on storage changes so we don't handle incorrectly formatted data
     protected readonly KEY_LOCAL_HISTORY = 'cody-local-chatHistory-v2'
     protected readonly KEY_CONFIG = 'cody-config'
-    protected readonly KEY_LOCAL_MINION_HISTORY = 'cody-local-minionHistory-v0'
     protected readonly CODY_ENDPOINT_HISTORY = 'SOURCEGRAPH_CODY_ENDPOINT_HISTORY'
     protected readonly CODY_ENROLLMENT_HISTORY = 'SOURCEGRAPH_CODY_ENROLLMENTS'
     protected readonly LAST_USED_CHAT_MODALITY = 'cody-last-used-chat-modality'
@@ -38,6 +37,9 @@ class LocalStorage implements LocalStorageForModelPreferences {
     public readonly LAST_USED_ENDPOINT = 'SOURCEGRAPH_CODY_ENDPOINT'
     private readonly MODEL_PREFERENCES_KEY = 'cody-model-preferences'
     private readonly CODY_CHAT_MEMORY = 'cody-chat-memory'
+    private readonly AUTO_EDITS_ONBOARDING_NOTIFICATION_COUNT =
+        'cody-auto-edit-onboarding-notification-info'
+
     public readonly keys = {
         // LLM waitlist for the 09/12/2024 openAI o1 models
         waitlist_o1: 'CODY_WAITLIST_LLM_09122024',
@@ -240,14 +242,17 @@ class LocalStorage implements LocalStorageForModelPreferences {
         }
     }
 
-    public async setMinionHistory(authStatus: AuthStatus, serializedHistory: string): Promise<void> {
-        // TODO(beyang): SECURITY - use authStatus
-        await this.set(this.KEY_LOCAL_MINION_HISTORY, serializedHistory)
+    public async getAutoEditsOnboardingNotificationInfo(): Promise<AutoEditNotificationInfo> {
+        return (
+            this.get<AutoEditNotificationInfo>(this.AUTO_EDITS_ONBOARDING_NOTIFICATION_COUNT) ?? {
+                lastNotifiedTime: 0,
+                timesShown: 0,
+            }
+        )
     }
 
-    public getMinionHistory(authStatus: AuthStatus): string | null {
-        // TODO(beyang): SECURITY - use authStatus
-        return this.get<string | null>(this.KEY_LOCAL_MINION_HISTORY)
+    public async setAutoEditsOnboardingNotificationInfo(info: AutoEditNotificationInfo): Promise<void> {
+        await this.set(this.AUTO_EDITS_ONBOARDING_NOTIFICATION_COUNT, info)
     }
 
     public async setGitHubRepoAccessibility(data: GitHubDotComRepoMetaData[]): Promise<void> {

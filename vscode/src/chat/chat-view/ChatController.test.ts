@@ -139,6 +139,7 @@ describe('ChatController', () => {
             chatID: mockNowDate.toUTCString(),
             messages: [
                 {
+                    agent: undefined,
                     speaker: 'human',
                     text: 'Test input',
                     intent: 'chat',
@@ -149,8 +150,10 @@ describe('ChatController', () => {
                     editorState: null,
                     contextFiles: undefined,
                     processes: undefined,
+                    subMessages: undefined,
                 },
                 {
+                    agent: undefined,
                     speaker: 'assistant',
                     model: 'my-model',
                     intent: undefined,
@@ -161,6 +164,7 @@ describe('ChatController', () => {
                     text: undefined,
                     contextFiles: undefined,
                     processes: undefined,
+                    subMessages: undefined,
                 },
             ],
         })
@@ -168,7 +172,7 @@ describe('ChatController', () => {
         await vi.runOnlyPendingTimersAsync()
         expect(mockChatClient.chat).toBeCalledTimes(1)
         expect(addBotMessageSpy).toHaveBeenCalledWith('1', ps`Test reply 1`, 'my-model')
-        expect(postMessageSpy.mock.calls.at(5)?.at(0)).toStrictEqual<
+        expect(postMessageSpy.mock.calls.at(6)?.at(0)).toStrictEqual<
             Extract<ExtensionMessage, { type: 'transcript' }>
         >({
             type: 'transcript',
@@ -176,6 +180,7 @@ describe('ChatController', () => {
             chatID: mockNowDate.toUTCString(),
             messages: [
                 {
+                    agent: undefined,
                     speaker: 'human',
                     text: 'Test input',
                     intent: 'chat',
@@ -186,8 +191,10 @@ describe('ChatController', () => {
                     editorState: null,
                     contextFiles: [],
                     processes: undefined,
+                    subMessages: undefined,
                 },
                 {
+                    agent: undefined,
                     speaker: 'assistant',
                     intent: undefined,
                     manuallySelectedIntent: undefined,
@@ -198,6 +205,7 @@ describe('ChatController', () => {
                     search: undefined,
                     contextFiles: undefined,
                     processes: undefined,
+                    subMessages: undefined,
                 },
             ],
         })
@@ -229,6 +237,7 @@ describe('ChatController', () => {
             chatID: mockNowDate.toUTCString(),
             messages: [
                 {
+                    agent: undefined,
                     speaker: 'human',
                     text: 'Test input',
                     intent: 'chat',
@@ -239,8 +248,10 @@ describe('ChatController', () => {
                     editorState: null,
                     contextFiles: [],
                     processes: undefined,
+                    subMessages: undefined,
                 },
                 {
+                    agent: undefined,
                     speaker: 'assistant',
                     model: 'my-model',
                     intent: undefined,
@@ -251,8 +262,10 @@ describe('ChatController', () => {
                     search: undefined,
                     contextFiles: undefined,
                     processes: undefined,
+                    subMessages: undefined,
                 },
                 {
+                    agent: undefined,
                     speaker: 'human',
                     text: 'Test followup',
                     intent: 'chat',
@@ -263,8 +276,10 @@ describe('ChatController', () => {
                     editorState: null,
                     contextFiles: [],
                     processes: undefined,
+                    subMessages: undefined,
                 },
                 {
+                    agent: undefined,
                     speaker: 'assistant',
                     model: 'my-model',
                     intent: undefined,
@@ -275,6 +290,7 @@ describe('ChatController', () => {
                     contextFiles: undefined,
                     search: undefined,
                     processes: undefined,
+                    subMessages: undefined,
                 },
             ],
         })
@@ -305,6 +321,7 @@ describe('ChatController', () => {
             chatID: mockNowDate.toUTCString(),
             messages: [
                 {
+                    agent: undefined,
                     speaker: 'human',
                     text: 'Test input',
                     intent: 'chat',
@@ -315,8 +332,10 @@ describe('ChatController', () => {
                     editorState: null,
                     contextFiles: [],
                     processes: undefined,
+                    subMessages: undefined,
                 },
                 {
+                    agent: undefined,
                     speaker: 'assistant',
                     model: 'my-model',
                     intent: undefined,
@@ -327,8 +346,10 @@ describe('ChatController', () => {
                     search: undefined,
                     contextFiles: undefined,
                     processes: undefined,
+                    subMessages: undefined,
                 },
                 {
+                    agent: undefined,
                     speaker: 'human',
                     text: 'Test edit',
                     intent: 'chat',
@@ -339,8 +360,10 @@ describe('ChatController', () => {
                     editorState: null,
                     contextFiles: [],
                     processes: undefined,
+                    subMessages: undefined,
                 },
                 {
+                    agent: undefined,
                     speaker: 'assistant',
                     model: 'my-model',
                     intent: undefined,
@@ -351,6 +374,7 @@ describe('ChatController', () => {
                     text: 'Test reply 3',
                     contextFiles: undefined,
                     processes: undefined,
+                    subMessages: undefined,
                 },
             ],
         })
@@ -382,7 +406,7 @@ describe('ChatController', () => {
         await vi.runOnlyPendingTimersAsync()
         expect(mockChatClient.chat).toBeCalledTimes(1)
         expect(addBotMessageSpy).toHaveBeenCalledWith('1', ps`Test partial reply`, 'my-model')
-        expect(postMessageSpy.mock.calls.at(8)?.at(0)).toStrictEqual<
+        expect(postMessageSpy.mock.calls.at(9)?.at(0)).toStrictEqual<
             Extract<ExtensionMessage, { type: 'transcript' }>
         >({
             type: 'transcript',
@@ -390,6 +414,7 @@ describe('ChatController', () => {
             chatID: mockNowDate.toUTCString(),
             messages: [
                 {
+                    agent: undefined,
                     speaker: 'human',
                     text: 'Test input',
                     model: undefined,
@@ -400,8 +425,10 @@ describe('ChatController', () => {
                     manuallySelectedIntent: undefined,
                     search: undefined,
                     processes: undefined,
+                    subMessages: undefined,
                 },
                 {
+                    agent: undefined,
                     speaker: 'assistant',
                     model: FIXTURE_MODEL.id,
                     error: errorToChatError(new Error('my-error')),
@@ -412,6 +439,7 @@ describe('ChatController', () => {
                     contextFiles: undefined,
                     search: undefined,
                     processes: undefined,
+                    subMessages: undefined,
                 },
             ],
         })

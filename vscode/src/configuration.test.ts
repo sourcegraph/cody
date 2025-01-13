@@ -1,7 +1,12 @@
 import { assert, describe, expect, it } from 'vitest'
 import type * as vscode from 'vscode'
 
-import { type ClientConfiguration, OLLAMA_DEFAULT_URL, ps } from '@sourcegraph/cody-shared'
+import {
+    type ClientConfiguration,
+    CodyAutoSuggestionMode,
+    OLLAMA_DEFAULT_URL,
+    ps,
+} from '@sourcegraph/cody-shared'
 
 import type { ChatModelProviderConfig } from '@sourcegraph/cody-shared/src/models/sync'
 import { getConfiguration } from './configuration'
@@ -28,8 +33,8 @@ describe('getConfiguration', () => {
                             'Cache-Control': 'no-cache',
                             'Proxy-Authenticate': 'Basic',
                         }
-                    case 'cody.autocomplete.enabled':
-                        return false
+                    case 'cody.suggestions.mode':
+                        return CodyAutoSuggestionMode.Off
                     case 'cody.autocomplete.languages':
                         return { '*': true }
                     case 'cody.commandCodeLenses':
@@ -95,11 +100,9 @@ describe('getConfiguration', () => {
                         return false
                     case 'cody.experimental.supercompletions':
                         return false
-                    case 'cody.experimental.autoedits.enabled':
-                        return undefined
-                    case 'cody.experimental.autoedits-renderer-testing':
+                    case 'cody.experimental.autoedit-renderer-testing':
                         return false
-                    case 'cody.experimental.autoedits.config.override':
+                    case 'cody.experimental.autoedit.config.override':
                         return undefined
                     case 'cody.experimental.noodle':
                         return false
@@ -163,12 +166,11 @@ describe('getConfiguration', () => {
                 '*': true,
             },
             commandCodeLenses: true,
-            agenticContextExperimentalShell: false,
             agenticContextExperimentalOptions: { shell: { allow: ['git'] } },
             experimentalSupercompletions: false,
-            experimentalAutoeditsEnabled: undefined,
-            experimentalAutoeditsConfigOverride: undefined,
-            experimentalAutoeditsRendererTesting: false,
+            experimentalAutoEditEnabled: false,
+            experimentalAutoEditConfigOverride: undefined,
+            experimentalAutoEditRendererTesting: false,
             experimentalMinionAnthropicKey: undefined,
             experimentalTracing: true,
             experimentalCommitMessage: true,

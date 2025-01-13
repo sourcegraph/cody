@@ -558,7 +558,7 @@ export interface ServerInfo {
 }
 
 export interface ExtensionConfiguration {
-    serverEndpoint: string
+    serverEndpoint?: string | undefined | null
     proxy?: string | undefined | null
     accessToken?: string | undefined | null
     customHeaders: Record<string, string>

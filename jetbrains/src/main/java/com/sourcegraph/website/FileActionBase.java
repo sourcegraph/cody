@@ -40,11 +40,13 @@ public abstract class FileActionBase extends DumbAwareEDTAction {
     LogicalPosition selectionStartPosition = getSelectionStartPosition(editor);
     LogicalPosition selectionEndPosition = getSelectionEndPosition(editor);
 
+    URLBuilder urlBuilder = new URLBuilder(project);
+
     if (currentFile instanceof SourcegraphVirtualFile) {
       SourcegraphVirtualFile sourcegraphFile = (SourcegraphVirtualFile) currentFile;
       handleFileUri(
           project,
-          URLBuilder.buildSourcegraphBlobUrl(
+          urlBuilder.buildSourcegraphBlobUrl(
               sourcegraphFile.getRepoUrl(),
               sourcegraphFile.getCommit(),
               sourcegraphFile.getRelativePath(),
@@ -68,7 +70,7 @@ public abstract class FileActionBase extends DumbAwareEDTAction {
                   // Our "editor" backend doesn't support Perforce, but we have all the info we
                   // need, so we'll go to the final URL directly.
                   url =
-                      URLBuilder.buildSourcegraphBlobUrl(
+                      urlBuilder.buildSourcegraphBlobUrl(
                           repoInfo.getCodeHostUrl() + "/" + repoInfo.getRepoName(),
                           null,
                           repoInfo.relativePath,
@@ -76,7 +78,7 @@ public abstract class FileActionBase extends DumbAwareEDTAction {
                           selectionEndPosition);
                 } else {
                   url =
-                      URLBuilder.buildEditorFileUrl(
+                      urlBuilder.buildEditorFileUrl(
                           repoInfo.remoteUrl,
                           repoInfo.remoteBranchName,
                           repoInfo.relativePath,
@@ -102,12 +104,13 @@ public abstract class FileActionBase extends DumbAwareEDTAction {
 
     handleFileUri(
         project,
-        URLBuilder.buildSourcegraphBlobUrl(
-            previewContent.getRepoUrl(),
-            previewContent.getCommit(),
-            previewContent.getPath(),
-            start,
-            end));
+        new URLBuilder(project)
+            .buildSourcegraphBlobUrl(
+                previewContent.getRepoUrl(),
+                previewContent.getCommit(),
+                previewContent.getPath(),
+                start,
+                end));
   }
 
   @Nullable

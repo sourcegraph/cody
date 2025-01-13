@@ -438,7 +438,7 @@ export function getContextItemMappingWithTokenLimit(
         if (tokenLimit !== undefined) {
             contextItemMapping.set(identifier, getContextItemsInTokenBudget(items, tokenLimit))
         } else {
-            autoeditsOutputChannelLogger.logDebug(
+            autoeditsOutputChannelLogger.logError(
                 'getContextItemMappingWithTokenLimit',
                 `No token limit for ${identifier}`
             )

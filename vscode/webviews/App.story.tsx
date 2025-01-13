@@ -30,6 +30,7 @@ const dummyVSCodeAPI: VSCodeWrapper = {
                 experimentalNoodle: false,
                 smartApply: false,
                 hasEditCapability: false,
+                allowEndpointChange: true,
             },
             clientCapabilities: CLIENT_CAPABILITIES_FIXTURE,
             authStatus: {

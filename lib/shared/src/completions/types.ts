@@ -24,7 +24,7 @@ export interface AutocompleteBaseContextSnippet {
     /**
      * Metadata populated by the context retriever.
      * The metadata can be specific to the context retriever and may not apply to other context retrievers.
-     * The metadata can be used by other components such as `auto-edits` to determine if the snippet is still relevant or logging for offline analysis.
+     * The metadata can be used by other components such as `auto-edit` to determine if the snippet is still relevant or logging for offline analysis.
      */
     metadata?: AutocompleteContextSnippetMetadata
 }

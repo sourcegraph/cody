@@ -436,3 +436,61 @@ export function splitLineIntoChunks(line: string): string[] {
     // Split line into words, consecutive spaces and punctuation marks
     return line.match(/(\w+|\s+|\W)/g) || []
 }
+
+/**
+ * A generic helper for summing up `item.text.length` in an array of objects with a `text` field.
+ */
+function sumTextLengths<T extends { text: string }>(items: T[]): number {
+    return items.reduce((total, { text }) => total + text.length, 0)
+}
+
+export interface DecorationStats {
+    modifiedLines: number
+    removedLines: number
+    addedLines: number
+    unchangedLines: number
+    addedChars: number
+    removedChars: number
+    unchangedChars: number
+}
+
+export function getDecorationStats({
+    modifiedLines,
+    removedLines,
+    addedLines,
+    unchangedLines,
+}: DecorationInfo): DecorationStats {
+    const added = sumTextLengths(addedLines)
+    const removed = sumTextLengths(removedLines)
+    const unchanged = sumTextLengths(unchangedLines)
+
+    const charsStats = modifiedLines
+        .flatMap(line => line.changes)
+        .reduce(
+            (acc, change) => {
+                switch (change.type) {
+                    case 'insert':
+                        acc.added += change.text.length
+                        break
+                    case 'delete':
+                        acc.removed += change.text.length
+                        break
+                    case 'unchanged':
+                        acc.unchanged += change.text.length
+                        break
+                }
+                return acc
+            },
+            { added, removed, unchanged }
+        )
+
+    return {
+        modifiedLines: modifiedLines.length,
+        removedLines: removedLines.length,
+        addedLines: addedLines.length,
+        unchangedLines: unchangedLines.length,
+        addedChars: charsStats.added,
+        removedChars: charsStats.removed,
+        unchangedChars: charsStats.unchanged,
+    }
+}

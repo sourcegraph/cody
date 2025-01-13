@@ -15,7 +15,6 @@ import {
 import { useCallback, useState } from 'react'
 import { URI } from 'vscode-uri'
 import { ACCOUNT_USAGE_URL, isSourcegraphToken } from '../../src/chat/protocol'
-import type { View } from '../tabs'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
 import { useTelemetryRecorder } from '../utils/telemetry'
 import { UserAvatar } from './UserAvatar'
@@ -31,9 +30,9 @@ interface UserMenuProps {
     isProUser: boolean
     authStatus: AuthenticatedAuthStatus
     endpointHistory: string[]
-    setView: (view: View) => void
     className?: string
     onCloseByEscape?: () => void
+    allowEndpointChange: boolean
     __storybook__open?: boolean
 }
 
@@ -44,8 +43,8 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
     authStatus,
     endpointHistory,
     className,
-    setView,
     onCloseByEscape,
+    allowEndpointChange,
     __storybook__open,
 }) => {
     const telemetryRecorder = useTelemetryRecorder()
@@ -312,12 +311,12 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
                         <CommandList>
                             <CommandGroup title="Main Account Menu">
                                 <CommandItem>
-                                    <div className="tw-flex tw-w-full tw-justify-start tw-gap-4 tw-align-middle">
+                                    <div className="tw-flex tw-w-full tw-justify-start tw-gap-4 tw-align-middle tw-max-h-9">
                                         <UserAvatar
                                             user={authStatus}
                                             size={USER_MENU_AVATAR_SIZE}
                                             sourcegraphGradientBorder={!!isProUser}
-                                            className="tw-inline-flex tw-self-center tw-items-center tw-w-auto tw-flex-none"
+                                            className="tw-inline-flex tw-self-center tw-items-center tw-w-auto tw-flex-none tw-max-h-9"
                                         />
                                         <div className="tw-flex tw-self-stretch tw-flex-col tw-w-full tw-items-start tw-justify-center tw-flex-auto tw-overflow-hidden">
                                             <p
@@ -388,20 +387,23 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
                             </CommandGroup>
 
                             <CommandGroup>
-                                <CommandItem onSelect={() => onMenuViewChange('switch')}>
-                                    <ArrowLeftRightIcon
-                                        size={16}
-                                        strokeWidth={1.25}
-                                        className="tw-mr-2"
-                                    />
-                                    <span className="tw-flex-grow">Switch Account</span>
-                                    <ChevronRightIcon size={16} strokeWidth={1.25} />
-                                </CommandItem>
+                                {allowEndpointChange && (
+                                    <CommandItem onSelect={() => onMenuViewChange('switch')}>
+                                        <ArrowLeftRightIcon
+                                            size={16}
+                                            strokeWidth={1.25}
+                                            className="tw-mr-2"
+                                        />
+                                        <span className="tw-flex-grow">Switch Account</span>
+                                        <ChevronRightIcon size={16} strokeWidth={1.25} />
+                                    </CommandItem>
+                                )}
                                 <CommandItem onSelect={() => onSignOutClick(endpoint)}>
                                     <LogOutIcon size={16} strokeWidth={1.25} className="tw-mr-2" />
                                     <span className="tw-flex-grow">Sign Out</span>
                                 </CommandItem>
                             </CommandGroup>
+
                             <CommandGroup>
                                 <CommandLink
                                     href="https://community.sourcegraph.com/"
@@ -438,7 +440,7 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
                 user={authStatus}
                 size={USER_MENU_AVATAR_SIZE}
                 sourcegraphGradientBorder={!!isProUser}
-                className="tw-w-10 tw-h-10"
+                className="tw-max-h-full tw-width-auto"
             />
         </ToolbarPopoverItem>
     )

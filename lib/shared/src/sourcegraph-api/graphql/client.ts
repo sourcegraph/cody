@@ -994,15 +994,22 @@ export class SourcegraphGraphQLAPIClient {
     }
 
     /**
-     * Gets a subset of the list of repositories from the Sourcegraph instance.
-     * @param first the number of repositories to retrieve.
-     * @param after the last repository retrieved, if any, to continue enumerating the list.
-     * @returns the list of repositories. If `endCursor` is null, this is the end of the list.
+     * Fetches a list of repositories matching the given query.
+     * @param {Object} params - The query parameters
+     * @param {number} params.first - The number of repositories to return
+     * @param {string} [params.after] - Cursor for pagination
+     * @param {string} [params.query] - Search query to filter repositories
+     * @returns {Promise<RepoListResponse | Error>} List of repositories that match the query
      */
-    public async getRepoList(first: number, after?: string): Promise<RepoListResponse | Error> {
+    public async getRepoList({
+        first,
+        after,
+        query,
+    }: { first: number; after?: string; query?: string }): Promise<RepoListResponse | Error> {
         return this.fetchSourcegraphAPI<APIResponse<RepoListResponse>>(REPOSITORY_LIST_QUERY, {
             first,
             after: after || null,
+            query: query || null,
         }).then(response => extractDataOrError(response, data => data))
     }
 
