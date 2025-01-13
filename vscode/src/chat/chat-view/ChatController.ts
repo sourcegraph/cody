@@ -54,7 +54,6 @@ import {
     ps,
     recordErrorToSpan,
     reformatBotMessageForChat,
-    resolveAuth,
     resolvedConfig,
     serializeChatMessage,
     shareReplay,
@@ -75,6 +74,7 @@ import * as vscode from 'vscode'
 import { type Span, context } from '@opentelemetry/api'
 import { captureException } from '@sentry/core'
 import type { SubMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { resolveAuth } from '@sourcegraph/cody-shared/src/configuration/auth-resolver'
 import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
 import { Subject, map } from 'observable-fns'
 import type { URI } from 'vscode-uri'

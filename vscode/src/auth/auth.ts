@@ -19,9 +19,9 @@ import {
     isDotCom,
     isError,
     isNetworkLikeError,
-    resolveAuth,
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
+import { resolveAuth } from '@sourcegraph/cody-shared/src/configuration/auth-resolver'
 import { isSourcegraphToken } from '../chat/protocol'
 import { newAuthStatus } from '../chat/utils'
 import { logDebug } from '../output-channel-logger'

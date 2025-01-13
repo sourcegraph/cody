@@ -42,7 +42,7 @@ export function addAuthHeaders(auth: AuthCredentials, headers: Headers, url: URL
         if ('token' in auth.credentials) {
             headers.set('Authorization', `token ${auth.credentials.token}`)
         } else if ('headers' in auth.credentials) {
-            for (const [key, value] of Object.entries(auth.credentials.headers)) {
+            for (const [key, value] of Object.entries(auth.credentials.getHeaders())) {
                 headers.set(key, value)
             }
         } else {

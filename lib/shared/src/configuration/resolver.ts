@@ -1,11 +1,5 @@
 import { Observable, map } from 'observable-fns'
-import type {
-    AuthCredentials,
-    ClientConfiguration,
-    ExternalAuthCommand,
-    ExternalAuthProviderResult,
-    TokenSource,
-} from '../configuration'
+import type { AuthCredentials, ClientConfiguration, TokenSource } from '../configuration'
 import { logError } from '../logger'
 import {
     distinctUntilChanged,
@@ -17,6 +11,7 @@ import { skipPendingOperation, switchMapReplayOperation } from '../misc/observab
 import type { DefaultsAndUserPreferencesByEndpoint } from '../models/modelsService'
 import { DOTCOM_URL } from '../sourcegraph-api/environments'
 import { type PartialDeep, type ReadonlyDeep, isError } from '../utils'
+import { resolveAuth } from './auth-resolver'
 
 /**
  * The input from various sources that is needed to compute the {@link ResolvedConfiguration}.
@@ -79,82 +74,6 @@ export type PickResolvedConfiguration<Keys extends KeysSpec> = {
           : undefined
 }
 
-async function executeCommand(cmd: ExternalAuthCommand): Promise<string> {
-    if (typeof process === 'undefined' || !process.version) {
-        throw new Error('Command execution is only supported in Node.js environments')
-    }
-
-    const { exec } = await import('node:child_process')
-    const { promisify } = await import('node:util')
-    const execAsync = promisify(exec)
-
-    const command = cmd.commandLine.join(' ')
-
-    // No need to check error code, promisify causes exec to throw in case of errors
-    const { stdout } = await execAsync(command, {
-        shell: cmd.shell,
-        timeout: cmd.timeout,
-        windowsHide: cmd.windowsHide,
-        env: cmd.environment ? { ...process.env, ...cmd.environment } : process.env,
-    })
-
-    return stdout.trim()
-}
-
-async function getExternalProviderAuthResult(
-    serverEndpoint: string,
-    clientConfiguration: ClientConfiguration
-): Promise<ExternalAuthProviderResult | undefined> {
-    // Check for external auth provider for this endpoint
-    const externalProvider = clientConfiguration.authExternalProviders.find(
-        provider => normalizeServerEndpointURL(provider.endpoint) === serverEndpoint
-    )
-
-    if (externalProvider) {
-        const result = await executeCommand(externalProvider.executable)
-        return JSON.parse(result)
-    }
-
-    return undefined
-}
-
-export async function resolveAuth(
-    endpoint: string,
-    clientConfiguration: ClientConfiguration,
-    clientSecrets: ClientSecrets
-): Promise<AuthCredentials> {
-    const serverEndpoint = normalizeServerEndpointURL(
-        clientConfiguration.overrideServerEndpoint || endpoint
-    )
-
-    if (clientConfiguration.overrideAuthToken) {
-        return { credentials: { token: clientConfiguration.overrideAuthToken }, serverEndpoint }
-    }
-
-    const authHeaders = await getExternalProviderAuthResult(serverEndpoint, clientConfiguration)
-        .then(result => result?.headers)
-        .catch(error => {
-            throw new Error(`Failed to execute external auth command: ${error}`)
-        })
-
-    if (authHeaders) {
-        return { credentials: { headers: authHeaders }, serverEndpoint }
-    }
-
-    const token = await clientSecrets.getToken(serverEndpoint).catch(error => {
-        throw new Error(
-            `Failed to get access token for endpoint ${serverEndpoint}: ${error.message || error}`
-        )
-    })
-
-    return {
-        credentials: token
-            ? { token, source: await clientSecrets.getTokenSource(serverEndpoint) }
-            : undefined,
-        serverEndpoint,
-    }
-}
-
 async function resolveConfiguration({
     clientConfiguration,
     clientSecrets,
@@ -181,10 +100,6 @@ async function resolveConfiguration({
         const auth = { credentials: undefined, serverEndpoint }
         return { configuration: clientConfiguration, clientState, auth, isReinstall }
     }
-}
-
-export function normalizeServerEndpointURL(url: string): string {
-    return url.endsWith('/') ? url : `${url}/`
 }
 
 const _resolvedConfig = fromLateSetSource<ResolvedConfiguration>()

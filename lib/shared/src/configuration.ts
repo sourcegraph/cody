@@ -11,11 +11,6 @@ import type { ReadonlyDeep } from './utils'
  */
 export type TokenSource = 'redirect' | 'paste'
 
-const nonSerializableSymbol = Symbol('nonSerializable')
-export type NonSerializableRecord<K extends keyof any, T> = Record<K, T> & {
-    [nonSerializableSymbol]: never
-}
-
 /**
  * The user's authentication credentials, which are stored separately from the rest of the
  * configuration.
@@ -26,7 +21,9 @@ export interface AuthCredentials {
 }
 
 export interface HeaderCredential {
-    headers: NonSerializableRecord<string, string>
+    // We use function instead of property to prevent accidential top level serialization - we never want to store this data
+    getHeaders(): Record<string, string>
+    expiration: number | undefined
 }
 
 export interface TokenCredential {
@@ -95,11 +92,6 @@ export interface ExternalAuthCommand {
 export interface ExternalAuthProvider {
     endpoint: string
     executable: ExternalAuthCommand
-}
-
-export interface ExternalAuthProviderResult {
-    headers: NonSerializableRecord<string, string>
-    expiration?: number // Epoch Unix Timestamp (UTC) of the expiration date
 }
 
 interface RawClientConfiguration {
