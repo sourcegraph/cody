@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 import { getEditorTabSize } from '@sourcegraph/cody-shared'
-import { AddedLinesDecorationInfo } from './default-decorator'
+import type { AddedLinesDecorationInfo } from './default-decorator'
 import detectIndent from 'detect-indent'
 
 export const UNICODE_SPACE = '\u00A0'
@@ -15,13 +15,16 @@ export function blockify(document: vscode.TextDocument, addedLines: AddedLinesDe
 export function convertToSpaceIndentation(document: vscode.TextDocument, addedLines: AddedLinesDecorationInfo[]): AddedLinesDecorationInfo[] {
     const incomingIndentation = detectIndent(addedLines.map((line) => line.lineText).join('\n')).type
     if (incomingIndentation === 'space') {
-        // Convert regular spaces to unicode spaces
+        // In order to reliably render spaces in VS Code decorations, we must convert them to
+        // their unicode equivalent
         return addedLines.map(line => ({
             ...line,
-            lineText: line.lineText.replace(/^( +)/, match => UNICODE_SPACE.repeat(match.length))
+            lineText: line.lineText.replace(/^\s+/, match => UNICODE_SPACE.repeat(match.length))
         }))
     }
 
+    // The incoming indentation is tab-based, but this will not render correctly in VS COde decorations.
+    // We must convert it to space indentation that matches the editor's tab size
     const tabSize = getEditorTabSize(document.uri, vscode.workspace, vscode.window)
     const tabAsSpace = UNICODE_SPACE.repeat(tabSize)
     return addedLines.map(line => ({
@@ -29,7 +32,6 @@ export function convertToSpaceIndentation(document: vscode.TextDocument, addedLi
         lineText: line.lineText.replace(/^(\t+)/, match => tabAsSpace.repeat(match.length))
     }))
 }
-
 
 function padTrailingWhitespaceBlock(addedLines: AddedLinesDecorationInfo[]): AddedLinesDecorationInfo[] {
     let maxLineWidth = 0
@@ -41,6 +43,7 @@ function padTrailingWhitespaceBlock(addedLines: AddedLinesDecorationInfo[]): Add
         lineText: line.lineText.padEnd(maxLineWidth, UNICODE_SPACE)
     }))
 }
+
 function removeLeadingWhitespaceBlock(addedLines: AddedLinesDecorationInfo[]): AddedLinesDecorationInfo[] {
     let leastCommonWhitespacePrefix: undefined | string = undefined
     for (const addedLine of addedLines) {
@@ -69,6 +72,7 @@ function removeLeadingWhitespaceBlock(addedLines: AddedLinesDecorationInfo[]): A
         ])
     }))
 }
+
 function getCommonPrefix(s1: string, s2: string): string {
     const minLength = Math.min(s1.length, s2.length)
     let commonPrefix = ''

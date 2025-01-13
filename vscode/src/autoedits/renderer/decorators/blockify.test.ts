@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { document } from '../../../completions/test-helpers'
 import { blockify } from './blockify'
-import { AddedLinesDecorationInfo } from './default-decorator'
+import type { AddedLinesDecorationInfo } from './default-decorator'
 
 describe('blockify', () => {
     describe('space indentation', () => {
@@ -51,7 +51,7 @@ describe('blockify', () => {
         })
     })
 
-    describe('space indentation', () => {
+    describe('tab indentation', () => {
         // Content doesn't matter here, just the fact that this document uses tabs
         const mockSpacesDocument = document('\thello world\n\tgoodbye world')
 

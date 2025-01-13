@@ -260,13 +260,15 @@ export class DefaultDecorator implements AutoEditsDecorator {
         startLine: number,
         replacerCol: number
     ): void {
-        const addedLinesInfo = blockify(this.editor.document, _addedLinesInfo)
+        // Blockify the added lines so they are suitable to be rendered together as a VS Code decoration
+        const blockifiedAddedLines = blockify(this.editor.document, _addedLinesInfo)
         const replacerDecorations: vscode.DecorationOptions[] = []
-        for (let i = 0; i < addedLinesInfo.length; i++) {
+
+        for (let i = 0; i < blockifiedAddedLines.length; i++) {
             const j = i + startLine
             const line = this.editor.document.lineAt(j)
             const lineReplacerCol = this.getReplacerColumn(line)
-            const decoration = addedLinesInfo[i]
+            const decoration = blockifiedAddedLines[i]
             const decorationStyle = cssPropertiesToString({
                 // Absolutely position the suggested code so that the cursor does not jump there
                 position: 'absolute',
@@ -291,7 +293,6 @@ export class DefaultDecorator implements AutoEditsDecorator {
                         // Required to make the viewport scrollable to view the suggestion if it's outside.
                         after: {
                             contentText:
-                            // Creates a spacer element with the same width as the suggested code to ensure proper scrolling
                             UNICODE_SPACE.repeat(3) + decoration.lineText.replace(/\S/g, UNICODE_SPACE),
                             margin: `0 0 0 ${replacerCol - lineReplacerCol}ch`,
                         },
