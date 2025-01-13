@@ -279,7 +279,7 @@ export class DefaultDecorator implements AutoEditsDecorator {
                 'backdrop-filter': 'blur(5px)',
             })
 
-            if (replacerCol >= line.range.end.character) {
+            if (replacerCol >= lineReplacerCol) {
                 replacerDecorations.push({
                     range: new vscode.Range(j, line.range.end.character, j, line.range.end.character),
                     renderOptions: {
