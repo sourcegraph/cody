@@ -4,8 +4,10 @@ import { GHOST_TEXT_COLOR } from '../../../commands/GhostHintDecorator'
 
 import type { AutoEditsDecorator, DecorationInfo, ModifiedLineInfo } from './base'
 import { cssPropertiesToString } from './utils'
+import { getEditorInsertSpaces, getEditorTabSize } from '@sourcegraph/cody-shared'
+import { blockify } from './blockify'
 
-interface AddedLinesDecorationInfo {
+export interface AddedLinesDecorationInfo {
     ranges: [number, number][]
     afterLine: number
     lineText: string
@@ -155,21 +157,47 @@ export class DefaultDecorator implements AutoEditsDecorator {
         }
         // todo (hitesh): handle case when too many lines to fit in the editor
         const oldLines = addedLinesInfo.map(info => this.editor.document.lineAt(info.afterLine))
-        const replacerCol = Math.max(...oldLines.map(line => line.range.end.character))
+        const longestLineValue = Math.max(...oldLines.map(line => line.range.end.character))
+        const longestLine = oldLines.find(line => line.range.end.character === longestLineValue)
+        const replacerCol = this.getColumnPositions(longestLine!)
         const startLine = Math.min(...oldLines.map(line => line.lineNumber))
-        this.renderAddedLinesDecorations(addedLinesInfo, startLine, replacerCol)
+        this.renderAddedLinesDecorations(addedLinesInfo, startLine, replacerCol.endColumn)
+    }
+
+    private getColumnPositions(
+        line: vscode.TextLine
+    ): { startColumn: number; endColumn: number } {
+        const insertSpaces = getEditorInsertSpaces(this.editor.document.uri, vscode.workspace, vscode.window)
+        if (insertSpaces) {
+            return { startColumn: line.firstNonWhitespaceCharacterIndex, endColumn: line.range.end.character }
+        }
+
+        // For files using tab-based indentation, we need special handling
+        // VSCode's Range API doesn't account for tab display width
+        // We need to:
+        // 1. Convert tabs to spaces based on editor tab size
+        // 2. Calculate the visual width including both indentation and content
+        const tabSize = getEditorTabSize(this.editor.document.uri, vscode.workspace, vscode.window)
+        const tabAsSpace = '\u00A0'.repeat(tabSize)
+        const firstNonWhitespaceCharacterIndex = line.firstNonWhitespaceCharacterIndex
+        const indentationText = line.text.substring(0, firstNonWhitespaceCharacterIndex)
+        const spaceAdjustedEndCharacter = indentationText.replaceAll(/\t/g, tabAsSpace).length +
+            (line.text.length - firstNonWhitespaceCharacterIndex)
+
+        return { startColumn: firstNonWhitespaceCharacterIndex * tabSize, endColumn: spaceAdjustedEndCharacter }
     }
 
     private renderAddedLinesDecorations(
-        addedLinesInfo: AddedLinesDecorationInfo[],
+        _addedLinesInfo: AddedLinesDecorationInfo[],
         startLine: number,
         replacerCol: number
     ): void {
-        blockify(addedLinesInfo)
+        const addedLinesInfo = blockify(this.editor.document, _addedLinesInfo)
         const replacerDecorations: vscode.DecorationOptions[] = []
         for (let i = 0; i < addedLinesInfo.length; i++) {
             const j = i + startLine
             const line = this.editor.document.lineAt(j)
+            const { startColumn, endColumn } = this.getColumnPositions(line)
             const decoration = addedLinesInfo[i]
             const decorationStyle = cssPropertiesToString({
                 // Absolutely position the suggested code so that the cursor does not jump there
@@ -187,22 +215,16 @@ export class DefaultDecorator implements AutoEditsDecorator {
                         // the cursor does not jump there.
                         before: {
                             contentText:
-                                '\u00A0'.repeat(3) +
-                                _replaceLeadingTrailingChars(decoration.lineText, ' ', '\u00A0'),
-                            margin: `0 0 0 ${replacerCol - line.range.end.character}ch`,
+                            '\u00A0'.repeat(3) + decoration.lineText,
+                            margin: `0 0 0 ${replacerCol - endColumn}ch`,
                             textDecoration: `none;${decorationStyle}`,
                         },
                         // Create an empty HTML element with the width required to show the suggested code.
                         // Required to make the viewport scrollable to view the suggestion if it's outside.
                         after: {
                             contentText:
-                                '\u00A0'.repeat(3) +
-                                _replaceLeadingTrailingChars(
-                                    decoration.lineText.replace(/\S/g, '\u00A0'),
-                                    ' ',
-                                    '\u00A0'
-                                ),
-                            margin: `0 0 0 ${replacerCol - line.range.end.character}ch`,
+                            '\u00A0'.repeat(3) + decoration.lineText.replace(/\S/g, '\u00A0'),
+                            margin: `0 0 0 ${replacerCol - endColumn}ch`,
                         },
                     },
                 })
@@ -211,19 +233,11 @@ export class DefaultDecorator implements AutoEditsDecorator {
                     range: new vscode.Range(j, replacerCol, j, replacerCol),
                     renderOptions: {
                         before: {
-                            contentText:
-                                '\u00A0' +
-                                _replaceLeadingTrailingChars(decoration.lineText, ' ', '\u00A0'),
+                            contentText: '\u00A0' + decoration.lineText,
                             textDecoration: `none;${decorationStyle}`,
                         },
                         after: {
-                            contentText:
-                                '\u00A0'.repeat(3) +
-                                _replaceLeadingTrailingChars(
-                                    decoration.lineText.replace(/\S/g, '\u00A0'),
-                                    ' ',
-                                    '\u00A0'
-                                ),
+                            contentText:'\u00A0'.repeat(3) + decoration.lineText.replace(/\S/g, '\u00A0'),
                         },
                     },
                 })
@@ -300,58 +314,6 @@ export function _replaceLeadingTrailingChars(str: string, oldS: string, newS: st
     str = str.substring(0, str.length - suffixLen) + newS.repeat(suffixLen)
 
     return str
-}
-
-function blockify(addedLines: AddedLinesDecorationInfo[]) {
-    removeLeadingWhitespaceBlock(addedLines)
-    padTrailingWhitespaceBlock(addedLines)
-}
-
-function padTrailingWhitespaceBlock(addedLines: AddedLinesDecorationInfo[]) {
-    let maxLineWidth = 0
-    for (const addedLine of addedLines) {
-        maxLineWidth = Math.max(maxLineWidth, addedLine.lineText.length)
-    }
-    for (const addedLine of addedLines) {
-        addedLine.lineText = addedLine.lineText.padEnd(maxLineWidth, ' ')
-    }
-}
-
-function removeLeadingWhitespaceBlock(addedLines: AddedLinesDecorationInfo[]) {
-    let leastCommonWhitespacePrefix: undefined | string = undefined
-    for (const addedLine of addedLines) {
-        const leadingWhitespaceMatch = addedLine.lineText.match(/^\s*/)
-        if (leadingWhitespaceMatch === null) {
-            leastCommonWhitespacePrefix = ''
-            break
-        }
-        const leadingWhitespace = leadingWhitespaceMatch[0]
-        if (leastCommonWhitespacePrefix === undefined) {
-            leastCommonWhitespacePrefix = leadingWhitespace
-            continue
-        }
-        // get common prefix of leastCommonWhitespacePrefix and leadingWhitespace
-        leastCommonWhitespacePrefix = getCommonPrefix(leastCommonWhitespacePrefix, leadingWhitespace)
-    }
-    if (!leastCommonWhitespacePrefix) {
-        return
-    }
-    for (const addedLine of addedLines) {
-        addedLine.lineText = addedLine.lineText.replace(leastCommonWhitespacePrefix, '')
-    }
-}
-
-function getCommonPrefix(s1: string, s2: string): string {
-    const minLength = Math.min(s1.length, s2.length)
-    let commonPrefix = ''
-    for (let i = 0; i < minLength; i++) {
-        if (s1[i] === s2[i]) {
-            commonPrefix += s1[i]
-        } else {
-            break
-        }
-    }
-    return commonPrefix
 }
 
 /**
