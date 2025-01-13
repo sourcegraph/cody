@@ -83,6 +83,7 @@ export class DeepCodyAgent {
                 this.stepsManager.completeStep(toolName, error)
             },
         }
+        this.statusCallback.onStart()
     }
 
     /**

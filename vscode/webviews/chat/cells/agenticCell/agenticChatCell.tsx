@@ -30,10 +30,10 @@ export const AgenticChatCell: FunctionComponent<{
     }, [])
 
     const subHeader = !isContextLoading
-        ? 'context reviewed'
-        : processes?.some(p => p.content && p.status === 'pending')
-          ? 'fetching context using tools...'
-          : 'reviewing...'
+        ? 'reviewed'
+        : processes?.every(p => !p.content && p.status === 'pending')
+          ? 'reviewing request...'
+          : 'fetching context using tools...'
 
     return (
         <div>
@@ -49,7 +49,7 @@ export const AgenticChatCell: FunctionComponent<{
                         header={
                             <AccordionTrigger
                                 onClick={() => triggerAccordion()}
-                                title="Agentic Context"
+                                title="Agentic context"
                                 className="tw-flex tw-items-center tw-gap-4"
                                 disabled={!processes?.some(p => p.id)}
                             >
@@ -65,7 +65,7 @@ export const AgenticChatCell: FunctionComponent<{
                                     />
                                 )}
                                 <span className="tw-flex tw-items-baseline">
-                                    Agentic Context
+                                    Agentic context
                                     <span className="tw-opacity-60 tw-text-sm tw-ml-2">
                                         &mdash; {subHeader}
                                     </span>
