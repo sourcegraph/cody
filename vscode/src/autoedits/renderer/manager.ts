@@ -385,7 +385,7 @@ export class AutoEditsDefaultRendererManager implements AutoEditsRendererManager
         }
         autoeditsOutputChannelLogger.logDebugIfVerbose(
             'tryMakeInlineCompletions',
-            'Rendering a diff view for auto-edits.'
+            'Rendering a diff view for auto-edit.'
         )
 
         return {

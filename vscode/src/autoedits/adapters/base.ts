@@ -5,7 +5,7 @@ export interface AutoeditsModelAdapter {
 }
 
 /**
- * Represents the structure of a prompt for auto-edits functionality
+ * Represents the structure of a prompt for auto-edit functionality
  */
 export type AutoeditsPrompt = {
     /**

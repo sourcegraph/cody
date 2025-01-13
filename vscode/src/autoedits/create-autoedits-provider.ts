@@ -22,24 +22,24 @@ import { AutoeditsProvider } from './autoedits-provider'
 import { autoeditsOutputChannelLogger } from './output-channel-logger'
 
 const AUTOEDITS_NON_ELIGIBILITY_MESSAGES = {
-    ONLY_VSCODE_SUPPORT: 'Auto-Edits is currently only supported in VS Code.',
-    PRO_USER_ONLY: 'Auto-Edits requires Cody Pro subscription.',
+    ONLY_VSCODE_SUPPORT: 'Auto-Edit is currently only supported in VS Code.',
+    PRO_USER_ONLY: 'Auto-Edit requires Cody Pro subscription.',
     FEATURE_FLAG_NOT_ELIGIBLE:
-        'Auto-Edits is an experimental feature and currently not enabled for your account. Please check back later.',
+        'Auto-Edit is an experimental feature and currently not enabled for your account. Please check back later.',
 }
 
 /**
- * Information about a user's eligibility for auto-edits functionality.
+ * Information about a user's eligibility for auto-edit functionality.
  */
 export interface AutoeditsUserEligibilityInfo {
     /**
-     * Whether the user is eligible to use auto-edits.
+     * Whether the user is eligible to use auto-edit.
      */
     isUserEligible: boolean
 
     /**
-     * The reason why the user is not eligible for auto-edits, if applicable.
-     * The message can be shown to the user, why auto-edits are not available to them.
+     * The reason why the user is not eligible for auto-edit, if applicable.
+     * The message can be shown to the user, why auto-edit are not available to them.
      */
     nonEligibilityReason?: string
 }
@@ -59,7 +59,7 @@ export function createAutoEditsProvider({
     autoeditsFeatureFlagEnabled,
     fixupController,
 }: AutoeditsItemProviderArgs): Observable<void> {
-    if (!configuration.experimentalAutoeditsEnabled) {
+    if (!configuration.experimentalAutoEditEnabled) {
         return NEVER
     }
 
@@ -87,7 +87,7 @@ export function createAutoEditsProvider({
 
             const provider = new AutoeditsProvider(chatClient, fixupController)
             return [
-                vscode.commands.registerCommand('cody.command.autoedits-manual-trigger', async () => {
+                vscode.commands.registerCommand('cody.command.autoedit-manual-trigger', async () => {
                     await vscode.commands.executeCommand('editor.action.inlineSuggest.hide')
                     await vscode.commands.executeCommand('editor.action.inlineSuggest.trigger')
                 }),
@@ -127,12 +127,19 @@ export function isUserEligibleForAutoeditsFeature(
     authStatus: AuthStatus,
     productSubscription: UserProductSubscription | null
 ): AutoeditsUserEligibilityInfo {
-    // Always enable auto-edits when testing
+    console.log({
+        autoeditsFeatureFlagEnabled,
+        isTesting: process.env.CODY_TESTING === 'true',
+        isRunningInsideAgent: isRunningInsideAgent(),
+        isFreeUser: isFreeUser(authStatus, productSubscription),
+    })
+
+    // Always enable auto-edit when testing
     if (process.env.CODY_TESTING === 'true') {
         return { isUserEligible: true }
     }
 
-    // Editors other than vscode are not eligible for auto-edits
+    // Editors other than vscode are not eligible for auto-edit
     if (isRunningInsideAgent()) {
         return {
             isUserEligible: false,
@@ -140,7 +147,7 @@ export function isUserEligibleForAutoeditsFeature(
         }
     }
 
-    // Free users are not eligible for auto-edits
+    // Free users are not eligible for auto-edit
     if (isFreeUser(authStatus, productSubscription)) {
         return {
             isUserEligible: false,
@@ -148,7 +155,7 @@ export function isUserEligibleForAutoeditsFeature(
         }
     }
 
-    // Users with autoedits feature flag enabled are eligible for auto-edits
+    // Users with autoedit feature flag enabled are eligible for auto-edit
     return {
         isUserEligible: autoeditsFeatureFlagEnabled,
         nonEligibilityReason: autoeditsFeatureFlagEnabled

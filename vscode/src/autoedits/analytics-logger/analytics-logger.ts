@@ -233,7 +233,7 @@ interface AutoEditFinalMetadata extends AutoeditPostProcessedMetadata {
      * if a suggestion is really visible.
      */
     isRead: boolean
-    /** The number of the auto-edits started since the last suggestion was shown. */
+    /** The number of the auto-edit started since the last suggestion was shown. */
     suggestionsStartedSinceLastSuggestion: number
 }
 

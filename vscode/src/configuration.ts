@@ -132,13 +132,13 @@ export function getConfiguration(
         experimentalTracing: getHiddenSetting('experimental.tracing', false),
 
         experimentalSupercompletions: getHiddenSetting('experimental.supercompletions', false),
-        experimentalAutoeditsEnabled: codyAutoSuggestionsMode === CodyAutoSuggestionMode.Autoedits,
-        experimentalAutoeditsConfigOverride: getHiddenSetting(
-            'experimental.autoedits.config.override',
+        experimentalAutoEditEnabled: codyAutoSuggestionsMode === CodyAutoSuggestionMode.Autoedit,
+        experimentalAutoEditConfigOverride: getHiddenSetting(
+            'experimental.autoedit.config.override',
             undefined
         ),
-        experimentalAutoeditsRendererTesting: getHiddenSetting(
-            'experimental.autoedits-renderer-testing',
+        experimentalAutoEditRendererTesting: getHiddenSetting(
+            'experimental.autoedit-renderer-testing',
             false
         ),
         experimentalMinionAnthropicKey: getHiddenSetting('experimental.minion.anthropicKey', undefined),

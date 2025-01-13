@@ -11,7 +11,7 @@ import {
 } from './helpers'
 
 /**
- * Auto-edits Visual Regression Tests
+ * Auto-Edit Visual Regression Tests
  *
  * Currently these tests run only on macOS due to cross-platform rendering inconsistencies.
  *
@@ -35,13 +35,13 @@ import {
  *
  * Note: While macOS E2E tests are not required by default in CI, these tests
  * are currently running only on macOS to establish a baseline for visual regression
- * testing of auto-edits functionality.
+ * testing of auto-edit functionality.
  * [Slack discussion](https://sourcegraph.slack.com/archives/C07F8LLKE06/p1734715196312609)
  * [Integration PR](https://github.com/sourcegraph/cody/pull/6454)
  *
  * Implementation Note: Mock Response Strategy
  *
- * While typically E2E tests use mock-server.ts for server responses, auto-edits tests
+ * While typically E2E tests use mock-server.ts for server responses, auto-edit tests
  * use direct mock responses instead, for the following reasons:
  *
  * 1. Flexibility & Extensibility:
@@ -60,15 +60,15 @@ import {
  *    - Skipping adapter layer in E2E is acceptable given the coverage elsewhere
  *
  * While this approach bypasses the adapter layer in E2E setup, it provides better
- * flexibility for testing visual aspects of auto-edits functionality.
+ * flexibility for testing visual aspects of auto-edit functionality.
  */
 
 const test = baseTest
     .extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL })
     .extend<ExtraWorkspaceSettings>({
         extraWorkspaceSettings: {
-            'cody.suggestions.mode': CodyAutoSuggestionMode.Autoedits,
-            'cody.experimental.autoedits.use-mock-responses': true,
+            'cody.suggestions.mode': CodyAutoSuggestionMode.Autoedit,
+            'cody.experimental.autoedit.use-mock-responses': true,
         },
     })
 
@@ -127,8 +127,8 @@ const autoeditsTestHelper = async ({
     // Open the Explorer view from the sidebar
     await sidebarExplorer(page).click()
 
-    // Go to the auto-edits directory in the workspace
-    await page.getByRole('treeitem', { name: 'auto-edits' }).locator('a').click()
+    // Go to the auto-edit directory in the workspace
+    await page.getByRole('treeitem', { name: 'auto-edit' }).locator('a').click()
     await page.getByRole('treeitem', { name: fileName }).locator('a').click()
 
     // Close the explorer view
