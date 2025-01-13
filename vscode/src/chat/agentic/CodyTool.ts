@@ -194,8 +194,8 @@ class FileTool extends CodyTool {
                 subTag: ps`name`,
             },
             prompt: {
-                instruction: ps`To retrieve full content of a codebase file-DO NOT retrieve files that may contain secrets`,
-                placeholder: ps`FILENAME`,
+                instruction: ps`Get full content of a file in codebase-DO NOT retrieve files that may contain secrets`,
+                placeholder: ps`RELATIVE_PATH`,
                 examples: [
                     ps`See the content of different files: \`<TOOLFILE><name>path/foo.ts</name><name>path/bar.ts</name></TOOLFILE>\``,
                 ],
@@ -319,7 +319,7 @@ export class OpenCtxTool extends CodyTool {
         super(config)
     }
 
-    async execute(span: Span, queries: string[]): Promise<ContextItem[]> {
+    public async execute(span: Span, queries: string[]): Promise<ContextItem[]> {
         span.addEvent('executeOpenCtxTool')
         const openCtxClient = openCtx.controller
         if (!queries?.length || !openCtxClient) {
