@@ -216,9 +216,8 @@ export class DefaultDecorator implements AutoEditsDecorator {
         const oldLines = addedLinesInfo
             .filter(info => info.afterLine < this.editor.document.lineCount)
             .map(info => this.editor.document.lineAt(info.afterLine))
-        const longestLineValue = Math.max(...oldLines.map(line => line.range.end.character))
-        const longestLine = oldLines.find(line => line.range.end.character === longestLineValue)
-        const replacerCol = this.getReplacerColumn(longestLine!)
+
+        const replacerCol = Math.max(...oldLines.map(line => this.getEndColumn(line)))
         const startLine = Math.min(...oldLines.map(line => line.lineNumber))
 
         return {
@@ -231,7 +230,7 @@ export class DefaultDecorator implements AutoEditsDecorator {
         }
     }
 
-    private getReplacerColumn(line: vscode.TextLine): number {
+    private getEndColumn(line: vscode.TextLine): number {
         const insertSpaces = getEditorInsertSpaces(
             this.editor.document.uri,
             vscode.workspace,
@@ -270,7 +269,7 @@ export class DefaultDecorator implements AutoEditsDecorator {
         for (let i = 0; i < blockifiedAddedLines.length; i++) {
             const j = i + startLine
             const line = this.editor.document.lineAt(j)
-            const lineReplacerCol = this.getReplacerColumn(line)
+            const lineReplacerCol = this.getEndColumn(line)
             const decoration = blockifiedAddedLines[i]
             const decorationStyle = cssPropertiesToString({
                 // Absolutely position the suggested code so that the cursor does not jump there

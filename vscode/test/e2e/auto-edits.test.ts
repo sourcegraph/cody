@@ -231,6 +231,20 @@ test('autoedits: triggers inline decorations when multiple separate insertions a
     })
 })
 
+test('autoedits: triggers a suffix decoration and renders correctly in files that use tab based indentation', async ({
+    page,
+    sidebar,
+}) => {
+    const lineOptions: LineOptions[] = [{ line: 23 }]
+    await autoeditsTestHelper({
+        page,
+        sidebar,
+        fileName: 'suffix-decoration-example-3.go',
+        testCaseName: 'autoedits-suffix-decoration-tab-indentation',
+        lineOptions,
+    })
+})
+
 /**
  * BUG: We need to fix our logic to display decorations at the end of a file.
  * Linear issue: https://linear.app/sourcegraph/issue/CODY-4650/fix-rendering-issues-with-suffix-suggestions-at-the-end-of-a-file
