@@ -253,7 +253,7 @@ export class DeepCodyAgent {
             }
             // When there are context items matched, we will replace the current context with
             // the reviewed context list, but first we will make sure all the user added context
-            // items are nor removed from the updated context list. We will let the prompt builder
+            // items are not removed from the updated context list. We will let the prompt builder
             // at the final stage to do the unique context check.
             if (reviewed.length > 0) {
                 const userAdded = this.context.filter(c => isUserAddedItem(c))
