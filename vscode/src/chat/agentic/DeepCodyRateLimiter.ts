@@ -35,6 +35,7 @@ export class DeepCodyRateLimiter {
                 const timeToWait = this.ONE_DAY_MS - timeDiff
                 return Math.floor(timeToWait / 1000)
             }
+
             // Reset cache if a day has passed
             this.lastUsedCache = 0
         }
@@ -54,6 +55,8 @@ export class DeepCodyRateLimiter {
         const currentQuota = quota ?? DAILY_QUOTA
         const newQuota = Math.min(DAILY_QUOTA, currentQuota + quotaToAdd)
 
+        toolboxManager.setIsRateLimited(newQuota < 1)
+
         // If we have at least 1 quota available
         if (newQuota >= 1) {
             localStorage.setDeepCodyUsage(newQuota - 1, now.toISOString())
@@ -65,7 +68,6 @@ export class DeepCodyRateLimiter {
                     },
                 })
             }
-            toolboxManager.setIsRateLimited(newQuota === 1)
             return undefined
         }
 
