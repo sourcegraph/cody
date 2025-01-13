@@ -1,10 +1,4 @@
-import type {
-    ChatMessage,
-    ContextItem,
-    Model,
-    ProcessingStep,
-    RankedContext,
-} from '@sourcegraph/cody-shared'
+import type { ChatMessage, ContextItem, Model, RankedContext } from '@sourcegraph/cody-shared'
 import { pluralize } from '@sourcegraph/cody-shared'
 import { MENTION_CLASS_NAME } from '@sourcegraph/prompt-editor'
 import { clsx } from 'clsx'
@@ -49,7 +43,6 @@ export const ContextCell: FunctionComponent<{
     onManuallyEditContext: () => void
     editContextNode: React.ReactNode
     experimentalOneBoxEnabled?: boolean
-    processes?: ProcessingStep[]
     agent?: string
 }> = memo(
     ({
@@ -66,7 +59,6 @@ export const ContextCell: FunctionComponent<{
         editContextNode,
         intent,
         experimentalOneBoxEnabled,
-        processes,
         agent,
     }) => {
         const __storybook__initialOpen = useContext(__ContextCellStorybookContext)?.initialOpen ?? false

@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react'
 import { VSCodeStandaloneComponent } from '../../../storybook/VSCodeStoryDecorator'
-import { AgenticChatCell } from './agenticChatCell'
+import { AgenticChatCell } from './AgenticContextCell'
 
 const meta: Meta<typeof AgenticChatCell> = {
     title: 'cody/AgenticChatCell',
@@ -22,9 +22,14 @@ export const Default: Story = {
                 content: 'Found relevant code in repository',
             },
             {
-                id: 'GitHub',
-                status: 'success',
-                content: 'Checked pull requests',
+                id: 'Linear',
+                status: 'pending',
+                content: 'github',
+            },
+            {
+                id: 'Terminal',
+                status: 'error',
+                content: 'git clone',
             },
         ],
     },
@@ -36,13 +41,18 @@ export const Loading: Story = {
         processes: [
             {
                 id: 'Code Search',
-                status: 'pending',
-                content: 'Searching codebase...',
+                status: 'success',
+                content: 'function processer',
             },
             {
-                id: 'Documentation',
+                id: 'Terminal',
+                status: 'success',
+                content: 'git diff',
+            },
+            {
+                id: 'Terminal',
                 status: 'pending',
-                content: 'Scanning docs...',
+                content: 'git clone',
             },
         ],
     },
