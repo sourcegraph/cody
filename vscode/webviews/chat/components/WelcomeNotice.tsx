@@ -1,5 +1,5 @@
 import { XIcon } from 'lucide-react'
-import { useCallback } from 'react'
+import { type FunctionComponent, useCallback } from 'react'
 import { useLocalStorage } from '../../components/hooks'
 import { Badge } from '../../components/shadcn/ui/badge'
 import { Button } from '../../components/shadcn/ui/button'
@@ -12,7 +12,7 @@ const WORKSPACES_URL = 'https://workspaces.sourcegraph.com'
 // TODO: Update to live link https://linear.app/sourcegraph/issue/CORE-535/
 const DOCS_URL = 'https://docs.sourcegraph.com'
 
-export function WelcomeNotice() {
+export const WelcomeNotice: FunctionComponent = () => {
     const [dismissed, setDismissed] = useLocalStorage('sg_welcome_notice_00', 0)
     if (dismissed) {
         return null
@@ -29,12 +29,12 @@ export function WelcomeNotice() {
                 <SourcegraphLogo width={22} height={22} />
                 <Badge className="tw-ml-3 tw-text-sm">Enterprise Starter</Badge>
             </div>
-            <h1 className="tw-font-bold tw-text-2xl tw-my-2">Unlock the Sourcegraph platform</h1>
-            <p className="tw-text-muted-foreground tw-mb-2">
+            <h1 className="tw-font-bold tw-text-[14px] tw-my-2">Unlock the Sourcegraph platform</h1>
+            <p className="tw-text-muted-foreground tw-mb-2 tw-text-[12px]">
                 Get search, AI chat, autocompletes and inline edits for your entire team to find,
                 understand and fix code across all of your codebases.
             </p>
-            <div id="welcome-notice-buttons" className="tw-flex tw-gap-4 tw-mb-4">
+            <div id="welcome-notice-buttons" className="tw-flex tw-gap-4 tw-mb-4 tw-text-[12px]">
                 <Button variant="outline" className="tw-px-2">
                     <a
                         href={WORKSPACES_URL}
@@ -63,6 +63,3 @@ export function WelcomeNotice() {
         </div>
     )
 }
-;<div className="tw-fixed tw-bottom-0 tw-left-1/2 tw-transform tw--translate-x-1/2 tw-z-50 tw-mb-4">
-    <WelcomeNotice />
-</div>
