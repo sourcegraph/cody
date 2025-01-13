@@ -26,6 +26,7 @@ import type { ExtensionClient } from '../extension-client'
 import { ACTIVE_TASK_STATES } from '../non-stop/codelenses/constants'
 import { splitSafeMetadata } from '../services/telemetry-v2'
 import type { ExecuteEditArguments } from './execute'
+import { getInstantSmartApplyPrompt } from './prompt/instant-smart-apply'
 import { SMART_APPLY_FILE_DECORATION, getSmartApplySelection } from './prompt/smart-apply'
 import { EditProvider } from './provider'
 import type { SmartApplyArguments } from './smart-apply'
@@ -315,6 +316,43 @@ export class EditManager implements vscode.Disposable {
                 const documentRange = new vscode.Range(0, 0, document.lineCount, 0)
                 editor.setDecorations(SMART_APPLY_FILE_DECORATION, [documentRange])
 
+                const isInstantSmartApplyEnabled = await vscode.workspace
+                    .getConfiguration()
+                    .get<boolean | undefined>('cody.experimental.instant-smart-apply')
+
+                if (isInstantSmartApplyEnabled) {
+                    const updatedCode = await getInstantSmartApplyPrompt({
+                        originalCode: document.getText(),
+                        updatedSnippet: configuration.replacement,
+                    })
+                    const lastLine = document.lineAt(document.lineCount - 1)
+                    const docRange = new vscode.Range(
+                        0,
+                        0,
+                        document.lineCount - 1,
+                        lastLine.range.end.character
+                    )
+
+                    const task = await this.options.controller.createTask(
+                        document,
+                        configuration.instruction,
+                        [],
+                        docRange,
+                        'edit',
+                        'edit',
+                        model,
+                        source,
+                        configuration.document.uri,
+                        undefined,
+                        {},
+                        configuration.id
+                    )
+                    const provider = this.getProviderForTask(task)
+                    await provider.applyEdit('\n' + updatedCode)
+                    editor.setDecorations(SMART_APPLY_FILE_DECORATION, [])
+                    return
+                }
+
                 // We need to extract the proposed code, provided by the LLM, so we can use it in future
                 // queries to ask the LLM to generate a selection, and then ultimately apply the edit.
                 const replacementCode = PromptString.unsafe_fromLLMResponse(configuration.replacement)
@@ -323,7 +361,6 @@ export class EditManager implements vscode.Disposable {
                 if (!versions) {
                     throw new Error('unable to determine site version')
                 }
-
                 const selection = await getSmartApplySelection(
                     configuration.id,
                     configuration.instruction,
@@ -420,7 +457,6 @@ export class EditManager implements vscode.Disposable {
                     await provider.applyEdit('\n' + configuration.replacement)
                     return task
                 }
-
                 // We have a selection to replace, we re-prompt the LLM to generate the changes to ensure that
                 // we can reliably apply this edit.
                 // Just using the replacement code from the response is not enough, as it may contain parts that are not suitable to apply,
