@@ -576,9 +576,9 @@
         "enablement": "cody.activated"
       },
       {
-        "command": "cody.command.autoedits-manual-trigger",
+        "command": "cody.command.autoedit-manual-trigger",
         "title": "Autoedits Manual Trigger",
-        "enablement": "cody.activated && config.cody.suggestions.mode == 'auto-edits (Experimental)'"
+        "enablement": "cody.activated && config.cody.suggestions.mode == 'auto-edit (Experimental)'"
       }
     ],
     "keybindings": [
@@ -739,7 +739,7 @@
       {
         "command": "cody.supersuggest.testExample",
         "key": "ctrl+alt+enter",
-        "when": "cody.activated && config.cody.suggestions.mode == 'auto-edits (Experimental)'"
+        "when": "cody.activated && config.cody.suggestions.mode == 'auto-edit (Experimental)'"
       }
     ],
     "submenus": [
@@ -1003,7 +1003,7 @@
         },
         "cody.suggestions.mode": {
           "type": "string",
-          "enum": ["autocomplete", "auto-edits (Experimental)", "off"],
+          "enum": ["autocomplete", "auto-edit (Experimental)", "off"],
           "enumDescriptions": [
             "Suggests standard code completions as you type.",
             "Suggests advanced context-aware code edits as you navigate the codebase. Experimental feature for Pro and Enterprise users.",

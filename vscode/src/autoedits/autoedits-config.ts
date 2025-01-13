@@ -68,9 +68,9 @@ function getBaseProviderConfig(): BaseAutoeditsProviderConfig {
 export function getAutoeditsProviderConfig(): AutoeditsProviderConfig {
     const isMockResponseFromCurrentDocumentTemplateEnabled = vscode.workspace
         .getConfiguration()
-        .get<boolean>('cody.experimental.autoedits.use-mock-responses', false)
+        .get<boolean>('cody.experimental.autoedit.use-mock-responses', false)
 
-    const userConfig = getConfiguration().experimentalAutoeditsConfigOverride
+    const userConfig = getConfiguration().experimentalAutoEditConfigOverride
     const baseConfig = userConfig ?? getBaseProviderConfig()
 
     return {

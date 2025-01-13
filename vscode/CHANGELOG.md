@@ -35,7 +35,7 @@ This is a log of all notable changes to Cody for VS Code.
 - update `billingMetadata` for failed/disconnected type of events  [pull/6254](https://github.com/sourcegraph/cody/pull/6254)
 - feat(nls): add relevant repo boost  [pull/6502](https://github.com/sourcegraph/cody/pull/6502)
 - chore(chat): Decompose ChatController.sendChat into handlers for different request types  [pull/6469](https://github.com/sourcegraph/cody/pull/6469)
-- feat(autoedit): track notebook for auto-edits  [pull/6449](https://github.com/sourcegraph/cody/pull/6449)
+- feat(autoedit): track notebook for auto-edit  [pull/6449](https://github.com/sourcegraph/cody/pull/6449)
 - chore(audoedit): consistent use of the output channel logger  [pull/6472](https://github.com/sourcegraph/cody/pull/6472)
 - feat(audoedit): ensure inline completions are also hidden on dismiss  [pull/6465](https://github.com/sourcegraph/cody/pull/6465)
 - feat(audoedit): remove the auto edit experimental command  [pull/6471](https://github.com/sourcegraph/cody/pull/6471)
@@ -45,8 +45,8 @@ This is a log of all notable changes to Cody for VS Code.
 ## 1.56.0
 
 ### Added
-- autoedits e2e tests  [pull/6425](https://github.com/sourcegraph/cody/pull/6425)
-- feat(audoedit): extract autoedits config from the provider  [pull/6460](https://github.com/sourcegraph/cody/pull/6460)
+- auto-edit e2e tests  [pull/6425](https://github.com/sourcegraph/cody/pull/6425)
+- feat(audoedit): extract auto-edit config from the provider  [pull/6460](https://github.com/sourcegraph/cody/pull/6460)
 - autoedit: address dogfooding feedback  [pull/6454](https://github.com/sourcegraph/cody/pull/6454)
 - feat(audoedit): implement basic analytics logger  [pull/6430](https://github.com/sourcegraph/cody/pull/6430)
 - feat(onebox): Use new prompt editor when onebox is enabled  [pull/6288](https://github.com/sourcegraph/cody/pull/6288)
@@ -58,7 +58,7 @@ This is a log of all notable changes to Cody for VS Code.
 - fix(modelSelectField): missing overflow scrollbar when there isn't space to show entire list  [pull/6423](https://github.com/sourcegraph/cody/pull/6423)
 - fix: remove trailing spaces from extracted query  [pull/6432](https://github.com/sourcegraph/cody/pull/6432)
 - Fix small screen filters panel opening  [pull/6420](https://github.com/sourcegraph/cody/pull/6420)
-- fix diff rendering for autoedits  [pull/6410](https://github.com/sourcegraph/cody/pull/6410)
+- fix diff rendering for auto-edit  [pull/6410](https://github.com/sourcegraph/cody/pull/6410)
 - chore(agent): disable flaky test  [pull/6429](https://github.com/sourcegraph/cody/pull/6429)
 - fix: Prevent style leaks in cody web  [pull/6427](https://github.com/sourcegraph/cody/pull/6427)
 - chore(onebox/telemetry): add `billingMetadata`   [pull/6426](https://github.com/sourcegraph/cody/pull/6426)
@@ -192,8 +192,8 @@ This is a log of all notable changes to Cody for VS Code.
 #### Autoedits
 
 - feat(autoedit): combine inline completion provider and selection change [pull/6147](https://github.com/sourcegraph/cody/pull/6147)
-- feat(autoedit): use code completion feature for auto edits [pull/6161](https://github.com/sourcegraph/cody/pull/6161)
-- add 10 sec diff for autoedit experiments [pull/6191](https://github.com/sourcegraph/cody/pull/6191)
+- feat(autoedit): use code completion feature for auto-edit [pull/6161](https://github.com/sourcegraph/cody/pull/6161)
+- add 10 sec diff for auto-edit experiments [pull/6191](https://github.com/sourcegraph/cody/pull/6191)
 - adding line level diff strategy for the recent edits diff calculation [pull/6188](https://github.com/sourcegraph/cody/pull/6188)
 - Hitesh/add diff stratagies [pull/6190](https://github.com/sourcegraph/cody/pull/6190)
 - Hitesh/add diff strategies logging [pull/6189](https://github.com/sourcegraph/cody/pull/6189)
@@ -210,7 +210,7 @@ This is a log of all notable changes to Cody for VS Code.
 - feat(autoedit): fix cursor jumping issue [pull/6156](https://github.com/sourcegraph/cody/pull/6156)
 - fix(autoedit): fix suffix matching logic [pull/6171](https://github.com/sourcegraph/cody/pull/6171)
 - fix(audoedit): fix the scrollbar issue [pull/6158](https://github.com/sourcegraph/cody/pull/6158)
-- fix added lines sorting in autoedits [pull/6155](https://github.com/sourcegraph/cody/pull/6155)
+- fix added lines sorting in auto-edit [pull/6155](https://github.com/sourcegraph/cody/pull/6155)
 
 ### Changed
 
@@ -252,13 +252,13 @@ This is a log of all notable changes to Cody for VS Code.
 - [Backport vscode-v1.46.x] Prompts Picker [pull/6168](https://github.com/sourcegraph/cody/pull/6168)
 - [Backport vscode-v1.46.x] VS Code: Release v1.44.0 [pull/6169](https://github.com/sourcegraph/cody/pull/6169)
 - feat(autoedit): fix cursor jumping issue [pull/6156](https://github.com/sourcegraph/cody/pull/6156)
-- only activate autoedits command when experimental setting is enabled [pull/6157](https://github.com/sourcegraph/cody/pull/6157)
+- only activate auto-edit command when experimental setting is enabled [pull/6157](https://github.com/sourcegraph/cody/pull/6157)
 - Chat: ensure ScrollDown button only takes it's width [pull/6143](https://github.com/sourcegraph/cody/pull/6143)
 - autoedit: Add feature flag to enable/disable autoedit feature [pull/6145](https://github.com/sourcegraph/cody/pull/6145)
 - remove ctrl+shift+L shortcut and update shift+alt+L shortcut [pull/6148](https://github.com/sourcegraph/cody/pull/6148)
 - Fix various JetBrains styling issues [pull/6153](https://github.com/sourcegraph/cody/pull/6153)
 - Autoedits Context Improvements [pull/6141](https://github.com/sourcegraph/cody/pull/6141)
-- Better rendering for auto edits [pull/6132](https://github.com/sourcegraph/cody/pull/6132)
+- Better rendering for auto-edit [pull/6132](https://github.com/sourcegraph/cody/pull/6132)
 - Chat: context cell improvements [pull/6115](https://github.com/sourcegraph/cody/pull/6115)
 - Fix inline-edit prompts chat building [pull/6003](https://github.com/sourcegraph/cody/pull/6003)
 - Cody Web: Polish cody web Prompts [pull/6135](https://github.com/sourcegraph/cody/pull/6135)
@@ -299,7 +299,7 @@ This is a log of all notable changes to Cody for VS Code.
 - fix indentation issue [pull/6103](https://github.com/sourcegraph/cody/pull/6103)
 - Cody Web: Add support running prompts from consumer [pull/6081](https://github.com/sourcegraph/cody/pull/6081)
 - fix recent edits context source [pull/6071](https://github.com/sourcegraph/cody/pull/6071)
-- Hitesh/autoedits improvements [pull/5956](https://github.com/sourcegraph/cody/pull/5956)
+- Hitesh/auto-edit improvements [pull/5956](https://github.com/sourcegraph/cody/pull/5956)
 - Agent: disable the flaky edit test [pull/6093](https://github.com/sourcegraph/cody/pull/6093)
 - VS Code: point releases to `./vscode/changelog.md` [pull/6080](https://github.com/sourcegraph/cody/pull/6080)
 - Fix issue with merging configs [pull/6084](https://github.com/sourcegraph/cody/pull/6084)

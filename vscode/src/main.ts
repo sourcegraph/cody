@@ -472,7 +472,7 @@ async function registerCodyCommands(
     // Initialize autoedit tester
     disposables.push(
         enableFeature(
-            ({ configuration }) => configuration.experimentalAutoeditsRendererTesting !== false,
+            ({ configuration }) => configuration.experimentalAutoEditRendererTesting !== false,
             () => registerAutoEditTestRenderCommand()
         )
     )
@@ -724,7 +724,7 @@ function registerAutoEdits(
                 resolvedConfig,
                 authStatus,
                 featureFlagProvider.evaluatedFeatureFlag(
-                    FeatureFlag.CodyAutoeditExperimentEnabledFeatureFlag
+                    FeatureFlag.CodyAutoEditExperimentEnabledFeatureFlag
                 )
             )
                 .pipe(

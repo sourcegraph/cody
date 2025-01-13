@@ -20,7 +20,7 @@ export interface UserPromptForModelArgs extends UserPromptArgs {
 }
 
 /**
- * Class for generating user prompts in auto-edits functionality.
+ * Class for generating user prompts in auto-edit functionality.
  * The major difference between different strategy is the prompt rendering.
  */
 export abstract class AutoeditsUserPromptStrategy {
