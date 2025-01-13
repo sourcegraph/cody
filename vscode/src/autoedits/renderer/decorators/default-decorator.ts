@@ -5,7 +5,7 @@ import { GHOST_TEXT_COLOR } from '../../../commands/GhostHintDecorator'
 import type { AutoEditsDecorator, DecorationInfo, ModifiedLineInfo } from './base'
 import { cssPropertiesToString } from './utils'
 import { getEditorInsertSpaces, getEditorTabSize } from '@sourcegraph/cody-shared'
-import { blockify } from './blockify'
+import { blockify, UNICODE_SPACE } from './blockify'
 
 export interface AddedLinesDecorationInfo {
     ranges: [number, number][]
@@ -159,32 +159,33 @@ export class DefaultDecorator implements AutoEditsDecorator {
         const oldLines = addedLinesInfo.map(info => this.editor.document.lineAt(info.afterLine))
         const longestLineValue = Math.max(...oldLines.map(line => line.range.end.character))
         const longestLine = oldLines.find(line => line.range.end.character === longestLineValue)
-        const replacerCol = this.getColumnPositions(longestLine!)
+        const replacerCol = this.getReplacerColumn(longestLine!)
         const startLine = Math.min(...oldLines.map(line => line.lineNumber))
-        this.renderAddedLinesDecorations(addedLinesInfo, startLine, replacerCol.endColumn)
+        this.renderAddedLinesDecorations(addedLinesInfo, startLine, replacerCol)
     }
 
-    private getColumnPositions(
+    private getReplacerColumn(
         line: vscode.TextLine
-    ): { startColumn: number; endColumn: number } {
+    ): number {
         const insertSpaces = getEditorInsertSpaces(this.editor.document.uri, vscode.workspace, vscode.window)
         if (insertSpaces) {
-            return { startColumn: line.firstNonWhitespaceCharacterIndex, endColumn: line.range.end.character }
+            // We can reliably use the range position for files using space characters
+            return line.range.end.character
         }
 
-        // For files using tab-based indentation, we need special handling
+        // For files using tab-based indentation, we need special handling.
         // VSCode's Range API doesn't account for tab display width
         // We need to:
         // 1. Convert tabs to spaces based on editor tab size
         // 2. Calculate the visual width including both indentation and content
         const tabSize = getEditorTabSize(this.editor.document.uri, vscode.workspace, vscode.window)
-        const tabAsSpace = '\u00A0'.repeat(tabSize)
+        const tabAsSpace = UNICODE_SPACE.repeat(tabSize)
         const firstNonWhitespaceCharacterIndex = line.firstNonWhitespaceCharacterIndex
         const indentationText = line.text.substring(0, firstNonWhitespaceCharacterIndex)
         const spaceAdjustedEndCharacter = indentationText.replaceAll(/\t/g, tabAsSpace).length +
             (line.text.length - firstNonWhitespaceCharacterIndex)
 
-        return { startColumn: firstNonWhitespaceCharacterIndex * tabSize, endColumn: spaceAdjustedEndCharacter }
+        return spaceAdjustedEndCharacter
     }
 
     private renderAddedLinesDecorations(
@@ -197,7 +198,7 @@ export class DefaultDecorator implements AutoEditsDecorator {
         for (let i = 0; i < addedLinesInfo.length; i++) {
             const j = i + startLine
             const line = this.editor.document.lineAt(j)
-            const { startColumn, endColumn } = this.getColumnPositions(line)
+            const lineReplacerCol = this.getReplacerColumn(line)
             const decoration = addedLinesInfo[i]
             const decorationStyle = cssPropertiesToString({
                 // Absolutely position the suggested code so that the cursor does not jump there
@@ -215,16 +216,17 @@ export class DefaultDecorator implements AutoEditsDecorator {
                         // the cursor does not jump there.
                         before: {
                             contentText:
-                            '\u00A0'.repeat(3) + decoration.lineText,
-                            margin: `0 0 0 ${replacerCol - endColumn}ch`,
+                            UNICODE_SPACE.repeat(3) + decoration.lineText,
+                            margin: `0 0 0 ${replacerCol - lineReplacerCol}ch`,
                             textDecoration: `none;${decorationStyle}`,
                         },
                         // Create an empty HTML element with the width required to show the suggested code.
                         // Required to make the viewport scrollable to view the suggestion if it's outside.
                         after: {
                             contentText:
-                            '\u00A0'.repeat(3) + decoration.lineText.replace(/\S/g, '\u00A0'),
-                            margin: `0 0 0 ${replacerCol - endColumn}ch`,
+                            // Creates a spacer element with the same width as the suggested code to ensure proper scrolling
+                            UNICODE_SPACE.repeat(3) + decoration.lineText.replace(/\S/g, UNICODE_SPACE),
+                            margin: `0 0 0 ${replacerCol - lineReplacerCol}ch`,
                         },
                     },
                 })
@@ -233,11 +235,11 @@ export class DefaultDecorator implements AutoEditsDecorator {
                     range: new vscode.Range(j, replacerCol, j, replacerCol),
                     renderOptions: {
                         before: {
-                            contentText: '\u00A0' + decoration.lineText,
+                            contentText: UNICODE_SPACE + decoration.lineText,
                             textDecoration: `none;${decorationStyle}`,
                         },
                         after: {
-                            contentText:'\u00A0'.repeat(3) + decoration.lineText.replace(/\S/g, '\u00A0'),
+                            contentText:UNICODE_SPACE.repeat(3) + decoration.lineText.replace(/\S/g, UNICODE_SPACE),
                         },
                     },
                 })
@@ -282,38 +284,6 @@ export class DefaultDecorator implements AutoEditsDecorator {
             decorationType.dispose()
         }
     }
-}
-
-/**
- * Replaces leading and trailing occurrences of a character with another string
- * @param str The input string to process
- * @param oldS The character to replace
- * @param newS The character/string to replace with
- * @returns The string with leading and trailing characters replaced
- */
-export function _replaceLeadingTrailingChars(str: string, oldS: string, newS: string): string {
-    let prefixLen = str.length
-    for (let i = 0; i < str.length; i++) {
-        if (str[i] !== oldS) {
-            // str = newS.repeat(i) + str.substring(i)
-            prefixLen = i
-            break
-        }
-    }
-    str = newS.repeat(prefixLen) + str.substring(prefixLen)
-
-    let suffixLen = str.length
-    for (let i = 0; i < str.length; i++) {
-        const j = str.length - 1 - i
-        if (str[j] !== oldS) {
-            // str = str.substring(0, j + 1) + newS.repeat(i)
-            suffixLen = i
-            break
-        }
-    }
-    str = str.substring(0, str.length - suffixLen) + newS.repeat(suffixLen)
-
-    return str
 }
 
 /**
