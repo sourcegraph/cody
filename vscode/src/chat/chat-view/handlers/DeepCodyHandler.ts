@@ -5,6 +5,7 @@ import {
     type SerializedPromptEditorState,
     featureFlagProvider,
     storeLastValue,
+    telemetryRecorder,
 } from '@sourcegraph/cody-shared'
 import { DeepCodyAgent } from '../../agentic/DeepCody'
 import { DeepCodyRateLimiter } from '../../agentic/DeepCodyRateLimiter'
@@ -12,6 +13,9 @@ import type { ChatBuilder } from '../ChatBuilder'
 import type { HumanInput } from '../context'
 import { ChatHandler } from './ChatHandler'
 import type { AgentHandler, AgentHandlerDelegate } from './interfaces'
+
+// NOTE: Skip query rewrite for Deep Cody as it will be done during review step.
+const skipQueryRewriteForDeepCody = true
 
 export class DeepCodyHandler extends ChatHandler implements AgentHandler {
     private featureDeepCodyRateLimitBase = storeLastValue(
@@ -36,8 +40,6 @@ export class DeepCodyHandler extends ChatHandler implements AgentHandler {
         error?: Error
         abort?: boolean
     }> {
-        // NOTE: Skip query rewrite for deep-cody as the agent will reviewed and rewrite the query.
-        const skipQueryRewrite = true
         const baseContextResult = await super.computeContext(
             requestID,
             { text, mentions },
@@ -45,20 +47,30 @@ export class DeepCodyHandler extends ChatHandler implements AgentHandler {
             chatBuilder,
             delegate,
             signal,
-            skipQueryRewrite
+            skipQueryRewriteForDeepCody
         )
-        const isEnabled = chatBuilder.selectedAgent === 'deep-cody'
-        if (!isEnabled || baseContextResult.error || baseContextResult.abort) {
+        // Early return if basic conditions aren't met.
+        if (
+            chatBuilder.selectedAgent !== 'deep-cody' ||
+            baseContextResult.error ||
+            baseContextResult.abort
+        ) {
             return baseContextResult
         }
-
-        // Skip deep-cody if the query is too short.
-        const wordsCount = text.split(' ').length
-        // Only runs deep-cody for the first 5 human messages if the session limit flag is enabled.
+        // Check session and query constraints
+        const queryTooShort = text.split(' ').length < 3
+        // Limits to the first 5 human messages if the session limit flag is enabled.
         // NOTE: Times 2 as the human and agent messages are counted as pair.
-        const isSessionLimitFlagEnabled = this.featureSessionLimit.value.last
-        const isAtSessionLimit = (chatBuilder.getLastSpeakerMessageIndex('human') ?? 0) > 5 * 2
-        if (wordsCount < 3 || (isSessionLimitFlagEnabled && isAtSessionLimit)) {
+        const sessionLimitReached = (chatBuilder.getLastSpeakerMessageIndex('human') ?? 0) > 5 * 2
+        // Skip if the query is too short or the session limit is reached.
+        if (queryTooShort || (this.featureSessionLimit.value.last && sessionLimitReached)) {
+            const limitType = queryTooShort ? 'skipped' : 'hit'
+            telemetryRecorder.recordEvent('cody.agentic-chat.sessionLimit', limitType, {
+                billingMetadata: {
+                    product: 'cody',
+                    category: 'billable',
+                },
+            })
             return baseContextResult
         }
 
@@ -67,10 +79,10 @@ export class DeepCodyHandler extends ChatHandler implements AgentHandler {
             this.featureDeepCodyRateLimitMultiplier.value.last ? 4 : 2
         )
 
-        const deepCodyLimit = deepCodyRateLimiter.isAtLimit()
-        if (isEnabled && deepCodyLimit) {
+        const retryTime = deepCodyRateLimiter.isAtLimit()
+        if (retryTime) {
             chatBuilder.setSelectedAgent(undefined)
-            return { error: deepCodyRateLimiter.getRateLimitError(deepCodyLimit), abort: true }
+            return { error: deepCodyRateLimiter.getRateLimitError(retryTime), abort: true }
         }
 
         const baseContext = baseContextResult.contextItems ?? []
