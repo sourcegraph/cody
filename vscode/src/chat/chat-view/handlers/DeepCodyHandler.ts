@@ -20,8 +20,8 @@ export class DeepCodyHandler extends ChatHandler implements AgentHandler {
     private featureDeepCodyRateLimitMultiplier = storeLastValue(
         featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.DeepCodyRateLimitMultiplier)
     )
-    private featureDeepCodySessionLimit = storeLastValue(
-        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.DeepCodyRateSessionLimit)
+    private featureSessionLimit = storeLastValue(
+        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.AgenticContextSessionLimit)
     )
 
     override async computeContext(
@@ -56,7 +56,7 @@ export class DeepCodyHandler extends ChatHandler implements AgentHandler {
         const wordsCount = text.split(' ').length
         // Only runs deep-cody for the first 5 human messages if the session limit flag is enabled.
         // NOTE: Times 2 as the human and agent messages are counted as pair.
-        const isSessionLimitFlagEnabled = this.featureDeepCodySessionLimit.value.last
+        const isSessionLimitFlagEnabled = this.featureSessionLimit.value.last
         const isAtSessionLimit = (chatBuilder.getLastSpeakerMessageIndex('human') ?? 0) > 5 * 2
         if (wordsCount < 3 || (isSessionLimitFlagEnabled && isAtSessionLimit)) {
             return baseContextResult
