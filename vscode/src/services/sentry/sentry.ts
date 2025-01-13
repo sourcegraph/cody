@@ -95,6 +95,7 @@ export function shouldErrorBeReported(error: unknown, insideAgent: boolean): boo
     // TODO(valery): verify if the stack-substring condition is still applicable
     // Reason: we don't have _any_ errors in Sentry which is suspicious.
     // Original PR: https://github.com/sourcegraph/cody/pull/3540
+    // Follow-up issue: https://linear.app/sourcegraph/issue/CODY-4673/telemetry-verify-error-filtering-conditions-after-the-change
     //
     // Attempt to silence errors from other extensions (if we're inside a VS Code extension, the
     // stack trace should include the extension name).
