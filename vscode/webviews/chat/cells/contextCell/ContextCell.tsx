@@ -156,7 +156,7 @@ export const ContextCell: FunctionComponent<{
                 experimentalOneBoxEnabled && !intent
                     ? 'Reviewing query'
                     : isDeepCodyEnabled
-                      ? 'Agentic Context'
+                      ? 'Agentic context'
                       : isContextLoading
                         ? 'Fetching context'
                         : 'Context',
