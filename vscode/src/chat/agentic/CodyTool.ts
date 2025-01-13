@@ -19,7 +19,7 @@ import { type ContextRetriever, toStructuredMentions } from '../chat-view/Contex
 import { getChatContextItemsForMention } from '../context/chatContext'
 import { getCorpusContextItemsForEditorState } from '../initialContext'
 import { CodyChatMemory } from './CodyChatMemory'
-import type { ToolStatusCallback } from './CodyToolProvider'
+import { CodyToolProvider, type ToolStatusCallback } from './CodyToolProvider'
 import { RawTextProcessor } from './DeepCody'
 
 /**
@@ -69,11 +69,17 @@ export abstract class CodyTool {
      */
     protected parse(): string[] {
         const { subTag } = this.config.tags
+        // Compile regex once
         const regex = new RegExp(`<${subTag}>(.+?)</?${subTag}>`, 'gs')
-        // Use matchAll for more efficient iteration and destructuring
-        const newQueries = [...this.unprocessedText.matchAll(regex)]
-            .map(([, group]) => group?.trim())
-            .filter(query => query && !this.performedQueries.has(query))
+        // Single pass through matches with Set for deduplication
+        const newQueries = Array.from(
+            new Set(
+                Array.from(this.unprocessedText.matchAll(regex))
+                    .map(match => match[1]?.trim())
+                    .filter(Boolean)
+                    .filter(query => !this.performedQueries.has(query))
+            )
+        )
         // Add all new queries to the set at once
         for (const query of newQueries) {
             this.performedQueries.add(query)
@@ -106,32 +112,41 @@ export abstract class CodyTool {
      *
      * Abstract method to be implemented by subclasses for executing the tool.
      */
-    protected abstract execute(span: Span, queries: string[]): Promise<ContextItem[]>
+    public abstract execute(span: Span, queries: string[]): Promise<ContextItem[]>
+    /**
+     * Runs the tool with the given span and optional callback.
+     */
     public async run(span: Span, callback?: ToolStatusCallback): Promise<ContextItem[]> {
+        const queries = this.parse()
+        if (!queries.length) {
+            return []
+        }
+
         try {
-            const queries = this.parse()
-            if (queries.length) {
-                callback?.onStream(this.config.title, queries.join(', '))
-                // Create a timeout promise
-                const timeoutPromise = new Promise<ContextItem[]>((_, reject) => {
-                    setTimeout(() => {
-                        reject(
-                            new Error(
-                                `${this.config.title} execution timed out after ${CodyTool.EXECUTION_TIMEOUT_MS}ms`
-                            )
-                        )
-                    }, CodyTool.EXECUTION_TIMEOUT_MS)
-                })
-                // Race between execution and timeout
-                const results = await Promise.race([this.execute(span, queries), timeoutPromise])
-                // Notify that tool execution is complete
-                callback?.onComplete(this.config.title)
-                return results
-            }
+            callback?.onStream(this.config.title, queries.join(', '))
+
+            // Race between execution and timeout
+            const results = await Promise.race([
+                this.execute(span, queries),
+                new Promise<never>((_, reject) =>
+                    setTimeout(
+                        () =>
+                            reject(
+                                new Error(
+                                    `${this.config.title} execution timed out after ${CodyTool.EXECUTION_TIMEOUT_MS}ms`
+                                )
+                            ),
+                        CodyTool.EXECUTION_TIMEOUT_MS
+                    )
+                ),
+            ])
+
+            callback?.onComplete(this.config.title)
+            return results
         } catch (error) {
             callback?.onComplete(this.config.title, error as Error)
+            return []
         }
-        return Promise.resolve([])
     }
 }
 
@@ -170,6 +185,7 @@ class CliTool extends CodyTool {
  * Tool for retrieving the full content of files in the codebase.
  */
 class FileTool extends CodyTool {
+    private static remoteFileTool: CodyTool | undefined
     constructor() {
         super({
             title: 'Codebase File',
@@ -185,15 +201,50 @@ class FileTool extends CodyTool {
                 ],
             },
         })
+        if (!FileTool.remoteFileTool) {
+            FileTool.remoteFileTool = CodyToolProvider.getToolByName('TOOLREMOTEFILES')
+        }
     }
 
     public async execute(span: Span, filePaths: string[]): Promise<ContextItem[]> {
         span.addEvent('executeFileTool')
-        if (filePaths.length === 0) return []
-        logDebug('CodyTool', `requesting ${filePaths.length} files`)
-        return Promise.all(filePaths.map(getContextFromRelativePath)).then(results =>
-            results.filter((item): item is ContextItem => item !== null)
+
+        if (filePaths.length === 0) {
+            return []
+        }
+
+        // Split paths into remote and local
+        const [remotePaths, localPaths] = filePaths.reduce<[string[], string[]]>(
+            ([remote, local], path) => {
+                if (path.startsWith('http')) {
+                    remote.push(path)
+                } else {
+                    local.push(path)
+                }
+                return [remote, local]
+            },
+            [[], []]
         )
+
+        try {
+            // Process both remote and local paths concurrently
+            const results = await Promise.all([
+                // Handle remote paths if they exist
+                remotePaths.length > 0 && FileTool.remoteFileTool
+                    ? FileTool.remoteFileTool.execute(span, remotePaths)
+                    : Promise.resolve([]),
+                // Handle local paths
+                Promise.all(localPaths.map(getContextFromRelativePath)).then(results =>
+                    results.filter((item): item is ContextItem => item !== null)
+                ),
+            ])
+
+            // Combine results from both sources
+            return results.flat()
+        } catch (error) {
+            logDebug('CodyTool', `failed to retrieve file content for ${filePaths}`, { verbose: error })
+            return []
+        }
     }
 }
 

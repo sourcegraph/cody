@@ -45,6 +45,8 @@ export interface ToolConfiguration extends CodyToolConfig {
  */
 class ToolFactory {
     private tools: Map<string, ToolConfiguration> = new Map()
+    // Registry for created tool instances
+    private toolInstances: Map<string, CodyTool> = new Map()
 
     constructor(private contextRetriever: Retriever) {
         // Register default tools
@@ -74,6 +76,9 @@ class ToolFactory {
             return undefined
         }
         const instance = config.createInstance(config, retriever)
+        if (instance) {
+            this.toolInstances.set(name, instance)
+        }
         return instance
     }
 
@@ -83,6 +88,11 @@ class ToolFactory {
             .filter(([name]) => name !== 'CliTool' || toolboxManager.getSettings()?.shell?.enabled)
             .map(([_, config]) => config.createInstance(config, this.contextRetriever))
             .filter(isDefined)
+    }
+
+    // Get existing tool instance
+    public getLastInstance(name: string): CodyTool | undefined {
+        return this.toolInstances.get(name)
     }
 
     public createDefaultTools(contextRetriever?: Retriever): CodyTool[] {
@@ -188,6 +198,10 @@ export class CodyToolProvider {
                 .pipe(map(providers => providers.filter(p => !!p.mentions).map(openCtxProviderMetadata)))
                 .subscribe(providerMeta => provider.factory.createOpenCtxTools(providerMeta))
         }
+    }
+
+    public static getToolByName(name: string): CodyTool | undefined {
+        return CodyToolProvider.instance?.factory.getLastInstance(name)
     }
 
     public static dispose(): void {
