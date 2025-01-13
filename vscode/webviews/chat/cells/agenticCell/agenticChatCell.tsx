@@ -59,10 +59,13 @@ export const AgenticChatCell: FunctionComponent<{
                                         className="tw-animate-spin"
                                     />
                                 ) : (
-                                    <BrainIcon size={NON_HUMAN_CELL_AVATAR_SIZE} />
+                                    <BrainIcon
+                                        size={NON_HUMAN_CELL_AVATAR_SIZE}
+                                        className="tw-text-green-500"
+                                    />
                                 )}
                                 <span className="tw-flex tw-items-baseline">
-                                    Agentic context
+                                    Agentic Context
                                     <span className="tw-opacity-60 tw-text-sm tw-ml-2">
                                         &mdash; {subHeader}
                                     </span>

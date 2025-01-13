@@ -39,6 +39,11 @@ import { getTraceparentFromSpanContext, useTelemetryRecorder } from '../utils/te
 import { useExperimentalOneBox } from '../utils/useExperimentalOneBox'
 import type { CodeBlockActionsProps } from './ChatMessageContent/ChatMessageContent'
 import {
+    ContextCell,
+    EditContextButtonChat,
+    EditContextButtonSearch,
+} from './cells/contextCell/ContextCell'
+import {
     AssistantMessageCell,
     makeHumanMessageInfo,
 } from './cells/messageCell/assistant/AssistantMessageCell'
@@ -47,7 +52,7 @@ import { HumanMessageCell } from './cells/messageCell/human/HumanMessageCell'
 import { type Context, type Span, context, trace } from '@opentelemetry/api'
 import { isCodeSearchContextItem } from '../../src/context/openctx/codeSearch'
 import { TELEMETRY_INTENT } from '../../src/telemetry/onebox'
-import { TopCell } from './cells/TopCell'
+import { AgenticChatCell } from './cells/agenticCell/agenticChatCell'
 import { SwitchIntent } from './cells/messageCell/assistant/SwitchIntent'
 import { LastEditorContext } from './context'
 
@@ -630,24 +635,43 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                     }
                 />
             )}
-            {humanMessage?.processes && !isSearchIntent && (
-                <TopCell
+            {humanMessage?.processes && (
+                <AgenticChatCell
+                    key={`${humanMessage.index}-${humanMessage.intent}-process`}
                     isContextLoading={isContextLoading}
-                    contextItems={humanMessage.contextFiles}
-                    processes={humanMessage?.processes}
-                    agent={humanMessage?.agent ?? undefined}
-                    intent={humanMessage.intent}
-                    model={assistantMessage?.model}
-                    isForFirstMessage={humanMessage.index === 0}
-                    experimentalOneBoxEnabled={experimentalOneBoxEnabled}
-                    resubmitWithRepoContext={
-                        corpusContextItems.length > 0 && !mentionsContainRepository && assistantMessage
-                            ? resubmitWithRepoContext
-                            : undefined
-                    }
-                    onManuallyEditContext={manuallyEditContext}
+                    processes={humanMessage?.processes ?? undefined}
                 />
             )}
+            {!(humanMessage.agent && isContextLoading) &&
+                (humanMessage.contextFiles || assistantMessage || isContextLoading) &&
+                !isSearchIntent && (
+                    <ContextCell
+                        experimentalOneBoxEnabled={experimentalOneBoxEnabled}
+                        intent={humanMessage.intent}
+                        resubmitWithRepoContext={
+                            corpusContextItems.length > 0 &&
+                            !mentionsContainRepository &&
+                            assistantMessage
+                                ? resubmitWithRepoContext
+                                : undefined
+                        }
+                        key={`${humanMessage.index}-${humanMessage.intent}-context`}
+                        contextItems={humanMessage.contextFiles}
+                        contextAlternatives={humanMessage.contextAlternatives}
+                        model={assistantMessage?.model}
+                        isForFirstMessage={humanMessage.index === 0}
+                        isContextLoading={isContextLoading}
+                        onManuallyEditContext={manuallyEditContext}
+                        editContextNode={
+                            humanMessage.intent === 'search'
+                                ? EditContextButtonSearch
+                                : EditContextButtonChat
+                        }
+                        defaultOpen={isContextLoading && humanMessage.agent === 'deep-cody'}
+                        processes={humanMessage?.processes ?? undefined}
+                        agent={humanMessage?.agent ?? undefined}
+                    />
+                )}
             {assistantMessage &&
                 (!isContextLoading ||
                     (assistantMessage.subMessages && assistantMessage.subMessages.length > 0)) && (

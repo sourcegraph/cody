@@ -169,3 +169,68 @@ export const NoContextFound: Story = {
         isForFirstMessage: true,
     },
 }
+
+export const WithSteps: Story = {
+    args: {
+        contextItems: [
+            { type: 'file', uri: URI.file('/foo/bar.go'), source: ContextItemSource.Search },
+            {
+                type: 'openctx',
+                uri: URI.file('https://linear.com/issue/openctx-issue'),
+                source: ContextItemSource.Agentic,
+                provider: 'openctx',
+                title: 'Linear Issue',
+                providerUri: '',
+            },
+        ],
+        isForFirstMessage: true,
+        model: 'deep-cody',
+        processes: [
+            {
+                id: 'Code Search',
+                status: 'success',
+                content: 'Found relevant code in repository',
+            },
+            {
+                id: 'Linear',
+                status: 'pending',
+                content: 'github',
+            },
+            {
+                id: 'Terminal',
+                status: 'error',
+                content: 'git clone',
+            },
+        ],
+        isContextLoading: false,
+    },
+}
+
+export const LoadingWithSteps: Story = {
+    args: {
+        contextItems: [
+            { type: 'file', uri: URI.file('/foo/bar.go'), source: ContextItemSource.Search },
+            { type: 'file', uri: URI.file('git diff'), source: ContextItemSource.Terminal },
+        ],
+        isForFirstMessage: true,
+        model: 'deep-cody',
+        processes: [
+            {
+                id: 'Code Search',
+                status: 'success',
+                content: 'function processer',
+            },
+            {
+                id: 'Terminal',
+                status: 'success',
+                content: 'git diff',
+            },
+            {
+                id: 'Terminal',
+                status: 'pending',
+                content: 'git clone',
+            },
+        ],
+        isContextLoading: true,
+    },
+}
