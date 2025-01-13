@@ -25,12 +25,13 @@ export interface PollyRequestError {
     error: string
 }
 
-function recordingModeOption(value: string): MODE {
+function recordingModeOption(value: string): MODE | 'disabled' {
     switch (value) {
         case 'record':
         case 'replay':
         case 'passthrough':
         case 'stopped':
+        case 'disabled':
             return value
         default:
             throw new commander.InvalidArgumentError(
