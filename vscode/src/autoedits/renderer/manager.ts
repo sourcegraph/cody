@@ -200,7 +200,7 @@ export class AutoEditsDefaultRendererManager implements AutoEditsRendererManager
             this.decorator = null
             autoeditAnalyticsLogger.markAsDiscarded({
                 requestId,
-                discardReason: autoeditDiscardReason.noEnoughLinesEditor,
+                discardReason: autoeditDiscardReason.notEnoughLinesEditor,
             })
             return
         }
