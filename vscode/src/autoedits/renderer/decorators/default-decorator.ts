@@ -2,10 +2,10 @@ import * as vscode from 'vscode'
 
 import { GHOST_TEXT_COLOR } from '../../../commands/GhostHintDecorator'
 
-import type { AutoEditsDecorator, DecorationInfo, ModifiedLineInfo } from './base'
-import { cssPropertiesToString } from './utils'
 import { getEditorInsertSpaces, getEditorTabSize } from '@sourcegraph/cody-shared'
-import { blockify, UNICODE_SPACE } from './blockify'
+import type { AutoEditsDecorator, DecorationInfo, ModifiedLineInfo } from './base'
+import { UNICODE_SPACE, blockify } from './blockify'
+import { cssPropertiesToString } from './utils'
 
 export interface AddedLinesDecorationInfo {
     ranges: [number, number][]
@@ -231,10 +231,12 @@ export class DefaultDecorator implements AutoEditsDecorator {
         }
     }
 
-    private getReplacerColumn(
-        line: vscode.TextLine
-    ): number {
-        const insertSpaces = getEditorInsertSpaces(this.editor.document.uri, vscode.workspace, vscode.window)
+    private getReplacerColumn(line: vscode.TextLine): number {
+        const insertSpaces = getEditorInsertSpaces(
+            this.editor.document.uri,
+            vscode.workspace,
+            vscode.window
+        )
         if (insertSpaces) {
             // We can reliably use the range position for files using space characters
             return line.range.end.character
@@ -249,7 +251,8 @@ export class DefaultDecorator implements AutoEditsDecorator {
         const tabAsSpace = UNICODE_SPACE.repeat(tabSize)
         const firstNonWhitespaceCharacterIndex = line.firstNonWhitespaceCharacterIndex
         const indentationText = line.text.substring(0, firstNonWhitespaceCharacterIndex)
-        const spaceAdjustedEndCharacter = indentationText.replaceAll(/\t/g, tabAsSpace).length +
+        const spaceAdjustedEndCharacter =
+            indentationText.replaceAll(/\t/g, tabAsSpace).length +
             (line.text.length - firstNonWhitespaceCharacterIndex)
 
         return spaceAdjustedEndCharacter
@@ -284,8 +287,7 @@ export class DefaultDecorator implements AutoEditsDecorator {
                         // Show the suggested code but keep it positioned absolute to ensure
                         // the cursor does not jump there.
                         before: {
-                            contentText:
-                            UNICODE_SPACE.repeat(3) + decoration.lineText,
+                            contentText: UNICODE_SPACE.repeat(3) + decoration.lineText,
                             margin: `0 0 0 ${replacerCol - lineReplacerCol}ch`,
                             textDecoration: `none;${decorationStyle}`,
                         },
@@ -293,7 +295,8 @@ export class DefaultDecorator implements AutoEditsDecorator {
                         // Required to make the viewport scrollable to view the suggestion if it's outside.
                         after: {
                             contentText:
-                            UNICODE_SPACE.repeat(3) + decoration.lineText.replace(/\S/g, UNICODE_SPACE),
+                                UNICODE_SPACE.repeat(3) +
+                                decoration.lineText.replace(/\S/g, UNICODE_SPACE),
                             margin: `0 0 0 ${replacerCol - lineReplacerCol}ch`,
                         },
                     },
@@ -307,7 +310,9 @@ export class DefaultDecorator implements AutoEditsDecorator {
                             textDecoration: `none;${decorationStyle}`,
                         },
                         after: {
-                            contentText:UNICODE_SPACE.repeat(3) + decoration.lineText.replace(/\S/g, UNICODE_SPACE),
+                            contentText:
+                                UNICODE_SPACE.repeat(3) +
+                                decoration.lineText.replace(/\S/g, UNICODE_SPACE),
                         },
                     },
                 })

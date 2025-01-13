@@ -13,16 +13,18 @@ describe('blockify', () => {
                 {
                     afterLine: 0,
                     lineText: '    hello world',
-                    ranges: [[5, 10]]
+                    ranges: [[5, 10]],
                 },
                 {
                     afterLine: 1,
                     lineText: '    goodbye world',
-                    ranges: [[5, 12]]
-                }
+                    ranges: [[5, 12]],
+                },
             ]
 
-            const text = blockify(mockSpacesDocument, mockAddedLines).map(({ lineText }) => lineText).join('\n')
+            const text = blockify(mockSpacesDocument, mockAddedLines)
+                .map(({ lineText }) => lineText)
+                .join('\n')
             expect(text).toMatchInlineSnapshot(`
               "hello world  
               goodbye world"
@@ -34,16 +36,18 @@ describe('blockify', () => {
                 {
                     afterLine: 0,
                     lineText: '    hello world',
-                    ranges: [[5, 10]]
+                    ranges: [[5, 10]],
                 },
                 {
                     afterLine: 1,
                     lineText: '        goodbye world',
-                    ranges: [[9, 14]]
-                }
+                    ranges: [[9, 14]],
+                },
             ]
 
-            const text = blockify(mockSpacesDocument, mockAddedLines).map(({ lineText }) => lineText).join('\n')
+            const text = blockify(mockSpacesDocument, mockAddedLines)
+                .map(({ lineText }) => lineText)
+                .join('\n')
             expect(text).toMatchInlineSnapshot(`
               "hello world      
                   goodbye world"
@@ -60,16 +64,18 @@ describe('blockify', () => {
                 {
                     afterLine: 0,
                     lineText: '\thello world',
-                    ranges: [[5, 10]]
+                    ranges: [[5, 10]],
                 },
                 {
                     afterLine: 1,
                     lineText: '\tgoodbye world',
-                    ranges: [[5, 12]]
-                }
+                    ranges: [[5, 12]],
+                },
             ]
 
-            const text = blockify(mockSpacesDocument, mockAddedLines).map(({ lineText }) => lineText).join('\n')
+            const text = blockify(mockSpacesDocument, mockAddedLines)
+                .map(({ lineText }) => lineText)
+                .join('\n')
             expect(text).toMatchInlineSnapshot(`
               "hello world  
               goodbye world"
@@ -81,16 +87,18 @@ describe('blockify', () => {
                 {
                     afterLine: 0,
                     lineText: '\thello world',
-                    ranges: [[5, 10]]
+                    ranges: [[5, 10]],
                 },
                 {
                     afterLine: 1,
                     lineText: '\t\tgoodbye world',
-                    ranges: [[9, 14]]
-                }
+                    ranges: [[9, 14]],
+                },
             ]
 
-            const text = blockify(mockSpacesDocument, mockAddedLines).map(({ lineText }) => lineText).join('\n')
+            const text = blockify(mockSpacesDocument, mockAddedLines)
+                .map(({ lineText }) => lineText)
+                .join('\n')
             expect(text).toMatchInlineSnapshot(`
               "hello world      
                   goodbye world"
