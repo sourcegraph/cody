@@ -263,7 +263,7 @@ test('autoedits: does not show any suggestion if the suffix decoration spans fur
     page,
     sidebar,
 }) => {
-    const lineOptions: LineOptions[] = [{ line: 38 }]
+    const lineOptions: LineOptions[] = [{ line: 38, accept: false }]
     await autoeditsTestHelper({
         page,
         sidebar,
