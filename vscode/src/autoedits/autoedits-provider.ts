@@ -44,7 +44,7 @@ import {
 import { shrinkPredictionUntilSuffix } from './shrink-prediction'
 import { areSameUriDocs, isPredictedTextAlreadyInSuffix } from './utils'
 
-const AUTOEDITS_CONTEXT_STRATEGY = 'auto-edits'
+const AUTOEDITS_CONTEXT_STRATEGY = 'auto-edit'
 export const INLINE_COMPLETION_DEFAULT_DEBOUNCE_INTERVAL_MS = 150
 const ON_SELECTION_CHANGE_DEFAULT_DEBOUNCE_INTERVAL_MS = 150
 const RESET_SUGGESTION_ON_CURSOR_CHANGE_AFTER_INTERVAL_MS = 60 * 1000
@@ -69,7 +69,7 @@ export interface AutoeditsResult extends vscode.InlineCompletionList {
 }
 
 /**
- * Provides inline completions and auto-edits functionality.
+ * Provides inline completions and auto-edit functionality.
  *
  * Before introducing new logic into the AutoEditsProvider class, evaluate whether it can be abstracted into a separate component.
  * This practice ensures that AutoEditsProvider remains focused on its primary responsibilities of triggering and providing completions
@@ -83,7 +83,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
     private readonly modelAdapter: AutoeditsModelAdapter
     private readonly enabledRenderer = vscode.workspace
         .getConfiguration()
-        .get<'default' | 'inline'>('cody.experimental.autoedits.renderer', 'default')
+        .get<'default' | 'inline'>('cody.experimental.autoedit.renderer', 'default')
 
     private readonly promptStrategy = new ShortTermPromptStrategy()
     public readonly filterPrediction = new FilterPredictionBasedOnRecentEdits()
