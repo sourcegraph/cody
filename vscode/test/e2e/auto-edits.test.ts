@@ -154,13 +154,19 @@ const autoeditsTestHelper = async ({
         // Wait for the diff view to stabilize - required to reduce flakiness
         await page.waitForTimeout(500)
 
-        await expect(page).toHaveScreenshot([snapshotPlatform, `${snapshotName}-suggested.png`], SNAPSHOT_ASSERTIONS)
+        await expect(page).toHaveScreenshot(
+            [snapshotPlatform, `${snapshotName}-suggested.png`],
+            SNAPSHOT_ASSERTIONS
+        )
 
         if (accept) {
             // Trigger Tab to accept the autoedit
             await page.keyboard.press('Tab')
             await page.waitForTimeout(500)
-            await expect(page).toHaveScreenshot([snapshotPlatform, `${snapshotName}-accepted.png`], SNAPSHOT_ASSERTIONS)
+            await expect(page).toHaveScreenshot(
+                [snapshotPlatform, `${snapshotName}-accepted.png`],
+                SNAPSHOT_ASSERTIONS
+            )
         }
     }
 }
@@ -253,16 +259,16 @@ test.extend<ExpectedV2Events>({
  *
  * Note: This should not be a problem when we move towards image based decorations/
  */
-test(
-    'autoedits: does not show any suggestion if the suffix decoration spans further than the end of the file',
-    async ({ page, sidebar }) => {
-        const lineOptions: LineOptions[] = [{ line: 38 }]
-        await autoeditsTestHelper({
-            page,
-            sidebar,
-            fileName: 'suffix-decoration-example-2.go',
-            testCaseName: 'autoedits-suffix-decoration-end-of-file',
-            lineOptions,
-        })
-    }
-)
+test('autoedits: does not show any suggestion if the suffix decoration spans further than the end of the file', async ({
+    page,
+    sidebar,
+}) => {
+    const lineOptions: LineOptions[] = [{ line: 38 }]
+    await autoeditsTestHelper({
+        page,
+        sidebar,
+        fileName: 'suffix-decoration-example-2.go',
+        testCaseName: 'autoedits-suffix-decoration-end-of-file',
+        lineOptions,
+    })
+})
