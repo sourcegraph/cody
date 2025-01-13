@@ -3,7 +3,6 @@ import { PromptString, graphqlClient, isError } from '@sourcegraph/cody-shared'
 import { SourcegraphNodeCompletionsClient } from '../../../../vscode/src/completions/nodeClient'
 import { rewriteKeywordQuery } from '../../../../vscode/src/local-context/rewrite-keyword-query'
 import { version } from '../../../package.json'
-import type { RpcMessageHandler } from '../../jsonrpc-alias'
 import type { CodyBenchOptions } from './command-bench'
 import {
     type ClientOptions,
@@ -15,10 +14,7 @@ import {
     writeYAMLMetadata,
 } from './strategy-chat-context-types'
 
-export async function evaluateChatContextStrategy(
-    client: RpcMessageHandler,
-    options: CodyBenchOptions
-): Promise<void> {
+export async function evaluateChatContextStrategy(options: CodyBenchOptions): Promise<void> {
     const inputFilename = options.fixture.customConfiguration?.['cody-bench.chatContext.inputFile']
     if (options.insecureTls) {
         process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'
@@ -89,14 +85,41 @@ async function runContextCommand(
 ): Promise<ExampleOutput[]> {
     const completionsClient = new SourcegraphNodeCompletionsClient()
     const exampleOutputs: ExampleOutput[] = []
+    const repoIDNamesCache = new Map<string, string>()
 
     for (const example of examples) {
         const { targetRepoRevs, query: origQuery } = example
         const repoNames = targetRepoRevs.map(repoRev => repoRev.repoName)
-        const repoIDNames = await graphqlClient.getRepoIds(repoNames, repoNames.length + 10)
-        if (isError(repoIDNames)) {
-            throw new Error(`getRepoIds failed for [${repoNames.join(',')}]: ${repoIDNames}`)
+
+        // Get repo IDs from cache or fetch them
+        const repoIDNames: { id: string; name: string }[] = []
+        const uncachedRepoNames: string[] = []
+        for (const repoName of repoNames) {
+            const cachedId = repoIDNamesCache.get(repoName)
+            if (cachedId) {
+                repoIDNames.push({ id: cachedId, name: repoName })
+            } else {
+                uncachedRepoNames.push(repoName)
+            }
         }
+
+        if (uncachedRepoNames.length > 0) {
+            const fetchedRepoIDNames = await graphqlClient.getRepoIds(
+                uncachedRepoNames,
+                uncachedRepoNames.length + 10
+            )
+            if (isError(fetchedRepoIDNames)) {
+                throw new Error(
+                    `getRepoIds failed for [${uncachedRepoNames.join(',')}]: ${fetchedRepoIDNames}`
+                )
+            }
+            // Add fetched IDs to cache and results
+            for (const repo of fetchedRepoIDNames) {
+                repoIDNamesCache.set(repo.name, repo.id)
+                repoIDNames.push(repo)
+            }
+        }
+
         if (repoIDNames.length !== repoNames.length) {
             throw new Error(
                 `repoIDs.length (${repoIDNames.length}) !== repoNames.length (${
@@ -156,6 +179,5 @@ async function runContextCommand(
             actualContext,
         })
     }
-
     return exampleOutputs
 }

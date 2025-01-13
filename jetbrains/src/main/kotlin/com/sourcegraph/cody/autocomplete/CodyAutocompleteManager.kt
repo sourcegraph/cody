@@ -28,7 +28,7 @@ import com.sourcegraph.cody.agent.CodyAgentService
 import com.sourcegraph.cody.agent.protocol_generated.AutocompleteItem
 import com.sourcegraph.cody.agent.protocol_generated.AutocompleteResult
 import com.sourcegraph.cody.agent.protocol_generated.CompletionItemParams
-import com.sourcegraph.cody.auth.CodyAccount
+import com.sourcegraph.cody.auth.CodyAuthService
 import com.sourcegraph.cody.autocomplete.Utils.triggerAutocompleteAsync
 import com.sourcegraph.cody.autocomplete.render.AutocompleteRendererType
 import com.sourcegraph.cody.autocomplete.render.CodyAutocompleteBlockElementRenderer
@@ -156,7 +156,7 @@ class CodyAutocompleteManager {
         isCommandExcluded(currentCommand)) {
       return
     }
-    if (!CodyAccount.hasActiveAccount()) {
+    if (!CodyAuthService.getInstance(project).isActivated()) {
       if (isTriggeredExplicitly) {
         HintManager.getInstance().showErrorHint(editor, "Cody: Sign in to use autocomplete")
         CodyToolWindowContent.show(project)

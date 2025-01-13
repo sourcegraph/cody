@@ -1,5 +1,6 @@
 import {
     AUTH_STATUS_FIXTURE_AUTHED,
+    type AgentToolboxSettings,
     type AuthStatus,
     CLIENT_CAPABILITIES_FIXTURE,
     type ClientConfiguration,
@@ -89,6 +90,7 @@ export const AppWrapperForTest: FunctionComponent<{ children: ReactNode }> = ({ 
                                 return Observable.of(true)
                         }
                     },
+                    repos: () => Observable.of([]),
                     prompts: makePromptsAPIWithData({
                         prompts: FIXTURE_PROMPTS,
                         commands: FIXTURE_COMMANDS,
@@ -137,6 +139,12 @@ export const AppWrapperForTest: FunctionComponent<{ children: ReactNode }> = ({ 
                             },
                         }),
                     userProductSubscription: () => Observable.of(null),
+                    toolboxSettings: () =>
+                        Observable.of<AgentToolboxSettings | null>({
+                            agent: undefined,
+                            shell: undefined,
+                        }),
+                    updateToolboxSettings: () => EMPTY,
                 },
             } satisfies Wrapper<ComponentProps<typeof ExtensionAPIProviderForTestsOnly>['value']>,
             {

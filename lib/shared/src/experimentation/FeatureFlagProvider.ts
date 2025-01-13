@@ -54,7 +54,7 @@ export enum FeatureFlag {
     CodyAutocompleteContextExperimentVariant4 = 'cody-autocomplete-context-experiment-variant-4',
     CodyAutocompleteContextExperimentControl = 'cody-autocomplete-context-experiment-control',
 
-    CodyAutoeditExperimentEnabledFeatureFlag = 'cody-autoedit-experiment-enabled-flag',
+    CodyAutoEditExperimentEnabledFeatureFlag = 'cody-autoedit-experiment-enabled-flag',
 
     // Enables gpt-4o-mini as a default Edit model
     CodyEditDefaultToGpt4oMini = 'cody-edit-default-to-gpt-4o-mini',
@@ -107,9 +107,13 @@ export enum FeatureFlag {
     /** Enable Shell Context for Deep Cody */
     DeepCodyShellContext = 'deep-cody-shell-context',
 
+    /** Whether Context Agent (Deep Cody) should use the default chat model or 3.5 Haiku */
+    ContextAgentDefaultChatModel = 'context-agent-use-default-chat-model',
+
     /** Enable Rate Limit for Deep Cody */
     DeepCodyRateLimitBase = 'deep-cody-experimental-rate-limit',
     DeepCodyRateLimitMultiplier = 'deep-cody-experimental-rate-limit-multiplier',
+    AgenticContextSessionLimit = 'agentic-context-experimental-session-limit',
 
     /**
      * Whether the current repo context chip is shown in the chat input by default

@@ -10,7 +10,7 @@ import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.project.Project
 import com.sourcegraph.Icons
-import com.sourcegraph.cody.auth.CodyAccount
+import com.sourcegraph.cody.auth.CodyAuthService
 import com.sourcegraph.cody.statusbar.CodyStatus
 import com.sourcegraph.cody.statusbar.CodyStatusService
 import com.sourcegraph.common.CodyBundle
@@ -31,7 +31,7 @@ class ActionInIgnoredFileNotification :
 
     fun maybeNotify(project: Project) {
       val status = CodyStatusService.getCurrentStatus(project)
-      val account = CodyAccount.getActiveAccount()
+      val endpoint = CodyAuthService.getInstance(project).getEndpoint()
       when {
         status == CodyStatus.CodyUninit ||
             status == CodyStatus.CodyDisabled ||
@@ -40,12 +40,12 @@ class ActionInIgnoredFileNotification :
             status == CodyStatus.CodyAgentNotRunning ||
             status == CodyStatus.AgentError ||
             status == CodyStatus.RateLimitError -> {
-          // Do nothing. These errors are not related to context filters; displaying them is handled
-          // by the status
-          // bar widget.
+          // Do nothing. These errors are not related to context filters; displaying them
+          // is handled by the status bar widget.
         }
-        account?.isDotcomAccount() == true -> {
-          // Show nothing. We do not use context filters on sourcegraph.com; should be unreachable.
+        endpoint.isDotcom() == true -> {
+          // Show nothing. We do not use context filters on sourcegraph.com; should be
+          // unreachable.
           log.warn(
               "got 'action in ignored file' notification with a dotcom account, which should be unreachable")
         }

@@ -1,36 +1,31 @@
 import {
     type ContextItem,
     FeatureFlag,
+    type ProcessingStep,
     type SerializedPromptEditorState,
     featureFlagProvider,
     storeLastValue,
+    telemetryRecorder,
 } from '@sourcegraph/cody-shared'
-import type { CodyToolProvider } from '../../agentic/CodyToolProvider'
 import { DeepCodyAgent } from '../../agentic/DeepCody'
 import { DeepCodyRateLimiter } from '../../agentic/DeepCodyRateLimiter'
 import type { ChatBuilder } from '../ChatBuilder'
-import type { ChatControllerOptions } from '../ChatController'
-import type { ContextRetriever } from '../ContextRetriever'
 import type { HumanInput } from '../context'
 import { ChatHandler } from './ChatHandler'
-import type { AgentHandler } from './interfaces'
+import type { AgentHandler, AgentHandlerDelegate } from './interfaces'
+
+// NOTE: Skip query rewrite for Deep Cody as it will be done during review step.
+const skipQueryRewriteForDeepCody = true
 
 export class DeepCodyHandler extends ChatHandler implements AgentHandler {
-    constructor(
-        modelId: string,
-        contextRetriever: Pick<ContextRetriever, 'retrieveContext'>,
-        editor: ChatControllerOptions['editor'],
-        chatClient: ChatControllerOptions['chatClient'],
-        private toolProvider: CodyToolProvider
-    ) {
-        super(modelId, contextRetriever, editor, chatClient)
-    }
-
     private featureDeepCodyRateLimitBase = storeLastValue(
         featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.DeepCodyRateLimitBase)
     )
     private featureDeepCodyRateLimitMultiplier = storeLastValue(
         featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.DeepCodyRateLimitMultiplier)
+    )
+    private featureSessionLimit = storeLastValue(
+        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.AgenticContextSessionLimit)
     )
 
     override async computeContext(
@@ -38,6 +33,7 @@ export class DeepCodyHandler extends ChatHandler implements AgentHandler {
         { text, mentions }: HumanInput,
         editorState: SerializedPromptEditorState | null,
         chatBuilder: ChatBuilder,
+        delegate: AgentHandlerDelegate,
         signal: AbortSignal
     ): Promise<{
         contextItems?: ContextItem[]
@@ -49,30 +45,51 @@ export class DeepCodyHandler extends ChatHandler implements AgentHandler {
             { text, mentions },
             editorState,
             chatBuilder,
-            signal
+            delegate,
+            signal,
+            skipQueryRewriteForDeepCody
         )
-        const isEnabled = chatBuilder.getMessages().length < 4
-        if (!isEnabled || baseContextResult.error || baseContextResult.abort) {
+        // Early return if basic conditions aren't met.
+        if (
+            chatBuilder.selectedAgent !== 'deep-cody' ||
+            baseContextResult.error ||
+            baseContextResult.abort
+        ) {
             return baseContextResult
         }
+        // Check session and query constraints
+        const queryTooShort = text.split(' ').length < 3
+        // Limits to the first 5 human messages if the session limit flag is enabled.
+        // NOTE: Times 2 as the human and agent messages are counted as pair.
+        const sessionLimitReached = (chatBuilder.getLastSpeakerMessageIndex('human') ?? 0) > 5 * 2
+        // Skip if the query is too short or the session limit is reached.
+        if (queryTooShort || (this.featureSessionLimit.value.last && sessionLimitReached)) {
+            const limitType = queryTooShort ? 'skipped' : 'hit'
+            telemetryRecorder.recordEvent('cody.agentic-chat.sessionLimit', limitType, {
+                billingMetadata: {
+                    product: 'cody',
+                    category: 'billable',
+                },
+            })
+            return baseContextResult
+        }
+
         const deepCodyRateLimiter = new DeepCodyRateLimiter(
             this.featureDeepCodyRateLimitBase.value.last ? 50 : 0,
-            this.featureDeepCodyRateLimitMultiplier.value.last ? 2 : 1
+            this.featureDeepCodyRateLimitMultiplier.value.last ? 4 : 2
         )
 
-        const deepCodyLimit = deepCodyRateLimiter.isAtLimit()
-        if (isEnabled && deepCodyLimit) {
-            return { error: deepCodyRateLimiter.getRateLimitError(deepCodyLimit), abort: true }
+        const retryTime = deepCodyRateLimiter.isAtLimit()
+        if (retryTime) {
+            chatBuilder.setSelectedAgent(undefined)
+            return { error: deepCodyRateLimiter.getRateLimitError(retryTime), abort: true }
         }
 
         const baseContext = baseContextResult.contextItems ?? []
-        const codyAgent = new DeepCodyAgent(
-            chatBuilder,
-            this.chatClient,
-            this.toolProvider.getTools(),
-            baseContext
+        const agent = new DeepCodyAgent(chatBuilder, this.chatClient, (steps: ProcessingStep[]) =>
+            delegate.postStatuses(steps)
         )
-        const agenticContext = await codyAgent.getContext(requestID, signal)
-        return { contextItems: [...baseContext, ...agenticContext] }
+
+        return { contextItems: await agent.getContext(requestID, signal, baseContext) }
     }
 }

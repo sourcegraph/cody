@@ -7,8 +7,8 @@ import {
     dedupeWith,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
+import { autoeditsOutputChannelLogger } from '../../autoedits/output-channel-logger'
 import type { LastInlineCompletionCandidate } from '../get-inline-completions'
-import { autocompleteOutputChannelLogger } from '../output-channel-logger'
 import type { ContextRetriever } from '../types'
 import {
     DefaultCompletionsContextRanker,
@@ -64,7 +64,7 @@ export interface ContextSummary {
 
 export interface GetContextResult {
     context: AutocompleteContextSnippet[]
-    logSummary: ContextSummary
+    contextSummary: ContextSummary
     contextLoggingSnippets: AutocompleteContextSnippet[]
 }
 
@@ -114,7 +114,7 @@ export class ContextMixer implements vscode.Disposable {
         if (retrieversWithDataLogging.length === 0) {
             return {
                 context: [],
-                logSummary: {
+                contextSummary: {
                     strategy: 'none',
                     totalChars: options.docContext.prefix.length + options.docContext.suffix.length,
                     prefixChars: options.docContext.prefix.length,
@@ -153,7 +153,7 @@ export class ContextMixer implements vscode.Disposable {
 
         // Extract back the context results for the original retrievers
         const results = this.extractOriginalRetrieverResults(resultsWithDataLogging, retrievers)
-        autocompleteOutputChannelLogger.logDebug(
+        autoeditsOutputChannelLogger.logDebugIfVerbose(
             'ContextMixer',
             `Extracted ${results.length} contexts from the retrievers`
         )
@@ -165,7 +165,7 @@ export class ContextMixer implements vscode.Disposable {
         if (results.length === 0) {
             return {
                 context: [],
-                logSummary: {
+                contextSummary: {
                     strategy: 'none',
                     totalChars: options.docContext.prefix.length + options.docContext.suffix.length,
                     prefixChars: options.docContext.prefix.length,
@@ -177,13 +177,13 @@ export class ContextMixer implements vscode.Disposable {
             }
         }
 
-        autocompleteOutputChannelLogger.logDebug(
+        autoeditsOutputChannelLogger.logDebugIfVerbose(
             'ContextMixer',
             `Fusing ${results.length} context results with ${this.contextRankingStrategy}`
         )
         const contextRanker = new DefaultCompletionsContextRanker(this.contextRankingStrategy)
         const fusedResults = contextRanker.rankAndFuseContext(results)
-        autocompleteOutputChannelLogger.logDebug('ContextMixer', 'Fused context results')
+        autoeditsOutputChannelLogger.logDebugIfVerbose('ContextMixer', 'Fused context results')
 
         // The total chars size hint is inclusive of the prefix and suffix sizes, so we seed the
         // total chars with the prefix and suffix sizes.
@@ -225,7 +225,7 @@ export class ContextMixer implements vscode.Disposable {
             position++
         }
 
-        const logSummary: ContextSummary = {
+        const contextSummary: ContextSummary = {
             strategy,
             duration: performance.now() - start,
             totalChars,
@@ -236,7 +236,7 @@ export class ContextMixer implements vscode.Disposable {
 
         return {
             context: mixedContext,
-            logSummary,
+            contextSummary,
             contextLoggingSnippets,
         }
     }

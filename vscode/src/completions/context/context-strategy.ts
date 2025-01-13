@@ -31,7 +31,7 @@ export type ContextStrategy =
     | 'recent-copy'
     | 'diagnostics'
     | 'recent-view-port'
-    | 'auto-edits'
+    | 'auto-edit'
 
 export interface ContextStrategyFactory extends vscode.Disposable {
     getStrategy(
@@ -128,7 +128,7 @@ export class DefaultContextStrategyFactory implements ContextStrategyFactory {
                                 }),
                             ]
                             break
-                        case 'auto-edits':
+                        case 'auto-edit':
                             this.allLocalRetrievers = [
                                 new RecentEditsRetriever({
                                     maxAgeMs: 10 * 60 * 1000,
@@ -212,7 +212,7 @@ export class DefaultContextStrategyFactory implements ContextStrategyFactory {
             case 'recent-copy':
             case 'diagnostics':
             case 'recent-view-port':
-            case 'auto-edits':
+            case 'auto-edit':
             case 'recent-edits-mixed': {
                 if (this.allLocalRetrievers) {
                     retrievers.push(...this.allLocalRetrievers)

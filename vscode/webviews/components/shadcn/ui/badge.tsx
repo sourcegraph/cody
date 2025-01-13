@@ -11,6 +11,10 @@ const badgeVariants = cva(
                 outline: 'tw-border tw-border-muted-transparent tw-bg-[unset] tw-text-muted-foreground',
                 ghost: 'tw-bg-muted-transparent tw-text-muted-foreground',
                 cody: 'tw-bg-gradient-to-r tw-from-sourcegraph-blue tw-via-sourcegraph-purple tw-to-sourcegraph-orange tw-text-badge-foreground',
+                warning: 'tw-bg-yellow-900 tw-text-yellow-300',
+                info: 'tw-bg-blue-900 tw-text-blue-300',
+                error: 'tw-bg-pink-900 tw-text-pink-300',
+                disabled: 'tw-bg-gray-900 tw-text-gray-300',
             },
         },
         defaultVariants: {

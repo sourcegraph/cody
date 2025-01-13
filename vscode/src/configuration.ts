@@ -2,6 +2,7 @@ import * as vscode from 'vscode'
 
 import {
     type ClientConfiguration,
+    CodyAutoSuggestionMode,
     type CodyIDE,
     OLLAMA_DEFAULT_URL,
     type PickResolvedConfiguration,
@@ -46,6 +47,20 @@ export function getConfiguration(
         debugRegex = /.*/
     }
 
+    let codyAutoSuggestionsMode = config.get<string>(
+        CONFIG_KEY.suggestionsMode,
+        CodyAutoSuggestionMode.Autocomplete
+    )
+
+    // Backward compatibility with the older config for autocomplete. If autocomplete was turned off - override the suggestion mode to "off".
+    // TODO (Hitesh): Remove the manual override once the updated config is communicated after experimental release
+    if (
+        codyAutoSuggestionsMode === CodyAutoSuggestionMode.Autocomplete &&
+        vscode.workspace.getConfiguration().get<boolean>('cody.autocomplete.enabled') === false
+    ) {
+        codyAutoSuggestionsMode = CodyAutoSuggestionMode.Off
+    }
+
     return {
         net: {
             mode: config.get<string | null | undefined>(CONFIG_KEY.netMode, undefined),
@@ -68,7 +83,7 @@ export function getConfiguration(
         debugVerbose: config.get<boolean>(CONFIG_KEY.debugVerbose, false),
         debugFilter: debugRegex,
         telemetryLevel: config.get<'all' | 'off'>(CONFIG_KEY.telemetryLevel, 'all'),
-        autocomplete: config.get(CONFIG_KEY.autocompleteEnabled, true),
+        autocomplete: codyAutoSuggestionsMode === CodyAutoSuggestionMode.Autocomplete,
         autocompleteLanguages: config.get(CONFIG_KEY.autocompleteLanguages, {
             '*': true,
         }),
@@ -93,9 +108,7 @@ export function getConfiguration(
 
         /**
          * Instance must have feature flag enabled to use this feature.
-         * Allows AI Agent to run shell commands automatically.
          */
-        agenticContextExperimentalShell: config.get(CONFIG_KEY.agenticContextExperimentalShell, false),
         agenticContextExperimentalOptions: config.get(CONFIG_KEY.agenticContextExperimentalOptions, {}),
 
         /**
@@ -119,13 +132,13 @@ export function getConfiguration(
         experimentalTracing: getHiddenSetting('experimental.tracing', false),
 
         experimentalSupercompletions: getHiddenSetting('experimental.supercompletions', false),
-        experimentalAutoeditsEnabled: getHiddenSetting('experimental.autoedits.enabled', undefined),
-        experimentalAutoeditsConfigOverride: getHiddenSetting(
-            'experimental.autoedits.config.override',
+        experimentalAutoEditEnabled: codyAutoSuggestionsMode === CodyAutoSuggestionMode.Autoedit,
+        experimentalAutoEditConfigOverride: getHiddenSetting(
+            'experimental.autoedit.config.override',
             undefined
         ),
-        experimentalAutoeditsRendererTesting: getHiddenSetting(
-            'experimental.autoedits-renderer-testing',
+        experimentalAutoEditRendererTesting: getHiddenSetting(
+            'experimental.autoedit-renderer-testing',
             false
         ),
         experimentalMinionAnthropicKey: getHiddenSetting('experimental.minion.anthropicKey', undefined),

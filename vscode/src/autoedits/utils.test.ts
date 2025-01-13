@@ -686,4 +686,17 @@ describe('isPredictedTextAlreadyInSuffix', () => {
         })
         expect(result).toBe(true)
     })
+
+    it('should not hide if suffix matches by empty space', () => {
+        const codeToRewrite = 'const x = '
+        const prediction = 'const x = 1\n'
+
+        const result = utils.isPredictedTextAlreadyInSuffix({
+            codeToRewrite,
+            decorationInfo: getDecorationInfo(codeToRewrite, prediction),
+            suffix: '',
+        })
+
+        expect(result).toBe(false)
+    })
 })

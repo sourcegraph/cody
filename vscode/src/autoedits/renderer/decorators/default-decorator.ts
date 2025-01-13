@@ -3,6 +3,7 @@ import * as vscode from 'vscode'
 import { GHOST_TEXT_COLOR } from '../../../commands/GhostHintDecorator'
 
 import type { AutoEditsDecorator, DecorationInfo, ModifiedLineInfo } from './base'
+import { cssPropertiesToString } from './utils'
 
 interface AddedLinesDecorationInfo {
     ranges: [number, number][]
@@ -10,15 +11,40 @@ interface AddedLinesDecorationInfo {
     lineText: string
 }
 
+interface DiffDecorationAddedLinesInfo {
+    /** Information about lines that have been added */
+    addedLinesDecorationInfo: AddedLinesDecorationInfo[]
+    /** Starting line number for the decoration */
+    startLine: number
+    /** Column position for the replacement text */
+    replacerCol: number
+}
+
+/**
+ * Information about diff decorations to be applied to lines in the editor
+ */
+interface DiffDecorationInfo {
+    /** Ranges of text that have been removed */
+    removedRangesInfo: vscode.Range[]
+    /** Information about lines that have been added */
+    addedLinesInfo?: DiffDecorationAddedLinesInfo
+}
+
 export class DefaultDecorator implements AutoEditsDecorator {
     private readonly decorationTypes: vscode.TextEditorDecorationType[]
+    private readonly editor: vscode.TextEditor
+
+    // Decoration types
     private readonly removedTextDecorationType: vscode.TextEditorDecorationType
     private readonly modifiedTextDecorationType: vscode.TextEditorDecorationType
     private readonly suggesterType: vscode.TextEditorDecorationType
-    private readonly hideRemainderDecorationType: vscode.TextEditorDecorationType
     private readonly addedLinesDecorationType: vscode.TextEditorDecorationType
     private readonly insertMarkerDecorationType: vscode.TextEditorDecorationType
-    private readonly editor: vscode.TextEditor
+
+    /**
+     * Pre-computed information about diff decorations to be applied to lines in the editor.
+     */
+    private diffDecorationInfo: DiffDecorationInfo | undefined
 
     constructor(editor: vscode.TextEditor) {
         this.editor = editor
@@ -32,9 +58,6 @@ export class DefaultDecorator implements AutoEditsDecorator {
         this.suggesterType = vscode.window.createTextEditorDecorationType({
             before: { color: GHOST_TEXT_COLOR },
             after: { color: GHOST_TEXT_COLOR },
-        })
-        this.hideRemainderDecorationType = vscode.window.createTextEditorDecorationType({
-            opacity: '0',
         })
         this.addedLinesDecorationType = vscode.window.createTextEditorDecorationType({
             backgroundColor: 'red', // SENTINEL (should not actually appear)
@@ -54,10 +77,26 @@ export class DefaultDecorator implements AutoEditsDecorator {
             this.removedTextDecorationType,
             this.modifiedTextDecorationType,
             this.suggesterType,
-            this.hideRemainderDecorationType,
             this.addedLinesDecorationType,
             this.insertMarkerDecorationType,
         ]
+    }
+
+    public canRenderDecoration(decorationInfo: DecorationInfo): boolean {
+        if (!this.diffDecorationInfo) {
+            this.diffDecorationInfo = this.getDiffDecorationsInfo(decorationInfo)
+        }
+        const { addedLinesInfo } = this.diffDecorationInfo
+        if (addedLinesInfo) {
+            // Check if there are enough lines in the editor to render the diff decorations
+            if (
+                addedLinesInfo.startLine + addedLinesInfo.addedLinesDecorationInfo.length >
+                this.editor.document.lineCount
+            ) {
+                return false
+            }
+        }
+        return true
     }
 
     private clearDecorations(): void {
@@ -89,6 +128,27 @@ export class DefaultDecorator implements AutoEditsDecorator {
     }
 
     private renderDiffDecorations(decorationInfo: DecorationInfo): void {
+        if (!this.diffDecorationInfo) {
+            this.diffDecorationInfo = this.getDiffDecorationsInfo(decorationInfo)
+        }
+        this.editor.setDecorations(
+            this.modifiedTextDecorationType,
+            this.diffDecorationInfo.removedRangesInfo
+        )
+        const addedLinesInfo = this.diffDecorationInfo.addedLinesInfo
+
+        if (!addedLinesInfo) {
+            return
+        }
+
+        this.renderAddedLinesDecorations(
+            addedLinesInfo.addedLinesDecorationInfo,
+            addedLinesInfo.startLine,
+            addedLinesInfo.replacerCol
+        )
+    }
+
+    private getDiffDecorationsInfo(decorationInfo: DecorationInfo): DiffDecorationInfo {
         const { modifiedLines, addedLines, unchangedLines } = decorationInfo
 
         // Display the removed range decorations
@@ -118,7 +178,6 @@ export class DefaultDecorator implements AutoEditsDecorator {
                 })
             }
         }
-        this.editor.setDecorations(this.modifiedTextDecorationType, removedRanges)
 
         // Handle fully added lines
         for (const addedLine of addedLines) {
@@ -150,13 +209,22 @@ export class DefaultDecorator implements AutoEditsDecorator {
         // Sort addedLinesInfo by line number in ascending order
         addedLinesInfo.sort((a, b) => a.afterLine - b.afterLine)
         if (addedLinesInfo.length === 0) {
-            return
+            return { removedRangesInfo: removedRanges }
         }
-        // todo (hitesh): handle case when too many lines to fit in the editor
-        const oldLines = addedLinesInfo.map(info => this.editor.document.lineAt(info.afterLine))
+        const oldLines = addedLinesInfo
+            .filter(info => info.afterLine < this.editor.document.lineCount)
+            .map(info => this.editor.document.lineAt(info.afterLine))
         const replacerCol = Math.max(...oldLines.map(line => line.range.end.character))
         const startLine = Math.min(...oldLines.map(line => line.lineNumber))
-        this.renderAddedLinesDecorations(addedLinesInfo, startLine, replacerCol)
+
+        return {
+            removedRangesInfo: removedRanges,
+            addedLinesInfo: {
+                addedLinesDecorationInfo: addedLinesInfo,
+                startLine,
+                replacerCol,
+            },
+        }
     }
 
     private renderAddedLinesDecorations(
@@ -170,6 +238,13 @@ export class DefaultDecorator implements AutoEditsDecorator {
             const j = i + startLine
             const line = this.editor.document.lineAt(j)
             const decoration = addedLinesInfo[i]
+            const decorationStyle = cssPropertiesToString({
+                // Absolutely position the suggested code so that the cursor does not jump there
+                position: 'absolute',
+                // Due the the absolute position, the decoration may interfere with other decorations (e.g. GitLens)
+                // Apply a background blur to avoid interference
+                'backdrop-filter': 'blur(5px)',
+            })
 
             if (replacerCol >= line.range.end.character) {
                 replacerDecorations.push({
@@ -182,7 +257,7 @@ export class DefaultDecorator implements AutoEditsDecorator {
                                 '\u00A0'.repeat(3) +
                                 _replaceLeadingTrailingChars(decoration.lineText, ' ', '\u00A0'),
                             margin: `0 0 0 ${replacerCol - line.range.end.character}ch`,
-                            textDecoration: 'none; position: absolute;',
+                            textDecoration: `none;${decorationStyle}`,
                         },
                         // Create an empty HTML element with the width required to show the suggested code.
                         // Required to make the viewport scrollable to view the suggestion if it's outside.
@@ -206,7 +281,7 @@ export class DefaultDecorator implements AutoEditsDecorator {
                             contentText:
                                 '\u00A0' +
                                 _replaceLeadingTrailingChars(decoration.lineText, ' ', '\u00A0'),
-                            textDecoration: 'none; position: absolute;',
+                            textDecoration: `none;${decorationStyle}`,
                         },
                         after: {
                             contentText:

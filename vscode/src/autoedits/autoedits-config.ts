@@ -3,6 +3,7 @@ import * as vscode from 'vscode'
 import {
     type AutoEditsModelConfig,
     type AutoEditsTokenLimit,
+    authStatus,
     isDotComAuthed,
 } from '@sourcegraph/cody-shared'
 
@@ -67,9 +68,9 @@ function getBaseProviderConfig(): BaseAutoeditsProviderConfig {
 export function getAutoeditsProviderConfig(): AutoeditsProviderConfig {
     const isMockResponseFromCurrentDocumentTemplateEnabled = vscode.workspace
         .getConfiguration()
-        .get<boolean>('cody.experimental.autoedits.use-mock-responses', false)
+        .get<boolean>('cody.experimental.autoedit.use-mock-responses', false)
 
-    const userConfig = getConfiguration().experimentalAutoeditsConfigOverride
+    const userConfig = getConfiguration().experimentalAutoEditConfigOverride
     const baseConfig = userConfig ?? getBaseProviderConfig()
 
     return {
@@ -85,6 +86,10 @@ export function getAutoeditsProviderConfig(): AutoeditsProviderConfig {
 
 /**
  * A singleton for the static autoedits provider config.
- * TODO: make it reactive to VS Code settings changes.
  */
-export const autoeditsProviderConfig = getAutoeditsProviderConfig()
+export let autoeditsProviderConfig = getAutoeditsProviderConfig()
+
+// Recompute autoedits config on auth status change.
+authStatus.subscribe(() => {
+    autoeditsProviderConfig = getAutoeditsProviderConfig()
+})

@@ -10,6 +10,7 @@ import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.project.Project
 import com.intellij.util.net.HttpConfigurable
+import com.sourcegraph.cody.auth.SourcegraphServerPath
 import com.sourcegraph.cody.config.CodyApplicationSettings
 import com.sourcegraph.cody.listeners.CodyFileEditorListener
 import com.sourcegraph.cody.statusbar.CodyStatusService
@@ -77,10 +78,22 @@ class CodyAgentService(private val project: Project) : Disposable {
   }
 
   fun startAgent(project: Project, secondsTimeout: Long = 45): CompletableFuture<CodyAgent> {
+    // Normally we do not need to specify endpoint or token used for starting an agent.
+    // Agent will automatically pick up the last used one or the default.
+    // Custom endpoint and token are used in tests.
+    return startAgent(project, endpoint = null, token = null, secondsTimeout)
+  }
+
+  fun startAgent(
+      project: Project,
+      endpoint: SourcegraphServerPath?,
+      token: String?,
+      secondsTimeout: Long = 45
+  ): CompletableFuture<CodyAgent> {
     ApplicationManager.getApplication().executeOnPooledThread {
       try {
         val future =
-            CodyAgent.create(project).exceptionally { err ->
+            CodyAgent.create(project, endpoint, token).exceptionally { err ->
               val msg = "Creating agent unsuccessful: ${err.localizedMessage}"
               logger.error(msg)
               throw (CodyAgentException(msg))

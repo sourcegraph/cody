@@ -42,7 +42,7 @@ public class JSToJavaBridgeRequestHandler {
     try {
       switch (action) {
         case "getConfig":
-          return createSuccessResponse(ConfigUtil.getConfigAsJson());
+          return createSuccessResponse(ConfigUtil.getConfigAsJson(project));
         case "getTheme":
           JsonObject currentThemeAsJson = ThemeUtil.getCurrentThemeAsJson();
           return createSuccessResponse(currentThemeAsJson);

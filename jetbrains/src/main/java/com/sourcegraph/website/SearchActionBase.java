@@ -40,11 +40,12 @@ public abstract class SearchActionBase extends DumbAwareEDTAction {
     VirtualFile currentFile = FileDocumentManager.getInstance().getFile(editor.getDocument());
     assert currentFile != null; // selectedText != null, so this can't be null.
 
+    URLBuilder urlBuilder = new URLBuilder(project);
     if (currentFile instanceof SourcegraphVirtualFile) {
       String url;
       SourcegraphVirtualFile sourcegraphFile = (SourcegraphVirtualFile) currentFile;
       String repoUrl = (scope == Scope.REPOSITORY) ? sourcegraphFile.getRepoUrl() : null;
-      url = URLBuilder.buildEditorSearchUrl(selectedText, repoUrl, null);
+      url = urlBuilder.buildEditorSearchUrl(selectedText, repoUrl, null);
       BrowserOpener.INSTANCE.openInBrowser(project, url);
     } else {
       // This cannot run on EDT (Event Dispatch Thread) because it may block for a long time.
@@ -62,9 +63,9 @@ public abstract class SearchActionBase extends DumbAwareEDTAction {
                   String codeHostUrl =
                       (scope == Scope.REPOSITORY) ? repoInfo.getCodeHostUrl() : null;
                   String repoName = (scope == Scope.REPOSITORY) ? repoInfo.getRepoName() : null;
-                  url = URLBuilder.buildDirectSearchUrl(selectedText, codeHostUrl, repoName);
+                  url = urlBuilder.buildDirectSearchUrl(selectedText, codeHostUrl, repoName);
                 } else {
-                  url = URLBuilder.buildEditorSearchUrl(selectedText, remoteUrl, remoteBranchName);
+                  url = urlBuilder.buildEditorSearchUrl(selectedText, remoteUrl, remoteBranchName);
                 }
                 BrowserOpener.INSTANCE.openInBrowser(project, url);
               });

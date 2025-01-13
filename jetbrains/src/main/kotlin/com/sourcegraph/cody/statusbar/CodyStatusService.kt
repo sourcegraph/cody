@@ -8,7 +8,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
 import com.intellij.util.ui.UIUtil
 import com.sourcegraph.cody.agent.CodyAgentService
-import com.sourcegraph.cody.auth.CodyAccount
+import com.sourcegraph.cody.auth.CodyAuthService
 import com.sourcegraph.cody.ignore.IgnoreOracle
 import com.sourcegraph.common.UpgradeToCodyProNotification
 import com.sourcegraph.config.ConfigUtil
@@ -55,7 +55,7 @@ class CodyStatusService(val project: Project) : Disposable {
             CodyStatus.AgentError
           } else if (!CodyAgentService.isConnected(project)) {
             CodyStatus.CodyAgentNotRunning
-          } else if (!CodyAccount.hasActiveAccount()) {
+          } else if (!CodyAuthService.getInstance(project).isActivated()) {
             CodyStatus.CodyNotSignedIn
           } else if (UpgradeToCodyProNotification.autocompleteRateLimitError.get() != null ||
               UpgradeToCodyProNotification.chatRateLimitError.get() != null) {

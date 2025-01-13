@@ -15,7 +15,7 @@ export interface ClientOptions {
 export interface EvalOutput {
     evaluatedAt: string
     codyClientVersion: string
-    clientOptions: ClientOptions
+    clientOptions?: ClientOptions
     siteUserMetadata: {
         url: string
         sourcegraphVersion: string

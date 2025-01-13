@@ -26,6 +26,7 @@ import { matchesGlobPatterns } from './matchesGlobPatterns'
 import { evaluateAutocompleteStrategy } from './strategy-autocomplete'
 import { evaluateChatStrategy } from './strategy-chat'
 import { evaluateChatContextStrategy } from './strategy-chat-context'
+import { evaluateNLSStrategy } from './strategy-chat-nls'
 import { evaluateFixStrategy } from './strategy-fix'
 import { evaluateGitLogStrategy } from './strategy-git-log'
 import { evaluateUnitTestStrategy } from './strategy-unit-test'
@@ -84,6 +85,7 @@ export enum BenchStrategy {
     ChatContext = 'chat-context',
     Fix = 'fix',
     GitLog = 'git-log',
+    NLS = 'nls',
     UnitTest = 'unit-test',
 }
 
@@ -334,23 +336,34 @@ export const benchCommand = new commander.Command('bench')
             },
         })
 
-        const recordingMode =
-            process.env.CODY_RECORDING_MODE === 'passthrough' ? 'passthrough' : 'replay'
+        const recordingMode = (() => {
+            switch (process.env.CODY_RECORDING_MODE) {
+                case 'passthrough':
+                    return 'passthrough'
+                case 'disabled':
+                    return 'disabled'
+                default:
+                    return 'replay'
+            }
+        })()
         const recordingDirectory = path.join(path.dirname(options.evaluationConfig), 'recordings')
-        const polly = startPollyRecording({
-            recordingName: 'cody-bench',
-            recordingMode: recordingMode,
-            recordIfMissing: true,
-            recordingDirectory,
-            keepUnusedRecordings: true,
-        })
+        const polly =
+            recordingMode === 'disabled'
+                ? null
+                : startPollyRecording({
+                      recordingName: 'cody-bench',
+                      recordingMode: recordingMode,
+                      recordIfMissing: true,
+                      recordingDirectory,
+                      keepUnusedRecordings: true,
+                  })
 
         try {
             await Promise.all(
                 workspacesToRun.map(workspace => evaluateWorkspace(workspace, recordingDirectory))
             )
         } finally {
-            await polly.stop()
+            await polly?.stop()
         }
         process.exit(0)
     })
@@ -430,7 +443,10 @@ async function evaluateWorkspace(options: CodyBenchOptions, recordingDirectory: 
                 await evaluateChatStrategy(client, options)
                 break
             case BenchStrategy.ChatContext:
-                await evaluateChatContextStrategy(client, options)
+                await evaluateChatContextStrategy(options)
+                break
+            case BenchStrategy.NLS:
+                await evaluateNLSStrategy(options)
                 break
             case BenchStrategy.UnitTest:
                 await evaluateUnitTestStrategy(client, options)

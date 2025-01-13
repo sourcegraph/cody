@@ -10,7 +10,7 @@ import com.intellij.openapi.project.Project
 import com.sourcegraph.cody.CodyToolWindowContent
 import com.sourcegraph.cody.agent.CodyAgentService
 import com.sourcegraph.cody.agent.protocol_generated.Ignore_TestResult
-import com.sourcegraph.cody.auth.CodyAccount
+import com.sourcegraph.cody.auth.CodyAuthService
 import com.sourcegraph.cody.autocomplete.action.CodyAction
 import com.sourcegraph.cody.ignore.IgnoreOracle
 import com.sourcegraph.common.CodyBundle
@@ -39,7 +39,7 @@ open class BaseEditCodeAction(runAction: (Editor) -> Unit) :
           false to CodyBundle.getString("action.cody.not-working")
         } else if (isBlockedByPolicy(project, event)) {
           false to CodyBundle.getString("filter.action-in-ignored-file.detail")
-        } else if (!CodyAccount.hasActiveAccount()) {
+        } else if (!CodyAuthService.getInstance(project).isActivated()) {
           false to CodyBundle.getString("action.sourcegraph.disabled.description")
         } else {
           true to ""

@@ -85,7 +85,7 @@ jobs:
           ANNOUNCE_RELEASES_SLACK_WEBHOOK_URL=${{ secrets.ANNOUNCE_RELEASES_SLACK_WEBHOOK_URL }}
 
           # treat this like an array, add a space for the next webhook secret
-          webhooks=("$ANNOUNCE_EDITORS_SLACK_WEBHOOK_URL" "ANNOUNCE_RELEASES_SLACK_WEBHOOK_URL")
+          webhooks=("$ANNOUNCE_EDITORS_SLACK_WEBHOOK_URL" "$ANNOUNCE_RELEASES_SLACK_WEBHOOK_URL")
           for webhook in "${webhooks[@]}"; do
             response=$(curl -s -w "%{http_code}" -X POST -H "Content-Type: application/json" -d '{
               "type": "mrkdwn",
