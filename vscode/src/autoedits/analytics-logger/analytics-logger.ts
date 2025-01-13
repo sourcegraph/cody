@@ -86,7 +86,7 @@ const validRequestTransitions = {
     started: ['contextLoaded', 'discarded'],
     contextLoaded: ['loaded', 'discarded'],
     loaded: ['postProcessed', 'discarded'],
-    postProcessed: ['suggested'],
+    postProcessed: ['suggested', 'discarded'],
     suggested: ['read', 'accepted', 'rejected'],
     read: ['accepted', 'rejected'],
     accepted: [],
@@ -173,6 +173,8 @@ export const autoeditDiscardReason = {
     suffixOverlap: 5,
     emptyPredictionAfterInlineCompletionExtraction: 6,
     noActiveEditor: 7,
+    conflictingDecorationWithEdits: 8,
+    notEnoughLinesEditor: 9,
 } as const
 
 /** We use numeric keys to send these to the analytics backend */
@@ -233,7 +235,7 @@ interface AutoEditFinalMetadata extends AutoeditPostProcessedMetadata {
      * if a suggestion is really visible.
      */
     isRead: boolean
-    /** The number of the auto-edits started since the last suggestion was shown. */
+    /** The number of the auto-edit started since the last suggestion was shown. */
     suggestionsStartedSinceLastSuggestion: number
 }
 

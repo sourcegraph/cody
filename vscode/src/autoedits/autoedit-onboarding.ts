@@ -12,7 +12,7 @@ import * as vscode from 'vscode'
 import { localStorage } from '../services/LocalStorageProvider'
 import { isUserEligibleForAutoeditsFeature } from './create-autoedits-provider'
 
-export interface AutoeditsNotificationInfo {
+export interface AutoEditNotificationInfo {
     lastNotifiedTime: number
     timesShown: number
 }
@@ -28,22 +28,22 @@ interface AutoeditsNotificationPayload {
     actionTaken: (typeof userNotificationAction)[keyof typeof userNotificationAction]
 }
 
-export class AutoeditsOnboarding implements vscode.Disposable {
+export class AutoEditOnboarding implements vscode.Disposable {
     private readonly MAX_AUTO_EDITS_ONBOARDING_NOTIFICATIONS = 3
     private readonly MIN_TIME_DIFF_AUTO_EDITS_BETWEEN_NOTIFICATIONS_MS = 60 * 60 * 1000 // 1 hour
 
-    private featureFlagAutoeditsExperimental = storeLastValue(
-        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyAutoeditExperimentEnabledFeatureFlag)
+    private featureFlagAutoEditExperimental = storeLastValue(
+        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyAutoEditExperimentEnabledFeatureFlag)
     )
 
-    public async showAutoeditsOnboardingIfEligible(): Promise<void> {
-        const shouldShowOnboardingPopup = await this.shouldShowAutoeditsOnboardingPopup()
+    public async showAutoEditOnboardingIfEligible(): Promise<void> {
+        const shouldShowOnboardingPopup = await this.shouldShowAutoEditOnboardingPopup()
         if (shouldShowOnboardingPopup) {
-            await this.showAutoeditsOnboardingPopup()
+            await this.showAutoEditOnboardingPopup()
         }
     }
 
-    private async showAutoeditsOnboardingPopup(): Promise<void> {
+    private async showAutoEditOnboardingPopup(): Promise<void> {
         const { timesShown } = await this.getAutoEditsOnboardingNotificationInfo()
 
         const enableAutoeditsText = 'Enable Auto-Edits'
@@ -67,11 +67,11 @@ export class AutoeditsOnboarding implements vscode.Disposable {
                 .getConfiguration()
                 .update(
                     'cody.suggestions.mode',
-                    CodyAutoSuggestionMode.Autoedits,
+                    CodyAutoSuggestionMode.Autoedit,
                     vscode.ConfigurationTarget.Global
                 )
 
-            // Open VS Code settings UI and focus on the Cody Autoedits setting
+            // Open VS Code settings UI and focus on the Cody AutoEdit setting
             await vscode.commands.executeCommand(
                 'workbench.action.openSettings',
                 'cody.suggestions.mode'
@@ -79,7 +79,7 @@ export class AutoeditsOnboarding implements vscode.Disposable {
         } else if (selection === dontShowAgainText) {
             // If user doesn't want to see the notification again, increase number of shown notification by max limit + 1
             // to prevent showing the notification again until the user restarts VS Code.
-            await this.incrementAutoEditsOnboardingNotificationCount({
+            await this.incrementAutoEditOnboardingNotificationCount({
                 incrementCount: this.MAX_AUTO_EDITS_ONBOARDING_NOTIFICATIONS + 1,
             })
         }
@@ -106,20 +106,20 @@ export class AutoeditsOnboarding implements vscode.Disposable {
         })
     }
 
-    private async shouldShowAutoeditsOnboardingPopup(): Promise<boolean> {
-        const isAutoeditsEnabled = await this.isAutoeditsEnabled()
-        if (isAutoeditsEnabled) {
+    private async shouldShowAutoEditOnboardingPopup(): Promise<boolean> {
+        const isAutoEditEnabled = await this.isAutoEditEnabled()
+        if (isAutoEditEnabled) {
             return false
         }
-        const isUserEligible = await this.isUserEligibleForAutoeditsOnboarding()
+        const isUserEligible = await this.isUserEligibleForAutoEditOnboarding()
         if (!isUserEligible) {
             return false
         }
-        const isUnderNotificationLimit = await this.isAutoeditsNotificationsUnderLimit()
+        const isUnderNotificationLimit = await this.isAutoEditNotificationsUnderLimit()
         return isUnderNotificationLimit
     }
 
-    private async incrementAutoEditsOnboardingNotificationCount(param: {
+    private async incrementAutoEditOnboardingNotificationCount(param: {
         incrementCount: number
     }): Promise<void> {
         const info = await this.getAutoEditsOnboardingNotificationInfo()
@@ -129,12 +129,12 @@ export class AutoeditsOnboarding implements vscode.Disposable {
         })
     }
 
-    private async isAutoeditsEnabled(): Promise<boolean> {
+    private async isAutoEditEnabled(): Promise<boolean> {
         const config = await currentResolvedConfig()
-        return config.configuration.experimentalAutoeditsEnabled
+        return config.configuration.experimentalAutoEditEnabled
     }
 
-    private async isAutoeditsNotificationsUnderLimit(): Promise<boolean> {
+    private async isAutoEditNotificationsUnderLimit(): Promise<boolean> {
         const info = await this.getAutoEditsOnboardingNotificationInfo()
         return (
             info.timesShown < this.MAX_AUTO_EDITS_ONBOARDING_NOTIFICATIONS &&
@@ -142,27 +142,27 @@ export class AutoeditsOnboarding implements vscode.Disposable {
         )
     }
 
-    private async getAutoEditsOnboardingNotificationInfo(): Promise<AutoeditsNotificationInfo> {
+    private async getAutoEditsOnboardingNotificationInfo(): Promise<AutoEditNotificationInfo> {
         return localStorage.getAutoEditsOnboardingNotificationInfo()
     }
 
-    private async isUserEligibleForAutoeditsOnboarding(): Promise<boolean> {
+    private async isUserEligibleForAutoEditOnboarding(): Promise<boolean> {
         const authStatus = currentAuthStatus()
         const productSubscription = await currentUserProductSubscription()
-        const autoeditsFeatureFlag = this.isAutoeditsFeatureFlagEnabled()
+        const autoEditFeatureFlag = this.isAutoEditFeatureFlagEnabled()
         const { isUserEligible } = isUserEligibleForAutoeditsFeature(
-            autoeditsFeatureFlag,
+            autoEditFeatureFlag,
             authStatus,
             productSubscription
         )
         return isUserEligible
     }
 
-    private isAutoeditsFeatureFlagEnabled(): boolean {
-        return !!this.featureFlagAutoeditsExperimental.value.last
+    private isAutoEditFeatureFlagEnabled(): boolean {
+        return !!this.featureFlagAutoEditExperimental.value.last
     }
 
     dispose(): void {
-        this.featureFlagAutoeditsExperimental.subscription.unsubscribe()
+        this.featureFlagAutoEditExperimental.subscription.unsubscribe()
     }
 }
