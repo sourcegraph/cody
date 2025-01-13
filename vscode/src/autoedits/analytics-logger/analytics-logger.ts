@@ -86,7 +86,7 @@ const validRequestTransitions = {
     started: ['contextLoaded', 'discarded'],
     contextLoaded: ['loaded', 'discarded'],
     loaded: ['postProcessed', 'discarded'],
-    postProcessed: ['suggested'],
+    postProcessed: ['suggested', 'discarded'],
     suggested: ['read', 'accepted', 'rejected'],
     read: ['accepted', 'rejected'],
     accepted: [],
@@ -173,6 +173,8 @@ export const autoeditDiscardReason = {
     suffixOverlap: 5,
     emptyPredictionAfterInlineCompletionExtraction: 6,
     noActiveEditor: 7,
+    conflictingDecorationWithEdits: 8,
+    notEnoughLinesEditor: 9,
 } as const
 
 /** We use numeric keys to send these to the analytics backend */
