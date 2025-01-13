@@ -1476,7 +1476,8 @@
     "valibot": "1.0.0-beta.9",
     "vscode-languageserver-textdocument": "^1.0.8",
     "vscode-uri": "^3.0.8",
-    "wink-nlp-utils": "^2.1.0"
+    "wink-nlp-utils": "^2.1.0",
+    "json5": "^2.2.3"
   },
   "devDependencies": {
     "7zip-min": "^1.4.5",

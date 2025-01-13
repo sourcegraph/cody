@@ -43,6 +43,7 @@ import {
 } from './renderer/mock-renderer'
 import { shrinkPredictionUntilSuffix } from './shrink-prediction'
 import { areSameUriDocs, isPredictedTextAlreadyInSuffix } from './utils'
+import { VimTabKeyBindingConflictChecker } from './vim-tab-conflict-checker'
 
 const AUTOEDITS_CONTEXT_STRATEGY = 'auto-edits'
 export const INLINE_COMPLETION_DEFAULT_DEBOUNCE_INTERVAL_MS = 150
@@ -92,6 +93,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         contextRankingStrategy: ContextRankingStrategy.TimeBased,
         dataCollectionEnabled: false,
     })
+    private readonly vimTabConflictChecker = new VimTabKeyBindingConflictChecker()
 
     constructor(chatClient: ChatClient, fixupController: FixupController) {
         autoeditsOutputChannelLogger.logDebug('Constructor', 'Constructing AutoEditsProvider')
@@ -158,6 +160,9 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         inlineCompletionContext: vscode.InlineCompletionContext,
         token?: vscode.CancellationToken
     ): Promise<AutoeditsResult | null> {
+        if (this.vimTabConflictChecker.doesVimTabConflictWithAutoeditsInNormalMode()) {
+            return null
+        }
         const start = getTimeNowInMillis()
         const controller = new AbortController()
         const abortSignal = controller.signal
