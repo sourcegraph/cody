@@ -37,8 +37,7 @@ class LocalStorage implements LocalStorageForModelPreferences {
     public readonly LAST_USED_ENDPOINT = 'SOURCEGRAPH_CODY_ENDPOINT'
     private readonly MODEL_PREFERENCES_KEY = 'cody-model-preferences'
     private readonly CODY_CHAT_MEMORY = 'cody-chat-memory'
-    private readonly AUTO_EDITS_ONBOARDING_NOTIFICATION_COUNT =
-        'cody-auto-edits-onboarding-notification-info'
+    private readonly AUTO_EDITS_ONBOARDING_NOTIFICATION_COUNT = 'cody-auto-edit-notification-info'
 
     public readonly keys = {
         // LLM waitlist for the 09/12/2024 openAI o1 models

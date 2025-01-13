@@ -11,7 +11,6 @@ import {
 import * as vscode from 'vscode'
 import { localStorage } from '../services/LocalStorageProvider'
 import { isUserEligibleForAutoeditsFeature } from './create-autoedits-provider'
-import { autoeditsOutputChannelLogger } from './output-channel-logger'
 
 export interface AutoeditsNotificationInfo {
     lastNotifiedTime: number
@@ -50,11 +49,16 @@ export class AutoeditsOnboarding implements vscode.Disposable {
         const enableAutoeditsText = 'Enable Auto-Edits'
         const dontShowAgainText = "Don't Show Again"
 
-        const selection = await vscode.window.showInformationMessage(
-            'Try Cody Auto-Edits (experimental)? Cody will intelligently suggest next edits as you navigate the codebase.',
-            enableAutoeditsText,
-            dontShowAgainText
-        )
+        const selection = await Promise.race([
+            vscode.window.showInformationMessage(
+                'Try Cody Auto-Edits (experimental)? Cody will intelligently suggest next edits as you navigate the codebase.',
+                enableAutoeditsText,
+                dontShowAgainText
+            ),
+            new Promise<string | undefined>(
+                resolve => setTimeout(() => resolve(undefined), 30_000) // 30 seconds timeout
+            ),
+        ])
         await this.incrementAutoEditsOnboardingNotificationCount({ incrementCount: 1 })
 
         if (selection === enableAutoeditsText) {
@@ -93,9 +97,7 @@ export class AutoeditsOnboarding implements vscode.Disposable {
     }
 
     private writeAutoeditsNotificationEvent(payload: AutoeditsNotificationPayload): void {
-        const action = 'notified'
-        autoeditsOutputChannelLogger.logDebug('autoeditsOnboardingEvent', action)
-        telemetryRecorder.recordEvent('cody.autoedit', action, {
+        telemetryRecorder.recordEvent('cody.autoedit', 'notified', {
             version: 0,
             metadata: {
                 timesNotified: payload.timesNotified,
