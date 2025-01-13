@@ -57,7 +57,7 @@ class CompletionProviderConfig {
             'recent-copy',
             'diagnostics',
             'recent-view-port',
-            'auto-edits',
+            'auto-edit',
         ]
         return resolvedConfig.pipe(
             switchMap(({ configuration }) => {

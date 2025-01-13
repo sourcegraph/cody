@@ -14,7 +14,7 @@ interface JsonrpcCommandOptions {
     expiresIn?: string | null | undefined
     recordingDirectory?: string
     keepUnusedRecordings?: boolean
-    recordingMode?: MODE
+    recordingMode?: MODE | 'disabled'
     recordIfMissing?: boolean
     recordingExpiryStrategy?: EXPIRY_STRATEGY
     recordingName?: string
@@ -25,12 +25,13 @@ export interface PollyRequestError {
     error: string
 }
 
-function recordingModeOption(value: string): MODE {
+function recordingModeOption(value: string): MODE | 'disabled' {
     switch (value) {
         case 'record':
         case 'replay':
         case 'passthrough':
         case 'stopped':
+        case 'disabled':
             return value
         default:
             throw new commander.InvalidArgumentError(
@@ -115,7 +116,7 @@ export const jsonrpcCommand = new Command('jsonrpc-stdio')
         const networkRequests: Request[] = []
         const requestErrors: PollyRequestError[] = []
         let polly: Polly | undefined
-        if (options.recordingMode === 'passthrough') {
+        if (options.recordingMode === 'passthrough' || options.recordingMode === 'disabled') {
             // Do nothing. We don't want Polly to interfere with `fetch` at all.
         } else if (options.recordingDirectory) {
             if (options.recordingMode === undefined) {

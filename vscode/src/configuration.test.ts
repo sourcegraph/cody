@@ -100,9 +100,9 @@ describe('getConfiguration', () => {
                         return false
                     case 'cody.experimental.supercompletions':
                         return false
-                    case 'cody.experimental.autoedits-renderer-testing':
+                    case 'cody.experimental.autoedit-renderer-testing':
                         return false
-                    case 'cody.experimental.autoedits.config.override':
+                    case 'cody.experimental.autoedit.config.override':
                         return undefined
                     case 'cody.experimental.noodle':
                         return false
@@ -168,9 +168,9 @@ describe('getConfiguration', () => {
             commandCodeLenses: true,
             agenticContextExperimentalOptions: { shell: { allow: ['git'] } },
             experimentalSupercompletions: false,
-            experimentalAutoeditsEnabled: false,
-            experimentalAutoeditsConfigOverride: undefined,
-            experimentalAutoeditsRendererTesting: false,
+            experimentalAutoEditEnabled: false,
+            experimentalAutoEditConfigOverride: undefined,
+            experimentalAutoEditRendererTesting: false,
             experimentalMinionAnthropicKey: undefined,
             experimentalTracing: true,
             experimentalCommitMessage: true,

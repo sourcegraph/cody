@@ -19,6 +19,11 @@ export class InlineDiffDecorator implements vscode.Disposable, AutoEditsDecorato
         this.editor.setDecorations(this.addedTextDecorationType, added)
     }
 
+    public canRenderDecoration(decorationInfo: DecorationInfo): boolean {
+        // Inline decorator can render any decoration, so it should always return true.
+        return true
+    }
+
     /**
      * Process modified lines to create decorations for inserted and deleted text within those lines.
      */
