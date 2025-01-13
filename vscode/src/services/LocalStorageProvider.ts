@@ -37,8 +37,7 @@ class LocalStorage implements LocalStorageForModelPreferences {
     public readonly LAST_USED_ENDPOINT = 'SOURCEGRAPH_CODY_ENDPOINT'
     private readonly MODEL_PREFERENCES_KEY = 'cody-model-preferences'
     private readonly CODY_CHAT_MEMORY = 'cody-chat-memory'
-    private readonly AUTO_EDITS_ONBOARDING_NOTIFICATION_COUNT =
-        'cody-auto-edit-onboarding-notification-info'
+    private readonly AUTO_EDITS_ONBOARDING_NOTIFICATION_COUNT = 'cody-auto-edit-notification-info'
 
     public readonly keys = {
         // LLM waitlist for the 09/12/2024 openAI o1 models
@@ -242,7 +241,7 @@ class LocalStorage implements LocalStorageForModelPreferences {
         }
     }
 
-    public async getAutoEditsOnboardingNotificationInfo(): Promise<AutoEditNotificationInfo> {
+    public async getAutoEditOnboardingNotificationInfo(): Promise<AutoEditNotificationInfo> {
         return (
             this.get<AutoEditNotificationInfo>(this.AUTO_EDITS_ONBOARDING_NOTIFICATION_COUNT) ?? {
                 lastNotifiedTime: 0,
@@ -251,7 +250,7 @@ class LocalStorage implements LocalStorageForModelPreferences {
         )
     }
 
-    public async setAutoEditsOnboardingNotificationInfo(info: AutoEditNotificationInfo): Promise<void> {
+    public async setAutoEditOnboardingNotificationInfo(info: AutoEditNotificationInfo): Promise<void> {
         await this.set(this.AUTO_EDITS_ONBOARDING_NOTIFICATION_COUNT, info)
     }
 

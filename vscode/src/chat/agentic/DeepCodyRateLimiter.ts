@@ -77,8 +77,7 @@ export class DeepCodyRateLimiter {
         return Math.floor(timeToWait / 1000)
     }
 
-    public getRateLimitError(retryTime: number): RateLimitError {
-        const retryAfter = retryTime.toString()
-        return new RateLimitError('Agentic Chat', 'daily limit', false, undefined, retryAfter)
+    public getRateLimitError(retryAfter: number): RateLimitError {
+        return new RateLimitError('Agentic Chat', 'daily limit', false, undefined, retryAfter.toString())
     }
 }
