@@ -10,10 +10,10 @@ import {
     REMOTE_DIRECTORY_PROVIDER_URI,
     REMOTE_FILE_PROVIDER_URI,
     SYMBOL_CONTEXT_MENTION_PROVIDER,
-    isRemoteWorkspaceProvider,
     parseMentionQuery,
 } from '@sourcegraph/cody-shared'
 import { clsx } from 'clsx'
+import { ExternalLinkIcon, GlobeIcon, InfoIcon } from 'lucide-react'
 import { type FunctionComponent, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { usePromptEditorConfig } from '../../config'
 import { type MentionMenuOption, createMentionMenuOption } from '../../plugins/atMentions/atMentions'
@@ -117,10 +117,6 @@ export const MentionMenu: FunctionComponent<
             const provider = data.providers.find(p => commandRowValue(p) === value)
             if (!provider) {
                 throw new Error(`No provider found with value ${value}`)
-            }
-
-            if (isRemoteWorkspaceProvider(provider.id)) {
-                return
             }
 
             updateMentionMenuParams({ parentItem: provider })
@@ -258,63 +254,92 @@ export const MentionMenu: FunctionComponent<
     ))
 
     return (
-        <Command
-            loop={true}
-            shouldFilter={false}
-            value={effectiveValueRow ? commandRowValue(effectiveValueRow) : undefined}
-            onValueChange={setValue}
-            className={styles.container}
-            label="@-mention context"
-            ref={ref}
-            data-testid="mention-menu"
-        >
-            <CommandList className="!tw-max-h-[unset]">
-                {providers.length > 0 && (
-                    <CommandGroup className={COMMAND_GROUP_CLASS_NAME}>{providers}</CommandGroup>
-                )}
+        <div>
+            <Command
+                loop={true}
+                shouldFilter={false}
+                value={effectiveValueRow ? commandRowValue(effectiveValueRow) : undefined}
+                onValueChange={setValue}
+                className={styles.container}
+                label="@-mention context"
+                ref={ref}
+                data-testid="mention-menu"
+            >
+                <CommandList className="!tw-max-h-[unset]">
+                    {providers.length > 0 && (
+                        <CommandGroup className={COMMAND_GROUP_CLASS_NAME}>{providers}</CommandGroup>
+                    )}
 
-                {(heading || (data.items && data.items.length > 0)) && (
-                    <CommandGroup heading={heading} className={COMMAND_GROUP_CLASS_NAME}>
-                        {data.items?.map(item => (
-                            <CommandItem
-                                key={commandRowValue(item)}
-                                value={commandRowValue(item)}
-                                disabled={item.isIgnored}
-                                onSelect={onCommandSelect}
-                                className={clsx(styles.item, styles.contextItem, COMMAND_ROW_CLASS_NAME)}
-                            >
-                                <MentionMenuContextItemContent query={mentionQuery} item={item} />
-                            </CommandItem>
-                        ))}
-                    </CommandGroup>
-                )}
+                    {(heading || (data.items && data.items.length > 0)) && (
+                        <CommandGroup heading={heading} className={COMMAND_GROUP_CLASS_NAME}>
+                            {data.items?.map(item => (
+                                <CommandItem
+                                    key={commandRowValue(item)}
+                                    value={commandRowValue(item)}
+                                    disabled={item.isIgnored}
+                                    onSelect={onCommandSelect}
+                                    className={clsx(
+                                        styles.item,
+                                        styles.contextItem,
+                                        COMMAND_ROW_CLASS_NAME
+                                    )}
+                                >
+                                    <MentionMenuContextItemContent query={mentionQuery} item={item} />
+                                </CommandItem>
+                            ))}
+                        </CommandGroup>
+                    )}
 
-                {params.parentItem?.id === REMOTE_DIRECTORY_PROVIDER_URI && !!data.items?.length && (
-                    <CommandLoading
-                        className={clsx(
-                            COMMAND_ROW_CLASS_NAME,
-                            COMMAND_ROW_TEXT_CLASS_NAME,
-                            'tw-bg-accent'
-                        )}
-                    >
-                        * Sourced from the remote default branch
-                    </CommandLoading>
-                )}
+                    {params.parentItem?.id === REMOTE_DIRECTORY_PROVIDER_URI && !!data.items?.length && (
+                        <CommandLoading
+                            className={clsx(
+                                COMMAND_ROW_CLASS_NAME,
+                                COMMAND_ROW_TEXT_CLASS_NAME,
+                                'tw-bg-accent'
+                            )}
+                        >
+                            * Sourced from the remote default branch
+                        </CommandLoading>
+                    )}
 
-                {data.items && data.items.length === 0 ? (
-                    <CommandEmpty className={clsx(COMMAND_ROW_CLASS_NAME, COMMAND_ROW_TEXT_CLASS_NAME)}>
-                        {getEmptyLabel(params.parentItem, mentionQuery)}
-                    </CommandEmpty>
-                ) : null}
-                {data.error && (
-                    <CommandLoading
-                        className={clsx(COMMAND_ROW_CLASS_NAME, COMMAND_ROW_TEXT_CLASS_NAME)}
-                    >
-                        Error: {data.error}
-                    </CommandLoading>
-                )}
-            </CommandList>
-        </Command>
+                    {data.items && data.items.length === 0 ? (
+                        <CommandEmpty
+                            className={clsx(COMMAND_ROW_CLASS_NAME, COMMAND_ROW_TEXT_CLASS_NAME)}
+                        >
+                            {getEmptyLabel(params.parentItem, mentionQuery)}
+                        </CommandEmpty>
+                    ) : null}
+                    {data.error && (
+                        <CommandLoading
+                            className={clsx(COMMAND_ROW_CLASS_NAME, COMMAND_ROW_TEXT_CLASS_NAME)}
+                        >
+                            Error: {data.error}
+                        </CommandLoading>
+                    )}
+                </CommandList>
+            </Command>
+            <footer className="tw-sticky tw-bottom-0 tw-left-0 tw-right-0 tw-bg-background tw-border-t tw-border-muted">
+                <div className="tw-p-2">
+                    <div className="tw-text-sm tw-font-medium tw-text-muted-foreground">
+                        Additional scope
+                    </div>
+                    <div className="tw-flex tw-justify-between tw-items-center tw-gap-2 tw-mt-1">
+                        <button
+                            type="button"
+                            className="tw-flex tw-items-center tw-gap-2 tw-text-sm tw-text-accent-foreground hover:tw-text-accent tw-py-1"
+                            onClick={() => {}}
+                        >
+                            <GlobeIcon size={14} />
+                            Add remote code
+                            <ExternalLinkIcon size={14} />
+                        </button>
+                        <div className="tw-flex tw-justify-between tw-items-center tw-gap-2">
+                            Enterprise <InfoIcon size={14} />
+                        </div>
+                    </div>
+                </div>
+            </footer>
+        </div>
     )
 }
 
