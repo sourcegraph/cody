@@ -13,7 +13,6 @@ import {
     parseMentionQuery,
 } from '@sourcegraph/cody-shared'
 import { clsx } from 'clsx'
-import { ExternalLinkIcon, GlobeIcon, InfoIcon } from 'lucide-react'
 import { type FunctionComponent, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { usePromptEditorConfig } from '../../config'
 import { type MentionMenuOption, createMentionMenuOption } from '../../plugins/atMentions/atMentions'
@@ -318,27 +317,6 @@ export const MentionMenu: FunctionComponent<
                     )}
                 </CommandList>
             </Command>
-            <footer className="tw-sticky tw-bottom-0 tw-left-0 tw-right-0 tw-bg-background tw-border-t tw-border-muted">
-                <div className="tw-p-2">
-                    <div className="tw-text-sm tw-font-medium tw-text-muted-foreground">
-                        Additional scope
-                    </div>
-                    <div className="tw-flex tw-justify-between tw-items-center tw-gap-2 tw-mt-1">
-                        <button
-                            type="button"
-                            className="tw-flex tw-items-center tw-gap-2 tw-text-sm tw-text-accent-foreground hover:tw-text-accent tw-py-1"
-                            onClick={() => {}}
-                        >
-                            <GlobeIcon size={14} />
-                            Add remote code
-                            <ExternalLinkIcon size={14} />
-                        </button>
-                        <div className="tw-flex tw-justify-between tw-items-center tw-gap-2">
-                            Enterprise <InfoIcon size={14} />
-                        </div>
-                    </div>
-                </div>
-            </footer>
         </div>
     )
 }
