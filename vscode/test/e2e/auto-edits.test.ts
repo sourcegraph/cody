@@ -157,6 +157,8 @@ const autoeditsTestHelper = async ({
             // Be mindful of this when adding new tests that have minor differences
             maxDiffPixelRatio: 0.02,
             maxDiffPixels: 500,
+            // Threshold accounts for color changes between screenshots. It's important to keep this low as
+            // our decoration logic heavily relies on pure color changes to be functional
             threshold: 0.01,
             clip,
         })
