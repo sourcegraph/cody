@@ -253,13 +253,7 @@ test.extend<ExpectedV2Events>({
  *
  * Note: This should not be a problem when we move towards image based decorations/
  */
-test.extend<ExpectedV2Events>({
-    expectedV2Events: [
-        // Note: This event should not be sent once the above bug is fixed.
-        // The accept event does not happen currently.
-        'cody.autoedit:suggested',
-    ],
-})(
+test(
     'autoedits: does not show any suggestion if the suffix decoration spans further than the end of the file',
     async ({ page, sidebar }) => {
         const lineOptions: LineOptions[] = [{ line: 38 }]
