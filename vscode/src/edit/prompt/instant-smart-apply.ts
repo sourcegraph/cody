@@ -1,7 +1,7 @@
 import { logDebug } from '@sourcegraph/cody-shared'
 import dedent from 'dedent'
 import * as vscode from 'vscode'
-import { type FireworksCompatibleRequestParams, getModelResponse } from '../../autoedits/adapters/utils'
+import { getModelResponse } from '../../autoedits/adapters/utils'
 
 const SMART_APPLY_MODEL = 'accounts/sourcegraph/models/exp-instant-apply-qwen-7b-instruct-ft'
 
@@ -33,20 +33,22 @@ function getMessageBody(
     maxTokens = 4_000,
     userId = '123'
 ): string {
-    const body: FireworksCompatibleRequestParams = {
+    const body = {
         stream: false,
         model: SMART_APPLY_MODEL,
-        temperature: 0.2,
+        temperature: 0,
         max_tokens: maxTokens,
         response_format: {
             type: 'text',
         },
         // Fireworks Predicted outputs
         // https://docs.fireworks.ai/guides/querying-text-models#predicted-outputs
+        // speculation: originalCode,
         prediction: {
             type: 'content',
             content: originalCode,
         },
+        rewrite_speculation: true,
         user: userId || undefined,
     }
     const request = {

@@ -1,4 +1,4 @@
-import { type Message, type PromptString, charsToTokens } from '@sourcegraph/cody-shared'
+import { type Message, type PromptString, charsToTokens, logDebug } from '@sourcegraph/cody-shared'
 
 export interface FireworksCompatibleRequestParams {
     stream: boolean
@@ -66,5 +66,12 @@ export async function getModelResponse(
         throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`)
     }
     const data = await response.json()
+
+    // Convert Headers object to plain key-value object
+    const headers: Record<string, string> = {}
+    response.headers.forEach((value, key) => {
+        headers[key] = value
+    })
+    logDebug('Instant Smart Apply', 'Headers', JSON.stringify(headers))
     return data
 }
