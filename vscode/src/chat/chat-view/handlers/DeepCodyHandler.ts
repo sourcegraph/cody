@@ -79,10 +79,10 @@ export class DeepCodyHandler extends ChatHandler implements AgentHandler {
             this.featureDeepCodyRateLimitMultiplier.value.last ? 4 : 2
         )
 
-        const retryTime = deepCodyRateLimiter.isAtLimit()
-        if (retryTime) {
+        const retryAfter = deepCodyRateLimiter.isAtLimit()
+        if (retryAfter) {
             chatBuilder.setSelectedAgent(undefined)
-            return { error: deepCodyRateLimiter.getRateLimitError(retryTime), abort: true }
+            return { error: deepCodyRateLimiter.getRateLimitError(retryAfter), abort: true }
         }
 
         const baseContext = baseContextResult.contextItems ?? []

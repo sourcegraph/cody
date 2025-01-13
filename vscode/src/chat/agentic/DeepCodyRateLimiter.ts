@@ -10,13 +10,14 @@ import { toolboxManager } from './ToolboxManager'
  */
 export class DeepCodyRateLimiter {
     private readonly ONE_DAY_MS = 24 * 60 * 60 * 1000
+    private lastUsedCache = 0
 
     constructor(
         private readonly baseQuota: number = 0,
         private readonly multiplier: number = 1
     ) {}
 
-    public isAtLimit(): string | undefined {
+    public isAtLimit(): number | undefined {
         const DAILY_QUOTA = this.baseQuota * this.multiplier
 
         // If there is no quota set, there is no limit
@@ -25,8 +26,20 @@ export class DeepCodyRateLimiter {
         }
 
         const now = new Date()
-        const { quota, lastUsed } = localStorage.getDeepCodyUsage()
+        const currentTime = now.getTime()
 
+        // Check if there is a timeToWait set, and if it has passed compared to the current time
+        if (this.lastUsedCache !== 0) {
+            const timeDiff = currentTime - this.lastUsedCache
+            if (timeDiff < this.ONE_DAY_MS) {
+                const timeToWait = this.ONE_DAY_MS - timeDiff
+                return Math.floor(timeToWait / 1000)
+            }
+            // Reset cache if a day has passed
+            this.lastUsedCache = 0
+        }
+
+        const { quota, lastUsed } = localStorage.getDeepCodyUsage()
         // Reset for cases where lastUsed was not stored properly but quota was.
         if (quota !== undefined && lastUsed === undefined) {
             localStorage.setDeepCodyUsage(DAILY_QUOTA - 1, now.toISOString())
@@ -34,7 +47,7 @@ export class DeepCodyRateLimiter {
         }
 
         const lastUsedTime = new Date(lastUsed ?? now.toISOString()).getTime()
-        const timeDiff = now.getTime() - lastUsedTime
+        const timeDiff = currentTime - lastUsedTime
 
         // Calculate remaining quota with time-based replenishment
         const quotaToAdd = DAILY_QUOTA * (timeDiff / this.ONE_DAY_MS)
@@ -56,12 +69,16 @@ export class DeepCodyRateLimiter {
             return undefined
         }
 
+        // Cache the last used time.
+        this.lastUsedCache = lastUsedTime
+
         // Calculate wait time if no quota available
         const timeToWait = this.ONE_DAY_MS - timeDiff
-        return Math.floor(timeToWait / 1000).toString()
+        return Math.floor(timeToWait / 1000)
     }
 
-    public getRateLimitError(retryAfter: string): RateLimitError {
+    public getRateLimitError(retryTime: number): RateLimitError {
+        const retryAfter = retryTime.toString()
         return new RateLimitError('Agentic Chat', 'daily limit', false, undefined, retryAfter)
     }
 }
