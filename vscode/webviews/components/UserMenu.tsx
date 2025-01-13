@@ -311,7 +311,7 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
                                 </CommandItem>
                             </CommandGroup>
 
-                            {isTeamsUpgradeCtaEnabled && (
+                            {!isTeamsUpgradeCtaEnabled && (
                                 <CommandGroup>
                                     <CommandLink
                                         href="https://workspaces.sourcegraph.com"
@@ -333,10 +333,10 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
                                                 Enterprise Starter
                                             </Badge>
                                         </div>
-                                        <div className="tw-w-full tw-text-lg tw-font-semibold tw-text-left tw-mt-2">
+                                        <div className="tw-w-full tw-text-[14px] tw-font-semibold tw-text-left tw-mt-2">
                                             Unlock the Sourcegraph platform
                                         </div>
-                                        <div className="tw-text-md tw-text-muted-foreground">
+                                        <div className="tw-text-[12px] tw-text-muted-foreground">
                                             Create a workspace and connect GitHub repositories to unlock
                                             Code Search, AI chat, autocompletes, inline edits and more
                                             for your team.
@@ -344,7 +344,7 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
                                         <Button
                                             key="workspace-create-button"
                                             variant="outline"
-                                            className="tw-flex-grow tw-rounded-md tw-text-center tw-w-full tw-text-foreground tw-my-2"
+                                            className="tw-flex-grow tw-rounded-md tw-text-center tw-w-full tw-text-foreground tw-my-2 tw-text-[12px]"
                                         >
                                             Create a workspace
                                         </Button>
