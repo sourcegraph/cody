@@ -241,7 +241,7 @@ class LocalStorage implements LocalStorageForModelPreferences {
         }
     }
 
-    public async getAutoEditsOnboardingNotificationInfo(): Promise<AutoEditNotificationInfo> {
+    public async getAutoEditOnboardingNotificationInfo(): Promise<AutoEditNotificationInfo> {
         return (
             this.get<AutoEditNotificationInfo>(this.AUTO_EDITS_ONBOARDING_NOTIFICATION_COUNT) ?? {
                 lastNotifiedTime: 0,
@@ -250,7 +250,7 @@ class LocalStorage implements LocalStorageForModelPreferences {
         )
     }
 
-    public async setAutoEditsOnboardingNotificationInfo(info: AutoEditNotificationInfo): Promise<void> {
+    public async setAutoEditOnboardingNotificationInfo(info: AutoEditNotificationInfo): Promise<void> {
         await this.set(this.AUTO_EDITS_ONBOARDING_NOTIFICATION_COUNT, info)
     }
 

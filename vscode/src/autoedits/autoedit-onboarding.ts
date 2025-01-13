@@ -23,7 +23,7 @@ const userNotificationAction = {
     notificationIgnored: 3,
 } as const
 
-interface AutoeditsNotificationPayload {
+interface AutoEditNotificationPayload {
     timesNotified: number
     actionTaken: (typeof userNotificationAction)[keyof typeof userNotificationAction]
 }
@@ -44,24 +44,24 @@ export class AutoEditOnboarding implements vscode.Disposable {
     }
 
     private async showAutoEditOnboardingPopup(): Promise<void> {
-        const { timesShown } = await this.getAutoEditsOnboardingNotificationInfo()
+        const { timesShown } = await this.getAutoEditOnboardingNotificationInfo()
 
-        const enableAutoeditsText = 'Enable Auto-Edits'
+        const enableAutoeditText = 'Enable Auto-Edit'
         const dontShowAgainText = "Don't Show Again"
 
         const selection = await Promise.race([
             vscode.window.showInformationMessage(
-                'Try Cody Auto-Edits (experimental)? Cody will intelligently suggest next edits as you navigate the codebase.',
-                enableAutoeditsText,
+                'Try Cody Auto-Edit (experimental)? Cody will intelligently suggest next edits as you navigate the codebase.',
+                enableAutoeditText,
                 dontShowAgainText
             ),
             new Promise<string | undefined>(
                 resolve => setTimeout(() => resolve(undefined), 30_000) // 30 seconds timeout
             ),
         ])
-        await this.incrementAutoEditsOnboardingNotificationCount({ incrementCount: 1 })
+        await this.incrementAutoEditOnboardingNotificationCount({ incrementCount: 1 })
 
-        if (selection === enableAutoeditsText) {
+        if (selection === enableAutoeditText) {
             // Enable the setting programmatically
             await vscode.workspace
                 .getConfiguration()
@@ -84,19 +84,19 @@ export class AutoEditOnboarding implements vscode.Disposable {
             })
         }
 
-        const notificationPayload: AutoeditsNotificationPayload = {
+        const notificationPayload: AutoEditNotificationPayload = {
             timesNotified: timesShown,
             actionTaken:
-                selection === enableAutoeditsText
+                selection === enableAutoeditText
                     ? userNotificationAction.notificationAccepted
                     : selection === dontShowAgainText
                       ? userNotificationAction.notificationRejected
                       : userNotificationAction.notificationIgnored,
         }
-        this.writeAutoeditsNotificationEvent(notificationPayload)
+        this.writeAutoeditNotificationEvent(notificationPayload)
     }
 
-    private writeAutoeditsNotificationEvent(payload: AutoeditsNotificationPayload): void {
+    private writeAutoeditNotificationEvent(payload: AutoEditNotificationPayload): void {
         telemetryRecorder.recordEvent('cody.autoedit', 'notified', {
             version: 0,
             metadata: {
@@ -122,8 +122,8 @@ export class AutoEditOnboarding implements vscode.Disposable {
     private async incrementAutoEditOnboardingNotificationCount(param: {
         incrementCount: number
     }): Promise<void> {
-        const info = await this.getAutoEditsOnboardingNotificationInfo()
-        await localStorage.setAutoEditsOnboardingNotificationInfo({
+        const info = await this.getAutoEditOnboardingNotificationInfo()
+        await localStorage.setAutoEditOnboardingNotificationInfo({
             timesShown: info.timesShown + param.incrementCount,
             lastNotifiedTime: Date.now(),
         })
@@ -135,15 +135,15 @@ export class AutoEditOnboarding implements vscode.Disposable {
     }
 
     private async isAutoEditNotificationsUnderLimit(): Promise<boolean> {
-        const info = await this.getAutoEditsOnboardingNotificationInfo()
+        const info = await this.getAutoEditOnboardingNotificationInfo()
         return (
             info.timesShown < this.MAX_AUTO_EDITS_ONBOARDING_NOTIFICATIONS &&
             Date.now() - info.lastNotifiedTime > this.MIN_TIME_DIFF_AUTO_EDITS_BETWEEN_NOTIFICATIONS_MS
         )
     }
 
-    private async getAutoEditsOnboardingNotificationInfo(): Promise<AutoEditNotificationInfo> {
-        return localStorage.getAutoEditsOnboardingNotificationInfo()
+    private async getAutoEditOnboardingNotificationInfo(): Promise<AutoEditNotificationInfo> {
+        return localStorage.getAutoEditOnboardingNotificationInfo()
     }
 
     private async isUserEligibleForAutoEditOnboarding(): Promise<boolean> {
