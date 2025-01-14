@@ -31,7 +31,8 @@ export const AgenticContextCell: FunctionComponent<{
 
     const subHeader = !isContextLoading
         ? 'reviewed'
-        : processes?.findLast(p => p.type !== 'tool')?.content || 'starting...'
+        : processes?.findLast(p => p.type !== 'tool' && p.type !== 'confirmation')?.content ||
+          'starting...'
 
     const statusClassName = processes?.some(p => p.error) ? 'tw-text-yellow-500' : 'tw-text-green-500'
 

@@ -182,8 +182,8 @@ class CliTool extends CodyTool {
         for (const command of commands) {
             const stepId = `${toolID}-${uuid.v4()}`
             const apporval = await callback?.onConfirmationNeeded(stepId, {
+                title: this.config.title,
                 content: command,
-                title: 'Send the output of the command below for context',
             })
             if (apporval) {
                 approvedCommands.add(command)
