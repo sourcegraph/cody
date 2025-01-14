@@ -277,6 +277,11 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 this.setWebviewToChat()
                 break
             case 'submit': {
+                logDebug(
+                    'ChatController',
+                    'onDidReceiveMessage.submit',
+                    JSON.stringify({ intent: message.intent, scores: message.intentScores })
+                )
                 await this.handleUserMessage({
                     requestID: uuid.v4(),
                     inputText: PromptString.unsafe_fromUserQuery(message.text),
@@ -650,7 +655,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         command?: DefaultChatCommands
         intent?: ChatMessage['intent'] | undefined | null
         intentScores?: { intent: string; score: number }[] | undefined | null
-        manuallySelectedIntent?: boolean | undefined | null
+        manuallySelectedIntent?: ChatMessage['intent'] | undefined | null
         traceparent?: string | undefined | null
         selectedAgent?: string | undefined | null
     }): Promise<void> {
@@ -710,12 +715,14 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         signal,
         detectedIntent,
         detectedIntentScores,
+        manuallySelectedIntent,
     }: {
         requestID: string
         input: string
         signal: AbortSignal
         detectedIntent?: ChatMessage['intent'] | undefined | null
         detectedIntentScores?: { intent: string; score: number }[] | undefined | null
+        manuallySelectedIntent?: ChatMessage['intent'] | undefined | null
     }): Promise<{
         intent: ChatMessage['intent']
         intentScores: { intent: string; score: number }[]
@@ -727,9 +734,13 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         // The `detectedIntent` comes from the webview, where it can either be manually set by the user
         // using the dropdown UI or automatically pre-fetched for the input while the user is typing.
         // If any such intent is already detected, we use that.
-        if (detectedIntent) {
+
+        // TODO: detectedIntent is null here because it isn't persisted in the transcript for some reason
+
+        // TODO: differentiate between manually selected intent and detected intent
+        if (manuallySelectedIntent) {
             return {
-                intent: detectedIntent,
+                intent: manuallySelectedIntent,
                 intentScores: detectedIntentScores || [],
             }
         }
@@ -794,6 +805,14 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         })
         recorder.recordChatQuestionSubmitted(mentions)
 
+        logDebug(
+            'ChatController',
+            'getIntent',
+            JSON.stringify({
+                detectedIntent: detectedIntent,
+                detectedIntentScores: detectedIntentScores,
+            })
+        )
         const { intent, intentScores } = await this.getIntentAndScores({
             requestID,
             input: editorState
@@ -801,6 +820,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 : inputText.toString(),
             detectedIntent,
             detectedIntentScores,
+            manuallySelectedIntent,
             signal,
         })
         signal.throwIfAborted()
@@ -818,15 +838,28 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         })
 
         recorder.setIntentInfo({
-            userSpecifiedIntent:
-                manuallySelectedIntent && detectedIntent
-                    ? detectedIntent
-                    : this.featureCodyExperimentalOneBox
-                      ? 'auto'
-                      : 'chat',
+            userSpecifiedIntent: manuallySelectedIntent
+                ? manuallySelectedIntent
+                : this.featureCodyExperimentalOneBox
+                  ? 'auto'
+                  : 'chat',
             detectedIntent: intent,
             detectedIntentScores: intentScores,
         })
+
+        logDebug(
+            'ChatController',
+            'Setting intent info',
+            JSON.stringify({
+                userSpecifiedIntent: manuallySelectedIntent
+                    ? manuallySelectedIntent
+                    : this.featureCodyExperimentalOneBox
+                      ? 'auto'
+                      : 'chat',
+                detectedIntent: intent,
+                detectedIntentScores: intentScores,
+            })
+        )
 
         this.postEmptyMessageInProgress(model)
         let messageInProgress: ChatMessage = { speaker: 'assistant', model }
@@ -1094,7 +1127,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         editorState: SerializedPromptEditorState | null
         intent?: ChatMessage['intent'] | undefined | null
         intentScores?: { intent: string; score: number }[] | undefined | null
-        manuallySelectedIntent?: boolean | undefined | null
+        manuallySelectedIntent?: ChatMessage['intent'] | undefined | null
     }): Promise<void> {
         const abortSignal = this.startNewSubmitOrEditOperation()
 
@@ -1111,6 +1144,11 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 return
             }
             this.chatBuilder.removeMessagesFromIndex(humanMessage, 'human')
+            logDebug(
+                'ChatController',
+                'handleEdit',
+                JSON.stringify({ intent: intent, scores: intentScores })
+            )
             return await this.handleUserMessage({
                 requestID,
                 inputText: text,
