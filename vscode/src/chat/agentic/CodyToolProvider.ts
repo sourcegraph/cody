@@ -26,7 +26,7 @@ export interface ToolStatusCallback {
     onComplete(id?: string, error?: Error): void
     onConfirmationNeeded(
         id: string,
-        step: Omit<ProcessingStep, 'id' | 'type' | 'status'>
+        step: Omit<ProcessingStep, 'id' | 'type' | 'state'>
     ): Promise<boolean>
 }
 

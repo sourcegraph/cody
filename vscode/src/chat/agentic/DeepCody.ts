@@ -197,7 +197,7 @@ export class DeepCodyAgent {
             this.stats.context += validItems.length
             if (newContext.every(isUserAddedItem)) break
         }
-        this.statusCallback.onComplete('status')
+        this.statusCallback.onComplete()
     }
 
     /**

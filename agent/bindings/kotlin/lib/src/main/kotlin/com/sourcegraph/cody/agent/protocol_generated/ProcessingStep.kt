@@ -7,12 +7,13 @@ data class ProcessingStep(
   val type: ProcessType? = null, // Oneof: tool, confirmation
   val id: String,
   val title: String? = null,
+  val description: String? = null,
   val content: String,
-  val status: StatusEnum, // Oneof: pending, success, error
+  val state: StateEnum, // Oneof: pending, success, error
   val error: ChatError? = null,
 ) {
 
-  enum class StatusEnum {
+  enum class StateEnum {
     @SerializedName("pending") Pending,
     @SerializedName("success") Success,
     @SerializedName("error") Error,

@@ -1,5 +1,4 @@
 import type { ProcessingStep } from '@sourcegraph/cody-shared'
-import { InfoIcon } from 'lucide-react'
 import { type FC, useEffect, useState } from 'react'
 import { Button } from '../../../components/shadcn/ui/button'
 import type { VSCodeWrapper } from '../../../utils/VSCodeApi'
@@ -40,26 +39,27 @@ const ApprovalCell: FC<{ vscodeAPI: VSCodeWrapper }> = ({ vscodeAPI }) => {
             {Array.from(actions.values()).map(a => (
                 <div
                     key={`confirmation-cell-${a.id}`}
-                    className="tw-w-full tw-min-w-xs tw-max-w-[600px] tw-my-2 tw-p-4 tw-bg-muted-transparent tw-text-muted-foreground tw-rounded-lg tw-shadow"
+                    className="tw-w-full tw-min-w-xs tw-max-w-[600px] tw-my-2 tw-p-4 tw-bg-muted-transparent tw-text-muted-foreground tw-rounded-lg tw-shadow tw-border tw-border-border"
                     role="alert"
                 >
                     <div className="tw-flex">
-                        <div className="tw-inline-flex tw-pt-1 tw-items-center tw-justify-center tw-flex-shrink-0 tw-w-8 tw-h-8 tw-text-blue-800 tw-rounded-lg dark:tw-text-blue-200">
-                            <InfoIcon size={14} />
-                        </div>
                         <div className="tw-ms-3 tw-text-sm tw-font-normal tw-w-full">
-                            <span className="tw-mb-1 tw-font-semibold ">
-                                {a.title ?? 'Approve to continue...'}
+                            <span className="tw-mb-1 tw-font-bold tw-text-md tw-text-foreground">
+                                ⓘ {a.title ?? 'Pending Approval'}
                             </span>
-                            <div className="tw-ml-2 tw-my-4 tw-text-sm tw-text-foreground">
+                            <div className="tw-ml-2 tw-my-4 tw-text-sm tw-text-muted-foreground">
                                 {a.content}
                             </div>
                             <div className="tw-grid tw-grid-cols-2 tw-gap-2">
-                                <Button variant="danger" onClick={() => handleClick(a.id, false)}>
-                                    Cancel
+                                <Button
+                                    variant="danger"
+                                    onClick={() => handleClick(a.id, false)}
+                                    className="tw-opacity-85"
+                                >
+                                    Reject
                                 </Button>
                                 <Button variant="success" onClick={() => handleClick(a.id, true)}>
-                                    Approve
+                                    Accept
                                 </Button>
                             </div>
                         </div>

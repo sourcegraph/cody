@@ -1,4 +1,4 @@
-import type { ProcessingStep } from '@sourcegraph/cody-shared'
+import { ProcessType, type ProcessingStep } from '@sourcegraph/cody-shared'
 import { describe, expect, it, vi } from 'vitest'
 import { ProcessManager } from './ProcessManager'
 
@@ -30,8 +30,8 @@ describe('ProcessManager', () => {
                     expect.objectContaining({
                         content: 'test content',
                         id: 'test-tool',
-                        status: 'pending',
-                    }),
+                        state: 'pending',
+                    } satisfies ProcessingStep),
                 ])
             )
         })
@@ -58,7 +58,7 @@ describe('ProcessManager', () => {
 
             const steps = onChange.mock.lastCall?.[0]
             const toolStep = steps.find((s: ProcessingStep) => s.id === 'test-tool')
-            expect(toolStep?.status).toBe('success')
+            expect(toolStep?.state).toBe('success')
         })
 
         it('marks step as error when error provided', () => {
@@ -70,7 +70,7 @@ describe('ProcessManager', () => {
 
             const steps = onChange.mock.lastCall?.[0]
             const toolStep = steps.find((s: ProcessingStep) => s.id === 'test-tool')
-            expect(toolStep?.status).toBe('error')
+            expect(toolStep?.state).toBe('error')
             expect(toolStep?.error).toBeDefined()
         })
 
@@ -82,10 +82,10 @@ describe('ProcessManager', () => {
             manager.completeStep()
 
             const steps = onChange.mock.lastCall?.[0]
-            expect(steps.every((s: ProcessingStep) => s.status === 'success')).toBe(true)
+            expect(steps.every((s: ProcessingStep) => s.state === 'success')).toBe(true)
         })
 
-        it('preserves error status when completing all steps', () => {
+        it('preserves error state when completing all steps', () => {
             const { manager, onChange } = createManager()
             manager.addStep({ id: 'tool1', content: 'content1' })
             manager.completeStep('tool1', new Error('test error'))
@@ -94,7 +94,7 @@ describe('ProcessManager', () => {
 
             const steps = onChange.mock.lastCall?.[0]
             const errorStep = steps.find((s: ProcessingStep) => s.id === 'tool1')
-            expect(errorStep?.status).toBe('error')
+            expect(errorStep?.state).toBe('error')
         })
     })
 
@@ -113,9 +113,9 @@ describe('ProcessManager', () => {
                         content: 'confirmation content',
                         id: 'confirm-1',
                         title: 'Confirm Title',
-                        status: 'pending',
-                        type: 'confirmation',
-                    }),
+                        state: 'pending',
+                        type: ProcessType.Confirmation,
+                    } satisfies ProcessingStep),
                 ])
             )
         })

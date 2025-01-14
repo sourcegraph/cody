@@ -109,7 +109,7 @@ export class ExperimentalToolHandler implements AgentHandler {
                                             content: `Invoking tool ${
                                                 contentBlock.name
                                             }(${JSON.stringify(contentBlock.input)})`,
-                                            status: 'pending',
+                                            state: 'pending',
                                             type: ProcessType.Tool,
                                         },
                                     }

@@ -183,7 +183,7 @@ class CliTool extends CodyTool {
             const stepId = `${toolID}-${uuid.v4()}`
             const apporval = await callback?.onConfirmationNeeded(stepId, {
                 content: command,
-                title: 'Allow agent to execute the following command in your terminal?',
+                title: 'Send the output of the command below for context',
             })
             if (apporval) {
                 approvedCommands.add(command)

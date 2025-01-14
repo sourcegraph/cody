@@ -16,7 +16,7 @@ export class ProcessManager {
             ..._step,
             id: _step.id ?? uuid.v4(),
             type: _step.type,
-            status: 'pending',
+            state: 'pending',
             title: _step.title || undefined,
             content: _step.content || '',
         }
@@ -45,15 +45,15 @@ export class ProcessManager {
             if (step) {
                 this.processMap.set(id, {
                     ...step,
-                    status: error ? 'error' : 'success',
+                    state: error ? 'error' : 'success',
                     ...(error && { error: errorToChatError(error) }),
                 })
             }
         } else {
             // Complete all pending processes
             for (const [id, step] of this.processMap) {
-                if (step.status !== 'error') {
-                    this.processMap.set(id, { ...step, status: 'success' })
+                if (step.state !== 'error') {
+                    this.processMap.set(id, { ...step, state: 'success' })
                 }
             }
         }

@@ -89,7 +89,12 @@ export interface ProcessingStep {
     title?: string | undefined | null
 
     /**
-     * Description of what the step is doing or has completed
+     * Description of the step
+     */
+    description?: string | undefined | null
+
+    /**
+     * Content for the step
      */
     content: string
 
@@ -99,7 +104,7 @@ export interface ProcessingStep {
      * - 'success': Step completed successfully
      * - 'error': Step failed to complete
      */
-    status: 'pending' | 'success' | 'error'
+    state: 'pending' | 'success' | 'error'
 
     /**
      * Error information if the step failed

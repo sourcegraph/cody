@@ -125,13 +125,13 @@ const ProcessItem: FC<{ process: ProcessingStep; isContextLoading: boolean }> = 
                         size={14}
                         className="tw-text-green-500 tw-drop-shadow-md"
                     />
-                ) : process.status === 'error' ? (
+                ) : process.state === 'error' ? (
                     <CircleXIcon
                         strokeWidth={1.25}
                         size={14}
                         className="tw-text-red-500 tw-drop-shadow-md"
                     />
-                ) : process.status === 'success' || !isContextLoading ? (
+                ) : process.state === 'success' || !isContextLoading ? (
                     <CircleCheckIcon strokeWidth={1.25} size={14} className="tw-text-green-500" />
                 ) : (
                     <Loader2Icon strokeWidth={1.25} size={14} className="tw-animate-spin" />

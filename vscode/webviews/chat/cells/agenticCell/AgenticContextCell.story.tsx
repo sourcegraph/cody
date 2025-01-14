@@ -19,18 +19,18 @@ export const Default: Story = {
         processes: [
             {
                 id: 'review-agent',
-                status: 'success',
+                state: 'success',
                 content: 'reviewing...',
             },
             {
                 id: 'Code Search',
-                status: 'success',
+                state: 'success',
                 content: 'Found relevant code in repository',
                 type: ProcessType.Tool,
             },
             {
                 id: 'GitHub',
-                status: 'success',
+                state: 'success',
                 content: 'Checked pull requests',
                 type: ProcessType.Tool,
             },
@@ -44,13 +44,13 @@ export const Loading: Story = {
         processes: [
             {
                 id: 'Code Search',
-                status: 'pending',
+                state: 'pending',
                 content: 'Searching codebase...',
                 type: ProcessType.Tool,
             },
             {
                 id: 'Documentation',
-                status: 'pending',
+                state: 'pending',
                 content: 'Scanning docs...',
                 type: ProcessType.Tool,
             },
@@ -64,13 +64,13 @@ export const WithErrors: Story = {
         processes: [
             {
                 id: 'Code Search',
-                status: 'success',
+                state: 'success',
                 content: 'Search completed',
                 type: ProcessType.Tool,
             },
             {
                 id: 'API Call',
-                status: 'error',
+                state: 'error',
                 content: 'Failed to connect',
                 type: ProcessType.Tool,
             },

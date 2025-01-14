@@ -26,8 +26,8 @@ export const Default: Story = {
                     step: {
                         id: 'action1',
                         type: 'confirmation',
-                        title: 'Confirm Action',
-                        content: 'Would you like to proceed with this action?',
+                        title: 'Command Execution',
+                        content: 'git commit -m "Initial commit"',
                     },
                 })
                 return () => {}
