@@ -209,11 +209,11 @@ class SearchTool extends CodyTool {
                 subTag: ps`query`,
             },
             prompt: {
-                instruction: ps`Perform a symbol query search in the codebase-Do not support natural language search`,
+                instruction: ps`Perform a symbol query search in the codebase (Natural language search NOT supported)`,
                 placeholder: ps`SEARCH_QUERY`,
                 examples: [
-                    ps`Locate a function found in an error log: \`<TOOLSEARCH><query>function name</query></TOOLSEARCH>\``,
-                    ps`Search for a function in a file: \`<TOOLSEARCH><query>getController file:controller.py</query></TOOLSEARCH>\``,
+                    ps`Locate a symbol found in an error log: \`<TOOLSEARCH><query>symbol name</query></TOOLSEARCH>\``,
+                    ps`Search for a function named getController: \`<TOOLSEARCH><query>getController</query></TOOLSEARCH>\``,
                 ],
             },
         })
