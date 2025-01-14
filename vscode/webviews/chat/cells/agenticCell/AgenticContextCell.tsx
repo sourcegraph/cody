@@ -1,5 +1,5 @@
 import type { ProcessingStep } from '@sourcegraph/cody-shared'
-import { BrainIcon, CircleXIcon, DotIcon, Loader2Icon } from 'lucide-react'
+import { BrainIcon, CircleCheckIcon, CircleXIcon, Loader2Icon } from 'lucide-react'
 import { type FC, type FunctionComponent, createContext, memo, useCallback, useState } from 'react'
 import {
     Accordion,
@@ -31,7 +31,9 @@ export const AgenticContextCell: FunctionComponent<{
 
     const subHeader = !isContextLoading
         ? 'reviewed'
-        : processes?.findLast(p => p.id === 'status-report' && p.content)?.content || 'running...'
+        : processes?.findLast(p => p.type !== 'tool')?.content || 'starting...'
+
+    const statusClassName = processes?.some(p => p.error) ? 'tw-text-yellow-500' : 'tw-text-green-500'
 
     return (
         <div>
@@ -59,7 +61,7 @@ export const AgenticContextCell: FunctionComponent<{
                                 ) : (
                                     <BrainIcon
                                         size={NON_HUMAN_CELL_AVATAR_SIZE}
-                                        className="tw-text-green-500"
+                                        className={statusClassName}
                                     />
                                 )}
                                 <span className="tw-flex tw-items-baseline">
@@ -79,7 +81,11 @@ export const AgenticContextCell: FunctionComponent<{
                             overflow={false}
                         >
                             {processes && (
-                                <ProcessList processes={processes} isContextLoading={isContextLoading} />
+                                <ProcessList
+                                    processes={processes}
+                                    isContextLoading={isContextLoading}
+                                    headerIconClassName={statusClassName}
+                                />
                             )}
                         </AccordionContent>
                     </Cell>
@@ -89,10 +95,11 @@ export const AgenticContextCell: FunctionComponent<{
     )
 })
 
-const ProcessList: FC<{ processes: ProcessingStep[]; isContextLoading: boolean }> = ({
-    processes,
-    isContextLoading,
-}) => {
+const ProcessList: FC<{
+    processes: ProcessingStep[]
+    isContextLoading: boolean
+    headerIconClassName?: string
+}> = ({ processes, isContextLoading, headerIconClassName }) => {
     return (
         <div className="tw-flex tw-flex-col tw-gap-2">
             <div className="tw-flex tw-flex-col tw-gap-2">
@@ -101,6 +108,7 @@ const ProcessList: FC<{ processes: ProcessingStep[]; isContextLoading: boolean }
                         key={process.id}
                         process={process}
                         isContextLoading={isContextLoading}
+                        headerIconClassName={headerIconClassName}
                     />
                 ))}
             </div>
@@ -108,36 +116,38 @@ const ProcessList: FC<{ processes: ProcessingStep[]; isContextLoading: boolean }
     )
 }
 
-const ProcessItem: FC<{ process: ProcessingStep; isContextLoading: boolean }> = ({ process }) => {
-    if (!process.id || process.id === 'deep-cody') {
+const ProcessItem: FC<{
+    process: ProcessingStep
+    isContextLoading: boolean
+    headerIconClassName?: string
+}> = ({ process, isContextLoading, headerIconClassName }) => {
+    if (!process.id || process.type === 'confirmation') {
         return null
     }
 
     return (
         <div className="tw-flex tw-items-center">
-            <div className="tw-mr-3">
-                {process.status === 'error' ? (
+            <div className={`tw-mr-3 ${process.type === 'tool' ? 'tw-ml-4' : 'tw-ml-0'}`}>
+                {process.type !== 'tool' ? (
+                    <BrainIcon strokeWidth={1.5} size={14} className={headerIconClassName} />
+                ) : process.state === 'error' ? (
                     <CircleXIcon
-                        strokeWidth={1.25}
+                        strokeWidth={1.5}
                         size={14}
                         className="tw-text-red-500 tw-drop-shadow-md"
                     />
-                ) : process.content ? (
-                    <DotIcon strokeWidth={1.25} size={14} className="tw-text-transparent" />
+                ) : process.state === 'success' || !isContextLoading ? (
+                    <CircleCheckIcon strokeWidth={1.5} size={14} className="tw-text-green-500" />
                 ) : (
-                    <BrainIcon
-                        strokeWidth={1.25}
-                        size={14}
-                        className="tw-text-green-500 tw-drop-shadow-md"
-                    />
+                    <Loader2Icon strokeWidth={1.5} size={14} className="tw-animate-spin" />
                 )}
             </div>
             <div className="tw-flex-grow tw-min-w-0">
                 <div className="tw-truncate tw-max-w-full tw-text-sm">
-                    <span className={process.content ? 'tw-font-normal' : 'tw-font-semibold'}>
-                        {process.id}
+                    <span className={process.type === 'tool' ? 'tw-font-normal' : 'tw-font-semibold'}>
+                        {process.type !== 'tool' ? process.content : process.title ?? process.id}
                     </span>
-                    {process.content && (
+                    {process.type === 'tool' && process.content && (
                         <span
                             className="tw-font-normal tw-ml-1 tw-truncate tw-max-w-full tw-text-xs tw-muted-foreground tw-opacity-80"
                             title="Query generated by agent"

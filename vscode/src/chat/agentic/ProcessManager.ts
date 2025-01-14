@@ -1,55 +1,68 @@
 import { type ProcessingStep, errorToChatError } from '@sourcegraph/cody-shared'
+import { ProcessType } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import * as uuid from 'uuid'
 
 export class ProcessManager {
-    private processes: ProcessingStep[] = []
+    // Using a Map for O(1) lookups by ID
+    private processMap = new Map<string, ProcessingStep>()
 
-    constructor(private readonly onChange: (processes: ProcessingStep[]) => void) {}
+    constructor(
+        private readonly onChange: (processes: ProcessingStep[]) => void,
+        private readonly onRequest: (step: ProcessingStep) => Promise<boolean>
+    ) {}
 
-    public initializeStep(): void {
-        this.processes = [
-            {
-                content: '',
-                id: '',
-                step: 0,
-                status: 'pending',
-            },
-        ]
+    public addStep(_step: Partial<ProcessingStep>): ProcessingStep {
+        const step: ProcessingStep = {
+            ..._step,
+            id: _step.id ?? uuid.v4(),
+            type: _step.type,
+            state: 'pending',
+            title: _step.title || undefined,
+            content: _step.content || '',
+        }
+        this.processMap.set(step.id, step)
+        this.notifyChange()
+        return step
+    }
+
+    public async addConfirmationStep(id: string, _step: Partial<ProcessingStep>): Promise<boolean> {
+        const step = this.addStep({ ..._step, id, type: ProcessType.Confirmation })
+        return this.onRequest(step)
+    }
+
+    public updateStep(id: string, content: string): void {
+        const step = this.processMap.get(id)
+        if (!step) {
+            return
+        }
+        this.processMap.set(id, { ...step, content })
         this.notifyChange()
     }
 
-    public addStep(toolName: string, content: string): void {
-        this.processes.push({
-            content,
-            id: toolName,
-            step: this.processes.length,
-            status: 'pending',
-        })
-        this.notifyChange()
-    }
-
-    public completeStep(toolName?: string, error?: Error): void {
-        if (toolName) {
-            // Update specific tool
-            this.processes = this.processes.map(step =>
-                step.id === toolName
-                    ? {
-                          ...step,
-                          status: error ? 'error' : 'success',
-                          ...(error && { error: errorToChatError(error) }),
-                      }
-                    : step
-            )
+    public completeStep(id?: string, error?: Error): void {
+        if (id) {
+            const step = this.processMap.get(id)
+            if (step) {
+                this.processMap.set(id, {
+                    ...step,
+                    state: error ? 'error' : 'success',
+                    ...(error && { error: errorToChatError(error) }),
+                })
+            }
         } else {
             // Complete all pending processes
-            this.processes = this.processes.map(step => ({
-                ...step,
-                status: step.status === 'error' ? step.status : 'success',
-            }))
+            for (const [id, step] of this.processMap) {
+                if (step.state !== 'error') {
+                    this.processMap.set(id, { ...step, state: 'success' })
+                }
+            }
         }
         this.notifyChange()
     }
 
     private notifyChange(): void {
-        this.onChange(this.processes)
+        // Convert Map back to array in original order
+        const processes = Array.from(this.processMap.values())
+        this.onChange(processes)
     }
 }
