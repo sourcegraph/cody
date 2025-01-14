@@ -157,7 +157,7 @@ export const ToolboxButton: FC<ToolboxButtonProps> = memo(({ settings, api, isFi
                                     </div>
                                     <div className="tw-text-sm tw-mt-2">
                                         Allows agents to execute terminal commands. When enabled, this
-                                        this tool can execute <code>ls</code>, <code>dir</code>,{' '}
+                                        tool can execute <code>ls</code>, <code>dir</code>,{' '}
                                         <code>git</code>, etc. Configure additional commands in settings.
                                         <span className="tw-ml-1 tw-text-red-800 dark:tw-text-red-300">
                                             Enable with caution as mistakes are possible.
