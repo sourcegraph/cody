@@ -41,8 +41,6 @@ async function measureBundleSize(): Promise<void> {
             process.env.GITHUB_ENV,
             `WEBVIEW_BUNDLE_SIZE_MB=${(webviewBundle.size / (1024 * 1024)).toFixed(2)}\n`
         )
-    } else {
-        console.error('GITHUB_ENV environment variable is not defined.')
     }
 
     if (violations.length > 0) {
