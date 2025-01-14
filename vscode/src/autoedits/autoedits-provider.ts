@@ -158,269 +158,285 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         inlineCompletionContext: vscode.InlineCompletionContext,
         token?: vscode.CancellationToken
     ): Promise<AutoeditsResult | null> {
-        const start = getTimeNowInMillis()
-        const controller = new AbortController()
-        const abortSignal = controller.signal
-        token?.onCancellationRequested(() => controller.abort())
+        try {
+            const start = getTimeNowInMillis()
+            const controller = new AbortController()
+            const abortSignal = controller.signal
+            token?.onCancellationRequested(() => controller.abort())
 
-        await new Promise(resolve => setTimeout(resolve, INLINE_COMPLETION_DEFAULT_DEBOUNCE_INTERVAL_MS))
-        if (abortSignal.aborted) {
+            await new Promise(resolve =>
+                setTimeout(resolve, INLINE_COMPLETION_DEFAULT_DEBOUNCE_INTERVAL_MS)
+            )
+            if (abortSignal.aborted) {
+                autoeditsOutputChannelLogger.logDebugIfVerbose(
+                    'provideInlineCompletionItems',
+                    'debounce aborted before calculating getCurrentDocContext'
+                )
+                return null
+            }
+
             autoeditsOutputChannelLogger.logDebugIfVerbose(
                 'provideInlineCompletionItems',
-                'debounce aborted before calculating getCurrentDocContext'
+                'Calculating getCurrentDocContext...'
             )
-            return null
-        }
-
-        autoeditsOutputChannelLogger.logDebugIfVerbose(
-            'provideInlineCompletionItems',
-            'Calculating getCurrentDocContext...'
-        )
-        const docContext = getCurrentDocContext({
-            document,
-            position,
-            maxPrefixLength: tokensToChars(autoeditsProviderConfig.tokenLimit.prefixTokens),
-            maxSuffixLength: tokensToChars(autoeditsProviderConfig.tokenLimit.suffixTokens),
-        })
-
-        const {
-            fileWithMarkerPrompt,
-            areaPrompt,
-            codeToReplaceData,
-            codeToReplaceData: { codeToRewrite },
-        } = getCurrentFilePromptComponents({
-            docContext,
-            document,
-            position,
-            tokenBudget: autoeditsProviderConfig.tokenLimit,
-        })
-
-        autoeditsOutputChannelLogger.logDebugIfVerbose(
-            'provideInlineCompletionItems',
-            'Calculating context from contextMixer...'
-        )
-        const requestId = autoeditAnalyticsLogger.createRequest({
-            startedAt: performance.now(),
-            codeToReplaceData,
-            position,
-            docContext,
-            document,
-            payload: {
-                languageId: document.languageId,
-                model: autoeditsProviderConfig.model,
-                codeToRewrite,
-                triggerKind: autoeditTriggerKind.automatic,
-            },
-        })
-
-        const { context, contextSummary } = await this.contextMixer.getContext({
-            document,
-            position,
-            docContext,
-            maxChars: 32_000,
-        })
-        autoeditAnalyticsLogger.markAsContextLoaded({
-            requestId,
-            payload: {
-                contextSummary,
-            },
-        })
-        if (abortSignal.aborted) {
-            autoeditsOutputChannelLogger.logDebugIfVerbose(
-                'provideInlineCompletionItems',
-                'aborted in getContext'
-            )
-            return null
-        }
-
-        autoeditsOutputChannelLogger.logDebugIfVerbose(
-            'provideInlineCompletionItems',
-            'Calculating prompt from promptStrategy...'
-        )
-        const prompt = this.promptStrategy.getPromptForModelType({
-            fileWithMarkerPrompt,
-            areaPrompt,
-            context,
-            tokenBudget: autoeditsProviderConfig.tokenLimit,
-            isChatModel: autoeditsProviderConfig.isChatModel,
-        })
-
-        autoeditsOutputChannelLogger.logDebugIfVerbose(
-            'provideInlineCompletionItems',
-            'Calculating prediction from getPrediction...'
-        )
-        const initialPrediction = await this.getPrediction({
-            document,
-            position,
-            prompt,
-            codeToReplaceData,
-        })
-
-        if (abortSignal?.aborted) {
-            autoeditsOutputChannelLogger.logDebugIfVerbose(
-                'provideInlineCompletionItems',
-                'client aborted after getPrediction'
-            )
-
-            autoeditAnalyticsLogger.markAsDiscarded({
-                requestId,
-                discardReason: autoeditDiscardReason.clientAborted,
+            const docContext = getCurrentDocContext({
+                document,
+                position,
+                maxPrefixLength: tokensToChars(autoeditsProviderConfig.tokenLimit.prefixTokens),
+                maxSuffixLength: tokensToChars(autoeditsProviderConfig.tokenLimit.suffixTokens),
             })
-            return null
-        }
 
-        if (initialPrediction === undefined || initialPrediction.length === 0) {
-            autoeditsOutputChannelLogger.logDebugIfVerbose(
-                'provideInlineCompletionItems',
-                'received empty prediction'
-            )
-
-            autoeditAnalyticsLogger.markAsDiscarded({
-                requestId,
-                discardReason: autoeditDiscardReason.emptyPrediction,
-            })
-            return null
-        }
-
-        autoeditAnalyticsLogger.markAsLoaded({
-            requestId,
-            prompt,
-            payload: {
-                source: autoeditSource.network,
-                isFuzzyMatch: false,
-                responseHeaders: {},
-                prediction: initialPrediction,
-            },
-        })
-        autoeditsOutputChannelLogger.logDebug(
-            'provideInlineCompletionItems',
-            `"${requestId}" ============= Response:\n${initialPrediction}\n` +
-                `============= Time Taken: ${getTimeNowInMillis() - start}ms`
-        )
-
-        const prediction = shrinkPredictionUntilSuffix({
-            prediction: initialPrediction,
-            codeToReplaceData,
-        })
-
-        if (prediction === codeToRewrite) {
-            autoeditsOutputChannelLogger.logDebugIfVerbose(
-                'provideInlineCompletionItems',
-                'prediction equals to code to rewrite'
-            )
-            autoeditAnalyticsLogger.markAsDiscarded({
-                requestId,
-                discardReason: autoeditDiscardReason.predictionEqualsCodeToRewrite,
-            })
-            return null
-        }
-
-        const shouldFilterPredictionBasedRecentEdits = this.filterPrediction.shouldFilterPrediction({
-            uri: document.uri,
-            prediction,
-            codeToRewrite,
-        })
-
-        if (shouldFilterPredictionBasedRecentEdits) {
-            autoeditsOutputChannelLogger.logDebugIfVerbose(
-                'provideInlineCompletionItems',
-                'based on recent edits'
-            )
-            autoeditAnalyticsLogger.markAsDiscarded({
-                requestId,
-                discardReason: autoeditDiscardReason.recentEdits,
-            })
-            return null
-        }
-
-        const decorationInfo = getDecorationInfoFromPrediction(document, prediction, codeToReplaceData)
-
-        if (
-            isPredictedTextAlreadyInSuffix({
-                codeToRewrite,
-                decorationInfo,
-                suffix: codeToReplaceData.suffixInArea + codeToReplaceData.suffixAfterArea,
-            })
-        ) {
-            autoeditsOutputChannelLogger.logDebugIfVerbose(
-                'provideInlineCompletionItems',
-                'skip because the prediction equals to code to rewrite'
-            )
-            autoeditAnalyticsLogger.markAsDiscarded({
-                requestId,
-                discardReason: autoeditDiscardReason.suffixOverlap,
-            })
-            return null
-        }
-
-        const { inlineCompletionItems, updatedDecorationInfo, updatedPrediction } =
-            this.rendererManager.tryMakeInlineCompletions({
-                requestId,
-                prediction,
+            const {
+                fileWithMarkerPrompt,
+                areaPrompt,
                 codeToReplaceData,
+                codeToReplaceData: { codeToRewrite },
+            } = getCurrentFilePromptComponents({
+                docContext,
+                document,
+                position,
+                tokenBudget: autoeditsProviderConfig.tokenLimit,
+            })
+
+            autoeditsOutputChannelLogger.logDebugIfVerbose(
+                'provideInlineCompletionItems',
+                'Calculating context from contextMixer...'
+            )
+            const requestId = autoeditAnalyticsLogger.createRequest({
+                startedAt: performance.now(),
+                codeToReplaceData,
+                position,
+                docContext,
+                document,
+                payload: {
+                    languageId: document.languageId,
+                    model: autoeditsProviderConfig.model,
+                    codeToRewrite,
+                    triggerKind: autoeditTriggerKind.automatic,
+                },
+            })
+
+            const { context, contextSummary } = await this.contextMixer.getContext({
                 document,
                 position,
                 docContext,
+                maxChars: 32_000,
+            })
+            autoeditAnalyticsLogger.markAsContextLoaded({
+                requestId,
+                payload: {
+                    contextSummary,
+                },
+            })
+            if (abortSignal.aborted) {
+                autoeditsOutputChannelLogger.logDebugIfVerbose(
+                    'provideInlineCompletionItems',
+                    'aborted in getContext'
+                )
+                return null
+            }
+
+            autoeditsOutputChannelLogger.logDebugIfVerbose(
+                'provideInlineCompletionItems',
+                'Calculating prompt from promptStrategy...'
+            )
+            const prompt = this.promptStrategy.getPromptForModelType({
+                fileWithMarkerPrompt,
+                areaPrompt,
+                context,
+                tokenBudget: autoeditsProviderConfig.tokenLimit,
+                isChatModel: autoeditsProviderConfig.isChatModel,
+            })
+
+            autoeditsOutputChannelLogger.logDebugIfVerbose(
+                'provideInlineCompletionItems',
+                'Calculating prediction from getPrediction...'
+            )
+            const initialPrediction = await this.getPrediction({
+                document,
+                position,
+                prompt,
+                codeToReplaceData,
+            })
+
+            if (abortSignal?.aborted) {
+                autoeditsOutputChannelLogger.logDebugIfVerbose(
+                    'provideInlineCompletionItems',
+                    'client aborted after getPrediction'
+                )
+
+                autoeditAnalyticsLogger.markAsDiscarded({
+                    requestId,
+                    discardReason: autoeditDiscardReason.clientAborted,
+                })
+                return null
+            }
+
+            if (initialPrediction === undefined || initialPrediction.length === 0) {
+                autoeditsOutputChannelLogger.logDebugIfVerbose(
+                    'provideInlineCompletionItems',
+                    'received empty prediction'
+                )
+
+                autoeditAnalyticsLogger.markAsDiscarded({
+                    requestId,
+                    discardReason: autoeditDiscardReason.emptyPrediction,
+                })
+                return null
+            }
+
+            autoeditAnalyticsLogger.markAsLoaded({
+                requestId,
+                prompt,
+                payload: {
+                    source: autoeditSource.network,
+                    isFuzzyMatch: false,
+                    responseHeaders: {},
+                    prediction: initialPrediction,
+                },
+            })
+            autoeditsOutputChannelLogger.logDebug(
+                'provideInlineCompletionItems',
+                `"${requestId}" ============= Response:\n${initialPrediction}\n` +
+                    `============= Time Taken: ${getTimeNowInMillis() - start}ms`
+            )
+
+            const prediction = shrinkPredictionUntilSuffix({
+                prediction: initialPrediction,
+                codeToReplaceData,
+            })
+
+            if (prediction === codeToRewrite) {
+                autoeditsOutputChannelLogger.logDebugIfVerbose(
+                    'provideInlineCompletionItems',
+                    'prediction equals to code to rewrite'
+                )
+                autoeditAnalyticsLogger.markAsDiscarded({
+                    requestId,
+                    discardReason: autoeditDiscardReason.predictionEqualsCodeToRewrite,
+                })
+                return null
+            }
+
+            const shouldFilterPredictionBasedRecentEdits = this.filterPrediction.shouldFilterPrediction({
+                uri: document.uri,
+                prediction,
+                codeToRewrite,
+            })
+
+            if (shouldFilterPredictionBasedRecentEdits) {
+                autoeditsOutputChannelLogger.logDebugIfVerbose(
+                    'provideInlineCompletionItems',
+                    'based on recent edits'
+                )
+                autoeditAnalyticsLogger.markAsDiscarded({
+                    requestId,
+                    discardReason: autoeditDiscardReason.recentEdits,
+                })
+                return null
+            }
+
+            const decorationInfo = getDecorationInfoFromPrediction(
+                document,
+                prediction,
+                codeToReplaceData
+            )
+
+            if (
+                isPredictedTextAlreadyInSuffix({
+                    codeToRewrite,
+                    decorationInfo,
+                    suffix: codeToReplaceData.suffixInArea + codeToReplaceData.suffixAfterArea,
+                })
+            ) {
+                autoeditsOutputChannelLogger.logDebugIfVerbose(
+                    'provideInlineCompletionItems',
+                    'skip because the prediction equals to code to rewrite'
+                )
+                autoeditAnalyticsLogger.markAsDiscarded({
+                    requestId,
+                    discardReason: autoeditDiscardReason.suffixOverlap,
+                })
+                return null
+            }
+
+            const { inlineCompletionItems, updatedDecorationInfo, updatedPrediction } =
+                this.rendererManager.tryMakeInlineCompletions({
+                    requestId,
+                    prediction,
+                    codeToReplaceData,
+                    document,
+                    position,
+                    docContext,
+                    decorationInfo,
+                })
+
+            if (inlineCompletionItems === null && updatedDecorationInfo === null) {
+                autoeditsOutputChannelLogger.logDebugIfVerbose(
+                    'provideInlineCompletionItems',
+                    'no suggestion to render'
+                )
+                autoeditAnalyticsLogger.markAsDiscarded({
+                    requestId,
+                    discardReason: autoeditDiscardReason.emptyPredictionAfterInlineCompletionExtraction,
+                })
+                return null
+            }
+
+            const editor = vscode.window.activeTextEditor
+            if (!editor || !areSameUriDocs(document, editor.document)) {
+                autoeditsOutputChannelLogger.logDebugIfVerbose(
+                    'provideInlineCompletionItems',
+                    'no active editor'
+                )
+                autoeditAnalyticsLogger.markAsDiscarded({
+                    requestId,
+                    discardReason: autoeditDiscardReason.noActiveEditor,
+                })
+                return null
+            }
+
+            // Save metadata required for the agent API calls.
+            // `this.unstable_handleDidShowCompletionItem` can't receive anything apart from the `requestId`
+            // because the agent does not know anything about our internal state.
+            // We need to ensure all the relevant metadata can be retrieved from `requestId` only.
+            autoeditAnalyticsLogger.markAsPostProcessed({
+                requestId,
+                prediction: updatedPrediction,
+                decorationInfo: updatedDecorationInfo,
+                inlineCompletionItems,
+            })
+
+            if (!isRunningInsideAgent()) {
+                // Since VS Code has no callback as to when a completion is shown, we assume
+                // that if we pass the above visibility tests, the completion is going to be
+                // rendered in the UI
+                await this.unstable_handleDidShowCompletionItem(requestId)
+            }
+
+            if (updatedDecorationInfo) {
+                await this.rendererManager.renderInlineDecorations(updatedDecorationInfo)
+            }
+
+            // The data structure returned to the agent's from the `autoedits/execute` calls.
+            // Note: this is subject to change later once we start working on the agent API.
+            const result: AutoeditsResult = {
+                items: inlineCompletionItems || [],
+                requestId,
+                prediction,
                 decorationInfo,
-            })
+            }
 
-        if (inlineCompletionItems === null && updatedDecorationInfo === null) {
-            autoeditsOutputChannelLogger.logDebugIfVerbose(
-                'provideInlineCompletionItems',
-                'no suggestion to render'
-            )
-            autoeditAnalyticsLogger.markAsDiscarded({
-                requestId,
-                discardReason: autoeditDiscardReason.emptyPredictionAfterInlineCompletionExtraction,
-            })
+            return result
+        } catch (error) {
+            const errorToReport =
+                error instanceof Error
+                    ? error
+                    : new Error(`provideInlineCompletionItems autoedit error: ${error}`)
+
+            autoeditAnalyticsLogger.logError(errorToReport)
             return null
         }
-
-        const editor = vscode.window.activeTextEditor
-        if (!editor || !areSameUriDocs(document, editor.document)) {
-            autoeditsOutputChannelLogger.logDebugIfVerbose(
-                'provideInlineCompletionItems',
-                'no active editor'
-            )
-            autoeditAnalyticsLogger.markAsDiscarded({
-                requestId,
-                discardReason: autoeditDiscardReason.noActiveEditor,
-            })
-            return null
-        }
-
-        // Save metadata required for the agent API calls.
-        // `this.unstable_handleDidShowCompletionItem` can't receive anything apart from the `requestId`
-        // because the agent does not know anything about our internal state.
-        // We need to ensure all the relevant metadata can be retrieved from `requestId` only.
-        autoeditAnalyticsLogger.markAsPostProcessed({
-            requestId,
-            prediction: updatedPrediction,
-            decorationInfo: updatedDecorationInfo,
-            inlineCompletionItems,
-        })
-
-        if (!isRunningInsideAgent()) {
-            // Since VS Code has no callback as to when a completion is shown, we assume
-            // that if we pass the above visibility tests, the completion is going to be
-            // rendered in the UI
-            await this.unstable_handleDidShowCompletionItem(requestId)
-        }
-
-        if (updatedDecorationInfo) {
-            await this.rendererManager.renderInlineDecorations(updatedDecorationInfo)
-        }
-
-        // The data structure returned to the agent's from the `autoedits/execute` calls.
-        // Note: this is subject to change later once we start working on the agent API.
-        const result: AutoeditsResult = {
-            items: inlineCompletionItems || [],
-            requestId,
-            prediction,
-            decorationInfo,
-        }
-
-        return result
     }
 
     /**
