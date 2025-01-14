@@ -6,7 +6,6 @@ import {
     currentAuthStatusAuthed,
     firstResultFromOperation,
     getTokenCounterUtils,
-    logDebug,
     logError,
     telemetryEvents,
     wrapInActiveSpan,
@@ -66,7 +65,6 @@ export class OmniboxTelemetry {
     }
 
     public setIntentInfo(intentInfo: IntentInfo) {
-        logDebug('OmniboxTelemetry', 'setting intent info', JSON.stringify(intentInfo))
         this.intentInfo = intentInfo
     }
 

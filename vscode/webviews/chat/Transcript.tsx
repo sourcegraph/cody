@@ -365,14 +365,6 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                 return
             }
 
-            if (
-                !editorValue.contextItems.find(contextItem =>
-                    ['repository', 'tree'].includes(contextItem.type)
-                )
-            ) {
-                return
-            }
-
             setIntentResults(undefined)
 
             const query = inputTextWithMappedContextChipsFromPromptEditorState(editorValue.editorState)

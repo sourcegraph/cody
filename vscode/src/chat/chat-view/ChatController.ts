@@ -277,11 +277,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 this.setWebviewToChat()
                 break
             case 'submit': {
-                logDebug(
-                    'ChatController',
-                    'onDidReceiveMessage.submit',
-                    JSON.stringify({ intent: message.intent, scores: message.intentScores })
-                )
                 await this.handleUserMessage({
                     requestID: uuid.v4(),
                     inputText: PromptString.unsafe_fromUserQuery(message.text),
@@ -805,14 +800,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         })
         recorder.recordChatQuestionSubmitted(mentions)
 
-        logDebug(
-            'ChatController',
-            'getIntent',
-            JSON.stringify({
-                detectedIntent: detectedIntent,
-                detectedIntentScores: detectedIntentScores,
-            })
-        )
         const { intent, intentScores } = await this.getIntentAndScores({
             requestID,
             input: editorState
@@ -1144,11 +1131,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 return
             }
             this.chatBuilder.removeMessagesFromIndex(humanMessage, 'human')
-            logDebug(
-                'ChatController',
-                'handleEdit',
-                JSON.stringify({ intent: intent, scores: intentScores })
-            )
             return await this.handleUserMessage({
                 requestID,
                 inputText: text,
