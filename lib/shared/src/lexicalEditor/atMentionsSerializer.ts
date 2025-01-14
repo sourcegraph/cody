@@ -1,7 +1,7 @@
-import {type SerializedPromptEditorValue} from "./editorState";
+import type { SerializedPromptEditorValue } from './editorState'
 
 export function serialize(m: SerializedPromptEditorValue): string {
-    return `cody://serialized?data=${btoa(JSON.stringify(m, undefined, 0))}`;
+    return `cody://serialized?data=${btoa(JSON.stringify(m, undefined, 0))}`
 }
 
 export function deserialize(s: string): SerializedPromptEditorValue | undefined {
@@ -10,5 +10,5 @@ export function deserialize(s: string): SerializedPromptEditorValue | undefined 
         return undefined
     }
 
-    return JSON.parse(atob(s.slice('cody://serialized?data='.length))) as SerializedPromptEditorValue;
+    return JSON.parse(atob(s.slice('cody://serialized?data='.length))) as SerializedPromptEditorValue
 }
