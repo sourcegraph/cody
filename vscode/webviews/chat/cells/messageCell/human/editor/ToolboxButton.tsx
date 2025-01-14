@@ -117,7 +117,7 @@ export const ToolboxButton: FC<ToolboxButtonProps> = memo(({ settings, api, isFi
                         </h2>
                         <div
                             id="accordion-collapse-body"
-                            className="tw-ml-5 tw-p-5 tw-flex tw-flex-col tw-gap-5 tw-mt-1"
+                            className="tw-ml-5 tw-p-5 tw-flex tw-flex-col tw-gap-3 tw-my-2"
                         >
                             <div className="tw-text-sm">
                                 <span>
@@ -128,6 +128,8 @@ export const ToolboxButton: FC<ToolboxButtonProps> = memo(({ settings, api, isFi
                                     {/* <a href={AGENTIC_CONTEXT_DOCS}>Read the docs</a> to learn more. */}
                                 </span>
                             </div>
+                            {/* Seperator */}
+                            <div className="tw-border-b tw-border-border tw-my-2" />
                             {/* Only shows the Terminal access option if client and instance supports it */}
                             {settings.agent?.name && !settings.shell?.error && (
                                 <div>
@@ -156,12 +158,10 @@ export const ToolboxButton: FC<ToolboxButtonProps> = memo(({ settings, api, isFi
                                         />
                                     </div>
                                     <div className="tw-text-sm tw-mt-2">
-                                        Allows agents to execute terminal commands. When enabled, this
-                                        tool can execute <code>ls</code>, <code>dir</code>,{' '}
-                                        <code>git</code>, etc. Configure additional commands in settings.
-                                        <span className="tw-ml-1 tw-text-red-800 dark:tw-text-red-300">
-                                            Enable with caution as mistakes are possible.
-                                        </span>
+                                        Allows agents to execute commands like <code>ls</code>,{' '}
+                                        <code>dir</code>, <code>git</code>, and other commands for
+                                        context. The agent will ask permission each time it would like to
+                                        run a command.
                                     </div>
                                 </div>
                             )}
