@@ -1,7 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk'
 import type { ChatNetworkClientParams } from '..'
 import { CompletionStopReason, contextFiltersProvider, getCompletionsModelConfig, onAbort } from '../..'
-// import { logDebug } from '../../logger'
+import { logDebug } from '../../logger'
 
 export async function anthropicChatClient({
     params,
@@ -33,21 +33,31 @@ export async function anthropicChatClient({
     }
 
     try {
+        let foundFirstContext = false
         const messages = await (async () => {
             const rawMessages = await Promise.all(
-                params.messages.map(async msg => ({
-                    role: msg.speaker === 'human' ? 'user' : 'assistant',
-                    content: [
-                        {
+                params.messages.map(async msg => {
+                    const isCodebaseContext = !foundFirstContext &&
+                        msg.speaker === 'human' &&
+                        msg.text?.toString().includes('Codebase context from')
+
+                    if (isCodebaseContext) {
+                        foundFirstContext = true
+                    }
+
+                    return {
+                        role: msg.speaker === 'human' ? 'user' : 'assistant',
+                        content: [{
                             type: 'text',
-                            text: (await msg.text?.toFilteredString(contextFiltersProvider)) ?? '',
-                            cache_control: { type: 'ephemeral' },
-                        },
-                    ],
-                }))
+                            text: await msg.text?.toFilteredString(contextFiltersProvider) ?? '',
+                            ...(isCodebaseContext && { cache_control: { type: 'ephemeral' } })
+                        }],
+                    }
+                })
             )
 
-            const firstRole = rawMessages[0]?.role
+            const firstRole =
+            rawMessages[0]?.role
             const groupedMessages = {
                 user: [],
                 assistant: [],
@@ -103,10 +113,14 @@ export async function anthropicChatClient({
             })
             .then(async stream => {
                 onAbort(signal, () => stream.controller.abort())
-                const requestEnd = performance.now()
-                let finalMessage: any
-
                 for await (const messageStreamEvent of stream) {
+                    if (messageStreamEvent.type === 'message_start') {
+                        // Capture initial usage metrics
+                        logDebug('promptCachingMetrics', 'input_tokens:', messageStreamEvent.message.usage.input_tokens)
+                        logDebug('promptCachingMetrics', 'output_tokens:', messageStreamEvent.message.usage.output_tokens)
+                        logDebug('promptCachingMetrics', 'cache_creation_input_tokens:', (messageStreamEvent.message.usage as any).cache_creation_input_tokens)
+                        logDebug('promptCachingMetrics', 'cache_read_input_tokens:', (messageStreamEvent.message.usage as any).cache_read_input_tokens)
+                    }
                     if (messageStreamEvent.type === 'content_block_delta') {
                         result.completion += messageStreamEvent.delta.text
                         cb.onChange(result.completion)
@@ -118,20 +132,10 @@ export async function anthropicChatClient({
                     }
 
                     if (messageStreamEvent.type === 'message_stop') {
-                        finalMessage = messageStreamEvent
-                        result.metrics = {
-                            networkLatency: networkStart - requestStart,
-                            processingTime: requestEnd - networkStart,
-                            totalTime: requestEnd - requestStart,
-                            usage: {
-                                input_tokens: finalMessage?.usage?.input_tokens ?? 0,
-                                output_tokens: finalMessage?.usage?.output_tokens ?? 0,
-                                cache_creation_input_tokens:
-                                    finalMessage?.usage?.cache_creation_input_tokens,
-                                cache_read_input_tokens: finalMessage?.usage?.cache_read_input_tokens,
-                            },
-                        }
-                        log?.onComplete(result)
+                        const requestEnd = performance.now()
+                        logDebug('promptCachingMetrics', 'networkLatency:', networkStart - requestStart)
+                        logDebug('promptCachingMetrics', 'processingTime:', requestEnd - networkStart)
+                        logDebug('promptCachingMetrics', 'totalTime:', requestEnd - requestStart)
                         break
                     }
                 }
