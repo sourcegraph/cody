@@ -123,7 +123,7 @@ async function loginAction(
             : await captureAccessTokenViaBrowserRedirect(serverEndpoint, spinner)
     const client = SourcegraphGraphQLAPIClient.withStaticConfig({
         configuration: { telemetryLevel: 'agent' },
-        auth: { accessToken: token, serverEndpoint: serverEndpoint },
+        auth: { credentials: { token: options.accessToken }, serverEndpoint: serverEndpoint },
         clientState: { anonymousUserID: null },
     })
     const userInfo = await client.getCurrentUserInfo()
@@ -256,7 +256,7 @@ async function promptUserAboutLoginMethod(spinner: Ora, options: LoginOptions): 
     try {
         const client = SourcegraphGraphQLAPIClient.withStaticConfig({
             configuration: { telemetryLevel: 'agent' },
-            auth: { accessToken: options.accessToken, serverEndpoint: options.endpoint },
+            auth: { credentials: { token: options.accessToken }, serverEndpoint: options.endpoint },
             clientState: { anonymousUserID: null },
         })
         const userInfo = await client.getCurrentUserInfo()

@@ -1486,11 +1486,10 @@ export class Agent extends MessageHandler implements ExtensionClient {
         config: ExtensionConfiguration,
         params?: { forceAuthentication: boolean }
     ): Promise<AuthStatus> {
-        const isAuthChange = vscode_shim.isAuthenticationChange(config)
+        const isAuthChange = vscode_shim.isTokenOrEndpointChange(config)
         vscode_shim.setExtensionConfiguration(config)
 
-        // If this is an authentication change we need to reauthenticate prior to firing events
-        // that update the clients
+        // If this is an token or endpoint change we need to save them prior to firing events that update the clients
         try {
             if ((isAuthChange || params?.forceAuthentication) && config.serverEndpoint) {
                 await authProvider.validateAndStoreCredentials(
@@ -1500,7 +1499,9 @@ export class Agent extends MessageHandler implements ExtensionClient {
                         },
                         auth: {
                             serverEndpoint: config.serverEndpoint,
-                            accessToken: config.accessToken ?? null,
+                            credentials: config.accessToken
+                                ? { token: config.accessToken, source: 'paste' }
+                                : undefined,
                         },
                         clientState: {
                             anonymousUserID: config.anonymousUserID ?? null,
