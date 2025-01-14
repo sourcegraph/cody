@@ -26,7 +26,7 @@ async function executeCommand(cmd: ExternalAuthCommand): Promise<string> {
         shell: cmd.shell,
         timeout: cmd.timeout,
         windowsHide: cmd.windowsHide,
-        env: cmd.environment ? { ...process.env, ...cmd.environment } : process.env,
+        env: { ...process.env, ...cmd.environment },
     })
 
     return stdout.trim()

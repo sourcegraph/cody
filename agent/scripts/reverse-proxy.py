@@ -1,9 +1,10 @@
+#!/usr/bin/env python3
+
 from aiohttp import web, ClientSession
 from urllib.parse import urlparse
+import argparse
 import asyncio
-
-target_url = ''
-port = 5050
+import re
 
 async def proxy_handler(request):
     async with ClientSession(auto_decompress=False) as session:
@@ -22,9 +23,9 @@ async def proxy_handler(request):
 
         # Use value of 'Authorization: Bearer' to fill 'X-Forwarded-User' and remove 'Authorization' header
         if 'Authorization' in headers:
-            values = headers['Authorization'].split()
-            if values and values[0] == 'Bearer':
-                headers['X-Forwarded-User'] = values[1]
+            match = re.match('Bearer (.*)', headers['Authorization'])
+            if match:
+                headers['X-Forwarded-User'] = match.group(1)
             del headers['Authorization']
 
         # Forward the request to target
@@ -51,18 +52,29 @@ async def proxy_handler(request):
 app = web.Application()
 app.router.add_route('*', '/{path_info:.*}', proxy_handler)
 
+"""
+Reverse Proxy Server for testing External Auth Providers in Cody
 
+This script implements a simple reverse proxy server to facilitate testing of external authentication providers
+with Cody. It's role is to simulate simulate HTTP authentication proxy setups. It handles incoming requests by:
+- Forwarding them to a target Sourcegraph instance
+- Converting Bearer tokens from Authorization headers into X-Forwarded-User headers
+- Managing request/response streaming
+- Handling header modifications required for Cloudflare compatibility
+
+Target Sourcegraph instance needs to be configured to use HTTP authentication proxies
+as described in https://sourcegraph.com/docs/admin/auth#http-authentication-proxies
+"""
 if __name__ == '__main__':
-    print('Usage:  python reverse_proxy.py [target_url] [proxy_port]')
+    parser = argparse.ArgumentParser(description='External auth provider test proxy server')
+    parser.add_argument('target_url', help='Target Sourcegraph instance URL to proxy to')
+    parser.add_argument('proxy_port', type=int, nargs='?', default=5555,
+                       help='Port for the proxy server (default: %(default)s)')
 
-    import sys
-    if (len(sys.argv) < 2):
-        print('Please specify target_url')
-        sys.exit(1)
-    if len(sys.argv) > 1:
-        target_url = sys.argv[1]
-    if len(sys.argv) > 2:
-        port = int(sys.argv[2])
+    args = parser.parse_args()
+
+    target_url = args.target_url.rstrip('/')
+    port = args.proxy_port
 
     print(f'Starting proxy server on port {port} targeting {target_url}...')
     web.run_app(app, port=port)
