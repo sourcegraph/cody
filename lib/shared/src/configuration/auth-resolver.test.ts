@@ -61,9 +61,10 @@ describe('auth-resolver', () => {
     })
 
     test('resolve custom auth provider', async () => {
+        const expirationEpoch = 2736874802
         const credentialsJson = JSON.stringify({
             headers: { Authorization: 'token X' },
-            expiration: 1337,
+            expiration: expirationEpoch,
         })
 
         const auth = await resolveAuth(
@@ -91,11 +92,73 @@ describe('auth-resolver', () => {
         expect(auth.serverEndpoint).toBe('https://my-server.com/')
 
         const headerCredential = auth.credentials as HeaderCredential
-        expect(headerCredential.expiration).toBe(1337)
+        expect(headerCredential.expiration).toBe(expirationEpoch)
         expect(headerCredential.getHeaders()).toStrictEqual({
             Authorization: 'token X',
         })
 
         expect(JSON.stringify(headerCredential)).not.toContain('token X')
+    })
+
+    test('resolve custom auth provider error handling - bad JSON', async () => {
+        const auth = await resolveAuth(
+            'sourcegraph.com',
+            {
+                authExternalProviders: [
+                    {
+                        endpoint: 'https://my-server.com',
+                        executable: {
+                            commandLine: ['echo '],
+                            shell: isWindows() ? process.env.ComSpec : '/bin/bash',
+                            timeout: 5000,
+                            windowsHide: true,
+                        },
+                    },
+                ],
+                overrideServerEndpoint: 'https://my-server.com',
+                overrideAuthToken: undefined,
+            },
+            new TempClientSecrets(new Map())
+        )
+
+        expect(auth.serverEndpoint).toBe('https://my-server.com/')
+
+        expect(auth.credentials).toBe(undefined)
+        expect(auth.error.message).toContain('Unexpected end of JSON input')
+    })
+
+    test('resolve custom auth provider error handling - bad expiration', async () => {
+        const expirationEpoch = 1636865002
+        const credentialsJson = JSON.stringify({
+            headers: { Authorization: 'token X' },
+            expiration: expirationEpoch,
+        })
+
+        const auth = await resolveAuth(
+            'sourcegraph.com',
+            {
+                authExternalProviders: [
+                    {
+                        endpoint: 'https://my-server.com',
+                        executable: {
+                            commandLine: [
+                                isWindows() ? `echo ${credentialsJson}` : `echo '${credentialsJson}'`,
+                            ],
+                            shell: isWindows() ? process.env.ComSpec : '/bin/bash',
+                            timeout: 5000,
+                            windowsHide: true,
+                        },
+                    },
+                ],
+                overrideServerEndpoint: 'https://my-server.com',
+                overrideAuthToken: undefined,
+            },
+            new TempClientSecrets(new Map())
+        )
+
+        expect(auth.serverEndpoint).toBe('https://my-server.com/')
+
+        expect(auth.credentials).toBe(undefined)
+        expect(auth.error.message).toContain('Credentials expiration cannot be se to the past date')
     })
 })
