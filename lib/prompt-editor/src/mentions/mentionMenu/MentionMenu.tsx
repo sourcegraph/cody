@@ -10,7 +10,6 @@ import {
     REMOTE_DIRECTORY_PROVIDER_URI,
     REMOTE_FILE_PROVIDER_URI,
     SYMBOL_CONTEXT_MENTION_PROVIDER,
-    isRemoteWorkspaceProvider,
     parseMentionQuery,
 } from '@sourcegraph/cody-shared'
 import { clsx } from 'clsx'
@@ -117,10 +116,6 @@ export const MentionMenu: FunctionComponent<
             const provider = data.providers.find(p => commandRowValue(p) === value)
             if (!provider) {
                 throw new Error(`No provider found with value ${value}`)
-            }
-
-            if (isRemoteWorkspaceProvider(provider.id)) {
-                return
             }
 
             updateMentionMenuParams({ parentItem: provider })
@@ -258,63 +253,71 @@ export const MentionMenu: FunctionComponent<
     ))
 
     return (
-        <Command
-            loop={true}
-            shouldFilter={false}
-            value={effectiveValueRow ? commandRowValue(effectiveValueRow) : undefined}
-            onValueChange={setValue}
-            className={styles.container}
-            label="@-mention context"
-            ref={ref}
-            data-testid="mention-menu"
-        >
-            <CommandList className="!tw-max-h-[unset]">
-                {providers.length > 0 && (
-                    <CommandGroup className={COMMAND_GROUP_CLASS_NAME}>{providers}</CommandGroup>
-                )}
+        <div>
+            <Command
+                loop={true}
+                shouldFilter={false}
+                value={effectiveValueRow ? commandRowValue(effectiveValueRow) : undefined}
+                onValueChange={setValue}
+                className={styles.container}
+                label="@-mention context"
+                ref={ref}
+                data-testid="mention-menu"
+            >
+                <CommandList className="!tw-max-h-[unset]">
+                    {providers.length > 0 && (
+                        <CommandGroup className={COMMAND_GROUP_CLASS_NAME}>{providers}</CommandGroup>
+                    )}
 
-                {(heading || (data.items && data.items.length > 0)) && (
-                    <CommandGroup heading={heading} className={COMMAND_GROUP_CLASS_NAME}>
-                        {data.items?.map(item => (
-                            <CommandItem
-                                key={commandRowValue(item)}
-                                value={commandRowValue(item)}
-                                disabled={item.isIgnored}
-                                onSelect={onCommandSelect}
-                                className={clsx(styles.item, styles.contextItem, COMMAND_ROW_CLASS_NAME)}
-                            >
-                                <MentionMenuContextItemContent query={mentionQuery} item={item} />
-                            </CommandItem>
-                        ))}
-                    </CommandGroup>
-                )}
+                    {(heading || (data.items && data.items.length > 0)) && (
+                        <CommandGroup heading={heading} className={COMMAND_GROUP_CLASS_NAME}>
+                            {data.items?.map(item => (
+                                <CommandItem
+                                    key={commandRowValue(item)}
+                                    value={commandRowValue(item)}
+                                    disabled={item.isIgnored}
+                                    onSelect={onCommandSelect}
+                                    className={clsx(
+                                        styles.item,
+                                        styles.contextItem,
+                                        COMMAND_ROW_CLASS_NAME
+                                    )}
+                                >
+                                    <MentionMenuContextItemContent query={mentionQuery} item={item} />
+                                </CommandItem>
+                            ))}
+                        </CommandGroup>
+                    )}
 
-                {params.parentItem?.id === REMOTE_DIRECTORY_PROVIDER_URI && !!data.items?.length && (
-                    <CommandLoading
-                        className={clsx(
-                            COMMAND_ROW_CLASS_NAME,
-                            COMMAND_ROW_TEXT_CLASS_NAME,
-                            'tw-bg-accent'
-                        )}
-                    >
-                        * Sourced from the remote default branch
-                    </CommandLoading>
-                )}
+                    {params.parentItem?.id === REMOTE_DIRECTORY_PROVIDER_URI && !!data.items?.length && (
+                        <CommandLoading
+                            className={clsx(
+                                COMMAND_ROW_CLASS_NAME,
+                                COMMAND_ROW_TEXT_CLASS_NAME,
+                                'tw-bg-accent'
+                            )}
+                        >
+                            * Sourced from the remote default branch
+                        </CommandLoading>
+                    )}
 
-                {data.items && data.items.length === 0 ? (
-                    <CommandEmpty className={clsx(COMMAND_ROW_CLASS_NAME, COMMAND_ROW_TEXT_CLASS_NAME)}>
-                        {getEmptyLabel(params.parentItem, mentionQuery)}
-                    </CommandEmpty>
-                ) : null}
-                {data.error && (
-                    <CommandLoading
-                        className={clsx(COMMAND_ROW_CLASS_NAME, COMMAND_ROW_TEXT_CLASS_NAME)}
-                    >
-                        Error: {data.error}
-                    </CommandLoading>
-                )}
-            </CommandList>
-        </Command>
+                    {data.items && data.items.length === 0 ? (
+                        <CommandEmpty
+                            className={clsx(COMMAND_ROW_CLASS_NAME, COMMAND_ROW_TEXT_CLASS_NAME)}
+                        >
+                            {getEmptyLabel(params.parentItem, mentionQuery)}
+                        </CommandEmpty>
+                    ) : null}
+                    {data.error && (
+                        <CommandLoading
+                            className={clsx(COMMAND_ROW_CLASS_NAME, COMMAND_ROW_TEXT_CLASS_NAME)}
+                        >
+                            Error: {data.error}
+                        </CommandLoading>
+                    )}
+                </CommandList>
+            </Command>
+        </div>
     )
 }
 

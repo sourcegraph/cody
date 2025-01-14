@@ -678,8 +678,11 @@ async function registerTestCommands(
             }
         }),
         // Access token - this is only used in configuration tests
-        vscode.commands.registerCommand('cody.test.token', async (serverEndpoint, accessToken) =>
-            authProvider.validateAndStoreCredentials({ serverEndpoint, accessToken }, 'always-store')
+        vscode.commands.registerCommand('cody.test.token', async (serverEndpoint, token) =>
+            authProvider.validateAndStoreCredentials(
+                { credentials: { token }, serverEndpoint },
+                'always-store'
+            )
         )
     )
 }
