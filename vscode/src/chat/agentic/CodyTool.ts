@@ -212,7 +212,7 @@ class SearchTool extends CodyTool {
                 instruction: ps`Perform a symbol query search in the codebase (Natural language search NOT supported)`,
                 placeholder: ps`SEARCH_QUERY`,
                 examples: [
-                    ps`Locate a symbol found in an error log: \`<TOOLSEARCH><query>$symbol_name</query></TOOLSEARCH>\``,
+                    ps`Locate a symbol found in an error log: \`<TOOLSEARCH><query>symbol name</query></TOOLSEARCH>\``,
                     ps`Search for a function named getController: \`<TOOLSEARCH><query>getController</query></TOOLSEARCH>\``,
                 ],
             },
