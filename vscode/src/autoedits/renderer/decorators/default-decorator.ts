@@ -258,12 +258,12 @@ export class DefaultDecorator implements AutoEditsDecorator {
     }
 
     private renderAddedLinesDecorations(
-        _addedLinesInfo: AddedLinesDecorationInfo[],
+        addedLinesInfo: AddedLinesDecorationInfo[],
         startLine: number,
         replacerCol: number
     ): void {
         // Blockify the added lines so they are suitable to be rendered together as a VS Code decoration
-        const blockifiedAddedLines = blockify(this.editor.document, _addedLinesInfo)
+        const blockifiedAddedLines = blockify(this.editor.document, addedLinesInfo)
         const replacerDecorations: vscode.DecorationOptions[] = []
 
         for (let i = 0; i < blockifiedAddedLines.length; i++) {

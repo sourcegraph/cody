@@ -5,6 +5,19 @@ import type { AddedLinesDecorationInfo } from './default-decorator'
 
 export const UNICODE_SPACE = '\u00A0'
 
+/**
+ * Given a list of added lines, blockify them to make them suitable for rendering as a VS Code decoration.
+ *
+ * For example, given the code block:
+ * "    hello
+ *          world"
+ * We blockify it like so:
+ * "hello
+ *      world"
+ *
+ * Notice that the start indentation is adjusted left, and each line is padded to match the length of the longest line.
+ * We also convert any "normal" spaces to unicode spaces. This is also to improve rendering as a VS Code decoration.
+ */
 export function blockify(
     document: vscode.TextDocument,
     addedLines: AddedLinesDecorationInfo[]
