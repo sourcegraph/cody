@@ -31,6 +31,7 @@ export interface SharedProperties {
     sessionID: string
     repoIsPublic: boolean
     repoMetadata?: { commit?: string; remoteID?: string }[]
+    chatAgent?: string | undefined | null
 }
 export const events = [
     event(
@@ -76,6 +77,7 @@ export const events = [
                               )
                             : undefined,
                         gitMetadata,
+                        chatAgent: params.chatAgent,
                     },
                     billingMetadata: {
                         product: 'cody',
@@ -171,6 +173,7 @@ export const events = [
                                   tokenCounterUtils
                               )
                             : undefined,
+                        chatAgent: params.chatAgent,
                     },
                     billingMetadata: {
                         product: 'cody',
@@ -296,6 +299,7 @@ function publicContextSummary(globalPrefix: string, context: ContextItem[]) {
                 sortedSizes.length > 0 ? sizes.reduce((a, b) => a + b, 0) / sizes.length : undefined,
             [`${prefix}.size.median`]:
                 sortedSizes.length > 0 ? sortedSizes[Math.floor(sortedSizes.length / 2)] : undefined,
+            [`${prefix}.size.total`]: sortedSizes.reduce((a, b) => a + b, 0),
         } as const
     }
 

@@ -740,6 +740,12 @@ const languages: Partial<typeof vscode_types.languages> = {
             'vimrc',
         ])
     },
+    getDiagnostics() {
+        return []
+    },
+    registerCodeLensProvider() {
+        return { dispose: () => {} }
+    },
 }
 
 export enum TextDocumentChangeReason {
@@ -803,8 +809,12 @@ export const vsCodeMocks = {
             options: { tabSize: 4 },
             selection: {},
         },
+        onDidChangeVisibleTextEditors() {},
         onDidChangeActiveTextEditor() {},
         onDidChangeTextEditorSelection() {},
+        onDidChangeTextEditorVisibleRanges() {},
+        onDidChangeNotebookEditorVisibleRanges() {},
+        onDidChangeActiveNotebookEditor() {},
         onDidChangeWindowState() {},
         state: { focused: false },
         createTextEditorDecorationType: () => ({
@@ -826,6 +836,7 @@ export const vsCodeMocks = {
     },
     commands: {
         registerCommand: () => ({ dispose: () => {} }),
+        executeCommand: () => Promise.resolve(),
     },
     workspace: {
         fs: workspaceFs,
@@ -851,7 +862,9 @@ export const vsCodeMocks = {
         asRelativePath(path: string | vscode_types.Uri) {
             return path.toString()
         },
+        registerTextDocumentContentProvider() {},
         onDidChangeTextDocument() {},
+        onDidOpenTextDocument() {},
         onDidCloseTextDocument() {},
         onDidRenameFiles() {},
         onDidDeleteFiles() {},
@@ -869,6 +882,8 @@ export const vsCodeMocks = {
     },
     InlineCompletionTriggerKind,
     SymbolKind,
+    QuickPickItemKind,
+    DecorationRangeBehavior,
     FoldingRange,
     FoldingRangeKind,
     CodeActionKind,
@@ -898,9 +913,9 @@ export const DEFAULT_VSCODE_SETTINGS = {
     },
     commandCodeLenses: false,
     experimentalSupercompletions: false,
-    experimentalAutoeditsEnabled: undefined,
-    experimentalAutoeditsRendererTesting: false,
-    experimentalAutoeditsConfigOverride: undefined,
+    experimentalAutoEditEnabled: false,
+    experimentalAutoEditRendererTesting: false,
+    experimentalAutoEditConfigOverride: undefined,
     experimentalMinionAnthropicKey: undefined,
     experimentalTracing: false,
     experimentalCommitMessage: true,
@@ -918,7 +933,6 @@ export const DEFAULT_VSCODE_SETTINGS = {
     internalUnstable: false,
     internalDebugContext: false,
     internalDebugState: false,
-    agenticContextExperimentalShell: false,
     agenticContextExperimentalOptions: {},
     autocompleteAdvancedProvider: 'default',
     autocompleteAdvancedModel: null,
@@ -934,4 +948,5 @@ export const DEFAULT_VSCODE_SETTINGS = {
     experimentalGuardrailsTimeoutSeconds: undefined,
     overrideAuthToken: undefined,
     overrideServerEndpoint: undefined,
+    authExternalProviders: [],
 } satisfies ClientConfiguration

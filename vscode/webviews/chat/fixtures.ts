@@ -25,7 +25,8 @@ export const FIXTURE_TRANSCRIPT: Record<
     | 'explainCode2'
     | 'experimentalGenerateUnitTest'
     | 'long'
-    | 'empty',
+    | 'empty'
+    | 'toolUse',
     ChatMessage[]
 > = {
     simple: transcriptFixture([
@@ -181,6 +182,30 @@ export const FIXTURE_TRANSCRIPT: Record<
         },
     ]),
     empty: [],
+    toolUse: transcriptFixture([
+        {
+            speaker: 'human',
+            text: ps`What does foo.ts do?`,
+        },
+        {
+            speaker: 'assistant',
+            subMessages: [
+                {
+                    text: ps`I will read the file foo.ts.`,
+                },
+                {
+                    step: {
+                        id: 'read_file',
+                        content: `Invoking tool get_file({"path":"vscode/src/main.ts"})`,
+                        status: 'success',
+                    },
+                },
+                {
+                    text: ps`According to the contents of the file, foo.ts contains the function bar.`,
+                },
+            ],
+        },
+    ]),
 }
 
 export const FIXTURE_USER_ACCOUNT_INFO: UserAccountInfo = {

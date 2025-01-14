@@ -27,7 +27,7 @@ import { RestClient } from '../sourcegraph-api/rest/client'
 import type { UserProductSubscription } from '../sourcegraph-api/userProductSubscription'
 import { CHAT_INPUT_TOKEN_BUDGET } from '../token/constants'
 import { isError } from '../utils'
-import { getExperimentalClientModelByFeatureFlag } from './client'
+import { TOOL_CODY_MODEL } from './client'
 import { type Model, type ServerModel, createModel, createModelFromServerModel } from './model'
 import type {
     DefaultsAndUserPreferencesForEndpoint,
@@ -197,6 +197,10 @@ export function syncModels({
                                     data.primaryModels.push(...getModelsFromVSCodeConfiguration(config))
 
                                     // For DotCom users with early access or on the waitlist, replace the waitlist tag with the appropriate tags.
+                                    const enableToolCody: Observable<boolean> = resolvedConfig.pipe(
+                                        map(c => !!c.configuration.experimentalMinionAnthropicKey),
+                                        distinctUntilChanged()
+                                    )
                                     return combineLatest(
                                         featureFlagProvider.evaluatedFeatureFlag(
                                             FeatureFlag.CodyEarlyAccess
@@ -204,10 +208,11 @@ export function syncModels({
                                         featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.DeepCody),
                                         featureFlagProvider.evaluatedFeatureFlag(
                                             FeatureFlag.CodyChatDefaultToClaude35Haiku
-                                        )
+                                        ),
+                                        enableToolCody
                                     ).pipe(
                                         switchMap(
-                                            ([hasEarlyAccess, hasDeepCodyFlag, defaultToHaiku]) => {
+                                            ([hasEarlyAccess, isDeepCodyEnabled, defaultToHaiku]) => {
                                                 // TODO(sqs): remove waitlist from localStorage when user has access
                                                 const isOnWaitlist = config.clientState.waitlist_o1
                                                 if (isDotComUser && (hasEarlyAccess || isOnWaitlist)) {
@@ -228,34 +233,11 @@ export function syncModels({
                                                         }
                                                     )
                                                 }
-
-                                                // Replace user's current sonnet model with deep-cody model.
-                                                const sonnetModel = data.primaryModels.find(m =>
-                                                    m.id.includes('sonnet')
-                                                )
-                                                // DEEP CODY is enabled for all PLG users.
-                                                // Enterprise users need to have the feature flag enabled.
-                                                const isDeepCodyEnabled =
-                                                    (isDotComUser && !isCodyFreeUser) || hasDeepCodyFlag
-                                                if (
-                                                    isDeepCodyEnabled &&
-                                                    sonnetModel &&
-                                                    // Ensure the deep-cody model is only added once.
-                                                    !data.primaryModels.some(m =>
-                                                        m.id.includes('deep-cody')
-                                                    )
-                                                ) {
-                                                    const DEEPCODY_MODEL =
-                                                        getExperimentalClientModelByFeatureFlag(
-                                                            FeatureFlag.DeepCody
-                                                        )!
+                                                if (isDeepCodyEnabled && enableToolCody) {
                                                     data.primaryModels.push(
-                                                        ...maybeAdjustContextWindows([
-                                                            DEEPCODY_MODEL,
-                                                        ]).map(createModelFromServerModel)
+                                                        createModelFromServerModel(TOOL_CODY_MODEL)
                                                     )
                                                 }
-
                                                 // set the default model to Haiku for free users
                                                 if (isDotComUser && isCodyFreeUser && defaultToHaiku) {
                                                     const haikuModel = data.primaryModels.find(m =>
@@ -448,11 +430,7 @@ async function fetchServerSideModels(
 ): Promise<ServerModelConfiguration | undefined> {
     // Fetch the data via REST API.
     // NOTE: We may end up exposing this data via GraphQL, it's still TBD.
-    const client = new RestClient(
-        config.auth.serverEndpoint,
-        config.auth.accessToken ?? undefined,
-        config.configuration.customHeaders
-    )
+    const client = new RestClient(config.auth, config.configuration.customHeaders)
     return await client.getAvailableModels(signal)
 }
 

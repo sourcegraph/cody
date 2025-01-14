@@ -17,8 +17,18 @@ export type TokenSource = 'redirect' | 'paste'
  */
 export interface AuthCredentials {
     serverEndpoint: string
-    accessToken: string | null
-    tokenSource?: TokenSource | undefined
+    credentials: HeaderCredential | TokenCredential | undefined
+}
+
+export interface HeaderCredential {
+    // We use function instead of property to prevent accidential top level serialization - we never want to store this data
+    getHeaders(): Record<string, string>
+    expiration: number | undefined
+}
+
+export interface TokenCredential {
+    token: string
+    source?: TokenSource
 }
 
 export interface AutoEditsTokenLimit {
@@ -32,13 +42,13 @@ export interface AutoEditsTokenLimit {
 }
 
 /**
- * Configuration for the auto-edits model provider.
- * Used to configure the model provider for auto-edits functionality in the VS Code extension.
+ * Configuration for the auto-edit model provider.
+ * Used to configure the model provider for auto-edit functionality in the VS Code extension.
  */
 export interface AutoEditsModelConfig {
-    /** The provider service to use for auto-edits. Can be 'openai', 'fireworks', 'cody-gateway', or 'sourcegraph' */
+    /** The provider service to use for auto-edit. Can be 'openai', 'fireworks', 'cody-gateway', or 'sourcegraph' */
     provider: 'openai' | 'fireworks' | 'cody-gateway' | 'sourcegraph'
-    /** The specific model identifier to use for auto-edits */
+    /** The specific model identifier to use for auto-edit */
     model: string
     /** The endpoint URL for the provider's API */
     url: string
@@ -71,6 +81,19 @@ export interface AgenticContextConfiguration {
     }
 }
 
+export interface ExternalAuthCommand {
+    commandLine: readonly string[]
+    environment?: Record<string, string>
+    shell?: string
+    timeout?: number
+    windowsHide?: boolean
+}
+
+export interface ExternalAuthProvider {
+    endpoint: string
+    executable: ExternalAuthCommand
+}
+
 interface RawClientConfiguration {
     net: NetConfiguration
     codebase?: string
@@ -87,7 +110,6 @@ interface RawClientConfiguration {
     commandCodeLenses: boolean
 
     // Deep Cody
-    agenticContextExperimentalShell?: boolean
     agenticContextExperimentalOptions?: AgenticContextConfiguration
 
     //#region Autocomplete
@@ -105,9 +127,9 @@ interface RawClientConfiguration {
 
     experimentalTracing: boolean
     experimentalSupercompletions: boolean
-    experimentalAutoeditsRendererTesting: boolean
-    experimentalAutoeditsConfigOverride: AutoEditsModelConfig | undefined
-    experimentalAutoeditsEnabled: boolean | undefined
+    experimentalAutoEditRendererTesting: boolean
+    experimentalAutoEditConfigOverride: AutoEditsModelConfig | undefined
+    experimentalAutoEditEnabled: boolean
     experimentalCommitMessage: boolean
     experimentalNoodle: boolean
     experimentalMinionAnthropicKey: string | undefined
@@ -166,6 +188,8 @@ interface RawClientConfiguration {
      */
     overrideServerEndpoint?: string | undefined
     overrideAuthToken?: string | undefined
+
+    authExternalProviders: ExternalAuthProvider[]
 }
 
 /**
@@ -186,6 +210,24 @@ export enum CodyIDE {
      * The standalone web client in the Cody repository's `web/` tree.
      */
     StandaloneWeb = 'StandaloneWeb',
+}
+
+/**
+ * These values must match the enum values in cody.suggestions.mode in vscode/package.json
+ */
+export enum CodyAutoSuggestionMode {
+    /**
+     * The suggestion mode where suggestions come from the OpenAI completions API. This is the default mode.
+     */
+    Autocomplete = 'autocomplete',
+    /**
+     * The suggestion mode where suggestions come from the Cody AI agent chat API.
+     */
+    Autoedit = 'auto-edit (Experimental)',
+    /**
+     * Disable Cody suggestions altogether.
+     */
+    Off = 'off',
 }
 
 export type AutocompleteProviderID = keyof typeof AUTOCOMPLETE_PROVIDER_ID
@@ -462,4 +504,24 @@ export interface FireworksCodeCompletionParams {
     stream: boolean
     languageId: string
     user: string | null
+}
+
+export interface AgentToolboxSettings {
+    /**
+     * The agent that user has currently enabled.
+     */
+    agent?: {
+        /**
+         * The name of the agent that user has currently enabled. E.g. "deep-cody"
+         */
+        name?: string
+    }
+    /**
+     * Whether the user has enabled terminal context.
+     * Defaulted to undefined if shell context is not enabled by site admin via feature flag.
+     */
+    shell?: {
+        enabled: boolean
+        error?: string
+    }
 }

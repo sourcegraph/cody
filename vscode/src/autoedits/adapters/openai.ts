@@ -35,7 +35,9 @@ export class OpenAIAdapter implements AutoeditsModelAdapter {
             )
             return response.choices[0].message.content
         } catch (error) {
-            autoeditsOutputChannelLogger.logError('getModelResponse', 'Error calling OpenAI API:', error)
+            autoeditsOutputChannelLogger.logError('getModelResponse', 'Error calling OpenAI API:', {
+                verbose: error,
+            })
             throw error
         }
     }

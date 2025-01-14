@@ -69,11 +69,3 @@ export const SettingsTab: Story = {
         user: mockUser,
     },
 }
-
-export const AccountTab: Story = {
-    args: {
-        currentView: View.Account,
-        setView: () => {},
-        user: mockUser,
-    },
-}

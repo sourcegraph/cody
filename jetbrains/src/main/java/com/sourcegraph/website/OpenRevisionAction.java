@@ -12,10 +12,10 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.vcs.log.VcsLogCommitSelection;
 import com.intellij.vcs.log.VcsLogDataKeys;
 import com.intellij.vcsUtil.VcsUtil;
+import com.sourcegraph.cody.auth.CodyAuthService;
 import com.sourcegraph.common.BrowserOpener;
 import com.sourcegraph.common.ErrorNotification;
 import com.sourcegraph.common.ui.DumbAwareEDTAction;
-import com.sourcegraph.config.ConfigUtil;
 import com.sourcegraph.vcs.RepoUtil;
 import com.sourcegraph.vcs.RevisionContext;
 import com.sourcegraph.vcs.VCSType;
@@ -89,7 +89,7 @@ public class OpenRevisionAction extends DumbAwareEDTAction {
               try {
                 url =
                     URLBuilder.buildCommitUrl(
-                        ConfigUtil.getServerPath().getUrl(),
+                        CodyAuthService.getInstance(project).getEndpoint().getUrl(),
                         context.getRevisionNumber(),
                         remoteUrl,
                         productName,
@@ -97,7 +97,7 @@ public class OpenRevisionAction extends DumbAwareEDTAction {
               } catch (IllegalArgumentException e) {
                 logger.warn(
                     "Unable to build commit view URI for url "
-                        + ConfigUtil.getServerPath().getUrl()
+                        + CodyAuthService.getInstance(project).getEndpoint().getUrl()
                         + ", revision "
                         + context.getRevisionNumber()
                         + ", product "

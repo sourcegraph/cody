@@ -15,6 +15,7 @@ import com.sourcegraph.cody.agent.protocol_generated.ClientInfo
 import com.sourcegraph.cody.agent.protocol_generated.CodyAgentServer
 import com.sourcegraph.cody.agent.protocol_generated.ProtocolTypeAdapters
 import com.sourcegraph.cody.agent.protocol_generated.WebviewNativeConfig
+import com.sourcegraph.cody.auth.SourcegraphServerPath
 import com.sourcegraph.cody.ui.web.WebUIServiceWebviewProvider
 import com.sourcegraph.cody.vscode.CancellationToken
 import com.sourcegraph.config.ConfigUtil
@@ -114,7 +115,11 @@ private constructor(
           else -> Debuggability.NotDebuggable
         }
 
-    fun create(project: Project): CompletableFuture<CodyAgent> {
+    fun create(
+        project: Project,
+        endpoint: SourcegraphServerPath?,
+        token: String?,
+    ): CompletableFuture<CodyAgent> {
       try {
         val conn = startAgentProcess()
         val client = CodyAgentClient(project, WebUIServiceWebviewProvider(project))
@@ -131,7 +136,8 @@ private constructor(
                       workspaceRootUri =
                           ProtocolTextDocumentExt.normalizeUriOrPath(
                               ConfigUtil.getWorkspaceRootPath(project).toUri().toString()),
-                      extensionConfiguration = ConfigUtil.getAgentConfiguration(project),
+                      extensionConfiguration =
+                          ConfigUtil.getAgentConfiguration(project, endpoint, token),
                       capabilities =
                           ClientCapabilities(
                               authentication = ClientCapabilities.AuthenticationEnum.Enabled,
@@ -157,7 +163,9 @@ private constructor(
                               webviewMessages =
                                   ClientCapabilities.WebviewMessagesEnum.`String-encoded`,
                               accountSwitchingInWebview =
-                                  ClientCapabilities.AccountSwitchingInWebviewEnum.Enabled)))
+                                  ClientCapabilities.AccountSwitchingInWebviewEnum.Enabled,
+                              showWindowMessage =
+                                  ClientCapabilities.ShowWindowMessageEnum.Request)))
               .thenApply { info ->
                 logger.warn("Connected to Cody agent " + info.name)
                 server.initialized(null)
@@ -201,7 +209,7 @@ private constructor(
       val processBuilder = ProcessBuilder(command)
       if (java.lang.Boolean.getBoolean("cody.accept-non-trusted-certificates-automatically") ||
           ConfigUtil.getShouldAcceptNonTrustedCertificatesAutomatically()) {
-        processBuilder.environment()["NODE_TLS_REJECT_UNAUTHORIZED"] = "0"
+        processBuilder.environment()["CODY_NODE_TLS_REJECT_UNAUTHORIZED"] = "0"
       }
 
       if (java.lang.Boolean.getBoolean("cody.log-events-to-connected-instance-only")) {
@@ -212,18 +220,34 @@ private constructor(
 
       val proxy = HttpConfigurable.getInstance()
       val proxyUrl = proxy.PROXY_HOST + ":" + proxy.PROXY_PORT
+      val proxyProto =
+          if (proxy.PROXY_TYPE_IS_SOCKS) {
+            "socks:"
+          } else {
+            "http:"
+          }
+      val proxyAuth =
+          if (proxy.PROXY_AUTHENTICATION) {
+            // TODO: we should maybe prompt the user here instead?
+            val password = proxy.plainProxyPassword
+            val username = proxy.proxyLogin
+            if (!password.isNullOrEmpty() && !username.isNullOrEmpty()) {
+              "${username}:${password}@"
+            } else {
+              ""
+            }
+          } else {
+            ""
+          }
       if (proxy.USE_HTTP_PROXY) {
-        if (proxy.PROXY_TYPE_IS_SOCKS) {
-          processBuilder.environment()["HTTP_PROXY"] = "socks://$proxyUrl"
-        } else {
-          processBuilder.environment()["HTTP_PROXY"] = "http://$proxyUrl"
-          processBuilder.environment()["HTTPS_PROXY"] = "http://$proxyUrl"
+        if (!proxy.PROXY_EXCEPTIONS.isNullOrEmpty()) {
+          processBuilder.environment()["CODY_NODE_NO_PROXY"] = proxy.PROXY_EXCEPTIONS
         }
+        processBuilder.environment()["CODY_NODE_DEFAULT_PROXY"] =
+            "${proxyProto}//${proxyAuth}${proxyUrl}"
       }
 
       logger.info("starting Cody agent ${command.joinToString(" ")}")
-      logger.info(
-          "Cody agent proxyUrl ${proxyUrl} PROXY_TYPE_IS_SOCKS ${proxy.PROXY_TYPE_IS_SOCKS}")
 
       val process =
           processBuilder
@@ -292,16 +316,17 @@ private constructor(
             run {
               gsonBuilder
                   // emit `null` instead of leaving fields undefined because Cody
-                  // VSC has many `=== null` checks that return false for undefined fields.
+                  // VSC has many `=== null` checks that return false for
+                  // undefined fields.
                   .serializeNulls()
-                  // TODO: Once all protocols have migrated we can remove these legacy enum
-                  // conversions
+                  // TODO: Once all protocols have migrated we can remove these
+                  // legacy enum conversions
                   .registerTypeAdapter(URI::class.java, uriDeserializer)
                   .registerTypeAdapter(URI::class.java, uriSerializer)
 
               ProtocolTypeAdapters.register(gsonBuilder)
-              // This ensures that by default all enums are always serialized to their string
-              // equivalents
+              // This ensures that by default all enums are always serialized to their
+              // string equivalents string equivalents
               gsonBuilder.registerTypeAdapterFactory(EnumTypeAdapterFactory())
             }
           }
@@ -364,9 +389,9 @@ private constructor(
       return try {
         binaryTarget?.toFile()?.deleteOnExit()
         token.onFinished {
-          // Important: delete the file from disk after the process exists
-          // Ideally, we should eventually replace this temporary file with a permanent location
-          // in the plugin directory.
+          // Important: delete the file from disk after the process exists Ideally, we
+          // should eventually replace this temporary file with a permanent location in
+          // the plugin directory.
           Files.deleteIfExists(binaryTarget)
         }
         logger.info("Extracting Node binary to " + binaryTarget.toAbsolutePath())

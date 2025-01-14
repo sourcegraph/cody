@@ -1,9 +1,10 @@
+import dedent from 'dedent'
 import { describe, expect, it } from 'vitest'
 
 import { Position, Range } from '../../testutils/mocks'
 
 import type { DecorationInfo } from './decorators/base'
-import { getDecorationInfo } from './diff-utils'
+import { getDecorationInfo, getDecorationStats } from './diff-utils'
 
 describe('getDecorationInfo', () => {
     const newLineChars = ['\n', '\r\n']
@@ -796,4 +797,39 @@ describe('getDecorationInfo', () => {
             })
         })
     }
+})
+
+describe('getDecorationStats', () => {
+    it('handles added, removed, modified, and unchanged lines', () => {
+        const originalText = dedent`
+            function greet(name: string) {
+              console.log('Hello {name}')
+            }
+
+            console.log('unchanged line')
+            const unused = ""
+        `
+
+        const modifiedText = dedent`
+            function greet(name: string) {
+              console.log('Hello Brave {name}')
+            }
+            console.log('unchanged line')
+            const used = "Bob"
+            greet(used)
+        `
+
+        const decorationInfo = getDecorationInfo(originalText, modifiedText)
+        const stats = getDecorationStats(decorationInfo)
+
+        expect(stats).toEqual({
+            modifiedLines: 2, // "console.log('Hello Brave {name}')" and "const used = "Bob""
+            removedLines: 1, // empty line after the function definition
+            addedLines: 1, // "greet(newVar)"
+            unchangedLines: 3,
+            addedChars: ('Brave ' + 'used' + 'Bob' + 'greet(used)').length,
+            removedChars: 'unused'.length,
+            unchangedChars: 100,
+        })
+    })
 })

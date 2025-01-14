@@ -1,7 +1,9 @@
+import _ from 'lodash'
+import { isEqual } from 'lodash'
+import { filter, map } from 'observable-fns'
 import * as vscode from 'vscode'
 
 import {
-    type AuthStatus,
     type ChatClient,
     ClientConfigSingleton,
     type ConfigurationInput,
@@ -25,7 +27,6 @@ import {
     fromVSCodeEvent,
     graphqlClient,
     isDotCom,
-    isS2,
     modelsService,
     resolvedConfig,
     setClientCapabilities,
@@ -39,16 +40,17 @@ import {
     take,
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
-import _ from 'lodash'
-import { isEqual } from 'lodash'
-import { filter, map } from 'observable-fns'
+
 import { isReinstalling } from '../uninstall/reinstall'
+
 import type { CommandResult } from './CommandResult'
 import { showAccountMenu } from './auth/account-menu'
 import { showSignInMenu, showSignOutMenu, tokenCallbackHandler } from './auth/auth'
-import { AutoeditsProvider } from './autoedits/autoedits-provider'
+import { createAutoEditsProvider } from './autoedits/create-autoedits-provider'
+import { autoeditsOutputChannelLogger } from './autoedits/output-channel-logger'
 import { registerAutoEditTestRenderCommand } from './autoedits/renderer/mock-renderer'
 import type { MessageProviderOptions } from './chat/MessageProvider'
+import { CodyToolProvider } from './chat/agentic/CodyToolProvider'
 import { ChatsController, CodyChatEditorViewType } from './chat/chat-view/ChatsController'
 import { ContextRetriever } from './chat/chat-view/ContextRetriever'
 import type { ChatIntentAPIClient } from './chat/context/chatIntentAPIClient'
@@ -84,9 +86,7 @@ import { VSCodeEditor } from './editor/vscode-editor'
 import type { PlatformContext } from './extension.common'
 import { configureExternalServices } from './external-services'
 import { isRunningInsideAgent } from './jsonrpc/isRunningInsideAgent'
-import type { SymfRunner } from './local-context/symf'
-import { MinionOrchestrator } from './minion/MinionOrchestrator'
-import { PoorMansBash } from './minion/environment'
+import { FixupController } from './non-stop/FixupController'
 import { CodyProExpirationNotifications } from './notifications/cody-pro-expiration'
 import { showSetupNotification } from './notifications/setup-notification'
 import { logDebug, logError } from './output-channel-logger'
@@ -262,9 +262,22 @@ const register = async (
         },
         disposables
     )
-    disposables.push(chatsController)
+    const fixupController = new FixupController(platform.extensionClient)
+    const ghostHintDecorator = new GhostHintDecorator({ fixupController })
+    const editManager = new EditManager({
+        controller: fixupController,
+        chat: chatClient,
+        editor,
+        ghostHintDecorator,
+        extensionClient: platform.extensionClient,
+    })
+
+    CodyToolProvider.initialize(contextRetriever)
 
     disposables.push(
+        chatsController,
+        ghostHintDecorator,
+        editManager,
         subscriptionDisposable(
             exposeOpenCtxClient(context, platform.createOpenCtxController).subscribe({})
         )
@@ -284,7 +297,7 @@ const register = async (
     registerAutocomplete(platform, statusBar, disposables)
     const tutorialSetup = tryRegisterTutorial(context, disposables)
 
-    await registerCodyCommands(statusBar, chatClient, disposables)
+    await registerCodyCommands(statusBar, chatClient, fixupController, disposables)
     registerAuthCommands(disposables)
     registerChatCommands(disposables)
     disposables.push(...registerSidebarCommands())
@@ -313,8 +326,6 @@ const register = async (
             })
         )
     )
-
-    disposables.push(registerMinion(context, symfRunner))
 
     await tutorialSetup
 
@@ -410,6 +421,7 @@ async function registerOtherCommands(disposables: vscode.Disposable[]) {
 async function registerCodyCommands(
     statusBar: CodyStatusBar,
     chatClient: ChatClient,
+    fixupController: FixupController,
     disposables: vscode.Disposable[]
 ): Promise<void> {
     // Execute Cody Commands and Cody Custom Commands
@@ -455,12 +467,12 @@ async function registerCodyCommands(
     )
 
     // Initialize autoedit provider if experimental feature is enabled
-    registerAutoEdits(chatClient, disposables)
+    registerAutoEdits(chatClient, fixupController, disposables)
 
     // Initialize autoedit tester
     disposables.push(
         enableFeature(
-            ({ configuration }) => configuration.experimentalAutoeditsRendererTesting !== false,
+            ({ configuration }) => configuration.experimentalAutoEditRendererTesting !== false,
             () => registerAutoEditTestRenderCommand()
         )
     )
@@ -666,8 +678,11 @@ async function registerTestCommands(
             }
         }),
         // Access token - this is only used in configuration tests
-        vscode.commands.registerCommand('cody.test.token', async (serverEndpoint, accessToken) =>
-            authProvider.validateAndStoreCredentials({ serverEndpoint, accessToken }, 'always-store')
+        vscode.commands.registerCommand('cody.test.token', async (serverEndpoint, token) =>
+            authProvider.validateAndStoreCredentials(
+                { credentials: { token }, serverEndpoint },
+                'always-store'
+            )
         )
     )
 }
@@ -701,58 +716,45 @@ async function tryRegisterTutorial(
     }
 }
 
-function registerAutoEdits(chatClient: ChatClient, disposables: vscode.Disposable[]): void {
+function registerAutoEdits(
+    chatClient: ChatClient,
+    fixupController: FixupController,
+    disposables: vscode.Disposable[]
+): void {
     disposables.push(
         subscriptionDisposable(
             combineLatest(
                 resolvedConfig,
                 authStatus,
                 featureFlagProvider.evaluatedFeatureFlag(
-                    FeatureFlag.CodyAutoeditExperimentEnabledFeatureFlag
+                    FeatureFlag.CodyAutoEditExperimentEnabledFeatureFlag
                 )
             )
                 .pipe(
-                    map(([config, authStatus, autoeditEnabled]) => {
-                        if (shouldEnableExperimentalAutoedits(config, autoeditEnabled, authStatus)) {
-                            const provider = new AutoeditsProvider(chatClient)
-                            const completionRegistration =
-                                vscode.languages.registerInlineCompletionItemProvider(
-                                    [{ scheme: 'file', language: '*' }, { notebookType: '*' }],
-                                    provider
-                                )
-
-                            // Command used to trigger autoedits manually via command palette and is also used by e2e test
-                            vscode.commands.registerCommand(
-                                'cody.command.autoedits-manual-trigger',
-                                async () => {
-                                    await vscode.commands.executeCommand(
-                                        'editor.action.inlineSuggest.hide'
-                                    )
-                                    await vscode.commands.executeCommand(
-                                        'editor.action.inlineSuggest.trigger'
-                                    )
-                                }
-                            )
-                            return vscode.Disposable.from(provider, completionRegistration)
-                        }
-                        return []
+                    distinctUntilChanged((a, b) => {
+                        return (
+                            isEqual(a[0].configuration, b[0].configuration) &&
+                            isEqual(a[1], b[1]) &&
+                            isEqual(a[2], b[2])
+                        )
+                    }),
+                    switchMap(([config, authStatus, autoeditsFeatureFlagEnabled]) => {
+                        return createAutoEditsProvider({
+                            config,
+                            authStatus,
+                            chatClient,
+                            autoeditsFeatureFlagEnabled,
+                            fixupController,
+                        })
+                    }),
+                    catchError(error => {
+                        autoeditsOutputChannelLogger.logError('registerAutoedits', 'Error', error)
+                        return NEVER
                     })
                 )
                 .subscribe({})
         )
     )
-}
-
-function shouldEnableExperimentalAutoedits(
-    config: ResolvedConfiguration,
-    autoeditExperimentFlag: boolean,
-    authStatus: AuthStatus
-): boolean {
-    // If the config is explicitly set in the vscode settings, use the setting instead of the feature flag.
-    if (config.configuration.experimentalAutoeditsEnabled !== undefined) {
-        return config.configuration.experimentalAutoeditsEnabled
-    }
-    return autoeditExperimentFlag && isS2(authStatus) && isRunningInsideAgent() === false
 }
 
 /**
@@ -775,29 +777,14 @@ function registerAutocomplete(
 
     disposables.push(
         subscriptionDisposable(
-            combineLatest(
-                resolvedConfig,
-                authStatus,
-                featureFlagProvider.evaluatedFeatureFlag(
-                    FeatureFlag.CodyAutoeditExperimentEnabledFeatureFlag
-                )
-            )
+            combineLatest(resolvedConfig, authStatus)
                 .pipe(
                     //TODO(@rnauta -> @sqs): It feels yuk to handle the invalidation outside of
                     //where the state is picked. It's also very tedious
                     distinctUntilChanged((a, b) => {
-                        return (
-                            isEqual(a[0].configuration, b[0].configuration) &&
-                            isEqual(a[1], b[1]) &&
-                            isEqual(a[2], b[2])
-                        )
+                        return isEqual(a[0].configuration, b[0].configuration) && isEqual(a[1], b[1])
                     }),
-                    switchMap(([config, authStatus, autoeditEnabled]) => {
-                        // If the auto-edit experiment is enabled, we don't need to load the completion provider
-                        if (shouldEnableExperimentalAutoedits(config, autoeditEnabled, authStatus)) {
-                            finishLoading()
-                            return NEVER
-                        }
+                    switchMap(([config, authStatus]) => {
                         if (!authStatus.pendingValidation && !statusBarLoader) {
                             statusBarLoader = statusBar.addLoader({
                                 title: 'Completion Provider is starting',
@@ -825,31 +812,6 @@ function registerAutocomplete(
                 )
                 .subscribe({})
         )
-    )
-}
-
-function registerMinion(
-    context: vscode.ExtensionContext,
-
-    symfRunner: SymfRunner | undefined
-): vscode.Disposable {
-    return enableFeature(
-        config => !!config.configuration.experimentalMinionAnthropicKey,
-        () => {
-            const disposables: vscode.Disposable[] = []
-            const minionOrchestrator = new MinionOrchestrator(context.extensionUri, symfRunner)
-            disposables.push(
-                minionOrchestrator,
-                vscode.commands.registerCommand('cody.minion.panel.new', () =>
-                    minionOrchestrator.createNewMinionPanel()
-                ),
-                vscode.commands.registerCommand('cody.minion.new-terminal', async () => {
-                    const t = new PoorMansBash()
-                    await t.run('hello world')
-                })
-            )
-            return vscode.Disposable.from(...disposables)
-        }
     )
 }
 
@@ -896,16 +858,8 @@ function registerChat(
         platform.extensionClient
     )
     chatsController.registerViewsAndCommands()
-
-    const ghostHintDecorator = new GhostHintDecorator()
-    const editorManager = new EditManager({
-        chat: chatClient,
-        editor,
-        ghostHintDecorator,
-        extensionClient: platform.extensionClient,
-    })
     const promptsManager = new PromptsManager({ chatsController })
-    disposables.push(ghostHintDecorator, editorManager, new CodeActionProvider(), promptsManager)
+    disposables.push(new CodeActionProvider(), promptsManager)
 
     // Register a serializer for reviving the chat panel on reload
     if (vscode.window.registerWebviewPanelSerializer) {

@@ -15,7 +15,6 @@ import {
     distinctUntilChanged,
     clientCapabilities as getClientCapabilities,
     isAbortError,
-    normalizeServerEndpointURL,
     resolvedConfig as resolvedConfig_,
     setAuthStatusObservable as setAuthStatusObservable_,
     startWith,
@@ -23,6 +22,7 @@ import {
     telemetryRecorder,
     withLatestFrom,
 } from '@sourcegraph/cody-shared'
+import { normalizeServerEndpointURL } from '@sourcegraph/cody-shared/src/configuration/auth-resolver'
 import isEqual from 'lodash/isEqual'
 import { Observable, Subject } from 'observable-fns'
 import * as vscode from 'vscode'

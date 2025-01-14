@@ -35,6 +35,25 @@ describe.skip(
             expect(authStatus?.endpoint).toBe(TESTING_CREDENTIALS.dotcomUnauthed.serverEndpoint)
         })
 
+        it('starts up with default andpoint and credentials if they are present in the secure store', async () => {
+            const newClient = TestClient.create({
+                workspaceRootUri: workspace.rootUri,
+                name: 'unauthed',
+                credentials: TESTING_CREDENTIALS.dotcomUnauthed,
+            })
+
+            newClient.secrets.store(
+                TESTING_CREDENTIALS.dotcom.serverEndpoint,
+                TESTING_CREDENTIALS.dotcom.token ?? 'invalid'
+            )
+
+            await newClient.beforeAll({ serverEndpoint: undefined }, { expectAuthenticated: true })
+            const authStatus = await newClient.request('extensionConfiguration/status', null)
+            expect(authStatus?.authenticated).toBe(true)
+            expect(authStatus?.endpoint).toBe(TESTING_CREDENTIALS.dotcom.serverEndpoint)
+            newClient.afterAll()
+        })
+
         it('authenticates to same endpoint using valid credentials', async () => {
             const authStatus = await client.request('extensionConfiguration/change', {
                 ...client.info.extensionConfiguration,

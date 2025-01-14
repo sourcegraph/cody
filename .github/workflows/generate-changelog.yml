@@ -62,6 +62,7 @@ jobs:
             --releaseregistry.version=$EXT_VERSION
 
           #cat vscode/CHANGELOG.md
+
           # git checkout -b release/vscode-v$EXT_VERSION
           # git add vscode/CHANGELOG.md
           # git commit -m "Automated release and changelog for VS code Cody"

@@ -69,9 +69,8 @@ class SettingsMigration : Activity {
     RunOnceUtil.runOnceForProject(project, "CodyMigrateChatHistory-v2") {
       ChatHistoryMigration.migrate(project)
     }
-    RunOnceUtil.runOnceForProject(project, "AccountsToCodyMigration") {
-      AccountsMigration.migrate()
-    }
+
+    RunOnceUtil.runOnceForApp("AccountsToCodyMigration") { AccountsMigration.migrate() }
   }
 
   private fun migrateOrphanedChatsToActiveAccount(project: Project) {

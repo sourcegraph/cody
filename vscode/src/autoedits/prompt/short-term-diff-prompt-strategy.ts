@@ -4,6 +4,7 @@ import { groupConsecutiveItemsByPredicate } from '../../completions/context/retr
 import { RetrieverIdentifier } from '../../completions/context/utils'
 import { autoeditsOutputChannelLogger } from '../output-channel-logger'
 
+import { shortenPromptForOutputChannel } from '../../../src/completions/output-channel-logger'
 import { AutoeditsUserPromptStrategy, type UserPromptArgs } from './base'
 import * as constants from './constants'
 import {
@@ -71,7 +72,9 @@ export class ShortTermPromptStrategy extends AutoeditsUserPromptStrategy {
             constants.FINAL_USER_PROMPT
         )
 
-        autoeditsOutputChannelLogger.logDebug('getUserPrompt', 'Prompt\n', finalPrompt)
+        autoeditsOutputChannelLogger.logDebugIfVerbose('ShortTermPromptStrategy', 'getUserPrompt', {
+            verbose: shortenPromptForOutputChannel(finalPrompt.toString(), []),
+        })
         return finalPrompt
     }
 

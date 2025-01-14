@@ -17,6 +17,7 @@ interface Props {
     isKeyboardSelectable?: boolean
     collapsed: boolean
     onToggleCollapse: () => void
+    collapsible: boolean
 }
 
 /**
@@ -35,6 +36,7 @@ export const RepoFileLink: React.FunctionComponent<React.PropsWithChildren<Props
         isKeyboardSelectable,
         collapsed,
         onToggleCollapse,
+        collapsible,
     } = props
 
     const [fileBase, fileName] = splitPath(filePath)
@@ -52,16 +54,12 @@ export const RepoFileLink: React.FunctionComponent<React.PropsWithChildren<Props
         }
     }, [pathMatchRanges, fileName])
 
+    const Chevron = collapsed ? ChevronDown : ChevronUp
+
     return (
         <span className={cn(className, 'tw-flex tw-items-center tw-w-full')}>
-            {collapsed ? (
-                <ChevronDown
-                    size={16}
-                    className="tw-inline-block tw-mr-2 tw-cursor-pointer"
-                    onClick={onToggleCollapse}
-                />
-            ) : (
-                <ChevronUp
+            {collapsible && (
+                <Chevron
                     size={16}
                     className="tw-inline-block tw-mr-2 tw-cursor-pointer"
                     onClick={onToggleCollapse}

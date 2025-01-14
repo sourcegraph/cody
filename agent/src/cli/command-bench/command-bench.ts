@@ -331,28 +331,39 @@ export const benchCommand = new commander.Command('bench')
         setStaticResolvedConfigurationWithAuthCredentials({
             configuration: { customHeaders: {} },
             auth: {
-                accessToken: options.srcAccessToken,
+                credentials: { token: options.srcAccessToken },
                 serverEndpoint: options.srcEndpoint,
             },
         })
 
-        const recordingMode =
-            process.env.CODY_RECORDING_MODE === 'passthrough' ? 'passthrough' : 'replay'
+        const recordingMode = (() => {
+            switch (process.env.CODY_RECORDING_MODE) {
+                case 'passthrough':
+                    return 'passthrough'
+                case 'disabled':
+                    return 'disabled'
+                default:
+                    return 'replay'
+            }
+        })()
         const recordingDirectory = path.join(path.dirname(options.evaluationConfig), 'recordings')
-        const polly = startPollyRecording({
-            recordingName: 'cody-bench',
-            recordingMode: recordingMode,
-            recordIfMissing: true,
-            recordingDirectory,
-            keepUnusedRecordings: true,
-        })
+        const polly =
+            recordingMode === 'disabled'
+                ? null
+                : startPollyRecording({
+                      recordingName: 'cody-bench',
+                      recordingMode: recordingMode,
+                      recordIfMissing: true,
+                      recordingDirectory,
+                      keepUnusedRecordings: true,
+                  })
 
         try {
             await Promise.all(
                 workspacesToRun.map(workspace => evaluateWorkspace(workspace, recordingDirectory))
             )
         } finally {
-            await polly.stop()
+            await polly?.stop()
         }
         process.exit(0)
     })

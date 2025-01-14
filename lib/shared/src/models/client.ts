@@ -1,4 +1,4 @@
-import { FeatureFlag, type ServerModel } from '..'
+import type { FeatureFlag, ServerModel } from '..'
 import type { ModelTag } from './tags'
 
 /**
@@ -9,26 +9,21 @@ import type { ModelTag } from './tags'
  */
 export function getExperimentalClientModelByFeatureFlag(flag: FeatureFlag): ServerModel | null {
     switch (flag) {
-        case FeatureFlag.DeepCody:
-            return getDeepCodyServerModel()
         default:
             return null
     }
 }
 
-function getDeepCodyServerModel(): ServerModel {
-    return {
-        // This modelRef does not exist in the backend and is used to identify the model in the client.
-        modelRef: 'sourcegraph::2023-06-01::deep-cody',
-        displayName: 'Deep Cody',
-        modelName: 'deep-cody',
-        capabilities: ['chat'],
-        category: 'accuracy',
-        status: 'experimental' as ModelTag.Experimental,
-        tier: 'pro' as ModelTag.Pro,
-        contextWindow: {
-            maxInputTokens: 45000,
-            maxOutputTokens: 4000,
-        },
-    }
+export const TOOL_CODY_MODEL: ServerModel = {
+    modelRef: 'sourcegraph::2024-12-31::tool-cody',
+    displayName: 'Tool Cody',
+    modelName: 'tool-cody',
+    capabilities: ['chat'],
+    category: 'accuracy',
+    status: 'experimental' as ModelTag.Experimental,
+    tier: 'pro' as ModelTag.Pro,
+    contextWindow: {
+        maxInputTokens: 45000,
+        maxOutputTokens: 4000,
+    },
 }

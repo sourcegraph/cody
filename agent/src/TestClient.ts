@@ -116,7 +116,6 @@ export function setupRecording(): void {
 }
 
 export class TestClient extends MessageHandler {
-    private secrets = new AgentStatelessSecretStorage()
     private extensionConfigurationDuringInitialization: ExtensionConfiguration | undefined
     public static create({ bin = 'node', ...params }: TestClientParams): TestClient {
         setupRecording()
@@ -180,6 +179,7 @@ export class TestClient extends MessageHandler {
     public workspaceEditParams: WorkspaceEditParams[] = []
     public textDocumentEditParams: TextDocumentEditParams[] = []
     public expectedEvents: string[] = []
+    public secrets = new AgentStatelessSecretStorage()
 
     get serverEndpoint(): string {
         return this.params.credentials.serverEndpoint

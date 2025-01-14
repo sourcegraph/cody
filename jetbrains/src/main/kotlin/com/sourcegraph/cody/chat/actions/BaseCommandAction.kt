@@ -11,7 +11,7 @@ import com.sourcegraph.cody.agent.CodyAgentService
 import com.sourcegraph.cody.agent.protocol_extensions.ProtocolTextDocumentExt
 import com.sourcegraph.cody.agent.protocol_generated.ExecuteCommandParams
 import com.sourcegraph.cody.agent.protocol_generated.Ignore_TestResult
-import com.sourcegraph.cody.auth.CodyAccount.Companion.hasActiveAccount
+import com.sourcegraph.cody.auth.CodyAuthService
 import com.sourcegraph.cody.commands.CommandId
 import com.sourcegraph.cody.ignore.ActionInIgnoredFileNotification
 import com.sourcegraph.cody.ignore.IgnoreOracle
@@ -30,7 +30,9 @@ abstract class BaseCommandAction : DumbAwareEDTAction() {
 
   override fun update(e: AnActionEvent) {
     super.update(e)
-    e.presentation.isVisible = isCodyEnabled() && hasActiveAccount()
+    val project = e.project
+    e.presentation.isVisible =
+        isCodyEnabled() && project != null && CodyAuthService.getInstance(project).isActivated()
   }
 
   open fun doAction(project: Project) {

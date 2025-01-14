@@ -16,7 +16,7 @@ class ConfigUtils {
         """
     {
       "cody.debug": true,
-      "cody.autocomplete.enabled": true
+      "cody.suggestions.mode": "autocomplete"
     }
     """
     val result = ConfigUtil.getCustomConfiguration(mockProject, input)
@@ -39,7 +39,7 @@ class ConfigUtils {
         """
     {
       "cody.debug": true,
-      "cody.autocomplete.enabled": true,
+      "cody.suggestions.mode": "autocomplete"
     }
     """
     val result = ConfigUtil.getCustomConfiguration(mockProject, input)
@@ -55,7 +55,7 @@ class ConfigUtils {
     {
        // This is a comment
       "cody.debug": true,
-      "cody.autocomplete.enabled": true,
+      "cody.suggestions.mode": "autocomplete"
     }
     """
     val result = ConfigUtil.getCustomConfiguration(mockProject, input)
