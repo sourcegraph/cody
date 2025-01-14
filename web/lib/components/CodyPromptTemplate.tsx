@@ -2,9 +2,7 @@ import classNames from 'classnames'
 import { type FC, type FunctionComponent, useLayoutEffect, useMemo, useState } from 'react'
 
 import {
-    type ChatMessage,
     type CodyClientConfig,
-    PromptString,
     type SerializedPromptEditorState,
     type SerializedPromptEditorValue,
     isErrorLike,
@@ -60,13 +58,11 @@ export interface CodyPromptTemplateProps {
 
     initialEditorState?: SerializedPromptEditorState | undefined
     disabled?: boolean
+    placeholder?: string
 }
 /**
- * The root component node for Cody Web Chat, implements Cody Agent client
- * and connects VSCode Cody Chat UI with web-worker agent. The main component
- * to use in Cody Web Consumers.
- *
- * You can see the demo usage of this component in demo/App.tsx
+ * The root component node for Cody Prompt Template editing, implements all things necessary
+ * to run this with @ mentions in the prompt template editor.
  */
 export const CodyPromptTemplate: FunctionComponent<CodyPromptTemplateProps> = ({
     serverEndpoint,
@@ -80,6 +76,7 @@ export const CodyPromptTemplate: FunctionComponent<CodyPromptTemplateProps> = ({
     setMessage,
     disabled,
     initialEditorState,
+    placeholder,
 }) => {
     const { client, vscodeAPI } = useCodyWebAgent({
         serverEndpoint,
@@ -101,7 +98,7 @@ export const CodyPromptTemplate: FunctionComponent<CodyPromptTemplateProps> = ({
     return (
         <AppWrapper>
             <div className={classNames(className, styles.root)}>
-                <CodyWebPanel
+                <Panel
                     vscodeAPI={vscodeAPI}
                     initialContext={initialContext}
                     className={styles.container}
@@ -109,13 +106,14 @@ export const CodyPromptTemplate: FunctionComponent<CodyPromptTemplateProps> = ({
                     setMessage={setMessage}
                     disabled={disabled}
                     initialEditorState={initialEditorState}
+                    placeholder={placeholder}
                 />
             </div>
         </AppWrapper>
     )
 }
 
-interface CodyWebPanelProps {
+interface PanelProps {
     vscodeAPI: VSCodeWrapper
     initialContext: InitialContext | undefined
     setMessage: (m: SerializedPromptEditorValue) => void
@@ -123,9 +121,10 @@ interface CodyWebPanelProps {
     disabled?: boolean
     className?: string
     onExternalApiReady?: (api: CodyExternalApi) => void
+    placeholder?: string
 }
 
-const CodyWebPanel: FC<CodyWebPanelProps> = props => {
+const Panel: FC<PanelProps> = props => {
     const {
         vscodeAPI,
         initialContext: initialContextData,
@@ -133,12 +132,11 @@ const CodyWebPanel: FC<CodyWebPanelProps> = props => {
         setMessage,
         disabled,
         initialEditorState,
+        placeholder,
     } = props
 
     const dispatchClientAction = useClientActionDispatcher()
     const [_errorMessages, setErrorMessages] = useState<string[]>([])
-    const [_messageInProgress, setMessageInProgress] = useState<ChatMessage | null>(null)
-    const [_transcript, setTranscript] = useState<ChatMessage[]>([])
     const [config, setConfig] = useState<Config | null>(null)
     const [clientConfig, setClientConfig] = useState<CodyClientConfig | null>(null)
     const [view, setView] = useState<View | undefined>()
@@ -146,20 +144,6 @@ const CodyWebPanel: FC<CodyWebPanelProps> = props => {
     useLayoutEffect(() => {
         vscodeAPI.onMessage(message => {
             switch (message.type) {
-                case 'transcript': {
-                    const deserializedMessages = message.messages.map(
-                        PromptString.unsafe_deserializeChatMessage
-                    )
-                    if (message.isMessageInProgress) {
-                        const msgLength = deserializedMessages.length - 1
-                        setTranscript(deserializedMessages.slice(0, msgLength))
-                        setMessageInProgress(deserializedMessages[msgLength])
-                    } else {
-                        setTranscript(deserializedMessages)
-                        setMessageInProgress(null)
-                    }
-                    break
-                }
                 case 'errors':
                     setErrorMessages(prev => [...prev, message.errors].slice(-5))
                     break
@@ -216,7 +200,7 @@ const CodyWebPanel: FC<CodyWebPanelProps> = props => {
                     <ComposedWrappers wrappers={wrappers}>
                         <PromptEditorV2
                             seamless={true}
-                            placeholder={'My Placeholder'}
+                            placeholder={placeholder}
                             initialEditorState={initialEditorState}
                             onChange={setMessage}
                             disabled={disabled}
