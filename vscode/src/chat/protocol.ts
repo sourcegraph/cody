@@ -194,7 +194,7 @@ export type ExtensionMessage =
       }
     | ({ type: 'attribution' } & ExtensionAttributionMessage)
     | { type: 'rpc/response'; message: ResponseMessage }
-    | { type: 'action/confirmationRequest'; id: string; step?: ProcessingStep }
+    | { type: 'action/confirmationRequest'; id: string; step: ProcessingStep }
 
 interface ExtensionAttributionMessage {
     snippet: string

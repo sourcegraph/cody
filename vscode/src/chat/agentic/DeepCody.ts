@@ -72,25 +72,26 @@ export class DeepCodyAgent {
         this.tools = CodyToolProvider.getTools()
         this.initializeMultiplexer(this.tools)
         this.buildPrompt(this.tools)
+
         this.stepsManager = new ProcessManager(
             steps => statusUpdateCallback(steps),
             step => postRequest(step)
         )
+
         this.statusCallback = {
-            onStart: () => {
-                this.stepsManager.initializeStep()
+            onUpdate: (id, content) => {
+                this.stepsManager.updateStep(id, content)
             },
-            onStream: (toolName, content) => {
-                this.stepsManager.addStep(toolName, content)
+            onStream: step => {
+                this.stepsManager.addStep(step)
             },
-            onComplete: (toolName, error) => {
-                this.stepsManager.completeStep(toolName, error)
+            onComplete: (id, error) => {
+                this.stepsManager.completeStep(id, error)
             },
-            onConfirmationNeeded: async (toolName, title, content) => {
-                return this.stepsManager.addConfirmationStep(toolName, title, content)
+            onConfirmationNeeded: async (id, step) => {
+                return this.stepsManager.addConfirmationStep(id, step)
             },
         }
-        this.statusCallback.onStream('status-report', 'reviewing request...')
     }
 
     /**
@@ -184,7 +185,11 @@ export class DeepCodyAgent {
         span.addEvent('reviewLoop')
         for (let i = 0; i < maxLoops && !chatAbortSignal.aborted; i++) {
             this.stats.loop++
+            const step = this.stepsManager.addStep({
+                content: 'agentic context reflection...',
+            })
             const newContext = await this.review(requestID, span, chatAbortSignal)
+            this.statusCallback.onComplete(step.id)
             if (!newContext.length) break
             // Filter and add new context items in one pass
             const validItems = newContext.filter(c => c.title !== 'TOOLCONTEXT')
@@ -192,7 +197,7 @@ export class DeepCodyAgent {
             this.stats.context += validItems.length
             if (newContext.every(isUserAddedItem)) break
         }
-        this.statusCallback.onStream('status-report', 'sending final request...')
+        this.statusCallback.onComplete('status')
     }
 
     /**
@@ -214,13 +219,11 @@ export class DeepCodyAgent {
         const { prompt } = await prompter.makePrompt(this.chatBuilder, 1, this.promptMixins)
         span.addEvent('sendReviewRequest')
         try {
-            this.statusCallback.onStream('status-report', 'reflecting...')
             const res = await this.processStream(requestID, prompt, chatAbortSignal, DeepCodyAgent.model)
             // If the response is empty or only contains the answer token, it's ready to answer.
             if (!res || isReadyToAnswer(res)) {
                 return []
             }
-            this.statusCallback.onStream('status-report', 'fetching context using tools...')
             const results = await Promise.all(
                 this.tools.map(async tool => {
                     try {
@@ -267,7 +270,6 @@ export class DeepCodyAgent {
             // items are not removed from the updated context list. We will let the prompt builder
             // at the final stage to do the unique context check.
             if (reviewed.length > 0) {
-                this.statusCallback.onStream('status-report', 'filtering fetched context...')
                 const userAdded = this.context.filter(c => isUserAddedItem(c))
                 reviewed.push(...userAdded)
                 this.context = reviewed

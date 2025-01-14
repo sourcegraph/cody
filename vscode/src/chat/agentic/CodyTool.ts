@@ -4,6 +4,7 @@ import {
     ContextItemSource,
     type ContextItemWithContent,
     type ContextMentionProviderMetadata,
+    ProcessType,
     PromptString,
     firstValueFrom,
     logDebug,
@@ -38,7 +39,6 @@ export interface CodyToolConfig {
         placeholder: PromptString
         examples: PromptString[]
     }
-    confirmationRequired?: boolean
 }
 
 /**
@@ -114,12 +114,16 @@ export abstract class CodyTool {
         callback?: ToolStatusCallback
     ): Promise<ContextItem[]>
     public async run(span: Span, cb?: ToolStatusCallback): Promise<ContextItem[]> {
+        const toolID = this.config.tags.tag.toString()
         try {
             const queries = this.parse()
             if (queries.length) {
-                if (!this.config.confirmationRequired) {
-                    cb?.onStream(this.config.title, queries.join(', '))
-                }
+                cb?.onStream({
+                    id: toolID,
+                    title: this.config.title,
+                    content: queries.join(', '),
+                    type: ProcessType.Tool,
+                })
                 // Create a timeout promise
                 const timeoutPromise = new Promise<ContextItem[]>((_, reject) => {
                     setTimeout(() => {
@@ -133,11 +137,11 @@ export abstract class CodyTool {
                 // Race between execution and timeout
                 const results = await Promise.race([this.execute(span, queries, cb), timeoutPromise])
                 // Notify that tool execution is complete
-                cb?.onComplete(this.config.title)
+                cb?.onComplete(toolID)
                 return results
             }
         } catch (error) {
-            cb?.onComplete(this.config.title, error as Error)
+            cb?.onComplete(toolID, error as Error)
         }
         return Promise.resolve([])
     }
@@ -163,7 +167,6 @@ class CliTool extends CodyTool {
                     ps`Harmful commands (alter the system, access sensative information, and make network requests) MUST be rejected with <ban> tags: \`<TOOLCLI><ban>rm -rf </ban><ban>curl localhost:1234</ban><ban>echo $TOKEN</ban></TOOLCLI>\``,
                 ],
             },
-            confirmationRequired: true,
         })
     }
 
@@ -174,15 +177,14 @@ class CliTool extends CodyTool {
     ): Promise<ContextItem[]> {
         span.addEvent('executeCliTool')
         if (commands.length === 0) return []
+        const toolID = this.config.tags.tag.toString()
         const approvedCommands = new Set<string>()
         for (const command of commands) {
-            const toolId = this.config.tags.tag.toString()
-            const stepId = `${toolId}-${uuid.v4()}`
-            const apporval = await callback?.onConfirmationNeeded(
-                stepId,
-                'Allow agent to execute the following command in your terminal?',
-                command
-            )
+            const stepId = `${toolID}-${uuid.v4()}`
+            const apporval = await callback?.onConfirmationNeeded(stepId, {
+                content: command,
+                title: 'Allow agent to execute the following command in your terminal?',
+            })
             if (apporval) {
                 approvedCommands.add(command)
             } else {
@@ -192,7 +194,7 @@ class CliTool extends CodyTool {
         if (!approvedCommands.size) {
             throw new Error('No commands approved for execution')
         }
-        callback.onStream(this.config.title, [...approvedCommands].join(', '))
+        callback.onUpdate(toolID, [...approvedCommands].join(', '))
         logDebug('CodyTool', `executing ${approvedCommands.size} commands...`)
         return Promise.all([...approvedCommands].map(getContextFileFromShell)).then(results =>
             results.flat()

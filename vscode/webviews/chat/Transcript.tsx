@@ -637,7 +637,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                     }
                 />
             )}
-            {humanMessage?.processes && (
+            {humanMessage.agent && (
                 <AgenticContextCell
                     key={`${humanMessage.index}-${humanMessage.intent}-process`}
                     isContextLoading={isContextLoading}

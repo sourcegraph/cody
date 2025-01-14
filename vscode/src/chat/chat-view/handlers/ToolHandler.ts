@@ -110,7 +110,7 @@ export class ExperimentalToolHandler implements AgentHandler {
                                                 contentBlock.name
                                             }(${JSON.stringify(contentBlock.input)})`,
                                             status: 'pending',
-                                            type: ProcessType.Step,
+                                            type: ProcessType.Tool,
                                         },
                                     }
                                 )

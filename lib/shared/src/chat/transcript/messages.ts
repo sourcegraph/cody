@@ -58,8 +58,14 @@ export interface ChatMessage extends Message {
 }
 
 export enum ProcessType {
+    /**
+     * A process initiated by a tool.
+     */
+    Tool = 'tool',
+    /**
+     * A process that prompts the user confirmation.
+     */
     Confirmation = 'confirmation',
-    Step = 'step',
 }
 
 /**
@@ -70,7 +76,8 @@ export interface ProcessingStep {
     /**
      * The type of the step
      */
-    type: ProcessType
+    type?: ProcessType | undefined | null
+
     /**
      * Unique identifier or name for the processing step
      */
@@ -79,7 +86,7 @@ export interface ProcessingStep {
     /**
      * The title of the step
      */
-    title?: string
+    title?: string | undefined | null
 
     /**
      * Description of what the step is doing or has completed
@@ -95,15 +102,9 @@ export interface ProcessingStep {
     status: 'pending' | 'success' | 'error'
 
     /**
-     * Optional numerical order of the step in the sequence.
-     * Used to display the steps in the correct order.
-     */
-    step?: number
-
-    /**
      * Error information if the step failed
      */
-    error?: ChatError
+    error?: ChatError | undefined | null
 }
 
 export type ChatMessageWithSearch = ChatMessage & { search: ChatMessageSearch }

@@ -13,37 +13,24 @@ describe('ProcessManager', () => {
 
     describe('initializeStep', () => {
         it('creates initial pending step', () => {
-            const { manager, onChange } = createManager()
+            const { onChange } = createManager()
 
-            manager.initializeStep()
-
-            expect(onChange).toHaveBeenCalledWith([
-                {
-                    content: '',
-                    id: '',
-                    step: 0,
-                    status: 'pending',
-                    type: 'step',
-                },
-            ])
+            expect(onChange.mock.lastCall).not.toBeDefined()
         })
     })
 
     describe('addStep', () => {
         it('adds new step with correct properties', () => {
             const { manager, onChange } = createManager()
-            manager.initializeStep()
 
-            manager.addStep('test-tool', 'test content')
+            manager.addStep({ id: 'test-tool', content: 'test content' })
 
             expect(onChange).toHaveBeenLastCalledWith(
                 expect.arrayContaining([
                     expect.objectContaining({
                         content: 'test content',
                         id: 'test-tool',
-                        step: 1,
                         status: 'pending',
-                        type: 'step',
                     }),
                 ])
             )
@@ -51,23 +38,21 @@ describe('ProcessManager', () => {
 
         it('maintains step order', () => {
             const { manager, onChange } = createManager()
-            manager.initializeStep()
 
-            manager.addStep('tool1', 'content1')
-            manager.addStep('tool2', 'content2')
+            manager.addStep({ id: 'tool1', content: 'content1' })
+            manager.addStep({ id: 'tool2', content: 'content2' })
 
             const lastCall = onChange.mock.lastCall?.[0]
-            expect(lastCall).toHaveLength(3)
-            expect(lastCall[1].id).toBe('tool1')
-            expect(lastCall[2].id).toBe('tool2')
+            expect(lastCall).toHaveLength(2)
+            expect(lastCall[0].id).toBe('tool1')
+            expect(lastCall[1].id).toBe('tool2')
         })
     })
 
     describe('completeStep', () => {
         it('completes specific tool step with success', () => {
             const { manager, onChange } = createManager()
-            manager.initializeStep()
-            manager.addStep('test-tool', 'content')
+            manager.addStep({ id: 'test-tool', content: 'content' })
 
             manager.completeStep('test-tool')
 
@@ -78,8 +63,7 @@ describe('ProcessManager', () => {
 
         it('marks step as error when error provided', () => {
             const { manager, onChange } = createManager()
-            manager.initializeStep()
-            manager.addStep('test-tool', 'content')
+            manager.addStep({ id: 'test-tool', content: 'content' })
 
             const testError = new Error('test error')
             manager.completeStep('test-tool', testError)
@@ -92,9 +76,8 @@ describe('ProcessManager', () => {
 
         it('completes all pending steps when no tool specified', () => {
             const { manager, onChange } = createManager()
-            manager.initializeStep()
-            manager.addStep('tool1', 'content1')
-            manager.addStep('tool2', 'content2')
+            manager.addStep({ id: 'tool1', content: 'content1' })
+            manager.addStep({ id: 'tool2', content: 'content2' })
 
             manager.completeStep()
 
@@ -104,8 +87,7 @@ describe('ProcessManager', () => {
 
         it('preserves error status when completing all steps', () => {
             const { manager, onChange } = createManager()
-            manager.initializeStep()
-            manager.addStep('tool1', 'content1')
+            manager.addStep({ id: 'tool1', content: 'content1' })
             manager.completeStep('tool1', new Error('test error'))
 
             manager.completeStep()
@@ -119,9 +101,11 @@ describe('ProcessManager', () => {
     describe('addConfirmationStep', () => {
         it('adds confirmation step with correct properties', () => {
             const { manager, onChange } = createManager()
-            manager.initializeStep()
 
-            manager.addConfirmationStep('confirm-1', 'Confirm Title', 'confirmation content')
+            manager.addConfirmationStep('confirm-1', {
+                content: 'confirmation content',
+                title: 'Confirm Title',
+            })
 
             expect(onChange).toHaveBeenLastCalledWith(
                 expect.arrayContaining([
@@ -129,7 +113,6 @@ describe('ProcessManager', () => {
                         content: 'confirmation content',
                         id: 'confirm-1',
                         title: 'Confirm Title',
-                        step: 1,
                         status: 'pending',
                         type: 'confirmation',
                     }),
@@ -139,24 +122,25 @@ describe('ProcessManager', () => {
 
         it('returns promise that resolves to onRequest result', async () => {
             const { manager } = createManager()
-            manager.initializeStep()
 
-            const result = await manager.addConfirmationStep('confirm-1', 'Title', 'content')
+            const result = await manager.addConfirmationStep('confirm-1', {
+                content: 'content',
+                title: 'Title',
+            })
 
             expect(result).toBe(true) // Since mock onRequest returns true
         })
 
         it('maintains correct step ordering with other steps', () => {
             const { manager, onChange } = createManager()
-            manager.initializeStep()
-            manager.addStep('tool1', 'content1')
-            manager.addConfirmationStep('confirm-1', 'Title', 'confirm content')
+            manager.addStep({ id: 'tool1', content: 'content1' })
+            manager.addConfirmationStep('confirm-1', { content: 'confirm content', title: 'Title' })
 
             const lastCall = onChange.mock.lastCall?.[0]
-            expect(lastCall).toHaveLength(3)
-            expect(lastCall[1].id).toBe('tool1')
-            expect(lastCall[2].id).toBe('confirm-1')
-            expect(lastCall[2].type).toBe('confirmation')
+            expect(lastCall).toHaveLength(2)
+            expect(lastCall[0].id).toBe('tool1')
+            expect(lastCall[1].id).toBe('confirm-1')
+            expect(lastCall[1].type).toBe('confirmation')
         })
     })
 })

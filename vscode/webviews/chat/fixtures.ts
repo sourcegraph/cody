@@ -5,7 +5,6 @@ import {
     CodyIDE,
     ContextItemSource,
     FILE_MENTION_EDITOR_STATE_FIXTURE,
-    ProcessType,
     ps,
 } from '@sourcegraph/cody-shared'
 import { GENERATE_UNIT_TEST_EDITOR_STATE_FIXTURE } from '@sourcegraph/cody-shared/src/lexicalEditor/fixtures'
@@ -199,7 +198,6 @@ export const FIXTURE_TRANSCRIPT: Record<
                         id: 'read_file',
                         content: `Invoking tool get_file({"path":"vscode/src/main.ts"})`,
                         status: 'success',
-                        type: ProcessType.Step,
                     },
                 },
                 {
