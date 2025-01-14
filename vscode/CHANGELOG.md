@@ -2,8 +2,6 @@
 
 This is a log of all notable changes to Cody for VS Code.
 
-{/* CHANGELOG_START */}
-
 ## Unreleased
 
 ### Added
@@ -13,6 +11,8 @@ This is a log of all notable changes to Cody for VS Code.
 ### Changed
 
 ### Uncategorized
+
+{/* CHANGELOG_START */}
 
 ### Added
 - autoedits e2e tests  [pull/6425](https://github.com/sourcegraph/cody/pull/6425)
