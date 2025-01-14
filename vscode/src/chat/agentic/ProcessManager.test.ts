@@ -23,6 +23,7 @@ describe('ProcessManager', () => {
                     id: '',
                     step: 0,
                     status: 'pending',
+                    type: 'step',
                 },
             ])
         })
@@ -42,6 +43,7 @@ describe('ProcessManager', () => {
                         id: 'test-tool',
                         step: 1,
                         status: 'pending',
+                        type: 'step',
                     }),
                 ])
             )
@@ -111,6 +113,50 @@ describe('ProcessManager', () => {
             const steps = onChange.mock.lastCall?.[0]
             const errorStep = steps.find((s: ProcessingStep) => s.id === 'tool1')
             expect(errorStep?.status).toBe('error')
+        })
+    })
+
+    describe('addConfirmationStep', () => {
+        it('adds confirmation step with correct properties', () => {
+            const { manager, onChange } = createManager()
+            manager.initializeStep()
+
+            manager.addConfirmationStep('confirm-1', 'Confirm Title', 'confirmation content')
+
+            expect(onChange).toHaveBeenLastCalledWith(
+                expect.arrayContaining([
+                    expect.objectContaining({
+                        content: 'confirmation content',
+                        id: 'confirm-1',
+                        title: 'Confirm Title',
+                        step: 1,
+                        status: 'pending',
+                        type: 'confirmation',
+                    }),
+                ])
+            )
+        })
+
+        it('returns promise that resolves to onRequest result', async () => {
+            const { manager } = createManager()
+            manager.initializeStep()
+
+            const result = await manager.addConfirmationStep('confirm-1', 'Title', 'content')
+
+            expect(result).toBe(true) // Since mock onRequest returns true
+        })
+
+        it('maintains correct step ordering with other steps', () => {
+            const { manager, onChange } = createManager()
+            manager.initializeStep()
+            manager.addStep('tool1', 'content1')
+            manager.addConfirmationStep('confirm-1', 'Title', 'confirm content')
+
+            const lastCall = onChange.mock.lastCall?.[0]
+            expect(lastCall).toHaveLength(3)
+            expect(lastCall[1].id).toBe('tool1')
+            expect(lastCall[2].id).toBe('confirm-1')
+            expect(lastCall[2].type).toBe('confirmation')
         })
     })
 })

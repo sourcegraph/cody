@@ -391,11 +391,12 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
         }, 300)
     }, [experimentalOneBoxEnabled, extensionAPI, setIntentResults])
 
+    const vscodeAPI = getVSCodeAPI()
     const onStop = useCallback(() => {
-        getVSCodeAPI().postMessage({
+        vscodeAPI.postMessage({
             command: 'abort',
         })
-    }, [])
+    }, [vscodeAPI])
 
     const isSearchIntent = experimentalOneBoxEnabled && humanMessage.intent === 'search'
 
@@ -643,7 +644,9 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                     processes={humanMessage?.processes ?? undefined}
                 />
             )}
-            {humanMessage.agent && isContextLoading && assistantMessage?.isLoading && <ApprovalCell />}
+            {humanMessage.agent && isContextLoading && assistantMessage?.isLoading && (
+                <ApprovalCell vscodeAPI={vscodeAPI} />
+            )}
             {!(humanMessage.agent && isContextLoading) &&
                 (humanMessage.contextFiles || assistantMessage || isContextLoading) &&
                 !isSearchIntent && (
