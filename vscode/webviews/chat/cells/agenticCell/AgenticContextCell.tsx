@@ -33,6 +33,8 @@ export const AgenticContextCell: FunctionComponent<{
         ? 'reviewed'
         : processes?.findLast(p => p.type !== 'tool')?.content || 'starting...'
 
+    const statusClassName = processes?.some(p => p.error) ? 'tw-text-yellow-500' : 'tw-text-green-500'
+
     return (
         <div>
             <Accordion
@@ -59,7 +61,7 @@ export const AgenticContextCell: FunctionComponent<{
                                 ) : (
                                     <BrainIcon
                                         size={NON_HUMAN_CELL_AVATAR_SIZE}
-                                        className="tw-text-green-500"
+                                        className={statusClassName}
                                     />
                                 )}
                                 <span className="tw-flex tw-items-baseline">
@@ -79,7 +81,11 @@ export const AgenticContextCell: FunctionComponent<{
                             overflow={false}
                         >
                             {processes && (
-                                <ProcessList processes={processes} isContextLoading={isContextLoading} />
+                                <ProcessList
+                                    processes={processes}
+                                    isContextLoading={isContextLoading}
+                                    headerIconClassName={statusClassName}
+                                />
                             )}
                         </AccordionContent>
                     </Cell>
@@ -89,10 +95,11 @@ export const AgenticContextCell: FunctionComponent<{
     )
 })
 
-const ProcessList: FC<{ processes: ProcessingStep[]; isContextLoading: boolean }> = ({
-    processes,
-    isContextLoading,
-}) => {
+const ProcessList: FC<{
+    processes: ProcessingStep[]
+    isContextLoading: boolean
+    headerIconClassName?: string
+}> = ({ processes, isContextLoading, headerIconClassName }) => {
     return (
         <div className="tw-flex tw-flex-col tw-gap-2">
             <div className="tw-flex tw-flex-col tw-gap-2">
@@ -101,6 +108,7 @@ const ProcessList: FC<{ processes: ProcessingStep[]; isContextLoading: boolean }
                         key={process.id}
                         process={process}
                         isContextLoading={isContextLoading}
+                        headerIconClassName={headerIconClassName}
                     />
                 ))}
             </div>
@@ -108,10 +116,11 @@ const ProcessList: FC<{ processes: ProcessingStep[]; isContextLoading: boolean }
     )
 }
 
-const ProcessItem: FC<{ process: ProcessingStep; isContextLoading: boolean }> = ({
-    process,
-    isContextLoading,
-}) => {
+const ProcessItem: FC<{
+    process: ProcessingStep
+    isContextLoading: boolean
+    headerIconClassName?: string
+}> = ({ process, isContextLoading, headerIconClassName }) => {
     if (!process.id || process.type === 'confirmation') {
         return null
     }
@@ -120,21 +129,17 @@ const ProcessItem: FC<{ process: ProcessingStep; isContextLoading: boolean }> = 
         <div className="tw-flex tw-items-center">
             <div className={`tw-mr-3 ${process.type === 'tool' ? 'tw-ml-4' : 'tw-ml-0'}`}>
                 {process.type !== 'tool' ? (
-                    <BrainIcon
-                        strokeWidth={1.25}
-                        size={14}
-                        className="tw-text-green-500 tw-drop-shadow-md"
-                    />
+                    <BrainIcon strokeWidth={1.5} size={14} className={headerIconClassName} />
                 ) : process.state === 'error' ? (
                     <CircleXIcon
-                        strokeWidth={1.25}
+                        strokeWidth={1.5}
                         size={14}
                         className="tw-text-red-500 tw-drop-shadow-md"
                     />
                 ) : process.state === 'success' || !isContextLoading ? (
-                    <CircleCheckIcon strokeWidth={1.25} size={14} className="tw-text-green-500" />
+                    <CircleCheckIcon strokeWidth={1.5} size={14} className="tw-text-green-500" />
                 ) : (
-                    <Loader2Icon strokeWidth={1.25} size={14} className="tw-animate-spin" />
+                    <Loader2Icon strokeWidth={1.5} size={14} className="tw-animate-spin" />
                 )}
             </div>
             <div className="tw-flex-grow tw-min-w-0">
