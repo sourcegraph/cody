@@ -34,7 +34,7 @@ async function executeCommand(cmd: ExternalAuthCommand): Promise<string> {
 
 interface HeaderCredentialResult {
     headers: Record<string, string>
-    expiration: number | undefined
+    expiration?: number | undefined
 }
 
 async function getExternalProviderAuthResult(
@@ -77,7 +77,7 @@ export async function resolveAuth(
     if (credentials) {
         return {
             credentials: {
-                expiration: credentials.expiration,
+                expiration: credentials?.expiration,
                 getHeaders() {
                     return credentials.headers
                 },

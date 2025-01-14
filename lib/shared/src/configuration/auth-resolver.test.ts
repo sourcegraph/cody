@@ -70,7 +70,7 @@ describe('auth-resolver', () => {
                         endpoint: 'my-server.com',
                         executable: {
                             commandLine: [
-                                'echo \'{ "headers": { "Authorization": "token X" }, "expiration": 1337 }\'',
+                                'echo \'{ "headers": { "Authorization": "token X" }, "expiration": 2222222222 }\'',
                             ],
                             shell: isWindows || '/bin/bash',
                             timeout: 5000,
@@ -87,7 +87,7 @@ describe('auth-resolver', () => {
         expect(auth.serverEndpoint).toBe('my-server.com/')
 
         const headerCredential = auth.credentials as HeaderCredential
-        expect(headerCredential.expiration).toBe(1337)
+        expect(headerCredential.expiration).toBe(2222222222)
         expect(headerCredential.getHeaders()).toStrictEqual({
             Authorization: 'token X',
         })
