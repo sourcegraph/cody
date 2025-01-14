@@ -53,6 +53,7 @@ import { type Context, type Span, context, trace } from '@opentelemetry/api'
 import { isCodeSearchContextItem } from '../../src/context/openctx/codeSearch'
 import { TELEMETRY_INTENT } from '../../src/telemetry/onebox'
 import { AgenticContextCell } from './cells/agenticCell/AgenticContextCell'
+import ApprovalCell from './cells/agenticCell/ApprovalCell'
 import { SwitchIntent } from './cells/messageCell/assistant/SwitchIntent'
 import { LastEditorContext } from './context'
 
@@ -642,6 +643,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                     processes={humanMessage?.processes ?? undefined}
                 />
             )}
+            {humanMessage.agent && isContextLoading && assistantMessage?.isLoading && <ApprovalCell />}
             {!(humanMessage.agent && isContextLoading) &&
                 (humanMessage.contextFiles || assistantMessage || isContextLoading) &&
                 !isSearchIntent && (

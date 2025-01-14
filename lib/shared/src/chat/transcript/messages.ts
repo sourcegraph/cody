@@ -57,15 +57,29 @@ export interface ChatMessage extends Message {
     subMessages?: SubMessage[]
 }
 
+export enum ProcessType {
+    Confirmation = 'confirmation',
+    Step = 'step',
+}
+
 /**
  * Represents an individual step in a chat message processing pipeline, typically used
  * to track and display the progress of context fetching and analysis operations.
  */
 export interface ProcessingStep {
     /**
+     * The type of the step
+     */
+    type: ProcessType
+    /**
      * Unique identifier or name for the processing step
      */
     id: string
+
+    /**
+     * The title of the step
+     */
+    title?: string
 
     /**
      * Description of what the step is doing or has completed
@@ -207,14 +221,5 @@ export function errorToChatError(error: Error): ChatError {
         ...error,
         message: error.message,
         name: error.name,
-    }
-}
-
-export function createProcessingStep(data: Partial<ProcessingStep>): ProcessingStep {
-    return {
-        id: data.id ?? '',
-        content: data.content ?? '',
-        status: data.status ?? 'pending',
-        step: data.step ?? 0,
     }
 }

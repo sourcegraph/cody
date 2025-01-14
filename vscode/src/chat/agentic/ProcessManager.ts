@@ -1,9 +1,13 @@
 import { type ProcessingStep, errorToChatError } from '@sourcegraph/cody-shared'
+import { ProcessType } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 
 export class ProcessManager {
     private processes: ProcessingStep[] = []
 
-    constructor(private readonly onChange: (processes: ProcessingStep[]) => void) {}
+    constructor(
+        private readonly onChange: (processes: ProcessingStep[]) => void,
+        private readonly onRequest: (step: ProcessingStep) => Promise<boolean>
+    ) {}
 
     public initializeStep(): void {
         this.processes = [
@@ -11,6 +15,7 @@ export class ProcessManager {
                 content: '',
                 id: '',
                 step: 0,
+                type: ProcessType.Step,
                 status: 'pending',
             },
         ]
@@ -19,6 +24,7 @@ export class ProcessManager {
 
     public addStep(toolName: string, content: string): void {
         this.processes.push({
+            type: ProcessType.Step,
             content,
             id: toolName,
             step: this.processes.length,
@@ -27,11 +33,25 @@ export class ProcessManager {
         this.notifyChange()
     }
 
-    public completeStep(toolName?: string, error?: Error): void {
-        if (toolName) {
+    public addConfirmationStep(stepId: string, title: string, content: string): Promise<boolean> {
+        const step = {
+            type: ProcessType.Confirmation,
+            content,
+            id: stepId,
+            title,
+            step: this.processes.length,
+            status: 'pending',
+        } satisfies ProcessingStep
+        this.processes.push(step)
+        this.notifyChange()
+        return this.onRequest(step)
+    }
+
+    public completeStep(toolId?: string, error?: Error): void {
+        if (toolId) {
             // Update specific tool
             this.processes = this.processes.map(step =>
-                step.id === toolName
+                step.id === toolId
                     ? {
                           ...step,
                           status: error ? 'error' : 'success',

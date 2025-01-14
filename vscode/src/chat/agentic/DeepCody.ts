@@ -65,13 +65,17 @@ export class DeepCodyAgent {
     constructor(
         protected readonly chatBuilder: ChatBuilder,
         protected readonly chatClient: Pick<ChatClient, 'chat'>,
-        statusUpdateCallback: (steps: ProcessingStep[]) => void
+        statusUpdateCallback: (steps: ProcessingStep[]) => void,
+        postRequest: (step: ProcessingStep) => Promise<boolean>
     ) {
         // Initialize tools, handlers and mixins in constructor
         this.tools = CodyToolProvider.getTools()
         this.initializeMultiplexer(this.tools)
         this.buildPrompt(this.tools)
-        this.stepsManager = new ProcessManager(steps => statusUpdateCallback(steps))
+        this.stepsManager = new ProcessManager(
+            steps => statusUpdateCallback(steps),
+            step => postRequest(step)
+        )
         this.statusCallback = {
             onStart: () => {
                 this.stepsManager.initializeStep()
@@ -81,6 +85,9 @@ export class DeepCodyAgent {
             },
             onComplete: (toolName, error) => {
                 this.stepsManager.completeStep(toolName, error)
+            },
+            onConfirmationNeeded: async (toolName, title, content) => {
+                return this.stepsManager.addConfirmationStep(toolName, title, content)
             },
         }
         this.statusCallback.onStream('status-report', 'reviewing request...')

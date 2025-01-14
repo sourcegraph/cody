@@ -23,6 +23,7 @@ export interface ToolStatusCallback {
     onStart(): void
     onStream(tool: string, content: string): void
     onComplete(tool?: string, error?: Error): void
+    onConfirmationNeeded(tool: string, title: string, content: string): Promise<boolean>
 }
 
 /**

@@ -6,7 +6,8 @@ describe('ProcessManager', () => {
     // Helper to create manager instance with mock callback
     const createManager = () => {
         const onChange = vi.fn()
-        const manager = new ProcessManager(onChange)
+        const onRequest = vi.fn().mockResolvedValue(true)
+        const manager = new ProcessManager(onChange, onRequest)
         return { manager, onChange }
     }
 

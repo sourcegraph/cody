@@ -147,6 +147,7 @@ export type WebviewMessage =
           index: number
           selectedFilters: NLSSearchDynamicFilter[]
       }
+    | { command: 'action/confirmation'; id: string; response: boolean }
 
 export interface SmartApplyResult {
     taskId: FixupTaskID
@@ -193,6 +194,7 @@ export type ExtensionMessage =
       }
     | ({ type: 'attribution' } & ExtensionAttributionMessage)
     | { type: 'rpc/response'; message: ResponseMessage }
+    | { type: 'action/confirmationRequest'; id: string; step?: ProcessingStep }
 
 interface ExtensionAttributionMessage {
     snippet: string

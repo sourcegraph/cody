@@ -109,7 +109,7 @@ const ProcessList: FC<{ processes: ProcessingStep[]; isContextLoading: boolean }
 }
 
 const ProcessItem: FC<{ process: ProcessingStep; isContextLoading: boolean }> = ({ process }) => {
-    if (!process.id || process.id === 'deep-cody') {
+    if (!process.id || process.id === 'status-report' || process.type === 'confirmation') {
         return null
     }
 

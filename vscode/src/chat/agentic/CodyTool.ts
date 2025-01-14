@@ -12,6 +12,7 @@ import {
     pendingOperation,
     ps,
 } from '@sourcegraph/cody-shared'
+import * as uuid from 'uuid'
 import { URI } from 'vscode-uri'
 import { getContextFromRelativePath } from '../../commands/context/file-path'
 import { getContextFileFromShell } from '../../commands/context/shell'
@@ -37,6 +38,7 @@ export interface CodyToolConfig {
         placeholder: PromptString
         examples: PromptString[]
     }
+    confirmationRequired?: boolean
 }
 
 /**
@@ -106,12 +108,18 @@ export abstract class CodyTool {
      *
      * Abstract method to be implemented by subclasses for executing the tool.
      */
-    protected abstract execute(span: Span, queries: string[]): Promise<ContextItem[]>
-    public async run(span: Span, callback?: ToolStatusCallback): Promise<ContextItem[]> {
+    public abstract execute(
+        span: Span,
+        queries: string[],
+        callback?: ToolStatusCallback
+    ): Promise<ContextItem[]>
+    public async run(span: Span, cb?: ToolStatusCallback): Promise<ContextItem[]> {
         try {
             const queries = this.parse()
             if (queries.length) {
-                callback?.onStream(this.config.title, queries.join(', '))
+                if (!this.config.confirmationRequired) {
+                    cb?.onStream(this.config.title, queries.join(', '))
+                }
                 // Create a timeout promise
                 const timeoutPromise = new Promise<ContextItem[]>((_, reject) => {
                     setTimeout(() => {
@@ -123,13 +131,13 @@ export abstract class CodyTool {
                     }, CodyTool.EXECUTION_TIMEOUT_MS)
                 })
                 // Race between execution and timeout
-                const results = await Promise.race([this.execute(span, queries), timeoutPromise])
+                const results = await Promise.race([this.execute(span, queries, cb), timeoutPromise])
                 // Notify that tool execution is complete
-                callback?.onComplete(this.config.title)
+                cb?.onComplete(this.config.title)
                 return results
             }
         } catch (error) {
-            callback?.onComplete(this.config.title, error as Error)
+            cb?.onComplete(this.config.title, error as Error)
         }
         return Promise.resolve([])
     }
@@ -155,14 +163,40 @@ class CliTool extends CodyTool {
                     ps`Harmful commands (alter the system, access sensative information, and make network requests) MUST be rejected with <ban> tags: \`<TOOLCLI><ban>rm -rf </ban><ban>curl localhost:1234</ban><ban>echo $TOKEN</ban></TOOLCLI>\``,
                 ],
             },
+            confirmationRequired: true,
         })
     }
 
-    public async execute(span: Span, commands: string[]): Promise<ContextItem[]> {
+    public async execute(
+        span: Span,
+        commands: string[],
+        callback: ToolStatusCallback
+    ): Promise<ContextItem[]> {
         span.addEvent('executeCliTool')
         if (commands.length === 0) return []
-        logDebug('CodyTool', `executing ${commands.length} commands...`)
-        return Promise.all(commands.map(getContextFileFromShell)).then(results => results.flat())
+        const approvedCommands = new Set<string>()
+        for (const command of commands) {
+            const toolId = this.config.tags.tag.toString()
+            const stepId = `${toolId}-${uuid.v4()}`
+            const apporval = await callback?.onConfirmationNeeded(
+                stepId,
+                'Allow agent to execute the following command in your terminal?',
+                command
+            )
+            if (apporval) {
+                approvedCommands.add(command)
+            } else {
+                callback.onComplete(stepId, new Error('Command rejected'))
+            }
+        }
+        if (!approvedCommands.size) {
+            throw new Error('No commands approved for execution')
+        }
+        callback.onStream(this.config.title, [...approvedCommands].join(', '))
+        logDebug('CodyTool', `executing ${approvedCommands.size} commands...`)
+        return Promise.all([...approvedCommands].map(getContextFileFromShell)).then(results =>
+            results.flat()
+        )
     }
 }
 

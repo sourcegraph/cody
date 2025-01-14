@@ -12,6 +12,7 @@ const mockCallback: ToolStatusCallback = {
     onStart: vi.fn(),
     onStream: vi.fn(),
     onComplete: vi.fn(),
+    onConfirmationNeeded: vi.fn(),
 }
 
 class TestTool extends CodyTool {
