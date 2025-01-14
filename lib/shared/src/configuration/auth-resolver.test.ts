@@ -61,10 +61,10 @@ describe('auth-resolver', () => {
     })
 
     test('resolve custom auth provider', async () => {
-        const expirationEpoch = 2736874802
+        const futureExpirationEpoch = 1000 * 1000 * 1000 * 1000
         const credentialsJson = JSON.stringify({
             headers: { Authorization: 'token X' },
-            expiration: expirationEpoch,
+            expiration: futureExpirationEpoch,
         })
 
         const auth = await resolveAuth(
@@ -92,7 +92,7 @@ describe('auth-resolver', () => {
         expect(auth.serverEndpoint).toBe('https://my-server.com/')
 
         const headerCredential = auth.credentials as HeaderCredential
-        expect(headerCredential.expiration).toBe(expirationEpoch)
+        expect(headerCredential.expiration).toBe(futureExpirationEpoch)
         expect(headerCredential.getHeaders()).toStrictEqual({
             Authorization: 'token X',
         })
@@ -128,10 +128,10 @@ describe('auth-resolver', () => {
     })
 
     test('resolve custom auth provider error handling - bad expiration', async () => {
-        const expirationEpoch = 1636865002
+        const pastExpirationEpoch = 1000 * 1000 * 1000
         const credentialsJson = JSON.stringify({
             headers: { Authorization: 'token X' },
-            expiration: expirationEpoch,
+            expiration: pastExpirationEpoch,
         })
 
         const auth = await resolveAuth(
