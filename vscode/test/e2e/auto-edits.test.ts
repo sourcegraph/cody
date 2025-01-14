@@ -234,6 +234,20 @@ test('autoedits: triggers inline decorations when multiple separate insertions a
     })
 })
 
+test('autoedits: triggers a suffix decoration and renders correctly in files that use tab based indentation', async ({
+    page,
+    sidebar,
+}) => {
+    const lineOptions: LineOptions[] = [{ line: 23 }]
+    await autoeditsTestHelper({
+        page,
+        sidebar,
+        fileName: 'suffix-decoration-example-3.go',
+        testCaseName: 'autoedits-suffix-decoration-tab-indentation',
+        lineOptions,
+    })
+})
+
 test('autoedits: does not show any suggestion if the suffix decoration spans further than the end of the file', async ({
     page,
     sidebar,
