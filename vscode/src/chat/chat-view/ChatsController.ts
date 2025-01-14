@@ -82,6 +82,9 @@ export class ChatsController implements vscode.Disposable {
                     const hasSwitchedAccount =
                         this.currentAuthAccount &&
                         this.currentAuthAccount.endpoint !== authStatus.endpoint
+                    this.currentAuthAccount = authStatus.authenticated ? { ...authStatus } : undefined
+                    console.log('this.currentAuthAccount endpoint', this.currentAuthAccount?.endpoint, '\n hasLoggedOut: ', hasLoggedOut, '\n hasSwitchedAccount: ', hasSwitchedAccount, '\n authStatus endpoint: ', authStatus.endpoint)
+
                     if (hasLoggedOut) {
                         this.disposeAllChats()
                     }
