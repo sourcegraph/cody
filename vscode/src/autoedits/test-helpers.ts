@@ -33,12 +33,19 @@ export async function autoeditResultFor(
         prediction,
         token,
         provider: existingProvider,
+        getModelResponse,
     }: {
         prediction: string
         /** provide to reuse an existing provider instance */
         provider?: AutoeditsProvider
         inlineCompletionContext?: vscode.InlineCompletionContext
         token?: vscode.CancellationToken
+        getModelResponse?: (
+            url: string,
+            body: string,
+            apiKey: string,
+            customHeaders?: Record<string, string>
+        ) => Promise<unknown>
     }
 ): Promise<{
     result: AutoeditsResult | null
@@ -47,8 +54,7 @@ export async function autoeditResultFor(
     provider: AutoeditsProvider
     editBuilder: WorkspaceEdit
 }> {
-    // TODO: add a callback to verify `getModelResponse` arguments.
-    vi.spyOn(adapters, 'getModelResponse').mockImplementation(async (..._args: unknown[]) => {
+    const getModelResponseMock = async (...args: unknown[]) => {
         // Simulate response latency.
         vi.advanceTimersByTime(100)
 
@@ -59,7 +65,10 @@ export async function autoeditResultFor(
                 },
             ],
         }
-    })
+    }
+
+    // TODO: add a callback to verify `getModelResponse` arguments.
+    vi.spyOn(adapters, 'getModelResponse').mockImplementation(getModelResponse || getModelResponseMock)
 
     const editBuilder = new WorkspaceEdit()
     const { document, position } = documentAndPosition(textWithCursor)

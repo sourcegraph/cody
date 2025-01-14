@@ -38,10 +38,6 @@ import LinearIssuesProvider from './openctx/linear-issues'
 import RemoteDirectoryProvider, { createRemoteDirectoryProvider } from './openctx/remoteDirectorySearch'
 import RemoteFileProvider, { createRemoteFileProvider } from './openctx/remoteFileSearch'
 import RemoteRepositorySearch, { createRemoteRepositoryProvider } from './openctx/remoteRepositorySearch'
-import {
-    RemoteWorkspaceDirectoryProvider,
-    RemoteWorkspaceRepositoryProvider,
-} from './openctx/remoteSourcegraphTeams'
 import { createWebProvider } from './openctx/web'
 
 export function exposeOpenCtxClient(
@@ -143,21 +139,7 @@ export function getOpenCtxProviders(
                 },
             ]
 
-            if (isDotCom(authStatus)) {
-                // Add providers for dotcom users with upgrade flag
-                if (showRemoteWorkspaceUpgrade) {
-                    providers.push({
-                        settings: false,
-                        provider: RemoteWorkspaceRepositoryProvider,
-                        providerUri: RemoteWorkspaceRepositoryProvider.providerUri,
-                    })
-                    providers.push({
-                        settings: false,
-                        provider: RemoteWorkspaceDirectoryProvider,
-                        providerUri: RemoteWorkspaceDirectoryProvider.providerUri,
-                    })
-                }
-            } else {
+            if (!isDotCom(authStatus)) {
                 // Remote repository and remote files should be available for non-dotcom users.
                 providers.push({
                     settings: true,

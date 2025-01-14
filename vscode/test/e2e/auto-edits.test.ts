@@ -157,6 +157,9 @@ const autoeditsTestHelper = async ({
             // Be mindful of this when adding new tests that have minor differences
             maxDiffPixelRatio: 0.02,
             maxDiffPixels: 500,
+            // Threshold accounts for color changes between screenshots. It's important to keep this low as
+            // our decoration logic heavily relies on pure color changes to be functional
+            threshold: 0.01,
             clip,
         })
     }
@@ -245,14 +248,6 @@ test('autoedits: triggers a suffix decoration and renders correctly in files tha
     })
 })
 
-/**
- * BUG: We need to fix our logic to display decorations at the end of a file.
- * Linear issue: https://linear.app/sourcegraph/issue/CODY-4650/fix-rendering-issues-with-suffix-suggestions-at-the-end-of-a-file
- * Expected behaviour: We do not show any suggestion, as there is not enough room in the file to show the full decorations..
- * Actual behaviour: We *do* hide the suffix decorations, but we still show the deletion decorations.
- *
- * Note: This should not be a problem when we move towards image based decorations/
- */
 test('autoedits: does not show any suggestion if the suffix decoration spans further than the end of the file', async ({
     page,
     sidebar,
