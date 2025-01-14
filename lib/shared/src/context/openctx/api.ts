@@ -1,6 +1,5 @@
 import type { Client } from '@openctx/client'
 import type * as vscode from 'vscode'
-import { DOTCOM_WORKSPACE_UPGRADE_URL } from '../..'
 
 type OpenCtxController = Pick<
     Client<vscode.Range>,
@@ -33,9 +32,3 @@ export const REMOTE_DIRECTORY_PROVIDER_URI = 'internal-remote-directory-search'
 export const WEB_PROVIDER_URI = 'internal-web-provider'
 export const GIT_OPENCTX_PROVIDER_URI = 'internal-git-openctx-provider'
 export const CODE_SEARCH_PROVIDER_URI = 'internal-code-search-provider'
-export const WORKSPACE_DIRECTORY_PROVIDER_URI = DOTCOM_WORKSPACE_UPGRADE_URL.href + '?workspace=dir'
-export const WORKSPACE_REPOSITORY_PROVIDER_URI = DOTCOM_WORKSPACE_UPGRADE_URL.href + '?workspace=repo'
-
-export function isRemoteWorkspaceProvider(uri: string): boolean {
-    return uri === WORKSPACE_DIRECTORY_PROVIDER_URI || uri === WORKSPACE_REPOSITORY_PROVIDER_URI
-}

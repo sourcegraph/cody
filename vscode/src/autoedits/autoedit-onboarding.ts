@@ -6,6 +6,7 @@ import {
     currentUserProductSubscription,
     featureFlagProvider,
     storeLastValue,
+    telemetryRecorder,
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import { localStorage } from '../services/LocalStorageProvider'
@@ -14,6 +15,17 @@ import { isUserEligibleForAutoeditsFeature } from './create-autoedits-provider'
 export interface AutoEditNotificationInfo {
     lastNotifiedTime: number
     timesShown: number
+}
+
+const userNotificationAction = {
+    notificationAccepted: 1,
+    notificationRejected: 2,
+    notificationIgnored: 3,
+} as const
+
+interface AutoEditNotificationPayload {
+    timesNotified: number
+    actionTaken: (typeof userNotificationAction)[keyof typeof userNotificationAction]
 }
 
 export class AutoEditOnboarding implements vscode.Disposable {
@@ -32,14 +44,24 @@ export class AutoEditOnboarding implements vscode.Disposable {
     }
 
     private async showAutoEditOnboardingPopup(): Promise<void> {
-        const selection = await vscode.window.showInformationMessage(
-            'Try Cody Auto-Edit (experimental)? Cody will intelligently suggest next edits as you navigate the codebase.',
-            'Enable Auto-Edit',
-            "Don't Show Again"
-        )
+        const { timesShown } = await this.getAutoEditOnboardingNotificationInfo()
+
+        const enableAutoeditText = 'Enable Auto-Edit'
+        const dontShowAgainText = "Don't Show Again"
+
+        const selection = await Promise.race([
+            vscode.window.showInformationMessage(
+                'Try Cody Auto-Edit (experimental)? Cody will intelligently suggest next edits as you navigate the codebase.',
+                enableAutoeditText,
+                dontShowAgainText
+            ),
+            new Promise<string | undefined>(
+                resolve => setTimeout(() => resolve(undefined), 30_000) // 30 seconds timeout
+            ),
+        ])
         await this.incrementAutoEditOnboardingNotificationCount({ incrementCount: 1 })
 
-        if (selection === 'Enable Auto-Edit') {
+        if (selection === enableAutoeditText) {
             // Enable the setting programmatically
             await vscode.workspace
                 .getConfiguration()
@@ -54,13 +76,34 @@ export class AutoEditOnboarding implements vscode.Disposable {
                 'workbench.action.openSettings',
                 'cody.suggestions.mode'
             )
-        } else if (selection === "Don't Show Again") {
+        } else if (selection === dontShowAgainText) {
             // If user doesn't want to see the notification again, increase number of shown notification by max limit + 1
             // to prevent showing the notification again until the user restarts VS Code.
             await this.incrementAutoEditOnboardingNotificationCount({
                 incrementCount: this.MAX_AUTO_EDITS_ONBOARDING_NOTIFICATIONS + 1,
             })
         }
+
+        const notificationPayload: AutoEditNotificationPayload = {
+            timesNotified: timesShown,
+            actionTaken:
+                selection === enableAutoeditText
+                    ? userNotificationAction.notificationAccepted
+                    : selection === dontShowAgainText
+                      ? userNotificationAction.notificationRejected
+                      : userNotificationAction.notificationIgnored,
+        }
+        this.writeAutoeditNotificationEvent(notificationPayload)
+    }
+
+    private writeAutoeditNotificationEvent(payload: AutoEditNotificationPayload): void {
+        telemetryRecorder.recordEvent('cody.autoedit', 'notified', {
+            version: 0,
+            metadata: {
+                timesNotified: payload.timesNotified,
+                userActionTaken: payload.actionTaken,
+            },
+        })
     }
 
     private async shouldShowAutoEditOnboardingPopup(): Promise<boolean> {
@@ -79,8 +122,8 @@ export class AutoEditOnboarding implements vscode.Disposable {
     private async incrementAutoEditOnboardingNotificationCount(param: {
         incrementCount: number
     }): Promise<void> {
-        const info = await this.getAutoEditsOnboardingNotificationInfo()
-        await localStorage.setAutoEditsOnboardingNotificationInfo({
+        const info = await this.getAutoEditOnboardingNotificationInfo()
+        await localStorage.setAutoEditOnboardingNotificationInfo({
             timesShown: info.timesShown + param.incrementCount,
             lastNotifiedTime: Date.now(),
         })
@@ -92,15 +135,15 @@ export class AutoEditOnboarding implements vscode.Disposable {
     }
 
     private async isAutoEditNotificationsUnderLimit(): Promise<boolean> {
-        const info = await this.getAutoEditsOnboardingNotificationInfo()
+        const info = await this.getAutoEditOnboardingNotificationInfo()
         return (
             info.timesShown < this.MAX_AUTO_EDITS_ONBOARDING_NOTIFICATIONS &&
             Date.now() - info.lastNotifiedTime > this.MIN_TIME_DIFF_AUTO_EDITS_BETWEEN_NOTIFICATIONS_MS
         )
     }
 
-    private async getAutoEditsOnboardingNotificationInfo(): Promise<AutoEditNotificationInfo> {
-        return localStorage.getAutoEditsOnboardingNotificationInfo()
+    private async getAutoEditOnboardingNotificationInfo(): Promise<AutoEditNotificationInfo> {
+        return localStorage.getAutoEditOnboardingNotificationInfo()
     }
 
     private async isUserEligibleForAutoEditOnboarding(): Promise<boolean> {

@@ -2,8 +2,11 @@ import * as vscode from 'vscode'
 
 import { GHOST_TEXT_COLOR } from '../../../commands/GhostHintDecorator'
 
+import { getEditorInsertSpaces, getEditorTabSize } from '@sourcegraph/cody-shared'
 import { generateSuggestionAsImage } from '../image-gen'
 import type { AutoEditsDecorator, DecorationInfo, ModifiedLineInfo } from './base'
+import { blockify } from './blockify'
+import { UNICODE_SPACE } from './blockify'
 
 export interface AddedLinesDecorationInfo {
     ranges: [number, number][]
@@ -214,7 +217,8 @@ export class DefaultDecorator implements AutoEditsDecorator {
         const oldLines = addedLinesInfo
             .filter(info => info.afterLine < this.editor.document.lineCount)
             .map(info => this.editor.document.lineAt(info.afterLine))
-        const replacerCol = Math.max(...oldLines.map(line => line.range.end.character))
+
+        const replacerCol = Math.max(...oldLines.map(line => this.getEndColumn(line)))
         const startLine = Math.min(...oldLines.map(line => line.lineNumber))
 
         return {
@@ -227,52 +231,78 @@ export class DefaultDecorator implements AutoEditsDecorator {
         }
     }
 
+    private getEndColumn(line: vscode.TextLine): number {
+        const insertSpaces = getEditorInsertSpaces(
+            this.editor.document.uri,
+            vscode.workspace,
+            vscode.window
+        )
+        if (insertSpaces) {
+            // We can reliably use the range position for files using space characters
+            return line.range.end.character
+        }
+
+        // For files using tab-based indentation, we need special handling.
+        // VSCode's Range API doesn't account for tab display width
+        // We need to:
+        // 1. Convert tabs to spaces based on editor tab size
+        // 2. Calculate the visual width including both indentation and content
+        const tabSize = getEditorTabSize(this.editor.document.uri, vscode.workspace, vscode.window)
+        const tabAsSpace = UNICODE_SPACE.repeat(tabSize)
+        const firstNonWhitespaceCharacterIndex = line.firstNonWhitespaceCharacterIndex
+        const indentationText = line.text.substring(0, firstNonWhitespaceCharacterIndex)
+        const spaceAdjustedEndCharacter =
+            indentationText.replaceAll(/\t/g, tabAsSpace).length +
+            (line.text.length - firstNonWhitespaceCharacterIndex)
+
+        return spaceAdjustedEndCharacter
+    }
+
     private renderAddedLinesDecorations(
-        addedLinesInfo: AddedLinesDecorationInfo[],
+        _addedLinesInfo: AddedLinesDecorationInfo[],
         startLine: number,
         replacerCol: number
     ): void {
-        blockify(addedLinesInfo)
-        const { dark } = generateSuggestionAsImage({ decorations: addedLinesInfo, lang: 'typescript' })
-        const startLineRef = this.editor.document.lineAt(startLine)
-        const startLineLength = startLineRef.range.end.character
+        // Blockify the added lines so they are suitable to be rendered together as a VS Code decoration
+        const blockifiedAddedLines = blockify(this.editor.document, _addedLinesInfo)
+        const { dark, light } = generateSuggestionAsImage({
+            decorations: blockifiedAddedLines,
+            lang: 'typescript',
+        })
+        const startLineEndColumn = this.getEndColumn(this.editor.document.lineAt(startLine))
 
         // The padding in which to offset the decoration image away from neighbouring code
         const decorationPadding = 4
         // The margin position where the decoration image should render.
         // Ensuring it does not conflict with the visibility of existing code.
-        const decorationMargin = replacerCol - startLineLength + decorationPadding
+        const decorationMargin = replacerCol - startLineEndColumn + decorationPadding
 
         this.editor.setDecorations(this.addedLinesDecorationType, [
             {
-                range: new vscode.Range(startLine, startLineLength, startLine, startLineLength),
+                range: new vscode.Range(startLine, startLineEndColumn, startLine, startLineEndColumn),
                 renderOptions: {
                     before: {
                         color: new vscode.ThemeColor('editorSuggestWidget.foreground'),
                         backgroundColor: new vscode.ThemeColor('editorSuggestWidget.background'),
                         border: '1px solid white',
                         borderColor: new vscode.ThemeColor('editorSuggestWidget.border'),
-                        contentIconPath: vscode.Uri.parse(dark),
                         textDecoration:
                             'none; position: absolute; z-index: 99999; scale: 0.5; transform-origin: 0px 0px; height: auto;',
                         margin: `0 0 0 ${decorationMargin}ch`,
                     },
                     after: {
-                        contentText:
-                            '\u00A0'.repeat(3) +
-                            _replaceLeadingTrailingChars(
-                                addedLinesInfo[0].lineText.replace(/\S/g, '\u00A0'),
-                                ' ',
-                                '\u00A0'
-                            ),
+                        contentText: '\u00A0'.repeat(3) + '\u00A0'.repeat(startLineEndColumn),
                         margin: `0 0 0 ${decorationMargin}ch`,
                     },
+                    // Provide different highlighting for dark/light themes
+                    dark: { before: { contentIconPath: vscode.Uri.parse(dark) } },
+                    light: { before: { contentIconPath: vscode.Uri.parse(light) } },
                 },
             },
         ])
         this.editor.setDecorations(this.insertMarkerDecorationType, [
             {
-                range: new vscode.Range(startLine, 0, startLine, startLineLength),
+                range: new vscode.Range(startLine, 0, startLine, startLineEndColumn),
             },
         ])
     }
@@ -306,94 +336,6 @@ export class DefaultDecorator implements AutoEditsDecorator {
             decorationType.dispose()
         }
     }
-}
-
-/**
- * Replaces leading and trailing occurrences of a character with another string
- * @param str The input string to process
- * @param oldS The character to replace
- * @param newS The character/string to replace with
- * @returns The string with leading and trailing characters replaced
- */
-export function _replaceLeadingTrailingChars(str: string, oldS: string, newS: string): string {
-    let prefixLen = str.length
-    for (let i = 0; i < str.length; i++) {
-        if (str[i] !== oldS) {
-            // str = newS.repeat(i) + str.substring(i)
-            prefixLen = i
-            break
-        }
-    }
-    str = newS.repeat(prefixLen) + str.substring(prefixLen)
-
-    let suffixLen = str.length
-    for (let i = 0; i < str.length; i++) {
-        const j = str.length - 1 - i
-        if (str[j] !== oldS) {
-            // str = str.substring(0, j + 1) + newS.repeat(i)
-            suffixLen = i
-            break
-        }
-    }
-    str = str.substring(0, str.length - suffixLen) + newS.repeat(suffixLen)
-
-    return str
-}
-
-function blockify(addedLines: AddedLinesDecorationInfo[]) {
-    removeLeadingWhitespaceBlock(addedLines)
-    padTrailingWhitespaceBlock(addedLines)
-}
-
-function padTrailingWhitespaceBlock(addedLines: AddedLinesDecorationInfo[]) {
-    let maxLineWidth = 0
-    for (const addedLine of addedLines) {
-        maxLineWidth = Math.max(maxLineWidth, addedLine.lineText.length)
-    }
-    for (const addedLine of addedLines) {
-        addedLine.lineText = addedLine.lineText.padEnd(maxLineWidth, ' ')
-    }
-}
-
-function removeLeadingWhitespaceBlock(addedLines: AddedLinesDecorationInfo[]) {
-    let leastCommonWhitespacePrefix: undefined | string = undefined
-    for (const addedLine of addedLines) {
-        const leadingWhitespaceMatch = addedLine.lineText.match(/^\s*/)
-        if (leadingWhitespaceMatch === null) {
-            leastCommonWhitespacePrefix = ''
-            break
-        }
-        const leadingWhitespace = leadingWhitespaceMatch[0]
-        if (leastCommonWhitespacePrefix === undefined) {
-            leastCommonWhitespacePrefix = leadingWhitespace
-            continue
-        }
-        leastCommonWhitespacePrefix = getCommonPrefix(leastCommonWhitespacePrefix, leadingWhitespace)
-    }
-    if (!leastCommonWhitespacePrefix) {
-        return
-    }
-    const prefixLength = leastCommonWhitespacePrefix.length
-    for (const addedLine of addedLines) {
-        addedLine.lineText = addedLine.lineText.replace(leastCommonWhitespacePrefix, '')
-        addedLine.ranges = addedLine.ranges.map(([start, end]) => [
-            Math.max(0, start - prefixLength),
-            Math.max(0, end - prefixLength),
-        ])
-    }
-}
-
-function getCommonPrefix(s1: string, s2: string): string {
-    const minLength = Math.min(s1.length, s2.length)
-    let commonPrefix = ''
-    for (let i = 0; i < minLength; i++) {
-        if (s1[i] === s2[i]) {
-            commonPrefix += s1[i]
-        } else {
-            break
-        }
-    }
-    return commonPrefix
 }
 
 /**
