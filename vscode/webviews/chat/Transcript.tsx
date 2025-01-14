@@ -344,7 +344,6 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
 
     const onEditSubmit = useCallback(
         (intentFromSubmit?: ChatMessage['intent']): void => {
-            console.log('Transcript', 'onEditSubmit', JSON.stringify(intentFromSubmit))
             onUserAction('edit', intentFromSubmit)
         },
         [onUserAction]
@@ -518,7 +517,6 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
     const telemetryRecorder = useTelemetryRecorder()
     const reSubmitWithIntent = useCallback(
         (intent: ChatMessage['intent']) => {
-            console.log('Transcript', 'resubmitWithIntent', intent)
             const editorState = humanEditorRef.current?.getSerializedValue()
             if (editorState) {
                 onEditSubmit(intent)

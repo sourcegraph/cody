@@ -726,16 +726,22 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             return { intent: 'chat', intentScores: [] }
         }
 
-        // The `detectedIntent` comes from the webview, where it can either be manually set by the user
-        // using the dropdown UI or automatically pre-fetched for the input while the user is typing.
-        // If any such intent is already detected, we use that.
-
-        // TODO: detectedIntent is null here because it isn't persisted in the transcript for some reason
-
         // TODO: differentiate between manually selected intent and detected intent
+
+        // The `detectedIntent` and `manuallySelectedIntent` params come from the webview.
+        // If `manuallySelectedIntent` is set, this was a user override, and we should use it.
         if (manuallySelectedIntent) {
             return {
                 intent: manuallySelectedIntent,
+                intentScores: detectedIntentScores || [],
+            }
+        }
+
+        // `detectedIntent` can be automatically pre-fetched for the input while the user is typing.
+        // If an intent was already detected, we use that.
+        if (detectedIntent) {
+            return {
+                intent: detectedIntent,
                 intentScores: detectedIntentScores || [],
             }
         }
@@ -833,20 +839,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             detectedIntent: intent,
             detectedIntentScores: intentScores,
         })
-
-        logDebug(
-            'ChatController',
-            'Setting intent info',
-            JSON.stringify({
-                userSpecifiedIntent: manuallySelectedIntent
-                    ? manuallySelectedIntent
-                    : this.featureCodyExperimentalOneBox
-                      ? 'auto'
-                      : 'chat',
-                detectedIntent: intent,
-                detectedIntentScores: intentScores,
-            })
-        )
 
         this.postEmptyMessageInProgress(model)
         let messageInProgress: ChatMessage = { speaker: 'assistant', model }
