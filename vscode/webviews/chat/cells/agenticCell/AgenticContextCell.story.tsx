@@ -1,16 +1,16 @@
 import type { Meta, StoryObj } from '@storybook/react'
 import { VSCodeStandaloneComponent } from '../../../storybook/VSCodeStoryDecorator'
-import { AgenticChatCell } from './agenticChatCell'
+import { AgenticContextCell } from './AgenticContextCell'
 
-const meta: Meta<typeof AgenticChatCell> = {
-    title: 'cody/AgenticChatCell',
-    component: AgenticChatCell,
+const meta: Meta<typeof AgenticContextCell> = {
+    title: 'cody/AgenticContextCell',
+    component: AgenticContextCell,
     decorators: [VSCodeStandaloneComponent],
 }
 
 export default meta
 
-type Story = StoryObj<typeof AgenticChatCell>
+type Story = StoryObj<typeof AgenticContextCell>
 
 export const Default: Story = {
     args: {

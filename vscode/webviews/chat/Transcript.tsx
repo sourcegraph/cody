@@ -52,7 +52,7 @@ import { HumanMessageCell } from './cells/messageCell/human/HumanMessageCell'
 import { type Context, type Span, context, trace } from '@opentelemetry/api'
 import { isCodeSearchContextItem } from '../../src/context/openctx/codeSearch'
 import { TELEMETRY_INTENT } from '../../src/telemetry/onebox'
-import { AgenticChatCell } from './cells/agenticCell/agenticChatCell'
+import { AgenticContextCell } from './cells/agenticCell/AgenticContextCell'
 import { SwitchIntent } from './cells/messageCell/assistant/SwitchIntent'
 import { LastEditorContext } from './context'
 
@@ -636,7 +636,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                 />
             )}
             {humanMessage?.processes && (
-                <AgenticChatCell
+                <AgenticContextCell
                     key={`${humanMessage.index}-${humanMessage.intent}-process`}
                     isContextLoading={isContextLoading}
                     processes={humanMessage?.processes ?? undefined}

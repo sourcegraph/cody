@@ -16,7 +16,7 @@ const CELL_NAME = 'agentic-context-items'
 /**
  * A component displaying the agentic chat status.
  */
-export const AgenticChatCell: FunctionComponent<{
+export const AgenticContextCell: FunctionComponent<{
     isContextLoading: boolean
     className?: string
     processes?: ProcessingStep[]
@@ -31,9 +31,7 @@ export const AgenticChatCell: FunctionComponent<{
 
     const subHeader = !isContextLoading
         ? 'reviewed'
-        : processes?.every(p => !p.content && p.status === 'pending')
-          ? 'reviewing request...'
-          : 'fetching context using tools...'
+        : processes?.findLast(p => p.id === 'status-report' && p.content)?.content || 'running...'
 
     return (
         <div>
@@ -111,7 +109,7 @@ const ProcessList: FC<{ processes: ProcessingStep[]; isContextLoading: boolean }
 }
 
 const ProcessItem: FC<{ process: ProcessingStep; isContextLoading: boolean }> = ({ process }) => {
-    if (!process.id) {
+    if (!process.id || process.id === 'deep-cody') {
         return null
     }
 

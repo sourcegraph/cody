@@ -83,7 +83,7 @@ export class DeepCodyAgent {
                 this.stepsManager.completeStep(toolName, error)
             },
         }
-        this.statusCallback.onStart()
+        this.statusCallback.onStream('status-report', 'reviewing request...')
     }
 
     /**
@@ -185,6 +185,7 @@ export class DeepCodyAgent {
             this.stats.context += validItems.length
             if (newContext.every(isUserAddedItem)) break
         }
+        this.statusCallback.onStream('status-report', 'sending final request...')
     }
 
     /**
@@ -206,11 +207,13 @@ export class DeepCodyAgent {
         const { prompt } = await prompter.makePrompt(this.chatBuilder, 1, this.promptMixins)
         span.addEvent('sendReviewRequest')
         try {
+            this.statusCallback.onStream('status-report', 'reflecting...')
             const res = await this.processStream(requestID, prompt, chatAbortSignal, DeepCodyAgent.model)
             // If the response is empty or only contains the answer token, it's ready to answer.
             if (!res || isReadyToAnswer(res)) {
                 return []
             }
+            this.statusCallback.onStream('status-report', 'fetching context using tools...')
             const results = await Promise.all(
                 this.tools.map(async tool => {
                     try {
@@ -257,6 +260,7 @@ export class DeepCodyAgent {
             // items are not removed from the updated context list. We will let the prompt builder
             // at the final stage to do the unique context check.
             if (reviewed.length > 0) {
+                this.statusCallback.onStream('status-report', 'filtering fetched context...')
                 const userAdded = this.context.filter(c => isUserAddedItem(c))
                 reviewed.push(...userAdded)
                 this.context = reviewed
