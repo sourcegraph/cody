@@ -61,6 +61,11 @@ describe('auth-resolver', () => {
     })
 
     test('resolve custom auth provider', async () => {
+        const credentialsJson = JSON.stringify({
+            headers: { Authorization: 'token X' },
+            expiration: 1337,
+        })
+
         const auth = await resolveAuth(
             'sourcegraph.com',
             {
@@ -69,9 +74,9 @@ describe('auth-resolver', () => {
                         endpoint: 'https://my-server.com',
                         executable: {
                             commandLine: [
-                                'echo \'{ "headers": { "Authorization": "token X" }, "expiration": 2222222222 }\'',
+                                isWindows() ? `echo ${credentialsJson}` : `echo '${credentialsJson}'`,
                             ],
-                            shell: isWindows() ? 'true' : '/bin/bash',
+                            shell: isWindows() ? process.env.ComSpec : '/bin/bash',
                             timeout: 5000,
                             windowsHide: true,
                         },
@@ -86,7 +91,7 @@ describe('auth-resolver', () => {
         expect(auth.serverEndpoint).toBe('https://my-server.com/')
 
         const headerCredential = auth.credentials as HeaderCredential
-        expect(headerCredential.expiration).toBe(2222222222)
+        expect(headerCredential.expiration).toBe(1337)
         expect(headerCredential.getHeaders()).toStrictEqual({
             Authorization: 'token X',
         })
