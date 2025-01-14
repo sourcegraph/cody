@@ -1,29 +1,33 @@
 import classNames from 'classnames'
-import {type FC, type FunctionComponent, useLayoutEffect, useMemo, useState} from 'react'
+import { type FC, type FunctionComponent, useLayoutEffect, useMemo, useState } from 'react'
 
 import {
     type ChatMessage,
     type CodyClientConfig,
-    isErrorLike,
     PromptString,
     type SerializedPromptEditorState,
-    SerializedPromptEditorValue,
+    type SerializedPromptEditorValue,
+    isErrorLike,
     setDisplayPathEnvInfo,
 } from '@sourcegraph/cody-shared'
-import {AppWrapper} from 'cody-ai/webviews/AppWrapper'
-import type {VSCodeWrapper} from 'cody-ai/webviews/utils/VSCodeApi'
+import { AppWrapper } from 'cody-ai/webviews/AppWrapper'
+import type { VSCodeWrapper } from 'cody-ai/webviews/utils/VSCodeApi'
 
-import {ChatMentionContext, type ChatMentionsSettings, PromptEditorV2} from '@sourcegraph/prompt-editor'
-import {getAppWrappers} from 'cody-ai/webviews/App'
-import {useClientActionDispatcher} from 'cody-ai/webviews/client/clientState'
-import type {View} from 'cody-ai/webviews/tabs'
-import {ComposedWrappers, type Wrapper} from 'cody-ai/webviews/utils/composeWrappers'
-import {createWebviewTelemetryRecorder} from 'cody-ai/webviews/utils/telemetry'
-import type {Config} from 'cody-ai/webviews/utils/useConfig'
+import {
+    ChatMentionContext,
+    type ChatMentionsSettings,
+    PromptEditorV2,
+} from '@sourcegraph/prompt-editor'
+import { getAppWrappers } from 'cody-ai/webviews/App'
+import { useClientActionDispatcher } from 'cody-ai/webviews/client/clientState'
+import type { View } from 'cody-ai/webviews/tabs'
+import { ComposedWrappers, type Wrapper } from 'cody-ai/webviews/utils/composeWrappers'
+import { createWebviewTelemetryRecorder } from 'cody-ai/webviews/utils/telemetry'
+import type { Config } from 'cody-ai/webviews/utils/useConfig'
 
-import type {CodyExternalApi, InitialContext} from '../types'
+import type { CodyExternalApi, InitialContext } from '../types'
 
-import {useCodyWebAgent} from './use-cody-agent'
+import { useCodyWebAgent } from './use-cody-agent'
 
 // Include global Cody Web styles to the styles bundle
 import '../global-styles/styles.css'
@@ -122,7 +126,14 @@ interface CodyWebPanelProps {
 }
 
 const CodyWebPanel: FC<CodyWebPanelProps> = props => {
-    const { vscodeAPI, initialContext: initialContextData, className, setMessage, disabled, initialEditorState } = props
+    const {
+        vscodeAPI,
+        initialContext: initialContextData,
+        className,
+        setMessage,
+        disabled,
+        initialEditorState,
+    } = props
 
     const dispatchClientAction = useClientActionDispatcher()
     const [_errorMessages, setErrorMessages] = useState<string[]>([])
@@ -205,7 +216,7 @@ const CodyWebPanel: FC<CodyWebPanelProps> = props => {
                     <ComposedWrappers wrappers={wrappers}>
                         <PromptEditorV2
                             seamless={true}
-                            placeholder={"My Placeholder"}
+                            placeholder={'My Placeholder'}
                             initialEditorState={initialEditorState}
                             onChange={setMessage}
                             disabled={disabled}
