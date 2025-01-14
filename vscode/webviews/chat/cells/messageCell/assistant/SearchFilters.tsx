@@ -40,6 +40,7 @@ const supportedDynamicFilterKinds: string[] = [
     'repo',
     'file',
     'lang',
+    'symbol',
 ] satisfies Array<NLSSearchDynamicFilterKind>
 
 export const SearchFilters = ({
@@ -60,7 +61,7 @@ export const SearchFilters = ({
 
                 return groups
             },
-            { repo: [], file: [], type: [], lang: [] }
+            { repo: [], file: [], type: [], lang: [], symbol: [] }
         )
     }, [filters, selectedFilters])
 
@@ -164,6 +165,20 @@ export const SearchFilters = ({
                     ))}
                 </div>
             )}
+            {filterGroups.symbol.length > 0 && (
+                <div className="tw-flex tw-flex-col tw-gap-4">
+                    <div className="tw-font-bold tw-mb-4">Symbol</div>
+                    {filterGroups.symbol.map(filter => (
+                        <SearchFilter
+                            key={filter.value}
+                            filter={filter}
+                            onFilterSelect={onFilterSelect}
+                            onFilterDeselect={onFilterDeselect}
+                            selectedFilters={selectedFilters}
+                        />
+                    ))}
+                </div>
+            )}
         </div>
     )
 }
@@ -229,6 +244,8 @@ function getTelemetryFilterType(filter: NLSSearchDynamicFilter): number {
             return TELEMETRY_SEARCH_FILTER.REPO
         case 'file':
             return TELEMETRY_SEARCH_FILTER.FILE
+        case 'symbol':
+            return TELEMETRY_SEARCH_FILTER.SYMBOL
         default:
             return TELEMETRY_SEARCH_FILTER.UNKNOWN
     }
