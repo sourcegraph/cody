@@ -311,13 +311,13 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
                                 </CommandItem>
                             </CommandGroup>
 
-                            {!isTeamsUpgradeCtaEnabled && (
+                            {isTeamsUpgradeCtaEnabled && (
                                 <CommandGroup>
                                     <CommandLink
                                         href="https://workspaces.sourcegraph.com"
                                         target="_blank"
                                         rel="noreferrer"
-                                        className="tw-flex tw-w-full tw-justify-start tw-gap-4 tw-align-center tw-flex-col tw-bg-inherit tw-font-left"
+                                        className="tw-flex tw-w-full tw-justify-start tw-gap-8 tw-align-center tw-flex-col tw-font-left !tw-bg-transparent hover:!tw-bg-transparent [&[aria-selected]]:!tw-bg-transparent tw-pt-[15px]"
                                     >
                                         <div className="tw-flex tw-w-full tw-justify-start tw-gap-4 tw-align-center">
                                             {/* TODO: Replace with new logo */}
@@ -333,17 +333,19 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
                                                 Enterprise Starter
                                             </Badge>
                                         </div>
-                                        <div className="tw-w-full tw-text-[14px] tw-font-semibold tw-text-left tw-mt-2">
-                                            Unlock the Sourcegraph platform
-                                        </div>
-                                        <div className="tw-text-[12px] tw-text-muted-foreground">
-                                            Create a workspace and connect GitHub repositories to unlock
-                                            Code Search, AI chat, autocompletes, inline edits and more
-                                            for your team.
+                                        <div>
+                                            <div className="tw-w-full tw-text-[14px] tw-font-semibold tw-text-left tw-mb-5">
+                                                Unlock the Sourcegraph platform
+                                            </div>
+                                            <div className="tw-text-[12px] tw-text-muted-foreground">
+                                                Create a workspace and connect GitHub repositories to
+                                                unlock Code Search, AI chat, autocompletes, inline edits
+                                                and more for your team.
+                                            </div>
                                         </div>
                                         <Button
                                             key="workspace-create-button"
-                                            variant="outline"
+                                            variant="secondary"
                                             className="tw-flex-grow tw-rounded-md tw-text-center tw-w-full tw-text-foreground tw-my-2 tw-text-[12px]"
                                         >
                                             Create a workspace
