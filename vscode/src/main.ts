@@ -48,7 +48,6 @@ import { showAccountMenu } from './auth/account-menu'
 import { showSignInMenu, showSignOutMenu, tokenCallbackHandler } from './auth/auth'
 import { createAutoEditsProvider } from './autoedits/create-autoedits-provider'
 import { autoeditsOutputChannelLogger } from './autoedits/output-channel-logger'
-import { initDiffImageGenerator } from './autoedits/renderer/diff-to-png'
 import { registerAutoEditTestRenderCommand } from './autoedits/renderer/mock-renderer'
 import type { MessageProviderOptions } from './chat/MessageProvider'
 import { CodyToolProvider } from './chat/agentic/CodyToolProvider'
@@ -283,9 +282,6 @@ const register = async (
             exposeOpenCtxClient(context, platform.createOpenCtxController).subscribe({})
         )
     )
-
-    // Init image generator for AutoEdits. TODO, is this the best place?
-    await initDiffImageGenerator()
 
     const statusBar = CodyStatusBar.init()
     disposables.push(statusBar)

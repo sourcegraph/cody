@@ -2,7 +2,7 @@ import * as vscode from 'vscode'
 
 import { GHOST_TEXT_COLOR } from '../../../commands/GhostHintDecorator'
 
-import { diffToPng } from '../diff-to-png'
+import { generateSuggestionAsImage } from '../image-gen'
 import type { AutoEditsDecorator, DecorationInfo, ModifiedLineInfo } from './base'
 
 export interface AddedLinesDecorationInfo {
@@ -233,7 +233,7 @@ export class DefaultDecorator implements AutoEditsDecorator {
         replacerCol: number
     ): void {
         blockify(addedLinesInfo)
-        const png = diffToPng(addedLinesInfo)
+        const { dark } = generateSuggestionAsImage({ decorations: addedLinesInfo, lang: 'typescript' })
         const startLineRef = this.editor.document.lineAt(startLine)
         const startLineLength = startLineRef.range.end.character
 
@@ -252,7 +252,7 @@ export class DefaultDecorator implements AutoEditsDecorator {
                         backgroundColor: new vscode.ThemeColor('editorSuggestWidget.background'),
                         border: '1px solid white',
                         borderColor: new vscode.ThemeColor('editorSuggestWidget.border'),
-                        contentIconPath: vscode.Uri.parse(png),
+                        contentIconPath: vscode.Uri.parse(dark),
                         textDecoration:
                             'none; position: absolute; z-index: 99999; scale: 0.5; transform-origin: 0px 0px; height: auto;',
                         margin: `0 0 0 ${decorationMargin}ch`,
