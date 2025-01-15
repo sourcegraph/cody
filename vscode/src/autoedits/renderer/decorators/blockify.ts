@@ -45,13 +45,31 @@ export function convertToSpaceIndentation(
     // The incoming indentation is tab-based, but this will not render correctly in VS COde decorations.
     // We must convert it to space indentation that matches the editor's tab size
     const tabSize = getEditorTabSize(document.uri, vscode.workspace, vscode.window)
-    const tabAsSpace = UNICODE_SPACE.repeat(tabSize)
-    return addedLines.map(line => ({
-        ...line,
-        lineText: line.lineText.replace(/^(\t+)/, match => tabAsSpace.repeat(match.length)),
-    }))
-}
+    return addedLines.map(line => {
+        const tabMatch = line.lineText.match(/^(\t+)/)
+        const leadingTabs = tabMatch ? tabMatch[1].length : 0
+        const lengthDifference = leadingTabs * (tabSize - 1)
+        const newLineText = line.lineText.replace(/^(\t+)/, match =>
+            UNICODE_SPACE.repeat(match.length * tabSize)
+        )
 
+        // VS Code treats each tab as a single column when producing ranges, we need to reverse
+        // this as we are converting this text to use spaces. Adjust the range accordingly.
+        const newRanges = line.ranges.map(
+            ([start, end]) =>
+                [
+                    start + (start > leadingTabs ? lengthDifference : 0),
+                    end + (end > leadingTabs ? lengthDifference : 0),
+                ] as [number, number]
+        )
+
+        return {
+            ...line,
+            lineText: newLineText,
+            ranges: newRanges,
+        }
+    })
+}
 function padTrailingWhitespaceBlock(addedLines: AddedLinesDecorationInfo[]): AddedLinesDecorationInfo[] {
     let maxLineWidth = 0
     for (const addedLine of addedLines) {

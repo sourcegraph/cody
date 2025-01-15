@@ -1,0 +1,77 @@
+import { toMatchImageSnapshot } from 'jest-image-snapshot'
+import { describe, expect, it } from 'vitest'
+import { generateSuggestionAsImage, initImageSuggestionService } from '.'
+import type { AddedLinesDecorationInfo } from '../decorators/default-decorator'
+
+const MOCK_DECORATIONS = [
+    {
+        ranges: [[4, 55]],
+        afterLine: 63,
+        lineText: 'for (const remote of repository.state?.remotes || []) {',
+    },
+    {
+        ranges: [[0, 26]],
+        afterLine: 64,
+        lineText: '    if (remote.fetchUrl) {                             ',
+    },
+    {
+        ranges: [[0, 43]],
+        afterLine: 65,
+        lineText: '        seenRemoteUrls.add(remote.fetchUrl)            ',
+    },
+    {
+        ranges: [[0, 5]],
+        afterLine: 66,
+        lineText: '    }                                                  ',
+    },
+    {
+        ranges: [[0, 1]],
+        afterLine: 67,
+        lineText: '}                                                      ',
+    },
+] as AddedLinesDecorationInfo[]
+
+expect.extend({ toMatchImageSnapshot })
+
+async function generateImageForTest(
+    decorations: AddedLinesDecorationInfo[],
+    lang: string
+): Promise<{ darkBuffer: Buffer; lightBuffer: Buffer }> {
+    await initImageSuggestionService()
+
+    const { light, dark } = generateSuggestionAsImage({
+        decorations,
+        lang,
+    })
+
+    return {
+        // These suggestions are generated as dataURLs, so let's convert them back to a useful Buffer for testing
+        darkBuffer: Buffer.from(dark.split(',')[1], 'base64'),
+        lightBuffer: Buffer.from(light.split(',')[1], 'base64'),
+    }
+}
+
+describe('generateSuggestionAsImage', () => {
+    it('generates correct images, with correct highlighting applied, from a set of tokens', async () => {
+        const { darkBuffer, lightBuffer } = await generateImageForTest(MOCK_DECORATIONS, 'typescript')
+        expect(lightBuffer).toMatchImageSnapshot({
+            customSnapshotIdentifier: 'highlighted-suggestion-light',
+        })
+        expect(darkBuffer).toMatchImageSnapshot({
+            customSnapshotIdentifier: 'highlighted-suggestion-dark',
+        })
+    })
+
+    it('generates correct images, with correct highlighting applied, from a set of tokens in a language that does not have supported highlighting', async () => {
+        const { darkBuffer, lightBuffer } = await generateImageForTest(
+            MOCK_DECORATIONS,
+            'non-existent-language'
+        )
+        expect(lightBuffer).toMatchImageSnapshot({
+            customSnapshotIdentifier: 'unhighlighted-suggestion-light',
+        })
+        expect(darkBuffer).toMatchImageSnapshot({
+            customSnapshotIdentifier: 'unhighlighted-suggestion-dark',
+        })
+    })
+})
