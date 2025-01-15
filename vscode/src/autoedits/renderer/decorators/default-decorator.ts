@@ -266,7 +266,7 @@ export class DefaultDecorator implements AutoEditsDecorator {
         const blockifiedAddedLines = blockify(this.editor.document, addedLinesInfo)
         const { dark, light } = generateSuggestionAsImage({
             decorations: blockifiedAddedLines,
-            lang: 'typescript',
+            lang: this.editor.document.languageId,
         })
         const startLineEndColumn = this.getEndColumn(this.editor.document.lineAt(startLine))
 

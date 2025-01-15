@@ -1,7 +1,7 @@
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import CanvasKitInit, { type EmulatedCanvas2D } from 'canvaskit-wasm'
-import type { HighlightedAddedLinesDecorationInfo } from './highlight'
+import type { HIGHLIGHT_THEMES, HighlightedAddedLinesDecorationInfo } from './highlight'
 
 type CanvasKitType = Awaited<ReturnType<typeof CanvasKitInit>>
 type RenderContext = {
@@ -76,8 +76,16 @@ function drawText(
     ctx: CanvasRenderingContext2D,
     line: HighlightedAddedLinesDecorationInfo,
     position: { x: number; y: number },
+    mode: keyof typeof HIGHLIGHT_THEMES,
     config: RenderConfig
 ): number {
+    if (!line.highlightedTokens) {
+        // We weren't able to highlight this text, so we just draw the full line
+        ctx.fillStyle = mode === 'dark' ? '#ffffff' : '#000000'
+        ctx.fillText(line.lineText, position.x, position.y + config.fontSize)
+        return ctx.measureText(line.lineText).width
+    }
+
     let xPos = position.x
 
     for (const token of line.highlightedTokens) {
@@ -97,6 +105,12 @@ function drawHighlights(
 ): void {
     if (line.ranges.length === 0) {
         // Nothing to highlight
+        return
+    }
+
+    if (!line.highlightedTokens) {
+        // No highlighting. TODO Improve this so we still support highlighted regions on non-syntax highlighted
+        // text
         return
     }
 
@@ -131,6 +145,7 @@ function drawHighlights(
 
 export function drawTokensToCanvas(
     highlightedDecorations: HighlightedAddedLinesDecorationInfo[],
+    mode: keyof typeof HIGHLIGHT_THEMES,
     /**
      * Specific configuration to determine how we render the canvas.
      * Consider changing this, or supporting configuration from the user (e.g. font-size)
@@ -161,13 +176,9 @@ export function drawTokensToCanvas(
     // and the required height of the canvas (number of lines determined by their line height)
     let tempYPos = renderConfig.padding.y
     let requiredWidth = 0
-    for (const { highlightedTokens } of highlightedDecorations) {
-        let tempXPos = renderConfig.padding.x
-        for (const token of highlightedTokens) {
-            const measure = tempCtx.measureText(token.content)
-            tempXPos += measure.width
-            requiredWidth = Math.max(requiredWidth, tempXPos)
-        }
+    for (const { lineText } of highlightedDecorations) {
+        const measure = tempCtx.measureText(lineText)
+        requiredWidth = Math.max(requiredWidth, renderConfig.padding.x + measure.width)
         tempYPos += renderConfig.lineHeight
     }
 
@@ -196,7 +207,7 @@ export function drawTokensToCanvas(
         drawHighlights(ctx, line, position, renderConfig)
 
         // Draw text on top
-        drawText(ctx, line, position, renderConfig)
+        drawText(ctx, line, position, mode, renderConfig)
 
         yPos += renderConfig.lineHeight
     }

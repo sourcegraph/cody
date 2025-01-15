@@ -1,7 +1,7 @@
-import type { BundledLanguage } from 'shiki/langs'
+import type { MultiLineSupportedLanguage } from '../../../completions/detect-multiline'
 import type { AddedLinesDecorationInfo } from '../decorators/default-decorator'
 import { drawTokensToCanvas, initCanvas } from './canvas'
-import { highlightDecorations, initHighlighter } from './highlight'
+import { SYNTAX_HIGHLIGHT_MAPPING, highlightDecorations, initHighlighter } from './highlight'
 
 export async function initImageSuggestionService() {
     return Promise.all([initHighlighter(), initCanvas()])
@@ -9,17 +9,22 @@ export async function initImageSuggestionService() {
 
 interface SuggestionOptions {
     decorations: AddedLinesDecorationInfo[]
-    lang: BundledLanguage
+    lang: string
 }
 
 export function generateSuggestionAsImage(options: SuggestionOptions): { light: string; dark: string } {
     const { decorations, lang } = options
+    const highlightingLang = SYNTAX_HIGHLIGHT_MAPPING[lang as MultiLineSupportedLanguage]
 
-    const highlightedLightDecorations = highlightDecorations(decorations, lang, 'light')
-    const highlightedDarkDecorations = highlightDecorations(decorations, lang, 'dark')
+    const darkDecorations = highlightingLang
+        ? highlightDecorations(decorations, highlightingLang, 'dark')
+        : decorations
+    const lightDecorations = highlightingLang
+        ? highlightDecorations(decorations, highlightingLang, 'light')
+        : decorations
 
     return {
-        dark: drawTokensToCanvas(highlightedDarkDecorations).toDataURL('image/png'),
-        light: drawTokensToCanvas(highlightedLightDecorations).toDataURL('image/png'),
+        dark: drawTokensToCanvas(darkDecorations, 'dark').toDataURL('image/png'),
+        light: drawTokensToCanvas(lightDecorations, 'light').toDataURL('image/png'),
     }
 }
