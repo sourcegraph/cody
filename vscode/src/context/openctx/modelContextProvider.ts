@@ -3,9 +3,7 @@ import proxy from '@openctx/provider-modelcontextprotocoltools'
 import { MODEL_CONTEXT_PROVIDER_URI } from '@sourcegraph/cody-shared'
 import type { OpenCtxProvider } from './types'
 
-export async function createModelContextProvider(
-    modelContextProviderToolsURI: string
-): Promise<OpenCtxProvider> {
+export function createModelContextProvider(modelContextProviderToolsURI: string): OpenCtxProvider {
     return {
         providerUri: MODEL_CONTEXT_PROVIDER_URI,
 
@@ -19,6 +17,7 @@ export async function createModelContextProvider(
             )
             return {
                 name: client.name,
+                mentions: { label: client.name ?? 'Select a tool' },
             }
         },
 

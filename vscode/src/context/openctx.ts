@@ -4,6 +4,7 @@ import {
     type ClientConfiguration,
     FeatureFlag,
     GIT_OPENCTX_PROVIDER_URI,
+    MODEL_CONTEXT_PROVIDER_URI,
     WEB_PROVIDER_URI,
     authStatus,
     clientCapabilities,
@@ -35,6 +36,7 @@ import { logDebug } from '../output-channel-logger'
 import { createCodeSearchProvider } from './openctx/codeSearch'
 import { gitMentionsProvider } from './openctx/git'
 import LinearIssuesProvider from './openctx/linear-issues'
+import { createModelContextProvider } from './openctx/modelContextProvider'
 import RemoteDirectoryProvider, { createRemoteDirectoryProvider } from './openctx/remoteDirectorySearch'
 import RemoteFileProvider, { createRemoteFileProvider } from './openctx/remoteFileSearch'
 import RemoteRepositorySearch, { createRemoteRepositoryProvider } from './openctx/remoteRepositorySearch'
@@ -185,6 +187,14 @@ export function getOpenCtxProviders(
                     providerUri: CODE_SEARCH_PROVIDER_URI,
                 })
             }
+            // enable MCP provider
+            providers.push({
+                settings: true,
+                provider: createModelContextProvider(
+                    'file:///Users/arafatkhan/Desktop/servers/src/everything/dist/index.js'
+                ),
+                providerUri: MODEL_CONTEXT_PROVIDER_URI,
+            })
 
             return providers
         }
