@@ -261,8 +261,8 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                         isPromptsV2Enabled={isPromptsV2Enabled}
                     />
                     <WelcomeFooter IDE={userInfo.IDE} />
-                    {!isTeamsUpgradeCtaEnabled && (
-                        <div className="tw-absolute tw-bottom-0 tw-left-1/2 tw-transform tw--translate-x-1/2 tw-w-[95%] tw-z-1 tw-mb-4">
+                    {isTeamsUpgradeCtaEnabled && (
+                        <div className="tw-absolute tw-bottom-0 tw-left-1/2 tw-transform tw--translate-x-1/2 tw-w-[95%] tw-z-1 tw-mb-4 tw-max-h-1/2">
                             <WelcomeNotice />
                         </div>
                     )}
