@@ -9,15 +9,20 @@ import { CodyToolProvider, TestToolFactory, type ToolStatusCallback } from './Co
 import { toolboxManager } from './ToolboxManager'
 
 const mockCallback: ToolStatusCallback = {
-    onStart: vi.fn(),
+    onUpdate: vi.fn(),
     onStream: vi.fn(),
     onComplete: vi.fn(),
+    onConfirmationNeeded: vi.fn(),
 }
 
 class TestTool extends CodyTool {
     public async execute(span: Span, queries: string[]): Promise<ContextItem[]> {
         if (queries.length) {
-            mockCallback?.onStream(this.config.title, queries.join(', '))
+            mockCallback?.onStream({
+                id: this.config.tags.tag.toString(),
+                title: this.config.title,
+                content: queries.join(', '),
+            })
             // Return mock context items based on queries
             return queries.map(query => ({
                 type: 'file',
@@ -152,7 +157,12 @@ describe('CodyTool', () => {
         testTool?.stream('<TOOLTEST><test>test content</test></TOOLTEST>')
         await testTool?.run(mockSpan, mockCallback)
 
-        expect(mockCallback.onStream).toHaveBeenCalledWith('TestTool', 'test content')
+        expect(mockCallback.onStream).toHaveBeenCalledWith({
+            content: 'test content',
+            id: 'TOOLTEST',
+            title: 'TestTool',
+            type: 'tool',
+        })
     })
 
     it('should not call callback when running tool with empty content', async () => {

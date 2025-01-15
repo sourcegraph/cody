@@ -8,23 +8,8 @@ import type {
 import { pluralize } from '@sourcegraph/cody-shared'
 import { MENTION_CLASS_NAME } from '@sourcegraph/prompt-editor'
 import { clsx } from 'clsx'
-import {
-    BrainIcon,
-    CheckCircle,
-    CircleXIcon,
-    FilePenLine,
-    Loader2Icon,
-    MessagesSquareIcon,
-} from 'lucide-react'
-import {
-    type FC,
-    type FunctionComponent,
-    createContext,
-    memo,
-    useCallback,
-    useContext,
-    useState,
-} from 'react'
+import { BrainIcon, FilePenLine, MessagesSquareIcon } from 'lucide-react'
+import { type FunctionComponent, createContext, memo, useCallback, useContext, useState } from 'react'
 import { FileLink } from '../../../components/FileLink'
 import {
     Accordion,
@@ -170,7 +155,9 @@ export const ContextCell: FunctionComponent<{
                       : contextItems === undefined
                         ? 'none requested'
                         : contextItems.length === 0
-                          ? 'none fetched'
+                          ? isDeepCodyEnabled
+                              ? 'none'
+                              : 'none fetched'
                           : itemCountLabel,
         }
 
@@ -218,12 +205,6 @@ export const ContextCell: FunctionComponent<{
                                         className="tw-ml-6 tw-flex tw-flex-col tw-gap-2"
                                         overflow={false}
                                     >
-                                        {isDeepCodyEnabled && processes && (
-                                            <ProcessList
-                                                processes={processes}
-                                                isContextLoading={isContextLoading}
-                                            />
-                                        )}
                                         <div className={styles.contextSuggestedActions}>
                                             {contextItems &&
                                                 contextItems.length > 0 &&
@@ -331,7 +312,9 @@ export const ContextCell: FunctionComponent<{
                                                                     size={14}
                                                                     className="tw-ml-1"
                                                                 />
-                                                                <span>Reviewed by context agent</span>
+                                                                <span>
+                                                                    Selected from agentic context
+                                                                </span>
                                                             </span>
                                                         </TooltipTrigger>
                                                         <TooltipContent side="bottom">
@@ -453,75 +436,3 @@ export const EditContextButtonChat = (
         <div>Edit context</div>
     </>
 )
-
-const ProcessList: FC<{ processes: ProcessingStep[]; isContextLoading: boolean }> = ({
-    processes,
-    isContextLoading,
-}) => {
-    return (
-        <div className="tw-flex tw-flex-col tw-gap-2">
-            <div className="tw-flex tw-flex-col tw-gap-2">
-                {processes.map(process => (
-                    <ProcessItem
-                        key={process.id}
-                        process={process}
-                        isContextLoading={isContextLoading}
-                    />
-                ))}
-            </div>
-            {isContextLoading && (
-                <div className="tw-flex tw-items-center tw-rounded-md tw-bg-muted-transparent tw-p-4">
-                    {isContextLoading && <LoadingDots />}
-                    <div className="tw-ml-4 tw-text-sm">
-                        May take a few seconds to fetch relevant context to improve response quality
-                    </div>
-                </div>
-            )}{' '}
-        </div>
-    )
-}
-
-const ProcessItem: FC<{ process: ProcessingStep; isContextLoading: boolean }> = ({
-    process,
-    isContextLoading,
-}) => {
-    if (!process.id && !process.content) {
-        return null
-    }
-
-    return (
-        <div className="tw-border-l-4 tw-border-muted-foreground tw-pl-2">
-            <div className="tw-border tw-border-border tw-bg-input-background tw-ml-2 tw-my-2 tw-py-2 tw-flex tw-items-center tw-rounded-md tw-shadow-sm tw-opacity-80 hover:tw-opacity-100">
-                <div className="tw-mx-4">
-                    {process.status === 'pending' && isContextLoading ? (
-                        <Loader2Icon
-                            strokeWidth={2}
-                            size={14}
-                            className="tw-mr-2 tw-h-6 tw-w-6 tw-animate-spin"
-                        />
-                    ) : process.status === 'error' ? (
-                        <CircleXIcon
-                            strokeWidth={2}
-                            size={14}
-                            className="tw-text-red-500 tw-drop-shadow-md"
-                        />
-                    ) : (
-                        <CheckCircle
-                            strokeWidth={2}
-                            size={14}
-                            className="tw-text-green-500 tw-drop-shadow-md"
-                        />
-                    )}
-                </div>
-                <div className="tw-flex-grow tw-min-w-0">
-                    <div className="tw-truncate tw-max-w-full tw-font-semibold tw-text-sm">
-                        Running {process.id}...
-                    </div>
-                    <div className="tw-truncate tw-max-w-full tw-text-xs tw-muted-foreground tw-opacity-80">
-                        {process.content}
-                    </div>
-                </div>
-            </div>
-        </div>
-    )
-}

@@ -26,6 +26,7 @@ export interface AgentHandlerDelegate {
     postError(error: Error, type?: MessageErrorType): void
     postStatuses(steps: ProcessingStep[]): void
     postMessageInProgress(message: ChatMessage): void
+    postRequest(step: ProcessingStep): Promise<boolean>
     postDone(ops?: { abort: boolean }): void
 
     /**
