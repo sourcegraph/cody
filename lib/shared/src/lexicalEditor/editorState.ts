@@ -368,6 +368,17 @@ function lexicalEditorStateFromPromptString(
     const words = input.toString().split(' ')
 
     for (const word of words) {
+        if (word.startsWith('cody://serialized')) {
+            // Save previous last text or mention node before adding new mention
+            if (lastTextNode) {
+                children.push(lastTextNode)
+                lastTextNode = undefined
+            }
+            const encodedData = new URL(word).searchParams.get('data')
+            const t = JSON.parse(atob(encodedData!))
+            children.push(t satisfies SerializedContextItemMentionNode)
+            continue
+        }
         if (word.startsWith('@')) {
             const [displayPath, maybeRange] = word.slice(1).split(':', 2)
             const range = maybeRange ? parseRangeString(maybeRange) : undefined

@@ -1,10 +1,17 @@
 import classNames from 'classnames'
-import { type FC, type FunctionComponent, useLayoutEffect, useMemo, useState } from 'react'
+import {
+    type FC,
+    type FunctionComponent,
+    useEffect,
+    useLayoutEffect,
+    useMemo,
+    useRef,
+    useState,
+} from 'react'
 
 import {
     type CodyClientConfig,
     type SerializedPromptEditorState,
-    type SerializedPromptEditorValue,
     isErrorLike,
     setDisplayPathEnvInfo,
 } from '@sourcegraph/cody-shared'
@@ -14,7 +21,8 @@ import type { VSCodeWrapper } from 'cody-ai/webviews/utils/VSCodeApi'
 import {
     ChatMentionContext,
     type ChatMentionsSettings,
-    PromptEditorV2,
+    PromptEditor,
+    type PromptEditorRefAPI,
 } from '@sourcegraph/prompt-editor'
 import { getAppWrappers } from 'cody-ai/webviews/App'
 import { useClientActionDispatcher } from 'cody-ai/webviews/client/clientState'
@@ -22,8 +30,6 @@ import type { View } from 'cody-ai/webviews/tabs'
 import { ComposedWrappers, type Wrapper } from 'cody-ai/webviews/utils/composeWrappers'
 import { createWebviewTelemetryRecorder } from 'cody-ai/webviews/utils/telemetry'
 import type { Config } from 'cody-ai/webviews/utils/useConfig'
-
-import type { CodyExternalApi, InitialContext } from '../types'
 
 import { useCodyWebAgent } from './use-cody-agent'
 
@@ -42,11 +48,13 @@ export interface CodyPromptTemplateProps {
     serverEndpoint: string
     accessToken: string | null
     createAgentWorker: () => Worker
-    setMessage: (m: SerializedPromptEditorValue) => void
     telemetryClientName?: string
-    initialContext?: InitialContext
     customHeaders?: Record<string, string>
     className?: string
+
+    initialEditorState?: SerializedPromptEditorState | undefined
+    disabled?: boolean
+    placeholder?: string
 
     /**
      * Whenever an external (imperative) Cody Chat API instance is ready,
@@ -54,11 +62,7 @@ export interface CodyPromptTemplateProps {
      * should be memoized and not change between components re-render, otherwise
      * it will be stuck in infinite update loop
      */
-    onExternalApiReady?: (api: CodyExternalApi) => void
-
-    initialEditorState?: SerializedPromptEditorState | undefined
-    disabled?: boolean
-    placeholder?: string
+    onEditorApiReady?: (api: PromptEditorRefAPI) => void
 }
 /**
  * The root component node for Cody Prompt Template editing, implements all things necessary
@@ -68,21 +72,18 @@ export const CodyPromptTemplate: FunctionComponent<CodyPromptTemplateProps> = ({
     serverEndpoint,
     accessToken,
     createAgentWorker,
-    initialContext,
     telemetryClientName,
     customHeaders,
     className,
-    onExternalApiReady,
-    setMessage,
     disabled,
     initialEditorState,
     placeholder,
+    onEditorApiReady,
 }) => {
     const { client, vscodeAPI } = useCodyWebAgent({
         serverEndpoint,
         accessToken,
         createAgentWorker,
-        initialContext,
         telemetryClientName,
         customHeaders,
     })
@@ -92,21 +93,19 @@ export const CodyPromptTemplate: FunctionComponent<CodyPromptTemplateProps> = ({
     }
 
     if (client === null || vscodeAPI === null) {
-        return <p>Error: Client and api have not been initialized.</p>
+        return <p>Initializing ...</p>
     }
 
     return (
         <AppWrapper>
             <div className={classNames(className, styles.root)}>
-                <Panel
+                <CodyPromptTemplatePanel
                     vscodeAPI={vscodeAPI}
-                    initialContext={initialContext}
                     className={styles.container}
-                    onExternalApiReady={onExternalApiReady}
-                    setMessage={setMessage}
                     disabled={disabled}
                     initialEditorState={initialEditorState}
                     placeholder={placeholder}
+                    onEditorApiReady={onEditorApiReady}
                 />
             </div>
         </AppWrapper>
@@ -115,31 +114,27 @@ export const CodyPromptTemplate: FunctionComponent<CodyPromptTemplateProps> = ({
 
 interface PanelProps {
     vscodeAPI: VSCodeWrapper
-    initialContext: InitialContext | undefined
-    setMessage: (m: SerializedPromptEditorValue) => void
     initialEditorState?: SerializedPromptEditorState | undefined
     disabled?: boolean
     className?: string
-    onExternalApiReady?: (api: CodyExternalApi) => void
     placeholder?: string
+    onEditorApiReady?: (api: PromptEditorRefAPI) => void
 }
 
-const Panel: FC<PanelProps> = props => {
-    const {
-        vscodeAPI,
-        initialContext: initialContextData,
-        className,
-        setMessage,
-        disabled,
-        initialEditorState,
-        placeholder,
-    } = props
+const CodyPromptTemplatePanel: FC<PanelProps> = props => {
+    const { vscodeAPI, className, disabled, initialEditorState, placeholder, onEditorApiReady } = props
 
     const dispatchClientAction = useClientActionDispatcher()
     const [_errorMessages, setErrorMessages] = useState<string[]>([])
     const [config, setConfig] = useState<Config | null>(null)
     const [clientConfig, setClientConfig] = useState<CodyClientConfig | null>(null)
     const [view, setView] = useState<View | undefined>()
+    const editorRef = useRef<PromptEditorRefAPI>(null)
+    useEffect(() => {
+        if (editorRef?.current && onEditorApiReady) {
+            onEditorApiReady(editorRef.current)
+        }
+    }, [onEditorApiReady]) // todo michael: we might have to set editorRef?.current as an additional dependency
 
     useLayoutEffect(() => {
         vscodeAPI.onMessage(message => {
@@ -183,13 +178,11 @@ const Panel: FC<PanelProps> = props => {
     )
 
     const CONTEXT_MENTIONS_SETTINGS = useMemo<ChatMentionsSettings>(() => {
-        const { repository } = initialContextData ?? {}
-
         return {
             resolutionMode: 'remote',
-            remoteRepositoriesNames: repository?.name ? [repository.name] : [],
+            remoteRepositoriesNames: [],
         }
-    }, [initialContextData])
+    }, [])
 
     const isLoading = !config || !view
 
@@ -198,11 +191,11 @@ const Panel: FC<PanelProps> = props => {
             {!isLoading && (
                 <ChatMentionContext.Provider value={CONTEXT_MENTIONS_SETTINGS}>
                     <ComposedWrappers wrappers={wrappers}>
-                        <PromptEditorV2
+                        <PromptEditor
+                            editorRef={editorRef}
                             seamless={true}
                             placeholder={placeholder}
                             initialEditorState={initialEditorState}
-                            onChange={setMessage}
                             disabled={disabled}
                             contextWindowSizeInTokens={4096}
                             editorClassName={styles.editor}

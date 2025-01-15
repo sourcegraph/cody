@@ -8,3 +8,5 @@ export {
     serialize,
     deserialize,
 } from '@sourcegraph/cody-shared'
+
+export { type PromptEditorRefAPI } from './types'

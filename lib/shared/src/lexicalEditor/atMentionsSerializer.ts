@@ -1,9 +1,30 @@
+import type { SerializedLexicalNode, SerializedTextNode } from 'lexical'
+import type { SerializedElementNode } from 'lexical'
 import type { SerializedPromptEditorValue } from './editorState'
 
-const SERIALIZED_PREFIX = 'cody://serialized.v1'
+const SERIALIZED_PREFIX = 'cody://serialized'
 
 export function serialize(m: SerializedPromptEditorValue): string {
-    return `${SERIALIZED_PREFIX}?data=${btoa(JSON.stringify(m, undefined, 0))}`
+    const nodes: SerializedLexicalNode[] = recurse(m.editorState.lexicalEditorState.root)
+    let t = ''
+    for (const n of nodes) {
+        if (n.type === 'text') {
+            t += (n as SerializedTextNode).text
+        } else {
+            t += `${SERIALIZED_PREFIX}?data=${btoa(JSON.stringify(n, undefined, 0))}`
+        }
+    }
+    return t
+}
+
+function recurse(node: SerializedLexicalNode): SerializedLexicalNode[] {
+    switch (node.type) {
+        case 'root':
+        case 'paragraph':
+            return (node as SerializedElementNode).children.flatMap(recurse)
+        default:
+            return [node]
+    }
 }
 
 export function deserialize(s: string): SerializedPromptEditorValue | undefined {
