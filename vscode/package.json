@@ -687,7 +687,7 @@
       {
         "command": "-extension.vim_tab",
         "key": "tab",
-        "when": "editorTextFocus && vim.active && vim.mode != 'Insert' && !inDebugRepl"
+        "when": "editorTextFocus && vim.active && vim.mode == 'Normal' && !inDebugRepl"
       },
       {
         "command": "cody.autocomplete.manual-trigger",
