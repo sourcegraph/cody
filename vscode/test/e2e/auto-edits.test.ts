@@ -83,7 +83,7 @@ interface LineOptions {
     /* The column in which the autoedit should be triggered. Defaults to the end of the line */
     column?: number
     /* Whether the autoedit should be accepted once triggered. Defaults to true */
-    accept?: boolean
+    shouldAccept?: boolean
 }
 
 interface AutoeditsTestOptions {
@@ -146,7 +146,7 @@ const autoeditsTestHelper = async ({
     await executeCommandInPalette(page, 'View: Toggle Zen Mode')
     await executeCommandInPalette(page, 'Hide Custom Title Bar In Full Screen')
 
-    for (const { line, column = Number.MAX_SAFE_INTEGER, accept = true } of lineOptions) {
+    for (const { line, column = Number.MAX_SAFE_INTEGER, shouldAccept: accept = true } of lineOptions) {
         const snapshotName = `${testCaseName}-${line}`
         await executeCommandInPalette(page, 'Go to Line/Column')
         await page.keyboard.type(`${line}:${column}`)
@@ -182,7 +182,7 @@ test.extend<ExpectedV2Events>({
 })(
     'autoedits: triggers a multi-line diff view when edit affects existing lines',
     async ({ page, sidebar }) => {
-        const lineOptions: LineOptions[] = [{ line: 70, accept: false }, { line: 76 }]
+        const lineOptions: LineOptions[] = [{ line: 70, shouldAccept: false }, { line: 76 }]
         await autoeditsTestHelper({
             page,
             sidebar,
@@ -275,7 +275,7 @@ test('autoedits: does not show any suggestion if the suffix decoration spans fur
     page,
     sidebar,
 }) => {
-    const lineOptions: LineOptions[] = [{ line: 38, accept: false }]
+    const lineOptions: LineOptions[] = [{ line: 38, shouldAccept: false }]
     await autoeditsTestHelper({
         page,
         sidebar,
