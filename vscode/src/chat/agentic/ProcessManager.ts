@@ -7,7 +7,7 @@ export class ProcessManager {
     private processMap = new Map<string, ProcessingStep>()
 
     constructor(
-        private readonly onChange: (processes: ProcessingStep[]) => void,
+        private readonly onChange: (steps: ProcessingStep[]) => void,
         private readonly onRequest: (step: ProcessingStep) => Promise<boolean>
     ) {}
 
@@ -32,7 +32,7 @@ export class ProcessManager {
 
     public updateStep(id: string, content: string): void {
         const step = this.processMap.get(id)
-        if (!step) {
+        if (!step || step.state !== 'pending') {
             return
         }
         this.processMap.set(id, { ...step, content })

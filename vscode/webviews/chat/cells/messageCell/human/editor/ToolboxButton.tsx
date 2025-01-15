@@ -92,7 +92,7 @@ export const ToolboxButton: FC<ToolboxButtonProps> = memo(({ settings, api, isFi
                     <div id="accordion-collapse" data-accordion="collapse" className="tw-w-full">
                         <h2 id="accordion-collapse-heading">
                             <div
-                                className="tw-flex tw-items-center tw-justify-between tw-w-full tw-p-5 tw-font-medium tw-border tw-border-border tw-rounded-t-md tw-focus:ring-4 tw-focus:ring-gray-200 tw-gap-3 tw-bg-[color-mix(in_lch,currentColor_10%,transparent)]"
+                                className="tw-flex tw-items-center tw-justify-between tw-w-full tw-py-3 tw-px-5 tw-font-medium tw-border tw-border-border tw-rounded-t-md tw-focus:ring-4 tw-focus:ring-gray-200 tw-gap-3 tw-bg-[color-mix(in_lch,currentColor_10%,transparent)]"
                                 title="Agentic Chat Context"
                             >
                                 <span className="tw-flex tw-gap-2 tw-items-center">
@@ -119,7 +119,7 @@ export const ToolboxButton: FC<ToolboxButtonProps> = memo(({ settings, api, isFi
                             id="accordion-collapse-body"
                             className="tw-ml-5 tw-p-5 tw-flex tw-flex-col tw-gap-3 tw-my-2"
                         >
-                            <div className="tw-text-sm">
+                            <div className="tw-text-xs">
                                 <span>
                                     Agentic context can search your codebase, browse the web, execute
                                     shell commands (when enabled), and utilize configured tools to
@@ -129,7 +129,9 @@ export const ToolboxButton: FC<ToolboxButtonProps> = memo(({ settings, api, isFi
                                 </span>
                             </div>
                             {/* Seperator */}
-                            <div className="tw-border-b tw-border-border tw-my-2" />
+                            {settings.agent?.name && !settings.shell?.error && (
+                                <div className="tw-border-b tw-border-border tw-my-2" />
+                            )}
                             {/* Only shows the Terminal access option if client and instance supports it */}
                             {settings.agent?.name && !settings.shell?.error && (
                                 <div>
@@ -157,7 +159,7 @@ export const ToolboxButton: FC<ToolboxButtonProps> = memo(({ settings, api, isFi
                                             }
                                         />
                                     </div>
-                                    <div className="tw-text-sm tw-mt-2">
+                                    <div className="tw-text-xs tw-mt-2">
                                         Allows agents to execute commands like <code>ls</code>,{' '}
                                         <code>dir</code>, <code>git</code>, and other commands for
                                         context. The agent will ask permission each time it would like to

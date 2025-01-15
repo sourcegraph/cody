@@ -98,10 +98,22 @@ export class DeepCodyAgent {
      * Register the tools with the multiplexer.
      */
     protected initializeMultiplexer(tools: CodyTool[]): void {
+        const calledTools = new Set<string>()
         for (const tool of tools) {
-            this.multiplexer.sub(tool.config.tags.tag.toString(), {
-                onResponse: async (content: string) => tool.stream(content),
-                onTurnComplete: async () => {},
+            const { tags, title } = tool.config
+            this.multiplexer.sub(tags.tag.toString(), {
+                onResponse: async (content: string) => {
+                    tool.stream(content)
+                    if (!calledTools.has(title)) {
+                        calledTools.add(title)
+                        const toolCount = calledTools.size
+                        const suffix = toolCount > 1 ? 'tools' : 'tool'
+                        this.statusCallback.onStream({
+                            title: `Retrieving context from ${toolCount} ${suffix}`,
+                        })
+                    }
+                },
+                onTurnComplete: async () => calledTools.clear(),
             })
         }
     }
@@ -185,10 +197,9 @@ export class DeepCodyAgent {
         span.addEvent('reviewLoop')
         for (let i = 0; i < maxLoops && !chatAbortSignal.aborted; i++) {
             this.stats.loop++
-            const step = this.stepsManager.addStep({
-                content: 'agentic context reflection...',
-            })
+            const step = this.stepsManager.addStep({ title: 'Agentic context reflection' })
             const newContext = await this.review(requestID, span, chatAbortSignal)
+            this.statusCallback.onUpdate(step.id, ` (${newContext.length} context fetched)`)
             this.statusCallback.onComplete(step.id)
             if (!newContext.length) break
             // Filter and add new context items in one pass
@@ -273,6 +284,10 @@ export class DeepCodyAgent {
                 const userAdded = this.context.filter(c => isUserAddedItem(c))
                 reviewed.push(...userAdded)
                 this.context = reviewed
+                this.statusCallback.onStream({
+                    title: 'Filtering',
+                    content: `selected ${contextNames.length} context`,
+                })
             }
 
             const newContextFetched = results.flat().filter(isDefined)

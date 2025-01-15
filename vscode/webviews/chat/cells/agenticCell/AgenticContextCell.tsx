@@ -1,5 +1,5 @@
 import type { ProcessingStep } from '@sourcegraph/cody-shared'
-import { BrainIcon, CircleCheckIcon, CircleXIcon, Loader2Icon } from 'lucide-react'
+import { BrainIcon, CircleXIcon, Loader2Icon } from 'lucide-react'
 import { type FC, type FunctionComponent, createContext, memo, useCallback, useState } from 'react'
 import {
     Accordion,
@@ -31,8 +31,7 @@ export const AgenticContextCell: FunctionComponent<{
 
     const subHeader = !isContextLoading
         ? 'reviewed'
-        : processes?.findLast(p => p.type !== 'tool' && p.type !== 'confirmation')?.content ||
-          'starting...'
+        : processes?.findLast(p => p.type !== 'tool' && p.type !== 'confirmation')?.title || 'reviewing'
 
     const statusClassName = processes?.some(p => p.error) ? 'tw-text-yellow-500' : 'tw-text-green-500'
 
@@ -68,7 +67,7 @@ export const AgenticContextCell: FunctionComponent<{
                                 <span className="tw-flex tw-items-baseline">
                                     Agentic context
                                     <span className="tw-opacity-60 tw-text-sm tw-ml-2">
-                                        &mdash; {subHeader}
+                                        &mdash; {subHeader.toLowerCase()}
                                     </span>
                                 </span>
                             </AccordionTrigger>
@@ -77,10 +76,7 @@ export const AgenticContextCell: FunctionComponent<{
                         contentClassName="tw-flex tw-flex-col tw-gap-4 tw-max-w-full"
                         data-testid="context"
                     >
-                        <AccordionContent
-                            className="tw-ml-6 tw-flex tw-flex-col tw-gap-2"
-                            overflow={false}
-                        >
+                        <AccordionContent className="tw-flex tw-flex-col tw-gap-4" overflow={false}>
                             {processes && (
                                 <ProcessList
                                     processes={processes}
@@ -102,17 +98,15 @@ const ProcessList: FC<{
     headerIconClassName?: string
 }> = ({ processes, isContextLoading, headerIconClassName }) => {
     return (
-        <div className="tw-flex tw-flex-col tw-gap-2">
-            <div className="tw-flex tw-flex-col tw-gap-2">
-                {processes.map(process => (
-                    <ProcessItem
-                        key={process.id}
-                        process={process}
-                        isContextLoading={isContextLoading}
-                        headerIconClassName={headerIconClassName}
-                    />
-                ))}
-            </div>
+        <div className="tw-flex tw-flex-col tw-gap-3 tw-ml-[1rem]">
+            {processes.map(process => (
+                <ProcessItem
+                    key={process.id}
+                    process={process}
+                    isContextLoading={isContextLoading}
+                    headerIconClassName={headerIconClassName}
+                />
+            ))}
         </div>
     )
 }
@@ -127,33 +121,27 @@ const ProcessItem: FC<{
     }
 
     return (
-        <div className="tw-flex tw-items-center">
-            <div className={`tw-mr-3 ${process.type === 'tool' ? 'tw-ml-4' : 'tw-ml-0'}`}>
+        <div className="tw-flex tw-items-center tw-gap-3 tw-p-1">
+            <div className={process.type === 'tool' ? 'tw-ml-[1rem] tw-font-sm' : 'tw-ml-0'}>
                 {process.type !== 'tool' ? (
-                    <BrainIcon strokeWidth={1.5} size={14} className={headerIconClassName} />
+                    <BrainIcon strokeWidth={1.25} size={14} className={headerIconClassName} />
                 ) : process.state === 'error' ? (
-                    <CircleXIcon
-                        strokeWidth={1.5}
-                        size={14}
-                        className="tw-text-red-500 tw-drop-shadow-md"
-                    />
-                ) : process.state === 'success' || !isContextLoading ? (
-                    <CircleCheckIcon strokeWidth={1.5} size={14} className="tw-text-green-500" />
-                ) : (
+                    <CircleXIcon strokeWidth={1.5} size={14} className="tw-text-red-500" />
+                ) : process.state === 'pending' && isContextLoading ? (
                     <Loader2Icon strokeWidth={1.5} size={14} className="tw-animate-spin" />
-                )}
+                ) : null}
             </div>
             <div className="tw-flex-grow tw-min-w-0">
                 <div className="tw-truncate tw-max-w-full tw-text-sm">
-                    <span className={process.type === 'tool' ? 'tw-font-normal' : 'tw-font-semibold'}>
-                        {process.type !== 'tool' ? process.content : process.title ?? process.id}
-                    </span>
-                    {process.type === 'tool' && process.content && (
+                    <span>{process.type !== 'tool' ? process.title : process.title ?? process.id}</span>
+                    {process.content && (
                         <span
-                            className="tw-font-normal tw-ml-1 tw-truncate tw-max-w-full tw-text-xs tw-muted-foreground tw-opacity-80"
-                            title="Query generated by agent"
+                            className="tw-ml-2 tw-truncate tw-max-w-full tw-text-xs tw-muted-foreground tw-opacity-6`0"
+                            title={
+                                process.type === 'tool' ? 'agentic query' : process.title ?? process.id
+                            }
                         >
-                            ({process.content})
+                            {process.type === 'tool' ? `(${process.content})` : process.content}
                         </span>
                     )}
                 </div>
