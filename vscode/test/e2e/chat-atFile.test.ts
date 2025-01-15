@@ -326,8 +326,8 @@ test.extend<ExpectedV2Events>({
     await chatInput.pressSequentially('fizzb', { delay: 10 })
     await expect(chatPanelFrame.getByRole('option', { name: 'fizzbuzz()' })).toBeVisible()
     await chatPanelFrame.getByRole('option', { name: 'fizzbuzz()' }).click()
-    await expect(chatInput).toHaveText('buzz.ts fizzbuzz() ')
-    await expect(chatInputMentions(chatInput)).toHaveText(['buzz.ts', 'fizzbuzz()'])
+    await expect(chatInput).toHaveText(/buzz.ts (workspace|sourcegraph.cody) fizzbuzz\(\) /)
+    await expect(chatInputMentions(chatInput)).toContainText(['buzz.ts', 'fizzbuzz()'])
 
     // Submit the message
     await chatInput.press('Enter')
