@@ -111,7 +111,7 @@ describe('ToolFactory', () => {
     let factory: TestToolFactory
 
     class TestCodyTool extends CodyTool {
-        protected async execute(): Promise<ContextItem[]> {
+        public async execute(): Promise<ContextItem[]> {
             return Promise.resolve([])
         }
     }
