@@ -33,7 +33,6 @@ export async function rewriteKeywordQuery(
         }
     }
 
-    // TODO: move this out to chat controller so we can show a notice.
     try {
         const rewritten = await extractKeywords(completionsClient, query, signal)
         return rewritten.length !== 0 ? rewritten.sort().join(' ') : query.toString()
@@ -100,14 +99,12 @@ export async function extractKeywords(
     }
     const result = new Set<string>()
     for (const { value, literal } of keywords) {
-        outputChannelLogger.logDebug('found keyword', JSON.stringify({ value, literal }))
         if (value && literal) {
             for (const v of value.split(' ')) {
                 result.add(v)
             }
         }
     }
-    outputChannelLogger.logDebug('keyword extraction', JSON.stringify([...result]))
 
     return [...result]
 }
