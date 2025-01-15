@@ -197,7 +197,7 @@ export const FIXTURE_TRANSCRIPT: Record<
                     step: {
                         id: 'read_file',
                         content: `Invoking tool get_file({"path":"vscode/src/main.ts"})`,
-                        status: 'success',
+                        state: 'success',
                     },
                 },
                 {

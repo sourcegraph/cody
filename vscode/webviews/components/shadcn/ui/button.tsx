@@ -22,6 +22,9 @@ const buttonVariants = cva(
                 primaryRoundedIcon: `${roundedIconStyles} tw-border tw-border-button-border tw-bg-button-background tw-text-button-foreground hover:tw-bg-button-background-hover disabled:tw-bg-current-25 disabled:tw-text-current`,
                 outlineRoundedIcon: `${roundedIconStyles} tw-border tw-border-border`,
                 ghostRoundedIcon: `${roundedIconStyles} tw-border-transparent`,
+                danger: 'tw-text-white tw-bg-red-800 hover:tw-bg-red-900 focus:tw-ring-4 focus:tw-outline-none focus:tw-ring-red-300',
+                success:
+                    'tw-text-white tw-bg-green-800 hover:tw-bg-green-900 focus:tw-ring-4 focus:tw-outline-none focus:tw-ring-green-300',
             },
 
             size: {

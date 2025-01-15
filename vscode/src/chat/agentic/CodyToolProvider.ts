@@ -1,5 +1,6 @@
 import {
     type ContextMentionProviderMetadata,
+    type ProcessingStep,
     PromptString,
     type Unsubscribable,
     isDefined,
@@ -20,9 +21,13 @@ type Retriever = Pick<ContextRetriever, 'retrieveContext'>
  * Used to track and report tool execution progress.
  */
 export interface ToolStatusCallback {
-    onStart(): void
-    onStream(tool: string, content: string): void
-    onComplete(tool?: string, error?: Error): void
+    onUpdate(id: string, content: string): void
+    onStream(step: Partial<ProcessingStep>): void
+    onComplete(id?: string, error?: Error): void
+    onConfirmationNeeded(
+        id: string,
+        step: Omit<ProcessingStep, 'id' | 'type' | 'state'>
+    ): Promise<boolean>
 }
 
 /**

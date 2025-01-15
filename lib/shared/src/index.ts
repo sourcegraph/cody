@@ -78,6 +78,7 @@ export type {
     ChatMessageSearch,
     ProcessingStep,
 } from './chat/transcript/messages'
+export { ProcessType } from './chat/transcript/messages'
 export {
     CODY_PASSTHROUGH_VSCODE_OPEN_COMMAND_ID,
     webviewOpenURIForContextItem,

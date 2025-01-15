@@ -55,7 +55,7 @@ class ToolboxManager {
         return (
             localStorage.get<StoredToolboxSettings>(ToolboxManager.STORAGE_KEY) ?? {
                 agent: undefined,
-                shell: false,
+                shell: true,
             }
         )
     }
