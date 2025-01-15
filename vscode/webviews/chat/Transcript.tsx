@@ -308,9 +308,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
             return
         }
 
-        const { intent, intentScores } = intentFromSubmit
-            ? { intent: intentFromSubmit, intentScores: undefined }
-            : getIntentProps(editorValue, intentResults.current)
+        const { intent, intentScores } = getIntentProps(editorValue, intentResults.current)
 
         const commonProps = {
             editorValue,
@@ -368,7 +366,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                 editorValue.editorState
             ).trim()
 
-            // editor value change get changed due to multiple reasons but if the query hasn't changed skip re-computing the intent
+            // The editor value change can get changed due to multiple reasons but if the query hasn't changed, skip re-computing the intent
             if (query === intentResults.current?.query) {
                 return
             }

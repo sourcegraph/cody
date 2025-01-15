@@ -731,7 +731,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         // If `manuallySelectedIntent` is set, this was a user override, and we should use it.
         // If `preDetectedIntent` is set, the intent was automatically pre-fetched for the input,
         // meaning we don't have to fetch it again.
-        const intent = manuallySelectedIntent ? manuallySelectedIntent : preDetectedIntent
+        const intent = manuallySelectedIntent ?? preDetectedIntent
 
         if (intent) {
             return {
