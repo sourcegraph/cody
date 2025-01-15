@@ -39,9 +39,6 @@ async function generateImageForTest(
 ): Promise<{ darkBuffer: Buffer; lightBuffer: Buffer }> {
     await initImageSuggestionService()
 
-    // These are dataURLs created via .toDataURL('image/png') in CanvasKit.
-    // I need to convert these to images and somehow diff the images with Vitest.
-    // Any ideas would be helpful
     const { light, dark } = generateSuggestionAsImage({
         decorations,
         lang,
