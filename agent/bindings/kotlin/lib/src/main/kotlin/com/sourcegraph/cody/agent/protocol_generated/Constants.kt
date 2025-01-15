@@ -2,6 +2,7 @@
 package com.sourcegraph.cody.agent.protocol_generated;
 
 object Constants {
+  const val `` = ".*"
   const val Applied = "Applied"
   const val Applying = "Applying"
   const val Automatic = "Automatic"
