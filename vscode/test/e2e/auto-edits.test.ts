@@ -283,4 +283,14 @@ test('autoedits: does not show any suggestion if the suffix decoration spans fur
         testCaseName: 'autoedits-suffix-decoration-end-of-file',
         lineOptions,
     })
+
+    // Confirm that no telemetry events were fired, as no suggestion was shown
+    const suggestedEvent = mockServer.loggedV2Events.find(
+        event => event.testId === 'cody.autoedit:suggested'
+    )
+    const acceptedEvent = mockServer.loggedV2Events.find(
+        event => event.testId === 'cody.autoedit:accepted'
+    )
+    expect(suggestedEvent).toBeUndefined()
+    expect(acceptedEvent).toBeUndefined()
 })
