@@ -214,7 +214,7 @@ export interface WebviewSubmitMessage extends WebviewContextMessage {
     editorState?: unknown | undefined | null
     intent?: ChatMessage['intent'] | undefined | null
     intentScores?: { intent: string; score: number }[] | undefined | null
-    manuallySelectedIntent?: boolean | undefined | null
+    manuallySelectedIntent?: ChatMessage['intent'] | undefined | null
     traceparent?: string | undefined | null
     steps?: ProcessingStep[] | undefined | null
 }
@@ -227,7 +227,7 @@ interface WebviewEditMessage extends WebviewContextMessage {
     editorState?: unknown | undefined | null
     intent?: ChatMessage['intent'] | undefined | null
     intentScores?: { intent: string; score: number }[] | undefined | null
-    manuallySelectedIntent?: boolean | undefined | null
+    manuallySelectedIntent?: ChatMessage['intent'] | undefined | null
     steps?: ProcessingStep[] | undefined | null
 }
 

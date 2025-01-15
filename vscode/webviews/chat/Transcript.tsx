@@ -308,15 +308,13 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
             return
         }
 
-        const { intent, intentScores } = intentFromSubmit
-            ? { intent: intentFromSubmit, intentScores: undefined }
-            : getIntentProps(editorValue, intentResults.current)
+        const { intent, intentScores } = getIntentProps(editorValue, intentResults.current)
 
         const commonProps = {
             editorValue,
             intent,
             intentScores,
-            manuallySelectedIntent: !!intentFromSubmit,
+            manuallySelectedIntent: intentFromSubmit,
             traceparent,
         }
 
@@ -325,7 +323,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
             // reference search results that don't exist anymore.
             // This is a no-op if the input does not contain any search context chips.
             // NOTE: Doing this for the penultimate input only seems to suffice because
-            // editing a message earlier in the transcript will clear the converstation
+            // editing a message earlier in the transcript will clear the conversation
             // and reset the last input anyway.
             if (isLastSentInteraction) {
                 lastEditorRef.current?.filterMentions(item => !isCodeSearchContextItem(item))
@@ -364,17 +362,14 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                 return
             }
 
-            if (
-                !editorValue.contextItems.find(contextItem =>
-                    ['repository', 'tree'].includes(contextItem.type)
-                )
-            ) {
+            const query = inputTextWithMappedContextChipsFromPromptEditorState(
+                editorValue.editorState
+            ).trim()
+
+            // The editor value change can get changed due to multiple reasons but if the query hasn't changed, skip re-computing the intent
+            if (query === intentResults.current?.query) {
                 return
             }
-
-            setIntentResults(undefined)
-
-            const query = inputTextWithMappedContextChipsFromPromptEditorState(editorValue.editorState)
 
             const subscription = extensionAPI.detectIntent(query).subscribe({
                 next: value => {
@@ -388,7 +383,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
             // Clean up subscription if component unmounts
             return () => subscription.unsubscribe()
         }, 300)
-    }, [experimentalOneBoxEnabled, extensionAPI, setIntentResults])
+    }, [experimentalOneBoxEnabled, extensionAPI, setIntentResults, intentResults.current?.query])
 
     const onStop = useCallback(() => {
         getVSCodeAPI().postMessage({
@@ -722,7 +717,7 @@ export function editHumanMessage({
     editorValue: SerializedPromptEditorValue
     intent?: ChatMessage['intent']
     intentScores?: { intent: string; score: number }[]
-    manuallySelectedIntent?: boolean
+    manuallySelectedIntent?: ChatMessage['intent']
 }): void {
     getVSCodeAPI().postMessage({
         command: 'edit',
@@ -747,7 +742,7 @@ function submitHumanMessage({
     editorValue: SerializedPromptEditorValue
     intent?: ChatMessage['intent']
     intentScores?: { intent: string; score: number }[]
-    manuallySelectedIntent?: boolean
+    manuallySelectedIntent?: ChatMessage['intent']
     traceparent: string
 }): void {
     getVSCodeAPI().postMessage({
