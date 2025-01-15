@@ -47,8 +47,6 @@ jobs:
           export RELEASE_LATEST_COMMIT=$(git rev-parse HEAD)
           echo "Latest Commit: $RELEASE_LATEST_COMMIT"
           echo "Latest Release: $RELEASE_LATEST_RELEASE"
-          git rev-parse --abbrev-ref HEAD
-          git log -n 5
           ./changelog update-as-pr \
             --github.repo=$GH_REPO \
             --output.repo.base="main" \
