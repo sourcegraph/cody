@@ -86,6 +86,11 @@ export class ChatHandler implements AgentHandler {
         recorder.recordChatQuestionExecuted(corpusContext, { addMetadata: true, current: span })
 
         signal.throwIfAborted()
+
+        // HACK(camdencheek): the assistant responses don't know anything about "did you mean",
+        // so will clobber any information on the chat message other than the message text.
+        // This creates a wrapper around the delegate that adds didYouMeanQuery to each in-progress
+        // message. Ideally, we'd be smarter about merging messages
         const didYouMeanQuery = await didYouMeanPromise
         const delegateWithDidYouMean = {
             ...delegate,
@@ -93,6 +98,7 @@ export class ChatHandler implements AgentHandler {
                 delegate.postMessageInProgress({ ...message, didYouMeanQuery })
             },
         }
+
         // Send context to webview for display before sending the request.
         delegateWithDidYouMean.postMessageInProgress({
             speaker: 'assistant',
