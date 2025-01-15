@@ -59,7 +59,7 @@ describe('blockify', () => {
         // Content doesn't matter here, just the fact that this document uses tabs
         const mockSpacesDocument = document('\thello world\n\tgoodbye world')
 
-        it('removes leading space-indended blocks', () => {
+        it('removes leading tab-indented blocks', () => {
             const mockAddedLines: AddedLinesDecorationInfo[] = [
                 {
                     afterLine: 0,
@@ -82,7 +82,7 @@ describe('blockify', () => {
             `)
         })
 
-        it('removes leading space-indended blocks whilst maintaining indentation levels', () => {
+        it('removes leading tab-indented blocks whilst maintaining indentation levels', () => {
             const mockAddedLines: AddedLinesDecorationInfo[] = [
                 {
                     afterLine: 0,
@@ -96,9 +96,8 @@ describe('blockify', () => {
                 },
             ]
 
-            const text = blockify(mockSpacesDocument, mockAddedLines)
-                .map(({ lineText }) => lineText)
-                .join('\n')
+            const blockified = blockify(mockSpacesDocument, mockAddedLines)
+            const text = blockified.map(({ lineText }) => lineText).join('\n')
             expect(text).toMatchInlineSnapshot(`
               "hello world      
                   goodbye world"
