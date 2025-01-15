@@ -19,6 +19,7 @@ jobs:
         run: |
           git config --global user.name 'sourcegraph-bot'
           git config --global user.email 'bot@sourcegraph.com'
+          git fetch --tags origin
       - name: Update version
         env:
           VERSION: ${{ github.event.inputs.version }}
@@ -30,6 +31,14 @@ jobs:
           git add vscode/package.json
           git status
           git commit -m "Update version to $VERSION"
+      - name: Download changelog
+        env:
+          GH_TOKEN: ${{ secrets.DEVX_SERVICE_GH_TOKEN }}
+        run: |
+          # Download and run changelog generator
+          tagName=$(gh release -R sourcegraph/devx-service list --exclude-drafts --exclude-pre-releases -L 1 --json tagName -q '.[] | .tagName')
+          gh release -R sourcegraph/devx-service download ${tagName} --pattern changelog
+          chmod +x changelog
       - name: Generate changelog
         env:
           GH_TOKEN: ${{ secrets.DEVX_SERVICE_GH_TOKEN }}
@@ -40,18 +49,11 @@ jobs:
         run: |
           set +x
           # Get previous tag's commit
-          git fetch --tags origin
           PREV_TAG=$(git tag --sort=-v:refname | grep '^vscode-v' |  head -n 2 | tail -n 1)
           export RELEASE_LATEST_RELEASE=$(git rev-parse $PREV_TAG)
 
           # Get current release commit
           export RELEASE_LATEST_COMMIT=$(git rev-parse HEAD)
-
-          # Download and run changelog generator
-          tagName=$(gh release -R sourcegraph/devx-service list --exclude-drafts --exclude-pre-releases -L 1 --json tagName -q '.[] | .tagName')
-          gh release -R sourcegraph/devx-service download ${tagName} --pattern changelog
-          chmod +x changelog
-
           ./changelog update-as-pr \
             --github.repo=$GH_REPO \
             --output.repo.base="main" \
