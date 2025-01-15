@@ -108,11 +108,7 @@ export const CodyPanel: FunctionComponent<CodyPanelProps> = ({
                 orientation="vertical"
                 className={styles.outerContainer}
             >
-                <Notices
-                    user={user}
-                    instanceNotices={instanceNotices}
-                    isTeamsUpgradeCtaEnabled={isTeamsUpgradeCtaEnabled}
-                />
+                <Notices user={user} instanceNotices={instanceNotices} />
                 {/* Hide tab bar in editor chat panels. */}
                 {(clientCapabilities.agentIDE === CodyIDE.Web || config.webviewType !== 'editor') && (
                     <TabsBar

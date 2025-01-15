@@ -37,13 +37,6 @@ const baseUser = {
     IDE: CodyIDE.VSCode,
 }
 
-export const TeamsUpgradeCTA: Story = {
-    args: {
-        user: baseUser,
-        isTeamsUpgradeCtaEnabled: true,
-    },
-}
-
 export const SgTeammateNotice: Story = {
     args: {
         user: {
@@ -58,7 +51,6 @@ export const SgTeammateNotice: Story = {
                 ],
             },
         },
-        isTeamsUpgradeCtaEnabled: false,
     },
 }
 
@@ -68,7 +60,6 @@ export const NoNotices: Story = {
             ...baseUser,
             isDotComUser: false,
         },
-        isTeamsUpgradeCtaEnabled: false,
     },
 }
 
@@ -78,6 +69,5 @@ export const WebUserNoNotices: Story = {
             ...baseUser,
             IDE: CodyIDE.Web,
         },
-        isTeamsUpgradeCtaEnabled: true,
     },
 }
