@@ -2,6 +2,7 @@ import { differenceInDays, format, formatDistanceStrict, formatRelative } from '
 
 import { isError } from '../utils'
 
+import type { AuthenticationErrorMessage } from '../auth/types'
 import type { BrowserOrNodeResponse } from './graphql/client'
 
 function formatRetryAfterDate(retryAfterDate: Date): string {
@@ -143,4 +144,31 @@ export class ExternalProviderAuthError extends Error {
 
 export function isExternalProviderAuthError(error: unknown): error is ExternalProviderAuthError {
     return error instanceof ExternalProviderAuthError
+}
+
+/**
+ * An error indicating that the user needs to complete an authentication challenge.
+ */
+export class NeedsAuthChallengeError extends Error {
+    constructor() {
+        super(NeedsAuthChallengeError.DESCRIPTION)
+    }
+
+    /** A human-readable description of this error. */
+    static DESCRIPTION =
+        `Tap your YubiKey to re-authenticate. (Your device's authentication expired and must be renewed to access Sourcegraph on your organization's network.)`
+
+    /** The same, but separated into title and message. */
+    static TITLE_AND_MESSAGE: AuthenticationErrorMessage = {
+        // See
+        // https://linear.app/sourcegraph/issue/CODY-4695/handle-customer-proxy-re-auth-response-by-retrying-not-prompting-user
+        // for an explanation of this message. If you need to change it to something more general,
+        // consult the customers mentioned in that issue.
+        title: 'Tap Your YubiKey to Authenticate...',
+        message: `Your device's authentication expired and must be renewed to access Sourcegraph on your organization's network.`,
+    }
+}
+
+export function isNeedsAuthChallengeError(error: Error): error is NeedsAuthChallengeError {
+    return error instanceof NeedsAuthChallengeError
 }

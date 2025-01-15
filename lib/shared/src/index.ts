@@ -258,6 +258,8 @@ export {
     isNetworkError,
     isNetworkLikeError,
     isRateLimitError,
+    NeedsAuthChallengeError,
+    isNeedsAuthChallengeError,
 } from './sourcegraph-api/errors'
 export {
     SourcegraphGraphQLAPIClient,
@@ -286,6 +288,8 @@ export {
     type NLSSearchDynamicFilter,
     type NLSSearchDynamicFilterKind,
     type GraphQLAPIClientConfig,
+    setJSONAcceptContentTypeHeaders,
+    isCustomAuthChallengeResponse,
 } from './sourcegraph-api/graphql/client'
 export type {
     CodyLLMSiteConfiguration,

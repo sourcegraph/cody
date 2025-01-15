@@ -13,7 +13,7 @@ sealed class AuthenticationError {
     val deserializer: JsonDeserializer<AuthenticationError> =
       JsonDeserializer { element: JsonElement, _: Type, context: JsonDeserializationContext ->
         when (element.getAsJsonObject().get("type").getAsString()) {
-          "network-error" -> context.deserialize<NetworkAuthError>(element, NetworkAuthError::class.java)
+          "availability-error" -> context.deserialize<AvailabilityError>(element, AvailabilityError::class.java)
           "invalid-access-token" -> context.deserialize<InvalidAccessTokenError>(element, InvalidAccessTokenError::class.java)
           "enterprise-user-logged-into-dotcom" -> context.deserialize<EnterpriseUserDotComError>(element, EnterpriseUserDotComError::class.java)
           "auth-config-error" -> context.deserialize<AuthConfigError>(element, AuthConfigError::class.java)
@@ -24,12 +24,12 @@ sealed class AuthenticationError {
   }
 }
 
-data class NetworkAuthError(
-  val type: TypeEnum, // Oneof: network-error
+data class AvailabilityError(
+  val type: TypeEnum, // Oneof: Availability-error
 ) : AuthenticationError() {
 
   enum class TypeEnum {
-    @SerializedName("network-error") `Network-error`,
+    @SerializedName("availability-error") `Availability-error`,
   }
 }
 
