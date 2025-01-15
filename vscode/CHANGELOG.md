@@ -4,6 +4,43 @@ This is a log of all notable changes to Cody for VS Code.
 
 {/* CHANGELOG_START */}
 
+## 1.58.0
+
+### Features
+
+#### Nls
+
+- add relevant repo boost [#6502](https://github.com/sourcegraph/cody/pull/6502)
+
+#### Others
+
+- generate changelog action [#6516](https://github.com/sourcegraph/cody/pull/6516)
+
+### Fix
+
+#### Release
+
+- add $ variable invocation [#6509](https://github.com/sourcegraph/cody/pull/6509)
+  - Fixes error in release notification step
+
+### Chore
+
+#### Security
+
+- Fix closed events for sast scan [#6512](https://github.com/sourcegraph/cody/pull/6512)
+
+### Reverts
+
+  There were no reverts for this release
+
+### Uncategorized
+
+#### Others
+
+- storybook: add context items with sources for steps [#6505](https://github.com/sourcegraph/cody/pull/6505)
+- Add Cody bench command for NLS [#6497](https://github.com/sourcegraph/cody/pull/6497)
+
+
 ## Unreleased
 
 ### Added
