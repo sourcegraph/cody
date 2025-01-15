@@ -5,10 +5,12 @@ import {
     isDefined,
     openCtx,
     openCtxProviderMetadata,
+    parseMentionQuery,
     ps,
 } from '@sourcegraph/cody-shared'
 import { map } from 'observable-fns'
 import type { ContextRetriever } from '../chat-view/ContextRetriever'
+import { getChatContextItemsForMention } from '../context/chatContext'
 import { type CodyTool, type CodyToolConfig, OpenCtxTool, TOOL_CONFIGS } from './CodyTool'
 import { toolboxManager } from './ToolboxManager'
 import { OPENCTX_TOOL_CONFIG } from './config'
@@ -91,19 +93,26 @@ class ToolFactory {
             .filter(isDefined)
     }
 
-    public createOpenCtxTools(providers: ContextMentionProviderMetadata[]): CodyTool[] {
-        return providers
-            .map(provider => {
-                const toolName = this.generateToolName(provider)
-                const config = this.getToolConfig(provider)
-                this.register({
-                    name: toolName,
-                    ...config,
-                    createInstance: cfg => new OpenCtxTool(provider, cfg),
-                })
-                return this.createTool(toolName)
+    public async createOpenCtxTools(providers: ContextMentionProviderMetadata[]): Promise<CodyTool[]> {
+        const tools: CodyTool[] = []
+
+        for (const provider of providers) {
+            const toolName = this.generateToolName(provider)
+            const config = this.getToolConfig(provider)
+
+            this.register({
+                name: toolName,
+                ...config,
+                createInstance: cfg => new OpenCtxTool(provider, cfg),
             })
-            .filter(isDefined)
+
+            const tool = this.createTool(toolName)
+            if (tool) {
+                tools.push(tool)
+            }
+        }
+
+        return tools
     }
 
     private generateToolName(provider: ContextMentionProviderMetadata): string {
@@ -124,20 +133,56 @@ class ToolFactory {
         const defaultConfig = Object.entries(OPENCTX_TOOL_CONFIG).find(
             c => provider.id.toLowerCase().includes(c[0]) || provider.title.toLowerCase().includes(c[0])
         )
-        return (
-            defaultConfig?.[1] ?? {
-                title: provider.title,
-                tags: {
-                    tag: PromptString.unsafe_fromUserQuery(this.generateToolName(provider)),
-                    subTag: ps`get`,
-                },
-                prompt: {
-                    instruction: PromptString.unsafe_fromUserQuery(provider.queryLabel),
-                    placeholder: ps`QUERY`,
-                    examples: [],
-                },
-            }
-        )
+        if (defaultConfig) {
+            return defaultConfig[1]
+        }
+        // Check if the provider is a model context protocol provider
+        if (provider.id === 'internal-model-context-provider') {
+            // TODO: Moves createModelContextConfig logic into this function.
+            return this.createModelContextConfig(provider.id, provider.title)
+        }
+        return {
+            title: provider.title,
+            tags: {
+                tag: PromptString.unsafe_fromUserQuery(this.generateToolName(provider)),
+                subTag: ps`get`,
+            },
+            prompt: {
+                instruction: PromptString.unsafe_fromUserQuery(provider.queryLabel),
+                placeholder: ps`QUERY`,
+                examples: [],
+            },
+        }
+    }
+    // TODO: Handles this in getToolConfig instead of
+    // having a separate function specific to model context protocol
+    private createModelContextConfig(mention: any, tagName: string): CodyToolConfig {
+        return {
+            title: `${mention.title} (via MCP)`,
+            tags: {
+                tag: PromptString.unsafe_fromUserQuery(tagName),
+                subTag: ps`query`,
+            },
+            prompt: {
+                instruction: PromptString.unsafe_fromUserQuery(
+                    `Use ${mention.title} to ${mention.description || 'retrieve context'}. ` +
+                        `Input must follow this schema: ${JSON.stringify(
+                            mention.data?.properties,
+                            null,
+                            2
+                        )}` +
+                        'Ensure all required properties are provided and types match the schema.'
+                ),
+                placeholder: ps`QUERY`,
+                examples: [
+                    PromptString.unsafe_fromUserQuery(
+                        `To use ${mention.title} with valid schema: \`<${tagName}>${JSON.stringify({
+                            message: mention.data?.properties || 'example input',
+                        })}</${tagName}>\``
+                    ),
+                ],
+            },
+        }
     }
 }
 
@@ -185,8 +230,37 @@ export class CodyToolProvider {
         if (provider && !CodyToolProvider.openCtxSubscription && openCtx.controller) {
             CodyToolProvider.openCtxSubscription = openCtx.controller
                 .metaChanges({}, {})
-                .pipe(map(providers => providers.filter(p => !!p.mentions).map(openCtxProviderMetadata)))
-                .subscribe(providerMeta => provider.factory.createOpenCtxTools(providerMeta))
+                .pipe(
+                    map(providers =>
+                        providers
+                            .filter(p => !!p.mentions)
+                            .map(async p => {
+                                if (p.providerUri === 'internal-model-context-provider') {
+                                    const idObject: Pick<ContextMentionProviderMetadata, 'id'> = {
+                                        id: p.providerUri,
+                                    }
+                                    const mention = parseMentionQuery('', idObject)
+                                    const mentions = await getChatContextItemsForMention({
+                                        mentionQuery: mention,
+                                    })
+                                    for (const mention of mentions) {
+                                        return openCtxProviderMetadata({
+                                            providerUri: p.providerUri.toString(),
+                                            name: mention.title ?? 'MCP Tool',
+                                            mentions: {
+                                                label: 'MCP Tool: ' + mention.title,
+                                            },
+                                        })
+                                    }
+                                }
+                                return openCtxProviderMetadata(p)
+                            })
+                    )
+                )
+                .subscribe(async providerMeta => {
+                    const resolvedProviders = await Promise.all(providerMeta)
+                    provider.factory.createOpenCtxTools(resolvedProviders)
+                })
         }
     }
 
