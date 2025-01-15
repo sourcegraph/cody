@@ -29,14 +29,12 @@ type NoticeIDs = 'DogfoodS2' | 'TeamsUpgrade' | 'DeepCodyDotCom' | 'DeepCodyEnte
 
 interface NoticesProps {
     user: UserAccountInfo
-    // Whether to show the Sourcegraph Teams upgrade CTA or not.
-    isTeamsUpgradeCtaEnabled?: boolean
     instanceNotices: CodyNotice[]
 }
 
 const storageKey = 'DismissedWelcomeNotices'
 
-export const Notices: React.FC<NoticesProps> = ({ user, isTeamsUpgradeCtaEnabled, instanceNotices }) => {
+export const Notices: React.FC<NoticesProps> = ({ user, instanceNotices }) => {
     const telemetryRecorder = useTelemetryRecorder()
 
     // dismissed notices from local storage
