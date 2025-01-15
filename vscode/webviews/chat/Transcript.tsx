@@ -309,7 +309,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
         }
 
         const { intent, intentScores } = intentFromSubmit
-            ? { intent: intentFromSubmit }
+            ? { intent: intentFromSubmit, intentScores: undefined }
             : getIntentProps(editorValue, intentResults.current)
 
         const commonProps = {
