@@ -11,6 +11,7 @@ import {
     parseMentionQuery,
     pendingOperation,
     ps,
+    AutocompleteContextSnippet
 } from '@sourcegraph/cody-shared'
 import { URI } from 'vscode-uri'
 import { getContextFromRelativePath } from '../../commands/context/file-path'
@@ -21,6 +22,10 @@ import { getCorpusContextItemsForEditorState } from '../initialContext'
 import { CodyChatMemory } from './CodyChatMemory'
 import type { ToolStatusCallback } from './CodyToolProvider'
 import { RawTextProcessor } from './DeepCody'
+import { RecentEditsRetriever } from '../../completions/context/retrievers/recent-user-actions/recent-edits-retriever'
+import { UnifiedDiffStrategy } from '../../completions/context/retrievers/recent-user-actions/recent-edits-diff-helpers/unified-diff'
+import * as vscode from 'vscode'
+import { getCurrentDocContext } from '../../completions/get-current-doc-context'
 
 /**
  * Configuration interface for CodyTool instances.
@@ -194,6 +199,68 @@ class FileTool extends CodyTool {
         return Promise.all(filePaths.map(getContextFromRelativePath)).then(results =>
             results.filter((item): item is ContextItem => item !== null)
         )
+    }
+}
+
+/**
+ * Tool for retrieving the recent edits made by the user in the editor.
+ */
+class RecentEditsTool extends CodyTool {
+
+    private recentEditsRetriever = new RecentEditsRetriever({
+        maxAgeMs: 10 * 60 * 1000, // 10 minutes
+        diffStrategyList: [
+            new UnifiedDiffStrategy({ addLineNumbers: false }),
+        ],
+    })
+
+    constructor() {
+        super({
+            title: 'Recent Edits',
+            tags: {
+                tag: ps`TOOLRECENTEDITS`,
+                subTag: ps`diff`,
+            },
+            prompt: {
+                instruction: ps`To retrieve all the recent changes made by the user in different files in the codebase.`,
+                placeholder: ps`FILENAME`,
+                examples: [
+                    ps`Can you propose the next steps based on the latest code changes: \`<TOOLRECENTEDITS><diff>path/foo.ts</diff></TOOLRECENTEDITS>\``,
+                ],
+            },
+        })
+    }
+
+    public async execute(span: Span, _: string[]): Promise<ContextItem[]> {
+        // Ignore the files for now and return all the files in the agentic context.
+        span.addEvent('executeFileTool')
+        const document = vscode.window.activeTextEditor?.document
+        const position = vscode.window.activeTextEditor?.selection.active
+        if (!document || !position) {
+            return []
+        }
+        const docContext = getCurrentDocContext({
+            document,
+            position,
+            maxPrefixLength: 100,
+            maxSuffixLength: 100,
+        })
+        const recentEditsContextItems = await this.recentEditsRetriever.retrieve({
+            document,
+            position,
+            docContext,
+        })
+        return this.convertAutocompleteContext(recentEditsContextItems)
+    }
+
+    private convertAutocompleteContext(items: AutocompleteContextSnippet[]): ContextItem[] {
+        return items.map((snippet) => ({
+            type: 'file',
+            uri: snippet.uri,
+            content: snippet.content,
+            source: ContextItemSource.Agentic,
+            title: 'TOOLRECENTEDITS',
+        }))
     }
 }
 
@@ -384,4 +451,5 @@ export const TOOL_CONFIGS = {
     SearchTool: { tool: SearchTool, useContextRetriever: true },
     CliTool: { tool: CliTool, useContextRetriever: false },
     FileTool: { tool: FileTool, useContextRetriever: false },
+    RecentEditsTool: { tool: RecentEditsTool, useContextRetriever: false },
 } as const
