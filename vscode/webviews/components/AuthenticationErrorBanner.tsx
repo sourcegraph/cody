@@ -11,20 +11,31 @@ interface AuthenticationErrorBannerProps {
 export const AuthenticationErrorBanner: React.FC<AuthenticationErrorBannerProps> = ({
     errorMessage,
 }) => {
+    const tryAgain = useCallback(() => {
+        getVSCodeAPI().postMessage({ command: 'auth', authKind: 'refresh' })
+    }, [])
+
     const signOut = useCallback(() => {
         getVSCodeAPI().postMessage({ command: 'auth', authKind: 'signout' })
     }, [])
 
     return (
-        <div className="tw-w-full tw-px-2 tw-py-3 tw-text-center tw-border-b tw-border-b-border tw-text-sm tw-text-status-offline-foreground tw-bg-status-offline-background tw-flex tw-justify-center tw-items-center tw-gap-3">
-            <TriangleAlertIcon size={14} strokeWidth={2} />
-            <span className="tw-flex-1 tw-text-xs">
-                <span className="tw-font-bold">{errorMessage.title}</span> &mdash;
-                {errorMessage.message}
-            </span>
-            <Button variant="secondary" size="sm" onClick={signOut} className="tw-flex-shrink-0">
-                Sign Out
-            </Button>
+        <div className="tw-w-full tw-px-3 tw-py-3 tw-border-b tw-border-b-border tw-text-status-offline-foreground tw-bg-status-offline-background">
+            <h5 className="tw-font-bold tw-text-sm">
+                <TriangleAlertIcon size={14} strokeWidth={2} className="tw-inline tw-mr-2" />
+                {errorMessage.title}
+            </h5>
+            <p className="tw-text-sm">{errorMessage.message}</p>
+            <div className="tw-flex tw-gap-3 tw-mt-3">
+                {errorMessage.showTryAgain && (
+                    <Button variant="secondary" size="sm" onClick={tryAgain}>
+                        Try Again
+                    </Button>
+                )}
+                <Button variant="secondary" size="sm" onClick={signOut}>
+                    Sign Out
+                </Button>
+            </div>
         </div>
     )
 }
