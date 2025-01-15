@@ -364,9 +364,14 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                 return
             }
 
-            setIntentResults(undefined)
+            const query = inputTextWithMappedContextChipsFromPromptEditorState(
+                editorValue.editorState
+            ).trim()
 
-            const query = inputTextWithMappedContextChipsFromPromptEditorState(editorValue.editorState)
+            // editor value change get changed due to multiple reasons but if the query hasn't changed skip re-computing the intent
+            if (query === intentResults.current?.query) {
+                return
+            }
 
             const subscription = extensionAPI.detectIntent(query).subscribe({
                 next: value => {
@@ -380,7 +385,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
             // Clean up subscription if component unmounts
             return () => subscription.unsubscribe()
         }, 300)
-    }, [experimentalOneBoxEnabled, extensionAPI, setIntentResults])
+    }, [experimentalOneBoxEnabled, extensionAPI, setIntentResults, intentResults.current?.query])
 
     const onStop = useCallback(() => {
         getVSCodeAPI().postMessage({
