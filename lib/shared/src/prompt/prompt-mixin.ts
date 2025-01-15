@@ -67,7 +67,9 @@ export class PromptMixin {
         }
 
         const joinedMixins = PromptMixin.join(mixins)
-        if (humanMessage.agent && humanMessage.text.includes('{{USER_INPUT_TEXT}}')) {
+
+        // If the agent's mixins include `{{USER_INPUT_TEXT}}`, replace it with the human message text.
+        if (humanMessage.agent && joinedMixins.includes('{{USER_INPUT_TEXT}}')) {
             return {
                 ...humanMessage,
                 text: joinedMixins.replace('{{USER_INPUT_TEXT}}', humanMessage.text),

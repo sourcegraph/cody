@@ -1,7 +1,5 @@
 import { beforeEach, describe, expect, test, vi } from 'vitest'
-import type { ChatMessage, ChatModel } from '../..'
-import { PromptMixin } from '../prompt-mixin'
-import { ps } from '../prompt-string'
+import { type ChatMessage, type ChatModel, PromptMixin, ps } from '..'
 
 describe('PromptMixin', () => {
     interface TestCase {
@@ -37,6 +35,14 @@ describe('PromptMixin', () => {
                 message: { speaker: 'human', text: ps`How to code?`, agent: 'deep-cody' },
             },
             expected: 'Explain your reasoning in detail for coding questions.\n\nQuestion: How to code?',
+        },
+        {
+            name: 'deep-cody agent message with custom mixin',
+            input: {
+                message: { speaker: 'human', text: ps`How to code?`, agent: 'deep-cody' },
+                newMixins: [new PromptMixin(ps`Review <input>{{USER_INPUT_TEXT}}</input>`)],
+            },
+            expected: 'Review <input>How to code?</input>',
         },
         {
             name: 'message with context mixin',
