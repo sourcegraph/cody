@@ -9,6 +9,7 @@ import {
     deserializeContextItem,
     inputTextWithMappedContextChipsFromPromptEditorState,
     isAbortErrorOrSocketHangUp,
+    serializedPromptEditorStateFromText,
 } from '@sourcegraph/cody-shared'
 import {
     type PromptEditorRefAPI,
@@ -602,6 +603,21 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
         [humanMessage.index]
     )
 
+    const editAndSubmitSearch = useCallback(
+        (text: string) =>
+            editHumanMessage({
+                messageIndexInTranscript: humanMessage.index,
+                editorValue: {
+                    text,
+                    contextItems: [],
+                    editorState: serializedPromptEditorStateFromText(text),
+                },
+                intent: 'search',
+                manuallySelectedIntent: true,
+            }),
+        [humanMessage]
+    )
+
     return (
         <>
             <HumanMessageCell
@@ -639,7 +655,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                 <DidYouMeanNotice
                     query={assistantMessage?.didYouMeanQuery}
                     disabled={!!assistantMessage?.isLoading}
-                    switchToSearch={() => {}}
+                    switchToSearch={() => editAndSubmitSearch(assistantMessage?.didYouMeanQuery ?? '')}
                 />
             )}
             {(humanMessage.contextFiles || assistantMessage || isContextLoading) && !isSearchIntent && (
