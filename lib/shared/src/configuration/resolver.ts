@@ -94,11 +94,6 @@ async function resolveConfiguration({
 
     try {
         const auth = await resolveAuth(serverEndpoint, clientConfiguration, clientSecrets)
-        const cred = auth.credentials
-        if (cred !== undefined && 'expiration' in cred && cred.expiration !== undefined) {
-            const expireInMs = cred.expiration * 1000 - Date.now()
-            setInterval(() => _refreshConfigRequests.next(), expireInMs)
-        }
         return { configuration: clientConfiguration, clientState, auth, isReinstall }
     } catch (error) {
         // We don't want to throw here, because that would cause the observable to terminate and
@@ -116,6 +111,10 @@ async function resolveConfiguration({
 const _resolvedConfig = fromLateSetSource<ResolvedConfiguration>()
 
 const _refreshConfigRequests = new Subject<void>()
+
+export function refreshConfig(): void {
+    _refreshConfigRequests.next()
+}
 
 /**
  * Set the observable that will be used to provide the global {@link resolvedConfig}. This should be

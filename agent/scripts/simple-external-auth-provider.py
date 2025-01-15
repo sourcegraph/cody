@@ -4,7 +4,7 @@ import time
 from datetime import datetime
 
 def generate_credentials():
-    current_epoch = int(time.time()) + 100
+    current_epoch = int(time.time()) + 30
 
     credentials = {
         "headers": {

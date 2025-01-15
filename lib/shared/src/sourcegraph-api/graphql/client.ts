@@ -1573,7 +1573,7 @@ export class SourcegraphGraphQLAPIClient {
 
         addTraceparent(headers)
         addCodyClientIdentificationHeaders(headers)
-        addAuthHeaders(config.auth, headers, url)
+        await addAuthHeaders(config.auth, headers, url)
 
         const queryName = query.match(QUERY_TO_NAME_REGEXP)?.[1]
 

@@ -72,7 +72,7 @@ class DefaultCodeCompletionsClient implements CodeCompletionsClient {
                 // c.f. https://github.com/microsoft/vscode/issues/173861
                 headers.set('Content-Type', 'application/json; charset=utf-8')
                 addCodyClientIdentificationHeaders(headers)
-                addAuthHeaders(auth, headers, url)
+                await addAuthHeaders(auth, headers, url)
 
                 if (tracingFlagEnabled) {
                     headers.set('X-Sourcegraph-Should-Trace', '1')

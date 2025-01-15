@@ -93,7 +93,7 @@ describe('auth-resolver', () => {
 
         const headerCredential = auth.credentials as HeaderCredential
         expect(headerCredential.expiration).toBe(futureEpoch)
-        expect(headerCredential.getHeaders()).toStrictEqual({
+        expect(await headerCredential.getHeaders()).toStrictEqual({
             Authorization: 'token X',
         })
 

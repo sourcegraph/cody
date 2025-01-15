@@ -40,7 +40,7 @@ export class SourcegraphBrowserCompletionsClient extends SourcegraphCompletionsC
             ...requestParams.customHeaders,
         } as HeadersInit)
         addCodyClientIdentificationHeaders(headersInstance)
-        addAuthHeaders(config.auth, headersInstance, url)
+        await addAuthHeaders(config.auth, headersInstance, url)
         headersInstance.set('Content-Type', 'application/json; charset=utf-8')
 
         const parameters = new URLSearchParams(globalThis.location.search)
@@ -132,7 +132,7 @@ export class SourcegraphBrowserCompletionsClient extends SourcegraphCompletionsC
             ...requestParams.customHeaders,
         })
         addCodyClientIdentificationHeaders(headersInstance)
-        addAuthHeaders(auth, headersInstance, url)
+        await addAuthHeaders(auth, headersInstance, url)
 
         if (new URLSearchParams(globalThis.location.search).get('trace')) {
             headersInstance.set('X-Sourcegraph-Should-Trace', 'true')

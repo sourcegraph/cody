@@ -97,7 +97,7 @@ class UpstreamHealthProvider implements vscode.Disposable {
 
             const url = new URL('/healthz', auth.serverEndpoint)
             const upstreamHeaders = new Headers(sharedHeaders)
-            addAuthHeaders(auth, upstreamHeaders, url)
+            await addAuthHeaders(auth, upstreamHeaders, url)
 
             const upstreamResult = await wrapInActiveSpan('upstream-latency.upstream', span => {
                 span.setAttribute('sampled', true)

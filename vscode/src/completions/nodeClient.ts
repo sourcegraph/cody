@@ -102,7 +102,7 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                 Connection: 'keep-alive',
             })
             addCodyClientIdentificationHeaders(headers)
-            addAuthHeaders(auth, headers, url)
+            await addAuthHeaders(auth, headers, url)
 
             const request = requestFn(
                 url,
@@ -307,7 +307,7 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                 })
 
                 addCodyClientIdentificationHeaders(headers)
-                addAuthHeaders(auth, headers, url)
+                await addAuthHeaders(auth, headers, url)
 
                 const response = await fetch(url.toString(), {
                     method: 'POST',

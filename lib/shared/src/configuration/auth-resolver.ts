@@ -3,8 +3,10 @@ import type {
     ClientConfiguration,
     ExternalAuthCommand,
     ExternalAuthProvider,
+    HeaderCredential,
 } from '../configuration'
-import type { ClientSecrets } from './resolver'
+import { logError } from '../logger'
+import { type ClientSecrets, refreshConfig } from './resolver'
 
 export function normalizeServerEndpointURL(url: string): string {
     return url.endsWith('/') ? url : `${url}/`
@@ -37,7 +39,7 @@ interface HeaderCredentialResult {
     expiration?: number | undefined
 }
 
-async function getExternalProviderAuthResult(
+async function getExternalProviderHeaders(
     serverEndpoint: string,
     authExternalProviders: readonly ExternalAuthProvider[]
 ): Promise<HeaderCredentialResult | undefined> {
@@ -45,12 +47,27 @@ async function getExternalProviderAuthResult(
         provider => normalizeServerEndpointURL(provider.endpoint) === serverEndpoint
     )
 
-    if (externalProvider) {
-        const result = await executeCommand(externalProvider.executable)
-        return JSON.parse(result)
+    if (!externalProvider) {
+        return undefined
     }
 
-    return undefined
+    const result = await executeCommand(externalProvider.executable).catch(error => {
+        throw new Error(`Failed to execute external auth command: ${error.message || error}`)
+    })
+
+    const credentials = JSON.parse(result) as HeaderCredentialResult
+
+    if (credentials?.expiration) {
+        const expirationMs = credentials?.expiration * 1000
+        if (expirationMs < Date.now()) {
+            throw new Error(
+                'Credentials expiration cannot be set to a date in the past: ' +
+                    `${new Date(expirationMs)} (${credentials.expiration})`
+            )
+        }
+    }
+
+    return credentials
 }
 
 export async function resolveAuth(
@@ -69,30 +86,38 @@ export async function resolveAuth(
             return { credentials: { token: overrideAuthToken }, serverEndpoint }
         }
 
-        const credentials = await getExternalProviderAuthResult(
-            serverEndpoint,
-            authExternalProviders
-        ).catch(error => {
-            throw new Error(`Failed to execute external auth command: ${error.message || error}`)
-        })
+        const extProviderResult = await getExternalProviderHeaders(serverEndpoint, authExternalProviders)
+        if (extProviderResult) {
+            const headerCredentials: HeaderCredential = {
+                expiration: extProviderResult?.expiration,
+                async getHeaders() {
+                    if (extProviderResult?.expiration) {
+                        const expirationMs = extProviderResult?.expiration * 1000
+                        if (expirationMs < Date.now()) {
+                            try {
+                                const newExtProviderResult = await getExternalProviderHeaders(
+                                    serverEndpoint,
+                                    authExternalProviders
+                                )
+                                this.expiration = newExtProviderResult?.expiration
+                                this.getHeaders = this.getHeaders.bind(newExtProviderResult)
+                            } catch (error) {
+                                // In case of error we do a config refresh so error can be surfaced to the user
+                                logError(
+                                    'resolveAuth',
+                                    `Failed to get external auth provider data: ${error}`
+                                )
+                                refreshConfig()
+                            }
+                        }
+                    }
 
-        if (credentials) {
-            if (credentials?.expiration) {
-                const expirationMs = credentials?.expiration * 1000
-                if (expirationMs < Date.now()) {
-                    throw new Error(
-                        'Credentials expiration cannot be set to a date in the past: ' +
-                            `${new Date(expirationMs)} (${credentials.expiration})`
-                    )
-                }
-            }
-            return {
-                credentials: {
-                    expiration: credentials?.expiration,
-                    getHeaders() {
-                        return credentials.headers
-                    },
+                    return extProviderResult.headers
                 },
+            }
+
+            return {
+                credentials: headerCredentials,
                 serverEndpoint,
             }
         }
