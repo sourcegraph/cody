@@ -265,7 +265,7 @@ export class KotlinFormatter extends Formatter {
     }
 
     override formatFieldName(name: string): string {
-        const escaped = name.replace(':', '_').replace('/', '_')
+        const escaped = name.replace('.*', 'Wildcard').replace(':', '_').replace('/', '_')
         const isKeyword = this.options.reserved.has(escaped)
         const needsBacktick = isKeyword || !/^[a-zA-Z0-9_]+$/.test(escaped)
         // Replace all non-alphanumeric characters with underscores

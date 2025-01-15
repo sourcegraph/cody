@@ -24,12 +24,16 @@ import {
     pluralize,
 } from './utils'
 
+import { CodyIDE } from '@sourcegraph/cody-shared'
 import type {
     NLSSearchFileMatch,
     NLSSearchResult,
 } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 import type { Observable } from 'observable-fns'
 import { useInView } from 'react-intersection-observer'
+import { URI } from 'vscode-uri'
+import { getVSCodeAPI } from '../../utils/VSCodeApi'
+import { useConfig } from '../../utils/useConfig'
 import styles from './CodeSnippet.module.css'
 
 const DEFAULT_VISIBILITY_OFFSET = '500px'
@@ -123,6 +127,29 @@ export const FileMatchSearchResult: FC<PropsWithChildren<FileMatchSearchResultPr
     const expandable = !showAllMatches && expandedHighlightCount > collapsedHighlightCount
 
     useEffect(() => setExpanded(allExpanded || defaultExpanded), [allExpanded, defaultExpanded])
+    const {
+        clientCapabilities: { agentIDE },
+    } = useConfig()
+    const openRemoteFile = useCallback(
+        (line?: number) => {
+            const urlWithLineNumber = line ? `${fileURL}?L${line}` : fileURL
+            if (agentIDE !== CodyIDE.VSCode) {
+                getVSCodeAPI().postMessage({
+                    command: 'links',
+                    value: urlWithLineNumber,
+                })
+
+                return
+            }
+
+            const uri = URI.parse(urlWithLineNumber)
+            getVSCodeAPI().postMessage({
+                command: 'openRemoteFile',
+                uri,
+            })
+        },
+        [fileURL, agentIDE]
+    )
 
     const handleVisibility = useCallback(
         (inView: boolean, entry: IntersectionObserverEntry) => {
@@ -183,6 +210,7 @@ export const FileMatchSearchResult: FC<PropsWithChildren<FileMatchSearchResultPr
             repoName={result.repository.name}
             repoURL={repoAtRevisionURL}
             filePath={result.file.path}
+            onFilePathClick={openRemoteFile}
             pathMatchRanges={result.pathMatches ?? []}
             fileURL={fileURL}
             repoDisplayName={
@@ -231,6 +259,7 @@ export const FileMatchSearchResult: FC<PropsWithChildren<FileMatchSearchResultPr
                     serverEndpoint={serverEndpoint}
                     result={result}
                     grouped={expanded ? expandedGroups : collapsedGroups}
+                    onLineClick={openRemoteFile}
                 />
                 {expandable && (
                     <button

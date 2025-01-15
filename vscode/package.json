@@ -685,6 +685,11 @@
         "key": "ctrl+enter"
       },
       {
+        "command": "-extension.vim_tab",
+        "key": "tab",
+        "when": "editorTextFocus && vim.active && vim.mode == 'Normal' && !inDebugRepl"
+      },
+      {
         "command": "cody.autocomplete.manual-trigger",
         "key": "alt+\\",
         "when": "editorTextFocus && !editorHasSelection && config.cody.suggestions.mode === 'autocomplete' && !inlineSuggestionsVisible"
