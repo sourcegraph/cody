@@ -1,7 +1,9 @@
 import type * as React from 'react'
 import { useEffect, useRef } from 'react'
 
+import { CodyIDE } from '@sourcegraph/cody-shared'
 import { ChevronDown, ChevronUp } from 'lucide-react'
+import { useConfig } from '../../../utils/useConfig'
 import { cn } from '../../shadcn/utils'
 import { highlightNode } from '../highlights'
 import type { Range } from '../types'
@@ -18,6 +20,7 @@ interface Props {
     collapsed: boolean
     onToggleCollapse: () => void
     collapsible: boolean
+    onFilePathClick?: () => void
 }
 
 /**
@@ -37,6 +40,7 @@ export const RepoFileLink: React.FunctionComponent<React.PropsWithChildren<Props
         collapsed,
         onToggleCollapse,
         collapsible,
+        onFilePathClick,
     } = props
 
     const [fileBase, fileName] = splitPath(filePath)
@@ -55,6 +59,9 @@ export const RepoFileLink: React.FunctionComponent<React.PropsWithChildren<Props
     }, [pathMatchRanges, fileName])
 
     const Chevron = collapsed ? ChevronDown : ChevronUp
+    const {
+        clientCapabilities: { agentIDE },
+    } = useConfig()
 
     return (
         <span className={cn(className, 'tw-flex tw-items-center tw-w-full')}>
@@ -71,11 +78,12 @@ export const RepoFileLink: React.FunctionComponent<React.PropsWithChildren<Props
                 </a>
                 <span aria-hidden={true}> ›</span>{' '}
                 <a
-                    href={fileURL}
+                    href={agentIDE === CodyIDE.VSCode ? '' : fileURL}
                     ref={containerElement}
                     target="_blank"
                     rel="noreferrer"
                     data-selectable-search-result={isKeyboardSelectable}
+                    onClick={() => onFilePathClick?.()}
                 >
                     {fileBase ? `${fileBase}/` : null}
                     <strong>{fileName}</strong>

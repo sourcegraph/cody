@@ -9,7 +9,7 @@ data class CodyContextFilterItem(
 ) {
 
   enum class RepoNamePatternEnum {
-    @SerializedName(".*") MATCH_ALL,
+    @SerializedName(".*") Wildcard,
   }
 }
 
