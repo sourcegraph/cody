@@ -1,5 +1,7 @@
+import { SG_WORKSPACES_URL } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 import { XIcon } from 'lucide-react'
 import { type FunctionComponent, useCallback } from 'react'
+import { DOTCOM_WORKSPACE_LEARN_MORE_URL } from '../../../src/chat/protocol'
 import { useLocalStorage } from '../../components/hooks'
 import { Badge } from '../../components/shadcn/ui/badge'
 import { Button } from '../../components/shadcn/ui/button'
@@ -7,10 +9,6 @@ import graphDarkCTA from '../../graph_dark.svg'
 import graphLightCTA from '../../graph_light.svg'
 import { SourcegraphLogo } from '../../icons/SourcegraphLogo'
 import { useTelemetryRecorder } from '../../utils/telemetry'
-
-const WORKSPACES_URL = 'https://workspaces.sourcegraph.com'
-// TODO: Update to live link https://linear.app/sourcegraph/issue/CORE-535/
-const DOCS_URL = 'https://docs.sourcegraph.com'
 
 export const WelcomeNotice: FunctionComponent = () => {
     const [dismissed, setDismissed] = useLocalStorage('sg_welcome_notice_00', 0)
@@ -37,7 +35,7 @@ export const WelcomeNotice: FunctionComponent = () => {
             <div id="welcome-notice-buttons" className="tw-flex tw-gap-4 tw-mb-4 tw-text-[12px]">
                 <Button variant="outline" className="tw-px-2">
                     <a
-                        href={WORKSPACES_URL}
+                        href={SG_WORKSPACES_URL.href}
                         className="tw-text-foreground hover:tw-text-foreground"
                         rel="noreferrer"
                         target="_blank"
@@ -46,7 +44,12 @@ export const WelcomeNotice: FunctionComponent = () => {
                     </a>
                 </Button>
                 <Button type="button" variant="ghost" className="tw-px-2">
-                    <a href={DOCS_URL} className="" rel="noreferrer" target="_blank">
+                    <a
+                        href={DOTCOM_WORKSPACE_LEARN_MORE_URL.href}
+                        className=""
+                        rel="noreferrer"
+                        target="_blank"
+                    >
                         Learn more
                     </a>
                 </Button>
