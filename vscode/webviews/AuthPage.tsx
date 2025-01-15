@@ -1,4 +1,9 @@
-import type { AuthStatus, CodyIDE, TelemetryRecorder } from '@sourcegraph/cody-shared'
+import {
+    type AuthStatus,
+    type CodyIDE,
+    type TelemetryRecorder,
+    isDotCom,
+} from '@sourcegraph/cody-shared'
 
 import signInLogoSourcegraph from '../resources/sourcegraph-mark.svg'
 import { type AuthMethod, isSourcegraphToken } from '../src/chat/protocol'
@@ -286,7 +291,7 @@ const ClientSignInForm: React.FC<ClientSignInFormProps> = memo(
             isSubmitting: false,
             showAuthError: false,
             formData: {
-                endpoint: authStatus?.endpoint ?? '',
+                endpoint: authStatus && !isDotCom(authStatus) ? authStatus.endpoint : '',
                 accessToken: '',
             },
         })
