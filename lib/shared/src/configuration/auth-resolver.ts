@@ -79,10 +79,9 @@ export async function resolveAuth(
         if (credentials) {
             if (credentials?.expiration) {
                 const expirationMs = credentials?.expiration * 1000
-                const expireInMs = expirationMs - Date.now()
-                if (expireInMs < 0) {
+                if (expirationMs < Date.now()) {
                     throw new Error(
-                        'Credentials expiration cannot be se to the past date: ' +
+                        'Credentials expiration cannot be set to a date in the past: ' +
                             `${new Date(expirationMs)} (${credentials.expiration})`
                     )
                 }

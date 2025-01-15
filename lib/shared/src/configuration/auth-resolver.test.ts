@@ -61,10 +61,10 @@ describe('auth-resolver', () => {
     })
 
     test('resolve custom auth provider', async () => {
-        const futureExpirationEpoch = 1000 * 1000 * 1000 * 1000
+        const futureEpoch = Date.UTC(2050) / 1000
         const credentialsJson = JSON.stringify({
             headers: { Authorization: 'token X' },
-            expiration: futureExpirationEpoch,
+            expiration: futureEpoch,
         })
 
         const auth = await resolveAuth(
@@ -92,7 +92,7 @@ describe('auth-resolver', () => {
         expect(auth.serverEndpoint).toBe('https://my-server.com/')
 
         const headerCredential = auth.credentials as HeaderCredential
-        expect(headerCredential.expiration).toBe(futureExpirationEpoch)
+        expect(headerCredential.expiration).toBe(futureEpoch)
         expect(headerCredential.getHeaders()).toStrictEqual({
             Authorization: 'token X',
         })
@@ -108,7 +108,7 @@ describe('auth-resolver', () => {
                     {
                         endpoint: 'https://my-server.com',
                         executable: {
-                            commandLine: ['echo '],
+                            commandLine: ['echo x'],
                             shell: isWindows() ? process.env.ComSpec : '/bin/bash',
                             timeout: 5000,
                             windowsHide: true,
@@ -124,14 +124,14 @@ describe('auth-resolver', () => {
         expect(auth.serverEndpoint).toBe('https://my-server.com/')
 
         expect(auth.credentials).toBe(undefined)
-        expect(auth.error.message).toContain('Unexpected end of JSON input')
+        expect(auth.error.message).toContain('Failed to execute external auth command: Unexpected token')
     })
 
     test('resolve custom auth provider error handling - bad expiration', async () => {
-        const pastExpirationEpoch = 1000 * 1000 * 1000
+        const expiredEpoch = Date.UTC(2020) / 1000
         const credentialsJson = JSON.stringify({
             headers: { Authorization: 'token X' },
-            expiration: pastExpirationEpoch,
+            expiration: expiredEpoch,
         })
 
         const auth = await resolveAuth(
@@ -159,6 +159,8 @@ describe('auth-resolver', () => {
         expect(auth.serverEndpoint).toBe('https://my-server.com/')
 
         expect(auth.credentials).toBe(undefined)
-        expect(auth.error.message).toContain('Credentials expiration cannot be se to the past date')
+        expect(auth.error.message).toContain(
+            'Credentials expiration cannot be set to a date in the past'
+        )
     })
 })

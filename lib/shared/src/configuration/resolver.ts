@@ -96,8 +96,7 @@ async function resolveConfiguration({
         const auth = await resolveAuth(serverEndpoint, clientConfiguration, clientSecrets)
         const cred = auth.credentials
         if (cred !== undefined && 'expiration' in cred && cred.expiration !== undefined) {
-            const expirationMs = cred.expiration * 1000
-            const expireInMs = expirationMs - Date.now()
+            const expireInMs = cred.expiration * 1000 - Date.now()
             setInterval(() => _refreshConfigRequests.next(), expireInMs)
         }
         return { configuration: clientConfiguration, clientState, auth, isReinstall }
