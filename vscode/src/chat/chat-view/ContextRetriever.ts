@@ -182,9 +182,13 @@ export class ContextRetriever implements vscode.Disposable {
         )
     }
 
+    /**
+     * Computes a "Did you mean?" suggestion for a given query by extracting keywords.
+     * Only attempts to extract keywords for queries that look like search queries.
+     */
     public async computeDidYouMean(
         query: PromptString,
-        signal?: AbortSignal
+        signal: AbortSignal
     ): Promise<string | undefined> {
         if (!looksLikeSearch(query.toString())) {
             return undefined

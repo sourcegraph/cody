@@ -53,7 +53,7 @@ export class ChatHandler implements AgentHandler {
         // forgot to set the source, assume it's from the user.
         mentions = mentions.map(m => (m.source ? m : { ...m, source: ContextItemSource.User }))
 
-        const didYouMeanPromise = this.contextRetriever.computeDidYouMean(inputText)
+        const didYouMeanPromise = this.contextRetriever.computeDidYouMean(inputText, signal)
 
         const contextResult = await this.computeContext(
             requestID,

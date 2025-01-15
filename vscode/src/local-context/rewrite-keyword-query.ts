@@ -101,10 +101,15 @@ async function doRewrite(
     return [...result]
 }
 
+/**
+ * Extracts keywords from a user query by using the completions model to identify relevant search terms.
+ * The function processes the query and returns an array of individual keywords that could be found
+ * literally in code snippets or file names.
+ */
 export async function extractKeywords(
     completionsClient: SourcegraphCompletionsClient,
     query: PromptString,
-    signal?: AbortSignal
+    signal: AbortSignal
 ): Promise<string[]> {
     const preamble = getSimplePreamble(undefined, 0, 'Default')
     const stream = completionsClient.stream(
@@ -139,6 +144,7 @@ export async function extractKeywords(
         }
     }
 
+    // If there are multiple keyword entries, it will be parsed as an array. Otherwise, it will be parsed as a string.
     const document: { keywords: { keyword: string | string[] } } = new XMLParser().parse(lastMessageText)
 
     let keywords: string[] = []

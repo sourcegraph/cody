@@ -117,7 +117,7 @@ export interface SerializedChatMessage {
     intent?: ChatMessage['intent']
     manuallySelectedIntent?: ChatMessage['manuallySelectedIntent']
     search?: ChatMessage['search']
-    didYouMeanQuery: ChatMessage['didYouMeanQuery']
+    didYouMeanQuery?: ChatMessage['didYouMeanQuery']
     agent?: string | undefined | null
     processes?: ProcessingStep[] | undefined | null
     subMessages?: SubMessage[]
