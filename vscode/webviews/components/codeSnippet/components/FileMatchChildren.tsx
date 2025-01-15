@@ -1,4 +1,4 @@
-import { type FC, type PropsWithChildren, useCallback } from 'react'
+import type { FC, PropsWithChildren } from 'react'
 
 import { clsx } from 'clsx'
 
@@ -8,10 +8,7 @@ import { getFileMatchUrl } from '../utils'
 
 import { CodeExcerpt } from './CodeExcerpt'
 
-import { CodyIDE } from '@sourcegraph/cody-shared'
 import type { NLSSearchFileMatch } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
-import { getVSCodeAPI } from '../../../utils/VSCodeApi'
-import { useConfig } from '../../../utils/useConfig'
 import resultStyles from '../CodeSnippet.module.css'
 import styles from './FileMatchChildren.module.css'
 
@@ -19,7 +16,7 @@ interface FileMatchProps {
     result: NLSSearchFileMatch
     grouped: MatchGroup[]
     serverEndpoint: string
-    onLineClick?: () => void
+    onLineClick?: (line: number) => void
 }
 
 export const FileMatchChildren: FC<PropsWithChildren<FileMatchProps>> = props => {
@@ -41,26 +38,6 @@ export const FileMatchChildren: FC<PropsWithChildren<FileMatchProps>> = props =>
 
         return urlBuilder.toString()
     }
-
-    const {
-        clientCapabilities: { agentIDE },
-    } = useConfig()
-
-    const navigateToFile = useCallback(
-        (line: number) => {
-            if (agentIDE === CodyIDE.VSCode && onLineClick) {
-                onLineClick()
-                return
-            }
-
-            // TODO: this does not work on web as opening links from within a web worker does not work.
-            getVSCodeAPI().postMessage({
-                command: 'links',
-                value: `${getFileMatchUrl(serverEndpoint, result)}?L${line}`,
-            })
-        },
-        [serverEndpoint, result, onLineClick, agentIDE]
-    )
 
     return (
         <div data-testid="file-match-children">
@@ -87,7 +64,7 @@ export const FileMatchChildren: FC<PropsWithChildren<FileMatchProps>> = props =>
                             highlightRanges={group.matches}
                             plaintextLines={group.plaintextLines}
                             highlightedLines={group.highlightedHTMLRows}
-                            onLineClick={navigateToFile}
+                            onLineClick={onLineClick}
                         />
                     </div>
                 ))}

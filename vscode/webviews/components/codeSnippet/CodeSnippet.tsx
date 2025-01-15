@@ -130,17 +130,26 @@ export const FileMatchSearchResult: FC<PropsWithChildren<FileMatchSearchResultPr
     const {
         clientCapabilities: { agentIDE },
     } = useConfig()
-    const openRemoteFile = useCallback(() => {
-        if (agentIDE !== CodyIDE.VSCode) {
-            return
-        }
+    const openRemoteFile = useCallback(
+        (line?: number) => {
+            const urlWithLineNumber = line ? `${fileURL}?L${line}` : fileURL
+            if (agentIDE !== CodyIDE.VSCode) {
+                getVSCodeAPI().postMessage({
+                    command: 'links',
+                    value: urlWithLineNumber,
+                })
 
-        const uri = URI.parse(fileURL)
-        getVSCodeAPI().postMessage({
-            command: 'openRemoteFile',
-            uri,
-        })
-    }, [fileURL, agentIDE])
+                return
+            }
+
+            const uri = URI.parse(urlWithLineNumber)
+            getVSCodeAPI().postMessage({
+                command: 'openRemoteFile',
+                uri,
+            })
+        },
+        [fileURL, agentIDE]
+    )
 
     const handleVisibility = useCallback(
         (inView: boolean, entry: IntersectionObserverEntry) => {

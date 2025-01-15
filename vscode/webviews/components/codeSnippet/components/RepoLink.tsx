@@ -83,7 +83,7 @@ export const RepoFileLink: React.FunctionComponent<React.PropsWithChildren<Props
                     target="_blank"
                     rel="noreferrer"
                     data-selectable-search-result={isKeyboardSelectable}
-                    onClick={onFilePathClick}
+                    onClick={() => onFilePathClick?.()}
                 >
                     {fileBase ? `${fileBase}/` : null}
                     <strong>{fileName}</strong>
