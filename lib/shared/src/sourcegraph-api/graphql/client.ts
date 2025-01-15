@@ -1615,7 +1615,12 @@ export class SourcegraphGraphQLAPIClient {
 
         addTraceparent(headers)
         addCodyClientIdentificationHeaders(headers)
-        addAuthHeaders(config.auth, headers, url)
+
+        try {
+            await addAuthHeaders(config.auth, headers, url)
+        } catch (error: any) {
+            return error
+        }
 
         const queryName = query.match(QUERY_TO_NAME_REGEXP)?.[1]
 
@@ -1663,7 +1668,12 @@ export class SourcegraphGraphQLAPIClient {
 
         addTraceparent(headers)
         addCodyClientIdentificationHeaders(headers)
-        addAuthHeaders(config.auth, headers, url)
+
+        try {
+            await addAuthHeaders(config.auth, headers, url)
+        } catch (error: any) {
+            return error
+        }
 
         const { abortController, timeoutSignal } = dependentAbortControllerWithTimeout(signal)
         return wrapInActiveSpan(`httpapi.fetch${queryName ? `.${queryName}` : ''}`, () =>

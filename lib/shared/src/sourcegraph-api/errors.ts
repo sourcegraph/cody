@@ -135,3 +135,9 @@ export function isNetworkLikeError(error: Error): boolean {
         message.includes('SELF_SIGNED_CERT_IN_CHAIN')
     )
 }
+
+export class ExternalProviderAuthError extends Error {}
+
+export function isExternalProviderAuthError(error: unknown): boolean {
+    return error instanceof ExternalProviderAuthError
+}
