@@ -4,6 +4,174 @@ This is a log of all notable changes to Cody for VS Code.
 
 {/* CHANGELOG_START */}
 
+## v
+
+### Features
+
+#### Agentic-Context
+
+- disable setting by default [#6641](https://github.com/sourcegraph/cody/pull/6641)
+- add feature flag for session usage limit [#6623](https://github.com/sourcegraph/cody/pull/6623)
+
+#### Audoedit
+
+- update billing categories [#6591](https://github.com/sourcegraph/cody/pull/6591)
+- add char/line count stats to analytics events [#6563](https://github.com/sourcegraph/cody/pull/6563)
+- check if suggestion is still visible before marking as read [#6552](https://github.com/sourcegraph/cody/pull/6552)
+- improve output channel logs [#6551](https://github.com/sourcegraph/cody/pull/6551)
+- add the `accept` command callback [#6543](https://github.com/sourcegraph/cody/pull/6543)
+- autoedits provider integration tests [#6536](https://github.com/sourcegraph/cody/pull/6536)
+- integrate analytics logger with autoedits provider [#6535](https://github.com/sourcegraph/cody/pull/6535)
+- add `isRead` field and `postProcessed` state to the analytics logger [#6534](https://github.com/sourcegraph/cody/pull/6534)
+- rename `logSummary` to `contextSummary` to match the type name [#6533](https://github.com/sourcegraph/cody/pull/6533)
+- improve suffix duplicate detection [#6532](https://github.com/sourcegraph/cody/pull/6532)
+- update vscode mocks [#6531](https://github.com/sourcegraph/cody/pull/6531)
+- reactive config singleton [#6530](https://github.com/sourcegraph/cody/pull/6530)
+
+#### Auto-Edit
+
+- improve error logging [#6609](https://github.com/sourcegraph/cody/pull/6609)
+
+#### Auto-Edits
+
+- add telemetry for auto-edits notification [#6594](https://github.com/sourcegraph/cody/pull/6594)
+- add test case for setting context [#6592](https://github.com/sourcegraph/cody/pull/6592)
+- fix the suffix duplication on inline accept [#6583](https://github.com/sourcegraph/cody/pull/6583)
+- fix the partial decoration issue when not enough lines in the editor [#6582](https://github.com/sourcegraph/cody/pull/6582)
+- fix tab not working when decorations are triggered on conflicting decorations [#6581](https://github.com/sourcegraph/cody/pull/6581)
+- clean auto-edits output channel [#6547](https://github.com/sourcegraph/cody/pull/6547)
+- adding autoedits onboarding setup for dotcom users [#6463](https://github.com/sourcegraph/cody/pull/6463)
+
+#### Autoedit
+
+- E2E tests, adjust color threshold [#6616](https://github.com/sourcegraph/cody/pull/6616)
+- Add more E2E test scenarios [#6573](https://github.com/sourcegraph/cody/pull/6573)
+- add `discarded` events [#6564](https://github.com/sourcegraph/cody/pull/6564)
+
+#### Autoedits
+
+- Correctly produce decorations for files that use Tab indentation [#6617](https://github.com/sourcegraph/cody/pull/6617)
+- make it reactive to config changes [#6537](https://github.com/sourcegraph/cody/pull/6537)
+
+#### Context-Agent
+
+- move Deep Cody out of model dropdown [#6513](https://github.com/sourcegraph/cody/pull/6513)
+
+#### Deep-Cody
+
+- add selected agent tracking and update telemetry [#6548](https://github.com/sourcegraph/cody/pull/6548)
+
+#### Webview
+
+- replace Deep Cody with Agentic Chat [#6561](https://github.com/sourcegraph/cody/pull/6561)
+
+#### Others
+
+- changelog generation + version update action [#6597](https://github.com/sourcegraph/cody/pull/6597)
+
+### Fix
+
+#### Agentic-Context
+
+- update search tool prompt and examples [#6632](https://github.com/sourcegraph/cody/pull/6632)
+
+#### Autoedit
+
+- Ensure suffix decorations do not visually interfere with other decorations [#6554](https://github.com/sourcegraph/cody/pull/6554)
+
+#### Autoedits
+
+- Fix E2E tests on main [#6576](https://github.com/sourcegraph/cody/pull/6576)
+
+#### Cody
+
+- fix chat context review logic [#6602](https://github.com/sourcegraph/cody/pull/6602)
+
+#### Context
+
+- Nit, remove duplicate "this" from Agentic context popover [#6633](https://github.com/sourcegraph/cody/pull/6633)
+
+#### Release
+
+- add GH_TOKEN for gh command [#6517](https://github.com/sourcegraph/cody/pull/6517)
+
+#### Vscode
+
+- adjust user avatar image size in UserMenu and TabsBar [#6518](https://github.com/sourcegraph/cody/pull/6518)
+
+#### Webview
+
+- update context cell for deep cody [#6553](https://github.com/sourcegraph/cody/pull/6553)
+
+#### Others
+
+- Hide search result checkboxes instead of disabling them [#6568](https://github.com/sourcegraph/cody/pull/6568)
+- Remove search context chip on resubmission [#6556](https://github.com/sourcegraph/cody/pull/6556)
+- do not filter out path-only results [#6549](https://github.com/sourcegraph/cody/pull/6549)
+
+### Chore
+
+#### Audoedit
+
+- ensure consistent auto-edit name [#6611](https://github.com/sourcegraph/cody/pull/6611)
+- simplify output channel logger [#6610](https://github.com/sourcegraph/cody/pull/6610)
+
+#### Build
+
+- Do not complain about GITHUB_ENV when building locally [#6586](https://github.com/sourcegraph/cody/pull/6586)
+
+#### Release
+
+- Remove the changelog section from the PR template. [#6470](https://github.com/sourcegraph/cody/pull/6470)
+
+### Refactor
+
+#### Agentic-Context
+
+- rename experimental feature flags [#6644](https://github.com/sourcegraph/cody/pull/6644)
+
+#### Webviews
+
+- remove "Upgrade to Team" from context menu [#6621](https://github.com/sourcegraph/cody/pull/6621)
+
+### Reverts
+
+  There were no reverts for this release
+
+### Uncategorized
+
+#### Others
+
+- Fix: Can actually run the changelog github action [#6645](https://github.com/sourcegraph/cody/pull/6645)
+- Add disabled to recording modes [#6615](https://github.com/sourcegraph/cody/pull/6615)
+- refactor(agentic context): update agent context settings [#6596](https://github.com/sourcegraph/cody/pull/6596)
+- NLS: escape backslashes in query string [#6585](https://github.com/sourcegraph/cody/pull/6585)
+- feat(agentic chat): showing  error for toolbox settings status [#6579](https://github.com/sourcegraph/cody/pull/6579)
+- Update Cody Web 0.22.0 [#6578](https://github.com/sourcegraph/cody/pull/6578)
+- Implement showWindowsMessage in JetBrains [#6577](https://github.com/sourcegraph/cody/pull/6577)
+- Allow to force usage of pre-defined endpoint [#6574](https://github.com/sourcegraph/cody/pull/6574)
+- Fix repo name resolver cache miss due to using separate RepoNameResol… [#6570](https://github.com/sourcegraph/cody/pull/6570)
+- bench/context: Cache repo IDs [#6569](https://github.com/sourcegraph/cody/pull/6569)
+- Pass query as 'content' in NLS bench [#6565](https://github.com/sourcegraph/cody/pull/6565)
+- fix(agentic chat): update rate limit telemetry event to billable [#6562](https://github.com/sourcegraph/cody/pull/6562)
+- Fix Cody Web Search [#6559](https://github.com/sourcegraph/cody/pull/6559)
+- Simplify jetbrains account management [#6558](https://github.com/sourcegraph/cody/pull/6558)
+- Bench: add option to disable Polly [#6557](https://github.com/sourcegraph/cody/pull/6557)
+- Network: respect NO_PROXY settings [#6555](https://github.com/sourcegraph/cody/pull/6555)
+- Result Types & Repo Filter [#6546](https://github.com/sourcegraph/cody/pull/6546)
+- Fix not working authorisation actions after previous one was cancelled [#6544](https://github.com/sourcegraph/cody/pull/6544)
+- fix(Deep Cody): skip query rewrite for Deep Cody [#6539](https://github.com/sourcegraph/cody/pull/6539)
+- Record telemetry when executing search [#6538](https://github.com/sourcegraph/cody/pull/6538)
+- External Authentication Providers Support for Cody [#6526](https://github.com/sourcegraph/cody/pull/6526)
+- suggestion mode UI [#6523](https://github.com/sourcegraph/cody/pull/6523)
+- Update CHANGELOG.md versioning for 1.56 [#6522](https://github.com/sourcegraph/cody/pull/6522)
+- Experimental proof-of-concept tool use in omnibox [#6510](https://github.com/sourcegraph/cody/pull/6510)
+  - This is an experimental feature which we're not turning on or onboarding users to yet, so no changelog entry.
+- Edit: Handle conflicting diff decorations [#6501](https://github.com/sourcegraph/cody/pull/6501)
+- Fix Ghost Text and CodeLens issue in Jetbrains [#6494](https://github.com/sourcegraph/cody/pull/6494)
+- Update NativeWebview title only if the title changes [#5861](https://github.com/sourcegraph/cody/pull/5861)
+
+
 ## Unreleased
 
 ### Added
@@ -15,6 +183,174 @@ This is a log of all notable changes to Cody for VS Code.
 ### Uncategorized
 
 {/* CHANGELOG_START */}
+
+## v
+
+### Features
+
+#### Agentic-Context
+
+- disable setting by default [#6641](https://github.com/sourcegraph/cody/pull/6641)
+- add feature flag for session usage limit [#6623](https://github.com/sourcegraph/cody/pull/6623)
+
+#### Audoedit
+
+- update billing categories [#6591](https://github.com/sourcegraph/cody/pull/6591)
+- add char/line count stats to analytics events [#6563](https://github.com/sourcegraph/cody/pull/6563)
+- check if suggestion is still visible before marking as read [#6552](https://github.com/sourcegraph/cody/pull/6552)
+- improve output channel logs [#6551](https://github.com/sourcegraph/cody/pull/6551)
+- add the `accept` command callback [#6543](https://github.com/sourcegraph/cody/pull/6543)
+- autoedits provider integration tests [#6536](https://github.com/sourcegraph/cody/pull/6536)
+- integrate analytics logger with autoedits provider [#6535](https://github.com/sourcegraph/cody/pull/6535)
+- add `isRead` field and `postProcessed` state to the analytics logger [#6534](https://github.com/sourcegraph/cody/pull/6534)
+- rename `logSummary` to `contextSummary` to match the type name [#6533](https://github.com/sourcegraph/cody/pull/6533)
+- improve suffix duplicate detection [#6532](https://github.com/sourcegraph/cody/pull/6532)
+- update vscode mocks [#6531](https://github.com/sourcegraph/cody/pull/6531)
+- reactive config singleton [#6530](https://github.com/sourcegraph/cody/pull/6530)
+
+#### Auto-Edit
+
+- improve error logging [#6609](https://github.com/sourcegraph/cody/pull/6609)
+
+#### Auto-Edits
+
+- add telemetry for auto-edits notification [#6594](https://github.com/sourcegraph/cody/pull/6594)
+- add test case for setting context [#6592](https://github.com/sourcegraph/cody/pull/6592)
+- fix the suffix duplication on inline accept [#6583](https://github.com/sourcegraph/cody/pull/6583)
+- fix the partial decoration issue when not enough lines in the editor [#6582](https://github.com/sourcegraph/cody/pull/6582)
+- fix tab not working when decorations are triggered on conflicting decorations [#6581](https://github.com/sourcegraph/cody/pull/6581)
+- clean auto-edits output channel [#6547](https://github.com/sourcegraph/cody/pull/6547)
+- adding autoedits onboarding setup for dotcom users [#6463](https://github.com/sourcegraph/cody/pull/6463)
+
+#### Autoedit
+
+- E2E tests, adjust color threshold [#6616](https://github.com/sourcegraph/cody/pull/6616)
+- Add more E2E test scenarios [#6573](https://github.com/sourcegraph/cody/pull/6573)
+- add `discarded` events [#6564](https://github.com/sourcegraph/cody/pull/6564)
+
+#### Autoedits
+
+- Correctly produce decorations for files that use Tab indentation [#6617](https://github.com/sourcegraph/cody/pull/6617)
+- make it reactive to config changes [#6537](https://github.com/sourcegraph/cody/pull/6537)
+
+#### Context-Agent
+
+- move Deep Cody out of model dropdown [#6513](https://github.com/sourcegraph/cody/pull/6513)
+
+#### Deep-Cody
+
+- add selected agent tracking and update telemetry [#6548](https://github.com/sourcegraph/cody/pull/6548)
+
+#### Webview
+
+- replace Deep Cody with Agentic Chat [#6561](https://github.com/sourcegraph/cody/pull/6561)
+
+#### Others
+
+- changelog generation + version update action [#6597](https://github.com/sourcegraph/cody/pull/6597)
+
+### Fix
+
+#### Agentic-Context
+
+- update search tool prompt and examples [#6632](https://github.com/sourcegraph/cody/pull/6632)
+
+#### Autoedit
+
+- Ensure suffix decorations do not visually interfere with other decorations [#6554](https://github.com/sourcegraph/cody/pull/6554)
+
+#### Autoedits
+
+- Fix E2E tests on main [#6576](https://github.com/sourcegraph/cody/pull/6576)
+
+#### Cody
+
+- fix chat context review logic [#6602](https://github.com/sourcegraph/cody/pull/6602)
+
+#### Context
+
+- Nit, remove duplicate "this" from Agentic context popover [#6633](https://github.com/sourcegraph/cody/pull/6633)
+
+#### Release
+
+- add GH_TOKEN for gh command [#6517](https://github.com/sourcegraph/cody/pull/6517)
+
+#### Vscode
+
+- adjust user avatar image size in UserMenu and TabsBar [#6518](https://github.com/sourcegraph/cody/pull/6518)
+
+#### Webview
+
+- update context cell for deep cody [#6553](https://github.com/sourcegraph/cody/pull/6553)
+
+#### Others
+
+- Hide search result checkboxes instead of disabling them [#6568](https://github.com/sourcegraph/cody/pull/6568)
+- Remove search context chip on resubmission [#6556](https://github.com/sourcegraph/cody/pull/6556)
+- do not filter out path-only results [#6549](https://github.com/sourcegraph/cody/pull/6549)
+
+### Chore
+
+#### Audoedit
+
+- ensure consistent auto-edit name [#6611](https://github.com/sourcegraph/cody/pull/6611)
+- simplify output channel logger [#6610](https://github.com/sourcegraph/cody/pull/6610)
+
+#### Build
+
+- Do not complain about GITHUB_ENV when building locally [#6586](https://github.com/sourcegraph/cody/pull/6586)
+
+#### Release
+
+- Remove the changelog section from the PR template. [#6470](https://github.com/sourcegraph/cody/pull/6470)
+
+### Refactor
+
+#### Agentic-Context
+
+- rename experimental feature flags [#6644](https://github.com/sourcegraph/cody/pull/6644)
+
+#### Webviews
+
+- remove "Upgrade to Team" from context menu [#6621](https://github.com/sourcegraph/cody/pull/6621)
+
+### Reverts
+
+  There were no reverts for this release
+
+### Uncategorized
+
+#### Others
+
+- Fix: Can actually run the changelog github action [#6645](https://github.com/sourcegraph/cody/pull/6645)
+- Add disabled to recording modes [#6615](https://github.com/sourcegraph/cody/pull/6615)
+- refactor(agentic context): update agent context settings [#6596](https://github.com/sourcegraph/cody/pull/6596)
+- NLS: escape backslashes in query string [#6585](https://github.com/sourcegraph/cody/pull/6585)
+- feat(agentic chat): showing  error for toolbox settings status [#6579](https://github.com/sourcegraph/cody/pull/6579)
+- Update Cody Web 0.22.0 [#6578](https://github.com/sourcegraph/cody/pull/6578)
+- Implement showWindowsMessage in JetBrains [#6577](https://github.com/sourcegraph/cody/pull/6577)
+- Allow to force usage of pre-defined endpoint [#6574](https://github.com/sourcegraph/cody/pull/6574)
+- Fix repo name resolver cache miss due to using separate RepoNameResol… [#6570](https://github.com/sourcegraph/cody/pull/6570)
+- bench/context: Cache repo IDs [#6569](https://github.com/sourcegraph/cody/pull/6569)
+- Pass query as 'content' in NLS bench [#6565](https://github.com/sourcegraph/cody/pull/6565)
+- fix(agentic chat): update rate limit telemetry event to billable [#6562](https://github.com/sourcegraph/cody/pull/6562)
+- Fix Cody Web Search [#6559](https://github.com/sourcegraph/cody/pull/6559)
+- Simplify jetbrains account management [#6558](https://github.com/sourcegraph/cody/pull/6558)
+- Bench: add option to disable Polly [#6557](https://github.com/sourcegraph/cody/pull/6557)
+- Network: respect NO_PROXY settings [#6555](https://github.com/sourcegraph/cody/pull/6555)
+- Result Types & Repo Filter [#6546](https://github.com/sourcegraph/cody/pull/6546)
+- Fix not working authorisation actions after previous one was cancelled [#6544](https://github.com/sourcegraph/cody/pull/6544)
+- fix(Deep Cody): skip query rewrite for Deep Cody [#6539](https://github.com/sourcegraph/cody/pull/6539)
+- Record telemetry when executing search [#6538](https://github.com/sourcegraph/cody/pull/6538)
+- External Authentication Providers Support for Cody [#6526](https://github.com/sourcegraph/cody/pull/6526)
+- suggestion mode UI [#6523](https://github.com/sourcegraph/cody/pull/6523)
+- Update CHANGELOG.md versioning for 1.56 [#6522](https://github.com/sourcegraph/cody/pull/6522)
+- Experimental proof-of-concept tool use in omnibox [#6510](https://github.com/sourcegraph/cody/pull/6510)
+  - This is an experimental feature which we're not turning on or onboarding users to yet, so no changelog entry.
+- Edit: Handle conflicting diff decorations [#6501](https://github.com/sourcegraph/cody/pull/6501)
+- Fix Ghost Text and CodeLens issue in Jetbrains [#6494](https://github.com/sourcegraph/cody/pull/6494)
+- Update NativeWebview title only if the title changes [#5861](https://github.com/sourcegraph/cody/pull/5861)
+
 
 ## 1.58.0
 
