@@ -14,6 +14,8 @@ This is a log of all notable changes to Cody for VS Code.
 
 ### Uncategorized
 
+{/* CHANGELOG_START */}
+
 ## 1.58.0
 
 ### Added
