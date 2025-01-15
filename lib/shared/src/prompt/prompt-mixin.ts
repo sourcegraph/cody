@@ -62,11 +62,11 @@ export class PromptMixin {
     }
 
     private static mixedMessage(humanMessage: ChatMessage, mixins: PromptMixin[]): ChatMessage {
-        const joinedMixins = PromptMixin.join(mixins)
-        if (!humanMessage.text) {
+        if (!humanMessage.text || !mixins.length) {
             return humanMessage
         }
 
+        const joinedMixins = PromptMixin.join(mixins)
         if (humanMessage.agent && humanMessage.text.includes('{{USER_INPUT_TEXT}}')) {
             return {
                 ...humanMessage,
