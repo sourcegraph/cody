@@ -247,6 +247,12 @@ interface TranscriptInteractionProps
     }) => void
 }
 
+interface IntentResults {
+    query: string
+    intent: ChatMessage['intent']
+    allScores?: { intent: string; score: number }[]
+}
+
 const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
     const {
         interaction: { humanMessage, assistantMessage },
@@ -266,14 +272,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
         smartApplyEnabled,
         editorRef: parentEditorRef,
     } = props
-    const [intentResults, setIntentResults] = useMutatedValue<
-        | {
-              intent: ChatMessage['intent']
-              allScores?: { intent: string; score: number }[]
-          }
-        | undefined
-        | null
-    >()
+    const [intentResults, setIntentResults] = useMutatedValue<IntentResults | undefined | null>()
 
     const { activeChatContext, setActiveChatContext } = props
     const humanEditorRef = useRef<PromptEditorRefAPI | null>(null)
@@ -309,10 +308,14 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
             return
         }
 
+        const { intent, intentScores } = intentFromSubmit
+            ? { intent: intentFromSubmit, intentScores: undefined }
+            : getIntentProps(editorValue, intentResults.current)
+
         const commonProps = {
             editorValue,
-            intent: intentFromSubmit || intentResults.current?.intent,
-            intentScores: intentFromSubmit ? undefined : intentResults.current?.allScores,
+            intent,
+            intentScores,
             manuallySelectedIntent: !!intentFromSubmit,
             traceparent,
         }
@@ -371,18 +374,16 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
 
             setIntentResults(undefined)
 
-            const subscription = extensionAPI
-                .detectIntent(
-                    inputTextWithMappedContextChipsFromPromptEditorState(editorValue.editorState)
-                )
-                .subscribe({
-                    next: value => {
-                        setIntentResults(value)
-                    },
-                    error: error => {
-                        console.error('Error detecting intent:', error)
-                    },
-                })
+            const query = inputTextWithMappedContextChipsFromPromptEditorState(editorValue.editorState)
+
+            const subscription = extensionAPI.detectIntent(query).subscribe({
+                next: value => {
+                    setIntentResults(value && { ...value, query })
+                },
+                error: error => {
+                    console.error('Error detecting intent:', error)
+                },
+            })
 
             // Clean up subscription if component unmounts
             return () => subscription.unsubscribe()
@@ -774,4 +775,14 @@ function reevaluateSearchWithSelectedFilters({
         index: messageIndexInTranscript,
         selectedFilters,
     })
+}
+
+const getIntentProps = (editorValue: SerializedPromptEditorValue, results?: IntentResults | null) => {
+    const query = inputTextWithMappedContextChipsFromPromptEditorState(editorValue.editorState)
+
+    if (query === results?.query) {
+        return { intent: results.intent, intentScores: results.allScores }
+    }
+
+    return {}
 }
