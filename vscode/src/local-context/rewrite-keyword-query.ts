@@ -34,7 +34,7 @@ export async function rewriteKeywordQuery(
     }
 
     try {
-        const rewritten = await extractKeywords(completionsClient, query, signal)
+        const rewritten = await doRewrite(completionsClient, query, signal)
         return rewritten.length !== 0 ? rewritten.sort().join(' ') : query.toString()
     } catch (err) {
         outputChannelLogger.logDebug('rewrite-keyword-query', 'failed', { verbose: err })
@@ -43,7 +43,7 @@ export async function rewriteKeywordQuery(
     }
 }
 
-export async function extractKeywords(
+async function doRewrite(
     completionsClient: SourcegraphCompletionsClient,
     query: PromptString,
     signal?: AbortSignal
@@ -55,7 +55,7 @@ export async function extractKeywords(
                 ...preamble,
                 {
                     speaker: 'human',
-                    text: ps`You are helping the user search over a codebase. List terms that could be found literally in code snippets or file names relevant to answering the user's query. Present your results in a *single* XML list in the following format: <keywords><keyword><value>a single keyword</value><literal>true if the keyword appears literally in the user query, false otherwise</literal><variants>a space separated list of synonyms and variants of the keyword, including acronyms, abbreviations, and expansions</variants><weight>a numerical weight between 0.0 and 1.0 that indicates the importance of the keyword</weight></keyword></keywords>. Here is the user query: <userQuery>${query}</userQuery>`,
+                    text: ps`You are helping the user search over a codebase. List some filename fragments that would match files relevant to read to answer the user's query. Present your results in a *single* XML list in the following format: <keywords><keyword><value>a single keyword</value><variants>a space separated list of synonyms and variants of the keyword, including acronyms, abbreviations, and expansions</variants><weight>a numerical weight between 0.0 and 1.0 that indicates the importance of the keyword</weight></keyword></keywords>. Here is the user query: <userQuery>${query}</userQuery>`,
                 },
                 { speaker: 'assistant' },
             ],
@@ -86,20 +86,12 @@ export async function extractKeywords(
     const parser = new XMLParser()
     const document = parser.parse(text)
 
-    let keywords: { value?: string; variants?: string; weight?: number; literal?: string }[] = []
-    switch (true) {
-        case Array.isArray(document?.keywords?.keyword): {
-            keywords = document.keywords.keyword
-            break
-        }
-        case document?.keywords?.keyword instanceof Object: {
-            keywords = [document.keywords.keyword]
-            break
-        }
-    }
+    const keywords: { value?: string; variants?: string; weight?: number }[] =
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+        document?.keywords?.keyword ?? []
     const result = new Set<string>()
-    for (const { value, literal } of keywords) {
-        if (value && literal) {
+    for (const { value } of keywords) {
+        if (value) {
             for (const v of value.split(' ')) {
                 result.add(v)
             }
@@ -107,4 +99,54 @@ export async function extractKeywords(
     }
 
     return [...result]
+}
+
+export async function extractKeywords(
+    completionsClient: SourcegraphCompletionsClient,
+    query: PromptString,
+    signal?: AbortSignal
+): Promise<string[]> {
+    const preamble = getSimplePreamble(undefined, 0, 'Default')
+    const stream = completionsClient.stream(
+        {
+            messages: [
+                ...preamble,
+                {
+                    speaker: 'human',
+                    text: ps`You are helping the user search over a codebase. List terms that could be found literally in code snippets or file names relevant to answering the user's query. Limit your results to terms that are in the user's query. Present your results in a *single* XML list in the following format: <keywords><keyword>a single keyword</keyword></keywords>. Here is the user query: <userQuery>${query}</userQuery>`,
+                },
+                { speaker: 'assistant' },
+            ],
+            maxTokensToSample: 400,
+            temperature: 0,
+            topK: 1,
+            fast: true,
+        },
+        { apiVersion: 0 }, // Use legacy API version for now
+        signal
+    )
+
+    let lastMessageText = '<keywords></keywords>'
+    for await (const message of stream) {
+        switch (message.type) {
+            case 'change': {
+                lastMessageText = message.text
+                break
+            }
+            case 'error': {
+                throw message.error
+            }
+        }
+    }
+
+    const document: { keywords: { keyword: string | string[] } } = new XMLParser().parse(lastMessageText)
+
+    let keywords: string[] = []
+    if (Array.isArray(document.keywords.keyword)) {
+        keywords = document.keywords.keyword
+    } else {
+        keywords = [document.keywords.keyword]
+    }
+
+    return keywords.flatMap(keyword => keyword.split(' ').filter(v => v !== ''))
 }
