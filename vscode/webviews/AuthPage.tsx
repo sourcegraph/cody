@@ -338,7 +338,7 @@ const ClientSignInForm: React.FC<ClientSignInFormProps> = memo(
                             isSubmitting: false,
                             showAuthError:
                                 !!authStatus?.authenticated ||
-                                authStatus?.error?.type === 'network-error',
+                                authStatus?.error?.type === 'availability-error',
                         }))
                     }, 8000)
                 }
@@ -375,7 +375,7 @@ const ClientSignInForm: React.FC<ClientSignInFormProps> = memo(
                         serverInvalid={
                             authStatus &&
                             !authStatus.authenticated &&
-                            authStatus?.error?.type === 'network-error'
+                            authStatus?.error?.type === 'availability-error'
                         }
                         className="tw-m-2"
                     >
