@@ -2,6 +2,7 @@ import type { AgentToolboxSettings, WebviewToExtensionAPI } from '@sourcegraph/c
 import { debounce } from 'lodash'
 import { BrainIcon } from 'lucide-react'
 import { type FC, memo, useCallback, useState } from 'react'
+import { CODY_DOCS_CAPABILITIES_URL } from '../../../../../../src/chat/protocol'
 import { Badge } from '../../../../../components/shadcn/ui/badge'
 import { Button } from '../../../../../components/shadcn/ui/button'
 import { ToolbarPopoverItem } from '../../../../../components/shadcn/ui/toolbar'
@@ -12,9 +13,6 @@ interface ToolboxButtonProps {
     settings: AgentToolboxSettings
     isFirstMessage: boolean
 }
-
-// TODO: Update the link to the actual documentation when available.
-// const AGENTIC_CONTEXT_DOCS = 'https://sourcegraph.com/docs'
 
 /**
  * A button component that provides a UI for managing agent context settings.
@@ -121,11 +119,16 @@ export const ToolboxButton: FC<ToolboxButtonProps> = memo(({ settings, api, isFi
                         >
                             <div className="tw-text-xs">
                                 <span>
-                                    Agentic chat optimizes the context fetched by reflecting and
-                                    utilizing configured tools to retrieve necessary context and improve
-                                    responses.
-                                    {/* TODO: Uncomment this when the docs is available */}
-                                    {/* <a href={AGENTIC_CONTEXT_DOCS}>Read the docs</a> to learn more. */}
+                                    Agentic chat reflects on your request and uses tools to dynamically
+                                    retrieve relevant context, improving accuracy and response quality.
+                                    <a
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        href={CODY_DOCS_CAPABILITIES_URL.href} // TODO: Replace with CODY_DOCS_AGENTIC_CHAT_URL
+                                    >
+                                        Read the docs
+                                    </a>{' '}
+                                    to learn more.
                                 </span>
                             </div>
                             {/* Seperator */}
