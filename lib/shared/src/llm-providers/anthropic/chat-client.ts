@@ -1,4 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk'
+import type { MessageParam } from '@anthropic-ai/sdk/resources/messages.mjs'
 import type { ChatNetworkClientParams } from '..'
 import { CompletionStopReason, contextFiltersProvider, getCompletionsModelConfig, onAbort } from '../..'
 import { logDebug } from '../../logger'
@@ -29,67 +30,25 @@ export async function anthropicChatClient({
     const result = {
         completion: '',
         stopReason: CompletionStopReason.StreamingChunk,
-        metrics: {},
     }
 
     try {
-        let foundFirstContext = false
-        const messages = await (async () => {
-            const rawMessages = await Promise.all(
-                params.messages.map(async msg => {
-                    const isCodebaseContext = !foundFirstContext &&
-                        msg.speaker === 'human' &&
-                        msg.text?.toString().includes('Codebase context from')
-
-                    if (isCodebaseContext) {
-                        foundFirstContext = true
-                    }
-
-                    return {
-                        role: msg.speaker === 'human' ? 'user' : 'assistant',
-                        content: [{
-                            type: 'text',
-                            text: await msg.text?.toFilteredString(contextFiltersProvider) ?? '',
-                            ...(isCodebaseContext && { cache_control: { type: 'ephemeral' } })
-                        }],
-                    }
-                })
-            )
-
-            const firstRole =
-            rawMessages[0]?.role
-            const groupedMessages = {
-                user: [],
-                assistant: [],
-            } as Record<string, string[]>
-
-            // Collect non-empty texts by role
-            // biome-ignore lint/complexity/noForEach: <explanation>
-            rawMessages.forEach(msg => {
-                if (msg.content[0].text.trim()) {
-                    groupedMessages[msg.role].push(msg.content[0].text)
+        const messages = (await Promise.all(
+            params.messages.map(async msg => {
+                const contentText = (await msg.text?.toFilteredString(contextFiltersProvider)) ?? ''
+                return {
+                    role: msg.speaker === 'human' ? 'user' : 'assistant',
+                    content: contentText.includes('Codebase context from')
+                        ? [{
+                              type: 'text',
+                              text: contentText,
+                              cache_control: { type: 'ephemeral' }
+                          }] as any
+                        : contentText
                 }
             })
+        )) as MessageParam[]
 
-            // Create array in the correct order based on first role
-            const orderedRoles =
-                firstRole === 'assistant' ? ['assistant', 'user'] : ['user', 'assistant']
-
-            const ret = orderedRoles
-                .filter(role => groupedMessages[role].length > 0)
-                .map(role => ({
-                    role,
-                    content: [
-                        {
-                            type: 'text',
-                            text: groupedMessages[role].join('\n\n'),
-                            cache_control: { type: 'ephemeral' },
-                        },
-                    ],
-                }))
-
-            return ret
-        })()
         const systemPrompt = messages[0]?.role !== 'user' ? messages.shift()?.content : ''
 
         anthropic.beta.tools.messages
@@ -106,7 +65,6 @@ export async function anthropicChatClient({
                     {
                         type: 'text',
                         text: `${systemPrompt}`,
-                        cache_control: { type: 'ephemeral' },
                     },
                 ] as any,
                 ...config?.options,
