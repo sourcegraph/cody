@@ -1,0 +1,72 @@
+
+.root {
+    display: flex;
+    width: 100%;
+    height: 100%;
+    font-size: 13px;
+    overflow: hidden;
+}
+
+.container {
+    height: 100%;
+    flex-grow: 1;
+}
+
+
+
+
+:root {
+    --human-message-editor-gap: 0;
+    --human-message-editor-cell-spacing-bottom: 6px;
+}
+
+.container {
+    display: flex;
+    flex-direction: column;
+    gap: var(--human-message-editor-gap);
+    border-radius: 4px;
+    background-color: color-mix(in srgb, var(--vscode-input-background) 50%, transparent);
+    color: var(--vscode-input-foreground);
+    outline: solid 1px var(--vscode-input-border);
+    outline-offset: -1px;
+    cursor: text;
+
+    .editor {
+        scrollbar-gutter: stable;
+        padding: var(--prompt-editor-padding-y) var(--prompt-editor-padding-x);
+    }
+}
+
+.toolbar {
+    padding: calc(0.75*var(--prompt-editor-padding-y)) var(--prompt-editor-padding-x);
+    overflow: hidden;
+}
+
+.container:not(.focused, [data-keep-toolbar-open]) {
+
+    .editor-content-editable {
+        min-height: 1lh;
+    }
+
+    .toolbar {
+        height: 0;
+        opacity: 0;
+        margin-top: 0;
+        pointer-events: none;
+        padding: 0;
+    }
+}
+
+.container:hover, .container:has(:focus-within, menu>button:focus) {
+    background-color: var(--vscode-input-background);
+}
+
+/* Show focus ring when the input is focused or a toolbar button within the input container is
+   focused, but NOT if something in a toolbar button's popover is focused. */
+.container:has([data-lexical-editor='true']:focus-within, menu>button:focus) {
+    outline-color: var(--vscode-focusBorder);
+}
+
+.editor-content-editable {
+    min-height: 3lh;
+}
