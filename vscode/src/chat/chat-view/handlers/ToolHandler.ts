@@ -1,6 +1,6 @@
 import type Anthropic from '@anthropic-ai/sdk'
 import type { ContentBlock, MessageParam, Tool, ToolResultBlockParam } from '@anthropic-ai/sdk/resources'
-import { PromptString } from '@sourcegraph/cody-shared'
+import { ProcessType, PromptString } from '@sourcegraph/cody-shared'
 import type { SubMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import * as vscode from 'vscode'
 import type { AgentHandler, AgentHandlerDelegate, AgentRequest } from './interfaces'
@@ -109,7 +109,8 @@ export class ExperimentalToolHandler implements AgentHandler {
                                             content: `Invoking tool ${
                                                 contentBlock.name
                                             }(${JSON.stringify(contentBlock.input)})`,
-                                            status: 'pending',
+                                            state: 'pending',
+                                            type: ProcessType.Tool,
                                         },
                                     }
                                 )
