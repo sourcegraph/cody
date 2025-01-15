@@ -1,4 +1,5 @@
 import { isDotCom } from '../sourcegraph-api/environments'
+import { NeedsAuthChallengeError } from '../sourcegraph-api/errors'
 import type { UserProductSubscription } from '../sourcegraph-api/userProductSubscription'
 
 /**
@@ -49,8 +50,19 @@ export interface UnauthenticatedAuthStatus {
     pendingValidation: boolean
 }
 
-export interface NetworkAuthError {
-    type: 'network-error'
+/**
+ * An error representing the condition where the endpoint is not available due to lack of network
+ * connectivity, server downtime, or other configuration issues *unrelated to* the validity of the
+ * credentials.
+ */
+export interface AvailabilityError {
+    type: 'availability-error'
+
+    /**
+     * Whether the error is due to a proxy needing the user to complete an auth challenge. See
+     * {@link NeedsAuthChallengeError}.
+     */
+    needsAuthChallenge?: boolean
 }
 
 export interface InvalidAccessTokenError {
@@ -73,7 +85,7 @@ export interface ExternalAuthProviderError {
 }
 
 export type AuthenticationError =
-    | NetworkAuthError
+    | AvailabilityError
     | InvalidAccessTokenError
     | EnterpriseUserDotComError
     | AuthConfigError
@@ -82,15 +94,19 @@ export type AuthenticationError =
 export interface AuthenticationErrorMessage {
     title?: string
     message: string
+    showTryAgain?: boolean
 }
 
 export function getAuthErrorMessage(error: AuthenticationError): AuthenticationErrorMessage {
     switch (error.type) {
-        case 'network-error':
-            return {
-                title: 'Network Error',
-                message: 'Cody is unreachable',
-            }
+        case 'availability-error':
+            return error.needsAuthChallenge
+                ? NeedsAuthChallengeError.TITLE_AND_MESSAGE
+                : {
+                      title: 'Network Error',
+                      message: 'Sourcegraph is unreachable',
+                      showTryAgain: true,
+                  }
         case 'invalid-access-token':
             return {
                 title: 'Invalid Access Token',

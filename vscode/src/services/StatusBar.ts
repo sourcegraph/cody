@@ -336,13 +336,13 @@ export class CodyStatusBar implements vscode.Disposable {
             }
         }
 
-        if (!authStatus.authenticated && authStatus.error?.type === 'network-error') {
+        if (!authStatus.authenticated && authStatus.error?.type === 'availability-error') {
             return {
                 icon: 'disabled',
                 tooltip: 'Network issues prevented Cody from signing in.',
                 style: 'error',
                 tags,
-                interact: interactNetworkIssues,
+                interact: authStatus.error.needsAuthChallenge ? interactAuth : interactNetworkIssues,
             }
         }
 

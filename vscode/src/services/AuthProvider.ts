@@ -4,6 +4,7 @@ import {
     type ClientCapabilitiesWithLegacyFields,
     ClientConfigSingleton,
     DOTCOM_URL,
+    EMPTY,
     NEVER,
     type ResolvedConfiguration,
     type Unsubscribable,
@@ -24,7 +25,7 @@ import {
 } from '@sourcegraph/cody-shared'
 import { normalizeServerEndpointURL } from '@sourcegraph/cody-shared/src/configuration/auth-resolver'
 import isEqual from 'lodash/isEqual'
-import { Observable, Subject } from 'observable-fns'
+import { Observable, Subject, interval } from 'observable-fns'
 import * as vscode from 'vscode'
 import { serializeConfigSnapshot } from '../../uninstall/serializeConfig'
 import { type ResolvedConfigurationCredentialsOnly, validateCredentials } from '../auth/auth'
@@ -133,6 +134,34 @@ class AuthProvider implements vscode.Disposable {
                     })
                 )
                 .subscribe({})
+        )
+
+        // Try to reauthenticate periodically when the authentication failed due to an availability
+        // error (which is ephemeral and the underlying error condition may no longer exist).
+        this.subscriptions.push(
+            authStatus
+                .pipe(
+                    switchMap(authStatus => {
+                        if (
+                            !authStatus.authenticated &&
+                            authStatus.error?.type === 'availability-error' &&
+                            authStatus.error.needsAuthChallenge
+                        ) {
+                            // This interval is short because we want to quickly authenticate after
+                            // the user successfully performs the auth challenge. If automatic auth
+                            // refresh is expanded to include other conditions (such as any network
+                            // connectivity gaps), it should probably have a longer interval, and we
+                            // need to respect
+                            // https://linear.app/sourcegraph/issue/CODY-3745/codys-background-periodic-network-access-causes-2fa.
+                            const intervalMsec = 2500
+                            return interval(intervalMsec)
+                        }
+                        return EMPTY
+                    })
+                )
+                .subscribe(() => {
+                    this.refreshRequests.next()
+                })
         )
 
         // Keep context updated with auth status.
@@ -318,7 +347,8 @@ function reportAuthTelemetryEvent(authStatus: AuthStatus): void {
     let eventValue: 'disconnected' | 'connected' | 'failed'
     if (
         !authStatus.authenticated &&
-        (authStatus.error?.type === 'network-error' || authStatus.error?.type === 'invalid-access-token')
+        (authStatus.error?.type === 'availability-error' ||
+            authStatus.error?.type === 'invalid-access-token')
     ) {
         eventValue = 'failed'
     } else if (authStatus.authenticated) {

@@ -44,7 +44,7 @@ export const NetworkError: StoryObj<typeof meta> = {
             clientCapabilities: CLIENT_CAPABILITIES_FIXTURE,
             authStatus: {
                 ...AUTH_STATUS_FIXTURE_UNAUTHED,
-                error: { type: 'network-error' },
+                error: { type: 'availability-error' },
             },
             isDotComUser: true,
             userProductSubscription: {
