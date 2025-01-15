@@ -1,7 +1,8 @@
 import type { MultiLineSupportedLanguage } from '../../../completions/detect-multiline'
 import type { AddedLinesDecorationInfo } from '../decorators/default-decorator'
 import { drawTokensToCanvas, initCanvas } from './canvas'
-import { SYNTAX_HIGHLIGHT_MAPPING, highlightDecorations, initHighlighter } from './highlight'
+import { highlightDecorations, initHighlighter } from './highlight'
+import { SYNTAX_HIGHLIGHT_MAPPING } from './shiki'
 
 export async function initImageSuggestionService() {
     return Promise.all([initHighlighter(), initCanvas()])
