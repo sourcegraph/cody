@@ -308,11 +308,9 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
             return
         }
 
-        const { intent, intentScores } = getIntentProps(
-            editorValue,
-            intentFromSubmit,
-            intentResults.current
-        )
+        const { intent, intentScores } = intentFromSubmit
+            ? { intent: intentFromSubmit }
+            : getIntentProps(editorValue, intentResults.current)
 
         const commonProps = {
             editorValue,
@@ -779,15 +777,7 @@ function reevaluateSearchWithSelectedFilters({
     })
 }
 
-const getIntentProps = (
-    editorValue: SerializedPromptEditorValue,
-    intentFromSubmit?: ChatMessage['intent'],
-    results?: IntentResults | null
-) => {
-    if (intentFromSubmit) {
-        return { intent: intentFromSubmit, intentScores: undefined }
-    }
-
+const getIntentProps = (editorValue: SerializedPromptEditorValue, results?: IntentResults | null) => {
     const query = inputTextWithMappedContextChipsFromPromptEditorState(editorValue.editorState)
 
     if (query === results?.query) {
