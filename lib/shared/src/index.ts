@@ -404,5 +404,5 @@ export {
     checkVersion,
 } from './sourcegraph-api/siteVersion'
 export { configOverwrites } from './models/configOverwrites'
-export { isS2 } from './sourcegraph-api/environments'
+export { isS2, isWorkspaceInstance } from './sourcegraph-api/environments'
 export { createGitDiff } from './editor/create-git-diff'
