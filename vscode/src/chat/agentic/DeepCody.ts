@@ -98,22 +98,13 @@ export class DeepCodyAgent {
      * Register the tools with the multiplexer.
      */
     protected initializeMultiplexer(tools: CodyTool[]): void {
-        const calledTools = new Set<string>()
         for (const tool of tools) {
-            const { tags, title } = tool.config
+            const { tags } = tool.config
             this.multiplexer.sub(tags.tag.toString(), {
                 onResponse: async (content: string) => {
                     tool.stream(content)
-                    if (!calledTools.has(title)) {
-                        calledTools.add(title)
-                        const toolCount = calledTools.size
-                        const suffix = toolCount > 1 ? 'tools' : 'tool'
-                        this.statusCallback.onStream({
-                            title: `Retrieving context from ${toolCount} ${suffix}`,
-                        })
-                    }
                 },
-                onTurnComplete: async () => calledTools.clear(),
+                onTurnComplete: async () => {},
             })
         }
     }
@@ -197,9 +188,8 @@ export class DeepCodyAgent {
         span.addEvent('reviewLoop')
         for (let i = 0; i < maxLoops && !chatAbortSignal.aborted; i++) {
             this.stats.loop++
-            const step = this.stepsManager.addStep({ title: 'Agentic context reflection' })
+            const step = this.stepsManager.addStep({ title: 'Reflecting' })
             const newContext = await this.review(requestID, span, chatAbortSignal)
-            this.statusCallback.onUpdate(step.id, ` (${newContext.length} context fetched)`)
             this.statusCallback.onComplete(step.id)
             if (!newContext.length) break
             // Filter and add new context items in one pass
@@ -235,6 +225,9 @@ export class DeepCodyAgent {
             if (!res || isReadyToAnswer(res)) {
                 return []
             }
+
+            const step = this.stepsManager.addStep({ title: 'Retrieving additional context' })
+
             const results = await Promise.all(
                 this.tools.map(async tool => {
                     try {
@@ -253,6 +246,12 @@ export class DeepCodyAgent {
                     }
                 })
             )
+
+            const newContext = results.flat().filter(isDefined)
+            if (newContext.length > 0) {
+                this.stats.context = this.stats.context + newContext.length
+                this.statusCallback.onUpdate(step.id, `fetched ${toPlural(newContext.length, 'item')}`)
+            }
 
             const reviewed = []
             const currentContext = [
@@ -281,18 +280,16 @@ export class DeepCodyAgent {
             // items are not removed from the updated context list. We will let the prompt builder
             // at the final stage to do the unique context check.
             if (reviewed.length > 0) {
+                this.statusCallback.onStream({
+                    title: 'Optimizing context',
+                    content: `selected ${toPlural(reviewed.length, 'item')}`,
+                })
                 const userAdded = this.context.filter(c => isUserAddedItem(c))
                 reviewed.push(...userAdded)
                 this.context = reviewed
-                this.statusCallback.onStream({
-                    title: 'Filtering',
-                    content: `selected ${contextNames.length} context`,
-                })
             }
 
-            const newContextFetched = results.flat().filter(isDefined)
-            this.stats.context = this.stats.context + newContextFetched.length
-            return newContextFetched
+            return newContext
         } catch (error) {
             await this.multiplexer.notifyTurnComplete()
             logDebug('Deep Cody', `context review failed: ${error}`, { verbose: { prompt, error } })
@@ -389,3 +386,4 @@ export class RawTextProcessor {
 const answerTag = ACTIONS_TAGS.ANSWER.toString()
 const contextTag = ACTIONS_TAGS.CONTEXT.toString()
 const isReadyToAnswer = (text: string) => text === `<${answerTag}>`
+const toPlural = (num: number, text: string) => `${num} ${text}${num > 1 ? 's' : ''}`

@@ -18,7 +18,7 @@ interface ToolboxButtonProps {
 
 /**
  * A button component that provides a UI for managing agent context settings.
- * Displays a popover with toggles for agentic context and terminal access.
+ * Displays a popover with toggles for agentic chat and terminal access.
  * Includes experimental features with appropriate warnings and documentation links.
  *
  * @param settings - The current agent toolbox settings
@@ -96,7 +96,7 @@ export const ToolboxButton: FC<ToolboxButtonProps> = memo(({ settings, api, isFi
                                 title="Agentic Chat Context"
                             >
                                 <span className="tw-flex tw-gap-2 tw-items-center">
-                                    <span className="tw-font-semibold tw-text-md">Agentic context</span>
+                                    <span className="tw-font-semibold tw-text-md">Agentic chat</span>
                                     <Badge variant="secondary" className="tw-text-xs">
                                         Experimental
                                     </Badge>
@@ -121,9 +121,9 @@ export const ToolboxButton: FC<ToolboxButtonProps> = memo(({ settings, api, isFi
                         >
                             <div className="tw-text-xs">
                                 <span>
-                                    Agentic context can search your codebase, browse the web, execute
-                                    shell commands (when enabled), and utilize configured tools to
-                                    retrieve necessary context.
+                                    Agentic chat optimizes the context fetched by reflecting and
+                                    utilizing configured tools to retrieve necessary context and improve
+                                    responses.
                                     {/* TODO: Uncomment this when the docs is available */}
                                     {/* <a href={AGENTIC_CONTEXT_DOCS}>Read the docs</a> to learn more. */}
                                 </span>
@@ -198,7 +198,7 @@ export const ToolboxButton: FC<ToolboxButtonProps> = memo(({ settings, api, isFi
                             className="tw-w-8 tw-h-8 tw-text-muted-foreground"
                         />
                     )}
-                    {isFirstMessage && <span className="tw-font-semibold">agentic context</span>}
+                    {isFirstMessage && <span className="tw-font-semibold">agentic chat</span>}
                 </Button>
             </ToolbarPopoverItem>
         </div>

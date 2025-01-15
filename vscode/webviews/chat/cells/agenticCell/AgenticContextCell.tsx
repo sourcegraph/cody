@@ -12,7 +12,7 @@ import { NON_HUMAN_CELL_AVATAR_SIZE } from '../messageCell/assistant/AssistantMe
 
 export const __ProcessCellStorybookContext = createContext<{ initialOpen: boolean } | null>(null)
 
-const CELL_NAME = 'agentic-context-items'
+const CELL_NAME = 'agentic-chat-items'
 /**
  * A component displaying the agentic chat status.
  */
@@ -29,11 +29,13 @@ export const AgenticContextCell: FunctionComponent<{
         })
     }, [])
 
-    const subHeader = !isContextLoading
-        ? 'reviewed'
+    const hasError = processes?.some(p => p.error)
+    const status = !isContextLoading
+        ? hasError
+            ? 'failed'
+            : 'completed'
         : processes?.findLast(p => p.type !== 'tool' && p.type !== 'confirmation')?.title || 'reviewing'
-
-    const statusClassName = processes?.some(p => p.error) ? 'tw-text-yellow-500' : 'tw-text-green-500'
+    const statusClassName = hasError ? 'tw-text-yellow-500' : 'tw-text-green-500'
 
     return (
         <div>
@@ -49,7 +51,7 @@ export const AgenticContextCell: FunctionComponent<{
                         header={
                             <AccordionTrigger
                                 onClick={() => triggerAccordion()}
-                                title="Agentic context"
+                                title="Agentic chat"
                                 className="tw-flex tw-items-center tw-gap-4"
                                 disabled={!processes?.some(p => p.id)}
                             >
@@ -65,9 +67,9 @@ export const AgenticContextCell: FunctionComponent<{
                                     />
                                 )}
                                 <span className="tw-flex tw-items-baseline">
-                                    Agentic context
+                                    Agentic chat
                                     <span className="tw-opacity-60 tw-text-sm tw-ml-2">
-                                        &mdash; {subHeader.toLowerCase()}
+                                        &mdash; {status.toLowerCase()}
                                     </span>
                                 </span>
                             </AccordionTrigger>
@@ -137,11 +139,9 @@ const ProcessItem: FC<{
                     {process.content && (
                         <span
                             className="tw-ml-2 tw-truncate tw-max-w-full tw-text-xs tw-muted-foreground tw-opacity-60"
-                            title={
-                                process.type === 'tool' ? 'agentic query' : process.title ?? process.id
-                            }
+                            title={process.type === 'tool' ? 'agentic chat query' : process.content}
                         >
-                            {process.type === 'tool' ? `(${process.content})` : process.content}
+                            ({process.content})
                         </span>
                     )}
                 </div>
