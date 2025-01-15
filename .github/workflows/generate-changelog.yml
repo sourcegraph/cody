@@ -36,7 +36,7 @@ jobs:
           GH_REPO: "sourcegraph/cody"
           CHANGELOG_SKIP_NO_CHANGELOG: "true"
           CHANGELOG_COMPACT: "true"
-          VERSION: ${{ github.event.inputs.branchenv.VERSION }}
+          VERSION: ${{ github.event.inputs.version }}
         run: |
           set +x
           # Get previous tag's commit
