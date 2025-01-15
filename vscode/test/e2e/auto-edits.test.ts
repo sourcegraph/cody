@@ -172,8 +172,7 @@ const autoeditsTestHelper = async ({
             )
 
             // Undo the change
-            await page.keyboard.press('Alt+Z')
-            await page.waitForTimeout(500)
+            await page.keyboard.press('ControlOrMeta+Z')
         }
     }
 }
