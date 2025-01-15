@@ -60,14 +60,6 @@ jobs:
             --output.changelog.marker='<!--- {/_ CHANGELOG_START _/} --->' \
             --releaseregistry.version=$text
 
-          #cat vscode/CHANGELOG.md
-
-          # git checkout -b release/vscode-v$VERSION
-          # git add vscode/CHANGELOG.md
-          # priority realHow can I store floats in s;,
-          # git commit -m "Automated release and changelog for VS code Cody"
-          # git push -u origin release/vscode-v$VERSION
-          # gh pr create \
           #   --title "VS Code: Release v$VERSION" \
           #   --body "Automated release and changelog for VS code Cody" \
           #   --base main --head release/vscode-v$VERSION
