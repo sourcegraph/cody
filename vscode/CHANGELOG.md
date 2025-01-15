@@ -2,7 +2,7 @@
 
 This is a log of all notable changes to Cody for VS Code.
 
-{/* CHANGELOG_START */}
+{/_ CHANGELOG_START _/}
 
 ## Unreleased
 
@@ -14,21 +14,68 @@ This is a log of all notable changes to Cody for VS Code.
 
 ### Uncategorized
 
+## 1.60.0
+
+### Added
+
+- feat(agentic context): add agentic context component [pull/6598](https://github.com/sourcegraph/cody/pull/6598)
+- feat(webviews): add Sourcegraph Workspaces CTA [pull/6604](https://github.com/sourcegraph/cody/pull/6604)
+- feat(audo-edit): target vim normal mode only [pull/6647](https://github.com/sourcegraph/cody/pull/6647)
+- Open remote files locally in VSCode [pull/6475](https://github.com/sourcegraph/cody/pull/6475)
+
+### Fixed
+
+- fix(webview): reorder human editor menu buttons [pull/6660](https://github.com/sourcegraph/cody/pull/6660)
+- feat(auto-edit): fix problem with vim extension supressing the tab [pull/6640](https://github.com/sourcegraph/cody/pull/6640)
+- Fix: Can actually run the changelog github action [pull/6645](https://github.com/sourcegraph/cody/pull/6645)
+- External Authentication Providers Support for Cody [pull/6526](https://github.com/sourcegraph/cody/pull/6526)
+- feat(autoedits): Correctly produce decorations for files that use Tab indentation [pull/6617](https://github.com/sourcegraph/cody/pull/6617)
+- chore/build: Do not complain about GITHUB_ENV when building locally [pull/6586](https://github.com/sourcegraph/cody/pull/6586)
+- fix(agentic-context): update search tool prompt and examples [pull/6632](https://github.com/sourcegraph/cody/pull/6632)
+- fix(cody): fix chat context review logic [pull/6602](https://github.com/sourcegraph/cody/pull/6602)
+- feat(auto-edits): fix the partial decoration issue when not enough lines in the editor [pull/6582](https://github.com/sourcegraph/cody/pull/6582)
+- Allow to force usage of pre-defined endpoint [pull/6574](https://github.com/sourcegraph/cody/pull/6574)
+- feat(auto-edits): fix the suffix duplication on inline accept [pull/6583](https://github.com/sourcegraph/cody/pull/6583)
+- feat(auto-edits): fix tab not working when decorations are triggered on conflicting decorations [pull/6581](https://github.com/sourcegraph/cody/pull/6581)
+- feat(agentic chat): showing error for toolbox settings status [pull/6579](https://github.com/sourcegraph/cody/pull/6579)
+- Pass query as 'content' in NLS bench [pull/6565](https://github.com/sourcegraph/cody/pull/6565)
+- fix: Hide search result checkboxes instead of disabling them [pull/6568](https://github.com/sourcegraph/cody/pull/6568)
+- Fix repo name resolver cache miss due to using separate RepoNameResol… [pull/6570](https://github.com/sourcegraph/cody/pull/6570)
+
+### Changed
+
+- Improve reporting auth errors [pull/6639](https://github.com/sourcegraph/cody/pull/6639)
+- feat(autoedit): Add telemetry and accept behaviour to E2E tests [pull/6575](https://github.com/sourcegraph/cody/pull/6575)
+- Make sure precomputed intent is not stale [pull/6572](https://github.com/sourcegraph/cody/pull/6572)
+- refactor(agentic-context): rename experimental feature flags [pull/6644](https://github.com/sourcegraph/cody/pull/6644)
+- feat(agentic-context): disable setting by default [pull/6641](https://github.com/sourcegraph/cody/pull/6641)
+- refactor(webviews): remove "Upgrade to Team" from context menu [pull/6621](https://github.com/sourcegraph/cody/pull/6621)
+- feat(auto-edit): improve error logging [pull/6609](https://github.com/sourcegraph/cody/pull/6609)
+- feat(agentic-context): add feature flag for session usage limit [pull/6623](https://github.com/sourcegraph/cody/pull/6623)
+- feat(auto-edits): add telemetry for auto-edits notification [pull/6594](https://github.com/sourcegraph/cody/pull/6594)
+- refactor(agentic context): update agent context settings [pull/6596](https://github.com/sourcegraph/cody/pull/6596)
+- Add disabled to recording modes [pull/6615](https://github.com/sourcegraph/cody/pull/6615)
+- bench/context: Cache repo IDs [pull/6569](https://github.com/sourcegraph/cody/pull/6569)
+- chore(audoedit): ensure consistent auto-edit name [pull/6611](https://github.com/sourcegraph/cody/pull/6611)
+- chore(audoedit): simplify output channel logger [pull/6610](https://github.com/sourcegraph/cody/pull/6610)
+- NLS: escape backslashes in query string [pull/6585](https://github.com/sourcegraph/cody/pull/6585)
+- feat(audoedit): update billing categories [pull/6591](https://github.com/sourcegraph/cody/pull/6591)
+
 ## 1.58.0
 
 ### Added
 
-- feat(context-agent): tool status callbacks and process support  [pull/6451](https://github.com/sourcegraph/cody/pull/6451)
-- feat(nls): Add Cody bench command for NLS  [pull/6497](https://github.com/sourcegraph/cody/pull/6497)
+- feat(context-agent): tool status callbacks and process support [pull/6451](https://github.com/sourcegraph/cody/pull/6451)
+- feat(nls): Add Cody bench command for NLS [pull/6497](https://github.com/sourcegraph/cody/pull/6497)
 
 ### Fixed
 
-- fix(release): add $ variable invocation  [pull/6509](https://github.com/sourcegraph/cody/pull/6509)
-- fix/editor: Ask Cody to Fix no longer throws exceptions in TypeScript files   [pull/6473](https://github.com/sourcegraph/cody/pull/6473)
-- fix(context-agent): add status callbacks back   [pull/6479](https://github.com/sourcegraph/cody/pull/6479)
-- chore(security): Fix closed events for sast scan  [pull/6512](https://github.com/sourcegraph/cody/pull/6512)
-- fix: Move BigQuery insertion after release step  [pull/6477](https://github.com/sourcegraph/cody/pull/6477)
-- chore(chat): Adding fixing save chat session overwriting  [pull/6457](https://github.com/sourcegraph/cody/pull/6457)
+- fix(release): add $ variable invocation [pull/6509](https://github.com/sourcegraph/cody/pull/6509)
+- fix/editor: Ask Cody to Fix no longer throws exceptions in TypeScript files [pull/6473](https://github.com/sourcegraph/cody/pull/6473)
+- fix(context-agent): add status callbacks back [pull/6479](https://github.com/sourcegraph/cody/pull/6479)
+- chore(security): Fix closed events for sast scan [pull/6512](https://github.com/sourcegraph/cody/pull/6512)
+- fix: Move BigQuery insertion after release step [pull/6477](https://github.com/sourcegraph/cody/pull/6477)
+- chore(chat): Adding fixing save chat session overwriting [pull/6457](https://github.com/sourcegraph/cody/pull/6457)
 
 ### Changed
 
@@ -41,6 +88,15 @@ This is a log of all notable changes to Cody for VS Code.
 - feat(audoedit): remove the auto edit experimental command  [pull/6471](https://github.com/sourcegraph/cody/pull/6471)
 - feat(logging): Add interactionId to header of Cody Client requests (CODY-4117)  [pull/6450](https://github.com/sourcegraph/cody/pull/6450)
 - chore(audoedit): decouple `codeToReplaceData` from `getPromptForModelType`  [pull/6474](https://github.com/sourcegraph/cody/pull/6474)
+- update `billingMetadata` for failed/disconnected type of events [pull/6254](https://github.com/sourcegraph/cody/pull/6254)
+- feat(nls): add relevant repo boost [pull/6502](https://github.com/sourcegraph/cody/pull/6502)
+- chore(chat): Decompose ChatController.sendChat into handlers for different request types [pull/6469](https://github.com/sourcegraph/cody/pull/6469)
+- feat(autoedit): track notebook for auto-edit [pull/6449](https://github.com/sourcegraph/cody/pull/6449)
+- chore(audoedit): consistent use of the output channel logger [pull/6472](https://github.com/sourcegraph/cody/pull/6472)
+- feat(audoedit): ensure inline completions are also hidden on dismiss [pull/6465](https://github.com/sourcegraph/cody/pull/6465)
+- feat(audoedit): remove the auto edit experimental command [pull/6471](https://github.com/sourcegraph/cody/pull/6471)
+- feat(logging): Add interactionId to header of Cody Client requests (CODY-4117) [pull/6450](https://github.com/sourcegraph/cody/pull/6450)
+- chore(audoedit): decouple `codeToReplaceData` from `getPromptForModelType` [pull/6474](https://github.com/sourcegraph/cody/pull/6474)
 
 ## 1.56.0
 
@@ -64,15 +120,37 @@ This is a log of all notable changes to Cody for VS Code.
 - chore(onebox/telemetry): add `billingMetadata`   [pull/6426](https://github.com/sourcegraph/cody/pull/6426)
 - fix(audoedit): fix renderer testing command  [pull/6408](https://github.com/sourcegraph/cody/pull/6408)
 - chore/release: Bump package version and update changelog for 1.52  [pull/6414](https://github.com/sourcegraph/cody/pull/6414)
+
+- auto-edit e2e tests [pull/6425](https://github.com/sourcegraph/cody/pull/6425)
+- feat(audoedit): extract auto-edit config from the provider [pull/6460](https://github.com/sourcegraph/cody/pull/6460)
+- autoedit: address dogfooding feedback [pull/6454](https://github.com/sourcegraph/cody/pull/6454)
+- feat(audoedit): implement basic analytics logger [pull/6430](https://github.com/sourcegraph/cody/pull/6430)
+- feat(onebox): Use new prompt editor when onebox is enabled [pull/6288](https://github.com/sourcegraph/cody/pull/6288)
+- feat(network): Support for NO_PROXY (CODY_NODE_NO_PROXY) environment variable [pull/6555](https://github.com/sourcegraph/cody/pull/6555)
+
+### Fixed
+
+- feat(logging): Add interactionId to header of Cody Client requests (CODY-4117) [pull/6450](https://github.com/sourcegraph/cody/pull/6450)
+- fix(autoedit): fix shrink prediction logic [pull/6404](https://github.com/sourcegraph/cody/pull/6404)
+- fix(modelSelectField): missing overflow scrollbar when there isn't space to show entire list [pull/6423](https://github.com/sourcegraph/cody/pull/6423)
+- fix: remove trailing spaces from extracted query [pull/6432](https://github.com/sourcegraph/cody/pull/6432)
+- Fix small screen filters panel opening [pull/6420](https://github.com/sourcegraph/cody/pull/6420)
+- fix diff rendering for auto-edit [pull/6410](https://github.com/sourcegraph/cody/pull/6410)
+- chore(agent): disable flaky test [pull/6429](https://github.com/sourcegraph/cody/pull/6429)
+- fix: Prevent style leaks in cody web [pull/6427](https://github.com/sourcegraph/cody/pull/6427)
+- chore(onebox/telemetry): add `billingMetadata` [pull/6426](https://github.com/sourcegraph/cody/pull/6426)
+- fix(audoedit): fix renderer testing command [pull/6408](https://github.com/sourcegraph/cody/pull/6408)
+- chore/release: Bump package version and update changelog for 1.52 [pull/6414](https://github.com/sourcegraph/cody/pull/6414)
 - fix(logging): removed unecessary logging when requests are aborted [pull/6555](https://github.com/sourcegraph/cody/pull/6555)
 - fix(network): removed dangling request handlers on network requests which could potentially cause memory leaks [pull/6555](https://github.com/sourcegraph/cody/pull/6555)
 
 ### Changed
-- feat(prompt-editor): Add new ProseMirror-based implementation  [pull/6272](https://github.com/sourcegraph/cody/pull/6272)
-- refactor(user-menu): improve display of user menu  [pull/6389](https://github.com/sourcegraph/cody/pull/6389)
-- Use omnibox ff for intent detector  [pull/6419](https://github.com/sourcegraph/cody/pull/6419)
-- Enable repo boost for inactive editor  [pull/6443](https://github.com/sourcegraph/cody/pull/6443)
-- include symbol matches in search results  [pull/6441](https://github.com/sourcegraph/cody/pull/6441)
+
+- feat(prompt-editor): Add new ProseMirror-based implementation [pull/6272](https://github.com/sourcegraph/cody/pull/6272)
+- refactor(user-menu): improve display of user menu [pull/6389](https://github.com/sourcegraph/cody/pull/6389)
+- Use omnibox ff for intent detector [pull/6419](https://github.com/sourcegraph/cody/pull/6419)
+- Enable repo boost for inactive editor [pull/6443](https://github.com/sourcegraph/cody/pull/6443)
+- include symbol matches in search results [pull/6441](https://github.com/sourcegraph/cody/pull/6441)
 - improved network logging with less verbose output [pull/6555](https://github.com/sourcegraph/cody/pull/6555)
 
 ## 1.54.0
