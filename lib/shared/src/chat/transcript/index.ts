@@ -34,6 +34,7 @@ export function serializeChatMessage(chatMessage: ChatMessage): SerializedChatMe
         intent: chatMessage.intent,
         manuallySelectedIntent: chatMessage.manuallySelectedIntent,
         search: chatMessage.search,
+        didYouMeanQuery: chatMessage.didYouMeanQuery,
         processes: chatMessage.processes,
         agent: chatMessage.agent,
         subMessages: chatMessage.subMessages,

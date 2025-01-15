@@ -19,7 +19,7 @@ import {
 import isError from 'lodash/isError'
 import * as vscode from 'vscode'
 import type { VSCodeEditor } from '../../editor/vscode-editor'
-import { rewriteKeywordQuery } from '../../local-context/rewrite-keyword-query'
+import { extractKeywords, rewriteKeywordQuery } from '../../local-context/rewrite-keyword-query'
 import type { SymfRunner } from '../../local-context/symf'
 import { logDebug, logError } from '../../output-channel-logger'
 import { gitLocallyModifiedFiles } from '../../repository/git-extension-api'
@@ -180,6 +180,20 @@ export class ContextRetriever implements vscode.Disposable {
             signal,
             skipQueryRewrite
         )
+    }
+
+    public async computeDidYouMean(
+        query: PromptString,
+        signal?: AbortSignal
+    ): Promise<string | undefined> {
+        if (!looksLikeSearch(query.toString())) {
+            return undefined
+        }
+        const keywords = await extractKeywords(this.llms, query, signal)
+        if (keywords.length > 0) {
+            return keywords.join(' ')
+        }
+        return undefined
     }
 
     private async _retrieveContext(
@@ -471,4 +485,20 @@ export function filterLocallyModifiedFilesOutOfRemoteContext(
         keep.push(item)
     }
     return { keep, remove }
+}
+
+const searchPatterns = [
+    /^where is/i,
+    /^look for/i,
+    /^search for/i,
+    /^find all/i,
+    /^list all/i,
+    /^get all/i,
+    /^show all/i,
+    /occurrences of/i,
+    /^where do we/i,
+    /examples of/i,
+]
+function looksLikeSearch(query: string): boolean {
+    return searchPatterns.some(pattern => pattern.test(query.trim()))
 }

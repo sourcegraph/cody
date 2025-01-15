@@ -52,6 +52,7 @@ import { HumanMessageCell } from './cells/messageCell/human/HumanMessageCell'
 import { type Context, type Span, context, trace } from '@opentelemetry/api'
 import { isCodeSearchContextItem } from '../../src/context/openctx/codeSearch'
 import { TELEMETRY_INTENT } from '../../src/telemetry/onebox'
+import { DidYouMeanNotice } from './cells/messageCell/assistant/DidYouMean'
 import { SwitchIntent } from './cells/messageCell/assistant/SwitchIntent'
 import { LastEditorContext } from './context'
 
@@ -624,14 +625,21 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
             />
             {experimentalOneBoxEnabled && (
                 <SwitchIntent
-                    intent={humanMessage?.intent}
+                    intent={humanMessage.intent}
                     disabled={!!assistantMessage?.isLoading}
                     manuallySelected={!!humanMessage.manuallySelectedIntent}
                     onSwitch={
-                        humanMessage?.intent === 'search'
+                        humanMessage.intent === 'search'
                             ? reSubmitWithChatIntent
                             : reSubmitWithSearchIntent
                     }
+                />
+            )}
+            {experimentalOneBoxEnabled && assistantMessage?.didYouMeanQuery && (
+                <DidYouMeanNotice
+                    query={assistantMessage?.didYouMeanQuery}
+                    disabled={!!assistantMessage?.isLoading}
+                    switchToSearch={() => {}}
                 />
             )}
             {(humanMessage.contextFiles || assistantMessage || isContextLoading) && !isSearchIntent && (

@@ -56,7 +56,7 @@ export async function extractKeywords(
                 ...preamble,
                 {
                     speaker: 'human',
-                    text: ps`You are helping the user search over a codebase. List terms that could be found literally in code snippets or file names relevant to answering the user's query. Present your results in a *single* XML list in the following format: <keywords><keyword><value>a single keyword</value><variants>a space separated list of synonyms and variants of the keyword, including acronyms, abbreviations, and expansions</variants><weight>a numerical weight between 0.0 and 1.0 that indicates the importance of the keyword</weight></keyword></keywords>. Here is the user query: <userQuery>${query}</userQuery>`,
+                    text: ps`You are helping the user search over a codebase. List terms that could be found literally in code snippets or file names relevant to answering the user's query. Present your results in a *single* XML list in the following format: <keywords><keyword><value>a single keyword</value><literal>true if the keyword appears literally in the user query, false otherwise</literal><variants>a space separated list of synonyms and variants of the keyword, including acronyms, abbreviations, and expansions</variants><weight>a numerical weight between 0.0 and 1.0 that indicates the importance of the keyword</weight></keyword></keywords>. Here is the user query: <userQuery>${query}</userQuery>`,
                 },
                 { speaker: 'assistant' },
             ],
@@ -87,17 +87,27 @@ export async function extractKeywords(
     const parser = new XMLParser()
     const document = parser.parse(text)
 
-    const keywords: { value?: string; variants?: string; weight?: number }[] =
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-        document?.keywords?.keyword ?? []
+    let keywords: { value?: string; variants?: string; weight?: number; literal?: string }[] = []
+    switch (true) {
+        case Array.isArray(document?.keywords?.keyword): {
+            keywords = document.keywords.keyword
+            break
+        }
+        case document?.keywords?.keyword instanceof Object: {
+            keywords = [document.keywords.keyword]
+            break
+        }
+    }
     const result = new Set<string>()
-    for (const { value } of keywords) {
-        if (value) {
+    for (const { value, literal } of keywords) {
+        outputChannelLogger.logDebug('found keyword', JSON.stringify({ value, literal }))
+        if (value && literal) {
             for (const v of value.split(' ')) {
                 result.add(v)
             }
         }
     }
+    outputChannelLogger.logDebug('keyword extraction', JSON.stringify([...result]))
 
     return [...result]
 }
