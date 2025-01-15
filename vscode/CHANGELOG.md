@@ -4,6 +4,21 @@ This is a log of all notable changes to Cody for VS Code.
 
 {/* CHANGELOG_START */}
 
+## 1.60.0
+
+### Reverts
+
+  There were no reverts for this release
+
+### Uncategorized
+
+#### Others
+
+- Backport 798c73be4a63cefd5c601a79ab1e3c418df081d0 from #6579. [#6580](https://github.com/sourcegraph/cody/pull/6580)
+- Backport 3f908ae4d94862a511c249d214ef97cacb93e57b from #6570. [#6571](https://github.com/sourcegraph/cody/pull/6571)
+- This is an experimental feature which we're not turning on or onboarding users to yet, so no changelog entry. [#6510](https://github.com/sourcegraph/cody/pull/6510)
+
+
 ## Unreleased
 
 ### Added
@@ -15,6 +30,21 @@ This is a log of all notable changes to Cody for VS Code.
 ### Uncategorized
 
 {/* CHANGELOG_START */}
+
+## 1.60.0
+
+### Reverts
+
+  There were no reverts for this release
+
+### Uncategorized
+
+#### Others
+
+- Backport 798c73be4a63cefd5c601a79ab1e3c418df081d0 from #6579. [#6580](https://github.com/sourcegraph/cody/pull/6580)
+- Backport 3f908ae4d94862a511c249d214ef97cacb93e57b from #6570. [#6571](https://github.com/sourcegraph/cody/pull/6571)
+- This is an experimental feature which we're not turning on or onboarding users to yet, so no changelog entry. [#6510](https://github.com/sourcegraph/cody/pull/6510)
+
 
 ## 1.58.0
 
