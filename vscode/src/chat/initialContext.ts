@@ -228,7 +228,9 @@ export function getCorpusContextItemsForEditorState(): Observable<
                         icon: 'folder',
                     })
                 }
-            } else {
+            }
+
+            if (items.length === 0) {
                 // TODO(sqs): Support multi-root. Right now, this only supports the 1st workspace root.
                 const workspaceFolder = vscode.workspace.workspaceFolders?.at(0)
                 if (workspaceFolder) {
