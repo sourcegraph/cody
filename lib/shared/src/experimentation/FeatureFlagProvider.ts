@@ -99,20 +99,22 @@ export enum FeatureFlag {
      */
     CodyPromptsV2 = 'prompt-creation-v2',
 
-    /** Whether user has access to the experimental Deep Cody feature.
-     * This replaces the old 'cody-deep-reflection' that was used for internal testing.
+    /** Whether user has access to the experimental agentic chat (fka Deep Cody) feature.
+     * This replaces the old 'cody-deep-reflection' & 'deep-cody' that was used for internal testing.
      */
-    DeepCody = 'deep-cody',
+    DeepCody = 'agentic-chat-experimental',
 
-    /** Enable Shell Context for Deep Cody */
-    DeepCodyShellContext = 'deep-cody-shell-context',
+    /** Enable terminal access for agentic context */
+    DeepCodyShellContext = 'agentic-chat-cli-tool-experimental',
 
     /** Whether Context Agent (Deep Cody) should use the default chat model or 3.5 Haiku */
-    ContextAgentDefaultChatModel = 'context-agent-use-default-chat-model',
+    ContextAgentDefaultChatModel = 'agentic-chat-use-default-chat-model',
 
     /** Enable Rate Limit for Deep Cody */
     DeepCodyRateLimitBase = 'deep-cody-experimental-rate-limit',
     DeepCodyRateLimitMultiplier = 'deep-cody-experimental-rate-limit-multiplier',
+    /** Enable Rate Limit per chat session for agentic chat */
+    AgenticContextSessionLimit = 'agentic-chat-experimental-session-limit',
 
     /**
      * Whether the current repo context chip is shown in the chat input by default

@@ -56,7 +56,7 @@ describe('DeepCody', () => {
     } as any)
 
     beforeEach(async () => {
-        mockResolvedConfig({ configuration: {} })
+        mockResolvedConfig({ configuration: {}, auth: { serverEndpoint: DOTCOM_URL.toString() } })
         mockClientCapabilities(CLIENT_CAPABILITIES_FIXTURE)
         mockAuthStatus(codyProAuthStatus)
         localStorageData = {}
@@ -211,5 +211,63 @@ describe('DeepCody', () => {
         expect(mockChatClient.chat).toHaveBeenCalled()
         expect(result.some(r => r.content === 'const example = "test";')).toBeFalsy()
         expect(result.some(r => r.content === 'const newExample = "test result";')).toBeTruthy()
+    })
+
+    it('validates and preserves context items during review process', async () => {
+        // Mock a scenario where we have existing context items
+        const existingContext = [
+            {
+                uri: URI.file('/path/to/file1.ts'),
+                type: 'file',
+                source: ContextItemSource.User,
+                content: 'const userAddedFile = "test";',
+            },
+            {
+                uri: URI.file('/path/to/file2.ts'),
+                type: 'file',
+                source: ContextItemSource.Search,
+                content: 'const searchResult = "test";',
+            },
+        ] satisfies ContextItem[]
+
+        // Mock the chat messages to include context files
+        mockChatBuilder.getDehydratedMessages = vi.fn().mockReturnValue([
+            {
+                speaker: 'human',
+                text: ps`test message`,
+                contextFiles: existingContext,
+            },
+        ])
+
+        // Mock stream response that includes context validation tags
+        const mockStreamResponse = [
+            {
+                type: 'change',
+                text: '<context_list>file1.ts</context_list><context_list>file2.ts</context_list><context_list>newfile.ts</context_list>',
+            },
+            { type: 'complete' },
+        ]
+
+        mockChatClient.chat = vi.fn().mockReturnValue(mockStreamResponse)
+
+        // Create agent and run context retrieval
+        const agent = new DeepCodyAgent(mockChatBuilder, mockChatClient, mockStatusCallback)
+        const result = await agent.getContext(
+            'deep-cody-test-validation-id',
+            new AbortController().signal,
+            existingContext
+        )
+
+        // Verify results
+        expect(mockChatClient.chat).toHaveBeenCalled()
+
+        // Should preserve user-added context as is
+        expect(result.some(r => r.content === 'const userAddedFile = "test";')).toBeTruthy()
+        expect(result.some(r => r.source === ContextItemSource.User)).toBeTruthy()
+
+        // Should include validated context from review
+        expect(result.some(r => r.content === 'const searchResult = "test";')).toBeTruthy()
+        // Should replace search context with agentic source during validation.
+        expect(result.filter(r => r.source === ContextItemSource.Search).length).toBe(0)
     })
 })

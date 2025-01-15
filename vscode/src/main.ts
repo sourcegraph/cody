@@ -53,6 +53,7 @@ import type { MessageProviderOptions } from './chat/MessageProvider'
 import { CodyToolProvider } from './chat/agentic/CodyToolProvider'
 import { ChatsController, CodyChatEditorViewType } from './chat/chat-view/ChatsController'
 import { ContextRetriever } from './chat/chat-view/ContextRetriever'
+import { SourcegraphRemoteFileProvider } from './chat/chat-view/sourcegraphRemoteFile'
 import type { ChatIntentAPIClient } from './chat/context/chatIntentAPIClient'
 import {
     ACCOUNT_LIMITS_INFO_URL,
@@ -678,8 +679,11 @@ async function registerTestCommands(
             }
         }),
         // Access token - this is only used in configuration tests
-        vscode.commands.registerCommand('cody.test.token', async (serverEndpoint, accessToken) =>
-            authProvider.validateAndStoreCredentials({ serverEndpoint, accessToken }, 'always-store')
+        vscode.commands.registerCommand('cody.test.token', async (serverEndpoint, token) =>
+            authProvider.validateAndStoreCredentials(
+                { credentials: { token }, serverEndpoint },
+                'always-store'
+            )
         )
     )
 }
@@ -856,7 +860,9 @@ function registerChat(
     )
     chatsController.registerViewsAndCommands()
     const promptsManager = new PromptsManager({ chatsController })
-    disposables.push(new CodeActionProvider(), promptsManager)
+    const sourcegraphRemoteFileProvider = new SourcegraphRemoteFileProvider()
+
+    disposables.push(new CodeActionProvider(), promptsManager, sourcegraphRemoteFileProvider)
 
     // Register a serializer for reviving the chat panel on reload
     if (vscode.window.registerWebviewPanelSerializer) {

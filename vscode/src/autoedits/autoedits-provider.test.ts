@@ -1,3 +1,4 @@
+import * as sentryCore from '@sentry/core'
 import * as uuid from 'uuid'
 import {
     type MockInstance,
@@ -59,7 +60,7 @@ describe('AutoeditsProvider', () => {
         mockResolvedConfig({
             configuration: {},
             auth: {
-                accessToken: 'sgp_local_f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0',
+                credentials: { token: 'sgp_local_f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0' },
                 serverEndpoint: DOTCOM_URL.toString(),
             },
         })
@@ -305,6 +306,44 @@ describe('AutoeditsProvider', () => {
 
         const suggestedEventPayload = recordSpy.mock.calls[0].at(2)
         expect(suggestedEventPayload.metadata.isRead).toBe(1)
+    })
+
+    it('errors are reported via telemetry recorded and Sentry', async () => {
+        const captureExceptionSpy = vi.spyOn(sentryCore, 'captureException')
+        const testError = new Error('test-error')
+
+        const { result } = await autoeditResultFor('const x = █', {
+            prediction: 'const x = 1\n',
+            getModelResponse() {
+                throw testError
+            },
+        })
+
+        expect(result).toBe(null)
+
+        // Error is captured by the telemetry recorded
+        expect(recordSpy).toHaveBeenCalledTimes(1)
+        expect(recordSpy).toHaveBeenNthCalledWith(1, 'cody.autoedit', 'error', expect.any(Object))
+
+        const errorPayload = recordSpy.mock.calls[0].at(2)
+        expect(errorPayload).toMatchInlineSnapshot(`
+          {
+            "metadata": {
+              "count": 1,
+            },
+            "privateMetadata": {
+              "message": "test-error",
+              "traceId": undefined,
+            },
+            "version": 0,
+          }
+        `)
+
+        // Error is captured by the Sentry service
+        expect(captureExceptionSpy).toHaveBeenCalledTimes(1)
+
+        const captureExceptionPayload = captureExceptionSpy.mock.calls[0].at(0)
+        expect(captureExceptionPayload).toEqual(testError)
     })
 
     it('rejects the current suggestion when the new one is shown', async () => {
