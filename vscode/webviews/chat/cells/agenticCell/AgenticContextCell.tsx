@@ -136,7 +136,7 @@ const ProcessItem: FC<{
                     <span>{process.type !== 'tool' ? process.title : process.title ?? process.id}</span>
                     {process.content && (
                         <span
-                            className="tw-ml-2 tw-truncate tw-max-w-full tw-text-xs tw-muted-foreground tw-opacity-6`0"
+                            className="tw-ml-2 tw-truncate tw-max-w-full tw-text-xs tw-muted-foreground tw-opacity-60"
                             title={
                                 process.type === 'tool' ? 'agentic query' : process.title ?? process.id
                             }
