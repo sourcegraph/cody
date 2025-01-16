@@ -208,7 +208,15 @@ class ToolFactory {
     ): CodyToolConfig {
         // Extract schema properties for better instruction formatting
         const schemaProperties = mention.data?.properties || {}
-
+        // Create an example object with sample values based on the schema
+        const exampleValues = Object.entries(schemaProperties).reduce(
+            (acc, [key, schema]: [string, any]) => {
+                // Generate sample values based on type
+                acc[key] = this.generateSampleValue(schema.type, key)
+                return acc
+            },
+            {} as Record<string, any>
+        )
         return {
             title: mention.title,
             tags: {
@@ -224,12 +232,24 @@ class ToolFactory {
                 placeholder: PromptString.unsafe_fromUserQuery('INPUT'),
                 examples: [
                     PromptString.unsafe_fromUserQuery(
-                        `To use ${mention.title} with valid schema: \`<${tagName}>${JSON.stringify({
-                            message: mention.data?.properties || 'example input',
-                        })}</${tagName}>\``
+                        `To use ${mention.title} with valid input: \`<${tagName}>${JSON.stringify(
+                            exampleValues
+                        )}</${tagName}>\``
                     ),
                 ],
             },
+        }
+    }
+    private generateSampleValue(type: string, key: string): any {
+        switch (type.toLowerCase()) {
+            case 'string':
+                return 'sample-string'
+            case 'number':
+                return 42
+            case 'boolean':
+                return true
+            default:
+                return 'sample-value'
         }
     }
 }
