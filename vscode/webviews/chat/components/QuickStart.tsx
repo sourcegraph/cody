@@ -115,7 +115,7 @@ export function QuickStart() {
 
     return (
         <>
-            <div className="tw-mx-auto tw-my-2 tw-flex tw-max-w-3xl tw-max-w-[768px] tw-flex-col tw-gap-4 tw-py-2 tw-text-sm tw-text-muted-foreground">
+            <div className="tw-mx-auto tw-my-2 tw-flex tw-max-w-3xl tw-max-w-[768px] tw-flex-col tw-py-2 tw-text-sm tw-text-muted-foreground">
                 <div
                     className={`tw-flex tw-items-center tw-justify-between tw-gap-4 tw-text-md tw-font-medium tw-text-foreground tw-p-4 md:tw-text-base ${
                         isCollapsed ? 'hover:tw-bg-muted tw-cursor-pointer tw-rounded-lg' : ''
@@ -125,7 +125,7 @@ export function QuickStart() {
                     role="button"
                     tabIndex={isCollapsed ? 0 : undefined}
                 >
-                    <div className="tw-flex tw-items-center tw-gap-4">
+                    <div className="tw-flex tw-items-center tw-gap-4 tw-text-md">
                         <Zap className="tw-h-8 tw-w-8" strokeWidth={1.25} />
                         Quick Start
                     </div>
@@ -176,7 +176,7 @@ export function QuickStart() {
             {/* Overlay */}
             {showTipsOverlay && (
                 <div
-                    className="tw-fixed tw-inset-0 tw-flex tw-items-center tw-justify-center tw-bg-background tw-p-4 tw-animate-[fadeIn_0.2s_ease-in-out]"
+                    className="tw-fixed tw-inset-0 tw-flex tw-items-center tw-justify-center tw-bg-black/20 tw-p-4 tw-animate-[fadeIn_0.2s_ease-in-out]"
                     onClick={handleOverlayClick}
                     onKeyDown={handleOverlayKeyDown}
                     role="presentation"
@@ -191,7 +191,7 @@ export function QuickStart() {
                     >
                         {/* Overlay content */}
                         <div className="tw-flex tw-items-center tw-justify-between">
-                            <div className="tw-flex tw-items-center tw-gap-4 tw-font-medium tw-text-foreground md:tw-text-base">
+                            <div className="tw-flex tw-items-center tw-gap-4 tw-font-medium tw-text-foreground text-md md:tw-text-base">
                                 <Zap className="tw-h-8 tw-w-8" strokeWidth={1.25} />
                                 Quick Start
                             </div>
@@ -221,7 +221,7 @@ export function QuickStart() {
                                             </h4>
                                         )}
                                         {'examples' in example ? (
-                                            <div className="tw-flex tw-flex-row tw-flex-wrap tw-gap-4">
+                                            <div className="tw-flex tw-flex-row tw-flex-wrap tw-gap-8">
                                                 {example.examples?.map(ex => (
                                                     <div
                                                         key={`nested-example-${ex.input}`}
