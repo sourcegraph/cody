@@ -106,7 +106,7 @@ class ToolFactory {
                 // For MCP providers, get available tools through the mentions() function
                 // NOTE: For MCP, the single provider can create multiple tools
 
-                // get the Vscode Regex Here for query
+                // helps filter the tools by name so that only the matching nameQuery regex are created
                 const nameQuery = vscode.workspace
                     .getConfiguration()
                     .get<string>('openctx.providers.mcp.nameQuery', '')
