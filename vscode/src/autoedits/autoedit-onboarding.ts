@@ -46,12 +46,12 @@ export class AutoEditOnboarding implements vscode.Disposable {
     private async showAutoEditOnboardingPopup(): Promise<void> {
         const { timesShown } = await this.getAutoEditOnboardingNotificationInfo()
 
-        const enableAutoeditText = 'Enable Auto-Edit'
+        const enableAutoeditText = 'Enable Auto-edit'
         const dontShowAgainText = "Don't Show Again"
 
         const selection = await Promise.race([
             vscode.window.showInformationMessage(
-                'Try Cody Auto-Edit (experimental)? Cody will intelligently suggest next edits as you navigate the codebase.',
+                'Try Cody Auto-edit (experimental)? Cody will intelligently suggest next edits as you navigate the codebase.',
                 enableAutoeditText,
                 dontShowAgainText
             ),

@@ -12,7 +12,7 @@ import {
 } from './helpers'
 
 /**
- * Auto-Edit Visual Regression Tests
+ * Auto-edit Visual Regression Tests
  *
  * Currently these tests run only on macOS due to cross-platform rendering inconsistencies.
  *
