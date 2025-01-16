@@ -68,7 +68,7 @@ const ApprovalCell: FC<{ vscodeAPI: VSCodeWrapper }> = ({ vscodeAPI }) => {
                                 className="tw-w-1/4"
                                 onClick={() => handleClick(a.id, true)}
                             >
-                                Allow
+                                Run
                             </Button>
                         </div>
                     </div>
