@@ -336,7 +336,13 @@ export class OpenCtxTool extends CodyTool {
                     }
 
                     const mcpResults = await openCtxClient.items(
-                        { mention: { uri: '', title: this.config.title, data: jsonQuery } },
+                        {
+                            mention: {
+                                uri: '',
+                                title: this.config.title,
+                                data: jsonQuery as Record<string, unknown>,
+                            },
+                        },
                         { providerUri: MODEL_CONTEXT_PROVIDER_URI }
                     )
                     const itemsWithContent = mcpResults.map(item => ({

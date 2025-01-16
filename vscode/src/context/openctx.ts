@@ -187,14 +187,22 @@ export function getOpenCtxProviders(
                     providerUri: CODE_SEARCH_PROVIDER_URI,
                 })
             }
+            const isMcpEnabled = vscode.workspace
+                .getConfiguration()
+                .get<boolean>('openctx.providers.mcp.enable', true)
+
+            // if mcp is enabled, add the mcp provider to the providers
+            if (isMcpEnabled) {
+                const modelContextProviderToolsURI = vscode.workspace
+                    .getConfiguration()
+                    .get<string>('openctx.providers.mcp.uri', '')
+                providers.push({
+                    settings: true,
+                    provider: createModelContextProvider(modelContextProviderToolsURI),
+                    providerUri: MODEL_CONTEXT_PROVIDER_URI,
+                })
+            }
             // enable MCP provider vscode settings
-            providers.push({
-                settings: true,
-                provider: createModelContextProvider(
-                    'file:///Users/arafatkhan/Desktop/servers/src/everything/dist/index.js'
-                ),
-                providerUri: MODEL_CONTEXT_PROVIDER_URI,
-            })
 
             return providers
         }

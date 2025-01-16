@@ -10,6 +10,7 @@ import {
     ps,
 } from '@sourcegraph/cody-shared'
 import { map } from 'observable-fns'
+import * as vscode from 'vscode'
 import type { ContextRetriever } from '../chat-view/ContextRetriever'
 import { type CodyTool, type CodyToolConfig, OpenCtxTool, TOOL_CONFIGS } from './CodyTool'
 import { toolboxManager } from './ToolboxManager'
@@ -106,9 +107,12 @@ class ToolFactory {
                 // NOTE: For MCP, the single provider can create multiple tools
 
                 // get the Vscode Regex Here for query
+                const nameQuery = vscode.workspace
+                    .getConfiguration()
+                    .get<string>('openctx.providers.mcp.nameQuery', '')
                 const mcpTools =
                     (await openCtx.controller?.mentions(
-                        { query: 'echo' },
+                        { query: nameQuery },
                         { providerUri: provider.id }
                     )) ?? []
 
