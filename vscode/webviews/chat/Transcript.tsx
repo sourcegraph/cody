@@ -9,6 +9,7 @@ import {
     deserializeContextItem,
     inputTextWithMappedContextChipsFromPromptEditorState,
     isAbortErrorOrSocketHangUp,
+    serializedPromptEditorStateFromText,
 } from '@sourcegraph/cody-shared'
 import {
     type PromptEditorRefAPI,
@@ -54,6 +55,7 @@ import { isCodeSearchContextItem } from '../../src/context/openctx/codeSearch'
 import { TELEMETRY_INTENT } from '../../src/telemetry/onebox'
 import { AgenticContextCell } from './cells/agenticCell/AgenticContextCell'
 import ApprovalCell from './cells/agenticCell/ApprovalCell'
+import { DidYouMeanNotice } from './cells/messageCell/assistant/DidYouMean'
 import { SwitchIntent } from './cells/messageCell/assistant/SwitchIntent'
 import { LastEditorContext } from './context'
 
@@ -605,6 +607,21 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
         [humanMessage.index]
     )
 
+    const editAndSubmitSearch = useCallback(
+        (text: string) =>
+            editHumanMessage({
+                messageIndexInTranscript: humanMessage.index,
+                editorValue: {
+                    text,
+                    contextItems: [],
+                    editorState: serializedPromptEditorStateFromText(text),
+                },
+                intent: 'search',
+                manuallySelectedIntent: true,
+            }),
+        [humanMessage]
+    )
+
     return (
         <>
             <HumanMessageCell
@@ -628,14 +645,21 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
             />
             {experimentalOneBoxEnabled && (
                 <SwitchIntent
-                    intent={humanMessage?.intent}
+                    intent={humanMessage.intent}
                     disabled={!!assistantMessage?.isLoading}
                     manuallySelected={!!humanMessage.manuallySelectedIntent}
                     onSwitch={
-                        humanMessage?.intent === 'search'
+                        humanMessage.intent === 'search'
                             ? reSubmitWithChatIntent
                             : reSubmitWithSearchIntent
                     }
+                />
+            )}
+            {experimentalOneBoxEnabled && assistantMessage?.didYouMeanQuery && (
+                <DidYouMeanNotice
+                    query={assistantMessage?.didYouMeanQuery}
+                    disabled={!!assistantMessage?.isLoading}
+                    switchToSearch={() => editAndSubmitSearch(assistantMessage?.didYouMeanQuery ?? '')}
                 />
             )}
             {humanMessage.agent && (

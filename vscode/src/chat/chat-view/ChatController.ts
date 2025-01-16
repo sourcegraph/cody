@@ -135,7 +135,7 @@ export interface ChatControllerOptions {
     extensionUri: vscode.Uri
     chatClient: Pick<ChatClient, 'chat'>
 
-    contextRetriever: Pick<ContextRetriever, 'retrieveContext'>
+    contextRetriever: Pick<ContextRetriever, 'retrieveContext' | 'computeDidYouMean'>
     chatIntentAPIClient: ChatIntentAPIClient | null
 
     extensionClient: Pick<ExtensionClient, 'capabilities'>
@@ -912,7 +912,12 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                         ) {
                             this.chatBuilder.addBotMessage(messageInProgress, model)
                         } else if (messageInProgress?.text) {
-                            this.addBotMessage(requestID, messageInProgress.text, model)
+                            this.addBotMessage(
+                                requestID,
+                                messageInProgress.text,
+                                messageInProgress.didYouMeanQuery,
+                                model
+                            )
                         }
 
                         this.saveSession()
@@ -1338,10 +1343,11 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     private async addBotMessage(
         requestID: string,
         rawResponse: PromptString,
+        didYouMeanQuery: string | undefined | null,
         model: ChatModel
     ): Promise<void> {
         const messageText = reformatBotMessageForChat(rawResponse)
-        this.chatBuilder.addBotMessage({ text: messageText }, model)
+        this.chatBuilder.addBotMessage({ text: messageText, didYouMeanQuery }, model)
         void this.saveSession()
         this.postViewTranscript()
 
