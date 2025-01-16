@@ -8,6 +8,7 @@ import {
     focusChatInputAtEnd,
     getContextCell,
     mentionMenu,
+    mentionMenuItems,
     openContextCell,
     openFileInEditorTab,
     openMentionsForProvider,
@@ -31,7 +32,7 @@ test.extend<ExpectedV2Events>({
         'cody.chat-question:executed',
         'cody.chatResponse:noCode',
     ],
-})('@-mention file in chat', async ({ page, sidebar }) => {
+})('@-mention file in chat', async ({ page, sidebar, workspaceDirectory }) => {
     // This test requires that the window be focused in the OS window manager because it deals with
     // focus.
     await page.bringToFront()
@@ -56,11 +57,10 @@ test.extend<ExpectedV2Events>({
 
     // We should only match the relative visible path, not parts of the full path outside of the workspace.
     // Eg. searching for "source" should not find all files if the project is inside `C:\Source`.
-    // TODO(dantup): After https://github.com/sourcegraph/cody/pull/2235 lands, add workspacedirectory to the test
-    //   and assert that it contains `fixtures` to ensure this check isn't passing because the fixture folder no
-    //   longer matches.
+    // Instead it should find Current Repository item.
+    await expect(workspaceDirectory).toContain('fixtures')
     await chatInput.fill('@fixtures') // fixture is in the test project folder name, but not in the relative paths.
-    await expect(atMentionMenuMessage(chatPanelFrame, 'No files found')).toBeVisible()
+    await expect(mentionMenuItems(chatPanelFrame)).toHaveText([/^Current Repository/])
 
     // Includes dotfiles after just "."
     await chatInput.fill('@.')
@@ -358,7 +358,7 @@ test.extend<ExpectedV2Events>({
     await selectLineRangeInEditorTab(page, 2, 5)
 
     const [, lastChatInput] = await createEmptyChatPanel(page)
-    await expect(chatInputMentions(lastChatInput)).toContainText(
+    await expect(chatInputMentions(lastChatInput)).toHaveText(
         [
             'buzz.ts',
             'buzz.ts:2-5',
@@ -368,16 +368,17 @@ test.extend<ExpectedV2Events>({
             /workspace|sourcegraph.cody/,
         ],
         {
-            timeout: 2_000,
+            timeout: 3_000,
         }
     )
 
     await lastChatInput.press('x')
     await selectLineRangeInEditorTab(page, 7, 10)
     await executeCommandInPalette(page, 'Cody: Add Selection to Cody Chat')
-    await expect(chatInputMentions(lastChatInput)).toContainText([
+    await expect(chatInputMentions(lastChatInput)).toHaveText([
         'buzz.ts',
         'buzz.ts:2-5',
+        /workspace|sourcegraph.cody/,
         'buzz.ts:7-10',
     ])
 })
