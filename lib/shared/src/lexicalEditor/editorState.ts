@@ -17,6 +17,7 @@ import {
 } from '../context/openctx/api'
 import { displayPath } from '../editor/displayPath'
 import type { PromptString } from '../prompt/prompt-string'
+import { deserializeContextMentionItem } from './atMentionsSerializer'
 import {
     CONTEXT_ITEM_MENTION_NODE_TYPE,
     type SerializedContextItem,
@@ -374,9 +375,7 @@ function lexicalEditorStateFromPromptString(
                 children.push(lastTextNode)
                 lastTextNode = undefined
             }
-            const encodedData = new URL(word).searchParams.get('data')
-            const t = JSON.parse(atob(encodedData!))
-            children.push(t satisfies SerializedContextItemMentionNode)
+            children.push(deserializeContextMentionItem(word))
             continue
         }
         if (word.startsWith('@')) {

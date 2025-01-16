@@ -36,6 +36,7 @@ import { useCodyWebAgent } from './use-cody-agent'
 // Include global Cody Web styles to the styles bundle
 import '../global-styles/styles.css'
 import styles from './CodyPromptTemplate.module.css'
+import { PromptTemplateSkeleton } from './skeleton/ChatSkeleton'
 
 // Internal API mock call in order to set up web version of
 // the cody agent properly (completely mock data)
@@ -93,7 +94,7 @@ export const CodyPromptTemplate: FunctionComponent<CodyPromptTemplateProps> = ({
     }
 
     if (client === null || vscodeAPI === null) {
-        return <p>Initializing ...</p>
+        return <PromptTemplateSkeleton className={classNames(className, styles.root)} />
     }
 
     return (
@@ -130,11 +131,12 @@ const CodyPromptTemplatePanel: FC<PanelProps> = props => {
     const [clientConfig, setClientConfig] = useState<CodyClientConfig | null>(null)
     const [view, setView] = useState<View | undefined>()
     const editorRef = useRef<PromptEditorRefAPI>(null)
+    // biome-ignore lint/correctness/useExhaustiveDependencies:
     useEffect(() => {
         if (editorRef?.current && onEditorApiReady) {
             onEditorApiReady(editorRef.current)
         }
-    }, [onEditorApiReady]) // todo michael: we might have to set editorRef?.current as an additional dependency
+    }, [onEditorApiReady, editorRef?.current])
 
     useLayoutEffect(() => {
         vscodeAPI.onMessage(message => {

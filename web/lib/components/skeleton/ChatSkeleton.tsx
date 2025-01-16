@@ -80,3 +80,19 @@ const ChatMessageSkeleton: FC = props => {
         </div>
     )
 }
+
+export const PromptTemplateSkeleton: FC<ChatSkeletonProps> = props => {
+    const { className } = props
+    return (
+        <div className={classNames(className, styles.root)}>
+            <div className={styles.message}>
+                <div className={styles.messageContent}>
+                    <div className={classNames(styles.line, styles.lineShortText)} />
+                    <div className={classNames(styles.line, styles.lineText)} />
+                    <div className={classNames(styles.line, styles.lineLongText)} />
+                    <div className={classNames(styles.line, styles.lineText)} />
+                </div>
+            </div>
+        </div>
+    )
+}
