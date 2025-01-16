@@ -86,7 +86,7 @@ jobs:
           plugin-location: '*.zip'
           ide-versions: |
             ideaIC:2023.2
-            ideaIC:2024.2.4
+            ideaIC:251.14649.49
           failure-levels: |
             INVALID_PLUGIN
             MISSING_DEPENDENCIES
@@ -100,4 +100,4 @@ jobs:
           name: plugin-verifier-reports
           path: 'verification-*'
           compression-level: 9
-        
+
