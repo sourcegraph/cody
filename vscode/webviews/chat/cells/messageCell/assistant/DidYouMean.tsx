@@ -5,6 +5,7 @@ interface DidYouMeanNoticeProps {
 }
 
 export const DidYouMeanNotice = (props: DidYouMeanNoticeProps) => {
+    // TODO(camdencheek): remove the disable functionality once SRCH-1484 is fixed
     const { query, disabled, switchToSearch } = props
 
     return (
