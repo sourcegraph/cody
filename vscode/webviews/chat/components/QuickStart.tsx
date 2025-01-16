@@ -54,7 +54,7 @@ export function QuickStart() {
 
     const examples: Example[] = [
         {
-            input: '=useCallBack(',
+            input: '= useCallback(',
             description: 'Deterministically find symbols',
         },
         {
