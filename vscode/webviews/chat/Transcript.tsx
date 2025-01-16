@@ -564,8 +564,6 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
         [reSubmitWithIntent]
     )
 
-    const resetIntent = useCallback(() => setIntentResults(undefined), [setIntentResults])
-
     const manuallyEditContext = useCallback(() => {
         const contextFiles = humanMessage.contextFiles
         const editor = humanEditorRef.current
@@ -619,7 +617,6 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                 isEditorInitiallyFocused={isLastInteraction}
                 editorRef={humanEditorRef}
                 className={!isFirstInteraction && isLastInteraction ? 'tw-mt-auto' : ''}
-                onEditorFocusChange={resetIntent}
             />
             {experimentalOneBoxEnabled && (
                 <SwitchIntent
