@@ -103,6 +103,7 @@ class ToolFactory {
         for (const provider of providers) {
             if (provider.id === MODEL_CONTEXT_PROVIDER_URI) {
                 // For MCP providers, get available tools through the mentions() function
+                // NOTE: For MCP, the single provider can create multiple tools
 
                 // get the Vscode Regex Here for query
                 const mcpTools =

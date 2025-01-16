@@ -323,14 +323,20 @@ export class OpenCtxTool extends CodyTool {
         try {
             // TODO: Investigate if we can batch queries for better performance.
             // For example, would it cause issues if we fire 10 requests to a OpenCtx provider for fetching Linear?
-            const toolName = this.config.title
-
-            console.log('toolName', toolName)
 
             for (const query of queries) {
                 if (this.provider.id === MODEL_CONTEXT_PROVIDER_URI) {
+                    // for mcp provider, we need to parse the query as JSON with try catch
+                    let jsonQuery: unknown
+                    try {
+                        jsonQuery = JSON.parse(query)
+                    } catch (error) {
+                        logDebug('OpenCtxTool', `Failed to parse query as JSON: ${error}`)
+                        continue
+                    }
+
                     const mcpResults = await openCtxClient.items(
-                        { mention: { uri: '', title: this.config.title, data: JSON.parse(query) } },
+                        { mention: { uri: '', title: this.config.title, data: jsonQuery } },
                         { providerUri: MODEL_CONTEXT_PROVIDER_URI }
                     )
                     const itemsWithContent = mcpResults.map(item => ({
