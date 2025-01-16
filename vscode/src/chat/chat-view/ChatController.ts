@@ -135,7 +135,7 @@ export interface ChatControllerOptions {
     extensionUri: vscode.Uri
     chatClient: Pick<ChatClient, 'chat'>
 
-    contextRetriever: Pick<ContextRetriever, 'retrieveContext'>
+    contextRetriever: Pick<ContextRetriever, 'retrieveContext'|'computeDidYouMean'>
     chatIntentAPIClient: ChatIntentAPIClient | null
 
     extensionClient: Pick<ExtensionClient, 'capabilities'>
