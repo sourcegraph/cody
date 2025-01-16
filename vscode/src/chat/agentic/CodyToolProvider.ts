@@ -103,13 +103,14 @@ class ToolFactory {
 
         for (const provider of providers) {
             if (provider.id === MODEL_CONTEXT_PROVIDER_URI) {
-                // For MCP providers, get available tools through the mentions() function
                 // NOTE: For MCP, the single provider can create multiple tools
 
-                // helps filter the tools by name so that only the matching nameQuery regex are created
+                // toolNameQuery helps filter the tools by name so that only the matching nameQuery regex are created
                 const toolNameQuery = vscode.workspace
                     .getConfiguration()
                     .get<string>('openctx.providers.mcp.toolNameQuery', '')
+
+                // For MCP providers, get available tools through the mentions() function
                 const mcpTools =
                     (await openCtx.controller?.mentions(
                         { query: toolNameQuery },
