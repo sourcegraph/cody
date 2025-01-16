@@ -1,13 +1,19 @@
-import { type AutoEditsTokenLimit, testFileUri } from '@sourcegraph/cody-shared'
-import type { AutocompleteContextSnippet } from '@sourcegraph/cody-shared/src/completions/types'
 import dedent from 'dedent'
 import { describe, expect, it } from 'vitest'
+
+import {
+    type AutoEditsTokenLimit,
+    type AutocompleteContextSnippet,
+    testFileUri,
+} from '@sourcegraph/cody-shared'
+
 import { RetrieverIdentifier } from '../../completions/context/utils'
 import { getCurrentDocContext } from '../../completions/get-current-doc-context'
 import { documentAndPosition } from '../../completions/test-helpers'
+
 import type { UserPromptArgs } from './base'
 import { DefaultUserPromptStrategy } from './default-prompt-strategy'
-import { getCurrentFilePromptComponents } from './prompt-utils'
+import { getCodeToReplaceData } from './prompt-utils'
 
 describe('DefaultUserPromptStrategy', () => {
     const promptProvider = new DefaultUserPromptStrategy()
@@ -59,7 +65,7 @@ describe('DefaultUserPromptStrategy', () => {
             },
         }
 
-        const { fileWithMarkerPrompt, areaPrompt } = getCurrentFilePromptComponents({
+        const codeToReplaceData = getCodeToReplaceData({
             docContext,
             document,
             position,
@@ -173,8 +179,8 @@ describe('DefaultUserPromptStrategy', () => {
 
         return {
             context,
-            fileWithMarkerPrompt,
-            areaPrompt,
+            codeToReplaceData,
+            document,
             tokenBudget,
         }
     }

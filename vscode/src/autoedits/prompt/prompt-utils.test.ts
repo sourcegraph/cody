@@ -10,10 +10,10 @@ import { getCurrentDocContext } from '../../completions/get-current-doc-context'
 import { documentAndPosition, mockNotebookAndPosition } from '../../completions/test-helpers'
 import {
     type CurrentFilePromptOptions,
+    getCodeToReplaceData,
     getCompletionsPromptWithSystemPrompt,
     getContextItemsInTokenBudget,
     getContextPromptWithPath,
-    getCurrentFileContext,
     getCurrentFilePromptComponents,
     getJaccardSimilarityPrompt,
     getLintErrorsPrompt,
@@ -78,19 +78,19 @@ describe('getCurrentFilePromptComponents', () => {
             maxSuffixLength,
         })
 
-        const options: CurrentFilePromptOptions = {
+        const codeToReplaceData = getCodeToReplaceData({
             docContext,
-            document,
             position,
+            document,
             tokenBudget: {
                 maxPrefixLinesInArea: 1,
                 maxSuffixLinesInArea: 1,
                 codeToRewritePrefixLines: 1,
                 codeToRewriteSuffixLines: 1,
             },
-        }
+        })
 
-        const result = getCurrentFilePromptComponents(options)
+        const result = getCurrentFilePromptComponents(document, codeToReplaceData)
         expect(result.fileWithMarkerPrompt.toString()).toBe(dedent`
             (\`test.ts\`)
             <file>
@@ -142,19 +142,19 @@ describe('getCurrentFilePromptComponents', () => {
             maxSuffixLength: 30,
         })
 
-        const options: CurrentFilePromptOptions = {
+        const codeToReplaceData = getCodeToReplaceData({
             docContext,
-            document,
             position,
+            document,
             tokenBudget: {
                 maxPrefixLinesInArea: 1,
                 maxSuffixLinesInArea: 1,
                 codeToRewritePrefixLines: 1,
                 codeToRewriteSuffixLines: 1,
             },
-        }
+        })
 
-        const result = getCurrentFilePromptComponents(options)
+        const result = getCurrentFilePromptComponents(document, codeToReplaceData)
         expect(result.fileWithMarkerPrompt.toString()).toBe(dedent`
             (\`test.ts\`)
             <file>
@@ -180,7 +180,7 @@ describe('getCurrentFilePromptComponents', () => {
     })
 })
 
-describe('getCurrentFileContext', () => {
+describe('getCodeToReplaceData', () => {
     beforeEach(() => {
         vi.restoreAllMocks()
         vi.clearAllMocks()
@@ -229,16 +229,16 @@ describe('getCurrentFileContext', () => {
             },
         }
 
-        const result = getCurrentFileContext(options)
+        const result = getCodeToReplaceData(options)
 
         // Verify the results
-        expect(result.codeToRewrite.toString()).toBe('console.log("cell1 code")')
-        expect(result.codeToRewritePrefix.toString()).toBe('console.log("cell1')
-        expect(result.codeToRewriteSuffix.toString()).toBe(' code")')
-        expect(result.prefixInArea.toString()).toBe('')
-        expect(result.suffixInArea.toString()).toBe('')
-        expect(result.prefixBeforeArea.toString()).toBe('console.log("cell0 code")\n')
-        expect(result.suffixAfterArea.toString()).toBe('\nconsole.log("cell2 code")')
+        expect(result.codeToRewrite).toBe('console.log("cell1 code")')
+        expect(result.codeToRewritePrefix).toBe('console.log("cell1')
+        expect(result.codeToRewriteSuffix).toBe(' code")')
+        expect(result.prefixInArea).toBe('')
+        expect(result.suffixInArea).toBe('')
+        expect(result.prefixBeforeArea).toBe('console.log("cell0 code")\n')
+        expect(result.suffixAfterArea).toBe('\nconsole.log("cell2 code")')
     })
 
     it('correctly handles the notebook document and relevant context', async () => {
@@ -289,18 +289,16 @@ describe('getCurrentFileContext', () => {
             },
         }
 
-        const result = getCurrentFileContext(options)
+        const result = getCodeToReplaceData(options)
 
         // Verify the results
-        expect(result.codeToRewrite.toString()).toBe('console.log("cell1 code")')
-        expect(result.codeToRewritePrefix.toString()).toBe('console.log("cell1')
-        expect(result.codeToRewriteSuffix.toString()).toBe(' code")')
-        expect(result.prefixInArea.toString()).toBe('')
-        expect(result.suffixInArea.toString()).toBe('')
-        expect(result.prefixBeforeArea.toString()).toBe('console.log("cell0 code")\n')
-        expect(result.suffixAfterArea.toString()).toBe(
-            '\n# # This is a markdown cell\n\nconsole.log("cell2 code")'
-        )
+        expect(result.codeToRewrite).toBe('console.log("cell1 code")')
+        expect(result.codeToRewritePrefix).toBe('console.log("cell1')
+        expect(result.codeToRewriteSuffix).toBe(' code")')
+        expect(result.prefixInArea).toBe('')
+        expect(result.suffixInArea).toBe('')
+        expect(result.prefixBeforeArea).toBe('console.log("cell0 code")\n')
+        expect(result.suffixAfterArea).toBe('\n# # This is a markdown cell\n\nconsole.log("cell2 code")')
     })
 
     it('correctly splits content into different areas based on cursor position', () => {
@@ -325,16 +323,16 @@ describe('getCurrentFileContext', () => {
             },
         }
 
-        const result = getCurrentFileContext(options)
+        const result = getCodeToReplaceData(options)
 
         // Verify the results
-        expect(result.codeToRewrite.toString()).toBe('line2\nline3line4\nline5\n')
-        expect(result.codeToRewritePrefix.toString()).toBe('line2\nline3')
-        expect(result.codeToRewriteSuffix.toString()).toBe('line4\nline5\n')
-        expect(result.prefixInArea.toString()).toBe('line1\n')
-        expect(result.suffixInArea.toString()).toBe('line6')
-        expect(result.prefixBeforeArea.toString()).toBe('')
-        expect(result.suffixAfterArea.toString()).toBe('')
+        expect(result.codeToRewrite).toBe('line2\nline3line4\nline5\n')
+        expect(result.codeToRewritePrefix).toBe('line2\nline3')
+        expect(result.codeToRewriteSuffix).toBe('line4\nline5\n')
+        expect(result.prefixInArea).toBe('line1\n')
+        expect(result.suffixInArea).toBe('line6')
+        expect(result.prefixBeforeArea).toBe('')
+        expect(result.suffixAfterArea).toBe('')
         expect(result.range.start.line).toBe(1)
         expect(result.range.end.line).toBe(3)
     })
@@ -361,12 +359,12 @@ describe('getCurrentFileContext', () => {
             },
         }
 
-        const result = getCurrentFileContext(options)
+        const result = getCodeToReplaceData(options)
 
-        expect(result.codeToRewritePrefix.toString()).toBe('line2\n')
-        expect(result.codeToRewriteSuffix.toString()).toBe('line3\nline4\n')
-        expect(result.prefixInArea.toString()).toBe('line1\n')
-        expect(result.suffixInArea.toString()).toBe('line5')
+        expect(result.codeToRewritePrefix).toBe('line2\n')
+        expect(result.codeToRewriteSuffix).toBe('line3\nline4\n')
+        expect(result.prefixInArea).toBe('line1\n')
+        expect(result.suffixInArea).toBe('line5')
         expect(result.range.start.line).toBe(1)
         expect(result.range.end.line).toBe(3)
     })
@@ -393,13 +391,13 @@ describe('getCurrentFileContext', () => {
             },
         }
 
-        const result = getCurrentFileContext(options)
+        const result = getCodeToReplaceData(options)
 
-        expect(result.codeToRewrite.toString()).toBe('const foo = bar')
-        expect(result.codeToRewritePrefix.toString()).toBe('const foo = ')
-        expect(result.codeToRewriteSuffix.toString()).toBe('bar')
-        expect(result.prefixInArea.toString()).toBe('')
-        expect(result.suffixInArea.toString()).toBe('')
+        expect(result.codeToRewrite).toBe('const foo = bar')
+        expect(result.codeToRewritePrefix).toBe('const foo = ')
+        expect(result.codeToRewriteSuffix).toBe('bar')
+        expect(result.prefixInArea).toBe('')
+        expect(result.suffixInArea).toBe('')
         expect(result.range.start.line).toBe(0)
         expect(result.range.end.line).toBe(0)
     })
@@ -426,13 +424,13 @@ describe('getCurrentFileContext', () => {
             },
         }
 
-        const result = getCurrentFileContext(options)
+        const result = getCodeToReplaceData(options)
 
-        expect(result.codeToRewrite.toString()).toBe('line1\nline2\n')
-        expect(result.codeToRewritePrefix.toString()).toBe('')
-        expect(result.codeToRewriteSuffix.toString()).toBe('line1\nline2\n')
-        expect(result.prefixInArea.toString()).toBe('')
-        expect(result.suffixInArea.toString()).toBe('line3')
+        expect(result.codeToRewrite).toBe('line1\nline2\n')
+        expect(result.codeToRewritePrefix).toBe('')
+        expect(result.codeToRewriteSuffix).toBe('line1\nline2\n')
+        expect(result.prefixInArea).toBe('')
+        expect(result.suffixInArea).toBe('line3')
         expect(result.range.start.line).toBe(0)
         expect(result.range.end.line).toBe(1)
     })
@@ -459,13 +457,13 @@ describe('getCurrentFileContext', () => {
             },
         }
 
-        const result = getCurrentFileContext(options)
+        const result = getCodeToReplaceData(options)
 
-        expect(result.codeToRewrite.toString()).toBe('line2\nline3')
-        expect(result.codeToRewritePrefix.toString()).toBe('line2\nline3')
-        expect(result.codeToRewriteSuffix.toString()).toBe('')
-        expect(result.prefixInArea.toString()).toBe('line1\n')
-        expect(result.suffixInArea.toString()).toBe('')
+        expect(result.codeToRewrite).toBe('line2\nline3')
+        expect(result.codeToRewritePrefix).toBe('line2\nline3')
+        expect(result.codeToRewriteSuffix).toBe('')
+        expect(result.prefixInArea).toBe('line1\n')
+        expect(result.suffixInArea).toBe('')
         expect(result.range.start.line).toBe(1)
         expect(result.range.end.line).toBe(2)
     })
@@ -494,13 +492,13 @@ describe('getCurrentFileContext', () => {
             },
         }
 
-        const result = getCurrentFileContext(options)
+        const result = getCodeToReplaceData(options)
 
-        expect(result.codeToRewrite.toString()).toBe('line3\nline4\nline5\nline6\nline7')
-        expect(result.codeToRewritePrefix.toString()).toBe('line3\nline4\nline5\n')
-        expect(result.codeToRewriteSuffix.toString()).toBe('line6\nline7')
-        expect(result.prefixInArea.toString()).toBe('line2\n')
-        expect(result.suffixInArea.toString()).toBe('')
+        expect(result.codeToRewrite).toBe('line3\nline4\nline5\nline6\nline7')
+        expect(result.codeToRewritePrefix).toBe('line3\nline4\nline5\n')
+        expect(result.codeToRewriteSuffix).toBe('line6\nline7')
+        expect(result.prefixInArea).toBe('line2\n')
+        expect(result.suffixInArea).toBe('')
         expect(result.range.start.line).toBe(2)
         expect(result.range.end.line).toBe(6)
     })
@@ -532,14 +530,14 @@ describe('getCurrentFileContext', () => {
             },
         }
 
-        const result = getCurrentFileContext(options)
+        const result = getCodeToReplaceData(options)
 
         // Verify truncation behavior
-        expect(result.prefixBeforeArea.toString()).toBe('')
-        expect(result.suffixAfterArea.toString()).toBe('')
-        expect(result.codeToRewrite.toString()).toContain('prefix-line\ncursorline\nsuffix-line\n')
-        expect(result.codeToRewritePrefix.toString()).toContain('prefix-line\ncursor')
-        expect(result.codeToRewriteSuffix.toString()).toContain('line\nsuffix-line\n')
+        expect(result.prefixBeforeArea).toBe('')
+        expect(result.suffixAfterArea).toBe('')
+        expect(result.codeToRewrite).toContain('prefix-line\ncursorline\nsuffix-line\n')
+        expect(result.codeToRewritePrefix).toContain('prefix-line\ncursor')
+        expect(result.codeToRewriteSuffix).toContain('line\nsuffix-line\n')
         expect(result.range.start.line).toBe(9)
         expect(result.range.end.line).toBe(11)
     })
@@ -571,14 +569,14 @@ describe('getCurrentFileContext', () => {
             },
         }
 
-        const result = getCurrentFileContext(options)
+        const result = getCodeToReplaceData(options)
 
         // Verify truncation behavior
-        expect(result.prefixBeforeArea.toString()).toBe('')
-        expect(result.suffixAfterArea.toString()).toBe('')
-        expect(result.codeToRewrite.toString()).toContain('prefix-line\ncursorline\nsuffix-line')
-        expect(result.codeToRewritePrefix.toString()).toContain('prefix-line\ncursor')
-        expect(result.codeToRewriteSuffix.toString()).toContain('line\nsuffix-line')
+        expect(result.prefixBeforeArea).toBe('')
+        expect(result.suffixAfterArea).toBe('')
+        expect(result.codeToRewrite).toContain('prefix-line\ncursorline\nsuffix-line')
+        expect(result.codeToRewritePrefix).toContain('prefix-line\ncursor')
+        expect(result.codeToRewriteSuffix).toContain('line\nsuffix-line')
         expect(result.range.start.line).toBe(9)
         expect(result.range.end.line).toBe(11)
     })
@@ -605,15 +603,15 @@ describe('getCurrentFileContext', () => {
             },
         }
 
-        const result = getCurrentFileContext(options)
+        const result = getCodeToReplaceData(options)
 
-        expect(result.codeToRewrite.toString()).toBe('line1\nline2\nline3\n')
-        expect(result.codeToRewritePrefix.toString()).toBe('line1\n')
-        expect(result.codeToRewriteSuffix.toString()).toBe('line2\nline3\n')
-        expect(result.prefixInArea.toString()).toBe('')
-        expect(result.suffixInArea.toString()).toBe('')
-        expect(result.prefixBeforeArea.toString()).toBe('')
-        expect(result.suffixAfterArea.toString()).toBe('')
+        expect(result.codeToRewrite).toBe('line1\nline2\nline3\n')
+        expect(result.codeToRewritePrefix).toBe('line1\n')
+        expect(result.codeToRewriteSuffix).toBe('line2\nline3\n')
+        expect(result.prefixInArea).toBe('')
+        expect(result.suffixInArea).toBe('')
+        expect(result.prefixBeforeArea).toBe('')
+        expect(result.suffixAfterArea).toBe('')
         expect(result.range.start.line).toBe(0)
         expect(result.range.end.line).toBe(2)
     })

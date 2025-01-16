@@ -1,5 +1,6 @@
 import dedent from 'dedent'
 import { describe, expect, it } from 'vitest'
+
 import type { CodeToReplaceData } from './prompt/prompt-utils'
 import { createCodeToReplaceDataForTest } from './prompt/test-helper'
 import { shrinkPredictionUntilSuffix } from './shrink-prediction'

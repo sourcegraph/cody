@@ -14,7 +14,7 @@ import { getCurrentDocContext } from '../../completions/get-current-doc-context'
 import { documentAndPosition } from '../../completions/test-helpers'
 import * as sentryModule from '../../services/sentry/sentry'
 import type { AutoeditModelOptions } from '../adapters/base'
-import { getCurrentFilePromptComponents } from '../prompt/prompt-utils'
+import { getCodeToReplaceData } from '../prompt/prompt-utils'
 import { getDecorationInfo } from '../renderer/diff-utils'
 
 import {
@@ -43,7 +43,7 @@ describe('AutoeditAnalyticsLogger', () => {
         maxSuffixLength: 1000,
     })
 
-    const { codeToReplaceData } = getCurrentFilePromptComponents({
+    const codeToReplaceData = getCodeToReplaceData({
         docContext,
         position,
         document,
