@@ -101,14 +101,14 @@ export function createMessageAPIForExtension<
 
     return {
         postMessage: data => {
-            logRPCMessage('X->W:', data)
+            logRPCMessage('X->W', () => JSON.stringify(data))
             webviewAPI.postMessage({ type: 'rpc/response', message: data } as TExtensionMessage)
         },
         addEventListener: (type, listener) => {
             if (type === 'message') {
                 const dispose = webviewAPI.onMessage(m => {
                     if (isRPCRequest(m)) {
-                        logRPCMessage('W->X:', m.message)
+                        logRPCMessage('W->X', () => JSON.stringify(m.message))
                         listener({ data: m.message })
                     }
                 })
@@ -152,14 +152,14 @@ export function createMessageAPIForWebview<
 
     return {
         postMessage: data => {
-            logRPCMessage('W->X:', data)
+            logRPCMessage('W->X', () => JSON.stringify(data))
             vscodeAPI.postMessage({ command: 'rpc/request', message: data })
         },
         addEventListener: (type, listener) => {
             if (type === 'message') {
                 const dispose = vscodeAPI.onMessage(m => {
                     if (isRPCResponse(m)) {
-                        logRPCMessage('X->W:', m.message)
+                        logRPCMessage('X->W', () => JSON.stringify(m.message))
                         listener({ data: m.message })
                     }
                 })
@@ -224,7 +224,7 @@ function callExtensionAPI<T>(
             messageAPI.removeEventListener('message', messageListener)
             if (!finished) {
                 // Send abort message to peer if the observable is unsubscribed before completion.
-                logRPCMessage(`W->X: aborting stream ${streamId}`)
+                logRPCMessage('W->X', () => `aborting stream ${streamId}`)
                 messageAPI.postMessage({ streamIdToAbort: streamId })
             }
         }
@@ -239,7 +239,7 @@ export function proxyExtensionAPI<M extends keyof WebviewToExtensionAPI>(
     method: M
 ): WebviewToExtensionAPI[M] {
     return (...args: any[]): Observable<any> => {
-        logRPCMessage(`X->W: call method=${method} args=${JSON.stringify(args)}`)
+        logRPCMessage('X->W', () => `call method=${method} args=${JSON.stringify(args)}`)
         return callExtensionAPI(messageAPI, method, args)
     }
 }
@@ -277,7 +277,7 @@ export function addMessageListenersForExtensionAPI(
             }
             const { streamIdToAbort } = data
             if (streamIdToAbort === streamId) {
-                logRPCMessage(`X->W: abort signal received for streamId=${streamId}`)
+                logRPCMessage('X->W', () => `abort signal received for streamId=${streamId}`)
                 abortController.abort()
             }
         }
@@ -337,10 +337,10 @@ const LOG_RPC_MESSAGES = process.env.CODY_LOG_WEBVIEW_RPC_MESSAGES === 'true'
 
 /**
  * Write the RPC message to the output log.
- * NOTE: Do not use console logging as it would break write to strout/stderr and break the JSON-RPC protocol.
+ * NOTE: Do not use console logging as it would break write to stdout/stderr and break the JSON-RPC protocol.
  */
-function logRPCMessage(msg: string, ...args: any[]) {
+function logRPCMessage(msg: string, detail: () => string) {
     if (LOG_RPC_MESSAGES) {
-        logDebug('[RPC]', msg, ...args)
+        logDebug('[RPC]', msg, detail())
     }
 }

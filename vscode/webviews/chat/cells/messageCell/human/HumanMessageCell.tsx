@@ -113,10 +113,10 @@ const HumanMessageCellContent = memo<HumanMessageCellContent>(props => {
             speakerTitle={userInfo.user.displayName ?? userInfo.user.username}
             cellAction={
                 <div className="tw-flex tw-gap-2 tw-items-center tw-justify-end">
-                    {isFirstMessage && <OpenInNewEditorAction />}
                     {settings && (
                         <ToolboxButton settings={settings} api={api} isFirstMessage={isFirstMessage} />
                     )}
+                    {isFirstMessage && <OpenInNewEditorAction />}
                 </div>
             }
             content={

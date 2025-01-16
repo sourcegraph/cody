@@ -866,6 +866,37 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                         messageInProgress.subMessages = subMessages
                         this.postViewTranscript(messageInProgress)
                     },
+                    postRequest: (step: ProcessingStep): Promise<boolean> => {
+                        // Generate a unique ID for this confirmation request
+                        const confirmationId = step.id
+
+                        // Send the confirmation request to the webview
+                        this.postMessage({
+                            type: 'action/confirmationRequest',
+                            id: confirmationId,
+                            step,
+                        })
+
+                        // Wait for the webview to respond with the confirmation
+                        const confirmation = new Promise<boolean>(resolve => {
+                            const disposable = this._webviewPanelOrView?.webview.onDidReceiveMessage(
+                                (message: WebviewMessage) => {
+                                    if (
+                                        message.command === 'action/confirmation' &&
+                                        message.id === confirmationId
+                                    ) {
+                                        disposable?.dispose()
+                                        resolve(message.response)
+                                    }
+                                }
+                            )
+                        })
+
+                        // Now that we have the confirmation, proceed based on the user's choice
+
+                        this.postViewTranscript({ speaker: 'assistant', processes: [step], model })
+                        return confirmation
+                    },
                     postDone: (op?: { abort: boolean }): void => {
                         if (op?.abort) {
                             this.handleAbort()
