@@ -26,6 +26,7 @@
     display: flex;
     flex-flow: row wrap;
     gap: 0.25rem 1rem;
+    padding: 0 0.5rem;
 }
 
 .example {
@@ -59,7 +60,7 @@
     display: flex;
     flex-flow: row wrap;
     padding: 0.75rem 0;
-    gap: 0.5rem;
+    gap: 1rem;
 }
 
 .item {
