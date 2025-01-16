@@ -305,13 +305,6 @@ export class OpenCtxTool extends CodyTool {
         super(config)
     }
 
-    parse(): string[] {
-        if (this.provider.id === MODEL_CONTEXT_PROVIDER_URI) {
-            return [this.unprocessedText]
-        }
-        return super.parse()
-    }
-
     async execute(span: Span, queries: string[]): Promise<ContextItem[]> {
         span.addEvent('executeOpenCtxTool')
         const openCtxClient = openCtx.controller

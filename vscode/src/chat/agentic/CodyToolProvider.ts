@@ -217,24 +217,29 @@ class ToolFactory {
             },
             {} as Record<string, any>
         )
+        const tags = {
+            tag: PromptString.unsafe_fromUserQuery(tagName),
+            subTag: ps`input`,
+        }
         return {
             title: mention.title,
-            tags: {
-                tag: PromptString.unsafe_fromUserQuery(tagName),
-                subTag: ps`QUERY`,
-            },
+            tags,
             prompt: {
                 instruction: PromptString.unsafe_fromUserQuery(
                     `Use ${mention.title} to ${mention.description || 'retrieve context'}. ` +
-                        `Input must follow this schema::\n${JSON.stringify(schemaProperties, null, 2)}` +
+                        `Input must follow this schema::\n<${tags.subTag}>${JSON.stringify(
+                            schemaProperties,
+                            null,
+                            2
+                        )}</${tags.subTag}>` +
                         'Ensure all required properties are provided and types match the schema.'
                 ),
                 placeholder: PromptString.unsafe_fromUserQuery('INPUT'),
                 examples: [
                     PromptString.unsafe_fromUserQuery(
-                        `To use ${mention.title} with valid input: \`<${tagName}>${JSON.stringify(
+                        `To use ${mention.title} with valid input: \`<${tags.subTag}>${JSON.stringify(
                             exampleValues
-                        )}</${tagName}>\``
+                        )}</${tags.subTag}>\``
                     ),
                 ],
             },
