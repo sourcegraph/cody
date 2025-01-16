@@ -10,17 +10,16 @@ export const DidYouMeanNotice = (props: DidYouMeanNoticeProps) => {
     return (
         <div className="tw-border tw-border-border tw-bg-input-background tw-rounded-md tw-p-4">
             Did you mean to search{' '}
-            <span
+            <button
+                type="button"
                 onClick={() => !disabled && switchToSearch(query)}
-                onKeyDown={() => !disabled && switchToSearch(query)}
-                className={`tw-italic tw-font-bold ${
-                    disabled ? 'tw-text-text-disabled' : 'tw-text-link tw-cursor-pointer'
+                className={`tw-italic tw-font-bold tw-border-0 tw-bg-transparent tw-p-0 ${
+                    disabled ? 'tw-text-text-disabled' : 'tw-text-link'
                 }`}
-                role="button"
-                tabIndex={disabled ? -1 : 0}
+                disabled={disabled}
             >
                 {query}
-            </span>
+            </button>
             ?
         </div>
     )
