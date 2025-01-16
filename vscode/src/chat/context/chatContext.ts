@@ -156,7 +156,6 @@ export async function getChatContextItemsForMention(
             if (!openCtx.controller) {
                 return []
             }
-            // For MCP provider, we need to call items() with the mention
             const items = await openCtx.controller.mentions(
                 {
                     query: mentionQuery.text,

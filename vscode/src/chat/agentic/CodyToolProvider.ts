@@ -1,5 +1,6 @@
 import {
     type ContextMentionProviderMetadata,
+    MODEL_CONTEXT_PROVIDER_URI,
     type ProcessingStep,
     PromptString,
     type Unsubscribable,
@@ -100,8 +101,9 @@ class ToolFactory {
         const tools: CodyTool[] = []
 
         for (const provider of providers) {
-            if (provider.id === 'internal-model-context-provider') {
+            if (provider.id === MODEL_CONTEXT_PROVIDER_URI) {
                 // For MCP providers, get available tools through the mentions() function
+
                 // get the Vscode Regex Here for query
                 const mcpTools =
                     (await openCtx.controller?.mentions(

@@ -187,7 +187,7 @@ export function getOpenCtxProviders(
                     providerUri: CODE_SEARCH_PROVIDER_URI,
                 })
             }
-            // enable MCP provider
+            // enable MCP provider vscode settings
             providers.push({
                 settings: true,
                 provider: createModelContextProvider(
