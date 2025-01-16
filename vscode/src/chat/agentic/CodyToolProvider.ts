@@ -107,12 +107,12 @@ class ToolFactory {
                 // NOTE: For MCP, the single provider can create multiple tools
 
                 // helps filter the tools by name so that only the matching nameQuery regex are created
-                const nameQuery = vscode.workspace
+                const toolNameQuery = vscode.workspace
                     .getConfiguration()
-                    .get<string>('openctx.providers.mcp.nameQuery', '')
+                    .get<string>('openctx.providers.mcp.toolNameQuery', '')
                 const mcpTools =
                     (await openCtx.controller?.mentions(
-                        { query: nameQuery },
+                        { query: toolNameQuery },
                         { providerUri: provider.id }
                     )) ?? []
 

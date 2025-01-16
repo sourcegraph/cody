@@ -1257,7 +1257,7 @@
                   "markdownDescription": "URI for the MCP provider tools in OpenCtx.",
                   "default": ""
                 },
-                "nameQuery": {
+                "toolNameQuery": {
                   "type": "string",
                   "markdownDescription": "Regex for the MCP provider tools in OpenCtx.",
                   "default": ""
