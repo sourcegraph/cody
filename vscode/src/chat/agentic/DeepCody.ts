@@ -226,7 +226,7 @@ export class DeepCodyAgent {
                 return []
             }
 
-            const step = this.stepsManager.addStep({ title: 'Retrieving context' })
+            const step = this.stepsManager.addStep({ title: 'Retrieving additional context' })
 
             const results = await Promise.all(
                 this.tools.map(async tool => {
