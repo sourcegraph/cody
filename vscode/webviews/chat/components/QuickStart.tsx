@@ -2,16 +2,16 @@ import {
     AtSignIcon,
     ChevronDown,
     ChevronRight,
-    type LucideProps,
+    type LucideIcon,
     MessageSquarePlus,
     TextSelect,
     X,
     Zap,
 } from 'lucide-react'
-import type { ForwardRefExoticComponent } from 'react'
+
 interface ChatViewTip {
     message: string
-    icon: ForwardRefExoticComponent<Omit<LucideProps, 'ref'>>
+    icon: LucideIcon
     vsCodeOnly: boolean
 }
 
