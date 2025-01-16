@@ -3,7 +3,10 @@ import proxy from '@openctx/provider-modelcontextprotocoltools'
 import { MODEL_CONTEXT_PROVIDER_URI } from '@sourcegraph/cody-shared'
 import type { OpenCtxProvider } from './types'
 
-export function createModelContextProvider(modelContextProviderToolsURI: string): OpenCtxProvider {
+export function createModelContextProvider(
+    modelContextProviderToolsURI: string,
+    modelContextProviderArgs: string[]
+): OpenCtxProvider {
     return {
         providerUri: MODEL_CONTEXT_PROVIDER_URI,
 
@@ -12,7 +15,7 @@ export function createModelContextProvider(modelContextProviderToolsURI: string)
                 {},
                 {
                     'mcp.provider.uri': modelContextProviderToolsURI,
-                    'mcp.provider.args': [],
+                    'mcp.provider.args': modelContextProviderArgs,
                 }
             )
             return {

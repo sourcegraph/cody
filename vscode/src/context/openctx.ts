@@ -196,10 +196,16 @@ export function getOpenCtxProviders(
                 const modelContextProviderToolsURI = vscode.workspace
                     .getConfiguration()
                     .get<string>('openctx.providers.mcp.uri', '')
+                const modelContextProviderArgs = vscode.workspace
+                    .getConfiguration()
+                    .get<string[]>('openctx.providers.mcp.args', [])
                 if (modelContextProviderToolsURI) {
                     providers.push({
                         settings: true,
-                        provider: createModelContextProvider(modelContextProviderToolsURI),
+                        provider: createModelContextProvider(
+                            modelContextProviderToolsURI,
+                            modelContextProviderArgs
+                        ),
                         providerUri: MODEL_CONTEXT_PROVIDER_URI,
                     })
                     logDebug(
