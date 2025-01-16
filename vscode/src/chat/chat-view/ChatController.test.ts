@@ -174,7 +174,7 @@ describe('ChatController', () => {
         // Make sure it was sent and the reply was received.
         await vi.runOnlyPendingTimersAsync()
         expect(mockChatClient.chat).toBeCalledTimes(1)
-        expect(addBotMessageSpy).toHaveBeenCalledWith('1', ps`Test reply 1`, 'my-model')
+        expect(addBotMessageSpy).toHaveBeenCalledWith('1', ps`Test reply 1`, undefined, 'my-model')
         expect(postMessageSpy.mock.calls.at(6)?.at(0)).toStrictEqual<
             Extract<ExtensionMessage, { type: 'transcript' }>
         >({
@@ -233,7 +233,7 @@ describe('ChatController', () => {
         })
         await vi.runOnlyPendingTimersAsync()
         expect(mockChatClient.chat).toBeCalledTimes(1)
-        expect(addBotMessageSpy).toHaveBeenCalledWith('2', ps`Test reply 2`, 'my-model')
+        expect(addBotMessageSpy).toHaveBeenCalledWith('2', ps`Test reply 2`, undefined, 'my-model')
         expect(postMessageSpy.mock.calls.at(4)?.at(0)).toStrictEqual<
             Extract<ExtensionMessage, { type: 'transcript' }>
         >({
@@ -321,7 +321,7 @@ describe('ChatController', () => {
         })
         await vi.runOnlyPendingTimersAsync()
         expect(mockChatClient.chat).toBeCalledTimes(1)
-        expect(addBotMessageSpy).toHaveBeenCalledWith('3', ps`Test reply 3`, 'my-model')
+        expect(addBotMessageSpy).toHaveBeenCalledWith('3', ps`Test reply 3`, undefined, 'my-model')
         expect(postMessageSpy.mock.calls.at(4)?.at(0)).toStrictEqual<
             Extract<ExtensionMessage, { type: 'transcript' }>
         >({
@@ -418,7 +418,7 @@ describe('ChatController', () => {
         })
         await vi.runOnlyPendingTimersAsync()
         expect(mockChatClient.chat).toBeCalledTimes(1)
-        expect(addBotMessageSpy).toHaveBeenCalledWith('1', ps`Test partial reply`, 'my-model')
+        expect(addBotMessageSpy).toHaveBeenCalledWith('1', ps`Test partial reply`, undefined, 'my-model')
         expect(postMessageSpy.mock.calls.at(9)?.at(0)).toStrictEqual<
             Extract<ExtensionMessage, { type: 'transcript' }>
         >({
