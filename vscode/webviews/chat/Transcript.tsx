@@ -53,7 +53,9 @@ import { HumanMessageCell } from './cells/messageCell/human/HumanMessageCell'
 import { type Context, type Span, context, trace } from '@opentelemetry/api'
 import { isCodeSearchContextItem } from '../../src/context/openctx/codeSearch'
 import { TELEMETRY_INTENT } from '../../src/telemetry/onebox'
+import { AgenticContextCell } from './cells/agenticCell/AgenticContextCell'
 import { DidYouMeanNotice } from './cells/messageCell/assistant/DidYouMean'
+import ApprovalCell from './cells/agenticCell/ApprovalCell'
 import { SwitchIntent } from './cells/messageCell/assistant/SwitchIntent'
 import { LastEditorContext } from './context'
 
@@ -249,6 +251,12 @@ interface TranscriptInteractionProps
     }) => void
 }
 
+interface IntentResults {
+    query: string
+    intent: ChatMessage['intent']
+    allScores?: { intent: string; score: number }[]
+}
+
 const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
     const {
         interaction: { humanMessage, assistantMessage },
@@ -268,14 +276,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
         smartApplyEnabled,
         editorRef: parentEditorRef,
     } = props
-    const [intentResults, setIntentResults] = useMutatedValue<
-        | {
-              intent: ChatMessage['intent']
-              allScores?: { intent: string; score: number }[]
-          }
-        | undefined
-        | null
-    >()
+    const [intentResults, setIntentResults] = useMutatedValue<IntentResults | undefined | null>()
 
     const { activeChatContext, setActiveChatContext } = props
     const humanEditorRef = useRef<PromptEditorRefAPI | null>(null)
@@ -311,10 +312,14 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
             return
         }
 
+        const { intent, intentScores } = intentFromSubmit
+            ? { intent: intentFromSubmit, intentScores: undefined }
+            : getIntentProps(editorValue, intentResults.current)
+
         const commonProps = {
             editorValue,
-            intent: intentFromSubmit || intentResults.current?.intent,
-            intentScores: intentFromSubmit ? undefined : intentResults.current?.allScores,
+            intent,
+            intentScores,
             manuallySelectedIntent: !!intentFromSubmit,
             traceparent,
         }
@@ -373,29 +378,28 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
 
             setIntentResults(undefined)
 
-            const subscription = extensionAPI
-                .detectIntent(
-                    inputTextWithMappedContextChipsFromPromptEditorState(editorValue.editorState)
-                )
-                .subscribe({
-                    next: value => {
-                        setIntentResults(value)
-                    },
-                    error: error => {
-                        console.error('Error detecting intent:', error)
-                    },
-                })
+            const query = inputTextWithMappedContextChipsFromPromptEditorState(editorValue.editorState)
+
+            const subscription = extensionAPI.detectIntent(query).subscribe({
+                next: value => {
+                    setIntentResults(value && { ...value, query })
+                },
+                error: error => {
+                    console.error('Error detecting intent:', error)
+                },
+            })
 
             // Clean up subscription if component unmounts
             return () => subscription.unsubscribe()
         }, 300)
     }, [experimentalOneBoxEnabled, extensionAPI, setIntentResults])
 
+    const vscodeAPI = getVSCodeAPI()
     const onStop = useCallback(() => {
-        getVSCodeAPI().postMessage({
+        vscodeAPI.postMessage({
             command: 'abort',
         })
-    }, [])
+    }, [vscodeAPI])
 
     const isSearchIntent = experimentalOneBoxEnabled && humanMessage.intent === 'search'
 
@@ -658,32 +662,46 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                     switchToSearch={() => editAndSubmitSearch(assistantMessage?.didYouMeanQuery ?? '')}
                 />
             )}
-            {(humanMessage.contextFiles || assistantMessage || isContextLoading) && !isSearchIntent && (
-                <ContextCell
-                    experimentalOneBoxEnabled={experimentalOneBoxEnabled}
-                    intent={humanMessage.intent}
-                    resubmitWithRepoContext={
-                        corpusContextItems.length > 0 && !mentionsContainRepository && assistantMessage
-                            ? resubmitWithRepoContext
-                            : undefined
-                    }
-                    key={`${humanMessage.index}-${humanMessage.intent}-context`}
-                    contextItems={humanMessage.contextFiles}
-                    contextAlternatives={humanMessage.contextAlternatives}
-                    model={assistantMessage?.model}
-                    isForFirstMessage={humanMessage.index === 0}
+            {humanMessage.agent && (
+                <AgenticContextCell
+                    key={`${humanMessage.index}-${humanMessage.intent}-process`}
                     isContextLoading={isContextLoading}
-                    onManuallyEditContext={manuallyEditContext}
-                    editContextNode={
-                        humanMessage.intent === 'search'
-                            ? EditContextButtonSearch
-                            : EditContextButtonChat
-                    }
-                    defaultOpen={isContextLoading && humanMessage.agent === 'deep-cody'}
                     processes={humanMessage?.processes ?? undefined}
-                    agent={humanMessage?.agent ?? undefined}
                 />
             )}
+            {humanMessage.agent && isContextLoading && assistantMessage?.isLoading && (
+                <ApprovalCell vscodeAPI={vscodeAPI} />
+            )}
+            {!(humanMessage.agent && isContextLoading) &&
+                (humanMessage.contextFiles || assistantMessage || isContextLoading) &&
+                !isSearchIntent && (
+                    <ContextCell
+                        experimentalOneBoxEnabled={experimentalOneBoxEnabled}
+                        intent={humanMessage.intent}
+                        resubmitWithRepoContext={
+                            corpusContextItems.length > 0 &&
+                            !mentionsContainRepository &&
+                            assistantMessage
+                                ? resubmitWithRepoContext
+                                : undefined
+                        }
+                        key={`${humanMessage.index}-${humanMessage.intent}-context`}
+                        contextItems={humanMessage.contextFiles}
+                        contextAlternatives={humanMessage.contextAlternatives}
+                        model={assistantMessage?.model}
+                        isForFirstMessage={humanMessage.index === 0}
+                        isContextLoading={isContextLoading}
+                        onManuallyEditContext={manuallyEditContext}
+                        editContextNode={
+                            humanMessage.intent === 'search'
+                                ? EditContextButtonSearch
+                                : EditContextButtonChat
+                        }
+                        defaultOpen={isContextLoading && humanMessage.agent === 'deep-cody'}
+                        processes={humanMessage?.processes ?? undefined}
+                        agent={humanMessage?.agent ?? undefined}
+                    />
+                )}
             {assistantMessage &&
                 (!isContextLoading ||
                     (assistantMessage.subMessages && assistantMessage.subMessages.length > 0)) && (
@@ -798,4 +816,14 @@ function reevaluateSearchWithSelectedFilters({
         index: messageIndexInTranscript,
         selectedFilters,
     })
+}
+
+const getIntentProps = (editorValue: SerializedPromptEditorValue, results?: IntentResults | null) => {
+    const query = inputTextWithMappedContextChipsFromPromptEditorState(editorValue.editorState)
+
+    if (query === results?.query) {
+        return { intent: results.intent, intentScores: results.allScores }
+    }
+
+    return {}
 }

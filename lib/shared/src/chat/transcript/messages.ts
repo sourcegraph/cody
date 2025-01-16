@@ -58,18 +58,44 @@ export interface ChatMessage extends Message {
     subMessages?: SubMessage[]
 }
 
+export enum ProcessType {
+    /**
+     * A process initiated by a tool.
+     */
+    Tool = 'tool',
+    /**
+     * A process that prompts the user confirmation.
+     */
+    Confirmation = 'confirmation',
+}
+
 /**
  * Represents an individual step in a chat message processing pipeline, typically used
  * to track and display the progress of context fetching and analysis operations.
  */
 export interface ProcessingStep {
     /**
+     * The type of the step
+     */
+    type?: ProcessType | undefined | null
+
+    /**
      * Unique identifier or name for the processing step
      */
     id: string
 
     /**
-     * Description of what the step is doing or has completed
+     * The title of the step
+     */
+    title?: string | undefined | null
+
+    /**
+     * Description of the step
+     */
+    description?: string | undefined | null
+
+    /**
+     * Content for the step
      */
     content: string
 
@@ -79,18 +105,12 @@ export interface ProcessingStep {
      * - 'success': Step completed successfully
      * - 'error': Step failed to complete
      */
-    status: 'pending' | 'success' | 'error'
-
-    /**
-     * Optional numerical order of the step in the sequence.
-     * Used to display the steps in the correct order.
-     */
-    step?: number
+    state: 'pending' | 'success' | 'error'
 
     /**
      * Error information if the step failed
      */
-    error?: ChatError
+    error?: ChatError | undefined | null
 }
 
 export type ChatMessageWithSearch = ChatMessage & { search: ChatMessageSearch }
@@ -209,14 +229,5 @@ export function errorToChatError(error: Error): ChatError {
         ...error,
         message: error.message,
         name: error.name,
-    }
-}
-
-export function createProcessingStep(data: Partial<ProcessingStep>): ProcessingStep {
-    return {
-        id: data.id ?? '',
-        content: data.content ?? '',
-        status: data.status ?? 'pending',
-        step: data.step ?? 0,
     }
 }

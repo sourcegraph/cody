@@ -16,6 +16,7 @@ interface WelcomeMessageProps {
     setView: (view: View) => void
     IDE: CodyIDE
     isPromptsV2Enabled?: boolean
+    isTeamsUpgradeCtaEnabled?: boolean
 }
 
 export const WelcomeMessage: FunctionComponent<WelcomeMessageProps> = ({
@@ -32,7 +33,7 @@ export const WelcomeMessage: FunctionComponent<WelcomeMessageProps> = ({
     }
 
     return (
-        <div className="tw-flex-1 tw-flex tw-flex-col tw-items-start tw-w-full tw-px-8 tw-gap-6 tw-transition-all">
+        <div className="tw-flex-1 tw-flex tw-flex-col tw-items-start tw-w-full tw-px-8 tw-gap-6 tw-transition-all tw-relative">
             {isPromptsV2Enabled && IDE !== CodyIDE.Web && (
                 <PromptMigrationWidget dismissible={true} className="tw-w-full" />
             )}
@@ -48,7 +49,6 @@ export const WelcomeMessage: FunctionComponent<WelcomeMessageProps> = ({
                     telemetryLocation="WelcomeAreaPrompts"
                     onSelect={item => runAction(item, setView)}
                 />
-
                 <div className={clsx(styles.actions, 'tw-flex tw-py-2 tw-gap-8 tw-justify-center')}>
                     <Button
                         variant="ghost"

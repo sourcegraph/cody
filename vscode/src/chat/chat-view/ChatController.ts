@@ -363,6 +363,9 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     viewColumn: vscode.ViewColumn.Beside,
                 })
                 break
+            case 'openRemoteFile':
+                this.openRemoteFile(message.uri)
+                break
             case 'newFile':
                 await handleCodeFromSaveToNewFile(message.text, this.editor)
                 break
@@ -855,6 +858,37 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                         messageInProgress.subMessages = subMessages
                         this.postViewTranscript(messageInProgress)
                     },
+                    postRequest: (step: ProcessingStep): Promise<boolean> => {
+                        // Generate a unique ID for this confirmation request
+                        const confirmationId = step.id
+
+                        // Send the confirmation request to the webview
+                        this.postMessage({
+                            type: 'action/confirmationRequest',
+                            id: confirmationId,
+                            step,
+                        })
+
+                        // Wait for the webview to respond with the confirmation
+                        const confirmation = new Promise<boolean>(resolve => {
+                            const disposable = this._webviewPanelOrView?.webview.onDidReceiveMessage(
+                                (message: WebviewMessage) => {
+                                    if (
+                                        message.command === 'action/confirmation' &&
+                                        message.id === confirmationId
+                                    ) {
+                                        disposable?.dispose()
+                                        resolve(message.response)
+                                    }
+                                }
+                            )
+                        })
+
+                        // Now that we have the confirmation, proceed based on the user's choice
+
+                        this.postViewTranscript({ speaker: 'assistant', processes: [step], model })
+                        return confirmation
+                    },
                     postDone: (op?: { abort: boolean }): void => {
                         if (op?.abort) {
                             this.handleAbort()
@@ -931,6 +965,37 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         }
 
         return
+    }
+
+    private openRemoteFile(uri: vscode.Uri) {
+        const json = uri.toJSON()
+        const searchParams = (json.query || '').split('&')
+
+        const sourcegraphSchemaURI = vscode.Uri.from({
+            ...json,
+            query: '',
+            scheme: 'codysourcegraph',
+        })
+
+        // Supported line params examples: L42 (single line) or L42-45 (line range)
+        const lineParam = searchParams.find((value: string) => value.match(/^L\d+(?:-\d+)?$/)?.length)
+        const range = this.lineParamToRange(lineParam)
+
+        vscode.workspace.openTextDocument(sourcegraphSchemaURI).then(async doc => {
+            const textEditor = await vscode.window.showTextDocument(doc)
+
+            textEditor.revealRange(range)
+        })
+    }
+
+    private lineParamToRange(lineParam?: string | null): vscode.Range {
+        const lines = (lineParam ?? '0')
+            .replace('L', '')
+            .split('-')
+            .map(num => Number.parseInt(num))
+
+        // adding 20 lines to the end of the range to allow the start line to be visible in a more center position on the screen.
+        return new vscode.Range(lines.at(0) || 0, 0, lines.at(1) || (lines.at(0) || 0) + 20, 0)
     }
 
     private submitOrEditOperation: AbortController | undefined
