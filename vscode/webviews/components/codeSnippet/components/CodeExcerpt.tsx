@@ -87,7 +87,7 @@ export const CodeExcerpt: FC<Props> = props => {
                                 key={startLine + i}
                             >
                                 <td
-                                    //rendered in css
+                                    //number is rendered in css
                                     className="line hover:tw-underline"
                                     data-line={startLine + i + 1}
                                     onClick={handleLineClick}

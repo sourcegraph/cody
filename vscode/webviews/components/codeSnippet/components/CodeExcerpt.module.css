@@ -7,7 +7,6 @@
         padding: 0;
     }
 
-    /* this would be better written as line number */
     :global(.line) {
         min-width: 1.5rem;
         text-align: right;
