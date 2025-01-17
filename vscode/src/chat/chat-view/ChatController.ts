@@ -650,7 +650,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         command?: DefaultChatCommands
         intent?: ChatMessage['intent'] | undefined | null
         intentScores?: { intent: string; score: number }[] | undefined | null
-        manuallySelectedIntent?: boolean | undefined | null
+        manuallySelectedIntent?: ChatMessage['intent'] | undefined | null
         traceparent?: string | undefined | null
         selectedAgent?: string | undefined | null
     }): Promise<void> {
@@ -708,29 +708,36 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         requestID,
         input,
         signal,
-        detectedIntent,
-        detectedIntentScores,
+        preDetectedIntent,
+        preDetectedIntentScores,
+        manuallySelectedIntent,
     }: {
         requestID: string
         input: string
         signal: AbortSignal
-        detectedIntent?: ChatMessage['intent'] | undefined | null
-        detectedIntentScores?: { intent: string; score: number }[] | undefined | null
+        preDetectedIntent?: ChatMessage['intent'] | undefined | null
+        preDetectedIntentScores?: { intent: string; score: number }[] | undefined | null
+        manuallySelectedIntent?: ChatMessage['intent'] | undefined | null
     }): Promise<{
         intent: ChatMessage['intent']
-        intentScores: { intent: string; score: number }[]
+        detectedIntent: ChatMessage['intent'] | undefined | null
+        detectedIntentScores: { intent: string; score: number }[]
     }> {
         if (!this.featureCodyExperimentalOneBox) {
-            return { intent: 'chat', intentScores: [] }
+            return { intent: 'chat', detectedIntent: null, detectedIntentScores: [] }
         }
 
-        // The `detectedIntent` comes from the webview, where it can either be manually set by the user
-        // using the dropdown UI or automatically pre-fetched for the input while the user is typing.
-        // If any such intent is already detected, we use that.
-        if (detectedIntent) {
+        // The `preDetectedIntent` and `manuallySelectedIntent` params come from the webview.
+        // If `manuallySelectedIntent` is set, this was a user override, and we should use it.
+        // If `preDetectedIntent` is set, the intent was automatically pre-fetched for the input,
+        // meaning we don't have to fetch it again.
+        const intent = manuallySelectedIntent ?? preDetectedIntent
+
+        if (intent) {
             return {
-                intent: detectedIntent,
-                intentScores: detectedIntentScores || [],
+                intent: intent,
+                detectedIntent: preDetectedIntent,
+                detectedIntentScores: preDetectedIntentScores || [],
             }
         }
 
@@ -747,11 +754,12 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         if (response) {
             return {
                 intent: response.intent,
-                intentScores: response.allScores,
+                detectedIntent: response.intent,
+                detectedIntentScores: response.allScores,
             }
         }
 
-        return { intent: 'chat', intentScores: [] }
+        return { intent: 'chat', detectedIntent: null, detectedIntentScores: [] }
     }
 
     private async sendChat(
@@ -763,8 +771,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             signal,
             source,
             command,
-            intent: detectedIntent,
-            intentScores: detectedIntentScores,
+            intent: preDetectedIntent,
+            intentScores: preDetectedIntentScores,
             manuallySelectedIntent,
             selectedAgent,
         }: Parameters<typeof this.handleUserMessage>[0],
@@ -794,13 +802,14 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         })
         recorder.recordChatQuestionSubmitted(mentions)
 
-        const { intent, intentScores } = await this.getIntentAndScores({
+        const { intent, detectedIntent, detectedIntentScores } = await this.getIntentAndScores({
             requestID,
             input: editorState
                 ? inputTextWithMappedContextChipsFromPromptEditorState(editorState)
                 : inputText.toString(),
-            detectedIntent,
-            detectedIntentScores,
+            preDetectedIntent,
+            preDetectedIntentScores,
+            manuallySelectedIntent,
             signal,
         })
         signal.throwIfAborted()
@@ -818,14 +827,13 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         })
 
         recorder.setIntentInfo({
-            userSpecifiedIntent:
-                manuallySelectedIntent && detectedIntent
-                    ? detectedIntent
-                    : this.featureCodyExperimentalOneBox
-                      ? 'auto'
-                      : 'chat',
-            detectedIntent: intent,
-            detectedIntentScores: intentScores,
+            userSpecifiedIntent: manuallySelectedIntent
+                ? manuallySelectedIntent
+                : this.featureCodyExperimentalOneBox
+                  ? 'auto'
+                  : 'chat',
+            detectedIntent: detectedIntent,
+            detectedIntentScores: detectedIntentScores,
         })
 
         this.postEmptyMessageInProgress(model)
@@ -1130,7 +1138,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         editorState: SerializedPromptEditorState | null
         intent?: ChatMessage['intent'] | undefined | null
         intentScores?: { intent: string; score: number }[] | undefined | null
-        manuallySelectedIntent?: boolean | undefined | null
+        manuallySelectedIntent?: ChatMessage['intent'] | undefined | null
     }): Promise<void> {
         const abortSignal = this.startNewSubmitOrEditOperation()
 
