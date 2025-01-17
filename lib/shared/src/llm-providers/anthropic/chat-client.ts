@@ -11,9 +11,6 @@ export async function anthropicChatClient({
     logger,
     signal,
 }: ChatNetworkClientParams): Promise<void> {
-    const requestStart = performance.now()
-    const networkStart = performance.now()
-
     const log = logger?.startCompletion(params, completionsEndpoint)
     if (!params.model || !params.messages) {
         throw new Error('Anthropic Client: No model or messages')
@@ -39,12 +36,14 @@ export async function anthropicChatClient({
                 return {
                     role: msg.speaker === 'human' ? 'user' : 'assistant',
                     content: contentText.includes('Codebase context from')
-                        ? [{
-                              type: 'text',
-                              text: contentText,
-                              cache_control: { type: 'ephemeral' }
-                          }] as any
-                        : contentText
+                        ? ([
+                              {
+                                  type: 'text',
+                                  text: contentText,
+                                  cache_control: { type: 'ephemeral' },
+                              },
+                          ] as any)
+                        : contentText,
                 }
             })
         )) as MessageParam[]
@@ -74,10 +73,26 @@ export async function anthropicChatClient({
                 for await (const messageStreamEvent of stream) {
                     if (messageStreamEvent.type === 'message_start') {
                         // Capture initial usage metrics
-                        logDebug('promptCachingMetrics', 'input_tokens:', messageStreamEvent.message.usage.input_tokens)
-                        logDebug('promptCachingMetrics', 'output_tokens:', messageStreamEvent.message.usage.output_tokens)
-                        logDebug('promptCachingMetrics', 'cache_creation_input_tokens:', (messageStreamEvent.message.usage as any).cache_creation_input_tokens)
-                        logDebug('promptCachingMetrics', 'cache_read_input_tokens:', (messageStreamEvent.message.usage as any).cache_read_input_tokens)
+                        logDebug(
+                            'promptCachingMetrics',
+                            'input_tokens:',
+                            messageStreamEvent.message.usage.input_tokens
+                        )
+                        logDebug(
+                            'promptCachingMetrics',
+                            'output_tokens:',
+                            messageStreamEvent.message.usage.output_tokens
+                        )
+                        logDebug(
+                            'promptCachingMetrics',
+                            'cache_creation_input_tokens:',
+                            (messageStreamEvent.message.usage as any).cache_creation_input_tokens
+                        )
+                        logDebug(
+                            'promptCachingMetrics',
+                            'cache_read_input_tokens:',
+                            (messageStreamEvent.message.usage as any).cache_read_input_tokens
+                        )
                     }
                     if (messageStreamEvent.type === 'content_block_delta') {
                         result.completion += messageStreamEvent.delta.text
@@ -90,14 +105,9 @@ export async function anthropicChatClient({
                     }
 
                     if (messageStreamEvent.type === 'message_stop') {
-                        const requestEnd = performance.now()
-                        logDebug('promptCachingMetrics', 'networkLatency:', networkStart - requestStart)
-                        logDebug('promptCachingMetrics', 'processingTime:', requestEnd - networkStart)
-                        logDebug('promptCachingMetrics', 'totalTime:', requestEnd - requestStart)
                         break
                     }
                 }
-                // Continue with existing stream handling
                 onAbort(signal, () => stream.controller.abort())
                 cb.onComplete()
                 log?.onComplete(result)

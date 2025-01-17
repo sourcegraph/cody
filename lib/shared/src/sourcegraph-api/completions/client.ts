@@ -162,7 +162,7 @@ export abstract class SourcegraphCompletionsClient {
 
         // Custom chat clients for Non-Sourcegraph-supported providers.
         const isNonSourcegraphProvider = await useCustomChatClient({
-            completionsEndpoint: await this.completionsEndpoint(), 
+            completionsEndpoint: await this.completionsEndpoint(),
             params,
             cb: callbacks,
             logger: this.logger,
