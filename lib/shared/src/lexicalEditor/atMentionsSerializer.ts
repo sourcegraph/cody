@@ -4,6 +4,14 @@ import type { SerializedPromptEditorValue } from './editorState'
 export const AT_MENTION_SERIALIZED_PREFIX = 'cody://serialized.v1'
 const AT_MENTION_SERIALIZATION_END = '_'
 
+function unicodeSafeBtoa(str: string) {
+    return btoa(encodeURIComponent(str));
+}
+
+function unicodeSafeAtob(str: string) {
+    return decodeURIComponent(atob(str));
+}
+
 /**
  * This function serializes a SerializedPromptEditorValue into a string representation that contains serialized
  * elements for contextMentionItems as a base64 encoded string. The result can be used with the deserialize function
@@ -18,7 +26,7 @@ export function serialize(m: SerializedPromptEditorValue): string {
         if (n.type === 'text') {
             t += (n as SerializedTextNode).text
         } else {
-            t += `${AT_MENTION_SERIALIZED_PREFIX}?data=${btoa(
+            t += `${AT_MENTION_SERIALIZED_PREFIX}?data=${unicodeSafeBtoa(
                 JSON.stringify(n, undefined, 0)
             )}${AT_MENTION_SERIALIZATION_END}`
         }
@@ -59,7 +67,7 @@ const NEW_LINE_NODE = {
 
 export function deserializeContextMentionItem(s: string) {
     return JSON.parse(
-        atob(new URL(s).searchParams.get('data')?.replace(AT_MENTION_SERIALIZATION_END, '')!)
+        unicodeSafeAtob(new URL(s).searchParams.get('data')?.replace(AT_MENTION_SERIALIZATION_END, '')!)
     )
 }
 
