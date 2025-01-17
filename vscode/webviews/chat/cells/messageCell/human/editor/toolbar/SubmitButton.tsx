@@ -62,7 +62,7 @@ function getIntentOptions({
     const standardOneBoxIntents: IntentOption[] = [
         {
             title: (
-                <div className="tw-flex tw-flex-col tw-gap-1 tw-self-start">
+                <div className="tw-flex tw-flex-col tw-self-start">
                     <p>Run detected intent</p>
                     <p className="tw-text-sm tw-text-muted-foreground">
                         {isDotComUser
@@ -98,7 +98,7 @@ function getIntentOptions({
         },
         {
             title: (
-                <span className="tw-inline-flex tw-items-center tw-gap-2">
+                <span className="tw-inline-flex tw-items-center tw-gap-4">
                     <span>Run as Search</span>
                     <Badge>Beta</Badge>
                 </span>
@@ -173,6 +173,9 @@ export const SubmitButton: FC<{
     const detectedIntentOption = intentOptions.find(option => option.intent === detectedIntent)
 
     const Icon = detectedIntentOption?.intent ? detectedIntentOption.icon : Play
+    const iconClassName = `tw-size-6 ${
+        detectedIntentOption?.intent === 'search' ? '' : 'tw-fill-current'
+    }`
 
     const toggleIntentDetection = useCallback(() => {
         updateIntentDetectionToggle(!intentDetectionToggleOn)
@@ -207,7 +210,7 @@ export const SubmitButton: FC<{
                 onClick={() => onClick()}
                 disabled={disabled}
                 className={clsx(
-                    'tw-px-2 tw-py-1',
+                    'tw-px-3 tw-py-1 md:twpx-4 md:tw-py-2',
                     'tw-rounded-tl-full tw-rounded-bl-full',
                     'tw-w-full tw-relative tw-border tw-border-button-border tw-box-content tw-bg-button-background hover:tw-bg-button-background-hover tw-text-button-foreground',
 
@@ -215,7 +218,7 @@ export const SubmitButton: FC<{
                 )}
                 title="Send"
             >
-                <Icon className="tw-size-6 tw-fill-current" />
+                <Icon className={iconClassName} />
             </button>
             <PopoverItem
                 aria-label="Insert prompt"
@@ -231,9 +234,9 @@ export const SubmitButton: FC<{
                                             onClick(option.intent)
                                             close()
                                         }}
-                                        className="tw-flex tw-text-left tw-justify-between tw-rounded-sm tw-cursor-pointer"
+                                        className="tw-flex tw-text-left tw-justify-between tw-rounded-sm tw-cursor-pointer tw-px-4"
                                     >
-                                        <div className="tw-flex tw-gap-2">
+                                        <div className="tw-flex tw-gap-4">
                                             <option.icon className="tw-size-8 tw-mt-1" />
                                             {option.title}
                                         </div>
@@ -277,7 +280,7 @@ export const SubmitButton: FC<{
                                             toggleIntentDetection()
                                         }
                                     }}
-                                    className="tw-flex tw-px-2 tw-py-4 tw-gap-4 tw-items-baseline"
+                                    className="tw-flex tw-p-4 tw-gap-6 tw-items-baseline"
                                 >
                                     <Switch checked={intentDetectionToggleOn} />
                                     <div className="tw-flex tw-flex-col">
@@ -287,7 +290,7 @@ export const SubmitButton: FC<{
                                             </span>
                                             <Badge variant="secondary">Beta</Badge>
                                         </div>
-                                        <p className="tw-text-muted-foreground">
+                                        <p className="tw-text-sm tw-text-muted-foreground">
                                             Automatic selection between chat and search
                                         </p>
                                     </div>
@@ -309,7 +312,7 @@ export const SubmitButton: FC<{
                     type="button"
                     disabled={disabled}
                     className={clsx(
-                        'tw-pl-1 tw-pr-2 tw-py-1',
+                        'tw-pl-1 tw-pr-2 tw-py-1 md:pl-2 md:tw-pr-3 md:tw-py-2',
                         'tw-rounded-tr-full tw-rounded-br-full tw-border-l-0',
                         'tw-w-full tw-relative tw-border tw-border-button-border tw-box-content tw-bg-button-background hover:tw-bg-button-background-hover tw-text-button-foreground',
                         'disabled:tw-bg-button-secondary-background disabled:tw-text-muted-foreground'
