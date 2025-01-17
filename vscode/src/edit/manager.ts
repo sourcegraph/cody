@@ -82,7 +82,7 @@ export class EditManager implements vscode.Disposable {
             (task: FixupTask) => {
                 const provider = this.getProviderForTask(task)
                 provider.abortEdit()
-                provider.startEdit()
+                provider.startEdit('')
             }
         )
         this.disposables.push(this.options.controller, editCommand, smartApplyCommand, startCommand)
@@ -234,7 +234,7 @@ export class EditManager implements vscode.Disposable {
             )
         }
         const provider = this.getProviderForTask(task)
-        await provider.startEdit()
+        await provider.startEdit(configuration.requestID)
         return task
     }
 

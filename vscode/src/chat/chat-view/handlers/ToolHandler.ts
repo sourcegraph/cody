@@ -57,7 +57,7 @@ const allTools: CodyTool[] = [
 export class ExperimentalToolHandler implements AgentHandler {
     constructor(private anthropicAPI: Anthropic) {}
 
-    public async handle({ inputText }: AgentRequest, delegate: AgentHandlerDelegate): Promise<void> {
+    public async handle({ requestID, inputText }: AgentRequest, delegate: AgentHandlerDelegate): Promise<void> {
         const maxTurns = 10
         let turns = 0
         const subTranscript: Array<MessageParam> = [
@@ -82,6 +82,7 @@ export class ExperimentalToolHandler implements AgentHandler {
                         {
                             headers: {
                                 'anthropic-dangerous-direct-browser-access': 'true',
+                                'X-Sourcegraph-Interaction-ID': requestID
                             },
                         }
                     )

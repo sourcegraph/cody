@@ -1108,6 +1108,7 @@ export function logSuggestionEvents(isDotComUser: boolean): void {
     // biome-ignore lint/complexity/noForEach: LRUCache#forEach has different typing than #entries, so just keeping it for now
     activeSuggestionRequests.forEach(completionEvent => {
         const {
+            id,
             params,
             loadedAt,
             suggestedAt,

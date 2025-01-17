@@ -149,6 +149,7 @@ export class CommandRunner implements vscode.Disposable {
                     intent: 'edit',
                     mode: this.command.mode as EditMode,
                     userContextFiles,
+                    requestID: this.args.requestID,
                 },
                 source: 'custom-commands' as EventSource,
             } satisfies ExecuteEditArguments),

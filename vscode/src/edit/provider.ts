@@ -54,7 +54,7 @@ export class EditProvider {
 
     constructor(public config: EditProviderOptions) {}
 
-    public async startEdit(): Promise<void> {
+    public async startEdit(interactionID: string | undefined): Promise<void> {
         return wrapInActiveSpan('command.edit.start', async span => {
             span.setAttribute('sampled', true)
             const editTimeToFirstTokenSpan = tracer.startSpan('cody.edit.provider.timeToFirstToken')
@@ -153,7 +153,8 @@ export class EditProvider {
             const stream = await this.config.chat.chat(
                 messages,
                 { ...params },
-                this.abortController.signal
+                this.abortController.signal,
+                interactionID
             )
 
             let textConsumed = 0
