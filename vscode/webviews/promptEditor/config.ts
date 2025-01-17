@@ -12,6 +12,7 @@ import {
 } from '../components/shadcn/ui/command'
 import { Tooltip, TooltipContent, TooltipTrigger } from '../components/shadcn/ui/tooltip'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
+import {Badge} from "../components/shadcn/ui/badge";
 
 /**
  * This is for config that can't be passed via React context because Lexical nodes are rendered in
@@ -26,6 +27,9 @@ export const promptEditorConfig: PromptEditorConfig = {
                 uri,
             })
         }
+    },
+    badgeComponents: {
+        Badge,
     },
     tooltipComponents: {
         Tooltip,

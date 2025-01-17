@@ -73,6 +73,7 @@ export const Default: StoryObj<typeof MentionMenu> = {
                 {
                     type: 'tree',
                     isWorkspaceRoot: true,
+                    isIndexedRemotely: true,
                     name: 'my-repo',
                     description: 'my-repo',
                     title: 'Current Repository',
@@ -80,6 +81,17 @@ export const Default: StoryObj<typeof MentionMenu> = {
                     content: null,
                     uri: URI.file('a/b'),
                     icon: 'folder',
+                },
+                {
+                    type: 'tree',
+                    isWorkspaceRoot: true,
+                    isIndexedRemotely: false,
+                    icon: 'folder',
+                    content: null,
+                    title: 'Current Repository',
+                    name: '',
+                    uri: URI.parse('file:///'),
+                    badge: 'Not available yet',
                 },
                 {
                     uri: URI.file('a/b/initial.go'),

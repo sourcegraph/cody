@@ -19,6 +19,7 @@ import { clsx } from 'clsx'
 import {
     ArrowRightIcon,
     DatabaseIcon,
+    ExternalLinkIcon,
     FileIcon,
     FolderGitIcon,
     LibraryBigIcon,
@@ -26,7 +27,7 @@ import {
     SmileIcon,
     SquareFunctionIcon,
 } from 'lucide-react'
-import type { FunctionComponent } from 'react'
+import type {FunctionComponent, ReactNode} from 'react'
 import ConfluenceLogo from '../../providerIcons/confluence.svg?react'
 import GithubLogo from '../../providerIcons/github.svg?react'
 import GoogleLogo from '../../providerIcons/google.svg?react'
@@ -78,7 +79,8 @@ export function getMentionItemTitleAndDisplayName(item: ContextItem): {
 export const MentionMenuContextItemContent: FunctionComponent<{
     query: MentionQuery
     item: ContextItem
-}> = ({ query, item }) => {
+    badge?: ReactNode | undefined
+}> = ({ query, item, badge }) => {
     const isOpenCtx = item.type === 'openctx'
     const isFileType = item.type === 'file'
     const isSymbol = item.type === 'symbol'
@@ -90,6 +92,8 @@ export const MentionMenuContextItemContent: FunctionComponent<{
 
     const isIgnored = (isFileType || isOpenCtx) && item.isIgnored
     const isLargeFile = isFileType && item.isTooLarge
+    const isMissingCurrentRepo = item.type === 'tree' && item.isWorkspaceRoot && !item.isIndexedRemotely
+    // TODO: These warnings are not visible, even when present.
     let warning: string
     if (isIgnored) {
         warning = IGNORED_FILE_WARNING_LABEL
@@ -111,6 +115,8 @@ export const MentionMenuContextItemContent: FunctionComponent<{
                         {description}
                     </span>
                 )}
+                {badge}
+                {isMissingCurrentRepo && <ExternalLinkIcon size={16} strokeWidth={1.25} style={{ opacity: '0.5' }} />}
             </div>
             {warning && <span className={styles.warning}>{warning}</span>}
         </>

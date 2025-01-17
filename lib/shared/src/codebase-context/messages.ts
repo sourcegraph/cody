@@ -79,6 +79,11 @@ interface ContextItemCommon {
      * can help a user or dev working on Cody understand why this item is appearing in context.
      */
     metadata?: string[]
+
+    /**
+     * Optional badge to display with the context item.
+     */
+    badge?: string
 }
 
 /**
@@ -152,6 +157,9 @@ export interface ContextItemTree extends ContextItemCommon {
 
     /** Only workspace root trees are supported right now. */
     isWorkspaceRoot: true
+
+    /** Whether the tree is indexed remotely. */
+    isIndexedRemotely: boolean
 
     content: null
     name: string

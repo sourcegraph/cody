@@ -26,13 +26,13 @@ import {
     startWith,
     switchMap,
 } from '@sourcegraph/cody-shared'
-import { Observable, map } from 'observable-fns'
+import {Observable, map} from 'observable-fns'
 import * as vscode from 'vscode'
-import { URI } from 'vscode-uri'
-import { getSelectionOrFileContext } from '../commands/context/selection'
-import { createRepositoryMention } from '../context/openctx/common/get-repository-mentions'
-import { remoteReposForAllWorkspaceFolders } from '../repository/remoteRepos'
-import { ChatBuilder } from './chat-view/ChatBuilder'
+import {URI} from 'vscode-uri'
+import {getSelectionOrFileContext} from '../commands/context/selection'
+import {createRepositoryMention} from '../context/openctx/common/get-repository-mentions'
+import {remoteReposForAllWorkspaceFolders} from '../repository/remoteRepos'
+import {ChatBuilder} from './chat-view/ChatBuilder'
 import {
     activeEditorContextForOpenCtxMentions,
     contextItemMentionFromOpenCtxItem,
@@ -42,12 +42,12 @@ import {
  * Observe the initial context that should be populated in the chat message input field.
  */
 export function observeDefaultContext({
-    chatBuilder,
-}: {
+                                          chatBuilder,
+                                      }: {
     chatBuilder: Observable<ChatBuilder>
 }): Observable<DefaultContext | typeof pendingOperation> {
     return combineLatest(
-        getCurrentFileOrSelection({ chatBuilder }).pipe(distinctUntilChanged()),
+        getCurrentFileOrSelection({chatBuilder}).pipe(distinctUntilChanged()),
         getCorpusContextItemsForEditorState().pipe(distinctUntilChanged()),
         getOpenCtxContextItems().pipe(distinctUntilChanged()),
         featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.NoDefaultRepoChip)
@@ -92,8 +92,10 @@ const activeTextEditor = fromVSCodeEvent(
 ).pipe(shareReplay())
 
 function getCurrentFileOrSelection({
-    chatBuilder,
-}: { chatBuilder: Observable<ChatBuilder> }): Observable<ContextItem[] | typeof pendingOperation> {
+                                       chatBuilder,
+                                   }: {
+    chatBuilder: Observable<ChatBuilder>
+}): Observable<ContextItem[] | typeof pendingOperation> {
     /**
      * If the active text editor changes, this observable immediately emits.
      *
@@ -228,9 +230,21 @@ export function getCorpusContextItemsForEditorState(): Observable<
                         icon: 'folder',
                     })
                 }
-            }
-
-            if (items.length === 0) {
+                if (remoteReposForAllWorkspaceFolders.length === 0) {
+                    items.push({
+                        type: 'tree',
+                        title: 'Current Repository',
+                        // TODO: Consider displaying different badges here depending on whether the problem is not a git repo, missing on the remote, etc.
+                        badge: 'Not yet available',
+                        isWorkspaceRoot: true,
+                        isIndexedRemotely: false,
+                        content: null,
+                        uri: URI.parse('file:///'),
+                        name: '',
+                        icon: 'folder',
+                    })
+                }
+            } else {
                 // TODO(sqs): Support multi-root. Right now, this only supports the 1st workspace root.
                 const workspaceFolder = vscode.workspace.workspaceFolders?.at(0)
                 if (workspaceFolder) {
@@ -241,6 +255,7 @@ export function getCorpusContextItemsForEditorState(): Observable<
                         name: workspaceFolder.name,
                         description: workspaceFolder.name,
                         isWorkspaceRoot: true,
+                        isIndexedRemotely: false,
                         content: null,
                         source: ContextItemSource.Initial,
                         icon: 'folder',
@@ -279,7 +294,7 @@ function getOpenCtxContextItems(): Observable<ContextItem[] | typeof pendingOper
                     return combineLatest(
                         ...providersWithAutoInclude.map(provider =>
                             openctxController.mentionsChanges(
-                                { ...activeEditorContext, autoInclude: true },
+                                {...activeEditorContext, autoInclude: true},
                                 provider
                             )
                         )

@@ -230,6 +230,9 @@ export const MentionMenu: FunctionComponent<
     const heading = getItemsHeading(params.parentItem, mentionQuery)
 
     const {
+        badgeComponents: {
+            Badge,
+        },
         commandComponents: {
             Command,
             CommandEmpty,
@@ -271,21 +274,22 @@ export const MentionMenu: FunctionComponent<
 
                     {(heading || (data.items && data.items.length > 0)) && (
                         <CommandGroup heading={heading} className={COMMAND_GROUP_CLASS_NAME}>
-                            {data.items?.map(item => (
-                                <CommandItem
-                                    key={commandRowValue(item)}
-                                    value={commandRowValue(item)}
-                                    disabled={item.isIgnored}
-                                    onSelect={onCommandSelect}
-                                    className={clsx(
-                                        styles.item,
-                                        styles.contextItem,
-                                        COMMAND_ROW_CLASS_NAME
-                                    )}
-                                >
-                                    <MentionMenuContextItemContent query={mentionQuery} item={item} />
-                                </CommandItem>
-                            ))}
+                            {data.items?.map(item => {
+                                const badge = item.badge ? <Badge>{item.badge}</Badge> : undefined
+                                return <CommandItem
+                                        key={commandRowValue(item)}
+                                        value={commandRowValue(item)}
+                                        disabled={item.isIgnored}
+                                        onSelect={onCommandSelect}
+                                        className={clsx(
+                                            styles.item,
+                                            styles.contextItem,
+                                            COMMAND_ROW_CLASS_NAME
+                                        )}
+                                    >
+                                        <MentionMenuContextItemContent query={mentionQuery} item={item} badge={badge}/>
+                                    </CommandItem>
+                            })}
                         </CommandGroup>
                     )}
 
