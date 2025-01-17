@@ -230,9 +230,7 @@ export const MentionMenu: FunctionComponent<
     const heading = getItemsHeading(params.parentItem, mentionQuery)
 
     const {
-        badgeComponents: {
-            Badge,
-        },
+        badgeComponents: { Badge },
         commandComponents: {
             Command,
             CommandEmpty,
@@ -276,7 +274,8 @@ export const MentionMenu: FunctionComponent<
                         <CommandGroup heading={heading} className={COMMAND_GROUP_CLASS_NAME}>
                             {data.items?.map(item => {
                                 const badge = item.badge ? <Badge>{item.badge}</Badge> : undefined
-                                return <CommandItem
+                                return (
+                                    <CommandItem
                                         key={commandRowValue(item)}
                                         value={commandRowValue(item)}
                                         disabled={item.isIgnored}
@@ -287,8 +286,13 @@ export const MentionMenu: FunctionComponent<
                                             COMMAND_ROW_CLASS_NAME
                                         )}
                                     >
-                                        <MentionMenuContextItemContent query={mentionQuery} item={item} badge={badge}/>
+                                        <MentionMenuContextItemContent
+                                            query={mentionQuery}
+                                            item={item}
+                                            badge={badge}
+                                        />
                                     </CommandItem>
+                                )
                             })}
                         </CommandGroup>
                     )}

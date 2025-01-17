@@ -27,7 +27,7 @@ import {
     SmileIcon,
     SquareFunctionIcon,
 } from 'lucide-react'
-import type {FunctionComponent, ReactNode} from 'react'
+import type { FunctionComponent, ReactNode } from 'react'
 import ConfluenceLogo from '../../providerIcons/confluence.svg?react'
 import GithubLogo from '../../providerIcons/github.svg?react'
 import GoogleLogo from '../../providerIcons/google.svg?react'
@@ -116,7 +116,9 @@ export const MentionMenuContextItemContent: FunctionComponent<{
                     </span>
                 )}
                 {badge}
-                {isMissingCurrentRepo && <ExternalLinkIcon size={16} strokeWidth={1.25} style={{ opacity: '0.5' }} />}
+                {isMissingCurrentRepo && (
+                    <ExternalLinkIcon size={16} strokeWidth={1.25} style={{ opacity: '0.5' }} />
+                )}
             </div>
             {warning && <span className={styles.warning}>{warning}</span>}
         </>

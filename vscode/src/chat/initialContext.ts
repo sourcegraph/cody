@@ -26,13 +26,13 @@ import {
     startWith,
     switchMap,
 } from '@sourcegraph/cody-shared'
-import {Observable, map} from 'observable-fns'
+import { Observable, map } from 'observable-fns'
 import * as vscode from 'vscode'
-import {URI} from 'vscode-uri'
-import {getSelectionOrFileContext} from '../commands/context/selection'
-import {createRepositoryMention} from '../context/openctx/common/get-repository-mentions'
-import {remoteReposForAllWorkspaceFolders} from '../repository/remoteRepos'
-import {ChatBuilder} from './chat-view/ChatBuilder'
+import { URI } from 'vscode-uri'
+import { getSelectionOrFileContext } from '../commands/context/selection'
+import { createRepositoryMention } from '../context/openctx/common/get-repository-mentions'
+import { remoteReposForAllWorkspaceFolders } from '../repository/remoteRepos'
+import { ChatBuilder } from './chat-view/ChatBuilder'
 import {
     activeEditorContextForOpenCtxMentions,
     contextItemMentionFromOpenCtxItem,
@@ -42,12 +42,12 @@ import {
  * Observe the initial context that should be populated in the chat message input field.
  */
 export function observeDefaultContext({
-                                          chatBuilder,
-                                      }: {
+    chatBuilder,
+}: {
     chatBuilder: Observable<ChatBuilder>
 }): Observable<DefaultContext | typeof pendingOperation> {
     return combineLatest(
-        getCurrentFileOrSelection({chatBuilder}).pipe(distinctUntilChanged()),
+        getCurrentFileOrSelection({ chatBuilder }).pipe(distinctUntilChanged()),
         getCorpusContextItemsForEditorState().pipe(distinctUntilChanged()),
         getOpenCtxContextItems().pipe(distinctUntilChanged()),
         featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.NoDefaultRepoChip)
@@ -92,8 +92,8 @@ const activeTextEditor = fromVSCodeEvent(
 ).pipe(shareReplay())
 
 function getCurrentFileOrSelection({
-                                       chatBuilder,
-                                   }: {
+    chatBuilder,
+}: {
     chatBuilder: Observable<ChatBuilder>
 }): Observable<ContextItem[] | typeof pendingOperation> {
     /**
@@ -294,7 +294,7 @@ function getOpenCtxContextItems(): Observable<ContextItem[] | typeof pendingOper
                     return combineLatest(
                         ...providersWithAutoInclude.map(provider =>
                             openctxController.mentionsChanges(
-                                {...activeEditorContext, autoInclude: true},
+                                { ...activeEditorContext, autoInclude: true },
                                 provider
                             )
                         )

@@ -1,6 +1,7 @@
 import type { SerializedContextItem } from '@sourcegraph/cody-shared'
 import type { PromptEditorConfig } from '@sourcegraph/prompt-editor'
 import { URI } from 'vscode-uri'
+import { Badge } from '../components/shadcn/ui/badge'
 import {
     Command,
     CommandEmpty,
@@ -12,7 +13,6 @@ import {
 } from '../components/shadcn/ui/command'
 import { Tooltip, TooltipContent, TooltipTrigger } from '../components/shadcn/ui/tooltip'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
-import {Badge} from "../components/shadcn/ui/badge";
 
 /**
  * This is for config that can't be passed via React context because Lexical nodes are rendered in

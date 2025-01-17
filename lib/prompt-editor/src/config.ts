@@ -12,7 +12,20 @@ export interface PromptEditorConfig {
      * The [shadcn Badge component](https://ui.shadcn.com/docs/components/badge).
      */
     badgeComponents: {
-        Badge: React.ComponentType<{ variant?: "secondary" | "outline" | "ghost" | "cody" | "warning" | "info" | "error" | "disabled" | null | undefined, children: React.ReactNode }>
+        Badge: React.ComponentType<{
+            variant?:
+                | 'secondary'
+                | 'outline'
+                | 'ghost'
+                | 'cody'
+                | 'warning'
+                | 'info'
+                | 'error'
+                | 'disabled'
+                | null
+                | undefined
+            children: React.ReactNode
+        }>
     }
 
     /**
