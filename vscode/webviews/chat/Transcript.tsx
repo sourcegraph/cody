@@ -610,7 +610,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                     editorState: serializedPromptEditorStateFromText(text),
                 },
                 intent: 'search',
-                manuallySelectedIntent: true,
+                manuallySelectedIntent: 'search',
             }),
         [humanMessage]
     )

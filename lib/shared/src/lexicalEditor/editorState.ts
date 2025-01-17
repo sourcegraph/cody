@@ -17,6 +17,7 @@ import {
 } from '../context/openctx/api'
 import { displayPath } from '../editor/displayPath'
 import type { PromptString } from '../prompt/prompt-string'
+import { AT_MENTION_SERIALIZED_PREFIX, deserializeContextMentionItem } from './atMentionsSerializer'
 import {
     CONTEXT_ITEM_MENTION_NODE_TYPE,
     type SerializedContextItem,
@@ -368,6 +369,15 @@ function lexicalEditorStateFromPromptString(
     const words = input.toString().split(' ')
 
     for (const word of words) {
+        if (word.startsWith(AT_MENTION_SERIALIZED_PREFIX)) {
+            // Save previous last text or mention node before adding new mention
+            if (lastTextNode) {
+                children.push(lastTextNode)
+                lastTextNode = undefined
+            }
+            children.push(deserializeContextMentionItem(word))
+            continue
+        }
         if (word.startsWith('@')) {
             const [displayPath, maybeRange] = word.slice(1).split(':', 2)
             const range = maybeRange ? parseRangeString(maybeRange) : undefined
