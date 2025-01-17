@@ -124,6 +124,10 @@ export interface WebviewToExtensionAPI {
      *  Update the current user's toolbox settings.
      */
     updateToolboxSettings(settings: AgentToolboxSettings): Observable<void>
+    /**
+     * Edit the current user's temporary settings.
+     */
+    editTemporarySettings(settingsToEdit: string): Observable<boolean>
 }
 
 export function createExtensionAPI(
@@ -161,6 +165,7 @@ export function createExtensionAPI(
         toolboxSettings: proxyExtensionAPI(messageAPI, 'toolboxSettings'),
         updateToolboxSettings: proxyExtensionAPI(messageAPI, 'updateToolboxSettings'),
         repos: proxyExtensionAPI(messageAPI, 'repos'),
+        editTemporarySettings: proxyExtensionAPI(messageAPI, 'editTemporarySettings'),
     }
 }
 

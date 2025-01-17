@@ -46,6 +46,9 @@ interface HumanMessageCellProps {
     className?: string
     editorRef?: React.RefObject<PromptEditorRefAPI | null>
 
+    detectedIntent: ChatMessage['intent']
+    manuallySelectIntent: (intent: ChatMessage['intent'], query?: string) => void
+
     /** For use in storybooks only. */
     __storybook__focus?: boolean
 }
@@ -61,18 +64,11 @@ export const HumanMessageCell: FC<HumanMessageCellProps> = ({ message, ...otherP
         [messageJSON]
     )
 
-    return (
-        <HumanMessageCellContent
-            {...otherProps}
-            initialEditorState={initialEditorState}
-            intent={message.manuallySelectedIntent}
-        />
-    )
+    return <HumanMessageCellContent {...otherProps} initialEditorState={initialEditorState} />
 }
 
 type HumanMessageCellContent = {
     initialEditorState: SerializedPromptEditorState
-    intent: ChatMessage['intent']
 } & Omit<HumanMessageCellProps, 'message'>
 const HumanMessageCellContent = memo<HumanMessageCellContent>(props => {
     const {
@@ -93,7 +89,8 @@ const HumanMessageCellContent = memo<HumanMessageCellContent>(props => {
         editorRef,
         __storybook__focus,
         onEditorFocusChange,
-        intent,
+        detectedIntent,
+        manuallySelectIntent,
     } = props
 
     const api = useExtensionAPI()
@@ -142,7 +139,8 @@ const HumanMessageCellContent = memo<HumanMessageCellContent>(props => {
                     editorRef={editorRef}
                     __storybook__focus={__storybook__focus}
                     onEditorFocusChange={onEditorFocusChange}
-                    initialIntent={intent}
+                    detectedIntent={detectedIntent}
+                    manuallySelectIntent={manuallySelectIntent}
                 />
             }
             className={className}

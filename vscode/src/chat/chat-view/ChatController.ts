@@ -1667,6 +1667,18 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                             await toolboxManager.updateSettings(settings)
                         })
                     },
+                    editTemporarySettings: settingsToEdit => {
+                        return promiseFactoryToObservable(async () => {
+                            const dataOrError = await graphqlClient.editTemporarySettings(settingsToEdit)
+
+                            if (!isError(dataOrError)) {
+                                await ClientConfigSingleton.getInstance().forceUpdate()
+                                return true
+                            }
+
+                            return false
+                        })
+                    },
                 }
             )
         )

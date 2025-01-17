@@ -1,4 +1,4 @@
-import { Observable, interval, map } from 'observable-fns'
+import { Observable, Subject, interval, map, merge } from 'observable-fns'
 import semver from 'semver'
 import { authStatus } from '../auth/authStatus'
 import { editorWindowIsFocused } from '../editor/editorState'
@@ -56,9 +56,14 @@ export interface CodyClientConfig {
     // Whether the user should sign in to an enterprise instance.
     userShouldUseEnterprise: boolean
 
+    intentDetectionDisabled: boolean
+    intentDetectionDefaultToggleOff: boolean
+
     // List of global instance-level cody notice/banners (set only by admins in global
     // instance configuration file
     notices: CodyNotice[]
+
+    temporarySettings: Record<string, any>
 }
 
 export const dummyClientConfigForTest: CodyClientConfig = {
@@ -69,6 +74,9 @@ export const dummyClientConfigForTest: CodyClientConfig = {
     smartContextWindowEnabled: true,
     modelsAPIEnabled: true,
     userShouldUseEnterprise: false,
+    intentDetectionDisabled: false,
+    intentDetectionDefaultToggleOff: false,
+    temporarySettings: {},
     notices: [],
 }
 
@@ -93,30 +101,38 @@ export class ClientConfigSingleton {
         attribution: false,
     }
 
+    private readonly forceUpdateSubject = new Subject<any>()
+
+    public async forceUpdate(): Promise<CodyClientConfig | undefined> {
+        this.forceUpdateSubject.next(true)
+        return firstValueFrom(this.changes.pipe(skipPendingOperation()))
+    }
     /**
      * An observable that immediately emits the last-cached value (or fetches it if needed) and then
      * emits changes.
      */
-    public readonly changes: Observable<CodyClientConfig | undefined | typeof pendingOperation> =
-        authStatus.pipe(
-            debounceTime(0), // wait a tick for graphqlClient's auth to be updated
-            switchMapReplayOperation(authStatus =>
-                authStatus.authenticated
-                    ? interval(ClientConfigSingleton.REFETCH_INTERVAL).pipe(
-                          map(() => undefined),
-                          // Don't update if the editor is in the background, to avoid network
-                          // activity that can cause OS warnings or authorization flows when the
-                          // user is not using Cody. See
-                          // linear.app/sourcegraph/issue/CODY-3745/codys-background-periodic-network-access-causes-2fa.
-                          filter((_value): _value is undefined => editorWindowIsFocused()),
-                          startWith(undefined),
-                          switchMap(() => promiseFactoryToObservable(signal => this.fetchConfig(signal)))
-                      )
-                    : Observable.of(undefined)
-            ),
-            map(value => (isError(value) ? undefined : value)),
-            distinctUntilChanged()
-        )
+    public readonly changes: Observable<CodyClientConfig | undefined | typeof pendingOperation> = merge(
+        authStatus,
+        this.forceUpdateSubject
+    ).pipe(
+        debounceTime(0), // wait a tick for graphqlClient's auth to be updated
+        switchMapReplayOperation(authStatus =>
+            authStatus.authenticated
+                ? interval(ClientConfigSingleton.REFETCH_INTERVAL).pipe(
+                      map(() => undefined),
+                      // Don't update if the editor is in the background, to avoid network
+                      // activity that can cause OS warnings or authorization flows when the
+                      // user is not using Cody. See
+                      // linear.app/sourcegraph/issue/CODY-3745/codys-background-periodic-network-access-causes-2fa.
+                      filter((_value): _value is undefined => editorWindowIsFocused()),
+                      startWith(undefined),
+                      switchMap(() => promiseFactoryToObservable(signal => this.fetchConfig(signal)))
+                  )
+                : Observable.of(undefined)
+        ),
+        map(value => (isError(value) ? undefined : value)),
+        distinctUntilChanged()
+    )
 
     public readonly updates: Observable<CodyClientConfig> = this.changes.pipe(
         filter(value => value !== undefined && value !== pendingOperation),
@@ -190,25 +206,41 @@ export class ClientConfigSingleton {
             .then(clientConfig => {
                 signal?.throwIfAborted()
                 logDebug('ClientConfigSingleton', 'refreshed', JSON.stringify(clientConfig))
-                return graphqlClient.viewerSettings(signal).then(viewerSettings => {
-                    // Don't fail the whole chat because of viewer setting (used only to show banners)
-                    if (isError(viewerSettings)) {
-                        return { ...clientConfig, notices: [] }
+                return Promise.all([
+                    graphqlClient.viewerSettings(signal),
+                    graphqlClient.temporarySettings(signal),
+                ]).then(([viewerSettings, temporarySettings]) => {
+                    const config: CodyClientConfig = {
+                        ...clientConfig,
+                        intentDetectionDisabled: false,
+                        intentDetectionDefaultToggleOff: false,
+                        notices: [],
+                        temporarySettings: {},
                     }
 
-                    return {
-                        ...clientConfig,
+                    // Don't fail the whole chat because of viewer setting (used only to show banners)
+                    if (!isError(viewerSettings)) {
+                        config.intentDetectionDisabled =
+                            !!viewerSettings['omnibox.intentDetectionDisabled']
+                        config.intentDetectionDefaultToggleOff =
+                            !!viewerSettings['omnibox.intentDetectionDefaultToggleOff']
                         // Make sure that notice object will have all important field (notices come from
                         // instance global JSONC configuration so they can have any arbitrary field values.
-                        notices: Array.from<Partial<CodyNotice>, CodyNotice>(
+                        config.notices = Array.from<Partial<CodyNotice>, CodyNotice>(
                             viewerSettings['cody.notices'] ?? [],
                             (notice, index) => ({
                                 key: notice?.key ?? index.toString(),
                                 title: notice?.title ?? '',
                                 message: notice?.message ?? '',
                             })
-                        ),
+                        )
                     }
+
+                    if (!isError(temporarySettings)) {
+                        config.temporarySettings = temporarySettings
+                    }
+
+                    return config
                 })
             })
             .catch(e => {
@@ -235,9 +267,12 @@ export class ClientConfigSingleton {
             smartContextWindowEnabled: smartContextWindow,
 
             // Things that did not exist before logically default to disabled.
+            intentDetectionDisabled: true,
+            intentDetectionDefaultToggleOff: true,
             modelsAPIEnabled: false,
             userShouldUseEnterprise: false,
             notices: [],
+            temporarySettings: {},
         }
     }
 
