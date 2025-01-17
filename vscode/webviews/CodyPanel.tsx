@@ -108,11 +108,7 @@ export const CodyPanel: FunctionComponent<CodyPanelProps> = ({
                 orientation="vertical"
                 className={styles.outerContainer}
             >
-                <Notices
-                    user={user}
-                    instanceNotices={instanceNotices}
-                    isTeamsUpgradeCtaEnabled={isTeamsUpgradeCtaEnabled}
-                />
+                <Notices user={user} instanceNotices={instanceNotices} />
                 {/* Hide tab bar in editor chat panels. */}
                 {(clientCapabilities.agentIDE === CodyIDE.Web || config.webviewType !== 'editor') && (
                     <TabsBar
@@ -120,6 +116,7 @@ export const CodyPanel: FunctionComponent<CodyPanelProps> = ({
                         currentView={view}
                         setView={setView}
                         endpointHistory={config.endpointHistory ?? []}
+                        isTeamsUpgradeCtaEnabled={isTeamsUpgradeCtaEnabled}
                     />
                 )}
                 {errorMessages && <ErrorBanner errors={errorMessages} setErrors={setErrorMessages} />}
@@ -138,6 +135,7 @@ export const CodyPanel: FunctionComponent<CodyPanelProps> = ({
                             smartApplyEnabled={smartApplyEnabled}
                             isPromptsV2Enabled={isPromptsV2Enabled}
                             setView={setView}
+                            isTeamsUpgradeCtaEnabled={isTeamsUpgradeCtaEnabled}
                         />
                     )}
                     {view === View.History && (

@@ -50,13 +50,6 @@ export const remoteReposForAllWorkspaceFolders: Observable<
                 return Observable.of([])
             }
 
-            // NOTE(sqs): This check is to preserve prior behavior where agent/JetBrains did not use
-            // the old WorkspaceReposMonitor. We should make it so they can use it. See
-            // https://linear.app/sourcegraph/issue/CODY-3906/agent-allow-use-of-existing-fallback-that-looks-at-gitconfig-to-get.
-            if (!vscodeGitAPI) {
-                return Observable.of([])
-            }
-
             return combineLatest(
                 ...workspaceFolders.map(folder => repoNameResolver.getRepoNamesContainingUri(folder.uri))
             ).pipe(

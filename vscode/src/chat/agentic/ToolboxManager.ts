@@ -34,7 +34,7 @@ type StoredToolboxSettings = {
  * NOTE: This is a Singleton class.
  */
 class ToolboxManager {
-    private static readonly STORAGE_KEY = 'CODYAGENT_TOOLBOX_SETTINGS'
+    private static readonly STORAGE_KEY = 'EXPERIMENTAL_CODYAGENT_TOOLBOX_SETTINGS'
     private static instance?: ToolboxManager
 
     private constructor() {
@@ -54,8 +54,8 @@ class ToolboxManager {
     private getStoredUserSettings(): StoredToolboxSettings {
         return (
             localStorage.get<StoredToolboxSettings>(ToolboxManager.STORAGE_KEY) ?? {
-                agent: this.isEnabled ? 'deep-cody' : undefined,
-                shell: false,
+                agent: undefined,
+                shell: true,
             }
         )
     }

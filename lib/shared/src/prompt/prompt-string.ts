@@ -6,7 +6,12 @@ import type { ContextFiltersProvider } from '../cody-ignore/context-filters-prov
 import type { TerminalOutputArguments } from '../commands/types'
 import { markdownCodeBlockLanguageIDForFilename } from '../common/languages'
 import type { RangeData } from '../common/range'
-import type { AutocompleteContextSnippet, DocumentContext, GitContext } from '../completions/types'
+import type {
+    AutocompleteContextSnippet,
+    CodeToReplaceData,
+    DocumentContext,
+    GitContext,
+} from '../completions/types'
 import type { ActiveTextEditorDiagnostic } from '../editor'
 import { createGitDiff } from '../editor/create-git-diff'
 import { displayPath, displayPathWithLines } from '../editor/displayPath'
@@ -339,6 +344,20 @@ export class PromptString {
             injectedPrefix: docContext.injectedPrefix
                 ? internal_createPromptString(docContext.injectedPrefix, ref)
                 : null,
+        }
+    }
+
+    public static fromAutoEditCodeToReplaceData(codeToReplaceData: CodeToReplaceData, uri: vscode.Uri) {
+        const ref = [uri]
+        return {
+            range: codeToReplaceData.range,
+            codeToRewrite: internal_createPromptString(codeToReplaceData.codeToRewrite, ref),
+            prefixBeforeArea: internal_createPromptString(codeToReplaceData.prefixBeforeArea, ref),
+            suffixAfterArea: internal_createPromptString(codeToReplaceData.suffixAfterArea, ref),
+            prefixInArea: internal_createPromptString(codeToReplaceData.prefixInArea, ref),
+            suffixInArea: internal_createPromptString(codeToReplaceData.suffixInArea, ref),
+            codeToRewritePrefix: internal_createPromptString(codeToReplaceData.codeToRewritePrefix, ref),
+            codeToRewriteSuffix: internal_createPromptString(codeToReplaceData.codeToRewriteSuffix, ref),
         }
     }
 

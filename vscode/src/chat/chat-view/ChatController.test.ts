@@ -38,6 +38,7 @@ describe('ChatController', () => {
 
     const mockContextRetriever = {
         retrieveContext: vi.fn(),
+        computeDidYouMean: vi.fn(),
     } satisfies ChatControllerOptions['contextRetriever']
 
     const mockEditor: VSCodeEditor = {} as any
@@ -144,6 +145,7 @@ describe('ChatController', () => {
                     text: 'Test input',
                     intent: 'chat',
                     manuallySelectedIntent: undefined,
+                    didYouMeanQuery: undefined,
                     model: undefined,
                     search: undefined,
                     error: undefined,
@@ -158,6 +160,7 @@ describe('ChatController', () => {
                     model: 'my-model',
                     intent: undefined,
                     manuallySelectedIntent: undefined,
+                    didYouMeanQuery: undefined,
                     search: undefined,
                     error: undefined,
                     editorState: undefined,
@@ -171,7 +174,7 @@ describe('ChatController', () => {
         // Make sure it was sent and the reply was received.
         await vi.runOnlyPendingTimersAsync()
         expect(mockChatClient.chat).toBeCalledTimes(1)
-        expect(addBotMessageSpy).toHaveBeenCalledWith('1', ps`Test reply 1`, 'my-model')
+        expect(addBotMessageSpy).toHaveBeenCalledWith('1', ps`Test reply 1`, undefined, 'my-model')
         expect(postMessageSpy.mock.calls.at(6)?.at(0)).toStrictEqual<
             Extract<ExtensionMessage, { type: 'transcript' }>
         >({
@@ -185,6 +188,7 @@ describe('ChatController', () => {
                     text: 'Test input',
                     intent: 'chat',
                     manuallySelectedIntent: undefined,
+                    didYouMeanQuery: undefined,
                     model: undefined,
                     error: undefined,
                     search: undefined,
@@ -198,6 +202,7 @@ describe('ChatController', () => {
                     speaker: 'assistant',
                     intent: undefined,
                     manuallySelectedIntent: undefined,
+                    didYouMeanQuery: undefined,
                     model: 'my-model',
                     error: undefined,
                     editorState: undefined,
@@ -228,7 +233,7 @@ describe('ChatController', () => {
         })
         await vi.runOnlyPendingTimersAsync()
         expect(mockChatClient.chat).toBeCalledTimes(1)
-        expect(addBotMessageSpy).toHaveBeenCalledWith('2', ps`Test reply 2`, 'my-model')
+        expect(addBotMessageSpy).toHaveBeenCalledWith('2', ps`Test reply 2`, undefined, 'my-model')
         expect(postMessageSpy.mock.calls.at(4)?.at(0)).toStrictEqual<
             Extract<ExtensionMessage, { type: 'transcript' }>
         >({
@@ -242,6 +247,7 @@ describe('ChatController', () => {
                     text: 'Test input',
                     intent: 'chat',
                     manuallySelectedIntent: undefined,
+                    didYouMeanQuery: undefined,
                     model: undefined,
                     error: undefined,
                     search: undefined,
@@ -256,6 +262,7 @@ describe('ChatController', () => {
                     model: 'my-model',
                     intent: undefined,
                     manuallySelectedIntent: undefined,
+                    didYouMeanQuery: undefined,
                     error: undefined,
                     editorState: undefined,
                     text: 'Test reply 1',
@@ -270,6 +277,7 @@ describe('ChatController', () => {
                     text: 'Test followup',
                     intent: 'chat',
                     manuallySelectedIntent: undefined,
+                    didYouMeanQuery: undefined,
                     model: undefined,
                     search: undefined,
                     error: undefined,
@@ -284,6 +292,7 @@ describe('ChatController', () => {
                     model: 'my-model',
                     intent: undefined,
                     manuallySelectedIntent: undefined,
+                    didYouMeanQuery: undefined,
                     error: undefined,
                     editorState: undefined,
                     text: 'Test reply 2',
@@ -312,7 +321,7 @@ describe('ChatController', () => {
         })
         await vi.runOnlyPendingTimersAsync()
         expect(mockChatClient.chat).toBeCalledTimes(1)
-        expect(addBotMessageSpy).toHaveBeenCalledWith('3', ps`Test reply 3`, 'my-model')
+        expect(addBotMessageSpy).toHaveBeenCalledWith('3', ps`Test reply 3`, undefined, 'my-model')
         expect(postMessageSpy.mock.calls.at(4)?.at(0)).toStrictEqual<
             Extract<ExtensionMessage, { type: 'transcript' }>
         >({
@@ -326,6 +335,7 @@ describe('ChatController', () => {
                     text: 'Test input',
                     intent: 'chat',
                     manuallySelectedIntent: undefined,
+                    didYouMeanQuery: undefined,
                     model: undefined,
                     error: undefined,
                     search: undefined,
@@ -340,6 +350,7 @@ describe('ChatController', () => {
                     model: 'my-model',
                     intent: undefined,
                     manuallySelectedIntent: undefined,
+                    didYouMeanQuery: undefined,
                     error: undefined,
                     editorState: undefined,
                     text: 'Test reply 1',
@@ -354,6 +365,7 @@ describe('ChatController', () => {
                     text: 'Test edit',
                     intent: 'chat',
                     manuallySelectedIntent: undefined,
+                    didYouMeanQuery: undefined,
                     search: undefined,
                     model: undefined,
                     error: undefined,
@@ -368,6 +380,7 @@ describe('ChatController', () => {
                     model: 'my-model',
                     intent: undefined,
                     manuallySelectedIntent: undefined,
+                    didYouMeanQuery: undefined,
                     search: undefined,
                     error: undefined,
                     editorState: undefined,
@@ -405,7 +418,7 @@ describe('ChatController', () => {
         })
         await vi.runOnlyPendingTimersAsync()
         expect(mockChatClient.chat).toBeCalledTimes(1)
-        expect(addBotMessageSpy).toHaveBeenCalledWith('1', ps`Test partial reply`, 'my-model')
+        expect(addBotMessageSpy).toHaveBeenCalledWith('1', ps`Test partial reply`, undefined, 'my-model')
         expect(postMessageSpy.mock.calls.at(9)?.at(0)).toStrictEqual<
             Extract<ExtensionMessage, { type: 'transcript' }>
         >({
@@ -423,6 +436,7 @@ describe('ChatController', () => {
                     contextFiles: [],
                     intent: 'chat',
                     manuallySelectedIntent: undefined,
+                    didYouMeanQuery: undefined,
                     search: undefined,
                     processes: undefined,
                     subMessages: undefined,
@@ -434,6 +448,7 @@ describe('ChatController', () => {
                     error: errorToChatError(new Error('my-error')),
                     intent: undefined,
                     manuallySelectedIntent: undefined,
+                    didYouMeanQuery: undefined,
                     editorState: undefined,
                     text: 'Test partial reply',
                     contextFiles: undefined,

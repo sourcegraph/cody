@@ -1,13 +1,19 @@
 import { beforeEach } from 'node:test'
-import { type AutocompleteContextSnippet, testFileUri } from '@sourcegraph/cody-shared'
-import type { AutoEditsTokenLimit } from '@sourcegraph/cody-shared'
 import dedent from 'dedent'
 import { describe, expect, it, vi } from 'vitest'
+
+import {
+    type AutoEditsTokenLimit,
+    type AutocompleteContextSnippet,
+    testFileUri,
+} from '@sourcegraph/cody-shared'
+
 import { RetrieverIdentifier } from '../../completions/context/utils'
 import { getCurrentDocContext } from '../../completions/get-current-doc-context'
 import { documentAndPosition } from '../../completions/test-helpers'
+
 import type { UserPromptArgs } from './base'
-import { getCurrentFilePromptComponents } from './prompt-utils'
+import { getCodeToReplaceData } from './prompt-utils'
 import { ShortTermPromptStrategy } from './short-term-diff-prompt-strategy'
 
 describe('ShortTermPromptStrategy', () => {
@@ -63,12 +69,13 @@ describe('ShortTermPromptStrategy', () => {
                     [RetrieverIdentifier.DiagnosticsRetriever]: 100,
                 },
             }
-            const { fileWithMarkerPrompt, areaPrompt } = getCurrentFilePromptComponents({
+            const codeToReplaceData = getCodeToReplaceData({
                 docContext,
                 document,
                 position,
                 tokenBudget,
             })
+
             const context: AutocompleteContextSnippet[] = shouldIncludeContext
                 ? [
                       getContextItem(
@@ -175,8 +182,8 @@ describe('ShortTermPromptStrategy', () => {
                 : []
 
             return {
-                fileWithMarkerPrompt,
-                areaPrompt,
+                codeToReplaceData,
+                document,
                 context,
                 tokenBudget,
             }

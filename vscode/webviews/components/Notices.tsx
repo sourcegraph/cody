@@ -1,19 +1,15 @@
 import { CodyIDE, type CodyNotice } from '@sourcegraph/cody-shared'
-import { DOTCOM_WORKSPACE_UPGRADE_URL } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 import { S2_URL } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 import {
     ArrowLeftRightIcon,
     ArrowRightIcon,
     BuildingIcon,
-    ExternalLinkIcon,
     EyeIcon,
     HeartIcon,
-    Users2Icon,
     XIcon,
 } from 'lucide-react'
 import { type FunctionComponent, type ReactNode, useCallback, useMemo, useState } from 'react'
 import SourcegraphIcon from '../../resources/sourcegraph-mark.svg'
-import { DOTCOM_WORKSPACE_LEARN_MORE_URL } from '../../src/chat/protocol'
 import type { UserAccountInfo } from '../Chat'
 import { CodyLogo } from '../icons/CodyLogo'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
@@ -33,14 +29,12 @@ type NoticeIDs = 'DogfoodS2' | 'TeamsUpgrade' | 'DeepCodyDotCom' | 'DeepCodyEnte
 
 interface NoticesProps {
     user: UserAccountInfo
-    // Whether to show the Sourcegraph Teams upgrade CTA or not.
-    isTeamsUpgradeCtaEnabled?: boolean
     instanceNotices: CodyNotice[]
 }
 
 const storageKey = 'DismissedWelcomeNotices'
 
-export const Notices: React.FC<NoticesProps> = ({ user, isTeamsUpgradeCtaEnabled, instanceNotices }) => {
+export const Notices: React.FC<NoticesProps> = ({ user, instanceNotices }) => {
     const telemetryRecorder = useTelemetryRecorder()
 
     // dismissed notices from local storage
@@ -77,41 +71,6 @@ export const Notices: React.FC<NoticesProps> = ({ user, isTeamsUpgradeCtaEnabled
                     />
                 ),
             })),
-            /**
-             * Notifies users that they are eligible for a free upgrade to Sourcegraph Teams.
-             * TODO: Update to live link https://linear.app/sourcegraph/issue/CORE-535/cody-clients-migrate-ctas-to-live-links
-             */
-            {
-                id: 'TeamsUpgrade',
-                isVisible: user.isDotComUser && isTeamsUpgradeCtaEnabled && user.IDE !== CodyIDE.Web,
-                content: (
-                    <NoticeContent
-                        id="TeamsUpgrade"
-                        variant="default"
-                        title="Sourcegraph Teams is here"
-                        message="You now are eligible for an upgrade to teams for free"
-                        onDismiss={() => dismissNotice('TeamsUpgrade')}
-                        actions={[
-                            {
-                                // TODO: Update to live link https://linear.app/sourcegraph/issue/CORE-535/cody-clients-migrate-ctas-to-live-links
-                                label: 'Upgrade to Teams',
-                                href: DOTCOM_WORKSPACE_UPGRADE_URL.href,
-                                variant: 'default',
-                                icon: <Users2Icon size={14} />,
-                                iconPosition: 'start',
-                            },
-                            {
-                                // TODO: Update to live link https://linear.app/sourcegraph/issue/CORE-535/cody-clients-migrate-ctas-to-live-links
-                                label: 'Learn More',
-                                href: DOTCOM_WORKSPACE_LEARN_MORE_URL.href,
-                                variant: 'ghost',
-                                icon: <ExternalLinkIcon size={14} />,
-                                iconPosition: 'end',
-                            },
-                        ]}
-                    />
-                ),
-            },
             /**
              * For Sourcegraph team members who are using Sourcegraph.com to remind them that we want to be dogfooding S2.
              */
@@ -151,7 +110,7 @@ export const Notices: React.FC<NoticesProps> = ({ user, isTeamsUpgradeCtaEnabled
                 ),
             },
         ],
-        [user, dismissNotice, isTeamsUpgradeCtaEnabled, instanceNotices]
+        [user, dismissNotice, instanceNotices]
     )
 
     // First, modify the activeNotice useMemo to add conditional logic for DogfoodS2

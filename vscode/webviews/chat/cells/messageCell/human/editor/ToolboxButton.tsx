@@ -2,6 +2,7 @@ import type { AgentToolboxSettings, WebviewToExtensionAPI } from '@sourcegraph/c
 import { debounce } from 'lodash'
 import { BrainIcon } from 'lucide-react'
 import { type FC, memo, useCallback, useState } from 'react'
+import { CODY_DOCS_CAPABILITIES_URL } from '../../../../../../src/chat/protocol'
 import { Badge } from '../../../../../components/shadcn/ui/badge'
 import { Button } from '../../../../../components/shadcn/ui/button'
 import { ToolbarPopoverItem } from '../../../../../components/shadcn/ui/toolbar'
@@ -13,12 +14,9 @@ interface ToolboxButtonProps {
     isFirstMessage: boolean
 }
 
-// TODO: Update the link to the actual documentation when available.
-// const AGENTIC_CONTEXT_DOCS = 'https://sourcegraph.com/docs'
-
 /**
  * A button component that provides a UI for managing agent context settings.
- * Displays a popover with toggles for agentic context and terminal access.
+ * Displays a popover with toggles for agentic chat and terminal access.
  * Includes experimental features with appropriate warnings and documentation links.
  *
  * @param settings - The current agent toolbox settings
@@ -92,11 +90,11 @@ export const ToolboxButton: FC<ToolboxButtonProps> = memo(({ settings, api, isFi
                     <div id="accordion-collapse" data-accordion="collapse" className="tw-w-full">
                         <h2 id="accordion-collapse-heading">
                             <div
-                                className="tw-flex tw-items-center tw-justify-between tw-w-full tw-p-5 tw-font-medium tw-border tw-border-border tw-rounded-t-md tw-focus:ring-4 tw-focus:ring-gray-200 tw-gap-3 tw-bg-[color-mix(in_lch,currentColor_10%,transparent)]"
+                                className="tw-flex tw-items-center tw-justify-between tw-w-full tw-py-3 tw-px-5 tw-font-medium tw-border tw-border-border tw-rounded-t-md tw-focus:ring-4 tw-focus:ring-gray-200 tw-gap-3 tw-bg-[color-mix(in_lch,currentColor_10%,transparent)]"
                                 title="Agentic Chat Context"
                             >
                                 <span className="tw-flex tw-gap-2 tw-items-center">
-                                    <span className="tw-font-semibold tw-text-md">Agentic context</span>
+                                    <span className="tw-font-semibold tw-text-md">Agentic chat</span>
                                     <Badge variant="secondary" className="tw-text-xs">
                                         Experimental
                                     </Badge>
@@ -117,17 +115,26 @@ export const ToolboxButton: FC<ToolboxButtonProps> = memo(({ settings, api, isFi
                         </h2>
                         <div
                             id="accordion-collapse-body"
-                            className="tw-ml-5 tw-p-5 tw-flex tw-flex-col tw-gap-5 tw-mt-1"
+                            className="tw-ml-5 tw-p-5 tw-flex tw-flex-col tw-gap-3 tw-my-2"
                         >
-                            <div className="tw-text-sm">
+                            <div className="tw-text-xs">
                                 <span>
-                                    Agentic context can search your codebase, browse the web, execute
-                                    shell commands (when enabled), and utilize configured tools to
-                                    retrieve necessary context.
-                                    {/* TODO: Uncomment this when the docs is available */}
-                                    {/* <a href={AGENTIC_CONTEXT_DOCS}>Read the docs</a> to learn more. */}
+                                    Agentic chat reflects on your request and uses tools to dynamically
+                                    retrieve relevant context, improving accuracy and response quality.
+                                    <a
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        href={CODY_DOCS_CAPABILITIES_URL.href} // TODO: Replace with CODY_DOCS_AGENTIC_CHAT_URL
+                                    >
+                                        Read the docs
+                                    </a>{' '}
+                                    to learn more.
                                 </span>
                             </div>
+                            {/* Seperator */}
+                            {settings.agent?.name && !settings.shell?.error && (
+                                <div className="tw-border-b tw-border-border tw-my-2" />
+                            )}
                             {/* Only shows the Terminal access option if client and instance supports it */}
                             {settings.agent?.name && !settings.shell?.error && (
                                 <div>
@@ -155,13 +162,11 @@ export const ToolboxButton: FC<ToolboxButtonProps> = memo(({ settings, api, isFi
                                             }
                                         />
                                     </div>
-                                    <div className="tw-text-sm tw-mt-2">
-                                        Allows agents to execute terminal commands. When enabled, this
-                                        this tool can execute <code>ls</code>, <code>dir</code>,{' '}
-                                        <code>git</code>, etc. Configure additional commands in settings.
-                                        <span className="tw-ml-1 tw-text-red-800 dark:tw-text-red-300">
-                                            Enable with caution as mistakes are possible.
-                                        </span>
+                                    <div className="tw-text-xs tw-mt-2">
+                                        Allows agents to execute commands like <code>ls</code>,{' '}
+                                        <code>dir</code>, <code>git</code>, and other commands for
+                                        context. The agent will ask permission each time it would like to
+                                        run a command.
                                     </div>
                                 </div>
                             )}
@@ -196,7 +201,7 @@ export const ToolboxButton: FC<ToolboxButtonProps> = memo(({ settings, api, isFi
                             className="tw-w-8 tw-h-8 tw-text-muted-foreground"
                         />
                     )}
-                    {isFirstMessage && <span className="tw-font-semibold">agentic context</span>}
+                    {isFirstMessage && <span className="tw-font-semibold">agentic chat</span>}
                 </Button>
             </ToolbarPopoverItem>
         </div>

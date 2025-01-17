@@ -1,7 +1,8 @@
 import dedent from 'dedent'
+
 import { getCurrentDocContext } from '../../completions/get-current-doc-context'
 import { documentAndPosition } from '../../completions/test-helpers'
-import { type CodeToReplaceData, getCurrentFilePromptComponents } from '../prompt/prompt-utils'
+import { type CodeToReplaceData, getCodeToReplaceData } from '../prompt/prompt-utils'
 
 interface CodeToReplaceTestOptions {
     maxPrefixLength: number
@@ -25,10 +26,28 @@ export function createCodeToReplaceDataForTest(
         maxSuffixLength: options.maxSuffixLength,
     })
 
-    return getCurrentFilePromptComponents({
+    return getCodeToReplaceData({
         docContext,
         position,
         document,
         tokenBudget: options,
-    }).codeToReplaceData
+    })
+}
+
+export function getCodeToReplaceForRenderer(
+    code: TemplateStringsArray,
+    ...values: unknown[]
+): CodeToReplaceData {
+    return createCodeToReplaceDataForTest(
+        code,
+        {
+            maxPrefixLength: 100,
+            maxSuffixLength: 100,
+            maxPrefixLinesInArea: 2,
+            maxSuffixLinesInArea: 2,
+            codeToRewritePrefixLines: 1,
+            codeToRewriteSuffixLines: 1,
+        },
+        ...values
+    )
 }

@@ -4,6 +4,7 @@ import {
     ContextItemSource,
     type ContextItemWithContent,
     type ContextMentionProviderMetadata,
+    ProcessType,
     PromptString,
     firstValueFrom,
     logDebug,
@@ -12,6 +13,7 @@ import {
     pendingOperation,
     ps,
 } from '@sourcegraph/cody-shared'
+import * as uuid from 'uuid'
 import { URI } from 'vscode-uri'
 import { getContextFromRelativePath } from '../../commands/context/file-path'
 import { getContextFileFromShell } from '../../commands/context/shell'
@@ -106,12 +108,22 @@ export abstract class CodyTool {
      *
      * Abstract method to be implemented by subclasses for executing the tool.
      */
-    protected abstract execute(span: Span, queries: string[]): Promise<ContextItem[]>
-    public async run(span: Span, callback?: ToolStatusCallback): Promise<ContextItem[]> {
+    public abstract execute(
+        span: Span,
+        queries: string[],
+        callback?: ToolStatusCallback
+    ): Promise<ContextItem[]>
+    public async run(span: Span, cb?: ToolStatusCallback): Promise<ContextItem[]> {
+        const toolID = this.config.tags.tag.toString()
         try {
             const queries = this.parse()
             if (queries.length) {
-                callback?.onStream(this.config.title, queries.join(', '))
+                cb?.onStream({
+                    id: toolID,
+                    title: this.config.title,
+                    content: queries.join(', '),
+                    type: ProcessType.Tool,
+                })
                 // Create a timeout promise
                 const timeoutPromise = new Promise<ContextItem[]>((_, reject) => {
                     setTimeout(() => {
@@ -123,13 +135,13 @@ export abstract class CodyTool {
                     }, CodyTool.EXECUTION_TIMEOUT_MS)
                 })
                 // Race between execution and timeout
-                const results = await Promise.race([this.execute(span, queries), timeoutPromise])
+                const results = await Promise.race([this.execute(span, queries, cb), timeoutPromise])
                 // Notify that tool execution is complete
-                callback?.onComplete(this.config.title)
+                cb?.onComplete(toolID)
                 return results
             }
         } catch (error) {
-            callback?.onComplete(this.config.title, error as Error)
+            cb?.onComplete(toolID, error as Error)
         }
         return Promise.resolve([])
     }
@@ -158,11 +170,35 @@ class CliTool extends CodyTool {
         })
     }
 
-    public async execute(span: Span, commands: string[]): Promise<ContextItem[]> {
+    public async execute(
+        span: Span,
+        commands: string[],
+        callback: ToolStatusCallback
+    ): Promise<ContextItem[]> {
         span.addEvent('executeCliTool')
         if (commands.length === 0) return []
-        logDebug('CodyTool', `executing ${commands.length} commands...`)
-        return Promise.all(commands.map(getContextFileFromShell)).then(results => results.flat())
+        const toolID = this.config.tags.tag.toString()
+        const approvedCommands = new Set<string>()
+        for (const command of commands) {
+            const stepId = `${toolID}-${uuid.v4()}`
+            const apporval = await callback?.onConfirmationNeeded(stepId, {
+                title: this.config.title,
+                content: command,
+            })
+            if (apporval) {
+                approvedCommands.add(command)
+            } else {
+                callback.onComplete(stepId, new Error('Command rejected'))
+            }
+        }
+        if (!approvedCommands.size) {
+            throw new Error('No commands approved for execution')
+        }
+        callback.onUpdate(toolID, [...approvedCommands].join(', '))
+        logDebug('CodyTool', `executing ${approvedCommands.size} commands...`)
+        return Promise.all([...approvedCommands].map(getContextFileFromShell)).then(results =>
+            results.flat()
+        )
     }
 }
 
@@ -209,11 +245,11 @@ class SearchTool extends CodyTool {
                 subTag: ps`query`,
             },
             prompt: {
-                instruction: ps`Perform a symbol query search in the codebase-Do not support natural language search`,
+                instruction: ps`Perform a symbol query search in the codebase (Natural language search NOT supported)`,
                 placeholder: ps`SEARCH_QUERY`,
                 examples: [
-                    ps`Locate a function found in an error log: \`<TOOLSEARCH><query>function name</query></TOOLSEARCH>\``,
-                    ps`Search for a function in a file: \`<TOOLSEARCH><query>getController file:controller.py</query></TOOLSEARCH>\``,
+                    ps`Locate a symbol found in an error log: \`<TOOLSEARCH><query>symbol name</query></TOOLSEARCH>\``,
+                    ps`Search for a function named getController: \`<TOOLSEARCH><query>getController</query></TOOLSEARCH>\``,
                 ],
             },
         })

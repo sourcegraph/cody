@@ -65,22 +65,31 @@ export class DeepCodyAgent {
     constructor(
         protected readonly chatBuilder: ChatBuilder,
         protected readonly chatClient: Pick<ChatClient, 'chat'>,
-        statusUpdateCallback: (steps: ProcessingStep[]) => void
+        statusUpdateCallback: (steps: ProcessingStep[]) => void,
+        postRequest: (step: ProcessingStep) => Promise<boolean>
     ) {
         // Initialize tools, handlers and mixins in constructor
         this.tools = CodyToolProvider.getTools()
         this.initializeMultiplexer(this.tools)
         this.buildPrompt(this.tools)
-        this.stepsManager = new ProcessManager(steps => statusUpdateCallback(steps))
+
+        this.stepsManager = new ProcessManager(
+            steps => statusUpdateCallback(steps),
+            step => postRequest(step)
+        )
+
         this.statusCallback = {
-            onStart: () => {
-                this.stepsManager.initializeStep()
+            onUpdate: (id, content) => {
+                this.stepsManager.updateStep(id, content)
             },
-            onStream: (toolName, content) => {
-                this.stepsManager.addStep(toolName, content)
+            onStream: step => {
+                this.stepsManager.addStep(step)
             },
-            onComplete: (toolName, error) => {
-                this.stepsManager.completeStep(toolName, error)
+            onComplete: (id, error) => {
+                this.stepsManager.completeStep(id, error)
+            },
+            onConfirmationNeeded: async (id, step) => {
+                return this.stepsManager.addConfirmationStep(id, step)
             },
         }
     }
@@ -90,8 +99,11 @@ export class DeepCodyAgent {
      */
     protected initializeMultiplexer(tools: CodyTool[]): void {
         for (const tool of tools) {
-            this.multiplexer.sub(tool.config.tags.tag.toString(), {
-                onResponse: async (content: string) => tool.stream(content),
+            const { tags } = tool.config
+            this.multiplexer.sub(tags.tag.toString(), {
+                onResponse: async (content: string) => {
+                    tool.stream(content)
+                },
                 onTurnComplete: async () => {},
             })
         }
@@ -176,7 +188,9 @@ export class DeepCodyAgent {
         span.addEvent('reviewLoop')
         for (let i = 0; i < maxLoops && !chatAbortSignal.aborted; i++) {
             this.stats.loop++
+            const step = this.stepsManager.addStep({ title: 'Reflecting' })
             const newContext = await this.review(requestID, span, chatAbortSignal)
+            this.statusCallback.onComplete(step.id)
             if (!newContext.length) break
             // Filter and add new context items in one pass
             const validItems = newContext.filter(c => c.title !== 'TOOLCONTEXT')
@@ -184,6 +198,7 @@ export class DeepCodyAgent {
             this.stats.context += validItems.length
             if (newContext.every(isUserAddedItem)) break
         }
+        this.statusCallback.onComplete()
     }
 
     /**
@@ -210,6 +225,9 @@ export class DeepCodyAgent {
             if (!res || isReadyToAnswer(res)) {
                 return []
             }
+
+            const step = this.stepsManager.addStep({ title: 'Retrieving context' })
+
             const results = await Promise.all(
                 this.tools.map(async tool => {
                     try {
@@ -228,6 +246,12 @@ export class DeepCodyAgent {
                     }
                 })
             )
+
+            const newContext = results.flat().filter(isDefined)
+            if (newContext.length > 0) {
+                this.stats.context = this.stats.context + newContext.length
+                this.statusCallback.onUpdate(step.id, `fetched ${toPlural(newContext.length, 'item')}`)
+            }
 
             const reviewed = []
             const currentContext = [
@@ -256,14 +280,16 @@ export class DeepCodyAgent {
             // items are not removed from the updated context list. We will let the prompt builder
             // at the final stage to do the unique context check.
             if (reviewed.length > 0) {
+                this.statusCallback.onStream({
+                    title: 'Optimizing context',
+                    content: `selected ${toPlural(reviewed.length, 'item')}`,
+                })
                 const userAdded = this.context.filter(c => isUserAddedItem(c))
                 reviewed.push(...userAdded)
                 this.context = reviewed
             }
 
-            const newContextFetched = results.flat().filter(isDefined)
-            this.stats.context = this.stats.context + newContextFetched.length
-            return newContextFetched
+            return newContext
         } catch (error) {
             await this.multiplexer.notifyTurnComplete()
             logDebug('Deep Cody', `context review failed: ${error}`, { verbose: { prompt, error } })
@@ -360,3 +386,4 @@ export class RawTextProcessor {
 const answerTag = ACTIONS_TAGS.ANSWER.toString()
 const contextTag = ACTIONS_TAGS.CONTEXT.toString()
 const isReadyToAnswer = (text: string) => text === `<${answerTag}>`
+const toPlural = (num: number, text: string) => `${num} ${text}${num > 1 ? 's' : ''}`

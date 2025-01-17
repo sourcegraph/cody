@@ -14,7 +14,7 @@ import type { ContextRetriever } from '../ContextRetriever'
 import type { OmniboxTelemetry } from './OmniboxTelemetry'
 
 export interface AgentTools {
-    contextRetriever: Pick<ContextRetriever, 'retrieveContext'>
+    contextRetriever: Pick<ContextRetriever, 'retrieveContext' | 'computeDidYouMean'>
     editor: ChatControllerOptions['editor']
     chatClient: ChatControllerOptions['chatClient']
 }
@@ -26,6 +26,7 @@ export interface AgentHandlerDelegate {
     postError(error: Error, type?: MessageErrorType): void
     postStatuses(steps: ProcessingStep[]): void
     postMessageInProgress(message: ChatMessage): void
+    postRequest(step: ProcessingStep): Promise<boolean>
     postDone(ops?: { abort: boolean }): void
 
     /**

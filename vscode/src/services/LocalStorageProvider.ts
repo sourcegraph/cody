@@ -37,8 +37,7 @@ class LocalStorage implements LocalStorageForModelPreferences {
     public readonly LAST_USED_ENDPOINT = 'SOURCEGRAPH_CODY_ENDPOINT'
     private readonly MODEL_PREFERENCES_KEY = 'cody-model-preferences'
     private readonly CODY_CHAT_MEMORY = 'cody-chat-memory'
-    private readonly AUTO_EDITS_ONBOARDING_NOTIFICATION_COUNT =
-        'cody-auto-edit-onboarding-notification-info'
+    private readonly AUTO_EDITS_ONBOARDING_NOTIFICATION_COUNT = 'cody-auto-edit-notification-info'
 
     public readonly keys = {
         // LLM waitlist for the 09/12/2024 openAI o1 models
@@ -116,26 +115,26 @@ class LocalStorage implements LocalStorageForModelPreferences {
      * would give an inconsistent view of the state.
      */
     public async saveEndpointAndToken(
-        credentials: Pick<AuthCredentials, 'serverEndpoint' | 'accessToken' | 'tokenSource'>
+        auth: Pick<AuthCredentials, 'serverEndpoint' | 'credentials'>
     ): Promise<void> {
-        if (!credentials.serverEndpoint) {
+        if (!auth.serverEndpoint) {
             return
         }
         // Do not save an access token as the last-used endpoint, to prevent user mistakes.
-        if (isSourcegraphToken(credentials.serverEndpoint)) {
+        if (isSourcegraphToken(auth.serverEndpoint)) {
             return
         }
 
-        const serverEndpoint = new URL(credentials.serverEndpoint).href
+        const serverEndpoint = new URL(auth.serverEndpoint).href
 
         // Pass `false` to avoid firing the change event until we've stored all of the values.
         await this.set(this.LAST_USED_ENDPOINT, serverEndpoint, false)
         await this.addEndpointHistory(serverEndpoint, false)
-        if (credentials.accessToken) {
+        if (auth.credentials && 'token' in auth.credentials) {
             await secretStorage.storeToken(
                 serverEndpoint,
-                credentials.accessToken,
-                credentials.tokenSource
+                auth.credentials.token,
+                auth.credentials.source
             )
         }
         this.onChange.fire()
@@ -242,7 +241,7 @@ class LocalStorage implements LocalStorageForModelPreferences {
         }
     }
 
-    public async getAutoEditsOnboardingNotificationInfo(): Promise<AutoEditNotificationInfo> {
+    public async getAutoEditOnboardingNotificationInfo(): Promise<AutoEditNotificationInfo> {
         return (
             this.get<AutoEditNotificationInfo>(this.AUTO_EDITS_ONBOARDING_NOTIFICATION_COUNT) ?? {
                 lastNotifiedTime: 0,
@@ -251,7 +250,7 @@ class LocalStorage implements LocalStorageForModelPreferences {
         )
     }
 
-    public async setAutoEditsOnboardingNotificationInfo(info: AutoEditNotificationInfo): Promise<void> {
+    public async setAutoEditOnboardingNotificationInfo(info: AutoEditNotificationInfo): Promise<void> {
         await this.set(this.AUTO_EDITS_ONBOARDING_NOTIFICATION_COUNT, info)
     }
 

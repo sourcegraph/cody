@@ -8,6 +8,7 @@ import {
     type ModelsData,
     contextFiltersProvider,
     createModel,
+    graphqlClient,
     mockAuthStatus,
     mockClientCapabilities,
     mockResolvedConfig,
@@ -24,6 +25,7 @@ import { DefaultPrompter } from './prompt'
 describe('DefaultPrompter', () => {
     beforeEach(() => {
         vi.spyOn(contextFiltersProvider, 'isUriIgnored').mockResolvedValue(false)
+        vi.spyOn(graphqlClient, 'fetchSourcegraphAPI').mockResolvedValue(true)
         mockAuthStatus(AUTH_STATUS_FIXTURE_AUTHED)
         mockResolvedConfig({ configuration: {} })
         mockClientCapabilities(CLIENT_CAPABILITIES_FIXTURE)

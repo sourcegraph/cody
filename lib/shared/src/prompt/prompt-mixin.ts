@@ -43,19 +43,17 @@ export class PromptMixin {
             mixins.push(PromptMixin.hedging)
         }
 
-        // Handle Agent specific prompts
+        // Handle agent-specific prompts
         if (humanMessage.agent === 'deep-cody' && !newMixins.length) {
-            mixins.push(new PromptMixin(HEDGES_PREVENTION.concat(DEEP_CODY)))
+            mixins.push(new PromptMixin(DEEP_CODY))
         }
 
         // Add new mixins to the list of mixins to be prepended to the next human message.
         mixins.push(...newMixins)
-
-        const prompt = PromptMixin.buildPrompt(mixins)
-        return PromptMixin.mixedMessage(humanMessage, prompt, mixins)
+        return PromptMixin.mixedMessage(humanMessage, mixins)
     }
 
-    private static buildPrompt(mixins: PromptMixin[]): PromptString {
+    private static join(mixins: PromptMixin[]): PromptString {
         // Construct the prompt by joining all the mixins.
         return PromptString.join(
             mixins.map(m => m.prompt),
@@ -63,19 +61,18 @@ export class PromptMixin {
         ).trim()
     }
 
-    private static mixedMessage(
-        humanMessage: ChatMessage,
-        prompt: PromptString,
-        mixins: PromptMixin[]
-    ): ChatMessage {
-        if (!mixins.length || !humanMessage.text) {
+    private static mixedMessage(humanMessage: ChatMessage, mixins: PromptMixin[]): ChatMessage {
+        if (!humanMessage.text || !mixins.length) {
             return humanMessage
         }
 
-        if (humanMessage.agent === 'deep-cody' && prompt.includes('{{USER_INPUT_TEXT}}')) {
+        const joinedMixins = PromptMixin.join(mixins)
+
+        // If the agent's mixins include `{{USER_INPUT_TEXT}}`, replace it with the human message text.
+        if (humanMessage.agent && joinedMixins.includes('{{USER_INPUT_TEXT}}')) {
             return {
                 ...humanMessage,
-                text: prompt.replace('{{USER_INPUT_TEXT}}', humanMessage.text),
+                text: joinedMixins.replace('{{USER_INPUT_TEXT}}', humanMessage.text),
             }
         }
 
@@ -83,7 +80,7 @@ export class PromptMixin {
         // Note we do not reflect them in ChatMessage `text`.
         return {
             ...humanMessage,
-            text: ps`${prompt}\n\nQuestion: ${humanMessage.text ?? ps``}`,
+            text: ps`${joinedMixins}\n\nQuestion: ${humanMessage.text ?? ps``}`,
         }
     }
 

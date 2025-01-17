@@ -74,6 +74,7 @@ export type WebviewMessage =
     | { command: 'restoreHistory'; chatID: string }
     | { command: 'links'; value: string }
     | { command: 'openURI'; uri: Uri }
+    | { command: 'openRemoteFile'; uri: Uri }
     | {
           command: 'openFileLink'
           uri: Uri
@@ -147,6 +148,7 @@ export type WebviewMessage =
           index: number
           selectedFilters: NLSSearchDynamicFilter[]
       }
+    | { command: 'action/confirmation'; id: string; response: boolean }
 
 export interface SmartApplyResult {
     taskId: FixupTaskID
@@ -193,6 +195,7 @@ export type ExtensionMessage =
       }
     | ({ type: 'attribution' } & ExtensionAttributionMessage)
     | { type: 'rpc/response'; message: ResponseMessage }
+    | { type: 'action/confirmationRequest'; id: string; step: ProcessingStep }
 
 interface ExtensionAttributionMessage {
     snippet: string
@@ -213,7 +216,7 @@ export interface WebviewSubmitMessage extends WebviewContextMessage {
     editorState?: unknown | undefined | null
     intent?: ChatMessage['intent'] | undefined | null
     intentScores?: { intent: string; score: number }[] | undefined | null
-    manuallySelectedIntent?: boolean | undefined | null
+    manuallySelectedIntent?: ChatMessage['intent'] | undefined | null
     traceparent?: string | undefined | null
     steps?: ProcessingStep[] | undefined | null
 }
@@ -226,7 +229,7 @@ interface WebviewEditMessage extends WebviewContextMessage {
     editorState?: unknown | undefined | null
     intent?: ChatMessage['intent'] | undefined | null
     intentScores?: { intent: string; score: number }[] | undefined | null
-    manuallySelectedIntent?: boolean | undefined | null
+    manuallySelectedIntent?: ChatMessage['intent'] | undefined | null
     steps?: ProcessingStep[] | undefined | null
 }
 
@@ -264,7 +267,9 @@ export const SG_CHANGELOG_URL = new URL('https://sourcegraph.com/changelog')
 export const VSCODE_CHANGELOG_URL = new URL(
     'https://github.com/sourcegraph/cody/blob/main/vscode/CHANGELOG.md'
 )
-
+// Docs
+export const CODY_DOCS_CAPABILITIES_URL = new URL('https://sourcegraph.com/docs/cody/capabilities')
+export const CODY_DOCS_AGENTIC_CHAT_URL = new URL('agentic-chat', CODY_DOCS_CAPABILITIES_URL)
 // Community and support
 export const DISCORD_URL = new URL('https://discord.gg/s2qDtYGnAE')
 export const CODY_FEEDBACK_URL = new URL('https://github.com/sourcegraph/cody/issues/new/choose')
@@ -273,6 +278,8 @@ export const CODY_OLLAMA_DOCS_URL = new URL(
     'https://sourcegraph.com/docs/cody/clients/install-vscode#supported-local-ollama-models-with-cody'
 )
 // Account
+export const ENTERPRISE_PRICING_URL = new URL('https://sourcegraph.com/pricing')
+export const CODY_PRO_SUBSCRIPTION_URL = new URL('https://accounts.sourcegraph.com/cody/subscription')
 export const ACCOUNT_UPGRADE_URL = new URL('https://sourcegraph.com/cody/subscription')
 export const ACCOUNT_USAGE_URL = new URL('https://sourcegraph.com/cody/manage')
 export const ACCOUNT_LIMITS_INFO_URL = new URL(

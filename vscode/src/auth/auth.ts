@@ -12,6 +12,7 @@ import {
     cenv,
     clientCapabilities,
     currentAuthStatus,
+    currentResolvedConfig,
     getAuthErrorMessage,
     getCodyAuthReferralCode,
     graphqlClient,
@@ -20,6 +21,7 @@ import {
     isNetworkLikeError,
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
+import { resolveAuth } from '@sourcegraph/cody-shared/src/configuration/auth-resolver'
 import { isSourcegraphToken } from '../chat/protocol'
 import { newAuthStatus } from '../chat/utils'
 import { logDebug } from '../output-channel-logger'
@@ -83,27 +85,20 @@ export async function showSignInMenu(
             break
         }
         default: {
-            // Auto log user if token for the selected instance was found in secret
+            // Auto log user if token for the selected instance was found in secret or custom provider is configured
             const selectedEndpoint = item.uri
-            const token = await secretStorage.getToken(selectedEndpoint)
-            const tokenSource = await secretStorage.getTokenSource(selectedEndpoint)
-            let authStatus = token
-                ? await authProvider.validateAndStoreCredentials(
-                      { serverEndpoint: selectedEndpoint, accessToken: token, tokenSource },
-                      'store-if-valid'
-                  )
-                : undefined
+            const { configuration } = await currentResolvedConfig()
+            const auth = await resolveAuth(selectedEndpoint, configuration, secretStorage)
+
+            let authStatus = await authProvider.validateAndStoreCredentials(auth, 'store-if-valid')
+
             if (!authStatus?.authenticated) {
-                const newToken = await showAccessTokenInputBox(selectedEndpoint)
-                if (!newToken) {
+                const token = await showAccessTokenInputBox(selectedEndpoint)
+                if (!token) {
                     return
                 }
                 authStatus = await authProvider.validateAndStoreCredentials(
-                    {
-                        serverEndpoint: selectedEndpoint,
-                        accessToken: newToken,
-                        tokenSource: 'paste',
-                    },
+                    { serverEndpoint: selectedEndpoint, credentials: { token, source: 'paste' } },
                     'store-if-valid'
                 )
             }
@@ -228,12 +223,12 @@ const LoginMenuOptionItems = [
 ]
 
 async function signinMenuForInstanceUrl(instanceUrl: string): Promise<void> {
-    const accessToken = await showAccessTokenInputBox(instanceUrl)
-    if (!accessToken) {
+    const token = await showAccessTokenInputBox(instanceUrl)
+    if (!token) {
         return
     }
     const authStatus = await authProvider.validateAndStoreCredentials(
-        { serverEndpoint: instanceUrl, accessToken: accessToken, tokenSource: 'paste' },
+        { serverEndpoint: instanceUrl, credentials: { token, source: 'paste' } },
         'store-if-valid'
     )
     telemetryRecorder.recordEvent('cody.auth.signin.token', 'clicked', {
@@ -312,7 +307,7 @@ export async function tokenCallbackHandler(uri: vscode.Uri): Promise<void> {
     }
 
     const authStatus = await authProvider.validateAndStoreCredentials(
-        { serverEndpoint: endpoint, accessToken: token, tokenSource: 'redirect' },
+        { serverEndpoint: endpoint, credentials: { token, source: 'redirect' } },
         'store-if-valid'
     )
     telemetryRecorder.recordEvent('cody.auth.fromCallback.web', 'succeeded', {
@@ -409,8 +404,26 @@ export async function validateCredentials(
     signal?: AbortSignal,
     clientConfig?: CodyClientConfig
 ): Promise<AuthStatus> {
+    if (config.auth.error !== undefined) {
+        logDebug(
+            'auth',
+            `Failed to authenticate to ${config.auth.serverEndpoint} due to configuration error`,
+            config.auth.error
+        )
+        return {
+            authenticated: false,
+            endpoint: config.auth.serverEndpoint,
+            pendingValidation: false,
+            error: {
+                type: 'auth-config-error',
+                title: 'Auth config error',
+                message: config.auth.error?.message ?? config.auth.error,
+            },
+        }
+    }
+
     // An access token is needed except for Cody Web, which uses cookies.
-    if (!config.auth.accessToken && !clientCapabilities().isCodyWeb) {
+    if (!config.auth.credentials && !clientCapabilities().isCodyWeb) {
         return { authenticated: false, endpoint: config.auth.serverEndpoint, pendingValidation: false }
     }
 

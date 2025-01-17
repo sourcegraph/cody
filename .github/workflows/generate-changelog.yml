@@ -3,10 +3,9 @@ name: vscode-generate-changelog
 on:
   workflow_dispatch:
     inputs:
-      branch:
-        description: 'Branch to generate the changelog for'
+      version:
+        description: 'The version to be released, for example: 1.60.0'
         required: true
-        default: 'main'
         type: string
 
 jobs:
@@ -16,39 +15,69 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.inputs.branch }}
+      - name: Configure git
+        run: |
+          git config --global user.name 'sourcegraph-bot'
+          git config --global user.email 'bot@sourcegraph.com'
+          git fetch --tags origin
+          git checkout main
+          git pull
+      - name: Download changelog
+        env:
+          GH_TOKEN: ${{ secrets.DEVX_SERVICE_GH_TOKEN }}
+        run: |
+          # Download and run changelog generator
+          tagName=$(gh release -R sourcegraph/devx-service list --exclude-drafts --exclude-pre-releases -L 1 --json tagName -q '.[] | .tagName')
+          gh release -R sourcegraph/devx-service download ${tagName} --pattern changelog
+          chmod +x changelog
       - name: Generate changelog
         env:
-          DEVX_SERVICE_GH_TOKEN: ${{ secrets.DEVX_SERVICE_GH_TOKEN }}
-          GH_TOKEN: ${{ secrets.DEVX_SERVICE_GH_TOKEN }} 
+          GH_TOKEN: ${{ secrets.DEVX_SERVICE_GH_TOKEN }}
           GH_REPO: "sourcegraph/cody"
           CHANGELOG_SKIP_NO_CHANGELOG: "true"
           CHANGELOG_COMPACT: "true"
-          EXT_VERSION: ${{ env.EXT_VERSION }}
+          VERSION: ${{ github.event.inputs.version }}
         run: |
+          set +x
           # Get previous tag's commit
-          git fetch --tags origin
           PREV_TAG=$(git tag --sort=-v:refname | grep '^vscode-v' |  head -n 2 | tail -n 1)
           export RELEASE_LATEST_RELEASE=$(git rev-parse $PREV_TAG)
 
           # Get current release commit
           export RELEASE_LATEST_COMMIT=$(git rev-parse HEAD)
+          echo "Latest Commit: $RELEASE_LATEST_COMMIT"
+          echo "Latest Release: $RELEASE_LATEST_RELEASE"
+          ./changelog update-as-pr \
+            --github.repo=$GH_REPO \
+            --output.repo.base="main" \
+            --output.repo=$GH_REPO \
+            --output.pr.branch="release/vscode-%s" \
+            --output.pr.title="Changelog for %s" \
+            --output.pr.body="Automated release and changelog for VS code Cody %s" \
+            --output.changelog="vscode/CHANGELOG.md" \
+            --output.changelog.marker='{/* CHANGELOG_START */}' \
+            --releaseregistry.version=$VERSION
 
-          # Download and run changelog generator
-          tagName=$(gh release -R sourcegraph/devx-service list --exclude-drafts --exclude-pre-releases -L 1 --json tagName -q '.[] | .tagName')
-          gh release -R sourcegraph/devx-service download ${tagName} --pattern changelog
-          chmod +x changelog
+          #cat vscode/CHANGELOG.md
 
-          ./changelog write \
-          --output-file="vscode/CHANGELOG.md" \
-          --output.changelog.marker='{/* CHANGELOG_START */}' \
-          --releaseregistry.version=$EXT_VERSION
-
-          cat vscode/CHANGELOG.md
-          # git checkout -b release/vscode-v$EXT_VERSION
+          # git checkout -b release/vscode-v$VERSION
           # git add vscode/CHANGELOG.md
           # git commit -m "Automated release and changelog for VS code Cody"
-          # git push -u origin release/vscode-v$EXT_VERSION
+          # git push -u origin release/vscode-v$VERSION
           # gh pr create \
-          #   --title "VS Code: Release v$EXT_VERSION" \
+          #   --title "VS Code: Release v$VERSION" \
           #   --body "Automated release and changelog for VS code Cody" \
-          #   --base main --head release/vscode-v$EXT_VERSION
+          #   --base main --head release/vscode-v$VERSION
+      - name: Update version
+        env:
+          VERSION: ${{ github.event.inputs.version }}
+        run: |
+          set +x
+          # git checkout -b version-update/$VERSION
+          sed -i 's/"version": "[0-9]\+\.[0-9]\+\.[0-9]\+"/"version": "'$VERSION'"/' vscode/package.json
+          # This will get tagged along with the changelog PR
+          git add vscode/package.json
+          git pull
+          git checkout release/vscode-$VERSION
+          git commit -m "Update version to $VERSION"
+          git push

@@ -47,6 +47,7 @@ describe('DeepCody', () => {
     let mockCodyToolProvider: typeof CodyToolProvider
     let localStorageData: { [key: string]: unknown } = {}
     let mockStatusCallback: (steps: ProcessingStep[]) => void
+    let mockRequestCallback: (steps: ProcessingStep) => Promise<boolean>
 
     mockLocalStorage({
         get: (key: string) => localStorageData[key],
@@ -56,7 +57,7 @@ describe('DeepCody', () => {
     } as any)
 
     beforeEach(async () => {
-        mockResolvedConfig({ configuration: {} })
+        mockResolvedConfig({ configuration: {}, auth: { serverEndpoint: DOTCOM_URL.toString() } })
         mockClientCapabilities(CLIENT_CAPABILITIES_FIXTURE)
         mockAuthStatus(codyProAuthStatus)
         localStorageData = {}
@@ -99,6 +100,7 @@ describe('DeepCody', () => {
         ]
 
         mockStatusCallback = vi.fn()
+        mockRequestCallback = vi.fn().mockResolvedValue(true)
 
         vi.spyOn(featureFlagProvider, 'evaluatedFeatureFlag').mockReturnValue(Observable.of(false))
         vi.spyOn(modelsService, 'isStreamDisabled').mockReturnValue(false)
@@ -130,7 +132,12 @@ describe('DeepCody', () => {
     })
 
     it('initializes correctly when invoked', async () => {
-        const agent = new DeepCodyAgent(mockChatBuilder, mockChatClient, mockStatusCallback)
+        const agent = new DeepCodyAgent(
+            mockChatBuilder,
+            mockChatClient,
+            mockStatusCallback,
+            mockRequestCallback
+        )
 
         expect(agent).toBeDefined()
     })
@@ -159,7 +166,12 @@ describe('DeepCody', () => {
             ])
         )
 
-        const agent = new DeepCodyAgent(mockChatBuilder, mockChatClient, mockStatusCallback)
+        const agent = new DeepCodyAgent(
+            mockChatBuilder,
+            mockChatClient,
+            mockStatusCallback,
+            mockRequestCallback
+        )
 
         const result = await agent.getContext(
             'deep-cody-test-interaction-id',
@@ -200,7 +212,12 @@ describe('DeepCody', () => {
             ])
         )
 
-        const agent = new DeepCodyAgent(mockChatBuilder, mockChatClient, mockStatusCallback)
+        const agent = new DeepCodyAgent(
+            mockChatBuilder,
+            mockChatClient,
+            mockStatusCallback,
+            mockRequestCallback
+        )
 
         const result = await agent.getContext(
             'deep-cody-test-interaction-id',
@@ -251,7 +268,12 @@ describe('DeepCody', () => {
         mockChatClient.chat = vi.fn().mockReturnValue(mockStreamResponse)
 
         // Create agent and run context retrieval
-        const agent = new DeepCodyAgent(mockChatBuilder, mockChatClient, mockStatusCallback)
+        const agent = new DeepCodyAgent(
+            mockChatBuilder,
+            mockChatClient,
+            mockStatusCallback,
+            mockRequestCallback
+        )
         const result = await agent.getContext(
             'deep-cody-test-validation-id',
             new AbortController().signal,
