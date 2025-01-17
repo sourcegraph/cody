@@ -742,6 +742,20 @@ export const promptInput = setup({
                             return
                         }
 
+                        // TODO: We do want to be able to mention local context using dotcom
+                        if (item.type === 'tree' && !item.isIndexedRemotely) {
+                            // Delete the mention.
+                            enqueue({
+                                type: 'updateEditorState',
+                                params: replaceAtMention(
+                                    context.editorState,
+                                    schema.text(''),
+                                )
+                            })
+                            // TODO: Enqueue a task to open a link.
+                            return
+                        }
+
                         // In all other cases we'll insert the selected item as a mention node.
                         enqueue({
                             type: 'updateEditorState',

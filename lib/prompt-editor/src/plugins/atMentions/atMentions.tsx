@@ -61,8 +61,8 @@ function scanForMentionTriggerInLexicalInput(text: string) {
 
 export type setEditorQuery = (getNewQuery: (currentText: string) => [string, number?]) => void
 
-export const MentionsPlugin: FunctionComponent<{ contextWindowSizeInTokens?: number }> = memo(
-    ({ contextWindowSizeInTokens }) => {
+export const MentionsPlugin: FunctionComponent<{ contextWindowSizeInTokens?: number, openExternalLink: (uri: string) => void }> = memo(
+    ({ contextWindowSizeInTokens, openExternalLink }) => {
         const [editor] = useLexicalComposerContext()
 
         /**
@@ -146,6 +146,10 @@ export const MentionsPlugin: FunctionComponent<{ contextWindowSizeInTokens?: num
                         textNode.insertAfter(colonNode)
 
                         colonNode.select()
+                    } else if (selectedItem.type === 'tree' && !selectedItem.isIndexedRemotely) {
+                        // If the current repo is not indexed, delete the mention and open help instead.
+                        nodeToReplace.remove()
+                        openExternalLink('https://www.youtube.com/watch?v=dQw4w9WgXcQ')
                     } else {
                         const mentionNode = $createContextItemMentionNode(selectedItem)
                         nodeToReplace.replace(mentionNode)
@@ -156,7 +160,7 @@ export const MentionsPlugin: FunctionComponent<{ contextWindowSizeInTokens?: num
                     closeMenu()
                 })
             },
-            [editor]
+            [editor, openExternalLink]
         )
 
         // Close the menu when the editor loses focus.

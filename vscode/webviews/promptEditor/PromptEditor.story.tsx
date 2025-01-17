@@ -36,6 +36,7 @@ const PromptEditorWithStateValue: FunctionComponent<React.ComponentProps<typeof 
                 {...props}
                 initialEditorState={initialValue}
                 onChange={value => setEditorState(value.editorState)}
+                openExternalLink={(uri) => window.alert(`Navigate to: ${uri}`)}
             />
             <pre className={styles.stateValue}>{JSON.stringify(editorState, null, 2)}</pre>
         </div>

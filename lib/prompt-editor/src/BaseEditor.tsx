@@ -26,7 +26,8 @@ interface Props extends KeyboardEventPluginProps {
     disabled?: boolean
     className?: string
     contentEditableClassName?: string
-    'aria-label'?: string
+    'aria-label'?: string,
+    openExternalLink: (uri: string) => void,
 }
 
 /**
@@ -44,6 +45,7 @@ export const BaseEditor: FunctionComponent<Props> = ({
     contentEditableClassName,
     'aria-label': ariaLabel,
     onEnterKey,
+    openExternalLink,
 }) => {
     // biome-ignore lint/correctness/useExhaustiveDependencies: We do not want to update initialConfig because LexicalComposer is meant to be an uncontrolled component.
     const initialConfig = useMemo<InitialConfigType>(
@@ -80,7 +82,7 @@ export const BaseEditor: FunctionComponent<Props> = ({
                         // our tests using JSDOM. It doesn't hurt to enable otherwise.
                         ignoreHistoryMergeTagChange={false}
                     />
-                    <MentionsPlugin contextWindowSizeInTokens={contextWindowSizeInTokens} />
+                    <MentionsPlugin contextWindowSizeInTokens={contextWindowSizeInTokens} openExternalLink={openExternalLink} />
                     {onFocusChange && <OnFocusChangePlugin onFocusChange={onFocusChange} />}
                     {editorRef && <EditorRefPlugin editorRef={editorRef} />}
                     <KeyboardEventPlugin onEnterKey={onEnterKey} />
