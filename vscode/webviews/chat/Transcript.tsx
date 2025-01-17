@@ -442,6 +442,24 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
         intentDetectionToggleOn,
     ])
 
+    useEffect(() => {
+        if (!intentResults?.intent) {
+            return
+        }
+
+        if (intentDetectionDisabled || !intentDetectionToggleOn) {
+            setIntentResults({ intent: undefined, query: '' })
+        }
+    }, [intentDetectionDisabled, intentDetectionToggleOn, intentResults?.intent])
+
+    useEffect(() => {
+        if (!intentDetectionDisabled && intentDetectionToggleOn) {
+            if (humanEditorRef.current) {
+                prefetchIntent(humanEditorRef.current.getSerializedValue())
+            }
+        }
+    }, [intentDetectionDisabled, intentDetectionToggleOn, prefetchIntent])
+
     const onChange = useMemo(() => {
         return async (editorValue: SerializedPromptEditorValue) => {
             const currentQuery = inputTextWithMappedContextChipsFromPromptEditorState(
