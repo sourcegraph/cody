@@ -1,13 +1,14 @@
 import { type PromptString, ps } from '@sourcegraph/cody-shared'
 
+import { shortenPromptForOutputChannel } from '../../../src/completions/output-channel-logger'
 import { RetrieverIdentifier } from '../../completions/context/utils'
 import { autoeditsOutputChannelLogger } from '../output-channel-logger'
 
-import { shortenPromptForOutputChannel } from '../../../src/completions/output-channel-logger'
 import { AutoeditsUserPromptStrategy, type UserPromptArgs } from './base'
 import * as constants from './constants'
 import {
     getContextItemMappingWithTokenLimit,
+    getCurrentFilePromptComponents,
     getJaccardSimilarityPrompt,
     getLintErrorsPrompt,
     getPromptForTheContextSource,
@@ -19,12 +20,7 @@ import {
 } from './prompt-utils'
 
 export class DefaultUserPromptStrategy extends AutoeditsUserPromptStrategy {
-    getUserPrompt({
-        context,
-        tokenBudget,
-        fileWithMarkerPrompt,
-        areaPrompt,
-    }: UserPromptArgs): PromptString {
+    getUserPrompt({ context, tokenBudget, codeToReplaceData, document }: UserPromptArgs): PromptString {
         const contextItemMapping = getContextItemMappingWithTokenLimit(
             context,
             tokenBudget.contextSpecificTokenLimit
@@ -57,6 +53,11 @@ export class DefaultUserPromptStrategy extends AutoeditsUserPromptStrategy {
             contextItemMapping.get(RetrieverIdentifier.JaccardSimilarityRetriever) || [],
             constants.JACCARD_SIMILARITY_INSTRUCTION,
             getJaccardSimilarityPrompt
+        )
+
+        const { fileWithMarkerPrompt, areaPrompt } = getCurrentFilePromptComponents(
+            document,
+            codeToReplaceData
         )
 
         const currentFilePrompt = ps`${constants.CURRENT_FILE_INSTRUCTION}${fileWithMarkerPrompt}`

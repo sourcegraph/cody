@@ -69,6 +69,17 @@ export interface DocumentContext extends DocumentDependentContext, LinesContext 
     maxSuffixLength: number
 }
 
+export interface CodeToReplaceData {
+    codeToRewrite: string
+    prefixBeforeArea: string
+    suffixAfterArea: string
+    prefixInArea: string
+    suffixInArea: string
+    codeToRewritePrefix: string
+    codeToRewriteSuffix: string
+    range: vscode.Range
+}
+
 export interface GitContext {
     repoName: string
 }

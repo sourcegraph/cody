@@ -1,9 +1,10 @@
 import dedent from 'dedent'
 import { describe, expect, it, vi } from 'vitest'
 import * as vscode from 'vscode'
+
 import { documentAndPosition } from '../../completions/test-helpers'
-import type { CodeToReplaceData } from '../prompt/prompt-utils'
-import { createCodeToReplaceDataForTest } from '../prompt/test-helper'
+
+import { getCodeToReplaceForRenderer } from '../prompt/test-helper'
 import {
     INITIAL_TEXT_START_MARKER,
     REPLACER_TEXT_END_MARKER,
@@ -12,24 +13,6 @@ import {
     getTextBetweenMarkers,
     shrinkReplacerTextToCodeToReplaceRange,
 } from './mock-renderer'
-
-function getCodeToReplaceForRenderer(
-    code: TemplateStringsArray,
-    ...values: unknown[]
-): CodeToReplaceData {
-    return createCodeToReplaceDataForTest(
-        code,
-        {
-            maxPrefixLength: 100,
-            maxSuffixLength: 100,
-            maxPrefixLinesInArea: 2,
-            maxSuffixLinesInArea: 2,
-            codeToRewritePrefixLines: 1,
-            codeToRewriteSuffixLines: 1,
-        },
-        ...values
-    )
-}
 
 describe('renderer-testing', () => {
     const createDocumentTextForMockRenderer = (param: {

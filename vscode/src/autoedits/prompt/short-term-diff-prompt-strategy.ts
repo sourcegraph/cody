@@ -10,6 +10,7 @@ import * as constants from './constants'
 import {
     getContextItemMappingWithTokenLimit,
     getContextItemsForIdentifier,
+    getCurrentFilePromptComponents,
     getJaccardSimilarityPrompt,
     getLintErrorsPrompt,
     getPromptForTheContextSource,
@@ -23,12 +24,7 @@ import {
 export class ShortTermPromptStrategy extends AutoeditsUserPromptStrategy {
     private readonly SHORT_TERM_SNIPPET_VIEW_TIME_MS = 60 * 1000 // 1 minute
 
-    getUserPrompt({
-        context,
-        tokenBudget,
-        fileWithMarkerPrompt,
-        areaPrompt,
-    }: UserPromptArgs): PromptString {
+    getUserPrompt({ context, tokenBudget, codeToReplaceData, document }: UserPromptArgs): PromptString {
         const contextItemMapping = getContextItemMappingWithTokenLimit(
             context,
             tokenBudget.contextSpecificTokenLimit
@@ -56,6 +52,12 @@ export class ShortTermPromptStrategy extends AutoeditsUserPromptStrategy {
             constants.JACCARD_SIMILARITY_INSTRUCTION,
             getJaccardSimilarityPrompt
         )
+
+        const { fileWithMarkerPrompt, areaPrompt } = getCurrentFilePromptComponents(
+            document,
+            codeToReplaceData
+        )
+
         const currentFilePrompt = ps`${constants.CURRENT_FILE_INSTRUCTION}${fileWithMarkerPrompt}`
 
         const finalPrompt = joinPromptsWithNewlineSeparator(

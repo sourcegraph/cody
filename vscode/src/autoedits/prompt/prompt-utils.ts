@@ -3,6 +3,7 @@ import * as vscode from 'vscode'
 import {
     type AutoEditsTokenLimit,
     type AutocompleteContextSnippet,
+    type CodeToReplaceData,
     type DocumentContext,
     PromptString,
     ps,
@@ -21,6 +22,8 @@ import { clip, splitLinesKeepEnds } from '../utils'
 
 import * as constants from './constants'
 
+export { type CodeToReplaceData } from '@sourcegraph/cody-shared'
+
 export interface CurrentFilePromptOptions {
     docContext: DocumentContext
     document: vscode.TextDocument
@@ -32,35 +35,6 @@ export interface CurrentFilePromptOptions {
         | 'maxPrefixLinesInArea'
         | 'maxSuffixLinesInArea'
     >
-}
-
-export interface CodeToReplaceData {
-    codeToRewrite: string
-    prefixBeforeArea: string
-    suffixAfterArea: string
-    prefixInArea: string
-    suffixInArea: string
-    codeToRewritePrefix: string
-    codeToRewriteSuffix: string
-    range: vscode.Range
-}
-
-export interface CurrentFilePromptComponents {
-    fileWithMarkerPrompt: PromptString
-    areaPrompt: PromptString
-    codeToReplaceData: CodeToReplaceData
-}
-
-interface CurrentFileContext {
-    filePath: PromptString
-    codeToRewrite: PromptString
-    codeToRewritePrefix: PromptString
-    codeToRewriteSuffix: PromptString
-    prefixInArea: PromptString
-    suffixInArea: PromptString
-    prefixBeforeArea: PromptString
-    suffixAfterArea: PromptString
-    range: vscode.Range
 }
 
 export function getCompletionsPromptWithSystemPrompt(
@@ -90,30 +64,27 @@ export function getPromptForTheContextSource(
     return ps`${instructionPrompt}\n${prompt}`
 }
 
-//  Prompt components helper functions
 export function getCurrentFilePromptComponents(
-    options: CurrentFilePromptOptions
-): CurrentFilePromptComponents {
-    const currentFileContext = getCurrentFileContext(options)
-    const codeToReplaceData = {
-        codeToRewrite: currentFileContext.codeToRewrite.toString(),
-        range: currentFileContext.range,
-        codeToRewritePrefix: currentFileContext.codeToRewritePrefix.toString(),
-        codeToRewriteSuffix: currentFileContext.codeToRewriteSuffix.toString(),
-        prefixBeforeArea: currentFileContext.prefixBeforeArea.toString(),
-        suffixAfterArea: currentFileContext.suffixAfterArea.toString(),
-        prefixInArea: currentFileContext.prefixInArea.toString(),
-        suffixInArea: currentFileContext.suffixInArea.toString(),
-    } satisfies CodeToReplaceData
-
-    const fileWithMarker = joinPromptsWithNewlineSeparator(
-        currentFileContext.prefixBeforeArea,
-        constants.AREA_FOR_CODE_MARKER,
-        currentFileContext.suffixAfterArea
+    document: vscode.TextDocument,
+    codeToReplaceDataRaw: CodeToReplaceData
+): {
+    fileWithMarkerPrompt: PromptString
+    areaPrompt: PromptString
+} {
+    const filePath = getCurrentFilePath(document)
+    const codeToReplaceData = PromptString.fromAutoEditCodeToReplaceData(
+        codeToReplaceDataRaw,
+        document.uri
     )
 
-    const filePrompt = getCurrentFileContextPromptWithPath(
-        currentFileContext.filePath,
+    const fileWithMarker = joinPromptsWithNewlineSeparator(
+        codeToReplaceData.prefixBeforeArea,
+        constants.AREA_FOR_CODE_MARKER,
+        codeToReplaceData.suffixAfterArea
+    )
+
+    const fileWithMarkerPrompt = getCurrentFileContextPromptWithPath(
+        filePath,
         joinPromptsWithNewlineSeparator(
             constants.FILE_TAG_OPEN,
             fileWithMarker,
@@ -123,19 +94,21 @@ export function getCurrentFilePromptComponents(
 
     const areaPrompt = joinPromptsWithNewlineSeparator(
         constants.AREA_FOR_CODE_MARKER_OPEN,
-        currentFileContext.prefixInArea,
+        codeToReplaceData.prefixInArea,
         constants.CODE_TO_REWRITE_TAG_OPEN,
-        currentFileContext.codeToRewrite,
+        codeToReplaceData.codeToRewrite,
         constants.CODE_TO_REWRITE_TAG_CLOSE,
-        currentFileContext.suffixInArea,
+        codeToReplaceData.suffixInArea,
         constants.AREA_FOR_CODE_MARKER_CLOSE
     )
 
-    return { fileWithMarkerPrompt: filePrompt, areaPrompt, codeToReplaceData }
+    return {
+        fileWithMarkerPrompt,
+        areaPrompt,
+    }
 }
 
-export function getCurrentFileContext(options: CurrentFilePromptOptions): CurrentFileContext {
-    // Calculate line numbers for different sections
+export function getCodeToReplaceData(options: CurrentFilePromptOptions): CodeToReplaceData {
     const {
         position,
         document,
@@ -194,22 +167,21 @@ export function getCurrentFileContext(options: CurrentFilePromptOptions): Curren
         prefixBeforeArea: new vscode.Range(positionAtLineStart(minLine), positionAtLineStart(areaStart)),
         suffixAfterArea: new vscode.Range(positionAtLineEnd(areaEnd), positionAtLineEnd(maxLine)),
     }
+
     const { prefixBeforeArea, suffixAfterArea } = getUpdatedCurrentFilePrefixAndSuffixOutsideArea(
         document,
         ranges.prefixBeforeArea,
         ranges.suffixAfterArea
     )
 
-    // Convert ranges to PromptStrings
     return {
-        filePath: getCurrentFilePath(document),
-        codeToRewrite: PromptString.fromDocumentText(document, ranges.codeToRewrite),
-        codeToRewritePrefix: PromptString.fromDocumentText(document, ranges.codeToRewritePrefix),
-        codeToRewriteSuffix: PromptString.fromDocumentText(document, ranges.codeToRewriteSuffix),
-        prefixInArea: PromptString.fromDocumentText(document, ranges.prefixInArea),
-        suffixInArea: PromptString.fromDocumentText(document, ranges.suffixInArea),
-        prefixBeforeArea,
-        suffixAfterArea,
+        codeToRewrite: document.getText(ranges.codeToRewrite),
+        codeToRewritePrefix: document.getText(ranges.codeToRewritePrefix),
+        codeToRewriteSuffix: document.getText(ranges.codeToRewriteSuffix),
+        prefixInArea: document.getText(ranges.prefixInArea),
+        suffixInArea: document.getText(ranges.suffixInArea),
+        prefixBeforeArea: prefixBeforeArea.toString(),
+        suffixAfterArea: suffixAfterArea.toString(),
         range: ranges.codeToRewrite,
     }
 }
