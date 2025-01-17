@@ -280,12 +280,12 @@ export const SubmitButton: FC<{
                                             toggleIntentDetection()
                                         }
                                     }}
-                                    className="tw-flex tw-p-4 tw-gap-6 tw-items-baseline"
+                                    className="tw-flex tw-p-4 tw-gap-6 tw-items-center tw-cursor-pointer hover:tw-bg-button-secondary-background"
                                 >
                                     <Switch checked={intentDetectionToggleOn} />
                                     <div className="tw-flex tw-flex-col">
                                         <div>
-                                            <span className="tw-font-semibold tw-mr-4">
+                                            <span className="tw-font-medium tw-mr-4">
                                                 Intent Detection
                                             </span>
                                             <Badge variant="secondary">Beta</Badge>
