@@ -1,9 +1,51 @@
 .welcome-footer {
-    padding: 1rem 1rem;
+    padding: 1rem;
     display: flex;
     flex-flow: column nowrap;
     max-width: 100%;
     color: var(--vscode-input-placeholderForeground)
+}
+
+.cheatsheet {
+    display: flex;
+    flex-flow: column nowrap;
+    width: 100%;
+    gap: 0.5rem;
+    padding: 1rem 0;
+}
+
+.title {
+    display: flex;
+    flex-flow: row nowrap;
+    align-items: center;
+    font-weight: 500;
+    gap: 0.5rem;
+}
+
+.examples {
+    display: flex;
+    flex-flow: row wrap;
+    gap: 0.25rem 1rem;
+    padding: 0 0.5rem;
+}
+
+.example {
+    display: flex;
+    flex-flow: column nowrap;
+    align-items: flex-start;
+    gap: 0.25rem;
+    padding: 0.25rem 0;
+}
+
+.example-input {
+    display: flex;
+    flex-flow: row wrap;
+    border-radius: 4px;
+    color: var(--vscode-input-foreground);
+    border: 1px solid var(--vscode-button-secondaryBackground);
+    background-color: var(--vscode-editor-background);
+    font-family: var(--vscode-editor-font-family);
+    font-size: var(--vscode-editor-font-size);
 }
 
 .tips {
@@ -12,14 +54,15 @@
     width: 100%;
     gap: 0.5rem;
     padding: 1rem 0;
-    border-bottom: 0.25px solid var(--vscode-dropdown-border);
 }
 
 .links {
     display: flex;
     flex-flow: row wrap;
-    padding: 0.75rem 0;
-    gap: 0.5rem;
+    justify-content: center;
+    padding: 1rem 0;
+    gap: 1.25rem;
+    border-top: 0.5px solid var(--vscode-button-secondaryBackground);
 }
 
 .item {
