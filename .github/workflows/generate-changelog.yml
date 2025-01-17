@@ -39,6 +39,8 @@ jobs:
           VERSION: ${{ github.event.inputs.version }}
         run: |
           set +x
+          export CHANGELOG_SKIP_NO_CHANGELOG="false"
+          export CHANGELOG_COMPACT="false"
           # Get previous tag's commit
           PREV_TAG=$(git tag --sort=-v:refname | grep '^vscode-v' |  head -n 2 | tail -n 1)
           export RELEASE_LATEST_RELEASE=$(git rev-parse $PREV_TAG)
@@ -55,16 +57,9 @@ jobs:
             --output.pr.title="Changelog for %s" \
             --output.pr.body="Automated release and changelog for VS code Cody %s" \
             --output.changelog="vscode/CHANGELOG.md" \
-            --output.changelog.marker='{/* CHANGELOG_START */}' \
-            --releaseregistry.version=$VERSION
+            --output.changelog.marker='<!--- {/_ CHANGELOG_START _/} --->' \
+            --releaseregistry.version=$text
 
-          #cat vscode/CHANGELOG.md
-
-          # git checkout -b release/vscode-v$VERSION
-          # git add vscode/CHANGELOG.md
-          # git commit -m "Automated release and changelog for VS code Cody"
-          # git push -u origin release/vscode-v$VERSION
-          # gh pr create \
           #   --title "VS Code: Release v$VERSION" \
           #   --body "Automated release and changelog for VS code Cody" \
           #   --base main --head release/vscode-v$VERSION
