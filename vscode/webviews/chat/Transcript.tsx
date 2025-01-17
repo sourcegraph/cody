@@ -281,6 +281,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
     const [manuallySelectedIntent, setManuallySelectedIntent] = useState<{
         intent: ChatMessage['intent']
         query: string
+        prompt?: boolean
     }>({
         intent: humanMessage.manuallySelectedIntent,
         query: humanMessage.editorState
@@ -335,15 +336,15 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
             return
         }
 
-        const { intent, intentScores } = intentFromSubmit
-            ? { intent: intentFromSubmit, intentScores: undefined }
-            : getIntentProps(editorValue, intentResults)
+        const { intent, intentScores, manual } = intentFromSubmit
+            ? { intent: intentFromSubmit, intentScores: undefined, manual: true }
+            : getIntentProps(editorValue, intentResults || null, manuallySelectedIntent)
 
         const commonProps = {
             editorValue,
             intent,
             intentScores,
-            manuallySelectedIntent: intentFromSubmit,
+            manuallySelectedIntent: manual ? intent : undefined,
             traceparent,
         }
 
@@ -448,12 +449,11 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
             )
 
             // Reset manually selected intent if the editor text is changed.
-            // If the intent is set as 'edit' or 'insert' for prompts, then only
-            // reset the intent if the editor text is emptied.
+            // If the intent is set for a prompts, only reset the intent if the editor text is emptied.
             if (
                 manuallySelectedIntent.intent &&
                 currentQuery.trim() !== manuallySelectedIntent.query.trim() &&
-                (!['edit', 'insert'].includes(manuallySelectedIntent.intent) || !editorValue.text.trim())
+                (!manuallySelectedIntent.prompt || !editorValue.text.trim())
             ) {
                 setManuallySelectedIntent({ intent: undefined, query: '' })
             }
@@ -703,6 +703,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
         setManuallySelectedIntent({
             intent,
             query,
+            prompt: true,
         })
     }, [])
 
@@ -892,11 +893,19 @@ function reevaluateSearchWithSelectedFilters({
     })
 }
 
-const getIntentProps = (editorValue: SerializedPromptEditorValue, results?: IntentResults | null) => {
+const getIntentProps = (
+    editorValue: SerializedPromptEditorValue,
+    intentResults: IntentResults | null,
+    manuallySelectedIntent: { intent: ChatMessage['intent']; query: string }
+) => {
     const query = inputTextWithMappedContextChipsFromPromptEditorState(editorValue.editorState)
 
-    if (query === results?.query) {
-        return { intent: results.intent, intentScores: results.allScores }
+    if (manuallySelectedIntent.intent) {
+        return { intent: manuallySelectedIntent.intent, manual: true }
+    }
+
+    if (query === intentResults?.query) {
+        return { intent: intentResults.intent, intentScores: intentResults.allScores, manual: false }
     }
 
     return {}
