@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react'
 
-import { PromptString, ps } from '@sourcegraph/cody-shared'
+import { FIXTURE_MODEL, PromptString, ps } from '@sourcegraph/cody-shared'
 import { ExtensionAPIProviderForTestsOnly, MOCK_API } from '@sourcegraph/prompt-editor'
 import { Observable } from 'observable-fns'
 import { URI } from 'vscode-uri'
@@ -63,7 +63,7 @@ export const WithInitialContext: StoryObj<typeof meta> = {
         <ExtensionAPIProviderForTestsOnly
             value={{
                 ...MOCK_API,
-                chatModels: () => Observable.of([]),
+                chatModels: () => Observable.of([FIXTURE_MODEL]),
                 defaultContext: () =>
                     Observable.of({
                         initialContext: [
@@ -95,7 +95,7 @@ export const WithInitialContextFileTooLarge: StoryObj<typeof meta> = {
         <ExtensionAPIProviderForTestsOnly
             value={{
                 ...MOCK_API,
-                chatModels: () => Observable.of([]),
+                chatModels: () => Observable.of([FIXTURE_MODEL]),
                 defaultContext: () =>
                     Observable.of({
                         initialContext: [
