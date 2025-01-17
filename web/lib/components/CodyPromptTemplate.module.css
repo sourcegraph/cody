@@ -1,3 +1,7 @@
+:root {
+    --human-message-editor-gap: 0;
+    --human-message-editor-cell-spacing-bottom: 6px;
+}
 
 .root {
     display: flex;
@@ -10,17 +14,7 @@
 .container {
     height: 100%;
     flex-grow: 1;
-}
 
-
-
-
-:root {
-    --human-message-editor-gap: 0;
-    --human-message-editor-cell-spacing-bottom: 6px;
-}
-
-.container {
     display: flex;
     flex-direction: column;
     gap: var(--human-message-editor-gap);

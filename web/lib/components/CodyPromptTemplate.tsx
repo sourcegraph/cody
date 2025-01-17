@@ -26,10 +26,8 @@ import {
 } from '@sourcegraph/prompt-editor'
 import { getAppWrappers } from 'cody-ai/webviews/App'
 import { useClientActionDispatcher } from 'cody-ai/webviews/client/clientState'
-import type { View } from 'cody-ai/webviews/tabs'
 import { ComposedWrappers, type Wrapper } from 'cody-ai/webviews/utils/composeWrappers'
 import { createWebviewTelemetryRecorder } from 'cody-ai/webviews/utils/telemetry'
-import type { Config } from 'cody-ai/webviews/utils/useConfig'
 
 import { useCodyWebAgent } from './use-cody-agent'
 
@@ -126,10 +124,7 @@ const CodyPromptTemplatePanel: FC<PanelProps> = props => {
     const { vscodeAPI, className, disabled, initialEditorState, placeholder, onEditorApiReady } = props
 
     const dispatchClientAction = useClientActionDispatcher()
-    const [_errorMessages, setErrorMessages] = useState<string[]>([])
-    const [config, setConfig] = useState<Config | null>(null)
     const [clientConfig, setClientConfig] = useState<CodyClientConfig | null>(null)
-    const [view, setView] = useState<View | undefined>()
     const editorRef = useRef<PromptEditorRefAPI>(null)
     // biome-ignore lint/correctness/useExhaustiveDependencies:
     useEffect(() => {
@@ -141,17 +136,6 @@ const CodyPromptTemplatePanel: FC<PanelProps> = props => {
     useLayoutEffect(() => {
         vscodeAPI.onMessage(message => {
             switch (message.type) {
-                case 'errors':
-                    setErrorMessages(prev => [...prev, message.errors].slice(-5))
-                    break
-                case 'view':
-                    setView(message.view)
-                    break
-                case 'config':
-                    message.config.webviewType = 'sidebar'
-                    message.config.multipleWebviewsEnabled = false
-                    setConfig(message)
-                    break
                 case 'clientConfig':
                     if (message.clientConfig) {
                         setClientConfig(message.clientConfig)
@@ -172,11 +156,11 @@ const CodyPromptTemplatePanel: FC<PanelProps> = props => {
             getAppWrappers({
                 vscodeAPI,
                 telemetryRecorder,
-                config,
+                config: null,
                 clientConfig,
                 staticDefaultContext: undefined,
             }),
-        [vscodeAPI, telemetryRecorder, config, clientConfig]
+        [vscodeAPI, telemetryRecorder, clientConfig]
     )
 
     const CONTEXT_MENTIONS_SETTINGS = useMemo<ChatMentionsSettings>(() => {
@@ -186,26 +170,22 @@ const CodyPromptTemplatePanel: FC<PanelProps> = props => {
         }
     }, [])
 
-    const isLoading = !config || !view
-
     return (
         <div className={className} data-cody-web-chat={true}>
-            {!isLoading && (
-                <ChatMentionContext.Provider value={CONTEXT_MENTIONS_SETTINGS}>
-                    <ComposedWrappers wrappers={wrappers}>
-                        <PromptEditor
-                            editorRef={editorRef}
-                            seamless={true}
-                            placeholder={placeholder}
-                            initialEditorState={initialEditorState}
-                            disabled={disabled}
-                            contextWindowSizeInTokens={4096}
-                            editorClassName={styles.editor}
-                            contentEditableClassName={styles.editorContentEditable}
-                        />
-                    </ComposedWrappers>
-                </ChatMentionContext.Provider>
-            )}
+            <ChatMentionContext.Provider value={CONTEXT_MENTIONS_SETTINGS}>
+                <ComposedWrappers wrappers={wrappers}>
+                    <PromptEditor
+                        editorRef={editorRef}
+                        seamless={true}
+                        placeholder={placeholder}
+                        initialEditorState={initialEditorState}
+                        disabled={disabled}
+                        contextWindowSizeInTokens={4096}
+                        editorClassName={styles.editor}
+                        contentEditableClassName={styles.editorContentEditable}
+                    />
+                </ComposedWrappers>
+            </ChatMentionContext.Provider>
         </div>
     )
 }
