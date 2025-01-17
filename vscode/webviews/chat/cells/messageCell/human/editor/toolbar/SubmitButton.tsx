@@ -99,7 +99,7 @@ function getIntentOptions({
         {
             title: (
                 <span className="tw-inline-flex tw-items-center tw-gap-4">
-                    <span>Run as Search</span>
+                    <span>Run as search</span>
                     <Badge>Beta</Badge>
                 </span>
             ),
