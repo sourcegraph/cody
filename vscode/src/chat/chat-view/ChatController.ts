@@ -827,11 +827,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         })
 
         recorder.setIntentInfo({
-            userSpecifiedIntent: manuallySelectedIntent
-                ? manuallySelectedIntent
-                : this.featureCodyExperimentalOneBox
-                  ? 'auto'
-                  : 'chat',
+            userSpecifiedIntent:
+                manuallySelectedIntent ?? this.featureCodyExperimentalOneBox ? 'auto' : 'chat',
             detectedIntent: detectedIntent,
             detectedIntentScores: detectedIntentScores,
         })
