@@ -144,8 +144,9 @@ export const events = [
                             : undefined,
                         // Each intent is mapped to a `detectedIntentScores.{intent}` field inside the metadata
                         ...params.detectedIntentScores?.reduce(
-                            (scores, value) => {
-                                scores['detectedIntentScores.' + value.intent] = value.score
+                            (scores, intentScore) => {
+                                // intentScore.intent has a fixed set of values and is safe to use here - see ChatMessage['intent']
+                                scores['detectedIntentScores.' + intentScore.intent] = intentScore.score
                                 return scores
                             },
                             {} as Record<string, number>
@@ -156,13 +157,6 @@ export const events = [
                         recordsPrivateMetadataTranscript: recordTranscript ? 1 : 0,
                     }),
                     privateMetadata: {
-                        ...params.detectedIntentScores?.reduce(
-                            (scores, value) => {
-                                scores['detectedIntentScores.' + value.intent] = value.score
-                                return scores
-                            },
-                            {} as Record<string, number>
-                        ),
                         detectedIntent: params.detectedIntent,
                         // TODO: Remove this field when the transition from commands to prompts is complete
                         command: params.command,
