@@ -28,7 +28,7 @@ export default function WelcomeFooter({ IDE }: { IDE: CodyIDE }) {
     return (
         <div className={styles.welcomeFooter}>
             <QuickStart />
-            <div className={`${styles.links} tw-mx-auto`} style={{ maxWidth: '768px' }}>
+            <div className={styles.links}>
                 {chatLinks.map(link => (
                     <a
                         key={link.url}

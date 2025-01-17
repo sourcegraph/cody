@@ -1,3 +1,6 @@
+import { useState } from 'react'
+import styles from './WelcomeFooter.module.css'
+
 import {
     AtSignIcon,
     ChevronDown,
@@ -33,8 +36,6 @@ const chatTips: ChatViewTip[] = [
     },
 ]
 
-import { useState } from 'react'
-import styles from './WelcomeFooter.module.css'
 interface Example {
     input: string
     description: string
@@ -50,8 +51,10 @@ interface ExampleGroup {
 
 export function QuickStart() {
     const [showTipsOverlay, setShowTipsOverlay] = useState(false)
-    const [isCollapsed, setIsCollapsed] = useState(false)
-
+    const [isCollapsed, setIsCollapsed] = useState(() => {
+        const saved = localStorage.getItem('quickStartCollapsed')
+        return saved ? JSON.parse(saved) : false
+    })
     const examples: Example[] = [
         {
             input: '= useCallback(',
@@ -104,7 +107,11 @@ export function QuickStart() {
     }
 
     const toggleCollapse = () => {
-        setIsCollapsed(!isCollapsed)
+        setIsCollapsed((prevState: boolean) => {
+            const newState = !prevState
+            localStorage.setItem('quickStartCollapsed', JSON.stringify(newState))
+            return newState
+        })
     }
 
     const handleCollapseKeyDown = (event: React.KeyboardEvent) => {
@@ -115,33 +122,27 @@ export function QuickStart() {
 
     return (
         <>
-            <div className="tw-mx-auto tw-my-2 tw-flex tw-max-w-3xl tw-max-w-[768px] tw-flex-col tw-py-2 tw-text-sm tw-text-muted-foreground">
-                <div
-                    className={`tw-flex tw-items-center tw-justify-between tw-gap-4 tw-text-md tw-font-medium tw-text-foreground tw-p-4 md:tw-text-base ${
-                        isCollapsed ? 'hover:tw-bg-muted tw-cursor-pointer tw-rounded-lg' : ''
-                    }`}
-                    onClick={isCollapsed ? toggleCollapse : undefined}
-                    onKeyDown={isCollapsed ? handleCollapseKeyDown : undefined}
-                    role="button"
-                    tabIndex={isCollapsed ? 0 : undefined}
-                >
+            <div
+                className={`tw-mx-auto tw-my-2 tw-flex tw-max-w-3xl tw-max-w-[768px] tw-flex-col tw-py-2 tw-text-sm tw-text-muted-foreground tw-rounded-lg tw-transition-colors tw-duration-200 ${
+                    isCollapsed ? 'hover:tw-bg-muted' : 'hover:none'
+                }`}
+                onClick={toggleCollapse}
+                onKeyDown={handleCollapseKeyDown}
+                role="button"
+                tabIndex={0}
+            >
+                <div className="tw-flex tw-items-center tw-justify-between tw-gap-4 tw-text-md tw-font-medium tw-text-foreground tw-p-4 md:tw-text-base">
                     <div className="tw-flex tw-items-center tw-gap-4 tw-text-md">
                         <Zap className="tw-h-8 tw-w-8" strokeWidth={1.25} />
                         Quick Start
                     </div>
-                    <button
-                        type="button"
-                        onClick={toggleCollapse}
-                        onKeyDown={handleCollapseKeyDown}
-                        className="tw-p-1 hover:tw-bg-muted tw-rounded-full"
-                        aria-label={isCollapsed ? 'Expand quick start' : 'Collapse quick start'}
-                    >
+                    <div className="tw-p-1 hover:tw-bg-muted tw-rounded-full">
                         {isCollapsed ? (
                             <ChevronRight className="tw-h-8 tw-w-8 tw-text-muted-foreground" />
                         ) : (
                             <ChevronDown className="tw-h-8 tw-w-8 tw-text-muted-foreground" />
                         )}
-                    </button>
+                    </div>
                 </div>
                 <div
                     className={`tw-overflow-hidden tw-transition-[max-height] tw-duration-300 tw-ease-in-out ${
@@ -162,21 +163,26 @@ export function QuickStart() {
                             </div>
                         ))}
                     </div>
-                    <button
-                        type="button"
-                        className="tw-m-4 tw-rounded-md tw-border tw-border-muted tw-px-4 tw-py-2 tw-text-md hover:tw-bg-muted"
-                        onClick={() => setShowTipsOverlay(true)}
-                        onKeyDown={handleKeyDown}
-                    >
-                        More tips
-                    </button>
+                    <div className="tw-m-4">
+                        <button
+                            type="button"
+                            className="tw-rounded-md tw-border tw-border-muted tw-px-4 tw-py-2 tw-text-md hover:tw-bg-muted"
+                            onClick={e => {
+                                e.stopPropagation()
+                                setShowTipsOverlay(true)
+                            }}
+                            onKeyDown={handleKeyDown}
+                        >
+                            More tips
+                        </button>
+                    </div>
                 </div>
             </div>
 
             {/* Overlay */}
             {showTipsOverlay && (
                 <div
-                    className="tw-fixed tw-inset-0 tw-flex tw-items-center tw-justify-center tw-bg-black/20 tw-p-4 tw-animate-[fadeIn_0.2s_ease-in-out]"
+                    className="tw-fixed tw-inset-0 tw-flex tw-items-center tw-justify-center tw-bg-black/50 tw-p-4 tw-animate-[fadeIn_0.2s_ease-in-out]"
                     onClick={handleOverlayClick}
                     onKeyDown={handleOverlayKeyDown}
                     role="presentation"
@@ -216,12 +222,12 @@ export function QuickStart() {
                                         className={styles.example}
                                     >
                                         {'title' in example && (
-                                            <h4 className="tw-mb-2 tw-border-t tw-border-muted tw-pt-8 tw-text-md tw-font-medium tw-text-foreground">
+                                            <h4 className="tw-mb-2 tw-pt-8 tw-text-md tw-font-medium tw-text-foreground">
                                                 {example.title}
                                             </h4>
                                         )}
                                         {'examples' in example ? (
-                                            <div className="tw-flex tw-flex-row tw-flex-wrap tw-gap-8">
+                                            <div className="tw-flex tw-flex-row tw-flex-wrap tw-gap-4">
                                                 {example.examples?.map(ex => (
                                                     <div
                                                         key={`nested-example-${ex.input}`}

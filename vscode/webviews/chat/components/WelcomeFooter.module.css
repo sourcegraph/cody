@@ -31,13 +31,14 @@
 
 .example {
     display: flex;
-    flex-flow:column nowrap;
+    flex-flow: column nowrap;
+    align-items: flex-start;
     gap: 0.25rem;
     padding: 0.25rem 0;
 }
 
 .example-input {
-    display:flex;
+    display: flex;
     flex-flow: row wrap;
     border-radius: 4px;
     color: var(--vscode-input-foreground);
@@ -53,14 +54,15 @@
     width: 100%;
     gap: 0.5rem;
     padding: 1rem 0;
-    border-top: 0.25px solid var(--vscode-dropdown-border);
 }
 
 .links {
     display: flex;
     flex-flow: row wrap;
-    padding: 0.75rem 0;
-    gap: 1rem;
+    justify-content: center;
+    padding: 1rem 0;
+    gap: 1.25rem;
+    border-top: 0.5px solid var(--vscode-button-secondaryBackground);
 }
 
 .item {
