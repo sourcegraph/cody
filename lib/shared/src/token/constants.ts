@@ -1,7 +1,7 @@
 /**
  * The default context window for chat models that are NOT Claude-3 Sonnet or Opus.
  */
-export const CHAT_INPUT_TOKEN_BUDGET = 7000
+export const CHAT_INPUT_TOKEN_BUDGET = 7000000
 
 /**
  * The default context window for fast chat models with a smaller context window.
