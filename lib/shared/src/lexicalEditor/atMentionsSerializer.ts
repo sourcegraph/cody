@@ -5,11 +5,11 @@ export const AT_MENTION_SERIALIZED_PREFIX = 'cody://serialized.v1'
 const AT_MENTION_SERIALIZATION_END = '_'
 
 function unicodeSafeBtoa(str: string) {
-    return btoa(encodeURIComponent(str));
+    return btoa(encodeURIComponent(str))
 }
 
 function unicodeSafeAtob(str: string) {
-    return decodeURIComponent(atob(str));
+    return decodeURIComponent(atob(str))
 }
 
 /**
