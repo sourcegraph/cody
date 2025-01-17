@@ -64,6 +64,7 @@
   },
   "dependencies": {
     "@openctx/client": "^0.0.30",
+    "@openctx/provider-modelcontextprotocoltools": "^0.0.14",
     "@opentelemetry/sdk-trace-web": "^1.18.1",
     "@sourcegraph/telemetry": "^0.18.0",
     "observable-fns": "^0.6.1",
@@ -82,7 +83,10 @@
       "tslib": "2.1.0",
       "@lexical/react": "https://storage.googleapis.com/sourcegraph-assets/npm/lexical-react-sourcegraph-fork-31065486.tgz"
     },
-    "neverBuiltDependencies": ["deasync", "playwright"],
+    "neverBuiltDependencies": [
+      "deasync",
+      "playwright"
+    ],
     "patchedDependencies": {
       "highlight.js@11.8.0": "patches/highlight.js@11.8.0.patch"
     }
