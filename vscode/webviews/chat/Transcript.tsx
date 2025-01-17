@@ -336,15 +336,13 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
             return
         }
 
-        const { intent, intentScores, manual } = intentFromSubmit
-            ? { intent: intentFromSubmit, intentScores: undefined, manual: true }
-            : getIntentProps(editorValue, intentResults || null, manuallySelectedIntent)
+        const { intent, intentScores } = getIntentProps(editorValue, intentResults || null)
 
         const commonProps = {
             editorValue,
             intent,
             intentScores,
-            manuallySelectedIntent: manual ? intent : undefined,
+            manuallySelectedIntent: intentFromSubmit || manuallySelectedIntent.intent,
             traceparent,
         }
 
@@ -700,7 +698,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                     contextItems: [],
                     editorState: serializedPromptEditorStateFromText(text),
                 },
-                intent: 'search',
+                preDetectedIntent: 'search',
                 manuallySelectedIntent: 'search',
             }),
         [humanMessage]
@@ -848,14 +846,14 @@ export function focusLastHumanMessageEditor(): void {
 export function editHumanMessage({
     messageIndexInTranscript,
     editorValue,
-    intent,
-    intentScores,
+    preDetectedIntent,
+    preDetectedIntentScores,
     manuallySelectedIntent,
 }: {
     messageIndexInTranscript: number
     editorValue: SerializedPromptEditorValue
-    intent?: ChatMessage['intent']
-    intentScores?: { intent: string; score: number }[]
+    preDetectedIntent?: ChatMessage['intent']
+    preDetectedIntentScores?: { intent: string; score: number }[]
     manuallySelectedIntent?: ChatMessage['intent']
 }): void {
     getVSCodeAPI().postMessage({
@@ -864,8 +862,8 @@ export function editHumanMessage({
         text: editorValue.text,
         editorState: editorValue.editorState,
         contextItems: editorValue.contextItems.map(deserializeContextItem),
-        intent,
-        intentScores,
+        preDetectedIntent,
+        preDetectedIntentScores,
         manuallySelectedIntent,
     })
     focusLastHumanMessageEditor()
@@ -873,14 +871,14 @@ export function editHumanMessage({
 
 function submitHumanMessage({
     editorValue,
-    intent,
-    intentScores,
+    preDetectedIntent,
+    preDetectedIntentScores,
     manuallySelectedIntent,
     traceparent,
 }: {
     editorValue: SerializedPromptEditorValue
-    intent?: ChatMessage['intent']
-    intentScores?: { intent: string; score: number }[]
+    preDetectedIntent?: ChatMessage['intent']
+    preDetectedIntentScores?: { intent: string; score: number }[]
     manuallySelectedIntent?: ChatMessage['intent']
     traceparent: string
 }): void {
@@ -889,8 +887,8 @@ function submitHumanMessage({
         text: editorValue.text,
         editorState: editorValue.editorState,
         contextItems: editorValue.contextItems.map(deserializeContextItem),
-        intent,
-        intentScores,
+        preDetectedIntent,
+        preDetectedIntentScores,
         manuallySelectedIntent,
         traceparent,
     })
@@ -913,17 +911,12 @@ function reevaluateSearchWithSelectedFilters({
 
 const getIntentProps = (
     editorValue: SerializedPromptEditorValue,
-    intentResults: IntentResults | null,
-    manuallySelectedIntent: { intent: ChatMessage['intent']; query: string }
+    intentResults: IntentResults | null
 ) => {
     const query = inputTextWithMappedContextChipsFromPromptEditorState(editorValue.editorState)
 
-    if (manuallySelectedIntent.intent) {
-        return { intent: manuallySelectedIntent.intent, manual: true }
-    }
-
     if (query === intentResults?.query) {
-        return { intent: intentResults.intent, intentScores: intentResults.allScores, manual: false }
+        return { intent: intentResults.intent, intentScores: intentResults.allScores }
     }
 
     return {}
