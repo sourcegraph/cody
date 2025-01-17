@@ -332,10 +332,10 @@ export async function tokenCallbackHandler(uri: vscode.Uri): Promise<void> {
     // We want to prompt them to switch to this instance and if needed
     // start the auth flow
     const instanceHost = params.get('instance')
-    const instanceUrl = instanceHost ? new URL(`https://${instanceHost}`) : undefined
-    if (instanceUrl && isWorkspaceInstance(instanceUrl.toString())) {
+    const instanceUrl = instanceHost ? new URL(instanceHost).origin : undefined
+    if (instanceUrl && isWorkspaceInstance(instanceUrl)) {
         // Prompt the user to switch/setup with the new instance
-        await showEnterpriseInstanceUrlFlow(instanceUrl.toString())
+        await showEnterpriseInstanceUrlFlow(instanceUrl)
         return
     }
 
