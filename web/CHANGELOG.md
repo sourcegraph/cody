@@ -1,3 +1,5 @@
+## 0.23.0
+- New component for at mentions in prompt templates
 ## 0.22.0
 - New search filters and result types
 - Fix sticky chat intent
