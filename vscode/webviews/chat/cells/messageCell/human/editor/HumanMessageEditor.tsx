@@ -396,7 +396,7 @@ export const HumanMessageEditor: FunctionComponent<{
                 if (currentChatModel?.tags?.includes(ModelTag.StreamDisabled)) {
                     initialContext = initialContext.filter(item => item.type !== 'tree')
                 }
-                editor.setInitialContextMentions(initialContext)
+                void editor.setInitialContextMentions(initialContext.filter(item => item.type !== 'tree' || item.isIndexedRemotely))
             }
         }
     }, [defaultContext, isSent, isFirstMessage, currentChatModel])
