@@ -83,10 +83,7 @@
       "tslib": "2.1.0",
       "@lexical/react": "https://storage.googleapis.com/sourcegraph-assets/npm/lexical-react-sourcegraph-fork-31065486.tgz"
     },
-    "neverBuiltDependencies": [
-      "deasync",
-      "playwright"
-    ],
+    "neverBuiltDependencies": ["deasync", "playwright"],
     "patchedDependencies": {
       "highlight.js@11.8.0": "patches/highlight.js@11.8.0.patch"
     }
