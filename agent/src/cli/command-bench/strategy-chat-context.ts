@@ -88,7 +88,9 @@ async function runContextCommand(
     const repoIDNamesCache = new Map<string, string>()
 
     for (const example of examples) {
+        const start = Date.now()
         const { targetRepoRevs, query: origQuery } = example
+        console.log({ query: example.query })
         const repoNames = targetRepoRevs.map(repoRev => repoRev.repoName)
 
         // Get repo IDs from cache or fetch them
@@ -108,6 +110,7 @@ async function runContextCommand(
                 uncachedRepoNames,
                 uncachedRepoNames.length + 10
             )
+            console.log('repo id names', Date.now() - start)
             if (isError(fetchedRepoIDNames)) {
                 throw new Error(
                     `getRepoIds failed for [${uncachedRepoNames.join(',')}]: ${fetchedRepoIDNames}`
@@ -135,6 +138,7 @@ async function runContextCommand(
                 completionsClient,
                 PromptString.unsafe_fromUserQuery(origQuery)
             )
+            console.log('rewrote keyword query', Date.now() - start)
         }
 
         const resultsResp = await graphqlClient.contextSearchEvalDebug({
@@ -144,6 +148,7 @@ async function runContextCommand(
             codeResultsCount: clientOpts.codeResultsCount,
             textResultsCount: clientOpts.textResultsCount,
         })
+        console.log('fetched context', Date.now() - start)
 
         if (isError(resultsResp)) {
             throw new Error(
