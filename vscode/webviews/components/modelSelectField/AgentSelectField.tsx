@@ -3,7 +3,6 @@ import type { OmniboxHandler } from '@sourcegraph/cody-shared/src/models/model'
 import { clsx } from 'clsx'
 import { BookOpenIcon, BuildingIcon, ExternalLinkIcon, FlaskConicalIcon } from 'lucide-react'
 import { type FunctionComponent, type ReactNode, useCallback, useMemo } from 'react'
-import { DeepCodyAgent } from '../../../src/chat/agentic/DeepCody'
 import type { UserAccountInfo } from '../../Chat'
 import { getVSCodeAPI } from '../../utils/VSCodeApi'
 import { useTelemetryRecorder } from '../../utils/telemetry'
@@ -424,7 +423,7 @@ const getHandlerDropdownGroup = (handler: OmniboxHandler): string => {
         if (model.tags.includes(ModelTag.Speed)) return HandlerGroup.Speed
         if (model.tags.includes(ModelTag.Ollama)) return HandlerGroup.Ollama
     }
-    if (handler.id === DeepCodyAgent.id) return HandlerGroup.Agents
+    if (handler.id.includes('deep-cody')) return HandlerGroup.Agents
     if (['search'].includes(handler.id)) return HandlerGroup.Tools
     return HandlerGroup.Other
 }
