@@ -1,7 +1,7 @@
 import { type Model, ModelTag, isCodyProModel, isWaitlistModel } from '@sourcegraph/cody-shared'
 import type { OmniboxHandler } from '@sourcegraph/cody-shared/src/models/model'
 import { clsx } from 'clsx'
-import { BookOpenIcon, BuildingIcon, ExternalLinkIcon, FlaskConicalIcon } from 'lucide-react'
+import { BookOpenIcon, BrainIcon, BuildingIcon, ExternalLinkIcon, SearchIcon } from 'lucide-react'
 import { type FunctionComponent, type ReactNode, useCallback, useMemo } from 'react'
 import type { UserAccountInfo } from '../../Chat'
 import { getVSCodeAPI } from '../../utils/VSCodeApi'
@@ -128,14 +128,14 @@ export const AgentSelectField: React.FunctionComponent<{
     const options = useMemo<SelectListOption[]>(
         () =>
             models.map(handler => {
-                if (handler.model) {
-                    const model = handler.model!
+                const { model } = handler
+                if (model) {
                     const availability = modelAvailability(userInfo, serverSentModelsEnabled, model)
                     return {
                         value: model.id,
                         title: (
-                            <ModelTitleWithIcon
-                                model={model}
+                            <HandlerTitleWithIcon
+                                handler={handler}
                                 showIcon={true}
                                 showProvider={true}
                                 modelAvailability={availability}
@@ -151,7 +151,14 @@ export const AgentSelectField: React.FunctionComponent<{
                 // Non-model option
                 return {
                     value: handler.id,
-                    title: handler.title ?? handler.id,
+                    title: (
+                        <HandlerTitleWithIcon
+                            handler={handler}
+                            showIcon={true}
+                            showProvider={true}
+                            modelAvailability="available"
+                        />
+                    ),
                     // TODO(beyang): fill in other fields?
                     group: getHandlerDropdownGroup(handler),
                     tooltip: handler.title ?? handler.id,
@@ -345,7 +352,12 @@ function getTooltip(model: Model, availability: string): string {
     }
 }
 
-const getBadgeText = (model: Model, modelAvailability?: ModelAvailability): string | null => {
+const getBadgeText = (handler: OmniboxHandler, modelAvailability?: ModelAvailability): string | null => {
+    const { model } = handler
+    if (!model) {
+        return ''
+    }
+
     if (modelAvailability === 'needs-cody-pro') return 'Cody Pro'
 
     const tagToText: Record<string, string> = {
@@ -362,34 +374,39 @@ const getBadgeText = (model: Model, modelAvailability?: ModelAvailability): stri
     return model.tags.reduce((text, tag) => text || tagToText[tag] || '', null as string | null)
 }
 
-const ModelTitleWithIcon: React.FC<{
-    model: Model
+const HandlerTitleWithIcon: React.FC<{
+    handler: OmniboxHandler
     showIcon?: boolean
     showProvider?: boolean
     modelAvailability?: ModelAvailability
     isCurrentlySelected?: boolean
-}> = ({ model, showIcon, modelAvailability }) => {
-    const modelBadge = getBadgeText(model, modelAvailability)
+}> = ({ handler, showIcon, modelAvailability }) => {
+    const handlerBadge = getBadgeText(handler, modelAvailability)
     const isDisabled = modelAvailability !== 'available'
+    const { model } = handler
 
     return (
         <span className={clsx(styles.modelTitleWithIcon, { [styles.disabled]: isDisabled })}>
             {showIcon ? (
-                model.id.includes('deep-cody') ? (
-                    <FlaskConicalIcon size={16} className={styles.modelIcon} />
-                ) : (
+                handler.id.includes('deep-cody') ? (
+                    <BrainIcon size={16} className={styles.modelIcon} />
+                ) : handler.id.includes('search') ? (
+                    <SearchIcon size={16} className={styles.modelIcon} />
+                ) : model ? (
                     <ChatModelIcon model={model.provider} className={styles.modelIcon} />
-                )
+                ) : null
             ) : null}
-            <span className={clsx('tw-flex-grow', styles.modelName)}>{model.title}</span>
-            {modelBadge && (
+            <span className={clsx('tw-flex-grow', styles.modelName)}>
+                {model ? model.title : handler.title}
+            </span>
+            {handlerBadge && (
                 <Badge
                     variant="secondary"
                     className={clsx(styles.badge, {
                         'tw-opacity-75': modelAvailability === 'needs-cody-pro',
                     })}
                 >
-                    {modelBadge}
+                    {handlerBadge}
                 </Badge>
             )}
         </span>

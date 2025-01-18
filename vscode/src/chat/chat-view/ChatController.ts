@@ -655,7 +655,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         intentScores?: { intent: string; score: number }[] | undefined | null
         manuallySelectedIntent?: ChatMessage['intent'] | undefined | null
         traceparent?: string | undefined | null
-        selectedAgent?: string | undefined | null // TODO(beyang): remove
+        selectedAgent?: string | undefined | null
     }): Promise<void> {
         return context.with(extractContextFromTraceparent(traceparent), () => {
             return tracer.startActiveSpan('chat.handleUserMessage', async (span): Promise<void> => {
