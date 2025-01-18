@@ -153,6 +153,10 @@ const ModelSelectFieldToolbarItem: FunctionComponent<{
                 api.setChatModel(model.id).subscribe({
                     error: error => console.error('setChatModel:', error),
                 })
+                // KLUDGE(beyang)
+                api.setAgent('model').subscribe({
+                    error: error => console.error('setAgent:', error),
+                })
             } else {
                 api.setAgent(agent.id).subscribe({
                     error: error => console.error('setAgent:', error),
