@@ -127,13 +127,6 @@ export function isUserEligibleForAutoeditsFeature(
     authStatus: AuthStatus,
     productSubscription: UserProductSubscription | null
 ): AutoeditsUserEligibilityInfo {
-    console.log({
-        autoeditsFeatureFlagEnabled,
-        isTesting: process.env.CODY_TESTING === 'true',
-        isRunningInsideAgent: isRunningInsideAgent(),
-        isFreeUser: isFreeUser(authStatus, productSubscription),
-    })
-
     // Always enable auto-edit when testing
     if (process.env.CODY_TESTING === 'true') {
         return { isUserEligible: true }

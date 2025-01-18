@@ -3,26 +3,32 @@ import * as vscode from 'vscode'
 import {
     type AuthStatus,
     type ClientConfiguration,
+    CodyAutoSuggestionMode,
     CodyIDE,
+    FeatureFlag,
     InvisibleStatusBarTag,
     type IsIgnored,
     Mutable,
     type ResolvedConfiguration,
+    type UserProductSubscription,
     assertUnreachable,
     authStatus,
     combineLatest,
     contextFiltersProvider,
+    currentUserProductSubscription,
     distinctUntilChanged,
+    featureFlagProvider,
     firstValueFrom,
     fromVSCodeEvent,
     logError,
     promise,
+    promiseFactoryToObservable,
     resolvedConfig,
     shareReplay,
 } from '@sourcegraph/cody-shared'
-
 import { type Subscription, map } from 'observable-fns'
 import type { LiteralUnion, ReadonlyDeep } from 'type-fest'
+import { isUserEligibleForAutoeditsFeature } from '../autoedits/create-autoedits-provider'
 import { getGhostHintEnablement } from '../commands/GhostHintDecorator'
 import { getReleaseNotesURLByIDE } from '../release'
 import { version } from '../version'
@@ -82,7 +88,9 @@ export class CodyStatusBar implements vscode.Disposable {
         resolvedConfig,
         this.errors.changes,
         this.loaders.changes,
-        this.ignoreStatus
+        this.ignoreStatus,
+        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyAutoEditExperimentEnabledFeatureFlag),
+        promiseFactoryToObservable(async () => await currentUserProductSubscription())
     ).pipe(
         map((combined): StatusBarState | undefined => {
             return {
@@ -258,7 +266,9 @@ export class CodyStatusBar implements vscode.Disposable {
         config: ResolvedConfiguration,
         errors: ReadonlySet<StatusBarError>,
         loaders: ReadonlySet<StatusBarLoader>,
-        ignoreStatus: IsIgnored
+        ignoreStatus: IsIgnored,
+        autoeditsFeatureFlagEnabled: boolean,
+        userProductSubscription: UserProductSubscription | null
     ): Partial<StatusBarState> & Pick<StatusBarState, 'interact' | 'tooltip'> {
         const tags = new Set<InvisibleStatusBarTag>()
 
@@ -319,6 +329,9 @@ export class CodyStatusBar implements vscode.Disposable {
                     config,
                     errors,
                     isIgnored: ignoreStatus,
+                    autoeditsFeatureFlagEnabled,
+                    userProductSubscription,
+                    authStatus,
                 }),
             }
         }
@@ -356,6 +369,9 @@ export class CodyStatusBar implements vscode.Disposable {
                     config,
                     errors,
                     isIgnored: ignoreStatus,
+                    autoeditsFeatureFlagEnabled,
+                    userProductSubscription,
+                    authStatus,
                 }),
             }
         }
@@ -371,6 +387,9 @@ export class CodyStatusBar implements vscode.Disposable {
                     config,
                     errors,
                     isIgnored: ignoreStatus,
+                    autoeditsFeatureFlagEnabled,
+                    userProductSubscription,
+                    authStatus,
                 }),
             }
         }
@@ -381,6 +400,9 @@ export class CodyStatusBar implements vscode.Disposable {
                 config,
                 errors,
                 isIgnored: ignoreStatus,
+                autoeditsFeatureFlagEnabled,
+                userProductSubscription,
+                authStatus,
             }),
         }
     }
@@ -406,9 +428,17 @@ function interactDefault({
     config,
     errors,
     isIgnored,
-}: { config: ResolvedConfiguration; errors: ReadonlySet<StatusBarError>; isIgnored: IsIgnored }): (
-    abort: AbortSignal
-) => Promise<void> {
+    autoeditsFeatureFlagEnabled,
+    userProductSubscription,
+    authStatus,
+}: {
+    config: ResolvedConfiguration
+    errors: ReadonlySet<StatusBarError>
+    isIgnored: IsIgnored
+    autoeditsFeatureFlagEnabled: boolean
+    userProductSubscription: UserProductSubscription | null
+    authStatus: AuthStatus
+}): (abort: AbortSignal) => Promise<void> {
     return async (abort: AbortSignal) => {
         const [interactionDone] = promise<void>()
         // this QuickPick could probably be made reactive but that's a bit overkill.
@@ -436,6 +466,9 @@ function interactDefault({
             config.configuration,
             vscode.workspace.getConfiguration()
         )
+        const createFeatureEnumChoice = featureCodySuggestionEnumBuilder(
+            vscode.workspace.getConfiguration()
+        )
 
         quickPick.items = [
             // These description should stay in sync with the settings in package.json
@@ -461,23 +494,12 @@ function interactDefault({
                   ]
                 : []),
             { label: 'enable/disable features', kind: vscode.QuickPickItemKind.Separator },
-            await createFeatureToggle(
-                'Code Autocomplete',
-                undefined,
-                'Enable Cody-powered code autocompletions',
-                'cody.autocomplete.enabled',
-                c => c.autocomplete,
-                false,
-                [
-                    {
-                        iconPath: new vscode.ThemeIcon('settings-more-action'),
-                        tooltip: 'Autocomplete Settings',
-                        onClick: () =>
-                            vscode.commands.executeCommand('workbench.action.openSettings', {
-                                query: '@ext:sourcegraph.cody-ai autocomplete',
-                            }),
-                    } as vscode.QuickInputButton,
-                ]
+            await createFeatureEnumChoice(
+                'Cody Suggestion Mode',
+                'Choose how Cody suggests inline code changes',
+                autoeditsFeatureFlagEnabled,
+                userProductSubscription,
+                authStatus
             ),
             await createFeatureToggle(
                 'Code Actions',
@@ -568,6 +590,58 @@ function interactDefault({
             item?.onClick?.()
             quickPick.hide()
         })
+    }
+}
+
+function featureCodySuggestionEnumBuilder(workspaceConfig: vscode.WorkspaceConfiguration) {
+    return async (
+        name: string,
+        detail: string,
+        autoeditsFeatureFlagEnabled: boolean,
+        userProductSubscription: UserProductSubscription | null,
+        authStatus: AuthStatus
+    ): Promise<StatusBarItem> => {
+        const suggestionModeKey = 'cody.suggestions.mode'
+
+        const currentValue =
+            (await workspaceConfig.get<CodyAutoSuggestionMode>(suggestionModeKey)) ??
+            CodyAutoSuggestionMode.Autocomplete
+
+        const { isUserEligible } = isUserEligibleForAutoeditsFeature(
+            autoeditsFeatureFlagEnabled,
+            authStatus,
+            userProductSubscription
+        )
+        const requiredValues = isUserEligible
+            ? [
+                  CodyAutoSuggestionMode.Autocomplete,
+                  CodyAutoSuggestionMode.Autoedit,
+                  CodyAutoSuggestionMode.Off,
+              ]
+            : [CodyAutoSuggestionMode.Autocomplete, CodyAutoSuggestionMode.Off]
+
+        // Show the current choice in the label.
+        const label = `${QUICK_PICK_ITEM_EMPTY_INDENT_PREFIX}${name} (Current: “${currentValue}”)`
+
+        return {
+            label,
+            detail: QUICK_PICK_ITEM_EMPTY_INDENT_PREFIX + detail,
+            async onSelect() {
+                // Show a QuickPick for the user to choose a new value.
+                const selection = await vscode.window.showQuickPick(requiredValues, {
+                    placeHolder: `Current: “${currentValue}”. Pick a new mode...`,
+                })
+                if (!selection) {
+                    return
+                }
+                await workspaceConfig.update(
+                    suggestionModeKey,
+                    selection as CodyAutoSuggestionMode,
+                    vscode.ConfigurationTarget.Global
+                )
+                vscode.window.showInformationMessage(`${name} is set to “${selection}”.`)
+            },
+        }
     }
 }
 
