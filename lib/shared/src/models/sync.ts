@@ -198,7 +198,9 @@ export function syncModels({
 
                                     // For DotCom users with early access or on the waitlist, replace the waitlist tag with the appropriate tags.
                                     const enableToolCody: Observable<boolean> = resolvedConfig.pipe(
-                                        map(c => !!c.configuration.experimentalMinionAnthropicKey),
+                                        map(c => {
+                                            return !!c.configuration.experimentalMinionAnthropicKey
+                                        }),
                                         distinctUntilChanged()
                                     )
                                     return combineLatest(
@@ -212,7 +214,12 @@ export function syncModels({
                                         enableToolCody
                                     ).pipe(
                                         switchMap(
-                                            ([hasEarlyAccess, isDeepCodyEnabled, defaultToHaiku]) => {
+                                            ([
+                                                hasEarlyAccess,
+                                                isDeepCodyEnabled,
+                                                defaultToHaiku,
+                                                enableToolCody,
+                                            ]) => {
                                                 // TODO(sqs): remove waitlist from localStorage when user has access
                                                 const isOnWaitlist = config.clientState.waitlist_o1
                                                 if (isDotComUser && (hasEarlyAccess || isOnWaitlist)) {

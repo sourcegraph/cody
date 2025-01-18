@@ -3,6 +3,7 @@ import type { OmniboxHandler } from '@sourcegraph/cody-shared/src/models/model'
 import { clsx } from 'clsx'
 import { BookOpenIcon, BuildingIcon, ExternalLinkIcon, FlaskConicalIcon } from 'lucide-react'
 import { type FunctionComponent, type ReactNode, useCallback, useMemo } from 'react'
+import { DeepCodyAgent } from '../../../src/chat/agentic/DeepCody'
 import type { UserAccountInfo } from '../../Chat'
 import { getVSCodeAPI } from '../../utils/VSCodeApi'
 import { useTelemetryRecorder } from '../../utils/telemetry'
@@ -127,15 +128,15 @@ export const AgentSelectField: React.FunctionComponent<{
 
     const options = useMemo<SelectListOption[]>(
         () =>
-            models.map(mm => {
-                if (mm.model) {
-                    const m = mm.model!
-                    const availability = modelAvailability(userInfo, serverSentModelsEnabled, m)
+            models.map(handler => {
+                if (handler.model) {
+                    const model = handler.model!
+                    const availability = modelAvailability(userInfo, serverSentModelsEnabled, model)
                     return {
-                        value: m.id,
+                        value: model.id,
                         title: (
                             <ModelTitleWithIcon
-                                model={m}
+                                model={model}
                                 showIcon={true}
                                 showProvider={true}
                                 modelAvailability={availability}
@@ -144,14 +145,17 @@ export const AgentSelectField: React.FunctionComponent<{
                         // needs-cody-pro models should be clickable (not disabled) so the user can
                         // be taken to the upgrade page.
                         disabled: !['available', 'needs-cody-pro'].includes(availability),
-                        group: getModelDropDownUIGroup(m),
-                        tooltip: getTooltip(m, availability),
+                        group: getHandlerDropdownGroup(handler),
+                        tooltip: getTooltip(model, availability),
                     } satisfies SelectListOption
                 }
+                // Non-model option
                 return {
-                    value: mm.id,
-                    title: mm.id,
-                    tooltip: mm.id,
+                    value: handler.id,
+                    title: handler.title ?? handler.id,
+                    // TODO(beyang): fill in other fields?
+                    group: getHandlerDropdownGroup(handler),
+                    tooltip: handler.title ?? handler.id,
                 } satisfies SelectListOption
             }),
         [models, userInfo, serverSentModelsEnabled]
@@ -402,8 +406,9 @@ const ChatModelIcon: FunctionComponent<{ model: string; className?: string }> = 
 }
 
 /** Common {@link ModelsService.uiGroup} values. */
-const ModelUIGroup: Record<string, string> = {
-    DeepCody: 'Agent, extensive context fetching',
+const HandlerGroup: Record<string, string> = {
+    Tools: 'Tools',
+    Agents: 'Agents',
     Power: 'More powerful models',
     Balanced: 'Balanced for power and speed',
     Speed: 'Faster models',
@@ -411,29 +416,33 @@ const ModelUIGroup: Record<string, string> = {
     Other: 'Other',
 }
 
-const getModelDropDownUIGroup = (model: Model): string => {
-    if (model.id.includes('deep-cody')) return ModelUIGroup.DeepCody
-    if (model.tags.includes(ModelTag.Power)) return ModelUIGroup.Power
-    if (model.tags.includes(ModelTag.Balanced)) return ModelUIGroup.Balanced
-    if (model.tags.includes(ModelTag.Speed)) return ModelUIGroup.Speed
-    if (model.tags.includes(ModelTag.Ollama)) return ModelUIGroup.Ollama
-    return ModelUIGroup.Other
+const getHandlerDropdownGroup = (handler: OmniboxHandler): string => {
+    if (handler.model) {
+        const { model } = handler
+        if (model.tags.includes(ModelTag.Power)) return HandlerGroup.Power
+        if (model.tags.includes(ModelTag.Balanced)) return HandlerGroup.Balanced
+        if (model.tags.includes(ModelTag.Speed)) return HandlerGroup.Speed
+        if (model.tags.includes(ModelTag.Ollama)) return HandlerGroup.Ollama
+    }
+    if (handler.id === DeepCodyAgent.id) return HandlerGroup.Agents
+    if (['search'].includes(handler.id)) return HandlerGroup.Tools
+    return HandlerGroup.Other
 }
 
 const optionByGroup = (
     options: SelectListOption[]
 ): { group: string; options: SelectListOption[] }[] => {
     const groupOrder = [
-        ModelUIGroup.Power,
-        ModelUIGroup.Balanced,
-        ModelUIGroup.Speed,
-        ModelUIGroup.Ollama,
-        ModelUIGroup.Other,
+        HandlerGroup.Power,
+        HandlerGroup.Balanced,
+        HandlerGroup.Speed,
+        HandlerGroup.Ollama,
+        HandlerGroup.Other,
     ]
     const groups = new Map<string, SelectListOption[]>()
 
     for (const option of options) {
-        const group = option.group ?? ModelUIGroup.Other
+        const group = option.group ?? HandlerGroup.Other
         const groupOptions = groups.get(group) ?? []
         groupOptions.push(option)
         groups.set(group, groupOptions)

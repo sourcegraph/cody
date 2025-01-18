@@ -28,6 +28,7 @@ import {
     authStatus,
     cenv,
     clientCapabilities,
+    combineLatest,
     createMessageAPIForExtension,
     currentAuthStatus,
     currentAuthStatusAuthed,
@@ -109,6 +110,7 @@ import {
 import { openExternalLinks } from '../../services/utils/workspace-action'
 import { TestSupport } from '../../test-support'
 import type { MessageErrorType } from '../MessageProvider'
+import { DeepCodyAgent } from '../agentic/DeepCody'
 import { toolboxManager } from '../agentic/ToolboxManager'
 import { getMentionMenuData } from '../context/chatContext'
 import type { ChatIntentAPIClient } from '../context/chatIntentAPIClient'
@@ -826,15 +828,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             editor: this.editor,
             chatClient: this.chatClient,
         })
-
-        // TODO(beyang): do translation here between selectedAgent and agentName (i.e., the handler)
-        console.log(
-            '########### handling request',
-            'selectedAgent',
-            selectedAgent,
-            'agentName',
-            agentName
-        )
 
         recorder.setIntentInfo({
             userSpecifiedIntent:
@@ -1836,21 +1829,40 @@ async function joinModelWaitlist(): Promise<void> {
 }
 
 function getAgents(): Observable<OmniboxHandler[]> {
-    return modelsService.getModels(ModelUsage.Chat).pipe(
+    const enableToolCody = resolvedConfig.pipe(
+        map(c => {
+            return !!c.configuration.experimentalMinionAnthropicKey
+        }),
+        distinctUntilChanged()
+    )
+    const models = modelsService.getModels(ModelUsage.Chat).pipe(
         startWith([]),
-        map(models =>
-            models === pendingOperation
-                ? []
-                : models.map(model => ({
-                      id: model.id,
-                      model,
-                  }))
-        ),
-        // add additonal items to the array
-        map(modelAgents => {
-            const agents: OmniboxHandler[] = [...modelAgents]
+        map(models => (models === pendingOperation ? [] : models)),
+        distinctUntilChanged()
+    )
+
+    return combineLatest(enableToolCody, models).pipe(
+        map(([enableToolCody, models]) => {
+            const agents: OmniboxHandler[] = []
+            agents.push({
+                id: DeepCodyAgent.id,
+                title: 'Agentic chat',
+            })
+            if (enableToolCody) {
+                agents.push({
+                    id: 'tool-cody',
+                    title: 'Tool Cody',
+                })
+            }
+            agents.push(
+                ...models.map(model => ({
+                    id: model.id,
+                    model,
+                }))
+            )
             agents.push({
                 id: 'search',
+                title: 'Fuzzy keyword search',
             })
             return agents
         })
