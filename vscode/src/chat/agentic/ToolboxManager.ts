@@ -61,18 +61,27 @@ class ToolboxManager {
     }
 
     public getSettings(): AgentToolboxSettings | null {
-        if (!this.isEnabled) {
-            return null
-        }
-        const { agent, shell } = this.getStoredUserSettings()
-        const shellError = this.getFeatureError('shell')
         return {
-            agent: { name: this.isRateLimited ? undefined : agent },
+            agent: {
+                name: 'deep-cody',
+            },
             shell: {
-                enabled: !!agent && !!shell && !shellError,
-                error: shellError,
+                enabled: true,
+                error: this.getFeatureError('shell'),
             },
         }
+        // if (!this.isEnabled) {
+        //     return null
+        // }
+        // const { agent, shell } = this.getStoredUserSettings()
+        // const shellError = this.getFeatureError('shell')
+        // return {
+        //     agent: { name: this.isRateLimited ? undefined : agent },
+        //     shell: {
+        //         enabled: !!agent && !!shell && !shellError,
+        //         error: shellError,
+        //     },
+        // }
     }
 
     public setIsRateLimited(hasHitLimit: boolean): void {
