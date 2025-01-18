@@ -654,17 +654,17 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                     switchToSearch={() => editAndSubmitSearch(assistantMessage?.didYouMeanQuery ?? '')}
                 />
             )}
-            {humanMessage.agent && (
+            {humanMessage.agent === 'deep-cody' && (
                 <AgenticContextCell
                     key={`${humanMessage.index}-${humanMessage.intent}-process`}
                     isContextLoading={isContextLoading}
                     processes={humanMessage?.processes ?? undefined}
                 />
             )}
-            {humanMessage.agent && isContextLoading && assistantMessage?.isLoading && (
+            {humanMessage.agent === 'deep-cody' && isContextLoading && assistantMessage?.isLoading && (
                 <ApprovalCell vscodeAPI={vscodeAPI} />
             )}
-            {!(humanMessage.agent && isContextLoading) &&
+            {!(humanMessage.agent === 'deep-cody' && isContextLoading) &&
                 (humanMessage.contextFiles || assistantMessage || isContextLoading) &&
                 !isSearchIntent && (
                     <ContextCell
