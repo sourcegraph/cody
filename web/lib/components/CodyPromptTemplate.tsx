@@ -158,7 +158,7 @@ const CodyPromptTemplatePanel: FC<PanelProps> = props => {
                 telemetryRecorder,
                 config: null,
                 clientConfig,
-                staticDefaultContext: undefined,
+                staticDefaultContext: { initialContext: [], corpusContext: [] },
             }),
         [vscodeAPI, telemetryRecorder, clientConfig]
     )
