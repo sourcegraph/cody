@@ -80,6 +80,13 @@ export const Toolbar2: FunctionComponent<{
             data-testid="chat-editor-toolbar"
         >
             <div className="tw-flex tw-items-center">
+                <ModelSelectFieldToolbarItem
+                    models={models}
+                    userInfo={userInfo}
+                    focusEditor={focusEditor}
+                    className="tw-mr-1"
+                />
+                <PromptSelectFieldToolbarItem focusEditor={focusEditor} className="tw-ml-1 tw-mr-1" />
                 {/* Can't use tw-gap-1 because the popover creates an empty element when open. */}
                 {onMentionClick && (
                     <AddContextButton
@@ -87,13 +94,6 @@ export const Toolbar2: FunctionComponent<{
                         className={`tw-opacity-60 focus-visible:tw-opacity-100 hover:tw-opacity-100 tw-mr-2 tw-gap-0.5 ${toolbarStyles.button} ${toolbarStyles.buttonSmallIcon}`}
                     />
                 )}
-                <PromptSelectFieldToolbarItem focusEditor={focusEditor} className="tw-ml-1 tw-mr-1" />
-                <ModelSelectFieldToolbarItem
-                    models={models}
-                    userInfo={userInfo}
-                    focusEditor={focusEditor}
-                    className="tw-mr-1"
-                />
             </div>
             <div className="tw-flex-1 tw-flex tw-justify-end">
                 <SubmitButton
@@ -135,9 +135,7 @@ const ModelSelectFieldToolbarItem: FunctionComponent<{
     const serverSentModelsEnabled = !!clientConfig?.modelsAPIEnabled
 
     const api = useExtensionAPI()
-    const agents = useObservable(useMemo(() => api.agents(), [api.agents]))
-
-    console.log('# agents', agents)
+    const agents = useObservable<OmniboxAgent[]>(useMemo(() => api.agents(), [api.agents]))
 
     const onModelSelect = useCallback(
         (model: OmniboxAgent) => {
@@ -153,7 +151,7 @@ const ModelSelectFieldToolbarItem: FunctionComponent<{
         !!models?.length &&
         (userInfo.isDotComUser || serverSentModelsEnabled) && (
             <AgentSelectField
-                models={models}
+                models={agents.value ?? []}
                 onModelSelect={onModelSelect}
                 serverSentModelsEnabled={serverSentModelsEnabled}
                 userInfo={userInfo}
