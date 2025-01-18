@@ -75,7 +75,7 @@ import { type Span, context } from '@opentelemetry/api'
 import { captureException } from '@sentry/core'
 import type { SubMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { resolveAuth } from '@sourcegraph/cody-shared/src/configuration/auth-resolver'
-import type { OmniboxAgent } from '@sourcegraph/cody-shared/src/models/model'
+import type { OmniboxHandler } from '@sourcegraph/cody-shared/src/models/model'
 import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
 import { type Observable, Subject, map } from 'observable-fns'
 import type { URI } from 'vscode-uri'
@@ -1835,7 +1835,7 @@ async function joinModelWaitlist(): Promise<void> {
     telemetryRecorder.recordEvent('cody.joinLlmWaitlist', 'clicked')
 }
 
-function getAgents(): Observable<OmniboxAgent[]> {
+function getAgents(): Observable<OmniboxHandler[]> {
     return modelsService.getModels(ModelUsage.Chat).pipe(
         startWith([]),
         map(models =>
@@ -1848,9 +1848,9 @@ function getAgents(): Observable<OmniboxAgent[]> {
         ),
         // add additonal items to the array
         map(modelAgents => {
-            const agents: OmniboxAgent[] = [...modelAgents]
+            const agents: OmniboxHandler[] = [...modelAgents]
             agents.push({
-                id: 'Fuzzy keyword search',
+                id: 'search',
             })
             return agents
         })

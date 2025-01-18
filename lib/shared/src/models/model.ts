@@ -18,8 +18,13 @@ import { ModelTag } from './tags'
 import { type ModelContextWindow, ModelUsage } from './types'
 import { getModelInfo } from './utils'
 
-export interface OmniboxAgent {
+/**
+ * OmniboxHandler describes a handler to handle an omnibox query.
+ */
+export interface OmniboxHandler {
     readonly id: string
+
+    readonly title?: string
 
     /**
      * If set, then this agent corresponds to a base model.
@@ -29,7 +34,7 @@ export interface OmniboxAgent {
     model?: Model
 }
 
-export type AgentID = OmniboxAgent['id']
+export type HandlerID = OmniboxHandler['id']
 
 /**
  * Model describes an LLM model and its capabilities.

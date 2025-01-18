@@ -1,5 +1,5 @@
 import { type Model, ModelTag, isCodyProModel, isWaitlistModel } from '@sourcegraph/cody-shared'
-import type { OmniboxAgent } from '@sourcegraph/cody-shared/src/models/model'
+import type { OmniboxHandler } from '@sourcegraph/cody-shared/src/models/model'
 import { clsx } from 'clsx'
 import { BookOpenIcon, BuildingIcon, ExternalLinkIcon, FlaskConicalIcon } from 'lucide-react'
 import { type FunctionComponent, type ReactNode, useCallback, useMemo } from 'react'
@@ -25,8 +25,8 @@ interface SelectListOption {
 }
 
 export const AgentSelectField: React.FunctionComponent<{
-    models: OmniboxAgent[]
-    onModelSelect: (model: OmniboxAgent) => void
+    models: OmniboxHandler[]
+    onModelSelect: (model: OmniboxHandler) => void
 
     serverSentModelsEnabled: boolean
 
@@ -56,7 +56,7 @@ export const AgentSelectField: React.FunctionComponent<{
     const showCodyProBadge = !isEnterpriseUser && !isCodyProUser
 
     const onModelSelect = useCallback(
-        (agent: OmniboxAgent): void => {
+        (agent: OmniboxHandler): void => {
             const { model } = agent
             if (model) {
                 if (selectedModel.id !== model.id) {

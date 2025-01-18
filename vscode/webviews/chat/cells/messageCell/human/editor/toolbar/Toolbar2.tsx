@@ -1,5 +1,5 @@
 import type { Action, ChatMessage, Model } from '@sourcegraph/cody-shared'
-import type { OmniboxAgent } from '@sourcegraph/cody-shared/src/models/model'
+import type { OmniboxHandler } from '@sourcegraph/cody-shared/src/models/model'
 import { useExtensionAPI, useObservable } from '@sourcegraph/prompt-editor'
 import clsx from 'clsx'
 import { concat } from 'lodash'
@@ -136,7 +136,7 @@ const ModelSelectFieldToolbarItem: FunctionComponent<{
     const serverSentModelsEnabled = !!clientConfig?.modelsAPIEnabled
 
     const api = useExtensionAPI()
-    const agents = useObservable<OmniboxAgent[]>(useMemo(() => api.agents(), [api.agents])).value ?? []
+    const agents = useObservable<OmniboxHandler[]>(useMemo(() => api.agents(), [api.agents])).value ?? []
 
     // TODO(beyang): this is duplicated state with ChatBuilder.selectedAgent. Either move source of truth to that or move it here.
     const [selectedAgent, setSelectedAgent] = useState<string>(agents[0]?.id ?? undefined)
@@ -146,7 +146,7 @@ const ModelSelectFieldToolbarItem: FunctionComponent<{
     )
 
     const onModelSelect = useCallback(
-        (agent: OmniboxAgent) => {
+        (agent: OmniboxHandler) => {
             setSelectedAgent(agent.id)
             const { model } = agent
             if (model) {

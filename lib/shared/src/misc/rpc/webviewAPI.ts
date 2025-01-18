@@ -13,7 +13,7 @@ import type { CodyCommand } from '../../commands/types'
 import type { FeatureFlag } from '../../experimentation/FeatureFlagProvider'
 import type { ContextMentionProviderMetadata } from '../../mentions/api'
 import type { MentionQuery } from '../../mentions/query'
-import type { Model, OmniboxAgent } from '../../models/model'
+import type { Model, OmniboxHandler } from '../../models/model'
 import type {
     FetchHighlightFileParameters,
     Prompt,
@@ -70,7 +70,7 @@ export interface WebviewToExtensionAPI {
     /**
      * List of available agents. Replaces `chatModels`.
      */
-    agents(): Observable<OmniboxAgent[]>
+    agents(): Observable<OmniboxHandler[]>
 
     highlights(query: FetchHighlightFileParameters): Observable<string[][]>
 
