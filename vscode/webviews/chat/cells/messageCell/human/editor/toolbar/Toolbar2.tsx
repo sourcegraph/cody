@@ -2,7 +2,8 @@ import type { Action, ChatMessage, Model } from '@sourcegraph/cody-shared'
 import type { OmniboxAgent } from '@sourcegraph/cody-shared/src/models/model'
 import { useExtensionAPI, useObservable } from '@sourcegraph/prompt-editor'
 import clsx from 'clsx'
-import { type FunctionComponent, useCallback, useMemo } from 'react'
+import { concat } from 'lodash'
+import { type FunctionComponent, useCallback, useMemo, useState } from 'react'
 import type { UserAccountInfo } from '../../../../../../Chat'
 import { AgentSelectField } from '../../../../../../components/modelSelectField/AgentSelectField'
 import { PromptSelectField } from '../../../../../../components/promptSelectField/PromptSelectField'
@@ -135,30 +136,38 @@ const ModelSelectFieldToolbarItem: FunctionComponent<{
     const serverSentModelsEnabled = !!clientConfig?.modelsAPIEnabled
 
     const api = useExtensionAPI()
-    const agents = useObservable<OmniboxAgent[]>(useMemo(() => api.agents(), [api.agents]))
+    const agents = useObservable<OmniboxAgent[]>(useMemo(() => api.agents(), [api.agents])).value ?? []
+
+    const [selectedAgent, setSelectedAgent] = useState<string>(agents[0]?.id ?? undefined)
+
+    const agentList = concat(
+        agents.filter(a => a.id === selectedAgent) ?? [],
+        agents.filter(a => a.id !== selectedAgent)
+    )
 
     const onModelSelect = useCallback(
         (agent: OmniboxAgent) => {
+            setSelectedAgent(agent.id)
             const { model } = agent
             if (model) {
                 api.setChatModel(model.id).subscribe({
                     error: error => console.error('setChatModel:', error),
                 })
             } else {
-                api.setAgent(agent.id).subscribe({
-                    error: error => console.error('setAgent:', error),
-                })
+                // api.setAgent(agent.id).subscribe({
+                //     error: error => console.error('setAgent:', error),
+                // })
             }
             focusEditor?.()
         },
-        [focusEditor, api.setAgent, api.setChatModel]
+        [focusEditor, api.setChatModel]
     )
 
     return (
         !!models?.length &&
         (userInfo.isDotComUser || serverSentModelsEnabled) && (
             <AgentSelectField
-                models={agents.value ?? []}
+                models={agentList}
                 onModelSelect={onModelSelect}
                 serverSentModelsEnabled={serverSentModelsEnabled}
                 userInfo={userInfo}
