@@ -1845,6 +1845,10 @@ function getAgents(): Observable<OmniboxHandler[]> {
         map(([enableToolCody, models]) => {
             const agents: OmniboxHandler[] = []
             agents.push({
+                id: 'auto',
+                title: 'Auto (chat or search)',
+            })
+            agents.push({
                 id: DeepCodyAgent.id,
                 title: 'Agentic chat',
             })

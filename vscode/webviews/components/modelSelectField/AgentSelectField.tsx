@@ -1,7 +1,14 @@
 import { type Model, ModelTag, isCodyProModel, isWaitlistModel } from '@sourcegraph/cody-shared'
 import type { OmniboxHandler } from '@sourcegraph/cody-shared/src/models/model'
 import { clsx } from 'clsx'
-import { BookOpenIcon, BrainIcon, BuildingIcon, ExternalLinkIcon, SearchIcon } from 'lucide-react'
+import {
+    BookOpenIcon,
+    BrainIcon,
+    BuildingIcon,
+    ExternalLinkIcon,
+    SearchIcon,
+    SparklesIcon,
+} from 'lucide-react'
 import { type FunctionComponent, type ReactNode, useCallback, useMemo } from 'react'
 import type { UserAccountInfo } from '../../Chat'
 import { getVSCodeAPI } from '../../utils/VSCodeApi'
@@ -355,6 +362,7 @@ function getTooltip(model: Model, availability: string): string {
 const getBadgeText = (handler: OmniboxHandler, modelAvailability?: ModelAvailability): string | null => {
     const { model } = handler
     if (!model) {
+        if (handler.id === 'deep-cody') return 'Experimental'
         return ''
     }
 
@@ -390,6 +398,8 @@ const HandlerTitleWithIcon: React.FC<{
             {showIcon ? (
                 handler.id.includes('deep-cody') ? (
                     <BrainIcon size={16} className={styles.modelIcon} />
+                ) : handler.id.includes('auto') ? (
+                    <SparklesIcon size={16} className={styles.modelIcon} />
                 ) : handler.id.includes('search') ? (
                     <SearchIcon size={16} className={styles.modelIcon} />
                 ) : model ? (
@@ -440,6 +450,7 @@ const getHandlerDropdownGroup = (handler: OmniboxHandler): string => {
         if (model.tags.includes(ModelTag.Speed)) return HandlerGroup.Speed
         if (model.tags.includes(ModelTag.Ollama)) return HandlerGroup.Ollama
     }
+    if (handler.id.includes('auto')) return HandlerGroup.Agents
     if (handler.id.includes('deep-cody')) return HandlerGroup.Agents
     if (['search'].includes(handler.id)) return HandlerGroup.Tools
     return HandlerGroup.Other
