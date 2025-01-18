@@ -11,3 +11,17 @@
         fill: currentColor;
     }
 }
+
+.symbol-filter {
+    background-color: var(--vscode-symbol-background);
+    color: var(--vscode-symbol-foreground);
+
+    &.selected, &.selected:hover {
+        background-color: var(--vscode-symbol-selected-background);
+        color: var(--vscode-symbol-selected-foreground);
+    }
+
+    svg {
+        fill: currentColor;
+    }
+}
