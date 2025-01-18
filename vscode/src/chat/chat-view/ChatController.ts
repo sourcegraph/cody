@@ -827,6 +827,15 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             chatClient: this.chatClient,
         })
 
+        // TODO(beyang): do translation here between selectedAgent and agentName (i.e., the handler)
+        console.log(
+            '########### handling request',
+            'selectedAgent',
+            selectedAgent,
+            'agentName',
+            agentName
+        )
+
         recorder.setIntentInfo({
             userSpecifiedIntent:
                 manuallySelectedIntent ?? this.featureCodyExperimentalOneBox ? 'auto' : 'chat',
@@ -1641,10 +1650,9 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                             await modelsService.setSelectedModel(ModelUsage.Chat, model)
                         })
                     },
-                    // TODO(beyang): remove
                     setAgent: agentID => {
                         return promiseFactoryToObservable(async () => {
-                            console.log('# SET AGENT', agentID)
+                            this.chatBuilder.setSelectedAgent(agentID)
                         })
                     },
                     defaultContext: () => defaultContext.pipe(skipPendingOperation()),

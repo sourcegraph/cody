@@ -138,8 +138,8 @@ const ModelSelectFieldToolbarItem: FunctionComponent<{
     const api = useExtensionAPI()
     const agents = useObservable<OmniboxAgent[]>(useMemo(() => api.agents(), [api.agents])).value ?? []
 
+    // TODO(beyang): this is duplicated state with ChatBuilder.selectedAgent. Either move source of truth to that or move it here.
     const [selectedAgent, setSelectedAgent] = useState<string>(agents[0]?.id ?? undefined)
-
     const agentList = concat(
         agents.filter(a => a.id === selectedAgent) ?? [],
         agents.filter(a => a.id !== selectedAgent)
@@ -154,13 +154,13 @@ const ModelSelectFieldToolbarItem: FunctionComponent<{
                     error: error => console.error('setChatModel:', error),
                 })
             } else {
-                // api.setAgent(agent.id).subscribe({
-                //     error: error => console.error('setAgent:', error),
-                // })
+                api.setAgent(agent.id).subscribe({
+                    error: error => console.error('setAgent:', error),
+                })
             }
             focusEditor?.()
         },
-        [focusEditor, api.setChatModel]
+        [focusEditor, api.setChatModel, api.setAgent]
     )
 
     return (
