@@ -1647,6 +1647,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                         })
                     },
                     setAgent: agentID => {
+                        // TODO(beyang): default agent id needs to be whatever is selected
+
                         return promiseFactoryToObservable(async () => {
                             // TODO(beyang): need to reset model
                             this.chatBuilder.setSelectedAgent(agentID)
