@@ -75,8 +75,9 @@ import { type Span, context } from '@opentelemetry/api'
 import { captureException } from '@sentry/core'
 import type { SubMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { resolveAuth } from '@sourcegraph/cody-shared/src/configuration/auth-resolver'
+import type { OmniboxAgent } from '@sourcegraph/cody-shared/src/models/model'
 import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
-import { Subject, map } from 'observable-fns'
+import { type Observable, Subject, map } from 'observable-fns'
 import type { URI } from 'vscode-uri'
 import { View } from '../../../webviews/tabs/types'
 import { redirectToEndpointLogin, showSignInMenu, showSignOutMenu, signOut } from '../../auth/auth'
@@ -1619,18 +1620,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                             startWith([]),
                             map(models => (models === pendingOperation ? [] : models))
                         ),
-                    agents: () =>
-                        modelsService.getModels(ModelUsage.Chat).pipe(
-                            startWith([]),
-                            map(models =>
-                                models === pendingOperation
-                                    ? []
-                                    : models.map(model => ({
-                                          id: model.id,
-                                          model,
-                                      }))
-                            )
-                        ),
+                    agents: () => getAgents(),
                     highlights: parameters =>
                         promiseFactoryToObservable(() =>
                             graphqlClient.getHighlightedFileChunk(parameters)
@@ -1653,7 +1643,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     },
                     setAgent: agentID => {
                         return promiseFactoryToObservable(async () => {
-                            // TODO(beyang)
+                            console.log('# SET AGENT', agentID)
                         })
                     },
                     defaultContext: () => defaultContext.pipe(skipPendingOperation()),
@@ -1834,4 +1824,26 @@ export function manipulateWebviewHTML(html: string, options: TransformHTMLOption
 async function joinModelWaitlist(): Promise<void> {
     await localStorage.setOrDeleteWaitlistO1(true)
     telemetryRecorder.recordEvent('cody.joinLlmWaitlist', 'clicked')
+}
+
+function getAgents(): Observable<OmniboxAgent[]> {
+    return modelsService.getModels(ModelUsage.Chat).pipe(
+        startWith([]),
+        map(models =>
+            models === pendingOperation
+                ? []
+                : models.map(model => ({
+                      id: model.id,
+                      model,
+                  }))
+        ),
+        // add additonal items to the array
+        map(modelAgents => {
+            const agents: OmniboxAgent[] = [...modelAgents]
+            agents.push({
+                id: 'Fuzzy keyword search',
+            })
+            return agents
+        })
+    )
 }

@@ -1306,6 +1306,8 @@ export class Agent extends MessageHandler implements ExtensionClient {
             return null
         })
 
+        // TODO(beyang): register handler for setting agent (setAgent)
+
         const submitOrEditHandler = async (
             { id, message }: { id: string; message: WebviewMessage },
             token: vscode.CancellationToken

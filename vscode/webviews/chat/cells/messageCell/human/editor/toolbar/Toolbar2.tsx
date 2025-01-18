@@ -138,13 +138,20 @@ const ModelSelectFieldToolbarItem: FunctionComponent<{
     const agents = useObservable<OmniboxAgent[]>(useMemo(() => api.agents(), [api.agents]))
 
     const onModelSelect = useCallback(
-        (model: OmniboxAgent) => {
-            // api.setChatModel(model.id).subscribe({
-            //     error: error => console.error('setChatModel:', error),
-            // })
+        (agent: OmniboxAgent) => {
+            const { model } = agent
+            if (model) {
+                api.setChatModel(model.id).subscribe({
+                    error: error => console.error('setChatModel:', error),
+                })
+            } else {
+                api.setAgent(agent.id).subscribe({
+                    error: error => console.error('setAgent:', error),
+                })
+            }
             focusEditor?.()
         },
-        [focusEditor]
+        [focusEditor, api.setAgent, api.setChatModel]
     )
 
     return (

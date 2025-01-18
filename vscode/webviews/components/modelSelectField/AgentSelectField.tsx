@@ -56,44 +56,43 @@ export const AgentSelectField: React.FunctionComponent<{
     const showCodyProBadge = !isEnterpriseUser && !isCodyProUser
 
     const onModelSelect = useCallback(
-        ({ model }: OmniboxAgent): void => {
-            if (!model) {
-                console.error('#### TODO(beyang)')
-                return
+        (agent: OmniboxAgent): void => {
+            const { model } = agent
+            if (model) {
+                if (selectedModel.id !== model.id) {
+                    telemetryRecorder.recordEvent('cody.modelSelector', 'select', {
+                        metadata: {
+                            modelIsCodyProOnly: isCodyProModel(model) ? 1 : 0,
+                            isCodyProUser: isCodyProUser ? 1 : 0,
+                            // Log event when user switches to a different model from Deep Cody.
+                            isSwitchedFromDeepCody: selectedModel.id.includes('deep-cody') ? 1 : 0,
+                        },
+                        privateMetadata: {
+                            modelId: model.id,
+                            modelProvider: model.provider,
+                            modelTitle: model.title,
+                        },
+                        billingMetadata: {
+                            product: 'cody',
+                            category: 'billable',
+                        },
+                    })
+                }
+                if (showCodyProBadge && isCodyProModel(model)) {
+                    getVSCodeAPI().postMessage({
+                        command: 'links',
+                        value: 'https://sourcegraph.com/cody/subscription',
+                    })
+                    return
+                }
+                if (isWaitlistModel(model)) {
+                    getVSCodeAPI().postMessage({
+                        command: 'links',
+                        value: 'waitlist',
+                    })
+                }
             }
-            if (selectedModel.id !== model.id) {
-                telemetryRecorder.recordEvent('cody.modelSelector', 'select', {
-                    metadata: {
-                        modelIsCodyProOnly: isCodyProModel(model) ? 1 : 0,
-                        isCodyProUser: isCodyProUser ? 1 : 0,
-                        // Log event when user switches to a different model from Deep Cody.
-                        isSwitchedFromDeepCody: selectedModel.id.includes('deep-cody') ? 1 : 0,
-                    },
-                    privateMetadata: {
-                        modelId: model.id,
-                        modelProvider: model.provider,
-                        modelTitle: model.title,
-                    },
-                    billingMetadata: {
-                        product: 'cody',
-                        category: 'billable',
-                    },
-                })
-            }
-            if (showCodyProBadge && isCodyProModel(model)) {
-                getVSCodeAPI().postMessage({
-                    command: 'links',
-                    value: 'https://sourcegraph.com/cody/subscription',
-                })
-                return
-            }
-            if (isWaitlistModel(model)) {
-                getVSCodeAPI().postMessage({
-                    command: 'links',
-                    value: 'waitlist',
-                })
-            }
-            parentOnModelSelect(model)
+            parentOnModelSelect(agent)
         },
         [
             selectedModel,
@@ -128,9 +127,8 @@ export const AgentSelectField: React.FunctionComponent<{
 
     const options = useMemo<SelectListOption[]>(
         () =>
-            models
-                .filter(m => m.model)
-                .map(mm => {
+            models.map(mm => {
+                if (mm.model) {
                     const m = mm.model!
                     const availability = modelAvailability(userInfo, serverSentModelsEnabled, m)
                     return {
@@ -149,7 +147,13 @@ export const AgentSelectField: React.FunctionComponent<{
                         group: getModelDropDownUIGroup(m),
                         tooltip: getTooltip(m, availability),
                     } satisfies SelectListOption
-                }),
+                }
+                return {
+                    value: mm.id,
+                    title: mm.id,
+                    tooltip: mm.id,
+                } satisfies SelectListOption
+            }),
         [models, userInfo, serverSentModelsEnabled]
     )
     const optionsByGroup: { group: string; options: SelectListOption[] }[] = useMemo(() => {
