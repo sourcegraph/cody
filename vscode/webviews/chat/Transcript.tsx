@@ -51,6 +51,7 @@ import {
 import { HumanMessageCell } from './cells/messageCell/human/HumanMessageCell'
 
 import { type Context, type Span, context, trace } from '@opentelemetry/api'
+import { OmniboxHandlers } from '@sourcegraph/cody-shared/src/models/model'
 import { isCodeSearchContextItem } from '../../src/context/openctx/codeSearch'
 import { TELEMETRY_INTENT } from '../../src/telemetry/onebox'
 import { AgenticContextCell } from './cells/agenticCell/AgenticContextCell'
@@ -615,6 +616,11 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
         [humanMessage]
     )
 
+    const showIntent =
+        humanMessage.agent === undefined ||
+        humanMessage.agent === 'null' ||
+        humanMessage.agent === OmniboxHandlers.Auto.id
+
     return (
         <>
             <HumanMessageCell
@@ -635,7 +641,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                 editorRef={humanEditorRef}
                 className={!isFirstInteraction && isLastInteraction ? 'tw-mt-auto' : ''}
             />
-            {experimentalOneBoxEnabled && (
+            {experimentalOneBoxEnabled && showIntent && (
                 <SwitchIntent
                     intent={humanMessage.intent}
                     disabled={!!assistantMessage?.isLoading}
