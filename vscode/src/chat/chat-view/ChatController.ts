@@ -111,7 +111,6 @@ import { openExternalLinks } from '../../services/utils/workspace-action'
 import { TestSupport } from '../../test-support'
 import type { MessageErrorType } from '../MessageProvider'
 import { DeepCodyAgent } from '../agentic/DeepCody'
-import { toolboxManager } from '../agentic/ToolboxManager'
 import { getMentionMenuData } from '../context/chatContext'
 import type { ChatIntentAPIClient } from '../context/chatIntentAPIClient'
 import { observeDefaultContext } from '../initialContext'
@@ -1697,13 +1696,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                         userProductSubscription.pipe(
                             map(value => (value === pendingOperation ? null : value))
                         ),
-                    toolboxSettings: () => toolboxManager.observable,
-                    updateToolboxSettings: settings => {
-                        return promiseFactoryToObservable(async () => {
-                            this.chatBuilder.setSelectedAgent(settings.agent?.name)
-                            await toolboxManager.updateSettings(settings)
-                        })
-                    },
                 }
             )
         )

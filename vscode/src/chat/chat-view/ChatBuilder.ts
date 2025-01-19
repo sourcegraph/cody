@@ -119,11 +119,6 @@ export class ChatBuilder {
 
     public get selectedAgent(): string | undefined {
         return this.selectedChatAgent ?? undefined
-        // // SelectedChatAgent initially is null, so we will set it to the last user's agent.
-        // if (this.selectedChatAgent === null) {
-        //     this.setSelectedAgent(toolboxManager.getSettings()?.agent?.name)
-        // }
-        // return this.selectedChatAgent || undefined
     }
 
     public isEmpty(): boolean {

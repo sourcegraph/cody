@@ -1,6 +1,5 @@
 import { RateLimitError, telemetryRecorder } from '@sourcegraph/cody-shared'
 import { localStorage } from './../../services/LocalStorageProvider'
-import { toolboxManager } from './ToolboxManager'
 
 /**
  * NOTE: This is a temporary rate limit for deep-cody models to prevent users from
@@ -52,7 +51,6 @@ export class DeepCodyRateLimiter {
                     },
                 })
             }
-            toolboxManager.setIsRateLimited(newQuota === 1)
             return undefined
         }
 

@@ -506,23 +506,3 @@ export interface FireworksCodeCompletionParams {
     languageId: string
     user: string | null
 }
-
-export interface AgentToolboxSettings {
-    /**
-     * The agent that user has currently enabled.
-     */
-    agent?: {
-        /**
-         * The name of the agent that user has currently enabled. E.g. "deep-cody"
-         */
-        name?: string
-    }
-    /**
-     * Whether the user has enabled terminal context.
-     * Defaulted to undefined if shell context is not enabled by site admin via feature flag.
-     */
-    shell?: {
-        enabled: boolean
-        error?: string
-    }
-}

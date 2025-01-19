@@ -2,11 +2,9 @@ import type { Span } from '@opentelemetry/api'
 import { type ContextItem, ContextItemSource, ps } from '@sourcegraph/cody-shared'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { URI } from 'vscode-uri'
-import { mockLocalStorage } from '../../services/LocalStorageProvider'
 import type { ContextRetriever } from '../chat-view/ContextRetriever'
 import { CodyTool, OpenCtxTool } from './CodyTool'
-import { CodyToolProvider, TestToolFactory, type ToolStatusCallback } from './CodyToolProvider'
-import { toolboxManager } from './ToolboxManager'
+import { TestToolFactory, type ToolStatusCallback } from './CodyToolProvider'
 
 const mockCallback: ToolStatusCallback = {
     onUpdate: vi.fn(),
@@ -200,47 +198,6 @@ describe('CodyTool', () => {
         it('should create OpenCtxTool instance', () => {
             const openCtxTool = new OpenCtxTool(mockProvider as any, mockConfig)
             expect(openCtxTool).toBeInstanceOf(CodyTool)
-        })
-    })
-
-    describe('Default Tools', () => {
-        vi.mock('./CodyChatMemory', () => ({
-            CodyChatMemory: {
-                initialize: vi.fn(),
-                retrieve: vi.fn(),
-                load: vi.fn(),
-                unload: vi.fn(),
-            },
-        }))
-
-        // Update to use namespace-based approach
-        beforeEach(() => {
-            CodyToolProvider.initialize({ retrieveContext: vi.fn() })
-        })
-
-        it('should register all default tools based on toolbox settings', () => {
-            const mockedToolboxSettings = { agent: { name: 'deep-cody' }, shell: { enabled: true } }
-            vi.spyOn(toolboxManager, 'getSettings').mockReturnValue(mockedToolboxSettings)
-            const localStorageData: { [key: string]: unknown } = {}
-            mockLocalStorage({
-                get: (key: string) => localStorageData[key],
-                update: (key: string, value: unknown) => {
-                    localStorageData[key] = value
-                },
-            } as any)
-
-            const tools = CodyToolProvider.getTools()
-            expect(tools.some(t => t.config.title.includes('Cody Memory'))).toBeTruthy()
-            expect(tools.some(t => t.config.title.includes('Code Search'))).toBeTruthy()
-            expect(tools.some(t => t.config.title.includes('Codebase File'))).toBeTruthy()
-            expect(tools.some(t => t.config.title.includes('Terminal'))).toBeTruthy()
-
-            // Disable shell and check if terminal tool is removed.
-            mockedToolboxSettings.shell.enabled = false
-            vi.spyOn(toolboxManager, 'getSettings').mockReturnValue(mockedToolboxSettings)
-            const newTools = CodyToolProvider.getTools()
-            expect(newTools.some(t => t.config.title.includes('Terminal'))).toBeFalsy()
-            expect(newTools.length).toBe(tools.length - 1)
         })
     })
 })
