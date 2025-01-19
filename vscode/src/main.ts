@@ -443,7 +443,10 @@ async function registerCodyCommands(
         args?: Partial<CodyCommandArgs>
     ): Promise<CommandResult | undefined> => {
         const clientConfig = await ClientConfigSingleton.getInstance().getConfig()
-        if (!clientConfig?.customCommandsEnabled) {
+        if (!clientConfig) {
+            return undefined
+        }
+        if (!clientConfig.customCommandsEnabled) {
             void vscode.window.showErrorMessage(
                 'This feature has been disabled by your Sourcegraph site admin.'
             )
