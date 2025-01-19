@@ -1306,7 +1306,11 @@ export class Agent extends MessageHandler implements ExtensionClient {
             return null
         })
 
-        // TODO(beyang): register handler for setting agent (setAgent)
+        this.registerAuthenticatedRequest('chat/setHandler', async ({ id, handlerID, modelID }) => {
+            const panel = this.webPanels.getPanelOrError(id)
+            await waitUntilComplete(panel.extensionAPI.setHandler(handlerID, modelID))
+            return null
+        })
 
         const submitOrEditHandler = async (
             { id, message }: { id: string; message: WebviewMessage },

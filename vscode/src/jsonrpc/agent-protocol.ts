@@ -13,6 +13,7 @@ import type {
 } from '@sourcegraph/cody-shared'
 import type { TelemetryEventMarketingTrackingInput } from '@sourcegraph/telemetry'
 
+import { HandlerID } from '@sourcegraph/cody-shared/src/models/model'
 import type { ExtensionMessage, WebviewMessage } from '../chat/protocol'
 import type { CompletionBookkeepingEvent, CompletionItemID } from '../completions/analytics-logger'
 import type { FixupTaskID } from '../non-stop/FixupTask'
@@ -75,6 +76,7 @@ export type ClientRequests = {
     'chat/editMessage': [{ id: string; message: WebviewMessage }, ExtensionMessage]
 
     'chat/setModel': [{ id: string; model: Model['id'] }, null]
+    'chat/setHandler': [{ id: string; handlerID: HandlerID; modelID: Model['id'] }, null]
 
     // Trigger chat-based commands (explain, test, smell), which are effectively
     // shortcuts to start a new chat with a templated question. The return value
