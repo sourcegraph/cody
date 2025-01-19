@@ -76,7 +76,7 @@ import { type Span, context } from '@opentelemetry/api'
 import { captureException } from '@sentry/core'
 import type { SubMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { resolveAuth } from '@sourcegraph/cody-shared/src/configuration/auth-resolver'
-import type { OmniboxHandler } from '@sourcegraph/cody-shared/src/models/model'
+import { type OmniboxHandler, OmniboxHandlers } from '@sourcegraph/cody-shared/src/models/model'
 import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
 import { type Observable, Subject, map } from 'observable-fns'
 import type { URI } from 'vscode-uri'
@@ -805,7 +805,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         })
         recorder.recordChatQuestionSubmitted(mentions)
 
-        const { intent, detectedIntent, detectedIntentScores } = await this.getIntentAndScores({
+        let { intent, detectedIntent, detectedIntentScores } = await this.getIntentAndScores({
             requestID,
             input: editorState
                 ? inputTextWithMappedContextChipsFromPromptEditorState(editorState)
@@ -815,6 +815,13 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             manuallySelectedIntent,
             signal,
         })
+        // KLUDGE(beyang): intent controlled by handler selection
+        if (selectedAgent === OmniboxHandlers.DeepCody.id || selectedAgent === 'model') {
+            intent = 'chat'
+        } else if (selectedAgent === OmniboxHandlers.KeywordSearch.id) {
+            intent = 'search'
+        }
+
         signal.throwIfAborted()
         this.chatBuilder.setLastMessageIntent(intent)
 
