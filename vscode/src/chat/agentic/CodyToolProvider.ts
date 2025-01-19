@@ -85,7 +85,7 @@ class ToolFactory {
     public getInstances(): CodyTool[] {
         // Create fresh instances of all registered tools
         return Array.from(this.tools.entries())
-            .filter(([name]) => name !== 'CliTool' || toolboxManager.getSettings()?.shell?.enabled)
+            .filter(([name]) => name !== 'CliTool')
             .map(([_, config]) => config.createInstance(config, this.contextRetriever))
             .filter(isDefined)
     }
