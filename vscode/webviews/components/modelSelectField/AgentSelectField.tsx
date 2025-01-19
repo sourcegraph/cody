@@ -136,40 +136,22 @@ export const AgentSelectField: React.FunctionComponent<{
     const options = useMemo<SelectListOption[]>(
         () =>
             models.map(handler => {
-                const { model } = handler
-                if (model) {
-                    const availability = modelAvailability(userInfo, serverSentModelsEnabled, model)
-                    return {
-                        value: model.id,
-                        title: (
-                            <HandlerTitleWithIcon
-                                handler={handler}
-                                showIcon={true}
-                                showProvider={true}
-                                modelAvailability={availability}
-                            />
-                        ),
-                        // needs-cody-pro models should be clickable (not disabled) so the user can
-                        // be taken to the upgrade page.
-                        disabled: !['available', 'needs-cody-pro'].includes(availability),
-                        group: getHandlerDropdownGroup(handler),
-                        tooltip: getTooltip(model, availability),
-                    } satisfies SelectListOption
-                }
-                // Non-model option
+                const availability = modelAvailability(userInfo, serverSentModelsEnabled, handler)
                 return {
-                    value: handler.id,
+                    value: handler.model ? handler.model.id : handler.id,
                     title: (
                         <HandlerTitleWithIcon
                             handler={handler}
                             showIcon={true}
                             showProvider={true}
-                            modelAvailability="available"
+                            modelAvailability={availability}
                         />
                     ),
-                    // TODO(beyang): fill in other fields?
+                    // needs-cody-pro models should be clickable (not disabled) so the user can
+                    // be taken to the upgrade page.
+                    disabled: !['available', 'needs-cody-pro'].includes(availability),
                     group: getHandlerDropdownGroup(handler),
-                    tooltip: handler.title ?? handler.id,
+                    tooltip: getTooltip(handler, availability),
                 } satisfies SelectListOption
             }),
         [models, userInfo, serverSentModelsEnabled]
@@ -324,8 +306,12 @@ type ModelAvailability = 'available' | 'needs-cody-pro' | 'not-selectable-on-ent
 function modelAvailability(
     userInfo: Pick<UserAccountInfo, 'isCodyProUser' | 'isDotComUser'>,
     serverSentModelsEnabled: boolean,
-    model: Model
+    handler: OmniboxHandler
 ): ModelAvailability {
+    const { model } = handler
+    if (!model) {
+        return 'available'
+    }
     if (!userInfo.isDotComUser && !serverSentModelsEnabled) {
         return 'not-selectable-on-enterprise'
     }
@@ -335,10 +321,19 @@ function modelAvailability(
     return 'available'
 }
 
-// TODO(beyang): update
-function getTooltip(model: Model, availability: string): string {
-    if (model.id.includes('deep-cody')) {
-        return 'An agent powered by Claude 3.5 Sonnet (New) and other models with tool-use capabilities to gather contextual information for better responses. It can search your codebase, browse the web, execute shell commands in your terminal (when enabled), and utilize any configured tools to retrieve necessary context. To enable shell commands, set the "cody.agentic.context.experimentalShell" option to true in your settings.'
+function getTooltip(handler: OmniboxHandler, availability: string): string {
+    const { model } = handler
+    if (!model) {
+        if (handler.id === OmniboxHandlers.DeepCody.id) {
+            return 'An agent powered by Claude 3.5 Sonnet (New) and other models with tool-use capabilities to gather contextual information for better responses.'
+        }
+        if (handler.id === OmniboxHandlers.Auto.id) {
+            return 'Auto-switch between chat and search'
+        }
+        if (handler.id === OmniboxHandlers.KeywordSearch.id) {
+            return 'Fuzzy keyword search of the codebase.'
+        }
+        return ''
     }
     if (model.tags.includes(ModelTag.Waitlist)) {
         return 'Request access to this new model'
