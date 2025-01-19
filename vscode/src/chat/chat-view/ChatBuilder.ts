@@ -114,7 +114,6 @@ export class ChatBuilder {
     }
 
     public setSelectedAgent(newAgentName?: string): void {
-        console.log('# ChatBuilder.setSelectedAgent', this.selectedChatAgent)
         this.selectedChatAgent = newAgentName
     }
 

@@ -820,7 +820,10 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
         this.postEmptyMessageInProgress(model)
 
-        let agentName = selectedAgent ?? ''
+        if (!selectedAgent) {
+            selectedAgent = getDefaultOmniboxHandler().id
+        }
+        let agentName = selectedAgent
         if (selectedAgent === 'auto') {
             if (['search', 'edit', 'insert'].includes(intent ?? '')) {
                 agentName = intent ?? 'chat'
@@ -1846,6 +1849,11 @@ async function joinModelWaitlist(): Promise<void> {
     telemetryRecorder.recordEvent('cody.joinLlmWaitlist', 'clicked')
 }
 
+const autoHandler: OmniboxHandler = {
+    id: 'auto',
+    title: 'Auto (chat or search)',
+}
+
 function getOmniboxHandlers(): Observable<OmniboxHandler[]> {
     const enableToolCody = resolvedConfig.pipe(
         map(c => {
@@ -1862,10 +1870,7 @@ function getOmniboxHandlers(): Observable<OmniboxHandler[]> {
     return combineLatest(enableToolCody, models).pipe(
         map(([enableToolCody, models]) => {
             const agents: OmniboxHandler[] = []
-            agents.push({
-                id: 'auto',
-                title: 'Auto (chat or search)',
-            })
+            agents.push(autoHandler)
             agents.push({
                 id: DeepCodyAgent.id,
                 title: 'Agentic chat',
@@ -1889,4 +1894,8 @@ function getOmniboxHandlers(): Observable<OmniboxHandler[]> {
             return agents
         })
     )
+}
+
+function getDefaultOmniboxHandler(): OmniboxHandler {
+    return autoHandler
 }

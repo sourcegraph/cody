@@ -83,12 +83,12 @@ export const SubmitButton: FC<{
     intent?: ChatMessage['intent']
     onSelectIntent?: (intent: ChatMessage['intent']) => void
 }> = ({ onClick, state = 'submittable', className, intent, onSelectIntent }) => {
-    const experimentalOneBoxEnabled = useExperimentalOneBox()
-    const {
-        clientCapabilities: { agentIDE },
-    } = useConfig()
+    // const experimentalOneBoxEnabled = useExperimentalOneBox()
+    // const {
+    //     clientCapabilities: { agentIDE },
+    // } = useConfig()
 
-    const intentOptions = useMemo(() => getIntentOptions(agentIDE), [agentIDE])
+    // const intentOptions = useMemo(() => getIntentOptions(agentIDE), [agentIDE])
 
     if (state === 'waitingResponseComplete') {
         return (
@@ -115,13 +115,13 @@ export const SubmitButton: FC<{
         )
     }
 
-    const selectedIntent = intentOptions.find(option => option.intent === intent)
+    // const selectedIntent = intentOptions.find(option => option.intent === intent)
 
     return (
         <div className="tw-flex tw-items-center">
-            {experimentalOneBoxEnabled && selectedIntent && !selectedIntent.hidden && (
+            {/* {experimentalOneBoxEnabled && selectedIntent && !selectedIntent.hidden && (
                 <selectedIntent.icon className="tw-size-8 tw-mr-2" />
-            )}
+            )} */}
             <Tooltip>
                 <TooltipTrigger asChild>
                     <Button
@@ -152,7 +152,7 @@ export const SubmitButton: FC<{
                     Send <Kbd macOS="return" linuxAndWindows="return" />
                 </TooltipContent>
             </Tooltip>
-            {experimentalOneBoxEnabled && (
+            {/* {experimentalOneBoxEnabled && (
                 <ToolbarPopoverItem
                     role="combobox"
                     iconEnd="chevron"
@@ -194,7 +194,7 @@ export const SubmitButton: FC<{
                         },
                     }}
                 />
-            )}
+            )} */}
         </div>
     )
 }
