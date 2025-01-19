@@ -110,7 +110,6 @@ import {
 import { openExternalLinks } from '../../services/utils/workspace-action'
 import { TestSupport } from '../../test-support'
 import type { MessageErrorType } from '../MessageProvider'
-import { DeepCodyAgent } from '../agentic/DeepCody'
 import { getMentionMenuData } from '../context/chatContext'
 import type { ChatIntentAPIClient } from '../context/chatIntentAPIClient'
 import { observeDefaultContext } from '../initialContext'
@@ -1848,11 +1847,6 @@ async function joinModelWaitlist(): Promise<void> {
     telemetryRecorder.recordEvent('cody.joinLlmWaitlist', 'clicked')
 }
 
-const autoHandler: OmniboxHandler = {
-    id: 'auto',
-    title: 'Auto (chat or search)',
-}
-
 function getOmniboxHandlers(): Observable<OmniboxHandler[]> {
     const enableToolCody = resolvedConfig.pipe(
         map(c => {
@@ -1869,11 +1863,8 @@ function getOmniboxHandlers(): Observable<OmniboxHandler[]> {
     return combineLatest(enableToolCody, models).pipe(
         map(([enableToolCody, models]) => {
             const agents: OmniboxHandler[] = []
-            agents.push(autoHandler)
-            agents.push({
-                id: DeepCodyAgent.id,
-                title: 'Agentic chat',
-            })
+            agents.push(OmniboxHandlers.Auto)
+            agents.push(OmniboxHandlers.DeepCody)
             if (enableToolCody) {
                 agents.push({
                     id: 'tool-cody',
@@ -1886,15 +1877,12 @@ function getOmniboxHandlers(): Observable<OmniboxHandler[]> {
                     model,
                 }))
             )
-            agents.push({
-                id: 'search',
-                title: 'Fuzzy keyword search',
-            })
+            agents.push(OmniboxHandlers.KeywordSearch)
             return agents
         })
     )
 }
 
 function getDefaultOmniboxHandler(): OmniboxHandler {
-    return autoHandler
+    return OmniboxHandlers.Auto
 }

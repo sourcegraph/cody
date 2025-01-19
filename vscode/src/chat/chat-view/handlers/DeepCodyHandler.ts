@@ -7,6 +7,7 @@ import {
     storeLastValue,
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
+import { OmniboxHandlers } from '@sourcegraph/cody-shared/src/models/model'
 import { DeepCodyAgent } from '../../agentic/DeepCody'
 import { DeepCodyRateLimiter } from '../../agentic/DeepCodyRateLimiter'
 import type { ChatBuilder } from '../ChatBuilder'
@@ -51,7 +52,7 @@ export class DeepCodyHandler extends ChatHandler implements AgentHandler {
         )
         // Early return if basic conditions aren't met.
         if (
-            chatBuilder.selectedAgent !== 'deep-cody' ||
+            chatBuilder.selectedAgent !== OmniboxHandlers.DeepCody.id ||
             baseContextResult.error ||
             baseContextResult.abort
         ) {

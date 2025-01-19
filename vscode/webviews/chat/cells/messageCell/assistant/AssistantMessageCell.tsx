@@ -281,7 +281,7 @@ function useChatModelByID(
         (model
             ? {
                   id: model,
-                  title: model?.includes('deep-cody') ? 'Deep Cody (Experimental)' : model,
+                  title: model,
                   provider: 'unknown',
                   tags: [],
               }

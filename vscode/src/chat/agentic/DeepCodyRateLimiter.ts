@@ -2,7 +2,7 @@ import { RateLimitError, telemetryRecorder } from '@sourcegraph/cody-shared'
 import { localStorage } from './../../services/LocalStorageProvider'
 
 /**
- * NOTE: This is a temporary rate limit for deep-cody models to prevent users from
+ * NOTE: This is a temporary rate limit for DeepCody models to prevent users from
  * running into rate limits that block them from using Cody.
  * We should remove this once we have a more robust solution in place.
  * Any first 2 human messages submitted with Deep Cody is counted toward the usage.

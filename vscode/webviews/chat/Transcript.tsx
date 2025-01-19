@@ -660,17 +660,17 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                     switchToSearch={() => editAndSubmitSearch(assistantMessage?.didYouMeanQuery ?? '')}
                 />
             )}
-            {humanMessage.agent === 'deep-cody' && (
+            {humanMessage.agent === OmniboxHandlers.DeepCody.id && (
                 <AgenticContextCell
                     key={`${humanMessage.index}-${humanMessage.intent}-process`}
                     isContextLoading={isContextLoading}
                     processes={humanMessage?.processes ?? undefined}
                 />
             )}
-            {humanMessage.agent === 'deep-cody' && isContextLoading && assistantMessage?.isLoading && (
-                <ApprovalCell vscodeAPI={vscodeAPI} />
-            )}
-            {!(humanMessage.agent === 'deep-cody' && isContextLoading) &&
+            {humanMessage.agent === OmniboxHandlers.DeepCody.id &&
+                isContextLoading &&
+                assistantMessage?.isLoading && <ApprovalCell vscodeAPI={vscodeAPI} />}
+            {!(humanMessage.agent === OmniboxHandlers.DeepCody.id && isContextLoading) &&
                 (humanMessage.contextFiles || assistantMessage || isContextLoading) &&
                 !isSearchIntent && (
                     <ContextCell
@@ -695,7 +695,9 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                                 ? EditContextButtonSearch
                                 : EditContextButtonChat
                         }
-                        defaultOpen={isContextLoading && humanMessage.agent === 'deep-cody'}
+                        defaultOpen={
+                            isContextLoading && humanMessage.agent === OmniboxHandlers.DeepCody.id
+                        }
                         processes={humanMessage?.processes ?? undefined}
                         agent={humanMessage?.agent ?? undefined}
                     />

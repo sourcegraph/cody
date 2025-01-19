@@ -36,15 +36,18 @@ export interface OmniboxHandler {
 
 export type HandlerID = OmniboxHandler['id']
 
-export const OmniboxHandlers: Record<string, OmniboxHandler> = {
+export const OmniboxHandlers = {
     Auto: {
         id: 'auto',
+        title: 'Auto (chat or file search)',
     },
     DeepCody: {
         id: 'deep-cody',
+        title: 'Agentic chat',
     },
     KeywordSearch: {
-        id: 'keyword-search',
+        id: 'search',
+        title: 'Fuzzy keyword search',
     },
 }
 

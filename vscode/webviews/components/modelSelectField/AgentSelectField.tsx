@@ -1,5 +1,5 @@
 import { type Model, ModelTag, isCodyProModel, isWaitlistModel } from '@sourcegraph/cody-shared'
-import type { OmniboxHandler } from '@sourcegraph/cody-shared/src/models/model'
+import { type OmniboxHandler, OmniboxHandlers } from '@sourcegraph/cody-shared/src/models/model'
 import { clsx } from 'clsx'
 import {
     BookOpenIcon,
@@ -56,7 +56,7 @@ export const AgentSelectField: React.FunctionComponent<{
     const telemetryRecorder = useTelemetryRecorder()
 
     // The first model is the always the default.
-    const selectedModel = models[0]
+    const selectedHandler = models[0]
 
     const isCodyProUser = userInfo.isDotComUser && userInfo.isCodyProUser
     const isEnterpriseUser = !userInfo.isDotComUser
@@ -66,13 +66,14 @@ export const AgentSelectField: React.FunctionComponent<{
         (agent: OmniboxHandler): void => {
             const { model } = agent
             if (model) {
-                if (selectedModel.id !== model.id) {
+                if (selectedHandler.id !== model.id) {
                     telemetryRecorder.recordEvent('cody.modelSelector', 'select', {
                         metadata: {
                             modelIsCodyProOnly: isCodyProModel(model) ? 1 : 0,
                             isCodyProUser: isCodyProUser ? 1 : 0,
                             // Log event when user switches to a different model from Deep Cody.
-                            isSwitchedFromDeepCody: selectedModel.id.includes('deep-cody') ? 1 : 0,
+                            isSwitchedFromDeepCody:
+                                selectedHandler.id === OmniboxHandlers.DeepCody.id ? 1 : 0,
                         },
                         privateMetadata: {
                             modelId: model.id,
@@ -102,7 +103,7 @@ export const AgentSelectField: React.FunctionComponent<{
             parentOnModelSelect(agent)
         },
         [
-            selectedModel,
+            selectedHandler,
             telemetryRecorder.recordEvent,
             showCodyProBadge,
             parentOnModelSelect,
@@ -197,7 +198,7 @@ export const AgentSelectField: React.FunctionComponent<{
         return null
     }
 
-    const value = selectedModel.id
+    const value = selectedHandler.id
     return (
         <ToolbarPopoverItem
             role="combobox"
@@ -334,6 +335,7 @@ function modelAvailability(
     return 'available'
 }
 
+// TODO(beyang): update
 function getTooltip(model: Model, availability: string): string {
     if (model.id.includes('deep-cody')) {
         return 'An agent powered by Claude 3.5 Sonnet (New) and other models with tool-use capabilities to gather contextual information for better responses. It can search your codebase, browse the web, execute shell commands in your terminal (when enabled), and utilize any configured tools to retrieve necessary context. To enable shell commands, set the "cody.agentic.context.experimentalShell" option to true in your settings.'
@@ -362,7 +364,7 @@ function getTooltip(model: Model, availability: string): string {
 const getBadgeText = (handler: OmniboxHandler, modelAvailability?: ModelAvailability): string | null => {
     const { model } = handler
     if (!model) {
-        if (handler.id === 'deep-cody') return 'Experimental'
+        if (handler.id === OmniboxHandlers.DeepCody.id) return 'Experimental'
         return ''
     }
 
@@ -396,11 +398,11 @@ const HandlerTitleWithIcon: React.FC<{
     return (
         <span className={clsx(styles.modelTitleWithIcon, { [styles.disabled]: isDisabled })}>
             {showIcon ? (
-                handler.id.includes('deep-cody') ? (
+                handler.id === OmniboxHandlers.DeepCody.id ? (
                     <BrainIcon size={16} className={styles.modelIcon} />
-                ) : handler.id.includes('auto') ? (
+                ) : handler.id === OmniboxHandlers.Auto.id ? (
                     <SparklesIcon size={16} className={styles.modelIcon} />
-                ) : handler.id.includes('search') ? (
+                ) : handler.id === OmniboxHandlers.KeywordSearch.id ? (
                     <SearchIcon size={16} className={styles.modelIcon} />
                 ) : model ? (
                     <ChatModelIcon model={model.provider} className={styles.modelIcon} />
@@ -450,9 +452,10 @@ const getHandlerDropdownGroup = (handler: OmniboxHandler): string => {
         if (model.tags.includes(ModelTag.Speed)) return HandlerGroup.Speed
         if (model.tags.includes(ModelTag.Ollama)) return HandlerGroup.Ollama
     }
-    if (handler.id.includes('auto')) return HandlerGroup.Agents
-    if (handler.id.includes('deep-cody')) return HandlerGroup.Agents
-    if (['search'].includes(handler.id)) return HandlerGroup.Tools
+    // HACK(beyang): should specify group in OmniboxHandlers
+    if (handler.id === OmniboxHandlers.Auto.id) return HandlerGroup.Agents
+    if (handler.id === OmniboxHandlers.DeepCody.id) return HandlerGroup.Agents
+    if (handler.id === OmniboxHandlers.KeywordSearch.id) return HandlerGroup.Tools
     return HandlerGroup.Other
 }
 
