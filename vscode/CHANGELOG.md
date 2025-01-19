@@ -12,6 +12,8 @@ This is a log of all notable changes to Cody for VS Code.
 
 ### Changed
 
+- Removed "agentic chat" toolbox UI.
+
 ### Uncategorized
 
 ## 1.60.0

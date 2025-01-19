@@ -1,11 +1,5 @@
 import { Observable } from 'observable-fns'
-import type {
-    AgentToolboxSettings,
-    AuthStatus,
-    ModelsData,
-    ResolvedConfiguration,
-    UserProductSubscription,
-} from '../..'
+import type { AuthStatus, ModelsData, ResolvedConfiguration, UserProductSubscription } from '../..'
 import type { SerializedPromptEditorState } from '../..'
 import type { ChatMessage, UserLocalHistory } from '../../chat/transcript/messages'
 import type { ContextItem, DefaultContext } from '../../codebase-context/messages'
@@ -13,7 +7,7 @@ import type { CodyCommand } from '../../commands/types'
 import type { FeatureFlag } from '../../experimentation/FeatureFlagProvider'
 import type { ContextMentionProviderMetadata } from '../../mentions/api'
 import type { MentionQuery } from '../../mentions/query'
-import type { Model } from '../../models/model'
+import type { Model, OmniboxHandlerOption } from '../../models/model'
 import type {
     FetchHighlightFileParameters,
     Prompt,
@@ -67,6 +61,11 @@ export interface WebviewToExtensionAPI {
      */
     chatModels(): Observable<Model[]>
 
+    /**
+     * List of available agents. Replaces `chatModels`.
+     */
+    handlers(): Observable<OmniboxHandlerOption[]>
+
     highlights(query: FetchHighlightFileParameters): Observable<string[][]>
 
     hydratePromptMessage(
@@ -78,6 +77,11 @@ export interface WebviewToExtensionAPI {
      * Set the chat model.
      */
     setChatModel(model: Model['id']): Observable<void>
+
+    /**
+     * Sets the agent ID. Replaces setChatModel.
+     */
+    setHandler(handlerID: string | undefined, modelID: Model['id'] | undefined): Observable<void>
 
     /**
      * Observe the default context that should be populated in the chat message input field and suggestions.
@@ -115,15 +119,6 @@ export interface WebviewToExtensionAPI {
      * The current user's product subscription information (Cody Free/Pro).
      */
     userProductSubscription(): Observable<UserProductSubscription | null>
-
-    /**
-     * The current user's toolbox settings.
-     */
-    toolboxSettings(): Observable<AgentToolboxSettings | null>
-    /**
-     *  Update the current user's toolbox settings.
-     */
-    updateToolboxSettings(settings: AgentToolboxSettings): Observable<void>
 }
 
 export function createExtensionAPI(
@@ -143,10 +138,12 @@ export function createExtensionAPI(
         clientActionBroadcast: proxyExtensionAPI(messageAPI, 'clientActionBroadcast'),
         models: proxyExtensionAPI(messageAPI, 'models'),
         chatModels: proxyExtensionAPI(messageAPI, 'chatModels'),
+        handlers: proxyExtensionAPI(messageAPI, 'handlers'),
         highlights: proxyExtensionAPI(messageAPI, 'highlights'),
         hydratePromptMessage: promptText =>
             hydratePromptMessage(promptText, staticDefaultContext?.initialContext),
         setChatModel: proxyExtensionAPI(messageAPI, 'setChatModel'),
+        setHandler: proxyExtensionAPI(messageAPI, 'setHandler'),
         defaultContext: staticDefaultContext
             ? () => Observable.of(staticDefaultContext)
             : proxyExtensionAPI(messageAPI, 'defaultContext'),
@@ -158,8 +155,6 @@ export function createExtensionAPI(
         transcript: proxyExtensionAPI(messageAPI, 'transcript'),
         userHistory: proxyExtensionAPI(messageAPI, 'userHistory'),
         userProductSubscription: proxyExtensionAPI(messageAPI, 'userProductSubscription'),
-        toolboxSettings: proxyExtensionAPI(messageAPI, 'toolboxSettings'),
-        updateToolboxSettings: proxyExtensionAPI(messageAPI, 'updateToolboxSettings'),
         repos: proxyExtensionAPI(messageAPI, 'repos'),
     }
 }

@@ -1,6 +1,5 @@
 import {
     AUTH_STATUS_FIXTURE_AUTHED,
-    type AgentToolboxSettings,
     type AuthStatus,
     CLIENT_CAPABILITIES_FIXTURE,
     type ClientConfiguration,
@@ -18,6 +17,7 @@ import {
     promiseFactoryToObservable,
     serializedPromptEditorStateFromText,
 } from '@sourcegraph/cody-shared'
+import { getMockedDotComHandlers } from '@sourcegraph/cody-shared/src/models/dotcom'
 import { ExtensionAPIProviderForTestsOnly } from '@sourcegraph/prompt-editor'
 import { Observable } from 'observable-fns'
 import { type ComponentProps, type FunctionComponent, type ReactNode, useMemo } from 'react'
@@ -106,7 +106,9 @@ export const AppWrapperForTest: FunctionComponent<{ children: ReactNode }> = ({ 
                             preferences: { defaults: {}, selected: {} },
                         } satisfies ModelsData),
                     chatModels: () => Observable.of(getMockedDotComClientModels()),
+                    handlers: () => Observable.of(getMockedDotComHandlers()),
                     setChatModel: () => EMPTY,
+                    setHandler: () => EMPTY,
                     defaultContext: () => Observable.of({ corpusContext: [], initialContext: [] }),
                     hydratePromptMessage: text =>
                         Observable.of(serializedPromptEditorStateFromText(text)),
@@ -142,12 +144,6 @@ export const AppWrapperForTest: FunctionComponent<{ children: ReactNode }> = ({ 
                             },
                         }),
                     userProductSubscription: () => Observable.of(null),
-                    toolboxSettings: () =>
-                        Observable.of<AgentToolboxSettings | null>({
-                            agent: undefined,
-                            shell: undefined,
-                        }),
-                    updateToolboxSettings: () => EMPTY,
                 },
             } satisfies Wrapper<ComponentProps<typeof ExtensionAPIProviderForTestsOnly>['value']>,
             {

@@ -51,6 +51,7 @@ import {
 import { HumanMessageCell } from './cells/messageCell/human/HumanMessageCell'
 
 import { type Context, type Span, context, trace } from '@opentelemetry/api'
+import { OmniboxHandlers } from '@sourcegraph/cody-shared/src/models/model'
 import { isCodeSearchContextItem } from '../../src/context/openctx/codeSearch'
 import { TELEMETRY_INTENT } from '../../src/telemetry/onebox'
 import { AgenticContextCell } from './cells/agenticCell/AgenticContextCell'
@@ -615,6 +616,11 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
         [humanMessage]
     )
 
+    const showIntent =
+        humanMessage.agent === undefined ||
+        humanMessage.agent === 'null' ||
+        humanMessage.agent === OmniboxHandlers.Auto.id
+
     return (
         <>
             <HumanMessageCell
@@ -635,7 +641,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                 editorRef={humanEditorRef}
                 className={!isFirstInteraction && isLastInteraction ? 'tw-mt-auto' : ''}
             />
-            {experimentalOneBoxEnabled && (
+            {experimentalOneBoxEnabled && showIntent && (
                 <SwitchIntent
                     intent={humanMessage.intent}
                     disabled={!!assistantMessage?.isLoading}
@@ -654,17 +660,17 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                     switchToSearch={() => editAndSubmitSearch(assistantMessage?.didYouMeanQuery ?? '')}
                 />
             )}
-            {humanMessage.agent && (
+            {humanMessage.agent === OmniboxHandlers.DeepCody.id && (
                 <AgenticContextCell
                     key={`${humanMessage.index}-${humanMessage.intent}-process`}
                     isContextLoading={isContextLoading}
                     processes={humanMessage?.processes ?? undefined}
                 />
             )}
-            {humanMessage.agent && isContextLoading && assistantMessage?.isLoading && (
-                <ApprovalCell vscodeAPI={vscodeAPI} />
-            )}
-            {!(humanMessage.agent && isContextLoading) &&
+            {humanMessage.agent === OmniboxHandlers.DeepCody.id &&
+                isContextLoading &&
+                assistantMessage?.isLoading && <ApprovalCell vscodeAPI={vscodeAPI} />}
+            {!(humanMessage.agent === OmniboxHandlers.DeepCody.id && isContextLoading) &&
                 (humanMessage.contextFiles || assistantMessage || isContextLoading) &&
                 !isSearchIntent && (
                     <ContextCell
@@ -689,7 +695,9 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                                 ? EditContextButtonSearch
                                 : EditContextButtonChat
                         }
-                        defaultOpen={isContextLoading && humanMessage.agent === 'deep-cody'}
+                        defaultOpen={
+                            isContextLoading && humanMessage.agent === OmniboxHandlers.DeepCody.id
+                        }
                         processes={humanMessage?.processes ?? undefined}
                         agent={humanMessage?.agent ?? undefined}
                     />

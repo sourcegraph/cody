@@ -28,6 +28,7 @@ import {
     authStatus,
     cenv,
     clientCapabilities,
+    combineLatest,
     createMessageAPIForExtension,
     currentAuthStatus,
     currentAuthStatusAuthed,
@@ -75,8 +76,9 @@ import { type Span, context } from '@opentelemetry/api'
 import { captureException } from '@sentry/core'
 import type { SubMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { resolveAuth } from '@sourcegraph/cody-shared/src/configuration/auth-resolver'
+import { type OmniboxHandlerOption, OmniboxHandlers } from '@sourcegraph/cody-shared/src/models/model'
 import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
-import { Subject, map } from 'observable-fns'
+import { type Observable, Subject, map } from 'observable-fns'
 import type { URI } from 'vscode-uri'
 import { View } from '../../../webviews/tabs/types'
 import { redirectToEndpointLogin, showSignInMenu, showSignOutMenu, signOut } from '../../auth/auth'
@@ -108,7 +110,6 @@ import {
 import { openExternalLinks } from '../../services/utils/workspace-action'
 import { TestSupport } from '../../test-support'
 import type { MessageErrorType } from '../MessageProvider'
-import { toolboxManager } from '../agentic/ToolboxManager'
 import { getMentionMenuData } from '../context/chatContext'
 import type { ChatIntentAPIClient } from '../context/chatIntentAPIClient'
 import { observeDefaultContext } from '../initialContext'
@@ -128,7 +129,7 @@ import type { ContextRetriever } from './ContextRetriever'
 import { InitDoer } from './InitDoer'
 import { getChatPanelTitle } from './chat-helpers'
 import { OmniboxTelemetry } from './handlers/OmniboxTelemetry'
-import { getAgent } from './handlers/registry'
+import { getHandler } from './handlers/registry'
 import { getPromptsMigrationInfo, startPromptsMigration } from './prompts-migration'
 
 export interface ChatControllerOptions {
@@ -652,7 +653,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         intentScores?: { intent: string; score: number }[] | undefined | null
         manuallySelectedIntent?: ChatMessage['intent'] | undefined | null
         traceparent?: string | undefined | null
-        selectedAgent?: string | undefined | null
+        selectedHandler?: string | undefined | null
     }): Promise<void> {
         return context.with(extractContextFromTraceparent(traceparent), () => {
             return tracer.startActiveSpan('chat.handleUserMessage', async (span): Promise<void> => {
@@ -670,14 +671,13 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     return this.clearAndRestartSession()
                 }
 
-                const selectedAgent = this.chatBuilder.selectedAgent
-
+                const selectedHandler = this.chatBuilder.selectedHandler
                 this.chatBuilder.addHumanMessage({
                     text: inputText,
                     editorState,
                     intent: detectedIntent,
                     manuallySelectedIntent: manuallySelectedIntent ? detectedIntent : undefined,
-                    agent: selectedAgent,
+                    agent: selectedHandler,
                 })
                 this.postViewTranscript({ speaker: 'assistant' })
 
@@ -696,7 +696,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                         intent: detectedIntent,
                         intentScores: detectedIntentScores,
                         manuallySelectedIntent,
-                        selectedAgent,
+                        selectedHandler,
                     },
                     span
                 )
@@ -774,7 +774,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             intent: preDetectedIntent,
             intentScores: preDetectedIntentScores,
             manuallySelectedIntent,
-            selectedAgent,
+            selectedHandler,
         }: Parameters<typeof this.handleUserMessage>[0],
         span: Span
     ): Promise<void> {
@@ -798,11 +798,11 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             sessionID: this.chatBuilder.sessionID,
             traceId: span.spanContext().traceId,
             promptText: inputText,
-            chatAgent: selectedAgent,
+            chatAgent: selectedHandler,
         })
         recorder.recordChatQuestionSubmitted(mentions)
 
-        const { intent, detectedIntent, detectedIntentScores } = await this.getIntentAndScores({
+        let { intent, detectedIntent, detectedIntentScores } = await this.getIntentAndScores({
             requestID,
             input: editorState
                 ? inputTextWithMappedContextChipsFromPromptEditorState(editorState)
@@ -812,15 +812,28 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             manuallySelectedIntent,
             signal,
         })
+        // KLUDGE(beyang): intent controlled by handler selection
+        if (selectedHandler === OmniboxHandlers.DeepCody.id || selectedHandler === 'model') {
+            intent = 'chat'
+        } else if (selectedHandler === OmniboxHandlers.KeywordSearch.id) {
+            intent = 'search'
+        }
+
         signal.throwIfAborted()
         this.chatBuilder.setLastMessageIntent(intent)
 
         this.postEmptyMessageInProgress(model)
 
-        const agentName = ['search', 'edit', 'insert'].includes(intent ?? '')
-            ? (intent as string)
-            : selectedAgent ?? 'chat'
-        const agent = getAgent(agentName, model, {
+        if (!selectedHandler) {
+            selectedHandler = getDefaultOmniboxHandler().id
+        }
+        let agentName = selectedHandler
+        if (selectedHandler === 'auto') {
+            if (['search', 'edit', 'insert'].includes(intent ?? '')) {
+                agentName = intent ?? 'chat'
+            }
+        }
+        const agent = getHandler(agentName, model, {
             contextRetriever: this.contextRetriever,
             editor: this.editor,
             chatClient: this.chatClient,
@@ -1619,6 +1632,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                             startWith([]),
                             map(models => (models === pendingOperation ? [] : models))
                         ),
+                    handlers: () => getOmniboxHandlers(),
                     highlights: parameters =>
                         promiseFactoryToObservable(() =>
                             graphqlClient.getHighlightedFileChunk(parameters)
@@ -1635,8 +1649,23 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                         // Because this was a user action to change the model we will set that
                         // as a global default for chat
                         return promiseFactoryToObservable(async () => {
+                            this.chatBuilder.setSelectedHandler(undefined) // TODO(beyang): hack
                             this.chatBuilder.setSelectedModel(model)
                             await modelsService.setSelectedModel(ModelUsage.Chat, model)
+                        })
+                    },
+                    setHandler: (handlerID, modelID) => {
+                        return promiseFactoryToObservable(async () => {
+                            if (!modelID) {
+                                modelID = await firstResultFromOperation(
+                                    modelsService.getDefaultChatModel().pipe(skipPendingOperation())
+                                )
+                            }
+                            this.chatBuilder.setSelectedModel(modelID)
+                            if (modelID) {
+                                await modelsService.setSelectedModel(ModelUsage.Chat, modelID)
+                            }
+                            this.chatBuilder.setSelectedHandler(handlerID)
                         })
                     },
                     defaultContext: () => defaultContext.pipe(skipPendingOperation()),
@@ -1660,13 +1689,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                         userProductSubscription.pipe(
                             map(value => (value === pendingOperation ? null : value))
                         ),
-                    toolboxSettings: () => toolboxManager.observable,
-                    updateToolboxSettings: settings => {
-                        return promiseFactoryToObservable(async () => {
-                            this.chatBuilder.setSelectedAgent(settings.agent?.name)
-                            await toolboxManager.updateSettings(settings)
-                        })
-                    },
                 }
             )
         )
@@ -1817,4 +1839,44 @@ export function manipulateWebviewHTML(html: string, options: TransformHTMLOption
 async function joinModelWaitlist(): Promise<void> {
     await localStorage.setOrDeleteWaitlistO1(true)
     telemetryRecorder.recordEvent('cody.joinLlmWaitlist', 'clicked')
+}
+
+function getOmniboxHandlers(): Observable<OmniboxHandlerOption[]> {
+    const enableToolCody = resolvedConfig.pipe(
+        map(c => {
+            return !!c.configuration.experimentalMinionAnthropicKey
+        }),
+        distinctUntilChanged()
+    )
+    const models = modelsService.getModels(ModelUsage.Chat).pipe(
+        startWith([]),
+        map(models => (models === pendingOperation ? [] : models)),
+        distinctUntilChanged()
+    )
+
+    return combineLatest(enableToolCody, models).pipe(
+        map(([enableToolCody, models]) => {
+            const handlers: OmniboxHandlerOption[] = []
+            handlers.push(OmniboxHandlers.Auto)
+            handlers.push(OmniboxHandlers.DeepCody)
+            if (enableToolCody) {
+                handlers.push({
+                    id: 'tool-cody',
+                    title: 'Tool Cody',
+                })
+            }
+            handlers.push(
+                ...models.map(model => ({
+                    id: model.id,
+                    model,
+                }))
+            )
+            handlers.push(OmniboxHandlers.KeywordSearch)
+            return handlers
+        })
+    )
+}
+
+function getDefaultOmniboxHandler(): OmniboxHandlerOption {
+    return OmniboxHandlers.Auto
 }

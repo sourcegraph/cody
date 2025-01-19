@@ -6,6 +6,7 @@ import type {
     RankedContext,
 } from '@sourcegraph/cody-shared'
 import { pluralize } from '@sourcegraph/cody-shared'
+import { OmniboxHandlers } from '@sourcegraph/cody-shared/src/models/model'
 import { MENTION_CLASS_NAME } from '@sourcegraph/prompt-editor'
 import { clsx } from 'clsx'
 import { BrainIcon, FilePenLine, MessagesSquareIcon } from 'lucide-react'
@@ -133,7 +134,7 @@ export const ContextCell: FunctionComponent<{
 
         const telemetryRecorder = useTelemetryRecorder()
 
-        const isDeepCodyEnabled = agent === 'deep-cody'
+        const isDeepCodyEnabled = agent === OmniboxHandlers.DeepCody.id
 
         // Text for top header text
         const headerText: { main: string; sub?: string } = {

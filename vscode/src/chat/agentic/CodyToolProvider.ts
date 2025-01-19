@@ -11,7 +11,6 @@ import {
 import { map } from 'observable-fns'
 import type { ContextRetriever } from '../chat-view/ContextRetriever'
 import { type CodyTool, type CodyToolConfig, OpenCtxTool, TOOL_CONFIGS } from './CodyTool'
-import { toolboxManager } from './ToolboxManager'
 import { OPENCTX_TOOL_CONFIG } from './config'
 
 type Retriever = Pick<ContextRetriever, 'retrieveContext'>
@@ -85,7 +84,7 @@ class ToolFactory {
     public getInstances(): CodyTool[] {
         // Create fresh instances of all registered tools
         return Array.from(this.tools.entries())
-            .filter(([name]) => name !== 'CliTool' || toolboxManager.getSettings()?.shell?.enabled)
+            .filter(([name]) => name !== 'CliTool')
             .map(([_, config]) => config.createInstance(config, this.contextRetriever))
             .filter(isDefined)
     }

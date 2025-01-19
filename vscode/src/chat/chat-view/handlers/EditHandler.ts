@@ -7,9 +7,9 @@ import { executeCodyCommand } from '../../../commands/CommandsController'
 import type { ChatControllerOptions } from '../ChatController'
 import type { ContextRetriever } from '../ContextRetriever'
 import { computeContextAlternatives } from './ChatHandler'
-import type { AgentHandler, AgentHandlerDelegate, AgentRequest } from './interfaces'
+import type { OmniboxHandler, OmniboxHandlerDelegate, OmniboxRequest } from './interfaces'
 
-export class EditHandler implements AgentHandler {
+export class EditHandler implements OmniboxHandler {
     constructor(
         private mode: 'edit' | 'insert',
         private contextRetriever: Pick<ContextRetriever, 'retrieveContext'>,
@@ -26,8 +26,8 @@ export class EditHandler implements AgentHandler {
             signal,
             chatBuilder,
             recorder,
-        }: AgentRequest,
-        delegate: AgentHandlerDelegate
+        }: OmniboxRequest,
+        delegate: OmniboxHandlerDelegate
     ): Promise<void> {
         const contextAlternatives = await computeContextAlternatives(
             this.contextRetriever,

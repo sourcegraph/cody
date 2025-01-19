@@ -47,3 +47,5 @@ test-results
 .vscode-test/
 .envrc
 agent/bindings/kotlin/lib/bin/
+.aiderignore
+.aider.*

@@ -7,17 +7,18 @@ import {
     storeLastValue,
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
+import { OmniboxHandlers } from '@sourcegraph/cody-shared/src/models/model'
 import { DeepCodyAgent } from '../../agentic/DeepCody'
 import { DeepCodyRateLimiter } from '../../agentic/DeepCodyRateLimiter'
 import type { ChatBuilder } from '../ChatBuilder'
 import type { HumanInput } from '../context'
 import { ChatHandler } from './ChatHandler'
-import type { AgentHandler, AgentHandlerDelegate } from './interfaces'
+import type { OmniboxHandler, OmniboxHandlerDelegate } from './interfaces'
 
 // NOTE: Skip query rewrite for Deep Cody as it will be done during review step.
 const skipQueryRewriteForDeepCody = true
 
-export class DeepCodyHandler extends ChatHandler implements AgentHandler {
+export class DeepCodyHandler extends ChatHandler implements OmniboxHandler {
     private featureDeepCodyRateLimitBase = storeLastValue(
         featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.DeepCodyRateLimitBase)
     )
@@ -33,7 +34,7 @@ export class DeepCodyHandler extends ChatHandler implements AgentHandler {
         { text, mentions }: HumanInput,
         editorState: SerializedPromptEditorState | null,
         chatBuilder: ChatBuilder,
-        delegate: AgentHandlerDelegate,
+        delegate: OmniboxHandlerDelegate,
         signal: AbortSignal
     ): Promise<{
         contextItems?: ContextItem[]
@@ -51,7 +52,7 @@ export class DeepCodyHandler extends ChatHandler implements AgentHandler {
         )
         // Early return if basic conditions aren't met.
         if (
-            chatBuilder.selectedAgent !== 'deep-cody' ||
+            chatBuilder.selectedHandler !== OmniboxHandlers.DeepCody.id ||
             baseContextResult.error ||
             baseContextResult.abort
         ) {
@@ -81,7 +82,7 @@ export class DeepCodyHandler extends ChatHandler implements AgentHandler {
 
         const retryTime = deepCodyRateLimiter.isAtLimit()
         if (retryTime) {
-            chatBuilder.setSelectedAgent(undefined)
+            chatBuilder.setSelectedHandler(undefined)
             return { error: deepCodyRateLimiter.getRateLimitError(retryTime), abort: true }
         }
 

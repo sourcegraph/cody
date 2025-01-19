@@ -1,4 +1,9 @@
-import { type Model, type ServerModel, createModelFromServerModel } from './model'
+import {
+    type Model,
+    type OmniboxHandlerOption,
+    type ServerModel,
+    createModelFromServerModel,
+} from './model'
 import type { ServerModelConfiguration } from './modelsService'
 import type { ModelTag } from './tags'
 
@@ -171,6 +176,14 @@ const MOCKED_SERVER_MODELS_CONFIG = {
 
 export function getMockedDotComClientModels(): Model[] {
     return MOCKED_SERVER_MODELS_CONFIG.models.map(createModelFromServerModel)
+}
+
+export function getMockedDotComHandlers(): OmniboxHandlerOption[] {
+    const agents = getMockedDotComClientModels().map(model => ({
+        id: model.id,
+        model,
+    }))
+    return agents
 }
 
 export function getMockedDotComServerModels(): ServerModel[] {

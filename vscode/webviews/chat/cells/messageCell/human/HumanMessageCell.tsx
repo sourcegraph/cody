@@ -5,7 +5,7 @@ import {
     type SerializedPromptEditorValue,
     serializedPromptEditorStateFromChatMessage,
 } from '@sourcegraph/cody-shared'
-import { type PromptEditorRefAPI, useExtensionAPI, useObservable } from '@sourcegraph/prompt-editor'
+import type { PromptEditorRefAPI } from '@sourcegraph/prompt-editor'
 import isEqual from 'lodash/isEqual'
 import { ColumnsIcon } from 'lucide-react'
 import { type FC, memo, useMemo } from 'react'
@@ -17,7 +17,6 @@ import { HumanMessageEditor } from './editor/HumanMessageEditor'
 import { Tooltip, TooltipContent, TooltipTrigger } from '../../../../components/shadcn/ui/tooltip'
 import { getVSCodeAPI } from '../../../../utils/VSCodeApi'
 import { useConfig } from '../../../../utils/useConfig'
-import { ToolboxButton } from './editor/ToolboxButton'
 
 interface HumanMessageCellProps {
     message: ChatMessage
@@ -96,11 +95,6 @@ const HumanMessageCellContent = memo<HumanMessageCellContent>(props => {
         intent,
     } = props
 
-    const api = useExtensionAPI()
-    const { value: settings } = useObservable(
-        useMemo(() => api.toolboxSettings(), [api.toolboxSettings])
-    )
-
     return (
         <BaseMessageCell
             speakerIcon={
@@ -113,9 +107,6 @@ const HumanMessageCellContent = memo<HumanMessageCellContent>(props => {
             speakerTitle={userInfo.user.displayName ?? userInfo.user.username}
             cellAction={
                 <div className="tw-flex tw-gap-2 tw-items-center tw-justify-end">
-                    {settings && (
-                        <ToolboxButton settings={settings} api={api} isFirstMessage={isFirstMessage} />
-                    )}
                     {isFirstMessage && <OpenInNewEditorAction />}
                 </div>
             }
