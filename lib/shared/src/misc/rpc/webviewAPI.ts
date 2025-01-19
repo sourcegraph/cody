@@ -87,7 +87,7 @@ export interface WebviewToExtensionAPI {
     /**
      * Sets the agent ID. Replaces setChatModel.
      */
-    setAgent(agentID: string): Observable<void>
+    setAgent(agentID: string | undefined, modelID: Model['id'] | undefined): Observable<void>
 
     /**
      * Observe the default context that should be populated in the chat message input field and suggestions.

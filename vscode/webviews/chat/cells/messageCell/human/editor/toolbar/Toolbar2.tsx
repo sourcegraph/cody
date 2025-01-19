@@ -136,35 +136,32 @@ const ModelSelectFieldToolbarItem: FunctionComponent<{
     const serverSentModelsEnabled = !!clientConfig?.modelsAPIEnabled
 
     const api = useExtensionAPI()
-    const agents = useObservable<OmniboxHandler[]>(useMemo(() => api.agents(), [api.agents])).value ?? []
+    const handlers =
+        useObservable<OmniboxHandler[]>(useMemo(() => api.agents(), [api.agents])).value ?? []
 
     // TODO(beyang): this is duplicated state with ChatBuilder.selectedAgent. Either move source of truth to that or move it here.
-    const [selectedAgent, setSelectedAgent] = useState<string>(agents[0]?.id ?? undefined)
+    const [selectedHandler, setSelectedHandler] = useState<string>(handlers[0]?.id ?? undefined)
     const agentList = concat(
-        agents.filter(a => a.id === selectedAgent) ?? [],
-        agents.filter(a => a.id !== selectedAgent)
+        handlers.filter(a => a.id === selectedHandler) ?? [],
+        handlers.filter(a => a.id !== selectedHandler)
     )
 
     const onModelSelect = useCallback(
-        (agent: OmniboxHandler) => {
-            setSelectedAgent(agent.id)
-            const { model } = agent
+        (handler: OmniboxHandler) => {
+            setSelectedHandler(handler.id)
+            const { model } = handler
             if (model) {
-                api.setChatModel(model.id).subscribe({
-                    error: error => console.error('setChatModel:', error),
-                })
-                // KLUDGE(beyang)
-                api.setAgent('model').subscribe({
+                api.setAgent('model', model.id).subscribe({
                     error: error => console.error('setAgent:', error),
                 })
             } else {
-                api.setAgent(agent.id).subscribe({
+                api.setAgent(handler.id, undefined).subscribe({
                     error: error => console.error('setAgent:', error),
                 })
             }
             focusEditor?.()
         },
-        [focusEditor, api.setChatModel, api.setAgent]
+        [focusEditor, api.setAgent]
     )
 
     return (

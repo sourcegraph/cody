@@ -18,6 +18,7 @@ import {
     telemetryRecorder,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
+import { OmniboxHandlers } from '@sourcegraph/cody-shared/src/models/model'
 import { getContextFromRelativePath } from '../../commands/context/file-path'
 import { forkSignal } from '../../completions/utils'
 import { getCategorizedMentions, isUserAddedItem } from '../../prompt-builder/utils'
@@ -42,7 +43,8 @@ import { ACTIONS_TAGS, CODYAGENT_PROMPTS } from './prompts'
  * - Implements iterative context review with configurable max loops
  */
 export class DeepCodyAgent {
-    public static readonly id = 'deep-cody'
+    public static readonly id = OmniboxHandlers.DeepCody.id
+
     /**
      * NOTE: Currently A/B test to default to 3.5 Haiku / 3.5 Sonnet for the review step.
      */

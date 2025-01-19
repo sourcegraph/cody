@@ -831,6 +831,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             editor: this.editor,
             chatClient: this.chatClient,
         })
+        console.log('# running agentName:', agentName, 'model:', model, 'selectedAgent:', selectedAgent)
 
         recorder.setIntentInfo({
             userSpecifiedIntent:
@@ -1625,7 +1626,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                             startWith([]),
                             map(models => (models === pendingOperation ? [] : models))
                         ),
-                    agents: () => getAgents(),
+                    agents: () => getOmniboxHandlers(),
                     highlights: parameters =>
                         promiseFactoryToObservable(() =>
                             graphqlClient.getHighlightedFileChunk(parameters)
@@ -1642,15 +1643,26 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                         // Because this was a user action to change the model we will set that
                         // as a global default for chat
                         return promiseFactoryToObservable(async () => {
+                            this.chatBuilder.setSelectedAgent(undefined) // TODO(beyang): hack
                             this.chatBuilder.setSelectedModel(model)
                             await modelsService.setSelectedModel(ModelUsage.Chat, model)
                         })
                     },
-                    setAgent: agentID => {
+                    // TODO(beyang): rename to "setHandler"
+                    setAgent: (agentID, modelID) => {
                         // TODO(beyang): default agent id needs to be whatever is selected
 
                         return promiseFactoryToObservable(async () => {
-                            // TODO(beyang): need to reset model
+                            // TODO(beyang): hack - need to set model whenever setting agentID
+                            if (!modelID) {
+                                modelID = await firstResultFromOperation(
+                                    modelsService.getDefaultChatModel().pipe(skipPendingOperation())
+                                )
+                            }
+                            this.chatBuilder.setSelectedModel(modelID)
+                            if (modelID) {
+                                await modelsService.setSelectedModel(ModelUsage.Chat, modelID)
+                            }
                             this.chatBuilder.setSelectedAgent(agentID)
                         })
                     },
@@ -1834,7 +1846,7 @@ async function joinModelWaitlist(): Promise<void> {
     telemetryRecorder.recordEvent('cody.joinLlmWaitlist', 'clicked')
 }
 
-function getAgents(): Observable<OmniboxHandler[]> {
+function getOmniboxHandlers(): Observable<OmniboxHandler[]> {
     const enableToolCody = resolvedConfig.pipe(
         map(c => {
             return !!c.configuration.experimentalMinionAnthropicKey

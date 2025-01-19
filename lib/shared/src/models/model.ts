@@ -36,6 +36,18 @@ export interface OmniboxHandler {
 
 export type HandlerID = OmniboxHandler['id']
 
+export const OmniboxHandlers: Record<string, OmniboxHandler> = {
+    Auto: {
+        id: 'auto',
+    },
+    DeepCody: {
+        id: 'deep-cody',
+    },
+    KeywordSearch: {
+        id: 'keyword-search',
+    },
+}
+
 /**
  * Model describes an LLM model and its capabilities.
  */

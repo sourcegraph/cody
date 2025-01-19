@@ -21,7 +21,6 @@ import {
 } from '@sourcegraph/cody-shared'
 
 import { Observable, Subject, map } from 'observable-fns'
-import { toolboxManager } from '../agentic/ToolboxManager'
 import { getChatPanelTitle } from './chat-helpers'
 
 /**
@@ -115,15 +114,17 @@ export class ChatBuilder {
     }
 
     public setSelectedAgent(newAgentName?: string): void {
+        console.log('# ChatBuilder.setSelectedAgent', this.selectedChatAgent)
         this.selectedChatAgent = newAgentName
     }
 
     public get selectedAgent(): string | undefined {
-        // SelectedChatAgent initially is null, so we will set it to the last user's agent.
-        if (this.selectedChatAgent === null) {
-            this.setSelectedAgent(toolboxManager.getSettings()?.agent?.name)
-        }
-        return this.selectedChatAgent || undefined
+        return this.selectedChatAgent ?? undefined
+        // // SelectedChatAgent initially is null, so we will set it to the last user's agent.
+        // if (this.selectedChatAgent === null) {
+        //     this.setSelectedAgent(toolboxManager.getSettings()?.agent?.name)
+        // }
+        // return this.selectedChatAgent || undefined
     }
 
     public isEmpty(): boolean {
