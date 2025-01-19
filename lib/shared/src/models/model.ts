@@ -27,8 +27,8 @@ export interface OmniboxHandlerOption {
     readonly title?: string
 
     /**
-     * If set, then this agent corresponds to a base model.
-     * This exists for legacy purposes, as formerly the agent
+     * If set, then this handler corresponds to a base model.
+     * This exists for legacy purposes, as formerly the handler
      * selector was a list of models.
      */
     model?: Model

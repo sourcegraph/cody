@@ -653,7 +653,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         intentScores?: { intent: string; score: number }[] | undefined | null
         manuallySelectedIntent?: ChatMessage['intent'] | undefined | null
         traceparent?: string | undefined | null
-        selectedAgent?: string | undefined | null
+        selectedHandler?: string | undefined | null
     }): Promise<void> {
         return context.with(extractContextFromTraceparent(traceparent), () => {
             return tracer.startActiveSpan('chat.handleUserMessage', async (span): Promise<void> => {
@@ -671,14 +671,13 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     return this.clearAndRestartSession()
                 }
 
-                const selectedAgent = this.chatBuilder.selectedAgent
-
+                const selectedHandler = this.chatBuilder.selectedHandler
                 this.chatBuilder.addHumanMessage({
                     text: inputText,
                     editorState,
                     intent: detectedIntent,
                     manuallySelectedIntent: manuallySelectedIntent ? detectedIntent : undefined,
-                    agent: selectedAgent,
+                    agent: selectedHandler,
                 })
                 this.postViewTranscript({ speaker: 'assistant' })
 
@@ -697,7 +696,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                         intent: detectedIntent,
                         intentScores: detectedIntentScores,
                         manuallySelectedIntent,
-                        selectedAgent,
+                        selectedHandler,
                     },
                     span
                 )
@@ -775,7 +774,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             intent: preDetectedIntent,
             intentScores: preDetectedIntentScores,
             manuallySelectedIntent,
-            selectedAgent,
+            selectedHandler,
         }: Parameters<typeof this.handleUserMessage>[0],
         span: Span
     ): Promise<void> {
@@ -799,7 +798,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             sessionID: this.chatBuilder.sessionID,
             traceId: span.spanContext().traceId,
             promptText: inputText,
-            chatAgent: selectedAgent,
+            chatAgent: selectedHandler,
         })
         recorder.recordChatQuestionSubmitted(mentions)
 
@@ -814,9 +813,9 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             signal,
         })
         // KLUDGE(beyang): intent controlled by handler selection
-        if (selectedAgent === OmniboxHandlers.DeepCody.id || selectedAgent === 'model') {
+        if (selectedHandler === OmniboxHandlers.DeepCody.id || selectedHandler === 'model') {
             intent = 'chat'
-        } else if (selectedAgent === OmniboxHandlers.KeywordSearch.id) {
+        } else if (selectedHandler === OmniboxHandlers.KeywordSearch.id) {
             intent = 'search'
         }
 
@@ -825,11 +824,11 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
         this.postEmptyMessageInProgress(model)
 
-        if (!selectedAgent) {
-            selectedAgent = getDefaultOmniboxHandler().id
+        if (!selectedHandler) {
+            selectedHandler = getDefaultOmniboxHandler().id
         }
-        let agentName = selectedAgent
-        if (selectedAgent === 'auto') {
+        let agentName = selectedHandler
+        if (selectedHandler === 'auto') {
             if (['search', 'edit', 'insert'].includes(intent ?? '')) {
                 agentName = intent ?? 'chat'
             }
@@ -1650,7 +1649,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                         // Because this was a user action to change the model we will set that
                         // as a global default for chat
                         return promiseFactoryToObservable(async () => {
-                            this.chatBuilder.setSelectedAgent(undefined) // TODO(beyang): hack
+                            this.chatBuilder.setSelectedHandler(undefined) // TODO(beyang): hack
                             this.chatBuilder.setSelectedModel(model)
                             await modelsService.setSelectedModel(ModelUsage.Chat, model)
                         })
@@ -1666,7 +1665,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                             if (modelID) {
                                 await modelsService.setSelectedModel(ModelUsage.Chat, modelID)
                             }
-                            this.chatBuilder.setSelectedAgent(handlerID)
+                            this.chatBuilder.setSelectedHandler(handlerID)
                         })
                     },
                     defaultContext: () => defaultContext.pipe(skipPendingOperation()),

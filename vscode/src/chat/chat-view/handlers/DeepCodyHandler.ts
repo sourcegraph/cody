@@ -52,7 +52,7 @@ export class DeepCodyHandler extends ChatHandler implements OmniboxHandler {
         )
         // Early return if basic conditions aren't met.
         if (
-            chatBuilder.selectedAgent !== OmniboxHandlers.DeepCody.id ||
+            chatBuilder.selectedHandler !== OmniboxHandlers.DeepCody.id ||
             baseContextResult.error ||
             baseContextResult.abort
         ) {
@@ -82,7 +82,7 @@ export class DeepCodyHandler extends ChatHandler implements OmniboxHandler {
 
         const retryTime = deepCodyRateLimiter.isAtLimit()
         if (retryTime) {
-            chatBuilder.setSelectedAgent(undefined)
+            chatBuilder.setSelectedHandler(undefined)
             return { error: deepCodyRateLimiter.getRateLimitError(retryTime), abort: true }
         }
 

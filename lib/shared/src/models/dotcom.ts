@@ -178,7 +178,7 @@ export function getMockedDotComClientModels(): Model[] {
     return MOCKED_SERVER_MODELS_CONFIG.models.map(createModelFromServerModel)
 }
 
-export function getMockedDotComAgents(): OmniboxHandlerOption[] {
+export function getMockedDotComHandlers(): OmniboxHandlerOption[] {
     const agents = getMockedDotComClientModels().map(model => ({
         id: model.id,
         model,

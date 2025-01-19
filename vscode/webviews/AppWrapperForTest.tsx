@@ -17,7 +17,7 @@ import {
     promiseFactoryToObservable,
     serializedPromptEditorStateFromText,
 } from '@sourcegraph/cody-shared'
-import { getMockedDotComAgents } from '@sourcegraph/cody-shared/src/models/dotcom'
+import { getMockedDotComHandlers } from '@sourcegraph/cody-shared/src/models/dotcom'
 import { ExtensionAPIProviderForTestsOnly } from '@sourcegraph/prompt-editor'
 import { Observable } from 'observable-fns'
 import { type ComponentProps, type FunctionComponent, type ReactNode, useMemo } from 'react'
@@ -106,7 +106,7 @@ export const AppWrapperForTest: FunctionComponent<{ children: ReactNode }> = ({ 
                             preferences: { defaults: {}, selected: {} },
                         } satisfies ModelsData),
                     chatModels: () => Observable.of(getMockedDotComClientModels()),
-                    handlers: () => Observable.of(getMockedDotComAgents()),
+                    handlers: () => Observable.of(getMockedDotComHandlers()),
                     setChatModel: () => EMPTY,
                     setHandler: () => EMPTY,
                     defaultContext: () => Observable.of({ corpusContext: [], initialContext: [] }),
