@@ -76,7 +76,7 @@ import { type Span, context } from '@opentelemetry/api'
 import { captureException } from '@sentry/core'
 import type { SubMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { resolveAuth } from '@sourcegraph/cody-shared/src/configuration/auth-resolver'
-import { type OmniboxHandler, OmniboxHandlers } from '@sourcegraph/cody-shared/src/models/model'
+import { type OmniboxHandlerOption, OmniboxHandlers } from '@sourcegraph/cody-shared/src/models/model'
 import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
 import { type Observable, Subject, map } from 'observable-fns'
 import type { URI } from 'vscode-uri'
@@ -129,7 +129,7 @@ import type { ContextRetriever } from './ContextRetriever'
 import { InitDoer } from './InitDoer'
 import { getChatPanelTitle } from './chat-helpers'
 import { OmniboxTelemetry } from './handlers/OmniboxTelemetry'
-import { getAgent } from './handlers/registry'
+import { getHandler } from './handlers/registry'
 import { getPromptsMigrationInfo, startPromptsMigration } from './prompts-migration'
 
 export interface ChatControllerOptions {
@@ -834,12 +834,11 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 agentName = intent ?? 'chat'
             }
         }
-        const agent = getAgent(agentName, model, {
+        const agent = getHandler(agentName, model, {
             contextRetriever: this.contextRetriever,
             editor: this.editor,
             chatClient: this.chatClient,
         })
-        console.log('# running agentName:', agentName, 'model:', model, 'selectedAgent:', selectedAgent)
 
         recorder.setIntentInfo({
             userSpecifiedIntent:
@@ -1634,7 +1633,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                             startWith([]),
                             map(models => (models === pendingOperation ? [] : models))
                         ),
-                    agents: () => getOmniboxHandlers(),
+                    handlers: () => getOmniboxHandlers(),
                     highlights: parameters =>
                         promiseFactoryToObservable(() =>
                             graphqlClient.getHighlightedFileChunk(parameters)
@@ -1656,12 +1655,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                             await modelsService.setSelectedModel(ModelUsage.Chat, model)
                         })
                     },
-                    // TODO(beyang): rename to "setHandler"
-                    setAgent: (agentID, modelID) => {
-                        // TODO(beyang): default agent id needs to be whatever is selected
-
+                    setHandler: (handlerID, modelID) => {
                         return promiseFactoryToObservable(async () => {
-                            // TODO(beyang): hack - need to set model whenever setting agentID
                             if (!modelID) {
                                 modelID = await firstResultFromOperation(
                                     modelsService.getDefaultChatModel().pipe(skipPendingOperation())
@@ -1671,7 +1666,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                             if (modelID) {
                                 await modelsService.setSelectedModel(ModelUsage.Chat, modelID)
                             }
-                            this.chatBuilder.setSelectedAgent(agentID)
+                            this.chatBuilder.setSelectedAgent(handlerID)
                         })
                     },
                     defaultContext: () => defaultContext.pipe(skipPendingOperation()),
@@ -1847,7 +1842,7 @@ async function joinModelWaitlist(): Promise<void> {
     telemetryRecorder.recordEvent('cody.joinLlmWaitlist', 'clicked')
 }
 
-function getOmniboxHandlers(): Observable<OmniboxHandler[]> {
+function getOmniboxHandlers(): Observable<OmniboxHandlerOption[]> {
     const enableToolCody = resolvedConfig.pipe(
         map(c => {
             return !!c.configuration.experimentalMinionAnthropicKey
@@ -1862,27 +1857,27 @@ function getOmniboxHandlers(): Observable<OmniboxHandler[]> {
 
     return combineLatest(enableToolCody, models).pipe(
         map(([enableToolCody, models]) => {
-            const agents: OmniboxHandler[] = []
-            agents.push(OmniboxHandlers.Auto)
-            agents.push(OmniboxHandlers.DeepCody)
+            const handlers: OmniboxHandlerOption[] = []
+            handlers.push(OmniboxHandlers.Auto)
+            handlers.push(OmniboxHandlers.DeepCody)
             if (enableToolCody) {
-                agents.push({
+                handlers.push({
                     id: 'tool-cody',
                     title: 'Tool Cody',
                 })
             }
-            agents.push(
+            handlers.push(
                 ...models.map(model => ({
                     id: model.id,
                     model,
                 }))
             )
-            agents.push(OmniboxHandlers.KeywordSearch)
-            return agents
+            handlers.push(OmniboxHandlers.KeywordSearch)
+            return handlers
         })
     )
 }
 
-function getDefaultOmniboxHandler(): OmniboxHandler {
+function getDefaultOmniboxHandler(): OmniboxHandlerOption {
     return OmniboxHandlers.Auto
 }

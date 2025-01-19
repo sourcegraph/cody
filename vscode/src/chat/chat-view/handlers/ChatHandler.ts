@@ -26,9 +26,9 @@ import type { ChatControllerOptions } from '../ChatController'
 import { type ContextRetriever, toStructuredMentions } from '../ContextRetriever'
 import { type HumanInput, getPriorityContext } from '../context'
 import { DefaultPrompter, type PromptInfo } from '../prompt'
-import type { AgentHandler, AgentHandlerDelegate, AgentRequest } from './interfaces'
+import type { OmniboxHandler, OmniboxHandlerDelegate, OmniboxRequest } from './interfaces'
 
-export class ChatHandler implements AgentHandler {
+export class ChatHandler implements OmniboxHandler {
     constructor(
         protected modelId: string,
         protected contextRetriever: Pick<ContextRetriever, 'retrieveContext' | 'computeDidYouMean'>,
@@ -46,8 +46,8 @@ export class ChatHandler implements AgentHandler {
             chatBuilder,
             recorder,
             span,
-        }: AgentRequest,
-        delegate: AgentHandlerDelegate
+        }: OmniboxRequest,
+        delegate: OmniboxHandlerDelegate
     ): Promise<void> {
         // All mentions we receive are either source=initial or source=user. If the caller
         // forgot to set the source, assume it's from the user.
@@ -189,7 +189,7 @@ export class ChatHandler implements AgentHandler {
         model: ChatModel,
         abortSignal: AbortSignal,
         chatBuilder: ChatBuilder,
-        delegate: AgentHandlerDelegate
+        delegate: OmniboxHandlerDelegate
     ): void {
         abortSignal.throwIfAborted()
         this.sendLLMRequest(
@@ -253,7 +253,7 @@ export class ChatHandler implements AgentHandler {
         { text, mentions }: HumanInput,
         editorState: SerializedPromptEditorState | null,
         _chatBuilder: ChatBuilder,
-        _delegate: AgentHandlerDelegate,
+        _delegate: OmniboxHandlerDelegate,
         signal?: AbortSignal,
         skipQueryRewrite = false
     ): Promise<{

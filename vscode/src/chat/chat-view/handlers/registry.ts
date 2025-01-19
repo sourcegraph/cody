@@ -6,42 +6,42 @@ import { DeepCodyHandler } from './DeepCodyHandler'
 import { EditHandler } from './EditHandler'
 import { SearchHandler } from './SearchHandler'
 import { ExperimentalToolHandler } from './ToolHandler'
-import type { AgentHandler, AgentTools } from './interfaces'
+import type { AgentTools, OmniboxHandler } from './interfaces'
 
 /**
- * The agentRegistry registers agent handlers under IDs which can then be invoked
+ * The handlerRegistry registers omnibox handlers under IDs which can then be invoked
  * at query time to retrieve the appropriate handler for a user request.
  */
-const agentRegistry = new Map<string, (id: string, tools: AgentTools) => AgentHandler>()
+const handlerRegistry = new Map<string, (id: string, tools: AgentTools) => OmniboxHandler>()
 
-function registerAgent(id: string, ctr: (id: string, tools: AgentTools) => AgentHandler) {
-    agentRegistry.set(id, ctr)
+function registerHandler(id: string, ctr: (id: string, tools: AgentTools) => OmniboxHandler) {
+    handlerRegistry.set(id, ctr)
 }
 
-export function getAgent(id: string, modelId: string, tools: AgentTools): AgentHandler {
+export function getHandler(id: string, modelId: string, tools: AgentTools): OmniboxHandler {
     const { contextRetriever, editor, chatClient } = tools
     if (id === DeepCodyAgent.id) {
         return new DeepCodyHandler(modelId, contextRetriever, editor, chatClient)
     }
-    if (agentRegistry.has(id)) {
-        return agentRegistry.get(id)!(id, tools)
+    if (handlerRegistry.has(id)) {
+        return handlerRegistry.get(id)!(id, tools)
     }
     // If id is not found, assume it's a base model
     return new ChatHandler(modelId, contextRetriever, editor, chatClient)
 }
 
-registerAgent('search', (_id: string, _tools: AgentTools) => new SearchHandler())
-registerAgent(
+registerHandler('search', (_id: string, _tools: AgentTools) => new SearchHandler())
+registerHandler(
     'edit',
     (_id: string, { contextRetriever, editor }: AgentTools) =>
         new EditHandler('edit', contextRetriever, editor)
 )
-registerAgent(
+registerHandler(
     'insert',
     (_id: string, { contextRetriever, editor }: AgentTools) =>
         new EditHandler('insert', contextRetriever, editor)
 )
-registerAgent('sourcegraph::2024-12-31::tool-cody', (_id: string) => {
+registerHandler('sourcegraph::2024-12-31::tool-cody', (_id: string) => {
     const config = getConfiguration()
     const anthropicAPI = new Anthropic({
         apiKey: config.experimentalMinionAnthropicKey,

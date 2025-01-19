@@ -7,7 +7,7 @@ import type { CodyCommand } from '../../commands/types'
 import type { FeatureFlag } from '../../experimentation/FeatureFlagProvider'
 import type { ContextMentionProviderMetadata } from '../../mentions/api'
 import type { MentionQuery } from '../../mentions/query'
-import type { Model, OmniboxHandler } from '../../models/model'
+import type { Model, OmniboxHandlerOption } from '../../models/model'
 import type {
     FetchHighlightFileParameters,
     Prompt,
@@ -64,7 +64,7 @@ export interface WebviewToExtensionAPI {
     /**
      * List of available agents. Replaces `chatModels`.
      */
-    agents(): Observable<OmniboxHandler[]>
+    handlers(): Observable<OmniboxHandlerOption[]>
 
     highlights(query: FetchHighlightFileParameters): Observable<string[][]>
 
@@ -81,7 +81,7 @@ export interface WebviewToExtensionAPI {
     /**
      * Sets the agent ID. Replaces setChatModel.
      */
-    setAgent(agentID: string | undefined, modelID: Model['id'] | undefined): Observable<void>
+    setHandler(handlerID: string | undefined, modelID: Model['id'] | undefined): Observable<void>
 
     /**
      * Observe the default context that should be populated in the chat message input field and suggestions.
@@ -138,12 +138,12 @@ export function createExtensionAPI(
         clientActionBroadcast: proxyExtensionAPI(messageAPI, 'clientActionBroadcast'),
         models: proxyExtensionAPI(messageAPI, 'models'),
         chatModels: proxyExtensionAPI(messageAPI, 'chatModels'),
-        agents: proxyExtensionAPI(messageAPI, 'agents'),
+        handlers: proxyExtensionAPI(messageAPI, 'handlers'),
         highlights: proxyExtensionAPI(messageAPI, 'highlights'),
         hydratePromptMessage: promptText =>
             hydratePromptMessage(promptText, staticDefaultContext?.initialContext),
         setChatModel: proxyExtensionAPI(messageAPI, 'setChatModel'),
-        setAgent: proxyExtensionAPI(messageAPI, 'setAgent'),
+        setHandler: proxyExtensionAPI(messageAPI, 'setHandler'),
         defaultContext: staticDefaultContext
             ? () => Observable.of(staticDefaultContext)
             : proxyExtensionAPI(messageAPI, 'defaultContext'),

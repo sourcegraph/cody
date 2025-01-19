@@ -3,7 +3,7 @@ import type { ContentBlock, MessageParam, Tool, ToolResultBlockParam } from '@an
 import { ProcessType, PromptString } from '@sourcegraph/cody-shared'
 import type { SubMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import * as vscode from 'vscode'
-import type { AgentHandler, AgentHandlerDelegate, AgentRequest } from './interfaces'
+import type { OmniboxHandler, OmniboxHandlerDelegate, OmniboxRequest } from './interfaces'
 
 interface CodyTool {
     spec: Tool
@@ -54,10 +54,10 @@ const allTools: CodyTool[] = [
     },
 ]
 
-export class ExperimentalToolHandler implements AgentHandler {
+export class ExperimentalToolHandler implements OmniboxHandler {
     constructor(private anthropicAPI: Anthropic) {}
 
-    public async handle({ inputText }: AgentRequest, delegate: AgentHandlerDelegate): Promise<void> {
+    public async handle({ inputText }: OmniboxRequest, delegate: OmniboxHandlerDelegate): Promise<void> {
         const maxTurns = 10
         let turns = 0
         const subTranscript: Array<MessageParam> = [

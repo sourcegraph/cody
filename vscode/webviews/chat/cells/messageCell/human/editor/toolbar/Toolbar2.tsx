@@ -1,11 +1,11 @@
 import type { Action, ChatMessage, Model } from '@sourcegraph/cody-shared'
-import type { OmniboxHandler } from '@sourcegraph/cody-shared/src/models/model'
+import type { OmniboxHandlerOption } from '@sourcegraph/cody-shared/src/models/model'
 import { useExtensionAPI, useObservable } from '@sourcegraph/prompt-editor'
 import clsx from 'clsx'
 import { concat } from 'lodash'
 import { type FunctionComponent, useCallback, useMemo, useState } from 'react'
 import type { UserAccountInfo } from '../../../../../../Chat'
-import { AgentSelectField } from '../../../../../../components/modelSelectField/AgentSelectField'
+import { HandlerSelectField } from '../../../../../../components/modelSelectField/HandlerSelectField'
 import { PromptSelectField } from '../../../../../../components/promptSelectField/PromptSelectField'
 import toolbarStyles from '../../../../../../components/shadcn/ui/toolbar.module.css'
 import { useActionSelect } from '../../../../../../prompts/PromptsTab'
@@ -137,38 +137,38 @@ const ModelSelectFieldToolbarItem: FunctionComponent<{
 
     const api = useExtensionAPI()
     const handlers =
-        useObservable<OmniboxHandler[]>(useMemo(() => api.agents(), [api.agents])).value ?? []
+        useObservable<OmniboxHandlerOption[]>(useMemo(() => api.handlers(), [api.handlers])).value ?? []
 
     // TODO(beyang): this is duplicated state with ChatBuilder.selectedAgent. Either move source of truth to that or move it here.
     const [selectedHandler, setSelectedHandler] = useState<string>(handlers[0]?.id ?? undefined)
-    const agentList = concat(
+    const handlerList = concat(
         handlers.filter(a => a.id === selectedHandler) ?? [],
         handlers.filter(a => a.id !== selectedHandler)
     )
 
     const onModelSelect = useCallback(
-        (handler: OmniboxHandler) => {
+        (handler: OmniboxHandlerOption) => {
             setSelectedHandler(handler.id)
             const { model } = handler
             if (model) {
-                api.setAgent('model', model.id).subscribe({
-                    error: error => console.error('setAgent:', error),
+                api.setHandler('model', model.id).subscribe({
+                    error: error => console.error('setHandler:', error),
                 })
             } else {
-                api.setAgent(handler.id, undefined).subscribe({
-                    error: error => console.error('setAgent:', error),
+                api.setHandler(handler.id, undefined).subscribe({
+                    error: error => console.error('setHandler:', error),
                 })
             }
             focusEditor?.()
         },
-        [focusEditor, api.setAgent]
+        [focusEditor, api.setHandler]
     )
 
     return (
         !!models?.length &&
         (userInfo.isDotComUser || serverSentModelsEnabled) && (
-            <AgentSelectField
-                models={agentList}
+            <HandlerSelectField
+                handlers={handlerList}
                 onModelSelect={onModelSelect}
                 serverSentModelsEnabled={serverSentModelsEnabled}
                 userInfo={userInfo}

@@ -1,5 +1,5 @@
-import { type Model, ModelTag, isCodyProModel, isWaitlistModel } from '@sourcegraph/cody-shared'
-import { type OmniboxHandler, OmniboxHandlers } from '@sourcegraph/cody-shared/src/models/model'
+import { ModelTag, isCodyProModel, isWaitlistModel } from '@sourcegraph/cody-shared'
+import { type OmniboxHandlerOption, OmniboxHandlers } from '@sourcegraph/cody-shared/src/models/model'
 import { clsx } from 'clsx'
 import {
     BookOpenIcon,
@@ -31,9 +31,9 @@ interface SelectListOption {
     disabled?: boolean
 }
 
-export const AgentSelectField: React.FunctionComponent<{
-    models: OmniboxHandler[]
-    onModelSelect: (model: OmniboxHandler) => void
+export const HandlerSelectField: React.FunctionComponent<{
+    handlers: OmniboxHandlerOption[]
+    onModelSelect: (model: OmniboxHandlerOption) => void
 
     serverSentModelsEnabled: boolean
 
@@ -45,7 +45,7 @@ export const AgentSelectField: React.FunctionComponent<{
     /** For storybooks only. */
     __storybook__open?: boolean
 }> = ({
-    models,
+    handlers,
     onModelSelect: parentOnModelSelect,
     serverSentModelsEnabled,
     userInfo,
@@ -56,15 +56,15 @@ export const AgentSelectField: React.FunctionComponent<{
     const telemetryRecorder = useTelemetryRecorder()
 
     // The first model is the always the default.
-    const selectedHandler = models[0]
+    const selectedHandler = handlers[0]
 
     const isCodyProUser = userInfo.isDotComUser && userInfo.isCodyProUser
     const isEnterpriseUser = !userInfo.isDotComUser
     const showCodyProBadge = !isEnterpriseUser && !isCodyProUser
 
     const onModelSelect = useCallback(
-        (agent: OmniboxHandler): void => {
-            const { model } = agent
+        (handler: OmniboxHandlerOption): void => {
+            const { model } = handler
             if (model) {
                 if (selectedHandler.id !== model.id) {
                     telemetryRecorder.recordEvent('cody.modelSelector', 'select', {
@@ -100,7 +100,7 @@ export const AgentSelectField: React.FunctionComponent<{
                     })
                 }
             }
-            parentOnModelSelect(agent)
+            parentOnModelSelect(handler)
         },
         [
             selectedHandler,
@@ -121,7 +121,7 @@ export const AgentSelectField: React.FunctionComponent<{
                 telemetryRecorder.recordEvent('cody.modelSelector', 'open', {
                     metadata: {
                         isCodyProUser: isCodyProUser ? 1 : 0,
-                        totalModels: models.length,
+                        totalModels: handlers.length,
                     },
                     billingMetadata: {
                         product: 'cody',
@@ -130,12 +130,12 @@ export const AgentSelectField: React.FunctionComponent<{
                 })
             }
         },
-        [telemetryRecorder.recordEvent, isCodyProUser, models.length]
+        [telemetryRecorder.recordEvent, isCodyProUser, handlers.length]
     )
 
     const options = useMemo<SelectListOption[]>(
         () =>
-            models.map(handler => {
+            handlers.map(handler => {
                 const availability = modelAvailability(userInfo, serverSentModelsEnabled, handler)
                 return {
                     value: handler.model ? handler.model.id : handler.id,
@@ -154,7 +154,7 @@ export const AgentSelectField: React.FunctionComponent<{
                     tooltip: getTooltip(handler, availability),
                 } satisfies SelectListOption
             }),
-        [models, userInfo, serverSentModelsEnabled]
+        [handlers, userInfo, serverSentModelsEnabled]
     )
     const optionsByGroup: { group: string; options: SelectListOption[] }[] = useMemo(() => {
         return optionByGroup(options)
@@ -162,9 +162,9 @@ export const AgentSelectField: React.FunctionComponent<{
 
     const onChange = useCallback(
         (value: string | undefined) => {
-            onModelSelect(models.find(m => m.id === value)!)
+            onModelSelect(handlers.find(m => m.id === value)!)
         },
-        [onModelSelect, models]
+        [onModelSelect, handlers]
     )
 
     const onKeyDown = useCallback(
@@ -176,7 +176,7 @@ export const AgentSelectField: React.FunctionComponent<{
         [onCloseByEscape]
     )
 
-    if (!models.length || models.length < 1) {
+    if (!handlers.length || handlers.length < 1) {
         return null
     }
 
@@ -306,7 +306,7 @@ type ModelAvailability = 'available' | 'needs-cody-pro' | 'not-selectable-on-ent
 function modelAvailability(
     userInfo: Pick<UserAccountInfo, 'isCodyProUser' | 'isDotComUser'>,
     serverSentModelsEnabled: boolean,
-    handler: OmniboxHandler
+    handler: OmniboxHandlerOption
 ): ModelAvailability {
     const { model } = handler
     if (!model) {
@@ -321,7 +321,7 @@ function modelAvailability(
     return 'available'
 }
 
-function getTooltip(handler: OmniboxHandler, availability: string): string {
+function getTooltip(handler: OmniboxHandlerOption, availability: string): string {
     const { model } = handler
     if (!model) {
         if (handler.id === OmniboxHandlers.DeepCody.id) {
@@ -356,7 +356,10 @@ function getTooltip(handler: OmniboxHandler, availability: string): string {
     }
 }
 
-const getBadgeText = (handler: OmniboxHandler, modelAvailability?: ModelAvailability): string | null => {
+const getBadgeText = (
+    handler: OmniboxHandlerOption,
+    modelAvailability?: ModelAvailability
+): string | null => {
     const { model } = handler
     if (!model) {
         if (handler.id === OmniboxHandlers.DeepCody.id) return 'Experimental'
@@ -380,7 +383,7 @@ const getBadgeText = (handler: OmniboxHandler, modelAvailability?: ModelAvailabi
 }
 
 const HandlerTitleWithIcon: React.FC<{
-    handler: OmniboxHandler
+    handler: OmniboxHandlerOption
     showIcon?: boolean
     showProvider?: boolean
     modelAvailability?: ModelAvailability
@@ -439,7 +442,7 @@ const HandlerGroup: Record<string, string> = {
     Other: 'Other',
 }
 
-const getHandlerDropdownGroup = (handler: OmniboxHandler): string => {
+const getHandlerDropdownGroup = (handler: OmniboxHandlerOption): string => {
     if (handler.model) {
         const { model } = handler
         if (model.tags.includes(ModelTag.Power)) return HandlerGroup.Power

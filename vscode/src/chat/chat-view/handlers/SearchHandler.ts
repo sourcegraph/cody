@@ -18,12 +18,12 @@ import * as vscode from 'vscode'
 import { escapeRegExp } from '../../../context/openctx/remoteFileSearch'
 import { getEditor } from '../../../editor/active-editor'
 import { getFirstRepoNameContainingUri } from '../../../repository/repo-name-resolver'
-import type { AgentHandler, AgentHandlerDelegate, AgentRequest } from './interfaces'
+import type { OmniboxHandler, OmniboxHandlerDelegate, OmniboxRequest } from './interfaces'
 
-export class SearchHandler implements AgentHandler {
+export class SearchHandler implements OmniboxHandler {
     async handle(
-        { editorState, inputText, mentions, chatBuilder, signal, recorder, span }: AgentRequest,
-        delegate: AgentHandlerDelegate
+        { editorState, inputText, mentions, chatBuilder, signal, recorder, span }: OmniboxRequest,
+        delegate: OmniboxHandlerDelegate
     ): Promise<void> {
         recorder.recordChatQuestionExecuted(mentions, { addMetadata: true, current: span })
 

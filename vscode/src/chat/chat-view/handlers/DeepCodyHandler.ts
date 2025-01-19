@@ -13,12 +13,12 @@ import { DeepCodyRateLimiter } from '../../agentic/DeepCodyRateLimiter'
 import type { ChatBuilder } from '../ChatBuilder'
 import type { HumanInput } from '../context'
 import { ChatHandler } from './ChatHandler'
-import type { AgentHandler, AgentHandlerDelegate } from './interfaces'
+import type { OmniboxHandler, OmniboxHandlerDelegate } from './interfaces'
 
 // NOTE: Skip query rewrite for Deep Cody as it will be done during review step.
 const skipQueryRewriteForDeepCody = true
 
-export class DeepCodyHandler extends ChatHandler implements AgentHandler {
+export class DeepCodyHandler extends ChatHandler implements OmniboxHandler {
     private featureDeepCodyRateLimitBase = storeLastValue(
         featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.DeepCodyRateLimitBase)
     )
@@ -34,7 +34,7 @@ export class DeepCodyHandler extends ChatHandler implements AgentHandler {
         { text, mentions }: HumanInput,
         editorState: SerializedPromptEditorState | null,
         chatBuilder: ChatBuilder,
-        delegate: AgentHandlerDelegate,
+        delegate: OmniboxHandlerDelegate,
         signal: AbortSignal
     ): Promise<{
         contextItems?: ContextItem[]

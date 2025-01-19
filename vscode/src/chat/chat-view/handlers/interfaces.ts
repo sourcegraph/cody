@@ -20,9 +20,9 @@ export interface AgentTools {
 }
 
 /**
- * Interface for the agent to post messages back to the user
+ * Interface for the handler to post messages back to the user
  */
-export interface AgentHandlerDelegate {
+export interface OmniboxHandlerDelegate {
     postError(error: Error, type?: MessageErrorType): void
     postStatuses(steps: ProcessingStep[]): void
     postMessageInProgress(message: ChatMessage): void
@@ -32,13 +32,13 @@ export interface AgentHandlerDelegate {
     /**
      * An experimental way to post updates to the message in progress.
      *
-     * NOTE: A given AgentHandler implementation should use either this
+     * NOTE: A given OmniboxHandler implementation should use either this
      * method or `postMessageInProgress` but not both.
      */
     experimentalPostMessageInProgress(subMessages: SubMessage[]): void
 }
 
-export interface AgentRequest {
+export interface OmniboxRequest {
     requestID: string
     inputText: PromptString
     mentions: ContextItem[]
@@ -49,6 +49,6 @@ export interface AgentRequest {
     recorder: OmniboxTelemetry
 }
 
-export interface AgentHandler {
-    handle(request: AgentRequest, delegate: AgentHandlerDelegate): Promise<void>
+export interface OmniboxHandler {
+    handle(request: OmniboxRequest, delegate: OmniboxHandlerDelegate): Promise<void>
 }

@@ -21,7 +21,7 @@ import { getModelInfo } from './utils'
 /**
  * OmniboxHandler describes a handler to handle an omnibox query.
  */
-export interface OmniboxHandler {
+export interface OmniboxHandlerOption {
     readonly id: string
 
     readonly title?: string
@@ -34,7 +34,7 @@ export interface OmniboxHandler {
     model?: Model
 }
 
-export type HandlerID = OmniboxHandler['id']
+export type HandlerID = OmniboxHandlerOption['id']
 
 export const OmniboxHandlers = {
     Auto: {
