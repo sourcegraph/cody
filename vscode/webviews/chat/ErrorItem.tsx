@@ -96,7 +96,7 @@ const RateLimitErrorItem: React.FunctionComponent<{
             {canUpgrade && <div className={styles.icon}>⚡️</div>}
             <div className={styles.body}>
                 <header>
-                    <h1>{canUpgrade ? 'Upgrade to Cody Pro' : 'Unable to blur the message'}</h1>
+                    <h1>{true ? 'Upgrade to Cody Pro' : 'Unable to blur the message'}</h1>
                     <p>
                         {error.userMessage}
                         {canUpgrade &&
@@ -122,20 +122,24 @@ const RateLimitErrorItem: React.FunctionComponent<{
                     )}
                 </div>
                 {error.retryMessage && <p className={styles.retryMessage}>{error.retryMessage}</p>}
-            </div>
-            {canUpgrade && (
-                <div className={styles.bannerContainer}>
-                    <div
-                        className={styles.banner}
-                        role="button"
-                        tabIndex={-1}
-                        onClick={() => onButtonClick('upgrade', 'upgrade')}
-                        onKeyDown={() => onButtonClick('upgrade', 'upgrade')}
-                    >
-                        Go low
+                {(
+                    <div className={styles.bannerContainer} style={{ 
+                        position: 'absolute',
+                        top: 0,
+                        right: 0
+                    }}>
+                        <div
+                            className={styles.banner}
+                            role="button"
+                            tabIndex={-1}
+                            onClick={() => onButtonClick('upgrade', 'upgrade')}
+                            onKeyDown={() => onButtonClick('upgrade', 'upgrade')}
+                        >
+                            Go Pro
+                        </div>
                     </div>
-                </div>
-            )}
+                )}
+            </div>
         </div>
     )
 }

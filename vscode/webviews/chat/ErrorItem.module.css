@@ -1,7 +1,13 @@
 .error-item {
     display: flex;
     flex-direction: row;
-    gap: 0.5rem;
+    gap: 0.8rem;
+    padding: 16px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 6px;
+    margin: 12px 0px;
+    position: relative;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .error-item .icon {
@@ -11,7 +17,8 @@
 .error-item .body {
     display: flex;
     flex-direction: column;
-    gap: 0.7rem;
+    gap: 1rem;
+    width: 100%;
 }
 
 .error-item vscode-button {
@@ -26,25 +33,22 @@
 .error-item header {
     display: flex;
     flex-direction: column;
-    gap: 0.3rem;
-    margin-right: 30px;
+    gap: 0.5rem;
 }
 
 .error-item header h1 {
-    text-transform: uppercase;
-    font-size: 11px;
-    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
 }
 
 .error-item header p {
-    max-width: 40em;
     opacity: 0.9;
+    line-height: 1.5;
 }
 
 .error-item .actions {
-    display: flex;
-    flex-direction: row;
-    gap: 8px;
+    margin-top: 8px;
 }
 
 .error-item .retry-message {
@@ -53,10 +57,10 @@
 }
 
 .error-item .banner-container {
-    position: relative;
+    position: absolute;
     top: 0;
     right: 0;
-    overflow: visible;
+    overflow: hidden;
     height: 100px;
     z-index: 1000;
 }
