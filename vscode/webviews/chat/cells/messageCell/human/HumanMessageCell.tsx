@@ -16,6 +16,7 @@ import styles from './HumanMessageCell.module.css'
 import { HumanMessageEditor } from './editor/HumanMessageEditor'
 
 import { Tooltip, TooltipContent, TooltipTrigger } from '../../../../components/shadcn/ui/tooltip'
+import { cn } from '../../../../components/shadcn/utils'
 import { getVSCodeAPI } from '../../../../utils/VSCodeApi'
 import { useConfig } from '../../../../utils/useConfig'
 import { ToolboxButton } from './editor/ToolboxButton'
@@ -147,11 +148,10 @@ const HumanMessageCellContent = memo<HumanMessageCellContent>(props => {
                     manuallySelectIntent={manuallySelectIntent}
                 />
             }
-            className={`${className} ${styles.followupMessageCell} ${
-                !isFirstMessage
-                    ? 'tw-sticky tw-bottom-0 tw-z-10 sticky-footer-input tw-background tw-border-t tw-border-solid tw-border-border tw-pt-4 tw-pb-6 md:tw-pt-6 md:tw-pb-8'
-                    : ''
-            }`}
+            className={cn(className, styles.followupMessageCell, {
+                'tw-sticky tw-bottom-0 tw-z-10 sticky-footer-input tw-background tw-border-t tw-border-solid tw-border-border tw-pt-4 tw-pb-6 md:tw-pt-6 md:tw-pb-8':
+                    !isFirstMessage,
+            })}
         />
     )
 }, isEqual)

@@ -78,7 +78,7 @@ export const ScrollDown: FC<ScrollDownProps> = props => {
                 className="tw-rounded-full tw-py-3 tw-my-4 tw hover:tw-bg-primary-hover"
             >
                 <ArrowDownIcon size={16} /> Skip to end
-            </Button>{' '}
+            </Button>
         </div>
     ) : null
 }
