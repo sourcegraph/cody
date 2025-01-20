@@ -109,8 +109,8 @@ export const SearchFilters = ({
 
     return (
         <div className="tw-flex tw-flex-col tw-gap-8">
-            <div className="tw-flex tw-flex-col tw-gap-4">
-                <div className="tw-font-bold tw-mb-4">Result type</div>
+            <div className="tw-flex tw-flex-col">
+                <div className="tw-font-semibold tw-mb-4">Result type</div>
                 {TYPE_FILTERS.map(filter => (
                     <SearchFilter
                         key={filter.value}
@@ -122,8 +122,8 @@ export const SearchFilters = ({
                 ))}
             </div>
             {filterGroups.lang.length > 0 && (
-                <div className="tw-flex tw-flex-col tw-gap-4">
-                    <div className="tw-font-bold tw-mb-4">Language</div>
+                <div className="tw-flex tw-flex-col">
+                    <div className="tw-font-semibold tw-mb-4">Language</div>
                     {filterGroups.lang.map(filter => (
                         <SearchFilter
                             key={filter.value}
@@ -136,8 +136,8 @@ export const SearchFilters = ({
                 </div>
             )}
             {filterGroups.repo.length > 0 && (
-                <div className="tw-flex tw-flex-col tw-gap-4">
-                    <div className="tw-font-bold tw-mb-4">Repository</div>
+                <div className="tw-flex tw-flex-col">
+                    <div className="tw-font-semibold tw-mb-4">Repository</div>
                     <RepositorySelector onSelect={onRepoSelect} />
                     {filterGroups.repo.map(filter => (
                         <SearchFilter
@@ -151,8 +151,8 @@ export const SearchFilters = ({
                 </div>
             )}
             {filterGroups.file.length > 0 && (
-                <div className="tw-flex tw-flex-col tw-gap-4">
-                    <div className="tw-font-bold tw-mb-4">File and path</div>
+                <div className="tw-flex tw-flex-col">
+                    <div className="tw-font-semibold tw-mb-4">File and path</div>
                     {filterGroups.file.map(filter => (
                         <SearchFilter
                             key={filter.value}
@@ -196,7 +196,7 @@ const SearchFilter = ({
                 <div
                     className={classNames(
                         styles.filter,
-                        'tw-flex tw-justify-between tw-items-center tw-gap-2 tw-py-2 tw-px-4 tw-rounded-md tw-cursor-pointer hover:tw-bg-accent hover:tw-text-accent-foreground',
+                        'tw-flex tw-justify-between tw-items-center tw-gap-2 tw-py-3 tw-px-6 tw-rounded-md tw-cursor-pointer hover:tw-bg-accent hover:tw-text-accent-foreground',
                         {
                             [styles.selected]: selected,
                         }

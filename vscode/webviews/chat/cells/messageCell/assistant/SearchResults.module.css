@@ -36,10 +36,6 @@
     transition: all 1s ease-in;
 }
 
-.filters-sidebar {
-    background-color: var(--vscode-input-background);
-}
-
 .search-results-header {
     container-type: inline-size;
     container-name: search-results-header
