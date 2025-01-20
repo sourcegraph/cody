@@ -149,8 +149,9 @@ const HumanMessageCellContent = memo<HumanMessageCellContent>(props => {
                 />
             }
             className={cn(className, styles.followupMessageCell, {
-                'tw-sticky tw-bottom-0 tw-z-10 sticky-footer-input tw-background tw-border-t tw-border-solid tw-border-border tw-pt-4 tw-pb-6 md:tw-pt-6 md:tw-pb-8':
+                /*  'tw-sticky tw-bottom-0 tw-z-10 tw-background tw-border-t tw-border-solid tw-border-border tw-pt-4 tw-pb-6 md:tw-pt-6 md:tw-pb-8':
                     !isFirstMessage,
+                    */
             })}
         />
     )

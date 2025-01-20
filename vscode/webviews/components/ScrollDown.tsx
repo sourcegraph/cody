@@ -12,7 +12,7 @@ interface Scroller {
     getClientHeight: () => number
 }
 
-function createScrollerAPI(element: HTMLElement): Scroller {
+export function createScrollerAPI(element: HTMLElement): Scroller {
     return {
         root: element,
         getObserveElement: () => element.firstElementChild!,
@@ -70,7 +70,7 @@ export const ScrollDown: FC<ScrollDownProps> = props => {
     }, [parentOnClick, scrollerAPI])
 
     return canScrollDown ? (
-        <div className="tw-bottom-0 tw-left-1/2 tw-inline-block tw-sticky tw--translate-x-1/2 tw-pb-40 md:tw-pb-48 tw-w-fit">
+        <div className="tw-bottom-0 tw-left-1/2 tw-inline-block tw-sticky tw--translate-x-1/2 tw-pb-4 tw-w-fit">
             <Button
                 variant="outline"
                 size="sm"

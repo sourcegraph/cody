@@ -1,5 +1,6 @@
 import * as Tabs from '@radix-ui/react-tabs'
 import React from 'react'
+import { View } from '../../../tabs'
 import { cn } from '../utils'
 
 export const TabRoot = React.forwardRef<
@@ -17,7 +18,9 @@ export const TabContainer = React.forwardRef<
         <Tabs.Content
             ref={ref}
             {...props}
-            className={cn('tw-h-full tw-flex tw-flex-col tw-overflow-auto tw-gap-4', className)}
+            className={cn('tw-h-full tw-flex tw-flex-col tw-overflow-auto tw-gap-4', className, {
+                'tw-overflow-hidden': props.value === View.Chat,
+            })}
         />
     )
 })

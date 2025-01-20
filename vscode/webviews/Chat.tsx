@@ -9,7 +9,7 @@ import type {
     Model,
     PromptString,
 } from '@sourcegraph/cody-shared'
-import { Transcript, focusLastHumanMessageEditor } from './chat/Transcript'
+import { Transcript } from './chat/Transcript'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 
 import type { Context } from '@opentelemetry/api'
@@ -19,7 +19,6 @@ import styles from './Chat.module.css'
 import WelcomeFooter from './chat/components/WelcomeFooter'
 import { WelcomeMessage } from './chat/components/WelcomeMessage'
 import { WelcomeNotice } from './chat/components/WelcomeNotice'
-import { ScrollDown } from './components/ScrollDown'
 import type { View } from './tabs'
 import { SpanManager } from './utils/spanManager'
 import { getTraceparentFromSpanContext, useTelemetryRecorder } from './utils/telemetry'
@@ -218,41 +217,31 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
         }
     }, [])
 
-    const handleScrollDownClick = useCallback(() => {
-        // Scroll to the bottom instead of focus input for unsent message
-        // it's possible that we just want to scroll to the bottom in case of
-        // welcome message screen
-        if (transcript.length === 0) {
-            return
-        }
-
-        focusLastHumanMessageEditor()
-    }, [transcript])
     const [activeChatContext, setActiveChatContext] = useState<Context>()
 
     return (
-        <>
+        <Transcript
+            activeChatContext={activeChatContext}
+            setActiveChatContext={setActiveChatContext}
+            transcript={transcript}
+            models={models}
+            messageInProgress={messageInProgress}
+            feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
+            copyButtonOnSubmit={copyButtonOnSubmit}
+            insertButtonOnSubmit={insertButtonOnSubmit}
+            smartApply={smartApply}
+            userInfo={userInfo}
+            chatEnabled={chatEnabled}
+            postMessage={postMessage}
+            guardrails={guardrails}
+            smartApplyEnabled={smartApplyEnabled}
+        >
             {!chatEnabled && (
                 <div className={styles.chatDisabled}>
                     Cody chat is disabled by your Sourcegraph site administrator
                 </div>
             )}
-            <Transcript
-                activeChatContext={activeChatContext}
-                setActiveChatContext={setActiveChatContext}
-                transcript={transcript}
-                models={models}
-                messageInProgress={messageInProgress}
-                feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
-                copyButtonOnSubmit={copyButtonOnSubmit}
-                insertButtonOnSubmit={insertButtonOnSubmit}
-                smartApply={smartApply}
-                userInfo={userInfo}
-                chatEnabled={chatEnabled}
-                postMessage={postMessage}
-                guardrails={guardrails}
-                smartApplyEnabled={smartApplyEnabled}
-            />
+
             {transcript.length === 0 && showWelcomeMessage && (
                 <>
                     <WelcomeMessage
@@ -268,11 +257,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                     )}
                 </>
             )}
-
-            {scrollableParent && (
-                <ScrollDown scrollableParent={scrollableParent} onClick={handleScrollDownClick} />
-            )}
-        </>
+        </Transcript>
     )
 }
 

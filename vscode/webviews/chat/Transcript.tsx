@@ -20,6 +20,7 @@ import {
 import { clsx } from 'clsx'
 import { isEqual } from 'lodash'
 import debounce from 'lodash/debounce'
+import type React from 'react'
 import {
     type FC,
     memo,
@@ -53,6 +54,7 @@ import { HumanMessageCell } from './cells/messageCell/human/HumanMessageCell'
 import { type Context, type Span, context, trace } from '@opentelemetry/api'
 import { isCodeSearchContextItem } from '../../src/context/openctx/codeSearch'
 import { TELEMETRY_INTENT } from '../../src/telemetry/onebox'
+import { ScrollDown, createScrollerAPI } from '../components/ScrollDown'
 import { useIntentDetectionConfig } from '../components/omnibox/intentDetection'
 import { AgenticContextCell } from './cells/agenticCell/AgenticContextCell'
 import ApprovalCell from './cells/agenticCell/ApprovalCell'
@@ -76,6 +78,7 @@ interface TranscriptProps {
     insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit']
     smartApply?: CodeBlockActionsProps['smartApply']
     smartApplyEnabled?: boolean
+    children?: React.ReactNode
 }
 
 export const Transcript: FC<TranscriptProps> = props => {
@@ -94,6 +97,7 @@ export const Transcript: FC<TranscriptProps> = props => {
         insertButtonOnSubmit,
         smartApply,
         smartApplyEnabled,
+        children,
     } = props
 
     const interactions = useMemo(
@@ -136,43 +140,121 @@ export const Transcript: FC<TranscriptProps> = props => {
         []
     )
 
+    const lastInteraction = interactions[interactions.length - 1]
+
+    const scrollableRef = useRef<HTMLDivElement>(null)
+
+    const handleScrollDownClick = useCallback(() => {
+        // Scroll to the bottom instead of focus input for unsent message
+        // it's possible that we just want to scroll to the bottom in case of
+        // welcome message screen
+        if (transcript.length === 0) {
+            return
+        }
+
+        focusLastHumanMessageEditor()
+    }, [transcript])
+
+    const scrollToBottom = useCallback(() => {
+        if (!scrollableRef.current) {
+            return
+        }
+
+        const scrollerAPI = createScrollerAPI(scrollableRef.current)
+
+        scrollerAPI.root.scrollTo({
+            top: scrollerAPI.getScrollHeight(),
+        })
+    }, [])
+
     return (
-        <div
-            className={clsx('tw-px-8 tw-pt-8 tw-flex tw-flex-col tw-gap-8', {
-                'tw-flex-grow': transcript.length > 0,
-            })}
-        >
-            <LastEditorContext.Provider value={lastHumanEditorRef}>
-                {interactions.map((interaction, i) => (
+        <LastEditorContext.Provider value={lastHumanEditorRef}>
+            <div className="tw-overflow-auto" ref={scrollableRef}>
+                <div
+                    className={clsx('tw-px-8 tw-pt-8 tw-pb-6 tw-flex tw-flex-col tw-gap-8', {
+                        'tw-flex-grow': transcript.length > 0,
+                    })}
+                >
+                    {interactions.map(
+                        (interaction, i) =>
+                            // biome-ignore lint/correctness/useJsxKeyInIterable:
+                            (i === 0 || i < interactions.length - 1) && (
+                                <TranscriptInteraction
+                                    key={interaction.humanMessage.index}
+                                    activeChatContext={activeChatContext}
+                                    setActiveChatContext={setActiveChatContext}
+                                    models={models}
+                                    chatEnabled={chatEnabled}
+                                    userInfo={userInfo}
+                                    interaction={interaction}
+                                    guardrails={guardrails}
+                                    postMessage={postMessage}
+                                    feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
+                                    copyButtonOnSubmit={copyButtonOnSubmit}
+                                    insertButtonOnSubmit={insertButtonOnSubmit}
+                                    isFirstInteraction={i === 0}
+                                    isLastInteraction={i === interactions.length - 1}
+                                    isLastSentInteraction={
+                                        i === interactions.length - 2 &&
+                                        interaction.assistantMessage !== null
+                                    }
+                                    priorAssistantMessageIsLoading={Boolean(
+                                        messageInProgress &&
+                                            interactions.at(i - 1)?.assistantMessage?.isLoading
+                                    )}
+                                    smartApply={smartApply}
+                                    smartApplyEnabled={smartApplyEnabled}
+                                    editorRef={
+                                        i === interactions.length - 1 ? lastHumanEditorRef : undefined
+                                    }
+                                    onAddToFollowupChat={onAddToFollowupChat}
+                                />
+                            )
+                    )}
+                </div>
+                {children}
+                {scrollableRef.current && (
+                    <ScrollDown
+                        scrollableParent={scrollableRef.current}
+                        onClick={handleScrollDownClick}
+                    />
+                )}
+            </div>
+            {interactions.length > 1 ? (
+                <div
+                    className={clsx('tw-px-8 tw-pt-8 tw-pb-6 tw-flex tw-flex-col tw-gap-8', {
+                        'tw-flex-grow': transcript.length > 0,
+                    })}
+                >
                     <TranscriptInteraction
-                        key={interaction.humanMessage.index}
+                        key={lastInteraction.humanMessage.index}
                         activeChatContext={activeChatContext}
                         setActiveChatContext={setActiveChatContext}
                         models={models}
                         chatEnabled={chatEnabled}
                         userInfo={userInfo}
-                        interaction={interaction}
+                        interaction={lastInteraction}
                         guardrails={guardrails}
                         postMessage={postMessage}
                         feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
                         copyButtonOnSubmit={copyButtonOnSubmit}
                         insertButtonOnSubmit={insertButtonOnSubmit}
-                        isFirstInteraction={i === 0}
-                        isLastInteraction={i === interactions.length - 1}
-                        isLastSentInteraction={
-                            i === interactions.length - 2 && interaction.assistantMessage !== null
-                        }
+                        isFirstInteraction={false}
+                        isLastInteraction={true}
+                        isLastSentInteraction={false}
                         priorAssistantMessageIsLoading={Boolean(
-                            messageInProgress && interactions.at(i - 1)?.assistantMessage?.isLoading
+                            messageInProgress &&
+                                interactions.at(interactions.length - 2)?.assistantMessage?.isLoading
                         )}
                         smartApply={smartApply}
                         smartApplyEnabled={smartApplyEnabled}
-                        editorRef={i === interactions.length - 1 ? lastHumanEditorRef : undefined}
+                        editorRef={lastHumanEditorRef}
                         onAddToFollowupChat={onAddToFollowupChat}
+                        scrollToBottom={scrollToBottom}
                     />
-                ))}
-            </LastEditorContext.Provider>
-        </div>
+                </div>
+            ) : null}
+        </LastEditorContext.Provider>
     )
 }
 
@@ -250,6 +332,7 @@ interface TranscriptInteractionProps
         filePath: string
         fileURL: string
     }) => void
+    scrollToBottom?: () => void
 }
 
 interface IntentResults {
@@ -276,6 +359,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
         smartApply,
         smartApplyEnabled,
         editorRef: parentEditorRef,
+        scrollToBottom,
     } = props
     const [intentResults, setIntentResults] = useState<IntentResults | undefined | null>()
     const [manuallySelectedIntent, setManuallySelectedIntent] = useState<{
@@ -374,6 +458,8 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                 ...commonProps,
             })
         }
+
+        setTimeout(() => scrollToBottom?.(), 500)
     }
 
     const onEditSubmit = useCallback(
@@ -754,7 +840,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
             {experimentalOneBoxEnabled && (
                 <SwitchIntent
                     intent={humanMessage.intent}
-                    disabled={!!assistantMessage?.isLoading}
+                    disabled={false} //!!assistantMessage?.isLoading}
                     manuallySelected={!!humanMessage.manuallySelectedIntent}
                     onSwitch={
                         humanMessage.intent === 'search'
