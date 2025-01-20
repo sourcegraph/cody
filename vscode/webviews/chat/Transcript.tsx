@@ -281,7 +281,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
     const [manuallySelectedIntent, setManuallySelectedIntent] = useState<{
         intent: ChatMessage['intent']
         query: string
-        prompt?: boolean
+        resetOnEditorStateClearOnly?: boolean
     }>({
         intent: humanMessage.manuallySelectedIntent,
         query: humanMessage.editorState
@@ -341,7 +341,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
         const { intent, intentScores } =
             query === intentResults?.query
                 ? { intent: intentResults.intent, intentScores: intentResults.allScores }
-                : {}
+                : { intent: undefined, intentScores: [] }
 
         const commonProps = {
             editorValue,
@@ -468,7 +468,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
             if (
                 manuallySelectedIntent.intent &&
                 currentQuery.trim() !== manuallySelectedIntent.query.trim() &&
-                (!manuallySelectedIntent.prompt || !editorValue.text.trim())
+                (!manuallySelectedIntent.resetOnEditorStateClearOnly || !editorValue.text.trim())
             ) {
                 setManuallySelectedIntent({ intent: undefined, query: '' })
             }
@@ -718,9 +718,9 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
             return setManuallySelectedIntent({
                 intent,
                 query: currentQuery,
-                // We set the prompt flag to true to differentiate between prompt selection and manual intent selection.
-                // This is used to reset the intent on prompt selection only when the editor text is emptied and not on input change.
-                prompt: !!editorStateFromProps,
+                // We set the `resetOnEditorStateClearOnly` flag to true to differentiate between prompt selection and manual intent selection.
+                // This is used to reset the intent only when the editor text is emptied and not on input change.
+                resetOnEditorStateClearOnly: !!editorStateFromProps,
             })
         },
         []
