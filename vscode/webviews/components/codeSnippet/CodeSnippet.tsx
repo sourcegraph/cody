@@ -237,7 +237,7 @@ export const FileMatchSearchResult: FC<PropsWithChildren<FileMatchSearchResultPr
 
     const actions = onSelectForContext ? (
         <div>
-            <label htmlFor="search-results.select-all">
+            <label htmlFor="search-results.select-all" className="tw-flex tw-flex-row-reverse tw-gap-4">
                 <input
                     type="checkbox"
                     id="search-results.select-all"
@@ -248,8 +248,8 @@ export const FileMatchSearchResult: FC<PropsWithChildren<FileMatchSearchResultPr
                     title="Select for context"
                     aria-label="Select for context"
                 />
-                Select for context
-            </label>
+                <span className={styles.addToContextLabel}>Add to context</span>
+            </label>{' '}
         </div>
     ) : null
 

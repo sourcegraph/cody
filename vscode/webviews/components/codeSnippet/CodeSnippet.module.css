@@ -30,15 +30,16 @@
 }
 
 .header {
-    padding: 0.45rem 0rem;
+    background-color: var(--vscode-editor-background);
     display: flex;
+    padding: 0.5rem;
     align-items: center;
     position: sticky;
     top: 0;
+    border-bottom: solid 1px var(--cody-chat-code-border-color);
 
     /* Show on top of search result contents */
     z-index: 1;
-    background-color: var(--cody-chat-code-header-background);
 
     &-title {
         flex: 1 1 auto;
@@ -48,9 +49,8 @@
 }
 
 .result {
-    border-radius: 4px;
-    border: solid 1px var(--cody-chat-code-border-color);
     background-color: var(--cody-chat-code-background);
+    border-bottom: solid 1px var(--cody-chat-code-border-color);
 
     code {
         padding: 0 !important;
@@ -143,3 +143,6 @@
     }
 }
 
+.addToContextLabel {
+    color: var(--cody-chat-code-text-muted);
+}

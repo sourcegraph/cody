@@ -148,12 +148,7 @@ export const SearchResults = ({
 
     return (
         <div className={styles.root}>
-            <div
-                className={classNames(
-                    styles.container,
-                    'tw-flex tw-gap-8 tw-items-start tw-justify-between'
-                )}
-            >
+            <div className={classNames(styles.container, 'tw-flex')}>
                 {showFiltersSidebar &&
                     (!!message.search.response?.results.dynamicFilters?.length ||
                         !!message.search.selectedFilters?.length) && (
@@ -196,7 +191,7 @@ export const SearchResults = ({
                         {!!resultsToShow && (
                             <div
                                 className={classNames(
-                                    'tw-flex tw-items-center tw-gap-4 tw-justify-between',
+                                    'tw-flex tw-items-center tw-gap-4 tw-justify-between tw-py-2 tw-px-4 tw-border-b tw-border-muted',
                                     styles.searchResultsHeader
                                 )}
                             >
@@ -327,7 +322,7 @@ export const SearchResults = ({
                             </InfoMessage>
                         )}
                         {resultsToShow.length ? (
-                            <ul className="tw-list-none tw-flex tw-flex-col tw-gap-2 tw-pt-2">
+                            <ul className="tw-list-none tw-flex tw-flex-col">
                                 {resultsToShow.map((result, i) => (
                                     <li
                                         // biome-ignore lint/correctness/useJsxKeyInIterable:
