@@ -70,10 +70,15 @@ export const ScrollDown: FC<ScrollDownProps> = props => {
     }, [parentOnClick, scrollerAPI])
 
     return canScrollDown ? (
-        <div className="tw-bottom-0 tw-left-1/2 tw-inline-block tw-sticky tw--translate-x-1/2 tw-py-4 tw-w-fit">
-            <Button variant="outline" onClick={onClick} className="tw-py-3 hover:tw-bg-primary-hover">
+        <div className="tw-bottom-0 tw-left-1/2 tw-inline-block tw-sticky tw--translate-x-1/2 tw-pb-40 md:tw-pb-48 tw-w-fit">
+            <Button
+                variant="outline"
+                size="sm"
+                onClick={onClick}
+                className="tw-rounded-full tw-py-3 tw-my-4 tw hover:tw-bg-primary-hover"
+            >
                 <ArrowDownIcon size={16} /> Skip to end
-            </Button>
+            </Button>{' '}
         </div>
     ) : null
 }
