@@ -1567,7 +1567,13 @@ export class SourcegraphGraphQLAPIClient {
             {},
             signal
         )
-        return extractDataOrError(response, data => JSON.parse(data.temporarySettings.contents))
+        return extractDataOrError(response, data => {
+            try {
+                return JSON.parse(data.temporarySettings.contents)
+            } catch {
+                return {}
+            }
+        })
     }
 
     public async editTemporarySettings(

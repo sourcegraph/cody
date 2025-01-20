@@ -19,7 +19,12 @@ import {
 } from '../misc/observableOperation'
 import { isError } from '../utils'
 import { isAbortError } from './errors'
-import { type CodyConfigFeatures, type GraphQLAPIClientConfig, graphqlClient } from './graphql/client'
+import {
+    type CodyConfigFeatures,
+    type GraphQLAPIClientConfig,
+    type TemporarySettings,
+    graphqlClient,
+} from './graphql/client'
 
 export interface CodyNotice {
     key: string
@@ -64,7 +69,7 @@ export interface CodyClientConfig {
     // instance configuration file
     notices: CodyNotice[]
 
-    temporarySettings: Record<string, any>
+    temporarySettings: Partial<TemporarySettings>
 }
 
 export const dummyClientConfigForTest: CodyClientConfig = {
