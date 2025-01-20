@@ -12,6 +12,7 @@ import { type FC, memo, useMemo } from 'react'
 import type { UserAccountInfo } from '../../../../Chat'
 import { UserAvatar } from '../../../../components/UserAvatar'
 import { BaseMessageCell, MESSAGE_CELL_AVATAR_SIZE } from '../BaseMessageCell'
+import styles from './HumanMessageCell.module.css'
 import { HumanMessageEditor } from './editor/HumanMessageEditor'
 
 import { Tooltip, TooltipContent, TooltipTrigger } from '../../../../components/shadcn/ui/tooltip'
@@ -146,11 +147,14 @@ const HumanMessageCellContent = memo<HumanMessageCellContent>(props => {
                     manuallySelectIntent={manuallySelectIntent}
                 />
             }
-            className={className}
+            className={`${className} ${styles.followupMessageCell} ${
+                !isFirstMessage
+                    ? 'tw-sticky tw-bottom-0 tw-z-10 sticky-footer-input tw-background tw-border-t tw-border-solid tw-border-border tw-pt-4 tw-pb-6 md:tw-pt-6 md:tw-pb-8'
+                    : ''
+            }`}
         />
     )
 }, isEqual)
-
 const OpenInNewEditorAction = () => {
     const {
         config: { multipleWebviewsEnabled },
@@ -172,6 +176,8 @@ const OpenInNewEditorAction = () => {
                         })
                     }}
                     className="tw-flex tw-gap-3 tw-items-center tw-leading-none tw-transition"
+                    aria-label="Open in Editor"
+                    title="Open in Editor"
                 >
                     <ColumnsIcon size={16} strokeWidth={1.25} className="tw-w-8 tw-h-8" />
                 </button>

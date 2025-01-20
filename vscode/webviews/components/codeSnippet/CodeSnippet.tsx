@@ -237,14 +237,19 @@ export const FileMatchSearchResult: FC<PropsWithChildren<FileMatchSearchResultPr
 
     const actions = onSelectForContext ? (
         <div>
-            <input
-                type="checkbox"
-                id="search-results.select-all"
-                checked={selectedForContext}
-                onChange={event => {
-                    onSelectForContext?.(event.target.checked, result)
-                }}
-            />
+            <label htmlFor="search-results-select-all">
+                <input
+                    type="checkbox"
+                    id="search-results-select-all"
+                    name="search-results-select-all"
+                    title="Select for context"
+                    checked={selectedForContext}
+                    onChange={event => {
+                        onSelectForContext?.(event.target.checked, result)
+                    }}
+                />
+                Select for context
+            </label>
         </div>
     ) : null
 
@@ -289,7 +294,6 @@ export const FileMatchSearchResult: FC<PropsWithChildren<FileMatchSearchResultPr
         </ResultContainer>
     )
 }
-
 interface ResultContainerProps {
     title: React.ReactNode
     titleClassName?: string
