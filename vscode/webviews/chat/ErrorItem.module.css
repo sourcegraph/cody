@@ -5,7 +5,7 @@
     padding: 16px;
     background: rgba(255, 255, 255, 0.05);
     border-radius: 6px;
-    margin: 12px 0px;
+    margin: 0px 0px;
     position: relative;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
@@ -33,7 +33,9 @@
 .error-item header {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: 0rem;
+    padding-right: 20px;
+    margin-top: -5px;
 }
 
 .error-item header h1 {
@@ -48,7 +50,7 @@
 }
 
 .error-item .actions {
-    margin-top: 8px;
+    margin-top: -10px;
 }
 
 .error-item .retry-message {

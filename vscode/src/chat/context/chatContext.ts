@@ -152,11 +152,14 @@ export async function getChatContextItemsForMention(
             return files
         }
 
+         //  case GIT_CONTEXT_MENTION_PROVIDER.id:
         default: {
             if (!openCtx.controller) {
                 return []
             }
 
+            // 
+ 
             const items = await openCtx.controller.mentions(
                 {
                     query: mentionQuery.text,
