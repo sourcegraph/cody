@@ -207,7 +207,7 @@ export class ChatsController implements vscode.Disposable {
             vscode.commands.registerCommand(
                 'cody.chat.toggle',
                 async (args: { uri: URI; editorFocus: boolean }) => {
-                    if (this.panel.isEmpty() && !args?.editorFocus) {
+                    if (this.panel.isEmpty()) {
                         await this.clearEditorText()
                     } else {
                         vscode.commands.executeCommand('cody.chat.newPanel')
