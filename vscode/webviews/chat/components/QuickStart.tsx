@@ -1,3 +1,4 @@
+import { isMacOS } from '@sourcegraph/cody-shared'
 import { useState } from 'react'
 import styles from './WelcomeFooter.module.css'
 
@@ -17,6 +18,7 @@ interface ChatViewTip {
     icon: LucideIcon
     vsCodeOnly: boolean
 }
+const osIcon = isMacOS() ? '⌥' : 'Alt+'
 
 const chatTips: ChatViewTip[] = [
     {
@@ -25,7 +27,7 @@ const chatTips: ChatViewTip[] = [
         vsCodeOnly: true,
     },
     {
-        message: 'Start a new chat with ⌥ L',
+        message: `Start a new chat with ${osIcon} + L`,
         icon: MessageSquarePlus,
         vsCodeOnly: false,
     },
