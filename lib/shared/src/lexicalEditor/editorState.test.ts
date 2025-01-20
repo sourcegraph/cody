@@ -242,7 +242,6 @@ describe('inputTextWithMappedContextChipsFromPromptEditorState', () => {
                                 content: undefined,
                                 repoName: 'sourcegraph/sourcegraph',
                                 isWorkspaceRoot: true,
-                                isIndexedRemotely: true,
                                 name: 'root',
                             },
                             isFromInitialContext: false,

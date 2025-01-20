@@ -57,6 +57,8 @@ function getDescription(item: ContextItem, query: MentionQuery): string {
             return '' // no description since it's duplicative
         case 'openctx':
             return item.mention?.description || defaultDescription
+        case 'open-link':
+            return ''
         default:
             return defaultDescription
     }
@@ -85,6 +87,7 @@ export const MentionMenuContextItemContent: FunctionComponent<{
     const isFileType = item.type === 'file'
     const isSymbol = item.type === 'symbol'
     const isClassSymbol = isSymbol && item.kind === 'class'
+    const isLink = item.type === 'open-link'
 
     const icon = item.icon || (isSymbol ? (isClassSymbol ? 'symbol-structure' : 'symbol-method') : null)
     const { title, displayName } = getMentionItemTitleAndDisplayName(item)
@@ -92,8 +95,6 @@ export const MentionMenuContextItemContent: FunctionComponent<{
 
     const isIgnored = (isFileType || isOpenCtx) && item.isIgnored
     const isLargeFile = isFileType && item.isTooLarge
-    const isMissingCurrentRepo = item.type === 'tree' && item.isWorkspaceRoot && !item.isIndexedRemotely
-    // TODO: These warnings are not visible, even when present.
     let warning: string
     if (isIgnored) {
         warning = IGNORED_FILE_WARNING_LABEL
@@ -116,7 +117,7 @@ export const MentionMenuContextItemContent: FunctionComponent<{
                     </span>
                 )}
                 {badge}
-                {isMissingCurrentRepo && (
+                {isLink && (
                     <ExternalLinkIcon size={16} strokeWidth={1.25} style={{ opacity: '0.5' }} />
                 )}
             </div>

@@ -232,14 +232,11 @@ export function getCorpusContextItemsForEditorState(): Observable<
                 }
                 if (remoteReposForAllWorkspaceFolders.length === 0) {
                     items.push({
-                        type: 'tree',
+                        type: 'open-link',
                         title: 'Current Repository',
-                        // TODO: Consider displaying different badges here depending on whether the problem is not a git repo, missing on the remote, etc.
                         badge: 'Not yet available',
-                        isWorkspaceRoot: true,
-                        isIndexedRemotely: false,
                         content: null,
-                        uri: URI.parse('file:///'),
+                        uri: URI.parse('https://www.youtube.com/watch?v=dQw4w9WgXcQ'),
                         name: '',
                         icon: 'folder',
                     })
@@ -255,7 +252,6 @@ export function getCorpusContextItemsForEditorState(): Observable<
                         name: workspaceFolder.name,
                         description: workspaceFolder.name,
                         isWorkspaceRoot: true,
-                        isIndexedRemotely: false,
                         content: null,
                         source: ContextItemSource.Initial,
                         icon: 'folder',

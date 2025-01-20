@@ -73,7 +73,6 @@ export const Default: StoryObj<typeof MentionMenu> = {
                 {
                     type: 'tree',
                     isWorkspaceRoot: true,
-                    isIndexedRemotely: true,
                     name: 'my-repo',
                     description: 'my-repo',
                     title: 'Current Repository',
@@ -83,14 +82,12 @@ export const Default: StoryObj<typeof MentionMenu> = {
                     icon: 'folder',
                 },
                 {
-                    type: 'tree',
-                    isWorkspaceRoot: true,
-                    isIndexedRemotely: false,
+                    type: 'open-link',
                     icon: 'folder',
                     content: null,
                     title: 'Current Repository',
                     name: '',
-                    uri: URI.parse('file:///'),
+                    uri: URI.parse('https://www.sourcegraph.com/'),
                     badge: 'Not available yet',
                 },
                 {

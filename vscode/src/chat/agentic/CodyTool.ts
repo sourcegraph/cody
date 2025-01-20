@@ -268,7 +268,7 @@ class SearchTool extends CodyTool {
             return []
         }
         // Find the first item that represents a repository
-        const repo = corpusItems.find(i => i.type === 'tree' && i.isIndexedRemotely || i.type === 'repository')
+        const repo = corpusItems.find(i => i.type === 'tree' || i.type === 'repository')
         if (!repo) {
             return []
         }

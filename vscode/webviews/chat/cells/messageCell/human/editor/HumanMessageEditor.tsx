@@ -397,9 +397,8 @@ export const HumanMessageEditor: FunctionComponent<{
                 if (currentChatModel?.tags?.includes(ModelTag.StreamDisabled)) {
                     initialContext = initialContext.filter(item => item.type !== 'tree')
                 }
-                // If the current repo is not indexed remotely, then skip it.
-                // TODO: Make this behavior flip *off* for non-Enterprise cases.
-                const filteredItems = initialContext.filter(item => item.type !== 'tree' || item.isIndexedRemotely)
+                // Remove documentation open-link items; they do not provide context.
+                const filteredItems = initialContext.filter(item => item.type !== 'open-link')
                 void editor.setInitialContextMentions(filteredItems)
             }
         }

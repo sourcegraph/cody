@@ -130,6 +130,7 @@ export type ContextItem =
     | ContextItemTree
     | ContextItemSymbol
     | ContextItemOpenCtx
+    | ContextItemOpenLink  // Not a context item, but opens a link to documentation.
 
 /**
  * Context items to show by default in the chat input, or as suggestions in the chat UI.
@@ -158,11 +159,17 @@ export interface ContextItemTree extends ContextItemCommon {
     /** Only workspace root trees are supported right now. */
     isWorkspaceRoot: true
 
-    /** Whether the tree is indexed remotely. */
-    isIndexedRemotely: boolean
-
     content: null
     name: string
+}
+
+/**
+ * Not a context item, but an item that can be presented with context choices and opens a link to documentation.
+ */
+export interface ContextItemOpenLink extends ContextItemCommon {
+    type: 'open-link'
+    content: null
+    name: ''
 }
 
 /**

@@ -146,10 +146,10 @@ export const MentionsPlugin: FunctionComponent<{ contextWindowSizeInTokens?: num
                         textNode.insertAfter(colonNode)
 
                         colonNode.select()
-                    } else if (selectedItem.type === 'tree' && !selectedItem.isIndexedRemotely) {
-                        // If the current repo is not indexed, delete the mention and open help instead.
+                    } else if (selectedItem.type === 'open-link') {
+                        // "open-link" items are links to documentation; you can't commit them as mentions.
                         nodeToReplace.remove()
-                        openExternalLink('https://www.youtube.com/watch?v=dQw4w9WgXcQ')
+                        openExternalLink(selectedItem.uri.toString())
                     } else {
                         const mentionNode = $createContextItemMentionNode(selectedItem)
                         nodeToReplace.replace(mentionNode)

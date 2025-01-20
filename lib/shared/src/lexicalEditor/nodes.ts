@@ -4,7 +4,7 @@ import { URI } from 'vscode-uri'
 import type {
     ContextItem,
     ContextItemFile,
-    ContextItemOpenCtx,
+    ContextItemOpenCtx, ContextItemOpenLink,
     ContextItemRepository,
     ContextItemSource,
     ContextItemSymbol,
@@ -37,6 +37,7 @@ export type SerializedContextItem = {
     | Omit<ContextItemTree, 'uri' | 'content' | 'source'>
     | Omit<ContextItemSymbol, 'uri' | 'content' | 'source'>
     | Omit<ContextItemOpenCtx, 'uri' | 'content' | 'source'>
+    | Omit<ContextItemOpenLink, 'uri' | 'content' | 'source'>
 )
 
 export type SerializedTemplateInput = {
