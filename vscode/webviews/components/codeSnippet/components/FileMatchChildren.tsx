@@ -51,7 +51,6 @@ export const FileMatchChildren: FC<PropsWithChildren<FileMatchProps>> = props =>
                         className={clsx(
                             'test-file-match-children-item',
                             styles.chunk,
-                            resultStyles.clickable,
                             resultStyles.focusableBlock,
                             resultStyles.horizontalDividerBetween
                         )}
