@@ -623,6 +623,20 @@ query ViewerSettings {
   }
 }
 `
+export const TEMPORARY_SETTINGS_QUERY = `
+query TemporarySettings {
+  temporarySettings {
+    contents
+  }
+}
+`
+export const EDIT_TEMPORARY_SETTINGS_QUERY = `
+mutation EditTemporarySettings($settingsToEdit: String!) {
+  editTemporarySettings(settingsToEdit: $settingsToEdit) {
+    alwaysNil
+  }
+}
+`
 
 export const HIGHLIGHTED_FILE_QUERY = `
    query HighlightedFile(

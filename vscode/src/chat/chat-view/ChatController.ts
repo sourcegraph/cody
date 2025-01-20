@@ -284,8 +284,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     editorState: message.editorState as SerializedPromptEditorState,
                     signal: this.startNewSubmitOrEditOperation(),
                     source: 'chat',
-                    intent: message.intent,
-                    intentScores: message.intentScores,
+                    preDetectedIntent: message.preDetectedIntent,
+                    preDetectedIntentScores: message.preDetectedIntentScores,
                     manuallySelectedIntent: message.manuallySelectedIntent,
                     traceparent: message.traceparent,
                 })
@@ -298,8 +298,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     index: message.index ?? undefined,
                     contextFiles: message.contextItems ?? [],
                     editorState: message.editorState as SerializedPromptEditorState,
-                    intent: message.intent,
-                    intentScores: message.intentScores,
+                    preDetectedIntent: message.preDetectedIntent,
+                    preDetectedIntentScores: message.preDetectedIntentScores,
                     manuallySelectedIntent: message.manuallySelectedIntent,
                 })
                 break
@@ -636,8 +636,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         signal,
         source,
         command,
-        intent: detectedIntent,
-        intentScores: detectedIntentScores,
+        preDetectedIntent,
+        preDetectedIntentScores,
         manuallySelectedIntent,
         traceparent,
     }: {
@@ -648,8 +648,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         signal: AbortSignal
         source?: EventSource
         command?: DefaultChatCommands
-        intent?: ChatMessage['intent'] | undefined | null
-        intentScores?: { intent: string; score: number }[] | undefined | null
+        preDetectedIntent?: ChatMessage['intent'] | undefined | null
+        preDetectedIntentScores?: { intent: string; score: number }[] | undefined | null
         manuallySelectedIntent?: ChatMessage['intent'] | undefined | null
         traceparent?: string | undefined | null
         selectedAgent?: string | undefined | null
@@ -675,8 +675,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 this.chatBuilder.addHumanMessage({
                     text: inputText,
                     editorState,
-                    intent: detectedIntent,
-                    manuallySelectedIntent: manuallySelectedIntent ? detectedIntent : undefined,
+                    intent: manuallySelectedIntent || preDetectedIntent,
+                    manuallySelectedIntent,
                     agent: selectedAgent,
                 })
                 this.postViewTranscript({ speaker: 'assistant' })
@@ -693,8 +693,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                         signal,
                         source,
                         command,
-                        intent: detectedIntent,
-                        intentScores: detectedIntentScores,
+                        preDetectedIntent,
+                        preDetectedIntentScores,
                         manuallySelectedIntent,
                         selectedAgent,
                     },
@@ -771,8 +771,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             signal,
             source,
             command,
-            intent: preDetectedIntent,
-            intentScores: preDetectedIntentScores,
+            preDetectedIntent,
+            preDetectedIntentScores,
             manuallySelectedIntent,
             selectedAgent,
         }: Parameters<typeof this.handleUserMessage>[0],
@@ -1124,8 +1124,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         index,
         contextFiles,
         editorState,
-        intent,
-        intentScores,
+        preDetectedIntent,
+        preDetectedIntentScores,
         manuallySelectedIntent,
     }: {
         requestID: string
@@ -1133,8 +1133,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         index: number | undefined
         contextFiles: ContextItem[]
         editorState: SerializedPromptEditorState | null
-        intent?: ChatMessage['intent'] | undefined | null
-        intentScores?: { intent: string; score: number }[] | undefined | null
+        preDetectedIntent?: ChatMessage['intent'] | undefined | null
+        preDetectedIntentScores?: { intent: string; score: number }[] | undefined | null
         manuallySelectedIntent?: ChatMessage['intent'] | undefined | null
     }): Promise<void> {
         const abortSignal = this.startNewSubmitOrEditOperation()
@@ -1159,8 +1159,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 editorState,
                 signal: abortSignal,
                 source: 'chat',
-                intent,
-                intentScores,
+                preDetectedIntent,
+                preDetectedIntentScores,
                 manuallySelectedIntent,
             })
         } catch {
@@ -1665,6 +1665,18 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                         return promiseFactoryToObservable(async () => {
                             this.chatBuilder.setSelectedAgent(settings.agent?.name)
                             await toolboxManager.updateSettings(settings)
+                        })
+                    },
+                    editTemporarySettings: settingsToEdit => {
+                        return promiseFactoryToObservable(async () => {
+                            const dataOrError = await graphqlClient.editTemporarySettings(settingsToEdit)
+
+                            if (!isError(dataOrError)) {
+                                await ClientConfigSingleton.getInstance().forceUpdate()
+                                return true
+                            }
+
+                            return false
                         })
                     },
                 }

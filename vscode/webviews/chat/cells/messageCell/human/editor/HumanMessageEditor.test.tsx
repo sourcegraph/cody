@@ -160,6 +160,7 @@ function renderWithMocks(props: Partial<ComponentProps<typeof HumanMessageEditor
     const onChange = vi.fn()
     const onSubmit = vi.fn()
     const onStop = vi.fn()
+    const manuallySelectIntent = vi.fn()
 
     const DEFAULT_PROPS: React.ComponentProps<typeof HumanMessageEditor> = {
         userInfo: FIXTURE_USER_ACCOUNT_INFO,
@@ -172,6 +173,7 @@ function renderWithMocks(props: Partial<ComponentProps<typeof HumanMessageEditor
         onSubmit,
         onStop,
         models: MOCK_MODELS,
+        manuallySelectIntent,
     }
 
     const { container } = render(<HumanMessageEditor {...DEFAULT_PROPS} {...props} />, {

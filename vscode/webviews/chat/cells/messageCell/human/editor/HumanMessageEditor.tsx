@@ -32,7 +32,6 @@ import type { UserAccountInfo } from '../../../../../Chat'
 import { type ClientActionListener, useClientActionListener } from '../../../../../client/clientState'
 import { promptModeToIntent } from '../../../../../prompts/PromptsTab'
 import { useTelemetryRecorder } from '../../../../../utils/telemetry'
-import { useExperimentalOneBox } from '../../../../../utils/useExperimentalOneBox'
 import { useFeatureFlag } from '../../../../../utils/useFeatureFlags'
 import styles from './HumanMessageEditor.module.css'
 import type { SubmitButtonState } from './toolbar/SubmitButton'
@@ -74,7 +73,11 @@ export const HumanMessageEditor: FunctionComponent<{
     /** For use in storybooks only. */
     __storybook__focus?: boolean
 
-    initialIntent?: ChatMessage['intent']
+    intent?: ChatMessage['intent']
+    manuallySelectIntent: (
+        intent: ChatMessage['intent'],
+        editorState?: SerializedPromptEditorState
+    ) => void
 }> = ({
     models,
     userInfo,
@@ -93,7 +96,8 @@ export const HumanMessageEditor: FunctionComponent<{
     editorRef: parentEditorRef,
     __storybook__focus,
     onEditorFocusChange: parentOnEditorFocusChange,
-    initialIntent,
+    intent,
+    manuallySelectIntent,
 }) => {
     const telemetryRecorder = useTelemetryRecorder()
 
@@ -121,22 +125,6 @@ export const HumanMessageEditor: FunctionComponent<{
           : 'submittable'
 
     const experimentalPromptEditorEnabled = useFeatureFlag(FeatureFlag.CodyExperimentalPromptEditor)
-    const experimentalOneBoxEnabled = useExperimentalOneBox()
-    const [submitIntent, setSubmitIntent] = useState<ChatMessage['intent'] | undefined>(
-        initialIntent || (experimentalOneBoxEnabled ? undefined : 'chat')
-    )
-
-    useEffect(() => {
-        // reset the input box intent when the editor is cleared
-        if (isEmptyEditorValue) {
-            setSubmitIntent(undefined)
-        }
-    }, [isEmptyEditorValue])
-
-    useEffect(() => {
-        // set the input box intent when the message is changed or a new chat is created
-        setSubmitIntent(initialIntent)
-    }, [initialIntent])
 
     const onSubmitClick = useCallback(
         (intent?: ChatMessage['intent'], forceSubmit?: boolean): void => {
@@ -184,21 +172,21 @@ export const HumanMessageEditor: FunctionComponent<{
 
             // Submit search intent query when CMD + Options + Enter is pressed.
             if ((event.metaKey || event.ctrlKey) && event.altKey) {
-                setSubmitIntent('search')
+                manuallySelectIntent('search')
                 onSubmitClick('search')
                 return
             }
 
             // Submit chat intent query when CMD + Enter is pressed.
             if (event.metaKey || event.ctrlKey) {
-                setSubmitIntent('chat')
+                manuallySelectIntent('chat')
                 onSubmitClick('chat')
                 return
             }
 
-            onSubmitClick(submitIntent)
+            onSubmitClick()
         },
-        [isEmptyEditorValue, onSubmitClick, submitIntent]
+        [isEmptyEditorValue, onSubmitClick, manuallySelectIntent]
     )
 
     const [isEditorFocused, setIsEditorFocused] = useState(false)
@@ -342,16 +330,12 @@ export const HumanMessageEditor: FunctionComponent<{
                         })
                     )
                 }
-                if (setLastHumanInputIntent) {
-                    setSubmitIntent(setLastHumanInputIntent)
-                }
 
-                let promptIntent = undefined
+                let promptIntent: ChatMessage['intent'] = undefined
 
                 if (setPromptAsInput) {
                     // set the intent
                     promptIntent = promptModeToIntent(setPromptAsInput.mode)
-                    setSubmitIntent(promptIntent)
 
                     updates.push(
                         // biome-ignore lint/suspicious/noAsyncPromiseExecutor: <explanation>
@@ -365,6 +349,8 @@ export const HumanMessageEditor: FunctionComponent<{
                                 extensionAPI.hydratePromptMessage(setPromptAsInput.text, initialContext)
                             )
 
+                            manuallySelectIntent(promptIntent, promptEditorState)
+
                             // update editor state
                             requestAnimationFrame(async () => {
                                 if (editorRef.current) {
@@ -377,15 +363,23 @@ export const HumanMessageEditor: FunctionComponent<{
                             })
                         })
                     )
+                } else if (setLastHumanInputIntent) {
+                    manuallySelectIntent(setLastHumanInputIntent)
                 }
 
                 if (submitHumanInput || setPromptAsInput?.autoSubmit) {
                     Promise.all(updates).then(() =>
-                        onSubmitClick(promptIntent || setLastHumanInputIntent || submitIntent, true)
+                        onSubmitClick(promptIntent || setLastHumanInputIntent || intent, true)
                     )
                 }
             },
-            [onSubmitClick, submitIntent, extensionAPI.hydratePromptMessage, extensionAPI.defaultContext]
+            [
+                onSubmitClick,
+                intent,
+                manuallySelectIntent,
+                extensionAPI.hydratePromptMessage,
+                extensionAPI.defaultContext,
+            ]
         )
     )
 
@@ -465,8 +459,7 @@ export const HumanMessageEditor: FunctionComponent<{
                     focusEditor={focusEditor}
                     hidden={!focused && isSent}
                     className={styles.toolbar}
-                    intent={submitIntent}
-                    onSelectIntent={setSubmitIntent}
+                    intent={intent}
                 />
             )}
         </div>

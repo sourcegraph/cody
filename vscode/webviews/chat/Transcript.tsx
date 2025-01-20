@@ -5,6 +5,7 @@ import {
     type Model,
     type NLSSearchDynamicFilter,
     REMOTE_FILE_PROVIDER_URI,
+    type SerializedPromptEditorState,
     type SerializedPromptEditorValue,
     deserializeContextItem,
     inputTextWithMappedContextChipsFromPromptEditorState,
@@ -21,7 +22,6 @@ import { isEqual } from 'lodash'
 import debounce from 'lodash/debounce'
 import {
     type FC,
-    type MutableRefObject,
     memo,
     useCallback,
     useContext,
@@ -53,6 +53,7 @@ import { HumanMessageCell } from './cells/messageCell/human/HumanMessageCell'
 import { type Context, type Span, context, trace } from '@opentelemetry/api'
 import { isCodeSearchContextItem } from '../../src/context/openctx/codeSearch'
 import { TELEMETRY_INTENT } from '../../src/telemetry/onebox'
+import { useIntentDetectionConfig } from '../components/omnibox/intentDetection'
 import { AgenticContextCell } from './cells/agenticCell/AgenticContextCell'
 import ApprovalCell from './cells/agenticCell/ApprovalCell'
 import { DidYouMeanNotice } from './cells/messageCell/assistant/DidYouMean'
@@ -276,7 +277,30 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
         smartApplyEnabled,
         editorRef: parentEditorRef,
     } = props
-    const [intentResults, setIntentResults] = useMutatedValue<IntentResults | undefined | null>()
+    const [intentResults, setIntentResults] = useState<IntentResults | undefined | null>()
+    const [manuallySelectedIntent, setManuallySelectedIntent] = useState<{
+        intent: ChatMessage['intent']
+        query: string
+        resetOnEditorStateClearOnly?: boolean
+    }>({
+        intent: humanMessage.manuallySelectedIntent,
+        query: humanMessage.editorState
+            ? inputTextWithMappedContextChipsFromPromptEditorState(
+                  humanMessage.editorState as SerializedPromptEditorState
+              )
+            : '',
+    })
+
+    useEffect(() => {
+        setManuallySelectedIntent({
+            intent: humanMessage.manuallySelectedIntent,
+            query: humanMessage.editorState
+                ? inputTextWithMappedContextChipsFromPromptEditorState(
+                      humanMessage.editorState as SerializedPromptEditorState
+                  )
+                : '',
+        })
+    }, [humanMessage])
 
     const { activeChatContext, setActiveChatContext } = props
     const humanEditorRef = useRef<PromptEditorRefAPI | null>(null)
@@ -312,13 +336,21 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
             return
         }
 
-        const { intent, intentScores } = getIntentProps(editorValue, intentResults.current)
+        const query = inputTextWithMappedContextChipsFromPromptEditorState(editorValue.editorState)
+
+        const {
+            intent,
+            intentScores,
+        }: { intent: ChatMessage['intent']; intentScores: IntentResults['allScores'] } =
+            query === intentResults?.query
+                ? { intent: intentResults.intent, intentScores: intentResults.allScores }
+                : { intent: undefined, intentScores: [] }
 
         const commonProps = {
             editorValue,
             intent,
             intentScores,
-            manuallySelectedIntent: intentFromSubmit,
+            manuallySelectedIntent: intentFromSubmit || manuallySelectedIntent.intent,
             traceparent,
         }
 
@@ -360,9 +392,11 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
 
     const extensionAPI = useExtensionAPI()
     const experimentalOneBoxEnabled = useExperimentalOneBox()
-    const onChange = useMemo(() => {
-        return debounce(async (editorValue: SerializedPromptEditorValue) => {
-            if (!experimentalOneBoxEnabled) {
+
+    const { doIntentDetection } = useIntentDetectionConfig()
+    const prefetchIntent = useMemo(() => {
+        const handler = async (editorValue: SerializedPromptEditorValue) => {
+            if (!experimentalOneBoxEnabled || !doIntentDetection) {
                 return
             }
 
@@ -370,13 +404,30 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                 editorValue.editorState
             ).trim()
 
+            if (query.length < 2) {
+                setIntentResults(null)
+                return
+            }
+
             // The editor value change can get changed due to multiple reasons but if the query hasn't changed, skip re-computing the intent
-            if (query === intentResults.current?.query) {
+            if (query === intentResults?.query) {
                 return
             }
 
             const subscription = extensionAPI.detectIntent(query).subscribe({
                 next: value => {
+                    const currentEditorValue = humanEditorRef.current?.getSerializedValue()
+                    if (currentEditorValue) {
+                        const currentQuery = inputTextWithMappedContextChipsFromPromptEditorState(
+                            currentEditorValue?.editorState
+                        ).trim()
+
+                        // make sure the query hasn't changed since the prefetch started
+                        if (query !== currentQuery) {
+                            return
+                        }
+                    }
+
                     setIntentResults(value && { ...value, query })
                 },
                 error: error => {
@@ -386,8 +437,48 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
 
             // Clean up subscription if component unmounts
             return () => subscription.unsubscribe()
-        }, 300)
-    }, [experimentalOneBoxEnabled, extensionAPI, setIntentResults, intentResults.current?.query])
+        }
+
+        return debounce(handler, 300)
+    }, [experimentalOneBoxEnabled, extensionAPI, intentResults?.query, doIntentDetection])
+
+    useEffect(() => {
+        if (!intentResults?.intent) {
+            return
+        }
+
+        if (!doIntentDetection) {
+            setIntentResults({ intent: undefined, query: '' })
+        }
+    }, [doIntentDetection, intentResults?.intent])
+
+    useEffect(() => {
+        if (doIntentDetection) {
+            if (humanEditorRef.current) {
+                prefetchIntent(humanEditorRef.current.getSerializedValue())
+            }
+        }
+    }, [doIntentDetection, prefetchIntent])
+
+    const onChange = useMemo(() => {
+        return async (editorValue: SerializedPromptEditorValue) => {
+            const currentQuery = inputTextWithMappedContextChipsFromPromptEditorState(
+                editorValue.editorState
+            )
+
+            // Reset manually selected intent if the editor text is changed.
+            // If the intent is set for a prompts, only reset the intent if the editor text is emptied.
+            if (
+                manuallySelectedIntent.intent &&
+                currentQuery.trim() !== manuallySelectedIntent.query.trim() &&
+                (!manuallySelectedIntent.resetOnEditorStateClearOnly || !editorValue.text.trim())
+            ) {
+                setManuallySelectedIntent({ intent: undefined, query: '' })
+            }
+
+            prefetchIntent(editorValue)
+        }
+    }, [manuallySelectedIntent, prefetchIntent])
 
     const vscodeAPI = getVSCodeAPI()
     const onStop = useCallback(() => {
@@ -609,10 +700,33 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                     contextItems: [],
                     editorState: serializedPromptEditorStateFromText(text),
                 },
-                intent: 'search',
+                preDetectedIntent: 'search',
                 manuallySelectedIntent: 'search',
             }),
         [humanMessage]
+    )
+    const handleManualIntentSelection = useCallback(
+        (intent: ChatMessage['intent'], editorStateFromProps?: SerializedPromptEditorState) => {
+            // When the user manually selects an intent from the SubmitButton dropdown, the query is empty.
+            // When the user selects a prompt the query is passed as an argument based on thr prompt text.
+            // This is because on prompt selection the editor state is updated async.
+
+            const editorState =
+                editorStateFromProps || humanEditorRef.current?.getSerializedValue()?.editorState
+
+            const currentQuery = editorState
+                ? inputTextWithMappedContextChipsFromPromptEditorState(editorState)
+                : ''
+
+            return setManuallySelectedIntent({
+                intent,
+                query: currentQuery,
+                // We set the `resetOnEditorStateClearOnly` flag to true to differentiate between prompt selection and manual intent selection.
+                // This is used to reset the intent only when the editor text is emptied and not on input change.
+                resetOnEditorStateClearOnly: !!editorStateFromProps,
+            })
+        },
+        []
     )
 
     return (
@@ -634,6 +748,8 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                 isEditorInitiallyFocused={isLastInteraction}
                 editorRef={humanEditorRef}
                 className={!isFirstInteraction && isLastInteraction ? 'tw-mt-auto' : ''}
+                intent={manuallySelectedIntent?.intent || intentResults?.intent}
+                manuallySelectIntent={handleManualIntentSelection}
             />
             {experimentalOneBoxEnabled && (
                 <SwitchIntent
@@ -725,17 +841,6 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
     )
 }, isEqual)
 
-function useMutatedValue<T>(value?: T): [MutableRefObject<T | undefined>, setValue: (value: T) => void] {
-    const valueRef = useRef<T | undefined>(value)
-
-    return [
-        valueRef,
-        useCallback(value => {
-            valueRef.current = value
-        }, []),
-    ]
-}
-
 // TODO(sqs): Do this the React-y way.
 export function focusLastHumanMessageEditor(): void {
     const elements = document.querySelectorAll<HTMLElement>('[data-lexical-editor]')
@@ -747,14 +852,14 @@ export function focusLastHumanMessageEditor(): void {
 export function editHumanMessage({
     messageIndexInTranscript,
     editorValue,
-    intent,
-    intentScores,
+    preDetectedIntent,
+    preDetectedIntentScores,
     manuallySelectedIntent,
 }: {
     messageIndexInTranscript: number
     editorValue: SerializedPromptEditorValue
-    intent?: ChatMessage['intent']
-    intentScores?: { intent: string; score: number }[]
+    preDetectedIntent?: ChatMessage['intent']
+    preDetectedIntentScores?: { intent: string; score: number }[]
     manuallySelectedIntent?: ChatMessage['intent']
 }): void {
     getVSCodeAPI().postMessage({
@@ -763,8 +868,8 @@ export function editHumanMessage({
         text: editorValue.text,
         editorState: editorValue.editorState,
         contextItems: editorValue.contextItems.map(deserializeContextItem),
-        intent,
-        intentScores,
+        preDetectedIntent,
+        preDetectedIntentScores,
         manuallySelectedIntent,
     })
     focusLastHumanMessageEditor()
@@ -772,14 +877,14 @@ export function editHumanMessage({
 
 function submitHumanMessage({
     editorValue,
-    intent,
-    intentScores,
+    preDetectedIntent,
+    preDetectedIntentScores,
     manuallySelectedIntent,
     traceparent,
 }: {
     editorValue: SerializedPromptEditorValue
-    intent?: ChatMessage['intent']
-    intentScores?: { intent: string; score: number }[]
+    preDetectedIntent?: ChatMessage['intent']
+    preDetectedIntentScores?: { intent: string; score: number }[]
     manuallySelectedIntent?: ChatMessage['intent']
     traceparent: string
 }): void {
@@ -788,8 +893,8 @@ function submitHumanMessage({
         text: editorValue.text,
         editorState: editorValue.editorState,
         contextItems: editorValue.contextItems.map(deserializeContextItem),
-        intent,
-        intentScores,
+        preDetectedIntent,
+        preDetectedIntentScores,
         manuallySelectedIntent,
         traceparent,
     })
@@ -808,14 +913,4 @@ function reevaluateSearchWithSelectedFilters({
         index: messageIndexInTranscript,
         selectedFilters,
     })
-}
-
-const getIntentProps = (editorValue: SerializedPromptEditorValue, results?: IntentResults | null) => {
-    const query = inputTextWithMappedContextChipsFromPromptEditorState(editorValue.editorState)
-
-    if (query === results?.query) {
-        return { intent: results.intent, intentScores: results.allScores }
-    }
-
-    return {}
 }
