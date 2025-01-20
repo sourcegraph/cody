@@ -42,14 +42,37 @@ export function convertToSpaceIndentation(
         }))
     }
 
-    // The incoming indentation is tab-based, but this will not render correctly in VS COde decorations.
+    // The incoming indentation is tab-based, but this will not render correctly in VS Code decorations.
     // We must convert it to space indentation that matches the editor's tab size
     const tabSize = getEditorTabSize(document.uri, vscode.workspace, vscode.window)
-    const tabAsSpace = UNICODE_SPACE.repeat(tabSize)
-    return addedLines.map(line => ({
-        ...line,
-        lineText: line.lineText.replace(/^(\t+)/, match => tabAsSpace.repeat(match.length)),
-    }))
+    return addedLines.map(line => {
+        // Convert the line text, replacing tabs with spaces
+        const newLineText = line.lineText.replace(/^(\t+)/, match =>
+            UNICODE_SPACE.repeat(match.length * tabSize)
+        )
+
+        // VS Code treats each tab as a single column when producing ranges, we need to reverse
+        // this as we are converting this text to use spaces.
+        // 1. Account for the fact that each tab is being replaced with tabSize spaces
+        // 2. Adjust the position based on how many tabs appear before the range
+        const newRanges = line.ranges.map(([start, end]) => {
+            // Count tabs before the start and end positions
+            const tabsBeforeStart = (line.lineText.slice(0, start).match(/\t/g) || []).length
+            const tabsBeforeEnd = (line.lineText.slice(0, end).match(/\t/g) || []).length
+
+            // Each tab expands to tabSize spaces, so we need to add (tabSize - 1) for each tab
+            const adjustedStart = start + tabsBeforeStart * (tabSize - 1)
+            const adjustedEnd = end + tabsBeforeEnd * (tabSize - 1)
+
+            return [adjustedStart, adjustedEnd] as [number, number]
+        })
+
+        return {
+            ...line,
+            lineText: newLineText,
+            ranges: newRanges,
+        }
+    })
 }
 
 function padTrailingWhitespaceBlock(addedLines: AddedLinesDecorationInfo[]): AddedLinesDecorationInfo[] {
