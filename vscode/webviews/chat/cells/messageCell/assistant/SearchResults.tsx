@@ -164,7 +164,7 @@ export const SearchResults = ({
                             )}
                         >
                             <div
-                                className="tw-absolute tw-top-4 tw-right-4"
+                                className="tw-absolute tw-top-5 tw-right-4 tw-text-muted-foreground hover:tw-text-foreground"
                                 onClick={onFilterSidebarClose}
                                 onKeyDown={onFilterSidebarClose}
                                 role="button"
