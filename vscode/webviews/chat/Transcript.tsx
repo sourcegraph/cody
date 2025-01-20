@@ -338,7 +338,10 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
 
         const query = inputTextWithMappedContextChipsFromPromptEditorState(editorValue.editorState)
 
-        const { intent, intentScores } =
+        const {
+            intent,
+            intentScores,
+        }: { intent: ChatMessage['intent']; intentScores: IntentResults['allScores'] } =
             query === intentResults?.query
                 ? { intent: intentResults.intent, intentScores: intentResults.allScores }
                 : { intent: undefined, intentScores: [] }

@@ -17,6 +17,7 @@ import {
     Play,
     Search,
     Sparkles,
+    Square,
 } from 'lucide-react'
 import type { FC, FunctionComponent, KeyboardEventHandler, PropsWithChildren } from 'react'
 import { useCallback, useMemo, useRef, useState } from 'react'
@@ -168,7 +169,8 @@ export const SubmitButton: FC<{
         [agentIDE, detectedIntent, intentDetectionDisabled, intentDetectionToggleOn, isDotComUser]
     )
 
-    const disabled = state === 'waitingResponseComplete' || state === 'emptyEditorValue'
+    const inProgress = state === 'waitingResponseComplete'
+    const disabled = state === 'emptyEditorValue'
 
     const detectedIntentOption = intentOptions.find(option => option.intent === detectedIntent)
 
@@ -181,7 +183,7 @@ export const SubmitButton: FC<{
         updateIntentDetectionToggle(!intentDetectionToggleOn)
     }, [intentDetectionToggleOn, updateIntentDetectionToggle])
 
-    if (!experimentalOneBoxEnabled) {
+    if (!experimentalOneBoxEnabled || inProgress) {
         return (
             <div className="tw-flex">
                 <button
@@ -195,9 +197,13 @@ export const SubmitButton: FC<{
 
                         'disabled:tw-bg-button-secondary-background disabled:tw-text-muted-foreground'
                     )}
-                    title="Send"
+                    title={inProgress ? 'Stop' : 'Send'}
                 >
-                    <Play className="tw-size-6 tw-fill-current" />
+                    {inProgress ? (
+                        <Square className="tw-size-6 tw-fill-current" />
+                    ) : (
+                        <Play className="tw-size-6 tw-fill-current" />
+                    )}
                 </button>
             </div>
         )
