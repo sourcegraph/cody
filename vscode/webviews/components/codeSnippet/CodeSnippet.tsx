@@ -213,7 +213,7 @@ export const FileMatchSearchResult: FC<PropsWithChildren<FileMatchSearchResultPr
             repoName={result.repository.name}
             repoURL={repoAtRevisionURL}
             filePath={result.file.path}
-            onFilePathClick={openRemoteFile}
+            onFilePathClick={() => openRemoteFile(expandedGroups.at(0)?.startLine)}
             pathMatchRanges={result.pathMatches ?? []}
             fileURL={fileURL}
             repoDisplayName={
