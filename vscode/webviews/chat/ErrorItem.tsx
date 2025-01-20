@@ -121,20 +121,20 @@ const RateLimitErrorItem: React.FunctionComponent<{
                     )}
                 </div>
                 {error.retryMessage && <p className={styles.retryMessage}>{error.retryMessage}</p>}
-            </div>
-            {canUpgrade && (
-                <div className={styles.bannerContainer}>
-                    <div
-                        className={styles.banner}
-                        role="button"
-                        tabIndex={-1}
-                        onClick={() => onButtonClick('upgrade', 'upgrade')}
-                        onKeyDown={() => onButtonClick('upgrade', 'upgrade')}
-                    >
-                        Go Pro
+                {canUpgrade && (
+                    <div className={styles.bannerContainer}>
+                        <div
+                            className={styles.banner}
+                            role="button"
+                            tabIndex={-1}
+                            onClick={() => onButtonClick('upgrade', 'upgrade')}
+                            onKeyDown={() => onButtonClick('upgrade', 'upgrade')}
+                        >
+                            Go Pro
+                        </div>
                     </div>
-                </div>
-            )}
+                )}
+            </div>
         </div>
     )
 }
