@@ -159,12 +159,12 @@ export const SearchResults = ({
                         !!message.search.selectedFilters?.length) && (
                         <div
                             className={classNames(
-                                'tw-min-w-[250px] tw-w-[250px] tw-relative tw-mt-2 tw-p-4 tw-rounded-md',
+                                'tw-min-w-[250px] tw-w-[250px] tw-relative tw-mt-2 tw-p-4 tw-border-r tw-border-muted tw-shadow',
                                 styles.filtersSidebar
                             )}
                         >
                             <div
-                                className="tw-absolute tw-top-5 tw-right-4 tw-text-muted-foreground hover:tw-text-foreground"
+                                className="tw-absolute tw-top-5 tw-right-8 tw-text-muted-foreground hover:tw-text-foreground"
                                 onClick={onFilterSidebarClose}
                                 onKeyDown={onFilterSidebarClose}
                                 role="button"
