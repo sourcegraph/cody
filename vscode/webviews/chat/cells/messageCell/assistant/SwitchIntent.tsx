@@ -14,9 +14,9 @@ export const SwitchIntent = ({ intent, manuallySelected, disabled, onSwitch }: S
     }
 
     return (
-        <div className="tw-flex tw-justify-between tw-gap-4 tw-items-center">
-            <div className="tw-flex tw-gap-2 tw-text-muted-foreground tw-items-center">
-                <Brain className="tw-size-8 tw-flex-shrink-0" />
+        <div className="tw-flex tw-justify-between tw-gap-4 tw-items-center tw-py-2 tw-px-4 md:tw-py-4 md:tw-px-6 tw-text-sm tw-font-medium tw-bg-background tw-border-b tw-border-muted">
+            <div className="tw-flex tw-gap-4 tw-p-1 tw-text-muted-foreground tw-items-start tw-leading-tight">
+                <Brain className="tw-size-8 tw-flex-shrink-0 tw-my-1" />
                 {manuallySelected ? 'User' : 'Query review'} selected a{' '}
                 {intent === 'search' ? 'code search' : 'chat'} response
             </div>
@@ -24,7 +24,7 @@ export const SwitchIntent = ({ intent, manuallySelected, disabled, onSwitch }: S
                 <Button
                     size="sm"
                     variant="outline"
-                    className="tw-text-prmary tw-flex tw-gap-2 tw-items-center tw-whitespace-nowrap"
+                    className="tw-text-primary tw-flex tw-gap-2 tw-items-center tw-whitespace-nowrap"
                     onClick={onSwitch}
                     disabled={disabled}
                 >
