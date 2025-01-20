@@ -18,6 +18,7 @@ import type {
     FetchHighlightFileParameters,
     Prompt,
     PromptTag,
+    TemporarySettings,
 } from '../../sourcegraph-api/graphql/client'
 import { type createMessageAPIForWebview, proxyExtensionAPI } from './rpc'
 
@@ -127,7 +128,7 @@ export interface WebviewToExtensionAPI {
     /**
      * Edit the current user's temporary settings.
      */
-    editTemporarySettings(settingsToEdit: string): Observable<boolean>
+    editTemporarySettings(settingsToEdit: Partial<TemporarySettings>): Observable<boolean>
 }
 
 export function createExtensionAPI(

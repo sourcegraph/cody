@@ -7,7 +7,6 @@ import {
     type SerializedPromptEditorState,
     type SerializedPromptEditorValue,
     firstValueFrom,
-    inputTextWithMappedContextChipsFromPromptEditorState,
     skipPendingOperation,
     textContentFromSerializedLexicalNode,
 } from '@sourcegraph/cody-shared'
@@ -74,8 +73,11 @@ export const HumanMessageEditor: FunctionComponent<{
     /** For use in storybooks only. */
     __storybook__focus?: boolean
 
-    detectedIntent?: ChatMessage['intent']
-    manuallySelectIntent: (intent: ChatMessage['intent'], query?: string) => void
+    intent?: ChatMessage['intent']
+    manuallySelectIntent: (
+        intent: ChatMessage['intent'],
+        editorState?: SerializedPromptEditorState
+    ) => void
 }> = ({
     models,
     userInfo,
@@ -94,7 +96,7 @@ export const HumanMessageEditor: FunctionComponent<{
     editorRef: parentEditorRef,
     __storybook__focus,
     onEditorFocusChange: parentOnEditorFocusChange,
-    detectedIntent,
+    intent,
     manuallySelectIntent,
 }) => {
     const telemetryRecorder = useTelemetryRecorder()
@@ -347,10 +349,7 @@ export const HumanMessageEditor: FunctionComponent<{
                                 extensionAPI.hydratePromptMessage(setPromptAsInput.text, initialContext)
                             )
 
-                            manuallySelectIntent(
-                                promptIntent,
-                                inputTextWithMappedContextChipsFromPromptEditorState(promptEditorState)
-                            )
+                            manuallySelectIntent(promptIntent, promptEditorState)
 
                             // update editor state
                             requestAnimationFrame(async () => {
@@ -370,13 +369,13 @@ export const HumanMessageEditor: FunctionComponent<{
 
                 if (submitHumanInput || setPromptAsInput?.autoSubmit) {
                     Promise.all(updates).then(() =>
-                        onSubmitClick(promptIntent || setLastHumanInputIntent || detectedIntent, true)
+                        onSubmitClick(promptIntent || setLastHumanInputIntent || intent, true)
                     )
                 }
             },
             [
                 onSubmitClick,
-                detectedIntent,
+                intent,
                 manuallySelectIntent,
                 extensionAPI.hydratePromptMessage,
                 extensionAPI.defaultContext,
@@ -460,7 +459,7 @@ export const HumanMessageEditor: FunctionComponent<{
                     focusEditor={focusEditor}
                     hidden={!focused && isSent}
                     className={styles.toolbar}
-                    intent={detectedIntent}
+                    intent={intent}
                 />
             )}
         </div>

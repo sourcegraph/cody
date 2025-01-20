@@ -629,7 +629,11 @@ interface TemporarySettingsResponse {
     temporarySettings: { contents: string }
 }
 
-interface EditTemporarySettingsResponse {
+export interface TemporarySettings {
+    'omnibox.intentDetectionToggleOn': boolean
+}
+
+export interface EditTemporarySettingsResponse {
     editTemporarySettings: { alwaysNil: string }
 }
 
@@ -1557,7 +1561,7 @@ export class SourcegraphGraphQLAPIClient {
         return extractDataOrError(response, data => JSON.parse(data.viewerSettings.final))
     }
 
-    public async temporarySettings(signal?: AbortSignal): Promise<Record<string, any> | Error> {
+    public async temporarySettings(signal?: AbortSignal): Promise<Partial<TemporarySettings> | Error> {
         const response = await this.fetchSourcegraphAPI<APIResponse<TemporarySettingsResponse>>(
             TEMPORARY_SETTINGS_QUERY,
             {},
@@ -1567,12 +1571,12 @@ export class SourcegraphGraphQLAPIClient {
     }
 
     public async editTemporarySettings(
-        settingsToEdit: string,
+        settingsToEdit: Partial<TemporarySettings>,
         signal?: AbortSignal
     ): Promise<{ alwaysNil: string } | Error> {
         const response = await this.fetchSourcegraphAPI<APIResponse<EditTemporarySettingsResponse>>(
             EDIT_TEMPORARY_SETTINGS_QUERY,
-            { settingsToEdit },
+            { settingsToEdit: JSON.stringify(settingsToEdit) },
             signal
         )
 

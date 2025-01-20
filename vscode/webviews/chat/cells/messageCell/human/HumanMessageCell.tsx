@@ -46,8 +46,11 @@ interface HumanMessageCellProps {
     className?: string
     editorRef?: React.RefObject<PromptEditorRefAPI | null>
 
-    detectedIntent: ChatMessage['intent']
-    manuallySelectIntent: (intent: ChatMessage['intent'], query?: string) => void
+    intent: ChatMessage['intent']
+    manuallySelectIntent: (
+        intent: ChatMessage['intent'],
+        editorState?: SerializedPromptEditorState
+    ) => void
 
     /** For use in storybooks only. */
     __storybook__focus?: boolean
@@ -89,7 +92,7 @@ const HumanMessageCellContent = memo<HumanMessageCellContent>(props => {
         editorRef,
         __storybook__focus,
         onEditorFocusChange,
-        detectedIntent,
+        intent,
         manuallySelectIntent,
     } = props
 
@@ -139,7 +142,7 @@ const HumanMessageCellContent = memo<HumanMessageCellContent>(props => {
                     editorRef={editorRef}
                     __storybook__focus={__storybook__focus}
                     onEditorFocusChange={onEditorFocusChange}
-                    detectedIntent={detectedIntent}
+                    intent={intent}
                     manuallySelectIntent={manuallySelectIntent}
                 />
             }

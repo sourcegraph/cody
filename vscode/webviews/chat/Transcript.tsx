@@ -336,7 +336,12 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
             return
         }
 
-        const { intent, intentScores } = getIntentProps(editorValue, intentResults || null)
+        const query = inputTextWithMappedContextChipsFromPromptEditorState(editorValue.editorState)
+
+        const { intent, intentScores } =
+            query === intentResults?.query
+                ? { intent: intentResults.intent, intentScores: intentResults.allScores }
+                : {}
 
         const commonProps = {
             editorValue,
@@ -385,10 +390,10 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
     const extensionAPI = useExtensionAPI()
     const experimentalOneBoxEnabled = useExperimentalOneBox()
 
-    const { intentDetectionDisabled, intentDetectionToggleOn } = useIntentDetectionConfig()
+    const { doIntentDetection } = useIntentDetectionConfig()
     const prefetchIntent = useMemo(() => {
         const handler = async (editorValue: SerializedPromptEditorValue) => {
-            if (!experimentalOneBoxEnabled || intentDetectionDisabled || !intentDetectionToggleOn) {
+            if (!experimentalOneBoxEnabled || !doIntentDetection) {
                 return
             }
 
@@ -432,31 +437,25 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
         }
 
         return debounce(handler, 300)
-    }, [
-        experimentalOneBoxEnabled,
-        extensionAPI,
-        intentResults?.query,
-        intentDetectionDisabled,
-        intentDetectionToggleOn,
-    ])
+    }, [experimentalOneBoxEnabled, extensionAPI, intentResults?.query, doIntentDetection])
 
     useEffect(() => {
         if (!intentResults?.intent) {
             return
         }
 
-        if (intentDetectionDisabled || !intentDetectionToggleOn) {
+        if (!doIntentDetection) {
             setIntentResults({ intent: undefined, query: '' })
         }
-    }, [intentDetectionDisabled, intentDetectionToggleOn, intentResults?.intent])
+    }, [doIntentDetection, intentResults?.intent])
 
     useEffect(() => {
-        if (!intentDetectionDisabled && intentDetectionToggleOn) {
+        if (doIntentDetection) {
             if (humanEditorRef.current) {
                 prefetchIntent(humanEditorRef.current.getSerializedValue())
             }
         }
-    }, [intentDetectionDisabled, intentDetectionToggleOn, prefetchIntent])
+    }, [doIntentDetection, prefetchIntent])
 
     const onChange = useMemo(() => {
         return async (editorValue: SerializedPromptEditorValue) => {
@@ -703,25 +702,29 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
             }),
         [humanMessage]
     )
-    const manuallySelectIntent = useCallback((intent: ChatMessage['intent'], query?: string) => {
-        if (!query) {
-            const editorValue = humanEditorRef.current?.getSerializedValue()
-            const currentQuery = editorValue
-                ? inputTextWithMappedContextChipsFromPromptEditorState(editorValue.editorState)
+    const handleManualIntentSelection = useCallback(
+        (intent: ChatMessage['intent'], editorStateFromProps?: SerializedPromptEditorState) => {
+            // When the user manually selects an intent from the SubmitButton dropdown, the query is empty.
+            // When the user selects a prompt the query is passed as an argument based on thr prompt text.
+            // This is because on prompt selection the editor state is updated async.
+
+            const editorState =
+                editorStateFromProps || humanEditorRef.current?.getSerializedValue()?.editorState
+
+            const currentQuery = editorState
+                ? inputTextWithMappedContextChipsFromPromptEditorState(editorState)
                 : ''
 
             return setManuallySelectedIntent({
                 intent,
                 query: currentQuery,
+                // We set the prompt flag to true to differentiate between prompt selection and manual intent selection.
+                // This is used to reset the intent on prompt selection only when the editor text is emptied and not on input change.
+                prompt: !!editorStateFromProps,
             })
-        }
-
-        setManuallySelectedIntent({
-            intent,
-            query,
-            prompt: true,
-        })
-    }, [])
+        },
+        []
+    )
 
     return (
         <>
@@ -742,8 +745,8 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                 isEditorInitiallyFocused={isLastInteraction}
                 editorRef={humanEditorRef}
                 className={!isFirstInteraction && isLastInteraction ? 'tw-mt-auto' : ''}
-                detectedIntent={manuallySelectedIntent?.intent || intentResults?.intent}
-                manuallySelectIntent={manuallySelectIntent}
+                intent={manuallySelectedIntent?.intent || intentResults?.intent}
+                manuallySelectIntent={handleManualIntentSelection}
             />
             {experimentalOneBoxEnabled && (
                 <SwitchIntent
@@ -907,17 +910,4 @@ function reevaluateSearchWithSelectedFilters({
         index: messageIndexInTranscript,
         selectedFilters,
     })
-}
-
-const getIntentProps = (
-    editorValue: SerializedPromptEditorValue,
-    intentResults: IntentResults | null
-) => {
-    const query = inputTextWithMappedContextChipsFromPromptEditorState(editorValue.editorState)
-
-    if (query === intentResults?.query) {
-        return { intent: intentResults.intent, intentScores: intentResults.allScores }
-    }
-
-    return {}
 }

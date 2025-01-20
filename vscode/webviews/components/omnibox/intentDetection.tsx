@@ -6,14 +6,14 @@ import { useClientConfig } from '../../utils/useClientConfig'
 export interface IntentDetectionConfig {
     intentDetectionDisabled: boolean
     intentDetectionToggleOn: boolean
+    doIntentDetection: boolean
     updateIntentDetectionToggle: (enabled: boolean) => Promise<boolean>
 }
-
-export const INTENT_DETECTION_TOGGLE_ON_KEY = 'omnibox.intentDetectionToggleOn'
 
 const intentDetectionConfigConext = createContext<IntentDetectionConfig>({
     intentDetectionDisabled: false,
     intentDetectionToggleOn: true,
+    doIntentDetection: true,
     updateIntentDetectionToggle: async () => false,
 })
 
@@ -22,28 +22,25 @@ export const IntentDetectionConfigProvider = ({ children }: { children: React.Re
     const extensionAPI = useExtensionAPI()
 
     const [intentDetectionToggleOn, setIntentDetectionToggleOn] = useState<boolean>(
-        config?.temporarySettings?.[INTENT_DETECTION_TOGGLE_ON_KEY] ??
-            !config?.intentDetectionDefaultToggleOff
+        config?.temporarySettings?.['omnibox.intentDetectionToggleOn'] ??
+            config?.intentDetection !== 'opt-in'
     )
 
     useEffect(() => {
         setIntentDetectionToggleOn(
-            config?.temporarySettings?.[INTENT_DETECTION_TOGGLE_ON_KEY] ??
-                !config?.intentDetectionDefaultToggleOff
+            config?.temporarySettings?.['omnibox.intentDetectionToggleOn'] ??
+                config?.intentDetection !== 'opt-in'
         )
-    }, [config?.temporarySettings, config?.intentDetectionDefaultToggleOff])
+    }, [config?.temporarySettings, config?.intentDetection])
 
     const updateIntentDetectionToggle = useCallback(
         (enabled: boolean) => {
             setIntentDetectionToggleOn(enabled)
 
             return firstValueFrom(
-                extensionAPI.editTemporarySettings(
-                    JSON.stringify({ [INTENT_DETECTION_TOGGLE_ON_KEY]: enabled })
-                )
+                extensionAPI.editTemporarySettings({ 'omnibox.intentDetectionToggleOn': enabled })
             ).then(success => {
                 if (!success) {
-                    console.log('undoing toggle')
                     setIntentDetectionToggleOn(!enabled)
                 }
 
@@ -54,11 +51,13 @@ export const IntentDetectionConfigProvider = ({ children }: { children: React.Re
     )
 
     const intentDetection = useMemo(
-        () => ({
-            intentDetectionDisabled: config?.intentDetectionDisabled ?? false,
-            intentDetectionToggleOn,
-            updateIntentDetectionToggle,
-        }),
+        () =>
+            ({
+                intentDetectionDisabled: config?.intentDetection === 'disabled',
+                intentDetectionToggleOn,
+                doIntentDetection: config?.intentDetection !== 'disabled' && intentDetectionToggleOn,
+                updateIntentDetectionToggle,
+            }) satisfies IntentDetectionConfig,
         [config, intentDetectionToggleOn, updateIntentDetectionToggle]
     )
 

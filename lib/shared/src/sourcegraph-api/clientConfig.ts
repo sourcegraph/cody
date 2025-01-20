@@ -56,8 +56,9 @@ export interface CodyClientConfig {
     // Whether the user should sign in to an enterprise instance.
     userShouldUseEnterprise: boolean
 
-    intentDetectionDisabled: boolean
-    intentDetectionDefaultToggleOff: boolean
+    // Whether the user should be able to use the intent detection feature.
+    // `opt-in` means the user must explicitly enable it.
+    intentDetection: 'disabled' | 'enabled' | 'opt-in'
 
     // List of global instance-level cody notice/banners (set only by admins in global
     // instance configuration file
@@ -74,8 +75,7 @@ export const dummyClientConfigForTest: CodyClientConfig = {
     smartContextWindowEnabled: true,
     modelsAPIEnabled: true,
     userShouldUseEnterprise: false,
-    intentDetectionDisabled: false,
-    intentDetectionDefaultToggleOff: false,
+    intentDetection: 'enabled',
     temporarySettings: {},
     notices: [],
 }
@@ -103,6 +103,13 @@ export class ClientConfigSingleton {
 
     private readonly forceUpdateSubject = new Subject<any>()
 
+    /**
+     * Forces an immediate update of the client configuration by triggering a new fetch.
+     * This method is called when temporary settings are edited from the client to ensure
+     * the configuration is immediately synchronized with the latest changes.
+     *
+     * @returns A promise that resolves to the updated CodyClientConfig or undefined
+     */
     public async forceUpdate(): Promise<CodyClientConfig | undefined> {
         this.forceUpdateSubject.next(true)
         return firstValueFrom(this.changes.pipe(skipPendingOperation()))
@@ -212,18 +219,18 @@ export class ClientConfigSingleton {
                 ]).then(([viewerSettings, temporarySettings]) => {
                     const config: CodyClientConfig = {
                         ...clientConfig,
-                        intentDetectionDisabled: false,
-                        intentDetectionDefaultToggleOff: false,
+                        intentDetection: 'enabled',
                         notices: [],
                         temporarySettings: {},
                     }
 
                     // Don't fail the whole chat because of viewer setting (used only to show banners)
                     if (!isError(viewerSettings)) {
-                        config.intentDetectionDisabled =
-                            !!viewerSettings['omnibox.intentDetectionDisabled']
-                        config.intentDetectionDefaultToggleOff =
-                            !!viewerSettings['omnibox.intentDetectionDefaultToggleOff']
+                        config.intentDetection = ['disabled', 'enabled', 'opt-in'].includes(
+                            viewerSettings['omnibox.intentDetection']
+                        )
+                            ? viewerSettings['omnibox.intentDetection']
+                            : 'enabled'
                         // Make sure that notice object will have all important field (notices come from
                         // instance global JSONC configuration so they can have any arbitrary field values.
                         config.notices = Array.from<Partial<CodyNotice>, CodyNotice>(
@@ -267,8 +274,7 @@ export class ClientConfigSingleton {
             smartContextWindowEnabled: smartContextWindow,
 
             // Things that did not exist before logically default to disabled.
-            intentDetectionDisabled: true,
-            intentDetectionDefaultToggleOff: true,
+            intentDetection: 'disabled',
             modelsAPIEnabled: false,
             userShouldUseEnterprise: false,
             notices: [],
