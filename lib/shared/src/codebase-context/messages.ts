@@ -130,7 +130,7 @@ export type ContextItem =
     | ContextItemTree
     | ContextItemSymbol
     | ContextItemOpenCtx
-    | ContextItemOpenLink  // Not a context item, but opens a link to documentation.
+    | ContextItemOpenLink // Not a context item, but opens a link to documentation.
 
 /**
  * Context items to show by default in the chat input, or as suggestions in the chat UI.

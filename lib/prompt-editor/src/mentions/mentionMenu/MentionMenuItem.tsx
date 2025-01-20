@@ -117,9 +117,7 @@ export const MentionMenuContextItemContent: FunctionComponent<{
                     </span>
                 )}
                 {badge}
-                {isLink && (
-                    <ExternalLinkIcon size={16} strokeWidth={1.25} style={{ opacity: '0.5' }} />
-                )}
+                {isLink && <ExternalLinkIcon size={16} strokeWidth={1.25} style={{ opacity: '0.5' }} />}
             </div>
             {warning && <span className={styles.warning}>{warning}</span>}
         </>

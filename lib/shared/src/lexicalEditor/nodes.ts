@@ -4,7 +4,8 @@ import { URI } from 'vscode-uri'
 import type {
     ContextItem,
     ContextItemFile,
-    ContextItemOpenCtx, ContextItemOpenLink,
+    ContextItemOpenCtx,
+    ContextItemOpenLink,
     ContextItemRepository,
     ContextItemSource,
     ContextItemSymbol,

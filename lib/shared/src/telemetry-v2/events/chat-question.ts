@@ -2,7 +2,7 @@ import type { Span } from '@opentelemetry/api'
 import { cloneDeep, isArray } from 'lodash'
 import type { AuthStatus } from '../../auth/types'
 import type { ChatMessage, EventSource } from '../../chat/transcript/messages'
-import {type ContextItem, ContextItemSource} from '../../codebase-context/messages'
+import { type ContextItem, ContextItemSource } from '../../codebase-context/messages'
 import type { DefaultChatCommands } from '../../commands/types'
 import {
     GIT_OPENCTX_PROVIDER_URI,

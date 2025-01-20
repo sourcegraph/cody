@@ -15,7 +15,9 @@ const meta: Meta<typeof BaseEditor> = {
         placeholder: 'Placeholder text',
         onChange: () => {},
         className: styles.editor,
-        openExternalLink: (uri: string) => {alert(`Open link: ${uri}`)},
+        openExternalLink: (uri: string) => {
+            alert(`Open link: ${uri}`)
+        },
     } as React.ComponentProps<typeof BaseEditor>,
 
     decorators: [VSCodeStandaloneComponent],

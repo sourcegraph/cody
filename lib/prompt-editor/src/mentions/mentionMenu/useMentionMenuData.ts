@@ -100,7 +100,7 @@ export function useMentionMenuData(
     const filteredInitialContextItems = isInProvider
         ? []
         : initialContext.filter(item =>
-            queryLower
+              queryLower
                   ? item.title?.toLowerCase().includes(queryLower) ||
                     item.uri.toString().toLowerCase().includes(queryLower) ||
                     item.description?.toString().toLowerCase().includes(queryLower)
