@@ -5,15 +5,7 @@ import {
     isDefined,
 } from '@sourcegraph/cody-shared'
 import classNames from 'classnames'
-import {
-    ArrowDown,
-    ExternalLink,
-    FilterIcon,
-    FilterX,
-    OctagonX,
-    PanelLeftClose,
-    Search,
-} from 'lucide-react'
+import { ArrowDown, FilterIcon, FilterX, OctagonX, PanelLeftClose, Search } from 'lucide-react'
 import { useCallback, useContext, useLayoutEffect, useMemo, useReducer, useState } from 'react'
 import {
     createContextItem,
@@ -24,7 +16,6 @@ import { NLSResultSnippet } from '../../../../components/NLSResultSnippet'
 import { Button } from '../../../../components/shadcn/ui/button'
 import { Label } from '../../../../components/shadcn/ui/label'
 import { useTelemetryRecorder } from '../../../../utils/telemetry'
-import { useConfig } from '../../../../utils/useConfig'
 import { useExperimentalOneBoxDebug } from '../../../../utils/useExperimentalOneBox'
 import { FeedbackButtons } from '../../../components/FeedbackButtons'
 import { InfoMessage } from '../../../components/InfoMessage'
@@ -77,10 +68,6 @@ export const SearchResults = ({
 
     const resultsToShow =
         initialResults?.length === totalResults?.length || showAll ? totalResults : initialResults
-
-    const {
-        config: { serverEndpoint },
-    } = useConfig()
 
     // Select all results by default when the results are rendered the first time
     useLayoutEffect(() => {
@@ -362,65 +349,43 @@ export const SearchResults = ({
                                 <p>No search results found</p>
                             </div>
                         )}
-                        <div className="tw-flex tw-justify-between tw-gap-4 tw-my-4">
-                            <div className="tw-flex tw-items-center tw-gap-4">
-                                {!showAll &&
-                                    resultsToShow &&
-                                    totalResults &&
-                                    resultsToShow !== totalResults && (
-                                        <Button
-                                            onClick={() => {
-                                                telemetryRecorder.recordEvent(
-                                                    'onebox.moreResults',
-                                                    'clicked',
-                                                    {
-                                                        metadata: {
-                                                            totalResults: totalResults.length,
-                                                            resultsAdded:
-                                                                totalResults.length -
-                                                                resultsToShow.length,
-                                                        },
-                                                        billingMetadata: {
-                                                            product: 'cody',
-                                                            category: 'billable',
-                                                        },
-                                                    }
-                                                )
-                                                setShowAll(true)
-                                                updateSelectedFollowUpResults({
-                                                    type: 'add',
-                                                    results: totalResults.slice(resultsToShow.length),
-                                                })
-                                            }}
-                                            variant="outline"
-                                        >
-                                            <ArrowDown className="tw-size-8" />
-                                            More results
-                                        </Button>
-                                    )}
-                                {showFeedbackButtons && feedbackButtonsOnSubmit && (
-                                    <FeedbackButtons feedbackButtonsOnSubmit={feedbackButtonsOnSubmit} />
+                        <div className="tw-flex tw-items-center tw-gap-4">
+                            {!showAll &&
+                                resultsToShow &&
+                                totalResults &&
+                                resultsToShow !== totalResults && (
+                                    <Button
+                                        onClick={() => {
+                                            telemetryRecorder.recordEvent(
+                                                'onebox.moreResults',
+                                                'clicked',
+                                                {
+                                                    metadata: {
+                                                        totalResults: totalResults.length,
+                                                        resultsAdded:
+                                                            totalResults.length - resultsToShow.length,
+                                                    },
+                                                    billingMetadata: {
+                                                        product: 'cody',
+                                                        category: 'billable',
+                                                    },
+                                                }
+                                            )
+                                            setShowAll(true)
+                                            updateSelectedFollowUpResults({
+                                                type: 'add',
+                                                results: totalResults.slice(resultsToShow.length),
+                                            })
+                                        }}
+                                        variant="outline"
+                                    >
+                                        <ArrowDown className="tw-size-8" />
+                                        More results
+                                    </Button>
                                 )}
-                            </div>
-                            <a
-                                href={`${serverEndpoint}/search`}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="tw-text-foreground"
-                                onClick={() => {
-                                    telemetryRecorder.recordEvent('onebox.codeSearch', 'clicked', {
-                                        metadata: {
-                                            totalResults: totalResults.length,
-                                            resultsAdded: totalResults.length - resultsToShow.length,
-                                        },
-                                        billingMetadata: { product: 'cody', category: 'core' },
-                                    })
-                                }}
-                            >
-                                <Button variant="outline">
-                                    Code search <ExternalLink className="tw-size-8" />
-                                </Button>
-                            </a>
+                            {showFeedbackButtons && feedbackButtonsOnSubmit && (
+                                <FeedbackButtons feedbackButtonsOnSubmit={feedbackButtonsOnSubmit} />
+                            )}
                         </div>
                     </div>
                 )}
