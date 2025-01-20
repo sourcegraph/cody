@@ -132,6 +132,9 @@ export const FileMatchSearchResult: FC<PropsWithChildren<FileMatchSearchResultPr
     } = useConfig()
     const openRemoteFile = useCallback(
         (line?: number) => {
+            // Call the "onSelect" callback when opening a remote file to log
+            // an event for interacting with the search result.
+            onSelect()
             const urlWithLineNumber = line ? `${fileURL}?L${line}` : fileURL
             if (agentIDE !== CodyIDE.VSCode) {
                 getVSCodeAPI().postMessage({
@@ -148,7 +151,7 @@ export const FileMatchSearchResult: FC<PropsWithChildren<FileMatchSearchResultPr
                 uri,
             })
         },
-        [fileURL, agentIDE]
+        [fileURL, agentIDE, onSelect]
     )
 
     const handleVisibility = useCallback(
@@ -249,7 +252,6 @@ export const FileMatchSearchResult: FC<PropsWithChildren<FileMatchSearchResultPr
         <ResultContainer
             ref={rootRef}
             title={title}
-            onResultClicked={onSelect}
             className={className}
             collapsed={hidden}
             actions={actions}
