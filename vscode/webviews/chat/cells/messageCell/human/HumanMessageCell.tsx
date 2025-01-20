@@ -172,6 +172,8 @@ const OpenInNewEditorAction = () => {
                         })
                     }}
                     className="tw-flex tw-gap-3 tw-items-center tw-leading-none tw-transition"
+                    aria-label="Open in Editor"
+                    title="Open in Editor"
                 >
                     <ColumnsIcon size={16} strokeWidth={1.25} className="tw-w-8 tw-h-8" />
                 </button>

@@ -168,6 +168,8 @@ export const SearchResults = ({
                                 onClick={onFilterSidebarClose}
                                 onKeyDown={onFilterSidebarClose}
                                 role="button"
+                                title="Close filters sidebar"
+                                tabIndex={0}
                             >
                                 <PanelLeftClose className="tw-size-8" />
                             </div>
@@ -275,6 +277,7 @@ export const SearchResults = ({
                                                 <input
                                                     type="checkbox"
                                                     id="search-results.select-all"
+                                                    title="Select all results"
                                                     checked={
                                                         selectedFollowUpResults.size ===
                                                         resultsToShow.length
@@ -393,7 +396,6 @@ export const SearchResults = ({
         </div>
     )
 }
-
 type SelectedResultAction =
     | { type: 'init'; results: NLSSearchResult[] }
     | { type: 'add'; results: NLSSearchResult[] }
