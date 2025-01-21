@@ -670,7 +670,10 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     return this.clearAndRestartSession()
                 }
 
-                const selectedAgent = this.chatBuilder.selectedAgent
+                // Set selected agent to deep-cody for Deep Cody model.
+                const selectedAgent = this.chatBuilder.selectedModel?.includes('deep-cody')
+                    ? 'deep-cody'
+                    : undefined
 
                 this.chatBuilder.addHumanMessage({
                     text: inputText,
@@ -1652,7 +1655,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     toolboxSettings: () => toolboxManager.observable,
                     updateToolboxSettings: settings => {
                         return promiseFactoryToObservable(async () => {
-                            this.chatBuilder.setSelectedAgent(settings.agent?.name)
+                            this.chatBuilder.setSelectedAgent('deep-cody')
                             await toolboxManager.updateSettings(settings)
                         })
                     },

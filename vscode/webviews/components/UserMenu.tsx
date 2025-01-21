@@ -430,9 +430,7 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
                                             onSubmit({
                                                 ...settings,
                                                 shell: {
-                                                    enabled:
-                                                        !!settings.agent?.name &&
-                                                        !settings.shell?.enabled,
+                                                    enabled: !settings.shell?.enabled,
                                                 },
                                             })
                                         }}

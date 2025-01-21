@@ -27,7 +27,7 @@ import { RestClient } from '../sourcegraph-api/rest/client'
 import type { UserProductSubscription } from '../sourcegraph-api/userProductSubscription'
 import { CHAT_INPUT_TOKEN_BUDGET } from '../token/constants'
 import { isError } from '../utils'
-import { TOOL_CODY_MODEL } from './client'
+import { TOOL_CODY_MODEL, getExperimentalClientModelByFeatureFlag } from './client'
 import { type Model, type ServerModel, createModel, createModelFromServerModel } from './model'
 import type {
     DefaultsAndUserPreferencesForEndpoint,
@@ -212,7 +212,7 @@ export function syncModels({
                                         enableToolCody
                                     ).pipe(
                                         switchMap(
-                                            ([hasEarlyAccess, isDeepCodyEnabled, defaultToHaiku]) => {
+                                            ([hasEarlyAccess, hasAgenticChatFlag, defaultToHaiku]) => {
                                                 // TODO(sqs): remove waitlist from localStorage when user has access
                                                 const isOnWaitlist = config.clientState.waitlist_o1
                                                 if (isDotComUser && (hasEarlyAccess || isOnWaitlist)) {
@@ -233,9 +233,37 @@ export function syncModels({
                                                         }
                                                     )
                                                 }
-                                                if (isDeepCodyEnabled && enableToolCody) {
+                                                // Replace user's current sonnet model with deep-cody (agentic chat) model.
+                                                const sonnetModel = data.primaryModels.find(m =>
+                                                    m.id.includes('sonnet')
+                                                )
+                                                // Agentic Chat is available for all Pro users.
+                                                // Enterprise users need to have the feature flag enabled.
+                                                const isAgenticChatEnabled =
+                                                    (isDotComUser && !isCodyFreeUser) ||
+                                                    hasAgenticChatFlag
+                                                if (
+                                                    isAgenticChatEnabled &&
+                                                    sonnetModel &&
+                                                    // Ensure the deep-cody model is only added once.
+                                                    !data.primaryModels.some(m =>
+                                                        m.id.includes('deep-cody')
+                                                    )
+                                                ) {
+                                                    const DEEPCODY_MODEL =
+                                                        getExperimentalClientModelByFeatureFlag(
+                                                            FeatureFlag.DeepCody
+                                                        )!
+
+                                                    const clientModels = [DEEPCODY_MODEL]
+                                                    if (enableToolCody) {
+                                                        clientModels.push(TOOL_CODY_MODEL)
+                                                    }
+
                                                     data.primaryModels.push(
-                                                        createModelFromServerModel(TOOL_CODY_MODEL)
+                                                        ...maybeAdjustContextWindows(clientModels).map(
+                                                            createModelFromServerModel
+                                                        )
                                                     )
                                                 }
                                                 // set the default model to Haiku for free users

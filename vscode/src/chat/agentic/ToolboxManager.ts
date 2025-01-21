@@ -64,10 +64,12 @@ class ToolboxManager {
         if (!this.isEnabled) {
             return null
         }
-        const { agent, shell } = this.getStoredUserSettings()
+        const { shell } = this.getStoredUserSettings()
         const shellError = this.getFeatureError('shell')
+        // TODO: Remove hard-coded agent once we have a proper agentic chat selection UI
+        const agent = this.isRateLimited ? undefined : 'deep-cody'
         return {
-            agent: { name: this.isRateLimited ? undefined : agent },
+            agent: { name: agent },
             shell: {
                 enabled: !!agent && !!shell && !shellError,
                 error: shellError,
@@ -85,7 +87,7 @@ class ToolboxManager {
     public async updateSettings(settings: AgentToolboxSettings): Promise<void> {
         logDebug('ToolboxManager', 'Updating toolbox settings', { verbose: settings })
         await localStorage.set(ToolboxManager.STORAGE_KEY, {
-            agent: settings.agent?.name,
+            agent: settings.agent?.name, // NOTE: CURRENTLY UNUSED
             shell: settings.shell?.enabled ?? false,
         })
         this.changeNotifications.next()
