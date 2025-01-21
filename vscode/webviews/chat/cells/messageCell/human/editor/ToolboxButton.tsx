@@ -4,7 +4,6 @@ import { BrainIcon } from 'lucide-react'
 import { type FC, memo, useCallback, useState } from 'react'
 import { CODY_DOCS_CAPABILITIES_URL } from '../../../../../../src/chat/protocol'
 import { Badge } from '../../../../../components/shadcn/ui/badge'
-import { Button } from '../../../../../components/shadcn/ui/button'
 import { ToolbarPopoverItem } from '../../../../../components/shadcn/ui/toolbar'
 import { useTelemetryRecorder } from '../../../../../utils/telemetry'
 
@@ -79,130 +78,106 @@ export const ToolboxButton: FC<ToolboxButtonProps> = memo(({ settings, api, isFi
     }
 
     return (
-        <div className="tw-flex tw-items-center">
+        <div className="tw-flex tw-items-center tw-w-full">
             <ToolbarPopoverItem
                 role="combobox"
-                iconEnd="chevron"
-                className="tw-opacity-100"
-                tooltip="Chat Settings"
+                iconEnd={null}
+                className="tw-opacity-100 tw-w-full tw-p-0"
+                tooltip={
+                    <span className="tw-text-left">
+                        Agentic chat reflects on your request and uses tools to dynamically retrieve
+                        relevant context, improving accuracy and response quality.
+                        <a
+                            target="_blank"
+                            rel="noreferrer"
+                            href={CODY_DOCS_CAPABILITIES_URL.href} // TODO: Replace with CODY_DOCS_AGENTIC_CHAT_URL
+                        >
+                            Read the docs
+                        </a>{' '}
+                        to learn more.
+                    </span>
+                }
                 aria-label="Chat Settings"
                 popoverContent={_close => (
                     <div id="accordion-collapse" data-accordion="collapse" className="tw-w-full">
-                        <h2 id="accordion-collapse-heading">
+                        {/* Only shows the Terminal access option if client and instance supports it */}
+                        {settings.agent?.name && !settings.shell?.error && (
                             <div
-                                className="tw-flex tw-items-center tw-justify-between tw-w-full tw-py-3 tw-px-5 tw-font-medium tw-border tw-border-border tw-rounded-t-md tw-focus:ring-4 tw-focus:ring-gray-200 tw-gap-3 tw-bg-[color-mix(in_lch,currentColor_10%,transparent)]"
-                                title="Agentic Chat Context"
+                                id="accordion-collapse-body"
+                                className="tw-p-5 tw-flex tw-flex-col tw-gap-3 tw-my-2 tw-text-left"
                             >
-                                <span className="tw-flex tw-gap-2 tw-items-center">
-                                    <span className="tw-font-semibold tw-text-md">Agentic chat</span>
-                                    <Badge variant="secondary" className="tw-text-xs">
-                                        Experimental
-                                    </Badge>
-                                </span>
-                                <Switch
-                                    disabled={isLoading}
-                                    checked={settings.agent?.name !== undefined}
-                                    onChange={() =>
-                                        onSubmit({
-                                            ...settings,
-                                            agent: {
-                                                name: settings.agent?.name ? undefined : 'deep-cody', // TODO: update name when finalized.
-                                            },
-                                        })
-                                    }
-                                />
-                            </div>
-                        </h2>
-                        <div
-                            id="accordion-collapse-body"
-                            className="tw-ml-5 tw-p-5 tw-flex tw-flex-col tw-gap-3 tw-my-2"
-                        >
-                            <div className="tw-text-xs">
-                                <span>
-                                    Agentic chat reflects on your request and uses tools to dynamically
-                                    retrieve relevant context, improving accuracy and response quality.
-                                    <a
-                                        target="_blank"
-                                        rel="noreferrer"
-                                        href={CODY_DOCS_CAPABILITIES_URL.href} // TODO: Replace with CODY_DOCS_AGENTIC_CHAT_URL
-                                    >
-                                        Read the docs
-                                    </a>{' '}
-                                    to learn more.
-                                </span>
-                            </div>
-                            {/* Seperator */}
-                            {settings.agent?.name && !settings.shell?.error && (
-                                <div className="tw-border-b tw-border-border tw-my-2" />
-                            )}
-                            {/* Only shows the Terminal access option if client and instance supports it */}
-                            {settings.agent?.name && !settings.shell?.error && (
-                                <div>
-                                    <div
-                                        className="tw-flex tw-items-center tw-justify-between tw-w-full tw-font-medium tw-gap-3"
-                                        aria-label="terminal"
-                                    >
-                                        <span className="tw-flex tw-gap-2 tw-items-center">
-                                            <span className="tw-font-semibold tw-text-md">
-                                                Terminal access
-                                            </span>
+                                <div
+                                    className="tw-flex tw-items-center tw-justify-between tw-w-full tw-font-medium tw-gap-3"
+                                    aria-label="terminal"
+                                >
+                                    <span className="tw-flex tw-gap-2 tw-items-center">
+                                        <span className="tw-font-semibold tw-text-md">
+                                            Terminal access
                                         </span>
-                                        <Switch
-                                            checked={settings.shell?.enabled}
-                                            disabled={isLoading || !!settings.shell?.error}
-                                            onChange={() =>
-                                                onSubmit({
-                                                    ...settings,
-                                                    shell: {
-                                                        enabled:
-                                                            !!settings.agent?.name &&
-                                                            !settings.shell?.enabled,
-                                                    },
-                                                })
-                                            }
-                                        />
-                                    </div>
-                                    <div className="tw-text-xs tw-mt-2">
-                                        Allows agents to execute commands like <code>ls</code>,{' '}
-                                        <code>dir</code>, <code>git</code>, and other commands for
-                                        context. The agent will ask permission each time it would like to
-                                        run a command.
-                                    </div>
+                                    </span>
+                                    <Switch
+                                        checked={settings.shell?.enabled}
+                                        disabled={isLoading || !!settings.shell?.error}
+                                        onChange={() =>
+                                            onSubmit({
+                                                ...settings,
+                                                shell: {
+                                                    enabled:
+                                                        !!settings.agent?.name &&
+                                                        !settings.shell?.enabled,
+                                                },
+                                            })
+                                        }
+                                    />
                                 </div>
-                            )}
-                        </div>
+                                <div className="tw-text-xs tw-mt-2">
+                                    Allows agents to execute commands like <code>ls</code>,{' '}
+                                    <code>dir</code>, <code>git</code>, and other commands for context.
+                                    The agent will ask permission each time it would like to run a
+                                    command.
+                                </div>
+                            </div>
+                        )}
                     </div>
                 )}
                 popoverRootProps={{ onOpenChange }}
                 popoverContentProps={{
-                    className: 'tw-w-[350px] !tw-p-0 tw-mr-4',
+                    side: 'bottom',
+                    className: 'tw-max-w-1/2 !tw-p-0 tw-mr-4',
                     onCloseAutoFocus: event => {
                         event.preventDefault()
                     },
                 }}
             >
-                <Button
-                    variant="ghost"
-                    size="none"
-                    className={`${
-                        settings.agent?.name ? 'tw-text-foreground' : 'tw-text-muted-foreground'
-                    } hover:!tw-bg-transparent`}
-                >
-                    {settings.agent?.name ? (
+                <div className="tw-flex tw-items-center tw-justify-between tw-w-full tw-py-3 tw-px-5 tw-font-medium tw-border tw-border-border tw-rounded-t-md tw-focus:ring-4 tw-focus:ring-gray-200 tw-gap-3 tw-bg-[color-mix(in_lch,currentColor_10%,transparent)]">
+                    <span className="tw-flex tw-gap-2 tw-items-center tw-py-2">
                         <BrainIcon
                             size={16}
-                            strokeWidth={2}
-                            className="tw-w-8 tw-h-8 tw-text-green-600 tw-drop-shadow-md"
+                            strokeWidth={2.5}
+                            className={
+                                settings.agent?.name
+                                    ? 'tw-w-8 tw-h-8 tw-text-green-600 tw-drop-shadow-md'
+                                    : 'tw-w-8 tw-h-8 tw-text-muted-foreground'
+                            }
                         />
-                    ) : (
-                        <BrainIcon
-                            size={16}
-                            strokeWidth={2}
-                            className="tw-w-8 tw-h-8 tw-text-muted-foreground"
-                        />
-                    )}
-                    {isFirstMessage && <span className="tw-font-semibold">agentic chat</span>}
-                </Button>
+                        <span className="tw-font-semibold tw-text-md">Agentic chat</span>
+                        <Badge variant="secondary" className="tw-text-xs tw-py-1">
+                            Experimental
+                        </Badge>
+                    </span>
+                    <Switch
+                        disabled={isLoading}
+                        checked={settings.agent?.name !== undefined}
+                        onChange={() =>
+                            onSubmit({
+                                ...settings,
+                                agent: {
+                                    name: settings.agent?.name ? undefined : 'deep-cody', // TODO: update name when finalized.
+                                },
+                            })
+                        }
+                    />
+                </div>
             </ToolbarPopoverItem>
         </div>
     )

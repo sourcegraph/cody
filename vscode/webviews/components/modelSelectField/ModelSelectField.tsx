@@ -1,8 +1,10 @@
 import { type Model, ModelTag, isCodyProModel, isWaitlistModel } from '@sourcegraph/cody-shared'
+import { useExtensionAPI, useObservable } from '@sourcegraph/prompt-editor'
 import { clsx } from 'clsx'
 import { BookOpenIcon, BuildingIcon, ExternalLinkIcon } from 'lucide-react'
 import { type FunctionComponent, type ReactNode, useCallback, useMemo } from 'react'
 import type { UserAccountInfo } from '../../Chat'
+import { ToolboxButton } from '../../chat/cells/messageCell/human/editor/ToolboxButton'
 import { getVSCodeAPI } from '../../utils/VSCodeApi'
 import { useTelemetryRecorder } from '../../utils/telemetry'
 import { chatModelIconComponent } from '../ChatModelIcon'
@@ -161,6 +163,11 @@ export const ModelSelectField: React.FunctionComponent<{
         [onCloseByEscape]
     )
 
+    const api = useExtensionAPI()
+    const { value: settings } = useObservable(
+        useMemo(() => api.toolboxSettings(), [api.toolboxSettings])
+    )
+
     if (!models.length || models.length < 1) {
         return null
     }
@@ -175,7 +182,7 @@ export const ModelSelectField: React.FunctionComponent<{
             disabled={readOnly}
             __storybook__open={__storybook__open}
             tooltip={readOnly ? undefined : 'Select a model'}
-            aria-label="Select a model"
+            aria-label="Select a model or an agent"
             popoverContent={close => (
                 <Command
                     loop={true}
@@ -184,6 +191,11 @@ export const ModelSelectField: React.FunctionComponent<{
                     className={`focus:tw-outline-none ${styles.chatModelPopover}`}
                     data-testid="chat-model-popover"
                 >
+                    {settings && (
+                        <header className="tw-w-full tw-border-t tw-border-border tw-flex tw-justify-between tw-items-center">
+                            <ToolboxButton settings={settings} api={api} isFirstMessage={true} />
+                        </header>
+                    )}
                     <CommandList
                         className="model-selector-popover tw-max-h-[80vh] tw-overflow-y-auto"
                         data-testid="chat-model-popover-option"
@@ -269,7 +281,7 @@ export const ModelSelectField: React.FunctionComponent<{
             )}
             popoverRootProps={{ onOpenChange }}
             popoverContentProps={{
-                className: 'tw-min-w-[325px] tw-w-[unset] tw-max-w-[90%] !tw-p-0',
+                className: 'tw-min-w-[325px] tw-w-[unset] tw-max-w-[200px] !tw-p-0',
                 onKeyDown: onKeyDown,
                 onCloseAutoFocus: event => {
                     // Prevent the popover trigger from stealing focus after the user selects an
