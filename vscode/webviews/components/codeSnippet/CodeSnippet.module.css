@@ -31,9 +31,6 @@
 
 .header {
     background-color: var(--vscode-editor-background);
-    display: flex;
-    padding: 0.5rem;
-    align-items: center;
     position: sticky;
     top: 0;
     border-bottom: solid 1px var(--cody-chat-code-border-color);
@@ -49,7 +46,6 @@
 }
 
 .result {
-    background-color: var(--cody-chat-code-background);
     border-bottom: solid 1px var(--cody-chat-code-border-color);
 
     code {
@@ -126,8 +122,8 @@
     border: none;
     padding: 0.25rem 0.5rem;
     border-top: 1px solid var(--cody-chat-code-border-color);
-    background-color: var(--cody-chat-code-background);
     color: var(--cody-chat-code-text-muted);
+    font-size: theme('fontSize.sm');
 
     &:hover {
         color: inherit;

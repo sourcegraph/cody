@@ -237,19 +237,14 @@ export const FileMatchSearchResult: FC<PropsWithChildren<FileMatchSearchResultPr
 
     const actions = onSelectForContext ? (
         <div>
-            <label htmlFor="search-results.select-all" className="tw-flex tw-flex-row-reverse tw-gap-4">
-                <input
-                    type="checkbox"
-                    id="search-results.select-all"
-                    checked={selectedForContext}
-                    onChange={event => {
-                        onSelectForContext?.(event.target.checked, result)
-                    }}
-                    title="Select for context"
-                    aria-label="Select for context"
-                />
-                <span className={styles.addToContextLabel}>Add to context</span>
-            </label>{' '}
+            <input
+                type="checkbox"
+                id="search-results.select-all"
+                checked={selectedForContext}
+                onChange={event => {
+                    onSelectForContext?.(event.target.checked, result)
+                }}
+            />
         </div>
     ) : null
 
@@ -339,7 +334,13 @@ const ResultContainer: ForwardReferenceExoticComponent<
             onClick={onResultClicked}
         >
             <article>
-                <header className={styles.header} data-result-header={true}>
+                <header
+                    className={clsx(
+                        styles.header,
+                        'tw-flex tw-items-center tw-gap-2 tw-py-2 tw-px-4 md:tw-py-3 md:tw-px-6 '
+                    )}
+                    data-result-header={true}
+                >
                     {/* Add a result type to be read out to screen readers only, so that screen reader users can
                     easily scan the search results list (for example, by navigating by landmarks). */}
                     <span className="sr-only">

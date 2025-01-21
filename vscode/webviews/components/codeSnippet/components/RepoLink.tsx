@@ -75,7 +75,7 @@ export const RepoFileLink: React.FunctionComponent<React.PropsWithChildren<Props
                     onClick={onToggleCollapse}
                 />
             )}
-            <span className="tw-flex-1 tw-gap-3">
+            <span className="tw-flex-1 tw-gap-3 tw-text-sm md:tw-text-md">
                 <a href={repoURL} target="_blank" rel="noreferrer">
                     {repoDisplayName || displayRepoName(repoName)}
                 </a>
