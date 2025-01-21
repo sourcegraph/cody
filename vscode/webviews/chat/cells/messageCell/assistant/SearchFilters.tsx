@@ -49,7 +49,6 @@ export const SearchFilters = ({
 }: SearchFiltersProps) => {
     const telemetryRecorder = useTelemetryRecorder()
     const filterGroups = useMemo(() => {
-
         // Use filters available from search response, if not display previous selection
         const availableFilters = filters.length > 0 ? [...filters] : [...selectedFilters]
 
