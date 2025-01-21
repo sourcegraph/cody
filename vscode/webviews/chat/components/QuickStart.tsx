@@ -182,7 +182,7 @@ export function QuickStart() {
             {/* Overlay */}
             {showTipsOverlay && (
                 <div
-                    className="tw-fixed tw-inset-0 tw-flex tw-items-center tw-justify-center tw-bg-black/50 tw-p-4 tw-animate-[fadeIn_0.2s_ease-in-out]"
+                    className="tw-fixed tw-inset-0 tw-flex tw-items-center tw-justify-center tw-bg-black/50 tw-p-4 tw-animate-[fadeIn_0.2s_ease-in-out] tw-z-50"
                     onClick={handleOverlayClick}
                     onKeyDown={handleOverlayKeyDown}
                     role="presentation"
