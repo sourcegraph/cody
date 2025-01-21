@@ -375,7 +375,6 @@ test.extend<ExpectedV2Events>({
         [
             'buzz.ts',
             'buzz.ts:2-5',
-            // Note, repo context does not appear because this repo is not indexed.
         ],
         {
             timeout: 3_000,
@@ -388,7 +387,6 @@ test.extend<ExpectedV2Events>({
     await expect(chatInputMentions(lastChatInput)).toHaveText([
         'buzz.ts',
         'buzz.ts:2-5',
-        /workspace|sourcegraph.cody/,
         'buzz.ts:7-10',
     ])
 })
