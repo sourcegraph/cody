@@ -2,11 +2,11 @@ import {
     type AuthStatus,
     type ChatMessage,
     type ClientCapabilitiesWithLegacyFields,
-    CodyIDE,
     type CodyNotice,
     FeatureFlag,
     type Guardrails,
     type UserProductSubscription,
+    type WebviewToExtensionAPI,
     firstValueFrom,
 } from '@sourcegraph/cody-shared'
 import { useExtensionAPI, useObservable } from '@sourcegraph/prompt-editor'
@@ -48,6 +48,7 @@ interface CodyPanelProps {
     showIDESnippetActions?: boolean
     smartApplyEnabled?: boolean
     onExternalApiReady?: (api: CodyExternalApi) => void
+    onExtensionApiReady?: (api: WebviewToExtensionAPI) => void
 }
 
 /**
@@ -56,7 +57,7 @@ interface CodyPanelProps {
 export const CodyPanel: FunctionComponent<CodyPanelProps> = ({
     view,
     setView,
-    configuration: { config, clientCapabilities, authStatus, isDotComUser, userProductSubscription },
+    configuration: { config, clientCapabilities },
     errorMessages,
     setErrorMessages,
     attributionEnabled,
@@ -70,6 +71,7 @@ export const CodyPanel: FunctionComponent<CodyPanelProps> = ({
     showWelcomeMessage,
     smartApplyEnabled,
     onExternalApiReady,
+    onExtensionApiReady,
 }) => {
     const tabContainerRef = useRef<HTMLDivElement>(null)
 
@@ -83,6 +85,10 @@ export const CodyPanel: FunctionComponent<CodyPanelProps> = ({
     useEffect(() => {
         onExternalApiReady?.(externalAPI)
     }, [onExternalApiReady, externalAPI])
+
+    useEffect(() => {
+        onExtensionApiReady?.(api)
+    }, [onExtensionApiReady, api])
 
     useEffect(() => {
         const subscription = api.clientActionBroadcast().subscribe(action => {
@@ -110,7 +116,7 @@ export const CodyPanel: FunctionComponent<CodyPanelProps> = ({
             >
                 <Notices user={user} instanceNotices={instanceNotices} />
                 {/* Hide tab bar in editor chat panels. */}
-                {(clientCapabilities.agentIDE === CodyIDE.Web || config.webviewType !== 'editor') && (
+                {config.webviewType !== 'editor' && (
                     <TabsBar
                         user={user}
                         currentView={view}
