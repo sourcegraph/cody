@@ -269,7 +269,7 @@ export const ModelSelectField: React.FunctionComponent<{
             )}
             popoverRootProps={{ onOpenChange }}
             popoverContentProps={{
-                className: 'tw-min-w-[325px] tw-w-[unset] tw-max-w-[200px] !tw-p-0',
+                className: 'tw-min-w-[325px] tw-w-[unset] tw-max-w-[90%] !tw-p-0',
                 onKeyDown: onKeyDown,
                 onCloseAutoFocus: event => {
                     // Prevent the popover trigger from stealing focus after the user selects an

@@ -154,7 +154,7 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
         useMemo(() => api.toolboxSettings(), [api.toolboxSettings])
     )
 
-    const debouncedSubmit = useCallback(
+    const debouncedSubmitAgenticChange = useCallback(
         debounce((newSettings: AgentToolboxSettings) => {
             if (isLoading) {
                 return
@@ -189,9 +189,9 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
         []
     )
 
-    function onSubmit(newSettings: AgentToolboxSettings): void {
+    function onChangeAgenticOption(newSettings: AgentToolboxSettings): void {
         setIsLoading(true)
-        debouncedSubmit(newSettings)
+        debouncedSubmitAgenticChange(newSettings)
     }
 
     return (
@@ -427,7 +427,7 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
                                 <CommandGroup heading="Agentic Chat Settings">
                                     <CommandItem
                                         onSelect={() => {
-                                            onSubmit({
+                                            onChangeAgenticOption({
                                                 ...settings,
                                                 shell: {
                                                     enabled: !settings.shell?.enabled,
