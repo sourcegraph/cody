@@ -52,7 +52,7 @@ export const SearchFilters = ({
 
         // Use filters available from search response, if not display previous selection
         const availableFilters = filters.length > 0 ? [...filters] : [...selectedFilters]
-        
+
         return uniqBy(availableFilters, ({ value, kind }) => `${value}-${kind}`).reduce<
             Record<NLSSearchDynamicFilterKind, NLSSearchDynamicFilter[]>
         >(
@@ -64,7 +64,7 @@ export const SearchFilters = ({
             },
             { repo: [], file: [], type: [], lang: [] }
         )
-    }, [filters])
+    }, [filters, selectedFilters])
     const onFilterSelect = useCallback(
         (filter: NLSSearchDynamicFilter) => {
             telemetryRecorder.recordEvent('onebox.filter', 'clicked', {
