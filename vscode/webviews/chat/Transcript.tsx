@@ -391,76 +391,93 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
     const lastEditorRef = useContext(LastEditorContext)
     useImperativeHandle(parentEditorRef, () => humanEditorRef.current)
 
-    const onUserAction = (action: 'edit' | 'submit', intentFromSubmit?: ChatMessage['intent']) => {
-        // Start the span as soon as the user initiates the action
-        const startMark = performance.mark('startSubmit')
-        const spanManager = new SpanManager('cody-webview')
-        const span = spanManager.startSpan('chat-interaction', {
-            attributes: {
-                sampled: true,
-                'render.state': 'started',
-                'startSubmit.mark': startMark.startTime,
-            },
-        })
+    const { doIntentDetection } = useIntentDetectionConfig()
+    const onUserAction = useCallback(
+        (action: 'edit' | 'submit', intentFromSubmit?: ChatMessage['intent']) => {
+            // Start the span as soon as the user initiates the action
+            const startMark = performance.mark('startSubmit')
+            const spanManager = new SpanManager('cody-webview')
+            const span = spanManager.startSpan('chat-interaction', {
+                attributes: {
+                    sampled: true,
+                    'render.state': 'started',
+                    'startSubmit.mark': startMark.startTime,
+                },
+            })
 
-        if (!span) {
-            throw new Error('Failed to start span for chat interaction')
-        }
-
-        const spanContext = trace.setSpan(context.active(), span)
-        setActiveChatContext(spanContext)
-        const currentSpanContext = span.spanContext()
-
-        const traceparent = getTraceparentFromSpanContext(currentSpanContext)
-
-        // Serialize the editor value after starting the span
-        const editorValue = humanEditorRef.current?.getSerializedValue()
-        if (!editorValue) {
-            console.error('Failed to serialize editor value')
-            return
-        }
-
-        const query = inputTextWithMappedContextChipsFromPromptEditorState(editorValue.editorState)
-
-        const {
-            intent,
-            intentScores,
-        }: { intent: ChatMessage['intent']; intentScores: IntentResults['allScores'] } =
-            query === intentResults?.query
-                ? { intent: intentResults.intent, intentScores: intentResults.allScores }
-                : { intent: undefined, intentScores: [] }
-
-        const commonProps = {
-            editorValue,
-            intent,
-            intentScores,
-            manuallySelectedIntent: intentFromSubmit || manuallySelectedIntent.intent,
-            traceparent,
-        }
-
-        if (action === 'edit') {
-            // Remove search context chips from the next input so that the user cannot
-            // reference search results that don't exist anymore.
-            // This is a no-op if the input does not contain any search context chips.
-            // NOTE: Doing this for the penultimate input only seems to suffice because
-            // editing a message earlier in the transcript will clear the conversation
-            // and reset the last input anyway.
-            if (isLastSentInteraction) {
-                lastEditorRef.current?.filterMentions(item => !isCodeSearchContextItem(item))
+            if (!span) {
+                throw new Error('Failed to start span for chat interaction')
             }
 
-            editHumanMessage({
-                messageIndexInTranscript: humanMessage.index,
-                ...commonProps,
-            })
-        } else {
-            submitHumanMessage({
-                ...commonProps,
-            })
-        }
+            const spanContext = trace.setSpan(context.active(), span)
+            setActiveChatContext(spanContext)
+            const currentSpanContext = span.spanContext()
 
-        setTimeout(() => scrollToBottom?.(), 500)
-    }
+            const traceparent = getTraceparentFromSpanContext(currentSpanContext)
+
+            // Serialize the editor value after starting the span
+            const editorValue = humanEditorRef.current?.getSerializedValue()
+            if (!editorValue) {
+                console.error('Failed to serialize editor value')
+                return
+            }
+
+            const query = inputTextWithMappedContextChipsFromPromptEditorState(editorValue.editorState)
+
+            const {
+                intent,
+                intentScores,
+            }: { intent: ChatMessage['intent']; intentScores: IntentResults['allScores'] } =
+                query === intentResults?.query
+                    ? { intent: intentResults.intent, intentScores: intentResults.allScores }
+                    : { intent: undefined, intentScores: [] }
+
+            const commonProps = {
+                editorValue,
+                intent,
+                intentScores,
+                manuallySelectedIntent:
+                    intentFromSubmit ||
+                    manuallySelectedIntent.intent ||
+                    (doIntentDetection ? undefined : 'chat'),
+                traceparent,
+            }
+
+            if (action === 'edit') {
+                // Remove search context chips from the next input so that the user cannot
+                // reference search results that don't exist anymore.
+                // This is a no-op if the input does not contain any search context chips.
+                // NOTE: Doing this for the penultimate input only seems to suffice because
+                // editing a message earlier in the transcript will clear the conversation
+                // and reset the last input anyway.
+                if (isLastSentInteraction) {
+                    lastEditorRef.current?.filterMentions(item => !isCodeSearchContextItem(item))
+                }
+
+                editHumanMessage({
+                    messageIndexInTranscript: humanMessage.index,
+                    ...commonProps,
+                })
+            } else {
+                submitHumanMessage({
+                    ...commonProps,
+                })
+            }
+
+            setTimeout(() => {
+                scrollToBottom?.()
+            }, 1000)
+        },
+        [
+            humanMessage,
+            setActiveChatContext,
+            isLastSentInteraction,
+            lastEditorRef,
+            intentResults,
+            manuallySelectedIntent,
+            doIntentDetection,
+        ]
+    )
 
     const onEditSubmit = useCallback(
         (intentFromSubmit?: ChatMessage['intent']): void => {
@@ -478,8 +495,6 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
 
     const extensionAPI = useExtensionAPI()
     const experimentalOneBoxEnabled = useExperimentalOneBox()
-
-    const { doIntentDetection } = useIntentDetectionConfig()
     const prefetchIntent = useMemo(() => {
         const handler = async (editorValue: SerializedPromptEditorValue) => {
             if (!experimentalOneBoxEnabled || !doIntentDetection) {
@@ -556,7 +571,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
             // If the intent is set for a prompts, only reset the intent if the editor text is emptied.
             if (
                 manuallySelectedIntent.intent &&
-                currentQuery.trim() !== manuallySelectedIntent.query.trim() &&
+                currentQuery !== manuallySelectedIntent.query &&
                 (!manuallySelectedIntent.resetOnEditorStateClearOnly || !editorValue.text.trim())
             ) {
                 setManuallySelectedIntent({ intent: undefined, query: '' })
