@@ -2,7 +2,7 @@
 
 This is a log of all notable changes to Cody for VS Code.
 
-{/_ CHANGELOG_START _/}
+<!--- {/_ CHANGELOG_START _/} -->
 
 ## Unreleased
 
