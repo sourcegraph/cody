@@ -115,12 +115,12 @@ export const ToolboxButton: FC<ToolboxButtonProps> = memo(({ settings, api, isFi
                         </h2>
                         <div
                             id="accordion-collapse-body"
-                            className="tw-ml-5 tw-p-5 tw-flex tw-flex-col tw-gap-3 tw-my-2"
+                            className="tw-p-5 tw-flex tw-flex-col tw-gap-3 tw-my-2"
                         >
                             <div className="tw-text-xs">
                                 <span>
                                     Agentic chat reflects on your request and uses tools to dynamically
-                                    retrieve relevant context, improving accuracy and response quality.
+                                    retrieve relevant context, improving accuracy and response quality.{' '}
                                     <a
                                         target="_blank"
                                         rel="noreferrer"
@@ -175,7 +175,7 @@ export const ToolboxButton: FC<ToolboxButtonProps> = memo(({ settings, api, isFi
                 )}
                 popoverRootProps={{ onOpenChange }}
                 popoverContentProps={{
-                    className: 'tw-w-[350px] !tw-p-0 tw-mr-4',
+                    className: 'tw-w-[250px] !tw-p-0 tw-mx-8',
                     onCloseAutoFocus: event => {
                         event.preventDefault()
                     },
