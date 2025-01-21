@@ -14,6 +14,12 @@ export async function initSyntaxHighlighter(): Promise<void> {
     }
 }
 
+/**
+ * Given a list of added lines, rebuild the code snippet and apply syntax highlighting to it.
+ * Highlighting colors and themes are provided by Shiki.
+ * Ideally we could re-use the same syntax highlighting from the users' editor, but this is unfortunately not possible - at least in VS Code.
+ * See: https://github.com/microsoft/vscode/issues/32813
+ */
 export function syntaxHighlightDecorations(
     decorations: AddedLinesDecorationInfo[],
     lang: string,
