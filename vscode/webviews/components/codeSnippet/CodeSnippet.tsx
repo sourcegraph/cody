@@ -289,7 +289,6 @@ export const FileMatchSearchResult: FC<PropsWithChildren<FileMatchSearchResultPr
         </ResultContainer>
     )
 }
-
 interface ResultContainerProps {
     title: React.ReactNode
     titleClassName?: string
@@ -335,7 +334,13 @@ const ResultContainer: ForwardReferenceExoticComponent<
             onClick={onResultClicked}
         >
             <article>
-                <header className={styles.header} data-result-header={true}>
+                <header
+                    className={clsx(
+                        styles.header,
+                        'tw-flex tw-items-center tw-gap-2 tw-py-2 tw-px-4 md:tw-py-3 md:tw-px-6 '
+                    )}
+                    data-result-header={true}
+                >
                     {/* Add a result type to be read out to screen readers only, so that screen reader users can
                     easily scan the search results list (for example, by navigating by landmarks). */}
                     <span className="sr-only">
