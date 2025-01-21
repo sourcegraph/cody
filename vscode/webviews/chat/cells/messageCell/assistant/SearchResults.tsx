@@ -5,7 +5,15 @@ import {
     isDefined,
 } from '@sourcegraph/cody-shared'
 import classNames from 'classnames'
-import { ArrowDown, FilterIcon, FilterX, OctagonX, PanelLeftClose, Search } from 'lucide-react'
+import {
+    ArrowDown,
+    ExternalLink,
+    FilterIcon,
+    FilterX,
+    OctagonX,
+    PanelLeftClose,
+    Search,
+} from 'lucide-react'
 import { useCallback, useContext, useLayoutEffect, useMemo, useReducer, useState } from 'react'
 import {
     createContextItem,
@@ -354,7 +362,7 @@ export const SearchResults = ({
                                 )}
                             </div>
                             <a
-                                href={`${serverEndpoint}/search`}
+                                href={'/search'}
                                 target="_blank"
                                 rel="noreferrer"
                                 className="tw-text-foreground"
