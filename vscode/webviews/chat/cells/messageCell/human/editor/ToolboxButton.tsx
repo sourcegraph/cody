@@ -120,7 +120,7 @@ export const ToolboxButton: FC<ToolboxButtonProps> = memo(({ settings, api, isFi
                             <div className="tw-text-xs">
                                 <span>
                                     Agentic chat reflects on your request and uses tools to dynamically
-                                    retrieve relevant context, improving accuracy and response quality.
+                                    retrieve relevant context, improving accuracy and response quality. 
                                     <a
                                         target="_blank"
                                         rel="noreferrer"
