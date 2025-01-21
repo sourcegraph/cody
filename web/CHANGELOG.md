@@ -1,3 +1,6 @@
+## 0.23.1
+- Support unicode characters in cody prompt templates @ mentions
+- Remove cody repository as default @ mention for prompt templates
 ## 0.22.0
 - New search filters and result types
 - Fix sticky chat intent

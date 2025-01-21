@@ -32,7 +32,11 @@ export class RestClient {
 
     // Make an authenticated HTTP request to the Sourcegraph instance.
     // "name" is a developer-friendly term to label the request's trace span.
-    private getRequest<T>(name: string, urlSuffix: string, signal?: AbortSignal): Promise<T | Error> {
+    private async getRequest<T>(
+        name: string,
+        urlSuffix: string,
+        signal?: AbortSignal
+    ): Promise<T | Error> {
         const headers = new Headers(this.customHeaders)
 
         const endpoint = new URL(this.auth.serverEndpoint)
@@ -40,8 +44,13 @@ export class RestClient {
         const url = endpoint.href
 
         addCodyClientIdentificationHeaders(headers)
-        addAuthHeaders(this.auth, headers, endpoint)
         addTraceparent(headers)
+
+        try {
+            await addAuthHeaders(this.auth, headers, endpoint)
+        } catch (error: any) {
+            return error
+        }
 
         return wrapInActiveSpan(`rest-api.${name}`, () =>
             fetch(url, {

@@ -14,8 +14,8 @@ import { ContextMixer } from '../completions/context/context-mixer'
 import { DefaultContextStrategyFactory } from '../completions/context/context-strategy'
 import { getCurrentDocContext } from '../completions/get-current-doc-context'
 import { isRunningInsideAgent } from '../jsonrpc/isRunningInsideAgent'
-
 import type { FixupController } from '../non-stop/FixupController'
+
 import type { AutoeditsModelAdapter, AutoeditsPrompt } from './adapters/base'
 import { createAutoeditsModelAdapter } from './adapters/create-adapter'
 import {
@@ -29,7 +29,7 @@ import {
 import { autoeditsProviderConfig } from './autoedits-config'
 import { FilterPredictionBasedOnRecentEdits } from './filter-prediction-edits'
 import { autoeditsOutputChannelLogger } from './output-channel-logger'
-import { type CodeToReplaceData, getCurrentFilePromptComponents } from './prompt/prompt-utils'
+import { type CodeToReplaceData, getCodeToReplaceData } from './prompt/prompt-utils'
 import { ShortTermPromptStrategy } from './prompt/short-term-diff-prompt-strategy'
 import type { DecorationInfo } from './renderer/decorators/base'
 import { DefaultDecorator } from './renderer/decorators/default-decorator'
@@ -186,12 +186,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 maxSuffixLength: tokensToChars(autoeditsProviderConfig.tokenLimit.suffixTokens),
             })
 
-            const {
-                fileWithMarkerPrompt,
-                areaPrompt,
-                codeToReplaceData,
-                codeToReplaceData: { codeToRewrite },
-            } = getCurrentFilePromptComponents({
+            const codeToReplaceData = getCodeToReplaceData({
                 docContext,
                 document,
                 position,
@@ -202,6 +197,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 'provideInlineCompletionItems',
                 'Calculating context from contextMixer...'
             )
+            const { codeToRewrite } = codeToReplaceData
             const requestId = autoeditAnalyticsLogger.createRequest({
                 startedAt: performance.now(),
                 codeToReplaceData,
@@ -241,8 +237,8 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 'Calculating prompt from promptStrategy...'
             )
             const prompt = this.promptStrategy.getPromptForModelType({
-                fileWithMarkerPrompt,
-                areaPrompt,
+                document,
+                codeToReplaceData,
                 context,
                 tokenBudget: autoeditsProviderConfig.tokenLimit,
                 isChatModel: autoeditsProviderConfig.isChatModel,

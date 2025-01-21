@@ -142,21 +142,21 @@ export const events = [
                         detectedIntent: params.detectedIntent
                             ? map.intent(params.detectedIntent)
                             : undefined,
+                        // Each intent is mapped to a `detectedIntentScores.{intent}` field inside the metadata
+                        ...params.detectedIntentScores?.reduce(
+                            (scores, intentScore) => {
+                                // intentScore.intent has a fixed set of values and is safe to use here - see ChatMessage['intent']
+                                scores['detectedIntentScores.' + intentScore.intent] = intentScore.score
+                                return scores
+                            },
+                            {} as Record<string, number>
+                        ),
                         // TODO: Remove this field when the transition from commands to prompts is complete
                         isCommand: params.command ? 1 : 0,
                         ...metadata,
                         recordsPrivateMetadataTranscript: recordTranscript ? 1 : 0,
                     }),
                     privateMetadata: {
-                        detectedIntentScores: params.detectedIntentScores?.length
-                            ? params.detectedIntentScores.reduce(
-                                  (scores, value) => {
-                                      scores[value.intent] = value.score
-                                      return scores
-                                  },
-                                  {} as Record<string, number>
-                              )
-                            : undefined,
                         detectedIntent: params.detectedIntent,
                         // TODO: Remove this field when the transition from commands to prompts is complete
                         command: params.command,
@@ -184,6 +184,8 @@ export const events = [
             },
         {
             intent: {
+                // This mapping must remain stable to avoid breaking the telemetry data.
+                // Do not remove intents without putting in a placeholder.
                 [fallbackValue]: 0,
                 auto: 1,
                 chat: 2,
@@ -196,13 +198,6 @@ export const events = [
             >,
         }
     ),
-    // //TODO
-    // event(
-    //     'cody.chat-question/response',
-    //     ({ feature, action }) =>
-    //         () => {},
-    //     {}
-    // ),
 ]
 
 function publicContextSummary(globalPrefix: string, context: ContextItem[]) {

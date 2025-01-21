@@ -41,6 +41,7 @@ object Constants {
   const val `enterprise-user-logged-into-dotcom` = "enterprise-user-logged-into-dotcom"
   const val error = "error"
   const val experimental = "experimental"
+  const val `external-auth-provider-error` = "external-auth-provider-error"
   const val file = "file"
   const val free = "free"
   const val function = "function"

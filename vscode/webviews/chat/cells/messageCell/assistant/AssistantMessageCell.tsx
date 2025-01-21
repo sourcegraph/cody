@@ -257,7 +257,7 @@ export function makeHumanMessageInfo(
                 editHumanMessage({
                     messageIndexInTranscript: assistantMessage.index - 1,
                     editorValue: newEditorValue,
-                    intent: humanMessage.intent,
+                    preDetectedIntent: humanMessage.intent,
                 })
             }
         },

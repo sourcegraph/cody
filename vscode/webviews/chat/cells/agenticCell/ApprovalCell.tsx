@@ -5,7 +5,7 @@ import { Button } from '../../../components/shadcn/ui/button'
 import type { VSCodeWrapper } from '../../../utils/VSCodeApi'
 
 const CONFIRMATION_TITLES: Record<string, string> = {
-    Terminal: 'Run command to retrieve context?',
+    Terminal: 'Allow commands to retrieve context?',
 }
 
 const ApprovalCell: FC<{ vscodeAPI: VSCodeWrapper }> = ({ vscodeAPI }) => {

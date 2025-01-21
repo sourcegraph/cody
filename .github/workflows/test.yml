@@ -84,6 +84,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           plugin-location: '*.zip'
+          # TODO (pkukielka): Upper range should be bumped to 251.14649.49-EAP-SNAPSHOT
+          # as soon as problem with Git4Idea dependencies will get resolved
           ide-versions: |
             ideaIC:2023.2
             ideaIC:2024.2.4
@@ -100,4 +102,4 @@ jobs:
           name: plugin-verifier-reports
           path: 'verification-*'
           compression-level: 9
-        
+

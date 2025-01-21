@@ -4,7 +4,6 @@ import {
     type ChatMessage,
     type ChatModel,
     type ContextItem,
-    type Message,
     type ModelContextWindow,
     type ProcessingStep,
     type RankedContext,
@@ -183,7 +182,7 @@ export class ChatBuilder {
     public static readonly NO_MODEL = Symbol('noChatModel')
 
     public addBotMessage(
-        message: Omit<Message, 'speaker'>,
+        message: Omit<ChatMessage, 'speaker' | 'model' | 'error'>,
         model: ChatModel | typeof ChatBuilder.NO_MODEL
     ): void {
         const lastMessage = this.messages.at(-1)

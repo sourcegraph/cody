@@ -41,6 +41,7 @@ import {
     CURRENT_USER_INFO_QUERY,
     CURRENT_USER_ROLE_QUERY,
     DELETE_ACCESS_TOKEN_MUTATION,
+    EDIT_TEMPORARY_SETTINGS_QUERY,
     EVALUATE_FEATURE_FLAG_QUERY,
     FILE_CONTENTS_QUERY,
     FILE_MATCH_SEARCH_QUERY,
@@ -65,6 +66,7 @@ import {
     REPOS_SUGGESTIONS_QUERY,
     REPO_NAME_QUERY,
     SEARCH_ATTRIBUTION_QUERY,
+    TEMPORARY_SETTINGS_QUERY,
     VIEWER_SETTINGS_QUERY,
 } from './queries'
 import { buildGraphQLUrl } from './url'
@@ -621,6 +623,18 @@ interface EvaluateFeatureFlagResponse {
 
 interface ViewerSettingsResponse {
     viewerSettings: { final: string }
+}
+
+interface TemporarySettingsResponse {
+    temporarySettings: { contents: string }
+}
+
+export interface TemporarySettings {
+    'omnibox.intentDetectionToggleOn': boolean
+}
+
+export interface EditTemporarySettingsResponse {
+    editTemporarySettings: { alwaysNil: string }
 }
 
 function extractDataOrError<T, R>(response: APIResponse<T> | Error, extract: (data: T) => R): R | Error {
@@ -1547,6 +1561,34 @@ export class SourcegraphGraphQLAPIClient {
         return extractDataOrError(response, data => JSON.parse(data.viewerSettings.final))
     }
 
+    public async temporarySettings(signal?: AbortSignal): Promise<Partial<TemporarySettings> | Error> {
+        const response = await this.fetchSourcegraphAPI<APIResponse<TemporarySettingsResponse>>(
+            TEMPORARY_SETTINGS_QUERY,
+            {},
+            signal
+        )
+        return extractDataOrError(response, data => {
+            try {
+                return JSON.parse(data.temporarySettings.contents)
+            } catch {
+                return {}
+            }
+        })
+    }
+
+    public async editTemporarySettings(
+        settingsToEdit: Partial<TemporarySettings>,
+        signal?: AbortSignal
+    ): Promise<{ alwaysNil: string } | Error> {
+        const response = await this.fetchSourcegraphAPI<APIResponse<EditTemporarySettingsResponse>>(
+            EDIT_TEMPORARY_SETTINGS_QUERY,
+            { settingsToEdit: JSON.stringify(settingsToEdit) },
+            signal
+        )
+
+        return extractDataOrError(response, data => data.editTemporarySettings)
+    }
+
     public async fetchSourcegraphAPI<T>(
         query: string,
         variables: Record<string, any> = {},
@@ -1573,7 +1615,12 @@ export class SourcegraphGraphQLAPIClient {
 
         addTraceparent(headers)
         addCodyClientIdentificationHeaders(headers)
-        addAuthHeaders(config.auth, headers, url)
+
+        try {
+            await addAuthHeaders(config.auth, headers, url)
+        } catch (error: any) {
+            return error
+        }
 
         const queryName = query.match(QUERY_TO_NAME_REGEXP)?.[1]
 
@@ -1621,7 +1668,12 @@ export class SourcegraphGraphQLAPIClient {
 
         addTraceparent(headers)
         addCodyClientIdentificationHeaders(headers)
-        addAuthHeaders(config.auth, headers, url)
+
+        try {
+            await addAuthHeaders(config.auth, headers, url)
+        } catch (error: any) {
+            return error
+        }
 
         const { abortController, timeoutSignal } = dependentAbortControllerWithTimeout(signal)
         return wrapInActiveSpan(`httpapi.fetch${queryName ? `.${queryName}` : ''}`, () =>

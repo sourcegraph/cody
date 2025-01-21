@@ -1,35 +1,18 @@
 import dedent from 'dedent'
 import { beforeEach, describe, expect, it } from 'vitest'
 import type * as vscode from 'vscode'
+
 import { getCurrentDocContext } from '../../completions/get-current-doc-context'
 import { documentAndPosition } from '../../completions/test-helpers'
 import { defaultVSCodeExtensionClient } from '../../extension-client'
 import { FixupController } from '../../non-stop/FixupController'
 import type { AutoeditRequestID } from '../analytics-logger'
 import { getDecorationInfoFromPrediction } from '../autoedits-provider'
-import type { CodeToReplaceData } from '../prompt/prompt-utils'
-import { createCodeToReplaceDataForTest } from '../prompt/test-helper'
+import { getCodeToReplaceForRenderer } from '../prompt/test-helper'
 import { AutoEditsDefaultRendererManager } from '../renderer/manager'
+
 import { DefaultDecorator } from './decorators/default-decorator'
 import type { TryMakeInlineCompletionsArgs } from './manager'
-
-function getCodeToReplaceForManager(
-    code: TemplateStringsArray,
-    ...values: unknown[]
-): CodeToReplaceData {
-    return createCodeToReplaceDataForTest(
-        code,
-        {
-            maxPrefixLength: 100,
-            maxSuffixLength: 100,
-            maxPrefixLinesInArea: 2,
-            maxSuffixLinesInArea: 2,
-            codeToRewritePrefixLines: 1,
-            codeToRewriteSuffixLines: 1,
-        },
-        ...values
-    )
-}
 
 describe('AutoEditsDefaultRendererManager', () => {
     const getAutoeditRendererManagerArgs = (
@@ -43,7 +26,7 @@ describe('AutoEditsDefaultRendererManager', () => {
             maxPrefixLength: 100,
             maxSuffixLength: 100,
         })
-        const codeToReplaceData = getCodeToReplaceForManager`${documentText}`
+        const codeToReplaceData = getCodeToReplaceForRenderer`${documentText}`
         const decorationInfo = getDecorationInfoFromPrediction(document, prediction, codeToReplaceData)
         return {
             requestId: 'test-request-id' as AutoeditRequestID,
