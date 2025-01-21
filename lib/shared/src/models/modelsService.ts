@@ -592,7 +592,8 @@ export class ModelsService {
     public isStreamDisabled(modelID: string): boolean {
         // TODO(sqs)#observe: remove synchronous access here, return an Observable<boolean> instead
         const model = this.getModelByID(modelID)
-        return model?.tags.includes(ModelTag.StreamDisabled) ?? false
+        console.log(model)
+        return true
     }
 }
 
