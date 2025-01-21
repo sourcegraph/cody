@@ -1,8 +1,8 @@
 import { type Model, ModelTag, isCodyProModel, isWaitlistModel } from '@sourcegraph/cody-shared'
 import { useExtensionAPI, useObservable } from '@sourcegraph/prompt-editor'
 import { clsx } from 'clsx'
-import { BookOpenIcon, BuildingIcon, ExternalLinkIcon } from 'lucide-react'
-import { type FunctionComponent, type ReactNode, useCallback, useMemo } from 'react'
+import { BookOpenIcon, BrainIcon, BuildingIcon, ExternalLinkIcon, Settings2Icon } from 'lucide-react'
+import { type FunctionComponent, type ReactNode, useCallback, useMemo, useState } from 'react'
 import type { UserAccountInfo } from '../../Chat'
 import { ToolboxButton } from '../../chat/cells/messageCell/human/editor/ToolboxButton'
 import { getVSCodeAPI } from '../../utils/VSCodeApi'
@@ -47,6 +47,8 @@ export const ModelSelectField: React.FunctionComponent<{
     __storybook__open,
 }) => {
     const telemetryRecorder = useTelemetryRecorder()
+
+    const [menuView, setMenuView] = useState<'main' | 'agents'>('main')
 
     // The first model is the always the default.
     const selectedModel = models[0]
@@ -191,92 +193,121 @@ export const ModelSelectField: React.FunctionComponent<{
                     className={`focus:tw-outline-none ${styles.chatModelPopover}`}
                     data-testid="chat-model-popover"
                 >
-                    {settings && (
-                        <header className="tw-w-full tw-border-t tw-border-border tw-flex tw-justify-between tw-items-center">
-                            <ToolboxButton settings={settings} api={api} isFirstMessage={true} />
-                        </header>
-                    )}
-                    <CommandList
-                        className="model-selector-popover tw-max-h-[80vh] tw-overflow-y-auto"
-                        data-testid="chat-model-popover-option"
-                    >
-                        {optionsByGroup.map(({ group, options }) => (
-                            <CommandGroup heading={group} key={group}>
-                                {options.map(option => (
+                    {settings && menuView === 'agents' ? (
+                        <ToolboxButton
+                            settings={settings}
+                            api={api}
+                            backToMainMenu={() => setMenuView('main')}
+                        />
+                    ) : (
+                        <div>
+                            {settings && (
+                                <header className="tw-w-full tw-border-t tw-border-border tw-flex tw-justify-between tw-items-center tw-focus:ring-4 tw-focus:ring-gray-200 tw-bg-[color-mix(in_lch,currentColor_10%,transparent)]">
                                     <CommandItem
-                                        data-testid="chat-model-popover-option"
-                                        key={option.value}
-                                        value={option.value}
-                                        onSelect={currentValue => {
-                                            onChange(currentValue)
-                                            close()
+                                        className="tw-w-full tw-gap-3"
+                                        onSelect={() => {
+                                            setMenuView('agents')
                                         }}
-                                        disabled={option.disabled}
-                                        tooltip={option.tooltip}
                                     >
-                                        {option.title}
+                                        <span className="tw-text-muted-foreground">
+                                            <BrainIcon size={16} strokeWidth={2.5} />{' '}
+                                        </span>
+                                        <span className={styles.modelName}>Agent Settings</span>
+                                        <span className={styles.rightIcon}>
+                                            <Settings2Icon
+                                                size={16}
+                                                strokeWidth={1.25}
+                                                className="tw-opacity-80"
+                                            />
+                                        </span>
                                     </CommandItem>
-                                ))}
-                            </CommandGroup>
-                        ))}
-                        <CommandGroup>
-                            <CommandLink
-                                href="https://sourcegraph.com/docs/cody/clients/install-vscode#supported-llm-models"
-                                target="_blank"
-                                rel="noreferrer"
-                                className={styles.modelTitleWithIcon}
+                                </header>
+                            )}
+                            <CommandList
+                                className="model-selector-popover tw-max-h-[80vh] tw-overflow-y-auto"
+                                data-testid="chat-model-popover-option"
                             >
-                                <span className={styles.modelIcon}>
-                                    {/* wider than normal to fit in with provider icons */}
-                                    <BookOpenIcon size={16} strokeWidth={2} />{' '}
-                                </span>
-                                <span className={styles.modelName}>Documentation</span>
-                                <span className={styles.rightIcon}>
-                                    <ExternalLinkIcon
-                                        size={16}
-                                        strokeWidth={1.25}
-                                        className="tw-opacity-80"
-                                    />
-                                </span>
-                            </CommandLink>
-                        </CommandGroup>
-                        {userInfo.isDotComUser && (
-                            <CommandGroup>
-                                <CommandLink
-                                    key="enterprise-model-options"
-                                    href={ENTERPRISE_MODEL_DOCS_PAGE}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    onSelect={() => {
-                                        telemetryRecorder.recordEvent(
-                                            'cody.modelSelector',
-                                            'clickEnterpriseModelOption',
-                                            {
-                                                billingMetadata: {
-                                                    product: 'cody',
-                                                    category: 'billable',
-                                                },
-                                            }
-                                        )
-                                    }}
-                                    className={styles.modelTitleWithIcon}
-                                >
-                                    <span className={styles.modelIcon}>
-                                        {/* wider than normal to fit in with provider icons */}
-                                        <BuildingIcon size={16} strokeWidth={2} />{' '}
-                                    </span>
-                                    <span className={styles.modelName}>Enterprise Model Options</span>
-                                    <span className={styles.rightIcon}>
-                                        <ExternalLinkIcon
-                                            size={16}
-                                            strokeWidth={1.25}
-                                            className="tw-opacity-80"
-                                        />
-                                    </span>
-                                </CommandLink>
-                            </CommandGroup>
-                        )}
-                    </CommandList>
+                                {optionsByGroup.map(({ group, options }) => (
+                                    <CommandGroup heading={group} key={group}>
+                                        {options.map(option => (
+                                            <CommandItem
+                                                data-testid="chat-model-popover-option"
+                                                key={option.value}
+                                                value={option.value}
+                                                onSelect={currentValue => {
+                                                    onChange(currentValue)
+                                                    close()
+                                                }}
+                                                disabled={option.disabled}
+                                                tooltip={option.tooltip}
+                                            >
+                                                {option.title}
+                                            </CommandItem>
+                                        ))}
+                                    </CommandGroup>
+                                ))}
+                                <CommandGroup>
+                                    <CommandLink
+                                        href="https://sourcegraph.com/docs/cody/clients/install-vscode#supported-llm-models"
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className={styles.modelTitleWithIcon}
+                                    >
+                                        <span className={styles.modelIcon}>
+                                            {/* wider than normal to fit in with provider icons */}
+                                            <BookOpenIcon size={16} strokeWidth={2} />{' '}
+                                        </span>
+                                        <span className={styles.modelName}>Documentation</span>
+                                        <span className={styles.rightIcon}>
+                                            <ExternalLinkIcon
+                                                size={16}
+                                                strokeWidth={1.25}
+                                                className="tw-opacity-80"
+                                            />
+                                        </span>
+                                    </CommandLink>
+                                </CommandGroup>
+                                {userInfo.isDotComUser && (
+                                    <CommandGroup>
+                                        <CommandLink
+                                            key="enterprise-model-options"
+                                            href={ENTERPRISE_MODEL_DOCS_PAGE}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            onSelect={() => {
+                                                telemetryRecorder.recordEvent(
+                                                    'cody.modelSelector',
+                                                    'clickEnterpriseModelOption',
+                                                    {
+                                                        billingMetadata: {
+                                                            product: 'cody',
+                                                            category: 'billable',
+                                                        },
+                                                    }
+                                                )
+                                            }}
+                                            className={styles.modelTitleWithIcon}
+                                        >
+                                            <span className={styles.modelIcon}>
+                                                {/* wider than normal to fit in with provider icons */}
+                                                <BuildingIcon size={16} strokeWidth={2} />{' '}
+                                            </span>
+                                            <span className={styles.modelName}>
+                                                Enterprise Model Options
+                                            </span>
+                                            <span className={styles.rightIcon}>
+                                                <ExternalLinkIcon
+                                                    size={16}
+                                                    strokeWidth={1.25}
+                                                    className="tw-opacity-80"
+                                                />
+                                            </span>
+                                        </CommandLink>
+                                    </CommandGroup>
+                                )}
+                            </CommandList>
+                        </div>
+                    )}
                 </Command>
             )}
             popoverRootProps={{ onOpenChange }}
