@@ -1,5 +1,13 @@
 import classNames from 'classnames'
-import { type FC, type FunctionComponent, useLayoutEffect, useMemo, useState } from 'react'
+import {
+    type FC,
+    type FunctionComponent,
+    useCallback,
+    useLayoutEffect,
+    useMemo,
+    useRef,
+    useState,
+} from 'react'
 import { URI } from 'vscode-uri'
 
 import {
@@ -11,6 +19,7 @@ import {
     ContextItemSource,
     PromptString,
     REMOTE_DIRECTORY_PROVIDER_URI,
+    type WebviewToExtensionAPI,
     isErrorLike,
     setDisplayPathEnvInfo,
 } from '@sourcegraph/cody-shared'
@@ -33,8 +42,15 @@ import { useCodyWebAgent } from './use-cody-agent'
 // Include global Cody Web styles to the styles bundle
 import '../global-styles/styles.css'
 import type { DefaultContext } from '@sourcegraph/cody-shared/src/codebase-context/messages'
+import type { WebviewType } from 'cody-ai/src/chat/protocol'
+import { downloadChatHistory } from 'cody-ai/webviews/chat/downloadChatHistory'
 import styles from './CodyWebChat.module.css'
 import { ChatSkeleton } from './skeleton/ChatSkeleton'
+
+/**
+ * Controls the rendering of the Cody Web Chat component.
+ */
+export type ViewType = 'page' | 'sidebar'
 
 // Internal API mock call in order to set up web version of
 // the cody agent properly (completely mock data)
@@ -42,6 +58,34 @@ setDisplayPathEnvInfo({
     isWindows: false,
     workspaceFolders: [],
 })
+
+export type ControllerMessage =
+    | { type: 'view.change'; view: View }
+    | { type: 'chat.new' }
+    | { type: 'history.clear' }
+    | { type: 'history.download' }
+
+export type CodyWebChatMessage =
+    | { type: 'chat.change'; chat: ChatMessage[] }
+    | { type: 'view.change'; view: View }
+
+export type MessageHandler = (message: ControllerMessage) => void
+export type Unsubscriber = () => void
+
+/**
+ * The host system can pass an instance of this controller to the Cody Web Chat component to have finer control over its behavior.
+ * The controller allows the host system to change which view to show and get information about the current state of the chat.
+ */
+export interface CodyWebChatController {
+    /**
+     * Sends messages from the chat component to the controller.
+     */
+    postMessage(message: CodyWebChatMessage): void
+    /**
+     * Handles messages from the controller to the chat component.
+     */
+    onMessage(handler: MessageHandler): Unsubscriber
+}
 
 export interface CodyWebChatProps {
     serverEndpoint: string
@@ -51,6 +95,12 @@ export interface CodyWebChatProps {
     initialContext?: InitialContext
     customHeaders?: Record<string, string>
     className?: string
+
+    /** A controller that allows the host system to control the behavior of the chat. */
+    controller?: CodyWebChatController
+
+    /** How to render the chat, either as standalone page or sidebar. Defaults to 'sidebar'. */
+    viewType?: ViewType
 
     /**
      * Whenever an external (imperative) Cody Chat API instance is ready,
@@ -76,6 +126,8 @@ export const CodyWebChat: FunctionComponent<CodyWebChatProps> = ({
     customHeaders,
     className,
     onExternalApiReady,
+    controller,
+    viewType,
 }) => {
     const { client, vscodeAPI } = useCodyWebAgent({
         serverEndpoint,
@@ -102,6 +154,8 @@ export const CodyWebChat: FunctionComponent<CodyWebChatProps> = ({
                     initialContext={initialContext}
                     className={styles.container}
                     onExternalApiReady={onExternalApiReady}
+                    webview={viewType === 'page' ? 'editor' : 'sidebar'}
+                    controller={controller}
                 />
             </div>
         </AppWrapper>
@@ -113,10 +167,19 @@ interface CodyWebPanelProps {
     initialContext: InitialContext | undefined
     className?: string
     onExternalApiReady?: (api: CodyExternalApi) => void
+    webview: WebviewType
+    controller?: CodyWebChatController
 }
 
 const CodyWebPanel: FC<CodyWebPanelProps> = props => {
-    const { vscodeAPI, initialContext: initialContextData, className, onExternalApiReady } = props
+    const {
+        vscodeAPI,
+        initialContext: initialContextData,
+        className,
+        onExternalApiReady,
+        webview,
+        controller,
+    } = props
 
     const dispatchClientAction = useClientActionDispatcher()
     const [errorMessages, setErrorMessages] = useState<string[]>([])
@@ -125,6 +188,61 @@ const CodyWebPanel: FC<CodyWebPanelProps> = props => {
     const [config, setConfig] = useState<Config | null>(null)
     const [clientConfig, setClientConfig] = useState<CodyClientConfig | null>(null)
     const [view, setView] = useState<View | undefined>()
+    const extensionApiRef = useRef<WebviewToExtensionAPI | null>(null)
+
+    useLayoutEffect(() => {
+        return controller?.onMessage(message => {
+            switch (message.type) {
+                case 'view.change':
+                    setView(message.view)
+                    break
+                case 'chat.new':
+                    vscodeAPI.postMessage({ command: 'command', id: 'cody.chat.new' })
+                    break
+                case 'history.clear':
+                    // For some reason the view doesnt' update after the history is cleared. We force create a new chat
+                    // as a workaround.
+                    // FIXME: Invoking these two commands in a row doesn't work either.
+                    vscodeAPI.postMessage({ command: 'command', id: 'cody.chat.new' })
+                    vscodeAPI.postMessage({
+                        command: 'command',
+                        id: 'cody.chat.history.clear',
+                        arg: 'clear-all-no-confirm',
+                    })
+                    break
+                case 'history.download': {
+                    if (extensionApiRef.current) {
+                        downloadChatHistory(extensionApiRef.current)
+                    }
+                    break
+                }
+            }
+        })
+    }, [controller, vscodeAPI])
+
+    const onExtensionApiReady = useCallback((api: WebviewToExtensionAPI) => {
+        extensionApiRef.current = api
+    }, [])
+
+    const handleViewChange = useCallback(
+        (view: View) => {
+            if (controller) {
+                // Let the controller decide how to handle the view change
+                controller.postMessage({ type: 'view.change', view })
+            } else {
+                setView(view)
+            }
+        },
+        [controller]
+    )
+
+    const handleTranscriptChange = useCallback(
+        (transcript: ChatMessage[]) => {
+            setTranscript(transcript)
+            controller?.postMessage({ type: 'chat.change', chat: transcript })
+        },
+        [controller]
+    )
 
     useLayoutEffect(() => {
         vscodeAPI.onMessage(message => {
@@ -135,10 +253,10 @@ const CodyWebPanel: FC<CodyWebPanelProps> = props => {
                     )
                     if (message.isMessageInProgress) {
                         const msgLength = deserializedMessages.length - 1
-                        setTranscript(deserializedMessages.slice(0, msgLength))
+                        handleTranscriptChange(deserializedMessages.slice(0, msgLength))
                         setMessageInProgress(deserializedMessages[msgLength])
                     } else {
-                        setTranscript(deserializedMessages)
+                        handleTranscriptChange(deserializedMessages)
                         setMessageInProgress(null)
                     }
                     break
@@ -147,10 +265,10 @@ const CodyWebPanel: FC<CodyWebPanelProps> = props => {
                     setErrorMessages(prev => [...prev, message.errors].slice(-5))
                     break
                 case 'view':
-                    setView(message.view)
+                    handleViewChange(message.view)
                     break
                 case 'config':
-                    message.config.webviewType = 'sidebar'
+                    message.config.webviewType = webview
                     message.config.multipleWebviewsEnabled = false
                     setConfig(message)
                     break
@@ -164,7 +282,7 @@ const CodyWebPanel: FC<CodyWebPanelProps> = props => {
                     break
             }
         })
-    }, [vscodeAPI, dispatchClientAction])
+    }, [vscodeAPI, dispatchClientAction, handleTranscriptChange, handleViewChange, webview])
 
     // V2 telemetry recorder
     const telemetryRecorder = useMemo(() => createWebviewTelemetryRecorder(vscodeAPI), [vscodeAPI])
@@ -266,7 +384,7 @@ const CodyWebPanel: FC<CodyWebPanelProps> = props => {
                     <ComposedWrappers wrappers={wrappers}>
                         <CodyPanel
                             view={view}
-                            setView={setView}
+                            setView={handleViewChange}
                             errorMessages={errorMessages}
                             setErrorMessages={setErrorMessages}
                             attributionEnabled={false}
@@ -279,6 +397,7 @@ const CodyWebPanel: FC<CodyWebPanelProps> = props => {
                             transcript={transcript}
                             vscodeAPI={vscodeAPI}
                             onExternalApiReady={onExternalApiReady}
+                            onExtensionApiReady={onExtensionApiReady}
                         />
                     </ComposedWrappers>
                 </ChatMentionContext.Provider>
