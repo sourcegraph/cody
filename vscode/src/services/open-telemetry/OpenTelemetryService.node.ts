@@ -35,6 +35,10 @@ export class OpenTelemetryService {
 
     private configSubscription: Unsubscribable
 
+    // TODO: CODY-4720 - Race between config and auth update can lead to easy to make errors.
+    // `externalAuthRefresh` or `resolvedConfig` can emit before `auth` is updated, leading to potentially incoherent state.
+    // E.g. url endpoint may not match the endpoint for which headers were generated
+    // `addAuthHeaders` function have internal guard against this, but it would be better to solve this issue on the architecture level
     constructor() {
         this.configSubscription = combineLatest(
             externalAuthRefresh,

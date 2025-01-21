@@ -61,17 +61,17 @@ async function getExternalProviderHeaders(
         throw new Error(`Output of the external auth command is invalid: ${result}`)
     }
 
-    if (credentials.expiration && hasExpired(credentials.expiration)) {
+    if (hasExpired(credentials.expiration)) {
         throw new Error(
             'Credentials expiration cannot be set to a date in the past: ' +
-                `${new Date(credentials.expiration * 1000)} (${credentials.expiration})`
+                `${new Date(credentials.expiration! * 1000)} (${credentials.expiration})`
         )
     }
 
     return credentials
 }
 
-async function createTokenCredentails(
+async function createTokenCredentials(
     clientSecrets: ClientSecrets,
     serverEndpoint: string
 ): Promise<AuthCredentials> {
@@ -89,7 +89,7 @@ async function createTokenCredentails(
     }
 }
 
-function createHeaderCredentails(
+function createHeaderCredentials(
     externalProvider: ExternalAuthProvider,
     serverEndpoint: string
 ): AuthCredentials {
@@ -101,12 +101,16 @@ function createHeaderCredentails(
         credentials: {
             async getHeaders() {
                 try {
-                    if (!_headersCache || hasExpired((await _headersCache)?.expiration)) {
-                        _headersCache = getExternalProviderHeaders(externalProvider)
-                        externalAuthRefresh.next()
+                    while (true) {
+                        let observed = _headersCache
+                        if (!observed || hasExpired((await observed)?.expiration)) {
+                            if (observed !== _headersCache) {
+                                continue // cache already changed, retry
+                            }
+                            observed = _headersCache = getExternalProviderHeaders(externalProvider)
+                        }
+                        return (await observed).headers
                     }
-
-                    return (await _headersCache).headers
                 } catch (error) {
                     _headersCache = undefined
                     externalAuthRefresh.next()
@@ -143,8 +147,8 @@ export async function resolveAuth(
         )
 
         return externalProvider
-            ? createHeaderCredentails(externalProvider, serverEndpoint)
-            : createTokenCredentails(clientSecrets, serverEndpoint)
+            ? createHeaderCredentials(externalProvider, serverEndpoint)
+            : createTokenCredentials(clientSecrets, serverEndpoint)
     } catch (error) {
         return {
             credentials: undefined,
