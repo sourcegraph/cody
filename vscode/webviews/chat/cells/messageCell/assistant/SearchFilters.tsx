@@ -49,21 +49,22 @@ export const SearchFilters = ({
 }: SearchFiltersProps) => {
     const telemetryRecorder = useTelemetryRecorder()
     const filterGroups = useMemo(() => {
-        // selectedFilter is included just as a safeguard in case the selected filter is not in the search response filters
-        return uniqBy([...filters, ...selectedFilters], ({ value, kind }) => `${value}-${kind}`).reduce<
+
+        // Use filters available from search response, if not display previous selection
+        const availableFilters = filters.length > 0 ? [...filters] : [...selectedFilters]
+        
+        return uniqBy(availableFilters, ({ value, kind }) => `${value}-${kind}`).reduce<
             Record<NLSSearchDynamicFilterKind, NLSSearchDynamicFilter[]>
         >(
             (groups, filter) => {
                 if (supportedDynamicFilterKinds.includes(filter.kind)) {
                     groups[filter.kind as NLSSearchDynamicFilterKind].push(filter)
                 }
-
                 return groups
             },
             { repo: [], file: [], type: [], lang: [] }
         )
-    }, [filters, selectedFilters])
-
+    }, [filters])
     const onFilterSelect = useCallback(
         (filter: NLSSearchDynamicFilter) => {
             telemetryRecorder.recordEvent('onebox.filter', 'clicked', {
