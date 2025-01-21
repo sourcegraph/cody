@@ -4,7 +4,7 @@
 
 **Code AI with codebase context**
 
-Cody is an AI coding assistant that uses the latest LLMs and codebase context to help you understand, write, and fix code faster.
+Cody Test is an AI coding assistant that uses the latest LLMs and codebase context to help you understand, write, and fix code faster.
 
 [Docs](https://sourcegraph.com/docs/cody) • [cody.dev](https://about.sourcegraph.com/cody?utm_source=github.com&utm_medium=referral)
 
