@@ -28,7 +28,7 @@ export const Cell = forwardRef<HTMLDivElement, PropsWithChildren<CellProps>>((pr
     return (
         <div
             ref={ref}
-            className={clsx('tw-flex tw-flex-col tw-gap-4', containerClassName)}
+            className={clsx('tw-flex tw-flex-col tw-gap-4 tw-pt-4', containerClassName)}
             role="row"
             aria-current={ariaCurrent}
             aria-disabled={ariaDisabled}

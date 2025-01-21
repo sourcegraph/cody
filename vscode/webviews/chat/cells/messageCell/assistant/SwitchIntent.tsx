@@ -21,7 +21,7 @@ export const SwitchIntent = ({ intent, manuallySelected, onSwitch }: SwitchInten
                     <Sparkles className="tw-size-8 tw-flex-shrink-0" />
                 )}
                 <span className="tw-leading-tight">
-                    {manuallySelected ? 'You' : 'Query review'} selected a{' '}
+                    {manuallySelected ? 'You' : 'Intent detection'} selected a{' '}
                     {intent === 'search' ? 'code search' : 'chat'} response
                 </span>
             </div>
