@@ -79,36 +79,21 @@ export class ChatsController implements vscode.Disposable {
             subscriptionDisposable(
                 authStatus.subscribe(authStatus => {
                     const hasLoggedOut = !authStatus.authenticated
-                    const hasSwitchedAccount =
-                        this.currentAuthAccount &&
-                        this.currentAuthAccount.endpoint !== authStatus.endpoint
-                    this.currentAuthAccount = authStatus.authenticated ? { ...authStatus } : undefined
-                    console.log('this.currentAuthAccount endpoint', this.currentAuthAccount?.endpoint, '\n hasLoggedOut: ', hasLoggedOut, '\n hasSwitchedAccount: ', hasSwitchedAccount, '\n authStatus endpoint: ', authStatus.endpoint)
+                    console.log(
+                        'code222: this.currentAuthAccount endpoint',
+                        this.currentAuthAccount?.endpoint,
+                        '\n hasLoggedOut: ',
+                        hasLoggedOut,
+                        '\n hasSwitchedAccount: ',
+                        hasSwitchedAccount,
+                        '\n authStatus endpoint: ',
+                        authStatus.endpoint
+                    )
+
+                    // this.currentAuthAccount = authStatus.authenticated ? { ...authStatus } : undefined
 
                     if (hasLoggedOut) {
                         this.disposeAllChats()
-                    }
-                    if (hasSwitchedAccount) {
-                        // Update account reference before disposing
-                        this.currentAuthAccount = authStatus.authenticated
-                            ? { ...authStatus }
-                            : undefined
-
-                        // Dispose chats without saving to storage
-                        this.activeEditor = undefined
-                        const oldEditors = this.editors
-                        this.editors = []
-                        for (const editor of oldEditors) {
-                            if (editor.webviewPanelOrView) {
-                                disposeWebviewViewOrPanel(editor.webviewPanelOrView)
-                            }
-                            editor.dispose()
-                        }
-
-                        // Clear panel without saving
-                        if (this.panel) {
-                            this.panel.clearAndRestartSession([], false)
-                        }
                     }
                 })
             )
