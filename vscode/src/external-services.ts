@@ -9,7 +9,7 @@ import {
 } from '@sourcegraph/cody-shared'
 
 import { ChatIntentAPIClient } from './chat/context/chatIntentAPIClient'
-import { autocompleteLifecycleOutputChannelLogger } from './completions/output-channel-logger'
+import { completionsLifecycleOutputChannelLogger } from './completions/output-channel-logger'
 import type { PlatformContext } from './extension.common'
 import type { SymfRunner } from './local-context/symf'
 
@@ -40,7 +40,7 @@ export async function configureExternalServices(
     const openTelemetryService = platform.createOpenTelemetryService?.()
     if (openTelemetryService) disposables.push(openTelemetryService)
 
-    const completionsClient = platform.createCompletionsClient(autocompleteLifecycleOutputChannelLogger)
+    const completionsClient = platform.createCompletionsClient(completionsLifecycleOutputChannelLogger)
 
     const symfRunner = platform.createSymfRunner?.(context)
     if (symfRunner) disposables.push(symfRunner)
