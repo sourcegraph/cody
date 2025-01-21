@@ -150,7 +150,6 @@ const HumanMessageCellContent = memo<HumanMessageCellContent>(props => {
         />
     )
 }, isEqual)
-
 const OpenInNewEditorAction = () => {
     const {
         config: { multipleWebviewsEnabled },
