@@ -23,6 +23,7 @@ import {
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
 import { resolveAuth } from '@sourcegraph/cody-shared/src/configuration/auth-resolver'
+import { isExternalProviderAuthError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
 import { isSourcegraphToken } from '../chat/protocol'
 import { newAuthStatus } from '../chat/utils'
 import { logDebug } from '../output-channel-logger'
@@ -453,13 +454,12 @@ export async function validateCredentials(
             pendingValidation: false,
             error: {
                 type: 'auth-config-error',
-                title: 'Auth config error',
                 message: config.auth.error?.message ?? config.auth.error,
             },
         }
     }
 
-    // An access token is needed except for Cody Web, which uses cookies.
+    // Credentials are needed except for Cody Web, which uses cookies.
     if (!config.auth.credentials && !clientCapabilities().isCodyWeb) {
         return { authenticated: false, endpoint: config.auth.serverEndpoint, pendingValidation: false }
     }
@@ -482,17 +482,28 @@ export async function validateCredentials(
         const userInfo = await client.getCurrentUserInfo(signal)
         signal?.throwIfAborted()
 
-        if (isError(userInfo) && isNetworkLikeError(userInfo)) {
-            logDebug(
-                'auth',
-                `Failed to authenticate to ${config.auth.serverEndpoint} due to likely network error`,
-                userInfo.message
-            )
-            return {
-                authenticated: false,
-                error: { type: 'network-error' },
-                endpoint: config.auth.serverEndpoint,
-                pendingValidation: false,
+        if (isError(userInfo)) {
+            if (isExternalProviderAuthError(userInfo)) {
+                logDebug('auth', userInfo.message)
+                return {
+                    authenticated: false,
+                    error: { type: 'external-auth-provider-error', message: userInfo.message },
+                    endpoint: config.auth.serverEndpoint,
+                    pendingValidation: false,
+                }
+            }
+            if (isNetworkLikeError(userInfo)) {
+                logDebug(
+                    'auth',
+                    `Failed to authenticate to ${config.auth.serverEndpoint} due to likely network error`,
+                    userInfo.message
+                )
+                return {
+                    authenticated: false,
+                    error: { type: 'network-error' },
+                    endpoint: config.auth.serverEndpoint,
+                    pendingValidation: false,
+                }
             }
         }
         if (!userInfo || isError(userInfo)) {
