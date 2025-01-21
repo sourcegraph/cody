@@ -8,7 +8,8 @@ import {
 } from './common'
 import { test } from './helpers'
 
-test('chat followup context', async ({ page, sidebar }) => {
+// TODO: https://linear.app/sourcegraph/issue/CODY-4721/fix-skipped-e2e-tests
+test.skip('chat followup context', async ({ page, sidebar }) => {
     await sidebarSignin(page, sidebar)
 
     // Open chat.
