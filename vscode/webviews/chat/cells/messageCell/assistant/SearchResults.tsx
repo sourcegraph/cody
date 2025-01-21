@@ -162,7 +162,7 @@ export const SearchResults = ({
                         !!message.search.selectedFilters?.length) && (
                         <div
                             className={classNames(
-                                'tw-min-w-[250px] tw-w-[250px] tw-relative tw-mt-2 tw-p-4 tw-border-r tw-border-muted tw-shadow',
+                                'tw-min-w-[250px] tw-w-[250px] tw-relative tw-mt-2 tw-p-4 tw-border-r tw-shadow',
                                 styles.filtersSidebar
                             )}
                         >
@@ -193,7 +193,7 @@ export const SearchResults = ({
                         {!!resultsToShow && (
                             <div
                                 className={classNames(
-                                    'tw-flex tw-items-center tw-gap-4 tw-justify-between tw-py-4 md:tw-px-4 tw-border-b tw-border-muted',
+                                    'tw-flex tw-items-center tw-gap-4 tw-justify-between tw-py-4 md:tw-px-4 tw-border-b',
                                     styles.searchResultsHeader
                                 )}
                             >

@@ -13,7 +13,7 @@ export const SwitchIntent = ({ intent, manuallySelected, onSwitch }: SwitchInten
     }
 
     return (
-        <div className="tw-flex tw-justify-between tw-gap-6 tw-items-center tw-py-2 tw-px-4 md:tw-p-4 tw-text-sm tw-font-medium tw-border-b tw-border-muted">
+        <div className="tw-flex tw-justify-between tw-gap-6 tw-items-center tw-py-2 tw-px-4 md:tw-p-4 tw-text-sm tw-font-medium tw-border-b">
             <div className="tw-flex tw-gap-4 tw-py-2 tw-text-muted-foreground">
                 {manuallySelected ? (
                     <UserCircle2 className="tw-size-8 tw-flex-shrink-0" />
