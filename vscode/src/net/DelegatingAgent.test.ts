@@ -137,10 +137,7 @@ describe.sequential('DelegatingAgent caching', () => {
             https.request(wildcardNoProxyRequest),
             wildcardNoProxyRequest
         )
-        const dotNoProxyAgent = await agent.connect(
-            https.request(dotNoProxyRequest),
-            dotNoProxyRequest
-        )
+        const dotNoProxyAgent = await agent.connect(https.request(dotNoProxyRequest), dotNoProxyRequest)
 
         // Verify different agents are used
         expect(proxiedAgent).instanceOf(HttpsProxyAgent)
