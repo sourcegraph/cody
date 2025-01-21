@@ -142,7 +142,7 @@ export function getContextCell(chatPanel: FrameLocator): Locator {
 }
 
 export async function openContextCell(contextCell: Locator) {
-    contextCell.locator('button', { hasText: 'Context' }).click()
+    contextCell.locator('button', { hasText: 'Context' }).first().click()
 }
 
 export async function expectContextCellCounts(
