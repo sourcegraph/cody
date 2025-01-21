@@ -31,7 +31,7 @@ interface ScrollDownProps {
  * A component that displays a down arrow at the bottom of the viewport to inform the user that
  * there is more content if they scroll down.
  */
-const ScrollDown: FC<ScrollDownProps> = props => {
+export const ScrollDown: FC<ScrollDownProps> = props => {
     const { scrollableParent, onClick: parentOnClick } = props
     const [canScrollDown, setCanScrollDown] = useState(false)
 
