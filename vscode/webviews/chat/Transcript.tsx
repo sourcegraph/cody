@@ -476,6 +476,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
             intentResults,
             manuallySelectedIntent,
             doIntentDetection,
+            scrollToBottom,
         ]
     )
 
