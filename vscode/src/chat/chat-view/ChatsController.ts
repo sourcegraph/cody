@@ -84,8 +84,6 @@ export class ChatsController implements vscode.Disposable {
                         this.currentAuthAccount?.endpoint,
                         '\n hasLoggedOut: ',
                         hasLoggedOut,
-                        '\n hasSwitchedAccount: ',
-                        hasSwitchedAccount,
                         '\n authStatus endpoint: ',
                         authStatus.endpoint
                     )
