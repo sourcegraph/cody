@@ -282,7 +282,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     inputText: PromptString.unsafe_fromUserQuery(message.text),
                     mentions: message.contextItems ?? [],
                     editorState: message.editorState as SerializedPromptEditorState,
-                    signal: this.startNewSubmitOrEditOperation(),
+                    signal: await this.startNewSubmitOrEditOperation(),
                     source: 'chat',
                     preDetectedIntent: message.preDetectedIntent,
                     preDetectedIntentScores: message.preDetectedIntentScores,
@@ -1004,17 +1004,23 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     }
 
     private submitOrEditOperation: AbortController | undefined
-    public startNewSubmitOrEditOperation(): AbortSignal {
+    public startNewSubmitOrEditOperation(): Promise<AbortSignal> {
         this.submitOrEditOperation?.abort()
-        this.submitOrEditOperation = new AbortController()
-        return this.submitOrEditOperation.signal
+
+        return new Promise(resolve => {
+            setTimeout(() => {
+                this.submitOrEditOperation = new AbortController()
+                resolve(this.submitOrEditOperation.signal)
+            }, 500)
+        })
     }
-    private cancelSubmitOrEditOperation(): void {
+    private cancelSubmitOrEditOperation(): Promise<void> {
         if (this.submitOrEditOperation) {
             this.submitOrEditOperation.abort()
             this.submitOrEditOperation = undefined
         }
-        void this.saveSession()
+
+        return this.saveSession()
     }
 
     private async reevaluateSearchWithSelectedFilters({
@@ -1027,6 +1033,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         if (index === undefined || !Array.isArray(selectedFilters)) {
             return
         }
+
+        await this.handleAbort()
 
         const humanMessage = this.chatBuilder.getMessages().at(index)
         const assistantMessage = this.chatBuilder.getMessages().at(index + 1)
@@ -1137,7 +1145,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         preDetectedIntentScores?: { intent: string; score: number }[] | undefined | null
         manuallySelectedIntent?: ChatMessage['intent'] | undefined | null
     }): Promise<void> {
-        const abortSignal = this.startNewSubmitOrEditOperation()
+        const abortSignal = await this.startNewSubmitOrEditOperation()
 
         telemetryRecorder.recordEvent('cody.editChatButton', 'clicked', {
             billingMetadata: {
@@ -1163,13 +1171,16 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 preDetectedIntentScores,
                 manuallySelectedIntent,
             })
-        } catch {
+        } catch (error) {
+            if (isAbortErrorOrSocketHangUp(error)) {
+                return
+            }
             this.postError(new Error('Failed to edit prompt'), 'transcript')
         }
     }
 
-    private handleAbort(): void {
-        this.cancelSubmitOrEditOperation()
+    private async handleAbort(): Promise<void> {
+        await this.cancelSubmitOrEditOperation()
         // Notify the webview there is no message in progress.
         this.postViewTranscript()
         telemetryRecorder.recordEvent('cody.sidebar.abortButton', 'clicked', {
