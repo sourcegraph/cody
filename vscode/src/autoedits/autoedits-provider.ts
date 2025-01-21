@@ -81,9 +81,15 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
     private readonly onSelectionChangeDebounced: DebouncedFunc<typeof this.onSelectionChange>
     public readonly rendererManager: AutoEditsRendererManager
     private readonly modelAdapter: AutoeditsModelAdapter
+
+    /**
+     * Default: Current supported renderer
+     * Inline: Experimental renderer that uses inline decorations to show additions
+     * Image: Experimental renderer that uses images to show additions.
+     */
     private readonly enabledRenderer = vscode.workspace
         .getConfiguration()
-        .get<'default' | 'inline'>('cody.experimental.autoedit.renderer', 'default')
+        .get<'default' | 'inline' | 'image'>('cody.experimental.autoedit.renderer', 'default')
 
     private readonly promptStrategy = new ShortTermPromptStrategy()
     public readonly filterPrediction = new FilterPredictionBasedOnRecentEdits()
@@ -108,7 +114,10 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                       fixupController
                   )
                 : new AutoEditsDefaultRendererManager(
-                      (editor: vscode.TextEditor) => new DefaultDecorator(editor),
+                      (editor: vscode.TextEditor) =>
+                          new DefaultDecorator(editor, {
+                              imageRendering: this.enabledRenderer === 'image',
+                          }),
                       fixupController
                   )
 

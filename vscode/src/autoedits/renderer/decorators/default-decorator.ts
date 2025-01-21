@@ -45,9 +45,15 @@ interface DiffDecorationInfo {
     addedLinesInfo?: DiffDecorationAddedLinesInfo
 }
 
+interface DefaultDecoratorOptions {
+    /** Experimentally render added lines as images in the editor */
+    imageRendering?: boolean
+}
+
 export class DefaultDecorator implements AutoEditsDecorator {
     private readonly decorationTypes: vscode.TextEditorDecorationType[]
     private readonly editor: vscode.TextEditor
+    private readonly options: DefaultDecoratorOptions
 
     // Decoration types
     private readonly removedTextDecorationType: vscode.TextEditorDecorationType
@@ -61,8 +67,10 @@ export class DefaultDecorator implements AutoEditsDecorator {
      */
     private diffDecorationInfo: DiffDecorationInfo | undefined
 
-    constructor(editor: vscode.TextEditor) {
+    constructor(editor: vscode.TextEditor, options: DefaultDecoratorOptions = {}) {
         this.editor = editor
+        this.options = options
+
         // Initialize decoration types
         this.removedTextDecorationType = vscode.window.createTextEditorDecorationType({
             backgroundColor: new vscode.ThemeColor('diffEditor.removedTextBackground'),
@@ -153,6 +161,15 @@ export class DefaultDecorator implements AutoEditsDecorator {
         const addedLinesInfo = this.diffDecorationInfo.addedLinesInfo
 
         if (!addedLinesInfo) {
+            return
+        }
+
+        if (this.options.imageRendering) {
+            this.renderAddedLinesImageDecorations(
+                addedLinesInfo.addedLinesDecorationInfo,
+                addedLinesInfo.startLine,
+                addedLinesInfo.replacerCol
+            )
             return
         }
 
@@ -280,6 +297,69 @@ export class DefaultDecorator implements AutoEditsDecorator {
     ): void {
         // Blockify the added lines so they are suitable to be rendered together as a VS Code decoration
         const blockifiedAddedLines = blockify(this.editor.document, addedLinesInfo)
+
+        const replacerDecorations: vscode.DecorationOptions[] = []
+        for (let i = 0; i < blockifiedAddedLines.length; i++) {
+            const j = i + startLine
+            const line = this.editor.document.lineAt(j)
+            const lineReplacerCol = this.getEndColumn(line)
+            const decoration = blockifiedAddedLines[i]
+            const decorationStyle = cssPropertiesToString({
+                // Absolutely position the suggested code so that the cursor does not jump there
+                position: 'absolute',
+                // Due the the absolute position, the decoration may interfere with other decorations (e.g. GitLens)
+                // Apply a background blur to avoid interference
+                'backdrop-filter': 'blur(5px)',
+            })
+
+            if (replacerCol >= lineReplacerCol) {
+                replacerDecorations.push({
+                    range: new vscode.Range(j, line.range.end.character, j, line.range.end.character),
+                    renderOptions: {
+                        // Show the suggested code but keep it positioned absolute to ensure
+                        // the cursor does not jump there.
+                        before: {
+                            contentText: UNICODE_SPACE.repeat(3) + decoration.lineText,
+                            margin: `0 0 0 ${replacerCol - lineReplacerCol}ch`,
+                            textDecoration: `none;${decorationStyle}`,
+                        },
+                        // Create an empty HTML element with the width required to show the suggested code.
+                        // Required to make the viewport scrollable to view the suggestion if it's outside.
+                        after: {
+                            contentText:
+                                UNICODE_SPACE.repeat(3) +
+                                decoration.lineText.replace(/\S/g, UNICODE_SPACE),
+                            margin: `0 0 0 ${replacerCol - lineReplacerCol}ch`,
+                        },
+                    },
+                })
+            } else {
+                replacerDecorations.push({
+                    range: new vscode.Range(j, replacerCol, j, replacerCol),
+                    renderOptions: {
+                        before: {
+                            contentText: UNICODE_SPACE + decoration.lineText,
+                            textDecoration: `none;${decorationStyle}`,
+                        },
+                        after: {
+                            contentText:
+                                UNICODE_SPACE.repeat(3) +
+                                decoration.lineText.replace(/\S/g, UNICODE_SPACE),
+                        },
+                    },
+                })
+            }
+        }
+    }
+
+    private renderAddedLinesImageDecorations(
+        addedLinesInfo: AddedLinesDecorationInfo[],
+        startLine: number,
+        replacerCol: number
+    ): void {
+        // Blockify the added lines so they are suitable to be rendered together as a VS Code decoration
+        const blockifiedAddedLines = blockify(this.editor.document, addedLinesInfo)
+
         const { dark, light } = generateSuggestionAsImage({
             decorations: blockifiedAddedLines,
             lang: this.editor.document.languageId,
