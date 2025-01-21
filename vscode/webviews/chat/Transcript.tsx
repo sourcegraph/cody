@@ -171,7 +171,7 @@ export const Transcript: FC<TranscriptProps> = props => {
         <LastEditorContext.Provider value={lastHumanEditorRef}>
             <div className="tw-overflow-auto" ref={scrollableRef}>
                 <div
-                    className={clsx('tw-px-8 tw-pt-8 tw-pb-6 tw-flex tw-flex-col tw-gap-8', {
+                    className={clsx(' tw-px-8 tw-pb-6 tw-flex tw-flex-col tw-gap-8 md:tw-pt-2', {
                         'tw-flex-grow': transcript.length > 0,
                     })}
                 >
@@ -222,7 +222,7 @@ export const Transcript: FC<TranscriptProps> = props => {
             </div>
             {interactions.length > 1 ? (
                 <div
-                    className={clsx('tw-px-8 tw-pt-8 tw-pb-6 tw-flex tw-flex-col tw-gap-8', {
+                    className={clsx('tw-px-8 tw-pb-6 tw-flex tw-flex-col tw-gap-8 md:tw-pt-2', {
                         'tw-flex-grow': transcript.length > 0,
                     })}
                 >
