@@ -32,7 +32,7 @@ import {
 } from '../../../../../../components/shadcn/ui/command'
 import { Switch } from '../../../../../../components/shadcn/ui/switch'
 import { useConfig } from '../../../../../../utils/useConfig'
-import { useExperimentalOneBox } from '../../../../../../utils/useExperimentalOneBox'
+import { useOmniBox } from '../../../../../../utils/useOmniBox'
 
 export type SubmitButtonState = 'submittable' | 'emptyEditorValue' | 'waitingResponseComplete'
 
@@ -148,7 +148,7 @@ export const SubmitButton: FC<{
     state?: SubmitButtonState
     detectedIntent?: ChatMessage['intent']
 }> = ({ onClick, state = 'submittable', detectedIntent }) => {
-    const experimentalOneBoxEnabled = useExperimentalOneBox()
+    const experimentalOneBoxEnabled = useOmniBox()
     const {
         clientCapabilities: { agentIDE },
         isDotComUser,

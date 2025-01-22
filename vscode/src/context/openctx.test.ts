@@ -9,6 +9,7 @@ import {
     mockClientCapabilities,
     mockResolvedConfig,
 } from '@sourcegraph/cody-shared'
+import { dummyClientConfigForTest } from '@sourcegraph/cody-shared/src/sourcegraph-api/clientConfig'
 import { Observable } from 'observable-fns'
 import { beforeAll, describe, expect, test, vi } from 'vitest'
 import { getOpenCtxProviders } from './openctx'
@@ -31,10 +32,14 @@ describe('getOpenCtxProviders', () => {
         return Observable.of({ endpoint: isDotCom ? DOTCOM_URL.toString() : 'https://example.com' })
     }
 
+    const mockClientConfig = Observable.of(dummyClientConfigForTest)
+
     test('dotcom user', async () => {
         vi.spyOn(featureFlagProvider, 'evaluatedFeatureFlag').mockReturnValue(Observable.of(false))
 
-        const providers = await firstValueFrom(getOpenCtxProviders(mockAuthStatus(true), true))
+        const providers = await firstValueFrom(
+            getOpenCtxProviders(mockAuthStatus(true), mockClientConfig, true)
+        )
 
         expect(providers.map(p => p.providerUri)).toEqual([WEB_PROVIDER_URI])
     })
@@ -42,7 +47,9 @@ describe('getOpenCtxProviders', () => {
     test('enterprise user', async () => {
         vi.spyOn(featureFlagProvider, 'evaluatedFeatureFlag').mockReturnValue(Observable.of(false))
 
-        const providers = await firstValueFrom(getOpenCtxProviders(mockAuthStatus(false), true))
+        const providers = await firstValueFrom(
+            getOpenCtxProviders(mockAuthStatus(false), mockClientConfig, true)
+        )
 
         expect(providers.map(p => p.providerUri)).toEqual([
             WEB_PROVIDER_URI,
@@ -55,7 +62,9 @@ describe('getOpenCtxProviders', () => {
     test('should include gitMentionsProvider when feature flag is true', async () => {
         vi.spyOn(featureFlagProvider, 'evaluatedFeatureFlag').mockReturnValue(Observable.of(true))
 
-        const providers = await firstValueFrom(getOpenCtxProviders(mockAuthStatus(false), true))
+        const providers = await firstValueFrom(
+            getOpenCtxProviders(mockAuthStatus(false), mockClientConfig, true)
+        )
 
         expect(providers.map(p => p.providerUri)).toContain(GIT_OPENCTX_PROVIDER_URI)
     })
