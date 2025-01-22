@@ -1228,22 +1228,23 @@ export class SourcegraphGraphQLAPIClient {
     }
 
     public async contextFilters(): Promise<{
-        filters: ContextFilters
+        filters: ContextFilters | Error
         transient: boolean
     }> {
         // CONTEXT FILTERS are only available on Sourcegraph 5.3.3 and later.
         const minimumVersion = '5.3.3'
         const version = await this.getSiteVersion()
         if (isError(version)) {
+            const error = version
             logError(
                 'SourcegraphGraphQLAPIClient',
                 'contextFilters getSiteVersion failed',
-                version.message
+                error.message
             )
 
             // Exclude everything in case of an unexpected error.
             return {
-                filters: EXCLUDE_EVERYTHING_CONTEXT_FILTERS,
+                filters: error,
                 transient: true,
             }
         }
@@ -1284,18 +1285,19 @@ export class SourcegraphGraphQLAPIClient {
         })
 
         if (result instanceof Error) {
+            const error = result
             // Ignore errors caused by outdated Sourcegraph API instances.
-            if (hasOutdatedAPIErrorMessages(result)) {
+            if (hasOutdatedAPIErrorMessages(error)) {
                 return {
                     filters: INCLUDE_EVERYTHING_CONTEXT_FILTERS,
                     transient: false,
                 }
             }
 
-            logError('SourcegraphGraphQLAPIClient', 'contextFilters', result.message)
+            logError('SourcegraphGraphQLAPIClient', 'contextFilters', error.message)
             // Exclude everything in case of an unexpected error.
             return {
-                filters: EXCLUDE_EVERYTHING_CONTEXT_FILTERS,
+                filters: error,
                 transient: true,
             }
         }
