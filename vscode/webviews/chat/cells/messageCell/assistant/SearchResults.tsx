@@ -7,6 +7,7 @@ import {
 import classNames from 'classnames'
 import {
     ArrowDown,
+    ChevronRight,
     ExternalLink,
     FilterIcon,
     FilterX,
@@ -63,7 +64,7 @@ export const SearchResults = ({
     const [showAll, setShowAll] = useState(false)
     const [showFiltersModal, setShowFiltersModal] = useState(false)
     const [showFiltersSidebar, setShowFiltersSidebar] = useState(true)
-
+    const [otherReposExpanded, setOtherReposExpanded] = useState(true)
     const totalResults = useMemo(
         () =>
             message.search.response?.results.results.filter(
@@ -343,28 +344,83 @@ export const SearchResults = ({
                         )}
                         {resultsToShow.length ? (
                             <ul className="tw-list-none tw-flex tw-flex-col">
-                                {resultsToShow.map((result, i) => (
-                                    <li
-                                        // biome-ignore lint/correctness/useJsxKeyInIterable:
-                                        // biome-ignore lint/suspicious/noArrayIndexKey: stable order
-                                        key={i}
-                                    >
-                                        {i === firstNonBoostedRepoIndex && (
-                                            <h6 className="tw-border-b tw-border-border tw-text-muted-foreground tw-p-4 tw-pt-8">
-                                                Results from other repositories
-                                            </h6>
-                                        )}
-                                        <NLSResultSnippet
-                                            result={result}
-                                            selectedForContext={selectedFollowUpResults.has(result)}
-                                            onSelectForContext={
-                                                enableContextSelection
-                                                    ? handleSelectForContext
-                                                    : undefined
-                                            }
-                                        />
-                                    </li>
-                                ))}
+                                {resultsToShow.map((result, i) => {
+                                    if (
+                                        typeof firstNonBoostedRepoIndex === 'number' &&
+                                        i === firstNonBoostedRepoIndex
+                                    ) {
+                                        const otherReposResultsCount =
+                                            resultsToShow.length - firstNonBoostedRepoIndex
+                                        return (
+                                            <>
+                                                <div
+                                                    className="tw-border-b tw-border-border tw-text-muted-foreground tw-p-4 tw-pt-8 tw-flex tw-justify-between tw-items-center tw-cursor-pointer hover:tw-bg-secondary/50"
+                                                    onClick={() =>
+                                                        setOtherReposExpanded(!otherReposExpanded)
+                                                    }
+                                                    onKeyDown={e => {
+                                                        if (e.key === 'Enter' || e.key === ' ') {
+                                                            setOtherReposExpanded(!otherReposExpanded)
+                                                        }
+                                                    }}
+                                                    role="button"
+                                                    tabIndex={0}
+                                                >
+                                                    <div className="tw-flex tw-items-center tw-gap-2 hover:tw-text-foreground">
+                                                        <ChevronRight
+                                                            className={classNames(
+                                                                'tw-size-8 tw-transition-transform',
+                                                                otherReposExpanded ? 'tw-rotate-90' : ''
+                                                            )}
+                                                        />
+                                                        <span className="tw-font-medium tw-text-sm">
+                                                            Results from other repositories
+                                                        </span>
+                                                        <span className="tw-bg-muted tw-text-muted-foreground tw-rounded-full tw-mx-2 tw-px-3 tw-py-2 tw-text-xs tw-font-semibold tw-leading-none">
+                                                            {otherReposResultsCount}
+                                                        </span>
+                                                    </div>
+                                                </div>{' '}
+                                                {otherReposExpanded && (
+                                                    <NLSResultSnippet
+                                                        result={result}
+                                                        selectedForContext={selectedFollowUpResults.has(
+                                                            result
+                                                        )}
+                                                        onSelectForContext={
+                                                            enableContextSelection
+                                                                ? handleSelectForContext
+                                                                : undefined
+                                                        }
+                                                    />
+                                                )}
+                                            </>
+                                        )
+                                    }
+
+                                    // Only render non-boosted repo results if expanded
+                                    if (
+                                        typeof firstNonBoostedRepoIndex === 'number' &&
+                                        i > firstNonBoostedRepoIndex &&
+                                        !otherReposExpanded
+                                    ) {
+                                        return null
+                                    }
+
+                                    return (
+                                        <li key={i}>
+                                            <NLSResultSnippet
+                                                result={result}
+                                                selectedForContext={selectedFollowUpResults.has(result)}
+                                                onSelectForContext={
+                                                    enableContextSelection
+                                                        ? handleSelectForContext
+                                                        : undefined
+                                                }
+                                            />
+                                        </li>
+                                    )
+                                })}{' '}
                             </ul>
                         ) : (
                             <div className="tw-flex tw-flex-col tw-gap-4 tw-justify-center tw-items-center tw-my-20 tw-text-muted-foreground">

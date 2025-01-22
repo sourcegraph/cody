@@ -14,17 +14,24 @@
     :global(.line) {
         min-width: 1.5rem;
         text-align: right;
+        -webkit-user-select: none;
         user-select: none;
         cursor: pointer;
+        color: var(--vscode-editorLineNumber-foreground);
+        transition: opacity 0.2s ease;
 
         &:hover {
             text-decoration: none;
+            color: var(--vscode-editorLineNumber-activeForeground);
         }
 
         &::before {
-            /* draw line number with css so it cannot be copied to clipboard */
             content: attr(data-line);
             color: var(--cody-chat-code-text-muted);
+        }
+
+        &:hover::before {
+            color: var(--vscode-editorLineNumber-activeForeground);
         }
     }
 
