@@ -120,6 +120,7 @@ export const PromptList: FC<PromptListProps> = props => {
                 },
                 privateMetadata: {
                     nameWithOwner: isPrompt ? action.nameWithOwner : undefined,
+                    promptId: isPrompt ? action.id : undefined,
                 },
                 billingMetadata: { product: 'cody', category: 'core' },
             })
