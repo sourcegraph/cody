@@ -20,6 +20,7 @@ describe('FireworksAdapter', () => {
         codeToRewrite: 'const x = 1',
         userId: 'test-user',
         isChatModel: true,
+        requestId: 'test-request-id',
     }
 
     const apiKey = 'test-api-key'

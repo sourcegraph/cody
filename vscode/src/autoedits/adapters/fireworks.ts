@@ -22,7 +22,10 @@ export class FireworksAdapter implements AutoeditsModelAdapter {
                 )
                 throw new Error('No api key provided in the config override')
             }
-            const response = await getModelResponse(option.url, body, apiKey)
+            const headers = {
+                'X-Sourcegraph-Interaction-ID': option.requestId,
+            }
+            const response = await getModelResponse(option.url, body, apiKey, headers)
             if (option.isChatModel) {
                 return response.choices[0].message.content
             }

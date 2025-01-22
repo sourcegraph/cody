@@ -65,6 +65,7 @@ describe('AutoeditAnalyticsLogger', () => {
         codeToRewrite: 'This is test code to rewrite',
         userId: 'test-user-id',
         isChatModel: false,
+        requestId: 'test-request-id',
     }
 
     function getRequestStartMetadata(): Parameters<AutoeditAnalyticsLogger['createRequest']>[0] {
