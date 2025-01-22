@@ -114,7 +114,6 @@ export class ClientConfigSingleton {
      * An observable that immediately emits the last-cached value (or fetches it if needed) and then
      * emits changes.
      */
-<<<<<<< HEAD
     public readonly changes: Observable<CodyClientConfig | undefined | typeof pendingOperation> =
         authStatus.pipe(
             debounceTime(0), // wait a tick for graphqlClient's auth to be updated
@@ -132,25 +131,6 @@ export class ClientConfigSingleton {
                               promiseFactoryToObservable(signal => this.fetchConfig(signal))
                           ),
                           retry(3)
-=======
-    public readonly changes: Observable<CodyClientConfig | undefined | typeof pendingOperation> = merge(
-        authStatus,
-        this.forceUpdateSubject
-    ).pipe(
-        debounceTime(0), // wait a tick for graphqlClient's auth to be updated
-        switchMapReplayOperation(authStatus =>
-            authStatus.authenticated
-                ? interval(ClientConfigSingleton.REFETCH_INTERVAL).pipe(
-                      map(() => undefined),
-                      // Don't update if the editor is in the background, to avoid network
-                      // activity that can cause OS warnings or authorization flows when the
-                      // user is not using Cody. See
-                      // https://linear.app/sourcegraph/issue/CODY-3745/codys-background-periodic-network-access-causes-2fa.
-                      filter((_value): _value is undefined => editorWindowIsFocused()),
-                      startWith(undefined),
-                      switchMap(() =>
-                          promiseFactoryToObservable(signal => this.fetchConfig(authStatus, signal))
->>>>>>> 6058a5b4c (Handle customer proxy re-auth response by retrying, not prompting user for different token)
                       )
                     : Observable.of(undefined)
             ),

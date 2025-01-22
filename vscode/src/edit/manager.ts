@@ -21,6 +21,7 @@ import type { FixupController } from '../non-stop/FixupController'
 import type { FixupTask } from '../non-stop/FixupTask'
 
 import { context } from '@opentelemetry/api'
+import { isError } from 'lodash'
 import { isUriIgnoredByContextFilterWithNotification } from '../cody-ignore/context-filter'
 import type { ExtensionClient } from '../extension-client'
 import { ACTIVE_TASK_STATES } from '../non-stop/codelenses/constants'
@@ -349,8 +350,9 @@ export class EditManager implements vscode.Disposable {
                 const replacementCode = PromptString.unsafe_fromLLMResponse(configuration.replacement)
 
                 const versions = await currentSiteVersion()
-                if (versions instanceof Error) {
-                    throw new Error('unable to determine site version')
+
+                if (isError(versions)) {
+                    throw new Error('Unable to determine site version', versions)
                 }
 
                 const contextloggerRequestId =

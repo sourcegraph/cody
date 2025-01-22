@@ -716,7 +716,7 @@ export class SourcegraphGraphQLAPIClient {
                 )
             ),
             {
-                maxAgeMsec: 1000 * 60 * 10, // 10 minutes,
+                maxAgeMsec: 1000 * 10, // 10 minutes,
                 initialRetryDelayMsec: 10, // Don't cache errors for long
                 backoffFactor: 1.5, // Back off exponentially
             }
