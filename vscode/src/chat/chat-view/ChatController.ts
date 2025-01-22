@@ -962,6 +962,10 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
           }
         | undefined
     > {
+        if (process.env.CODY_SHIM_TESTING === 'true') {
+            return
+        }
+
         const response = await wrapInActiveSpan('chat.detectChatIntent', () => {
             return this.chatIntentAPIClient?.detectChatIntent(requestID || '', text).catch(() => null)
         })
