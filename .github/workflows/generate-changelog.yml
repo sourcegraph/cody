@@ -72,6 +72,6 @@ jobs:
           # This will get tagged along with the changelog PR
           git add vscode/package.json
           git pull
-          git checkout release/vscode-$VERSION
+          git checkout release/vscode-v$VERSION
           git commit -m "Update version to $VERSION"
           git push
