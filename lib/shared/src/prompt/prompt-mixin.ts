@@ -15,7 +15,11 @@ const HEDGES_PREVENTION = ps`Answer positively without apologizing. `
  */
 const AGENTIC_CHAT = ps`Explain your reasoning in detail for coding questions. `
 
-//  Models that do not work well with agentic prompts
+/**
+ * Incompatible Models with Agentic Instructions
+ * Note: The chat-preview model series has limitations with detailed reasoning 
+ * and chain-of-thought processes, necessitating their exclusion
+ */
 const agenticBlockedModels = ['chat-preview']
 
 /**
