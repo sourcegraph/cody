@@ -28,7 +28,7 @@ export const ExtensionPromotionalBanner: React.FC<{ IDE: CodyIDE }> = ({ IDE }) 
 
     return (
         <div
-            className={`${styles.banner} ${isClosing ? styles.slideOut : styles.slideIn} tw-flex tw-items-center tw-w-full tw-max-w-[768px] tw-mb-16 tw-mt-4 tw-shadow tw-relative`}
+            className={`${styles.banner} ${isClosing ? styles.slideOut : styles.slideIn} tw-flex tw-items-center tw-w-full tw-max-w-[640px] tw-mb-16 tw-mt-4 tw-shadow tw-relative`}
         >
             <div className="tw-flex tw-flex-row tw-gap-6 tw-items-start tw-py-2">
                 <SourcegraphLogo className="tw-w-10 tw-h-10 tw-m-2" />
