@@ -34,7 +34,8 @@
                 .filters-modal-trigger {
                     display: none !important;
                 }
-            }        }
+            }
+        }
 
         .filters-sidebar && .results-container {
             transition: all 1s ease-in;

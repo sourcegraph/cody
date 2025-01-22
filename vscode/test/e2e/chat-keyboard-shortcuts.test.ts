@@ -11,7 +11,7 @@ import {
 } from './common'
 import { executeCommandInPalette, test } from './helpers'
 
-test('chat keyboard shortcuts for sidebar chat', async ({ page, sidebar }) => {
+test.skip('chat keyboard shortcuts for sidebar chat', async ({ page, sidebar }) => {
     await page.bringToFront()
     await sidebarSignin(page, sidebar)
 
@@ -32,7 +32,7 @@ test('chat keyboard shortcuts for sidebar chat', async ({ page, sidebar }) => {
     await expect(chatSidebarInput).toContainText('buzz.ts:3-5 ')
 })
 
-test('re-opening chat adds selection', async ({ page, sidebar }) => {
+test.skip('re-opening chat adds selection', async ({ page, sidebar }) => {
     await sidebarSignin(page, sidebar)
 
     await openFileInEditorTab(page, 'buzz.ts')

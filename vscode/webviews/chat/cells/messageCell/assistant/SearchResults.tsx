@@ -86,6 +86,15 @@ export const SearchResults = ({
               result => result.__typename === 'FileMatch' && result.repository.name !== boostedRepo
           )
         : undefined
+    // don't show filter on first search that returns no results
+    // show filter on subsquent filtered searches, we want users to be able to deselect their choices
+    const hasResults = initialResults?.length > 0 ? initialResults?.length > 0 : resultsToShow.length > 0
+
+    const showFiltersButton =
+        (hasResults && !!message.search.response?.results.dynamicFilters?.length) ||
+        message.search.selectedFilters?.length
+
+    const showAddContextCheckbox = hasResults && enableContextSelection
 
     // Select all results by default when the results are rendered the first time
     useLayoutEffect(() => {
@@ -208,8 +217,7 @@ export const SearchResults = ({
                                 )}
                             >
                                 <div className="tw-flex tw-gap-4 tw-items-center">
-                                    {(!!message.search.response?.results.dynamicFilters?.length ||
-                                        message.search.selectedFilters?.length) && (
+                                    {showFiltersButton && (
                                         <>
                                             <Button
                                                 onClick={() => {
@@ -224,7 +232,6 @@ export const SearchResults = ({
                                                         }
                                                     )
                                                     setShowFiltersModal(true)
-                                                    setShowFiltersSidebar(true)
                                                 }}
                                                 variant="outline"
                                                 className={styles.filtersModalTrigger}
@@ -246,7 +253,37 @@ export const SearchResults = ({
                                     </div>
                                 </div>
                                 <div className="tw-flex tw-items-center tw-gap-6 tw-px-4 md:tw-px-2">
-                                    {enableContextSelection && (
+                                    {showFiltersButton && (
+                                        <>
+                                            <Button
+                                                onClick={() => {
+                                                    telemetryRecorder.recordEvent(
+                                                        'onebox.filterModal',
+                                                        'opened',
+                                                        {
+                                                            billingMetadata: {
+                                                                product: 'cody',
+                                                                category: 'billable',
+                                                            },
+                                                        }
+                                                    )
+                                                    setShowFiltersSidebar(true)
+                                                }}
+                                                variant="outline"
+                                                className={styles.filtersSidebarToggle}
+                                            >
+                                                {message.search.selectedFilters?.length ? (
+                                                    <FilterX className="tw-size-6 md:tw-size-8" />
+                                                ) : (
+                                                    <FilterIcon className="tw-size-6 md:tw-size-8" />
+                                                )}
+                                                <span className={styles.searchResultsHeaderLabel}>
+                                                    Filters
+                                                </span>
+                                            </Button>
+                                        </>
+                                    )}
+                                    {showAddContextCheckbox && (
                                         <>
                                             <Label
                                                 htmlFor="search-results.select-all"
