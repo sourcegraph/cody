@@ -668,7 +668,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     return this.clearAndRestartSession()
                 }
 
-                // TODO: Move selectedAgent to intent.
                 // Set selected agent to deep-cody for Deep Cody model.
                 const model = await wrapInActiveSpan('chat.resolveModel', () =>
                     firstResultFromOperation(ChatBuilder.resolvedModelForChat(this.chatBuilder))
