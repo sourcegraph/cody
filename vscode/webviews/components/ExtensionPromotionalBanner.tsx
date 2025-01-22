@@ -32,15 +32,15 @@ export const ExtensionPromotionalBanner: React.FC<{ IDE: CodyIDE }> = ({ IDE }) 
         >
             <div className="tw-flex tw-flex-row tw-gap-6 tw-items-start tw-py-2">
                 <SourcegraphLogo className="tw-w-10 tw-h-10 tw-m-2" />
-                    <div className="tw-flex tw-flex-col tw-max-w-[400px] tw-gap-1">
+                    <div className="tw-flex tw-flex-col tw-max-w-[360px] tw-gap-1">
                         <h3>Get Sourcegraph for your favorite editor</h3>
                         <p className="tw-leading-tight">
                             Download the extension to get the power of Sourcegraph right where you code
                         </p>
                 </div>{' '}
             </div>
-            <div className="tw-flex tw-gap-12 tw-mx-4">
-                <div className="tw-flex tw-gap-12">
+            <div className="tw-flex tw-gap-8 tw-mx-4">
+                <div className="tw-flex tw-gap-8">
                     <img alt="VS Code" src="https://storage.googleapis.com/sourcegraph-assets/ideIcons/ideIconVsCode.svg" width="24" height="24" />
                     <img alt="All JetBrains IDEs" src="https://storage.googleapis.com/sourcegraph-assets/ideIcons/ideIconJetBrains.svg" width="24" height="24" />
                 </div>
