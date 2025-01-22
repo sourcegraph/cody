@@ -2,7 +2,15 @@ import classNames from 'classnames'
 
 import type { NLSSearchDynamicFilter, NLSSearchDynamicFilterKind } from '@sourcegraph/cody-shared'
 import { escapeRegExp, uniqBy } from 'lodash'
-import { XIcon } from 'lucide-react'
+import {
+    CodeIcon,
+    FileCodeIcon, // For general code files
+    FileIcon,
+    FileTextIcon,
+    FolderGit,
+    FolderIcon,
+    XIcon,
+} from 'lucide-react'
 import { useCallback, useMemo } from 'react'
 import { TELEMETRY_SEARCH_FILTER } from '../../../../../src/telemetry/onebox'
 import { Tooltip, TooltipContent, TooltipTrigger } from '../../../../components/shadcn/ui/tooltip'
@@ -49,21 +57,21 @@ export const SearchFilters = ({
 }: SearchFiltersProps) => {
     const telemetryRecorder = useTelemetryRecorder()
     const filterGroups = useMemo(() => {
-        // selectedFilter is included just as a safeguard in case the selected filter is not in the search response filters
-        return uniqBy([...filters, ...selectedFilters], ({ value, kind }) => `${value}-${kind}`).reduce<
+        // Use filters available from search response, if not display previous selection
+        const availableFilters = filters.length > 0 ? [...filters] : [...selectedFilters]
+
+        return uniqBy(availableFilters, ({ value, kind }) => `${value}-${kind}`).reduce<
             Record<NLSSearchDynamicFilterKind, NLSSearchDynamicFilter[]>
         >(
             (groups, filter) => {
                 if (supportedDynamicFilterKinds.includes(filter.kind)) {
                     groups[filter.kind as NLSSearchDynamicFilterKind].push(filter)
                 }
-
                 return groups
             },
             { repo: [], file: [], type: [], lang: [] }
         )
     }, [filters, selectedFilters])
-
     const onFilterSelect = useCallback(
         (filter: NLSSearchDynamicFilter) => {
             telemetryRecorder.recordEvent('onebox.filter', 'clicked', {
@@ -109,8 +117,8 @@ export const SearchFilters = ({
 
     return (
         <div className="tw-flex tw-flex-col tw-gap-8">
-            <div className="tw-flex tw-flex-col tw-gap-4">
-                <div className="tw-font-bold tw-mb-4">Result type</div>
+            <div className="tw-flex tw-flex-col">
+                <div className="tw-font-semibold tw-mb-4">Result type</div>
                 {TYPE_FILTERS.map(filter => (
                     <SearchFilter
                         key={filter.value}
@@ -122,8 +130,8 @@ export const SearchFilters = ({
                 ))}
             </div>
             {filterGroups.lang.length > 0 && (
-                <div className="tw-flex tw-flex-col tw-gap-4">
-                    <div className="tw-font-bold tw-mb-4">Language</div>
+                <div className="tw-flex tw-flex-col">
+                    <div className="tw-font-semibold tw-mb-4">Language</div>
                     {filterGroups.lang.map(filter => (
                         <SearchFilter
                             key={filter.value}
@@ -136,23 +144,25 @@ export const SearchFilters = ({
                 </div>
             )}
             {filterGroups.repo.length > 0 && (
-                <div className="tw-flex tw-flex-col tw-gap-4">
-                    <div className="tw-font-bold tw-mb-4">Repository</div>
+                <div className="tw-flex tw-flex-col">
+                    <div className="tw-font-semibold tw-mb-4">Repository</div>
                     <RepositorySelector onSelect={onRepoSelect} />
-                    {filterGroups.repo.map(filter => (
-                        <SearchFilter
-                            key={filter.value}
-                            filter={filter}
-                            onFilterSelect={onFilterSelect}
-                            onFilterDeselect={onFilterDeselect}
-                            selectedFilters={selectedFilters}
-                        />
-                    ))}
+                    <div className="tw-py-2">
+                        {filterGroups.repo.map(filter => (
+                            <SearchFilter
+                                key={filter.value}
+                                filter={filter}
+                                onFilterSelect={onFilterSelect}
+                                onFilterDeselect={onFilterDeselect}
+                                selectedFilters={selectedFilters}
+                            />
+                        ))}
+                    </div>
                 </div>
             )}
             {filterGroups.file.length > 0 && (
-                <div className="tw-flex tw-flex-col tw-gap-4">
-                    <div className="tw-font-bold tw-mb-4">File and path</div>
+                <div className="tw-flex tw-flex-col">
+                    <div className="tw-font-semibold tw-mb-4">File and path</div>
                     {filterGroups.file.map(filter => (
                         <SearchFilter
                             key={filter.value}
@@ -190,13 +200,19 @@ const SearchFilter = ({
         [filter, onFilterDeselect, onFilterSelect, selected]
     )
 
+    const IconComponent =
+        filter.kind === 'repo'
+            ? FolderGit
+            : filter.kind === 'lang'
+              ? FileCodeIcon
+              : FILTER_ICONS[filter.value as keyof typeof FILTER_ICONS] || FileIcon
     return (
         <Tooltip>
             <TooltipTrigger asChild>
                 <div
                     className={classNames(
                         styles.filter,
-                        'tw-flex tw-justify-between tw-items-center tw-gap-2 tw-py-2 tw-px-4 tw-rounded-md tw-cursor-pointer hover:tw-bg-accent hover:tw-text-accent-foreground',
+                        'tw-flex tw-justify-between tw-items-center tw-gap-2 tw-py-3 tw-px-6 tw-rounded-md tw-cursor-pointer hover:tw-bg-accent hover:tw-text-accent-foreground',
                         {
                             [styles.selected]: selected,
                         }
@@ -205,9 +221,10 @@ const SearchFilter = ({
                     role="button"
                     onKeyDown={onClickHandler}
                 >
-                    <div className="tw-text-ellipsis tw-overflow-hidden tw-max-w-[calc(100% - 1rem)] tw-line-clamp-1">
-                        {filter.label}
-                    </div>
+                    <div className="tw-flex tw-items-center tw-gap-4 tw-flex-1 tw-min-w-0">
+                        <IconComponent className="tw-h-8 tw-w-8 tw-flex-shrink-0" strokeWidth={1.75} />
+                        <div className="tw-truncate">{filter.label}</div>
+                    </div>{' '}
                     <div>{selected && <XIcon className="tw-size-8" />}</div>
                 </div>
             </TooltipTrigger>
@@ -233,3 +250,12 @@ function getTelemetryFilterType(filter: NLSSearchDynamicFilter): number {
             return TELEMETRY_SEARCH_FILTER.UNKNOWN
     }
 }
+
+const FILTER_ICONS = {
+    // Base types
+    'type:code': CodeIcon,
+    'type:text': FileTextIcon,
+    'type:path': FolderIcon,
+    repo: FolderGit,
+    file: FileIcon,
+} as const

@@ -255,7 +255,6 @@ export function syncModels({
                                                         m.id.includes('deep-cody')
                                                     )
                                                 ) {
-                                                    console.log(data.primaryModels, 'pr ')
                                                     const DEEPCODY_MODEL =
                                                         getExperimentalClientModelByFeatureFlag(
                                                             FeatureFlag.DeepCody

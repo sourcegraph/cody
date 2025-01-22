@@ -526,7 +526,7 @@ describe('syncModels', () => {
         mockAuthStatus(AUTH_STATUS_FIXTURE_AUTHED)
         expect(storage.data?.[AUTH_STATUS_FIXTURE_AUTHED.endpoint]!.selected.chat).toBe(undefined)
         vi.spyOn(modelsService, 'modelsChanges', 'get').mockReturnValue(Observable.of(result))
-        console.log(result.primaryModels, 'result.primaryModels')
+
         // Check if Deep Cody model is in the primary models list.
         expect(result.primaryModels.some(model => model.id.includes('deep-cody'))).toBe(true)
 

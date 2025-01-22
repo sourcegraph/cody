@@ -486,7 +486,7 @@ describe('Agent', () => {
                         ])
                     )
                 },
-                { timeout: mayRecord ? 10_000 : undefined }
+                { timeout: mayRecord ? 10_000 : 5000 }
             )
 
             it('edits messages by index', async () => {

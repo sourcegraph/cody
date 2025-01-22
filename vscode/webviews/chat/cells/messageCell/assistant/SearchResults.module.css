@@ -1,55 +1,57 @@
+/* Hidden by default */
+.filters-sidebar {
+    display: none;
+}
+
+@media (min-width: 768px) { /* md breakpoint */
+    .filters-sidebar {
+        display: block; /* Show at md breakpoint and above */
+    }
+}
+
 .root {
     container-type: inline-size;
+    -webkit-container-type: inline-size;
     container-name: root-outer-container;
-}
-
-.results-container {
-    max-width: calc(100% - 266px);
-
-    &.filters-sidebar-hidden {
-        max-width: 100%;
-    }
-}
-
-@container root-outer-container (max-width: 899px) {
-    .filters-sidebar,
-    .filters-sidebar-toggle {
-        display: none !important;
-    }
-
-    .container {
-        display: block !important;
-    }
+    -webkit-container-name: root-outer-container;
 
     .results-container {
-        max-width: 100% !important;
-    }
-}
+        max-width: 100%;
 
-@container root-outer-container (min-width: 900px) {
-    .filters-modal-trigger {
-        display: none !important;
-    }
-}
+        &.filters-sidebar-hidden {
+            max-width: 100%;
+        }
 
-.filters-sidebar && .results-container {
-    transition: all 1s ease-in;
-}
+        @supports (container-type: inline-size) {
+            @container root-outer-container (max-width: 768px) {
+                .filters-sidebar,
+                .filters-sidebar-toggle {
+                    display: none !important;
+                }
+            }
 
-.filters-sidebar {
-    background-color: var(--vscode-input-background);
-}
+            @container root-outer-container (min-width: 768px) {
+                .filters-modal-trigger {
+                    display: none !important;
+                }
+            }        }
 
-.search-results-header {
-    container-type: inline-size;
-    container-name: search-results-header
-}
+        .filters-sidebar && .results-container {
+            transition: all 1s ease-in;
+        }
 
-/*
-    Hide labels for small containers
-*/
-@container search-results-header (width < 475px) {
-    .search-results-header__label {
-        display: none;
-    }
-}
+        .search-results-header {
+            container-type: inline-size;
+            -webkit-container-type: inline-size;
+            container-name: search-results-header;
+            -webkit-container-name: search-results-header;
+        }
+
+        @supports (container-type: inline-size) {
+            @container search-results-header (width < 468px) {
+                .search-results-header-label {
+                    display: none;
+                }
+            }
+        }
+    }}

@@ -1,4 +1,5 @@
 import { CodyIDE } from '@sourcegraph/cody-shared'
+import { BookCopy } from 'lucide-react'
 import type { FunctionComponent } from 'react'
 import { Kbd } from '../../components/Kbd'
 import { PromptList } from '../../components/promptList/PromptList'
@@ -64,6 +65,7 @@ export const WelcomeMessage: FunctionComponent<WelcomeMessageProps> = ({
                         className="tw-justify-center tw-basis-0 tw-whitespace-nowrap"
                         onClick={() => setView(View.Prompts)}
                     >
+                        <BookCopy width={16} />
                         All Prompts
                     </Button>
                 </div>
