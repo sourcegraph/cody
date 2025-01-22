@@ -76,6 +76,9 @@ export interface CodyClientConfig {
 
     // Whether the user should be able to use the omnibox feature.
     omniBoxEnabled: boolean
+
+    // Whether code search is enabled for the SG instance.
+    codeSearchEnabled: boolean
 }
 
 export const dummyClientConfigForTest: CodyClientConfig = {
@@ -91,6 +94,7 @@ export const dummyClientConfigForTest: CodyClientConfig = {
     notices: [],
     siteVersion: undefined,
     omniBoxEnabled: false,
+    codeSearchEnabled: false,
 }
 
 /**
@@ -238,6 +242,7 @@ export class ClientConfigSingleton {
                     temporarySettings: {},
                     siteVersion: isError(siteVersion) ? undefined : siteVersion,
                     omniBoxEnabled,
+                    codeSearchEnabled: isError(codeSearchEnabled) ? false : codeSearchEnabled,
                 }
 
                 // Don't fail the whole chat because of viewer setting (used only to show banners)
@@ -299,6 +304,7 @@ export class ClientConfigSingleton {
             notices: [],
             temporarySettings: {},
             omniBoxEnabled: false,
+            codeSearchEnabled: false,
         }
     }
 

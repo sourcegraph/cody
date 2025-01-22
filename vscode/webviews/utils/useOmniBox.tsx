@@ -5,7 +5,7 @@ import { useFeatureFlag } from './useFeatureFlags'
 export const useOmniBox = (): boolean => {
     const config = useClientConfig()
 
-    return !!config?.omniBoxEnabled
+    return !!config?.omniBoxEnabled && !!config?.codeSearchEnabled
 }
 
 export const useOmniBoxDebug = (): boolean | undefined => {

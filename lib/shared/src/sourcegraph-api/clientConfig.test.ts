@@ -20,6 +20,7 @@ const CLIENT_CONFIG_FIXTURE: CodyClientConfig = {
     notices: [],
     temporarySettings: {},
     omniBoxEnabled: false,
+    codeSearchEnabled: true,
     siteVersion: '5.5.0',
 }
 
