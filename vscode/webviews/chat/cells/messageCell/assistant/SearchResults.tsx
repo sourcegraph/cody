@@ -24,7 +24,7 @@ import { NLSResultSnippet } from '../../../../components/NLSResultSnippet'
 import { Button } from '../../../../components/shadcn/ui/button'
 import { Label } from '../../../../components/shadcn/ui/label'
 import { useTelemetryRecorder } from '../../../../utils/telemetry'
-import { useExperimentalOneBoxDebug } from '../../../../utils/useExperimentalOneBox'
+import { useOmniBoxDebug } from '../../../../utils/useOmniBox'
 import { FeedbackButtons } from '../../../components/FeedbackButtons'
 import { InfoMessage } from '../../../components/InfoMessage'
 import { LoadingDots } from '../../../components/LoadingDots'
@@ -53,7 +53,7 @@ export const SearchResults = ({
     enableContextSelection,
 }: SearchResultsProps) => {
     const telemetryRecorder = useTelemetryRecorder()
-    const experimentalOneBoxDebug = useExperimentalOneBoxDebug()
+    const experimentalOneBoxDebug = useOmniBoxDebug()
     const lastEditorRef = useContext(LastEditorContext)
     const [selectedFollowUpResults, updateSelectedFollowUpResults] = useReducer(
         selectedResultsReducer,
