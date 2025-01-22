@@ -8,7 +8,6 @@ import {
     AccordionTrigger,
 } from '../../../components/shadcn/ui/accordion'
 import { Cell } from '../Cell'
-import { NON_HUMAN_CELL_AVATAR_SIZE } from '../messageCell/assistant/AssistantMessageCell'
 
 export const __ProcessCellStorybookContext = createContext<{ initialOpen: boolean } | null>(null)
 
@@ -56,15 +55,9 @@ export const AgenticContextCell: FunctionComponent<{
                                 disabled={!processes?.some(p => p.id)}
                             >
                                 {isContextLoading ? (
-                                    <Loader2Icon
-                                        size={16}
-                                        className="tw-animate-spin"
-                                    />
+                                    <Loader2Icon size={16} className="tw-animate-spin" />
                                 ) : (
-                                    <BrainIcon
-                                        size={16}
-                                        className={statusClassName}
-                                    />
+                                    <BrainIcon size={16} className={statusClassName} />
                                 )}
                                 <span className="tw-flex tw-items-baseline">
                                     Agentic chat
