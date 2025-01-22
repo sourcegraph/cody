@@ -1,4 +1,4 @@
-import { type DebouncedFunc, debounce } from 'lodash'
+import { type DebouncedFunc, debounce, isError } from 'lodash'
 import * as vscode from 'vscode'
 
 import {
@@ -343,7 +343,7 @@ export class InlineCompletionItemProvider
                 /* foreceFetch = */ isManualCompletion
             )
             if (isIgnored) {
-                logIgnored(document.uri, isIgnored, isManualCompletion)
+                this.logIgnored(document.uri, isIgnored, isManualCompletion)
                 return null
             }
 
@@ -1024,6 +1024,28 @@ export class InlineCompletionItemProvider
         // })
     }
 
+    private lastIgnoredUriLogged: string | undefined = undefined
+    private logIgnored(uri: vscode.Uri, isIgnored: IsIgnored, isManualCompletion: boolean) {
+        // Only show a notification for actively triggered autocomplete requests.
+        if (isManualCompletion) {
+            showCodyIgnoreNotification('autocomplete', isIgnored)
+        }
+
+        if (isError(isIgnored)) {
+            this.onError(isIgnored as Error)
+        }
+
+        const strUri = uri.toString()
+        if (this.lastIgnoredUriLogged === strUri) {
+            return
+        }
+        this.lastIgnoredUriLogged = strUri
+        autocompleteOutputChannelLogger.logDebug(
+            'ignored',
+            `Cody is disabled in file ${uri.toString()} (due to ${ignoreReason(isIgnored)})`
+        )
+    }
+
     private getDocContext(
         document: vscode.TextDocument,
         position: vscode.Position,
@@ -1127,22 +1149,4 @@ function onlyCompletionWidgetSelectionChanged(
     }
 
     return prevSelectedCompletionInfo.text !== nextSelectedCompletionInfo.text
-}
-
-let lastIgnoredUriLogged: string | undefined = undefined
-function logIgnored(uri: vscode.Uri, isIgnored: IsIgnored, isManualCompletion: boolean) {
-    // Only show a notification for actively triggered autocomplete requests.
-    if (isManualCompletion) {
-        showCodyIgnoreNotification('autocomplete', isIgnored)
-    }
-
-    const string = uri.toString()
-    if (lastIgnoredUriLogged === string) {
-        return
-    }
-    lastIgnoredUriLogged = string
-    autocompleteOutputChannelLogger.logDebug(
-        'ignored',
-        `Cody is disabled in file ${uri.toString()} (due to ${ignoreReason(isIgnored)})`
-    )
 }
