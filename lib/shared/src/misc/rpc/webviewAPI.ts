@@ -1,11 +1,5 @@
 import { Observable } from 'observable-fns'
-import type {
-    AgentToolboxSettings,
-    AuthStatus,
-    ModelsData,
-    ResolvedConfiguration,
-    UserProductSubscription,
-} from '../..'
+import type { AuthStatus, ModelsData, ResolvedConfiguration, UserProductSubscription } from '../..'
 import type { SerializedPromptEditorState } from '../..'
 import type { ChatMessage, UserLocalHistory } from '../../chat/transcript/messages'
 import type { ContextItem, DefaultContext } from '../../codebase-context/messages'
@@ -118,14 +112,6 @@ export interface WebviewToExtensionAPI {
     userProductSubscription(): Observable<UserProductSubscription | null>
 
     /**
-     * The current user's toolbox settings.
-     */
-    toolboxSettings(): Observable<AgentToolboxSettings | null>
-    /**
-     *  Update the current user's toolbox settings.
-     */
-    updateToolboxSettings(settings: AgentToolboxSettings): Observable<void>
-    /**
      * Edit the current user's temporary settings.
      */
     editTemporarySettings(settingsToEdit: Partial<TemporarySettings>): Observable<boolean>
@@ -163,8 +149,6 @@ export function createExtensionAPI(
         transcript: proxyExtensionAPI(messageAPI, 'transcript'),
         userHistory: proxyExtensionAPI(messageAPI, 'userHistory'),
         userProductSubscription: proxyExtensionAPI(messageAPI, 'userProductSubscription'),
-        toolboxSettings: proxyExtensionAPI(messageAPI, 'toolboxSettings'),
-        updateToolboxSettings: proxyExtensionAPI(messageAPI, 'updateToolboxSettings'),
         repos: proxyExtensionAPI(messageAPI, 'repos'),
         editTemporarySettings: proxyExtensionAPI(messageAPI, 'editTemporarySettings'),
     }

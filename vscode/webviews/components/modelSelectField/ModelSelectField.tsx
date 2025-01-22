@@ -1,6 +1,6 @@
 import { type Model, ModelTag, isCodyProModel, isWaitlistModel } from '@sourcegraph/cody-shared'
 import { clsx } from 'clsx'
-import { BookOpenIcon, BuildingIcon, ExternalLinkIcon } from 'lucide-react'
+import { BookOpenIcon, BrainIcon, BuildingIcon, ExternalLinkIcon } from 'lucide-react'
 import { type FunctionComponent, type ReactNode, useCallback, useMemo } from 'react'
 import type { UserAccountInfo } from '../../Chat'
 import { getVSCodeAPI } from '../../utils/VSCodeApi'
@@ -175,7 +175,7 @@ export const ModelSelectField: React.FunctionComponent<{
             disabled={readOnly}
             __storybook__open={__storybook__open}
             tooltip={readOnly ? undefined : 'Select a model'}
-            aria-label="Select a model"
+            aria-label="Select a model or an agent"
             popoverContent={close => (
                 <Command
                     loop={true}
@@ -303,6 +303,10 @@ function modelAvailability(
 }
 
 function getTooltip(model: Model, availability: string): string {
+    if (model.id.includes('deep-cody')) {
+        return 'Agentic chat reflects on your request and uses tools to dynamically retrieve relevant context, improving accuracy and response quality.'
+    }
+
     if (model.tags.includes(ModelTag.Waitlist)) {
         return 'Request access to this new model'
     }
@@ -353,7 +357,13 @@ const ModelTitleWithIcon: React.FC<{
 
     return (
         <span className={clsx(styles.modelTitleWithIcon, { [styles.disabled]: isDisabled })}>
-            {showIcon ? <ChatModelIcon model={model.provider} className={styles.modelIcon} /> : null}
+            {showIcon ? (
+                model.id.includes('deep-cody') ? (
+                    <BrainIcon size={16} className={styles.modelIcon} />
+                ) : (
+                    <ChatModelIcon model={model.provider} className={styles.modelIcon} />
+                )
+            ) : null}
             <span className={clsx('tw-flex-grow', styles.modelName)}>{model.title}</span>
             {modelBadge && (
                 <Badge
@@ -379,7 +389,7 @@ const ChatModelIcon: FunctionComponent<{ model: string; className?: string }> = 
 
 /** Common {@link ModelsService.uiGroup} values. */
 const ModelUIGroup: Record<string, string> = {
-    Agents: 'Agents with tools',
+    Agents: 'Agent, extensive context fetching',
     Power: 'More powerful models',
     Balanced: 'Balanced for power and speed',
     Speed: 'Faster models',

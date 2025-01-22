@@ -67,6 +67,7 @@ object Constants {
   const val `object-encoded` = "object-encoded"
   const val ollama = "ollama"
   const val `on-waitlist` = "on-waitlist"
+  const val `open-link` = "open-link"
   const val openctx = "openctx"
   const val other = "other"
   const val pending = "pending"
