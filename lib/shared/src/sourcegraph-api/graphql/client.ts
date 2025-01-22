@@ -23,6 +23,7 @@ import {
     BUILTIN_PROMPTS_QUERY,
     CHANGE_PROMPT_VISIBILITY,
     CHAT_INTENT_QUERY,
+    CODE_SEARCH_ENABLED_QUERY,
     CONTEXT_FILTERS_QUERY,
     CONTEXT_SEARCH_EVAL_DEBUG_QUERY,
     CONTEXT_SEARCH_QUERY,
@@ -623,6 +624,10 @@ interface EvaluateFeatureFlagResponse {
 
 interface ViewerSettingsResponse {
     viewerSettings: { final: string }
+}
+
+interface CodeSearchEnabledResponse {
+    codeSearchEnabled: boolean
 }
 
 interface TemporarySettingsResponse {
@@ -1559,6 +1564,15 @@ export class SourcegraphGraphQLAPIClient {
             signal
         )
         return extractDataOrError(response, data => JSON.parse(data.viewerSettings.final))
+    }
+
+    public async codeSearchEnabled(signal?: AbortSignal): Promise<boolean | Error> {
+        const response = await this.fetchSourcegraphAPI<APIResponse<CodeSearchEnabledResponse>>(
+            CODE_SEARCH_ENABLED_QUERY,
+            {},
+            signal
+        )
+        return extractDataOrError(response, data => data.codeSearchEnabled)
     }
 
     public async temporarySettings(signal?: AbortSignal): Promise<Partial<TemporarySettings> | Error> {
