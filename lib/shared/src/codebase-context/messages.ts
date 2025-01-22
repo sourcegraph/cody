@@ -169,7 +169,7 @@ export interface ContextItemTree extends ContextItemCommon {
 export interface ContextItemOpenLink extends ContextItemCommon {
     type: 'open-link'
     content: null
-    name: ''
+    name: string
 }
 
 /**

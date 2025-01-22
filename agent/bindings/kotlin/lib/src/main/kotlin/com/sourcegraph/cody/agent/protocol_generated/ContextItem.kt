@@ -18,6 +18,7 @@ sealed class ContextItem {
           "tree" -> context.deserialize<ContextItemTree>(element, ContextItemTree::class.java)
           "symbol" -> context.deserialize<ContextItemSymbol>(element, ContextItemSymbol::class.java)
           "openctx" -> context.deserialize<ContextItemOpenCtx>(element, ContextItemOpenCtx::class.java)
+          "open-link" -> context.deserialize<ContextItemOpenLink>(element, ContextItemOpenLink::class.java)
           else -> throw Exception("Unknown discriminator ${element}")
         }
       }
@@ -40,6 +41,7 @@ data class ContextItemFile(
   val provider: String? = null,
   val icon: String? = null,
   val metadata: List<String>? = null,
+  val badge: String? = null,
   val type: TypeEnum, // Oneof: file
   val remoteRepositoryName: String? = null,
   val ranges: List<Range>? = null,
@@ -66,6 +68,7 @@ data class ContextItemRepository(
   val provider: String? = null,
   val icon: String? = null,
   val metadata: List<String>? = null,
+  val badge: String? = null,
   val type: TypeEnum, // Oneof: repository
   val repoID: String,
 ) : ContextItem() {
@@ -91,6 +94,7 @@ data class ContextItemTree(
   val provider: String? = null,
   val icon: String? = null,
   val metadata: List<String>? = null,
+  val badge: String? = null,
   val type: TypeEnum, // Oneof: tree
   val isWorkspaceRoot: Boolean,
   val name: String,
@@ -117,6 +121,7 @@ data class ContextItemSymbol(
   val provider: String? = null,
   val icon: String? = null,
   val metadata: List<String>? = null,
+  val badge: String? = null,
   val type: TypeEnum, // Oneof: symbol
   val symbolName: String,
   val kind: SymbolKind, // Oneof: class, function, method
@@ -144,6 +149,7 @@ data class ContextItemOpenCtx(
   val provider: String? = null,
   val icon: String? = null,
   val metadata: List<String>? = null,
+  val badge: String? = null,
   val type: TypeEnum, // Oneof: openctx
   val providerUri: String,
   val mention: MentionParams? = null,
@@ -151,6 +157,32 @@ data class ContextItemOpenCtx(
 
   enum class TypeEnum {
     @SerializedName("openctx") Openctx,
+  }
+}
+
+data class ContextItemOpenLink(
+  val uri: String,
+  val range: RangeData? = null,
+  val content: String? = null,
+  val repoName: String? = null,
+  val revision: String? = null,
+  val title: String? = null,
+  val description: String? = null,
+  val source: ContextItemSource? = null, // Oneof: user, editor, search, initial, priority, unified, selection, terminal, history, agentic
+  val size: Long? = null,
+  val isIgnored: Boolean? = null,
+  val isTooLarge: Boolean? = null,
+  val isTooLargeReason: String? = null,
+  val provider: String? = null,
+  val icon: String? = null,
+  val metadata: List<String>? = null,
+  val badge: String? = null,
+  val type: TypeEnum, // Oneof: open-link
+  val name: String,
+) : ContextItem() {
+
+  enum class TypeEnum {
+    @SerializedName("open-link") `Open-link`,
   }
 }
 
