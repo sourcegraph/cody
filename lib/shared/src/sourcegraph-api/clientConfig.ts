@@ -90,7 +90,7 @@ export const dummyClientConfigForTest: CodyClientConfig = {
     temporarySettings: {},
     notices: [],
     siteVersion: undefined,
-    omniBoxEnabled: true,
+    omniBoxEnabled: false,
 }
 
 /**

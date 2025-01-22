@@ -1,7 +1,6 @@
 import {
     type AuthStatus,
     CLIENT_CAPABILITIES_FIXTURE,
-    CODE_SEARCH_PROVIDER_URI,
     DOTCOM_URL,
     GIT_OPENCTX_PROVIDER_URI,
     WEB_PROVIDER_URI,
@@ -42,7 +41,7 @@ describe('getOpenCtxProviders', () => {
             getOpenCtxProviders(mockAuthStatus(true), mockClientConfig, true)
         )
 
-        expect(providers.map(p => p.providerUri)).toEqual([WEB_PROVIDER_URI, CODE_SEARCH_PROVIDER_URI])
+        expect(providers.map(p => p.providerUri)).toEqual([WEB_PROVIDER_URI])
     })
 
     test('enterprise user', async () => {
@@ -57,7 +56,6 @@ describe('getOpenCtxProviders', () => {
             RemoteRepositorySearch.providerUri,
             RemoteDirectoryProvider.providerUri,
             RemoteFileProvider.providerUri,
-            CODE_SEARCH_PROVIDER_URI,
         ])
     })
 
