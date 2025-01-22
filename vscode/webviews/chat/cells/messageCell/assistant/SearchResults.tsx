@@ -77,6 +77,16 @@ export const SearchResults = ({
     const resultsToShow =
         initialResults?.length === totalResults?.length || showAll ? totalResults : initialResults
 
+    // mini-HACK: rather than prop drilling the current repository through to this component,
+    // just pull the boosted repo name from the query if it exists. This will break if we
+    // change how the current repo is boosted, but it at least doesn't depend on VSCode-specific APIs.
+    const boostedRepo = message.search.query.match(/boost:repo\(([^)]+)\)/)?.[1]
+    const firstNonBoostedRepoIndex = boostedRepo
+        ? resultsToShow.findIndex(
+              result => result.__typename === 'FileMatch' && result.repository.name !== boostedRepo
+          )
+        : undefined
+
     // Select all results by default when the results are rendered the first time
     useLayoutEffect(() => {
         updateSelectedFollowUpResults({
@@ -302,6 +312,11 @@ export const SearchResults = ({
                                         // biome-ignore lint/suspicious/noArrayIndexKey: stable order
                                         key={i}
                                     >
+                                        {i === firstNonBoostedRepoIndex && (
+                                            <h6 className="tw-border-b tw-border-border tw-text-muted-foreground tw-p-4 tw-pt-8">
+                                                Results from other repositories
+                                            </h6>
+                                        )}
                                         <NLSResultSnippet
                                             result={result}
                                             selectedForContext={selectedFollowUpResults.has(result)}
