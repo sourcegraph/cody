@@ -186,7 +186,7 @@ export const SearchResults = ({
                         !!message.search.selectedFilters?.length) && (
                         <div
                             className={classNames(
-                                'tw-min-w-[250px] tw-w-[250px] tw-relative tw-mt-2 tw-p-4 tw-border-r tw-border-border tw-shadow',
+                                'tw-min-w-[250px] tw-w-[250px] tw-relative tw-mt-2 tw-p-4 tw-border-r tw-border-border',
                                 styles.filtersSidebar
                             )}
                         >
