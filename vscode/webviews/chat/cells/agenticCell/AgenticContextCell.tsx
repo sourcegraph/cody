@@ -35,10 +35,10 @@ export const AgenticContextCell: FunctionComponent<{
             ? 'failed'
             : 'completed'
         : processes?.findLast(p => p.type !== 'tool' && p.type !== 'confirmation')?.title || 'reviewing'
-    const statusClassName = hasError ? 'tw-text-yellow-600' : 'tw-text-green-600'
+    const statusClassName = hasError ? 'tw-text-yellow-600' : 'tw-text-muted-foreground'
 
     return (
-        <div className="tw-flex tw-flex-col tw-justify-center tw-w-full tw-gap-2 tw-bg-background tw-py-1 tw-px-4">
+        <div className="tw-flex tw-flex-col tw-justify-center tw-w-full tw-gap-2 tw-py-1 tw-px-4">
             <Accordion
                 type="single"
                 collapsible={true}
@@ -57,12 +57,12 @@ export const AgenticContextCell: FunctionComponent<{
                             >
                                 {isContextLoading ? (
                                     <Loader2Icon
-                                        size={NON_HUMAN_CELL_AVATAR_SIZE}
+                                        size={16}
                                         className="tw-animate-spin"
                                     />
                                 ) : (
                                     <BrainIcon
-                                        size={NON_HUMAN_CELL_AVATAR_SIZE}
+                                        size={16}
                                         className={statusClassName}
                                     />
                                 )}
