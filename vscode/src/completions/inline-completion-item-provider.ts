@@ -5,6 +5,7 @@ import {
     ClientConfigSingleton,
     type DocumentContext,
     FeatureFlag,
+    type IsIgnored,
     RateLimitError,
     authStatus,
     contextFiltersProvider,
@@ -15,7 +16,7 @@ import {
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
 
-import { type CodyIgnoreType, showCodyIgnoreNotification } from '../cody-ignore/notification'
+import { ignoreReason, showCodyIgnoreNotification } from '../cody-ignore/notification'
 import { localStorage } from '../services/LocalStorageProvider'
 import { autocompleteStageCounterLogger } from '../services/autocomplete-stage-counter-logger'
 import { recordExposedExperimentsToSpan } from '../services/open-telemetry/utils'
@@ -337,8 +338,12 @@ export class InlineCompletionItemProvider
                     this.lastManualCompletionTimestamp > Date.now() - 500
             )
 
-            if (await contextFiltersProvider.isUriIgnored(document.uri)) {
-                logIgnored(document.uri, 'context-filter', isManualCompletion)
+            const isIgnored = await contextFiltersProvider.isUriIgnored(
+                document.uri,
+                /* foreceFetch = */ isManualCompletion
+            )
+            if (isIgnored) {
+                logIgnored(document.uri, isIgnored, isManualCompletion)
                 return null
             }
 
@@ -1125,10 +1130,10 @@ function onlyCompletionWidgetSelectionChanged(
 }
 
 let lastIgnoredUriLogged: string | undefined = undefined
-function logIgnored(uri: vscode.Uri, reason: CodyIgnoreType, isManualCompletion: boolean) {
+function logIgnored(uri: vscode.Uri, isIgnored: IsIgnored, isManualCompletion: boolean) {
     // Only show a notification for actively triggered autocomplete requests.
     if (isManualCompletion) {
-        showCodyIgnoreNotification('autocomplete', reason)
+        showCodyIgnoreNotification('autocomplete', isIgnored)
     }
 
     const string = uri.toString()
@@ -1138,6 +1143,6 @@ function logIgnored(uri: vscode.Uri, reason: CodyIgnoreType, isManualCompletion:
     lastIgnoredUriLogged = string
     autocompleteOutputChannelLogger.logDebug(
         'ignored',
-        'Cody is disabled in file ' + uri.toString() + ' (' + reason + ')'
+        `Cody is disabled in file ${uri.toString()} (due to ${ignoreReason(isIgnored)})`
     )
 }

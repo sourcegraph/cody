@@ -1,3 +1,4 @@
+import { isError } from 'lodash'
 import isEqual from 'lodash/isEqual'
 import { LRUCache } from 'lru-cache'
 import type { Observable } from 'observable-fns'
@@ -50,6 +51,7 @@ interface ParsedContextFilterItem {
 // Note: This can not be an empty string to make all non `false` values truthy.
 export type IsIgnored =
     | false
+    | Error
     | 'has-ignore-everything-filters'
     | 'non-file-uri'
     | 'no-repo-found'
@@ -70,7 +72,7 @@ type ResultLifetime = 'ephemeral' | 'durable'
 
 // hasAllowEverythingFilters, hasIgnoreEverythingFilters relies on === equality
 // for fast paths.
-function canonicalizeContextFilters(filters: ContextFilters): ContextFilters {
+function canonicalizeContextFilters(filters: ContextFilters | Error): ContextFilters | Error {
     if (isEqual(filters, INCLUDE_EVERYTHING_CONTEXT_FILTERS)) {
         return INCLUDE_EVERYTHING_CONTEXT_FILTERS
     }
@@ -89,7 +91,7 @@ export class ContextFiltersProvider implements vscode.Disposable {
      * `null` value means that we failed to fetch context filters.
      * In that case, we should exclude all the URIs.
      */
-    private lastContextFiltersResponse: ContextFilters | null = null
+    private lastContextFiltersResponse: ContextFilters | Error | null = null
     private parsedContextFilters: ParsedContextFilters | null = null
 
     private cache = new LRUCache<RepoName, IsRepoNameIgnored>({ max: 128 })
@@ -103,7 +105,7 @@ export class ContextFiltersProvider implements vscode.Disposable {
         return { delay: this.lastFetchDelay, lifetime: this.lastResultLifetime }
     }
 
-    private readonly contextFiltersSubscriber = createSubscriber<ContextFilters>()
+    private readonly contextFiltersSubscriber = createSubscriber<ContextFilters | Error>()
     public readonly onContextFiltersChanged = this.contextFiltersSubscriber.subscribe
 
     // Fetches context filters and updates the cached filter results. Returns
@@ -123,7 +125,7 @@ export class ContextFiltersProvider implements vscode.Disposable {
         }
     }
 
-    public get changes(): Observable<ContextFilters | null> {
+    public get changes(): Observable<ContextFilters | Error | null> {
         return fromVSCodeEvent(
             listener => {
                 const dispose = this.onContextFiltersChanged(listener)
@@ -133,7 +135,7 @@ export class ContextFiltersProvider implements vscode.Disposable {
         )
     }
 
-    private setContextFilters(contextFilters: ContextFilters): void {
+    private setContextFilters(contextFilters: ContextFilters | Error): void {
         if (isEqual(contextFilters, this.lastContextFiltersResponse)) {
             return
         }
@@ -148,12 +150,14 @@ export class ContextFiltersProvider implements vscode.Disposable {
                 verbose: contextFilters,
             })
         }
+
+        const filters = isError(contextFilters) ? EXCLUDE_EVERYTHING_CONTEXT_FILTERS : contextFilters
         this.parsedContextFilters = {
-            include: contextFilters.include?.map(parseContextFilterItem) || null,
-            exclude: contextFilters.exclude?.map(parseContextFilterItem) || null,
+            include: filters.include?.map(parseContextFilterItem) || null,
+            exclude: filters.exclude?.map(parseContextFilterItem) || null,
         }
 
-        this.contextFiltersSubscriber.notify(contextFilters)
+        this.contextFiltersSubscriber.notify(this.lastContextFiltersResponse)
     }
 
     private isTesting = false
@@ -183,8 +187,8 @@ export class ContextFiltersProvider implements vscode.Disposable {
         }, this.lastFetchDelay)
     }
 
-    private async fetchIfNeeded(): Promise<void> {
-        if (!this.fetchIntervalId && !this.isTesting) {
+    private async fetchIfNeeded(forceFetch = false): Promise<void> {
+        if (forceFetch || (!this.fetchIntervalId && !this.isTesting)) {
             const intervalHint = await this.fetchContextFilters()
             this.startRefetchTimer(intervalHint)
         }
@@ -226,17 +230,22 @@ export class ContextFiltersProvider implements vscode.Disposable {
         return isIgnored
     }
 
-    public async isUriIgnored(uri: vscode.Uri): Promise<IsIgnored> {
+    public async isUriIgnored(uri: vscode.Uri, forceFetch = false): Promise<IsIgnored> {
         if (isDotCom(currentAuthStatus())) {
             return false
         }
-        await this.fetchIfNeeded()
+        await this.fetchIfNeeded(forceFetch)
 
         if (allowedSchemes.has(uri.scheme) || this.hasAllowEverythingFilters()) {
             return false
         }
         if (this.hasIgnoreEverythingFilters()) {
             return 'has-ignore-everything-filters'
+        }
+
+        const maybeError = this.lastContextFiltersResponse
+        if (isError(maybeError)) {
+            return maybeError
         }
 
         // TODO: process non-file URIs https://github.com/sourcegraph/cody/issues/3893
