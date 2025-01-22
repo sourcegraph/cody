@@ -20,8 +20,6 @@ jobs:
           git config --global user.name 'sourcegraph-bot'
           git config --global user.email 'bot@sourcegraph.com'
           git fetch --tags origin
-          git checkout main
-          git pull
       - name: Download changelog
         env:
           GH_TOKEN: ${{ secrets.DEVX_SERVICE_GH_TOKEN }}
