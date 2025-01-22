@@ -1,6 +1,5 @@
 import type { CodyIDE } from '@sourcegraph/cody-shared'
 import { useState } from 'react'
-import { SourcegraphLogo } from '../icons/SourcegraphLogo'
 import styles from './ExtensionPromotionalBanner.module.css'
 
 const BANNER_DISMISSED_KEY = 'cody-extension-banner-dismissed'
