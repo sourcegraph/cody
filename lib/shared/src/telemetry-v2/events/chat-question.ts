@@ -225,6 +225,12 @@ function publicContextSummary(globalPrefix: string, context: ContextItem[]) {
             ...cloneDeep(defaultByTypeCount),
             isWorkspaceRoot: undefined as number | undefined,
         },
+        // todo michael: what does this do?
+        ['current-selection']: cloneDeep(defaultByTypeCount),
+        ['current-file']: cloneDeep(defaultByTypeCount),
+        ['current-repository']: cloneDeep(defaultByTypeCount),
+        ['current-directory']: cloneDeep(defaultByTypeCount),
+        ['current-open-tabs']: cloneDeep(defaultByTypeCount),
     }
     const byOpenctxProvider = {
         [REMOTE_REPOSITORY_PROVIDER_URI]: cloneDeep(defaultSharedItemCount),
@@ -365,6 +371,11 @@ const defaultBySourceCount: BySourceCount = {
         tree: undefined,
         openctx: undefined,
         symbol: undefined,
+        ['current-selection']: undefined,
+        ['current-file']: undefined,
+        ['current-repository']: undefined,
+        ['current-directory']: undefined,
+        ['current-open-tabs']: undefined,
     },
 }
 

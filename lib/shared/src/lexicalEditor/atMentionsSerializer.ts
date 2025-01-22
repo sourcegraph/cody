@@ -1,5 +1,6 @@
-import type { SerializedElementNode, SerializedLexicalNode, SerializedTextNode } from 'lexical'
-import type { SerializedPromptEditorValue } from './editorState'
+import type {SerializedElementNode, SerializedLexicalNode, SerializedTextNode} from 'lexical'
+import type {SerializedPromptEditorValue} from './editorState'
+import {SerializedContextItem, type SerializedContextItemMentionNode} from "./nodes";
 
 export const AT_MENTION_SERIALIZED_PREFIX = 'cody://serialized.v1'
 const AT_MENTION_SERIALIZATION_END = '_'
@@ -10,6 +11,18 @@ function unicodeSafeBtoa(str: string) {
 
 function unicodeSafeAtob(str: string) {
     return decodeURIComponent(atob(str))
+}
+
+const CURRENT_TO_HYDRATABLE = {
+    'current-selection': 'cody://selection',
+    'current-file': 'cody://current-file',
+    'current-repository': 'cody://repository',
+    'current-directory': 'cody://current-dir',
+    'current-open-tabs': 'cody://tabs'
+}
+
+function isCurrentKey(value: string): value is keyof typeof CURRENT_TO_HYDRATABLE {
+    return Object.keys(CURRENT_TO_HYDRATABLE).includes(value)
 }
 
 /**
@@ -25,10 +38,17 @@ export function serialize(m: SerializedPromptEditorValue): string {
     for (const n of nodes) {
         if (n.type === 'text') {
             t += (n as SerializedTextNode).text
+        } else if (n.type == 'contextItemMention') {
+            const contextItemMention: SerializedContextItem = (n as SerializedContextItemMentionNode).contextItem;
+            if (isCurrentKey(contextItemMention.type)) {
+                t += CURRENT_TO_HYDRATABLE[contextItemMention.type];
+            } else {
+                t += `${AT_MENTION_SERIALIZED_PREFIX}?data=${unicodeSafeBtoa(
+                    JSON.stringify(n, undefined, 0)
+                )}` + AT_MENTION_SERIALIZATION_END;
+            }
         } else {
-            t += `${AT_MENTION_SERIALIZED_PREFIX}?data=${unicodeSafeBtoa(
-                JSON.stringify(n, undefined, 0)
-            )}${AT_MENTION_SERIALIZATION_END}`
+            console.warn('Unhandled node type in atMentionsSerializer.serialize', n.type);
         }
     }
     return t
@@ -71,8 +91,58 @@ export function deserializeContextMentionItem(s: string) {
     )
 }
 
+const CONTEXT_ITEMS = {
+    'cody://selection': {
+        description: 'Picks the current selection',
+        type: 'selection', // serves as id, name, and type
+        title: 'Current Selection',
+        text: 'current selection'
+    },
+    'cody://current-file': {
+        description: 'Picks the current file',
+        type: 'current-file',
+        title: 'Current File',
+        text: 'current file'
+    },
+    'cody://repository': {
+        description: 'Picks the current repository',
+        type: 'current-repository',
+        title: 'Current Repository',
+        text: 'current repository'
+    },
+    'cody://current-dir': {
+        description: 'Picks the current directory',
+        type: 'current-directory',
+        title: 'Current Directory',
+        text: 'current directory'
+    },
+    'cody://tabs': {
+        description: 'Picks the current open tabs',
+        type: 'current-open-tabs',
+        title: 'Current Open Tabs',
+        text: 'current open tabs'
+    }
+} as const
+
+function createContextItemMention(item: typeof CONTEXT_ITEMS[keyof typeof CONTEXT_ITEMS], uri: string) {
+    return {
+        contextItem: {
+            description: item.description,
+            id: item.type,
+            name: item.type,
+            type: item.type,
+            title: item.title,
+            uri,
+        },
+        isFromInitialContext: false,
+        text: item.text,
+        type: 'contextItemMention',
+        version: 1,
+    }
+}
+
 function deserializeParagraph(s: string): SerializedLexicalNode[] {
-    const parts = s.split(new RegExp(`(${AT_MENTION_SERIALIZED_PREFIX}\\?data=[^\\s]+)`, 'g'))
+    const parts = s.split(new RegExp(`(cody://[a-z\-\?\=\_]+)`, 'g'))
     return parts
         .map(part => {
             if (part.startsWith(AT_MENTION_SERIALIZED_PREFIX)) {
@@ -89,6 +159,11 @@ function deserializeParagraph(s: string): SerializedLexicalNode[] {
                         style: '',
                         version: 1,
                     }
+                }
+            }
+            for (const [uri, item] of Object.entries(CONTEXT_ITEMS)) {
+                if (part.includes(uri)) {
+                    return createContextItemMention(item, uri)
                 }
             }
             return {

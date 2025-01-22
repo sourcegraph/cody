@@ -1,6 +1,6 @@
-import { describe, expect, it } from 'vitest'
-import { deserialize, serialize } from './atMentionsSerializer'
-import type { SerializedPromptEditorValue } from './editorState'
+import {describe, expect, it} from 'vitest'
+import {deserialize, serialize} from './atMentionsSerializer'
+import type {SerializedPromptEditorValue} from './editorState'
 
 describe('atMentionsSerializer', () => {
     it('serializes and deserializes editor state with unicode characters correctly', () => {
@@ -156,6 +156,82 @@ describe('atMentionsSerializer', () => {
         )
 
         // Verify emoji content is preserved
+        const serializedAgain = serialize(deserialized!)
+        expect(serializedAgain).toBe(serialized)
+    })
+
+    it('serializes a current file correctly', () => {
+        const input = {
+            text: 'test current file',
+            contextItems: [],
+            editorState: {
+                v: 'lexical-v1',
+                minReaderV: 'lexical-v1',
+                lexicalEditorState: {
+                    root: {
+                        type: 'root',
+                        children: [
+                            {
+                                type: 'paragraph',
+                                children: [
+                                    {
+                                        type: 'text',
+                                        text: 'explain ',
+                                        detail: 0,
+                                        format: 0,
+                                        mode: 'normal',
+                                        style: '',
+                                        version: 1,
+                                    },
+                                    {
+                                        "contextItem": {
+                                            "description": "Picks the current file",
+                                            "id": "current-file",
+                                            "name": "current-file",
+                                            "title": "Current File",
+                                            "type": "current-file",
+                                            "uri": "cody://current-file",
+                                        },
+                                        "isFromInitialContext": false,
+                                        "text": "current file",
+                                        "type": "contextItemMention",
+                                        "version": 1,
+                                    },
+                                    {
+                                        type: 'text',
+                                        text: '. Thank you!',
+                                        detail: 0,
+                                        format: 0,
+                                        mode: 'normal',
+                                        style: '',
+                                        version: 1,
+                                    },
+                                ],
+                                direction: 'ltr',
+                                format: '',
+                                indent: 0,
+                                version: 1,
+                                textStyle: '',
+                                textFormat: 0,
+                            },
+                        ],
+                        format: '',
+                        indent: 0,
+                        version: 1,
+                        direction: 'ltr',
+                    },
+                },
+            },
+        }
+
+        const serialized = serialize(input as SerializedPromptEditorValue)
+        expect(serialized).toBe(
+            'explain cody://current-file. Thank you!'
+        )
+
+        const deserialized = deserialize(serialized)
+        expect(deserialized).toBeDefined()
+
         const serializedAgain = serialize(deserialized!)
         expect(serializedAgain).toBe(serialized)
     })
