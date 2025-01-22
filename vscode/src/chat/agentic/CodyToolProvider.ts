@@ -83,7 +83,6 @@ class ToolFactory {
     }
 
     public getInstances(): CodyTool[] {
-        // Create fresh instances of all registered tools
         return Array.from(this.tools.entries())
             .filter(([name]) => name !== 'CliTool' || toolboxManager.getSettings()?.shell?.enabled)
             .map(([_, config]) => config.createInstance(config, this.contextRetriever))
@@ -171,6 +170,8 @@ export class CodyToolProvider {
     public factory: ToolFactory
 
     private static instance: CodyToolProvider | undefined
+    public static isTerminalAccessEnabled = false
+    public static configSubscription: Unsubscribable | undefined
     public static openCtxSubscription: Unsubscribable | undefined
 
     private constructor(contextRetriever: Retriever) {
@@ -187,6 +188,9 @@ export class CodyToolProvider {
 
     public static setupOpenCtxProviderListener(): void {
         const provider = CodyToolProvider.instance
+        if (provider && !CodyToolProvider.configSubscription) {
+            CodyToolProvider.configSubscription = toolboxManager.observable.subscribe({})
+        }
         if (provider && !CodyToolProvider.openCtxSubscription && openCtx.controller) {
             CodyToolProvider.openCtxSubscription = openCtx.controller
                 .metaChanges({}, {})
@@ -200,6 +204,8 @@ export class CodyToolProvider {
             CodyToolProvider.openCtxSubscription.unsubscribe()
             CodyToolProvider.openCtxSubscription = undefined
         }
+        CodyToolProvider.configSubscription?.unsubscribe()
+        CodyToolProvider.configSubscription = undefined
     }
 }
 

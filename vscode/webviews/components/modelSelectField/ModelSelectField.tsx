@@ -1,6 +1,6 @@
 import { type Model, ModelTag, isCodyProModel, isWaitlistModel } from '@sourcegraph/cody-shared'
 import { clsx } from 'clsx'
-import { BookOpenIcon, BuildingIcon, ExternalLinkIcon, FlaskConicalIcon } from 'lucide-react'
+import { BookOpenIcon, BrainIcon, BuildingIcon, ExternalLinkIcon } from 'lucide-react'
 import { type FunctionComponent, type ReactNode, useCallback, useMemo } from 'react'
 import type { UserAccountInfo } from '../../Chat'
 import { getVSCodeAPI } from '../../utils/VSCodeApi'
@@ -359,7 +359,7 @@ const ModelTitleWithIcon: React.FC<{
         <span className={clsx(styles.modelTitleWithIcon, { [styles.disabled]: isDisabled })}>
             {showIcon ? (
                 model.id.includes('deep-cody') ? (
-                    <FlaskConicalIcon size={16} className={styles.modelIcon} />
+                    <BrainIcon size={16} className={styles.modelIcon} />
                 ) : (
                     <ChatModelIcon model={model.provider} className={styles.modelIcon} />
                 )
@@ -389,7 +389,7 @@ const ChatModelIcon: FunctionComponent<{ model: string; className?: string }> = 
 
 /** Common {@link ModelsService.uiGroup} values. */
 const ModelUIGroup: Record<string, string> = {
-    Agents: 'Agentic',
+    Agents: 'Agent, extensive context fetching',
     Power: 'More powerful models',
     Balanced: 'Balanced for power and speed',
     Speed: 'Faster models',

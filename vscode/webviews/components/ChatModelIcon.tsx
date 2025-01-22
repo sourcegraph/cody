@@ -15,7 +15,7 @@ export function chatModelIconComponent(
     if (model.startsWith('openai') || model.includes('gpt')) {
         return OpenAILogo
     }
-    if (model.includes('anthropic')) {
+    if (model.includes('anthropic') || model.includes('deep-cody')) {
         return AnthropicLogo
     }
     if (model.startsWith('google') || model.includes('gemini')) {

@@ -103,7 +103,9 @@ export const AssistantMessageCell: FunctionComponent<{
                     isSearchIntent ? undefined : (
                         <span data-testid="chat-model">
                             {chatModel
-                                ? chatModel.title ?? `Model ${chatModel.id} by ${chatModel.provider}`
+                                ? chatModel.id.includes('deep-cody')
+                                    ? 'Claude 3.5 Sonnet (New)'
+                                    : chatModel.title ?? `Model ${chatModel.id} by ${chatModel.provider}`
                                 : 'Model'}
                         </span>
                     )

@@ -233,18 +233,22 @@ export function syncModels({
                                                         }
                                                     )
                                                 }
-                                                // Replace user's current sonnet model with deep-cody (agentic chat) model.
+                                                const haikuModel = data.primaryModels.find(m =>
+                                                    m.id.includes('5-haiku')
+                                                )
                                                 const sonnetModel = data.primaryModels.find(m =>
-                                                    m.id.includes('sonnet')
+                                                    m.id.includes('5-sonnet')
                                                 )
                                                 // Agentic Chat is available for all Pro users.
                                                 // Enterprise users need to have the feature flag enabled.
                                                 const isAgenticChatEnabled =
                                                     (isDotComUser && !isCodyFreeUser) ||
                                                     hasAgenticChatFlag
+                                                // Requires 3.5 Haiku and 3.5 Sonnet models to be available.
                                                 if (
                                                     isAgenticChatEnabled &&
                                                     sonnetModel &&
+                                                    haikuModel &&
                                                     // Ensure the deep-cody model is only added once.
                                                     !data.primaryModels.some(m =>
                                                         m.id.includes('deep-cody')
@@ -268,9 +272,6 @@ export function syncModels({
                                                 }
                                                 // set the default model to Haiku for free users
                                                 if (isDotComUser && isCodyFreeUser && defaultToHaiku) {
-                                                    const haikuModel = data.primaryModels.find(m =>
-                                                        m.id.includes('claude-3-5-haiku')
-                                                    )
                                                     if (haikuModel) {
                                                         data.preferences!.defaults.chat = haikuModel.id
                                                     }

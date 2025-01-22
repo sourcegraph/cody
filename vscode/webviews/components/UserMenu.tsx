@@ -1,10 +1,4 @@
-import {
-    type AgentToolboxSettings,
-    type AuthenticatedAuthStatus,
-    isDotCom,
-} from '@sourcegraph/cody-shared'
-import { useExtensionAPI, useObservable } from '@sourcegraph/prompt-editor'
-import { debounce } from 'lodash'
+import { type AuthenticatedAuthStatus, isDotCom } from '@sourcegraph/cody-shared'
 import {
     ArrowLeftRightIcon,
     ChevronLeftIcon,
@@ -17,11 +11,10 @@ import {
     PlusIcon,
     Settings2Icon,
     SettingsIcon,
-    TerminalIcon,
     UserCircleIcon,
     ZapIcon,
 } from 'lucide-react'
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useState } from 'react'
 import { URI } from 'vscode-uri'
 import {
     ACCOUNT_USAGE_URL,
@@ -70,8 +63,6 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
     const isDotComUser = isDotCom(endpoint)
 
     const [userMenuView, setUserMenuView] = useState<MenuView>('main')
-
-    const [isLoading, setIsLoading] = useState(false)
 
     const [endpointToRemove, setEndpointToRemove] = useState<string | null>(null)
 
@@ -148,51 +139,6 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
         },
         [telemetryRecorder, endpointHistory]
     )
-
-    const api = useExtensionAPI()
-    const { value: settings } = useObservable(
-        useMemo(() => api.toolboxSettings(), [api.toolboxSettings])
-    )
-
-    const debouncedSubmitAgenticChange = useCallback(
-        debounce((newSettings: AgentToolboxSettings) => {
-            if (isLoading) {
-                return
-            }
-            setIsLoading(true)
-            if (settings !== newSettings) {
-                telemetryRecorder.recordEvent('cody.toolboxSettings', 'updated', {
-                    billingMetadata: { product: 'cody', category: 'billable' },
-                    metadata: {
-                        agent: newSettings.agent?.name ? 1 : 0,
-                        shell: newSettings.shell?.enabled ? 1 : 0,
-                    },
-                })
-            }
-            const subscription = api.updateToolboxSettings(newSettings).subscribe({
-                next: () => {
-                    setIsLoading(false)
-                    close()
-                },
-                error: error => {
-                    console.error('updateToolboxSettings:', error)
-                    setIsLoading(false)
-                },
-                complete: () => {
-                    setIsLoading(false)
-                },
-            })
-            return () => {
-                subscription.unsubscribe()
-            }
-        }, 500), // 500ms delay between calls
-        []
-    )
-
-    function onChangeAgenticOption(newSettings: AgentToolboxSettings): void {
-        setIsLoading(true)
-        debouncedSubmitAgenticChange(newSettings)
-    }
 
     return (
         <ToolbarPopoverItem
@@ -423,29 +369,6 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
                                     <span className="tw-flex-grow">Back</span>
                                 </CommandItem>
                             </CommandGroup>
-                            {settings?.agent?.name && !settings?.shell?.error && (
-                                <CommandGroup heading="Agentic Chat Settings">
-                                    <CommandItem
-                                        onSelect={() => {
-                                            onChangeAgenticOption({
-                                                ...settings,
-                                                shell: {
-                                                    enabled: !settings.shell?.enabled,
-                                                },
-                                            })
-                                        }}
-                                        className="!tw-bg-transparent hover:!tw-bg-transparent"
-                                    >
-                                        <TerminalIcon size={16} strokeWidth={1.25} className="tw-mr-2" />
-                                        <span className="tw-flex-grow">Terminal access</span>
-                                        <input
-                                            type="checkbox"
-                                            checked={settings.shell?.enabled}
-                                            className="tw-w-8 tw-h-8 tw-text-green-600"
-                                        />
-                                    </CommandItem>
-                                </CommandGroup>
-                            )}
                             <CommandGroup>
                                 <CommandItem
                                     onSelect={() => {
