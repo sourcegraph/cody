@@ -232,7 +232,6 @@ export const SearchResults = ({
                                                         }
                                                     )
                                                     setShowFiltersModal(true)
-                                                    setShowFiltersSidebar(true)
                                                 }}
                                                 variant="outline"
                                                 className={styles.filtersModalTrigger}
@@ -254,6 +253,36 @@ export const SearchResults = ({
                                     </div>
                                 </div>
                                 <div className="tw-flex tw-items-center tw-gap-6 tw-px-4 md:tw-px-2">
+                                    {showFiltersButton && (
+                                        <>
+                                            <Button
+                                                onClick={() => {
+                                                    telemetryRecorder.recordEvent(
+                                                        'onebox.filterModal',
+                                                        'opened',
+                                                        {
+                                                            billingMetadata: {
+                                                                product: 'cody',
+                                                                category: 'billable',
+                                                            },
+                                                        }
+                                                    )
+                                                    setShowFiltersSidebar(true)
+                                                }}
+                                                variant="outline"
+                                                className={styles.filtersSidebarToggle}
+                                            >
+                                                {message.search.selectedFilters?.length ? (
+                                                    <FilterX className="tw-size-6 md:tw-size-8" />
+                                                ) : (
+                                                    <FilterIcon className="tw-size-6 md:tw-size-8" />
+                                                )}
+                                                <span className={styles.searchResultsHeaderLabel}>
+                                                    Filters
+                                                </span>
+                                            </Button>
+                                        </>
+                                    )}
                                     {showAddContextCheckbox && (
                                         <>
                                             <Label
