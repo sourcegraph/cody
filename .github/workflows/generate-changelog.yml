@@ -47,16 +47,19 @@ jobs:
           export RELEASE_LATEST_COMMIT=$(git rev-parse HEAD)
           echo "Latest Commit: $RELEASE_LATEST_COMMIT"
           echo "Latest Release: $RELEASE_LATEST_RELEASE"
+          echo $VERSION
           ./changelog update-as-pr \
             --github.repo=$GH_REPO \
             --output.repo.base="main" \
             --output.repo=$GH_REPO \
-            --output.pr.branch="release/vscode-v${VERSION}" \
-            --output.pr.title="Changelog for v${VERSION}" \
-            --output.pr.body="Automated release and changelog for VS code Cody v${VERSION}" \
+            --output.pr.branch="release/vscode-v%s" \
+            --output.pr.title="Changelog for v%s" \
+            --output.pr.body="Automated release and changelog for VS code Cody v%s" \
             --output.changelog="vscode/CHANGELOG.md" \
             --output.changelog.marker='<!--- {/_ CHANGELOG_START _/} -->' \
-            --releaseregistry.version=${VERSION}          #   --title "VS Code: Release v$VERSION" \
+            --releaseregistry.version=${VERSION}          
+  
+          #   --title "VS Code: Release v$VERSION" \
           #   --body "Automated release and changelog for VS code Cody" \
           #   --base main --head release/vscode-v$VERSION
       - name: Update version
