@@ -98,6 +98,8 @@ export const SearchResults = ({
 
     // Select all results by default when the results are rendered the first time
     useLayoutEffect(() => {
+        const otherReposResultsCount =
+            firstNonBoostedRepoIndex !== undefined ? resultsToShow.length - firstNonBoostedRepoIndex : 0
         updateSelectedFollowUpResults({
             type: 'init',
             results: initialResults ?? [],
@@ -353,6 +355,8 @@ export const SearchResults = ({
                                         typeof firstNonBoostedRepoIndex === 'number' &&
                                         i === firstNonBoostedRepoIndex
                                     ) {
+                                        const otherReposResultsCount =
+                                            resultsToShow.length - firstNonBoostedRepoIndex
                                         return (
                                             <>
                                                 <div
@@ -376,6 +380,9 @@ export const SearchResults = ({
                                                             )}
                                                         />
                                                         <span>Results from other repositories</span>
+                                                        <span className="tw-bg-muted tw-text-muted-foreground tw-rounded-full tw-mx-2 tw-px-3 tw-py-2 tw-text-xs tw-font-semibold tw-leading-none">
+                                                            {otherReposResultsCount}
+                                                        </span>
                                                     </div>
                                                 </div>{' '}
                                                 {otherReposExpanded && (
