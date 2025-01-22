@@ -1,9 +1,10 @@
-import type { CodyIDE } from '@sourcegraph/cody-shared'
+import { CodyIDE } from '@sourcegraph/cody-shared'
 import { QuickStart } from './QuickStart'
 import styles from './WelcomeFooter.module.css'
 
 import { BookOpenText, type LucideProps, MessageCircleQuestion } from 'lucide-react'
 import type { ForwardRefExoticComponent } from 'react'
+import { ExtensionPromotionalBanner } from '../../components/ExtensionPromotionalBanner'
 
 interface ChatViewLink {
     icon: ForwardRefExoticComponent<Omit<LucideProps, 'ref'>>
@@ -24,9 +25,10 @@ const chatLinks: ChatViewLink[] = [
     },
 ]
 
-export default function WelcomeFooter({ IDE }: { IDE: CodyIDE }) {
+export default function WelcomeFooter({ IDE }: { IDE: CodyIDE }): JSX.Element {
     return (
         <div className={styles.welcomeFooter}>
+            <ExtensionPromotionalBanner IDE={CodyIDE.VSCode} />
             <QuickStart />
             <div className={styles.links}>
                 {chatLinks.map(link => (
