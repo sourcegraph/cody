@@ -5,7 +5,15 @@ import {
     isDefined,
 } from '@sourcegraph/cody-shared'
 import classNames from 'classnames'
-import { ArrowDown, FilterIcon, FilterX, OctagonX, PanelLeftClose, Search } from 'lucide-react'
+import {
+    ArrowDown,
+    ChevronRight,
+    FilterIcon,
+    FilterX,
+    OctagonX,
+    PanelLeftClose,
+    Search,
+} from 'lucide-react'
 import { useCallback, useContext, useLayoutEffect, useMemo, useReducer, useState } from 'react'
 import {
     createContextItem,
@@ -55,7 +63,7 @@ export const SearchResults = ({
     const [showAll, setShowAll] = useState(false)
     const [showFiltersModal, setShowFiltersModal] = useState(false)
     const [showFiltersSidebar, setShowFiltersSidebar] = useState(true)
-
+    const [otherReposExpanded, setOtherReposExpanded] = useState(true)
     const totalResults = useMemo(
         () =>
             message.search.response?.results.results.filter(
@@ -340,28 +348,76 @@ export const SearchResults = ({
                         )}
                         {resultsToShow.length ? (
                             <ul className="tw-list-none tw-flex tw-flex-col">
-                                {resultsToShow.map((result, i) => (
-                                    <li
-                                        // biome-ignore lint/correctness/useJsxKeyInIterable:
-                                        // biome-ignore lint/suspicious/noArrayIndexKey: stable order
-                                        key={i}
-                                    >
-                                        {i === firstNonBoostedRepoIndex && (
-                                            <h6 className="tw-border-b tw-border-border tw-text-muted-foreground tw-p-4 tw-pt-8">
-                                                Results from other repositories
-                                            </h6>
-                                        )}
-                                        <NLSResultSnippet
-                                            result={result}
-                                            selectedForContext={selectedFollowUpResults.has(result)}
-                                            onSelectForContext={
-                                                enableContextSelection
-                                                    ? handleSelectForContext
-                                                    : undefined
-                                            }
-                                        />
-                                    </li>
-                                ))}
+                                {resultsToShow.map((result, i) => {
+                                    if (
+                                        typeof firstNonBoostedRepoIndex === 'number' &&
+                                        i === firstNonBoostedRepoIndex
+                                    ) {
+                                        return (
+                                            <>
+                                                <div
+                                                    className="tw-border-b tw-border-border tw-text-muted-foreground tw-p-4 tw-pt-8 tw-flex tw-justify-between tw-items-center tw-cursor-pointer hover:tw-bg-secondary/50"
+                                                    onClick={() =>
+                                                        setOtherReposExpanded(!otherReposExpanded)
+                                                    }
+                                                    onKeyDown={e => {
+                                                        if (e.key === 'Enter' || e.key === ' ') {
+                                                            setOtherReposExpanded(!otherReposExpanded)
+                                                        }
+                                                    }}
+                                                    role="button"
+                                                    tabIndex={0}
+                                                >
+                                                    <div className="tw-flex tw-items-center tw-gap-2">
+                                                        <ChevronRight
+                                                            className={classNames(
+                                                                'tw-size-8 tw-transition-transform',
+                                                                otherReposExpanded ? 'tw-rotate-90' : ''
+                                                            )}
+                                                        />
+                                                        <span>Results from other repositories</span>
+                                                    </div>
+                                                </div>{' '}
+                                                {otherReposExpanded && (
+                                                    <NLSResultSnippet
+                                                        result={result}
+                                                        selectedForContext={selectedFollowUpResults.has(
+                                                            result
+                                                        )}
+                                                        onSelectForContext={
+                                                            enableContextSelection
+                                                                ? handleSelectForContext
+                                                                : undefined
+                                                        }
+                                                    />
+                                                )}
+                                            </>
+                                        )
+                                    }
+
+                                    // Only render non-boosted repo results if expanded
+                                    if (
+                                        typeof firstNonBoostedRepoIndex === 'number' &&
+                                        i > firstNonBoostedRepoIndex &&
+                                        !otherReposExpanded
+                                    ) {
+                                        return null
+                                    }
+
+                                    return (
+                                        <li key={i}>
+                                            <NLSResultSnippet
+                                                result={result}
+                                                selectedForContext={selectedFollowUpResults.has(result)}
+                                                onSelectForContext={
+                                                    enableContextSelection
+                                                        ? handleSelectForContext
+                                                        : undefined
+                                                }
+                                            />
+                                        </li>
+                                    )
+                                })}{' '}
                             </ul>
                         ) : (
                             <div className="tw-flex tw-flex-col tw-gap-4 tw-justify-center tw-items-center tw-my-20 tw-text-muted-foreground">
