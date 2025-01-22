@@ -15,7 +15,6 @@ import {
     DOTCOM_URL,
     type DefaultChatCommands,
     type EventSource,
-    FeatureFlag,
     type Guardrails,
     ModelUsage,
     type NLSSearchDynamicFilter,
@@ -60,7 +59,6 @@ import {
     skip,
     skipPendingOperation,
     startWith,
-    storeLastValue,
     subscriptionDisposable,
     telemetryRecorder,
     tracer,
@@ -196,7 +194,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
     public dispose(): void {
         vscode.Disposable.from(...this.disposables).dispose()
-        this.featureCodyExperimentalOneBox.subscription.unsubscribe()
         this.disposables = []
     }
 
@@ -538,10 +535,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         return this.extensionClient.capabilities?.edit === 'enabled'
     }
 
-    private featureCodyExperimentalOneBox = storeLastValue(
-        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyExperimentalOneBox)
-    )
-
     private async getConfigForWebview(): Promise<ConfigurationSubsetForWebview & LocalEnv> {
         const { configuration, auth } = await currentResolvedConfig()
         const sidebarViewOnly = this.extensionClient.capabilities?.webviewNativeConfig?.view === 'single'
@@ -706,6 +699,12 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         })
     }
 
+    private async isOmniBoxEnabled(): Promise<boolean> {
+        const config = await ClientConfigSingleton.getInstance().getConfig()
+
+        return !!config?.omniBoxEnabled
+    }
+
     private async getIntentAndScores({
         requestID,
         input,
@@ -725,7 +724,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         detectedIntent: ChatMessage['intent'] | undefined | null
         detectedIntentScores: { intent: string; score: number }[]
     }> {
-        if (!this.featureCodyExperimentalOneBox) {
+        if (!(await this.isOmniBoxEnabled())) {
             return { intent: 'chat', detectedIntent: null, detectedIntentScores: [] }
         }
 
@@ -830,9 +829,10 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             chatClient: this.chatClient,
         })
 
+        const omniBoxEnabled = await this.isOmniBoxEnabled()
+
         recorder.setIntentInfo({
-            userSpecifiedIntent:
-                manuallySelectedIntent ?? this.featureCodyExperimentalOneBox ? 'auto' : 'chat',
+            userSpecifiedIntent: manuallySelectedIntent ?? omniBoxEnabled ? 'auto' : 'chat',
             detectedIntent: detectedIntent,
             detectedIntentScores: detectedIntentScores,
         })
