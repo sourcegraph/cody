@@ -76,6 +76,9 @@ export interface CodyClientConfig {
 
     // Whether the user should be able to use the omnibox feature.
     omniBoxEnabled: boolean
+
+    // Whether code search is enabled for the SG instance.
+    codeSearchEnabled: boolean
 }
 
 export const dummyClientConfigForTest: CodyClientConfig = {
@@ -91,6 +94,7 @@ export const dummyClientConfigForTest: CodyClientConfig = {
     notices: [],
     siteVersion: undefined,
     omniBoxEnabled: false,
+    codeSearchEnabled: false,
 }
 
 /**
@@ -229,7 +233,8 @@ export class ClientConfigSingleton {
             return Promise.all([
                 graphqlClient.viewerSettings(signal),
                 graphqlClient.temporarySettings(signal),
-            ]).then(([viewerSettings, temporarySettings]) => {
+                graphqlClient.codeSearchEnabled(signal),
+            ]).then(([viewerSettings, temporarySettings, codeSearchEnabled]) => {
                 const config: CodyClientConfig = {
                     ...clientConfig,
                     intentDetection: 'enabled',
@@ -237,6 +242,7 @@ export class ClientConfigSingleton {
                     temporarySettings: {},
                     siteVersion: isError(siteVersion) ? undefined : siteVersion,
                     omniBoxEnabled,
+                    codeSearchEnabled: isError(codeSearchEnabled) ? true : codeSearchEnabled,
                 }
 
                 // Don't fail the whole chat because of viewer setting (used only to show banners)
@@ -256,6 +262,10 @@ export class ClientConfigSingleton {
                             message: notice?.message ?? '',
                         })
                     )
+                }
+
+                if (codeSearchEnabled === false) {
+                    config.intentDetection = 'disabled'
                 }
 
                 if (!isError(temporarySettings)) {
@@ -294,6 +304,7 @@ export class ClientConfigSingleton {
             notices: [],
             temporarySettings: {},
             omniBoxEnabled: false,
+            codeSearchEnabled: false,
         }
     }
 
