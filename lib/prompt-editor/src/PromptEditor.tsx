@@ -50,6 +50,8 @@ interface Props extends KeyboardEventPluginProps {
     disabled?: boolean
 
     editorRef?: React.RefObject<PromptEditorRefAPI>
+
+    openExternalLink: (uri: string) => void
 }
 
 export interface PromptEditorRefAPI {
@@ -92,6 +94,7 @@ export const PromptEditor: FunctionComponent<Props> = ({
     disabled,
     editorRef: ref,
     onEnterKey,
+    openExternalLink,
 }) => {
     const editorRef = useRef<LexicalEditor>(null)
 
@@ -371,6 +374,7 @@ export const PromptEditor: FunctionComponent<Props> = ({
             disabled={disabled}
             aria-label="Chat message"
             onEnterKey={onEnterKey}
+            openExternalLink={openExternalLink}
         />
     )
 }

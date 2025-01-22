@@ -19,6 +19,7 @@ import { clsx } from 'clsx'
 import {
     ArrowRightIcon,
     DatabaseIcon,
+    ExternalLinkIcon,
     FileIcon,
     FolderGitIcon,
     LibraryBigIcon,
@@ -26,7 +27,7 @@ import {
     SmileIcon,
     SquareFunctionIcon,
 } from 'lucide-react'
-import type { FunctionComponent } from 'react'
+import type { FunctionComponent, ReactNode } from 'react'
 import ConfluenceLogo from '../../providerIcons/confluence.svg?react'
 import GithubLogo from '../../providerIcons/github.svg?react'
 import GoogleLogo from '../../providerIcons/google.svg?react'
@@ -56,6 +57,8 @@ function getDescription(item: ContextItem, query: MentionQuery): string {
             return '' // no description since it's duplicative
         case 'openctx':
             return item.mention?.description || defaultDescription
+        case 'open-link':
+            return ''
         default:
             return defaultDescription
     }
@@ -78,11 +81,13 @@ export function getMentionItemTitleAndDisplayName(item: ContextItem): {
 export const MentionMenuContextItemContent: FunctionComponent<{
     query: MentionQuery
     item: ContextItem
-}> = ({ query, item }) => {
+    badge?: ReactNode | undefined
+}> = ({ query, item, badge }) => {
     const isOpenCtx = item.type === 'openctx'
     const isFileType = item.type === 'file'
     const isSymbol = item.type === 'symbol'
     const isClassSymbol = isSymbol && item.kind === 'class'
+    const isLink = item.type === 'open-link'
 
     const icon = item.icon || (isSymbol ? (isClassSymbol ? 'symbol-structure' : 'symbol-method') : null)
     const { title, displayName } = getMentionItemTitleAndDisplayName(item)
@@ -111,6 +116,8 @@ export const MentionMenuContextItemContent: FunctionComponent<{
                         {description}
                     </span>
                 )}
+                {badge}
+                {isLink && <ExternalLinkIcon size={16} strokeWidth={1.25} style={{ opacity: '0.5' }} />}
             </div>
             {warning && <span className={styles.warning}>{warning}</span>}
         </>

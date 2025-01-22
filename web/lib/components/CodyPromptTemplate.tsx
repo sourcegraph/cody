@@ -33,6 +33,7 @@ import { useCodyWebAgent } from './use-cody-agent'
 
 // Include global Cody Web styles to the styles bundle
 import '../global-styles/styles.css'
+import { Uri } from 'vscode'
 import styles from './CodyPromptTemplate.module.css'
 import { PromptTemplateSkeleton } from './skeleton/ChatSkeleton'
 
@@ -170,6 +171,12 @@ const CodyPromptTemplatePanel: FC<PanelProps> = props => {
         }
     }, [])
 
+    const openExternalLink = (uri: string) =>
+        void vscodeAPI.postMessage({
+            command: 'openURI',
+            uri: Uri.parse(uri),
+        })
+
     return (
         <div className={className} data-cody-web-chat={true}>
             <ChatMentionContext.Provider value={CONTEXT_MENTIONS_SETTINGS}>
@@ -183,6 +190,7 @@ const CodyPromptTemplatePanel: FC<PanelProps> = props => {
                         contextWindowSizeInTokens={4096}
                         editorClassName={styles.editor}
                         contentEditableClassName={styles.editorContentEditable}
+                        openExternalLink={openExternalLink}
                     />
                 </ComposedWrappers>
             </ChatMentionContext.Provider>

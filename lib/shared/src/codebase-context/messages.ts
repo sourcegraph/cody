@@ -79,6 +79,11 @@ interface ContextItemCommon {
      * can help a user or dev working on Cody understand why this item is appearing in context.
      */
     metadata?: string[]
+
+    /**
+     * Optional badge to display with the context item.
+     */
+    badge?: string
 }
 
 /**
@@ -125,6 +130,7 @@ export type ContextItem =
     | ContextItemTree
     | ContextItemSymbol
     | ContextItemOpenCtx
+    | ContextItemOpenLink // Not a context item, but opens a link to documentation.
 
 /**
  * Context items to show by default in the chat input, or as suggestions in the chat UI.
@@ -155,6 +161,15 @@ export interface ContextItemTree extends ContextItemCommon {
 
     content: null
     name: string
+}
+
+/**
+ * Not a context item, but an item that can be presented with context choices and opens a link to documentation.
+ */
+export interface ContextItemOpenLink extends ContextItemCommon {
+    type: 'open-link'
+    content: null
+    name: ''
 }
 
 /**

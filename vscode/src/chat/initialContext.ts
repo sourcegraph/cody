@@ -93,7 +93,9 @@ const activeTextEditor = fromVSCodeEvent(
 
 function getCurrentFileOrSelection({
     chatBuilder,
-}: { chatBuilder: Observable<ChatBuilder> }): Observable<ContextItem[] | typeof pendingOperation> {
+}: {
+    chatBuilder: Observable<ChatBuilder>
+}): Observable<ContextItem[] | typeof pendingOperation> {
     /**
      * If the active text editor changes, this observable immediately emits.
      *
@@ -228,9 +230,18 @@ export function getCorpusContextItemsForEditorState(): Observable<
                         icon: 'folder',
                     })
                 }
-            }
-
-            if (items.length === 0) {
+                if (remoteReposForAllWorkspaceFolders.length === 0) {
+                    items.push({
+                        type: 'open-link',
+                        title: 'Current Repository',
+                        badge: 'Not yet available',
+                        content: null,
+                        uri: URI.parse('https://sourcegraph.com/docs/admin/code_hosts'),
+                        name: '',
+                        icon: 'folder',
+                    })
+                }
+            } else {
                 // TODO(sqs): Support multi-root. Right now, this only supports the 1st workspace root.
                 const workspaceFolder = vscode.workspace.workspaceFolders?.at(0)
                 if (workspaceFolder) {
