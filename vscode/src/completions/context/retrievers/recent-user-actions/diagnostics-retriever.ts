@@ -209,16 +209,20 @@ export class DiagnosticsRetriever implements vscode.Disposable, ContextRetriever
         }
         const diagnosticTextList = diagnostics.map(d => this.getDiagnosticMessage(document, d))
         const diagnosticText = diagnosticTextList.join('\n')
-        const diagnosticLine = diagnostics[0].range.start.line
 
-        return this.addSurroundingContext(document, diagnosticLine, diagnosticText)
+        return this.addSurroundingContext(document, diagnostics[0].range.start, diagnosticText)
     }
 
     private addSurroundingContext(
         document: vscode.TextDocument,
-        diagnosticLine: number,
+        diagnosticPosition: vscode.Position,
         diagnosticText: string
     ): string {
+        if (document.lineCount === 0) {
+            return diagnosticText
+        }
+
+        const diagnosticLine = document.validatePosition(diagnosticPosition).line
         const contextStartLine = Math.max(0, diagnosticLine - this.contextLines)
         const contextEndLine = Math.min(document.lineCount - 1, diagnosticLine + this.contextLines)
         const prevLines = document.getText(
@@ -229,6 +233,11 @@ export class DiagnosticsRetriever implements vscode.Disposable, ContextRetriever
                 document.lineAt(diagnosticLine).range.end.character
             )
         )
+
+        if (this.contextLines === 0 || diagnosticLine + 1 > contextEndLine) {
+            return `${prevLines}\n${diagnosticText}`
+        }
+
         const nextLines = document.getText(
             new vscode.Range(
                 diagnosticLine + 1,
@@ -237,9 +246,7 @@ export class DiagnosticsRetriever implements vscode.Disposable, ContextRetriever
                 document.lineAt(contextEndLine).range.end.character
             )
         )
-        if (this.contextLines === 0) {
-            return `${prevLines}\n${diagnosticText}`
-        }
+
         return `${prevLines}\n${diagnosticText}\n${nextLines}`
     }
 
@@ -247,14 +254,20 @@ export class DiagnosticsRetriever implements vscode.Disposable, ContextRetriever
         if (!this.useCaretToIndicateErrorLocation) {
             return `Err | ${diagnostic.message}`
         }
-        const line = document.lineAt(diagnostic.range.start.line)
-        const column = Math.max(0, diagnostic.range.start.character - 1)
+
+        if (document.lineCount === 0) {
+            return diagnostic.message
+        }
+
+        const start = document.validatePosition(diagnostic.range.start)
+        const end = document.validatePosition(diagnostic.range.end)
+
+        const line = document.lineAt(start.line)
+        const column = Math.max(0, start.character - 1)
+
         const diagnosticLength = Math.max(
             1,
-            Math.min(
-                document.offsetAt(diagnostic.range.end) - document.offsetAt(diagnostic.range.start),
-                line.text.length + 1 - column
-            )
+            Math.min(document.offsetAt(end) - document.offsetAt(start), line.text.length + 1 - column)
         )
         return `${' '.repeat(column)}${'^'.repeat(diagnosticLength)} ${diagnostic.message}`
     }
