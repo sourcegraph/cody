@@ -212,7 +212,7 @@ export const SearchResults = ({
                         {!!resultsToShow && (
                             <div
                                 className={classNames(
-                                    'tw-flex tw-items-center tw-gap-4 tw-justify-between tw-py-4 md:tw-px-4 tw-border-b tw-border-border',
+                                    'tw-flex tw-items-center tw-gap-4 tw-justify-between tw-pb-4 md:tw-px-4 tw-border-b tw-border-border',
                                     styles.searchResultsHeader
                                 )}
                             >
