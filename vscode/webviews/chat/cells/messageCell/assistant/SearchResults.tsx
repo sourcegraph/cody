@@ -86,6 +86,13 @@ export const SearchResults = ({
               result => result.__typename === 'FileMatch' && result.repository.name !== boostedRepo
           )
         : undefined
+    const hasResults = resultsToShow.length > 0
+
+    const showFiltersButton =
+        (hasResults && !!message.search.response?.results.dynamicFilters?.length) ||
+        message.search.selectedFilters?.length
+
+    const showAddContextCheckbox = hasResults && enableContextSelection
 
     // Select all results by default when the results are rendered the first time
     useLayoutEffect(() => {
@@ -208,8 +215,7 @@ export const SearchResults = ({
                                 )}
                             >
                                 <div className="tw-flex tw-gap-4 tw-items-center">
-                                    {(!!message.search.response?.results.dynamicFilters?.length ||
-                                        message.search.selectedFilters?.length) && (
+                                    {showFiltersButton && (
                                         <>
                                             <Button
                                                 onClick={() => {
@@ -246,7 +252,7 @@ export const SearchResults = ({
                                     </div>
                                 </div>
                                 <div className="tw-flex tw-items-center tw-gap-6 tw-px-4 md:tw-px-2">
-                                    {enableContextSelection && (
+                                    {showAddContextCheckbox && (
                                         <>
                                             <Label
                                                 htmlFor="search-results.select-all"
