@@ -242,7 +242,7 @@ export class ClientConfigSingleton {
                     temporarySettings: {},
                     siteVersion: isError(siteVersion) ? undefined : siteVersion,
                     omniBoxEnabled,
-                    codeSearchEnabled: isError(codeSearchEnabled) ? false : codeSearchEnabled,
+                    codeSearchEnabled: isError(codeSearchEnabled) ? true : codeSearchEnabled,
                 }
 
                 // Don't fail the whole chat because of viewer setting (used only to show banners)
@@ -264,7 +264,7 @@ export class ClientConfigSingleton {
                     )
                 }
 
-                if (!isError(codeSearchEnabled) && !codeSearchEnabled) {
+                if (codeSearchEnabled === false) {
                     config.intentDetection = 'disabled'
                 }
 
