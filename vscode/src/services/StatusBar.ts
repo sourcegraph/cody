@@ -29,6 +29,7 @@ import {
 import { type Subscription, map } from 'observable-fns'
 import type { LiteralUnion, ReadonlyDeep } from 'type-fest'
 import { isUserEligibleForAutoeditsFeature } from '../autoedits/create-autoedits-provider'
+import { ignoreReason } from '../cody-ignore/notification'
 import { getGhostHintEnablement } from '../commands/GhostHintDecorator'
 import { getReleaseNotesURLByIDE } from '../release'
 import { version } from '../version'
@@ -738,24 +739,6 @@ async function getCurrentCodySuggestionMode(
 
 function getCodySuggestionModeKey(): string {
     return 'cody.suggestions.mode'
-}
-
-function ignoreReason(isIgnore: IsIgnored): string | null {
-    switch (isIgnore) {
-        case false:
-            return null
-        case 'non-file-uri':
-            return 'This current file is ignored as it does not have a valid file URI.'
-        case 'no-repo-found':
-            return 'This current file is ignored as it is not in known git repository.'
-        case 'has-ignore-everything-filters':
-            return 'Your administrator has disabled Cody for this file.'
-        default:
-            if (isIgnore.startsWith('repo:')) {
-                return `Your administrator has disabled Cody for '${isIgnore.replace('repo:', '')}'.`
-            }
-            return 'The current file is ignored by Cody.'
-    }
 }
 
 interface StatusBarLoaderArgs {
