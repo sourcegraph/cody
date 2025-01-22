@@ -77,6 +77,9 @@ export const SearchResults = ({
     const resultsToShow =
         initialResults?.length === totalResults?.length || showAll ? totalResults : initialResults
 
+    // mini-HACK: rather than prop drilling the current repository through to this component,
+    // just pull the boosted repo name from the query if it exists. This will break if we
+    // change how the current repo is boosted, but it at least doesn't depend on VSCode-specific APIs.
     const boostedRepo = message.search.query.match(/boost:repo\(([^)]+)\)/)?.[1]
     const firstNonBoostedRepoIndex = boostedRepo
         ? resultsToShow.findIndex(
