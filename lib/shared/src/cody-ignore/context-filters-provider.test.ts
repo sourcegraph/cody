@@ -392,24 +392,23 @@ describe('ContextFiltersProvider', () => {
         )
 
         it('excludes everything on unknown API errors', async () => {
-            vi.spyOn(graphqlClient, 'fetchSourcegraphAPI').mockResolvedValue(
-                new Error('API error message')
-            )
+            const error = new Error('API error message')
+            vi.spyOn(graphqlClient, 'fetchSourcegraphAPI').mockResolvedValue(error)
 
             const uri = getTestURI({ repoName: 'whatever', filePath: 'foo/bar.ts' })
-            expect(await provider.isUriIgnored(uri)).toBe('has-ignore-everything-filters')
+            expect(await provider.isUriIgnored(uri)).toBe(error)
         })
 
         it('excludes everything on invalid response structure', async () => {
             vi.spyOn(graphqlClient, 'fetchSourcegraphAPI').mockResolvedValue({
                 data: { site: { codyContextFilters: { raw: { something: true } } } },
             })
-            vi.spyOn(graphqlClient, 'fetchSourcegraphAPI').mockResolvedValue(
-                new Error('API error message')
-            )
+
+            const error = new Error('API error message')
+            vi.spyOn(graphqlClient, 'fetchSourcegraphAPI').mockResolvedValue(error)
 
             const uri = getTestURI({ repoName: 'cody', filePath: 'foo/bar.ts' })
-            expect(await provider.isUriIgnored(uri)).toBe('has-ignore-everything-filters')
+            expect(await provider.isUriIgnored(uri)).toBe(error)
         })
 
         it('includes everything on empty responses', async () => {
