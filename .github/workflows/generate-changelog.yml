@@ -57,7 +57,7 @@ jobs:
             --output.pr.title="Changelog for %s" \
             --output.pr.body="Automated release and changelog for VS code Cody %s" \
             --output.changelog="vscode/CHANGELOG.md" \
-            --output.changelog.marker='<!--- {/_ CHANGELOG_START _/} --->' \
+            --output.changelog.marker='<!--- {/_ CHANGELOG_START _/} -->' \
             --releaseregistry.version=$text
 
           #   --title "VS Code: Release v$VERSION" \
