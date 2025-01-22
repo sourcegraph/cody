@@ -37,7 +37,7 @@ export const ExtensionPromotionalBanner: React.FC<{ IDE: CodyIDE }> = ({ IDE }) 
                     <p className="tw-leading-tight">
                         Download the extension to get the power of Sourcegraph right where you code
                     </p>
-                </div>{' '}
+                </div>
             </div>
             <div className="tw-flex tw-gap-8 tw-mx-4">
                 <div className="tw-flex tw-gap-8">

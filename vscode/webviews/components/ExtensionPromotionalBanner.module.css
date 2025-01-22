@@ -22,7 +22,7 @@
     padding: 0.25rem 0.75rem;
     font-weight: 500;
     background: var(--vscode-button-secondaryBackground);
-    color: var(--vscode-button-secondaryForeground);
+    color: var(--vscode-editor-foreground);
     text-decoration: none;
     border-radius: 4px;
     height: 32px;
