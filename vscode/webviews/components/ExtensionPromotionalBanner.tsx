@@ -70,7 +70,7 @@ export const ExtensionPromotionalBanner: React.FC<{ IDE: CodyIDE }> = ({ IDE }) 
                 >
                     ✕
                 </button>
-            </div>{' '}
+            </div>
         </div>
     )
 }
