@@ -38,7 +38,7 @@ const HAS_AUTHENTICATED_BEFORE_KEY = 'has-authenticated-before'
 
 class AuthProvider implements vscode.Disposable {
     private status = new Subject<AuthStatus>()
-    private refreshRequests = new Subject<void>()
+    private refreshRequests = new Subject<boolean>()
 
     /**
      * Credentials that were already validated with
@@ -54,20 +54,23 @@ class AuthProvider implements vscode.Disposable {
 
     private async validateAndUpdateAuthStatus(
         credentials: ResolvedConfigurationCredentialsOnly,
-        signal?: AbortSignal
+        signal?: AbortSignal,
+        resetInitialAuthStatus?: boolean
     ): Promise<void> {
-        // Immediately emit the unauthenticated status while we are authenticating.
-        // Emitting `authenticated: false` for a brief period is both true and a
-        // way to ensure that subscribers are robust to changes in
-        // authentication status.
-        this.status.next({
-            authenticated: false,
-            pendingValidation: true,
-            endpoint: credentials.auth.serverEndpoint,
-        })
+        if (resetInitialAuthStatus ?? true) {
+            // Immediately emit the unauthenticated status while we are authenticating.
+            // Emitting `authenticated: false` for a brief period is both true and a
+            // way to ensure that subscribers are robust to changes in
+            // authentication status.
+            this.status.next({
+                authenticated: false,
+                pendingValidation: true,
+                endpoint: credentials.auth.serverEndpoint,
+            })
+        }
 
         try {
-            const authStatus = await validateCredentials(credentials, signal)
+            const authStatus = await validateCredentials(credentials, signal, undefined)
             signal?.throwIfAborted()
             this.status.next(authStatus)
             await this.handleAuthTelemetry(authStatus, signal)
@@ -120,17 +123,17 @@ class AuthProvider implements vscode.Disposable {
         this.subscriptions.push(
             combineLatest(
                 credentialsChangesNeedingValidation,
-                this.refreshRequests.pipe(startWith(undefined))
+                this.refreshRequests.pipe(startWith(true))
             )
                 .pipe(
-                    abortableOperation(async ([config], signal) => {
+                    abortableOperation(async ([config, resetInitialAuthStatus], signal) => {
                         if (getClientCapabilities().isCodyWeb) {
                             // Cody Web calls {@link AuthProvider.validateAndStoreCredentials}
                             // explicitly. This early exit prevents duplicate authentications during
                             // the initial load.
                             return
                         }
-                        await this.validateAndUpdateAuthStatus(config, signal)
+                        await this.validateAndUpdateAuthStatus(config, signal, resetInitialAuthStatus)
                     })
                 )
                 .subscribe({})
@@ -160,7 +163,7 @@ class AuthProvider implements vscode.Disposable {
                     })
                 )
                 .subscribe(() => {
-                    this.refreshRequests.next()
+                    this.refreshRequests.next(false)
                 })
         )
 
@@ -218,9 +221,9 @@ class AuthProvider implements vscode.Disposable {
     /**
      * Refresh the auth status.
      */
-    public refresh(): void {
+    public refresh(resetInitialAuthStatus = true): void {
         this.lastValidatedAndStoredCredentials.next(null)
-        this.refreshRequests.next()
+        this.refreshRequests.next(resetInitialAuthStatus)
     }
 
     public signout(endpoint: string): void {
