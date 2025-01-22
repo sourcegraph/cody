@@ -229,7 +229,8 @@ export class ClientConfigSingleton {
             return Promise.all([
                 graphqlClient.viewerSettings(signal),
                 graphqlClient.temporarySettings(signal),
-            ]).then(([viewerSettings, temporarySettings]) => {
+                graphqlClient.codeSearchEnabled(signal),
+            ]).then(([viewerSettings, temporarySettings, codeSearchEnabled]) => {
                 const config: CodyClientConfig = {
                     ...clientConfig,
                     intentDetection: 'enabled',
@@ -256,6 +257,10 @@ export class ClientConfigSingleton {
                             message: notice?.message ?? '',
                         })
                     )
+                }
+
+                if (!isError(codeSearchEnabled) && !codeSearchEnabled) {
+                    config.intentDetection = 'disabled'
                 }
 
                 if (!isError(temporarySettings)) {
