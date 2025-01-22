@@ -236,7 +236,7 @@ export function getCorpusContextItemsForEditorState(): Observable<
                         title: 'Current Repository',
                         badge: 'Not yet available',
                         content: null,
-                        uri: URI.parse('https://www.youtube.com/watch?v=dQw4w9WgXcQ'),
+                        uri: URI.parse('https://sourcegraph.com/docs/admin/code_hosts'),
                         name: '',
                         icon: 'folder',
                     })
