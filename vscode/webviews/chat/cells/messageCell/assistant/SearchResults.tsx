@@ -86,7 +86,9 @@ export const SearchResults = ({
               result => result.__typename === 'FileMatch' && result.repository.name !== boostedRepo
           )
         : undefined
-    const hasResults = resultsToShow.length > 0
+    // don't show filter on first search that returns no results
+    // show filter on subsquent filtered searches, we want users to be able to deselect their choices
+    const hasResults = initialResults?.length > 0 ? initialResults?.length > 0 : resultsToShow.length > 0
 
     const showFiltersButton =
         (hasResults && !!message.search.response?.results.dynamicFilters?.length) ||
