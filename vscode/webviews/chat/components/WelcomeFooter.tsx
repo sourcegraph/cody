@@ -28,7 +28,7 @@ const chatLinks: ChatViewLink[] = [
 export default function WelcomeFooter({ IDE }: { IDE: CodyIDE }): JSX.Element {
     return (
         <div className={styles.welcomeFooter}>
-            <ExtensionPromotionalBanner IDE={CodyIDE.VSCode} />
+            {IDE === CodyIDE.Web && <ExtensionPromotionalBanner IDE={IDE} />}
             <QuickStart />
             <div className={styles.links}>
                 {chatLinks.map(link => (
