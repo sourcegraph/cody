@@ -4,6 +4,19 @@ This is a log of all notable changes to Cody for VS Code.
 
 <!--- {/_ CHANGELOG_START _/} -->
 
+## 
+
+### Fix
+
+#### Release
+
+- remove checkout and pull steps to keep workflow referen… [#6739](https://github.com/sourcegraph/cody/pull/6739)
+
+### Reverts
+
+  There were no reverts for this release
+
+
 ## Unreleased
 
 ### Added
