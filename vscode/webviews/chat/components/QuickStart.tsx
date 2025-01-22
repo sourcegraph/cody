@@ -166,7 +166,7 @@ export function QuickStart() {
                     <div className="tw-m-4">
                         <button
                             type="button"
-                            className="tw-rounded-md tw-border tw-px-4 tw-py-2 tw-text-md hover:tw-bg-muted"
+                            className="tw-rounded-md tw-border tw-px-4 tw-py-2 tw-text-md tw-border-border hover:tw-bg-muted"
                             onClick={e => {
                                 e.stopPropagation()
                                 setShowTipsOverlay(true)
@@ -264,7 +264,7 @@ export function QuickStart() {
                                     </div>
                                 ))}
                             </div>
-                            <div className="tw-mt-8 tw-border-t tw-pt-12">
+                            <div className="tw-mt-8 tw-border-t tw-border-border tw-pt-12">
                                 <div className="tw-grid tw-gap-4">
                                     {chatTips.map(tip => (
                                         <div

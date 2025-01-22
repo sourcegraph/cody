@@ -1,6 +1,6 @@
 {
   "name": "@sourcegraph/cody-web",
-  "version": "0.24.0",
+  "version": "0.25.0",
   "description": "Cody standalone web app",
   "license": "Apache-2.0",
   "repository": {
@@ -11,7 +11,9 @@
   "main": "dist/index.js",
   "types": "dist/lib/index.d.ts",
   "sideEffects": true,
-  "files": ["dist/*"],
+  "files": [
+    "dist/*"
+  ],
   "scripts": {
     "dev": "vite --mode development",
     "dev:standalone": "CODY_WEB_DEMO_STANDALONE_MODE=true vite --mode development",
