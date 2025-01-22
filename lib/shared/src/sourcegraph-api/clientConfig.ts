@@ -70,6 +70,9 @@ export interface CodyClientConfig {
     notices: CodyNotice[]
 
     temporarySettings: Partial<TemporarySettings>
+
+    // Whether code search is enabled for the SG instance.
+    codeSearchEnabled: boolean
 }
 
 export const dummyClientConfigForTest: CodyClientConfig = {
@@ -83,6 +86,7 @@ export const dummyClientConfigForTest: CodyClientConfig = {
     intentDetection: 'enabled',
     temporarySettings: {},
     notices: [],
+    codeSearchEnabled: false,
 }
 
 /**
@@ -221,12 +225,14 @@ export class ClientConfigSingleton {
                 return Promise.all([
                     graphqlClient.viewerSettings(signal),
                     graphqlClient.temporarySettings(signal),
-                ]).then(([viewerSettings, temporarySettings]) => {
+                    graphqlClient.codeSearchEnabled(signal),
+                ]).then(([viewerSettings, temporarySettings, codeSearchEnabled]) => {
                     const config: CodyClientConfig = {
                         ...clientConfig,
                         intentDetection: 'enabled',
                         notices: [],
                         temporarySettings: {},
+                        codeSearchEnabled: isError(codeSearchEnabled) ? true : codeSearchEnabled,
                     }
 
                     // Don't fail the whole chat because of viewer setting (used only to show banners)
@@ -246,6 +252,10 @@ export class ClientConfigSingleton {
                                 message: notice?.message ?? '',
                             })
                         )
+                    }
+
+                    if (codeSearchEnabled === false) {
+                        config.intentDetection = 'disabled'
                     }
 
                     if (!isError(temporarySettings)) {
@@ -284,6 +294,7 @@ export class ClientConfigSingleton {
             userShouldUseEnterprise: false,
             notices: [],
             temporarySettings: {},
+            codeSearchEnabled: false,
         }
     }
 
