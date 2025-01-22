@@ -313,7 +313,7 @@ export const SearchResults = ({
                                         key={i}
                                     >
                                         {i === firstNonBoostedRepoIndex && (
-                                            <h6 className="tw-border-b tw-text-muted-foreground tw-p-4 tw-pt-8">
+                                            <h6 className="tw-border-b tw-border-border tw-text-muted-foreground tw-p-4 tw-pt-8">
                                                 Results from other repositories
                                             </h6>
                                         )}
