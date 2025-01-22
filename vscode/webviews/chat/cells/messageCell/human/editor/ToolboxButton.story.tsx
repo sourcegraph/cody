@@ -6,9 +6,6 @@ const meta: Meta<typeof ToolboxButton> = {
     title: 'cody/ToolboxButton',
     component: ToolboxButton,
     decorators: [VSCodeStandaloneComponent],
-    args: {
-        isFirstMessage: true,
-    },
 }
 
 export default meta
@@ -75,6 +72,5 @@ export const NonFirstMessage: Story = {
                 enabled: true,
             },
         },
-        isFirstMessage: false,
     },
 }

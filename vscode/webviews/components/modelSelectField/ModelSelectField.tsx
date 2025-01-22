@@ -193,7 +193,7 @@ export const ModelSelectField: React.FunctionComponent<{
                 >
                     {settings && (
                         <header className="tw-w-full tw-border-t tw-border-border tw-flex tw-justify-between tw-items-center">
-                            <ToolboxButton settings={settings} api={api} isFirstMessage={true} />
+                            <ToolboxButton settings={settings} api={api} />
                         </header>
                     )}
                     <CommandList
@@ -391,7 +391,7 @@ const ChatModelIcon: FunctionComponent<{ model: string; className?: string }> = 
 
 /** Common {@link ModelsService.uiGroup} values. */
 const ModelUIGroup: Record<string, string> = {
-    Agents: 'Agents with tools',
+    Agents: 'Agent, extensive context fetching',
     Power: 'More powerful models',
     Balanced: 'Balanced for power and speed',
     Speed: 'Faster models',
