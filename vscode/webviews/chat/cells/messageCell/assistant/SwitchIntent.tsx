@@ -1,5 +1,5 @@
 import type { ChatMessage } from '@sourcegraph/cody-shared'
-import { MessageSquare, Search, Sparkles, UserCircle2 } from 'lucide-react'
+import { Brain, MessageSquare, Search, UserCircle2 } from 'lucide-react'
 import { Button } from '../../../../components/shadcn/ui/button'
 
 interface SwitchIntentProps {
@@ -13,15 +13,15 @@ export const SwitchIntent = ({ intent, manuallySelected, onSwitch }: SwitchInten
     }
 
     return (
-        <div className="tw-flex tw-justify-between tw-gap-6 tw-items-center tw-py-2 tw-px-4 md:tw-p-4 tw-text-sm tw-font-medium tw-border-b">
+        <div className="tw-flex tw-justify-between tw-gap-6 tw-items-center tw-py-2 tw-px-4 md:tw-p-4 tw-text-sm tw-font-medium">
             <div className="tw-flex tw-gap-4 tw-py-2 tw-text-muted-foreground">
                 {manuallySelected ? (
                     <UserCircle2 className="tw-size-8 tw-flex-shrink-0" />
                 ) : (
-                    <Sparkles className="tw-size-8 tw-flex-shrink-0" />
+                    <Brain className="tw-size-8 tw-flex-shrink-0" />
                 )}
                 <span className="tw-leading-tight">
-                    {manuallySelected ? 'You' : 'Query review'} selected a{' '}
+                    {manuallySelected ? 'You' : 'Intent detection'} selected a{' '}
                     {intent === 'search' ? 'code search' : 'chat'} response
                 </span>
             </div>
