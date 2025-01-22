@@ -51,13 +51,12 @@ jobs:
             --github.repo=$GH_REPO \
             --output.repo.base="main" \
             --output.repo=$GH_REPO \
-            --output.pr.branch="release/vscode-$VERSION" \
-            --output.pr.title="Changelog for $VERSION" \
-            --output.pr.body="Automated release and changelog for VS code Cody $VERSION" \
+            --output.pr.branch="release/vscode-v${VERSION}" \
+            --output.pr.title="Changelog for v${VERSION}" \
+            --output.pr.body="Automated release and changelog for VS code Cody v${VERSION}" \
             --output.changelog="vscode/CHANGELOG.md" \
             --output.changelog.marker='<!--- {/_ CHANGELOG_START _/} -->' \
-            --releaseregistry.version=$VERSION
-          #   --title "VS Code: Release v$VERSION" \
+            --releaseregistry.version=${VERSION}          #   --title "VS Code: Release v$VERSION" \
           #   --body "Automated release and changelog for VS code Cody" \
           #   --base main --head release/vscode-v$VERSION
       - name: Update version
