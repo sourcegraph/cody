@@ -13,7 +13,7 @@ import { useCallback, useMemo } from 'react'
 import type { URI } from 'vscode-uri'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
 import { useTelemetryRecorder } from '../utils/telemetry'
-import { useExperimentalOneBox } from '../utils/useExperimentalOneBox'
+import { useOmniBox } from '../utils/useOmniBox'
 import styles from './FileLink.module.css'
 import { Button } from './shadcn/ui/button'
 
@@ -114,7 +114,7 @@ export const FileLink: React.FunctionComponent<
         source && hoverSourceLabels[source] ? `Included ${hoverSourceLabels[source]}` : undefined
 
     const telemetryRecorder = useTelemetryRecorder()
-    const oneboxEnabled = useExperimentalOneBox()
+    const oneboxEnabled = useOmniBox()
     const logClick = useCallback(() => {
         if (!oneboxEnabled) {
             return
