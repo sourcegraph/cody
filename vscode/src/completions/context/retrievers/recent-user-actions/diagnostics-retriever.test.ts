@@ -59,6 +59,43 @@ describe('DiagnosticsRetriever', () => {
             retriever.dispose()
         })
 
+        it('should handle out-of-range diagnostic lines gracefully', async () => {
+            // This file has only 3 lines (indices 0, 1, and 2)
+            const testDocument = document(
+                dedent`
+                    function smallFile() {
+                        console.log('hello')
+                    }
+                `,
+                'typescript'
+            )
+
+            // Put the diagnostic at line 999 to force an out-of-range scenario
+            const diagnostics = [
+                createDiagnostic(
+                    vscode.DiagnosticSeverity.Error,
+                    new vscode.Range(999, 0, 999, 4),
+                    'Out-of-range error'
+                ),
+            ]
+
+            // Position is arbitrary; we just need something valid in the file
+            const position = new vscode.Position(0, 0)
+
+            await testDiagnostics(
+                testDocument,
+                diagnostics,
+                position,
+                1,
+                `
+        "function smallFile() {
+            console.log('hello')
+        }
+        ^ Out-of-range error"
+        `
+            )
+        })
+
         it('should retrieve diagnostics for a given position', async () => {
             const testDocument = document(
                 dedent`
@@ -129,7 +166,7 @@ describe('DiagnosticsRetriever', () => {
                 `
                 "function multiLineErrors() {
                     const x: number = "string";
-                                       ^^^^^^^^ Type 'string' is not assignable to type 'number'.
+                                       ^^^^^^^ Type 'string' is not assignable to type 'number'.
                     const y: string = 42;
                     const z = x + y;
                 }"
@@ -140,7 +177,7 @@ describe('DiagnosticsRetriever', () => {
                 "function multiLineErrors() {
                     const x: number = "string";
                     const y: string = 42;
-                                       ^^ Type 'number' is not assignable to type 'string'.
+                                       ^ Type 'number' is not assignable to type 'string'.
                     const z = x + y;
                 }"
             `)
@@ -149,7 +186,7 @@ describe('DiagnosticsRetriever', () => {
                     const x: number = "string";
                     const y: string = 42;
                     const z = x + y;
-                                 ^^^ The '+' operator cannot be applied to types 'number' and 'string'.
+                                 ^^ The '+' operator cannot be applied to types 'number' and 'string'.
                 }"
             `)
         })
@@ -293,7 +330,7 @@ describe('DiagnosticsRetriever', () => {
                     let x: number = 5;
                     let y: string = 'hello';
                     let z = x + y;
-                               ^^^ The '+' operator cannot be applied to types 'number' and 'string'.
+                               ^^ The '+' operator cannot be applied to types 'number' and 'string'.
                     console.log(x);
                 }"
             `
