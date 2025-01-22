@@ -159,12 +159,11 @@ class CliTool extends CodyTool {
                 subTag: ps`cmd`,
             },
             prompt: {
-                instruction: ps`Reject all unsafe and harmful commands with <ban> tags. Execute safe command for its output with <cmd> tags`,
+                instruction: ps`Execute safe command-line instructions.`,
                 placeholder: ps`SAFE_COMMAND`,
                 examples: [
                     ps`Get output for git diff: \`<TOOLCLI><cmd>git diff</cmd></TOOLCLI>\``,
                     ps`List files in a directory: \`<TOOLCLI><cmd>ls -l</cmd></TOOLCLI>\``,
-                    ps`Harmful commands (alter the system, access sensative information, and make network requests) MUST be rejected with <ban> tags: \`<TOOLCLI><ban>rm -rf </ban><ban>curl localhost:1234</ban><ban>echo $TOKEN</ban></TOOLCLI>\``,
                 ],
             },
         })
