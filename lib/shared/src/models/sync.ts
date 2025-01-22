@@ -212,7 +212,12 @@ export function syncModels({
                                         enableToolCody
                                     ).pipe(
                                         switchMap(
-                                            ([hasEarlyAccess, hasAgenticChatFlag, defaultToHaiku]) => {
+                                            ([
+                                                hasEarlyAccess,
+                                                hasAgenticChatFlag,
+                                                defaultToHaiku,
+                                                isToolCodyEnabled,
+                                            ]) => {
                                                 // TODO(sqs): remove waitlist from localStorage when user has access
                                                 const isOnWaitlist = config.clientState.waitlist_o1
                                                 if (isDotComUser && (hasEarlyAccess || isOnWaitlist)) {
@@ -233,49 +238,57 @@ export function syncModels({
                                                         }
                                                     )
                                                 }
+
+                                                const clientModels = []
+
+                                                // Handle agentic chat features
+                                                const isAgenticChatEnabled =
+                                                    hasAgenticChatFlag ||
+                                                    (isDotComUser && !isCodyFreeUser)
                                                 const haikuModel = data.primaryModels.find(m =>
                                                     m.id.includes('5-haiku')
                                                 )
                                                 const sonnetModel = data.primaryModels.find(m =>
                                                     m.id.includes('5-sonnet')
                                                 )
-                                                // Agentic Chat is available for all Pro users.
-                                                // Enterprise users need to have the feature flag enabled.
-                                                const isAgenticChatEnabled =
-                                                    hasAgenticChatFlag ||
-                                                    (isDotComUser && !isCodyFreeUser)
-
-                                                // Requires 3.5 Haiku and 3.5 Sonnet models to be available.
+                                                const hasDeepCody = data.primaryModels.some(m =>
+                                                    m.id.includes('deep-cody')
+                                                )
                                                 if (
+                                                    !hasDeepCody &&
                                                     isAgenticChatEnabled &&
                                                     sonnetModel &&
-                                                    haikuModel &&
-                                                    // Ensure the deep-cody model is only added once.
-                                                    !data.primaryModels.some(m =>
-                                                        m.id.includes('deep-cody')
-                                                    )
+                                                    haikuModel
                                                 ) {
-                                                    const DEEPCODY_MODEL =
+                                                    clientModels.push(
                                                         getExperimentalClientModelByFeatureFlag(
                                                             FeatureFlag.DeepCody
                                                         )!
-
-                                                    const clientModels = [DEEPCODY_MODEL]
-                                                    if (enableToolCody) {
-                                                        clientModels.push(TOOL_CODY_MODEL)
-                                                    }
-
-                                                    data.primaryModels.push(
-                                                        ...maybeAdjustContextWindows(clientModels).map(
-                                                            createModelFromServerModel
-                                                        )
                                                     )
                                                 }
-                                                // set the default model to Haiku for free users
-                                                if (isDotComUser && isCodyFreeUser && defaultToHaiku) {
-                                                    if (haikuModel) {
-                                                        data.preferences!.defaults.chat = haikuModel.id
-                                                    }
+
+                                                const hasToolCody = data.primaryModels.some(m =>
+                                                    m.id.includes('tool-cody')
+                                                )
+                                                if (!hasToolCody && isToolCodyEnabled) {
+                                                    clientModels.push(TOOL_CODY_MODEL)
+                                                }
+
+                                                // Add the client models to the list of models.
+                                                data.primaryModels.push(
+                                                    ...maybeAdjustContextWindows(clientModels).map(
+                                                        createModelFromServerModel
+                                                    )
+                                                )
+
+                                                // Set the default model to Haiku for free users.
+                                                if (
+                                                    isDotComUser &&
+                                                    isCodyFreeUser &&
+                                                    defaultToHaiku &&
+                                                    haikuModel
+                                                ) {
+                                                    data.preferences!.defaults.chat = haikuModel.id
                                                 }
 
                                                 return Observable.of(data)
