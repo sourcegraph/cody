@@ -19,6 +19,8 @@ const CLIENT_CONFIG_FIXTURE: CodyClientConfig = {
     intentDetection: 'enabled',
     notices: [],
     temporarySettings: {},
+    omniBoxEnabled: false,
+    siteVersion: '5.5.0',
 }
 
 describe('ClientConfigSingleton', () => {

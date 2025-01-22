@@ -18,7 +18,7 @@ import isEqual from 'lodash/isEqual'
 import { type FunctionComponent, type RefObject, memo, useMemo } from 'react'
 import type { ApiPostMessage, UserAccountInfo } from '../../../../Chat'
 import { chatModelIconComponent } from '../../../../components/ChatModelIcon'
-import { useExperimentalOneBox } from '../../../../utils/useExperimentalOneBox'
+import { useOmniBox } from '../../../../utils/useOmniBox'
 import {
     ChatMessageContent,
     type CodeBlockActionsProps,
@@ -88,7 +88,7 @@ export const AssistantMessageCell: FunctionComponent<{
 
         const hasLongerResponseTime = chatModel?.tags?.includes(ModelTag.StreamDisabled)
 
-        const experimentalOneBoxEnabled = useExperimentalOneBox()
+        const experimentalOneBoxEnabled = useOmniBox()
 
         const isSearchIntent = experimentalOneBoxEnabled && humanMessage?.intent === 'search'
 
