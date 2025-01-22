@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 
+import random
 from aiohttp import web, ClientSession
 from urllib.parse import urlparse
 import argparse
-import asyncio
 import re
 
 async def proxy_handler(request):
@@ -36,6 +36,17 @@ async def proxy_handler(request):
             headers=headers,
             data=await request.read()
         ) as response:
+            if random.random() < u2f_challenge_chance:
+                headers = dict(response.headers)
+                headers['X-Sourcegraph-U2f-Challenge'] = 'true'
+                proxy_response = web.StreamResponse(
+                    status=401,
+                    headers=headers
+                )
+                await proxy_response.prepare(request)
+                await proxy_response.write_eof()
+                return proxy_response
+
             proxy_response = web.StreamResponse(
                 status=response.status,
                 headers=response.headers
@@ -71,11 +82,13 @@ if __name__ == '__main__':
     parser.add_argument('target_url', help='Target Sourcegraph instance URL to proxy to')
     parser.add_argument('proxy_port', type=int, nargs='?', default=5555,
                        help='Port for the proxy server (default: %(default)s)')
+    parser.add_argument('u2f_challenge_chance', help='Defines chance that proxy will respond with U2F challenge; Accepts values from 0 to 1', type=float, nargs='?', default=0)
 
     args = parser.parse_args()
 
     target_url = args.target_url.rstrip('/')
     port = args.proxy_port
+    u2f_challenge_chance= args.u2f_challenge_chance
 
     print(f'Starting proxy server on port {port} targeting {target_url}...')
     web.run_app(app, port=port)
