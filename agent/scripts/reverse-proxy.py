@@ -38,7 +38,7 @@ async def proxy_handler(request):
         ) as response:
             if random.random() < u2f_challenge_chance:
                 headers = dict(response.headers)
-                headers['X-Sourcegraph-U2f-Challenge'] = 'true'
+                headers['x-sourcegraph-u2f-challenge'] = 'true'
                 proxy_response = web.StreamResponse(
                     status=401,
                     headers=headers
