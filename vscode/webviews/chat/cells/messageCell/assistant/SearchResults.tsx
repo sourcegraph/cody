@@ -372,14 +372,16 @@ export const SearchResults = ({
                                                     role="button"
                                                     tabIndex={0}
                                                 >
-                                                    <div className="tw-flex tw-items-center tw-gap-2">
+                                                    <div className="tw-flex tw-items-center tw-gap-2 hover:tw-text-foreground">
                                                         <ChevronRight
                                                             className={classNames(
                                                                 'tw-size-8 tw-transition-transform',
                                                                 otherReposExpanded ? 'tw-rotate-90' : ''
                                                             )}
                                                         />
-                                                        <span>Results from other repositories</span>
+                                                        <span className="tw-font-medium">
+                                                            Results from other repositories
+                                                        </span>
                                                         <span className="tw-bg-muted tw-text-muted-foreground tw-rounded-full tw-mx-2 tw-px-3 tw-py-2 tw-text-xs tw-font-semibold tw-leading-none">
                                                             {otherReposResultsCount}
                                                         </span>

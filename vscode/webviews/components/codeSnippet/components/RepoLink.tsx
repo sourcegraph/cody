@@ -71,12 +71,12 @@ export const RepoFileLink: React.FunctionComponent<React.PropsWithChildren<Props
             {collapsible && (
                 <Chevron
                     size={16}
-                    className="tw-inline-block tw-mr-2 tw-cursor-pointer"
+                    className="tw-inline-block tw-mr-2 tw-cursor-pointer hover:tw-opacity-80"
                     onClick={onToggleCollapse}
                 />
             )}
             <span className="tw-flex-1 tw-gap-3 tw-text-sm md:tw-text-md">
-                <a href={repoURL} target="_blank" rel="noreferrer">
+                <a href={repoURL} target="_blank" rel="noreferrer" className="hover:tw-opacity-80">
                     {repoDisplayName || displayRepoName(repoName)}
                 </a>
                 <span aria-hidden={true}> ›</span>{' '}
@@ -87,11 +87,12 @@ export const RepoFileLink: React.FunctionComponent<React.PropsWithChildren<Props
                     rel="noreferrer"
                     data-selectable-search-result={isKeyboardSelectable}
                     onClick={() => onFilePathClick?.()}
+                    className="hover:tw-opacity-80"
                 >
                     {fileBase ? `${fileBase}/` : null}
                     <span className="tw-font-semibold">{fileName}</span>
                 </a>
-            </span>
+            </span>{' '}
         </span>
     )
 }

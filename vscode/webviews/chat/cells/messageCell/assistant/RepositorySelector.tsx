@@ -31,7 +31,7 @@ export const RepositorySelector = ({ onSelect }: IProps) => {
                     setOpen(true)
                     setQuery(e.target.value)
                 }}
-                className="!tw-bg-background !tw-text-foreground !tw-border-border !tw-ring-offset-background !tw-py-4 !tw-px-4 !tw-h-14"
+                className="!tw-bg-background !tw-text-foreground !tw-border-border !tw-ring-offset-background !tw-py-4 !tw-px-4 !tw-h-14 !tw-text-sm"
             />
 
             {open && (
