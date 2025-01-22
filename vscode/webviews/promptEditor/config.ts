@@ -1,6 +1,7 @@
 import type { SerializedContextItem } from '@sourcegraph/cody-shared'
 import type { PromptEditorConfig } from '@sourcegraph/prompt-editor'
 import { URI } from 'vscode-uri'
+import { Badge } from '../components/shadcn/ui/badge'
 import {
     Command,
     CommandEmpty,
@@ -26,6 +27,9 @@ export const promptEditorConfig: PromptEditorConfig = {
                 uri,
             })
         }
+    },
+    badgeComponents: {
+        Badge,
     },
     tooltipComponents: {
         Tooltip,

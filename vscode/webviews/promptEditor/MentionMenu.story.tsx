@@ -82,6 +82,15 @@ export const Default: StoryObj<typeof MentionMenu> = {
                     icon: 'folder',
                 },
                 {
+                    type: 'open-link',
+                    icon: 'folder',
+                    content: null,
+                    title: 'Current Repository',
+                    name: '',
+                    uri: URI.parse('https://www.sourcegraph.com/'),
+                    badge: 'Not available yet',
+                },
+                {
                     uri: URI.file('a/b/initial.go'),
                     type: 'file',
                     description: 'initial.go:8-13',

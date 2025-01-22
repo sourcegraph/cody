@@ -28,6 +28,7 @@ import { updateDisplayPathEnvInfoForWebview } from './utils/displayPathEnvInfo'
 import { TelemetryRecorderContext, createWebviewTelemetryRecorder } from './utils/telemetry'
 import { ClientConfigProvider } from './utils/useClientConfig'
 import { type Config, ConfigProvider } from './utils/useConfig'
+import { LinkOpenerProvider } from './utils/useLinkOpener'
 
 export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vscodeAPI }) => {
     const [config, setConfig] = useState<Config | null>(null)
@@ -253,5 +254,9 @@ export function getAppWrappers({
             component: ClientConfigProvider,
             props: { value: clientConfig },
         } satisfies Wrapper<any, ComponentProps<typeof ClientConfigProvider>>,
+        {
+            component: LinkOpenerProvider,
+            props: { vscodeAPI },
+        } satisfies Wrapper<any, ComponentProps<typeof LinkOpenerProvider>>,
     ]
 }
