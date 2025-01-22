@@ -2,7 +2,6 @@ import type { AgentToolboxSettings, WebviewToExtensionAPI } from '@sourcegraph/c
 import { debounce } from 'lodash'
 import { BrainIcon } from 'lucide-react'
 import { type FC, memo, useCallback, useState } from 'react'
-import { CODY_DOCS_AGENTIC_CHAT_URL } from '../../../../../../src/chat/protocol'
 import { Badge } from '../../../../../components/shadcn/ui/badge'
 import { Switch } from '../../../../../components/shadcn/ui/switch'
 import { Tooltip, TooltipContent, TooltipTrigger } from '../../../../../components/shadcn/ui/tooltip'
@@ -104,41 +103,6 @@ export const ToolboxButton: FC<ToolboxButtonProps> = memo(({ settings, api }) =>
                     </span>
                 </TooltipContent>
             </Tooltip>
-            {/* Only shows the Terminal access option if client and instance supports it */}
-            {settings.agent?.name && !settings.shell?.error && (
-                <div className="tw-ml-4 tw-pl-4 tw-flex tw-flex-col tw-gap-2 tw-my-2 tw-text-left tw-border-l-2 tw-border-l-muted-transparent">
-                    <div
-                        className="tw-flex tw-items-center tw-justify-between tw-w-full tw-font-medium tw-gap-2"
-                        aria-label="terminal"
-                    >
-                        <span className="tw-flex tw-gap-2 tw-items-center">
-                            <span className="tw-text-md">Terminal access</span>
-                        </span>
-                        <Switch
-                            className="tw-bg-slate-400"
-                            checked={settings.shell?.enabled}
-                            disabled={isLoading || !!settings.shell?.error}
-                            onClick={() =>
-                                onSubmit({
-                                    ...settings,
-                                    shell: {
-                                        enabled: !!settings.agent?.name && !settings.shell?.enabled,
-                                    },
-                                })
-                            }
-                        />
-                    </div>
-                    <div className="tw-text-xs tw-text-muted-foreground">
-                        Allows agents to execute commands like <code>ls</code>, <code>dir</code>,{' '}
-                        <code>git</code>, and other commands for context. The agent will ask permission
-                        each time it would like to run a command.{' '}
-                        <a target="_blank" rel="noreferrer" href={CODY_DOCS_AGENTIC_CHAT_URL.href}>
-                            Read the docs
-                        </a>{' '}
-                        to learn more.
-                    </div>
-                </div>
-            )}
         </div>
     )
 })
