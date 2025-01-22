@@ -10,7 +10,6 @@ import {
     LogOutIcon,
     PlusIcon,
     Settings2Icon,
-    SettingsIcon,
     UserCircleIcon,
     ZapIcon,
 } from 'lucide-react'
@@ -46,7 +45,7 @@ interface UserMenuProps {
     isTeamsUpgradeCtaEnabled?: boolean
 }
 
-type MenuView = 'main' | 'switch' | 'add' | 'remove' | 'settings'
+type MenuView = 'main' | 'switch' | 'add' | 'remove'
 
 export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
     isProUser,
@@ -361,29 +360,6 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
                                 </CommandGroup>
                             )}
                         </CommandList>
-                    ) : userMenuView === 'settings' ? (
-                        <CommandList>
-                            <CommandGroup title="Back to main menu">
-                                <CommandItem onSelect={() => onMenuViewChange('main')}>
-                                    <ChevronLeftIcon size={16} strokeWidth={1.25} className="tw-mr-2" />
-                                    <span className="tw-flex-grow">Back</span>
-                                </CommandItem>
-                            </CommandGroup>
-                            <CommandGroup>
-                                <CommandItem
-                                    onSelect={() => {
-                                        getVSCodeAPI().postMessage({
-                                            command: 'command',
-                                            id: 'cody.status-bar.interacted',
-                                        })
-                                        close()
-                                    }}
-                                >
-                                    <Settings2Icon size={16} strokeWidth={1.25} className="tw-mr-2" />
-                                    <span className="tw-flex-grow">Extension Settings</span>
-                                </CommandItem>
-                            </CommandGroup>
-                        </CommandList>
                     ) : (
                         <CommandList>
                             <CommandGroup title="Main Account Menu">
@@ -487,7 +463,18 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
                                         <ExternalLinkIcon size={16} strokeWidth={1.25} />
                                     </CommandItem>
                                 )}
-
+                                <CommandItem
+                                    onSelect={() => {
+                                        getVSCodeAPI().postMessage({
+                                            command: 'command',
+                                            id: 'cody.status-bar.interacted',
+                                        })
+                                        close()
+                                    }}
+                                >
+                                    <Settings2Icon size={16} strokeWidth={1.25} className="tw-mr-2" />
+                                    <span className="tw-flex-grow">Extension Settings</span>
+                                </CommandItem>
                                 {isDotComUser && (
                                     <CommandLink
                                         href={ENTERPRISE_PRICING_URL.toString()}
@@ -510,11 +497,6 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
                             </CommandGroup>
 
                             <CommandGroup>
-                                <CommandItem onSelect={() => onMenuViewChange('settings')}>
-                                    <SettingsIcon size={16} strokeWidth={1.25} className="tw-mr-2" />
-                                    <span className="tw-flex-grow">Settings</span>
-                                    <ChevronRightIcon size={16} strokeWidth={1.25} />
-                                </CommandItem>
                                 {allowEndpointChange && (
                                     <CommandItem onSelect={() => onMenuViewChange('switch')}>
                                         <ArrowLeftRightIcon

@@ -464,9 +464,22 @@ describe('syncModels', () => {
 
     it('not to set Agentic Chat as default chat model when feature flag is enabled', async () => {
         const serverSonnet: ServerModel = {
-            modelRef: 'anthropic::unknown::sonnet',
+            modelRef: 'anthropic::unknown::claude-3-5-sonnet',
             displayName: 'Sonnet',
             modelName: 'anthropic.claude-3-5-sonnet',
+            capabilities: ['chat'],
+            category: 'balanced' as ModelCategory,
+            status: 'stable',
+            tier: 'enterprise' as ModelTier,
+            contextWindow: {
+                maxInputTokens: 9000,
+                maxOutputTokens: 4000,
+            },
+        }
+        const serverHaiku: ServerModel = {
+            modelRef: 'anthropic::unknown::claude-3-5-haiku',
+            displayName: 'Haiku',
+            modelName: 'anthropic.claude-3-5-haiku',
             capabilities: ['chat'],
             category: 'balanced' as ModelCategory,
             status: 'stable',
@@ -481,7 +494,7 @@ describe('syncModels', () => {
             schemaVersion: '0.0',
             revision: '-',
             providers: [],
-            models: [serverSonnet],
+            models: [serverSonnet, serverHaiku],
             defaultModels: {
                 chat: serverSonnet.modelRef,
                 fastChat: serverSonnet.modelRef,
@@ -513,7 +526,7 @@ describe('syncModels', () => {
         mockAuthStatus(AUTH_STATUS_FIXTURE_AUTHED)
         expect(storage.data?.[AUTH_STATUS_FIXTURE_AUTHED.endpoint]!.selected.chat).toBe(undefined)
         vi.spyOn(modelsService, 'modelsChanges', 'get').mockReturnValue(Observable.of(result))
-
+        console.log(result.primaryModels, 'result.primaryModels')
         // Check if Deep Cody model is in the primary models list.
         expect(result.primaryModels.some(model => model.id.includes('deep-cody'))).toBe(true)
 

@@ -242,8 +242,9 @@ export function syncModels({
                                                 // Agentic Chat is available for all Pro users.
                                                 // Enterprise users need to have the feature flag enabled.
                                                 const isAgenticChatEnabled =
-                                                    (isDotComUser && !isCodyFreeUser) ||
-                                                    hasAgenticChatFlag
+                                                    hasAgenticChatFlag ||
+                                                    (isDotComUser && !isCodyFreeUser)
+
                                                 // Requires 3.5 Haiku and 3.5 Sonnet models to be available.
                                                 if (
                                                     isAgenticChatEnabled &&
@@ -254,6 +255,7 @@ export function syncModels({
                                                         m.id.includes('deep-cody')
                                                     )
                                                 ) {
+                                                    console.log(data.primaryModels, 'pr ')
                                                     const DEEPCODY_MODEL =
                                                         getExperimentalClientModelByFeatureFlag(
                                                             FeatureFlag.DeepCody

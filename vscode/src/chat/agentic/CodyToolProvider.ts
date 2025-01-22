@@ -170,7 +170,6 @@ export class CodyToolProvider {
     public factory: ToolFactory
 
     private static instance: CodyToolProvider | undefined
-    public static isTerminalAccessEnabled = false
     public static configSubscription: Unsubscribable | undefined
     public static openCtxSubscription: Unsubscribable | undefined
 
