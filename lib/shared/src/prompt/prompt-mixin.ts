@@ -13,7 +13,10 @@ const HEDGES_PREVENTION = ps`Answer positively without apologizing. `
 /**
  * Answer guidelines for the Deep Cody model.
  */
-const DEEP_CODY = ps`Explain your reasoning in detail for coding questions. `
+const AGENTIC_CHAT = ps`Explain your reasoning in detail for coding questions. `
+
+//  Models that do not work well with agentic prompts
+const agenticBlockedModels = ['chat-preview']
 
 /**
  * Prompt mixins elaborate every prompt presented to the LLM.
@@ -44,8 +47,12 @@ export class PromptMixin {
         }
 
         // Handle agent-specific prompts
-        if (humanMessage.agent === 'deep-cody' && !newMixins.length) {
-            mixins.push(new PromptMixin(DEEP_CODY))
+        if (
+            humanMessage.agent === 'deep-cody' &&
+            !newMixins.length &&
+            !agenticBlockedModels.some(m => modelID?.includes(m))
+        ) {
+            mixins.push(new PromptMixin(AGENTIC_CHAT))
         }
 
         // Add new mixins to the list of mixins to be prepended to the next human message.
