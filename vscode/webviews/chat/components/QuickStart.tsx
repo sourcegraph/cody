@@ -166,7 +166,7 @@ export function QuickStart() {
                     <div className="tw-m-4">
                         <button
                             type="button"
-                            className="tw-rounded-md tw-border tw-border-muted tw-px-4 tw-py-2 tw-text-md hover:tw-bg-muted hover:tw-border-border hover:tw-text-foreground"
+                            className="tw-rounded-md tw-border tw-px-4 tw-py-2 tw-text-md tw-border-border hover:tw-bg-muted"
                             onClick={e => {
                                 e.stopPropagation()
                                 setShowTipsOverlay(true)
