@@ -18,12 +18,16 @@ import {
 import { clsx } from 'clsx'
 import {
     ArrowRightIcon,
+    BoxIcon,
     DatabaseIcon,
     ExternalLinkIcon,
     FileIcon,
     FolderGitIcon,
+    FolderIcon,
+    LayoutPanelTop,
     LibraryBigIcon,
     LinkIcon,
+    ListMinusIcon,
     SmileIcon,
     SquareFunctionIcon,
 } from 'lucide-react'
@@ -89,7 +93,9 @@ export const MentionMenuContextItemContent: FunctionComponent<{
     const isClassSymbol = isSymbol && item.kind === 'class'
     const isLink = item.type === 'open-link'
 
-    const icon = item.icon || (isSymbol ? (isClassSymbol ? 'symbol-structure' : 'symbol-method') : null)
+    const iconId =
+        item.icon || (isSymbol ? (isClassSymbol ? 'symbol-structure' : 'symbol-method') : null)
+    const Icon = iconId ? iconForItem[iconId] : null
     const { title, displayName } = getMentionItemTitleAndDisplayName(item)
     const description = getDescription(item, query)
 
@@ -107,7 +113,12 @@ export const MentionMenuContextItemContent: FunctionComponent<{
     return (
         <>
             <div className={styles.row}>
-                {icon && <i className={`codicon codicon-${icon}`} title={isSymbol ? item.kind : ''} />}
+                {Icon && (
+                    <div className={styles.row} title={isSymbol ? item.kind : ''}>
+                        <Icon size={16} strokeWidth={1.75} />
+                        {isSymbol ? item.kind : ''}
+                    </div>
+                )}
                 <span className={clsx(styles.title, warning && styles.titleWithWarning)} title={title}>
                     {displayName}
                 </span>
@@ -167,4 +178,18 @@ export const iconForProvider: Record<
     [REMOTE_FILE_PROVIDER_URI]: FileIcon,
     [REMOTE_DIRECTORY_PROVIDER_URI]: FolderGitIcon,
     [WEB_PROVIDER_URI]: LinkIcon,
+}
+
+export const iconForItem: Record<
+    string,
+    React.ComponentType<{
+        size?: string | number
+        strokeWidth?: string | number
+    }>
+> = {
+    'symbol-method': BoxIcon,
+    'symbol-structure': LayoutPanelTop,
+    folder: FolderIcon,
+    'git-folder': FolderGitIcon,
+    'list-selection': ListMinusIcon,
 }

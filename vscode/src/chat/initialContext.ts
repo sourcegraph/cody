@@ -227,7 +227,7 @@ export function getCorpusContextItemsForEditorState(): Observable<
                         title: 'Current Repository',
                         description: repo.name,
                         source: ContextItemSource.Initial,
-                        icon: 'folder',
+                        icon: 'git-folder',
                     })
                 }
                 if (remoteReposForAllWorkspaceFolders.length === 0) {
@@ -254,7 +254,7 @@ export function getCorpusContextItemsForEditorState(): Observable<
                         isWorkspaceRoot: true,
                         content: null,
                         source: ContextItemSource.Initial,
-                        icon: 'folder',
+                        icon: 'git-folder',
                     } satisfies ContextItemTree)
                 }
             }
