@@ -254,7 +254,7 @@ export function getCorpusContextItemsForEditorState(): Observable<
                         isWorkspaceRoot: true,
                         content: null,
                         source: ContextItemSource.Initial,
-                        icon: 'git-folder',
+                        icon: 'folder',
                     } satisfies ContextItemTree)
                 }
             }
