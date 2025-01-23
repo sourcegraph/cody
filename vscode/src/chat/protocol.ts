@@ -80,7 +80,7 @@ export type WebviewMessage =
           uri: Uri
           // Attempt to open the same file locally if we can map
           // the repository to an open workspace.
-          tryLocal?: boolean
+          tryLocal?: boolean | undefined | null
       }
     | {
           command: 'openFileLink'

@@ -361,7 +361,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 })
                 break
             case 'openRemoteFile':
-                this.openRemoteFile(message.uri, message.tryLocal)
+                this.openRemoteFile(message.uri, message.tryLocal ?? false)
                 break
             case 'newFile':
                 await handleCodeFromSaveToNewFile(message.text, this.editor)
