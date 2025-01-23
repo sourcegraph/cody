@@ -16,7 +16,7 @@ import {
     Pencil,
     Play,
     Search,
-    Sparkles,
+    Brain,
     Square,
 } from 'lucide-react'
 import type { FC, FunctionComponent, KeyboardEventHandler, PropsWithChildren } from 'react'
@@ -65,7 +65,7 @@ function getIntentOptions({
             title: (
                 <div className="tw-flex tw-flex-col tw-self-start">
                     <p>Run detected intent</p>
-                    <p className="tw-text-sm tw-text-muted-foreground">
+                    <p className="tw-text-sm">
                         {isDotComUser
                             ? 'Detects intent and runs appropriately'
                             : `Currently: ${
@@ -74,7 +74,7 @@ function getIntentOptions({
                     </p>
                 </div>
             ),
-            icon: Sparkles,
+            icon: Brain,
             intent: undefined,
             hidden: !intentDetectionAvailable,
             disabled: isDotComUser,
@@ -194,7 +194,6 @@ export const SubmitButton: FC<{
                         'tw-px-6 tw-py-1',
                         'tw-rounded-full',
                         'tw-w-full tw-relative tw-border tw-border-button-border tw-box-content tw-bg-button-background hover:tw-bg-button-background-hover tw-text-button-foreground',
-
                         'disabled:tw-bg-button-secondary-background disabled:tw-text-muted-foreground'
                     )}
                     title={inProgress ? 'Stop' : 'Send'}
@@ -219,7 +218,6 @@ export const SubmitButton: FC<{
                     'tw-px-3 tw-py-1 md:twpx-4 md:tw-py-2',
                     'tw-rounded-tl-full tw-rounded-bl-full',
                     'tw-w-full tw-relative tw-border tw-border-button-border tw-box-content tw-bg-button-background hover:tw-bg-button-background-hover tw-text-button-foreground',
-
                     'disabled:tw-bg-button-secondary-background disabled:tw-text-muted-foreground'
                 )}
                 title="Send"
@@ -306,7 +304,7 @@ export const SubmitButton: FC<{
                     </Command>
                 )}
                 popoverContentProps={{
-                    className: 'tw-w-[350px] !tw-p-0 tw-z-10 tw-my-2',
+                    className: 'tw-shadow-xl tw-w-[350px] !tw-p-0 tw-z-10 tw-my-2',
                     onCloseAutoFocus: event => {
                         // Prevent the popover trigger from stealing focus after the user selects an
                         // item. We want the focus to return to the editor.
@@ -331,7 +329,6 @@ export const SubmitButton: FC<{
         </div>
     )
 }
-
 export const PopoverItem: FunctionComponent<
     PropsWithChildren<{
         popoverContent: (close: () => void) => React.ReactNode
