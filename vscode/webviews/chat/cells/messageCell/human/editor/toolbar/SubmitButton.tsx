@@ -402,6 +402,10 @@ export const PopoverItem: FunctionComponent<
                 onKeyDown={onKeyDownInPopoverContent}
                 ref={popoverContentRef}
                 {...popoverContentProps}
+                className={clsx(
+                    'tw-w-[350px] !tw-p-0 tw-z-10 tw-my-2 tw-shadow-lg tw-border tw-border-button-border tw-rounded-md',
+                    popoverContentProps?.className
+                )}
             >
                 {popoverContent(close)}
             </PopoverContent>
