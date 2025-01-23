@@ -10,6 +10,7 @@ import {
     type CompletionResponseWithMetaData,
     CompletionStopReason,
     FeatureFlag,
+    NeedsAuthChallengeError,
     NetworkError,
     RateLimitError,
     type SerializedCodeCompletionsParams,
@@ -25,6 +26,7 @@ import {
     getActiveTraceAndSpanId,
     getClientInfoParams,
     isAbortError,
+    isCustomAuthChallengeResponse,
     isNodeResponse,
     isRateLimitError,
     logResponseHeadersToSpan,
@@ -147,7 +149,9 @@ class DefaultCodeCompletionsClient implements CodeCompletionsClient {
                 if (!response.ok) {
                     throw recordErrorToSpan(
                         span,
-                        new NetworkError(response, await response.text(), traceId)
+                        isCustomAuthChallengeResponse(response)
+                            ? new NeedsAuthChallengeError()
+                            : new NetworkError(response, await response.text(), traceId)
                     )
                 }
 
