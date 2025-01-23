@@ -7,6 +7,13 @@ on:
         description: 'The version to be released, for example: 1.60.0'
         required: true
         type: string
+      release_tag:
+        description: |
+          'Optional: Generate changelog since a specific release. ex - vscode-v1.58'
+        
+          If no release_tag is specified, the changelog will be generated from the latest release tag.
+        required: false
+        type: string
 
 jobs:
   changelog:
@@ -35,13 +42,20 @@ jobs:
           CHANGELOG_SKIP_NO_CHANGELOG: "true"
           CHANGELOG_COMPACT: "true"
           VERSION: ${{ github.event.inputs.version }}
+          RELEASE_TAG: ${{ github.event.inputs.release_tag }}
         run: |
           set +x
           export CHANGELOG_SKIP_NO_CHANGELOG="false"
           export CHANGELOG_COMPACT="false"
-          # Get previous tag's commit
-          PREV_TAG=$(git tag --sort=-v:refname | grep '^vscode-v' |  head -n 2 | tail -n 1)
-          export RELEASE_LATEST_RELEASE=$(git rev-parse $PREV_TAG)
+          
+          # Use provided release tag if available, otherwise get previous tag
+          if [ -n "$RELEASE_TAG" ]; then
+            export RELEASE_LATEST_RELEASE=$(git rev-parse $RELEASE_TAG)
+          else
+            # Get previous tag's commit
+            PREV_TAG=$(git tag --sort=-v:refname | grep '^vscode-v' |  head -n 2 | tail -n 1)
+            export RELEASE_LATEST_RELEASE=$(git rev-parse $PREV_TAG)
+          fi
 
           # Get current release commit
           export RELEASE_LATEST_COMMIT=$(git rev-parse HEAD)
@@ -57,11 +71,7 @@ jobs:
             --output.pr.body="Automated release and changelog for VS code Cody v%s" \
             --output.changelog="vscode/CHANGELOG.md" \
             --output.changelog.marker='<!--- {/_ CHANGELOG_START _/} -->' \
-            --releaseregistry.version=${VERSION}          
-  
-          #   --title "VS Code: Release v$VERSION" \
-          #   --body "Automated release and changelog for VS code Cody" \
-          #   --base main --head release/vscode-v$VERSION
+            --releaseregistry.version=${VERSION}  
       - name: Update version
         env:
           VERSION: ${{ github.event.inputs.version }}
