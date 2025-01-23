@@ -64,7 +64,7 @@ interface StreamSession {
     // TODO: hacky way to notify the streaming logic that we now want to update the UI
     // with the response. This field is `false` initially during prefetching and is
     // mutated to `true` when user clicks "start edit".
-    isPrefetch: boolean
+    isPrefetchActive: boolean
 }
 
 /**
@@ -91,7 +91,7 @@ export class EditProvider {
         const { task } = this.config
         if (!streamingSessions.has(task.id)) {
             // Kick off streaming in the background (but do not mark the task as started)
-            this.performStreamingEdit(task.id, false).catch(error => {
+            this.performStreamingEdit({ taskId: task.id, isPrefetchActive: true }).catch(error => {
                 // Remove the broken session so subsequent tries can retry
                 streamingSessions.delete(task.id)
                 // Rethrow so logs are visible
@@ -110,7 +110,7 @@ export class EditProvider {
         const taskId = this.config.task.id
         // If no streaming session or there was an error, start from scratch
         if (!streamingSessions.has(taskId)) {
-            await this.performStreamingEdit(taskId, true)
+            await this.performStreamingEdit({ taskId, isPrefetchActive: false })
             return
         }
         const session = streamingSessions.get(taskId)!
@@ -124,7 +124,7 @@ export class EditProvider {
         // If streaming is still in progress, we “startTask” now for UI,
         // then replay what has arrived so far, and continue to stream new tokens.
         this.config.controller.startTask(this.config.task)
-        session.isPrefetch = false
+        session.isPrefetchActive = false
         // Immediately apply what has already been streamed
         if (session.partialText) {
             await this.handleResponse(session.partialText, true)
@@ -156,7 +156,10 @@ export class EditProvider {
      * difference is we have a parameter startTask that determines if we call
      * “controller.startTask” right away or wait until the user actually clicks.
      */
-    private async performStreamingEdit(taskId: string, startTask: boolean): Promise<void> {
+    private async performStreamingEdit({
+        taskId,
+        isPrefetchActive,
+    }: { taskId: string; isPrefetchActive: boolean }): Promise<void> {
         console.log('performStreamingEdit: start')
         const fetchStart = performance.now()
         // Create a new session object and store it
@@ -168,14 +171,14 @@ export class EditProvider {
             abortController,
             multiplexer,
             streamingPromise: null,
-            isPrefetch: !startTask,
+            isPrefetchActive,
         }
         streamingSessions.set(taskId, session)
 
         session.streamingPromise = wrapInActiveSpan('command.edit.streaming', async span => {
             span.setAttribute('sampled', true)
 
-            if (!session.isPrefetch) {
+            if (!session.isPrefetchActive) {
                 this.config.controller.startTask(this.config.task)
             }
 
@@ -207,7 +210,7 @@ export class EditProvider {
                 update: content => {
                     session.partialText = content // store partial text in session
                     // If the user has called startEdit already, handle partial tokens
-                    if (!session.isPrefetch) {
+                    if (!session.isPrefetchActive) {
                         void this.handleResponse(content, true)
                     }
                 },
@@ -228,7 +231,7 @@ export class EditProvider {
                     session.partialText = text
                     // If user has started the task, pass final text to handleResponse(false)
                     // otherwise it’s “prefetched” and not yet shown or used
-                    if (!session.isPrefetch) {
+                    if (!session.isPrefetchActive) {
                         await this.handleResponse(text, false)
                     }
                     return Promise.resolve()
@@ -254,7 +257,7 @@ export class EditProvider {
                     onResponse: async (content: string) => {
                         filepath += content
                         // handleFileCreationResponse will check if destinationFile is set
-                        if (!session.isPrefetch) {
+                        if (!session.isPrefetchActive) {
                             void this.handleFileCreationResponse(filepath, true)
                         }
                         return Promise.resolve()
@@ -315,7 +318,7 @@ export class EditProvider {
                         if (isAbortError(err)) {
                             // Streams intentionally aborted; if user started the task,
                             // pass final partial text
-                            if (!session.isPrefetch) {
+                            if (!session.isPrefetchActive) {
                                 void this.handleResponse(text, false)
                             }
                             return
