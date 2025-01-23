@@ -1,6 +1,6 @@
 import type { ChatMessage, ProcessingStep } from '@sourcegraph/cody-shared'
 import { BrainIcon, CircleXIcon, Loader2Icon, MessageSquare, Search } from 'lucide-react'
-import { type FC, type FunctionComponent, createContext, memo, useCallback, useState } from 'react'
+import { type FC, type FunctionComponent, createContext, memo, useState } from 'react'
 import {
     Accordion,
     AccordionContent,
@@ -24,13 +24,9 @@ export const AgenticContextCell: FunctionComponent<{
     manuallySelected?: boolean
     onSwitchIntent?: () => void
 }> = memo(({ className, isContextLoading, processes, intent, onSwitchIntent }) => {
-    const [accordionValue, setAccordionValue] = useState<string | undefined>(undefined)
-
-    const triggerAccordion = useCallback(() => {
-        setAccordionValue(prev => {
-            return prev ? '' : CELL_NAME
-        })
-    }, [])
+    const [accordionValue, setAccordionValue] = useState<string | undefined>(() => {
+        return localStorage.getItem('agenticContextCell.accordionValue') || undefined
+    })
 
     const hasError = processes?.some(p => p.error) ?? false
     const { title, icon: Icon, status } = getDisplayConfig(intent, isContextLoading, hasError, processes)
@@ -66,19 +62,22 @@ export const AgenticContextCell: FunctionComponent<{
             <Accordion
                 type="single"
                 collapsible={true}
-                defaultValue={undefined}
-                asChild={true}
-                value={accordionValue}
+                value={accordionValue || undefined}
+                onValueChange={value => {
+                    setAccordionValue(value)
+                    localStorage.setItem('agenticContextCell.accordionValue', value)
+                }}
             >
                 <AccordionItem value={CELL_NAME} asChild>
                     <Cell
                         header={
                             <div className="tw-flex tw-justify-between tw-items-center tw-w-full">
                                 <AccordionTrigger
-                                    onClick={() => triggerAccordion()}
+                                    onClick={() => {}}
                                     title={title}
                                     className="tw-flex tw-justify-center tw-items-center tw-gap-3"
                                     disabled={!processes?.some(p => p.id)}
+                                    data-state={accordionValue === CELL_NAME ? 'open' : 'closed'}
                                 >
                                     {isContextLoading ? (
                                         <Loader2Icon size={16} className="tw-animate-spin" />
