@@ -1249,7 +1249,7 @@
               "properties": {
                 "enable": {
                   "type": "boolean",
-                  "markdownDescription": "Enable OpenCtx providers for Cody.",
+                  "markdownDescription": "Enable OpenCtx providers for MCP servers.",
                   "default": false
                 },
                 "uri": {
