@@ -33,9 +33,9 @@ export const SwitchIntent = ({ intent, manuallySelected, onSwitch }: SwitchInten
                     onClick={onSwitch}
                 >
                     {intent === 'search' ? (
-                        <MessageSquare className="tw-size-8 tw-flex-shrink-0" />
+                        <MessageSquare className="tw-size-6 tw-flex-shrink-0" />
                     ) : (
-                        <Search className="tw-size-8 tw-flex-shrink-0" />
+                        <Search className="tw-size-6 tw-flex-shrink-0" />
                     )}
                     {intent === 'search' ? 'Switch to chat' : 'Switch to search'}
                 </Button>
