@@ -1,4 +1,9 @@
-import { type AuthStatus, type AuthenticatedAuthStatus, isDotCom } from '@sourcegraph/cody-shared'
+import {
+    type AuthStatus,
+    type AuthenticatedAuthStatus,
+    InvalidAccessTokenError,
+    isDotCom,
+} from '@sourcegraph/cody-shared'
 import type { AuthenticationError } from '@sourcegraph/cody-shared'
 import type { CurrentUserInfo } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 
@@ -23,7 +28,7 @@ export function newAuthStatus(options: NewAuthStatusOptions): AuthStatus {
         return {
             authenticated: false,
             endpoint: options.endpoint,
-            error: { type: 'invalid-access-token' },
+            error: new InvalidAccessTokenError(),
             pendingValidation: false,
         }
     }

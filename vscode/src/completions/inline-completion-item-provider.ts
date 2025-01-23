@@ -2,6 +2,7 @@ import { type DebouncedFunc, debounce, isError } from 'lodash'
 import * as vscode from 'vscode'
 
 import {
+    AuthenticationError,
     ClientConfigSingleton,
     type DocumentContext,
     FeatureFlag,
@@ -10,6 +11,7 @@ import {
     authStatus,
     contextFiltersProvider,
     featureFlagProvider,
+    isAuthError,
     isDotCom,
     subscriptionDisposable,
     telemetryRecorder,
@@ -1003,6 +1005,18 @@ export class InlineCompletionItemProvider
                 },
             })
         }
+
+        if (isAuthError(error)) {
+            this.config.statusBar.addError({
+                title: error instanceof AuthenticationError ? error.title : 'Authorization Error',
+                description: error.message,
+                errorType: 'auth',
+                removeAfterSelected: false,
+                onSelect: () => {},
+                onShow: () => {},
+            })
+        }
+
         // TODO(philipp-spiess): Bring back this code once we have fewer uncaught errors
         //
         // c.f. https://sourcegraph.slack.com/archives/C05AGQYD528/p1693471486690459

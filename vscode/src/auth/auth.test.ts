@@ -1,6 +1,8 @@
 import {
     type AuthStatus,
+    AvailabilityError,
     CLIENT_CAPABILITIES_FIXTURE,
+    InvalidAccessTokenError,
     NeedsAuthChallengeError,
     SourcegraphGraphQLAPIClient,
     mockAuthStatus,
@@ -36,7 +38,7 @@ describe('showSignInMenu', () => {
                 .fn<(typeof AuthProviderModule.authProvider)['validateAndStoreCredentials']>()
                 .mockResolvedValue({
                     authenticated: false,
-                    error: { type: 'availability-error' },
+                    error: new AvailabilityError(),
                     endpoint: 'https://example.com',
                     pendingValidation: false,
                 }),
@@ -64,7 +66,7 @@ describe('showSignInMenu', () => {
                 .fn<(typeof AuthProviderModule.authProvider)['validateAndStoreCredentials']>()
                 .mockResolvedValue({
                     authenticated: false,
-                    error: { type: 'invalid-access-token' },
+                    error: new InvalidAccessTokenError(),
                     endpoint: 'https://example.com',
                     pendingValidation: false,
                 }),
@@ -117,10 +119,7 @@ describe('validateCredentials', () => {
 
         expect(result).toEqual<AuthStatus>({
             authenticated: false,
-            error: {
-                type: 'availability-error',
-                needsAuthChallenge: true,
-            },
+            error: new NeedsAuthChallengeError(),
             endpoint: 'https://sourcegraph.test',
             pendingValidation: false,
         })
