@@ -1,5 +1,5 @@
-import type { ProcessingStep } from '@sourcegraph/cody-shared'
-import { BrainIcon, CircleXIcon, Loader2Icon } from 'lucide-react'
+import type { ChatMessage, ProcessingStep } from '@sourcegraph/cody-shared'
+import { BrainIcon, CircleXIcon, Loader2Icon, MessageSquare, Search } from 'lucide-react'
 import { type FC, type FunctionComponent, createContext, memo, useCallback, useState } from 'react'
 import {
     Accordion,
@@ -7,6 +7,7 @@ import {
     AccordionItem,
     AccordionTrigger,
 } from '../../../components/shadcn/ui/accordion'
+import { Button } from '../../../components/shadcn/ui/button'
 import { Cell } from '../Cell'
 
 export const __ProcessCellStorybookContext = createContext<{ initialOpen: boolean } | null>(null)
@@ -19,7 +20,10 @@ export const AgenticContextCell: FunctionComponent<{
     isContextLoading: boolean
     className?: string
     processes?: ProcessingStep[]
-}> = memo(({ className, isContextLoading, processes }) => {
+    intent: ChatMessage['intent']
+    manuallySelected?: boolean
+    onSwitchIntent?: () => void
+}> = memo(({ className, isContextLoading, processes, intent, manuallySelected, onSwitchIntent }) => {
     const [accordionValue, setAccordionValue] = useState<string | undefined>(undefined)
 
     const triggerAccordion = useCallback(() => {
@@ -36,6 +40,28 @@ export const AgenticContextCell: FunctionComponent<{
         : processes?.findLast(p => p.type !== 'tool' && p.type !== 'confirmation')?.title || 'reviewing'
     const statusClassName = hasError ? 'tw-text-yellow-600' : 'tw-text-muted-foreground'
 
+    const renderSwitchButton = () => {
+        if (!['chat', 'search'].includes(intent || '')) {
+            return null
+        }
+
+        return (
+            <Button
+                size="sm"
+                variant="outline"
+                className="tw-text-primary tw-flex tw-gap-2 tw-items-center tw-whitespace-nowrap"
+                onClick={onSwitchIntent}
+            >
+                {intent === 'chat' ? (
+                    <Search className="tw-size-4 tw-flex-shrink-0" />
+                ) : (
+                    <MessageSquare className="tw-size-4 tw-flex-shrink-0" />
+                )}
+                {intent === 'chat' ? 'Switch to search' : 'Switch to chat'}
+            </Button>
+        )
+    }
+
     return (
         <div className="tw-flex tw-flex-col tw-justify-center tw-w-full tw-gap-2 tw-py-1 tw-px-4">
             <Accordion
@@ -48,24 +74,27 @@ export const AgenticContextCell: FunctionComponent<{
                 <AccordionItem value={CELL_NAME} asChild>
                     <Cell
                         header={
-                            <AccordionTrigger
-                                onClick={() => triggerAccordion()}
-                                title="Agentic chat"
-                                className="tw-flex tw-justify-center tw-items-center tw-gap-4"
-                                disabled={!processes?.some(p => p.id)}
-                            >
-                                {isContextLoading ? (
-                                    <Loader2Icon size={16} className="tw-animate-spin" />
-                                ) : (
-                                    <BrainIcon size={16} className={statusClassName} />
-                                )}
-                                <span className="tw-flex tw-items-baseline">
-                                    Agentic chat
-                                    <span className="tw-opacity-60 tw-text-sm tw-ml-2">
-                                        &mdash; {status.toLowerCase()}
+                            <div className="tw-flex tw-justify-between tw-items-center tw-w-full">
+                                <AccordionTrigger
+                                    onClick={() => triggerAccordion()}
+                                    title="Agentic chat"
+                                    className="tw-flex tw-justify-center tw-items-center tw-gap-4"
+                                    disabled={!processes?.some(p => p.id)}
+                                >
+                                    {isContextLoading ? (
+                                        <Loader2Icon size={16} className="tw-animate-spin" />
+                                    ) : (
+                                        <BrainIcon size={16} className={statusClassName} />
+                                    )}
+                                    <span className="tw-flex tw-items-baseline">
+                                        Agentic chat
+                                        <span className="tw-opacity-60 tw-text-sm tw-ml-2">
+                                            — {status.toLowerCase()}
+                                        </span>
                                     </span>
-                                </span>
-                            </AccordionTrigger>
+                                </AccordionTrigger>
+                                {renderSwitchButton()}
+                            </div>
                         }
                         containerClassName={className}
                         contentClassName="tw-flex tw-flex-col tw-gap-4 tw-max-w-full"
