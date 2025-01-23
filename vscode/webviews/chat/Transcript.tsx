@@ -57,7 +57,6 @@ import { useIntentDetectionConfig } from '../components/omnibox/intentDetection'
 import { AgenticContextCell } from './cells/agenticCell/AgenticContextCell'
 import ApprovalCell from './cells/agenticCell/ApprovalCell'
 import { DidYouMeanNotice } from './cells/messageCell/assistant/DidYouMean'
-import { SwitchIntent } from './cells/messageCell/assistant/SwitchIntent'
 import { LastEditorContext } from './context'
 
 interface TranscriptProps {
@@ -765,17 +764,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                 intent={manuallySelectedIntent?.intent || intentResults?.intent}
                 manuallySelectIntent={handleManualIntentSelection}
             />
-            {experimentalOneBoxEnabled && (
-                <SwitchIntent
-                    intent={humanMessage.intent}
-                    manuallySelected={!!humanMessage.manuallySelectedIntent}
-                    onSwitch={
-                        humanMessage.intent === 'search'
-                            ? reSubmitWithChatIntent
-                            : reSubmitWithSearchIntent
-                    }
-                />
-            )}
+
             {experimentalOneBoxEnabled && assistantMessage?.didYouMeanQuery && (
                 <DidYouMeanNotice
                     query={assistantMessage?.didYouMeanQuery}
@@ -788,6 +777,12 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                     key={`${humanMessage.index}-${humanMessage.intent}-process`}
                     isContextLoading={isContextLoading}
                     processes={humanMessage?.processes ?? undefined}
+                    intent={humanMessage.intent}
+                    onSwitchIntent={
+                        humanMessage.intent === 'search'
+                            ? reSubmitWithChatIntent
+                            : reSubmitWithSearchIntent
+                    }
                 />
             )}
             {!isSearchIntent &&
