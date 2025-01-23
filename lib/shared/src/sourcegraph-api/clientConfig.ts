@@ -1,5 +1,6 @@
 import { Observable, Subject, interval, map, merge } from 'observable-fns'
 import semver from 'semver'
+import type { AuthStatus } from '..'
 import { authStatus } from '../auth/authStatus'
 import { editorWindowIsFocused } from '../editor/editorState'
 import { logDebug, logError } from '../logger'
@@ -76,6 +77,9 @@ export interface CodyClientConfig {
 
     // Whether the user should be able to use the omnibox feature.
     omniBoxEnabled: boolean
+
+    // Whether code search is enabled for the SG instance.
+    codeSearchEnabled: boolean
 }
 
 export const dummyClientConfigForTest: CodyClientConfig = {
@@ -91,6 +95,7 @@ export const dummyClientConfigForTest: CodyClientConfig = {
     notices: [],
     siteVersion: undefined,
     omniBoxEnabled: false,
+    codeSearchEnabled: false,
 }
 
 /**
@@ -146,7 +151,9 @@ export class ClientConfigSingleton {
                       // linear.app/sourcegraph/issue/CODY-3745/codys-background-periodic-network-access-causes-2fa.
                       filter((_value): _value is undefined => editorWindowIsFocused()),
                       startWith(undefined),
-                      switchMap(() => promiseFactoryToObservable(signal => this.fetchConfig(signal)))
+                      switchMap(() =>
+                          promiseFactoryToObservable(signal => this.fetchConfig(authStatus, signal))
+                      )
                   )
                 : Observable.of(undefined)
         ),
@@ -180,7 +187,7 @@ export class ClientConfigSingleton {
         return await firstValueFrom(this.changes.pipe(skipPendingOperation()), signal)
     }
 
-    private async fetchConfig(signal?: AbortSignal): Promise<CodyClientConfig> {
+    private async fetchConfig(authStatus: AuthStatus, signal?: AbortSignal): Promise<CodyClientConfig> {
         logDebug('ClientConfigSingleton', 'refreshing configuration')
 
         try {
@@ -211,8 +218,11 @@ export class ClientConfigSingleton {
                 // Sourcegraph instances before 5.5.0 do not support the new /.api/client-config endpoint.
                 supportsClientConfig = insiderBuild || !semver.lt(siteVersion, '5.5.0')
 
+                const isDotCom =
+                    !authStatus.authenticated ||
+                    authStatus.endpoint.startsWith('https://sourcegraph.com')
                 // Enable OmniBox for Sourcegraph instances 6.0.0 and above or dev instances
-                omniBoxEnabled = insiderBuild || semver.gte(siteVersion, '6.0.0')
+                omniBoxEnabled = !isDotCom && (insiderBuild || semver.gte(siteVersion, '6.0.0'))
             }
 
             signal?.throwIfAborted()
@@ -229,7 +239,8 @@ export class ClientConfigSingleton {
             return Promise.all([
                 graphqlClient.viewerSettings(signal),
                 graphqlClient.temporarySettings(signal),
-            ]).then(([viewerSettings, temporarySettings]) => {
+                graphqlClient.codeSearchEnabled(signal),
+            ]).then(([viewerSettings, temporarySettings, codeSearchEnabled]) => {
                 const config: CodyClientConfig = {
                     ...clientConfig,
                     intentDetection: 'enabled',
@@ -237,6 +248,7 @@ export class ClientConfigSingleton {
                     temporarySettings: {},
                     siteVersion: isError(siteVersion) ? undefined : siteVersion,
                     omniBoxEnabled,
+                    codeSearchEnabled: isError(codeSearchEnabled) ? true : codeSearchEnabled,
                 }
 
                 // Don't fail the whole chat because of viewer setting (used only to show banners)
@@ -256,6 +268,10 @@ export class ClientConfigSingleton {
                             message: notice?.message ?? '',
                         })
                     )
+                }
+
+                if (codeSearchEnabled === false) {
+                    config.intentDetection = 'disabled'
                 }
 
                 if (!isError(temporarySettings)) {
@@ -294,6 +310,7 @@ export class ClientConfigSingleton {
             notices: [],
             temporarySettings: {},
             omniBoxEnabled: false,
+            codeSearchEnabled: false,
         }
     }
 
