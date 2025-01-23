@@ -71,7 +71,7 @@ interface StreamSession {
  * We store the streaming session in a Map keyed by task ID so prefetchEdit
  * and startEdit share the same stream if it’s in progress.
  */
-const streamingSessions = new LRUCache<string, StreamSession>({ maxSize: 20 })
+const streamingSessions = new LRUCache<string, StreamSession>({ max: 20 })
 
 // Initiates a completion and responds to the result from the LLM. Implements
 // "tools" like directing the response into a specific file. Code is forwarded
