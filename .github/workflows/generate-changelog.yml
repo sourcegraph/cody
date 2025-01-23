@@ -3,8 +3,19 @@ name: vscode-generate-changelog
 on:
   workflow_dispatch:
     inputs:
+      editor:
+        description: 'Select editor for changelog generation'
+        required: true
+        type: choice
+        default: 'VS Code'
+        options:
+          - VS Code
+          - JetBrains      
       version:
-        description: 'The version to be released, for example: 1.60.0'
+        description: |
+          The version to be released, this will be used as the header of the changelog
+
+          Ex - 1.60.0
         required: true
         type: string
       release_tag:
@@ -14,7 +25,6 @@ on:
           If no release_tag is specified, the changelog will be generated from the latest release tag.
         required: false
         type: string
-
 jobs:
   changelog:
     runs-on: ubuntu-latest
@@ -43,6 +53,7 @@ jobs:
           CHANGELOG_COMPACT: "true"
           VERSION: ${{ github.event.inputs.version }}
           RELEASE_TAG: ${{ github.event.inputs.release_tag }}
+          EDITOR: ${{ github.event.inputs.editor }}
         run: |
           set +x
           export CHANGELOG_SKIP_NO_CHANGELOG="false"
@@ -52,9 +63,22 @@ jobs:
           if [ -n "$RELEASE_TAG" ]; then
             export RELEASE_LATEST_RELEASE=$(git rev-parse $RELEASE_TAG)
           else
-            # Get previous tag's commit
-            PREV_TAG=$(git tag --sort=-v:refname | grep '^vscode-v' |  head -n 2 | tail -n 1)
+            # Get previous tag's commit based on editor selection
+            if [ "$EDITOR" = "VS Code" ]; then
+              PREV_TAG=$(git tag --sort=-v:refname | grep '^vscode-v' | head -n 2 | tail -n 1)
+            else
+              PREV_TAG=$(git tag --sort=-v:refname | grep '^jb-v' | head -n 2 | tail -n 1)
+            fi
             export RELEASE_LATEST_RELEASE=$(git rev-parse $PREV_TAG)
+          fi
+
+          # Set editor-specific variables
+          if [ "$EDITOR" = "VS Code" ]; then
+            CHANGELOG_PATH="vscode/CHANGELOG.md"
+            PR_BRANCH="release/vscode-v%s"
+          else
+            CHANGELOG_PATH="agent/jetbrains/CHANGELOG.md"
+            PR_BRANCH="release/jb-v%s"
           fi
 
           # Get current release commit
@@ -66,12 +90,12 @@ jobs:
             --github.repo=$GH_REPO \
             --output.repo.base="main" \
             --output.repo=$GH_REPO \
-            --output.pr.branch="release/vscode-v%s" \
+            --output.pr.branch="$PR_BRANCH" \
             --output.pr.title="Changelog for v%s" \
-            --output.pr.body="Automated release and changelog for VS code Cody v%s" \
-            --output.changelog="vscode/CHANGELOG.md" \
+            --output.pr.body="Automated release and changelog for ${EDITOR} Cody v%s" \
+            --output.changelog="$CHANGELOG_PATH" \
             --output.changelog.marker='<!--- {/_ CHANGELOG_START _/} -->' \
-            --releaseregistry.version=${VERSION}  
+            --releaseregistry.version=${VERSION}      
       - name: Update version
         env:
           VERSION: ${{ github.event.inputs.version }}
