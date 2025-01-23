@@ -832,7 +832,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         const omniBoxEnabled = await this.isOmniBoxEnabled()
 
         recorder.setIntentInfo({
-            userSpecifiedIntent: manuallySelectedIntent ?? omniBoxEnabled ? 'auto' : 'chat',
+            userSpecifiedIntent: manuallySelectedIntent ?? (omniBoxEnabled ? 'auto' : 'chat'),
             detectedIntent: detectedIntent,
             detectedIntentScores: detectedIntentScores,
         })
