@@ -9,7 +9,7 @@ import {
 } from '@sourcegraph/cody-shared'
 
 import { doesFileExist } from '../../commands/utils/workspace-files'
-import { executePrefetchSmartApplySelection, executeSmartApply } from '../../edit/smart-apply'
+import { executeSmartApply, executeprefetchSmartApply } from '../../edit/smart-apply'
 import { getEditor } from '../../editor/active-editor'
 import type { VSCodeEditor } from '../../editor/vscode-editor'
 
@@ -187,7 +187,7 @@ export async function handleSmartApply({
     }
 
     if (isSelectionPrefetch) {
-        executePrefetchSmartApplySelection({
+        executeprefetchSmartApply({
             configuration: {
                 id,
                 document,

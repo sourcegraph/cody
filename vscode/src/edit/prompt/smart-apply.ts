@@ -188,6 +188,7 @@ export async function getSmartApplySelection(
     codyApiVersion: number
 ): Promise<SmartSelection | null> {
     let originalCode: string
+    const fetchStart = performance.now()
     try {
         originalCode = await promptModelForOriginalCode(
             instruction,
@@ -253,7 +254,7 @@ export async function getSmartApplySelection(
         }
     }
 
-    console.log('SELECTION IS READY')
+    console.log(`SELECTION IS READY IN ${performance.now() - fetchStart}ms`)
 
     // We found a matching selection in the text, let's use this!
     return {

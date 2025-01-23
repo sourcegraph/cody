@@ -15,6 +15,7 @@ import type { VSCodeWrapper } from './utils/VSCodeApi'
 import type { Context } from '@opentelemetry/api'
 import { truncateTextStart } from '@sourcegraph/cody-shared/src/prompt/truncation'
 import { CHAT_INPUT_TOKEN_BUDGET } from '@sourcegraph/cody-shared/src/token/constants'
+import { LRUCache } from 'lru-cache'
 import styles from './Chat.module.css'
 import WelcomeFooter from './chat/components/WelcomeFooter'
 import { WelcomeMessage } from './chat/components/WelcomeMessage'
@@ -39,6 +40,8 @@ interface ChatboxProps {
     isPromptsV2Enabled?: boolean
     isTeamsUpgradeCtaEnabled?: boolean
 }
+
+const prefetchedEdits = new LRUCache<string, true>({ max: 100 })
 
 export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>> = ({
     messageInProgress,
@@ -169,12 +172,18 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
         }
 
         return {
-            onPrefetchSelection: (
+            onPrefetchStart: (
                 id: string,
                 text: string,
                 instruction?: PromptString,
                 fileName?: string
             ): void => {
+                // Ensure that we prefetch once per each suggested chat edit.
+                if (prefetchedEdits.has(id)) {
+                    return
+                }
+
+                prefetchedEdits.set(id, true)
                 onSubmit({ isSelectionPrefetch: true, id, text, instruction, fileName })
             },
             onSubmit: (

@@ -114,11 +114,6 @@ export class EditProvider {
             return
         }
         const session = streamingSessions.get(taskId)!
-        console.log(
-            `await starEdit isCompletion: ${session.isComplete}; hasPartialText: ${Boolean(
-                session.partialText
-            )}`
-        )
         // If streaming is already complete, just apply the final partial text
         if (session.isComplete) {
             // Mark the task started for UI
@@ -163,6 +158,7 @@ export class EditProvider {
      */
     private async performStreamingEdit(taskId: string, startTask: boolean): Promise<void> {
         console.log('performStreamingEdit: start')
+        const fetchStart = performance.now()
         // Create a new session object and store it
         const abortController = new AbortController()
         const multiplexer = new BotResponseMultiplexer()
@@ -309,7 +305,7 @@ export class EditProvider {
                         break
                     }
                     case 'complete': {
-                        console.log('EDIT IS READY')
+                        console.log(`EDIT IS READY IN ${performance.now() - fetchStart}ms`)
                         await multiplexer.notifyTurnComplete()
                         break
                     }

@@ -18,7 +18,7 @@ export interface CodeBlockActionsProps {
     copyButtonOnSubmit: (text: string, event?: 'Keydown' | 'Button') => void
     insertButtonOnSubmit: (text: string, newFile?: boolean) => void
     smartApply: {
-        onPrefetchSelection: (
+        onPrefetchStart: (
             id: string,
             text: string,
             instruction?: PromptString,
@@ -134,10 +134,12 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
                     const smartApplyId = getCodeBlockId(preText, fileName)
                     const smartApplyState = smartApplyStates[smartApplyId]
 
-                    // Side-effect: prefetch smart apply selection if possible to reduce the final latency.
-                    if (!isMessageLoading) {
-                        console.log('USE EFFECT DANGER ZONE!!')
-                        smartApplyInterceptor?.onPrefetchSelection(
+                    // Side-effect: prefetch smart apply data if possible to reduce the final latency.
+                    // TODO: trigger prefetch earlier if we can detect that the code block is complete.
+                    // TODO: extract this call into a separate `useEffect` call to avoid redundant calls
+                    // which currently happen.
+                    if (!isMessageLoading || !displayMarkdown.endsWith('```')) {
+                        smartApplyInterceptor?.onPrefetchStart(
                             smartApplyId,
                             preText,
                             humanMessage?.text,

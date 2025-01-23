@@ -68,10 +68,10 @@ export class EditManager implements vscode.Disposable {
             (args: ExecuteEditArguments) => this.executeEdit(args)
         )
 
-        const prefetchSmartApplySelectionCommand = vscode.commands.registerCommand(
-            'cody.command.smart-apply-prefetch-selection',
+        const prefetchSmartApplyCommand = vscode.commands.registerCommand(
+            'cody.command.smart-apply-prefetch',
             (args: SmartApplyArguments) => {
-                this.prefetchSmartApplySelection(args)
+                this.prefetchSmartApply(args)
             }
         )
 
@@ -106,7 +106,7 @@ export class EditManager implements vscode.Disposable {
             this.options.controller,
             editCommand,
             smartApplyCommand,
-            prefetchSmartApplySelectionCommand,
+            prefetchSmartApplyCommand,
             startCommand
         )
     }
@@ -123,7 +123,6 @@ export class EditManager implements vscode.Disposable {
         args: ExecuteEditArguments = {},
         prefetchOnly = false
     ): Promise<FixupTask | undefined> {
-        console.log('executeEdit start')
         const {
             configuration = {},
             /**
@@ -282,7 +281,6 @@ export class EditManager implements vscode.Disposable {
     }
 
     public async smartApplyEdit(args: SmartApplyArguments): Promise<void> {
-        console.log('smartApplyEdit start')
         return context.with(extractContextFromTraceparent(args.configuration.traceparent), async () => {
             await wrapInActiveSpan('edit.smart-apply', async span => {
                 span.setAttribute('sampled', true)
@@ -482,7 +480,7 @@ export class EditManager implements vscode.Disposable {
      * eventually calls smartApplyEdit, the selection is already cached or
      * in-flight.
      */
-    public async prefetchSmartApplySelection(args: SmartApplyArguments): Promise<void> {
+    public async prefetchSmartApply(args: SmartApplyArguments): Promise<void> {
         const { configuration } = args
         if (!configuration) {
             return
@@ -492,7 +490,7 @@ export class EditManager implements vscode.Disposable {
             return
         }
 
-        console.log('prefetchSmartApplySelection: start')
+        console.log('prefetchSmartApply: start')
 
         if (await isUriIgnoredByContextFilterWithNotification(configuration.document.uri, 'edit')) {
             return
