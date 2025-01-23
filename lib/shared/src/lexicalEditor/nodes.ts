@@ -320,7 +320,7 @@ export function contextItemMentionNodeDisplayText(contextItem: SerializedContext
             return contextItem.title
 
         case 'current-selection':
-            return 'current file'
+            return 'current selection'
 
         case 'current-file':
             return 'current file'

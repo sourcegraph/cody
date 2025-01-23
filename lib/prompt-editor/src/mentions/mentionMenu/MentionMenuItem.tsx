@@ -89,6 +89,8 @@ export const MentionMenuContextItemContent: FunctionComponent<{
     const isClassSymbol = isSymbol && item.kind === 'class'
     const isLink = item.type === 'open-link'
 
+    // symbol-structure -> layout-panel-top
+    // symbol-method -> box
     const icon = item.icon || (isSymbol ? (isClassSymbol ? 'symbol-structure' : 'symbol-method') : null)
     const { title, displayName } = getMentionItemTitleAndDisplayName(item)
     const description = getDescription(item, query)

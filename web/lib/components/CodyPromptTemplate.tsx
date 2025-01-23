@@ -157,7 +157,8 @@ const CodyPromptTemplatePanel: FC<PanelProps> = props => {
                 name: 'current-selection',
                 title: 'Current Selection',
                 uri: URI.parse(`cody://selection`),
-                description: 'Picks the current selection'
+                description: 'Picks the current selection',
+                icon: 'square-dashed-mouse-pointer'
             } as ContextItemCurrentSelection,
             {
                 type: 'current-file',
@@ -165,7 +166,8 @@ const CodyPromptTemplatePanel: FC<PanelProps> = props => {
                 name: 'current-file',
                 title: 'Current File',
                 uri: URI.parse(`cody://current-file`),
-                description: 'Picks the current file'
+                description: 'Picks the current file',
+                icon: 'file'
             } as ContextItemCurrentFile,
             {
                 type: 'current-repository',
@@ -173,7 +175,8 @@ const CodyPromptTemplatePanel: FC<PanelProps> = props => {
                 name: 'current-repository',
                 title: 'Current Repository',
                 uri: URI.parse(`cody://repository`),
-                description: 'Picks the current repository'
+                description: 'Picks the current repository',
+                icon: 'folder'
             } as ContextItemCurrentRepository,
             {
                 type: 'current-directory',
@@ -181,7 +184,8 @@ const CodyPromptTemplatePanel: FC<PanelProps> = props => {
                 name: 'current-directory',
                 title: 'Current Directory',
                 uri: URI.parse(`cody://current-dir`),
-                description: 'Picks the current directory'
+                description: 'Picks the current directory',
+                icon: 'folder'
             } as ContextItemCurrentDirectory,
             {
                 type: 'current-open-tabs',
@@ -189,7 +193,8 @@ const CodyPromptTemplatePanel: FC<PanelProps> = props => {
                 name: 'current-open-tabs',
                 title: 'Currently Open Tabs',
                 uri: URI.parse(`cody://tabs`),
-                description: 'Picks all currently open tabs'
+                description: 'Picks all currently open tabs',
+                icon: 'layout-menubar'
             } as ContextItemCurrentOpenTabs,
         ]
 

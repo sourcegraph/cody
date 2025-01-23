@@ -94,7 +94,7 @@ export function deserializeContextMentionItem(s: string) {
 const CONTEXT_ITEMS = {
     'cody://selection': {
         description: 'Picks the current selection',
-        type: 'selection', // serves as id, name, and type
+        type: 'current-selection',
         title: 'Current Selection',
         text: 'current selection'
     },
