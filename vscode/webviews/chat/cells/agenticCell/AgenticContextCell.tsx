@@ -77,7 +77,7 @@ export const AgenticContextCell: FunctionComponent<{
                                 <AccordionTrigger
                                     onClick={() => triggerAccordion()}
                                     title={title}
-                                    className="tw-flex tw-justify-center tw-items-center tw-gap-4"
+                                    className="tw-flex tw-justify-center tw-items-center tw-gap-3"
                                     disabled={!processes?.some(p => p.id)}
                                 >
                                     {isContextLoading ? (
@@ -99,7 +99,10 @@ export const AgenticContextCell: FunctionComponent<{
                         contentClassName="tw-flex tw-flex-col tw-gap-2 tw-max-w-full"
                         data-testid="context"
                     >
-                        <AccordionContent className="tw-flex tw-flex-col tw-gap-2" overflow={false}>
+                        <AccordionContent
+                            className="tw-flex tw-flex-col tw-gap-2 tw-pb-4"
+                            overflow={false}
+                        >
                             {processes && (
                                 <ProcessList
                                     processes={processes}
@@ -223,7 +226,7 @@ const getStateStyles = (state: string) => {
         case 'completed':
             return 'tw-text-green-700'
         case 'pending':
-            return 'tw-text-blue-700'
+            return 'tw-text-foreground'
         default:
             return 'tw-text-muted-foreground'
     }
