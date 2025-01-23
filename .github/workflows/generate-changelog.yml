@@ -4,13 +4,13 @@ on:
   workflow_dispatch:
     inputs:
       editor:
-        description: 'Select editor for changelog generation'
+        description: 'Select editor to create changelog for'
         required: true
         type: choice
         default: 'VS Code'
         options:
           - VS Code
-          - JetBrains      
+          - JetBrains
       version:
         description: |
           The version to be released, this will be used as the header of the changelog
@@ -20,7 +20,7 @@ on:
         type: string
       release_tag:
         description: |
-          'Optional: Generate changelog since a specific release. ex - vscode-v1.58'
+          Optional: Generate changelog since a specific release. ex - vscode-v1.58
         
           If no release_tag is specified, the changelog will be generated from the latest release tag.
         required: false
