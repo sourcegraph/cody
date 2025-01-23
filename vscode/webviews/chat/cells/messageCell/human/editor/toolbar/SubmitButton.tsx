@@ -61,31 +61,31 @@ function getIntentOptions({
     const intentDetectionAvailable = !isDotComUser && !intentDetectionDisabled && intentDetectionToggleOn
 
     const standardOneBoxIntents: IntentOption[] = [
-        {
-            title: (
-                <div className="tw-flex tw-flex-col tw-self-start">
-                    <p>Run detected intent</p>
-                    <p className="tw-text-sm tw-text-muted-foreground">
-                        {isDotComUser
-                            ? 'Detects intent and runs appropriately'
-                            : `Currently: ${
-                                  detectedIntent ? (detectedIntent === 'search' ? 'Search' : 'Chat') : ''
-                              }`}
-                    </p>
-                </div>
-            ),
-            icon: Sparkles,
-            intent: undefined,
-            hidden: !intentDetectionAvailable,
-            disabled: isDotComUser,
-            shortcut: isDotComUser ? (
-                <Badge>
-                    Enterprise <InfoIcon className="tw-size-4 tw-ml-1" />
-                </Badge>
-            ) : (
-                <Kbd macOS="return" linuxAndWindows="return" />
-            ),
-        },
+        // {
+        //     title: (
+        //         <div className="tw-flex tw-flex-col tw-self-start">
+        //             <p>Run detected intent</p>
+        //             <p className="tw-text-sm tw-text-muted-foreground">
+        //                 {isDotComUser
+        //                     ? 'Detects intent and runs appropriately'
+        //                     : `Currently: ${
+        //                           detectedIntent ? (detectedIntent === 'search' ? 'Search' : 'Chat') : ''
+        //                       }`}
+        //             </p>
+        //         </div>
+        //     ),
+        //     icon: Sparkles,
+        //     intent: undefined,
+        //     hidden: !intentDetectionAvailable,
+        //     disabled: isDotComUser,
+        //     shortcut: isDotComUser ? (
+        //         <Badge>
+        //             Enterprise <InfoIcon className="tw-size-4 tw-ml-1" />
+        //         </Badge>
+        //     ) : (
+        //         <Kbd macOS="return" linuxAndWindows="return" />
+        //     ),
+        // },
         {
             title: 'Run as chat',
             icon: MessageSquare,
@@ -275,7 +275,7 @@ export const SubmitButton: FC<{
                                     </CommandItem>
                                 )
                             )}
-                            {!isDotComUser && !(intentDetectionDisabled ?? false) && (
+                            {/* {!isDotComUser && !(intentDetectionDisabled ?? false) && (
                                 <div
                                     role="button"
                                     tabIndex={0}
@@ -301,7 +301,7 @@ export const SubmitButton: FC<{
                                         </p>
                                     </div>
                                 </div>
-                            )}
+                            )} */}
                         </CommandList>
                     </Command>
                 )}
