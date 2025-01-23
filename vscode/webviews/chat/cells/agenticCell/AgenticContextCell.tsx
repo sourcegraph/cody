@@ -1,5 +1,13 @@
 import type { ChatMessage, ProcessingStep } from '@sourcegraph/cody-shared'
-import { BrainIcon, CircleXIcon, Loader2Icon, MessageSquare, Search } from 'lucide-react'
+import {
+    BrainIcon,
+    Check,
+    CircleXIcon,
+    Ellipsis,
+    Loader2Icon,
+    MessageSquare,
+    Search,
+} from 'lucide-react'
 import { type FC, type FunctionComponent, createContext, memo, useState } from 'react'
 import {
     Accordion,
@@ -9,6 +17,7 @@ import {
 } from '../../../components/shadcn/ui/accordion'
 import { Button } from '../../../components/shadcn/ui/button'
 import { Cell } from '../Cell'
+import styles from './AgenticContextCell.module.css'
 
 export const __ProcessCellStorybookContext = createContext<{ initialOpen: boolean } | null>(null)
 
@@ -191,10 +200,22 @@ const ProcessItem: FC<{
     }
 
     return (
-        <div className="tw-flex tw-items-center tw-gap-3 tw-p-1">
-            <div className={process.type === 'tool' ? 'tw-ml-[1rem] tw-font-sm' : 'tw-ml-0'}>
+        <div
+            className={`tw-flex tw-items-center tw-gap-3 tw-p-1 ${styles.processItem} ${styles.fadeIn}`}
+        >
+            <div
+                className={`${process.type === 'tool' ? 'tw-ml-[1rem] tw-font-sm' : 'tw-ml-0'} ${
+                    styles.stateIcon
+                }`}
+            >
                 {process.type !== 'tool' ? (
-                    <BrainIcon strokeWidth={1.25} size={12} className={headerIconClassName} />
+                    process.state === 'pending' ? (
+                        <Ellipsis strokeWidth={1.5} size={12} className={headerIconClassName} />
+                    ) : process.state === 'success' ? (
+                        <Check strokeWidth={1.5} size={12} className={headerIconClassName} />
+                    ) : (
+                        <BrainIcon strokeWidth={1.5} size={12} className={headerIconClassName} />
+                    )
                 ) : process.state === 'error' ? (
                     <CircleXIcon strokeWidth={1.5} size={12} className="tw-text-red-500" />
                 ) : process.state === 'pending' && isContextLoading ? (
@@ -202,7 +223,11 @@ const ProcessItem: FC<{
                 ) : null}
             </div>
             <div className="tw-flex-grow tw-min-w-0">
-                <div className={`tw-truncate tw-max-w-full tw-text-sm ${getStateStyles(process.state)}`}>
+                <div
+                    className={`tw-truncate tw-max-w-full tw-text-sm ${
+                        styles.stateText
+                    } ${getStateStyles(process.state)}`}
+                >
                     <span>{process.type !== 'tool' ? process.title : process.title ?? process.id}</span>
                     {process.content && (
                         <span
@@ -217,13 +242,16 @@ const ProcessItem: FC<{
         </div>
     )
 }
-
 const getStateStyles = (state: string) => {
     switch (state) {
         case 'error':
             return 'tw-text-red-700'
         case 'completed':
             return 'tw-text-green-700'
+        case 'analyzing':
+            return 'tw-text-blue-600'
+        case 'searching':
+            return 'tw-text-purple-600'
         case 'pending':
             return 'tw-text-foreground'
         default:

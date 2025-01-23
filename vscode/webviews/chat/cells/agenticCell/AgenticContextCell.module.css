@@ -1,0 +1,27 @@
+.processItem {
+    transition: all 0.3s ease-in-out;
+}
+
+.stateIcon {
+    transition: transform 0.2s ease-in-out, opacity 0.2s ease-in-out;
+}
+
+.stateText {
+    transition: color 0.3s ease-in-out;
+}
+
+.fadeIn {
+    opacity: 0;
+    animation: fadeIn 0.3s ease-in-out forwards;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-4px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
