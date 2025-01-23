@@ -141,7 +141,7 @@ export const ContextCell: FunctionComponent<{
                 experimentalOneBoxEnabled && !intent
                     ? 'Reviewing query'
                     : isAgenticChat
-                      ? 'Agentic context'
+                      ? 'Context'
                       : isContextLoading
                         ? 'Fetching context'
                         : 'Context',
