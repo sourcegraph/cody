@@ -82,7 +82,6 @@ export const AgenticContextCell: FunctionComponent<{
                         header={
                             <div className="tw-flex tw-justify-between tw-items-center tw-w-full">
                                 <AccordionTrigger
-                                    onClick={() => {}}
                                     title={title}
                                     className="tw-flex tw-justify-center tw-items-center tw-gap-3"
                                     disabled={!processes?.some(p => p.id)}
