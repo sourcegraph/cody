@@ -764,7 +764,6 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                 intent={manuallySelectedIntent?.intent || intentResults?.intent}
                 manuallySelectIntent={handleManualIntentSelection}
             />
-
             {experimentalOneBoxEnabled && assistantMessage?.didYouMeanQuery && (
                 <DidYouMeanNotice
                     query={assistantMessage?.didYouMeanQuery}
@@ -772,24 +771,24 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                     switchToSearch={() => editAndSubmitSearch(assistantMessage?.didYouMeanQuery ?? '')}
                 />
             )}
-            {!isSearchIntent && humanMessage.agent && (
+            {humanMessage.agent && (
                 <AgenticContextCell
                     key={`${humanMessage.index}-${humanMessage.intent}-process`}
-                    isContextLoading={isContextLoading}
+                    isContextLoading={Boolean(
+                        humanMessage.contextFiles === undefined &&
+                            isLastSentInteraction &&
+                            assistantMessage?.text === undefined &&
+                            assistantMessage?.subMessages === undefined
+                    )}
                     processes={humanMessage?.processes ?? undefined}
-                    intent={humanMessage.intent}
-                    onSwitchIntent={
-                        humanMessage.intent === 'search'
-                            ? reSubmitWithChatIntent
-                            : reSubmitWithSearchIntent
-                    }
+                    intent={isSearchIntent ? 'search' : 'chat'}
+                    onSwitchIntent={isSearchIntent ? reSubmitWithChatIntent : reSubmitWithSearchIntent}
                 />
-            )}
+            )}{' '}
             {!isSearchIntent &&
                 humanMessage.agent &&
                 isContextLoading &&
                 assistantMessage?.isLoading && <ApprovalCell vscodeAPI={vscodeAPI} />}
-
             {!(humanMessage.agent && isContextLoading) &&
                 (humanMessage.contextFiles || assistantMessage || isContextLoading) &&
                 !isSearchIntent && (
