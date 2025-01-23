@@ -34,7 +34,8 @@ describe('PromptMixin', () => {
             input: {
                 message: { speaker: 'human', text: ps`How to code?`, agent: 'deep-cody' },
             },
-            expected: 'Explain your reasoning in detail for coding questions.\n\nQuestion: How to code?',
+            expected:
+                'Answer positively without apologizing. \n\nExplain your reasoning in detail for coding questions.\n\nQuestion: How to code?',
         },
         {
             name: 'deep-cody agent message with custom mixin',

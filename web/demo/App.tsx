@@ -48,6 +48,7 @@ export const App: FC = () => {
                 createAgentWorker={CREATE_AGENT_WORKER}
                 telemetryClientName="codydemo.testing"
                 initialContext={MOCK_INITIAL_CONTEXT}
+                viewType="sidebar"
             />
         </div>
     )

@@ -8,7 +8,6 @@ import {
     AccordionTrigger,
 } from '../../../components/shadcn/ui/accordion'
 import { Cell } from '../Cell'
-import { NON_HUMAN_CELL_AVATAR_SIZE } from '../messageCell/assistant/AssistantMessageCell'
 
 export const __ProcessCellStorybookContext = createContext<{ initialOpen: boolean } | null>(null)
 
@@ -35,10 +34,10 @@ export const AgenticContextCell: FunctionComponent<{
             ? 'failed'
             : 'completed'
         : processes?.findLast(p => p.type !== 'tool' && p.type !== 'confirmation')?.title || 'reviewing'
-    const statusClassName = hasError ? 'tw-text-yellow-500' : 'tw-text-green-500'
+    const statusClassName = hasError ? 'tw-text-yellow-600' : 'tw-text-muted-foreground'
 
     return (
-        <div>
+        <div className="tw-flex tw-flex-col tw-justify-center tw-w-full tw-gap-2 tw-py-1 tw-px-4">
             <Accordion
                 type="single"
                 collapsible={true}
@@ -52,19 +51,13 @@ export const AgenticContextCell: FunctionComponent<{
                             <AccordionTrigger
                                 onClick={() => triggerAccordion()}
                                 title="Agentic chat"
-                                className="tw-flex tw-items-center tw-gap-4"
+                                className="tw-flex tw-justify-center tw-items-center tw-gap-4"
                                 disabled={!processes?.some(p => p.id)}
                             >
                                 {isContextLoading ? (
-                                    <Loader2Icon
-                                        size={NON_HUMAN_CELL_AVATAR_SIZE}
-                                        className="tw-animate-spin"
-                                    />
+                                    <Loader2Icon size={16} className="tw-animate-spin" />
                                 ) : (
-                                    <BrainIcon
-                                        size={NON_HUMAN_CELL_AVATAR_SIZE}
-                                        className={statusClassName}
-                                    />
+                                    <BrainIcon size={16} className={statusClassName} />
                                 )}
                                 <span className="tw-flex tw-items-baseline">
                                     Agentic chat
@@ -126,11 +119,11 @@ const ProcessItem: FC<{
         <div className="tw-flex tw-items-center tw-gap-3 tw-p-1">
             <div className={process.type === 'tool' ? 'tw-ml-[1rem] tw-font-sm' : 'tw-ml-0'}>
                 {process.type !== 'tool' ? (
-                    <BrainIcon strokeWidth={1.25} size={14} className={headerIconClassName} />
+                    <BrainIcon strokeWidth={1.25} size={12} className={headerIconClassName} />
                 ) : process.state === 'error' ? (
-                    <CircleXIcon strokeWidth={1.5} size={14} className="tw-text-red-500" />
+                    <CircleXIcon strokeWidth={1.5} size={12} className="tw-text-red-500" />
                 ) : process.state === 'pending' && isContextLoading ? (
-                    <Loader2Icon strokeWidth={1.5} size={14} className="tw-animate-spin" />
+                    <Loader2Icon strokeWidth={1.5} size={12} className="tw-animate-spin" />
                 ) : null}
             </div>
             <div className="tw-flex-grow tw-min-w-0">

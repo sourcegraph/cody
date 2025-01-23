@@ -27,7 +27,7 @@ import { RestClient } from '../sourcegraph-api/rest/client'
 import type { UserProductSubscription } from '../sourcegraph-api/userProductSubscription'
 import { CHAT_INPUT_TOKEN_BUDGET } from '../token/constants'
 import { isError } from '../utils'
-import { TOOL_CODY_MODEL } from './client'
+import { TOOL_CODY_MODEL, getExperimentalClientModelByFeatureFlag } from './client'
 import { type Model, type ServerModel, createModel, createModelFromServerModel } from './model'
 import type {
     DefaultsAndUserPreferencesForEndpoint,
@@ -212,7 +212,12 @@ export function syncModels({
                                         enableToolCody
                                     ).pipe(
                                         switchMap(
-                                            ([hasEarlyAccess, isDeepCodyEnabled, defaultToHaiku]) => {
+                                            ([
+                                                hasEarlyAccess,
+                                                hasAgenticChatFlag,
+                                                defaultToHaiku,
+                                                isToolCodyEnabled,
+                                            ]) => {
                                                 // TODO(sqs): remove waitlist from localStorage when user has access
                                                 const isOnWaitlist = config.clientState.waitlist_o1
                                                 if (isDotComUser && (hasEarlyAccess || isOnWaitlist)) {
@@ -233,19 +238,57 @@ export function syncModels({
                                                         }
                                                     )
                                                 }
-                                                if (isDeepCodyEnabled && enableToolCody) {
-                                                    data.primaryModels.push(
-                                                        createModelFromServerModel(TOOL_CODY_MODEL)
+
+                                                const clientModels = []
+
+                                                // Handle agentic chat features
+                                                const isAgenticChatEnabled =
+                                                    hasAgenticChatFlag ||
+                                                    (isDotComUser && !isCodyFreeUser)
+                                                const haikuModel = data.primaryModels.find(m =>
+                                                    m.id.includes('5-haiku')
+                                                )
+                                                const sonnetModel = data.primaryModels.find(m =>
+                                                    m.id.includes('5-sonnet')
+                                                )
+                                                const hasDeepCody = data.primaryModels.some(m =>
+                                                    m.id.includes('deep-cody')
+                                                )
+                                                if (
+                                                    !hasDeepCody &&
+                                                    isAgenticChatEnabled &&
+                                                    sonnetModel &&
+                                                    haikuModel
+                                                ) {
+                                                    clientModels.push(
+                                                        getExperimentalClientModelByFeatureFlag(
+                                                            FeatureFlag.DeepCody
+                                                        )!
                                                     )
                                                 }
-                                                // set the default model to Haiku for free users
-                                                if (isDotComUser && isCodyFreeUser && defaultToHaiku) {
-                                                    const haikuModel = data.primaryModels.find(m =>
-                                                        m.id.includes('claude-3-5-haiku')
+
+                                                const hasToolCody = data.primaryModels.some(m =>
+                                                    m.id.includes('tool-cody')
+                                                )
+                                                if (!hasToolCody && isToolCodyEnabled) {
+                                                    clientModels.push(TOOL_CODY_MODEL)
+                                                }
+
+                                                // Add the client models to the list of models.
+                                                data.primaryModels.push(
+                                                    ...maybeAdjustContextWindows(clientModels).map(
+                                                        createModelFromServerModel
                                                     )
-                                                    if (haikuModel) {
-                                                        data.preferences!.defaults.chat = haikuModel.id
-                                                    }
+                                                )
+
+                                                // Set the default model to Haiku for free users.
+                                                if (
+                                                    isDotComUser &&
+                                                    isCodyFreeUser &&
+                                                    defaultToHaiku &&
+                                                    haikuModel
+                                                ) {
+                                                    data.preferences!.defaults.chat = haikuModel.id
                                                 }
 
                                                 return Observable.of(data)

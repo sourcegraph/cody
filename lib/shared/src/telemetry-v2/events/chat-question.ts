@@ -247,6 +247,10 @@ function publicContextSummary(globalPrefix: string, context: ContextItem[]) {
         }
     }
     for (const item of context) {
+        if (item.type === 'open-link') {
+            // Skip documentation links; these do not provide context content.
+            continue
+        }
         incrementShared(global, item)
         //bySource countbuildPrivateContextSummary
         const source = bySource[item.source ?? 'other']
@@ -349,7 +353,7 @@ const defaultSharedItemCount: SharedItemCount = {
 type BySourceCount = SharedItemCount & {
     isWorkspaceRoot: number | undefined
     types: {
-        [key in Exclude<ContextItem['type'], undefined>]: number | undefined
+        [key in Exclude<ContextItem['type'], undefined | 'open-link'>]: number | undefined
     }
 }
 const defaultBySourceCount: BySourceCount = {

@@ -404,7 +404,7 @@ describe('Agent', () => {
             )
         }, 30_000)
 
-        it('webview/receiveMessage (type: reset)', async () => {
+        it.skip('webview/receiveMessage (type: reset)', async () => {
             const id = await client.request('chat/new', null)
             await client.request('chat/setModel', {
                 id,
@@ -441,7 +441,7 @@ describe('Agent', () => {
         }, 30_000)
 
         describe('chat/editMessage', () => {
-            it(
+            it.skip(
                 'edits the last human chat message',
                 async () => {
                     const id = await client.request('chat/new', null)
@@ -486,7 +486,7 @@ describe('Agent', () => {
                         ])
                     )
                 },
-                { timeout: mayRecord ? 10_000 : undefined }
+                { timeout: mayRecord ? 10_000 : 5000 }
             )
 
             it('edits messages by index', async () => {

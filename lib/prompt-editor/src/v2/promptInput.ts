@@ -742,6 +742,16 @@ export const promptInput = setup({
                             return
                         }
 
+                        if (item.type === 'open-link') {
+                            // "open-link" items are links to documentation, you can not commit them as mentions.
+                            enqueue({
+                                type: 'updateEditorState',
+                                params: replaceAtMention(context.editorState, schema.text('')),
+                            })
+                            // TODO: Raise an event? Enqueue a task? to open the link.
+                            return
+                        }
+
                         // In all other cases we'll insert the selected item as a mention node.
                         enqueue({
                             type: 'updateEditorState',

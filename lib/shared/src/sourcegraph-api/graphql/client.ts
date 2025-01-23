@@ -23,6 +23,7 @@ import {
     BUILTIN_PROMPTS_QUERY,
     CHANGE_PROMPT_VISIBILITY,
     CHAT_INTENT_QUERY,
+    CODE_SEARCH_ENABLED_QUERY,
     CONTEXT_FILTERS_QUERY,
     CONTEXT_SEARCH_EVAL_DEBUG_QUERY,
     CONTEXT_SEARCH_QUERY,
@@ -623,6 +624,10 @@ interface EvaluateFeatureFlagResponse {
 
 interface ViewerSettingsResponse {
     viewerSettings: { final: string }
+}
+
+interface CodeSearchEnabledResponse {
+    codeSearchEnabled: boolean
 }
 
 interface TemporarySettingsResponse {
@@ -1561,6 +1566,15 @@ export class SourcegraphGraphQLAPIClient {
         return extractDataOrError(response, data => JSON.parse(data.viewerSettings.final))
     }
 
+    public async codeSearchEnabled(signal?: AbortSignal): Promise<boolean | Error> {
+        const response = await this.fetchSourcegraphAPI<APIResponse<CodeSearchEnabledResponse>>(
+            CODE_SEARCH_ENABLED_QUERY,
+            {},
+            signal
+        )
+        return extractDataOrError(response, data => data.codeSearchEnabled)
+    }
+
     public async temporarySettings(signal?: AbortSignal): Promise<Partial<TemporarySettings> | Error> {
         const response = await this.fetchSourcegraphAPI<APIResponse<TemporarySettingsResponse>>(
             TEMPORARY_SETTINGS_QUERY,
@@ -1615,7 +1629,12 @@ export class SourcegraphGraphQLAPIClient {
 
         addTraceparent(headers)
         addCodyClientIdentificationHeaders(headers)
-        addAuthHeaders(config.auth, headers, url)
+
+        try {
+            await addAuthHeaders(config.auth, headers, url)
+        } catch (error: any) {
+            return error
+        }
 
         const queryName = query.match(QUERY_TO_NAME_REGEXP)?.[1]
 
@@ -1663,7 +1682,12 @@ export class SourcegraphGraphQLAPIClient {
 
         addTraceparent(headers)
         addCodyClientIdentificationHeaders(headers)
-        addAuthHeaders(config.auth, headers, url)
+
+        try {
+            await addAuthHeaders(config.auth, headers, url)
+        } catch (error: any) {
+            return error
+        }
 
         const { abortController, timeoutSignal } = dependentAbortControllerWithTimeout(signal)
         return wrapInActiveSpan(`httpapi.fetch${queryName ? `.${queryName}` : ''}`, () =>

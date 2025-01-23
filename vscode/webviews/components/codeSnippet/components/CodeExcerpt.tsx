@@ -136,8 +136,13 @@ export const CodeExcerpt: FC<Props> = props => {
     }, [highlightRanges, startLine, endLine, tableContainerElement, table])
 
     return (
-        <Code className={clsx(styles.codeExcerpt, className)} data-code-excerpt={true}>
-            <div ref={setTableContainerElement}>{table}</div>
+        <Code
+            className={clsx(styles.codeExcerpt, 'tw-relative tw-overflow-auto tw-text-sm', className)}
+            data-code-excerpt={true}
+        >
+            <div ref={setTableContainerElement} className="tw-w-full">
+                {table}
+            </div>
         </Code>
     )
 }

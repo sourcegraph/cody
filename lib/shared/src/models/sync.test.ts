@@ -462,6 +462,83 @@ describe('syncModels', () => {
         }
     )
 
+    it('not to set Agentic Chat as default chat model when feature flag is enabled', async () => {
+        const serverSonnet: ServerModel = {
+            modelRef: 'anthropic::unknown::claude-3-5-sonnet',
+            displayName: 'Sonnet',
+            modelName: 'anthropic.claude-3-5-sonnet',
+            capabilities: ['chat'],
+            category: 'balanced' as ModelCategory,
+            status: 'stable',
+            tier: 'enterprise' as ModelTier,
+            contextWindow: {
+                maxInputTokens: 9000,
+                maxOutputTokens: 4000,
+            },
+        }
+        const serverHaiku: ServerModel = {
+            modelRef: 'anthropic::unknown::claude-3-5-haiku',
+            displayName: 'Haiku',
+            modelName: 'anthropic.claude-3-5-haiku',
+            capabilities: ['chat'],
+            category: 'balanced' as ModelCategory,
+            status: 'stable',
+            tier: 'enterprise' as ModelTier,
+            contextWindow: {
+                maxInputTokens: 9000,
+                maxOutputTokens: 4000,
+            },
+        }
+
+        const SERVER_MODELS: ServerModelConfiguration = {
+            schemaVersion: '0.0',
+            revision: '-',
+            providers: [],
+            models: [serverSonnet, serverHaiku],
+            defaultModels: {
+                chat: serverSonnet.modelRef,
+                fastChat: serverSonnet.modelRef,
+                codeCompletion: serverSonnet.modelRef,
+            },
+        }
+
+        const mockFetchServerSideModels = vi.fn(() => Promise.resolve(SERVER_MODELS))
+        vi.mocked(featureFlagProvider).evaluatedFeatureFlag.mockReturnValue(Observable.of(true))
+
+        const result = await firstValueFrom(
+            syncModels({
+                resolvedConfig: Observable.of({
+                    configuration: {},
+                    clientState: { modelPreferences: {} },
+                } satisfies PartialDeep<ResolvedConfiguration> as ResolvedConfiguration),
+                authStatus: Observable.of(AUTH_STATUS_FIXTURE_AUTHED),
+                configOverwrites: Observable.of(null),
+                clientConfig: Observable.of({
+                    modelsAPIEnabled: true,
+                } satisfies Partial<CodyClientConfig> as CodyClientConfig),
+                fetchServerSideModels_: mockFetchServerSideModels,
+                userProductSubscription: Observable.of({ userCanUpgrade: true }),
+            }).pipe(skipPendingOperation())
+        )
+
+        const storage = new TestLocalStorageForModelPreferences()
+        modelsService.setStorage(storage)
+        mockAuthStatus(AUTH_STATUS_FIXTURE_AUTHED)
+        expect(storage.data?.[AUTH_STATUS_FIXTURE_AUTHED.endpoint]!.selected.chat).toBe(undefined)
+        vi.spyOn(modelsService, 'modelsChanges', 'get').mockReturnValue(Observable.of(result))
+
+        // Check if Deep Cody model is in the primary models list.
+        expect(result.primaryModels.some(model => model.id.includes('deep-cody'))).toBe(true)
+
+        // Deep Cody should not replace the default chat / edit model.
+        expect(result.preferences.defaults.chat?.includes('deep-cody')).toBe(false)
+        expect(result.preferences.defaults.edit?.includes('deep-cody')).toBe(false)
+
+        // preference should not be affected and remains unchanged as this is handled in a later step.
+        expect(result.preferences.selected.chat).toBe(undefined)
+        expect(storage.data?.[AUTH_STATUS_FIXTURE_AUTHED.endpoint]!.selected.chat).toBe(undefined)
+    })
+
     describe('model selection based on user tier and feature flags', () => {
         const serverHaiku: ServerModel = {
             modelRef: 'anthropic::unknown::claude-3-5-haiku',

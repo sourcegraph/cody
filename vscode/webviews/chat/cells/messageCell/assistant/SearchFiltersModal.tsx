@@ -23,7 +23,7 @@ export const SearchFiltersModal = ({
     return (
         <div className="tw-flex tw-flex-col tw-gap-8">
             <div className="tw-flex tw-items-center tw-justify-between ">
-                <div className="tw-font-bold">Filter results</div>
+                <div className="tw-font-semibold">Filter results</div>
                 <div className="tw-flex tw-gap-4">
                     <Button variant="outline" onClick={close}>
                         Close

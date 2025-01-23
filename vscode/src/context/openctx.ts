@@ -1,7 +1,9 @@
 import {
     type AuthStatus,
     CODE_SEARCH_PROVIDER_URI,
+    ClientConfigSingleton,
     type ClientConfiguration,
+    type CodyClientConfig,
     FeatureFlag,
     GIT_OPENCTX_PROVIDER_URI,
     WEB_PROVIDER_URI,
@@ -20,6 +22,7 @@ import {
     promiseFactoryToObservable,
     resolvedConfig,
     setOpenCtx,
+    skipPendingOperation,
     switchMap,
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
@@ -93,7 +96,14 @@ export function exposeOpenCtxClient(
                     features: clientCapabilities().isVSCode ? { annotations: true } : {},
                     providers: clientCapabilities().isCodyWeb
                         ? getCodyWebOpenCtxProviders()
-                        : getOpenCtxProviders(authStatus, isValidSiteVersion),
+                        : getOpenCtxProviders(
+                              authStatus,
+                              ClientConfigSingleton.getInstance().changes.pipe(
+                                  skipPendingOperation(),
+                                  distinctUntilChanged()
+                              ),
+                              isValidSiteVersion
+                          ),
                     mergeConfiguration,
                 })
                 setOpenCtx({
@@ -115,20 +125,19 @@ let openctxOutputChannel: vscode.OutputChannel | undefined
 
 export function getOpenCtxProviders(
     authStatusChanges: Observable<Pick<AuthStatus, 'endpoint'>>,
+    clientConfigChanges: Observable<CodyClientConfig | undefined>,
     isValidSiteVersion: boolean
 ): Observable<ImportedProviderConfiguration[]> {
     return combineLatest(
         resolvedConfig.pipe(pluck('configuration'), distinctUntilChanged()),
+        clientConfigChanges,
         authStatusChanges,
-        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.GitMentionProvider),
-        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyExperimentalOneBox),
-        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.SourcegraphTeamsUpgradeCTA)
+        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.GitMentionProvider)
     ).map(
-        ([config, authStatus, gitMentionProvider, enableOneBox, showRemoteWorkspaceUpgrade]: [
+        ([config, clientConfig, authStatus, gitMentionProvider]: [
             ClientConfiguration,
+            CodyClientConfig | undefined,
             Pick<AuthStatus, 'endpoint'>,
-            boolean | undefined,
-            boolean | undefined,
             boolean | undefined,
         ]) => {
             const providers: ImportedProviderConfiguration[] = [
@@ -178,7 +187,7 @@ export function getOpenCtxProviders(
                 })
             }
 
-            if (enableOneBox) {
+            if (clientConfig?.omniBoxEnabled) {
                 providers.push({
                     settings: true,
                     provider: createCodeSearchProvider(),
@@ -193,8 +202,8 @@ export function getOpenCtxProviders(
 
 function getCodyWebOpenCtxProviders(): Observable<ImportedProviderConfiguration[]> {
     return combineLatest(
-        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyExperimentalOneBox)
-    ).map(([enableOneBox]: [boolean | undefined]) => {
+        ClientConfigSingleton.getInstance().changes.pipe(skipPendingOperation(), distinctUntilChanged())
+    ).map(([clientConfig]) => {
         const providers = [
             {
                 settings: true,
@@ -218,7 +227,7 @@ function getCodyWebOpenCtxProviders(): Observable<ImportedProviderConfiguration[
             },
         ]
 
-        if (enableOneBox) {
+        if (clientConfig?.omniBoxEnabled) {
             providers.push({
                 settings: true,
                 provider: createCodeSearchProvider(),

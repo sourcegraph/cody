@@ -133,14 +133,14 @@ export const ContextCell: FunctionComponent<{
 
         const telemetryRecorder = useTelemetryRecorder()
 
-        const isDeepCodyEnabled = agent === 'deep-cody'
+        const isAgenticChat = model?.includes('deep-cody') || agent === 'deep-cody'
 
         // Text for top header text
         const headerText: { main: string; sub?: string } = {
             main:
                 experimentalOneBoxEnabled && !intent
                     ? 'Reviewing query'
-                    : isDeepCodyEnabled
+                    : isAgenticChat
                       ? 'Agentic context'
                       : isContextLoading
                         ? 'Fetching context'
@@ -149,20 +149,20 @@ export const ContextCell: FunctionComponent<{
                 experimentalOneBoxEnabled && !intent
                     ? 'Figuring out query intent...'
                     : isContextLoading
-                      ? isDeepCodyEnabled
+                      ? isAgenticChat
                           ? 'Thinking…'
                           : 'Retrieving codebase files…'
                       : contextItems === undefined
                         ? 'none requested'
                         : contextItems.length === 0
-                          ? isDeepCodyEnabled
+                          ? isAgenticChat
                               ? 'none'
                               : 'none fetched'
                           : itemCountLabel,
         }
 
         return (
-            <div>
+            <div className="tw-flex tw-flex-col tw-justify-center tw-w-full tw-gap-2 tw-py-1 tw-px-4">
                 <Accordion
                     type="single"
                     collapsible={true}
@@ -197,7 +197,7 @@ export const ContextCell: FunctionComponent<{
                             contentClassName="tw-flex tw-flex-col tw-gap-4 tw-max-w-full"
                             data-testid="context"
                         >
-                            {isContextLoading && !isDeepCodyEnabled ? (
+                            {isContextLoading && !isAgenticChat ? (
                                 <LoadingDots />
                             ) : (
                                 <>
@@ -208,7 +208,7 @@ export const ContextCell: FunctionComponent<{
                                         <div className={styles.contextSuggestedActions}>
                                             {contextItems &&
                                                 contextItems.length > 0 &&
-                                                !isDeepCodyEnabled && (
+                                                !isAgenticChat && (
                                                     <Button
                                                         size="sm"
                                                         variant="outline"
@@ -221,7 +221,7 @@ export const ContextCell: FunctionComponent<{
                                                         {editContextNode}
                                                     </Button>
                                                 )}
-                                            {resubmitWithRepoContext && !isDeepCodyEnabled && (
+                                            {resubmitWithRepoContext && !isAgenticChat && (
                                                 <Button
                                                     size="sm"
                                                     variant="outline"
@@ -298,7 +298,7 @@ export const ContextCell: FunctionComponent<{
                                                     </span>
                                                 </span>
                                             )}
-                                            {!isContextLoading && isDeepCodyEnabled && (
+                                            {!isContextLoading && isAgenticChat && (
                                                 <li>
                                                     <Tooltip>
                                                         <TooltipTrigger asChild>
@@ -324,7 +324,7 @@ export const ContextCell: FunctionComponent<{
                                                     </Tooltip>
                                                 </li>
                                             )}
-                                            {!isContextLoading && !isDeepCodyEnabled && (
+                                            {!isContextLoading && !isAgenticChat && (
                                                 <li>
                                                     <Tooltip>
                                                         <TooltipTrigger asChild>

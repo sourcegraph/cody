@@ -164,6 +164,7 @@ export class DeepCodyAgent {
                 requestID,
                 model: DeepCodyAgent.model,
                 traceId: span.spanContext().traceId,
+                chatAgent: 'deep-cody',
             },
             metadata: {
                 loop: this.stats.loop, // Number of loops run.
