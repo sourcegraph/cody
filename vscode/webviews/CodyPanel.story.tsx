@@ -1,6 +1,7 @@
 import {
     AUTH_STATUS_FIXTURE_AUTHED,
     AUTH_STATUS_FIXTURE_UNAUTHED,
+    AvailabilityError,
     CLIENT_CAPABILITIES_FIXTURE,
 } from '@sourcegraph/cody-shared'
 import type { Meta, StoryObj } from '@storybook/react'
@@ -44,7 +45,7 @@ export const NetworkError: StoryObj<typeof meta> = {
             clientCapabilities: CLIENT_CAPABILITIES_FIXTURE,
             authStatus: {
                 ...AUTH_STATUS_FIXTURE_UNAUTHED,
-                error: { type: 'availability-error' },
+                error: new AvailabilityError(),
             },
             isDotComUser: true,
             userProductSubscription: {

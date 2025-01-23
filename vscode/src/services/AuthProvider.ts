@@ -16,6 +16,10 @@ import {
     distinctUntilChanged,
     clientCapabilities as getClientCapabilities,
     isAbortError,
+    isAvailabilityError,
+    isEnterpriseUserDotComError,
+    isInvalidAccessTokenError,
+    isNeedsAuthChallengeError,
     resolvedConfig as resolvedConfig_,
     setAuthStatusObservable as setAuthStatusObservable_,
     startWith,
@@ -110,7 +114,7 @@ class AuthProvider implements vscode.Disposable {
                         // we explicitly check for this error and only update if so
                         if (
                             !nextAuthStatus.authenticated &&
-                            nextAuthStatus.error?.type === 'enterprise-user-logged-into-dotcom'
+                            isEnterpriseUserDotComError(nextAuthStatus.error)
                         ) {
                             this.status.next(nextAuthStatus)
                         }
@@ -145,11 +149,7 @@ class AuthProvider implements vscode.Disposable {
             authStatus
                 .pipe(
                     switchMap(authStatus => {
-                        if (
-                            !authStatus.authenticated &&
-                            authStatus.error?.type === 'availability-error' &&
-                            authStatus.error.needsAuthChallenge
-                        ) {
+                        if (!authStatus.authenticated && isNeedsAuthChallengeError(authStatus.error)) {
                             // This interval is short because we want to quickly authenticate after
                             // the user successfully performs the auth challenge. If automatic auth
                             // refresh is expanded to include other conditions (such as any network
@@ -350,8 +350,7 @@ function reportAuthTelemetryEvent(authStatus: AuthStatus): void {
     let eventValue: 'disconnected' | 'connected' | 'failed'
     if (
         !authStatus.authenticated &&
-        (authStatus.error?.type === 'availability-error' ||
-            authStatus.error?.type === 'invalid-access-token')
+        (isAvailabilityError(authStatus.error) || isInvalidAccessTokenError(authStatus.error))
     ) {
         eventValue = 'failed'
     } else if (authStatus.authenticated) {

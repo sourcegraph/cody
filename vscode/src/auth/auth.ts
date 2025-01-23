@@ -1,11 +1,17 @@
 import * as vscode from 'vscode'
 
 import {
+    AuthConfigError,
     type AuthStatus,
+    AvailabilityError,
     ClientConfigSingleton,
     type CodyClientConfig,
     DOTCOM_URL,
+    EnterpriseUserDotComError,
+    ExternalAuthProviderError,
     type GraphQLAPIClientConfig,
+    InvalidAccessTokenError,
+    NeedsAuthChallengeError,
     type PickResolvedConfiguration,
     SourcegraphGraphQLAPIClient,
     type UnauthenticatedAuthStatus,
@@ -13,18 +19,18 @@ import {
     clientCapabilities,
     currentAuthStatus,
     currentResolvedConfig,
-    getAuthErrorMessage,
     getCodyAuthReferralCode,
     graphqlClient,
     isDotCom,
     isError,
+    isExternalProviderAuthError,
+    isInvalidAccessTokenError,
     isNeedsAuthChallengeError,
     isNetworkLikeError,
     isWorkspaceInstance,
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
 import { resolveAuth } from '@sourcegraph/cody-shared/src/configuration/auth-resolver'
-import { isExternalProviderAuthError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
 import { isSourcegraphToken } from '../chat/protocol'
 import { newAuthStatus } from '../chat/utils'
 import { logDebug } from '../output-channel-logger'
@@ -119,7 +125,7 @@ export async function showSignInMenu(
 
             // If authentication failed because the credentials were reported as invalid (and not
             // due to some other or some ephemeral reason), ask the user for a different token.
-            if (!authStatus?.authenticated && authStatus.error?.type === 'invalid-access-token') {
+            if (!authStatus?.authenticated && isInvalidAccessTokenError(authStatus.error)) {
                 const token = await showAccessTokenInputBox(selectedEndpoint)
                 if (!token) {
                     return
@@ -316,7 +322,7 @@ export async function showAuthFailureMessage(
     authStatus: UnauthenticatedAuthStatus | undefined
 ): Promise<void> {
     if (authStatus?.error) {
-        await vscode.window.showErrorMessage(getAuthErrorMessage(authStatus.error).message)
+        await vscode.window.showErrorMessage(authStatus.error.message)
     }
 }
 /**
@@ -455,10 +461,7 @@ export async function validateCredentials(
             authenticated: false,
             endpoint: config.auth.serverEndpoint,
             pendingValidation: false,
-            error: {
-                type: 'auth-config-error',
-                message: config.auth.error?.message ?? config.auth.error,
-            },
+            error: new AuthConfigError(config.auth.error?.message ?? config.auth.error),
         }
     }
 
@@ -490,24 +493,21 @@ export async function validateCredentials(
                 logDebug('auth', userInfo.message)
                 return {
                     authenticated: false,
-                    error: { type: 'external-auth-provider-error', message: userInfo.message },
+                    error: new ExternalAuthProviderError(userInfo.message),
                     endpoint: config.auth.serverEndpoint,
                     pendingValidation: false,
                 }
             }
-            if (isNetworkLikeError(userInfo) || isNeedsAuthChallengeError(userInfo)) {
+            const needsAuthChallenge = isNeedsAuthChallengeError(userInfo)
+            if (isNetworkLikeError(userInfo) || needsAuthChallenge) {
                 logDebug(
                     'auth',
                     `Failed to authenticate to ${config.auth.serverEndpoint} due to likely network or endpoint availability error`,
                     userInfo.message
                 )
-                const needsAuthChallenge = isNeedsAuthChallengeError(userInfo)
                 return {
                     authenticated: false,
-                    error: {
-                        type: 'availability-error',
-                        needsAuthChallenge,
-                    },
+                    error: needsAuthChallenge ? new NeedsAuthChallengeError() : new AvailabilityError(),
                     endpoint: config.auth.serverEndpoint,
                     pendingValidation: false,
                 }
@@ -523,7 +523,7 @@ export async function validateCredentials(
             return {
                 authenticated: false,
                 endpoint: config.auth.serverEndpoint,
-                error: { type: 'invalid-access-token' },
+                error: new InvalidAccessTokenError(),
                 pendingValidation: false,
             }
         }
@@ -540,10 +540,9 @@ export async function validateCredentials(
                     authenticated: false,
                     endpoint: config.auth.serverEndpoint,
                     pendingValidation: false,
-                    error: {
-                        type: 'enterprise-user-logged-into-dotcom',
-                        enterprise: getEnterpriseName(userInfo.primaryEmail?.email || ''),
-                    },
+                    error: new EnterpriseUserDotComError(
+                        getEnterpriseName(userInfo.primaryEmail?.email || '')
+                    ),
                 }
             }
         }

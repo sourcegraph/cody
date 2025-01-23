@@ -252,8 +252,6 @@ export {
     isNetworkError,
     isNetworkLikeError,
     isRateLimitError,
-    NeedsAuthChallengeError,
-    isNeedsAuthChallengeError,
 } from './sourcegraph-api/errors'
 export {
     SourcegraphGraphQLAPIClient,

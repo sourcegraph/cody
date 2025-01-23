@@ -4,6 +4,7 @@ import {
     type AuthStatus,
     type ClientConfiguration,
     CodyIDE,
+    InvalidAccessTokenError,
     InvisibleStatusBarTag,
     type IsIgnored,
     Mutable,
@@ -15,12 +16,14 @@ import {
     distinctUntilChanged,
     firstValueFrom,
     fromVSCodeEvent,
+    isAvailabilityError,
     logError,
     promise,
     resolvedConfig,
     shareReplay,
 } from '@sourcegraph/cody-shared'
 
+import { AuthenticationError } from '@sourcegraph/cody-shared/src/auth/types'
 import { type Subscription, map } from 'observable-fns'
 import type { LiteralUnion, ReadonlyDeep } from 'type-fest'
 import { ignoreReason } from '../cody-ignore/notification'
@@ -286,15 +289,6 @@ export class CodyStatusBar implements vscode.Disposable {
                 interact: interactAuth,
             }
         }
-        if (!authStatus.authenticated && authStatus.error?.type === 'invalid-access-token') {
-            return {
-                icon: 'disabled',
-                tooltip: 'Your authentication has expired.\nSign in again to continue using Cody.',
-                style: 'warning',
-                tags,
-                interact: interactAuth,
-            }
-        }
 
         if (errors.size > 0) {
             const [firstError, ...otherErrors] = [...errors.values()]
@@ -324,17 +318,19 @@ export class CodyStatusBar implements vscode.Disposable {
             }
         }
 
-        if (!authStatus.authenticated && authStatus.error?.type === 'availability-error') {
-            return {
-                icon: 'disabled',
-                tooltip: 'Network issues prevented Cody from signing in.',
-                style: 'error',
-                tags,
-                interact: authStatus.error.needsAuthChallenge ? interactAuth : interactNetworkIssues,
-            }
-        }
-
         if (!authStatus.authenticated) {
+            if (authStatus.error instanceof AuthenticationError) {
+                return {
+                    icon: 'disabled',
+                    tooltip: authStatus.error.message,
+                    style: authStatus.error instanceof InvalidAccessTokenError ? 'warning' : 'error',
+                    tags,
+                    interact: isAvailabilityError(authStatus.error)
+                        ? interactNetworkIssues
+                        : interactAuth,
+                }
+            }
+
             return {
                 text: 'Sign In',
                 tooltip: 'Sign in to get started with Cody.',
