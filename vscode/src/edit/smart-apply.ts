@@ -4,7 +4,7 @@ import * as vscode from 'vscode'
 import type { FixupTask, FixupTaskID } from '../non-stop/FixupTask'
 
 export interface SmartApplyArguments {
-    configuration?: {
+    configuration: {
         id: FixupTaskID
         instruction: PromptString
         replacement: string
@@ -13,7 +13,7 @@ export interface SmartApplyArguments {
         isNewFile?: boolean
         traceparent: string | undefined | null
     }
-    source?: EventSource
+    source: EventSource
 }
 
 /**
@@ -21,4 +21,13 @@ export interface SmartApplyArguments {
  */
 export const executeSmartApply = async (args: SmartApplyArguments): Promise<FixupTask | undefined> => {
     return vscode.commands.executeCommand<FixupTask | undefined>('cody.command.smart-apply', args)
+}
+
+export const executePrefetchSmartApplySelection = async (
+    args: SmartApplyArguments
+): Promise<FixupTask | undefined> => {
+    return vscode.commands.executeCommand<FixupTask | undefined>(
+        'cody.command.smart-apply-prefetch-selection',
+        args
+    )
 }

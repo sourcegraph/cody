@@ -484,6 +484,10 @@ export class FixupController
         return task
     }
 
+    public startDecorator(task: FixupTask) {
+        this.decorator.didCreateTask(task)
+    }
+
     public async createTask(
         document: vscode.TextDocument,
         instruction: PromptString,
@@ -496,7 +500,8 @@ export class FixupController
         destinationFile?: vscode.Uri,
         insertionPoint?: vscode.Position,
         telemetryMetadata?: FixupTelemetryMetadata,
-        taskId?: FixupTaskID
+        taskId?: FixupTaskID,
+        isPrefetch?: boolean
     ): Promise<FixupTask> {
         const authStatus = currentAuthStatus()
         const overriddenModel = getOverriddenModelForIntent(intent, model, authStatus)
@@ -517,7 +522,10 @@ export class FixupController
             taskId
         )
         this.tasks.set(task.id, task)
-        this.decorator.didCreateTask(task)
+        if (!isPrefetch) {
+            this.decorator.didCreateTask(task)
+        }
+
         return task
     }
 
@@ -1190,6 +1198,7 @@ export class FixupController
     }
 
     private setTaskState(task: FixupTask, state: CodyTaskState): void {
+        console.log(`FixupController.setTaskState from: ${task.state} => ${state}`)
         const oldState = task.state
         if (oldState === state) {
             // Not a transition--nothing to do.

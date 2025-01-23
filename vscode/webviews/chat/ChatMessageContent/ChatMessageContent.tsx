@@ -18,6 +18,12 @@ export interface CodeBlockActionsProps {
     copyButtonOnSubmit: (text: string, event?: 'Keydown' | 'Button') => void
     insertButtonOnSubmit: (text: string, newFile?: boolean) => void
     smartApply: {
+        onPrefetchSelection: (
+            id: string,
+            text: string,
+            instruction?: PromptString,
+            fileName?: string
+        ) => void
         onSubmit: (id: string, text: string, instruction?: PromptString, fileName?: string) => void
         onAccept: (id: string) => void
         onReject: (id: string) => void
@@ -127,6 +133,18 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
                 if (smartApplyEnabled) {
                     const smartApplyId = getCodeBlockId(preText, fileName)
                     const smartApplyState = smartApplyStates[smartApplyId]
+
+                    // Side-effect: prefetch smart apply selection if possible to reduce the final latency.
+                    if (!isMessageLoading) {
+                        console.log('USE EFFECT DANGER ZONE!!')
+                        smartApplyInterceptor?.onPrefetchSelection(
+                            smartApplyId,
+                            preText,
+                            humanMessage?.text,
+                            codeBlockName
+                        )
+                    }
+
                     buttons = createButtonsExperimentalUI(
                         preText,
                         humanMessage,

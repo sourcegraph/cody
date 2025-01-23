@@ -1,3 +1,5 @@
+import { context } from '@opentelemetry/api'
+import { LRUCache } from 'lru-cache'
 import * as vscode from 'vscode'
 
 import {
@@ -20,7 +22,6 @@ import type { VSCodeEditor } from '../editor/vscode-editor'
 import type { FixupController } from '../non-stop/FixupController'
 import type { FixupTask } from '../non-stop/FixupTask'
 
-import { context } from '@opentelemetry/api'
 import { isUriIgnoredByContextFilterWithNotification } from '../cody-ignore/context-filter'
 import type { ExtensionClient } from '../extension-client'
 import { ACTIVE_TASK_STATES } from '../non-stop/codelenses/constants'
@@ -48,6 +49,14 @@ export class EditManager implements vscode.Disposable {
     private disposables: vscode.Disposable[] = []
     private editProviders = new WeakMap<FixupTask, EditProvider>()
 
+    /**
+     * Cache to store in-progress or completed smart apply selection promises keyed by task ID
+     */
+    private inFlightSmartApplySelections = new LRUCache<
+        string,
+        Promise<ReturnType<typeof getSmartApplySelection>>
+    >({ max: 20 })
+
     constructor(public options: EditManagerOptions) {
         /**
          * Entry point to triggering a new Edit.
@@ -57,6 +66,13 @@ export class EditManager implements vscode.Disposable {
         const editCommand = vscode.commands.registerCommand(
             'cody.command.edit-code',
             (args: ExecuteEditArguments) => this.executeEdit(args)
+        )
+
+        const prefetchSmartApplySelectionCommand = vscode.commands.registerCommand(
+            'cody.command.smart-apply-prefetch-selection',
+            (args: SmartApplyArguments) => {
+                this.prefetchSmartApplySelection(args)
+            }
         )
 
         /**
@@ -85,10 +101,29 @@ export class EditManager implements vscode.Disposable {
                 provider.startEdit()
             }
         )
-        this.disposables.push(this.options.controller, editCommand, smartApplyCommand, startCommand)
+
+        this.disposables.push(
+            this.options.controller,
+            editCommand,
+            smartApplyCommand,
+            prefetchSmartApplySelectionCommand,
+            startCommand
+        )
     }
 
-    public async executeEdit(args: ExecuteEditArguments = {}): Promise<FixupTask | undefined> {
+    /**
+     * “executeEdit” can now optionally prefetch the LLM response by calling
+     * “provider.prefetchEdit” instead of “provider.startEdit.” This is controlled
+     * by the “prefetchOnly” parameter. If true, we kick off streaming in the background
+     * but do not immediately apply the edit to the user’s file.
+     *
+     * We also reuse an existing fixup task (if present) to avoid creating extra entities.
+     */
+    public async executeEdit(
+        args: ExecuteEditArguments = {},
+        prefetchOnly = false
+    ): Promise<FixupTask | undefined> {
+        console.log('executeEdit start')
         const {
             configuration = {},
             /**
@@ -159,7 +194,8 @@ export class EditManager implements vscode.Disposable {
                 configuration.destinationFile,
                 configuration.insertionPoint,
                 telemetryMetadata,
-                configuration.id
+                configuration.id,
+                prefetchOnly
             )
         } else {
             task = await this.options.controller.promptUserForTask(
@@ -234,12 +270,20 @@ export class EditManager implements vscode.Disposable {
             )
         }
         const provider = this.getProviderForTask(task)
+
+        if (prefetchOnly) {
+            await provider.prefetchEdit()
+            return task
+        }
+
+        this.options.controller.startDecorator(task)
         await provider.startEdit()
         return task
     }
 
-    public async smartApplyEdit(args: SmartApplyArguments = {}): Promise<void> {
-        return context.with(extractContextFromTraceparent(args.configuration?.traceparent), async () => {
+    public async smartApplyEdit(args: SmartApplyArguments): Promise<void> {
+        console.log('smartApplyEdit start')
+        return context.with(extractContextFromTraceparent(args.configuration.traceparent), async () => {
             await wrapInActiveSpan('edit.smart-apply', async span => {
                 span.setAttribute('sampled', true)
                 span.setAttribute('continued', true)
@@ -269,7 +313,7 @@ export class EditManager implements vscode.Disposable {
 
                 const editor = await vscode.window.showTextDocument(document.uri)
 
-                if (args.configuration?.isNewFile) {
+                if (configuration.isNewFile) {
                     // We are creating a new file, this means we are only _adding_ new code and _inserting_ it into the document.
                     // We do not need to re-prompt the LLM for this, let's just add the code directly.
                     const task = await this.options.controller.createTask(
@@ -318,21 +362,13 @@ export class EditManager implements vscode.Disposable {
                 // We need to extract the proposed code, provided by the LLM, so we can use it in future
                 // queries to ask the LLM to generate a selection, and then ultimately apply the edit.
                 const replacementCode = PromptString.unsafe_fromLLMResponse(configuration.replacement)
-
-                const versions = await currentSiteVersion()
-                if (!versions) {
-                    throw new Error('unable to determine site version')
-                }
-
-                const selection = await getSmartApplySelection(
-                    configuration.id,
-                    configuration.instruction,
+                const now = performance.now()
+                const selection = await this.fetchSmartApplySelection(
+                    configuration,
                     replacementCode,
-                    configuration.document,
-                    model,
-                    this.options.chat,
-                    versions.codyAPIVersion
+                    model
                 )
+                console.log(`Smart apply selection latency: ${performance.now() - now}ms`)
 
                 // We finished prompting the LLM for the selection, we can now remove the "progress" decoration
                 // that indicated we where working on the full file.
@@ -362,7 +398,6 @@ export class EditManager implements vscode.Disposable {
 
                 if (selection.range.isEmpty) {
                     let insertionRange = selection.range
-
                     if (
                         selection.type === 'insert' &&
                         document.lineAt(document.lineCount - 1).text.trim().length !== 0
@@ -431,7 +466,7 @@ export class EditManager implements vscode.Disposable {
                         document: configuration.document,
                         range: selection.range,
                         mode: 'edit',
-                        instruction: ps`Ensuring that you do not duplicate code that it outside of the selection, apply the following change:\n${replacementCode}`,
+                        instruction: ps`Ensuring that you do not duplicate code that is outside of the selection, apply the following change:\n${replacementCode}`,
                         model,
                         intent: 'edit',
                     },
@@ -439,6 +474,86 @@ export class EditManager implements vscode.Disposable {
                 })
             })
         })
+    }
+
+    /**
+     * Allows you to prefetch the smart apply selection in advance (e.g., when
+     * rendering a button or finishing a prior step) so that when the user
+     * eventually calls smartApplyEdit, the selection is already cached or
+     * in-flight.
+     */
+    public async prefetchSmartApplySelection(args: SmartApplyArguments): Promise<void> {
+        const { configuration } = args
+        if (!configuration) {
+            return
+        }
+
+        if (this.inFlightSmartApplySelections.get(configuration.id)) {
+            return
+        }
+
+        console.log('prefetchSmartApplySelection: start')
+
+        if (await isUriIgnoredByContextFilterWithNotification(configuration.document.uri, 'edit')) {
+            return
+        }
+        const model =
+            configuration.model || (await firstResultFromOperation(modelsService.getDefaultEditModel()))
+        if (!model) {
+            throw new Error('No default edit model found. Please set one.')
+        }
+
+        const replacementCode = PromptString.unsafe_fromLLMResponse(configuration.replacement)
+        const selection = await this.fetchSmartApplySelection(configuration, replacementCode, model)
+
+        // Once the selection is fetched, we also prefetch the LLM response.
+        await this.executeEdit(
+            {
+                configuration: {
+                    id: configuration.id,
+                    document: configuration.document,
+                    range: selection?.range || new vscode.Range(0, 0, 0, 0),
+                    mode: 'edit',
+                    instruction: ps`Ensuring that you do not duplicate code outside the selection, apply:\n${replacementCode}`,
+                    model,
+                    intent: 'edit',
+                },
+                source: 'chat',
+            },
+            true /* prefetchOnly */
+        )
+    }
+
+    private async fetchSmartApplySelection(
+        configuration: SmartApplyArguments['configuration'],
+        replacementCode: PromptString,
+        model: string
+    ): Promise<ReturnType<typeof getSmartApplySelection>> {
+        let inFlight = this.inFlightSmartApplySelections.get(configuration.id)
+        if (!inFlight) {
+            inFlight = (async (): Promise<ReturnType<typeof getSmartApplySelection>> => {
+                const versions = await currentSiteVersion()
+                if (!versions) {
+                    throw new Error('unable to determine site version')
+                }
+                return getSmartApplySelection(
+                    configuration.id,
+                    configuration.instruction,
+                    replacementCode,
+                    configuration.document,
+                    model,
+                    this.options.chat,
+                    versions.codyAPIVersion
+                )
+            })()
+            this.inFlightSmartApplySelections.set(configuration.id, inFlight)
+        }
+        try {
+            return await inFlight
+        } catch (error) {
+            this.inFlightSmartApplySelections.delete(configuration.id)
+            throw error
+        }
     }
 
     private getProviderForTask(task: FixupTask): EditProvider {

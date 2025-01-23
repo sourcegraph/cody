@@ -132,32 +132,58 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             return
         }
 
+        function onSubmit({
+            id,
+            text,
+            instruction,
+            fileName,
+            isSelectionPrefetch,
+        }: {
+            id: string
+            text: string
+            isSelectionPrefetch: boolean
+            instruction?: PromptString
+            fileName?: string
+        }) {
+            const command = isSelectionPrefetch ? 'smartApplyPrefetchSelection' : 'smartApplySubmit'
+
+            const spanManager = new SpanManager('cody-webview')
+            const span = spanManager.startSpan(command, {
+                attributes: {
+                    sampled: true,
+                    'smartApply.id': id,
+                },
+            })
+            const traceparent = getTraceparentFromSpanContext(span.spanContext())
+
+            vscodeAPI.postMessage({
+                command,
+                id,
+                instruction: instruction?.toString(),
+                // remove the additional /n added by the text area at the end of the text
+                code: text.replace(/\n$/, ''),
+                fileName,
+                traceparent,
+            })
+            span.end()
+        }
+
         return {
+            onPrefetchSelection: (
+                id: string,
+                text: string,
+                instruction?: PromptString,
+                fileName?: string
+            ): void => {
+                onSubmit({ isSelectionPrefetch: true, id, text, instruction, fileName })
+            },
             onSubmit: (
                 id: string,
                 text: string,
                 instruction?: PromptString,
                 fileName?: string
             ): void => {
-                const spanManager = new SpanManager('cody-webview')
-                const span = spanManager.startSpan('smartApplySubmit', {
-                    attributes: {
-                        sampled: true,
-                        'smartApply.id': id,
-                    },
-                })
-                const traceparent = getTraceparentFromSpanContext(span.spanContext())
-
-                vscodeAPI.postMessage({
-                    command: 'smartApplySubmit',
-                    id,
-                    instruction: instruction?.toString(),
-                    // remove the additional /n added by the text area at the end of the text
-                    code: text.replace(/\n$/, ''),
-                    fileName,
-                    traceparent,
-                })
-                span.end()
+                onSubmit({ isSelectionPrefetch: false, id, text, instruction, fileName })
             },
             onAccept: (id: string) => {
                 vscodeAPI.postMessage({

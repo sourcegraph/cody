@@ -9,7 +9,7 @@ import {
 } from '@sourcegraph/cody-shared'
 
 import { doesFileExist } from '../../commands/utils/workspace-files'
-import { executeSmartApply } from '../../edit/smart-apply'
+import { executePrefetchSmartApplySelection, executeSmartApply } from '../../edit/smart-apply'
 import { getEditor } from '../../editor/active-editor'
 import type { VSCodeEditor } from '../../editor/vscode-editor'
 
@@ -153,14 +153,23 @@ function getSmartApplyModel(authStatus: AuthStatus): EditModel | undefined {
     return 'anthropic/claude-3-5-sonnet-20240620'
 }
 
-export async function handleSmartApply(
-    id: string,
-    code: string,
-    authStatus: AuthStatus,
-    instruction?: string | null,
-    fileUri?: string | null,
+export async function handleSmartApply({
+    id,
+    code,
+    authStatus,
+    instruction,
+    fileUri,
+    traceparent,
+    isSelectionPrefetch,
+}: {
+    id: string
+    code: string
+    authStatus: AuthStatus
+    instruction?: string | null
+    fileUri?: string | null
     traceparent?: string | undefined | null
-): Promise<void> {
+    isSelectionPrefetch: boolean
+}): Promise<void> {
     const activeEditor = getEditor()?.active
     const workspaceUri = vscode.workspace.workspaceFolders?.[0].uri
     const uri = await resolveRelativeOrAbsoluteUri(workspaceUri, fileUri, activeEditor?.document?.uri)
@@ -175,6 +184,23 @@ export async function handleSmartApply(
     const document = uri ? await vscode.workspace.openTextDocument(uri) : activeEditor?.document
     if (!document) {
         throw new Error('No editor found to insert text')
+    }
+
+    if (isSelectionPrefetch) {
+        executePrefetchSmartApplySelection({
+            configuration: {
+                id,
+                document,
+                instruction: PromptString.unsafe_fromUserQuery(instruction || ''),
+                model: getSmartApplyModel(authStatus),
+                replacement: code,
+                isNewFile,
+                traceparent,
+            },
+            source: 'chat',
+        })
+
+        return
     }
 
     const visibleEditor = vscode.window.visibleTextEditors.find(
