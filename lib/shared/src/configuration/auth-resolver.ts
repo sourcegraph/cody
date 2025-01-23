@@ -6,10 +6,12 @@ import type {
     ExternalAuthProvider,
 } from '../configuration'
 import { logError } from '../logger'
+import { startWith } from '../misc/observable'
 import { ExternalProviderAuthError } from '../sourcegraph-api/errors'
 import type { ClientSecrets } from './resolver'
 
-export const externalAuthRefresh = new Subject<void>()
+const externalAuthRefreshNotifications = new Subject<void>()
+export const externalAuthRefreshChanges = externalAuthRefreshNotifications.pipe(startWith(undefined))
 
 export function normalizeServerEndpointURL(url: string): string {
     return url.endsWith('/') ? url : `${url}/`
@@ -113,7 +115,7 @@ function createHeaderCredentials(
                     }
                 } catch (error) {
                     _headersCache = undefined
-                    externalAuthRefresh.next()
+                    externalAuthRefreshNotifications.next()
 
                     logError('resolveAuth', `External Auth Provider Error: ${error}`)
                     throw new ExternalProviderAuthError(
