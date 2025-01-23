@@ -23,7 +23,7 @@ import {
     ExternalLinkIcon,
     FileIcon,
     FolderGitIcon,
-    FolderIcon,
+    FolderOpenIcon,
     LayoutPanelTop,
     LibraryBigIcon,
     LinkIcon,
@@ -189,7 +189,7 @@ export const iconForItem: Record<
 > = {
     'symbol-method': BoxIcon,
     'symbol-structure': LayoutPanelTop,
-    folder: FolderIcon,
+    folder: FolderOpenIcon,
     'git-folder': FolderGitIcon,
     'list-selection': ListMinusIcon,
 }
