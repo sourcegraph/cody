@@ -64,10 +64,7 @@ export const AgenticContextCell: FunctionComponent<{
     }
 
     return (
-        <div
-            className="tw-flex tw-flex-col tw-justify-center tw-w-full tw-px-4 tw-gap-2 tw-border-b tw-border-border tw-text-sm tw-font-medium"
-            style={{ background: 'var(--vscode-editor-background)' }}
-        >
+        <div className="tw-flex tw-flex-col tw-justify-center tw-w-full tw-gap-2 tw-text-sm tw-font-medium">
             <Accordion
                 type="single"
                 collapsible={true}
