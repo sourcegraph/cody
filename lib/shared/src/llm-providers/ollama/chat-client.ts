@@ -4,6 +4,8 @@ import { getCompletionsModelConfig } from '../..'
 import { contextFiltersProvider } from '../../cody-ignore/context-filters-provider'
 import { onAbort } from '../../common/abortController'
 import { CompletionStopReason } from '../../inferenceClient/misc'
+import path from 'path'
+import fs from 'fs'
 
 /**
  * Calls the Ollama API for chat completions with history.
@@ -40,8 +42,17 @@ export async function ollamaChatClient({
             params.messages.map(async msg => ({
                 role: msg.speaker === 'human' ? 'user' : 'assistant',
                 content: (await msg.text?.toFilteredString(contextFiltersProvider)) ?? '',
+                images: msg.images,
             }))
         )
+        const imagePath = path.join(process.cwd(), '/Users/arafatkhan/Desktop/cody/a.png')
+        const base64Image = `${fs.readFileSync(imagePath).toString('base64')}`
+        if (params.base64Image !== undefined || base64Image !== undefined) {
+            const lastUserMessage = messages.findLast(msg => msg.role === 'user')
+            if (lastUserMessage) {
+                lastUserMessage.images = [base64Image]
+            }
+        }
 
         ollama
             .chat({

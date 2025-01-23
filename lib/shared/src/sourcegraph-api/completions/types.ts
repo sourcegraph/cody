@@ -20,6 +20,12 @@ export interface Message {
     // Note: The unified API only supports one system message passed as the first message
     speaker: 'human' | 'assistant' | 'system'
     text?: PromptString
+    /**
+     * NOTE: Currently only llava multi-modal models from Ollama are supported.
+     * The base64-encoded image uploaded by user.
+     */
+    images?: string[]
+    
 }
 
 export interface CompletionResponse {
@@ -45,6 +51,11 @@ export interface CompletionParameters {
         type: 'content'
         content: string
     }
+        /**
+     * NOTE: Currently only llava multi-modal models from Ollama are supported.
+     * The base64-encoded image uploaded by user.
+     */
+        base64Image?: string
 }
 
 export interface SerializedCompletionParameters extends Omit<CompletionParameters, 'messages'> {
