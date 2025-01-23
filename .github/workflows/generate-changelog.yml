@@ -77,7 +77,8 @@ jobs:
             CHANGELOG_PATH="vscode/CHANGELOG.md"
             PR_BRANCH="release/vscode-v%s"
           else
-            CHANGELOG_PATH="agent/jetbrains/CHANGELOG.md"
+            # TODO change this once we have a proper JetBrains changelog
+            CHANGELOG_PATH="vscode/CHANGELOG.md"
             PR_BRANCH="release/jb-v%s"
           fi
 
@@ -97,6 +98,7 @@ jobs:
             --output.changelog.marker='<!--- {/_ CHANGELOG_START _/} -->' \
             --releaseregistry.version=${VERSION}      
       - name: Update version
+        if: github.event.inputs.editor == 'VS Code'
         env:
           VERSION: ${{ github.event.inputs.version }}
         run: |
