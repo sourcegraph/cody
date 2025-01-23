@@ -231,7 +231,7 @@ export class DeepCodyAgent {
             }
 
             const step = this.stepsManager.addStep({
-                title: 'Finding Relevant Files',
+                title: 'Finding relevant files',
                 content: 'in workspace',
             })
             const results = await Promise.all(
