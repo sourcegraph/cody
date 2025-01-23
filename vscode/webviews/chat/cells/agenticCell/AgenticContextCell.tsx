@@ -96,10 +96,10 @@ export const AgenticContextCell: FunctionComponent<{
                             </div>
                         }
                         containerClassName={className}
-                        contentClassName="tw-flex tw-flex-col tw-gap-4 tw-max-w-full"
+                        contentClassName="tw-flex tw-flex-col tw-gap-2 tw-max-w-full"
                         data-testid="context"
                     >
-                        <AccordionContent className="tw-flex tw-flex-col tw-gap-4" overflow={false}>
+                        <AccordionContent className="tw-flex tw-flex-col tw-gap-2" overflow={false}>
                             {processes && (
                                 <ProcessList
                                     processes={processes}
@@ -166,7 +166,7 @@ const ProcessList: FC<{
     headerIconClassName?: string
 }> = ({ processes, isContextLoading, headerIconClassName }) => {
     return (
-        <div className="tw-flex tw-flex-col tw-gap-3 tw-ml-[1rem]">
+        <div className="tw-flex tw-flex-col tw-ml-[1rem]">
             {processes.map(process => (
                 <ProcessItem
                     key={process.id}
@@ -200,7 +200,7 @@ const ProcessItem: FC<{
                 ) : null}
             </div>
             <div className="tw-flex-grow tw-min-w-0">
-                <div className="tw-truncate tw-max-w-full tw-text-sm">
+                <div className={`tw-truncate tw-max-w-full tw-text-sm ${getStateStyles(process.state)}`}>
                     <span>{process.type !== 'tool' ? process.title : process.title ?? process.id}</span>
                     {process.content && (
                         <span
@@ -214,4 +214,17 @@ const ProcessItem: FC<{
             </div>
         </div>
     )
+}
+
+const getStateStyles = (state: string) => {
+    switch (state) {
+        case 'error':
+            return 'tw-text-red-700'
+        case 'completed':
+            return 'tw-text-green-700'
+        case 'pending':
+            return 'tw-text-blue-700'
+        default:
+            return 'tw-text-muted-foreground'
+    }
 }
