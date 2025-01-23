@@ -326,7 +326,7 @@ export async function tokenCallbackHandler(uri: vscode.Uri): Promise<void> {
     const params = new URLSearchParams(uri.query)
 
     const token = params.get('code') || params.get('token')
-    const endpoint = params.get('endpoint') ?? currentAuthStatus().endpoint
+    const endpoint = currentAuthStatus().endpoint
 
     // If we were provided an instance URL then it means we are
     // request the user setup auth with a different sourcegraph instance

@@ -1,5 +1,6 @@
 import { Observable, Subject, interval, map, merge } from 'observable-fns'
 import semver from 'semver'
+import type { AuthStatus } from '..'
 import { authStatus } from '../auth/authStatus'
 import { editorWindowIsFocused } from '../editor/editorState'
 import { logDebug, logError } from '../logger'
@@ -70,6 +71,15 @@ export interface CodyClientConfig {
     notices: CodyNotice[]
 
     temporarySettings: Partial<TemporarySettings>
+
+    // The version of the Sourcegraph instance.
+    siteVersion?: string
+
+    // Whether the user should be able to use the omnibox feature.
+    omniBoxEnabled: boolean
+
+    // Whether code search is enabled for the SG instance.
+    codeSearchEnabled: boolean
 }
 
 export const dummyClientConfigForTest: CodyClientConfig = {
@@ -83,6 +93,9 @@ export const dummyClientConfigForTest: CodyClientConfig = {
     intentDetection: 'enabled',
     temporarySettings: {},
     notices: [],
+    siteVersion: undefined,
+    omniBoxEnabled: false,
+    codeSearchEnabled: false,
 }
 
 /**
@@ -138,7 +151,9 @@ export class ClientConfigSingleton {
                       // linear.app/sourcegraph/issue/CODY-3745/codys-background-periodic-network-access-causes-2fa.
                       filter((_value): _value is undefined => editorWindowIsFocused()),
                       startWith(undefined),
-                      switchMap(() => promiseFactoryToObservable(signal => this.fetchConfig(signal)))
+                      switchMap(() =>
+                          promiseFactoryToObservable(signal => this.fetchConfig(authStatus, signal))
+                      )
                   )
                 : Observable.of(undefined)
         ),
@@ -172,95 +187,105 @@ export class ClientConfigSingleton {
         return await firstValueFrom(this.changes.pipe(skipPendingOperation()), signal)
     }
 
-    private async fetchConfig(signal?: AbortSignal): Promise<CodyClientConfig> {
+    private async fetchConfig(authStatus: AuthStatus, signal?: AbortSignal): Promise<CodyClientConfig> {
         logDebug('ClientConfigSingleton', 'refreshing configuration')
 
-        // Determine based on the site version if /.api/client-config is available.
-        return graphqlClient
-            .getSiteVersion(signal)
-            .then(siteVersion => {
-                signal?.throwIfAborted()
-                if (isError(siteVersion)) {
-                    if (isAbortError(siteVersion)) {
-                        throw siteVersion
-                    }
-                    logError(
-                        'ClientConfigSingleton',
-                        'Failed to determine site version, GraphQL error',
-                        siteVersion
-                    )
-                    return false // assume /.api/client-config is not supported
-                }
+        try {
+            // Determine based on the site version if /.api/client-config is available.
+            const siteVersion = await graphqlClient.getSiteVersion(signal)
 
+            signal?.throwIfAborted()
+
+            let supportsClientConfig = false
+
+            let omniBoxEnabled = false
+
+            if (isError(siteVersion)) {
+                if (isAbortError(siteVersion)) {
+                    throw siteVersion
+                }
+                logError(
+                    'ClientConfigSingleton',
+                    'Failed to determine site version, GraphQL error',
+                    siteVersion
+                )
+
+                supportsClientConfig = false
+            } else {
                 // Insiders and dev builds support the new /.api/client-config endpoint
                 const insiderBuild = siteVersion.length > 12 || siteVersion.includes('dev')
-                if (insiderBuild) {
-                    return true
-                }
 
                 // Sourcegraph instances before 5.5.0 do not support the new /.api/client-config endpoint.
-                if (semver.lt(siteVersion, '5.5.0')) {
-                    return false
+                supportsClientConfig = insiderBuild || !semver.lt(siteVersion, '5.5.0')
+
+                const isDotCom =
+                    !authStatus.authenticated ||
+                    authStatus.endpoint.startsWith('https://sourcegraph.com')
+                // Enable OmniBox for Sourcegraph instances 6.0.0 and above or dev instances
+                omniBoxEnabled = !isDotCom && (insiderBuild || semver.gte(siteVersion, '6.0.0'))
+            }
+
+            signal?.throwIfAborted()
+
+            // If /.api/client-config is not available, fallback to the myriad of GraphQL
+            // requests that we previously used to determine the client configuration
+            const clientConfig = await (supportsClientConfig
+                ? this.fetchConfigEndpoint(signal)
+                : this.fetchClientConfigLegacy(signal))
+
+            signal?.throwIfAborted()
+            logDebug('ClientConfigSingleton', 'refreshed', JSON.stringify(clientConfig))
+
+            return Promise.all([
+                graphqlClient.viewerSettings(signal),
+                graphqlClient.temporarySettings(signal),
+                graphqlClient.codeSearchEnabled(signal),
+            ]).then(([viewerSettings, temporarySettings, codeSearchEnabled]) => {
+                const config: CodyClientConfig = {
+                    ...clientConfig,
+                    intentDetection: 'enabled',
+                    notices: [],
+                    temporarySettings: {},
+                    siteVersion: isError(siteVersion) ? undefined : siteVersion,
+                    omniBoxEnabled,
+                    codeSearchEnabled: isError(codeSearchEnabled) ? true : codeSearchEnabled,
                 }
-                return true
-            })
-            .then(supportsClientConfig => {
-                signal?.throwIfAborted()
 
-                // If /.api/client-config is not available, fallback to the myriad of GraphQL
-                // requests that we previously used to determine the client configuration
-                if (!supportsClientConfig) {
-                    return this.fetchClientConfigLegacy(signal)
+                // Don't fail the whole chat because of viewer setting (used only to show banners)
+                if (!isError(viewerSettings)) {
+                    config.intentDetection = ['disabled', 'enabled', 'opt-in'].includes(
+                        viewerSettings['omnibox.intentDetection']
+                    )
+                        ? viewerSettings['omnibox.intentDetection']
+                        : 'enabled'
+                    // Make sure that notice object will have all important field (notices come from
+                    // instance global JSONC configuration so they can have any arbitrary field values.
+                    config.notices = Array.from<Partial<CodyNotice>, CodyNotice>(
+                        viewerSettings['cody.notices'] ?? [],
+                        (notice, index) => ({
+                            key: notice?.key ?? index.toString(),
+                            title: notice?.title ?? '',
+                            message: notice?.message ?? '',
+                        })
+                    )
                 }
 
-                return this.fetchConfigEndpoint(signal)
-            })
-            .then(clientConfig => {
-                signal?.throwIfAborted()
-                logDebug('ClientConfigSingleton', 'refreshed', JSON.stringify(clientConfig))
-                return Promise.all([
-                    graphqlClient.viewerSettings(signal),
-                    graphqlClient.temporarySettings(signal),
-                ]).then(([viewerSettings, temporarySettings]) => {
-                    const config: CodyClientConfig = {
-                        ...clientConfig,
-                        intentDetection: 'enabled',
-                        notices: [],
-                        temporarySettings: {},
-                    }
-
-                    // Don't fail the whole chat because of viewer setting (used only to show banners)
-                    if (!isError(viewerSettings)) {
-                        config.intentDetection = ['disabled', 'enabled', 'opt-in'].includes(
-                            viewerSettings['omnibox.intentDetection']
-                        )
-                            ? viewerSettings['omnibox.intentDetection']
-                            : 'enabled'
-                        // Make sure that notice object will have all important field (notices come from
-                        // instance global JSONC configuration so they can have any arbitrary field values.
-                        config.notices = Array.from<Partial<CodyNotice>, CodyNotice>(
-                            viewerSettings['cody.notices'] ?? [],
-                            (notice, index) => ({
-                                key: notice?.key ?? index.toString(),
-                                title: notice?.title ?? '',
-                                message: notice?.message ?? '',
-                            })
-                        )
-                    }
-
-                    if (!isError(temporarySettings)) {
-                        config.temporarySettings = temporarySettings
-                    }
-
-                    return config
-                })
-            })
-            .catch(e => {
-                if (!isAbortError(e)) {
-                    logError('ClientConfigSingleton', 'failed to refresh client config', e)
+                if (codeSearchEnabled === false) {
+                    config.intentDetection = 'disabled'
                 }
-                throw e
+
+                if (!isError(temporarySettings)) {
+                    config.temporarySettings = temporarySettings
+                }
+
+                return config
             })
+        } catch (e) {
+            if (!isAbortError(e)) {
+                logError('ClientConfigSingleton', 'failed to refresh client config', e)
+            }
+            throw e
+        }
     }
 
     private async fetchClientConfigLegacy(signal?: AbortSignal): Promise<CodyClientConfig> {
@@ -284,6 +309,8 @@ export class ClientConfigSingleton {
             userShouldUseEnterprise: false,
             notices: [],
             temporarySettings: {},
+            omniBoxEnabled: false,
+            codeSearchEnabled: false,
         }
     }
 

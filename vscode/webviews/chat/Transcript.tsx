@@ -37,7 +37,7 @@ import type { ApiPostMessage } from '../Chat'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
 import { SpanManager } from '../utils/spanManager'
 import { getTraceparentFromSpanContext, useTelemetryRecorder } from '../utils/telemetry'
-import { useExperimentalOneBox } from '../utils/useExperimentalOneBox'
+import { useOmniBox } from '../utils/useOmniBox'
 import type { CodeBlockActionsProps } from './ChatMessageContent/ChatMessageContent'
 import {
     ContextCell,
@@ -406,7 +406,8 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
     )
 
     const extensionAPI = useExtensionAPI()
-    const experimentalOneBoxEnabled = useExperimentalOneBox()
+    const experimentalOneBoxEnabled = useOmniBox()
+
     const prefetchIntent = useMemo(() => {
         const handler = async (editorValue: SerializedPromptEditorValue) => {
             if (!experimentalOneBoxEnabled || !doIntentDetection) {
