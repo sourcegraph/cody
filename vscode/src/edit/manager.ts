@@ -116,13 +116,8 @@ export class EditManager implements vscode.Disposable {
      * “provider.prefetchEdit” instead of “provider.startEdit.” This is controlled
      * by the “prefetchOnly” parameter. If true, we kick off streaming in the background
      * but do not immediately apply the edit to the user’s file.
-     *
-     * We also reuse an existing fixup task (if present) to avoid creating extra entities.
      */
-    public async executeEdit(
-        args: ExecuteEditArguments = {},
-        prefetchOnly = false
-    ): Promise<FixupTask | undefined> {
+    public async executeEdit(args: ExecuteEditArguments = {}): Promise<FixupTask | undefined> {
         const {
             configuration = {},
             /**
@@ -132,6 +127,7 @@ export class EditManager implements vscode.Disposable {
              **/
             source = DEFAULT_EVENT_SOURCE,
             telemetryMetadata,
+            isPrefetchOnly,
         } = args
         const clientConfig = await ClientConfigSingleton.getInstance().getConfig()
         if (!clientConfig?.customCommandsEnabled) {
@@ -194,7 +190,7 @@ export class EditManager implements vscode.Disposable {
                 configuration.insertionPoint,
                 telemetryMetadata,
                 configuration.id,
-                prefetchOnly
+                isPrefetchOnly
             )
         } else {
             task = await this.options.controller.promptUserForTask(
@@ -270,13 +266,13 @@ export class EditManager implements vscode.Disposable {
         }
         const provider = this.getProviderForTask(task)
 
-        if (prefetchOnly) {
+        if (isPrefetchOnly) {
             await provider.prefetchEdit()
-            return task
+        } else {
+            this.options.controller.startDecorator(task)
+            await provider.startEdit()
         }
 
-        this.options.controller.startDecorator(task)
-        await provider.startEdit()
         return task
     }
 
@@ -475,10 +471,9 @@ export class EditManager implements vscode.Disposable {
     }
 
     /**
-     * Allows you to prefetch the smart apply selection in advance (e.g., when
-     * rendering a button or finishing a prior step) so that when the user
-     * eventually calls smartApplyEdit, the selection is already cached or
-     * in-flight.
+     * Allows you to prefetch the smart apply response in advance (e.g., when
+     * rendering a button) so that when the user eventually trigger smartApplyEdit,
+     * the response is already cached or in-flight.
      */
     public async prefetchSmartApply(args: SmartApplyArguments): Promise<void> {
         const { configuration } = args
@@ -505,21 +500,19 @@ export class EditManager implements vscode.Disposable {
         const selection = await this.fetchSmartApplySelection(configuration, replacementCode, model)
 
         // Once the selection is fetched, we also prefetch the LLM response.
-        await this.executeEdit(
-            {
-                configuration: {
-                    id: configuration.id,
-                    document: configuration.document,
-                    range: selection?.range || new vscode.Range(0, 0, 0, 0),
-                    mode: 'edit',
-                    instruction: ps`Ensuring that you do not duplicate code outside the selection, apply:\n${replacementCode}`,
-                    model,
-                    intent: 'edit',
-                },
-                source: 'chat',
+        await this.executeEdit({
+            configuration: {
+                id: configuration.id,
+                document: configuration.document,
+                range: selection?.range || new vscode.Range(0, 0, 0, 0),
+                mode: 'edit',
+                instruction: ps`Ensuring that you do not duplicate code outside the selection, apply:\n${replacementCode}`,
+                model,
+                intent: 'edit',
             },
-            true /* prefetchOnly */
-        )
+            source: 'chat',
+            isPrefetchOnly: true,
+        })
     }
 
     private async fetchSmartApplySelection(

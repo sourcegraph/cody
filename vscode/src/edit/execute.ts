@@ -51,6 +51,7 @@ export interface ExecuteEditArguments {
     }
     source?: EventSource
     telemetryMetadata?: FixupTelemetryMetadata
+    isPrefetchOnly?: boolean
 }
 
 /**
