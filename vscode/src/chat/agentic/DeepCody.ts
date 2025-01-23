@@ -189,7 +189,10 @@ export class DeepCodyAgent {
         span.addEvent('reviewLoop')
         for (let i = 0; i < maxLoops && !chatAbortSignal.aborted; i++) {
             this.stats.loop++
-            const step = this.stepsManager.addStep({ title: 'Reflecting' })
+            const step = this.stepsManager.addStep({
+                title: 'Reflecting',
+                state: 'pending', // Explicitly set pending state
+            })
             const newContext = await this.review(requestID, span, chatAbortSignal)
             this.statusCallback.onComplete(step.id)
             if (!newContext.length) break
@@ -227,8 +230,10 @@ export class DeepCodyAgent {
                 return []
             }
 
-            const step = this.stepsManager.addStep({ title: 'Retrieving context' })
-
+            const step = this.stepsManager.addStep({
+                title: 'Finding Relevant Files',
+                content: 'in workspace',
+            })
             const results = await Promise.all(
                 this.tools.map(async tool => {
                     try {
@@ -283,7 +288,7 @@ export class DeepCodyAgent {
             if (reviewed.length > 0) {
                 this.statusCallback.onStream({
                     title: 'Optimizing context',
-                    content: `selected ${toPlural(reviewed.length, 'item')}`,
+                    content: `${toPlural(reviewed.length, 'item')} selected`,
                 })
                 const userAdded = this.context.filter(c => isUserAddedItem(c))
                 reviewed.push(...userAdded)
