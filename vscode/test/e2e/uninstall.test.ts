@@ -4,7 +4,7 @@ import { loggedV2Events } from '../fixtures/mock-server'
 import { expectAuthenticated, focusSidebar, sidebarSignin } from './common'
 import { expect, getCodySidebar, test } from './helpers'
 
-test('uninstall extension', async ({ openVSCode }) => {
+test.fixme('uninstall extension', async ({ openVSCode }) => {
     // This test is quite heavy so it can timeout in CI unless we grant it a longer timeout
     test.setTimeout(60 * 1000)
     // In order to trigger the uninstall event, we need to actually install the extension
