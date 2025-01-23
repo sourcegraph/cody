@@ -1,5 +1,4 @@
 import { Subject } from 'observable-fns'
-import { ExternalAuthProviderError } from '..'
 import type {
     AuthCredentials,
     ClientConfiguration,
@@ -7,6 +6,7 @@ import type {
     ExternalAuthProvider,
 } from '../configuration'
 import { logError } from '../logger'
+import { ExternalAuthProviderError } from '../sourcegraph-api/errors'
 import type { ClientSecrets } from './resolver'
 
 export const externalAuthRefresh = new Subject<void>()

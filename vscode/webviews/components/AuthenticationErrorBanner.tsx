@@ -1,11 +1,11 @@
-import type { AuthenticationError } from '@sourcegraph/cody-shared'
+import type { AuthError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
 import { TriangleAlertIcon } from 'lucide-react'
 import type React from 'react'
 import { useCallback } from 'react'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
 import { Button } from './shadcn/ui/button'
 interface AuthenticationErrorBannerProps {
-    errorMessage: AuthenticationError
+    errorMessage: AuthError
 }
 
 export const AuthenticationErrorBanner: React.FC<AuthenticationErrorBannerProps> = ({
