@@ -1312,53 +1312,6 @@
             "~/.mitmproxy/mitmproxy-ca-cert.pem",
             "-----BEGIN CERTIFICATE-----\n...\n-----END CERTIFICATE-----"
           ]
-        },
-        "cody.auth.externalProviders": {
-          "type": "array",
-          "markdownDescription": "Configure external authentication providers for Cody requests. Each provider consists of a command that generates HTTP headers used for authentication for a given endpoint.\n\n**How it works:**\n1. The specified command outputs a JSON object with header-value pairs\n2. These headers are included in authenticated Cody requests to the specified endpoint\n3. HTTP authentication proxy need to be used to enable custom authentication flows (e.g. JWT tokens, Oath2, etc)\n\nSee [HTTP Authentication Proxies](https://sourcegraph.com/docs/admin/auth#http-authentication-proxies) for proxy configuration.",
-          "items": {
-            "type": "object",
-            "required": ["endpoint", "executable"],
-            "properties": {
-              "endpoint": {
-                "type": "string",
-                "description": "The endpoint URL of the Sourcegraph instance"
-              },
-              "executable": {
-                "type": "object",
-                "required": ["commandLine"],
-                "properties": {
-                  "commandLine": {
-                    "type": "array",
-                    "items": {
-                      "type": "string"
-                    },
-                    "description": "Command line arguments to execute the command."
-                  },
-                  "environment": {
-                    "type": "object",
-                    "additionalProperties": {
-                      "type": "string"
-                    },
-                    "description": "Environment variables to set when executing the command."
-                  },
-                  "shell": {
-                    "type": "string",
-                    "description": "If true, runs command inside of a shell. Uses '/bin/sh' on Unix, and process.env.ComSpec on Windows. A different shell can be specified as a string."
-                  },
-                  "timeout": {
-                    "type": "number",
-                    "description": "Timeout for executing the command in milliseconds."
-                  },
-                  "windowsHide": {
-                    "type": "boolean",
-                    "description": "Whether to hide the console window that would normally be created for the child process on Windows."
-                  }
-                }
-              }
-            }
-          },
-          "default": []
         }
       }
     },
