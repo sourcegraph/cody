@@ -29,7 +29,7 @@ async function doSendTraceData(spanData: any): Promise<void> {
     const traceUrl = new URL('/-/debug/otlp/v1/traces', auth.serverEndpoint)
 
     const headers = new Headers({ 'Content-Type': 'application/json' })
-    await addAuthHeaders(auth, headers, traceUrl)
+    addAuthHeaders(auth, headers, traceUrl)
 
     const response = await fetch(traceUrl, {
         method: 'POST',

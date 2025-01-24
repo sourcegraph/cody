@@ -72,16 +72,12 @@ class DefaultCodeCompletionsClient implements CodeCompletionsClient {
                 // c.f. https://github.com/microsoft/vscode/issues/173861
                 headers.set('Content-Type', 'application/json; charset=utf-8')
                 addCodyClientIdentificationHeaders(headers)
+                addAuthHeaders(auth, headers, url)
 
                 if (tracingFlagEnabled) {
                     headers.set('X-Sourcegraph-Should-Trace', '1')
-                    addTraceparent(headers)
-                }
 
-                try {
-                    await addAuthHeaders(auth, headers, url)
-                } catch (error: any) {
-                    throw recordErrorToSpan(span, error)
+                    addTraceparent(headers)
                 }
 
                 // We enable streaming only for Node environments right now because it's hard to make

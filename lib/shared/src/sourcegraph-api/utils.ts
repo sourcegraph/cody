@@ -36,13 +36,13 @@ export function toPartialUtf8String(buf: Buffer): { str: string; buf: Buffer } {
     }
 }
 
-export async function addAuthHeaders(auth: AuthCredentials, headers: Headers, url: URL): Promise<void> {
+export function addAuthHeaders(auth: AuthCredentials, headers: Headers, url: URL): void {
     // We want to be sure we sent authorization headers only to the valid endpoint
     if (auth.credentials && url.host === new URL(auth.serverEndpoint).host) {
         if ('token' in auth.credentials) {
             headers.set('Authorization', `token ${auth.credentials.token}`)
         } else if (typeof auth.credentials.getHeaders === 'function') {
-            for (const [key, value] of Object.entries(await auth.credentials.getHeaders())) {
+            for (const [key, value] of Object.entries(auth.credentials.getHeaders())) {
                 headers.set(key, value)
             }
         } else {
