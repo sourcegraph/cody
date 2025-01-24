@@ -4,6 +4,11 @@ on:
   push:
     branches:
       - main
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   test:
     name: JetBrains tests
@@ -65,7 +70,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: plugin
-          path: './jetbrains/build/distributions/Sourcegraph-*.zip'
+          path: "./jetbrains/build/distributions/Sourcegraph-*.zip"
           compression-level: 0
           retention-days: 7
   plugin-verifier:
@@ -83,7 +88,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          plugin-location: '*.zip'
+          plugin-location: "*.zip"
           # TODO (pkukielka): Upper range should be bumped to 251.14649.49-EAP-SNAPSHOT
           # as soon as problem with Git4Idea dependencies will get resolved
           ide-versions: |
@@ -100,6 +105,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: plugin-verifier-reports
-          path: 'verification-*'
+          path: "verification-*"
           compression-level: 9
-

@@ -3,9 +3,14 @@ on:
   workflow_dispatch:
     inputs:
       repetitions:
-        description: 'How many times to repeat each test'
+        description: "How many times to repeat each test"
         type: number
         default: 10
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   test:
     name: Build and run tests

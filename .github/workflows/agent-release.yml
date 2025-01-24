@@ -5,6 +5,10 @@ on:
     tags:
       - agent-v*
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   release:
     if: github.repository == 'sourcegraph/cody'
