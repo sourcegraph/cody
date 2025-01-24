@@ -119,6 +119,7 @@ function exampleFromCsvRecord(record: any): Example {
 }
 
 export interface ExampleOutput extends Example {
+    rewrittenQuery: string
     actualContext: EvalContextItem[]
 }
 
@@ -168,6 +169,7 @@ export async function writeExamplesToCSV(outputFile: string, examples: ExampleOu
             { id: 'type', title: 'type' },
             { id: 'targetRepoRevs', title: 'targetRepoRevs' },
             { id: 'query', title: 'query' },
+            { id: 'rewrittenQuery', title: 'rewrittenQuery' },
             { id: 'essentialContext', title: 'essentialContext' },
             { id: 'helpfulContext_optional', title: 'helpfulContext_optional' },
             { id: 'langs_optional', title: 'langs_optional' },
@@ -187,6 +189,7 @@ function exampleToCsvRecord(example: ExampleOutput): any {
         type: example.type,
         targetRepoRevs: repoRevsToString(example.targetRepoRevs),
         query: example.query,
+        rewrittenQuery: example.rewrittenQuery,
         essentialContext: example.essentialContext.map(contextItemToString).join('\n'),
         helpfulContext_optional: example.helpfulContext
             .map(c => `${c.repoName}:${c.path}:${c.startLine}-${c.endLine}`)
