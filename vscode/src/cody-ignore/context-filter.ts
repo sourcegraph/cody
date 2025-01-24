@@ -6,9 +6,9 @@ export async function isUriIgnoredByContextFilterWithNotification(
     uri: vscode.Uri,
     feature: CodyIgnoreFeature
 ): Promise<IsIgnored> {
-    const isIgnored = await contextFiltersProvider.isUriIgnored(uri)
+    const isIgnored = await contextFiltersProvider.isUriIgnored(uri, /* foreceFetch = */ true)
     if (isIgnored) {
-        showCodyIgnoreNotification(feature, 'context-filter')
+        showCodyIgnoreNotification(feature, isIgnored)
     }
     return isIgnored
 }

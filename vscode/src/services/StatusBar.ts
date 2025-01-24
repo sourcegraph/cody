@@ -21,8 +21,14 @@ import {
     shareReplay,
 } from '@sourcegraph/cody-shared'
 
+import {
+    AuthError,
+    InvalidAccessTokenError,
+    isAvailabilityError,
+} from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
 import { type Subscription, map } from 'observable-fns'
 import type { LiteralUnion, ReadonlyDeep } from 'type-fest'
+import { ignoreReason } from '../cody-ignore/notification'
 import { getGhostHintEnablement } from '../commands/GhostHintDecorator'
 import { getReleaseNotesURLByIDE } from '../release'
 import { version } from '../version'
@@ -285,15 +291,6 @@ export class CodyStatusBar implements vscode.Disposable {
                 interact: interactAuth,
             }
         }
-        if (!authStatus.authenticated && authStatus.error?.type === 'invalid-access-token') {
-            return {
-                icon: 'disabled',
-                tooltip: 'Your authentication has expired.\nSign in again to continue using Cody.',
-                style: 'warning',
-                tags,
-                interact: interactAuth,
-            }
-        }
 
         if (errors.size > 0) {
             const [firstError, ...otherErrors] = [...errors.values()]
@@ -323,17 +320,19 @@ export class CodyStatusBar implements vscode.Disposable {
             }
         }
 
-        if (!authStatus.authenticated && authStatus.error?.type === 'network-error') {
-            return {
-                icon: 'disabled',
-                tooltip: 'Network issues prevented Cody from signing in.',
-                style: 'error',
-                tags,
-                interact: interactNetworkIssues,
-            }
-        }
-
         if (!authStatus.authenticated) {
+            if (authStatus.error instanceof AuthError) {
+                return {
+                    icon: 'disabled',
+                    tooltip: authStatus.error.message,
+                    style: authStatus.error instanceof InvalidAccessTokenError ? 'warning' : 'error',
+                    tags,
+                    interact: isAvailabilityError(authStatus.error)
+                        ? interactNetworkIssues
+                        : interactAuth,
+                }
+            }
+
             return {
                 text: 'Sign In',
                 tooltip: 'Sign in to get started with Cody.',
@@ -605,24 +604,6 @@ function featureToggleBuilder(
             },
             buttons,
         }
-    }
-}
-
-function ignoreReason(isIgnore: IsIgnored): string | null {
-    switch (isIgnore) {
-        case false:
-            return null
-        case 'non-file-uri':
-            return 'This current file is ignored as it does not have a valid file URI.'
-        case 'no-repo-found':
-            return 'This current file is ignored as it is not in known git repository.'
-        case 'has-ignore-everything-filters':
-            return 'Your administrator has disabled Cody for this file.'
-        default:
-            if (isIgnore.startsWith('repo:')) {
-                return `Your administrator has disabled Cody for '${isIgnore.replace('repo:', '')}'.`
-            }
-            return 'The current file is ignored by Cody.'
     }
 }
 

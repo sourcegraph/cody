@@ -1,3 +1,4 @@
+import { isError } from 'lodash'
 import { authStatus } from '../auth/authStatus'
 import { firstValueFrom } from '../misc/observable'
 import { modelsService } from '../models/modelsService'
@@ -36,8 +37,8 @@ export class ChatClient {
             currentSiteVersion(),
             await firstValueFrom(authStatus),
         ])
-        if (!versions) {
-            throw new Error('unable to determine Cody API version')
+        if (isError(versions)) {
+            throw versions
         }
         if (!authStatus_.authenticated) {
             throw new Error('not authenticated')
