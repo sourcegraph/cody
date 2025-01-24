@@ -17,7 +17,6 @@ sealed class AuthenticationError {
           "invalid-access-token" -> context.deserialize<InvalidAccessTokenError>(element, InvalidAccessTokenError::class.java)
           "enterprise-user-logged-into-dotcom" -> context.deserialize<EnterpriseUserDotComError>(element, EnterpriseUserDotComError::class.java)
           "auth-config-error" -> context.deserialize<AuthConfigError>(element, AuthConfigError::class.java)
-          "external-auth-provider-error" -> context.deserialize<ExternalAuthProviderError>(element, ExternalAuthProviderError::class.java)
           else -> throw Exception("Unknown discriminator ${element}")
         }
       }
@@ -53,22 +52,13 @@ data class EnterpriseUserDotComError(
 }
 
 data class AuthConfigError(
-  val type: TypeEnum, // Oneof: auth-config-error
+  val title: String? = null,
   val message: String,
+  val type: TypeEnum, // Oneof: auth-config-error
 ) : AuthenticationError() {
 
   enum class TypeEnum {
     @SerializedName("auth-config-error") `Auth-config-error`,
-  }
-}
-
-data class ExternalAuthProviderError(
-  val type: TypeEnum, // Oneof: external-auth-provider-error
-  val message: String,
-) : AuthenticationError() {
-
-  enum class TypeEnum {
-    @SerializedName("external-auth-provider-error") `External-auth-provider-error`,
   }
 }
 
