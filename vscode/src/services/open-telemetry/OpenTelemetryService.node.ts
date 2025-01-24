@@ -79,7 +79,7 @@ export class OpenTelemetryService {
                 new CodyTraceExporter({
                     traceUrl,
                     isTracingEnabled: this.isTracingEnabled,
-                    auth,
+                    accessToken: auth.accessToken,
                 })
             )
         )

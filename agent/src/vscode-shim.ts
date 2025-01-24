@@ -136,8 +136,7 @@ export let extensionConfiguration: ExtensionConfiguration | undefined
 export function setExtensionConfiguration(newConfig: ExtensionConfiguration): void {
     extensionConfiguration = newConfig
 }
-
-export function isTokenOrEndpointChange(newConfig: ExtensionConfiguration): boolean {
+export function isAuthenticationChange(newConfig: ExtensionConfiguration): boolean {
     if (!extensionConfiguration) {
         return true
     }

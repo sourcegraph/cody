@@ -4,7 +4,6 @@ import { dependentAbortController } from '../../common/abortController'
 import { currentResolvedConfig } from '../../configuration/resolver'
 import { isError } from '../../utils'
 import { addClientInfoParams, addCodyClientIdentificationHeaders } from '../client-name-version'
-import { addAuthHeaders } from '../utils'
 
 import { CompletionsResponseBuilder } from './CompletionsResponseBuilder'
 import { type CompletionRequestParameters, SourcegraphCompletionsClient } from './client'
@@ -40,9 +39,10 @@ export class SourcegraphBrowserCompletionsClient extends SourcegraphCompletionsC
             ...requestParams.customHeaders,
         } as HeadersInit)
         addCodyClientIdentificationHeaders(headersInstance)
-        addAuthHeaders(config.auth, headersInstance, url)
         headersInstance.set('Content-Type', 'application/json; charset=utf-8')
-
+        if (config.auth.accessToken) {
+            headersInstance.set('Authorization', `token ${config.auth.accessToken}`)
+        }
         const parameters = new URLSearchParams(globalThis.location.search)
         const trace = parameters.get('trace')
         if (trace) {
@@ -132,8 +132,9 @@ export class SourcegraphBrowserCompletionsClient extends SourcegraphCompletionsC
             ...requestParams.customHeaders,
         })
         addCodyClientIdentificationHeaders(headersInstance)
-        addAuthHeaders(auth, headersInstance, url)
-
+        if (auth.accessToken) {
+            headersInstance.set('Authorization', `token ${auth.accessToken}`)
+        }
         if (new URLSearchParams(globalThis.location.search).get('trace')) {
             headersInstance.set('X-Sourcegraph-Should-Trace', 'true')
         }

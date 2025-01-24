@@ -16,10 +16,7 @@ export class LlmJudge {
         localStorage.setStorage('noop')
         setStaticResolvedConfigurationWithAuthCredentials({
             configuration: { customHeaders: undefined },
-            auth: {
-                credentials: { token: options.srcAccessToken },
-                serverEndpoint: options.srcEndpoint,
-            },
+            auth: { accessToken: options.srcAccessToken, serverEndpoint: options.srcEndpoint },
         })
         setClientCapabilities({ configuration: {}, agentCapabilities: undefined })
         this.client = new SourcegraphNodeCompletionsClient()
