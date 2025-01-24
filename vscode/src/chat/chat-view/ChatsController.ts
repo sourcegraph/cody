@@ -79,14 +79,20 @@ export class ChatsController implements vscode.Disposable {
             subscriptionDisposable(
                 authStatus.subscribe(authStatus => {
                     const hasLoggedOut = !authStatus.authenticated
-                    const hasSwitchedAccount =
-                        this.currentAuthAccount &&
-                        this.currentAuthAccount.endpoint !== authStatus.endpoint
-                    if (hasLoggedOut || hasSwitchedAccount) {
+                    console.log(
+                        'code222: this.currentAuthAccount endpoint',
+                        this.currentAuthAccount?.endpoint,
+                        '\n hasLoggedOut: ',
+                        hasLoggedOut,
+                        '\n authStatus endpoint: ',
+                        authStatus.endpoint
+                    )
+
+                    // this.currentAuthAccount = authStatus.authenticated ? { ...authStatus } : undefined
+
+                    if (hasLoggedOut) {
                         this.disposeAllChats()
                     }
-
-                    this.currentAuthAccount = authStatus.authenticated ? { ...authStatus } : undefined
                 })
             )
         )
