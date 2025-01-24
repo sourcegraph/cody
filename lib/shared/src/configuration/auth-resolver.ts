@@ -64,56 +64,38 @@ export async function resolveAuth(
     const { authExternalProviders, overrideServerEndpoint, overrideAuthToken } = configuration
     const serverEndpoint = normalizeServerEndpointURL(overrideServerEndpoint || endpoint)
 
-    try {
-        if (overrideAuthToken) {
-            return { credentials: { token: overrideAuthToken }, serverEndpoint }
+    if (overrideAuthToken) {
+        return { credentials: { token: overrideAuthToken }, serverEndpoint }
+    }
+
+    const credentials = await getExternalProviderAuthResult(serverEndpoint, authExternalProviders).catch(
+        error => {
+            throw new Error(`Failed to execute external auth command: ${error}`)
         }
+    )
 
-        const credentials = await getExternalProviderAuthResult(
-            serverEndpoint,
-            authExternalProviders
-        ).catch(error => {
-            throw new Error(`Failed to execute external auth command: ${error.message || error}`)
-        })
-
-        if (credentials) {
-            if (credentials?.expiration) {
-                const expirationMs = credentials?.expiration * 1000
-                if (expirationMs < Date.now()) {
-                    throw new Error(
-                        'Credentials expiration cannot be set to a date in the past: ' +
-                            `${new Date(expirationMs)} (${credentials.expiration})`
-                    )
-                }
-            }
-            return {
-                credentials: {
-                    expiration: credentials?.expiration,
-                    getHeaders() {
-                        return credentials.headers
-                    },
+    if (credentials) {
+        return {
+            credentials: {
+                expiration: credentials?.expiration,
+                getHeaders() {
+                    return credentials.headers
                 },
-                serverEndpoint,
-            }
-        }
-
-        const token = await clientSecrets.getToken(serverEndpoint).catch(error => {
-            throw new Error(
-                `Failed to get access token for endpoint ${serverEndpoint}: ${error.message || error}`
-            )
-        })
-
-        return {
-            credentials: token
-                ? { token, source: await clientSecrets.getTokenSource(serverEndpoint) }
-                : undefined,
+            },
             serverEndpoint,
         }
-    } catch (error) {
-        return {
-            credentials: undefined,
-            serverEndpoint,
-            error,
-        }
+    }
+
+    const token = await clientSecrets.getToken(serverEndpoint).catch(error => {
+        throw new Error(
+            `Failed to get access token for endpoint ${serverEndpoint}: ${error.message || error}`
+        )
+    })
+
+    return {
+        credentials: token
+            ? { token, source: await clientSecrets.getTokenSource(serverEndpoint) }
+            : undefined,
+        serverEndpoint,
     }
 }
