@@ -18,7 +18,6 @@ export type TokenSource = 'redirect' | 'paste'
 export interface AuthCredentials {
     serverEndpoint: string
     credentials: HeaderCredential | TokenCredential | undefined
-    error?: any
 }
 
 export interface HeaderCredential {
