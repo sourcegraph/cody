@@ -1,7 +1,6 @@
 import type { ExportResult } from '@opentelemetry/core'
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http'
 import type { ReadableSpan } from '@opentelemetry/sdk-trace-base'
-import { type AuthCredentials, addAuthHeaders } from '@sourcegraph/cody-shared'
 
 const MAX_TRACE_RETAIN_MS = 60 * 1000
 
@@ -11,16 +10,15 @@ export class CodyTraceExporter extends OTLPTraceExporter {
 
     constructor({
         traceUrl,
-        auth,
+        accessToken,
         isTracingEnabled,
-    }: { traceUrl: string; auth: AuthCredentials | null; isTracingEnabled: boolean }) {
-        const headers = new Headers()
-        if (auth) addAuthHeaders(auth, headers, new URL(traceUrl))
-
+    }: { traceUrl: string; accessToken: string | null; isTracingEnabled: boolean }) {
         super({
             url: traceUrl,
             httpAgentOptions: { rejectUnauthorized: false },
-            headers: Object.fromEntries(headers.entries()),
+            headers: {
+                ...(accessToken ? { Authorization: `token ${accessToken}` } : {}),
+            },
         })
         this.isTracingEnabled = isTracingEnabled
     }
