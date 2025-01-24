@@ -135,12 +135,3 @@ export function isNetworkLikeError(error: Error): boolean {
         message.includes('SELF_SIGNED_CERT_IN_CHAIN')
     )
 }
-
-export class ExternalProviderAuthError extends Error {
-    // Added to make TypeScript understand that ExternalProviderAuthError is not the same as Error.
-    public readonly isExternalProviderAuthError = true
-}
-
-export function isExternalProviderAuthError(error: unknown): error is ExternalProviderAuthError {
-    return error instanceof ExternalProviderAuthError
-}

@@ -92,7 +92,8 @@ describe('auth-resolver', () => {
         expect(auth.serverEndpoint).toBe('https://my-server.com/')
 
         const headerCredential = auth.credentials as HeaderCredential
-        expect(await headerCredential.getHeaders()).toStrictEqual({
+        expect(headerCredential.expiration).toBe(futureEpoch)
+        expect(headerCredential.getHeaders()).toStrictEqual({
             Authorization: 'token X',
         })
 
@@ -122,9 +123,8 @@ describe('auth-resolver', () => {
 
         expect(auth.serverEndpoint).toBe('https://my-server.com/')
 
-        const headerCredential = auth.credentials as HeaderCredential
-        expect(headerCredential.getHeaders).toBeInstanceOf(Function)
-        expect(headerCredential.getHeaders()).rejects.toThrowError('Unexpected token')
+        expect(auth.credentials).toBe(undefined)
+        expect(auth.error.message).toContain('Failed to execute external auth command: Unexpected token')
     })
 
     test('resolve custom auth provider error handling - bad expiration', async () => {
@@ -158,9 +158,8 @@ describe('auth-resolver', () => {
 
         expect(auth.serverEndpoint).toBe('https://my-server.com/')
 
-        const headerCredential = auth.credentials as HeaderCredential
-        expect(headerCredential.getHeaders).toBeInstanceOf(Function)
-        expect(headerCredential.getHeaders()).rejects.toThrowError(
+        expect(auth.credentials).toBe(undefined)
+        expect(auth.error.message).toContain(
             'Credentials expiration cannot be set to a date in the past'
         )
     })

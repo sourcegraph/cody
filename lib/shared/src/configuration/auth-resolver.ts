@@ -1,15 +1,10 @@
-import { Subject } from 'observable-fns'
 import type {
     AuthCredentials,
     ClientConfiguration,
     ExternalAuthCommand,
     ExternalAuthProvider,
 } from '../configuration'
-import { logError } from '../logger'
-import { ExternalProviderAuthError } from '../sourcegraph-api/errors'
 import type { ClientSecrets } from './resolver'
-
-export const externalAuthRefresh = new Subject<void>()
 
 export function normalizeServerEndpointURL(url: string): string {
     return url.endsWith('/') ? url : `${url}/`
@@ -42,88 +37,20 @@ interface HeaderCredentialResult {
     expiration?: number | undefined
 }
 
-let _headersCache: Promise<HeaderCredentialResult> | undefined = undefined
+async function getExternalProviderAuthResult(
+    serverEndpoint: string,
+    authExternalProviders: readonly ExternalAuthProvider[]
+): Promise<HeaderCredentialResult | undefined> {
+    const externalProvider = authExternalProviders.find(
+        provider => normalizeServerEndpointURL(provider.endpoint) === serverEndpoint
+    )
 
-function hasExpired(expiration: number | undefined): boolean {
-    return expiration !== undefined && expiration * 1000 < Date.now()
-}
-
-async function getExternalProviderHeaders(
-    externalProvider: ExternalAuthProvider
-): Promise<HeaderCredentialResult> {
-    const result = await executeCommand(externalProvider.executable).catch(error => {
-        throw new Error(`Failed to execute external auth command: ${error.message || error}`)
-    })
-
-    const credentials = JSON.parse(result) as HeaderCredentialResult
-
-    if (!credentials?.headers) {
-        throw new Error(`Output of the external auth command is invalid: ${result}`)
+    if (externalProvider) {
+        const result = await executeCommand(externalProvider.executable)
+        return JSON.parse(result)
     }
 
-    if (hasExpired(credentials.expiration)) {
-        throw new Error(
-            'Credentials expiration cannot be set to a date in the past: ' +
-                `${new Date(credentials.expiration! * 1000)} (${credentials.expiration})`
-        )
-    }
-
-    return credentials
-}
-
-async function createTokenCredentials(
-    clientSecrets: ClientSecrets,
-    serverEndpoint: string
-): Promise<AuthCredentials> {
-    const token = await clientSecrets.getToken(serverEndpoint).catch(error => {
-        throw new Error(
-            `Failed to get access token for endpoint ${serverEndpoint}: ${error.message || error}`
-        )
-    })
-
-    return {
-        credentials: token
-            ? { token, source: await clientSecrets.getTokenSource(serverEndpoint) }
-            : undefined,
-        serverEndpoint,
-    }
-}
-
-function createHeaderCredentials(
-    externalProvider: ExternalAuthProvider,
-    serverEndpoint: string
-): AuthCredentials {
-    // Needed in case of account switch so we reset the cache.
-    // We could also set it to undefined but there is no harm in pre-loading the cache.
-    _headersCache = getExternalProviderHeaders(externalProvider)
-
-    return {
-        credentials: {
-            async getHeaders() {
-                try {
-                    while (true) {
-                        let observed = _headersCache
-                        if (!observed || hasExpired((await observed)?.expiration)) {
-                            if (observed !== _headersCache) {
-                                continue // cache already changed, retry
-                            }
-                            observed = _headersCache = getExternalProviderHeaders(externalProvider)
-                        }
-                        return (await observed).headers
-                    }
-                } catch (error) {
-                    _headersCache = undefined
-                    externalAuthRefresh.next()
-
-                    logError('resolveAuth', `External Auth Provider Error: ${error}`)
-                    throw new ExternalProviderAuthError(
-                        error instanceof Error ? error.message : String(error)
-                    )
-                }
-            },
-        },
-        serverEndpoint,
-    }
+    return undefined
 }
 
 export async function resolveAuth(
@@ -142,13 +69,46 @@ export async function resolveAuth(
             return { credentials: { token: overrideAuthToken }, serverEndpoint }
         }
 
-        const externalProvider = authExternalProviders.find(
-            provider => normalizeServerEndpointURL(provider.endpoint) === serverEndpoint
-        )
+        const credentials = await getExternalProviderAuthResult(
+            serverEndpoint,
+            authExternalProviders
+        ).catch(error => {
+            throw new Error(`Failed to execute external auth command: ${error.message || error}`)
+        })
 
-        return externalProvider
-            ? createHeaderCredentials(externalProvider, serverEndpoint)
-            : createTokenCredentials(clientSecrets, serverEndpoint)
+        if (credentials) {
+            if (credentials?.expiration) {
+                const expirationMs = credentials?.expiration * 1000
+                if (expirationMs < Date.now()) {
+                    throw new Error(
+                        'Credentials expiration cannot be set to a date in the past: ' +
+                            `${new Date(expirationMs)} (${credentials.expiration})`
+                    )
+                }
+            }
+            return {
+                credentials: {
+                    expiration: credentials?.expiration,
+                    getHeaders() {
+                        return credentials.headers
+                    },
+                },
+                serverEndpoint,
+            }
+        }
+
+        const token = await clientSecrets.getToken(serverEndpoint).catch(error => {
+            throw new Error(
+                `Failed to get access token for endpoint ${serverEndpoint}: ${error.message || error}`
+            )
+        })
+
+        return {
+            credentials: token
+                ? { token, source: await clientSecrets.getTokenSource(serverEndpoint) }
+                : undefined,
+            serverEndpoint,
+        }
     } catch (error) {
         return {
             credentials: undefined,

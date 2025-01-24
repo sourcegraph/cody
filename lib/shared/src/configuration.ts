@@ -23,7 +23,8 @@ export interface AuthCredentials {
 
 export interface HeaderCredential {
     // We use function instead of property to prevent accidential top level serialization - we never want to store this data
-    getHeaders(): Promise<Record<string, string>>
+    getHeaders(): Record<string, string>
+    expiration: number | undefined
 }
 
 export interface TokenCredential {
