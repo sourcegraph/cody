@@ -72,7 +72,7 @@ export function deserializeContextMentionItem(s: string) {
 }
 
 function deserializeParagraph(s: string): SerializedLexicalNode[] {
-    const parts = s.split(new RegExp(`(${AT_MENTION_SERIALIZED_PREFIX}\\?data=[^\\s]+)`, 'g'))
+    const parts = s.split(new RegExp(`(${AT_MENTION_SERIALIZED_PREFIX}\\?data=[a-zA-Z0-9]+${AT_MENTION_SERIALIZATION_END})`, 'g'))
     return parts
         .map(part => {
             if (part.startsWith(AT_MENTION_SERIALIZED_PREFIX)) {
