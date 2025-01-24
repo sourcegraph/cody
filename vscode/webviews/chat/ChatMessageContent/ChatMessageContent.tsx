@@ -18,6 +18,12 @@ export interface CodeBlockActionsProps {
     copyButtonOnSubmit: (text: string, event?: 'Keydown' | 'Button') => void
     insertButtonOnSubmit: (text: string, newFile?: boolean) => void
     smartApply: {
+        onPrefetchStart: (
+            id: string,
+            text: string,
+            instruction?: PromptString,
+            fileName?: string
+        ) => void
         onSubmit: (id: string, text: string, instruction?: PromptString, fileName?: string) => void
         onAccept: (id: string) => void
         onReject: (id: string) => void
@@ -127,6 +133,20 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
                 if (smartApplyEnabled) {
                     const smartApplyId = getCodeBlockId(preText, fileName)
                     const smartApplyState = smartApplyStates[smartApplyId]
+
+                    // Side-effect: prefetch smart apply data if possible to reduce the final latency.
+                    // TODO: trigger prefetch earlier if we can detect that the code block is complete.
+                    // TODO: extract this call into a separate `useEffect` call to avoid redundant calls
+                    // which currently happen.
+                    if (!isMessageLoading || !displayMarkdown.endsWith('```')) {
+                        smartApplyInterceptor?.onPrefetchStart(
+                            smartApplyId,
+                            preText,
+                            humanMessage?.text,
+                            codeBlockName
+                        )
+                    }
+
                     buttons = createButtonsExperimentalUI(
                         preText,
                         humanMessage,
