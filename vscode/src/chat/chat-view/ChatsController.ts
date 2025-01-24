@@ -124,6 +124,18 @@ export class ChatsController implements vscode.Disposable {
         )
     }
 
+    public async clearEditorText(): Promise<void> {
+        const webviewPanelOrView = this.panel.webviewPanelOrView
+        if (!webviewPanelOrView) {
+            return
+        }
+
+        webviewPanelOrView.webview.postMessage({
+            type: 'clientAction',
+            clearEditorText: true,
+        })
+    }
+
     public registerViewsAndCommands() {
         this.disposables.push(
             vscode.window.registerWebviewViewProvider('cody.chat', this.panel, {
@@ -142,7 +154,6 @@ export class ChatsController implements vscode.Disposable {
                 return undefined
             }
         }
-
         this.disposables.push(
             vscode.commands.registerCommand('cody.chat.moveToEditor', async () => {
                 localStorage.setLastUsedChatModality('editor')
@@ -190,35 +201,19 @@ export class ChatsController implements vscode.Disposable {
                     case 'editor':
                         return vscode.commands.executeCommand('cody.chat.newEditorPanel', args)
                     case 'sidebar':
-                        return vscode.commands.executeCommand('cody.chat.newPanel', args)
+                        return vscode.commands.executeCommand('cody.chat.toggle', args)
                 }
             }),
-
             vscode.commands.registerCommand(
                 'cody.chat.toggle',
-                async (ops: { editorFocus: boolean }) => {
-                    const modality = getNewChatLocation()
-
-                    if (ops.editorFocus) {
-                        if (modality === 'sidebar') {
-                            await vscode.commands.executeCommand('cody.chat.focus')
-                        } else {
-                            const editorView = this.activeEditor?.webviewPanelOrView
-                            if (editorView) {
-                                revealWebviewViewOrPanel(editorView)
-                            } else {
-                                vscode.commands.executeCommand('cody.chat.newEditorPanel')
-                            }
-                        }
+                async (args: { uri: URI; editorFocus: boolean }) => {
+                    if (this.panel.isEmpty()) {
+                        await this.clearEditorText()
                     } else {
-                        if (modality === 'sidebar') {
-                            await vscode.commands.executeCommand(
-                                'workbench.action.focusActiveEditorGroup'
-                            )
-                        } else {
-                            await vscode.commands.executeCommand('workbench.action.navigateEditorGroups')
-                        }
+                        vscode.commands.executeCommand('cody.chat.newPanel')
                     }
+                    await vscode.commands.executeCommand('cody.chat.focus')
+                    this.sendEditorContextToChat(args?.uri)
                 }
             ),
             vscode.commands.registerCommand('cody.chat.history.export', () => this.exportHistory()),
