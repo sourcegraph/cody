@@ -997,7 +997,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         })
 
         // Supported line params examples: L42 (single line) or L42-45 (line range)
-        const lineParam = uri.query.split('&').find(key => key.match(/^L\d+(?:-\d+)?$/))
+        const lineParam = this.extractLineParamFromURI(uri)
         const range = this.lineParamToRange(lineParam)
 
         vscode.workspace.openTextDocument(sourcegraphSchemaURI).then(async doc => {
@@ -1026,8 +1026,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             throw new Error('could not find workspace for repo')
         }
 
-        const lineNumberParam = uri.query.split('&').find(key => key.match(/^L\d+(?:-\d+)?$/))
-        const selectionStart = this.lineParamToRange(lineNumberParam).start
+        const lineParam = this.extractLineParamFromURI(uri)
+        const selectionStart = this.lineParamToRange(lineParam).start
         // Opening the file with an active selection is awkward, so use a zero-length
         // selection to focus the target line without highlighting anything
         const selection = new vscode.Range(selectionStart, selectionStart)
@@ -1040,6 +1040,10 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             selection,
             preview: true,
         })
+    }
+
+    private extractLineParamFromURI(uri: vscode.Uri): string | undefined {
+        return uri.query.split('&').find(key => key.match(/^L\d+(?:-\d+)?$/))
     }
 
     private lineParamToRange(lineParam?: string | null): vscode.Range {
