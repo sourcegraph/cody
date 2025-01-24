@@ -1,6 +1,6 @@
-import { describe, expect, it } from 'vitest'
-import { deserialize, serialize } from './atMentionsSerializer'
-import type { SerializedPromptEditorValue } from './editorState'
+import {describe, expect, it} from 'vitest'
+import {deserialize, serialize, splitToWords} from './atMentionsSerializer'
+import type {SerializedPromptEditorValue} from './editorState'
 
 describe('atMentionsSerializer', () => {
     it('serializes and deserializes editor state with unicode characters correctly', () => {
@@ -232,5 +232,32 @@ describe('atMentionsSerializer', () => {
 
         const serializedAgain = serialize(deserialized!)
         expect(serializedAgain).toBe(serialized)
+    })
+
+    describe('splitToWords', () => {
+        it('extracts built-in shortcuts', () => {
+            const input = 'explain cody://tabs and more'
+            expect(splitToWords(input)).toEqual(['explain ', 'cody://tabs', ' and more'])
+        })
+
+        it('extracts serialized mentions', () => {
+            const input = 'explain cody://serialized.v1?data=123_ and more'
+            expect(splitToWords(input)).toEqual(['explain ', 'cody://serialized.v1?data=123_', ' and more'])
+        })
+
+        it('handles mentions at end of sentence', () => {
+            const input = 'explain cody://tabs.'
+            expect(splitToWords(input)).toEqual(['explain ', 'cody://tabs', '.'])
+        })
+
+        it('handles multiple mentions in one sentence', () => {
+            const input = 'explain cody://tabs and cody://serialized.v1?data=123_.'
+            expect(splitToWords(input)).toEqual(['explain ', 'cody://tabs', ' and ', 'cody://serialized.v1?data=123_', '.'])
+        })
+
+        it('handles mentions with surrounding whitespace', () => {
+            const input = 'explain\tcody://tabs\nand more'
+            expect(splitToWords(input)).toEqual(['explain\t', 'cody://tabs', '\nand more'])
+        })
     })
 })

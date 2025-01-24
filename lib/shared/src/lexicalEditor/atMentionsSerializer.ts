@@ -27,8 +27,8 @@ function isCurrentKey(value: string): value is keyof typeof CURRENT_TO_HYDRATABL
 
 /**
  * This function serializes a SerializedPromptEditorValue into a string representation that contains serialized
- * elements for contextMentionItems as a base64 encoded string. The result can be used with the deserialize function
- * to rebuild the editor state.
+ * elements for contextMentionItems as a base64 encoded string or cody:// syntax for current mentions.
+ * The result can be used with the deserialize function to rebuild the editor state.
  *
  * @param m SerializedPromptEditorValue
  */
@@ -50,7 +50,7 @@ export function serialize(m: SerializedPromptEditorValue): string {
                     )}` + AT_MENTION_SERIALIZATION_END
             }
         } else {
-            console.warn('Unhandled node type in atMentionsSerializer.serialize', n.type)
+            throw Error('Unhandled node type in atMentionsSerializer.serialize: ' + n.type)
         }
     }
     return t
@@ -146,9 +146,25 @@ function createContextItemMention(
     }
 }
 
+export function splitToWords(s: string): string[] {
+    /**
+     * Regular expression pattern that matches Cody context mentions in two formats:
+     * 1. Built-in shortcuts like 'cody://tabs', 'cody://selection' (defined in CONTEXT_ITEMS)
+     * 2. Serialized context items like 'cody://serialized.v1?data=base64data_'
+     *
+     * For built-in shortcuts: stops at whitespace, periods, or newlines
+     * For serialized items: includes everything between 'cody://serialized' and '_'
+     *
+     * Examples:
+     * - "cody://tabs." -> matches "cody://tabs"
+     * - "cody://serialized.v1?data=123_." -> matches "cody://serialized.v1?data=123_"
+     */
+    const pattern = /(cody:\/\/(?:serialized[^_]+_|[^_\s.]+))/
+    return s.split(pattern)
+}
+
 function deserializeParagraph(s: string): SerializedLexicalNode[] {
-    const parts = s.split(/(cody:\/\/[a-z\-?=_]+)/g)
-    return parts
+    return splitToWords(s)
         .map(part => {
             if (part.startsWith(AT_MENTION_SERIALIZED_PREFIX)) {
                 try {
@@ -200,6 +216,11 @@ function deserializeDoc(s: string): SerializedLexicalNode[] {
     })
 }
 
+/**
+ * Deserializes a prompt editor value from a previously serialized editor value.
+ *
+ * @param s serialized editor value
+ */
 export function deserialize(s: string): SerializedPromptEditorValue | undefined {
     const children: SerializedLexicalNode[] = deserializeDoc(s)
 
