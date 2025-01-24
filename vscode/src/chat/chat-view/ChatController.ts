@@ -94,6 +94,7 @@ import { migrateAndNotifyForOutdatedModels } from '../../models/modelMigrator'
 import { logDebug, outputChannelLogger } from '../../output-channel-logger'
 import { hydratePromptText } from '../../prompts/prompt-hydration'
 import { listPromptTags, mergedPromptsAndLegacyCommands } from '../../prompts/prompts'
+import { workspaceFolderForRepo } from '../../repository/remoteRepos'
 import { authProvider } from '../../services/AuthProvider'
 import { AuthProviderSimplified } from '../../services/AuthProviderSimplified'
 import { localStorage } from '../../services/LocalStorageProvider'
@@ -363,7 +364,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 })
                 break
             case 'openRemoteFile':
-                this.openRemoteFile(message.uri)
+                this.openRemoteFile(message.uri, message.tryLocal ?? false)
                 break
             case 'newFile':
                 await handleCodeFromSaveToNewFile(message.text, this.editor)
@@ -976,18 +977,23 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         return
     }
 
-    private openRemoteFile(uri: vscode.Uri) {
-        const json = uri.toJSON()
-        const searchParams = (json.query || '').split('&')
+    private async openRemoteFile(uri: vscode.Uri, tryLocal?: boolean) {
+        if (tryLocal) {
+            try {
+                await this.openSourcegraphUriAsLocalFile(uri)
+                return
+            } catch {
+                // Ignore error, just continue to opening the remote file
+            }
+        }
 
-        const sourcegraphSchemaURI = vscode.Uri.from({
-            ...json,
+        const sourcegraphSchemaURI = uri.with({
             query: '',
             scheme: 'codysourcegraph',
         })
 
         // Supported line params examples: L42 (single line) or L42-45 (line range)
-        const lineParam = searchParams.find((value: string) => value.match(/^L\d+(?:-\d+)?$/)?.length)
+        const lineParam = this.extractLineParamFromURI(uri)
         const range = this.lineParamToRange(lineParam)
 
         vscode.workspace.openTextDocument(sourcegraphSchemaURI).then(async doc => {
@@ -995,6 +1001,45 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
             textEditor.revealRange(range)
         })
+    }
+
+    /**
+     * Attempts to open a Sourcegraph file URL as a local file in VS Code.
+     * Fails if the URI is not a valid Sourcegraph URL for a file or if the
+     * file does not belong to the current workspace.
+     */
+    private async openSourcegraphUriAsLocalFile(uri: vscode.Uri): Promise<void> {
+        const match = uri.path.match(
+            /^\/*(?<repoName>[^@]*)(?<revision>@.*)?\/-\/blob\/(?<filePath>.*)$/
+        )
+        if (!match || !match.groups) {
+            throw new Error('failed to extract repo name and file path')
+        }
+        const { repoName, filePath } = match.groups
+
+        const workspaceFolder = await workspaceFolderForRepo(repoName)
+        if (!workspaceFolder) {
+            throw new Error('could not find workspace for repo')
+        }
+
+        const lineParam = this.extractLineParamFromURI(uri)
+        const selectionStart = this.lineParamToRange(lineParam).start
+        // Opening the file with an active selection is awkward, so use a zero-length
+        // selection to focus the target line without highlighting anything
+        const selection = new vscode.Range(selectionStart, selectionStart)
+
+        const fileUri = workspaceFolder.uri.with({
+            path: `${workspaceFolder.uri.path}/${filePath}`,
+        })
+        const document = await vscode.workspace.openTextDocument(fileUri)
+        await vscode.window.showTextDocument(document, {
+            selection,
+            preview: true,
+        })
+    }
+
+    private extractLineParamFromURI(uri: vscode.Uri): string | undefined {
+        return uri.query.split('&').find(key => key.match(/^L\d+(?:-\d+)?$/))
     }
 
     private lineParamToRange(lineParam?: string | null): vscode.Range {
