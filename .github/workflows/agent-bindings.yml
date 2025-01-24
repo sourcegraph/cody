@@ -2,12 +2,15 @@
 # Worst-case: feel free to disable this workflow here https://github.com/sourcegraph/cody/actions/workflows/agent-bindings.yml
 name: agent-bindings
 on:
-
   pull_request:
     paths:
-      - '**.ts'
-      - '**.tsx'
-      - '**.js'
+      - "**.ts"
+      - "**.tsx"
+      - "**.js"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   kotlin:

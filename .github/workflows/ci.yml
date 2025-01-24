@@ -8,6 +8,10 @@ on:
     types: [opened, reopened, synchronize, ready_for_review]
   workflow_dispatch:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   # Sets a variable that is used to determine the matrix to run fast tests (unit & integration) on.
   # Everything runs on ubuntu and windows, only commits to main run on macos.
