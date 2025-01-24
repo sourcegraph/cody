@@ -10,9 +10,9 @@ import {
 } from '@sourcegraph/cody-shared'
 import { map } from 'observable-fns'
 import type { ContextRetriever } from '../chat-view/ContextRetriever'
-import { type CodyTool, type CodyToolConfig, OpenCtxTool, TOOL_CONFIGS } from './CodyTool'
+import { type CodyTool, OpenCtxTool, TOOL_CONFIGS } from './CodyTool'
 import { toolboxManager } from './ToolboxManager'
-import { OPENCTX_TOOL_CONFIG } from './config'
+import { type CodyToolConfig, OPENCTX_TOOL_CONFIG } from './config'
 
 type Retriever = Pick<ContextRetriever, 'retrieveContext'>
 
@@ -34,8 +34,11 @@ export interface ToolStatusCallback {
  * Configuration interface for registering new tools.
  * Extends CodyToolConfig with name and instance creation function.
  */
-export interface ToolConfiguration extends CodyToolConfig {
+export interface ToolConfiguration {
     name: string
+    title: string
+    tags: CodyToolConfig['tags']
+    prompt: CodyToolConfig['prompt']
     createInstance: (config: CodyToolConfig, retriever?: Retriever) => CodyTool
 }
 

@@ -23,23 +23,7 @@ import { getCorpusContextItemsForEditorState } from '../initialContext'
 import { CodyChatMemory } from './CodyChatMemory'
 import type { ToolStatusCallback } from './CodyToolProvider'
 import { RawTextProcessor } from './DeepCody'
-
-/**
- * Configuration interface for CodyTool instances.
- */
-export interface CodyToolConfig {
-    // The title of the tool. For UI display purposes.
-    title: string
-    tags: {
-        tag: PromptString
-        subTag: PromptString
-    }
-    prompt: {
-        instruction: PromptString
-        placeholder: PromptString
-        examples: PromptString[]
-    }
-}
+import { type CodyToolConfig, DEFAULT_TOOL_CONFIG } from './config'
 
 /**
  * Abstract base class for Cody tools.
@@ -55,8 +39,25 @@ export abstract class CodyTool {
     public getInstruction(): PromptString {
         const { tag, subTag } = this.config.tags
         const { instruction, placeholder, examples } = this.config.prompt
+        const input_schema = this.config.input_schema
         try {
+            if (input_schema) {
+                const toolDefinition = JSON.stringify(
+                    {
+                        name: tag,
+                        description: instruction,
+                        input_schema,
+                    },
+                    null,
+                    2
+                )
+                return PromptString.unsafe_fromUserQuery(toolDefinition)
+            }
+
             const prompt = ps`\`<${tag}><${subTag}>${placeholder}</${subTag}></${tag}>\`: ${instruction}.`
+            if (!input_schema && prompt) {
+                return ps``
+            }
             if (!examples?.length) {
                 return prompt
             }
@@ -152,21 +153,7 @@ export abstract class CodyTool {
  */
 class CliTool extends CodyTool {
     constructor() {
-        super({
-            title: 'Terminal',
-            tags: {
-                tag: ps`TOOLCLI`,
-                subTag: ps`cmd`,
-            },
-            prompt: {
-                instruction: ps`Execute safe command-line instructions.`,
-                placeholder: ps`SAFE_COMMAND`,
-                examples: [
-                    ps`Get output for git diff: \`<TOOLCLI><cmd>git diff</cmd></TOOLCLI>\``,
-                    ps`List files in a directory: \`<TOOLCLI><cmd>ls -l</cmd></TOOLCLI>\``,
-                ],
-            },
-        })
+        super(DEFAULT_TOOL_CONFIG.exec_shell_command)
     }
 
     public async execute(
@@ -206,20 +193,7 @@ class CliTool extends CodyTool {
  */
 class FileTool extends CodyTool {
     constructor() {
-        super({
-            title: 'Codebase File',
-            tags: {
-                tag: ps`TOOLFILE`,
-                subTag: ps`name`,
-            },
-            prompt: {
-                instruction: ps`To retrieve full content of a codebase file-DO NOT retrieve files that may contain secrets`,
-                placeholder: ps`FILENAME`,
-                examples: [
-                    ps`See the content of different files: \`<TOOLFILE><name>path/foo.ts</name><name>path/bar.ts</name></TOOLFILE>\``,
-                ],
-            },
-        })
+        super(DEFAULT_TOOL_CONFIG.get_file_content)
     }
 
     public async execute(span: Span, filePaths: string[]): Promise<ContextItem[]> {
@@ -237,21 +211,7 @@ class FileTool extends CodyTool {
  */
 class SearchTool extends CodyTool {
     constructor(private contextRetriever: Pick<ContextRetriever, 'retrieveContext'>) {
-        super({
-            title: 'Code Search',
-            tags: {
-                tag: ps`TOOLSEARCH`,
-                subTag: ps`query`,
-            },
-            prompt: {
-                instruction: ps`Perform a symbol query search in the codebase (Natural language search NOT supported)`,
-                placeholder: ps`SEARCH_QUERY`,
-                examples: [
-                    ps`Locate a symbol found in an error log: \`<TOOLSEARCH><query>symbol name</query></TOOLSEARCH>\``,
-                    ps`Search for a function named getController: \`<TOOLSEARCH><query>getController</query></TOOLSEARCH>\``,
-                ],
-            },
-        })
+        super(DEFAULT_TOOL_CONFIG.code_search)
     }
 
     public async execute(span: Span, queries: string[]): Promise<ContextItem[]> {
@@ -368,22 +328,7 @@ export class OpenCtxTool extends CodyTool {
 class MemoryTool extends CodyTool {
     constructor() {
         CodyChatMemory.initialize()
-        super({
-            title: 'Cody Memory',
-            tags: {
-                tag: ps`TOOLMEMORY`,
-                subTag: ps`store`,
-            },
-            prompt: {
-                instruction: ps`Add info about the user and their preferences (e.g. name, preferred tool, language etc) based on the question, or when asked. DO NOT store summarized questions. DO NOT clear memory unless requested`,
-                placeholder: ps`SUMMARIZED_TEXT`,
-                examples: [
-                    ps`Add user info to memory: \`<TOOLMEMORY><store>info</store></TOOLMEMORY>\``,
-                    ps`Get the stored user info: \`<TOOLMEMORY><store>GET</store></TOOLMEMORY>\``,
-                    ps`ONLY clear memory ON REQUEST: \`<TOOLMEMORY><store>FORGET</store></TOOLMEMORY>\``,
-                ],
-            },
-        })
+        super(DEFAULT_TOOL_CONFIG.cody_memory)
     }
 
     private memoryOnStart = CodyChatMemory.retrieve()
