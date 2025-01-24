@@ -62,15 +62,7 @@ export interface EnterpriseUserDotComError {
     enterprise: string
 }
 
-export interface AuthConfigError extends AuthenticationErrorMessage {
-    type: 'auth-config-error'
-}
-
-export type AuthenticationError =
-    | NetworkAuthError
-    | InvalidAccessTokenError
-    | EnterpriseUserDotComError
-    | AuthConfigError
+export type AuthenticationError = NetworkAuthError | InvalidAccessTokenError | EnterpriseUserDotComError
 
 export interface AuthenticationErrorMessage {
     title?: string
@@ -98,8 +90,6 @@ export function getAuthErrorMessage(error: AuthenticationError): AuthenticationE
                     "in through your organization's enterprise instance instead. If you need assistance " +
                     'please contact your Sourcegraph admin.',
             }
-        case 'auth-config-error':
-            return error
     }
 }
 

@@ -90,7 +90,9 @@ export async function showSignInMenu(
             const { configuration } = await currentResolvedConfig()
             const auth = await resolveAuth(selectedEndpoint, configuration, secretStorage)
 
-            let authStatus = await authProvider.validateAndStoreCredentials(auth, 'store-if-valid')
+            let authStatus = auth.credentials
+                ? await authProvider.validateAndStoreCredentials(auth, 'store-if-valid')
+                : undefined
 
             if (!authStatus?.authenticated) {
                 const token = await showAccessTokenInputBox(selectedEndpoint)
@@ -404,24 +406,6 @@ export async function validateCredentials(
     signal?: AbortSignal,
     clientConfig?: CodyClientConfig
 ): Promise<AuthStatus> {
-    if (config.auth.error !== undefined) {
-        logDebug(
-            'auth',
-            `Failed to authenticate to ${config.auth.serverEndpoint} due to configuration error`,
-            config.auth.error
-        )
-        return {
-            authenticated: false,
-            endpoint: config.auth.serverEndpoint,
-            pendingValidation: false,
-            error: {
-                type: 'auth-config-error',
-                title: 'Auth config error',
-                message: config.auth.error?.message ?? config.auth.error,
-            },
-        }
-    }
-
     // An access token is needed except for Cody Web, which uses cookies.
     if (!config.auth.credentials && !clientCapabilities().isCodyWeb) {
         return { authenticated: false, endpoint: config.auth.serverEndpoint, pendingValidation: false }
