@@ -4,8 +4,12 @@ name: e2e-flakiness-detector
 
 on:
   schedule:
-    - cron: '0 14 * * *' # daily at 1400 UTC
+    - cron: "0 14 * * *" # daily at 1400 UTC
   workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   test-e2e:

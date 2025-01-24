@@ -4,9 +4,13 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'The version to be released, for example: 1.60.0'
+        description: "The version to be released, for example: 1.60.0"
         required: true
         type: string
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   changelog:
