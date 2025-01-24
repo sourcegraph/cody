@@ -74,7 +74,14 @@ export type WebviewMessage =
     | { command: 'restoreHistory'; chatID: string }
     | { command: 'links'; value: string }
     | { command: 'openURI'; uri: Uri }
-    | { command: 'openRemoteFile'; uri: Uri }
+    | {
+          // Open a file from a Sourcegraph URL
+          command: 'openRemoteFile'
+          uri: Uri
+          // Attempt to open the same file locally if we can map
+          // the repository to an open workspace.
+          tryLocal?: boolean | undefined | null
+      }
     | {
           command: 'openFileLink'
           uri: Uri

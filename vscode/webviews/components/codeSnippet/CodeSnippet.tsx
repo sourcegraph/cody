@@ -149,6 +149,7 @@ export const FileMatchSearchResult: FC<PropsWithChildren<FileMatchSearchResultPr
             getVSCodeAPI().postMessage({
                 command: 'openRemoteFile',
                 uri,
+                tryLocal: true,
             })
         },
         [fileURL, agentIDE, onSelect]
