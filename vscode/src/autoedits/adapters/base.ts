@@ -27,4 +27,5 @@ export interface AutoeditModelOptions {
     codeToRewrite: string
     userId: string | null
     isChatModel: boolean
+    requestId: string
 }
