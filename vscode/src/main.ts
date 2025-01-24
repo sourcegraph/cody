@@ -104,6 +104,7 @@ import { VSCodeSecretStorage, secretStorage } from './services/SecretStorageProv
 import { registerSidebarCommands } from './services/SidebarCommands'
 import { CodyStatusBar } from './services/StatusBar'
 import { createOrUpdateTelemetryRecorderProvider } from './services/telemetry-v2'
+import { ThreadOccupancyMonitor } from './services/thread-occupancy-monitor'
 import {
     enableVerboseDebugMode,
     exportOutputLog,
@@ -122,6 +123,11 @@ export async function start(
     platform: PlatformContext
 ): Promise<vscode.Disposable> {
     const disposables: vscode.Disposable[] = []
+
+    const threadMonitor = new ThreadOccupancyMonitor()
+    threadMonitor.start()
+
+    disposables.push(new vscode.Disposable(() => threadMonitor.stop()))
 
     //TODO: Add override flag
     const isExtensionModeDevOrTest =
