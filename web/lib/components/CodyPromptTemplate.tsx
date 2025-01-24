@@ -1,17 +1,29 @@
 import classNames from 'classnames'
-import {type FC, type FunctionComponent, useEffect, useLayoutEffect, useMemo, useRef, useState,} from 'react'
+import {
+    type FC,
+    type FunctionComponent,
+    useEffect,
+    useLayoutEffect,
+    useMemo,
+    useRef,
+    useState,
+} from 'react'
 
 import {
     type CodyClientConfig,
-    type ContextItem, ContextItemCurrentDirectory,
-    type ContextItemCurrentFile, ContextItemCurrentOpenTabs, ContextItemCurrentRepository, ContextItemCurrentSelection,
+    type ContextItem,
+    type ContextItemCurrentDirectory,
+    type ContextItemCurrentFile,
+    type ContextItemCurrentOpenTabs,
+    type ContextItemCurrentRepository,
+    type ContextItemCurrentSelection,
     type DefaultContext,
-    isErrorLike,
     type SerializedPromptEditorState,
+    isErrorLike,
     setDisplayPathEnvInfo,
 } from '@sourcegraph/cody-shared'
-import {AppWrapper} from 'cody-ai/webviews/AppWrapper'
-import type {VSCodeWrapper} from 'cody-ai/webviews/utils/VSCodeApi'
+import { AppWrapper } from 'cody-ai/webviews/AppWrapper'
+import type { VSCodeWrapper } from 'cody-ai/webviews/utils/VSCodeApi'
 
 import {
     ChatMentionContext,
@@ -19,19 +31,18 @@ import {
     PromptEditor,
     type PromptEditorRefAPI,
 } from '@sourcegraph/prompt-editor'
-import {getAppWrappers} from 'cody-ai/webviews/App'
-import {useClientActionDispatcher} from 'cody-ai/webviews/client/clientState'
-import {ComposedWrappers, type Wrapper} from 'cody-ai/webviews/utils/composeWrappers'
-import {createWebviewTelemetryRecorder} from 'cody-ai/webviews/utils/telemetry'
+import { getAppWrappers } from 'cody-ai/webviews/App'
+import { useClientActionDispatcher } from 'cody-ai/webviews/client/clientState'
+import { ComposedWrappers, type Wrapper } from 'cody-ai/webviews/utils/composeWrappers'
+import { createWebviewTelemetryRecorder } from 'cody-ai/webviews/utils/telemetry'
 
-import {useCodyWebAgent} from './use-cody-agent'
+import { useCodyWebAgent } from './use-cody-agent'
 
 // Include global Cody Web styles to the styles bundle
 import '../global-styles/styles.css'
-import {Uri} from 'vscode'
+import { Uri } from 'vscode'
 import styles from './CodyPromptTemplate.module.css'
-import {PromptTemplateSkeleton} from './skeleton/ChatSkeleton'
-import {URI} from "vscode-uri";
+import { PromptTemplateSkeleton } from './skeleton/ChatSkeleton'
 
 // Internal API mock call in order to set up web version of
 // the cody agent properly (completely mock data)
@@ -156,45 +167,45 @@ const CodyPromptTemplatePanel: FC<PanelProps> = props => {
                 id: 'current-selection',
                 name: 'current-selection',
                 title: 'Current Selection',
-                uri: URI.parse(`cody://selection`),
+                uri: Uri.parse('cody://selection'),
                 description: 'Picks the current selection',
-                icon: 'square-dashed-mouse-pointer'
+                icon: 'square-dashed-mouse-pointer',
             } as ContextItemCurrentSelection,
             {
                 type: 'current-file',
                 id: 'current-file',
                 name: 'current-file',
                 title: 'Current File',
-                uri: URI.parse(`cody://current-file`),
+                uri: Uri.parse('cody://current-file'),
                 description: 'Picks the current file',
-                icon: 'file'
+                icon: 'file',
             } as ContextItemCurrentFile,
             {
                 type: 'current-repository',
                 id: 'current-repository',
                 name: 'current-repository',
                 title: 'Current Repository',
-                uri: URI.parse(`cody://repository`),
+                uri: Uri.parse('cody://repository'),
                 description: 'Picks the current repository',
-                icon: 'folder'
+                icon: 'git-folder',
             } as ContextItemCurrentRepository,
             {
                 type: 'current-directory',
                 id: 'current-directory',
                 name: 'current-directory',
                 title: 'Current Directory',
-                uri: URI.parse(`cody://current-dir`),
+                uri: Uri.parse('cody://current-dir'),
                 description: 'Picks the current directory',
-                icon: 'folder'
+                icon: 'folder',
             } as ContextItemCurrentDirectory,
             {
                 type: 'current-open-tabs',
                 id: 'current-open-tabs',
                 name: 'current-open-tabs',
                 title: 'Currently Open Tabs',
-                uri: URI.parse(`cody://tabs`),
+                uri: Uri.parse('cody://tabs'),
                 description: 'Picks all currently open tabs',
-                icon: 'layout-menubar'
+                icon: 'layout-menubar',
             } as ContextItemCurrentOpenTabs,
         ]
 
@@ -210,7 +221,7 @@ const CodyPromptTemplatePanel: FC<PanelProps> = props => {
                 clientConfig,
                 staticDefaultContext,
             }),
-        [vscodeAPI, telemetryRecorder, clientConfig]
+        [vscodeAPI, telemetryRecorder, clientConfig, staticDefaultContext]
     )
 
     const CONTEXT_MENTIONS_SETTINGS = useMemo<ChatMentionsSettings>(() => {

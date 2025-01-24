@@ -1,6 +1,6 @@
-import type {SerializedElementNode, SerializedLexicalNode, SerializedTextNode} from 'lexical'
-import type {SerializedPromptEditorValue} from './editorState'
-import {SerializedContextItem, type SerializedContextItemMentionNode} from "./nodes";
+import type { SerializedElementNode, SerializedLexicalNode, SerializedTextNode } from 'lexical'
+import type { SerializedPromptEditorValue } from './editorState'
+import type { SerializedContextItem, SerializedContextItemMentionNode } from './nodes'
 
 export const AT_MENTION_SERIALIZED_PREFIX = 'cody://serialized.v1'
 const AT_MENTION_SERIALIZATION_END = '_'
@@ -18,7 +18,7 @@ const CURRENT_TO_HYDRATABLE = {
     'current-file': 'cody://current-file',
     'current-repository': 'cody://repository',
     'current-directory': 'cody://current-dir',
-    'current-open-tabs': 'cody://tabs'
+    'current-open-tabs': 'cody://tabs',
 }
 
 function isCurrentKey(value: string): value is keyof typeof CURRENT_TO_HYDRATABLE {
@@ -38,17 +38,19 @@ export function serialize(m: SerializedPromptEditorValue): string {
     for (const n of nodes) {
         if (n.type === 'text') {
             t += (n as SerializedTextNode).text
-        } else if (n.type == 'contextItemMention') {
-            const contextItemMention: SerializedContextItem = (n as SerializedContextItemMentionNode).contextItem;
+        } else if (n.type === 'contextItemMention') {
+            const contextItemMention: SerializedContextItem = (n as SerializedContextItemMentionNode)
+                .contextItem
             if (isCurrentKey(contextItemMention.type)) {
-                t += CURRENT_TO_HYDRATABLE[contextItemMention.type];
+                t += CURRENT_TO_HYDRATABLE[contextItemMention.type]
             } else {
-                t += `${AT_MENTION_SERIALIZED_PREFIX}?data=${unicodeSafeBtoa(
-                    JSON.stringify(n, undefined, 0)
-                )}` + AT_MENTION_SERIALIZATION_END;
+                t +=
+                    `${AT_MENTION_SERIALIZED_PREFIX}?data=${unicodeSafeBtoa(
+                        JSON.stringify(n, undefined, 0)
+                    )}` + AT_MENTION_SERIALIZATION_END
             }
         } else {
-            console.warn('Unhandled node type in atMentionsSerializer.serialize', n.type);
+            console.warn('Unhandled node type in atMentionsSerializer.serialize', n.type)
         }
     }
     return t
@@ -96,35 +98,38 @@ const CONTEXT_ITEMS = {
         description: 'Picks the current selection',
         type: 'current-selection',
         title: 'Current Selection',
-        text: 'current selection'
+        text: 'current selection',
     },
     'cody://current-file': {
         description: 'Picks the current file',
         type: 'current-file',
         title: 'Current File',
-        text: 'current file'
+        text: 'current file',
     },
     'cody://repository': {
         description: 'Picks the current repository',
         type: 'current-repository',
         title: 'Current Repository',
-        text: 'current repository'
+        text: 'current repository',
     },
     'cody://current-dir': {
         description: 'Picks the current directory',
         type: 'current-directory',
         title: 'Current Directory',
-        text: 'current directory'
+        text: 'current directory',
     },
     'cody://tabs': {
         description: 'Picks the current open tabs',
         type: 'current-open-tabs',
         title: 'Current Open Tabs',
-        text: 'current open tabs'
-    }
+        text: 'current open tabs',
+    },
 } as const
 
-function createContextItemMention(item: typeof CONTEXT_ITEMS[keyof typeof CONTEXT_ITEMS], uri: string) {
+function createContextItemMention(
+    item: (typeof CONTEXT_ITEMS)[keyof typeof CONTEXT_ITEMS],
+    uri: string
+) {
     return {
         contextItem: {
             description: item.description,
@@ -142,7 +147,7 @@ function createContextItemMention(item: typeof CONTEXT_ITEMS[keyof typeof CONTEX
 }
 
 function deserializeParagraph(s: string): SerializedLexicalNode[] {
-    const parts = s.split(new RegExp(`(cody://[a-z\-\?\=\_]+)`, 'g'))
+    const parts = s.split(/(cody:\/\/[a-z\-?=_]+)/g)
     return parts
         .map(part => {
             if (part.startsWith(AT_MENTION_SERIALIZED_PREFIX)) {

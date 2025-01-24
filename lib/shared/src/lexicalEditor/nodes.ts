@@ -3,11 +3,11 @@ import _ from 'lodash'
 import { URI } from 'vscode-uri'
 import type {
     ContextItem,
-    ContextItemCurrentSelection,
-    ContextItemCurrentFile,
-    ContextItemCurrentRepository,
     ContextItemCurrentDirectory,
+    ContextItemCurrentFile,
     ContextItemCurrentOpenTabs,
+    ContextItemCurrentRepository,
+    ContextItemCurrentSelection,
     ContextItemFile,
     ContextItemOpenCtx,
     ContextItemOpenLink,

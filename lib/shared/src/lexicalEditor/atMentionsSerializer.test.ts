@@ -1,6 +1,6 @@
-import {describe, expect, it} from 'vitest'
-import {deserialize, serialize} from './atMentionsSerializer'
-import type {SerializedPromptEditorValue} from './editorState'
+import { describe, expect, it } from 'vitest'
+import { deserialize, serialize } from './atMentionsSerializer'
+import type { SerializedPromptEditorValue } from './editorState'
 
 describe('atMentionsSerializer', () => {
     it('serializes and deserializes editor state with unicode characters correctly', () => {
@@ -184,18 +184,18 @@ describe('atMentionsSerializer', () => {
                                         version: 1,
                                     },
                                     {
-                                        "contextItem": {
-                                            "description": "Picks the current file",
-                                            "id": "current-file",
-                                            "name": "current-file",
-                                            "title": "Current File",
-                                            "type": "current-file",
-                                            "uri": "cody://current-file",
+                                        contextItem: {
+                                            description: 'Picks the current file',
+                                            id: 'current-file',
+                                            name: 'current-file',
+                                            title: 'Current File',
+                                            type: 'current-file',
+                                            uri: 'cody://current-file',
                                         },
-                                        "isFromInitialContext": false,
-                                        "text": "current file",
-                                        "type": "contextItemMention",
-                                        "version": 1,
+                                        isFromInitialContext: false,
+                                        text: 'current file',
+                                        type: 'contextItemMention',
+                                        version: 1,
                                     },
                                     {
                                         type: 'text',
@@ -225,9 +225,7 @@ describe('atMentionsSerializer', () => {
         }
 
         const serialized = serialize(input as SerializedPromptEditorValue)
-        expect(serialized).toBe(
-            'explain cody://current-file. Thank you!'
-        )
+        expect(serialized).toBe('explain cody://current-file. Thank you!')
 
         const deserialized = deserialize(serialized)
         expect(deserialized).toBeDefined()
