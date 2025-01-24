@@ -3,10 +3,12 @@ import {
     authStatus,
     combineLatest,
     debounceTime,
+    firstValueFrom,
     fromVSCodeEvent,
     graphqlClient,
     isError,
     type pendingOperation,
+    skipPendingOperation,
     startWith,
     switchMapReplayOperation,
 } from '@sourcegraph/cody-shared'
@@ -89,3 +91,21 @@ export const remoteReposForAllWorkspaceFolders: Observable<
         }
     )
 )
+
+async function remoteReposForWorkspaceFolder(folder: vscode.WorkspaceFolder): Promise<string[]> {
+    return firstValueFrom(
+        repoNameResolver.getRepoNamesContainingUri(folder.uri).pipe(skipPendingOperation())
+    )
+}
+
+export async function workspaceFolderForRepo(
+    repoName: string
+): Promise<vscode.WorkspaceFolder | undefined> {
+    for (const folder of vscode.workspace.workspaceFolders ?? []) {
+        const remoteRepos = await remoteReposForWorkspaceFolder(folder)
+        if (remoteRepos.some(remoteRepo => remoteRepo === repoName)) {
+            return folder
+        }
+    }
+    return undefined
+}
