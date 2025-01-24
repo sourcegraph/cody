@@ -19,7 +19,7 @@ import {
 import type { GhostHintDecorator } from '../commands/GhostHintDecorator'
 import { getEditor } from '../editor/active-editor'
 import type { VSCodeEditor } from '../editor/vscode-editor'
-import type { FixupController } from '../non-stop/FixupController'
+import type { CreateTaskOptions, FixupController } from '../non-stop/FixupController'
 import type { FixupTask } from '../non-stop/FixupTask'
 
 import { isUriIgnoredByContextFilterWithNotification } from '../cody-ignore/context-filter'
@@ -177,21 +177,21 @@ export class EditManager implements vscode.Disposable {
 
         let task: FixupTask | null
         if (configuration.instruction && configuration.instruction.trim().length > 0) {
-            task = await this.options.controller.createTask(
+            task = await this.createTaskAndMaybeRecordTelemetry({
                 document,
-                configuration.instruction,
-                configuration.userContextFiles ?? [],
-                expandedRange || range,
+                instruction: configuration.instruction,
+                userContextFiles: configuration.userContextFiles ?? [],
+                selectionRange: expandedRange || range,
                 intent,
                 mode,
                 model,
                 source,
-                configuration.destinationFile,
-                configuration.insertionPoint,
+                destinationFile: configuration.destinationFile,
+                insertionPoint: configuration.insertionPoint,
                 telemetryMetadata,
-                configuration.id,
-                isPrefetchOnly
-            )
+                taskId: configuration.id,
+                isPrefetch: isPrefetchOnly,
+            })
         } else {
             task = await this.options.controller.promptUserForTask(
                 configuration.preInstruction,
@@ -211,47 +211,6 @@ export class EditManager implements vscode.Disposable {
         }
 
         /**
-         * Checks if there is already an active task for the given fixup file
-         * that has the same instruction and selection range as the current task.
-         */
-        const activeTask = this.options.controller.tasksForFile(task.fixupFile).find(activeTask => {
-            return (
-                ACTIVE_TASK_STATES.includes(activeTask.state) &&
-                activeTask.instruction.toString() === task.instruction.toString() &&
-                activeTask.selectionRange.isEqual(task.selectionRange)
-            )
-        })
-
-        if (activeTask) {
-            this.options.controller.cancel(task)
-            return
-        }
-
-        // Log the default edit command name for doc intent or test mode
-        const isDocCommand = configuration.intent === 'doc' ? 'doc' : undefined
-        const isUnitTestCommand = configuration.intent === 'test' ? 'test' : undefined
-        const isFixCommand = configuration.intent === 'fix' ? 'fix' : undefined
-        const eventName = isDocCommand ?? isUnitTestCommand ?? isFixCommand ?? 'edit'
-
-        const legacyMetadata = {
-            intent: task.intent,
-            mode: task.mode,
-            source: task.source,
-            ...telemetryMetadata,
-        }
-        const { metadata, privateMetadata } = splitSafeMetadata(legacyMetadata)
-        telemetryRecorder.recordEvent(`cody.command.${eventName}`, 'executed', {
-            metadata,
-            privateMetadata: {
-                ...privateMetadata,
-                model: task.model,
-            },
-            billingMetadata: {
-                product: 'cody',
-                category: 'core',
-            },
-        })
-        /**
          * Updates the editor's selection and view for 'doc' or 'test' intents, causing the cursor to
          * move to the beginning of the selection range considered for the edit.
          *
@@ -264,6 +223,7 @@ export class EditManager implements vscode.Disposable {
                 vscode.TextEditorRevealType.InCenter
             )
         }
+
         const provider = this.getProviderForTask(task)
 
         if (isPrefetchOnly) {
@@ -310,39 +270,24 @@ export class EditManager implements vscode.Disposable {
                 if (configuration.isNewFile) {
                     // We are creating a new file, this means we are only _adding_ new code and _inserting_ it into the document.
                     // We do not need to re-prompt the LLM for this, let's just add the code directly.
-                    const task = await this.options.controller.createTask(
+                    const task = await this.createTaskAndMaybeRecordTelemetry({
                         document,
-                        configuration.instruction,
-                        [],
-                        new vscode.Range(0, 0, 0, 0),
-                        'add',
-                        'insert',
+                        instruction: configuration.instruction,
+                        userContextFiles: [],
+                        selectionRange: new vscode.Range(0, 0, 0, 0),
+                        intent: 'add',
+                        mode: 'insert',
                         model,
                         source,
-                        configuration.document.uri,
-                        undefined,
-                        {},
-                        configuration.id
-                    )
-
-                    const legacyMetadata = {
-                        intent: task.intent,
-                        mode: task.mode,
-                        source: task.source,
-                    }
-                    const { metadata, privateMetadata } = splitSafeMetadata(legacyMetadata)
-                    telemetryRecorder.recordEvent('cody.command.edit', 'executed', {
-                        metadata,
-                        privateMetadata: {
-                            ...privateMetadata,
-                            model: task.model,
-                        },
-                        billingMetadata: {
-                            product: 'cody',
-                            category: 'core',
-                        },
+                        destinationFile: configuration.document.uri,
+                        insertionPoint: undefined,
+                        telemetryMetadata: {},
+                        taskId: configuration.id,
+                        isPrefetch: false,
                     })
-
+                    if (!task) {
+                        return
+                    }
                     const provider = this.getProviderForTask(task)
                     await provider.applyEdit(configuration.replacement)
                     return task
@@ -362,7 +307,7 @@ export class EditManager implements vscode.Disposable {
                     replacementCode,
                     model
                 )
-                console.log(`Smart apply selection latency: ${performance.now() - now}ms`)
+                console.log(`Smart apply selection latency: ${Math.floor(performance.now() - now)}ms`)
 
                 // We finished prompting the LLM for the selection, we can now remove the "progress" decoration
                 // that indicated we where working on the full file.
@@ -391,6 +336,8 @@ export class EditManager implements vscode.Disposable {
                 editor.revealRange(selection.range, vscode.TextEditorRevealType.InCenter)
 
                 if (selection.range.isEmpty) {
+                    // We determined a selection, but it was empty. This means that we will be _adding_ new code
+                    // and _inserting_ it into the document. We do not need to re-prompt the LLM for this, let's just add the code directly.
                     let insertionRange = selection.range
                     if (
                         selection.type === 'insert' &&
@@ -409,41 +356,24 @@ export class EditManager implements vscode.Disposable {
                         insertionRange = document.lineAt(document.lineCount - 1).range
                     }
 
-                    // We determined a selection, but it was empty. This means that we will be _adding_ new code
-                    // and _inserting_ it into the document. We do not need to re-prompt the LLM for this, let's just
-                    // add the code directly.
-                    const task = await this.options.controller.createTask(
+                    const task = await this.createTaskAndMaybeRecordTelemetry({
                         document,
-                        configuration.instruction,
-                        [],
-                        insertionRange,
-                        'add',
-                        'insert',
+                        instruction: configuration.instruction,
+                        userContextFiles: [],
+                        selectionRange: insertionRange,
+                        intent: 'add',
+                        mode: 'insert',
                         model,
                         source,
-                        configuration.document.uri,
-                        undefined,
-                        {},
-                        configuration.id
-                    )
-
-                    const legacyMetadata = {
-                        intent: task.intent,
-                        mode: task.mode,
-                        source: task.source,
-                    }
-                    const { metadata, privateMetadata } = splitSafeMetadata(legacyMetadata)
-                    telemetryRecorder.recordEvent('cody.command.edit', 'executed', {
-                        metadata,
-                        privateMetadata: {
-                            ...privateMetadata,
-                            model: task.model,
-                        },
-                        billingMetadata: {
-                            product: 'cody',
-                            category: 'core',
-                        },
+                        destinationFile: configuration.document.uri,
+                        insertionPoint: undefined,
+                        telemetryMetadata: {},
+                        taskId: configuration.id,
+                        isPrefetch: false,
                     })
+                    if (!task) {
+                        return
+                    }
 
                     const provider = this.getProviderForTask(task)
                     await provider.applyEdit('\n' + configuration.replacement)
@@ -545,6 +475,68 @@ export class EditManager implements vscode.Disposable {
             this.inFlightSmartApplySelections.delete(configuration.id)
             throw error
         }
+    }
+
+    /**
+     * Helper to create a new FixupTask, check for duplicates, record telemetry,
+     * and return the resulting task or null if cancelled.
+     */
+    private async createTaskAndMaybeRecordTelemetry(
+        createTaskOptions: CreateTaskOptions
+    ): Promise<FixupTask | null> {
+        const { intent, telemetryMetadata, isPrefetch } = createTaskOptions
+
+        const task = await this.options.controller.createTask(createTaskOptions)
+        if (!task) {
+            return null
+        }
+
+        /**
+         * Checks if there is already an active task for the given fixup file
+         * that has the same instruction and selection range as the current task.
+         */
+        const activeTask = this.options.controller.tasksForFile(task.fixupFile).find(activeTask => {
+            return (
+                ACTIVE_TASK_STATES.includes(activeTask.state) &&
+                activeTask.instruction.toString() === task.instruction.toString() &&
+                activeTask.selectionRange.isEqual(task.selectionRange)
+            )
+        })
+
+        if (activeTask) {
+            this.options.controller.cancel(task)
+            return null
+        }
+
+        if (!isPrefetch) {
+            // Log the default edit command name for doc intent or test mode
+            const isDocCommand = intent === 'doc' ? 'doc' : undefined
+            const isUnitTestCommand = intent === 'test' ? 'test' : undefined
+            const isFixCommand = intent === 'fix' ? 'fix' : undefined
+            const eventName = isDocCommand ?? isUnitTestCommand ?? isFixCommand ?? 'edit'
+
+            const legacyMetadata = {
+                intent: task.intent,
+                mode: task.mode,
+                source: task.source,
+                ...telemetryMetadata,
+            }
+            const { metadata, privateMetadata } = splitSafeMetadata(legacyMetadata)
+
+            telemetryRecorder.recordEvent(`cody.command.${eventName}`, 'executed', {
+                metadata,
+                privateMetadata: {
+                    ...privateMetadata,
+                    model: task.model,
+                },
+                billingMetadata: {
+                    product: 'cody',
+                    category: 'core',
+                },
+            })
+        }
+
+        return task
     }
 
     private getProviderForTask(task: FixupTask): EditProvider {

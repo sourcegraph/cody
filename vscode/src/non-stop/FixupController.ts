@@ -46,6 +46,22 @@ import type { FixupActor, FixupFileCollection, FixupTextChanged } from './roles'
 import { CodyTaskState } from './state'
 import { expandRangeToInsertedText, getMinimumDistanceToRangeBoundary } from './utils'
 
+export interface CreateTaskOptions {
+    document: vscode.TextDocument
+    instruction: PromptString
+    userContextFiles: ContextItem[]
+    selectionRange: vscode.Range
+    intent: EditIntent
+    mode: EditMode
+    model: EditModel
+    source?: EventSource
+    destinationFile?: vscode.Uri
+    insertionPoint?: vscode.Position
+    telemetryMetadata?: FixupTelemetryMetadata
+    taskId?: FixupTaskID
+    isPrefetch?: boolean
+}
+
 // This class acts as the factory for Fixup Tasks and handles communication between the Tree View and editor
 export class FixupController
     implements FixupActor, FixupFileCollection, FixupTextChanged, vscode.Disposable
@@ -460,19 +476,19 @@ export class FixupController
             return null
         }
 
-        const task = this.createTask(
+        const task = this.createTask({
             document,
-            input.instruction,
-            input.userContextFiles,
-            input.range,
-            input.intent,
-            input.mode,
-            input.model,
+            instruction: input.instruction,
+            userContextFiles: input.userContextFiles,
+            selectionRange: input.range,
+            intent: input.intent,
+            mode: input.mode,
+            model: input.model,
             source,
-            undefined,
-            undefined,
-            telemetryMetadata
-        )
+            destinationFile: undefined,
+            insertionPoint: undefined,
+            telemetryMetadata,
+        })
 
         // Return focus to the editor
         const editor = await vscode.window.showTextDocument(document)
@@ -488,21 +504,21 @@ export class FixupController
         this.decorator.didCreateTask(task)
     }
 
-    public async createTask(
-        document: vscode.TextDocument,
-        instruction: PromptString,
-        userContextFiles: ContextItem[],
-        selectionRange: vscode.Range,
-        intent: EditIntent,
-        mode: EditMode,
-        model: EditModel,
-        source?: EventSource,
-        destinationFile?: vscode.Uri,
-        insertionPoint?: vscode.Position,
-        telemetryMetadata?: FixupTelemetryMetadata,
-        taskId?: FixupTaskID,
-        isPrefetch?: boolean
-    ): Promise<FixupTask> {
+    public async createTask({
+        document,
+        instruction,
+        userContextFiles,
+        selectionRange,
+        intent,
+        mode,
+        model,
+        source,
+        destinationFile,
+        insertionPoint,
+        telemetryMetadata,
+        taskId,
+        isPrefetch,
+    }: CreateTaskOptions): Promise<FixupTask> {
         const authStatus = currentAuthStatus()
         const overriddenModel = getOverriddenModelForIntent(intent, model, authStatus)
         const fixupFile = this.files.forUri(document.uri)

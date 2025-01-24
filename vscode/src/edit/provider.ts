@@ -108,9 +108,11 @@ export class EditProvider {
      */
     public async startEdit(): Promise<void> {
         const taskId = this.config.task.id
+        const now = performance.now()
         // If no streaming session or there was an error, start from scratch
         if (!streamingSessions.has(taskId)) {
             await this.performStreamingEdit({ taskId, isPrefetchActive: false })
+            console.log(`Edit patch latency ${Math.floor(performance.now() - now)}ms`)
             return
         }
         const session = streamingSessions.get(taskId)!
@@ -118,6 +120,7 @@ export class EditProvider {
         if (session.isComplete) {
             // Mark the task started for UI
             this.config.controller.startTask(this.config.task)
+            console.log(`Edit patch latency ${Math.floor(performance.now() - now)}ms`)
             // The final text is in session.partialText
             return this.handleResponse(session.partialText, false)
         }
@@ -128,6 +131,7 @@ export class EditProvider {
         // Immediately apply what has already been streamed
         if (session.partialText) {
             await this.handleResponse(session.partialText, true)
+            console.log(`Edit patch latency ${Math.floor(performance.now() - now)}ms`)
         }
         // We do NOT need to re-initiate streaming; it is already in flight.
         // We'll continue to get partial updates from the multiplexer.
@@ -308,7 +312,7 @@ export class EditProvider {
                         break
                     }
                     case 'complete': {
-                        console.log(`EDIT IS READY IN ${performance.now() - fetchStart}ms`)
+                        console.log(`EDIT IS READY IN ${Math.floor(performance.now() - fetchStart)}ms`)
                         await multiplexer.notifyTurnComplete()
                         break
                     }
