@@ -330,6 +330,7 @@ const CodyWebPanel: FC<CodyWebPanelProps> = props => {
                         },
                         description: fileURL,
                     },
+                    icon: 'git-folder',
                 } as ContextItemOpenCtx)
             } else {
                 // Common file mention with possible file range positions
@@ -347,6 +348,7 @@ const CodyWebPanel: FC<CodyWebPanelProps> = props => {
                     remoteRepositoryName: repository.name,
                     uri: URI.file(`${repository.name}/${fileURL}`),
                     source: ContextItemSource.Initial,
+                    icon: 'file',
                 })
             }
         }
