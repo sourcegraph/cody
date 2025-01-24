@@ -337,7 +337,7 @@ const ResultContainer: ForwardReferenceExoticComponent<
                 <header
                     className={clsx(
                         styles.header,
-                        'tw-flex tw-pt-4 tw-items-center tw-gap-2 tw-py-2 tw-px-4 md:tw-py-3 md:tw-px-6 '
+                        'tw-flex tw-py-2 tw-px-4 tw-items-center tw-gap-2 md:tw-py-3 md:tw-px-6 '
                     )}
                     data-result-header={true}
                 >
