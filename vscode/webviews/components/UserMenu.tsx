@@ -18,7 +18,8 @@ import { URI } from 'vscode-uri'
 import {
     ACCOUNT_USAGE_URL,
     CODY_PRO_SUBSCRIPTION_URL,
-    ENTERPRISE_PRICING_URL,
+    ENTERPRISE_STARTER_PRICING_URL,
+    ENTERPRISE_STARTER_LEARN_MORE_URL,
     isSourcegraphToken,
 } from '../../src/chat/protocol'
 import { SourcegraphLogo } from '../icons/SourcegraphLogo'
@@ -320,7 +321,7 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
                             {isTeamsUpgradeCtaEnabled && (
                                 <CommandGroup>
                                     <CommandLink
-                                        href="https://workspaces.sourcegraph.com"
+                                        href={ENTERPRISE_STARTER_LEARN_MORE_URL.toString()}
                                         target="_blank"
                                         rel="noreferrer"
                                         className="tw-flex tw-w-full tw-justify-start tw-gap-8 tw-align-center tw-flex-col tw-font-left !tw-bg-transparent hover:!tw-bg-transparent [&[aria-selected]]:!tw-bg-transparent tw-pt-[15px]"
@@ -341,12 +342,10 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
                                         </div>
                                         <div>
                                             <div className="tw-w-full tw-text-[14px] tw-font-semibold tw-text-left tw-mb-5">
-                                                Unlock the Sourcegraph platform
+                                                Enable collaboration with your team
                                             </div>
                                             <div className="tw-text-[12px] tw-text-muted-foreground">
-                                                Create a workspace and connect GitHub repositories to
-                                                unlock Code Search, AI chat, autocompletes, inline edits
-                                                and more for your team.
+                                            Get your own workspace with AI-powered chat, prompt sharing and codebase serach. Automate tasks and accelerate development.
                                             </div>
                                         </div>
                                         <Button
@@ -354,7 +353,7 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
                                             variant="secondary"
                                             className="tw-flex-grow tw-rounded-md tw-text-center tw-w-full tw-text-foreground tw-my-2 tw-text-[12px]"
                                         >
-                                            Create a workspace
+                                            Explore Workspaces
                                         </Button>
                                     </CommandLink>
                                 </CommandGroup>
@@ -475,9 +474,9 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
                                     <Settings2Icon size={16} strokeWidth={1.25} className="tw-mr-2" />
                                     <span className="tw-flex-grow">Extension Settings</span>
                                 </CommandItem>
-                                {isDotComUser && (
+                                {isTeamsUpgradeCtaEnabled && (
                                     <CommandLink
-                                        href={ENTERPRISE_PRICING_URL.toString()}
+                                        href={ENTERPRISE_STARTER_PRICING_URL.toString()}
                                         target="_blank"
                                         rel="noreferrer"
                                         onSelect={() => {
