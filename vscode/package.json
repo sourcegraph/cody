@@ -56,7 +56,7 @@
     "version-bump:minor": "RELEASE_TYPE=minor ts-node-transpile-only ./scripts/version-bump.ts",
     "version-bump:patch": "RELEASE_TYPE=patch ts-node-transpile-only ./scripts/version-bump.ts",
     "version-bump:dry-run": "RELEASE_TYPE=prerelease ts-node-transpile-only ./scripts/version-bump.ts",
-    "measure-bundle-size": "LOG_BUNDLE_SIZE=true ts-node-transpile-only ./scripts/measure-bundle-size.ts"
+    "measure-bundle-size": "cross-env LOG_BUNDLE_SIZE=true ts-node-transpile-only ./scripts/measure-bundle-size.ts"
   },
   "categories": ["AI", "Chat", "Programming Languages", "Machine Learning", "Snippets", "Education"],
   "keywords": [
@@ -1530,6 +1530,7 @@
     "chokidar": "^3.6.0",
     "commander": "^11.1.0",
     "concurrently": "^8.2.0",
+    "cross-env": "^7.0.3",
     "dedent": "^0.7.0",
     "dotenv": "^16.4.5",
     "esbuild": "^0.18.20",
