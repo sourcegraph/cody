@@ -731,7 +731,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                         assistantMessage?.isLoading && <ApprovalCell vscodeAPI={vscodeAPI} />}
                 </>
             )}{' '}
-            {!(humanMessage.agent && isContextLoading) &&
+            {!(humanMessage.agent === 'deep-cody') &&
                 (humanMessage.contextFiles || assistantMessage || isContextLoading) &&
                 !isSearchIntent && (
                     <ContextCell
@@ -760,7 +760,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                         processes={humanMessage?.processes ?? undefined}
                         agent={humanMessage?.agent ?? undefined}
                     />
-                )}
+                )}{' '}
             {assistantMessage &&
                 (!isContextLoading ||
                     (assistantMessage.subMessages && assistantMessage.subMessages.length > 0)) && (
