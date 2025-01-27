@@ -929,12 +929,18 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                             )
                         }
 
+                        // Mark the end of the span for chat.handleUserMessage here, as we do not await
+                        // the entire stream of chat messages being sent to the webview.
+                        // The span is concluded when the stream is complete.
+                        span.end()
                         this.saveSession()
                         this.postViewTranscript()
                     },
                 }
             )
         } catch (error) {
+            // This ensures that the span for chat.handleUserMessage is ended even if the operation fails
+            span.end()
             if (isAbortErrorOrSocketHangUp(error as Error)) {
                 return
             }
