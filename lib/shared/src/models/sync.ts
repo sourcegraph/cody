@@ -473,7 +473,11 @@ async function fetchServerSideModels(
 ): Promise<ServerModelConfiguration | undefined> {
     // Fetch the data via REST API.
     // NOTE: We may end up exposing this data via GraphQL, it's still TBD.
-    const client = new RestClient(config.auth, config.configuration.customHeaders)
+    const client = new RestClient(
+        config.auth.serverEndpoint,
+        config.auth.accessToken ?? undefined,
+        config.configuration.customHeaders
+    )
     return await client.getAvailableModels(signal)
 }
 

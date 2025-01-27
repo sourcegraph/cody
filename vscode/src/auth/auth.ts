@@ -12,18 +12,14 @@ import {
     cenv,
     clientCapabilities,
     currentAuthStatus,
-    currentResolvedConfig,
     getAuthErrorMessage,
     getCodyAuthReferralCode,
     graphqlClient,
     isDotCom,
     isError,
     isNetworkLikeError,
-    isWorkspaceInstance,
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
-import { resolveAuth } from '@sourcegraph/cody-shared/src/configuration/auth-resolver'
-import { isExternalProviderAuthError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
 import { isSourcegraphToken } from '../chat/protocol'
 import { newAuthStatus } from '../chat/utils'
 import { logDebug } from '../output-channel-logger'
@@ -42,28 +38,6 @@ interface LoginMenuItem {
 
 type AuthMenuType = 'signin' | 'switch'
 
-/**
- *  Handles trying to directly sign-in or add to an enterprise instance.
- * First tries to sign in with the current token, if it's valid. Otherwise,
- * opens the sign-in flow and has user confirm.
- */
-async function showEnterpriseInstanceUrlFlow(endpoint: string): Promise<void> {
-    const { configuration } = await currentResolvedConfig()
-    const auth = await resolveAuth(endpoint, configuration, secretStorage)
-
-    const authStatus = await authProvider.validateAndStoreCredentials(auth, 'store-if-valid')
-
-    if (!authStatus?.authenticated) {
-        const instanceUrl = await showInstanceURLInputBox(endpoint)
-        if (!instanceUrl) {
-            return
-        }
-        authProvider.setAuthPendingToEndpoint(instanceUrl)
-        redirectToEndpointLogin(instanceUrl)
-    } else {
-        await showAuthResultMessage(endpoint, authStatus)
-    }
-}
 /**
  * Show a quickpick to select the endpoint to sign into.
  */
@@ -109,20 +83,27 @@ export async function showSignInMenu(
             break
         }
         default: {
-            // Auto log user if token for the selected instance was found in secret or custom provider is configured
+            // Auto log user if token for the selected instance was found in secret
             const selectedEndpoint = item.uri
-            const { configuration } = await currentResolvedConfig()
-            const auth = await resolveAuth(selectedEndpoint, configuration, secretStorage)
-
-            let authStatus = await authProvider.validateAndStoreCredentials(auth, 'store-if-valid')
-
+            const token = await secretStorage.getToken(selectedEndpoint)
+            const tokenSource = await secretStorage.getTokenSource(selectedEndpoint)
+            let authStatus = token
+                ? await authProvider.validateAndStoreCredentials(
+                      { serverEndpoint: selectedEndpoint, accessToken: token, tokenSource },
+                      'store-if-valid'
+                  )
+                : undefined
             if (!authStatus?.authenticated) {
-                const token = await showAccessTokenInputBox(selectedEndpoint)
-                if (!token) {
+                const newToken = await showAccessTokenInputBox(selectedEndpoint)
+                if (!newToken) {
                     return
                 }
                 authStatus = await authProvider.validateAndStoreCredentials(
-                    { serverEndpoint: selectedEndpoint, credentials: { token, source: 'paste' } },
+                    {
+                        serverEndpoint: selectedEndpoint,
+                        accessToken: newToken,
+                        tokenSource: 'paste',
+                    },
                     'store-if-valid'
                 )
             }
@@ -161,12 +142,12 @@ async function showAuthMenu(type: AuthMenuType): Promise<LoginMenuItem | null> {
 /**
  * Show a VS Code input box to ask the user to enter a Sourcegraph instance URL.
  */
-async function showInstanceURLInputBox(url?: string): Promise<string | undefined> {
+async function showInstanceURLInputBox(title: string): Promise<string | undefined> {
     const result = await vscode.window.showInputBox({
-        title: 'Connect to a Sourcegraph instance',
+        title,
         prompt: 'Enter the URL of the Sourcegraph instance. For example, https://sourcegraph.example.com.',
         placeHolder: 'https://sourcegraph.example.com',
-        value: url ?? 'https://',
+        value: 'https://',
         password: false,
         ignoreFocusOut: true,
         // valide input to ensure the user is not entering a token as URL
@@ -247,12 +228,12 @@ const LoginMenuOptionItems = [
 ]
 
 async function signinMenuForInstanceUrl(instanceUrl: string): Promise<void> {
-    const token = await showAccessTokenInputBox(instanceUrl)
-    if (!token) {
+    const accessToken = await showAccessTokenInputBox(instanceUrl)
+    if (!accessToken) {
         return
     }
     const authStatus = await authProvider.validateAndStoreCredentials(
-        { serverEndpoint: instanceUrl, credentials: { token, source: 'paste' } },
+        { serverEndpoint: instanceUrl, accessToken: accessToken, tokenSource: 'paste' },
         'store-if-valid'
     )
     telemetryRecorder.recordEvent('cody.auth.signin.token', 'clicked', {
@@ -324,28 +305,14 @@ export async function tokenCallbackHandler(uri: vscode.Uri): Promise<void> {
     closeAuthProgressIndicator()
 
     const params = new URLSearchParams(uri.query)
-
     const token = params.get('code') || params.get('token')
     const endpoint = currentAuthStatus().endpoint
-
-    // If we were provided an instance URL then it means we are
-    // request the user setup auth with a different sourcegraph instance
-    // We want to prompt them to switch to this instance and if needed
-    // start the auth flow
-    const instanceHost = params.get('instance')
-    const instanceUrl = instanceHost ? new URL(instanceHost).origin : undefined
-    if (instanceUrl && isWorkspaceInstance(instanceUrl)) {
-        // Prompt the user to switch/setup with the new instance
-        await showEnterpriseInstanceUrlFlow(instanceUrl)
-        return
-    }
-
     if (!token || !endpoint) {
         return
     }
 
     const authStatus = await authProvider.validateAndStoreCredentials(
-        { serverEndpoint: endpoint, credentials: { token, source: 'redirect' } },
+        { serverEndpoint: endpoint, accessToken: token, tokenSource: 'redirect' },
         'store-if-valid'
     )
     telemetryRecorder.recordEvent('cody.auth.fromCallback.web', 'succeeded', {
@@ -442,25 +409,8 @@ export async function validateCredentials(
     signal?: AbortSignal,
     clientConfig?: CodyClientConfig
 ): Promise<AuthStatus> {
-    if (config.auth.error !== undefined) {
-        logDebug(
-            'auth',
-            `Failed to authenticate to ${config.auth.serverEndpoint} due to configuration error`,
-            config.auth.error
-        )
-        return {
-            authenticated: false,
-            endpoint: config.auth.serverEndpoint,
-            pendingValidation: false,
-            error: {
-                type: 'auth-config-error',
-                message: config.auth.error?.message ?? config.auth.error,
-            },
-        }
-    }
-
-    // Credentials are needed except for Cody Web, which uses cookies.
-    if (!config.auth.credentials && !clientCapabilities().isCodyWeb) {
+    // An access token is needed except for Cody Web, which uses cookies.
+    if (!config.auth.accessToken && !clientCapabilities().isCodyWeb) {
         return { authenticated: false, endpoint: config.auth.serverEndpoint, pendingValidation: false }
     }
 
@@ -482,28 +432,17 @@ export async function validateCredentials(
         const userInfo = await client.getCurrentUserInfo(signal)
         signal?.throwIfAborted()
 
-        if (isError(userInfo)) {
-            if (isExternalProviderAuthError(userInfo)) {
-                logDebug('auth', userInfo.message)
-                return {
-                    authenticated: false,
-                    error: { type: 'external-auth-provider-error', message: userInfo.message },
-                    endpoint: config.auth.serverEndpoint,
-                    pendingValidation: false,
-                }
-            }
-            if (isNetworkLikeError(userInfo)) {
-                logDebug(
-                    'auth',
-                    `Failed to authenticate to ${config.auth.serverEndpoint} due to likely network error`,
-                    userInfo.message
-                )
-                return {
-                    authenticated: false,
-                    error: { type: 'network-error' },
-                    endpoint: config.auth.serverEndpoint,
-                    pendingValidation: false,
-                }
+        if (isError(userInfo) && isNetworkLikeError(userInfo)) {
+            logDebug(
+                'auth',
+                `Failed to authenticate to ${config.auth.serverEndpoint} due to likely network error`,
+                userInfo.message
+            )
+            return {
+                authenticated: false,
+                error: { type: 'network-error' },
+                endpoint: config.auth.serverEndpoint,
+                pendingValidation: false,
             }
         }
         if (!userInfo || isError(userInfo)) {

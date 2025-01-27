@@ -2,7 +2,6 @@
 package com.sourcegraph.cody.agent.protocol_generated;
 
 object Constants {
-  const val Wildcard = ".*"
   const val Applied = "Applied"
   const val Applying = "Applying"
   const val Automatic = "Automatic"
@@ -16,7 +15,6 @@ object Constants {
   const val agentic = "agentic"
   const val ask = "ask"
   const val assistant = "assistant"
-  const val `auth-config-error` = "auth-config-error"
   const val authenticated = "authenticated"
   const val autocomplete = "autocomplete"
   const val balanced = "balanced"
@@ -41,7 +39,6 @@ object Constants {
   const val `enterprise-user-logged-into-dotcom` = "enterprise-user-logged-into-dotcom"
   const val error = "error"
   const val experimental = "experimental"
-  const val `external-auth-provider-error` = "external-auth-provider-error"
   const val file = "file"
   const val free = "free"
   const val function = "function"
