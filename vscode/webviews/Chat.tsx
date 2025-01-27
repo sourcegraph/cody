@@ -15,6 +15,7 @@ import type { VSCodeWrapper } from './utils/VSCodeApi'
 import type { Context } from '@opentelemetry/api'
 import { truncateTextStart } from '@sourcegraph/cody-shared/src/prompt/truncation'
 import { CHAT_INPUT_TOKEN_BUDGET } from '@sourcegraph/cody-shared/src/token/constants'
+import { LRUCache } from 'lru-cache'
 import styles from './Chat.module.css'
 import WelcomeFooter from './chat/components/WelcomeFooter'
 import { WelcomeMessage } from './chat/components/WelcomeMessage'
@@ -39,6 +40,8 @@ interface ChatboxProps {
     isPromptsV2Enabled?: boolean
     isTeamsUpgradeCtaEnabled?: boolean
 }
+
+const prefetchedEdits = new LRUCache<string, true>({ max: 100 })
 
 export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>> = ({
     messageInProgress,
@@ -132,32 +135,64 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             return
         }
 
+        function onSubmit({
+            id,
+            text,
+            instruction,
+            fileName,
+            isSelectionPrefetch,
+        }: {
+            id: string
+            text: string
+            isSelectionPrefetch: boolean
+            instruction?: PromptString
+            fileName?: string
+        }) {
+            const command = isSelectionPrefetch ? 'smartApplyPrefetchSelection' : 'smartApplySubmit'
+
+            const spanManager = new SpanManager('cody-webview')
+            const span = spanManager.startSpan(command, {
+                attributes: {
+                    sampled: true,
+                    'smartApply.id': id,
+                },
+            })
+            const traceparent = getTraceparentFromSpanContext(span.spanContext())
+
+            vscodeAPI.postMessage({
+                command,
+                id,
+                instruction: instruction?.toString(),
+                // remove the additional /n added by the text area at the end of the text
+                code: text.replace(/\n$/, ''),
+                fileName,
+                traceparent,
+            })
+            span.end()
+        }
+
         return {
+            onPrefetchStart: (
+                id: string,
+                text: string,
+                instruction?: PromptString,
+                fileName?: string
+            ): void => {
+                // Ensure that we prefetch once per each suggested chat edit.
+                if (prefetchedEdits.has(id)) {
+                    return
+                }
+
+                prefetchedEdits.set(id, true)
+                onSubmit({ isSelectionPrefetch: true, id, text, instruction, fileName })
+            },
             onSubmit: (
                 id: string,
                 text: string,
                 instruction?: PromptString,
                 fileName?: string
             ): void => {
-                const spanManager = new SpanManager('cody-webview')
-                const span = spanManager.startSpan('smartApplySubmit', {
-                    attributes: {
-                        sampled: true,
-                        'smartApply.id': id,
-                    },
-                })
-                const traceparent = getTraceparentFromSpanContext(span.spanContext())
-
-                vscodeAPI.postMessage({
-                    command: 'smartApplySubmit',
-                    id,
-                    instruction: instruction?.toString(),
-                    // remove the additional /n added by the text area at the end of the text
-                    code: text.replace(/\n$/, ''),
-                    fileName,
-                    traceparent,
-                })
-                span.end()
+                onSubmit({ isSelectionPrefetch: false, id, text, instruction, fileName })
             },
             onAccept: (id: string) => {
                 vscodeAPI.postMessage({

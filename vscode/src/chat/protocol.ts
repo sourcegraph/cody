@@ -102,7 +102,7 @@ export type WebviewMessage =
           text: string
       }
     | {
-          command: 'smartApplySubmit'
+          command: 'smartApplySubmit' | 'smartApplyPrefetchSelection'
           id: FixupTaskID
           code: string
           instruction?: string | undefined | null
