@@ -128,6 +128,10 @@ export const FileLink: React.FunctionComponent<
             privateMetadata: {
                 filename: displayPath(uri),
             },
+            billingMetadata: {
+                product: 'cody',
+                category: 'core',
+            },
         })
     }, [telemetryRecorder, oneboxEnabled, uri])
 
