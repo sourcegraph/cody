@@ -331,7 +331,7 @@ export const benchCommand = new commander.Command('bench')
         setStaticResolvedConfigurationWithAuthCredentials({
             configuration: { customHeaders: {} },
             auth: {
-                credentials: { token: options.srcAccessToken },
+                accessToken: options.srcAccessToken,
                 serverEndpoint: options.srcEndpoint,
             },
         })

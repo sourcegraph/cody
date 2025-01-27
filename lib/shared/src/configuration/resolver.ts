@@ -1,19 +1,16 @@
-import { Observable, Subject, map } from 'observable-fns'
-import type { AuthCredentials, ClientConfiguration, TokenSource } from '../configuration'
+import { Observable, map } from 'observable-fns'
+import type { AuthCredentials, ClientConfiguration } from '../configuration'
 import { logError } from '../logger'
 import {
-    combineLatest,
     distinctUntilChanged,
     firstValueFrom,
     fromLateSetSource,
     promiseToObservable,
-    startWith,
 } from '../misc/observable'
 import { skipPendingOperation, switchMapReplayOperation } from '../misc/observableOperation'
 import type { DefaultsAndUserPreferencesByEndpoint } from '../models/modelsService'
 import { DOTCOM_URL } from '../sourcegraph-api/environments'
 import { type PartialDeep, type ReadonlyDeep, isError } from '../utils'
-import { resolveAuth } from './auth-resolver'
 
 /**
  * The input from various sources that is needed to compute the {@link ResolvedConfiguration}.
@@ -30,7 +27,6 @@ export interface ConfigurationInput {
 
 export interface ClientSecrets {
     getToken(endpoint: string): Promise<string | undefined>
-    getTokenSource(endpoint: string): Promise<TokenSource | undefined>
 }
 
 export interface ClientState {
@@ -81,41 +77,42 @@ async function resolveConfiguration({
     clientSecrets,
     clientState,
     reinstall: { isReinstalling, onReinstall },
-}: ConfigurationInput): Promise<ResolvedConfiguration | Error> {
+}: ConfigurationInput): Promise<ResolvedConfiguration> {
     const isReinstall = await isReinstalling()
     if (isReinstall) {
         await onReinstall()
     }
-
-    const serverEndpoint =
+    // we allow for overriding the server endpoint from config if we haven't
+    // manually signed in somewhere else
+    const serverEndpoint = normalizeServerEndpointURL(
         clientConfiguration.overrideServerEndpoint ||
-        clientState.lastUsedEndpoint ||
-        DOTCOM_URL.toString()
+            (clientState.lastUsedEndpoint ?? DOTCOM_URL.toString())
+    )
 
-    try {
-        const auth = await resolveAuth(serverEndpoint, clientConfiguration, clientSecrets)
-        const cred = auth.credentials
-        if (cred !== undefined && 'expiration' in cred && cred.expiration !== undefined) {
-            const expireInMs = cred.expiration * 1000 - Date.now()
-            setInterval(() => _refreshConfigRequests.next(), expireInMs)
-        }
-        return { configuration: clientConfiguration, clientState, auth, isReinstall }
-    } catch (error) {
-        // We don't want to throw here, because that would cause the observable to terminate and
-        // all callers receiving no further config updates.
-        logError('resolveConfiguration', `Error resolving configuration: ${error}`)
-        const auth = {
-            credentials: undefined,
-            serverEndpoint,
-            error: error,
-        }
-        return { configuration: clientConfiguration, clientState, auth, isReinstall }
+    // We must not throw here, because that would result in the `resolvedConfig` observable
+    // terminating and all callers receiving no further config updates.
+    const loadTokenFn = () =>
+        clientSecrets.getToken(serverEndpoint).catch(error => {
+            logError(
+                'resolveConfiguration',
+                `Failed to get access token for endpoint ${serverEndpoint}: ${error}`
+            )
+            return null
+        })
+    const accessToken = clientConfiguration.overrideAuthToken || ((await loadTokenFn()) ?? null)
+    return {
+        configuration: clientConfiguration,
+        clientState,
+        auth: { accessToken, serverEndpoint },
+        isReinstall,
     }
 }
 
-const _resolvedConfig = fromLateSetSource<ResolvedConfiguration>()
+export function normalizeServerEndpointURL(url: string): string {
+    return url.endsWith('/') ? url : `${url}/`
+}
 
-const _refreshConfigRequests = new Subject<void>()
+const _resolvedConfig = fromLateSetSource<ResolvedConfiguration>()
 
 /**
  * Set the observable that will be used to provide the global {@link resolvedConfig}. This should be
@@ -123,8 +120,8 @@ const _refreshConfigRequests = new Subject<void>()
  */
 export function setResolvedConfigurationObservable(input: Observable<ConfigurationInput>): void {
     _resolvedConfig.setSource(
-        combineLatest(input, _refreshConfigRequests.pipe(startWith(undefined))).pipe(
-            switchMapReplayOperation(([input]) => promiseToObservable(resolveConfiguration(input))),
+        input.pipe(
+            switchMapReplayOperation(input => promiseToObservable(resolveConfiguration(input))),
             skipPendingOperation(),
             map(value => {
                 if (isError(value)) {
