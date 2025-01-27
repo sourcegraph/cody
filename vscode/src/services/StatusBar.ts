@@ -5,8 +5,11 @@ import {
     type ClientConfiguration,
     CodyAutoSuggestionMode,
     CodyIDE,
+<<<<<<< HEAD
     FeatureFlag,
     InvalidAccessTokenError,
+=======
+>>>>>>> c08e15619 (Refactor errors localtion)
     InvisibleStatusBarTag,
     type IsIgnored,
     Mutable,
@@ -21,7 +24,6 @@ import {
     featureFlagProvider,
     firstValueFrom,
     fromVSCodeEvent,
-    isAvailabilityError,
     logError,
     promise,
     promiseFactoryToObservable,
@@ -29,7 +31,11 @@ import {
     shareReplay,
 } from '@sourcegraph/cody-shared'
 
-import { AuthenticationError } from '@sourcegraph/cody-shared/src/auth/types'
+import {
+    AuthError,
+    InvalidAccessTokenError,
+    isAvailabilityError,
+} from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
 import { type Subscription, map } from 'observable-fns'
 import type { LiteralUnion, ReadonlyDeep } from 'type-fest'
 import { isUserEligibleForAutoeditsFeature } from '../autoedits/create-autoedits-provider'
@@ -123,6 +129,10 @@ export class CodyStatusBar implements vscode.Disposable {
         }
         CodyStatusBar.singleton = new CodyStatusBar()
         return CodyStatusBar.singleton
+    }
+
+    clearErrors() {
+        this.errors.mutate(draft => new Set())
     }
 
     addError(args: StatusBarErrorArgs) {
@@ -333,7 +343,7 @@ export class CodyStatusBar implements vscode.Disposable {
         }
 
         if (!authStatus.authenticated) {
-            if (authStatus.error instanceof AuthenticationError) {
+            if (authStatus.error instanceof AuthError) {
                 return {
                     icon: 'disabled',
                     tooltip: authStatus.error.message,
