@@ -417,7 +417,7 @@ const processingAnimationClasses = clsx(
     'tw-animate-fast-pulse',
     'tw-relative',
     'tw-border-transparent',
-    'tw-bg-button-background-hover',
+    'tw-bg-button-background hover:tw-bg-button-background-hover',
     'before:tw-absolute before:tw-inset-0',
     'before:tw-rounded-full',
     'before:tw-border',
