@@ -43,7 +43,7 @@ interface UserMenuProps {
     allowEndpointChange: boolean
     __storybook__open?: boolean
     // Whether to show the Sourcegraph Teams upgrade CTA or not.
-    isTeamsUpgradeCtaEnabled?: boolean
+    isWorkspacesUpgradeCtaEnabled?: boolean
 }
 
 type MenuView = 'main' | 'switch' | 'add' | 'remove'
@@ -56,7 +56,7 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
     onCloseByEscape,
     allowEndpointChange,
     __storybook__open,
-    isTeamsUpgradeCtaEnabled,
+    isWorkspacesUpgradeCtaEnabled,
 }) => {
     const telemetryRecorder = useTelemetryRecorder()
     const { displayName, username, primaryEmail, endpoint } = authStatus
@@ -318,7 +318,7 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
                                 </CommandItem>
                             </CommandGroup>
 
-                            {isTeamsUpgradeCtaEnabled && (
+                            {isWorkspacesUpgradeCtaEnabled && (
                                 <CommandGroup>
                                     <CommandLink
                                         href={ENTERPRISE_STARTER_LEARN_MORE_URL.toString()}
@@ -474,7 +474,7 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
                                     <Settings2Icon size={16} strokeWidth={1.25} className="tw-mr-2" />
                                     <span className="tw-flex-grow">Extension Settings</span>
                                 </CommandItem>
-                                {isTeamsUpgradeCtaEnabled && (
+                                {isWorkspacesUpgradeCtaEnabled && (
                                     <CommandLink
                                         href={ENTERPRISE_STARTER_PRICING_URL.toString()}
                                         target="_blank"

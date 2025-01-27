@@ -17,7 +17,7 @@ interface WelcomeMessageProps {
     setView: (view: View) => void
     IDE: CodyIDE
     isPromptsV2Enabled?: boolean
-    isTeamsUpgradeCtaEnabled?: boolean
+    isWorkspacesUpgradeCtaEnabled?: boolean
 }
 
 export const WelcomeMessage: FunctionComponent<WelcomeMessageProps> = ({

@@ -9,7 +9,8 @@ import graphLightCTA from '../../graph_light.svg'
 import { SourcegraphLogo } from '../../icons/SourcegraphLogo'
 import { useTelemetryRecorder } from '../../utils/telemetry'
 export const WelcomeNotice: FunctionComponent = () => {
-    const [dismissed, setDismissed] = useLocalStorage('sg_welcome_notice_16')
+    // to test locally, bump the suffix
+    const [dismissed, setDismissed] = useLocalStorage('sg_welcome_notice_001')
     if (dismissed === 1) {
         return null
     }
