@@ -137,9 +137,9 @@ export const AgenticContextCell: FunctionComponent<{
                                     <div className="tw-flex tw-flex-col tw-ml-[1rem]">
                                         <ContextList
                                             contextItems={contextItems}
-                                            isForFirstMessage={isForFirstMessage}
-                                            isAgenticChat={true}
-                                            model={model}
+                                            isForFirstMessage={false}
+                                            isAgenticChat={intent === 'chat'}
+                                            isSearchResponse={true}
                                         />
                                     </div>
                                 )}
