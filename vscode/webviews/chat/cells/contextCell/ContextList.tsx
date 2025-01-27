@@ -25,7 +25,7 @@ export const ContextList: React.FC<{
                             className={clsx(headerIconClassName, 'tw-mt-0.5')}
                         />
                         <div className="tw-flex tw-flex-col">
-                            No additional context fetched or used
+                            No additional context used
                             <div className="tw-text-sm tw-font-normal">Using public knowledge only</div>
                         </div>
                     </div>
