@@ -18,7 +18,7 @@ import {
 import { ActionItem } from './ActionItem'
 import styles from './PromptList.module.css'
 import { usePromptsQuery } from './usePromptsQuery'
-import { commandRowValue } from './utils'
+import { commandRowValue, shouldShowAction } from './utils'
 
 const BUILT_IN_PROMPTS_CODE: Record<string, number> = {
     'document-code': 1,
@@ -159,19 +159,31 @@ export const PromptList: FC<PromptListProps> = props => {
 
     const filteredActions = useCallback(
         (actions: Action[]) => {
+            const { clientCapabilities } = useConfig()
+            const isEditEnabled = clientCapabilities.edit !== 'none'
+
             if (promptFilters?.core) {
-                return actions.filter(action => action.actionType === 'prompt' && action.builtin)
+                return actions.filter(
+                    action =>
+                        action.actionType === 'prompt' &&
+                        action.builtin &&
+                        shouldShowAction(action, isEditEnabled)
+                )
             }
             const shouldExcludeBuiltinCommands =
                 promptFilters?.promoted || promptFilters?.owner || promptFilters?.tags
             if (shouldExcludeBuiltinCommands) {
-                return actions.filter(action => action.actionType === 'prompt' && !action.builtin)
+                return actions.filter(
+                    action =>
+                        action.actionType === 'prompt' &&
+                        !action.builtin &&
+                        shouldShowAction(action, isEditEnabled)
+                )
             }
-            return actions
+            return actions.filter(action => shouldShowAction(action, isEditEnabled))
         },
         [promptFilters]
     )
-
     // Don't show builtin commands to insert in the prompt editor.
     const allActions = showOnlyPromptInsertableCommands
         ? result?.actions.filter(action => action.actionType === 'prompt' || action.mode === 'ask') ?? []
