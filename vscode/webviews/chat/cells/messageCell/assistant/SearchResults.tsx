@@ -153,7 +153,12 @@ export const SearchResults = ({
     )
 
     const onFilterSidebarClose = useCallback(() => {
-        telemetryRecorder.recordEvent('onebox.filterSidebar', 'closed')
+        telemetryRecorder.recordEvent('onebox.filterSidebar', 'closed', {
+            billingMetadata: {
+                product: 'cody',
+                category: 'billable',
+            },
+        })
         setShowFiltersSidebar(false)
     }, [telemetryRecorder])
 
