@@ -29,7 +29,7 @@ export interface OpenTelemetryServiceConfig {
 }
 export class OpenTelemetryService {
     private tracerProvider?: NodeTracerProvider
-    private spanProcessors: BatchSpanProcessor[] = [] // Track span processors
+    private spanProcessors: BatchSpanProcessor[] = []
     private unloadInstrumentations?: () => void
     private lastConfig: OpenTelemetryServiceConfig | undefined
     private reconfigurePromiseMutex: Promise<void> = Promise.resolve()
@@ -89,20 +89,17 @@ export class OpenTelemetryService {
     }
 
     private async handleConfigUpdate(newConfig: OpenTelemetryServiceConfig): Promise<void> {
-        // Update diagnostics first
         const logLevel = newConfig.debugVerbose ? DiagLogLevel.INFO : DiagLogLevel.ERROR
         if (logLevel !== this.currentLogLevel) {
             diag.setLogger(this.diagLogger, logLevel)
             this.currentLogLevel = logLevel
         }
 
-        // Update instrumentation
         this.instrumentationUnload?.()
         this.instrumentationUnload = registerInstrumentations({
             instrumentations: [new HttpInstrumentation()],
         })
 
-        // Swap span processors
         await this.replaceSpanProcessors(newConfig)
     }
 
@@ -142,8 +139,6 @@ export class OpenTelemetryService {
                 console.error('Error shutting down old processors:', error)
             }
         }, 5000)
-        const list = this.tracerProvider?.getActiveSpanProcessor()
-        console.log('list', list)
     }
 
     public async reset(): Promise<void> {
