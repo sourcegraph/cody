@@ -18,8 +18,8 @@ import { URI } from 'vscode-uri'
 import {
     ACCOUNT_USAGE_URL,
     CODY_PRO_SUBSCRIPTION_URL,
-    ENTERPRISE_STARTER_PRICING_URL,
     ENTERPRISE_STARTER_LEARN_MORE_URL,
+    ENTERPRISE_STARTER_PRICING_URL,
     isSourcegraphToken,
 } from '../../src/chat/protocol'
 import { SourcegraphLogo } from '../icons/SourcegraphLogo'
@@ -345,7 +345,9 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
                                                 Enable collaboration with your team
                                             </div>
                                             <div className="tw-text-[12px] tw-text-muted-foreground">
-                                            Get your own workspace with AI-powered chat, prompt sharing and codebase serach. Automate tasks and accelerate development.
+                                                Get your own workspace with AI-powered chat, prompt
+                                                sharing and codebase serach. Automate tasks and
+                                                accelerate development.
                                             </div>
                                         </div>
                                         <Button

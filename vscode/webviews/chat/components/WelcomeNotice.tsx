@@ -1,5 +1,5 @@
 import { XIcon } from 'lucide-react'
-import { type FunctionComponent } from 'react'
+import type { FunctionComponent } from 'react'
 import { ENTERPRISE_STARTER_LEARN_MORE_URL } from '../../../src/chat/protocol'
 import { useLocalStorage } from '../../components/hooks'
 import { Badge } from '../../components/shadcn/ui/badge'
@@ -26,9 +26,12 @@ export const WelcomeNotice: FunctionComponent = () => {
                 <SourcegraphLogo width={22} height={22} />
                 <Badge className="tw-ml-3 tw-text-sm tw-py-[3px]">Enterprise Starter</Badge>
             </div>
-            <h1 className="tw-font-semibold tw-text-[14px] tw-my-6">Enable collaboration with your team</h1>
+            <h1 className="tw-font-semibold tw-text-[14px] tw-my-6">
+                Enable collaboration with your team
+            </h1>
             <p className="tw-text-muted-foreground tw-mb-2 tw-text-[12px]">
-                Get your own workspace with AI-powered chat, prompt sharing and codebase serach. Automate tasks and accelerate development.
+                Get your own workspace with AI-powered chat, prompt sharing and codebase serach. Automate
+                tasks and accelerate development.
             </p>
             <div id="welcome-notice-buttons" className="tw-flex tw-gap-4 tw-mb-4 tw-text-[12px]">
                 <Button type="button" variant="ghost" className="tw-px-2">
@@ -47,7 +50,7 @@ export const WelcomeNotice: FunctionComponent = () => {
             <button
                 type="button"
                 className="tw-absolute tw-h-5 tw-w-5 tw-text-muted-foreground tw-top-6 tw-right-6"
-                onClick={()=>dismissNotice()}
+                onClick={() => dismissNotice()}
             >
                 <XIcon size={16} />
             </button>
