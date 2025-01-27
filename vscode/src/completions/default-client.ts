@@ -14,8 +14,6 @@ import {
     RateLimitError,
     type SerializedCodeCompletionsParams,
     TracedError,
-    addAuthHeaders,
-    addCodyClientIdentificationHeaders,
     addTraceparent,
     contextFiltersProvider,
     createSSEIterator,
@@ -51,8 +49,8 @@ class DefaultCodeCompletionsClient implements CodeCompletionsClient {
         const { auth, configuration } = await currentResolvedConfig()
 
         const query = new URLSearchParams(getClientInfoParams())
-        const url = new URL(`/.api/completions/code?${query.toString()}`, auth.serverEndpoint)
-        const log = autocompleteLifecycleOutputChannelLogger?.startCompletion(params, url.href)
+        const url = new URL(`/.api/completions/code?${query.toString()}`, auth.serverEndpoint).href
+        const log = autocompleteLifecycleOutputChannelLogger?.startCompletion(params, url)
         const { signal } = abortController
 
         return tracer.startActiveSpan(
@@ -71,17 +69,14 @@ class DefaultCodeCompletionsClient implements CodeCompletionsClient {
                 // Force HTTP connection reuse to reduce latency.
                 // c.f. https://github.com/microsoft/vscode/issues/173861
                 headers.set('Content-Type', 'application/json; charset=utf-8')
-                addCodyClientIdentificationHeaders(headers)
+                if (auth.accessToken) {
+                    headers.set('Authorization', `token ${auth.accessToken}`)
+                }
 
                 if (tracingFlagEnabled) {
                     headers.set('X-Sourcegraph-Should-Trace', '1')
-                    addTraceparent(headers)
-                }
 
-                try {
-                    await addAuthHeaders(auth, headers, url)
-                } catch (error: any) {
-                    throw recordErrorToSpan(span, error)
+                    addTraceparent(headers)
                 }
 
                 // We enable streaming only for Node environments right now because it's hard to make

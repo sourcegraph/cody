@@ -17,7 +17,6 @@ import { addTraceparent, wrapInActiveSpan } from '../../tracing'
 import { isError } from '../../utils'
 import { addCodyClientIdentificationHeaders } from '../client-name-version'
 import { isAbortError } from '../errors'
-import { addAuthHeaders } from '../utils'
 import { type GraphQLResultCache, ObservableInvalidatedGraphQLResultCacheFactory } from './cache'
 import {
     BUILTIN_PROMPTS_QUERY,
@@ -1616,27 +1615,22 @@ export class SourcegraphGraphQLAPIClient {
 
         const headers = new Headers(config.configuration?.customHeaders as HeadersInit | undefined)
         headers.set('Content-Type', 'application/json; charset=utf-8')
+        if (config.auth.accessToken) {
+            headers.set('Authorization', `token ${config.auth.accessToken}`)
+        }
         if (config.clientState.anonymousUserID && !process.env.CODY_WEB_DONT_SET_SOME_HEADERS) {
             headers.set('X-Sourcegraph-Actor-Anonymous-UID', config.clientState.anonymousUserID)
         }
 
-        const url = new URL(
-            buildGraphQLUrl({
-                request: query,
-                baseUrl: config.auth.serverEndpoint,
-            })
-        )
-
         addTraceparent(headers)
         addCodyClientIdentificationHeaders(headers)
 
-        try {
-            await addAuthHeaders(config.auth, headers, url)
-        } catch (error: any) {
-            return error
-        }
-
         const queryName = query.match(QUERY_TO_NAME_REGEXP)?.[1]
+
+        const url = buildGraphQLUrl({
+            request: query,
+            baseUrl: config.auth.serverEndpoint,
+        })
 
         const { abortController, timeoutSignal } = dependentAbortControllerWithTimeout(signal)
         return wrapInActiveSpan(`graphql.fetch${queryName ? `.${queryName}` : ''}`, () =>
@@ -1648,7 +1642,7 @@ export class SourcegraphGraphQLAPIClient {
             })
                 .then(verifyResponseCode)
                 .then(response => response.json() as T)
-                .catch(catchHTTPError(url.href, timeoutSignal))
+                .catch(catchHTTPError(url, timeoutSignal))
         )
     }
 
@@ -1674,20 +1668,17 @@ export class SourcegraphGraphQLAPIClient {
 
         const headers = new Headers(config.configuration?.customHeaders as HeadersInit | undefined)
         headers.set('Content-Type', 'application/json; charset=utf-8')
+        if (config.auth.accessToken) {
+            headers.set('Authorization', `token ${config.auth.accessToken}`)
+        }
         if (config.clientState.anonymousUserID && !process.env.CODY_WEB_DONT_SET_SOME_HEADERS) {
             headers.set('X-Sourcegraph-Actor-Anonymous-UID', config.clientState.anonymousUserID)
         }
 
-        const url = new URL(urlPath, config.auth.serverEndpoint)
-
         addTraceparent(headers)
         addCodyClientIdentificationHeaders(headers)
 
-        try {
-            await addAuthHeaders(config.auth, headers, url)
-        } catch (error: any) {
-            return error
-        }
+        const url = new URL(urlPath, config.auth.serverEndpoint).href
 
         const { abortController, timeoutSignal } = dependentAbortControllerWithTimeout(signal)
         return wrapInActiveSpan(`httpapi.fetch${queryName ? `.${queryName}` : ''}`, () =>
@@ -1699,7 +1690,7 @@ export class SourcegraphGraphQLAPIClient {
             })
                 .then(verifyResponseCode)
                 .then(response => response.json() as T)
-                .catch(catchHTTPError(url.href, timeoutSignal))
+                .catch(catchHTTPError(url, timeoutSignal))
         )
     }
 }
