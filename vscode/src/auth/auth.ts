@@ -45,10 +45,14 @@ type AuthMenuType = 'signin' | 'switch'
  * opens the sign-in flow and has user confirm.
  */
 async function showEnterpriseInstanceUrlFlow(endpoint: string): Promise<void> {
-    const { configuration } = await currentResolvedConfig()
-    const auth = await resolveAuth(endpoint, configuration, secretStorage)
-
-    const authStatus = await authProvider.validateAndStoreCredentials(auth, 'store-if-valid')
+    const token = await secretStorage.getToken(endpoint)
+    const tokenSource = await secretStorage.getTokenSource(endpoint)
+    const authStatus = token
+        ? await authProvider.validateAndStoreCredentials(
+              { serverEndpoint: endpoint, accessToken: token, tokenSource },
+              'store-if-valid'
+          )
+        : undefined
 
     if (!authStatus?.authenticated) {
         const instanceUrl = await showInstanceURLInputBox(endpoint)
