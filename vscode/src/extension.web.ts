@@ -21,7 +21,6 @@ export function activate(
         extensionClient: extensionClient ?? defaultVSCodeExtensionClient(),
     })
 }
-// src/extension.web.ts
 
 export function createActivation(platformContext: Partial<PlatformContext>): typeof activate {
     return (context: vscode.ExtensionContext, extensionClient?: ExtensionClient) => {
