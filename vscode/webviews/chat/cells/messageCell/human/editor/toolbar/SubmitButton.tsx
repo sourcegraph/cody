@@ -418,6 +418,8 @@ const processingAnimationClasses = clsx(
     'tw-relative',
     'tw-border-transparent',
     'tw-bg-button-background hover:tw-bg-button-background-hover',
+    'active:tw-scale-95',
+    'tw-transition-transform tw-duration-100',
     'before:tw-absolute before:tw-inset-0',
     'before:tw-rounded-full',
     'before:tw-border',
