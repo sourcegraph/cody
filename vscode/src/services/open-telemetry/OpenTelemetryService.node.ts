@@ -38,6 +38,10 @@ export class OpenTelemetryService {
     private diagLogger: DiagConsoleLogger = new DiagConsoleLogger()
     private currentLogLevel: DiagLogLevel = DiagLogLevel.ERROR
 
+    // TODO: CODY-4720 - Race between config and auth update can lead to easy to make errors.
+    // `externalAuthRefresh` or `resolvedConfig` can emit before `auth` is updated, leading to potentially incoherent state.
+    // E.g. url endpoint may not match the endpoint for which headers were generated
+    // `addAuthHeaders` function have internal guard against this, but it would be better to solve this issue on the architecture level
     constructor() {
         // Initialize once and never replace
         this.tracerProvider = new NodeTracerProvider({
