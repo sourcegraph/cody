@@ -1,4 +1,4 @@
-import type { ChatMessage, ProcessingStep } from '@sourcegraph/cody-shared'
+import type { ChatMessage, ContextItem, ProcessingStep } from '@sourcegraph/cody-shared'
 import {
     BrainIcon,
     Check,
@@ -17,8 +17,8 @@ import {
 } from '../../../components/shadcn/ui/accordion'
 import { Button } from '../../../components/shadcn/ui/button'
 import { Cell } from '../Cell'
+import { ContextList } from '../contextCell/ContextList'
 import styles from './AgenticContextCell.module.css'
-
 export const __ProcessCellStorybookContext = createContext<{ initialOpen: boolean } | null>(null)
 
 const CELL_NAME = 'agentic-chat-items'
@@ -32,95 +32,123 @@ export const AgenticContextCell: FunctionComponent<{
     intent: ChatMessage['intent']
     manuallySelected?: boolean
     onSwitchIntent?: () => void
-}> = memo(({ className, isContextLoading, processes, intent, onSwitchIntent }) => {
-    const [accordionValue, setAccordionValue] = useState<string | undefined>(() => {
-        return localStorage.getItem('agenticContextCell.accordionValue') || undefined
-    })
+    contextItems?: ContextItem[]
+    isForFirstMessage: boolean
+    model?: string
+    experimentalOneBoxEnabled?: boolean
+}> = memo(
+    ({
+        className,
+        isContextLoading,
+        processes,
+        intent,
+        onSwitchIntent,
+        contextItems,
+        isForFirstMessage,
+        model,
+        experimentalOneBoxEnabled,
+    }) => {
+        const [accordionValue, setAccordionValue] = useState<string | undefined>(() => {
+            return localStorage.getItem('agenticContextCell.accordionValue') || undefined
+        })
 
-    const hasError = processes?.some(p => p.error) ?? false
-    const { title, icon: Icon, status } = getDisplayConfig(intent, isContextLoading, hasError, processes)
-    const statusClassName = hasError ? 'tw-text-yellow-600' : 'tw-text-muted-foreground'
+        const hasError = processes?.some(p => p.error) ?? false
+        const {
+            title,
+            icon: Icon,
+            status,
+        } = getDisplayConfig(intent, isContextLoading, hasError, processes)
+        const statusClassName = hasError ? 'tw-text-yellow-600' : 'tw-text-muted-foreground'
 
-    const renderSwitchButton = () => {
-        if (!['chat', 'search'].includes(intent || '')) {
-            return null
+        const renderSwitchButton = () => {
+            if (!['chat', 'search'].includes(intent || '')) {
+                return null
+            }
+
+            return (
+                <Button
+                    size="sm"
+                    variant="outline"
+                    className="tw-text-primary tw-flex tw-gap-2 tw-items-center tw-whitespace-nowrap"
+                    onClick={onSwitchIntent}
+                >
+                    {intent === 'chat' ? (
+                        <Search className="tw-size-6 tw-flex-shrink-0" />
+                    ) : (
+                        <MessageSquare className="tw-size-6 tw-flex-shrink-0" />
+                    )}
+                    {intent === 'chat' ? 'Switch to search' : 'Switch to chat'}
+                </Button>
+            )
         }
 
         return (
-            <Button
-                size="sm"
-                variant="outline"
-                className="tw-text-primary tw-flex tw-gap-2 tw-items-center tw-whitespace-nowrap"
-                onClick={onSwitchIntent}
-            >
-                {intent === 'chat' ? (
-                    <Search className="tw-size-6 tw-flex-shrink-0" />
-                ) : (
-                    <MessageSquare className="tw-size-6 tw-flex-shrink-0" />
-                )}
-                {intent === 'chat' ? 'Switch to search' : 'Switch to chat'}
-            </Button>
+            <div className="tw-flex tw-flex-col tw-justify-center tw-w-full tw-gap-2 tw-text-sm tw-font-medium">
+                <Accordion
+                    type="single"
+                    collapsible={true}
+                    value={accordionValue || undefined}
+                    onValueChange={value => {
+                        setAccordionValue(value)
+                        localStorage.setItem('agenticContextCell.accordionValue', value)
+                    }}
+                >
+                    <AccordionItem value={CELL_NAME} asChild>
+                        <Cell
+                            header={
+                                <div className="tw-flex tw-justify-between tw-items-center tw-w-full">
+                                    <AccordionTrigger
+                                        title={title}
+                                        className="tw-flex tw-justify-center tw-items-center tw-gap-3"
+                                        disabled={!processes?.some(p => p.id)}
+                                        data-state={accordionValue === CELL_NAME ? 'open' : 'closed'}
+                                    >
+                                        {isContextLoading ? (
+                                            <Loader2Icon size={16} className="tw-animate-spin" />
+                                        ) : (
+                                            <Icon size={16} className={statusClassName} />
+                                        )}
+                                        <span className="tw-flex tw-items-baseline">
+                                            {title}
+                                            <span className="tw-opacity-60 tw-text-sm tw-ml-2">
+                                                — {status.toLowerCase()}
+                                            </span>
+                                        </span>
+                                    </AccordionTrigger>{' '}
+                                    {renderSwitchButton()}
+                                </div>
+                            }
+                            containerClassName={className}
+                            contentClassName="tw-flex tw-flex-col tw-gap-2 tw-max-w-full"
+                            data-testid="context"
+                        >
+                            <AccordionContent
+                                className="tw-flex tw-flex-col tw-gap-2 tw-pb-4"
+                                overflow={false}
+                            >
+                                {processes && (
+                                    <ProcessList
+                                        processes={processes}
+                                        isContextLoading={isContextLoading}
+                                        headerIconClassName={statusClassName}
+                                    />
+                                )}
+                                {!isContextLoading && (
+                                    <ContextList
+                                        contextItems={contextItems}
+                                        isForFirstMessage={isForFirstMessage}
+                                        isAgenticChat={true}
+                                        model={model}
+                                    />
+                                )}
+                            </AccordionContent>
+                        </Cell>
+                    </AccordionItem>
+                </Accordion>
+            </div>
         )
     }
-
-    return (
-        <div className="tw-flex tw-flex-col tw-justify-center tw-w-full tw-gap-2 tw-text-sm tw-font-medium">
-            <Accordion
-                type="single"
-                collapsible={true}
-                value={accordionValue || undefined}
-                onValueChange={value => {
-                    setAccordionValue(value)
-                    localStorage.setItem('agenticContextCell.accordionValue', value)
-                }}
-            >
-                <AccordionItem value={CELL_NAME} asChild>
-                    <Cell
-                        header={
-                            <div className="tw-flex tw-justify-between tw-items-center tw-w-full">
-                                <AccordionTrigger
-                                    title={title}
-                                    className="tw-flex tw-justify-center tw-items-center tw-gap-3"
-                                    disabled={!processes?.some(p => p.id)}
-                                    data-state={accordionValue === CELL_NAME ? 'open' : 'closed'}
-                                >
-                                    {isContextLoading ? (
-                                        <Loader2Icon size={16} className="tw-animate-spin" />
-                                    ) : (
-                                        <Icon size={16} className={statusClassName} />
-                                    )}
-                                    <span className="tw-flex tw-items-baseline">
-                                        {title}
-                                        <span className="tw-opacity-60 tw-text-sm tw-ml-2">
-                                            — {status.toLowerCase()}
-                                        </span>
-                                    </span>
-                                </AccordionTrigger>{' '}
-                                {renderSwitchButton()}
-                            </div>
-                        }
-                        containerClassName={className}
-                        contentClassName="tw-flex tw-flex-col tw-gap-2 tw-max-w-full"
-                        data-testid="context"
-                    >
-                        <AccordionContent
-                            className="tw-flex tw-flex-col tw-gap-2 tw-pb-4"
-                            overflow={false}
-                        >
-                            {processes && (
-                                <ProcessList
-                                    processes={processes}
-                                    isContextLoading={isContextLoading}
-                                    headerIconClassName={statusClassName}
-                                />
-                            )}
-                        </AccordionContent>
-                    </Cell>
-                </AccordionItem>
-            </Accordion>{' '}
-        </div>
-    )
-})
+)
 const CHAT_STATES = {
     search: {
         title: 'Search',

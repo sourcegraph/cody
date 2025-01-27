@@ -711,23 +711,26 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                 />
             )}
             {humanMessage.agent && (
-                <AgenticContextCell
-                    key={`${humanMessage.index}-${humanMessage.intent}-process`}
-                    isContextLoading={Boolean(
-                        humanMessage.contextFiles === undefined &&
-                            isLastSentInteraction &&
-                            assistantMessage?.text === undefined &&
-                            assistantMessage?.subMessages === undefined
-                    )}
-                    processes={humanMessage?.processes ?? undefined}
-                    intent={isSearchIntent ? 'search' : 'chat'}
-                    onSwitchIntent={isSearchIntent ? reSubmitWithChatIntent : reSubmitWithSearchIntent}
-                />
+                <>
+                    <AgenticContextCell
+                        key={`${humanMessage.index}-${humanMessage.intent}-process`}
+                        isContextLoading={isContextLoading}
+                        processes={humanMessage?.processes ?? undefined}
+                        intent={isSearchIntent ? 'search' : 'chat'}
+                        onSwitchIntent={
+                            isSearchIntent ? reSubmitWithChatIntent : reSubmitWithSearchIntent
+                        }
+                        contextItems={humanMessage.contextFiles}
+                        isForFirstMessage={humanMessage.index === 0}
+                        model={assistantMessage?.model}
+                        experimentalOneBoxEnabled={experimentalOneBoxEnabled}
+                    />
+                    {!isSearchIntent &&
+                        humanMessage.agent &&
+                        isContextLoading &&
+                        assistantMessage?.isLoading && <ApprovalCell vscodeAPI={vscodeAPI} />}
+                </>
             )}{' '}
-            {!isSearchIntent &&
-                humanMessage.agent &&
-                isContextLoading &&
-                assistantMessage?.isLoading && <ApprovalCell vscodeAPI={vscodeAPI} />}
             {!(humanMessage.agent && isContextLoading) &&
                 (humanMessage.contextFiles || assistantMessage || isContextLoading) &&
                 !isSearchIntent && (
