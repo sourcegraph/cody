@@ -1,11 +1,13 @@
-import { Observable, map } from 'observable-fns'
+import { Observable, Subject, map } from 'observable-fns'
 import type { AuthCredentials, ClientConfiguration, TokenSource } from '../configuration'
 import { logError } from '../logger'
 import {
+    combineLatest,
     distinctUntilChanged,
     firstValueFrom,
     fromLateSetSource,
     promiseToObservable,
+    startWith,
 } from '../misc/observable'
 import { skipPendingOperation, switchMapReplayOperation } from '../misc/observableOperation'
 import type { DefaultsAndUserPreferencesByEndpoint } from '../models/modelsService'
@@ -92,6 +94,11 @@ async function resolveConfiguration({
 
     try {
         const auth = await resolveAuth(serverEndpoint, clientConfiguration, clientSecrets)
+        const cred = auth.credentials
+        if (cred !== undefined && 'expiration' in cred && cred.expiration !== undefined) {
+            const expireInMs = cred.expiration * 1000 - Date.now()
+            setInterval(() => _refreshConfigRequests.next(), expireInMs)
+        }
         return { configuration: clientConfiguration, clientState, auth, isReinstall }
     } catch (error) {
         // We don't want to throw here, because that would cause the observable to terminate and
@@ -108,14 +115,16 @@ async function resolveConfiguration({
 
 const _resolvedConfig = fromLateSetSource<ResolvedConfiguration>()
 
+const _refreshConfigRequests = new Subject<void>()
+
 /**
  * Set the observable that will be used to provide the global {@link resolvedConfig}. This should be
  * set exactly once (except in tests).
  */
 export function setResolvedConfigurationObservable(input: Observable<ConfigurationInput>): void {
     _resolvedConfig.setSource(
-        input.pipe(
-            switchMapReplayOperation(input => promiseToObservable(resolveConfiguration(input))),
+        combineLatest(input, _refreshConfigRequests.pipe(startWith(undefined))).pipe(
+            switchMapReplayOperation(([input]) => promiseToObservable(resolveConfiguration(input))),
             skipPendingOperation(),
             map(value => {
                 if (isError(value)) {
