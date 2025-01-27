@@ -231,7 +231,7 @@ export class DeepCodyAgent {
             }
 
             const step = this.stepsManager.addStep({
-                title: 'Finding relevant files',
+                title: 'Finding relevant context',
             })
             const results = await Promise.all(
                 this.tools.map(async tool => {
