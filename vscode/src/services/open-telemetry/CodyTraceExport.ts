@@ -6,20 +6,20 @@ import type { OpenTelemetryServiceConfig } from './OpenTelemetryService.node'
 const MAX_TRACE_RETAIN_MS = 60 * 1000
 
 export class CodyTraceExporter extends OTLPTraceExporter {
-    private isTracingEnabled = false
     private queuedSpans: Map<string, { span: ReadableSpan; enqueuedAt: number }> = new Map()
 
-    constructor(config: OpenTelemetryServiceConfig) {
+    constructor(private configAccessor: () => OpenTelemetryServiceConfig | null) {
         super({
-            url: config.traceUrl,
+            url: configAccessor()?.traceUrl,
+            headers: configAccessor()?.headers,
             httpAgentOptions: { rejectUnauthorized: false },
-            headers: config.headers,
         })
-        this.isTracingEnabled = config.isTracingEnabled
     }
 
     export(spans: ReadableSpan[], resultCallback: (result: ExportResult) => void): void {
-        if (!this.isTracingEnabled) {
+        const config = this.configAccessor()
+        if (!config?.isTracingEnabled) {
+            this.queuedSpans.clear()
             return
         }
 

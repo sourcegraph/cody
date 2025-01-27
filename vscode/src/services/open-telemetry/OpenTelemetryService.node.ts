@@ -27,24 +27,27 @@ export interface OpenTelemetryServiceConfig {
     headers: Record<string, string>
     debugVerbose: boolean
 }
-
 export class OpenTelemetryService {
     private tracerProvider?: NodeTracerProvider
+    private spanProcessors: BatchSpanProcessor[] = [] // Track span processors
     private unloadInstrumentations?: () => void
-
     private lastConfig: OpenTelemetryServiceConfig | undefined
-
-    // We use a single promise object that we chain on to, to avoid multiple reconfigure calls to
-    // be run in parallel
     private reconfigurePromiseMutex: Promise<void> = Promise.resolve()
-
     private configSubscription: Unsubscribable
+    private instrumentationUnload?: () => void
+    private diagLogger: DiagConsoleLogger = new DiagConsoleLogger()
 
-    // TODO: CODY-4720 - Race between config and auth update can lead to easy to make errors.
-    // `externalAuthRefresh` or `resolvedConfig` can emit before `auth` is updated, leading to potentially incoherent state.
-    // E.g. url endpoint may not match the endpoint for which headers were generated
-    // `addAuthHeaders` function have internal guard against this, but it would be better to solve this issue on the architecture level
     constructor() {
+        // Initialize once and never replace
+        this.tracerProvider = new NodeTracerProvider({
+            resource: new Resource({
+                [SemanticResourceAttributes.SERVICE_NAME]: 'cody-client',
+                [SemanticResourceAttributes.SERVICE_VERSION]: version,
+            }),
+        })
+        // Register once at startup
+        this.tracerProvider.register()
+
         this.configSubscription = combineLatest(
             externalAuthRefreshChanges,
             resolvedConfig,
@@ -54,7 +57,6 @@ export class OpenTelemetryService {
                 .then(async () => {
                     const isTracingEnabled =
                         configuration.experimentalTracing || codyAutocompleteTracingFlag
-
                     const traceUrl = new URL('/-/debug/otlp/v1/traces', auth.serverEndpoint).toString()
 
                     const httpHeaders = new Headers()
@@ -71,20 +73,9 @@ export class OpenTelemetryService {
                     if (isEqual(this.lastConfig, newConfig)) {
                         return
                     }
+                    await this.reset()
+                    await this.handleConfigUpdate(newConfig)
                     this.lastConfig = newConfig
-
-                    const logLevel = configuration.debugVerbose ? DiagLogLevel.INFO : DiagLogLevel.ERROR
-                    diag.setLogger(new DiagConsoleLogger(), logLevel)
-
-                    await this.reset().catch(error => {
-                        console.error('Error reset OpenTelemetry:', error)
-                    })
-
-                    this.unloadInstrumentations = registerInstrumentations({
-                        instrumentations: [new HttpInstrumentation()],
-                    })
-
-                    this.configureTracerProvider(this.lastConfig)
                 })
                 .catch(error => {
                     console.error('Error configuring OpenTelemetry:', error)
@@ -92,31 +83,62 @@ export class OpenTelemetryService {
         })
     }
 
-    public dispose(): void {
-        this.configSubscription.unsubscribe()
-    }
+    private async handleConfigUpdate(newConfig: OpenTelemetryServiceConfig): Promise<void> {
+        // Update diagnostics first
+        const logLevel = newConfig.debugVerbose ? DiagLogLevel.INFO : DiagLogLevel.ERROR
+        diag.setLogger(this.diagLogger, logLevel)
 
-    private configureTracerProvider(config: OpenTelemetryServiceConfig): void {
-        this.tracerProvider = new NodeTracerProvider({
-            resource: new Resource({
-                [SemanticResourceAttributes.SERVICE_NAME]: 'cody-client',
-                [SemanticResourceAttributes.SERVICE_VERSION]: version,
-            }),
+        // Update instrumentation
+        this.instrumentationUnload?.()
+        this.instrumentationUnload = registerInstrumentations({
+            instrumentations: [new HttpInstrumentation()],
         })
 
-        // Add the default tracer exporter used in production.
-        this.tracerProvider.addSpanProcessor(new BatchSpanProcessor(new CodyTraceExporter(config)))
+        // Swap span processors
+        await this.replaceSpanProcessors(newConfig)
+    }
 
-        // Add the console exporter used in development for verbose logging and debugging.
-        if (process.env.NODE_ENV === 'development' || config.debugVerbose) {
-            this.tracerProvider.addSpanProcessor(new BatchSpanProcessor(new ConsoleBatchSpanExporter()))
+    public dispose(): void {
+        this.configSubscription.unsubscribe()
+        this.reset().catch(error => console.error('Error disposing OpenTelemetry:', error))
+    }
+
+    private async replaceSpanProcessors(config: OpenTelemetryServiceConfig): Promise<void> {
+        const newProcessors = [new BatchSpanProcessor(new CodyTraceExporter(() => config))]
+
+        if (config.debugVerbose || process.env.NODE_ENV === 'development') {
+            newProcessors.push(new BatchSpanProcessor(new ConsoleBatchSpanExporter()))
         }
 
-        this.tracerProvider.register()
+        // Atomic swap of processors
+        const oldProcessors = this.spanProcessors
+        this.spanProcessors = newProcessors
+
+        // Gracefully shutdown old processors
+        setTimeout(async () => {
+            await Promise.all(oldProcessors.map(p => p.shutdown()))
+        }, 1000) // Allow buffer for in-flight spans
+        // Update provider's processors
+
+        // Get reference to tracer provider implementation
+        const provider = this.tracerProvider as any
+
+        // 2. Clear current processors list
+        provider._registeredSpanProcessors = []
+
+        for (const processor of newProcessors) {
+            this.tracerProvider?.addSpanProcessor(processor)
+        }
+        const list = this.tracerProvider?.getActiveSpanProcessor()
+        console.log('list', list)
     }
 
     public async reset(): Promise<void> {
-        await this.tracerProvider?.shutdown()
+        // Shutdown span processors and instrumentations
+        if (this.spanProcessors.length > 0) {
+            await Promise.all(this.spanProcessors.map(processor => processor.shutdown()))
+            this.spanProcessors = []
+        }
         this.unloadInstrumentations?.()
     }
 }
