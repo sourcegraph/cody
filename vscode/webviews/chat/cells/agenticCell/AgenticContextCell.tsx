@@ -87,10 +87,10 @@ export const AgenticContextCell: FunctionComponent<{
                 <Accordion
                     type="single"
                     collapsible={true}
-                    value={accordionValue || undefined}
+                    value={accordionValue}
                     onValueChange={value => {
                         setAccordionValue(value)
-                        localStorage.setItem('agenticContextCell.accordionValue', value)
+                        localStorage.setItem('agenticContextCell.accordionValue', value || '')
                     }}
                 >
                     <AccordionItem value={CELL_NAME} asChild>
@@ -181,8 +181,6 @@ export const getDisplayConfig = (
     contextItems?: ContextItem[]
 ) => {
     const config = CHAT_STATES[intent === 'search' ? 'search' : 'chat']
-
-    const hasNoContext = !isContextLoading && (!contextItems || contextItems.length === 0)
 
     const status = !isContextLoading
         ? hasError
