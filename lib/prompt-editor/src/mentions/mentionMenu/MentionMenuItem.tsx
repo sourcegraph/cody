@@ -25,10 +25,12 @@ import {
     FolderGitIcon,
     FolderOpenIcon,
     LayoutPanelTop,
+    LayoutPanelTopIcon,
     LibraryBigIcon,
     LinkIcon,
     ListMinusIcon,
     SmileIcon,
+    SquareDashedMousePointerIcon,
     SquareFunctionIcon,
 } from 'lucide-react'
 import type { FunctionComponent, ReactNode } from 'react'
@@ -192,4 +194,7 @@ export const iconForItem: Record<
     folder: FolderOpenIcon,
     'git-folder': FolderGitIcon,
     'list-selection': ListMinusIcon,
+    file: FileIcon,
+    'square-dashed-mouse-pointer': SquareDashedMousePointerIcon,
+    'layout-menubar': LayoutPanelTopIcon,
 }
