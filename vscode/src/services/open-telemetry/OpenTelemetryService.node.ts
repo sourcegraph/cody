@@ -109,26 +109,31 @@ export class OpenTelemetryService {
         if (config.debugVerbose || process.env.NODE_ENV === 'development') {
             newProcessors.push(new BatchSpanProcessor(new ConsoleBatchSpanExporter()))
         }
-
-        // Atomic swap of processors
-        const oldProcessors = this.spanProcessors
-        this.spanProcessors = newProcessors
-
-        // Gracefully shutdown old processors
-        setTimeout(async () => {
-            await Promise.all(oldProcessors.map(p => p.shutdown()))
-        }, 1000) // Allow buffer for in-flight spans
-        // Update provider's processors
-
-        // Get reference to tracer provider implementation
         const provider = this.tracerProvider as any
+        const oldProcessors = this.spanProcessors
 
-        // 2. Clear current processors list
+        // Clear the provider's internal processor list and active processor
         provider._registeredSpanProcessors = []
+        provider.activeSpanProcessor = {
+            forceFlush: async () => {},
+            onStart: () => {},
+            onEnd: () => {},
+            shutdown: async () => {},
+        }
 
+        // Add new processors to the provider
         for (const processor of newProcessors) {
             this.tracerProvider?.addSpanProcessor(processor)
         }
+
+        // Gracefully shutdown old processors after clearing references
+        setTimeout(async () => {
+            try {
+                await Promise.all(oldProcessors.map(p => p.shutdown()))
+            } catch (error) {
+                console.error('Error shutting down old processors:', error)
+            }
+        }, 5000)
         const list = this.tracerProvider?.getActiveSpanProcessor()
         console.log('list', list)
     }
