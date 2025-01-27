@@ -624,7 +624,7 @@ function registerUpgradeHandlers(disposables: vscode.Disposable[]): void {
                 if (uri.path === '/app-done') {
                     // This is an old re-entrypoint from App that is a no-op now.
                 } else {
-                    tokenCallbackHandler(uri)
+                    void tokenCallbackHandler(uri)
                 }
             },
         }),
