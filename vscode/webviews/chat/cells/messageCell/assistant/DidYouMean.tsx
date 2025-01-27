@@ -9,12 +9,12 @@ export const DidYouMeanNotice = (props: DidYouMeanNoticeProps) => {
     const { query, disabled, switchToSearch } = props
 
     return (
-        <div className="tw-border tw-border-border tw-bg-input-background tw-rounded-md tw-p-4">
+        <div className="tw-border-b tw-border-b-muted tw-p-4 tw-text-sm md:tw-text-md tw-leading-tight">
             Did you mean to search{' '}
             <button
                 type="button"
                 onClick={() => !disabled && switchToSearch(query)}
-                className={`tw-italic tw-font-bold tw-border-0 tw-bg-transparent tw-p-0 ${
+                className={`tw-italic tw-font-semibold tw-border-0 tw-bg-transparent tw-p-0 ${
                     disabled ? 'tw-text-text-disabled' : 'tw-text-link'
                 }`}
                 disabled={disabled}

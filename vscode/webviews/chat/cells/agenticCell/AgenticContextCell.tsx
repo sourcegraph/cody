@@ -173,14 +173,16 @@ const CHAT_STATES = {
         },
     },
 } as const
-
 export const getDisplayConfig = (
     intent: ChatMessage['intent'],
     isContextLoading: boolean,
     hasError: boolean,
-    processes?: ProcessingStep[]
+    processes?: ProcessingStep[],
+    contextItems?: ContextItem[]
 ) => {
     const config = CHAT_STATES[intent === 'search' ? 'search' : 'chat']
+
+    const hasNoContext = !isContextLoading && (!contextItems || contextItems.length === 0)
 
     const status = !isContextLoading
         ? hasError
@@ -227,7 +229,7 @@ const ProcessItem: FC<{
 
     return (
         <div
-            className={`tw-flex tw-items-center tw-gap-3 tw-p-1 ${styles.processItem} ${styles.fadeIn}`}
+            className={`tw-flex tw-items-center tw-gap-4 tw-p-1 ${styles.processItem} ${styles.fadeIn}`}
         >
             <div
                 className={`${process.type === 'tool' ? 'tw-ml-[1rem] tw-font-sm' : 'tw-ml-0'} ${
