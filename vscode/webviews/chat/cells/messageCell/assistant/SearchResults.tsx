@@ -12,7 +12,6 @@ import {
     FilterX,
     OctagonX,
     PanelLeftClose,
-    Search,
 } from 'lucide-react'
 import { useCallback, useContext, useLayoutEffect, useMemo, useReducer, useState } from 'react'
 import {
@@ -253,7 +252,6 @@ export const SearchResults = ({
                                         </>
                                     )}
                                     <div className="tw-flex tw-gap-4 tw-items-center tw-font-medium tw-text-sm tw-text-muted-foreground tw-px-2">
-                                        <Search className="tw-size-6 md:tw-size-8 tw-flex-shrink-0" />
                                         Displaying {resultsToShow.length} code search results
                                     </div>
                                 </div>
