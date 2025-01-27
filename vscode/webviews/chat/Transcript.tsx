@@ -548,6 +548,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                 attributes: { 'message.index': assistantMessage.index },
                 context: activeChatContext,
             })
+            debugger
         }
 
         const endRenderSpan = () => {

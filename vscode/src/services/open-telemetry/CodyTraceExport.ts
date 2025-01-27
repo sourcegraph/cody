@@ -44,20 +44,26 @@ export class CodyTraceExporter extends OTLPTraceExporter {
         const spansToExport: ReadableSpan[] = []
         for (const span of spans) {
             const rootSpan = getRootSpan(spanMap, span)
+
+            console.log("name is ", span.name)
+            console.log("rootSpan is ", rootSpan)
             if (rootSpan === null) {
                 // The child of the root is sampled but root is not and the span is continued
                 // This for the cases where the root span is actually present in the webview
                 // but not in the extension host.
                 const effectiveRootSpan = getEffectiveRootSpan(spanMap, span)
+                console.log("effectiveRootSpan is ", effectiveRootSpan?.name)
                 if (
                     effectiveRootSpan &&
                     isSampled(effectiveRootSpan) &&
                     isContinued(effectiveRootSpan)
                 ) {
+                    console.log("special case effectiveRootSpan is sampled and continued and sent to export", effectiveRootSpan.name)
                     spansToExport.push(span)
                     // Since we pushed the spans, we don't need to queue them
                     continue
                 }
+                console.log("effectiveRootSpan is not sampled or continued", effectiveRootSpan?.name)
 
                 const spanId = span.spanContext().spanId
                 if (!this.queuedSpans.has(spanId)) {
@@ -68,6 +74,7 @@ export class CodyTraceExporter extends OTLPTraceExporter {
                 }
             } else {
                 if (isSampled(rootSpan)) {
+                    console.log("rootSpan is sampled and sent to export", rootSpan.name)
                     spansToExport.push(span)
                 }
                 // else: The span is dropped

@@ -928,7 +928,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                                 model
                             )
                         }
-
+                        span.end()
                         this.saveSession()
                         this.postViewTranscript()
                     },
