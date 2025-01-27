@@ -37,7 +37,7 @@ interface ChatboxProps {
     setView: (view: View) => void
     smartApplyEnabled?: boolean
     isPromptsV2Enabled?: boolean
-    isTeamsUpgradeCtaEnabled?: boolean
+    isWorkspacesUpgradeCtaEnabled?: boolean
 }
 
 export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>> = ({
@@ -53,7 +53,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     setView,
     smartApplyEnabled,
     isPromptsV2Enabled,
-    isTeamsUpgradeCtaEnabled,
+    isWorkspacesUpgradeCtaEnabled,
 }) => {
     const telemetryRecorder = useTelemetryRecorder()
 
@@ -261,7 +261,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                         isPromptsV2Enabled={isPromptsV2Enabled}
                     />
                     <WelcomeFooter IDE={userInfo.IDE} />
-                    {isTeamsUpgradeCtaEnabled && (
+                    {isWorkspacesUpgradeCtaEnabled && (
                         <div className="tw-absolute tw-bottom-0 tw-left-1/2 tw-transform tw--translate-x-1/2 tw-w-[95%] tw-z-1 tw-mb-4 tw-max-h-1/2">
                             <WelcomeNotice />
                         </div>
