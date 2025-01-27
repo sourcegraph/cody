@@ -36,6 +36,7 @@ export class OpenTelemetryService {
     private configSubscription: Unsubscribable
     private instrumentationUnload?: () => void
     private diagLogger: DiagConsoleLogger = new DiagConsoleLogger()
+    private currentLogLevel: DiagLogLevel = DiagLogLevel.ERROR
 
     constructor() {
         // Initialize once and never replace
@@ -86,7 +87,10 @@ export class OpenTelemetryService {
     private async handleConfigUpdate(newConfig: OpenTelemetryServiceConfig): Promise<void> {
         // Update diagnostics first
         const logLevel = newConfig.debugVerbose ? DiagLogLevel.INFO : DiagLogLevel.ERROR
-        diag.setLogger(this.diagLogger, logLevel)
+        if (logLevel !== this.currentLogLevel) {
+            diag.setLogger(this.diagLogger, logLevel)
+            this.currentLogLevel = logLevel
+        }
 
         // Update instrumentation
         this.instrumentationUnload?.()
