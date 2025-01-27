@@ -10,7 +10,6 @@ import {
     type CompletionResponseWithMetaData,
     CompletionStopReason,
     FeatureFlag,
-    NeedsAuthChallengeError,
     NetworkError,
     RateLimitError,
     type SerializedCodeCompletionsParams,
@@ -38,6 +37,7 @@ import {
 } from '@sourcegraph/cody-shared'
 
 import { getClientIdentificationHeaders } from '@sourcegraph/cody-shared'
+import { NeedsAuthChallengeError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
 import { autocompleteLifecycleOutputChannelLogger } from './output-channel-logger'
 
 /**

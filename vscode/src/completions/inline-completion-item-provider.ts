@@ -2,7 +2,6 @@ import { type DebouncedFunc, debounce, isError } from 'lodash'
 import * as vscode from 'vscode'
 
 import {
-    AuthenticationError,
     ClientConfigSingleton,
     type DocumentContext,
     FeatureFlag,
@@ -24,6 +23,7 @@ import { autocompleteStageCounterLogger } from '../services/autocomplete-stage-c
 import { recordExposedExperimentsToSpan } from '../services/open-telemetry/utils'
 import { isInTutorial } from '../tutorial/helpers'
 
+import { AuthError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
 import { AutoEditOnboarding } from '../autoedits/autoedit-onboarding'
 import { ContextRankingStrategy } from '../completions/context/completions-context-ranker'
 import type { CompletionBookkeepingEvent, CompletionItemID, CompletionLogID } from './analytics-logger'
@@ -495,6 +495,9 @@ export class InlineCompletionItemProvider
                 if (abortController.signal.aborted || isPreloadRequest) {
                     return null
                 }
+
+                // If the getInlineCompletions completed successfully we should clear all status errors
+                this.config.statusBar.clearErrors()
 
                 if (!result) {
                     // Returning null will clear any existing suggestions, thus we need to reset the
@@ -1008,7 +1011,7 @@ export class InlineCompletionItemProvider
 
         if (isAuthError(error)) {
             this.config.statusBar.addError({
-                title: error instanceof AuthenticationError ? error.title : 'Authorization Error',
+                title: error instanceof AuthError ? error.title : 'Authorization Error',
                 description: error.message,
                 errorType: 'auth',
                 removeAfterSelected: false,
