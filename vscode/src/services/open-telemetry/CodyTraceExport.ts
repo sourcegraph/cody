@@ -10,17 +10,15 @@ export class CodyTraceExporter extends OTLPTraceExporter {
 
     constructor({
         traceUrl,
+        accessToken,
         isTracingEnabled,
-        authHeaders,
-    }: {
-        traceUrl: string
-        isTracingEnabled: boolean
-        authHeaders: Record<string, string>
-    }) {
+    }: { traceUrl: string; accessToken: string | null; isTracingEnabled: boolean }) {
         super({
             url: traceUrl,
             httpAgentOptions: { rejectUnauthorized: false },
-            headers: authHeaders,
+            headers: {
+                ...(accessToken ? { Authorization: `token ${accessToken}` } : {}),
+            },
         })
         this.isTracingEnabled = isTracingEnabled
     }

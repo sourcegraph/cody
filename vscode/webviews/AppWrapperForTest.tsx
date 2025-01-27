@@ -115,10 +115,7 @@ export const AppWrapperForTest: FunctionComponent<{ children: ReactNode }> = ({ 
                     detectIntent: () => Observable.of(),
                     resolvedConfig: () =>
                         Observable.of({
-                            auth: {
-                                credentials: { token: 'abc' },
-                                serverEndpoint: 'https://example.com',
-                            },
+                            auth: { accessToken: 'abc', serverEndpoint: 'https://example.com' },
                             configuration: {
                                 autocomplete: true,
                                 devModels: [{ model: 'my-model', provider: 'my-provider' }],

@@ -1,4 +1,5 @@
-import { addAuthHeaders, currentResolvedConfig, fetch } from '@sourcegraph/cody-shared'
+import { currentResolvedConfig } from '@sourcegraph/cody-shared'
+import fetch from 'node-fetch'
 import { logDebug, logError } from '../../output-channel-logger'
 
 /**
@@ -21,19 +22,18 @@ export const TraceSender = {
  */
 async function doSendTraceData(spanData: any): Promise<void> {
     const { auth } = await currentResolvedConfig()
-    if (!auth.credentials) {
+    if (!auth.accessToken) {
         logError('TraceSender', 'Cannot send trace data: not authenticated')
         throw new Error('Not authenticated')
     }
 
-    const traceUrl = new URL('/-/debug/otlp/v1/traces', auth.serverEndpoint)
-
-    const headers = new Headers({ 'Content-Type': 'application/json' })
-    await addAuthHeaders(auth, headers, traceUrl)
-
+    const traceUrl = new URL('/-/debug/otlp/v1/traces', auth.serverEndpoint).toString()
     const response = await fetch(traceUrl, {
         method: 'POST',
-        headers: headers,
+        headers: {
+            'Content-Type': 'application/json',
+            ...(auth.accessToken ? { Authorization: `token ${auth.accessToken}` } : {}),
+        },
         body: spanData,
     })
 
