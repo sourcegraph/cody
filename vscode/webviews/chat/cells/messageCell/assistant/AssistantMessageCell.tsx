@@ -205,7 +205,7 @@ export const AssistantMessageCell: FunctionComponent<{
 )
 
 export const NON_HUMAN_CELL_AVATAR_SIZE =
-    MESSAGE_CELL_AVATAR_SIZE * 0.83 /* make them "look" the same size as the human avatar icons */
+    MESSAGE_CELL_AVATAR_SIZE * 0.75 /* make them "look" the same size as the human avatar icons */
 
 export interface HumanMessageInitialContextInfo {
     repositories: boolean

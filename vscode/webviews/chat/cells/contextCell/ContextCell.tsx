@@ -162,7 +162,7 @@ export const ContextCell: FunctionComponent<{
         }
 
         return (
-            <div className="tw-flex tw-flex-col tw-justify-center tw-w-full tw-gap-2 tw-py-1 tw-px-4">
+            <div className="tw-flex tw-flex-col tw-justify-center tw-w-full tw-gap-2 tw-py-1">
                 <Accordion
                     type="single"
                     collapsible={true}
