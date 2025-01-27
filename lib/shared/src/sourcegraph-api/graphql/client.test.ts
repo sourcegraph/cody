@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
-import { NeedsAuthChallengeError, SourcegraphGraphQLAPIClient } from '../..'
+import { SourcegraphGraphQLAPIClient } from '../..'
 import * as fetchModule from '../../fetch'
+import { NeedsAuthChallengeError } from '../errors'
 
 vi.mocked(fetchModule)
 

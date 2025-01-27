@@ -1,11 +1,11 @@
-import type { AuthenticationError } from '@sourcegraph/cody-shared'
+import type { AuthError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
 import { TriangleAlertIcon } from 'lucide-react'
 import type React from 'react'
 import { useCallback } from 'react'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
 import { Button } from './shadcn/ui/button'
 interface AuthenticationErrorBannerProps {
-    errorMessage: AuthenticationError
+    errorMessage: AuthError
 }
 
 export const AuthenticationErrorBanner: React.FC<AuthenticationErrorBannerProps> = ({
@@ -25,7 +25,7 @@ export const AuthenticationErrorBanner: React.FC<AuthenticationErrorBannerProps>
                 <TriangleAlertIcon size={14} strokeWidth={2} className="tw-inline tw-mr-2" />
                 {errorMessage.title}
             </h5>
-            <p className="tw-text-sm">{errorMessage.message}</p>
+            <p className="tw-text-sm">{errorMessage.content}</p>
             <div className="tw-flex tw-gap-3 tw-mt-3">
                 {errorMessage.showTryAgain && (
                     <Button variant="secondary" size="sm" onClick={tryAgain}>

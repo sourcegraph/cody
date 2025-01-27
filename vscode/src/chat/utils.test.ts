@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
-import { type AuthStatus, DOTCOM_URL, InvalidAccessTokenError } from '@sourcegraph/cody-shared'
+import { type AuthStatus, DOTCOM_URL } from '@sourcegraph/cody-shared'
+import { InvalidAccessTokenError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
 import { newAuthStatus } from './utils'
 
 describe('validateAuthStatus', () => {

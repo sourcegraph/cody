@@ -1,14 +1,16 @@
 import {
     type AuthStatus,
-    AvailabilityError,
     CLIENT_CAPABILITIES_FIXTURE,
-    InvalidAccessTokenError,
-    NeedsAuthChallengeError,
     SourcegraphGraphQLAPIClient,
     mockAuthStatus,
     mockClientCapabilities,
     mockResolvedConfig,
 } from '@sourcegraph/cody-shared'
+import {
+    AvailabilityError,
+    InvalidAccessTokenError,
+    NeedsAuthChallengeError,
+} from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { type MockInstance, vi } from 'vitest'
 import type * as vscode from 'vscode'

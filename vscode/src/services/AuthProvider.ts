@@ -16,10 +16,6 @@ import {
     distinctUntilChanged,
     clientCapabilities as getClientCapabilities,
     isAbortError,
-    isAvailabilityError,
-    isEnterpriseUserDotComError,
-    isInvalidAccessTokenError,
-    isNeedsAuthChallengeError,
     resolvedConfig as resolvedConfig_,
     setAuthStatusObservable as setAuthStatusObservable_,
     startWith,
@@ -28,6 +24,12 @@ import {
     withLatestFrom,
 } from '@sourcegraph/cody-shared'
 import { normalizeServerEndpointURL } from '@sourcegraph/cody-shared/src/configuration/auth-resolver'
+import {
+    isAvailabilityError,
+    isEnterpriseUserDotComError,
+    isInvalidAccessTokenError,
+    isNeedsAuthChallengeError,
+} from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
 import isEqual from 'lodash/isEqual'
 import { Observable, Subject, interval } from 'observable-fns'
 import * as vscode from 'vscode'

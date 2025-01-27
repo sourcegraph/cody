@@ -1,17 +1,11 @@
 import * as vscode from 'vscode'
 
 import {
-    AuthConfigError,
     type AuthStatus,
-    AvailabilityError,
     ClientConfigSingleton,
     type CodyClientConfig,
     DOTCOM_URL,
-    EnterpriseUserDotComError,
-    ExternalAuthProviderError,
     type GraphQLAPIClientConfig,
-    InvalidAccessTokenError,
-    NeedsAuthChallengeError,
     type PickResolvedConfiguration,
     SourcegraphGraphQLAPIClient,
     type UnauthenticatedAuthStatus,
@@ -25,15 +19,22 @@ import {
     graphqlClient,
     isDotCom,
     isError,
-    isExternalProviderAuthError,
-    isInvalidAccessTokenError,
-    isNeedsAuthChallengeError,
     isNetworkLikeError,
     isWorkspaceInstance,
     resolvedConfig,
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
 import { resolveAuth } from '@sourcegraph/cody-shared/src/configuration/auth-resolver'
+import {
+    AuthConfigError,
+    AvailabilityError,
+    EnterpriseUserDotComError,
+    InvalidAccessTokenError,
+    NeedsAuthChallengeError,
+    isExternalProviderAuthError,
+    isInvalidAccessTokenError,
+    isNeedsAuthChallengeError,
+} from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
 import { isSourcegraphToken } from '../chat/protocol'
 import { newAuthStatus } from '../chat/utils'
 import { logDebug } from '../output-channel-logger'
@@ -496,7 +497,7 @@ export async function validateCredentials(
                 logDebug('auth', userInfo.message)
                 return {
                     authenticated: false,
-                    error: new ExternalAuthProviderError(userInfo.message),
+                    error: userInfo,
                     endpoint: config.auth.serverEndpoint,
                     pendingValidation: false,
                 }
