@@ -4,7 +4,7 @@ export function commandRowValue(row: Action): string {
     return row.actionType === 'prompt' ? `prompt-${row.id}` : `command-${row.key}`
 }
 
-export const shouldShowAction = (action: Action, isEditEnabled: boolean): boolean => {
+export function shouldShowAction(action: Action, isEditEnabled: boolean): boolean {
     const isActionEditLike =
         action.actionType === 'prompt' ? action.mode !== 'CHAT' : action.mode !== 'ask'
 
