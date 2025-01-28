@@ -4,6 +4,148 @@ This is a log of all notable changes to Cody for VS Code.
 
 <!--- {/_ CHANGELOG_START _/} -->
 
+## 7.13.0
+
+### Features
+
+#### Auth
+
+- Allow workspace to pre-populate URL for quick sign-in [#6653](https://github.com/sourcegraph/cody/pull/6653)
+
+#### Autoedit
+
+- Fix blockify range logic for tab indentation [#6701](https://github.com/sourcegraph/cody/pull/6701)
+
+#### Others
+
+- Add more control options to cody web [#6715](https://github.com/sourcegraph/cody/pull/6715)
+- omnibox cheatsheet [#6676](https://github.com/sourcegraph/cody/pull/6676)
+- at mentions for prompt templates editor [#6638](https://github.com/sourcegraph/cody/pull/6638)
+
+### Fix
+
+#### Accounts
+
+- Do not prefill the dotcom URL in the Enterprise login field [#6418](https://github.com/sourcegraph/cody/pull/6418)
+
+#### Agentic-Chat
+
+- fix prompt-mixin for deep-cody agent [#6654](https://github.com/sourcegraph/cody/pull/6654)
+
+#### Agentic-Context
+
+- Reveal hidden switch in context popup [#6694](https://github.com/sourcegraph/cody/pull/6694)
+
+#### Auto-Edit
+
+- fix the feature name [#6682](https://github.com/sourcegraph/cody/pull/6682)
+
+#### Context
+
+- Link to helpful resource when current repo not indexed in non-dotcom [#6695](https://github.com/sourcegraph/cody/pull/6695)
+
+#### Intent
+
+- Insert detected intent scores into telemetry event metadata in acceptable format [#6686](https://github.com/sourcegraph/cody/pull/6686)
+
+#### Models
+
+- ensure Tool Cody is only added when enabled [#6753](https://github.com/sourcegraph/cody/pull/6753)
+
+#### Omnibox
+
+- add conditional rendering to buttons [#6731](https://github.com/sourcegraph/cody/pull/6731)
+- fix available filters when deselecting [#6717](https://github.com/sourcegraph/cody/pull/6717)
+
+#### Release
+
+- remove checkout and pull steps to keep workflow referen… [#6737](https://github.com/sourcegraph/cody/pull/6737)
+- fix generate changelog template string [#6726](https://github.com/sourcegraph/cody/pull/6726)
+
+#### Others
+
+- Search results in Cody visual update [#6714](https://github.com/sourcegraph/cody/pull/6714)
+- add z-index to quick start modal [#6711](https://github.com/sourcegraph/cody/pull/6711)
+- only log on open file [#6704](https://github.com/sourcegraph/cody/pull/6704)
+- unicode support, remove current repo mention [#6688](https://github.com/sourcegraph/cody/pull/6688)
+- changelog generator with titles instead of changelog entries [#6669](https://github.com/sourcegraph/cody/pull/6669)
+- Intent handling logic fixes [#6637](https://github.com/sourcegraph/cody/pull/6637)
+
+### Chore
+
+#### Audo-Edit
+
+- fix the illegal line runtime error [#6727](https://github.com/sourcegraph/cody/pull/6727)
+- encapsulate prompt components [#6672](https://github.com/sourcegraph/cody/pull/6672)
+
+#### Autocomplete
+
+- use the correct output channel label [#6709](https://github.com/sourcegraph/cody/pull/6709)
+
+#### Build
+
+- Bump IntelliJ supported platform version to 251 [#6675](https://github.com/sourcegraph/cody/pull/6675)
+
+#### Release
+
+- Bump package version and update changelog for 1.62 [#6736](https://github.com/sourcegraph/cody/pull/6736)
+
+#### Webview
+
+- Fix webview-extension RPC logging to contain message payloads [#6671](https://github.com/sourcegraph/cody/pull/6671)
+
+#### Webviews
+
+- remove teams upgrade notice [#6651](https://github.com/sourcegraph/cody/pull/6651)
+
+### Refactor
+
+#### Agentic-Context
+
+- update status messaging [#6670](https://github.com/sourcegraph/cody/pull/6670)
+
+### Reverts
+
+- Revert "Support endpoint param in auth flow (workspaces vscode sign-in flow) [#-1](https://github.com/sourcegraph/cody/pull/6751)
+
+### Uncategorized
+
+#### Others
+
+- Update Cody Web 0.27.0 [#6760](https://github.com/sourcegraph/cody/pull/6760)
+- disable omnibox on dotcom [#6755](https://github.com/sourcegraph/cody/pull/6755)
+- Update Cody Web 0.26.0 [#6752](https://github.com/sourcegraph/cody/pull/6752)
+- Disable Intent Detection if Code Search Disabled [#6750](https://github.com/sourcegraph/cody/pull/6750)
+- Update Cody Web 0.25.0 [#6746](https://github.com/sourcegraph/cody/pull/6746)
+- omnibox: add callout for results from other repos [#6732](https://github.com/sourcegraph/cody/pull/6732)
+- Support endpoint param in auth flow (workspaces vscode sign-in flow) [#6730](https://github.com/sourcegraph/cody/pull/6730)
+- fix(agentic chat): exclude deep-cody prompt for o1 models [#6725](https://github.com/sourcegraph/cody/pull/6725)
+- More CSS updates [#6723](https://github.com/sourcegraph/cody/pull/6723)
+- Naman/update cody web 0.24.0 [#6721](https://github.com/sourcegraph/cody/pull/6721)
+- Update UI and fix intent bug [#6720](https://github.com/sourcegraph/cody/pull/6720)
+- refactor(agentic chat): move into model dropdown [#6718](https://github.com/sourcegraph/cody/pull/6718)
+- Update jetbrains recordings and build script [#6713](https://github.com/sourcegraph/cody/pull/6713)
+- Release Omnibox: remove feature flag [#6710](https://github.com/sourcegraph/cody/pull/6710)
+- omnibox: remove code search external link [#6706](https://github.com/sourcegraph/cody/pull/6706)
+- omnibox: link file path to the line of the first match [#6705](https://github.com/sourcegraph/cody/pull/6705)
+- Update Cody Web to 0.23.1 [#6693](https://github.com/sourcegraph/cody/pull/6693)
+- Refactor external auth providers to re-generate headers on demand [#6687](https://github.com/sourcegraph/cody/pull/6687)
+- Naman/new play button [#6685](https://github.com/sourcegraph/cody/pull/6685)
+- Update Cody Web to 0.23.0 [#6683](https://github.com/sourcegraph/cody/pull/6683)
+- Fix pointer cursor displaying on line numbers in search results [#6681](https://github.com/sourcegraph/cody/pull/6681)
+- omnibox: add "Did you mean" notice [#6655](https://github.com/sourcegraph/cody/pull/6655)
+- Fix missing current repo context in jetbrains [#6649](https://github.com/sourcegraph/cody/pull/6649)
+- Add NO_PROXY test that ensures dot prefixes are considered a wildcard [#6560](https://github.com/sourcegraph/cody/pull/6560)
+- fix NonEmptyFirstMessage storybook [#6492](https://github.com/sourcegraph/cody/pull/6492)
+- Fixing Css logic to correctly show rate limit banners in the correct place [#6464](https://github.com/sourcegraph/cody/pull/6464)
+
+### Untracked
+
+The following PRs were merged onto the previous release branch but could not be automatically mapped to a corresponding commit in this release:
+
+- fix(agentic chat): exclude deep-cody prompt for o1 models (#6725) [#6734](https://github.com/sourcegraph/cody/pull/6734)
+
+
 ## Unreleased
 
 ### Added
