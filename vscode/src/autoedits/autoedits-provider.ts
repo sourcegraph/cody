@@ -167,7 +167,11 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             await new Promise(resolve =>
                 setTimeout(resolve, INLINE_COMPLETION_DEFAULT_DEBOUNCE_INTERVAL_MS)
             )
+
+            console.log('DEBUGY: STEP 1: DEBOUNCED')
+
             if (abortSignal.aborted) {
+                console.log('DEBUGY: ABORTED AFTER STEP 1')
                 autoeditsOutputChannelLogger.logDebugIfVerbose(
                     'provideInlineCompletionItems',
                     'debounce aborted before calculating getCurrentDocContext'
@@ -192,6 +196,8 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 position,
                 tokenBudget: autoeditsProviderConfig.tokenLimit,
             })
+
+            console.log('DEBUGY: STEP 2: CODE TO REPLACE DATA', { codeToReplaceData })
 
             autoeditsOutputChannelLogger.logDebugIfVerbose(
                 'provideInlineCompletionItems',
@@ -225,6 +231,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 },
             })
             if (abortSignal.aborted) {
+                console.log('DEBUGY: ABORTED AFTER STEP 2')
                 autoeditsOutputChannelLogger.logDebugIfVerbose(
                     'provideInlineCompletionItems',
                     'aborted in getContext'
@@ -244,6 +251,8 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 isChatModel: autoeditsProviderConfig.isChatModel,
             })
 
+            console.log('DEBUGY: STEP 3: PROMPT', { prompt })
+
             autoeditsOutputChannelLogger.logDebugIfVerbose(
                 'provideInlineCompletionItems',
                 'Calculating prediction from getPrediction...'
@@ -255,7 +264,10 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 codeToReplaceData,
             })
 
+            console.log('DEBUGY: STEP 4: PREDICTION', { initialPrediction })
+
             if (abortSignal?.aborted) {
+                console.log('DEBUGY: ABORTED AFTER STEP 4')
                 autoeditsOutputChannelLogger.logDebugIfVerbose(
                     'provideInlineCompletionItems',
                     'client aborted after getPrediction'
@@ -269,6 +281,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             }
 
             if (initialPrediction === undefined || initialPrediction.length === 0) {
+                console.log('DEBUGY: EMPTY PREDICTION AFTER STEP 4')
                 autoeditsOutputChannelLogger.logDebugIfVerbose(
                     'provideInlineCompletionItems',
                     'received empty prediction'
@@ -301,8 +314,10 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 prediction: initialPrediction,
                 codeToReplaceData,
             })
+            console.log('DEBUGY: STEP 5: SHRINKED PREDICTION', { prediction })
 
             if (prediction === codeToRewrite) {
+                console.log('DEBUGY: PREDICTION EQUALS TO CODE TO REWRITE AFTER STEP 5')
                 autoeditsOutputChannelLogger.logDebugIfVerbose(
                     'provideInlineCompletionItems',
                     'prediction equals to code to rewrite'
@@ -319,8 +334,12 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 prediction,
                 codeToRewrite,
             })
+            console.log('DEBUGY: STEP 6: FILTER PREDICTION BASED RECENT EDITS', {
+                shouldFilterPredictionBasedRecentEdits,
+            })
 
             if (shouldFilterPredictionBasedRecentEdits) {
+                console.log('DEBUGY: FILTERED PREDICTION BASED RECENT EDITS AFTER STEP 6')
                 autoeditsOutputChannelLogger.logDebugIfVerbose(
                     'provideInlineCompletionItems',
                     'based on recent edits'
@@ -338,6 +357,8 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 codeToReplaceData
             )
 
+            console.log('DEBUGY: STEP 7: DECORATION INFO', { decorationInfo })
+
             if (
                 isPredictedTextAlreadyInSuffix({
                     codeToRewrite,
@@ -345,6 +366,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                     suffix: codeToReplaceData.suffixInArea + codeToReplaceData.suffixAfterArea,
                 })
             ) {
+                console.log('DEBUGY: PREDICTION EQUALS TO CODE TO REWRITE AFTER STEP 7')
                 autoeditsOutputChannelLogger.logDebugIfVerbose(
                     'provideInlineCompletionItems',
                     'skip because the prediction equals to code to rewrite'
@@ -367,7 +389,14 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                     decorationInfo,
                 })
 
+            console.log('DEBUGY: STEP 8: DECORATION ITEMS', {
+                updatedDecorationInfo,
+                inlineCompletionItems,
+                updatedPrediction,
+            })
+
             if (inlineCompletionItems === null && updatedDecorationInfo === null) {
+                console.log('DEBUGY: NO SUGGESTION TO RENDER AFTER STEP 8')
                 autoeditsOutputChannelLogger.logDebugIfVerbose(
                     'provideInlineCompletionItems',
                     'no suggestion to render'
@@ -381,6 +410,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
 
             const editor = vscode.window.activeTextEditor
             if (!editor || !areSameUriDocs(document, editor.document)) {
+                console.log('DEBUGY: NO ACTIVE EDITOR AFTER STEP 8')
                 autoeditsOutputChannelLogger.logDebugIfVerbose(
                     'provideInlineCompletionItems',
                     'no active editor'

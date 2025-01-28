@@ -349,11 +349,18 @@ export class AutoEditsDefaultRendererManager implements AutoEditsRendererManager
         updatedDecorationInfo: DecorationInfo | null
         updatedPrediction: string
     } {
+        console.log('DEBUGY: INSIDE MANAGER.TS')
         const updatedPrediction = adjustPredictionIfInlineCompletionPossible(
             prediction,
             codeToReplaceData.codeToRewritePrefix,
             codeToReplaceData.codeToRewriteSuffix
         )
+
+        console.log('DEBUGY: UPDATED PREDICTION', {
+            prediction,
+            updatedPrediction,
+        })
+
         const codeToRewriteAfterCurrentLine = codeToReplaceData.codeToRewriteSuffix.slice(
             docContext.currentLineSuffix.length + 1 // Additional char for newline
         )
@@ -364,7 +371,27 @@ export class AutoEditsDefaultRendererManager implements AutoEditsRendererManager
             // The new lines suggested after the current line must be equal to the prediction.
             updatedPrediction.endsWith(codeToRewriteAfterCurrentLine)
 
+        console.log('DEBUGY: IS PREFIX MATCH?', isPrefixMatch)
+        console.log('DEBUGY: IS SUFFIX MATCH?', isSuffixMatch, {
+            matchesSuffix: completionMatchesSuffix(updatedPrediction, docContext.currentLineSuffix),
+            updatedEndsWith: updatedPrediction.endsWith(codeToRewriteAfterCurrentLine),
+        })
+
+        console.log('DEBUGY: IS SUFFIX MATCH...', {
+            isSuffixMatch,
+            updatedPrediction,
+            suffix: docContext.currentLineSuffix || 'NO SUFFIX??',
+            codeToRewriteAfterCurrentLine,
+        })
+
         if (isPrefixMatch && isSuffixMatch) {
+            console.log('DEBUGY: PREFIX AND SUFFIX MATCHERRRSS...', {
+                updatedPrediction,
+                prefix: codeToReplaceData.codeToRewritePrefix,
+                suffix: codeToReplaceData.codeToRewriteSuffix,
+                codeToReplaceData,
+            })
+
             const autocompleteInlineResponse = extractInlineCompletionFromRewrittenCode(
                 updatedPrediction,
                 codeToReplaceData.codeToRewritePrefix,
@@ -372,6 +399,7 @@ export class AutoEditsDefaultRendererManager implements AutoEditsRendererManager
             )
 
             if (autocompleteInlineResponse.trimEnd().length === 0) {
+                console.log('RETURNING EARLY...')
                 return {
                     inlineCompletionItems: null,
                     updatedDecorationInfo: null,
@@ -380,6 +408,7 @@ export class AutoEditsDefaultRendererManager implements AutoEditsRendererManager
             }
 
             const insertText = docContext.currentLinePrefix + autocompleteInlineResponse
+            console.log('GOT INSERT TEXT', insertText)
             const inlineCompletionItem = new vscode.InlineCompletionItem(
                 insertText,
                 new vscode.Range(
