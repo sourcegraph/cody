@@ -14,6 +14,7 @@ import {
     DOTCOM_URL,
     type DefaultChatCommands,
     type EventSource,
+    FeatureFlag,
     type Guardrails,
     ModelUsage,
     type NLSSearchDynamicFilter,
@@ -58,6 +59,7 @@ import {
     skip,
     skipPendingOperation,
     startWith,
+    storeLastValue,
     subscriptionDisposable,
     telemetryRecorder,
     tracer,
@@ -193,6 +195,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
     public dispose(): void {
         vscode.Disposable.from(...this.disposables).dispose()
+        this.featureCodyExperimentalOneBox.subscription.unsubscribe()
         this.disposables = []
     }
 
@@ -693,10 +696,15 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         })
     }
 
+    // TODO(naman/tom): Remove this FF check before the Cody release on 29th.
+    private featureCodyExperimentalOneBox = storeLastValue(
+        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.TempCodyExperimentalOnebox)
+    )
+
     private async isOmniBoxEnabled(): Promise<boolean> {
         const config = await ClientConfigSingleton.getInstance().getConfig()
 
-        return !!config?.omniBoxEnabled
+        return !!config?.omniBoxEnabled && !!this.featureCodyExperimentalOneBox.value.last
     }
 
     private async getIntentAndScores({
