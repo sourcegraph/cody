@@ -31,7 +31,6 @@ export class OpenTelemetryService {
     private unloadInstrumentations?: () => void
     private isTracingEnabled = false
 
-    private lastTraceUrl: string | undefined
     // We use a single promise object that we chain on to, to avoid multiple reconfigure calls to
     // be run in parallel
     private lastConfig: OpenTelemetryServiceConfig | undefined
@@ -70,7 +69,6 @@ export class OpenTelemetryService {
                         accessToken: auth.accessToken,
                     }
 
-                    this.lastTraceUrl = traceUrl
                     if (isEqual(this.lastConfig, newConfig)) {
                         return
                     }
