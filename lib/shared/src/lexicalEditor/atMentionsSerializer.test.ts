@@ -225,5 +225,19 @@ describe('atMentionsSerializer', () => {
             const des = deserialize(s)
             expect(JSON.stringify(des)).not.contains('cody://serialized.v1')
         })
+
+        it('handles surrounding text 2', () => {
+            const s =
+                'testcody://serialized.v1?data=JTdCJTIyY29udGV4dEl0ZW0lMjIlM0ElN0IlMjJ0eXBlJTIyJTNBJTIyb3BlbmN0eCUyMiUyQyUyMnVyaSUyMiUzQSUyMmh0dHBzJTNBJTJGJTJGc291cmNlZ3JhcGguc291cmNlZ3JhcGguY29tJTJGZ2l0aHViLmNvbSUyRmdvbGFuZyUyRmdvJTJGLSUyRmJsb2IlMkZQQVRFTlRTJTIyJTJDJTIydGl0bGUlMjIlM0ElMjJQQVRFTlRTJTIyJTJDJTIycHJvdmlkZXJVcmklMjIlM0ElMjJpbnRlcm5hbC1yZW1vdGUtZmlsZS1zZWFyY2glMjIlMkMlMjJwcm92aWRlciUyMiUzQSUyMm9wZW5jdHglMjIlMkMlMjJtZW50aW9uJTIyJTNBJTdCJTIydXJpJTIyJTNBJTIyaHR0cHMlM0ElMkYlMkZzb3VyY2VncmFwaC5zb3VyY2VncmFwaC5jb20lMkZnaXRodWIuY29tJTJGZ29sYW5nJTJGZ28lMkYtJTJGYmxvYiUyRlBBVEVOVFMlMjIlMkMlMjJkYXRhJTIyJTNBJTdCJTIycmVwb05hbWUlMjIlM0ElMjJnaXRodWIuY29tJTJGZ29sYW5nJTJGZ28lMjIlMkMlMjJyZXYlMjIlM0ElMjJmODkzN2NiNjI1NTk3MGRlM2YwYzhjYmNjYzUyNTNhZTgxMjQ5YzQ3JTIyJTJDJTIyZmlsZVBhdGglMjIlM0ElMjJQQVRFTlRTJTIyJTdEJTJDJTIyZGVzY3JpcHRpb24lMjIlM0ElMjJQQVRFTlRTJTIyJTdEJTJDJTIyc291cmNlJTIyJTNBJTIydXNlciUyMiU3RCUyQyUyMmlzRnJvbUluaXRpYWxDb250ZXh0JTIyJTNBZmFsc2UlMkMlMjJ0eXBlJTIyJTNBJTIyY29udGV4dEl0ZW1NZW50aW9uJTIyJTJDJTIydGV4dCUyMiUzQSUyMlBBVEVOVFMlMjIlMkMlMjJ2ZXJzaW9uJTIyJTNBMSU3RA==_ =test'
+            const des = deserialize(s)
+            expect(JSON.stringify(des)).not.contains('cody://serialized.v1')
+        })
+
+        it('handles surrounding text 3', () => {
+            const s =
+                'cody://serialized.v1?data=JTdCJTIyY29udGV4dEl0ZW0lMjIlM0ElN0IlMjJ0eXBlJTIyJTNBJTIyb3BlbmN0eCUyMiUyQyUyMnVyaSUyMiUzQSUyMmh0dHBzJTNBJTJGJTJGc291cmNlZ3JhcGguc291cmNlZ3JhcGguY29tJTJGZ2l0aHViLmNvbSUyRmdvbGFuZyUyRmdvJTJGLSUyRmJsb2IlMkZQQVRFTlRTJTIyJTJDJTIydGl0bGUlMjIlM0ElMjJQQVRFTlRTJTIyJTJDJTIycHJvdmlkZXJVcmklMjIlM0ElMjJpbnRlcm5hbC1yZW1vdGUtZmlsZS1zZWFyY2glMjIlMkMlMjJwcm92aWRlciUyMiUzQSUyMm9wZW5jdHglMjIlMkMlMjJtZW50aW9uJTIyJTNBJTdCJTIydXJpJTIyJTNBJTIyaHR0cHMlM0ElMkYlMkZzb3VyY2VncmFwaC5zb3VyY2VncmFwaC5jb20lMkZnaXRodWIuY29tJTJGZ29sYW5nJTJGZ28lMkYtJTJGYmxvYiUyRlBBVEVOVFMlMjIlMkMlMjJkYXRhJTIyJTNBJTdCJTIycmVwb05hbWUlMjIlM0ElMjJnaXRodWIuY29tJTJGZ29sYW5nJTJGZ28lMjIlMkMlMjJyZXYlMjIlM0ElMjJmODkzN2NiNjI1NTk3MGRlM2YwYzhjYmNjYzUyNTNhZTgxMjQ5YzQ3JTIyJTJDJTIyZmlsZVBhdGglMjIlM0ElMjJQQVRFTlRTJTIyJTdEJTJDJTIyZGVzY3JpcHRpb24lMjIlM0ElMjJQQVRFTlRTJTIyJTdEJTJDJTIyc291cmNlJTIyJTNBJTIydXNlciUyMiU3RCUyQyUyMmlzRnJvbUluaXRpYWxDb250ZXh0JTIyJTNBZmFsc2UlMkMlMjJ0eXBlJTIyJTNBJTIyY29udGV4dEl0ZW1NZW50aW9uJTIyJTJDJTIydGV4dCUyMiUzQSUyMlBBVEVOVFMlMjIlMkMlMjJ2ZXJzaW9uJTIyJTNBMSU3RA==_=test'
+            const des = deserialize(s)
+            expect(JSON.stringify(des)).not.contains('cody://serialized.v1')
+        })
     })
 })
