@@ -346,7 +346,7 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
                                             </div>
                                             <div className="tw-text-[12px] tw-text-muted-foreground">
                                                 Get your own workspace with AI-powered chat, prompt
-                                                sharing and codebase serach. Automate tasks and
+                                                sharing and codebase search. Automate tasks and
                                                 accelerate development.
                                             </div>
                                         </div>
