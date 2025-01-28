@@ -56,7 +56,6 @@ import { useIntentDetectionConfig } from '../components/omnibox/intentDetection'
 import { AgenticContextCell } from './cells/agenticCell/AgenticContextCell'
 import ApprovalCell from './cells/agenticCell/ApprovalCell'
 import { DidYouMeanNotice } from './cells/messageCell/assistant/DidYouMean'
-import { SwitchIntent } from './cells/messageCell/assistant/SwitchIntent'
 import { LastEditorContext } from './context'
 
 interface TranscriptProps {
@@ -704,17 +703,6 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                 intent={manuallySelectedIntent || intentResults?.intent}
                 manuallySelectIntent={setManuallySelectedIntent}
             />
-            {experimentalOneBoxEnabled && (
-                <SwitchIntent
-                    intent={humanMessage.intent}
-                    manuallySelected={!!humanMessage.manuallySelectedIntent}
-                    onSwitch={
-                        humanMessage.intent === 'search'
-                            ? reSubmitWithChatIntent
-                            : reSubmitWithSearchIntent
-                    }
-                />
-            )}
             {experimentalOneBoxEnabled && assistantMessage?.didYouMeanQuery && (
                 <DidYouMeanNotice
                     query={assistantMessage?.didYouMeanQuery}
@@ -722,19 +710,28 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                     switchToSearch={() => editAndSubmitSearch(assistantMessage?.didYouMeanQuery ?? '')}
                 />
             )}
-            {!isSearchIntent && humanMessage.agent && (
-                <AgenticContextCell
-                    key={`${humanMessage.index}-${humanMessage.intent}-process`}
-                    isContextLoading={isContextLoading}
-                    processes={humanMessage?.processes ?? undefined}
-                />
+            {humanMessage.agent && (
+                <>
+                    <AgenticContextCell
+                        key={`${humanMessage.index}-${humanMessage.intent}-process`}
+                        isContextLoading={isContextLoading}
+                        processes={humanMessage?.processes ?? undefined}
+                        intent={isSearchIntent ? 'search' : 'chat'}
+                        onSwitchIntent={
+                            isSearchIntent ? reSubmitWithChatIntent : reSubmitWithSearchIntent
+                        }
+                        contextItems={humanMessage.contextFiles}
+                        isForFirstMessage={humanMessage.index === 0}
+                        model={assistantMessage?.model}
+                        experimentalOneBoxEnabled={experimentalOneBoxEnabled}
+                    />
+                    {!isSearchIntent &&
+                        humanMessage.agent &&
+                        isContextLoading &&
+                        assistantMessage?.isLoading && <ApprovalCell vscodeAPI={vscodeAPI} />}
+                </>
             )}
-            {!isSearchIntent &&
-                humanMessage.agent &&
-                isContextLoading &&
-                assistantMessage?.isLoading && <ApprovalCell vscodeAPI={vscodeAPI} />}
-
-            {!(humanMessage.agent && isContextLoading) &&
+            {!(humanMessage.agent === 'deep-cody') &&
                 (humanMessage.contextFiles || assistantMessage || isContextLoading) &&
                 !isSearchIntent && (
                     <ContextCell
