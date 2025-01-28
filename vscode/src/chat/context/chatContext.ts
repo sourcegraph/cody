@@ -156,7 +156,6 @@ export async function getChatContextItemsForMention(
             if (!openCtx.controller) {
                 return []
             }
-
             const items = await openCtx.controller.mentions(
                 {
                     query: mentionQuery.text,
