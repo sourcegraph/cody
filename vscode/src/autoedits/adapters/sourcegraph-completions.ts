@@ -28,7 +28,7 @@ export class SourcegraphCompletionsAdapter implements AutoeditsModelAdapter {
                 model: option.model as ModelRefStr,
                 messages,
                 maxTokensToSample: maxTokens,
-                temperature: 0.1,
+                temperature: 0.001,
                 prediction: {
                     type: 'content',
                     content: option.codeToRewrite,
