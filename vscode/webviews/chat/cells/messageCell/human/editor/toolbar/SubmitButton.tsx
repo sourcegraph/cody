@@ -8,6 +8,7 @@ import {
 import type { ChatMessage } from '@sourcegraph/cody-shared'
 import { CodyIDE } from '@sourcegraph/cody-shared'
 import clsx from 'clsx'
+
 import {
     BetweenHorizonalEnd,
     ChevronDown,
@@ -187,9 +188,9 @@ export const SubmitButton: FC<{
                     className={clsx(
                         'tw-px-6 tw-py-1',
                         'tw-rounded-full',
-                        'tw-w-full tw-relative tw-border tw-border-button-border tw-box-content tw-bg-button-background hover:tw-bg-button-background-hover tw-text-button-foreground',
-
-                        'disabled:tw-bg-button-secondary-background disabled:tw-text-muted-foreground'
+                        'tw-w-full tw-relative tw-border tw-border-transparent tw-box-content tw-bg-button-background hover:tw-bg-button-background-hover tw-text-button-foreground',
+                        'disabled:tw-bg-button-secondary-background disabled:tw-text-muted-foreground',
+                        inProgress && processingAnimationClasses
                     )}
                     title={inProgress ? 'Stop' : 'Send'}
                 >
@@ -198,7 +199,7 @@ export const SubmitButton: FC<{
                     ) : (
                         <Play className="tw-size-6 tw-fill-current" />
                     )}
-                </button>
+                </button>{' '}
             </div>
         )
     }
@@ -290,7 +291,6 @@ export const SubmitButton: FC<{
         </div>
     )
 }
-
 export const PopoverItem: FunctionComponent<
     PropsWithChildren<{
         popoverContent: (close: () => void) => React.ReactNode
@@ -371,3 +371,20 @@ export const PopoverItem: FunctionComponent<
         </Popover>
     )
 }
+
+const processingAnimationClasses = clsx(
+    'tw-animate-fast-pulse',
+    'tw-relative',
+    'tw-border-transparent',
+    'tw-bg-button-background hover:tw-bg-button-background-hover',
+    'active:tw-scale-95',
+    'tw-transition-transform tw-duration-100',
+    'before:tw-absolute before:tw-inset-0',
+    'before:tw-rounded-full',
+    'before:tw-border',
+    'before:tw-border-transparent',
+    'before:tw-bg-[length:300%_100%]',
+    'before:tw-bg-gradient-to-r',
+    'before:tw-from-white/10 before:tw-via-transparent before:tw-to-white/10',
+    'before:tw-animate-border-travel-fast'
+)
