@@ -24,6 +24,7 @@ describe('CodyGatewayAdapter', () => {
         codeToRewrite: 'const x = 1',
         userId: 'test-user',
         isChatModel: true,
+        requestId: 'test-request-id',
     }
 
     const mockFetch = vi.fn()

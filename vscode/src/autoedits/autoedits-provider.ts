@@ -253,6 +253,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 position,
                 prompt,
                 codeToReplaceData,
+                requestId,
             })
 
             if (abortSignal?.aborted) {
@@ -449,11 +450,13 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         position,
         codeToReplaceData,
         prompt,
+        requestId,
     }: {
         document: vscode.TextDocument
         position: vscode.Position
         codeToReplaceData: CodeToReplaceData
         prompt: AutoeditsPrompt
+        requestId: AutoeditRequestID
     }): Promise<string | undefined> {
         if (autoeditsProviderConfig.isMockResponseFromCurrentDocumentTemplateEnabled) {
             const responseMetadata = extractAutoEditResponseFromCurrentDocumentCommentTemplate(
@@ -480,6 +483,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             codeToRewrite: codeToReplaceData.codeToRewrite,
             userId: (await currentResolvedConfig()).clientState.anonymousUserID,
             isChatModel: autoeditsProviderConfig.isChatModel,
+            requestId: requestId,
         })
     }
 

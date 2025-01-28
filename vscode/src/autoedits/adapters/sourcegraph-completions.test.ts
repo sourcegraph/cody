@@ -18,6 +18,7 @@ describe('SourcegraphCompletionsAdapter', () => {
         codeToRewrite: 'const x = 1',
         userId: 'test-user',
         isChatModel: false,
+        requestId: 'test-request-id',
     }
 
     beforeEach(() => {
