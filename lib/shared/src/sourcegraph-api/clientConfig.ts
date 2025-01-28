@@ -238,14 +238,16 @@ export class ClientConfigSingleton {
             return Promise.all([
                 graphqlClient.viewerSettings(signal),
                 graphqlClient.temporarySettings(signal),
-            ]).then(([viewerSettings, temporarySettings]) => {
+                graphqlClient.codeSearchEnabled(signal),
+            ]).then(([viewerSettings, temporarySettings, codeSearchEnabled]) => {
                 const config: CodyClientConfig = {
                     ...clientConfig,
                     intentDetection: 'enabled',
                     notices: [],
                     temporarySettings: {},
                     siteVersion: isError(siteVersion) ? undefined : siteVersion,
-                    omniBoxEnabled,
+                    omniBoxEnabled: omniBoxEnabled && (isError(codeSearchEnabled) || codeSearchEnabled),
+                    codeSearchEnabled: isError(codeSearchEnabled) ? true : codeSearchEnabled,
                 }
 
                 // Don't fail the whole chat because of viewer setting (used only to show banners)
