@@ -62,13 +62,6 @@ export class OpenTelemetryService {
                         configuration.experimentalTracing || codyAutocompleteTracingFlag
 
                     const traceUrl = new URL('/-/debug/otlp/v1/traces', auth.serverEndpoint).toString()
-                    if (this.lastTraceUrl === traceUrl) {
-                        return
-                    }
-                    this.lastTraceUrl = traceUrl
-
-                    const logLevel = configuration.debugVerbose ? DiagLogLevel.INFO : DiagLogLevel.ERROR
-                    diag.setLogger(new DiagConsoleLogger(), logLevel)
 
                     const newConfig = {
                         isTracingEnabled: this.isTracingEnabled,
@@ -77,6 +70,7 @@ export class OpenTelemetryService {
                         accessToken: auth.accessToken,
                     }
 
+                    this.lastTraceUrl = traceUrl
                     if (isEqual(this.lastConfig, newConfig)) {
                         return
                     }

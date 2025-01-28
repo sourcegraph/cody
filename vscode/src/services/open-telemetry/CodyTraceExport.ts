@@ -12,7 +12,9 @@ export class CodyTraceExporter extends OTLPTraceExporter {
         super({
             url: configAccessor()?.traceUrl,
             headers: {
-                ...(configAccessor()?.accessToken ? { Authorization: `token ${configAccessor()?.accessToken}` } : {}),
+                ...(configAccessor()?.accessToken
+                    ? { Authorization: `token ${configAccessor()?.accessToken}` }
+                    : {}),
             },
             httpAgentOptions: { rejectUnauthorized: false },
         })
