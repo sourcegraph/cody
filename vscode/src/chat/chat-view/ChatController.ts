@@ -1717,18 +1717,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                         userProductSubscription.pipe(
                             map(value => (value === pendingOperation ? null : value))
                         ),
-                    editTemporarySettings: settingsToEdit => {
-                        return promiseFactoryToObservable(async () => {
-                            const dataOrError = await graphqlClient.editTemporarySettings(settingsToEdit)
-
-                            if (!isError(dataOrError)) {
-                                await ClientConfigSingleton.getInstance().forceUpdate()
-                                return true
-                            }
-
-                            return false
-                        })
-                    },
                 }
             )
         )
