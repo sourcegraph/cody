@@ -2,7 +2,6 @@ import Anthropic from '@anthropic-ai/sdk'
 import type { MessageParam } from '@anthropic-ai/sdk/resources/messages.mjs'
 import type { ChatNetworkClientParams } from '..'
 import { CompletionStopReason, contextFiltersProvider, getCompletionsModelConfig, onAbort } from '../..'
-import { logDebug } from '../../logger'
 
 export async function anthropicChatClient({
     params,
@@ -11,9 +10,6 @@ export async function anthropicChatClient({
     logger,
     signal,
 }: ChatNetworkClientParams): Promise<void> {
-    const requestStart = performance.now()
-    const networkStart = performance.now()
-
     const log = logger?.startCompletion(params, completionsEndpoint)
     if (!params.model || !params.messages) {
         throw new Error('Anthropic Client: No model or messages')
@@ -33,25 +29,31 @@ export async function anthropicChatClient({
     }
 
     try {
+        const contextItemsCount = params.messages.filter(msg =>
+            msg.text?.toString()?.startsWith('Codebase context from')
+        ).length
         const messages = (await Promise.all(
             params.messages.map(async msg => {
                 const contentText = (await msg.text?.toFilteredString(contextFiltersProvider)) ?? ''
                 return {
                     role: msg.speaker === 'human' ? 'user' : 'assistant',
-                    content: contentText.includes('Codebase context from')
-                        ? [{
-                              type: 'text',
-                              text: contentText,
-                              cache_control: { type: 'ephemeral' }
-                          }] as any
-                        : contentText
+                    content: contentText.startsWith('Codebase context from')
+                        ? ([
+                              {
+                                  type: 'text',
+                                  text: contentText,
+                                  cache_control:
+                                      contextItemsCount === 2 ? { type: 'ephemeral' } : undefined,
+                              },
+                          ] as any)
+                        : contentText,
                 }
             })
         )) as MessageParam[]
 
         const systemPrompt = messages[0]?.role !== 'user' ? messages.shift()?.content : ''
 
-        anthropic.beta.tools.messages
+        anthropic.messages
             .create({
                 model,
                 messages: messages as any,
@@ -73,11 +75,6 @@ export async function anthropicChatClient({
                 onAbort(signal, () => stream.controller.abort())
                 for await (const messageStreamEvent of stream) {
                     if (messageStreamEvent.type === 'message_start') {
-                        // Capture initial usage metrics
-                        logDebug('promptCachingMetrics', 'input_tokens:', messageStreamEvent.message.usage.input_tokens)
-                        logDebug('promptCachingMetrics', 'output_tokens:', messageStreamEvent.message.usage.output_tokens)
-                        logDebug('promptCachingMetrics', 'cache_creation_input_tokens:', (messageStreamEvent.message.usage as any).cache_creation_input_tokens)
-                        logDebug('promptCachingMetrics', 'cache_read_input_tokens:', (messageStreamEvent.message.usage as any).cache_read_input_tokens)
                     }
                     if (messageStreamEvent.type === 'content_block_delta') {
                         result.completion += messageStreamEvent.delta.text
@@ -90,10 +87,6 @@ export async function anthropicChatClient({
                     }
 
                     if (messageStreamEvent.type === 'message_stop') {
-                        const requestEnd = performance.now()
-                        logDebug('promptCachingMetrics', 'networkLatency:', networkStart - requestStart)
-                        logDebug('promptCachingMetrics', 'processingTime:', requestEnd - networkStart)
-                        logDebug('promptCachingMetrics', 'totalTime:', requestEnd - requestStart)
                         break
                     }
                 }
