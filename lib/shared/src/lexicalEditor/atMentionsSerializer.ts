@@ -66,13 +66,13 @@ const NEW_LINE_NODE = {
     version: 1,
 }
 
-export function deserializeContextMentionItem(s: string) {
+function deserializeContextMentionItem(s: string) {
     return JSON.parse(
         unicodeSafeAtob(new URL(s).searchParams.get('data')?.replace(AT_MENTION_SERIALIZATION_END, '')!)
     )
 }
 
-function deserializeParagraph(s: string): SerializedLexicalNode[] {
+export function deserializeParagraph(s: string): SerializedLexicalNode[] {
     const parts = s.split(
         new RegExp(
             `(${AT_MENTION_SERIALIZED_PREFIX}\\?data=${BASE_64_CHARACTERS}${AT_MENTION_SERIALIZATION_END})`,
