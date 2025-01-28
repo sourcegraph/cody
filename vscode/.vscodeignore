@@ -13,6 +13,7 @@
 !dist/*.exe
 !dist/*.wasm
 !dist/*.node
+!dist/*.ttf
 
 !resources/*
 !walkthroughs/*.md

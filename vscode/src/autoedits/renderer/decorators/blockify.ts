@@ -55,7 +55,7 @@ export function convertToSpaceIndentation(
         // this as we are converting this text to use spaces.
         // 1. Account for the fact that each tab is being replaced with tabSize spaces
         // 2. Adjust the position based on how many tabs appear before the range
-        const newRanges = line.ranges.map(([start, end]) => {
+        const newRanges = line.highlightedRanges.map(({ range: [start, end], ...rest }) => {
             // Count tabs before the start and end positions
             const tabsBeforeStart = (line.lineText.slice(0, start).match(/\t/g) || []).length
             const tabsBeforeEnd = (line.lineText.slice(0, end).match(/\t/g) || []).length
@@ -63,14 +63,13 @@ export function convertToSpaceIndentation(
             // Each tab expands to tabSize spaces, so we need to add (tabSize - 1) for each tab
             const adjustedStart = start + tabsBeforeStart * (tabSize - 1)
             const adjustedEnd = end + tabsBeforeEnd * (tabSize - 1)
-
-            return [adjustedStart, adjustedEnd] as [number, number]
+            return { ...rest, range: [adjustedStart, adjustedEnd] as [number, number] }
         })
 
         return {
             ...line,
             lineText: newLineText,
-            ranges: newRanges,
+            highlightedRanges: newRanges,
         }
     })
 }
@@ -110,10 +109,13 @@ function removeLeadingWhitespaceBlock(
     return addedLines.map(line => ({
         ...line,
         lineText: line.lineText.replace(leastCommonWhitespacePrefix, ''),
-        ranges: line.ranges.map(([start, end]) => [
-            start - leastCommonWhitespacePrefix.length,
-            end - leastCommonWhitespacePrefix.length,
-        ]),
+        highlightedRanges: line.highlightedRanges.map(({ range: [start, end], ...rest }) => ({
+            ...rest,
+            range: [
+                Math.max(0, start - leastCommonWhitespacePrefix.length),
+                Math.max(0, end - leastCommonWhitespacePrefix.length),
+            ],
+        })),
     }))
 }
 
