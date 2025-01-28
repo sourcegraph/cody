@@ -18,7 +18,7 @@ export class SourcegraphChatAdapter implements AutoeditsModelAdapter {
                 {
                     model: option.model,
                     maxTokensToSample: maxTokens,
-                    temperature: 0,
+                    temperature: 0.1,
                     prediction: {
                         type: 'content',
                         content: option.codeToRewrite,
