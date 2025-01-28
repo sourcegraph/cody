@@ -62,12 +62,12 @@ function getIntentOptions({
             title: (
                 <div className="tw-flex tw-flex-col tw-self-start">
                     <p>Run detected intent</p>
-                    <p className="tw-text-sm tw-text-muted-foreground">
+                    <p className="tw-text-sm tw-text-muted-foreground tw-min-h-10">
                         {isDotComUser
                             ? 'Detects intent and runs appropriately'
-                            : `Currently: ${
-                                  detectedIntent ? (detectedIntent === 'search' ? 'Search' : 'Chat') : ''
-                              }`}
+                            : detectedIntent
+                              ? `Currently: ${detectedIntent === 'search' ? 'Search' : 'Chat'}`
+                              : ''}
                     </p>
                 </div>
             ),
