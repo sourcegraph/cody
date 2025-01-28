@@ -72,7 +72,7 @@ describe('CodyGatewayAdapter', () => {
             expect.objectContaining({
                 stream: false,
                 model: options.model,
-                temperature: 0.1,
+                temperature: 0.001,
                 response_format: { type: 'text' },
                 prediction: {
                     type: 'content',
@@ -100,7 +100,7 @@ describe('CodyGatewayAdapter', () => {
             expect.objectContaining({
                 stream: false,
                 model: options.model,
-                temperature: 0.1,
+                temperature: 0.001,
                 response_format: { type: 'text' },
                 prediction: {
                     type: 'content',
