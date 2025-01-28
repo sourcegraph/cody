@@ -39,6 +39,22 @@ interface ChatMessageContentProps {
     className?: string
 }
 
+const extractThinkContent = (content: string): { displayContent: string; thinkContent: string } => {
+    const thinkRegex = /<think>([\s\S]*?)<\/think>/g
+    const thinkMatches = [...content.matchAll(thinkRegex)]
+
+    // Collect all think content
+    const thinkContent = thinkMatches
+        .map(match => match[1].trim())
+        .filter(Boolean)
+        .join('\n\n')
+
+    // Remove think tags from display content
+    const displayContent = content.replace(thinkRegex, '')
+
+    return { displayContent, thinkContent }
+}
+
 /**
  * A component presenting the content of a chat message.
  */
@@ -204,10 +220,23 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
         smartApplyStates,
     ])
 
+    const { displayContent, thinkContent } = useMemo(
+        () => extractThinkContent(displayMarkdown),
+        [displayMarkdown]
+    )
+
     return (
         <div ref={rootRef} data-testid="chat-message-content">
+            {thinkContent && (
+                <details className="tw-container tw-my-4 tw-border tw-border-muted-foreground tw-rounded-md tw-p-2">
+                    <summary className="tw-px-2">Thinking...</summary>
+                    <MarkdownFromCody className="tw-my-2 tw-text-muted-foreground tw-p-2">
+                        {thinkContent}
+                    </MarkdownFromCody>
+                </details>
+            )}
             <MarkdownFromCody className={clsx(styles.content, className)}>
-                {displayMarkdown}
+                {displayContent}
             </MarkdownFromCody>
         </div>
     )
