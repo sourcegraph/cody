@@ -46,10 +46,7 @@ interface HumanMessageCellProps {
     editorRef?: React.RefObject<PromptEditorRefAPI | null>
 
     intent: ChatMessage['intent']
-    manuallySelectIntent: (
-        intent: ChatMessage['intent'],
-        editorState?: SerializedPromptEditorState
-    ) => void
+    manuallySelectIntent: (intent: ChatMessage['intent']) => void
 
     /** For use in storybooks only. */
     __storybook__focus?: boolean

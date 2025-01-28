@@ -12,7 +12,6 @@ import type {
     FetchHighlightFileParameters,
     Prompt,
     PromptTag,
-    TemporarySettings,
 } from '../../sourcegraph-api/graphql/client'
 import { type createMessageAPIForWebview, proxyExtensionAPI } from './rpc'
 
@@ -110,11 +109,6 @@ export interface WebviewToExtensionAPI {
      * The current user's product subscription information (Cody Free/Pro).
      */
     userProductSubscription(): Observable<UserProductSubscription | null>
-
-    /**
-     * Edit the current user's temporary settings.
-     */
-    editTemporarySettings(settingsToEdit: Partial<TemporarySettings>): Observable<boolean>
 }
 
 export function createExtensionAPI(
@@ -150,7 +144,6 @@ export function createExtensionAPI(
         userHistory: proxyExtensionAPI(messageAPI, 'userHistory'),
         userProductSubscription: proxyExtensionAPI(messageAPI, 'userProductSubscription'),
         repos: proxyExtensionAPI(messageAPI, 'repos'),
-        editTemporarySettings: proxyExtensionAPI(messageAPI, 'editTemporarySettings'),
     }
 }
 
