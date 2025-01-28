@@ -30,7 +30,7 @@ export const WelcomeNotice: FunctionComponent = () => {
                 Enable collaboration with your team
             </h1>
             <p className="tw-text-muted-foreground tw-mb-2 tw-text-[12px]">
-                Get your own workspace with AI-powered chat, prompt sharing and codebase serach. Automate
+                Get your own workspace with AI-powered chat, prompt sharing and codebase search. Automate
                 tasks and accelerate development.
             </p>
             <div id="welcome-notice-buttons" className="tw-flex tw-gap-4 tw-mb-4 tw-text-[12px]">
