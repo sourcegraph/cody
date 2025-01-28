@@ -154,7 +154,7 @@ export const SubmitButton: FC<{
 
     const { intentDetectionDisabled } = useIntentDetectionConfig()
 
-    const { intentOptions, availableIntentOptions, disabledInentOptions } = useMemo(() => {
+    const { intentOptions, availableIntentOptions, disabledIntentOptions } = useMemo(() => {
         const intentOptions = getIntentOptions({
             ide: agentIDE,
             detectedIntent,
@@ -165,7 +165,7 @@ export const SubmitButton: FC<{
         return {
             intentOptions,
             availableIntentOptions: intentOptions.filter(option => !option.disabled),
-            disabledInentOptions: intentOptions.filter(option => option.disabled),
+            disabledIntentOptions: intentOptions.filter(option => option.disabled),
         }
     }, [agentIDE, detectedIntent, intentDetectionDisabled, isDotComUser])
 
@@ -242,8 +242,8 @@ export const SubmitButton: FC<{
                                     )}
                                 </CommandItem>
                             ))}
-                            {disabledInentOptions.length > 0 && <CommandSeparator />}
-                            {disabledInentOptions.map(option => (
+                            {disabledIntentOptions.length > 0 && <CommandSeparator />}
+                            {disabledIntentOptions.map(option => (
                                 <CommandItem
                                     key={option.intent || 'auto'}
                                     onSelect={() => {
