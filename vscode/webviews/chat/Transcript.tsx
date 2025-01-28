@@ -5,7 +5,6 @@ import {
     type Model,
     type NLSSearchDynamicFilter,
     REMOTE_FILE_PROVIDER_URI,
-    type SerializedPromptEditorState,
     type SerializedPromptEditorValue,
     deserializeContextItem,
     inputTextWithMappedContextChipsFromPromptEditorState,
@@ -278,28 +277,12 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
         editorRef: parentEditorRef,
     } = props
     const [intentResults, setIntentResults] = useState<IntentResults | undefined | null>()
-    const [manuallySelectedIntent, setManuallySelectedIntent] = useState<{
-        intent: ChatMessage['intent']
-        query: string
-        resetOnEditorStateClearOnly?: boolean
-    }>({
-        intent: humanMessage.manuallySelectedIntent,
-        query: humanMessage.editorState
-            ? inputTextWithMappedContextChipsFromPromptEditorState(
-                  humanMessage.editorState as SerializedPromptEditorState
-              )
-            : '',
-    })
+    const [manuallySelectedIntent, setManuallySelectedIntent] =
+        useState<ChatMessage['intent']>(undefined)
 
+    // biome-ignore lint/correctness/useExhaustiveDependencies: need to reset manually selected intent when the human message changes
     useEffect(() => {
-        setManuallySelectedIntent({
-            intent: humanMessage.manuallySelectedIntent,
-            query: humanMessage.editorState
-                ? inputTextWithMappedContextChipsFromPromptEditorState(
-                      humanMessage.editorState as SerializedPromptEditorState
-                  )
-                : '',
-        })
+        setManuallySelectedIntent(undefined)
     }, [humanMessage])
 
     const { activeChatContext, setActiveChatContext } = props
@@ -354,7 +337,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                 preDetectedIntentScores: intentScores,
                 manuallySelectedIntent:
                     intentFromSubmit ||
-                    manuallySelectedIntent.intent ||
+                    manuallySelectedIntent ||
                     (doIntentDetection ? undefined : 'chat'),
                 traceparent,
             }
@@ -473,26 +456,6 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
             }
         }
     }, [doIntentDetection, prefetchIntent])
-
-    const onChange = useMemo(() => {
-        return async (editorValue: SerializedPromptEditorValue) => {
-            const currentQuery = inputTextWithMappedContextChipsFromPromptEditorState(
-                editorValue.editorState
-            )
-
-            // Reset manually selected intent if the editor text is changed.
-            // If the intent is set for a prompts, only reset the intent if the editor text is emptied.
-            if (
-                manuallySelectedIntent.intent &&
-                currentQuery !== manuallySelectedIntent.query &&
-                (!manuallySelectedIntent.resetOnEditorStateClearOnly || !editorValue.text.trim())
-            ) {
-                setManuallySelectedIntent({ intent: undefined, query: '' })
-            }
-
-            prefetchIntent(editorValue)
-        }
-    }, [manuallySelectedIntent, prefetchIntent])
 
     const vscodeAPI = getVSCodeAPI()
     const onStop = useCallback(() => {
@@ -719,30 +682,6 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
             }),
         [humanMessage]
     )
-    const handleManualIntentSelection = useCallback(
-        (intent: ChatMessage['intent'], editorStateFromProps?: SerializedPromptEditorState) => {
-            // When the user manually selects an intent from the SubmitButton dropdown, the query is empty.
-            // When the user selects a prompt the query is passed as an argument based on thr prompt text.
-            // This is because on prompt selection the editor state is updated async.
-
-            const editorState =
-                editorStateFromProps || humanEditorRef.current?.getSerializedValue()?.editorState
-
-            const currentQuery = editorState
-                ? inputTextWithMappedContextChipsFromPromptEditorState(editorState)
-                : ''
-
-            return setManuallySelectedIntent({
-                intent,
-                query: currentQuery,
-                // We set the `resetOnEditorStateClearOnly` flag to true to differentiate between prompt selection and manual intent selection.
-                // This is used to reset the intent only when the editor text is emptied and not on input change.
-                resetOnEditorStateClearOnly: !!editorStateFromProps,
-            })
-        },
-        []
-    )
-
     return (
         <>
             <HumanMessageCell
@@ -754,7 +693,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                 isFirstMessage={humanMessage.index === 0}
                 isSent={!humanMessage.isUnsentFollowup}
                 isPendingPriorResponse={priorAssistantMessageIsLoading}
-                onChange={onChange}
+                onChange={prefetchIntent}
                 onSubmit={onHumanMessageSubmit}
                 onStop={onStop}
                 isFirstInteraction={isFirstInteraction}
@@ -762,8 +701,8 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                 isEditorInitiallyFocused={isLastInteraction}
                 editorRef={humanEditorRef}
                 className={!isFirstInteraction && isLastInteraction ? 'tw-mt-auto' : ''}
-                intent={manuallySelectedIntent?.intent || intentResults?.intent}
-                manuallySelectIntent={handleManualIntentSelection}
+                intent={manuallySelectedIntent || intentResults?.intent}
+                manuallySelectIntent={setManuallySelectedIntent}
             />
             {experimentalOneBoxEnabled && (
                 <SwitchIntent

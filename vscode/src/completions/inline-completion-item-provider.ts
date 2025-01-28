@@ -956,7 +956,10 @@ export class InlineCompletionItemProvider
                         canUpgrade ? 'cody.upsellUsageLimitCTA' : 'cody.abuseUsageLimitCTA',
                         'shown',
                         {
-                            privateMetadata: { limit_type: 'suggestions', tier },
+                            privateMetadata: {
+                                limit_type: 'suggestions',
+                                tier,
+                            },
                         }
                     )
                 },
