@@ -64,7 +64,7 @@ describe('SourcegraphChatAdapter', () => {
         expect(chatOptions).toMatchObject({
             model: 'anthropic/claude-2',
             maxTokensToSample: getMaxOutputTokensForAutoedits(options.codeToRewrite),
-            temperature: 0,
+            temperature: 0.1,
             prediction: {
                 type: 'content',
                 content: 'const x = 1',
