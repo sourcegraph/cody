@@ -20,6 +20,8 @@ const CLIENT_CONFIG_FIXTURE: CodyClientConfig = {
     notices: [],
     temporarySettings: {},
     codeSearchEnabled: true,
+    omniBoxEnabled: false,
+    siteVersion: '5.5.0',
 }
 
 describe('ClientConfigSingleton', () => {
