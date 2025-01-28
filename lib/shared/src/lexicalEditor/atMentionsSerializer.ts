@@ -3,6 +3,7 @@ import type { SerializedPromptEditorValue } from './editorState'
 
 export const AT_MENTION_SERIALIZED_PREFIX = 'cody://serialized.v1'
 const AT_MENTION_SERIALIZATION_END = '_'
+const BASE_64_CHARACTERS = '[A-Za-z0-9+/]+={0,2}'
 
 function unicodeSafeBtoa(str: string) {
     return btoa(encodeURIComponent(str))
@@ -74,7 +75,7 @@ export function deserializeContextMentionItem(s: string) {
 function deserializeParagraph(s: string): SerializedLexicalNode[] {
     const parts = s.split(
         new RegExp(
-            `(${AT_MENTION_SERIALIZED_PREFIX}\\?data=[a-zA-Z0-9]+${AT_MENTION_SERIALIZATION_END})`,
+            `(${AT_MENTION_SERIALIZED_PREFIX}\\?data=${BASE_64_CHARACTERS}${AT_MENTION_SERIALIZATION_END})`,
             'g'
         )
     )
