@@ -8,6 +8,7 @@ import {
     FeatureFlag,
     type ResolvedConfiguration,
     type Unsubscribable,
+    clientCapabilities,
     combineLatest,
     featureFlagProvider,
     resolvedConfig,
@@ -72,14 +73,16 @@ export class OpenTelemetryService {
                 [SemanticResourceAttributes.SERVICE_VERSION]: version,
             }),
         })
-
         // Add the default tracer exporter used in production.
+
         this.tracerProvider.addSpanProcessor(
             new BatchSpanProcessor(
                 new CodyTraceExporter({
                     traceUrl,
                     isTracingEnabled: this.isTracingEnabled,
                     accessToken: auth.accessToken,
+                    clientPlatform: clientCapabilities().agentIDE,
+                    agentVersion: clientCapabilities().agentExtensionVersion,
                 })
             )
         )
