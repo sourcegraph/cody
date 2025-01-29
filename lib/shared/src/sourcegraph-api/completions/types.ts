@@ -20,6 +20,7 @@ export interface Message {
     // Note: The unified API only supports one system message passed as the first message
     speaker: 'human' | 'assistant' | 'system'
     text?: PromptString
+    cache?: boolean
 }
 
 export interface CompletionResponse {
