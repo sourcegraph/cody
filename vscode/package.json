@@ -2,7 +2,7 @@
   "$schema": "package.schema.json",
   "name": "cody-ai",
   "private": true,
-  "displayName": "AI Code Assistant",
+  "displayName": "Cody: AI Code Assistant",
   "version": "1.62.0",
   "publisher": "sourcegraph",
   "license": "Apache-2.0",
