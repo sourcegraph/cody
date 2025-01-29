@@ -9,7 +9,7 @@ commands, and edit-based commands.
 ## Base protocol
 
 [JSON-RPC](https://www.jsonrpc.org) is a specification that enables two
-processes runningu to communicate with each other using JSON via stdout/stdin or
+processes running to communicate with each other using JSON via stdout/stdin or
 IPC sockets. The Cody Agent currently only supports communication via
 stdin/stdout.
 

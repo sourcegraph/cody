@@ -17,7 +17,6 @@ import { addTraceparent, wrapInActiveSpan } from '../../tracing'
 import { isError } from '../../utils'
 import { addCodyClientIdentificationHeaders } from '../client-name-version'
 import { isAbortError } from '../errors'
-import { addAuthHeaders } from '../utils'
 import { type GraphQLResultCache, ObservableInvalidatedGraphQLResultCacheFactory } from './cache'
 import {
     BUILTIN_PROMPTS_QUERY,
@@ -42,7 +41,6 @@ import {
     CURRENT_USER_INFO_QUERY,
     CURRENT_USER_ROLE_QUERY,
     DELETE_ACCESS_TOKEN_MUTATION,
-    EDIT_TEMPORARY_SETTINGS_QUERY,
     EVALUATE_FEATURE_FLAG_QUERY,
     FILE_CONTENTS_QUERY,
     FILE_MATCH_SEARCH_QUERY,
@@ -67,7 +65,6 @@ import {
     REPOS_SUGGESTIONS_QUERY,
     REPO_NAME_QUERY,
     SEARCH_ATTRIBUTION_QUERY,
-    TEMPORARY_SETTINGS_QUERY,
     VIEWER_SETTINGS_QUERY,
 } from './queries'
 import { buildGraphQLUrl } from './url'
@@ -628,18 +625,6 @@ interface ViewerSettingsResponse {
 
 interface CodeSearchEnabledResponse {
     codeSearchEnabled: boolean
-}
-
-interface TemporarySettingsResponse {
-    temporarySettings: { contents: string }
-}
-
-export interface TemporarySettings {
-    'omnibox.intentDetectionToggleOn': boolean
-}
-
-export interface EditTemporarySettingsResponse {
-    editTemporarySettings: { alwaysNil: string }
 }
 
 function extractDataOrError<T, R>(response: APIResponse<T> | Error, extract: (data: T) => R): R | Error {
@@ -1575,34 +1560,6 @@ export class SourcegraphGraphQLAPIClient {
         return extractDataOrError(response, data => data.codeSearchEnabled)
     }
 
-    public async temporarySettings(signal?: AbortSignal): Promise<Partial<TemporarySettings> | Error> {
-        const response = await this.fetchSourcegraphAPI<APIResponse<TemporarySettingsResponse>>(
-            TEMPORARY_SETTINGS_QUERY,
-            {},
-            signal
-        )
-        return extractDataOrError(response, data => {
-            try {
-                return JSON.parse(data.temporarySettings.contents)
-            } catch {
-                return {}
-            }
-        })
-    }
-
-    public async editTemporarySettings(
-        settingsToEdit: Partial<TemporarySettings>,
-        signal?: AbortSignal
-    ): Promise<{ alwaysNil: string } | Error> {
-        const response = await this.fetchSourcegraphAPI<APIResponse<EditTemporarySettingsResponse>>(
-            EDIT_TEMPORARY_SETTINGS_QUERY,
-            { settingsToEdit: JSON.stringify(settingsToEdit) },
-            signal
-        )
-
-        return extractDataOrError(response, data => data.editTemporarySettings)
-    }
-
     public async fetchSourcegraphAPI<T>(
         query: string,
         variables: Record<string, any> = {},
@@ -1616,27 +1573,22 @@ export class SourcegraphGraphQLAPIClient {
 
         const headers = new Headers(config.configuration?.customHeaders as HeadersInit | undefined)
         headers.set('Content-Type', 'application/json; charset=utf-8')
+        if (config.auth.accessToken) {
+            headers.set('Authorization', `token ${config.auth.accessToken}`)
+        }
         if (config.clientState.anonymousUserID && !process.env.CODY_WEB_DONT_SET_SOME_HEADERS) {
             headers.set('X-Sourcegraph-Actor-Anonymous-UID', config.clientState.anonymousUserID)
         }
 
-        const url = new URL(
-            buildGraphQLUrl({
-                request: query,
-                baseUrl: config.auth.serverEndpoint,
-            })
-        )
-
         addTraceparent(headers)
         addCodyClientIdentificationHeaders(headers)
 
-        try {
-            await addAuthHeaders(config.auth, headers, url)
-        } catch (error: any) {
-            return error
-        }
-
         const queryName = query.match(QUERY_TO_NAME_REGEXP)?.[1]
+
+        const url = buildGraphQLUrl({
+            request: query,
+            baseUrl: config.auth.serverEndpoint,
+        })
 
         const { abortController, timeoutSignal } = dependentAbortControllerWithTimeout(signal)
         return wrapInActiveSpan(`graphql.fetch${queryName ? `.${queryName}` : ''}`, () =>
@@ -1648,7 +1600,7 @@ export class SourcegraphGraphQLAPIClient {
             })
                 .then(verifyResponseCode)
                 .then(response => response.json() as T)
-                .catch(catchHTTPError(url.href, timeoutSignal))
+                .catch(catchHTTPError(url, timeoutSignal))
         )
     }
 
@@ -1674,20 +1626,17 @@ export class SourcegraphGraphQLAPIClient {
 
         const headers = new Headers(config.configuration?.customHeaders as HeadersInit | undefined)
         headers.set('Content-Type', 'application/json; charset=utf-8')
+        if (config.auth.accessToken) {
+            headers.set('Authorization', `token ${config.auth.accessToken}`)
+        }
         if (config.clientState.anonymousUserID && !process.env.CODY_WEB_DONT_SET_SOME_HEADERS) {
             headers.set('X-Sourcegraph-Actor-Anonymous-UID', config.clientState.anonymousUserID)
         }
 
-        const url = new URL(urlPath, config.auth.serverEndpoint)
-
         addTraceparent(headers)
         addCodyClientIdentificationHeaders(headers)
 
-        try {
-            await addAuthHeaders(config.auth, headers, url)
-        } catch (error: any) {
-            return error
-        }
+        const url = new URL(urlPath, config.auth.serverEndpoint).href
 
         const { abortController, timeoutSignal } = dependentAbortControllerWithTimeout(signal)
         return wrapInActiveSpan(`httpapi.fetch${queryName ? `.${queryName}` : ''}`, () =>
@@ -1699,7 +1648,7 @@ export class SourcegraphGraphQLAPIClient {
             })
                 .then(verifyResponseCode)
                 .then(response => response.json() as T)
-                .catch(catchHTTPError(url.href, timeoutSignal))
+                .catch(catchHTTPError(url, timeoutSignal))
         )
     }
 }

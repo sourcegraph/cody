@@ -1,5 +1,4 @@
 import {
-    type AuthCredentials,
     type AuthStatus,
     type BillingCategory,
     type BillingProduct,
@@ -72,7 +71,6 @@ import * as vscode from 'vscode'
 import { type Span, context } from '@opentelemetry/api'
 import { captureException } from '@sentry/core'
 import type { SubMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
-import { resolveAuth } from '@sourcegraph/cody-shared/src/configuration/auth-resolver'
 import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
 import { Subject, map } from 'observable-fns'
 import type { URI } from 'vscode-uri'
@@ -92,6 +90,7 @@ import { migrateAndNotifyForOutdatedModels } from '../../models/modelMigrator'
 import { logDebug, outputChannelLogger } from '../../output-channel-logger'
 import { hydratePromptText } from '../../prompts/prompt-hydration'
 import { listPromptTags, mergedPromptsAndLegacyCommands } from '../../prompts/prompts'
+import { workspaceFolderForRepo } from '../../repository/remoteRepos'
 import { authProvider } from '../../services/AuthProvider'
 import { AuthProviderSimplified } from '../../services/AuthProviderSimplified'
 import { localStorage } from '../../services/LocalStorageProvider'
@@ -360,7 +359,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 })
                 break
             case 'openRemoteFile':
-                this.openRemoteFile(message.uri)
+                this.openRemoteFile(message.uri, message.tryLocal ?? false)
                 break
             case 'newFile':
                 await handleCodeFromSaveToNewFile(message.text, this.editor)
@@ -409,6 +408,10 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 )
                 break
             case 'auth': {
+                if (message.authKind === 'callback' && message.endpoint) {
+                    redirectToEndpointLogin(message.endpoint)
+                    break
+                }
                 if (message.authKind === 'simplified-onboarding') {
                     const endpoint = DOTCOM_URL.href
 
@@ -448,28 +451,19 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     }
                     break
                 }
-                if (
-                    (message.authKind === 'signin' || message.authKind === 'callback') &&
-                    message.endpoint
-                ) {
+                if (message.authKind === 'signin' && message.endpoint) {
                     try {
                         const { endpoint, value: token } = message
-                        let auth: AuthCredentials | undefined = undefined
-
-                        if (token) {
-                            auth = { credentials: { token, source: 'paste' }, serverEndpoint: endpoint }
-                        } else {
-                            const { configuration } = await currentResolvedConfig()
-                            auth = await resolveAuth(endpoint, configuration, secretStorage)
+                        const credentials = {
+                            serverEndpoint: endpoint,
+                            accessToken: token || (await secretStorage.getToken(endpoint)) || null,
+                            tokenSource: token ? 'paste' : await secretStorage.getTokenSource(endpoint),
                         }
-
-                        if (!auth || !auth.credentials) {
-                            return redirectToEndpointLogin(endpoint)
+                        if (!credentials.accessToken) {
+                            return redirectToEndpointLogin(credentials.serverEndpoint)
                         }
-
-                        await authProvider.validateAndStoreCredentials(auth, 'always-store')
+                        await authProvider.validateAndStoreCredentials(credentials, 'always-store')
                     } catch (error) {
-                        void vscode.window.showErrorMessage(`Authentication failed: ${error}`)
                         this.postError(new Error(`Authentication failed: ${error}`))
                     }
                     break
@@ -505,7 +499,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                             const authStatus = await authProvider.validateAndStoreCredentials(
                                 {
                                     serverEndpoint: DOTCOM_URL.href,
-                                    credentials: { token },
+                                    accessToken: token,
                                 },
                                 'store-if-valid'
                             )
@@ -832,7 +826,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         const omniBoxEnabled = await this.isOmniBoxEnabled()
 
         recorder.setIntentInfo({
-            userSpecifiedIntent: manuallySelectedIntent ?? omniBoxEnabled ? 'auto' : 'chat',
+            userSpecifiedIntent: manuallySelectedIntent ?? (omniBoxEnabled ? 'auto' : 'chat'),
             detectedIntent: detectedIntent,
             detectedIntentScores: detectedIntentScores,
         })
@@ -929,12 +923,18 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                             )
                         }
 
+                        // Mark the end of the span for chat.handleUserMessage here, as we do not await
+                        // the entire stream of chat messages being sent to the webview.
+                        // The span is concluded when the stream is complete.
+                        span.end()
                         this.saveSession()
                         this.postViewTranscript()
                     },
                 }
             )
         } catch (error) {
+            // This ensures that the span for chat.handleUserMessage is ended even if the operation fails
+            span.end()
             if (isAbortErrorOrSocketHangUp(error as Error)) {
                 return
             }
@@ -980,18 +980,23 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         return
     }
 
-    private openRemoteFile(uri: vscode.Uri) {
-        const json = uri.toJSON()
-        const searchParams = (json.query || '').split('&')
+    private async openRemoteFile(uri: vscode.Uri, tryLocal?: boolean) {
+        if (tryLocal) {
+            try {
+                await this.openSourcegraphUriAsLocalFile(uri)
+                return
+            } catch {
+                // Ignore error, just continue to opening the remote file
+            }
+        }
 
-        const sourcegraphSchemaURI = vscode.Uri.from({
-            ...json,
+        const sourcegraphSchemaURI = uri.with({
             query: '',
             scheme: 'codysourcegraph',
         })
 
         // Supported line params examples: L42 (single line) or L42-45 (line range)
-        const lineParam = searchParams.find((value: string) => value.match(/^L\d+(?:-\d+)?$/)?.length)
+        const lineParam = this.extractLineParamFromURI(uri)
         const range = this.lineParamToRange(lineParam)
 
         vscode.workspace.openTextDocument(sourcegraphSchemaURI).then(async doc => {
@@ -999,6 +1004,45 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
             textEditor.revealRange(range)
         })
+    }
+
+    /**
+     * Attempts to open a Sourcegraph file URL as a local file in VS Code.
+     * Fails if the URI is not a valid Sourcegraph URL for a file or if the
+     * file does not belong to the current workspace.
+     */
+    private async openSourcegraphUriAsLocalFile(uri: vscode.Uri): Promise<void> {
+        const match = uri.path.match(
+            /^\/*(?<repoName>[^@]*)(?<revision>@.*)?\/-\/blob\/(?<filePath>.*)$/
+        )
+        if (!match || !match.groups) {
+            throw new Error('failed to extract repo name and file path')
+        }
+        const { repoName, filePath } = match.groups
+
+        const workspaceFolder = await workspaceFolderForRepo(repoName)
+        if (!workspaceFolder) {
+            throw new Error('could not find workspace for repo')
+        }
+
+        const lineParam = this.extractLineParamFromURI(uri)
+        const selectionStart = this.lineParamToRange(lineParam).start
+        // Opening the file with an active selection is awkward, so use a zero-length
+        // selection to focus the target line without highlighting anything
+        const selection = new vscode.Range(selectionStart, selectionStart)
+
+        const fileUri = workspaceFolder.uri.with({
+            path: `${workspaceFolder.uri.path}/${filePath}`,
+        })
+        const document = await vscode.workspace.openTextDocument(fileUri)
+        await vscode.window.showTextDocument(document, {
+            selection,
+            preview: true,
+        })
+    }
+
+    private extractLineParamFromURI(uri: vscode.Uri): string | undefined {
+        return uri.query.split('&').find(key => key.match(/^L\d+(?:-\d+)?$/))
     }
 
     private lineParamToRange(lineParam?: string | null): vscode.Range {
@@ -1679,18 +1723,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                         userProductSubscription.pipe(
                             map(value => (value === pendingOperation ? null : value))
                         ),
-                    editTemporarySettings: settingsToEdit => {
-                        return promiseFactoryToObservable(async () => {
-                            const dataOrError = await graphqlClient.editTemporarySettings(settingsToEdit)
-
-                            if (!isError(dataOrError)) {
-                                await ClientConfigSingleton.getInstance().forceUpdate()
-                                return true
-                            }
-
-                            return false
-                        })
-                    },
                 }
             )
         )

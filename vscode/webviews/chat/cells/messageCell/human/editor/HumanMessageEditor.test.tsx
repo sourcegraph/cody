@@ -58,7 +58,11 @@ describe('HumanMessageEditor', () => {
                     initialEditorState: serializedPromptEditorStateFromText('abc'),
                     isSent: false,
                 }),
-                { toolbarVisible: true, submitButtonEnabled: true, submitButtonText: /send/i }
+                {
+                    toolbarVisible: true,
+                    submitButtonEnabled: true,
+                    submitButtonText: /send/i,
+                }
             )
         })
 
@@ -78,35 +82,29 @@ describe('HumanMessageEditor', () => {
                     initialEditorState: undefined,
                     isPendingPriorResponse: true,
                 }),
-                { toolbarVisible: true, submitButtonEnabled: true, submitButtonText: /stop/i }
+                {
+                    toolbarVisible: true,
+                    submitButtonEnabled: true,
+                    submitButtonText: /stop/i,
+                }
             )
         })
     })
 
     describe('submitting', () => {
-        function testNoSubmitting({
-            editor,
-            submitButton,
-            onSubmit,
-        }: ReturnType<typeof renderWithMocks>): void {
-            if (submitButton) {
-                expect(submitButton).toBeDisabled()
-                // Click
-                fireEvent.click(submitButton!)
-                expect(onSubmit).toHaveBeenCalledTimes(0)
-            }
+        test('empty editor', () => {
+            const { submitButton, editor, onSubmit } = renderWithMocks({
+                initialEditorState: FILE_MENTION_EDITOR_STATE_FIXTURE,
+            })
+            expect(submitButton).toBeEnabled()
+
+            // Click
+            fireEvent.click(submitButton!)
+            expect(onSubmit).toHaveBeenCalledTimes(1)
 
             // Enter
             fireEvent.keyDown(editor, ENTER_KEYBOARD_EVENT_DATA)
-            expect(onSubmit).toHaveBeenCalledTimes(0)
-        }
-
-        test('empty editor', () => {
-            testNoSubmitting(
-                renderWithMocks({
-                    initialEditorState: undefined,
-                })
-            )
+            expect(onSubmit).toHaveBeenCalledTimes(2)
         })
 
         test('isPendingPriorResponse', () => {
@@ -146,7 +144,9 @@ describe('HumanMessageEditor', () => {
     })
 })
 
-type EditorHTMLElement = HTMLDivElement & { dataset: { lexicalEditor: 'true' } }
+type EditorHTMLElement = HTMLDivElement & {
+    dataset: { lexicalEditor: 'true' }
+}
 
 function renderWithMocks(props: Partial<ComponentProps<typeof HumanMessageEditor>>): {
     container: HTMLElement
@@ -182,7 +182,10 @@ function renderWithMocks(props: Partial<ComponentProps<typeof HumanMessageEditor
     return {
         container,
         editor: container.querySelector<EditorHTMLElement>('[data-lexical-editor="true"]')!,
-        addContextButton: screen.queryByRole('button', { name: 'Add context', hidden: true }),
+        addContextButton: screen.queryByRole('button', {
+            name: 'Add context',
+            hidden: true,
+        }),
         submitButton: screen.queryByRole('button', {
             name: /send|stop/i,
             hidden: true,

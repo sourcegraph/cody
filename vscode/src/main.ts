@@ -624,7 +624,7 @@ function registerUpgradeHandlers(disposables: vscode.Disposable[]): void {
                 if (uri.path === '/app-done') {
                     // This is an old re-entrypoint from App that is a no-op now.
                 } else {
-                    tokenCallbackHandler(uri)
+                    void tokenCallbackHandler(uri)
                 }
             },
         }),
@@ -679,11 +679,8 @@ async function registerTestCommands(
             }
         }),
         // Access token - this is only used in configuration tests
-        vscode.commands.registerCommand('cody.test.token', async (serverEndpoint, token) =>
-            authProvider.validateAndStoreCredentials(
-                { credentials: { token }, serverEndpoint },
-                'always-store'
-            )
+        vscode.commands.registerCommand('cody.test.token', async (serverEndpoint, accessToken) =>
+            authProvider.validateAndStoreCredentials({ serverEndpoint, accessToken }, 'always-store')
         )
     )
 }
