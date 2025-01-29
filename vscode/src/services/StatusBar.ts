@@ -470,6 +470,10 @@ function interactDefault({
             vscode.workspace.getConfiguration()
         )
 
+        const currentSuggestionMode = await getCurrentCodySuggestionMode(
+            vscode.workspace.getConfiguration()
+        )
+
         quickPick.items = [
             // These description should stay in sync with the settings in package.json
             ...(errors.size > 0
@@ -493,14 +497,6 @@ function interactDefault({
                       },
                   ]
                 : []),
-            { label: 'enable/disable features', kind: vscode.QuickPickItemKind.Separator },
-            await createFeatureEnumChoice(
-                'Cody Suggestion Mode',
-                'Choose how Cody suggests inline code changes',
-                autoeditsFeatureFlagEnabled,
-                userProductSubscription,
-                authStatus
-            ),
             await createFeatureToggle(
                 'Code Actions',
                 undefined,
@@ -524,6 +520,13 @@ function interactDefault({
                     const enablement = await getGhostHintEnablement()
                     return enablement.Document || enablement.EditOrChat || enablement.Generate
                 }
+            ),
+            { label: currentSuggestionMode, kind: vscode.QuickPickItemKind.Separator },
+            await createFeatureEnumChoice(
+                'Code Suggestion Settings',
+                autoeditsFeatureFlagEnabled,
+                userProductSubscription,
+                authStatus
             ),
             { label: 'settings', kind: vscode.QuickPickItemKind.Separator },
             {
@@ -596,50 +599,92 @@ function interactDefault({
 function featureCodySuggestionEnumBuilder(workspaceConfig: vscode.WorkspaceConfiguration) {
     return async (
         name: string,
-        detail: string,
         autoeditsFeatureFlagEnabled: boolean,
         userProductSubscription: UserProductSubscription | null,
         authStatus: AuthStatus
     ): Promise<StatusBarItem> => {
-        const suggestionModeKey = 'cody.suggestions.mode'
-
-        const currentValue =
-            (await workspaceConfig.get<CodyAutoSuggestionMode>(suggestionModeKey)) ??
-            CodyAutoSuggestionMode.Autocomplete
-
+        const currentSuggestionMode = await getCurrentCodySuggestionMode(workspaceConfig)
         const { isUserEligible } = isUserEligibleForAutoeditsFeature(
             autoeditsFeatureFlagEnabled,
             authStatus,
             userProductSubscription
         )
-        const requiredValues = isUserEligible
-            ? [
-                  CodyAutoSuggestionMode.Autocomplete,
-                  CodyAutoSuggestionMode.Autoedit,
-                  CodyAutoSuggestionMode.Off,
-              ]
-            : [CodyAutoSuggestionMode.Autocomplete, CodyAutoSuggestionMode.Off]
 
-        // Show the current choice in the label.
-        const label = `${QUICK_PICK_ITEM_EMPTY_INDENT_PREFIX}${name} (Current: “${currentValue}”)`
+        // Build the set of modes to display
+        const suggestionModes = [
+            {
+                label: CodyStatusBarSuggestionModeLabels.Autocomplete,
+                detail: 'Show code completions for the rest of the line or block',
+                value: CodyAutoSuggestionMode.Autocomplete,
+            },
+            ...(isUserEligible
+                ? [
+                      {
+                          label: CodyStatusBarSuggestionModeLabels.AutoEdit,
+                          detail: 'Show suggested code changes around the cursor based on file changes',
+                          value: CodyAutoSuggestionMode.Autoedit,
+                      },
+                  ]
+                : []),
+            {
+                label: CodyStatusBarSuggestionModeLabels.Disabled,
+                detail: 'No code suggestions',
+                value: CodyAutoSuggestionMode.Off,
+            },
+        ]
+
+        // Sort the modes so that the current mode is first
+        suggestionModes.sort((a, b) =>
+            a.value === currentSuggestionMode ? -1 : b.value === currentSuggestionMode ? 1 : 0
+        )
+
+        const autocompleteSettings = [
+            { label: 'autocomplete settings', kind: vscode.QuickPickItemKind.Separator },
+            {
+                label: '$(gear) Open Autocomplete Settings',
+            },
+        ]
 
         return {
-            label,
-            detail: QUICK_PICK_ITEM_EMPTY_INDENT_PREFIX + detail,
+            label: `$(code) ${name}`,
             async onSelect() {
-                // Show a QuickPick for the user to choose a new value.
-                const selection = await vscode.window.showQuickPick(requiredValues, {
-                    placeHolder: `Current: “${currentValue}”. Pick a new mode...`,
+                const quickPick = vscode.window.createQuickPick()
+                quickPick.title = 'Code Suggestion Settings'
+                quickPick.placeholder = 'Choose an option'
+                quickPick.items = [
+                    { label: 'current mode', kind: vscode.QuickPickItemKind.Separator },
+                    ...suggestionModes.map(mode => ({
+                        label: mode.label,
+                        detail: mode.detail,
+                    })),
+                    ...(currentSuggestionMode === CodyAutoSuggestionMode.Autocomplete
+                        ? autocompleteSettings
+                        : []),
+                ]
+
+                quickPick.onDidAccept(async () => {
+                    const selected = quickPick.selectedItems[0]
+                    if (!selected) {
+                        quickPick.hide()
+                        return
+                    }
+                    const chosenMode = suggestionModes.find(mode => mode.label === selected.label)
+                    if (chosenMode) {
+                        await workspaceConfig.update(
+                            getCodySuggestionModeKey(),
+                            chosenMode.value,
+                            vscode.ConfigurationTarget.Global
+                        )
+                        vscode.window.showInformationMessage(`${name} is set to “${chosenMode.label}”.`)
+                    } else if (selected.label.includes('Open Autocomplete Settings')) {
+                        await vscode.commands.executeCommand(
+                            'workbench.action.openSettings',
+                            '@ext:sourcegraph.cody-ai cody.autocomplete'
+                        )
+                    }
+                    quickPick.hide()
                 })
-                if (!selection) {
-                    return
-                }
-                await workspaceConfig.update(
-                    suggestionModeKey,
-                    selection as CodyAutoSuggestionMode,
-                    vscode.ConfigurationTarget.Global
-                )
-                vscode.window.showInformationMessage(`${name} is set to “${selection}”.`)
+                quickPick.show()
             },
         }
     }
@@ -680,6 +725,19 @@ function featureToggleBuilder(
             buttons,
         }
     }
+}
+
+async function getCurrentCodySuggestionMode(
+    workspaceConfig: vscode.WorkspaceConfiguration
+): Promise<string> {
+    const suggestionModeKey = getCodySuggestionModeKey()
+    const currentSuggestionMode =
+        (await workspaceConfig.get<string>(suggestionModeKey)) ?? CodyAutoSuggestionMode.Autocomplete
+    return currentSuggestionMode
+}
+
+function getCodySuggestionModeKey(): string {
+    return 'cody.suggestions.mode'
 }
 
 function ignoreReason(isIgnore: IsIgnored): string | null {
@@ -732,6 +790,12 @@ interface StatusBarLoader {
     createdAt: number
     title: string
     kind: 'startup' | 'feature'
+}
+
+enum CodyStatusBarSuggestionModeLabels {
+    Autocomplete = 'Autocomplete',
+    AutoEdit = 'Auto-edit (experimental)',
+    Disabled = 'Disabled',
 }
 
 type StatusBarErrorType = 'auth' | 'RateLimitError' | 'AutoCompleteDisabledByAdmin' | 'Networking'
