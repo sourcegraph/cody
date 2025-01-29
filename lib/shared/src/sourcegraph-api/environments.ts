@@ -43,7 +43,7 @@ export const DOTCOM_WORKSPACE_UPGRADE_URL = new URL('https://sourcegraph.com/cod
 export const SG_WORKSPACES_URL = new URL('https://workspaces.sourcegraph.com')
 
 export const Workspaces_Host_Prod = '.sourcegraph.app'
-export const Workspaces_Host_Dev = '.sourcegraphdev.app'
+export const Workspaces_Host_Dev = '.sourcegraphapp.test:3443'
 
 // 🚨 SECURITY: This is used to validate a set of URLs we will allow to be passed in
 //              to the editor in the URL handler.

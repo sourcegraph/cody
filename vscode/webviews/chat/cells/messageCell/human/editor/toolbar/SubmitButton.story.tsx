@@ -25,6 +25,7 @@ const meta: Meta<typeof SubmitButton> = {
                         state: args.state === 'submittable' ? 'waitingResponseComplete' : 'submittable',
                     })
                 }}
+                manuallySelectIntent={() => {}}
             />
         )
     },
