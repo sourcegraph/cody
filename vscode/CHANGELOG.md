@@ -12,6 +12,8 @@ This is a log of all notable changes to Cody for VS Code.
 
 ### Changed
 
+### Uncategorized
+
 ## 1.64.0
 
 ### Added
@@ -43,7 +45,6 @@ This is a log of all notable changes to Cody for VS Code.
 - fix(omnibox): fix available filters when deselecting [pull/6717](https://github.com/sourcegraph/cody/pull/6717)
 - Various styling updates [pull/6723](https://github.com/sourcegraph/cody/pull/6723)
 - fix/context: Link to helpful resource when current repo not indexed in non-dotcom [pull/6695](https://github.com/sourcegraph/cody/pull/6695)
-- fix(agentic chat): exclude deep-cody prompt for o1 models [pull/6725](https://github.com/sourcegraph/cody/pull/6725)
 - Update UI and fix intent bug [pull/6720](https://github.com/sourcegraph/cody/pull/6720)
 - fix: Search results in Cody visual update [pull/6714](https://github.com/sourcegraph/cody/pull/6714)
 - fix/agentic-context: Reveal hidden switch in context popup [pull/6694](https://github.com/sourcegraph/cody/pull/6694)
