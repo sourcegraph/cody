@@ -16,6 +16,8 @@ This is a log of all notable changes to Cody for VS Code.
 
 ## 1.64.0
 
+Introducing Sourcegraph’s AI coding agents: built to automate repetitive tasks so your developers can focus on innovation. Learn more about our vision for the future [here](https://sourcegraph.com/blog/introducing-enterprise-ai-agents).
+
 ### Added
 
 - Release Omnibox: remove feature flag [pull/6849](https://github.com/sourcegraph/cody/pull/6849)
