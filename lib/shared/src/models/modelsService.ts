@@ -277,8 +277,13 @@ export class ModelsService {
                         FeatureFlag.CodyEditDefaultToGpt4oMini
                     )
 
-                    // Ensures we only change user preferences once
-                    // when they join the A/B test.
+                    // Check if this user has already been enrolled in the deepseek chat feature flag experiment.
+                    // We only want to change their default model ONCE when they first join the A/B test.
+                    // This ensures that:
+                    // 1. New users in the test group get deepseek as their default model
+                    // 2. If they later explicitly choose a different model (e.g., sonnet), we respect that choice
+                    // 3. Their chosen preference persists across sessions and new chats
+                    // 4. We don't override their preference every time they load the app
                     const isEnrolledDeepSeekChat = this.storage?.getEnrollmentHistory(
                         FeatureFlag.CodyDeepSeekChat
                     )
