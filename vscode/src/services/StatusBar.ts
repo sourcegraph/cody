@@ -40,6 +40,8 @@ const QUICK_PICK_ITEM_EMPTY_INDENT_PREFIX = '\u00A0\u00A0\u00A0\u00A0\u00A0 '
 
 const ONE_HOUR = 60 * 60 * 1000
 
+const DEBOUNCE_TIMEOUT_MS = 300
+
 const STATUS_BAR_INTERACTION_COMMAND = 'cody.status-bar.interacted'
 
 interface StatusBarState {
@@ -163,14 +165,20 @@ export class CodyStatusBar implements vscode.Disposable {
     addLoader<T>(args: StatusBarLoaderArgs) {
         const now = Date.now()
         const ttl = args.timeout !== undefined ? Math.min(ONE_HOUR, args.timeout - now) : ONE_HOUR
-        const loaderHandle = {}
+        const loaderHandle = {} as StatusBarLoader
         const remove = () => {
-            this.loaders.mutate(draft => {
-                // this is safe because we'll asign properties to the same
-                // object, maintaining object identity
-                draft.delete(loaderHandle as any)
-                return draft
-            })
+            // Clear existing timer
+            if (loaderHandle.debounceTimeout) {
+                clearTimeout(loaderHandle.debounceTimeout)
+            }
+
+            // Set new timer
+            loaderHandle.debounceTimeout = setTimeout(() => {
+                this.loaders.mutate(draft => {
+                    draft.delete(loaderHandle as any)
+                    return draft
+                })
+            }, DEBOUNCE_TIMEOUT_MS)
         }
         const scheduledRemoval = setTimeout(remove, ttl)
         const removeFn = () => {
@@ -790,6 +798,7 @@ interface StatusBarLoader {
     createdAt: number
     title: string
     kind: 'startup' | 'feature'
+    debounceTimeout?: NodeJS.Timeout
 }
 
 enum CodyStatusBarSuggestionModeLabels {
