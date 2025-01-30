@@ -417,10 +417,9 @@ export class ModelsService {
             this.getModelsByType(type),
             this.modelsChanges,
             authStatus,
-            userProductSubscription,
-            featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyDeepSeekChat)
+            userProductSubscription
         ).pipe(
-            map(([models, modelsData, authStatus, userProductSubscription, deepSeekEnabled]) => {
+            map(([models, modelsData, authStatus, userProductSubscription]) => {
                 if (
                     models === pendingOperation ||
                     modelsData === pendingOperation ||
@@ -428,12 +427,14 @@ export class ModelsService {
                 ) {
                     return pendingOperation
                 }
+
+                // Free users can only use the default free model, so we just find the first model they can use
                 const firstModelUserCanUse = models.find(
                     m =>
                         this._isModelAvailable(modelsData, authStatus, userProductSubscription, m) ===
                         true
                 )
-                // First check user preferences
+
                 if (modelsData.preferences) {
                     // Check to see if the user has a selected a default model for this
                     // usage type and if not see if there is a server sent default type
@@ -452,14 +453,8 @@ export class ModelsService {
                     ) {
                         return selected
                     }
-                    return firstModelUserCanUse
                 }
-                // Finally, fall back to first available model
-                return models.find(
-                    m =>
-                        this._isModelAvailable(modelsData, authStatus, userProductSubscription, m) ===
-                        true
-                )
+                return firstModelUserCanUse
             }),
             distinctUntilChanged(),
             shareReplay()
