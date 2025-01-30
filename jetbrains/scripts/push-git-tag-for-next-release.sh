@@ -1,24 +1,19 @@
 #!/usr/bin/env bash
-# Run this script to cut a new release.
-# No arguments needed, the version is automatically computed.
-set -eux
+# Run this script to push a tag that will trigger CI to publish a new release.
+set -eu
 
 usage() {
   echo "Usage: $0 --major|--minor|--patch [ --nightly|--experimental ] [ --dry-run ]"
   exit 1
 }
 
-# Check if the current branch is 'main'
-CURRENT_BRANCH=$(git symbolic-ref --short HEAD)
-if [ "$CURRENT_BRANCH" != "main" ]; then
-  echo "Warning: You are not on the 'main' branch. You are on '$CURRENT_BRANCH'."
-  # shellcheck disable=SC2162
-  read -p "Are you sure you want to proceed? (y/N): " proceed
-  if [ "$proceed" != "y" ]; then
-    echo "Aborted."
-    exit 1
+execute() {
+  if [ "$DRY_RUN" -eq 1 ]; then
+    echo "DRY RUN: $*"
+  else
+    "$@"
   fi
-fi
+}
 
 # Check if the working tree is clean
 if ! git diff-index --quiet HEAD --; then
@@ -51,17 +46,21 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-execute() {
-  if [ "$DRY_RUN" -eq 0 ]; then
-    echo "DRY RUN: $*"
-  else
-    "$@"
-  fi
-}
-
 # Check one of --major, --minor or --patch was specified.
 if [ -z "$VERSION_INCREMENT" ]; then
   usage
+fi
+
+# Check if the current branch is 'main'
+CURRENT_BRANCH=$(git symbolic-ref --short HEAD)
+if [ "$CURRENT_BRANCH" != "main" ]; then
+  echo "Warning: You are not on the 'main' branch. You are on '$CURRENT_BRANCH'."
+  # shellcheck disable=SC2162
+  read -p "Are you sure you want to proceed? (y/N): " proceed
+  if [ "$proceed" != "y" ]; then
+    echo "Aborted."
+    exit 1
+  fi
 fi
 
 # Fetch git tags so we can compute an accurate next version.
