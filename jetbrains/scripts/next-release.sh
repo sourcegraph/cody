@@ -6,13 +6,13 @@ set -eu
 
 # Check the number of arguments
 if [ "$#" -ne 2 ]; then
-  echo "Usage: $0 < --major|--minor|--patch > <git commit for merge base>"
+  echo "Usage: $0 --major|--minor|--patch <git commit for merge base>"
   exit 1
 fi
 
 MERGE_BASE="$2"
 
-LAST_MAJOR_MINOR_ZERO_RELEASE=$(git tag -l 'jb-v*' --contains "$MERGE_BASE" | sort -V | tail -1 | sed 's/-nightly//' | sed 's/-experimental//')
+LAST_MAJOR_MINOR_ZERO_RELEASE=$(git rev-list "$MERGE_BASE~1"..HEAD | xargs -I{} git tag -l --points-at {} jb-v* | sort -V | tail -1 | sed 's/-nightly//' | sed 's/-experimental//')
 
 if [ -z "$LAST_MAJOR_MINOR_ZERO_RELEASE" ]; then
   # This is a new release branch.

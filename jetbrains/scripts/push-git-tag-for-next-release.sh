@@ -61,7 +61,7 @@ git show -s --format=oneline HEAD
 echo "Your branch base:"
 git show -s --format=oneline "$MERGE_BASE"
 echo "Other releases from this branch:"
-git tag --list 'jb-v*' --contains "$MERGE_BASE"
+git rev-list "$MERGE_BASE~1"..HEAD | xargs -I{} git tag -l --points-at {} jb-v*
 
 # shellcheck disable=SC2162
 read -p "Are you sure you want to proceed? (y/N): " proceed
