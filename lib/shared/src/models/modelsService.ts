@@ -266,7 +266,7 @@ export class ModelsService {
             featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyDeepSeekChat)
         )
             .pipe(
-                tap(([data, shouldEditDefaultToGpt4oMini, shouldDeepSeekChatDefaultToDeepSeek]) => {
+                tap(([data, shouldEditDefaultToGpt4oMini, shouldChatDefaultToDeepSeek]) => {
                     if (data === pendingOperation) {
                         return
                     }
@@ -306,7 +306,7 @@ export class ModelsService {
                     }
                     if (
                         !isEnrolledDeepSeekChat &&
-                        shouldDeepSeekChatDefaultToDeepSeek &&
+                        shouldChatDefaultToDeepSeek &&
                         deepseekModel
                     ) {
                         // For users enrolled in the A/B test, we'll default
