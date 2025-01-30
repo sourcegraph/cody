@@ -51,25 +51,28 @@ if [ -z "$VERSION_INCREMENT" ]; then
   usage
 fi
 
-# Check if the current branch is 'main'
-CURRENT_BRANCH=$(git symbolic-ref --short HEAD)
-if [ "$CURRENT_BRANCH" != "main" ]; then
-  echo "Warning: You are not on the 'main' branch. You are on '$CURRENT_BRANCH'."
-  # shellcheck disable=SC2162
-  read -p "Are you sure you want to proceed? (y/N): " proceed
-  if [ "$proceed" != "y" ]; then
-    echo "Aborted."
-    exit 1
-  fi
-fi
-
 # Fetch git tags so we can compute an accurate next version.
 echo Fetching git tags to compute next version...
 git fetch origin +refs/tags/jb-v*:refs/tags/jb-v*
 
+MERGE_BASE=$(git merge-base HEAD origin/main)
+echo "Your current commit:"
+git show -s --format=oneline HEAD
+echo "Your branch base:"
+git show -s --format=oneline "$MERGE_BASE"
+echo "Other releases from this branch:"
+git tag --list 'jb-v*' --contains "$MERGE_BASE"
+
+# shellcheck disable=SC2162
+read -p "Are you sure you want to proceed? (y/N): " proceed
+if [ "$proceed" != "y" ]; then
+  echo "Aborted."
+  exit 1
+fi
+
 SCRIPT_DIR="$(dirname "$0")"
 SCRIPT_DIR="$(readlink -f "$SCRIPT_DIR")"
-NEXT_VERSION="$(bash "$SCRIPT_DIR/next-release.sh" $VERSION_INCREMENT)"
+NEXT_VERSION="$(bash "$SCRIPT_DIR/next-release.sh" $VERSION_INCREMENT "$MERGE_BASE")"
 
 # Check the argument and take appropriate action
 if [ "$VERSION_INCREMENT" == "--major" ]; then
