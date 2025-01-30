@@ -821,6 +821,16 @@ export const vsCodeMocks = {
             key: 'foo',
             dispose: () => {},
         }),
+        createStatusBarItem: () => ({
+            dispose: () => {},
+            show: () => {},
+            hide: () => {},
+            text: '',
+            tooltip: '',
+            command: '',
+            backgroundColor: undefined,
+            color: undefined,
+        }),
         withProgress: async (
             options: vscode_types.ProgressOptions,
             task: (
