@@ -322,11 +322,11 @@ log:
         send: 0
         ssl: -1
         wait: 3205
-    - _id: e2eb4affc188cfcd6bd85e38afcf15db
+    - _id: a8ec39187be3c0b911b16bf1dbc1db82
       _order: 0
       cache: {}
       request:
-        bodySize: 2272
+        bodySize: 2360
         cookies: []
         headers:
           - name: accept-encoding
@@ -339,9 +339,9 @@ log:
           - name: content-type
             value: application/json
           - name: traceparent
-            value: 00-75ca576fdbd905f81105b57e2d21abcf-f1c71392a5cf2411-01
+            value: 00-66748b9cd9555886466677f20c501926-a436c6a17fbcaa90-01
           - name: user-agent
-            value: defaultclient/v1 (Node.js v20.4.0)
+            value: defaultclient/v1 (Node.js v23.6.1)
           - name: x-requested-with
             value: defaultclient v1
           - name: host
@@ -363,7 +363,8 @@ log:
                   structure: ```$LANGUAGE:$FILEPATH```
 
                   For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
-              - speaker: human
+              - cache_control: false
+                speaker: human
                 text: >-
                   Codebase context from file src/squirrel.ts:
 
@@ -378,7 +379,8 @@ log:
                   ```
               - speaker: assistant
                 text: Ok.
-              - speaker: human
+              - cache_control: false
+                speaker: human
                 text: |-
                   Codebase context from file src/Heading.tsx:
                   ```typescript:src/Heading.tsx
@@ -393,7 +395,8 @@ log:
                   ```
               - speaker: assistant
                 text: Ok.
-              - speaker: human
+              - cache_control: false
+                speaker: human
                 text: |-
                   Codebase context from file src/ChatColumn.tsx:
                   ```typescript:src/ChatColumn.tsx
@@ -419,7 +422,8 @@ log:
                   					<li>{message.text}</li>```
               - speaker: assistant
                 text: Ok.
-              - speaker: human
+              - cache_control: false
+                speaker: human
                 text: |-
                   Codebase context from file src/animal.ts:
                   ```typescript:src/animal.ts
@@ -455,14 +459,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=defaultclient&client-version=v1
       response:
-        bodySize: 700
+        bodySize: 705
         content:
           mimeType: text/event-stream
-          size: 700
+          size: 705
           text: >+
             event: completion
 
-            data: {"deltaText":"```typescript:src/dog.ts\nexport class Dog implements Animal {\n    name: string;\n    isMammal = true;\n\n    constructor(name: string) {\n        this.name = name;\n    }\n\n    makeAnimalSound(): string {\n        return \"Woof!\";\n    }\n}\n```","stopReason":"end_turn"}
+            data: {"deltaText":"```typescript:src/dog.ts\nexport class Dog implements Animal {\n    name: string\n    isMammal: boolean = true\n\n    constructor(name: string) {\n        this.name = name\n    }\n\n    makeAnimalSound(): string {\n        return \"Woof!\"\n    }\n}\n```","stopReason":"end_turn"}
 
 
             event: done
@@ -472,13 +476,15 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 27 Dec 2024 20:51:31 GMT
+            value: Thu, 30 Jan 2025 00:34:05 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
             value: chunked
           - name: connection
             value: keep-alive
+          - name: retry-after
+            value: "497"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -496,13 +502,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1299
+        headersSize: 1406
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-12-27T20:51:28.994Z
-      time: 2136
+      startedDateTime: 2025-01-30T00:34:03.008Z
+      time: 2656
       timings:
         blocked: -1
         connect: -1
@@ -510,12 +516,12 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 2136
-    - _id: 28414a5b7941190054b90c1de687dcde
+        wait: 2656
+    - _id: fc9ed4a86331b358bad19b45db06c2af
       _order: 0
       cache: {}
       request:
-        bodySize: 2206
+        bodySize: 2294
         cookies: []
         headers:
           - name: accept-encoding
@@ -528,9 +534,9 @@ log:
           - name: content-type
             value: application/json
           - name: traceparent
-            value: 00-0b48f29bced4934b6c599f53b3667623-85287a0163ba1930-01
+            value: 00-74ab8c4eafae936b10d31997fd6d9284-d6e5e1972bdb513c-01
           - name: user-agent
-            value: defaultclient/v1 (Node.js v20.4.0)
+            value: defaultclient/v1 (Node.js v23.6.1)
           - name: x-requested-with
             value: defaultclient v1
           - name: host
@@ -552,7 +558,8 @@ log:
                   structure: ```$LANGUAGE:$FILEPATH```
 
                   For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
-              - speaker: human
+              - cache_control: false
+                speaker: human
                 text: >-
                   Codebase context from file src/squirrel.ts:
 
@@ -567,7 +574,8 @@ log:
                   ```
               - speaker: assistant
                 text: Ok.
-              - speaker: human
+              - cache_control: false
+                speaker: human
                 text: |-
                   Codebase context from file src/Heading.tsx:
                   ```typescript:src/Heading.tsx
@@ -582,7 +590,8 @@ log:
                   ```
               - speaker: assistant
                 text: Ok.
-              - speaker: human
+              - cache_control: false
+                speaker: human
                 text: |-
                   Codebase context from file src/ChatColumn.tsx:
                   ```typescript:src/ChatColumn.tsx
@@ -608,7 +617,8 @@ log:
                   					<li>{message.text}</li>```
               - speaker: assistant
                 text: Ok.
-              - speaker: human
+              - cache_control: false
+                speaker: human
                 text: |-
                   Codebase context from file src/animal.ts:
                   ```typescript:src/animal.ts
@@ -642,14 +652,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=defaultclient&client-version=v1
       response:
-        bodySize: 3133
+        bodySize: 3402
         content:
           mimeType: text/event-stream
-          size: 3133
+          size: 3402
           text: >+
             event: completion
 
-            data: {"deltaText":"The Squirrel interface in the codebase is used for precise code navigation in Sourcegraph, rather than representing actual squirrels. While it's currently an empty interface, I can show you how it could be implemented along with the existing Animal interface for a fun example:\n\n```typescript:src/squirrel-example.ts\nimport { Animal } from './animal'\nimport { Squirrel } from './squirrel'\n\nclass TreeSquirrel implements Animal, Squirrel {\n    name: string\n    isMammal: boolean = true\n    \n    constructor(name: string) {\n        this.name = name\n    }\n\n    makeAnimalSound(): string {\n        return \"Chitter chitter!\"\n    }\n    \n    // Squirrel-specific behaviors\n    collectNuts(): number {\n        return Math.floor(Math.random() * 10)\n    }\n}\n\n// Usage example\nconst rocky = new TreeSquirrel(\"Rocky\")\nconsole.log(rocky.makeAnimalSound()) // \"Chitter chitter!\"\nconsole.log(rocky.collectNuts()) // Returns random number of nuts collected\n```\n\nThe interesting part is that while this interface is named Squirrel, according to the code comments it's actually used for implementing precise code navigation features in Sourcegraph, making it a clever naming choice that has nothing to do with actual squirrels. \n\nIf you want to actually use it for code navigation purposes, you would implement it differently based on Sourcegraph's navigation requirements rather than animal behaviors.","stopReason":"end_turn"}
+            data: {"deltaText":"The Squirrel interface in the codebase is actually related to precise code navigation in Sourcegraph, not the animal. Let me show you some examples of how to work with it.\n\nHere's a basic implementation example:\n\n```typescript:src/squirrel-implementation.ts\nimport { Squirrel } from './squirrel'\n\nclass CodeNavigator implements Squirrel {\n    // Add precise code navigation related methods\n    navigate(location: string): void {\n        // Implementation for code navigation\n    }\n    \n    findReferences(symbol: string): string[] {\n        // Find code references\n        return []\n    }\n}\n```\n\nYou could use it in a React component like this:\n\n```typescript:src/SquirrelNavigator.tsx\nimport React from 'react'\nimport { Squirrel } from './squirrel'\n\ninterface Props {\n    navigator: Squirrel\n}\n\nexport const SquirrelNavigator: React.FC<Props> = ({ navigator }) => {\n    return (\n        <div className=\"code-navigator\">\n            {/* Code navigation UI components */}\n        </div>\n    )\n}\n```\n\nThe interesting part is that despite its name, Squirrel is used as an abstraction for code navigation features rather than anything related to the actual animal. This is different from the `Animal` interface we can see in the codebase, which is actually about animals with properties like `makeAnimalSound()` and `isMammal`.\n\nThe empty interface in the original code suggests it might be used as a marker interface or that the implementation details are defined elsewhere in the codebase.","stopReason":"end_turn"}
 
 
             event: done
@@ -659,13 +669,15 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 27 Dec 2024 20:51:34 GMT
+            value: Thu, 30 Jan 2025 00:34:11 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
             value: chunked
           - name: connection
             value: keep-alive
+          - name: retry-after
+            value: "494"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -683,13 +695,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1299
+        headersSize: 1406
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-12-27T20:51:31.170Z
-      time: 6206
+      startedDateTime: 2025-01-30T00:34:06.338Z
+      time: 9819
       timings:
         blocked: -1
         connect: -1
@@ -697,7 +709,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 6206
+        wait: 9819
     - _id: f8077b99cfdf098868b18e9fc6fa0d2f
       _order: 0
       cache: {}
@@ -1431,11 +1443,11 @@ log:
         send: 0
         ssl: -1
         wait: 942
-    - _id: b64639709a19055cfe5708fcfb1ee06c
+    - _id: 246d642dd90d8264eb3d157463a274d1
       _order: 0
       cache: {}
       request:
-        bodySize: 2080
+        bodySize: 2124
         cookies: []
         headers:
           - name: accept-encoding
@@ -1448,9 +1460,9 @@ log:
           - name: content-type
             value: application/json
           - name: traceparent
-            value: 00-ba41d5f88b29abbda9fedd31caf5dfd0-1334f4a830db9027-01
+            value: 00-89b24e87721bc47f5d46df4dcbc37fc9-f51f6fe8f8c3d581-01
           - name: user-agent
-            value: defaultclient/v1 (Node.js v20.4.0)
+            value: defaultclient/v1 (Node.js v23.6.1)
           - name: x-requested-with
             value: defaultclient v1
           - name: host
@@ -1474,7 +1486,8 @@ log:
                   For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
               - speaker: assistant
                 text: I am Cody, an AI coding assistant from Sourcegraph.
-              - speaker: human
+              - cache_control: false
+                speaker: human
                 text: >
                   Codebase context from file path src/animal.ts: /*
                   SELECTION_START */
@@ -1488,7 +1501,8 @@ log:
                   /* SELECTION_END */
               - speaker: assistant
                 text: Ok.
-              - speaker: human
+              - cache_control: false
+                speaker: human
                 text: |-
                   My selected code from codebase file src/animal.ts:1-6:
                   ```
@@ -1519,14 +1533,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?client-name=defaultclient&client-version=v1
       response:
-        bodySize: 45921
+        bodySize: 82255
         content:
           mimeType: text/event-stream
-          size: 45921
+          size: 82255
           text: >+
             event: completion
 
-            data: {"completion":"The code being explained is an interface for an object called `Animal` in the file `animal.ts`. This code defines the shape that an Animal object must take in order to be considered an Animal in the codebase.\n\n1. The purpose of the code: The code is defining an `Animal` interface. This means that if any object is to be considered an `Animal`, it must have at least the following properties: `name` (a string), `makeAnimalSound` (a method that returns a string), and `isMammal` (a boolean value).\n2. Inputs: This code, as an interface, doesn't have inputs in the traditional sense. However, any object that wants to conform to the shape of an `Animal` will need to provide values for the required properties and methods defined in the `Animal` interface. For example, another code file might create an object like so: `let myDog: Animal = { name: 'Fido', makeAnimalSound: () => 'Woof!', isMammal: true }`.\n3. Outputs: The code doesn't produce outputs as it is just an interface. However, it enables other code to define objects with a consistent structure.\n4. Algorithm: The code uses TypeScript syntax to define an interface. This interface consists of three properties (`name`, `makeAnimalSound`, `isMammal`), each with a specific type; `string`, `() => string`, and `boolean`, respectively.\n5. Logic and data transformations: Since this is an interface, there are no actual logic and data transformations happening. However, it provides a blueprint for other objects so that they can implement the required logic and data transformations.\n\nIn summary, the given code describes the Animal interface, providing a blueprint for other objects to implement the required shape and behavior. Working with this blueprint, programmers can maintain consistency throughout the codebase and implement specific functionalities according to their demands.","stopReason":"stop"}
+            data: {"completion":"The code you've provided is an interface for a type called \"Animal\" in a TypeScript file. An interface is a blueprint or contract for creating an object, specifying what properties and methods an object should have.\n\nAn interface for an object in TypeScript defines the shape of that object, outlining the properties and methods it should have. This way, any objects created from this interface will be guaranteed to have these properties and methods.\n\nIn this `Animal` interface, three properties have been defined: `name` (a string), `makeAnimalSound` (a function that returns a string), and `isMammal` (a boolean). This means any object created using this `Animal` interface must have these three properties.\n\nThe purpose of this code is to make sure that any object that claims to be an `Animal` in the codebase will have a consistent structure. This makes it easier to work with `Animal` objects throughout your codebase, as you can rely on them having a certain set of properties and methods.\n\nIn simple terms, the `Animal` interface in this code takes no input, as it is not an executable function. However, it defines the structure that any object claiming to be an `Animal` should follow.\n\nThe output of this code is not a direct tangible value, but instead, it provides a consistent structure for any object that claims to be an `Animal`. This structure governs how `Animal` objects are created, and how they behave in the codebase. This way, as a developer, you can predict and control how different `Animal` objects will act and interact in the application.\n\nThe `Animal` interface achieves its purpose by defining the structure or \"blueprint\" that any object claiming to be an `Animal` should follow. By using this interface, you ensure a consistent and reliable structure for any `Animal` objects in your codebase, which makes it easier to understand their logic and behavior.\n\nTo summarize, the `Animal` interface in this code outlines the structure that any object claiming to be an `Animal` should have, ensuring consistency and reliability in your codebase. By following this blueprint, any `Animal` object will have the properties `name`, `makeAnimalSound`, and `isMammal`. This aids in predicting and controlling the behavior of `Animal` objects in your application.","stopReason":"stop"}
 
 
             event: done
@@ -1536,13 +1550,15 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 27 Dec 2024 20:51:49 GMT
+            value: Thu, 30 Jan 2025 00:34:21 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
             value: chunked
           - name: connection
             value: keep-alive
+          - name: retry-after
+            value: "481"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -1560,13 +1576,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1299
+        headersSize: 1406
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-12-27T20:51:48.674Z
-      time: 3197
+      startedDateTime: 2025-01-30T00:34:19.937Z
+      time: 4067
       timings:
         blocked: -1
         connect: -1
@@ -1574,12 +1590,12 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 3197
-    - _id: c3d5578472596bc8587745819912c31e
+        wait: 4067
+    - _id: e645f3e5e5f6c41b0f7e24fbaf6ea32b
       _order: 0
       cache: {}
       request:
-        bodySize: 1876
+        bodySize: 1920
         cookies: []
         headers:
           - name: accept-encoding
@@ -1592,9 +1608,9 @@ log:
           - name: content-type
             value: application/json
           - name: traceparent
-            value: 00-7315dcfe6eef5b764c00e0a353fb46e2-edc0fb925384086d-01
+            value: 00-63831136a0b0f0d7062d6b8ac83c72dd-5f939e8dd12d6ead-01
           - name: user-agent
-            value: defaultclient/v1 (Node.js v20.4.0)
+            value: defaultclient/v1 (Node.js v23.6.1)
           - name: x-requested-with
             value: defaultclient v1
           - name: host
@@ -1618,7 +1634,8 @@ log:
                   For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
               - speaker: assistant
                 text: I am Cody, an AI coding assistant from Sourcegraph.
-              - speaker: human
+              - cache_control: false
+                speaker: human
                 text: >
                   Codebase context from file path src/animal.ts: /*
                   SELECTION_START */
@@ -1632,7 +1649,8 @@ log:
                   /* SELECTION_END */
               - speaker: assistant
                 text: Ok.
-              - speaker: human
+              - cache_control: false
+                speaker: human
                 text: |-
                   My selected code from codebase file src/animal.ts:1-6:
                   ```
@@ -1663,14 +1681,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?client-name=defaultclient&client-version=v1
       response:
-        bodySize: 94855
+        bodySize: 32723
         content:
           mimeType: text/event-stream
-          size: 94855
+          size: 32723
           text: >+
             event: completion
 
-            data: {"completion":"Based on the provided code from `@src/animal.ts:1-6`:\n```typescript\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean\n}\n```\nHere are 5 suggestions to improve the code:\n1. **Add type annotations for the methods.** Adding type annotations for the methods in the interface could improve type safety and self-document the code.\n    ```typescript\n    export interface Animal {\n        name: string\n        makeAnimalSound(): string\n        isMammal: boolean\n        eat(food: string): void\n    }\n    ```\n    Benefit: Enhanced type safety, and clearer understanding of intended usage.\n2. **Add access modifiers.** By specifying access modifiers (public, private, protected) for members, we can ensure encapsulation and control access.\n    ```typescript\n    export interface Animal {\n        name: string\n        makeAnimalSound(): string\n        readonly isMammal: boolean // readonly ensures that this property cannot be changed\n    }\n    ```\n    Benefit: Improved encapsulation, and consistency in codebase.\n3. **Follow PascalCase for naming conventions in TypeScript.** Use PascalCase for method names inside the interface.\n    ```typescript\n    export interface Animal {\n        name: string\n        MakeAnimalSound(): string\n        isMammal: boolean\n    }\n    ```\n    Benefit: Adherence to community conventions and improved readability.\n\n4. **Use enums when defining a set of named values.** Instead of using boolean values for `isMammal`, use an enum.\n    ```typescript\n    export enum AnimalType {\n      Mammal,\n      Reptile,\n      Amphibian\n    }\n\n    export interface Animal {\n        name: string\n        makeAnimalSound(): string\n        type: AnimalType\n    }\n    ```\n    Benefit: Provides a clearer, more self-descriptive representation of the data.\n5. **Add JSDoc comments for TypeScript interfaces.** JSDoc comments make code more readable and provide useful information when interacting with code through an IDE.\n    ```typescript\n    /**\n     * Animal interface\n     */\n    export interface Animal {\n        name: string\n        makeAnimalSound(): string\n        isMammal: boolean\n    }\n    ```\n    Benefit: Improved readability and discoverability of interface usage in IDEs.\n\nOverall, the provided code snippet demonstrates a good foundation for a TypeScript interface. The main opportunities for improvement center around adhering to TypeScript conventions and enhancing code readability for both humans and integrated development environments.","stopReason":"stop"}
+            data: {"completion":"Based on the provided code, here are some potential areas for improvement:\n\n1. Improve Code Smells: Since this is an interface, there are no direct implementations or calls to methods, so it is hard to point out specific code smells. However, interfaces typically have properties, instead of just methods, like the `name` property here.\n2. Readability: Consider adding a description to the interface that explains its purpose or intentions to make it more clear for developers who will use this code.\n3. Maintainability: Consider adding an `updateAt` property or method that provides information about when the `Animal` interface was last updated to help maintainers.\n4. Performance: Interfaces don't really have performance impact until they're used in implementations. However, for the sake of completeness, you could define a type for the return type of the `makeAnimalSound()` method.\n5. Documentation: Add JSDoc comments to explain the properties and methods of the interface to help developers who are unfamiliar with it.\n\nSummary:\n\nBased on the given code, there are some opportunities for improvement in terms of readability, maintainability, and documentation. While the code meets the minimum requirements for defining an interface, it would be beneficial to include more metadata to help maintainers understand the purpose of this interface and to ensure it is used correctly. Overall, the code is functional and follows general design principles, but these suggestions could help make it more robust, efficient, and easier to understand.","stopReason":"stop"}
 
 
             event: done
@@ -1680,13 +1698,15 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 27 Dec 2024 20:51:52 GMT
+            value: Thu, 30 Jan 2025 00:34:26 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
             value: chunked
           - name: connection
             value: keep-alive
+          - name: retry-after
+            value: "476"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -1704,13 +1724,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1299
+        headersSize: 1406
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-12-27T20:51:51.939Z
-      time: 4212
+      startedDateTime: 2025-01-30T00:34:24.559Z
+      time: 3136
       timings:
         blocked: -1
         connect: -1
@@ -1718,7 +1738,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 4212
+        wait: 3136
     - _id: f1b1cde4cd57488b7f0137954f0302f5
       _order: 0
       cache: {}
@@ -2732,138 +2752,6 @@ log:
         send: 0
         ssl: -1
         wait: 150
-    - _id: 2481998e71355fc9ca2258fbaae1cf9a
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 101
-        cookies: []
-        headers:
-          - _fromType: array
-            name: authorization
-            value: token
-              REDACTED_fc324d3667e841181b0779375f26dedc911d26b303d23b29b1a2d7ee63dc77eb
-          - _fromType: array
-            name: content-type
-            value: application/json; charset=utf-8
-          - _fromType: array
-            name: user-agent
-            value: defaultclient/v1 (Node.js v20.4.0)
-          - _fromType: array
-            name: x-requested-with
-            value: defaultclient v1
-          - _fromType: array
-            name: accept
-            value: "*/*"
-          - _fromType: array
-            name: content-length
-            value: "101"
-          - _fromType: array
-            name: accept-encoding
-            value: gzip,deflate
-          - name: host
-            value: sourcegraph.com
-        headersSize: 434
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json; charset=utf-8
-          params: []
-          textJSON:
-            query: |
-              
-              query TemporarySettings {
-                temporarySettings {
-                  contents
-                }
-              }
-            variables: {}
-        queryString:
-          - name: TemporarySettings
-            value: null
-        url: https://sourcegraph.com/.api/graphql?TemporarySettings
-      response:
-        bodySize: 508
-        content:
-          encoding: base64
-          mimeType: application/json
-          size: 508
-          text: "[\"H4sIAAAAAAAAA8SSy07DMBBFf8WyWFWt8yJU9Q7Bgn27AoPkJtPEwrGDPQaiKv+OnEiIB\
-            Wwoj+3M9fjcuXOktURJ+ZEidL110g1bQFSm8bFYWYNg0FNOj4IGD45p6fFaDpcVqmcQ\
-            lBNBd20gW+hJtiF5mp8LuiSCVrYemDV7K12tTMM8Qh/leWxOk2o5+HnMlQ0GYzPLPnt\
-            a2a7XgFBHCboAUeRBuqplyvQBmYMKDG6nEvgouzsK+hTADTPiZOQVeaPtXmrioLf8oV\
-            HYhr0QQsQvEm+Dq6Bxsm+TiHBGIqaRHXByUBq4g8rORK10bJCdnq1q1Sm8UZODg9R+4\
-            kPVgUfZ9TNAXMwqLVf5epdl/DzjWcHKorydJzjwQeP7GopxSX6BXzZgMHl34ZNFsjjV\
-            RlqyNF1/biP9Ixvfxk95uWabrPjnFE7LIOVlwS6+OqWfyuBDZW9x87g6mJcunABdlCz\
-            ffHn/9yMdx/ENAAD//wMAHMsNG54EAAA=\"]"
-          textDecoded:
-            data:
-              temporarySettings:
-                contents: "{\"user.lastDayActive\": \"Thu Sep 19 2024\",
-                  \"cody.onboarding.step\": 2, \"user.daysActiveCount\": 11,
-                  \"cody.onboarding.completed\": true,
-                  \"search.input.recentSearches\": [{\"query\": \"context:global
-                  repo:^github\\\\.com/sourcegraph/cody$ username:
-                  file:recording.har.yaml\", \"limitHit\": false, \"timestamp\":
-                  \"2024-05-27T11:41:13.535Z\", \"resultCount\": 3}, {\"query\":
-                  \"context:global repo:^github\\\\.com/sourcegraph/cody$
-                  username: file:agent/recordings/*/*.yaml\", \"limitHit\":
-                  false, \"timestamp\": \"2024-05-27T11:41:05.007Z\",
-                  \"resultCount\": 0}, {\"query\": \"context:global
-                  repo:^github\\\\.com/sourcegraph/cody$ username:
-                  file:agent/recordings/\", \"limitHit\": false, \"timestamp\":
-                  \"2024-05-27T11:40:57.913Z\", \"resultCount\": 3}, {\"query\":
-                  \"context:global repo:^github\\\\.com/sourcegraph/cody$
-                  username: file:agent/recordings/*.yaml\", \"limitHit\": false,
-                  \"timestamp\": \"2024-05-27T11:40:53.635Z\", \"resultCount\":
-                  0}, {\"query\": \"context:global
-                  repo:^github\\\\.com/sourcegraph/cody$
-                  sourcegraphbot9k-fnwmu\", \"limitHit\": false, \"timestamp\":
-                  \"2024-05-27T11:40:35.295Z\", \"resultCount\": 3}]}"
-        cookies: []
-        headers:
-          - name: date
-            value: Fri, 17 Jan 2025 13:17:22 GMT
-          - name: content-type
-            value: application/json
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: close
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache, max-age=0
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-          - name: content-encoding
-            value: gzip
-        headersSize: 1468
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2025-01-17T13:17:21.369Z
-      time: 733
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 733
     - _id: fd0fee4687419870bc82cba9d1023319
       _order: 0
       cache: {}

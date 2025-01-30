@@ -7,7 +7,8 @@ export const TestLogger = {
         // Do some stuff
 
         /**
-         * Records a log message to the console.
+         * Logs a message to the console.
+         * This is an internal utility function used by the TestLogger module.
          */
         function recordLog() {
             console.log(/* CURSOR */ 'Recording the log')
@@ -49,7 +50,7 @@ export class TestClass {
     constructor(private shouldGreet: boolean) {}
 
     /**
-     * Logs "Hello World!" to the console if the \`shouldGreet\` property is true.
+     * Logs a greeting message to the console if \`shouldGreet\` is true.
      */
     public functionName() {
         if (this.shouldGreet) {
@@ -88,7 +89,8 @@ describe('test block', () => {
     it('does something else', () => {
         // This line will error due to incorrect usage of \`performance.now\`
         /**
-         * Retrieves the current time in milliseconds since the page was loaded, for use in performance measurements.
+         * Captures the current time in milliseconds since the page was loaded.
+         * This is useful for measuring the duration of an operation.
          */
         const startTime = performance.now(/* CURSOR */)
     })
