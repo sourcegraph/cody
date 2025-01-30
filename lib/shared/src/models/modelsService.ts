@@ -14,6 +14,7 @@ import {
     distinctUntilChanged,
     shareReplay,
     storeLastValue,
+    switchMap,
     tap,
 } from '../misc/observable'
 import { firstResultFromOperation, pendingOperation } from '../misc/observableOperation'
@@ -262,10 +263,11 @@ export class ModelsService {
 
         this.syncPreferencesSubscription = combineLatest(
             this.modelsChanges,
-            featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyEditDefaultToGpt4oMini)
+            featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyEditDefaultToGpt4oMini),
+            featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyDeepSeekChat)
         )
             .pipe(
-                tap(([data, shouldEditDefaultToGpt4oMini]) => {
+                tap(([data, shouldEditDefaultToGpt4oMini, shouldDeepSeekChatDefaultToDeepSeek]) => {
                     if (data === pendingOperation) {
                         return
                     }
@@ -276,10 +278,22 @@ export class ModelsService {
                         FeatureFlag.CodyEditDefaultToGpt4oMini
                     )
 
+                    // Ensures we only change user preferences once
+                    // when they join the A/B test.
+                    const isEnrolledDeepSeekChat = this.storage?.getEnrollmentHistory(
+                        FeatureFlag.CodyDeepSeekChat
+                    )
+
                     // Ensures that we have the gpt-4o-mini model
                     // we want to default to in this A/B test.
                     const gpt4oMini = data.primaryModels.find(
                         model => model?.modelRef?.modelId === 'gpt-4o-mini'
+                    )
+
+                    // Ensures that we have the deepseek model
+                    // we want to default to in this A/B test.
+                    const deepseekModel = data.primaryModels.find(
+                        model => model?.id === 'fireworks::v1::deepseek-v3'
                     )
 
                     const allSitePrefs = this.storage?.getModelPreferences()
@@ -290,6 +304,16 @@ export class ModelsService {
                         // to the gpt-4-mini model when using the Edit command.
                         // They still can switch back to other models if they want.
                         currentAccountPrefs.selected.edit = gpt4oMini.id
+                    }
+                    if (
+                        !isEnrolledDeepSeekChat &&
+                        shouldDeepSeekChatDefaultToDeepSeek &&
+                        deepseekModel
+                    ) {
+                        // For users enrolled in the A/B test, we'll default
+                        // to the deepseek model when using the Chat command.
+                        // They still can switch back to other models if they want.
+                        currentAccountPrefs.selected.chat = deepseekModel.id
                     }
 
                     const updated: DefaultsAndUserPreferencesByEndpoint = {
@@ -393,9 +417,10 @@ export class ModelsService {
             this.getModelsByType(type),
             this.modelsChanges,
             authStatus,
-            userProductSubscription
+            userProductSubscription,
+            featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyDeepSeekChat)
         ).pipe(
-            map(([models, modelsData, authStatus, userProductSubscription]) => {
+            map(([models, modelsData, authStatus, userProductSubscription, deepSeekEnabled]) => {
                 if (
                     models === pendingOperation ||
                     modelsData === pendingOperation ||
@@ -404,15 +429,9 @@ export class ModelsService {
                     return pendingOperation
                 }
 
-                // Free users can only use the default free model, so we just find the first model they can use
-                const firstModelUserCanUse = models.find(
-                    m =>
-                        this._isModelAvailable(modelsData, authStatus, userProductSubscription, m) ===
-                        true
-                )
-
+                // First check user preferences
                 if (modelsData.preferences) {
-                    // Check to see if the user has a selected a default model for this
+                    // Check to see if the user has selected a default model for this
                     // usage type and if not see if there is a server sent default type
                     const selected = this.resolveModel(
                         modelsData,
@@ -430,7 +449,29 @@ export class ModelsService {
                         return selected
                     }
                 }
-                return firstModelUserCanUse
+
+                // If no user selection, then check feature flag override
+                if (deepSeekEnabled) {
+                    const overrideModel = models.find(m => m.id === 'fireworks::v1::deepseek-v3')
+                    if (
+                        overrideModel &&
+                        this._isModelAvailable(
+                            modelsData,
+                            authStatus,
+                            userProductSubscription,
+                            overrideModel
+                        )
+                    ) {
+                        return overrideModel
+                    }
+                }
+
+                // Finally, fall back to first available model
+                return models.find(
+                    m =>
+                        this._isModelAvailable(modelsData, authStatus, userProductSubscription, m) ===
+                        true
+                )
             }),
             distinctUntilChanged(),
             shareReplay()
@@ -456,8 +497,17 @@ export class ModelsService {
     }
 
     public getDefaultChatModel(): Observable<ChatModel | undefined | typeof pendingOperation> {
-        return this.getDefaultModel(ModelUsage.Chat).pipe(
-            map(model => (model === pendingOperation ? pendingOperation : model?.id))
+        return featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyDeepSeekChat).pipe(
+            switchMap(flag => {
+                if (flag) {
+                    return this.getDefaultModel(ModelUsage.Chat).pipe(
+                        map(model => (model === pendingOperation ? pendingOperation : model?.id))
+                    )
+                }
+                return this.getDefaultModel(ModelUsage.Chat).pipe(
+                    map(model => (model === pendingOperation ? pendingOperation : model?.id))
+                )
+            })
         )
     }
 

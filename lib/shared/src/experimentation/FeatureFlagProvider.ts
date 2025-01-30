@@ -90,6 +90,7 @@ export enum FeatureFlag {
      * some standard out-of-the-box prompts like documentation and explain code prompts)
      */
     CodyUnifiedPrompts = 'cody-unified-prompts',
+    CodyDeepSeekChat = 'cody-deepseek-chat-4',
 
     /**
      * For internal use only. New Prompts UI and logic is behind this feature flag
