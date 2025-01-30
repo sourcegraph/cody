@@ -290,7 +290,8 @@ export class ModelsService {
                     )
 
                     // Ensures that we have the deepseek model
-                    // we want to default to in this A/B test.
+                    // we want to default to in this A/B test
+                    // The model is defined at https://sourcegraph.sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/cmd/cody-gateway-config/dotcom_models.go?L323
                     const deepseekModel = data.primaryModels.find(
                         model => model?.id === 'fireworks::v1::deepseek-v3'
                     )
@@ -304,11 +305,8 @@ export class ModelsService {
                         // They still can switch back to other models if they want.
                         currentAccountPrefs.selected.edit = gpt4oMini.id
                     }
-                    if (
-                        !isEnrolledDeepSeekChat &&
-                        shouldChatDefaultToDeepSeek &&
-                        deepseekModel
-                    ) {
+
+                    if (!isEnrolledDeepSeekChat && shouldChatDefaultToDeepSeek && deepseekModel) {
                         // For users enrolled in the A/B test, we'll default
                         // to the deepseek model when using the Chat command.
                         // They still can switch back to other models if they want.
