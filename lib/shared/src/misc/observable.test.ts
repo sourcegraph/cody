@@ -19,6 +19,7 @@ import {
     observableOfTimedSequence,
     promiseFactoryToObservable,
     readValuesFrom,
+    retry,
     shareReplay,
     startWith,
     storeLastValue,
@@ -1105,5 +1106,88 @@ describe('withLatestFrom', () => {
 
         unsubscribe()
         await done
+    })
+})
+
+describe('retry', () => {
+    test('should retry specified number of times before failing', async () => {
+        vi.useFakeTimers()
+
+        let attempts = 0
+        const errorCount = 3
+        const source = new Observable(observer => {
+            attempts++
+            if (attempts <= errorCount) {
+                observer.error(new Error(`Attempt ${attempts}`))
+            } else {
+                observer.next('Success')
+                observer.complete()
+            }
+        })
+
+        const results: string[] = []
+        const errors: Error[] = []
+
+        source.pipe(retry(errorCount)).subscribe({
+            next: value => results.push(value as string),
+            error: err => errors.push(err),
+            complete: () => results.push('completed'),
+        })
+
+        await vi.advanceTimersByTimeAsync(10)
+
+        expect(results).toEqual(['Success', 'completed'])
+        expect(errors).toEqual([])
+    })
+
+    test('should emit error when max retries exceeded', async () => {
+        vi.useFakeTimers()
+
+        const source = new Observable(observer => {
+            observer.error(new Error('Test Error'))
+        })
+
+        const errors: Error[] = []
+        source.pipe(retry(2)).subscribe({
+            error: err => errors.push(err),
+        })
+
+        await vi.advanceTimersByTimeAsync(10)
+
+        expect(errors.length).toBe(1)
+        expect(errors[0].message).toBe('Test Error')
+    })
+
+    test('should properly clean up subscriptions on unsubscribe', async () => {
+        vi.useFakeTimers()
+
+        const unsubscribeSpy = vi.fn()
+        const source = new Observable(() => unsubscribeSpy)
+
+        const subscription = source.pipe(retry(2)).subscribe({})
+        subscription.unsubscribe()
+
+        await vi.advanceTimersByTimeAsync(10)
+
+        expect(unsubscribeSpy).toHaveBeenCalled()
+    })
+
+    test('should complete when source completes', async () => {
+        vi.useFakeTimers()
+
+        const source = new Observable(observer => {
+            observer.next('value')
+            observer.complete()
+        })
+
+        const results: string[] = []
+        source.pipe(retry(2)).subscribe({
+            next: value => results.push(value as string),
+            complete: () => results.push('completed'),
+        })
+
+        await vi.advanceTimersByTimeAsync(10)
+
+        expect(results).toEqual(['value', 'completed'])
     })
 })
