@@ -89,7 +89,7 @@ jobs:
           echo $VERSION
           ./changelog update-as-pr \
             --github.repo=$GH_REPO \
-            --github.fetch-strategy="merge-base" \
+            --github.fetch-strategy="since-commit" \
             --output.repo.base="main" \
             --output.repo=$GH_REPO \
             --output.pr.branch="$PR_BRANCH" \
@@ -97,7 +97,8 @@ jobs:
             --output.pr.body="Automated release and changelog for ${EDITOR} Cody v%s" \
             --output.changelog="$CHANGELOG_PATH" \
             --output.changelog.marker='<!--- {/_ CHANGELOG_START _/} -->' \
-            --releaseregistry.version=${VERSION}      
+            --releaseregistry.version=${VERSION}  
+            --releaseregistry.commit=${RELEASE_LATEST_COMMIT}    
       - name: Update version
         if: github.event.inputs.editor == 'VS Code'
         env:
