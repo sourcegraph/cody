@@ -16,6 +16,7 @@ describe('StatusBar loader debouncing', () => {
         vi.useFakeTimers()
         statusBar = CodyStatusBar.init()
         // Track all changes to the loaders collection
+        // biome-ignore lint/complexity/useLiteralKeys: the loaders property is private with no accessor
         observedChanges = allValuesFrom(statusBar['loaders'].changes).then(changes =>
             changes.map(set => new Set(set))
         )
@@ -28,6 +29,7 @@ describe('StatusBar loader debouncing', () => {
 
     it('tracks loader mutations', async () => {
         statusBar.addLoader({ title: 'Test Loader' })
+        // biome-ignore lint/complexity/useLiteralKeys: the loaders property is private with no accessor
         statusBar['loaders'].complete()
 
         const states = await observedChanges
