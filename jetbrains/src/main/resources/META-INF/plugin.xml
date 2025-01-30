@@ -398,6 +398,12 @@
                     <override-text place="GoToAction" text="Cody: Enable OffScreen Rendering"/>
                 </action>
             </group>
+
+            <action id="cody.webview.backspace"
+                    class="com.sourcegraph.cody.config.actions.WebViewBackspaceAction"
+                    text="Webview Backspace">
+                <keyboard-shortcut first-keystroke="BACK_SPACE" keymap="$default"/>
+            </action>
         </group>
 
         <group id="CodyStatusBarActions" popup="true" searchable="false"
