@@ -2,7 +2,7 @@ import { DiagConsoleLogger, DiagLogLevel, diag } from '@opentelemetry/api'
 import { Resource } from '@opentelemetry/resources'
 import { BatchSpanProcessor, WebTracerProvider } from '@opentelemetry/sdk-trace-web'
 import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions'
-import type { CodyIDE } from '@sourcegraph/cody-shared/src/configuration'
+import { CodyIDE } from '@sourcegraph/cody-shared/src/configuration'
 import { CodyTraceExporterWeb } from '../../src/services/open-telemetry/CodyTraceExportWeb'
 
 // This class is used to initialize and manage the OpenTelemetry service for the webview.
@@ -14,8 +14,8 @@ export class WebviewOpenTelemetryService {
     private unloadInstrumentations?: () => void
     private isTracingEnabled = false
     private isInitialized = false
-    private agentIDE?: CodyIDE
-    private extensionAgentVersion?: string
+    private ide?: CodyIDE
+    private agentVersion?: string
     constructor() {
         if (!WebviewOpenTelemetryService.instance) {
             WebviewOpenTelemetryService.instance = this
@@ -26,8 +26,8 @@ export class WebviewOpenTelemetryService {
     public configure(options?: {
         isTracingEnabled?: boolean
         debugVerbose?: boolean
-        agentIDE?: CodyIDE
-        extensionAgentVersion?: string
+        ide?: CodyIDE
+        agentVersion?: string
     }): void {
         // If the service is already initialized or if it is not the instance that is being used, return
         if (this.isInitialized || WebviewOpenTelemetryService.instance !== this) {
@@ -37,12 +37,12 @@ export class WebviewOpenTelemetryService {
         const {
             isTracingEnabled = true,
             debugVerbose = false,
-            agentIDE,
-            extensionAgentVersion,
+            ide,
+            agentVersion,
         } = options || {}
         this.isTracingEnabled = isTracingEnabled
-        this.agentIDE = agentIDE
-        this.extensionAgentVersion = extensionAgentVersion
+        this.ide = ide
+        this.agentVersion = agentVersion
         const logLevel = debugVerbose ? DiagLogLevel.INFO : DiagLogLevel.ERROR
         diag.setLogger(new DiagConsoleLogger(), logLevel)
 
@@ -58,8 +58,8 @@ export class WebviewOpenTelemetryService {
                     new BatchSpanProcessor(
                         new CodyTraceExporterWeb({
                             isTracingEnabled: true,
-                            clientPlatform: this.agentIDE ?? ('defaultIDE' as CodyIDE),
-                            agentVersion: this.extensionAgentVersion,
+                            ide: this.ide ?? CodyIDE.VSCode,
+                            agentVersion: this.agentVersion,
                         })
                     )
                 )
