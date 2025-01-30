@@ -130,7 +130,7 @@ export function createExtensionAPI(
         chatModels: proxyExtensionAPI(messageAPI, 'chatModels'),
         highlights: proxyExtensionAPI(messageAPI, 'highlights'),
         hydratePromptMessage: promptText =>
-            hydratePromptMessage(promptText, staticDefaultContext?.initialContext),
+            hydratePromptMessage(promptText, staticDefaultContext ? [...staticDefaultContext.initialContext, ...staticDefaultContext.corpusContext] : undefined),
         setChatModel: proxyExtensionAPI(messageAPI, 'setChatModel'),
         defaultContext: staticDefaultContext
             ? () => Observable.of(staticDefaultContext)

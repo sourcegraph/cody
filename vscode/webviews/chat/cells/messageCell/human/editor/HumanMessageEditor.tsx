@@ -340,12 +340,12 @@ export const HumanMessageEditor: FunctionComponent<{
                         // biome-ignore lint/suspicious/noAsyncPromiseExecutor: <explanation>
                         new Promise<void>(async resolve => {
                             // get initial context
-                            const { initialContext } = await firstValueFrom(
+                            const context = await firstValueFrom(
                                 extensionAPI.defaultContext().pipe(skipPendingOperation())
                             )
                             // hydrate raw prompt text
                             const promptEditorState = await firstValueFrom(
-                                extensionAPI.hydratePromptMessage(setPromptAsInput.text, initialContext)
+                                extensionAPI.hydratePromptMessage(setPromptAsInput.text, [...context.initialContext, ...context.corpusContext])
                             )
 
                             manuallySelectIntent(promptIntent)
