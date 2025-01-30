@@ -1,8 +1,7 @@
-name: Experimental Release
+name: release-jetbrains-prerelease
 on:
   push:
-    tags: ["jb-*-experimental"]
-  workflow_dispatch:
+    tags: ["jb-*-nightly"]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -32,10 +31,10 @@ jobs:
         uses: gradle/wrapper-validation-action@v3
       - uses: pnpm/action-setup@fe02b34f77f8bc703788d5817da081398fad5dd2 # SECURITY: pin third-party action hashes
       - run: |
-          echo "RELEASE_VERSION=$(./jetbrains/scripts/version-from-git-tag.sh)-experimental" >> $GITHUB_ENV
-      - name: Publish experimental version
+          echo "RELEASE_VERSION=$(./jetbrains/scripts/version-from-git-tag.sh)-nightly" >> $GITHUB_ENV
+      - name: Publish nightly version
         run: |
-          echo "Publishing experimental version ${RELEASE_VERSION}"
+          echo "Publishing nightly version ${RELEASE_VERSION}"
           pushd jetbrains
           ./gradlew "-PpluginVersion=${RELEASE_VERSION}" publishPlugin
           popd > /dev/null
