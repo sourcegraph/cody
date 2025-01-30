@@ -148,7 +148,7 @@ export interface ContentPart {
     type: 'text'
     text: string
     cache_control?: {
-        type?: 'emphemeral'
+        type?: 'ephemeral'
     }
 }
 

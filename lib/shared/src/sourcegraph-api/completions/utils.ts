@@ -35,7 +35,7 @@ async function serializePrompts(
                         {
                             type: 'text',
                             text: text ?? '',
-                            cache_control: { type: 'emphemeral' },
+                            cache_control: { type: 'ephemeral' },
                         },
                     ],
                 }
