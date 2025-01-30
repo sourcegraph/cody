@@ -8,10 +8,10 @@ usage() {
 }
 
 execute() {
-  if [ "$DRY_RUN" -eq 1 ]; then
-    echo "DRY RUN: $*"
-  else
+  if [ -z "$DRY_RUN" ]; then
     "$@"
+  else
+    echo "DRY RUN: $*"
   fi
 }
 
@@ -23,7 +23,7 @@ fi
 
 VERSION_INCREMENT=""
 CHANNEL=""
-DRY_RUN=0
+DRY_RUN=""
 
 while [[ $# -gt 0 ]]; do
   case $1 in
@@ -36,7 +36,7 @@ while [[ $# -gt 0 ]]; do
       shift
       ;;
     --dry-run)
-      DRY_RUN=1
+      DRY_RUN="true"
       shift
       ;;
     *)
@@ -64,6 +64,7 @@ if [ "$CURRENT_BRANCH" != "main" ]; then
 fi
 
 # Fetch git tags so we can compute an accurate next version.
+echo Fetching git tags to compute next version...
 git fetch origin +refs/tags/jb-v*:refs/tags/jb-v*
 
 SCRIPT_DIR="$(dirname "$0")"
@@ -80,7 +81,7 @@ if [ "$VERSION_INCREMENT" == "--major" ]; then
 fi
 
 # shellcheck disable=SC2162
-read -p "Confirm that you want to run the release v$NEXT_VERSION$CHANNEL (y/N): " choice
+read -p "Confirm that you want to ${DRY_RUN:+"DRY "}run the release v$NEXT_VERSION$CHANNEL (y/N): " choice
 if [ "$choice" == "y" ]; then
   echo "Running release..."
 else
