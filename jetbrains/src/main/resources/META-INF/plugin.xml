@@ -404,6 +404,12 @@
                     text="Webview Backspace">
                 <keyboard-shortcut first-keystroke="BACK_SPACE" keymap="$default"/>
             </action>
+            <action id="cody.webview.shiftenter"
+                    class="com.sourcegraph.cody.config.actions.WebViewShiftEnterAction"
+                    text="Webview Shift+Enter">
+                <keyboard-shortcut first-keystroke="shift ENTER" keymap="$default"/>
+                <keyboard-shortcut first-keystroke="shift ENTER" keymap="Mac OS X 10.5+"/>
+            </action>
         </group>
 
         <group id="CodyStatusBarActions" popup="true" searchable="false"
