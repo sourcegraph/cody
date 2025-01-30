@@ -3,6 +3,19 @@
 # No arguments needed, the version is automatically computed.
 set -eux
 
+usage() {
+  echo "Usage: $0 --major|--minor|--patch [ --nightly|--experimental ] [ --dry-run ]"
+  exit 1
+}
+
+execute() {
+  if [ "$DRY_RUN" -eq 0 ]; then
+    echo "DRY RUN: $*"
+  else
+    "$@"
+  fi
+}
+
 # Check if the current branch is 'main'
 CURRENT_BRANCH=$(git symbolic-ref --short HEAD)
 if [ "$CURRENT_BRANCH" != "main" ]; then
@@ -21,25 +34,44 @@ if ! git diff-index --quiet HEAD --; then
   exit 1
 fi
 
-# Check the number of arguments
-if [ "$#" -ne 2 ]; then
-  echo "Usage: $0 [--major | --minor | --patch] [ --nightly | --experimental ]"
-  exit 1
+VERSION_INCREMENT=""
+DRY_RUN=0
+
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    --major|--minor|--patch)
+      VERSION_INCREMENT="$1"
+      shift
+      ;;
+    --nightly|--experimental)
+      CHANNEL="$1"
+      shift
+      ;;
+    --dry-run)
+      DRY_RUN=1
+      shift
+      ;;
+    *)
+      echo "Unknown option: $1"
+      usage
+      ;;
+  esac
+done
+
+# Check one of --major, --minor or --patch was specified.
+if [ -z "$VERSION_INCREMENT" ]; then
+  usage
 fi
 
-CHANNEL="${2#--}"
-if [ "$CHANNEL" != "nightly" ] && [ "$CHANNEL" != "experimental" ]; then
-  echo "Invalid argument. Usage: $0 [--major | --minor | --patch] [ --nightly | --experimental ]"
-  exit 1
-fi
+# Fetch git tags so we can compute an accurate next version.
+git fetch origin +refs/tags/jb-v*:refs/tags/jb-v*
 
 SCRIPT_DIR="$(dirname "$0")"
 SCRIPT_DIR="$(readlink -f "$SCRIPT_DIR")"
-NEXT_RELEASE_ARG="$1"
-NEXT_VERSION="$(bash "$SCRIPT_DIR/next-release.sh" $NEXT_RELEASE_ARG)"
+NEXT_VERSION="$(bash "$SCRIPT_DIR/next-release.sh" $VERSION_INCREMENT)"
 
 # Check the argument and take appropriate action
-if [ "$NEXT_RELEASE_ARG" == "--major" ]; then
+if [ "$VERSION_INCREMENT" == "--major" ]; then
   read -p "[WARNING] Upgrade of the major version in a special event, do you want to proceed? (y/N): " choice
   if [ "$choice" != "y" ]; then
     echo "Aborted."
@@ -56,7 +88,8 @@ else
   exit 1
 fi
 
-bash "$SCRIPT_DIR/verify-release.sh"
+execute bash "$SCRIPT_DIR/verify-release.sh"
 TAG="jb-v$NEXT_VERSION-$CHANNEL"
 echo "$TAG"
-git tag -a "$TAG" -m "$TAG" && git push origin "$TAG"
+
+execute git tag -a "$TAG" -m "$TAG" && execute git push origin "$TAG"

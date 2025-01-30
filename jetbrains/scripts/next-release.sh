@@ -7,7 +7,7 @@ if [ "$#" -ne 1 ]; then
   exit 1
 fi
 
-LAST_MAJOR_MINOR_ZERO_RELEASE=$(git tag -l | grep "jb-v\d*\\.\d*\\.\d*" | uniq | sort -V | tail -1 | sed 's/-nightly//' | sed 's/-experimental//')
+LAST_MAJOR_MINOR_ZERO_RELEASE=$(git tag -l | grep -E 'jb-v[0-9]+\.[0-9]+\.[0-9]+' | uniq | sort -V | tail -1 | sed 's/-nightly//' | sed 's/-experimental//')
 MAJOR=$(echo $LAST_MAJOR_MINOR_ZERO_RELEASE | sed 's/jb-v//' | cut -d. -f1)
 MINOR=$(echo $LAST_MAJOR_MINOR_ZERO_RELEASE | sed 's/jb-v//' | cut -d. -f2)
 PATCH=$(echo $LAST_MAJOR_MINOR_ZERO_RELEASE | sed 's/jb-v//' | cut -d. -f3)
