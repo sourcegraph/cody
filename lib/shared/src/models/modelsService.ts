@@ -428,10 +428,14 @@ export class ModelsService {
                 ) {
                     return pendingOperation
                 }
-
+                const firstModelUserCanUse = models.find(
+                    m =>
+                        this._isModelAvailable(modelsData, authStatus, userProductSubscription, m) ===
+                        true
+                )
                 // First check user preferences
                 if (modelsData.preferences) {
-                    // Check to see if the user has selected a default model for this
+                    // Check to see if the user has a selected a default model for this
                     // usage type and if not see if there is a server sent default type
                     const selected = this.resolveModel(
                         modelsData,
@@ -448,24 +452,8 @@ export class ModelsService {
                     ) {
                         return selected
                     }
+                    return firstModelUserCanUse
                 }
-
-                // If no user selection, then check feature flag override
-                if (deepSeekEnabled) {
-                    const overrideModel = models.find(m => m.id === 'fireworks::v1::deepseek-v3')
-                    if (
-                        overrideModel &&
-                        this._isModelAvailable(
-                            modelsData,
-                            authStatus,
-                            userProductSubscription,
-                            overrideModel
-                        )
-                    ) {
-                        return overrideModel
-                    }
-                }
-
                 // Finally, fall back to first available model
                 return models.find(
                     m =>
