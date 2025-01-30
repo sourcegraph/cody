@@ -8,14 +8,6 @@ usage() {
   exit 1
 }
 
-execute() {
-  if [ "$DRY_RUN" -eq 0 ]; then
-    echo "DRY RUN: $*"
-  else
-    "$@"
-  fi
-}
-
 # Check if the current branch is 'main'
 CURRENT_BRANCH=$(git symbolic-ref --short HEAD)
 if [ "$CURRENT_BRANCH" != "main" ]; then
@@ -35,6 +27,7 @@ if ! git diff-index --quiet HEAD --; then
 fi
 
 VERSION_INCREMENT=""
+CHANNEL=""
 DRY_RUN=0
 
 while [[ $# -gt 0 ]]; do
@@ -44,7 +37,7 @@ while [[ $# -gt 0 ]]; do
       shift
       ;;
     --nightly|--experimental)
-      CHANNEL="$1"
+      CHANNEL="${1:1}" # Trim one of the leading -s to make a version suffix like -nightly.
       shift
       ;;
     --dry-run)
@@ -57,6 +50,14 @@ while [[ $# -gt 0 ]]; do
       ;;
   esac
 done
+
+execute() {
+  if [ "$DRY_RUN" -eq 0 ]; then
+    echo "DRY RUN: $*"
+  else
+    "$@"
+  fi
+}
 
 # Check one of --major, --minor or --patch was specified.
 if [ -z "$VERSION_INCREMENT" ]; then
@@ -80,7 +81,7 @@ if [ "$VERSION_INCREMENT" == "--major" ]; then
 fi
 
 # shellcheck disable=SC2162
-read -p "Confirm that you want to run the release v$NEXT_VERSION-$CHANNEL (y/N): " choice
+read -p "Confirm that you want to run the release v$NEXT_VERSION$CHANNEL (y/N): " choice
 if [ "$choice" == "y" ]; then
   echo "Running release..."
 else
@@ -89,7 +90,7 @@ else
 fi
 
 execute bash "$SCRIPT_DIR/verify-release.sh"
-TAG="jb-v$NEXT_VERSION-$CHANNEL"
+TAG="jb-v$NEXT_VERSION$CHANNEL"
 echo "$TAG"
 
 execute git tag -a "$TAG" -m "$TAG" && execute git push origin "$TAG"
