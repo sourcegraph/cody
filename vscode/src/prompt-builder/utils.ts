@@ -61,7 +61,7 @@ export function renderContextItem(contextItem: ContextItem): ContextMessage | nu
             }
     }
 
-    return { speaker: 'human', text: messageText, file: contextItem }
+    return { speaker: 'human', text: messageText, file: contextItem, cache_control: false }
 }
 
 export function getContextItemTokenUsageType(item: ContextItem): ContextTokenUsageType {
