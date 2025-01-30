@@ -23,19 +23,19 @@ export interface Message {
     // stop using text and send content to instead to respect the official API contract and
     // mirrors what OpenAI and Anthropic expect
     content?: PromptString
-    cache_control?: boolean
+    cache_enabled?: boolean | null
 }
 
 export interface CompletionUsage {
-    completion_tokens: number
-    prompt_tokens: number
-    total_tokens: number
-    prompt_tokens_details?: PromptTokensDetails
+    completion_tokens: number | null
+    prompt_tokens: number | null
+    total_tokens: number | null
+    prompt_tokens_details?: PromptTokensDetails | null
 }
 
 export interface PromptTokensDetails {
-    cached_tokens: number
-    cache_read_input_tokens?: number
+    cached_tokens?: number | null
+    cache_read_input_tokens?: number | null
 }
 
 export interface CompletionResponse {

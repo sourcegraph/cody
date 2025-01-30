@@ -71,7 +71,7 @@ const getContextFromIntent = async ({
                         uri,
                         PROMPT_TOPICS.OUTPUT
                     ),
-                    cache_control: false,
+                    cache_enabled: false,
                     file: {
                         type: 'file',
                         uri,
@@ -96,7 +96,7 @@ const getContextFromIntent = async ({
                 contextMessages.push({
                     speaker: 'human',
                     content: populateCodeContextTemplate(truncatedPrecedingText, uri, undefined, 'edit'),
-                    cache_control: false,
+                    cache_enabled: false,
                     file: { type: 'file', uri, source: ContextItemSource.Editor, range: prefix.range },
                 })
             }
@@ -104,7 +104,7 @@ const getContextFromIntent = async ({
                 contextMessages.push({
                     speaker: 'human',
                     content: populateCodeContextTemplate(truncatedFollowingText, uri, undefined, 'edit'),
-                    cache_control: false,
+                    cache_enabled: false,
                     file: { type: 'file', uri, source: ContextItemSource.Editor, range: suffix.range },
                 })
             }
@@ -127,7 +127,7 @@ const getContextFromIntent = async ({
                         ({
                             speaker: 'human' as const,
                             content: populateCurrentEditorDiagnosticsTemplate(diagnostic, uri),
-                            cache_control: false,
+                            cache_enabled: false,
                             file: { type: 'file', uri, source: ContextItemSource.Editor },
                         }) satisfies ContextMessage
                 ),
@@ -138,7 +138,7 @@ const getContextFromIntent = async ({
                             ({
                                 speaker: 'human' as const,
                                 content: populateCodeContextTemplate(text, uri, undefined, 'edit'),
-                                cache_control: false,
+                                cache_enabled: false,
                                 file: { type: 'file', uri, source: ContextItemSource.Editor },
                             }) satisfies ContextMessage
                     ),

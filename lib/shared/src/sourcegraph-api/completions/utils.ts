@@ -1,4 +1,5 @@
 import { type SerializedChatMessage, contextFiltersProvider } from '../..'
+import { serverSupportsPromptCaching } from '../clientConfig'
 import type { CompletionParameters, Message, SerializedCompletionParameters } from './types'
 
 /**
@@ -28,7 +29,7 @@ async function serializePrompts(
     return Promise.all(
         messages.map(async m => {
             const text = await m.content?.toFilteredString(contextFiltersProvider)
-            if (m.cache_control) {
+            if (serverSupportsPromptCaching() && m.cache_enabled) {
                 return {
                     speaker: m.speaker,
                     content: [
