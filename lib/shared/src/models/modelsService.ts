@@ -14,7 +14,6 @@ import {
     distinctUntilChanged,
     shareReplay,
     storeLastValue,
-    switchMap,
     tap,
 } from '../misc/observable'
 import { firstResultFromOperation, pendingOperation } from '../misc/observableOperation'
@@ -478,19 +477,9 @@ export class ModelsService {
             })
         )
     }
-
     public getDefaultChatModel(): Observable<ChatModel | undefined | typeof pendingOperation> {
-        return featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyDeepSeekChat).pipe(
-            switchMap(flag => {
-                if (flag) {
-                    return this.getDefaultModel(ModelUsage.Chat).pipe(
-                        map(model => (model === pendingOperation ? pendingOperation : model?.id))
-                    )
-                }
-                return this.getDefaultModel(ModelUsage.Chat).pipe(
-                    map(model => (model === pendingOperation ? pendingOperation : model?.id))
-                )
-            })
+        return this.getDefaultModel(ModelUsage.Chat).pipe(
+            map(model => (model === pendingOperation ? pendingOperation : model?.id))
         )
     }
 
