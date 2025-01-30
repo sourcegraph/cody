@@ -4,11 +4,11 @@ package com.sourcegraph.cody.agent.protocol_generated;
 import com.google.gson.annotations.SerializedName;
 
 data class Cache_controlParams(
-  val type: TypeEnum? = null, // Oneof: emphemeral
+  val type: TypeEnum? = null, // Oneof: ephemeral
 ) {
 
   enum class TypeEnum {
-    @SerializedName("emphemeral") Emphemeral,
+    @SerializedName("ephemeral") Ephemeral,
   }
 }
 
