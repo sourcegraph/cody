@@ -327,6 +327,7 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                     )
                 }
                 const json = (await response.json()) as CompletionResponse
+                // json.usage?.completion_tokens
                 if (typeof json?.completion === 'string') {
                     cb.onChange(json.completion)
                     cb.onComplete()

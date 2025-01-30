@@ -133,6 +133,7 @@ export interface SerializedChatMessage {
     editorState?: unknown
     speaker: 'human' | 'assistant' | 'system'
     text?: string // Changed from PromptString
+    contentPart?: ContentPart[]
     model?: string
     intent?: ChatMessage['intent']
     manuallySelectedIntent?: ChatMessage['manuallySelectedIntent']
@@ -141,6 +142,14 @@ export interface SerializedChatMessage {
     agent?: string | undefined | null
     processes?: ProcessingStep[] | undefined | null
     subMessages?: SubMessage[]
+}
+
+export interface ContentPart {
+    type: 'text'
+    text: string
+    cache_control?: {
+        type?: 'emphemeral'
+    }
 }
 
 export interface ChatError {
