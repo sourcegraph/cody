@@ -57,8 +57,8 @@ export class ChatClient {
 
         // We only want to send up the speaker and prompt text, regardless of whatever other fields
         // might be on the messages objects (`file`, `displayText`, `contextFiles`, etc.).
-        const messagesToSend = augmentedMessages.map(({ speaker, text, cache_control }) => ({
-            text,
+        const messagesToSend = augmentedMessages.map(({ speaker, content, cache_control }) => ({
+            content,
             speaker,
             cache_control,
         }))
@@ -90,13 +90,13 @@ export class ChatClient {
 export function sanitizeMessages(messages: Message[]): Message[] {
     let sanitizedMessages = messages
 
-    // 1. If the last message is from an `assistant` with no or empty `text`, omit it
+    // 1. If the last message is from an `assistant` with no or empty `content`, omit it
     let lastMessage = messages.at(-1)
     const truncateLastMessage =
-        lastMessage && lastMessage.speaker === 'assistant' && !messages.at(-1)!.text?.length
+        lastMessage && lastMessage.speaker === 'assistant' && !messages.at(-1)!.content?.length
     sanitizedMessages = truncateLastMessage ? messages.slice(0, -1) : messages
 
-    // 2. If there is any assistant message in the middle of the messages without a `text`, omit
+    // 2. If there is any assistant message in the middle of the messages without a `content`, omit
     //    both the empty assistant message as well as the unanswered question from the `user`
     sanitizedMessages = sanitizedMessages.filter((message, index) => {
         // If the message is the last message, it is not a middle message
@@ -104,12 +104,12 @@ export function sanitizeMessages(messages: Message[]): Message[] {
             return true
         }
 
-        // If the next message is an assistant message with no or empty `text`, omit the current and
+        // If the next message is an assistant message with no or empty `content`, omit the current and
         // the next one
         const nextMessage = sanitizedMessages[index + 1]
         if (
-            (nextMessage.speaker === 'assistant' && !nextMessage.text?.length) ||
-            (message.speaker === 'assistant' && !message.text?.length)
+            (nextMessage.speaker === 'assistant' && !nextMessage.content?.length) ||
+            (message.speaker === 'assistant' && !message.content?.length)
         ) {
             return false
         }
@@ -118,9 +118,9 @@ export function sanitizeMessages(messages: Message[]): Message[] {
 
     // 3. Final assistant content cannot end with trailing whitespace
     lastMessage = sanitizedMessages.at(-1)
-    if (lastMessage?.speaker === 'assistant' && lastMessage.text?.length) {
-        const lastMessageText = lastMessage.text.trimEnd()
-        lastMessage.text = lastMessageText
+    if (lastMessage?.speaker === 'assistant' && lastMessage.content?.length) {
+        const lastMessageText = lastMessage.content.trimEnd()
+        lastMessage.content = lastMessageText
     }
 
     return sanitizedMessages
