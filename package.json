@@ -39,37 +39,37 @@
   "devDependencies": {
     "@biomejs/biome": "1.7.2",
     "@sourcegraph/tsconfig": "^4.0.1",
-    "@storybook/addon-essentials": "^8.5.2",
-    "@storybook/react": "^8.5.2",
-    "@storybook/react-vite": "^8.5.2",
-    "@testing-library/jest-dom": "^6.6.3",
-    "@testing-library/react": "^14.3.1",
+    "@storybook/addon-essentials": "^8.0.5",
+    "@storybook/react": "^8.0.5",
+    "@storybook/react-vite": "^8.0.5",
+    "@testing-library/jest-dom": "^6.4.2",
+    "@testing-library/react": "^14.2.2",
     "@types/fs-extra": "^11.0.4",
     "@types/node": "20.12.7",
     "@types/react": "18.2.79",
     "@types/react-dom": "18.2.25",
-    "@vitejs/plugin-react": "^4.3.4",
+    "@vitejs/plugin-react": "^4.2.1",
     "esbuild": "^0.18.20",
-    "fs-extra": "^11.3.0",
-    "happy-dom": "^14.12.3",
+    "fs-extra": "^11.2.0",
+    "happy-dom": "^14.3.10",
     "jsdom": "^22.1.0",
-    "knip": "^5.43.6",
-    "storybook": "^8.5.2",
+    "knip": "^5.27.4",
+    "storybook": "^8.0.5",
     "stylelint": "^15.11.0",
     "stylelint-config-standard": "^34.0.0",
     "ts-node": "^10.9.2",
-    "typescript": "^5.7.3",
-    "vite": "^5.4.14",
-    "vitest": "^2.1.8"
+    "typescript": "^5.5.4",
+    "vite": "^5.4.2",
+    "vitest": "^2.0.5"
   },
   "dependencies": {
     "@openctx/client": "^0.0.30",
-    "@opentelemetry/sdk-trace-web": "^1.30.1",
+    "@opentelemetry/sdk-trace-web": "^1.18.1",
     "@sourcegraph/telemetry": "^0.18.0",
     "observable-fns": "^0.6.1",
     "react": "18.2.0",
     "react-dom": "18.2.0",
-    "vscode-jsonrpc": "^8.2.1",
+    "vscode-jsonrpc": "^8.2.0",
     "web-tree-sitter": "^0.21.0",
     "win-ca": "^3.5.1"
   },
@@ -82,10 +82,7 @@
       "tslib": "2.1.0",
       "@lexical/react": "https://storage.googleapis.com/sourcegraph-assets/npm/lexical-react-sourcegraph-fork-31065486.tgz"
     },
-    "neverBuiltDependencies": [
-      "deasync",
-      "playwright"
-    ],
+    "neverBuiltDependencies": ["deasync", "playwright"],
     "patchedDependencies": {
       "highlight.js@11.8.0": "patches/highlight.js@11.8.0.patch"
     }

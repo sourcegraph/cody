@@ -573,6 +573,7 @@ describe('Agent', () => {
                     'cody.command.smell:executed',
                     'cody.chat-question:submitted',
                     'cody.chat-question:executed',
+                    'cody.chatResponse:hasCode',
                 ])
             )
         }, 30_000)

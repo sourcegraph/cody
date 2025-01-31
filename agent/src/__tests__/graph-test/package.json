@@ -10,7 +10,7 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "@types/node": "20.9.0",
+    "@types/node": "20.4.0",
     "typescript": "^5.5.4",
     "webauthn4js": "^3.0.0"
   },

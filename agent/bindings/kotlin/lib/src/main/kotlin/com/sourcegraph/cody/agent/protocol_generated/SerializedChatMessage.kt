@@ -9,7 +9,6 @@ data class SerializedChatMessage(
   val editorState: Any? = null,
   val speaker: SpeakerEnum, // Oneof: human, assistant, system
   val text: String? = null,
-  val contentPart: List<ContentPart>? = null,
   val model: String? = null,
   val intent: IntentEnum? = null, // Oneof: search, chat, edit, insert
   val manuallySelectedIntent: ManuallySelectedIntentEnum? = null, // Oneof: search, chat, edit, insert

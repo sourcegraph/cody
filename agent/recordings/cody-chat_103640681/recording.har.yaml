@@ -205,11 +205,11 @@ log:
         send: 0
         ssl: -1
         wait: 1029
-    - _id: e6e11a4d0d4a0c22ed433e233e503be0
+    - _id: 820c56d277c7b94198495dbccdf71edd
       _order: 0
       cache: {}
       request:
-        bodySize: 935
+        bodySize: 913
         cookies: []
         headers:
           - name: accept-encoding
@@ -222,7 +222,7 @@ log:
           - name: content-type
             value: application/json
           - name: user-agent
-            value: cody-cli/6.0.0-SNAPSHOT (Node.js v23.6.1)
+            value: cody-cli/6.0.0-SNAPSHOT (Node.js v20.4.0)
           - name: x-requested-with
             value: cody-cli 6.0.0-SNAPSHOT
           - name: host
@@ -244,8 +244,7 @@ log:
                   structure: ```$LANGUAGE:$FILEPATH```
 
                   For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
-              - cache_control: false
-                speaker: human
+              - speaker: human
                 text: |-
                   Codebase context from file animal.ts:
                   ```typescript:animal.ts
@@ -294,15 +293,13 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 30 Jan 2025 00:33:56 GMT
+            value: Tue, 24 Dec 2024 01:23:12 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
             value: chunked
           - name: connection
             value: keep-alive
-          - name: retry-after
-            value: "475"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -320,13 +317,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1497
+        headersSize: 1215
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-01-30T00:33:54.780Z
-      time: 1328
+      startedDateTime: 2024-12-24T01:23:11.527Z
+      time: 1087
       timings:
         blocked: -1
         connect: -1
@@ -334,7 +331,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 1328
+        wait: 1087
     - _id: 5d0e29776bf0857beffb22b778ce488b
       _order: 0
       cache: {}
@@ -1109,6 +1106,104 @@ log:
         send: 0
         ssl: -1
         wait: 267
+    - _id: 5bd989e3646d0bf40fc6f70fca0f6464
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 101
+        cookies: []
+        headers:
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_1858aad0e1ff07ae26d4042086acb9da455866ad617afd2cb9ab9419e1be1104
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: cody-cli/6.0.0-SNAPSHOT (Node.js v20.4.0)
+          - _fromType: array
+            name: x-requested-with
+            value: cody-cli 6.0.0-SNAPSHOT
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "101"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - name: host
+            value: sourcegraph.sourcegraph.com
+        headersSize: 498
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            query: |
+              
+              query TemporarySettings {
+                temporarySettings {
+                  contents
+                }
+              }
+            variables: {}
+        queryString:
+          - name: TemporarySettings
+            value: null
+        url: https://sourcegraph.sourcegraph.com/.api/graphql?TemporarySettings
+      response:
+        bodySize: 22
+        content:
+          mimeType: text/plain; charset=utf-8
+          size: 22
+          text: |
+            Invalid access token.
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 17 Jan 2025 13:14:31 GMT
+          - name: content-type
+            value: text/plain; charset=utf-8
+          - name: content-length
+            value: "22"
+          - name: connection
+            value: close
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: vary
+            value: Accept-Encoding, Authorization
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1347
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 401
+        statusText: Unauthorized
+      startedDateTime: 2025-01-17T13:14:30.973Z
+      time: 672
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 672
     - _id: 58db5729e7d9b6a2c9f5fd6d707dfc97
       _order: 0
       cache: {}
