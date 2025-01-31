@@ -6,6 +6,7 @@ import {
     CopyCodeBlockIcon,
     EllipsisIcon,
     InsertCodeBlockIcon,
+    RefreshIcon,
     SaveCodeBlockIcon,
     SparkleIcon,
     SyncSpinIcon,
@@ -283,6 +284,22 @@ function createApplyButton(
             iconContainer.className = styles.iconContainer
             iconContainer.innerHTML = SyncSpinIcon
             button.prepend(iconContainer)
+
+            break
+        }
+        case 'Applied':
+        case 'Finished': {
+            button.innerHTML = 'Reapply'
+
+            // Add Refresh Icon
+            const iconContainer = document.createElement('div')
+            iconContainer.className = styles.iconContainer
+            iconContainer.innerHTML = RefreshIcon
+            button.prepend(iconContainer)
+
+            button.addEventListener('click', () =>
+                smartApply.onSubmit(smartApplyId, preText, humanMessage?.text, fileName)
+            )
 
             break
         }
