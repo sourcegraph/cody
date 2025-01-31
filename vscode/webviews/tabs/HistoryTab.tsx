@@ -121,23 +121,18 @@ export const HistoryTabWithData: React.FC<
                             interactions[interactions.length - 1]?.humanMessage?.text?.trim()
                         return (
                             <div key={id} className={`tw-flex tw-flex-row tw-p-1 ${styles.historyRow}`}>
-                                <div
+                                <Button
+                                    variant="ghost"
+                                    className={`tw-text-left tw-truncate tw-w-full ${styles.historyItem}`}
                                     onClick={() =>
                                         getVSCodeAPI().postMessage({
                                             command: 'restoreHistory',
                                             chatID: id,
                                         })
                                     }
-                                    onKeyDown={() =>
-                                        getVSCodeAPI().postMessage({
-                                            command: 'restoreHistory',
-                                            chatID: id,
-                                        })
-                                    }
-                                    className={`tw-text-left tw-truncate tw-w-full ${styles.historyItem}`}
                                 >
                                     <span className="tw-truncate tw-w-full">{lastMessage}</span>
-                                </div>
+                                </Button>
                                 <Button
                                     variant="ghost"
                                     title="Delete chat"
