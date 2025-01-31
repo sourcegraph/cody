@@ -4,12 +4,12 @@ import { HistoryIcon, MessageSquarePlusIcon, TrashIcon } from 'lucide-react'
 import type React from 'react'
 import { useCallback, useMemo, useState } from 'react'
 
+import type { WebviewType } from '../../src/chat/protocol'
+import { getRelativeChatPeriod } from '../../src/common/time-date'
 import { LoadingDots } from '../chat/components/LoadingDots'
 import { Button } from '../components/shadcn/ui/button'
 import { Input } from '../components/shadcn/ui/input'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
-import type { WebviewType } from '../../src/chat/protocol'
-import { getRelativeChatPeriod } from '../../src/common/time-date'
 import { View } from './types'
 import { getCreateNewChatCommand } from './utils'
 
@@ -24,7 +24,6 @@ interface HistoryTabProps {
 
 export const HistoryTab: React.FC<HistoryTabProps> = props => {
     const userHistory = useUserHistory()
-
 
     const chats = useMemo(
         () => (userHistory ? Object.values(userHistory.chat) : userHistory),
@@ -86,23 +85,23 @@ export const HistoryTabWithData: React.FC<
         })
     }, [nonEmptyChats, searchText])
 
-    const sortedChatsByPeriod = useMemo(() =>
-        Array.from(
-            filteredChats
-                .filter(chat => chat.interactions.length)
-                .reverse()
-                .reduce((acc, chat) => {
-                    const period = getRelativeChatPeriod(new Date(chat.lastInteractionTimestamp))
-                    acc.set(period, [...(acc.get(period) || []), chat])
-                    return acc
-                }, new Map<string, typeof filteredChats>())
-        ),
+    const sortedChatsByPeriod = useMemo(
+        () =>
+            Array.from(
+                filteredChats
+                    .filter(chat => chat.interactions.length)
+                    .reverse()
+                    .reduce((acc, chat) => {
+                        const period = getRelativeChatPeriod(new Date(chat.lastInteractionTimestamp))
+                        acc.set(period, [...(acc.get(period) || []), chat])
+                        return acc
+                    }, new Map<string, typeof filteredChats>())
+            ),
         [filteredChats]
     )
 
     return (
         <div className="tw-flex tw-flex-col">
-
             <div className="tw-flex tw-py-2">
                 <Input
                     className="tw-flex-1 tw-h-12 tw-py-3 tw-border-none tw-text-sm"
@@ -114,13 +113,22 @@ export const HistoryTabWithData: React.FC<
 
             {sortedChatsByPeriod.map(([period, chats]) => (
                 <div key={period} className="tw-flex tw-flex-col">
-                    <h4 className="tw-font-semibold tw-text-muted-foreground tw-py-2 tw-my-4">{period}</h4>
+                    <h4 className="tw-font-semibold tw-text-muted-foreground tw-py-2 tw-my-4">
+                        {period}
+                    </h4>
                     {chats.map(({ interactions, id }) => {
-                        const lastMessage = interactions[interactions.length - 1]?.humanMessage?.text?.trim()
+                        const lastMessage =
+                            interactions[interactions.length - 1]?.humanMessage?.text?.trim()
                         return (
                             <div key={id} className={`tw-flex tw-flex-row tw-p-1 ${styles.historyRow}`}>
                                 <div
                                     onClick={() =>
+                                        getVSCodeAPI().postMessage({
+                                            command: 'restoreHistory',
+                                            chatID: id,
+                                        })
+                                    }
+                                    onKeyDown={() =>
                                         getVSCodeAPI().postMessage({
                                             command: 'restoreHistory',
                                             chatID: id,
@@ -135,6 +143,7 @@ export const HistoryTabWithData: React.FC<
                                     title="Delete chat"
                                     className={`${styles.historyDeleteBtn}`}
                                     onClick={() => onDeleteButtonClick(id)}
+                                    onKeyDown={() => onDeleteButtonClick(id)}
                                 >
                                     <TrashIcon
                                         className="tw-w-8 tw-h-8 tw-opacity-80"
@@ -178,7 +187,8 @@ export const HistoryTabWithData: React.FC<
                 </div>
             )}
         </div>
-    )}
+    )
+}
 
 function useUserHistory(): UserLocalHistory | null | undefined {
     const userHistory = useExtensionAPI().userHistory
