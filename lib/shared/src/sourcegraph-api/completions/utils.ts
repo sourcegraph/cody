@@ -28,7 +28,7 @@ async function serializePrompts(
 
     return Promise.all(
         messages.map(async m => {
-            const text = await m.content?.toFilteredString(contextFiltersProvider)
+            const text = await m.text?.toFilteredString(contextFiltersProvider)
             if (serverSupportsPromptCaching() && m.cache_enabled) {
                 return {
                     speaker: m.speaker,

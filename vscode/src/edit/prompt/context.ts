@@ -65,7 +65,7 @@ const getContextFromIntent = async ({
             return [
                 {
                     speaker: 'human',
-                    content: populateCodeGenerationContextTemplate(
+                    text: populateCodeGenerationContextTemplate(
                         ps`<${PROMPT_TOPICS.PRECEDING}>${truncatedPrecedingText}</${PROMPT_TOPICS.PRECEDING}>`,
                         ps`<${PROMPT_TOPICS.FOLLOWING}>${truncatedFollowingText}</${PROMPT_TOPICS.FOLLOWING}>`,
                         uri,
@@ -95,7 +95,7 @@ const getContextFromIntent = async ({
             if (truncatedPrecedingText.trim().length > 0) {
                 contextMessages.push({
                     speaker: 'human',
-                    content: populateCodeContextTemplate(truncatedPrecedingText, uri, undefined, 'edit'),
+                    text: populateCodeContextTemplate(truncatedPrecedingText, uri, undefined, 'edit'),
                     cache_enabled: false,
                     file: { type: 'file', uri, source: ContextItemSource.Editor, range: prefix.range },
                 })
@@ -103,7 +103,7 @@ const getContextFromIntent = async ({
             if (truncatedFollowingText.trim().length > 0) {
                 contextMessages.push({
                     speaker: 'human',
-                    content: populateCodeContextTemplate(truncatedFollowingText, uri, undefined, 'edit'),
+                    text: populateCodeContextTemplate(truncatedFollowingText, uri, undefined, 'edit'),
                     cache_enabled: false,
                     file: { type: 'file', uri, source: ContextItemSource.Editor, range: suffix.range },
                 })
@@ -126,7 +126,7 @@ const getContextFromIntent = async ({
                     diagnostic =>
                         ({
                             speaker: 'human' as const,
-                            content: populateCurrentEditorDiagnosticsTemplate(diagnostic, uri),
+                            text: populateCurrentEditorDiagnosticsTemplate(diagnostic, uri),
                             cache_enabled: false,
                             file: { type: 'file', uri, source: ContextItemSource.Editor },
                         }) satisfies ContextMessage
@@ -137,7 +137,7 @@ const getContextFromIntent = async ({
                         text =>
                             ({
                                 speaker: 'human' as const,
-                                content: populateCodeContextTemplate(text, uri, undefined, 'edit'),
+                                text: populateCodeContextTemplate(text, uri, undefined, 'edit'),
                                 cache_enabled: false,
                                 file: { type: 'file', uri, source: ContextItemSource.Editor },
                             }) satisfies ContextMessage

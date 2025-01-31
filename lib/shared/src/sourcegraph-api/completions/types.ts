@@ -22,7 +22,7 @@ export interface Message {
     // content used to be text, but starting from api-version 7, we require Cody clients to
     // stop using text and send content to instead to respect the official API contract and
     // mirrors what OpenAI and Anthropic expect
-    content?: PromptString
+    text?: PromptString
     cache_enabled?: boolean | null
 }
 
