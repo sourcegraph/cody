@@ -39,20 +39,43 @@ interface ChatMessageContentProps {
     className?: string
 }
 
-const extractThinkContent = (content: string): { displayContent: string; thinkContent: string } => {
+interface StreamingContent {
+    displayContent: string
+    thinkContent: string
+    hasThinkTag: boolean
+}
+
+const extractThinkContent = (content: string): StreamingContent => {
     const thinkRegex = /<think>([\s\S]*?)<\/think>/g
     const thinkMatches = [...content.matchAll(thinkRegex)]
-
-    // Collect all think content
-    const thinkContent = thinkMatches
+    
+    // Check if content has an unclosed think tag
+    const hasOpenThinkTag = content.includes('<think>') && 
+        (content.lastIndexOf('<think>') > content.lastIndexOf('</think>'))
+    
+    // Collect all think content, including partial content from unclosed tag
+    let thinkContent = thinkMatches
         .map(match => match[1].trim())
         .filter(Boolean)
         .join('\n\n')
+    
+    if (hasOpenThinkTag) {
+        const lastThinkContent = content.slice(content.lastIndexOf('<think>') + 7)
+        thinkContent = thinkContent ? `${thinkContent}\n\n${lastThinkContent}` : lastThinkContent
+    }
 
-    // Remove think tags from display content
-    const displayContent = content.replace(thinkRegex, '')
+    // Remove complete think tags from display content
+    let displayContent = content.replace(thinkRegex, '')
+    // Remove any unclosed think tag and its content
+    if (hasOpenThinkTag) {
+        displayContent = displayContent.slice(0, displayContent.lastIndexOf('<think>'))
+    }
 
-    return { displayContent, thinkContent }
+    return { 
+        displayContent, 
+        thinkContent,
+        hasThinkTag: thinkMatches.length > 0 || hasOpenThinkTag
+    }
 }
 
 /**
@@ -220,15 +243,15 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
         smartApplyStates,
     ])
 
-    const { displayContent, thinkContent } = useMemo(
+    const { displayContent, thinkContent, hasThinkTag } = useMemo(
         () => extractThinkContent(displayMarkdown),
         [displayMarkdown]
     )
 
     return (
         <div ref={rootRef} data-testid="chat-message-content">
-            {thinkContent && (
-                <details className="tw-container tw-my-4 tw-border tw-border-muted-foreground tw-rounded-md tw-p-2">
+            {hasThinkTag && (
+                <details open className="tw-container tw-my-4 tw-border tw-border-muted-foreground tw-rounded-md tw-p-2">
                     <summary className="tw-px-2">Thinking...</summary>
                     <MarkdownFromCody className="tw-my-2 tw-text-muted-foreground tw-p-2">
                         {thinkContent}
