@@ -1190,4 +1190,25 @@ describe('retry', () => {
 
         expect(results).toEqual(['value', 'completed'])
     })
+
+    test('should retry tasks with various duration', async () => {
+        vi.useFakeTimers()
+
+        let count = 0
+        const source = new Observable(observer => {
+            count++
+            const randomTimeout = Math.floor(Math.random() * 10) + 1
+            setTimeout(() => observer.error(new Error(`Test Error ${count}`)), randomTimeout)
+        })
+
+        const errors: Error[] = []
+        source.pipe(retry(100)).subscribe({
+            error: err => errors.push(err),
+        })
+
+        await vi.advanceTimersByTimeAsync(1000)
+
+        expect(errors.length).toBe(1)
+        expect(errors[0].message).toBe('Test Error 101')
+    })
 })

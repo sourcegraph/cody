@@ -1365,16 +1365,15 @@ export function retry<T>(count: number): (source: ObservableLike<T>) => Observab
             function subscribe() {
                 subscription = source.subscribe({
                     next(value) {
-                        observer.next(value)
-                        retries = 0
+                        if (subscription) {
+                            observer.next(value)
+                            retries = 0
+                        }
                     },
                     error(err) {
                         if (retries < count && subscription) {
                             retries++
-                            if (subscription) {
-                                unsubscribe(subscription)
-                                subscription = null
-                            }
+                            unsuscribeThis()
                             subscribe()
                         } else {
                             observer.error(err)
@@ -1388,13 +1387,15 @@ export function retry<T>(count: number): (source: ObservableLike<T>) => Observab
                 })
             }
 
-            subscribe()
-
-            return () => {
+            function unsuscribeThis() {
                 if (subscription) {
                     unsubscribe(subscription)
                     subscription = undefined
                 }
             }
+
+            subscribe()
+
+            return () => unsuscribeThis()
         })
 }
