@@ -77,7 +77,6 @@ export const HistoryTabWithData: React.FC<
         if (!searchTerm) {
             return nonEmptyChats
         }
-        console.log(searchTerm)
         //return the chats from nonEmptyChats where the humange messages contain the search term
         return nonEmptyChats.filter(chat => {
             return chat.interactions.some(c => {
