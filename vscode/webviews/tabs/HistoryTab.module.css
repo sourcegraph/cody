@@ -1,7 +1,20 @@
 
+h4{
+    border-bottom: 1px solid var(--vscode-editorWidget-border);
+}
+
 .history-row {
     display: flex;
     flex-direction: row;
+}
+
+.history-item {
+    cursor: pointer;;
+}
+
+.history-item:hover {
+    cursor: pointer;
+    color: var(--vscode-list-highlightForeground);
 }
 
 .history-delete-btn {

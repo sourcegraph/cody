@@ -74,7 +74,6 @@ export const HistoryTabWithData: React.FC<
     //add history search
     const [searchText, setSearchText] = useState('')
 
-
     const filteredChats = useMemo(() => {
         const searchTerm = searchText.trim().toLowerCase()
         if (!searchTerm) {
@@ -89,23 +88,19 @@ export const HistoryTabWithData: React.FC<
         })
     }, [nonEmptyChats, searchText])
 
-
-    const chatByPeriod = useMemo(
-        () =>
-            Array.from(
-                filteredChats
-                    .filter(chat => chat.interactions.length)
-                    .reverse()
-                    .reduce((acc, chat) => {
-                        const period = getRelativeChatPeriod(new Date(chat.lastInteractionTimestamp))
-                        acc.set(period, [...(acc.get(period) || []), chat])
-                        return acc
-                    }, new Map<string, SerializedChatTranscript[]>())
-            ),
-        [nonEmptyChats]
+    const sortedChatsByPeriod = useMemo(() =>
+        Array.from(
+            filteredChats
+                .filter(chat => chat.interactions.length)
+                .reverse()
+                .reduce((acc, chat) => {
+                    const period = getRelativeChatPeriod(new Date(chat.lastInteractionTimestamp))
+                    acc.set(period, [...(acc.get(period) || []), chat])
+                    return acc
+                }, new Map<string, typeof filteredChats>())
+        ),
+        [filteredChats]
     )
-
-
 
     return (
         <div className="tw-flex tw-flex-col">
@@ -119,41 +114,41 @@ export const HistoryTabWithData: React.FC<
                 />
             </div>
 
-            {filteredChats.map(({ interactions, id }) => {
-                const lastMessage =
-                    interactions[interactions.length - 1]?.humanMessage?.text?.trim()
-                return (
-                    <div key={id} className={`tw-flex tw-flex-row tw-p-1 ${styles.historyRow}`}>
-                        <Button
-                            key={id}
-                            variant="ghost"
-                            title={lastMessage}
-                            onClick={() =>
-                                getVSCodeAPI().postMessage({
-                                    command: 'restoreHistory',
-                                    chatID: id,
-                                })
-                            }
-                            className="tw-text-left tw-truncate tw-w-full"
-                        >
-                            <span className="tw-truncate tw-w-full">{lastMessage}</span>
-                        </Button>
-                        <Button
-                            key={id}
-                            variant="ghost"
-                            title="Delete chat"
-                            className={`${styles.historyDeleteBtn}`}
-                            onClick={() => onDeleteButtonClick(id)}
-                        >
-                            <TrashIcon
-                                className="tw-w-8 tw-h-8 tw-opacity-80"
-                                size={16}
-                                strokeWidth="1.25"
-                            />
-                        </Button>
-                    </div>
-                )
-            })}
+            {sortedChatsByPeriod.map(([period, chats]) => (
+                <div key={period} className="tw-flex tw-flex-col">
+                    <h4 className="tw-font-semibold tw-text-muted-foreground tw-py-2 tw-my-3">{period}</h4>
+                    {chats.map(({ interactions, id }) => {
+                        const lastMessage = interactions[interactions.length - 1]?.humanMessage?.text?.trim()
+                        return (
+                            <div key={id} className={`tw-flex tw-flex-row tw-p-1 ${styles.historyRow}`}>
+                                <div
+                                    onClick={() =>
+                                        getVSCodeAPI().postMessage({
+                                            command: 'restoreHistory',
+                                            chatID: id,
+                                        })
+                                    }
+                                    className={`tw-text-left tw-truncate tw-w-full ${styles.historyItem}`}
+                                >
+                                    <span className="tw-truncate tw-w-full">{lastMessage}</span>
+                                </div>
+                                <Button
+                                    variant="ghost"
+                                    title="Delete chat"
+                                    className={`${styles.historyDeleteBtn}`}
+                                    onClick={() => onDeleteButtonClick(id)}
+                                >
+                                    <TrashIcon
+                                        className="tw-w-8 tw-h-8 tw-opacity-80"
+                                        size={16}
+                                        strokeWidth="1.25"
+                                    />
+                                </Button>
+                            </div>
+                        )
+                    })}
+                </div>
+            ))}
 
             {nonEmptyChats.length === 0 && (
                 <div className="tw-flex tw-flex-col tw-items-center tw-mt-6">
@@ -168,7 +163,7 @@ export const HistoryTabWithData: React.FC<
                     </span>
 
                     <span className="tw-text-sm tw-text-muted-foreground tw-mb-8">
-                        Explore all your previous chats here. Track and <br /> search through what you’ve
+                        Explore all your previous chats here. Track and <br /> search through what you've
                         been working on.
                     </span>
 
@@ -185,8 +180,7 @@ export const HistoryTabWithData: React.FC<
                 </div>
             )}
         </div>
-    )
-}
+    )}
 
 function useUserHistory(): UserLocalHistory | null | undefined {
     const userHistory = useExtensionAPI().userHistory
