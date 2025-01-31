@@ -10,6 +10,7 @@ import {
     filter,
     firstValueFrom,
     promiseFactoryToObservable,
+    retry,
     startWith,
     switchMap,
 } from '../misc/observable'
@@ -129,7 +130,8 @@ export class ClientConfigSingleton {
                           startWith(undefined),
                           switchMap(() =>
                               promiseFactoryToObservable(signal => this.fetchConfig(authStatus, signal))
-                          )
+                          ),
+                          retry(3)
                       )
                     : Observable.of(undefined)
             ),
