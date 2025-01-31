@@ -5,15 +5,7 @@ import {
     isDefined,
 } from '@sourcegraph/cody-shared'
 import classNames from 'classnames'
-import {
-    ArrowDown,
-    ExternalLink,
-    FilterIcon,
-    FilterX,
-    OctagonX,
-    PanelLeftClose,
-    Search,
-} from 'lucide-react'
+import { ArrowDown, FilterIcon, FilterX, OctagonX, PanelLeftClose, Search } from 'lucide-react'
 import { useCallback, useContext, useLayoutEffect, useMemo, useReducer, useState } from 'react'
 import {
     createContextItem,
@@ -377,66 +369,44 @@ export const SearchResults = ({
                                 <p>No search results found</p>
                             </div>
                         )}
-                        <div className="tw-flex tw-justify-between tw-gap-4 tw-my-6 md:tw-px-6">
-                            <div className="tw-flex tw-items-center tw-gap-4">
-                                {!showAll &&
-                                    resultsToShow &&
-                                    totalResults &&
-                                    resultsToShow !== totalResults && (
-                                        <Button
-                                            onClick={() => {
-                                                telemetryRecorder.recordEvent(
-                                                    'onebox.moreResults',
-                                                    'clicked',
-                                                    {
-                                                        metadata: {
-                                                            totalResults: totalResults.length,
-                                                            resultsAdded:
-                                                                totalResults.length -
-                                                                resultsToShow.length,
-                                                        },
-                                                        billingMetadata: {
-                                                            product: 'cody',
-                                                            category: 'billable',
-                                                        },
-                                                    }
-                                                )
-                                                setShowAll(true)
-                                                updateSelectedFollowUpResults({
-                                                    type: 'add',
-                                                    results: totalResults.slice(resultsToShow.length),
-                                                })
-                                            }}
-                                            variant="outline"
-                                            size="sm"
-                                        >
-                                            <ArrowDown className="tw-size-8" />
-                                            More results
-                                        </Button>
-                                    )}
-                                {showFeedbackButtons && feedbackButtonsOnSubmit && (
-                                    <FeedbackButtons feedbackButtonsOnSubmit={feedbackButtonsOnSubmit} />
+                        <div className="tw-flex tw-items-center tw-justify-between tw-gap-4 tw-my-6 md:tw-px-6">
+                            {!showAll &&
+                                resultsToShow &&
+                                totalResults &&
+                                resultsToShow !== totalResults && (
+                                    <Button
+                                        onClick={() => {
+                                            telemetryRecorder.recordEvent(
+                                                'onebox.moreResults',
+                                                'clicked',
+                                                {
+                                                    metadata: {
+                                                        totalResults: totalResults.length,
+                                                        resultsAdded:
+                                                            totalResults.length - resultsToShow.length,
+                                                    },
+                                                    billingMetadata: {
+                                                        product: 'cody',
+                                                        category: 'billable',
+                                                    },
+                                                }
+                                            )
+                                            setShowAll(true)
+                                            updateSelectedFollowUpResults({
+                                                type: 'add',
+                                                results: totalResults.slice(resultsToShow.length),
+                                            })
+                                        }}
+                                        variant="outline"
+                                        size="sm"
+                                    >
+                                        <ArrowDown className="tw-size-8" />
+                                        More results
+                                    </Button>
                                 )}
-                            </div>
-                            <a
-                                href={'/search'}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="tw-text-foreground"
-                                onClick={() => {
-                                    telemetryRecorder.recordEvent('onebox.codeSearch', 'clicked', {
-                                        metadata: {
-                                            totalResults: totalResults.length,
-                                            resultsAdded: totalResults.length - resultsToShow.length,
-                                        },
-                                        billingMetadata: { product: 'cody', category: 'core' },
-                                    })
-                                }}
-                            >
-                                <Button variant="outline" size="sm">
-                                    Code search <ExternalLink className="tw-size-8" />
-                                </Button>
-                            </a>
+                            {showFeedbackButtons && feedbackButtonsOnSubmit && (
+                                <FeedbackButtons feedbackButtonsOnSubmit={feedbackButtonsOnSubmit} />
+                            )}
                         </div>
                     </div>
                 )}

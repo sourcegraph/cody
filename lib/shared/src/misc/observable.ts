@@ -1355,3 +1355,47 @@ export async function testing__firstValueFromWithinTime<T>(
     }
     return result
 }
+
+export function retry<T>(count: number): (source: ObservableLike<T>) => Observable<T> {
+    return (source: ObservableLike<T>) =>
+        new Observable<T>(observer => {
+            let retries = 0
+            let subscription: UnsubscribableLike | undefined = undefined
+
+            function subscribe() {
+                subscription = source.subscribe({
+                    next(value) {
+                        if (subscription) {
+                            observer.next(value)
+                            retries = 0
+                        }
+                    },
+                    error(err) {
+                        if (retries < count && subscription) {
+                            retries++
+                            unsuscribeThis()
+                            subscribe()
+                        } else {
+                            observer.error(err)
+                        }
+                    },
+                    complete() {
+                        if (subscription) {
+                            observer.complete()
+                        }
+                    },
+                })
+            }
+
+            function unsuscribeThis() {
+                if (subscription) {
+                    unsubscribe(subscription)
+                    subscription = undefined
+                }
+            }
+
+            subscribe()
+
+            return () => unsuscribeThis()
+        })
+}
