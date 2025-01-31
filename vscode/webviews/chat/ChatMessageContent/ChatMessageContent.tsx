@@ -251,11 +251,50 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
     return (
         <div ref={rootRef} data-testid="chat-message-content">
             {hasThinkTag && (
-                <details open className="tw-container tw-my-4 tw-border tw-border-muted-foreground tw-rounded-md tw-p-2">
-                    <summary className="tw-px-2">Thinking...</summary>
-                    <MarkdownFromCody className="tw-my-2 tw-text-muted-foreground tw-p-2">
-                        {thinkContent}
-                    </MarkdownFromCody>
+                <details 
+                    open 
+                    className={clsx(
+                        "tw-container tw-mb-4",
+                        "tw-border tw-border-gray-500/20 dark:tw-border-gray-600/40",
+                        "tw-rounded-lg tw-overflow-hidden",
+                        "tw-bg-gray-50/50 dark:tw-bg-gray-800/50",
+                        "tw-backdrop-blur-sm"
+                    )}
+                >
+                    <summary className={clsx(
+                        "tw-flex tw-items-center tw-gap-2 tw-px-3 tw-py-2",
+                        "tw-bg-gray-100/50 dark:tw-bg-gray-800/80",
+                        "tw-cursor-pointer hover:tw-bg-gray-200/50 dark:hover:tw-bg-gray-700/50",
+                        "tw-select-none tw-transition-colors"
+                    )}>
+                        <svg 
+                            className="tw-w-4 tw-h-4 tw-text-gray-500 dark:tw-text-gray-400 tw-animate-pulse" 
+                            viewBox="0 0 24 24" 
+                            fill="none" 
+                            stroke="currentColor" 
+                            strokeWidth="2"
+                        >
+                            <path 
+                                strokeLinecap="round" 
+                                strokeLinejoin="round" 
+                                d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707"
+                            />
+                        </svg>
+                        <span className="tw-text-sm tw-font-medium tw-text-gray-600 dark:tw-text-gray-300">
+                            Thinking...
+                        </span>
+                    </summary>
+                    <div className="tw-px-4 tw-py-3">
+                        <MarkdownFromCody 
+                            className={clsx(
+                                "tw-text-sm tw-text-gray-600 dark:tw-text-gray-300",
+                                "tw-prose dark:tw-prose-invert tw-max-w-none",
+                                "tw-leading-relaxed"
+                            )}
+                        >
+                            {thinkContent}
+                        </MarkdownFromCody>
+                    </div>
                 </details>
             )}
             <MarkdownFromCody className={clsx(styles.content, className)}>
