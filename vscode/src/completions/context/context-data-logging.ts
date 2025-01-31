@@ -14,7 +14,6 @@ import { JaccardSimilarityRetriever } from './retrievers/jaccard-similarity/jacc
 import { DiagnosticsRetriever } from './retrievers/recent-user-actions/diagnostics-retriever'
 import { RecentCopyRetriever } from './retrievers/recent-user-actions/recent-copy'
 import { LineLevelDiffStrategy } from './retrievers/recent-user-actions/recent-edits-diff-helpers/line-level-diff'
-import { TwoStageUnifiedDiffStrategy } from './retrievers/recent-user-actions/recent-edits-diff-helpers/two-stage-unified-diff'
 import { RecentEditsRetriever } from './retrievers/recent-user-actions/recent-edits-retriever'
 import { RecentViewPortRetriever } from './retrievers/recent-user-actions/recent-view-port'
 import { RetrieverIdentifier } from './utils'
@@ -37,6 +36,10 @@ export class ContextRetrieverDataCollection implements vscode.Disposable {
         { identifier: RetrieverIdentifier.RecentEditsRetriever },
         { identifier: RetrieverIdentifier.DiagnosticsRetriever, maxSnippets: 15 },
         { identifier: RetrieverIdentifier.RecentViewPortRetriever, maxSnippets: 10 },
+        { identifier: RetrieverIdentifier.RecentCopyRetriever, maxSnippets: 1 },
+        // Jaccard similarity snippets are very large in general (with ~50 lines of code per snippet),
+        // so we limit the number of snippets.
+        { identifier: RetrieverIdentifier.JaccardSimilarityRetriever, maxSnippets: 3 },
     ]
 
     constructor() {
@@ -109,42 +112,12 @@ export class ContextRetrieverDataCollection implements vscode.Disposable {
                 return new RecentEditsRetriever({
                     maxAgeMs: 10 * 60 * 1000,
                     diffStrategyList: [
-                        // Only use the last event as a short term diff.
-                        new TwoStageUnifiedDiffStrategy({
-                            longTermContextLines: 3,
-                            shortTermContextLines: 3,
-                            minShortTermEvents: 1,
-                            minShortTermTimeMs: 0,
-                        }),
-                        // Use atleast last 30 seconds of edits as short term diff
-                        new TwoStageUnifiedDiffStrategy({
-                            longTermContextLines: 3,
-                            shortTermContextLines: 3,
-                            minShortTermEvents: 1,
-                            minShortTermTimeMs: 30 * 1000, // 30 seconds
-                        }),
-                        // Use non-overlapping lines combination for long term diffs.
-                        new LineLevelDiffStrategy({
-                            contextLines: 3,
-                            longTermDiffCombinationStrategy: 'lines-based',
-                            minShortTermEvents: 1,
-                            minShortTermTimeMs: 30 * 1000, // 30 seconds,
-                            trimSurroundingContext: false,
-                        }),
                         // Use unified diff for long term changes, and line based diff for short term changes.
                         new LineLevelDiffStrategy({
                             contextLines: 3,
                             longTermDiffCombinationStrategy: 'unified-diff',
                             minShortTermEvents: 1,
                             minShortTermTimeMs: 2 * 60 * 1000, // 2 minutes,
-                            trimSurroundingContext: false,
-                        }),
-                        // Use raw line based changes for all the diff calculation.
-                        new LineLevelDiffStrategy({
-                            contextLines: 3,
-                            longTermDiffCombinationStrategy: undefined,
-                            minShortTermEvents: 1,
-                            minShortTermTimeMs: 0,
                             trimSurroundingContext: false,
                         }),
                     ],
