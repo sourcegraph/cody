@@ -108,7 +108,7 @@ export function createAutoEditsProvider({
  *
  * This is because because of the flaky network issues we could evaluate the default feature flag value to false
  * and show the non eligibility notification to the user even if they have access to the feature.
- * Generally the users should see the notification only when they manully change the vscode config which could be either
+ * Generally the users should see the notification only when they manually change the vscode config which could be either
  * through the settings UI or `settings.json` file.
  *
  * @param {string | undefined} nonEligibilityReason - The reason why the user is currently not eligible
