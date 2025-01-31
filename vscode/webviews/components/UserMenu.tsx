@@ -514,7 +514,7 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
                                             strokeWidth={1.25}
                                             className="tw-mr-2"
                                         />
-                                        <span className="tw-flex-grow">Help</span>
+                                        <span className="tw-flex-grow">Help & Support</span>
                                         <ExternalLinkIcon size={16} strokeWidth={1.25} />
                                     </CommandLink>
                                 )}
