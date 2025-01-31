@@ -141,6 +141,7 @@ export const HistoryTabWithData: React.FC<
                                 <Button
                                     variant="ghost"
                                     title="Delete chat"
+                                    aria-label="Delete chat"
                                     className={`${styles.historyDeleteBtn}`}
                                     onClick={() => onDeleteButtonClick(id)}
                                     onKeyDown={() => onDeleteButtonClick(id)}
