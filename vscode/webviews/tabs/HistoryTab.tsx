@@ -3,14 +3,15 @@ import { useExtensionAPI, useObservable } from '@sourcegraph/prompt-editor'
 import { HistoryIcon, MessageSquarePlusIcon, TrashIcon } from 'lucide-react'
 import type React from 'react'
 import { useCallback, useMemo, useState } from 'react'
-import type { WebviewType } from '../../src/chat/protocol'
-import { getRelativeChatPeriod } from '../../src/common/time-date'
+
 import { LoadingDots } from '../chat/components/LoadingDots'
 import { Button } from '../components/shadcn/ui/button'
+import { Input } from '../components/shadcn/ui/input'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
+import type { WebviewType } from '../../src/chat/protocol'
+import { getRelativeChatPeriod } from '../../src/common/time-date'
 import { View } from './types'
 import { getCreateNewChatCommand } from './utils'
-import { Input } from '../components/shadcn/ui/input'
 
 import styles from './HistoryTab.module.css'
 
@@ -113,7 +114,7 @@ export const HistoryTabWithData: React.FC<
 
             {sortedChatsByPeriod.map(([period, chats]) => (
                 <div key={period} className="tw-flex tw-flex-col">
-                    <h4 className="tw-font-semibold tw-text-muted-foreground tw-py-2 tw-my-3">{period}</h4>
+                    <h4 className="tw-font-semibold tw-text-muted-foreground tw-py-2 tw-my-4">{period}</h4>
                     {chats.map(({ interactions, id }) => {
                         const lastMessage = interactions[interactions.length - 1]?.humanMessage?.text?.trim()
                         return (
