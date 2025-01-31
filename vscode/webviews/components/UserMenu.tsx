@@ -1,6 +1,7 @@
-import { type AuthenticatedAuthStatus, isDotCom } from '@sourcegraph/cody-shared'
+import { type AuthenticatedAuthStatus, isDotCom, isEnterpriseUser } from '@sourcegraph/cody-shared'
 import {
     ArrowLeftRightIcon,
+    BookOpenIcon,
     ChevronLeftIcon,
     ChevronRightIcon,
     ChevronsUpDown,
@@ -370,7 +371,7 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
                                             user={authStatus}
                                             size={USER_MENU_AVATAR_SIZE}
                                             sourcegraphGradientBorder={!!isProUser}
-                                            className="tw-inline-flex tw-self-center tw-items-center tw-w-auto tw-flex-none tw-max-h-9"
+                                            className="tw-inline-flex tw-self-center tw-items-center tw-w-auto tw-flex-none tw-max-h-8 tw-flex-shrink-0 tw-flex-grow-0"
                                         />
                                         <div className="tw-flex tw-self-stretch tw-flex-col tw-w-full tw-items-start tw-justify-center tw-flex-auto tw-overflow-hidden">
                                             <p
@@ -476,6 +477,48 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
                                     <Settings2Icon size={16} strokeWidth={1.25} className="tw-mr-2" />
                                     <span className="tw-flex-grow">Extension Settings</span>
                                 </CommandItem>
+                                <CommandLink
+                                    href="https://sourcegraph.com/docs/cody"
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    onSelect={() => {
+                                        telemetryRecorder.recordEvent(
+                                            'cody.userMenu.documentationLink',
+                                            'open',
+                                            {}
+                                        )
+                                        close()
+                                    }}
+                                >
+                                    <BookOpenIcon size={16} strokeWidth={1.25} className="tw-mr-2" />
+                                    <span className="tw-flex-grow">Documentation</span>
+                                    <ExternalLinkIcon size={16} strokeWidth={1.25} />
+                                </CommandLink>
+
+                                {!isEnterpriseUser && (
+                                    <CommandLink
+                                        href="https://community.sourcegraph.com/"
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        onSelect={() => {
+                                            telemetryRecorder.recordEvent(
+                                                'cody.userMenu.helpLink',
+                                                'open',
+                                                {}
+                                            )
+                                            close()
+                                        }}
+                                    >
+                                        <CircleHelpIcon
+                                            size={16}
+                                            strokeWidth={1.25}
+                                            className="tw-mr-2"
+                                        />
+                                        <span className="tw-flex-grow">Help</span>
+                                        <ExternalLinkIcon size={16} strokeWidth={1.25} />
+                                    </CommandLink>
+                                )}
+
                                 {isWorkspacesUpgradeCtaEnabled && (
                                     <CommandLink
                                         href={ENTERPRISE_STARTER_PRICING_URL.toString()}
@@ -509,30 +552,12 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
                                         <ChevronRightIcon size={16} strokeWidth={1.25} />
                                     </CommandItem>
                                 )}
+                            </CommandGroup>
+                            <CommandGroup>
                                 <CommandItem onSelect={() => onSignOutClick(endpoint)}>
                                     <LogOutIcon size={16} strokeWidth={1.25} className="tw-mr-2" />
                                     <span className="tw-flex-grow">Sign Out</span>
                                 </CommandItem>
-                            </CommandGroup>
-
-                            <CommandGroup>
-                                <CommandLink
-                                    href="https://community.sourcegraph.com/"
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    onSelect={() => {
-                                        telemetryRecorder.recordEvent(
-                                            'cody.userMenu.helpLink',
-                                            'open',
-                                            {}
-                                        )
-                                        close()
-                                    }}
-                                >
-                                    <CircleHelpIcon size={16} strokeWidth={1.25} className="tw-mr-2" />
-                                    <span className="tw-flex-grow">Help</span>
-                                    <ExternalLinkIcon size={16} strokeWidth={1.25} />
-                                </CommandLink>
                             </CommandGroup>
                         </CommandList>
                     )}
@@ -557,4 +582,4 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
     )
 }
 
-export const USER_MENU_AVATAR_SIZE = 16
+export const USER_MENU_AVATAR_SIZE = 20
