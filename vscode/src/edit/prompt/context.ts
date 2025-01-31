@@ -71,7 +71,6 @@ const getContextFromIntent = async ({
                         uri,
                         PROMPT_TOPICS.OUTPUT
                     ),
-                    cache_enabled: false,
                     file: {
                         type: 'file',
                         uri,
@@ -96,7 +95,6 @@ const getContextFromIntent = async ({
                 contextMessages.push({
                     speaker: 'human',
                     text: populateCodeContextTemplate(truncatedPrecedingText, uri, undefined, 'edit'),
-                    cache_enabled: false,
                     file: { type: 'file', uri, source: ContextItemSource.Editor, range: prefix.range },
                 })
             }
@@ -104,7 +102,6 @@ const getContextFromIntent = async ({
                 contextMessages.push({
                     speaker: 'human',
                     text: populateCodeContextTemplate(truncatedFollowingText, uri, undefined, 'edit'),
-                    cache_enabled: false,
                     file: { type: 'file', uri, source: ContextItemSource.Editor, range: suffix.range },
                 })
             }
@@ -127,7 +124,6 @@ const getContextFromIntent = async ({
                         ({
                             speaker: 'human' as const,
                             text: populateCurrentEditorDiagnosticsTemplate(diagnostic, uri),
-                            cache_enabled: false,
                             file: { type: 'file', uri, source: ContextItemSource.Editor },
                         }) satisfies ContextMessage
                 ),
@@ -138,7 +134,6 @@ const getContextFromIntent = async ({
                             ({
                                 speaker: 'human' as const,
                                 text: populateCodeContextTemplate(text, uri, undefined, 'edit'),
-                                cache_enabled: false,
                                 file: { type: 'file', uri, source: ContextItemSource.Editor },
                             }) satisfies ContextMessage
                     ),
