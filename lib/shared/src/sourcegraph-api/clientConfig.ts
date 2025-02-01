@@ -33,7 +33,8 @@ export interface CodyNotice {
 //
 // This is fetched from the Sourcegraph instance and is specific to the current user.
 //
-// For the canonical type definition, see https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/internal/clientconfig/types.go
+// For the canonical type definition, see model ClientConfig in https://sourcegraph.sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/internal/openapi/internal.tsp
+// API Spec: https://sourcegraph.sourcegraph.com/api/openapi/internal#get-api-client-config
 export interface CodyClientConfig {
     // Whether the site admin allows this user to make use of the Cody chat feature.
     chatEnabled: boolean
@@ -73,6 +74,9 @@ export interface CodyClientConfig {
 
     // Whether code search is enabled for the SG instance.
     codeSearchEnabled: boolean
+
+    // The latest supported completions stream API version.
+    latestSupportedCompletionsStreamAPIVersion?: number
 }
 
 export const dummyClientConfigForTest: CodyClientConfig = {
@@ -317,6 +321,7 @@ export class ClientConfigSingleton {
                 if (isError(clientConfig)) {
                     throw clientConfig
                 }
+                latestCodyClientConfig = clientConfig
                 return clientConfig
             })
     }
@@ -328,4 +333,13 @@ export class ClientConfigSingleton {
     ): Promise<CodyClientConfig | undefined> {
         return this.fetchConfigEndpoint(signal, config)
     }
+}
+// It's really complicated to access CodyClientConfig from functions like utils.ts
+export let latestCodyClientConfig: CodyClientConfig | undefined
+
+export function serverSupportsPromptCaching(): boolean {
+    return (
+        latestCodyClientConfig?.latestSupportedCompletionsStreamAPIVersion !== undefined &&
+        latestCodyClientConfig?.latestSupportedCompletionsStreamAPIVersion >= 7
+    )
 }
