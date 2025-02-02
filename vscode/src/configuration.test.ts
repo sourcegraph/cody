@@ -206,6 +206,7 @@ describe('getConfiguration', () => {
 
             overrideAuthToken: undefined,
             overrideServerEndpoint: undefined,
+            experimentalImageUpload: false,
         } satisfies ClientConfiguration)
     })
 })
