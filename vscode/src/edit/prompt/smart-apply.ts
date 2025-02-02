@@ -188,6 +188,7 @@ export async function getSmartApplySelection(
     codyApiVersion: number
 ): Promise<SmartSelection | null> {
     let originalCode: string
+    const fetchStart = performance.now()
     try {
         originalCode = await promptModelForOriginalCode(
             instruction,
@@ -252,6 +253,8 @@ export async function getSmartApplySelection(
             range: new vscode.Range(fuzzyLocation.location.range.end, fuzzyLocation.location.range.end),
         }
     }
+
+    console.log(`SELECTION IS READY IN ${Math.floor(performance.now() - fetchStart)}ms`)
 
     // We found a matching selection in the text, let's use this!
     return {
