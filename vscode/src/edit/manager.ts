@@ -469,7 +469,9 @@ export class EditManager implements vscode.Disposable {
                     applyTimeTakenMs
                 )
                 const smartApplyContext =
-                    await this.smartApplyContextLogger.getSmartApplyLoggingContext(contextloggerRequestId)
+                    await this.smartApplyContextLogger.getSmartApplyLoggingContext(
+                        contextloggerRequestId
+                    )
                 if (smartApplyContext) {
                     const { metadata, privateMetadata } = splitSafeMetadata({
                         ...smartApplyContext,

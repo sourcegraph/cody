@@ -1,8 +1,8 @@
 import {
     FeatureFlag,
+    displayPathWithoutWorkspaceFolderPrefix,
     featureFlagProvider,
     isDotComAuthed,
-    displayPathWithoutWorkspaceFolderPrefix,
     storeLastValue,
 } from '@sourcegraph/cody-shared'
 import { LRUCache } from 'lru-cache'
@@ -113,7 +113,9 @@ export class SmartApplyContextLogger {
         })
     }
 
-    public getSmartApplyLoggingContext(requestId: SmartApplyLoggingRequestId): SmartApplyFinalContext | undefined {
+    public getSmartApplyLoggingContext(
+        requestId: SmartApplyLoggingRequestId
+    ): SmartApplyFinalContext | undefined {
         const request = this.activeRequests.get(requestId)
         if (!request) {
             return undefined
@@ -154,7 +156,9 @@ export class SmartApplyContextLogger {
         if (!gitIdentifiersForFile?.repoName) {
             return undefined
         }
-        const repoMetadata = this.repoMetaDataInstance.getRepoMetadataIfCached(gitIdentifiersForFile.repoName)
+        const repoMetadata = this.repoMetaDataInstance.getRepoMetadataIfCached(
+            gitIdentifiersForFile.repoName
+        )
         return {
             repoName: gitIdentifiersForFile.repoName,
             commit: gitIdentifiersForFile?.commit,
