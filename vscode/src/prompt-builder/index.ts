@@ -124,29 +124,12 @@ export class PromptBuilder {
 
             // Immediately inject an image message if there is a base64 image on the human message.
             if (humanMsg.base64Image) {
-                const imageType = detectImageType(humanMsg.base64Image)
-                const imageMessage: Message = {
-                    speaker: 'human',
-                    content: [
-                        {
-                            type: 'image_url',
-                            image_url: {
-                                url: `data:${imageType};base64,${humanMsg.base64Image}`,
-                            },
-                        },
-                    ],
-                }
+                const imageMessage = this.createImageMessage(humanMsg.base64Image)
                 this.reverseMessages.push(imageMessage)
             }
         }
         // All messages processed successfully.
         return undefined
-    }
-
-    public tryAddImage(base64Image: string | undefined): void {
-        if (base64Image) {
-            this.images.push(base64Image)
-        }
     }
 
     public async tryAddContext(
@@ -228,6 +211,25 @@ export class PromptBuilder {
             c => result.added.includes(c) && c.title !== 'Cody Chat Memory'
         )
         return result
+    }
+
+    /**
+     * Creates a Message object for an image given its base64 string.
+     * The function calculates the MIME type using detectImageType and wraps the data in a MessagePart.
+     */
+    private createImageMessage(base64Image: string): Message {
+        const imageType = detectImageType(base64Image)
+        return {
+            speaker: 'human',
+            content: [
+                {
+                    type: 'image_url',
+                    image_url: {
+                        url: `data:${imageType};base64,${base64Image}`,
+                    },
+                },
+            ],
+        }
     }
 }
 
