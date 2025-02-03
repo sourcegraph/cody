@@ -96,8 +96,7 @@ jobs:
             --output.pr.body="Automated release and changelog for ${EDITOR} Cody v%s" \
             --output.changelog="$CHANGELOG_PATH" \
             --output.changelog.marker='<!--- {/_ CHANGELOG_START _/} -->' \
-            --releaseregistry.version=${VERSION} \
-            --releaseregistry.commit=${RELEASE_LATEST_COMMIT}    
+            --releaseregistry.version=${VERSION} 
       - name: Update version
         if: github.event.inputs.editor == 'VS Code'
         env:
