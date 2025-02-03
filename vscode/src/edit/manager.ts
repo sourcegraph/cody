@@ -29,6 +29,7 @@ import type { ExecuteEditArguments } from './execute'
 import { SMART_APPLY_FILE_DECORATION, getSmartApplySelection } from './prompt/smart-apply'
 import { EditProvider } from './provider'
 import type { SmartApplyArguments } from './smart-apply'
+import { SmartApplyContextLogger } from './smart-apply-context-logging'
 import { getEditIntent } from './utils/edit-intent'
 import { getEditMode } from './utils/edit-mode'
 import { getEditLineSelection, getEditSmartSelection } from './utils/edit-selection'
@@ -47,6 +48,7 @@ export interface EditManagerOptions {
 export class EditManager implements vscode.Disposable {
     private disposables: vscode.Disposable[] = []
     private editProviders = new WeakMap<FixupTask, EditProvider>()
+    private smartApplyContextLogger = new SmartApplyContextLogger()
 
     constructor(public options: EditManagerOptions) {
         /**
@@ -85,7 +87,13 @@ export class EditManager implements vscode.Disposable {
                 provider.startEdit()
             }
         )
-        this.disposables.push(this.options.controller, editCommand, smartApplyCommand, startCommand)
+        this.disposables.push(
+            this.options.controller,
+            editCommand,
+            smartApplyCommand,
+            startCommand,
+            this.smartApplyContextLogger
+        )
     }
 
     public async executeEdit(args: ExecuteEditArguments = {}): Promise<FixupTask | undefined> {
@@ -324,6 +332,15 @@ export class EditManager implements vscode.Disposable {
                     throw new Error('unable to determine site version')
                 }
 
+                const contextloggerRequestId =
+                    await this.smartApplyContextLogger.createSmartApplyLoggingRequest({
+                        userQuery: configuration.instruction.toString(),
+                        replacementCodeBlock: replacementCode.toString(),
+                        filePath: configuration.document.uri.fsPath,
+                        fileContent: configuration.document.getText(),
+                    })
+
+                const selectionStartTime = Date.now()
                 const selection = await getSmartApplySelection(
                     configuration.id,
                     configuration.instruction,
@@ -333,6 +350,7 @@ export class EditManager implements vscode.Disposable {
                     this.options.chat,
                     versions.codyAPIVersion
                 )
+                const selectionTimeTakenMs = Date.now() - selectionStartTime
 
                 // We finished prompting the LLM for the selection, we can now remove the "progress" decoration
                 // that indicated we where working on the full file.
@@ -356,6 +374,13 @@ export class EditManager implements vscode.Disposable {
                     },
                     billingMetadata: { product: 'cody', category: 'billable' },
                 })
+
+                this.smartApplyContextLogger.addSmartApplySelectionContext(
+                    contextloggerRequestId,
+                    selection.type,
+                    selection.range,
+                    selectionTimeTakenMs
+                )
 
                 // Move focus to the determined selection
                 editor.revealRange(selection.range, vscode.TextEditorRevealType.InCenter)
@@ -425,7 +450,8 @@ export class EditManager implements vscode.Disposable {
                 // we can reliably apply this edit.
                 // Just using the replacement code from the response is not enough, as it may contain parts that are not suitable to apply,
                 // e.g. // ...
-                return this.executeEdit({
+                const applyStartTime = Date.now()
+                await this.executeEdit({
                     configuration: {
                         id: configuration.id,
                         document: configuration.document,
@@ -437,6 +463,27 @@ export class EditManager implements vscode.Disposable {
                     },
                     source,
                 })
+                const applyTimeTakenMs = Date.now() - applyStartTime
+                this.smartApplyContextLogger.addSmartApplyFinalContext(
+                    contextloggerRequestId,
+                    applyTimeTakenMs
+                )
+                const smartApplyContext =
+                    await this.smartApplyContextLogger.getRequestContext(contextloggerRequestId)
+                if (smartApplyContext) {
+                    const { metadata, privateMetadata } = splitSafeMetadata({
+                        ...smartApplyContext,
+                    })
+                    telemetryRecorder.recordEvent('cody.smart-apply.context', 'applied', {
+                        metadata: {
+                            ...metadata,
+                            recordsPrivateMetadataTranscript: 1,
+                        },
+                        privateMetadata,
+                        billingMetadata: { product: 'cody', category: 'billable' },
+                    })
+                }
+                return
             })
         })
     }
