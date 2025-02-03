@@ -232,7 +232,10 @@ export class EditManager implements vscode.Disposable {
         }
         const { metadata, privateMetadata } = splitSafeMetadata(legacyMetadata)
         telemetryRecorder.recordEvent(`cody.command.${eventName}`, 'executed', {
-            metadata,
+            metadata: {
+                ...metadata,
+                recordsPrivateMetadataTranscript: editContextData === undefined ? 0 : 1,
+            },
             privateMetadata: {
                 ...privateMetadata,
                 model: task.model,
