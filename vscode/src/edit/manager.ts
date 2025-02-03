@@ -336,8 +336,7 @@ export class EditManager implements vscode.Disposable {
                     await this.smartApplyContextLogger.createSmartApplyLoggingRequest({
                         userQuery: configuration.instruction.toString(),
                         replacementCodeBlock: replacementCode.toString(),
-                        filePath: configuration.document.uri.fsPath,
-                        fileContent: configuration.document.getText(),
+                        document: configuration.document,
                     })
 
                 const selectionStartTime = Date.now()
@@ -379,7 +378,8 @@ export class EditManager implements vscode.Disposable {
                     contextloggerRequestId,
                     selection.type,
                     selection.range,
-                    selectionTimeTakenMs
+                    selectionTimeTakenMs,
+                    configuration.document
                 )
 
                 // Move focus to the determined selection
@@ -469,7 +469,7 @@ export class EditManager implements vscode.Disposable {
                     applyTimeTakenMs
                 )
                 const smartApplyContext =
-                    await this.smartApplyContextLogger.getRequestContext(contextloggerRequestId)
+                    await this.smartApplyContextLogger.getSmartApplyLoggingContext(contextloggerRequestId)
                 if (smartApplyContext) {
                     const { metadata, privateMetadata } = splitSafeMetadata({
                         ...smartApplyContext,

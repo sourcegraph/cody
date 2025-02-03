@@ -2,6 +2,7 @@ import {
     FeatureFlag,
     featureFlagProvider,
     isDotComAuthed,
+    displayPathWithoutWorkspaceFolderPrefix,
     storeLastValue,
 } from '@sourcegraph/cody-shared'
 import { LRUCache } from 'lru-cache'
@@ -33,7 +34,7 @@ interface SmartApplySelectionContext extends SmartApplyBaseContext {
 }
 
 interface SmartApplyFinalContext extends SmartApplySelectionContext {
-    applyTime: number
+    applyTimeMs: number
 }
 
 export type SmartApplyLoggingState =
@@ -52,62 +53,67 @@ export class SmartApplyContextLogger {
         max: 20,
     })
     private repoMetaDataInstance = GitHubDotComRepoMetadata.getInstance()
+    private static readonly MAX_PAYLOAD_SIZE_BYTES = 1024 * 1024 // 1 MB
 
     private featureFlagSmartApplyContextDataCollection = storeLastValue(
         featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.SmartApplyContextDataCollectionFlag)
     )
 
-    public async createSmartApplyLoggingRequest(params: {
+    public createSmartApplyLoggingRequest(params: {
         userQuery: string
         replacementCodeBlock: string
-        filePath: string
-        fileContent: string
-    }): Promise<SmartApplyLoggingRequestId> {
-        const baseRepoContext = await this.getBaseRepoContext()
+        document: vscode.TextDocument
+    }): SmartApplyLoggingRequestId {
+        const baseRepoContext = this.getBaseRepoContext()
         const requestId = uuid.v4() as SmartApplyLoggingRequestId
+        const filePath = displayPathWithoutWorkspaceFolderPrefix(params.document.uri)
+        const fileContent = params.document.getText()
+
         const baseContext: SmartApplyBaseContext = {
             ...baseRepoContext,
-            ...params,
+            userQuery: params.userQuery,
+            replacementCodeBlock: params.replacementCodeBlock,
+            filePath,
+            fileContent,
         }
         this.activeRequests.set(requestId, baseContext)
         return requestId
     }
 
-    public async addSmartApplySelectionContext(
+    public addSmartApplySelectionContext(
         requestId: SmartApplyLoggingRequestId,
         selectionType: SmartSelectionType,
         selectionRange: vscode.Range,
-        selectionTimeMs: number
-    ): Promise<void> {
-        const request = await this.getRequestContext(requestId)
+        selectionTimeMs: number,
+        document: vscode.TextDocument
+    ): void {
+        const request = this.getRequest(requestId)
         if (!request) {
             return
         }
         this.activeRequests.set(requestId, {
             ...request,
             selectionType,
-            selectionRange: [selectionRange.start.line, selectionRange.end.line],
+            selectionRange: [
+                document.offsetAt(selectionRange.start),
+                document.offsetAt(selectionRange.end),
+            ],
             selectionTimeMs,
         })
     }
 
-    public async addSmartApplyFinalContext(
-        requestId: SmartApplyLoggingRequestId,
-        applyTime: number
-    ): Promise<void> {
-        const request = await this.getRequestContext(requestId)
+    public addSmartApplyFinalContext(requestId: SmartApplyLoggingRequestId, applyTimeMs: number): void {
+        const request = this.getRequest(requestId)
         if (!request) {
             return
         }
         this.activeRequests.set(requestId, {
             ...request,
-            applyTime,
+            applyTimeMs,
         })
     }
 
-    public async getSmartApplyLoggingContext(
-        requestId: SmartApplyLoggingRequestId
-    ): Promise<SmartApplyFinalContext | undefined> {
+    public getSmartApplyLoggingContext(requestId: SmartApplyLoggingRequestId): SmartApplyFinalContext | undefined {
         const request = this.activeRequests.get(requestId)
         if (!request) {
             return undefined
@@ -115,36 +121,40 @@ export class SmartApplyContextLogger {
         if (!this.shouldLogSmartApplyContextItem(request.isPublic)) {
             return undefined
         }
+        const requestSize = this.calculateCurrentRequestSizeInBytes(request)
+        if (requestSize > SmartApplyContextLogger.MAX_PAYLOAD_SIZE_BYTES) {
+            return undefined
+        }
         // Verify that the request has the final property required.
-        if (typeof (request as SmartApplyFinalContext).applyTime !== 'number') {
+        if (typeof (request as SmartApplyFinalContext).applyTimeMs !== 'number') {
             return undefined
         }
         return request as SmartApplyFinalContext
     }
 
-    public async getRequestContext(
-        requestId: SmartApplyLoggingRequestId
-    ): Promise<SmartApplyLoggingState | undefined> {
+    private calculateCurrentRequestSizeInBytes(request: SmartApplyLoggingState): number {
+        const snippetSizeBytes = Buffer.byteLength(JSON.stringify(request) || '', 'utf8')
+        return snippetSizeBytes
+    }
+
+    private getRequest(requestId: SmartApplyLoggingRequestId): SmartApplyLoggingState | undefined {
         return this.activeRequests.get(requestId)
     }
 
-    private async shouldLogSmartApplyContextItem(isPublicRepo: boolean | undefined): Promise<boolean> {
-        const isDotComUser = isDotComAuthed()
-        if (isDotComUser && isPublicRepo && this.isSmartApplyContextDataCollectionFlagEnabled()) {
+    private shouldLogSmartApplyContextItem(isPublicRepo: boolean | undefined): boolean {
+        if (isDotComAuthed() && isPublicRepo && this.isSmartApplyContextDataCollectionFlagEnabled()) {
             // 🚨 SECURITY: included only for DotCom users with public repos and for users in the feature flag.
             return true
         }
         return false
     }
 
-    private async getBaseRepoContext(): Promise<RepoContext | undefined> {
+    private getBaseRepoContext(): RepoContext | undefined {
         const gitIdentifiersForFile = gitMetadataForCurrentEditor.getGitIdentifiersForFile()
         if (!gitIdentifiersForFile?.repoName) {
             return undefined
         }
-        const repoMetadata = await this.repoMetaDataInstance.getRepoMetadataUsingRepoName(
-            gitIdentifiersForFile.repoName
-        )
+        const repoMetadata = this.repoMetaDataInstance.getRepoMetadataIfCached(gitIdentifiersForFile.repoName)
         return {
             repoName: gitIdentifiersForFile.repoName,
             commit: gitIdentifiersForFile?.commit,
