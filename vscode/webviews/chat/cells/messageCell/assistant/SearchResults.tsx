@@ -73,11 +73,6 @@ export const SearchResults = ({
     // just pull the boosted repo name from the query if it exists. This will break if we
     // change how the current repo is boosted, but it at least doesn't depend on VSCode-specific APIs.
     const boostedRepo = message.search.query.match(/boost:repo\(([^)]+)\)/)?.[1]
-    const firstNonBoostedRepoIndex = boostedRepo
-        ? resultsToShow.findIndex(
-              result => result.__typename === 'FileMatch' && result.repository.name !== boostedRepo
-          )
-        : undefined
     // don't show filter on first search that returns no results
     // show filter on subsquent filtered searches, we want users to be able to deselect their choices
     const hasResults = initialResults?.length > 0 ? initialResults?.length > 0 : resultsToShow.length > 0
@@ -366,7 +361,12 @@ export const SearchResults = ({
                                             {/* Render boosted results */}
                                             <ul className="tw-list-none tw-flex tw-flex-col">
                                                 {boostedResults.map((result, i) => (
-                                                    <li key={`boosted-${i}`}>
+                                                    <li
+                                                        key={`boosted-${
+                                                            // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
+                                                            i
+                                                        }`}
+                                                    >
                                                         <NLSResultSnippet
                                                             result={result}
                                                             selectedForContext={selectedFollowUpResults.has(
@@ -421,7 +421,12 @@ export const SearchResults = ({
                                                     {otherReposExpanded && (
                                                         <ul className="tw-list-none tw-flex tw-flex-col">
                                                             {nonBoostedResults.map((result, i) => (
-                                                                <li key={`non-boosted-${i}`}>
+                                                                <li
+                                                                    key={`non-boosted-${
+                                                                        // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
+                                                                        i
+                                                                    }`}
+                                                                >
                                                                     <NLSResultSnippet
                                                                         result={result}
                                                                         selectedForContext={selectedFollowUpResults.has(
