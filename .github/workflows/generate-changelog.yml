@@ -89,7 +89,6 @@ jobs:
           echo $VERSION
           ./changelog update-as-pr \
             --github.repo=$GH_REPO \
-            --github.fetch-strategy="since-commit" \
             --output.repo.base="main" \
             --output.repo=$GH_REPO \
             --output.pr.branch="$PR_BRANCH" \
