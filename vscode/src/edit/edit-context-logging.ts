@@ -216,12 +216,12 @@ export function shouldLogEditContextItem<T>(
     payload: T,
     isFeatureFlagEnabledForLogging: boolean
 ): boolean {
+    // 🚨 SECURITY: included only for DotCom users and for users in the feature flag.
     if (isDotComAuthed() && isFeatureFlagEnabledForLogging) {
-        // 🚨 SECURITY: included only for DotCom users and for users in the feature flag.
-        return true
+        const payloadSize = calculatePayloadSizeInBytes(payload)
+        return payloadSize !== undefined && payloadSize < MAX_LOGGING_PAYLOAD_SIZE_BYTES
     }
-    const payloadSize = calculatePayloadSizeInBytes(payload)
-    return payloadSize !== undefined && payloadSize < MAX_LOGGING_PAYLOAD_SIZE_BYTES
+    return false
 }
 
 function calculatePayloadSizeInBytes<T>(payload: T): number | undefined {
