@@ -73,8 +73,14 @@ export class DeepCodyAgent {
         this.initializeMultiplexer(this.tools)
         this.buildPrompt(this.tools)
 
+        // We can modify the ProcessManager to only show detailed steps in the accordion
+        // by filtering what gets passed to statusUpdateCallback
         this.stepsManager = new ProcessManager(
-            steps => statusUpdateCallback(steps),
+            steps => {
+                // Only pass steps that should appear in the accordion
+                const accordionSteps = steps.filter(step => step.type !== 'confirmation')
+                statusUpdateCallback(accordionSteps)
+            },
             step => postRequest(step)
         )
 

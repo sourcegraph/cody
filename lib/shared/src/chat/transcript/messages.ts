@@ -67,6 +67,7 @@ export enum ProcessType {
      * A process that prompts the user confirmation.
      */
     Confirmation = 'confirmation',
+    Detail = 'Detail',
 }
 
 /**

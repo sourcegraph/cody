@@ -49,7 +49,7 @@ export const AgenticContextCell: FunctionComponent<{
         experimentalOneBoxEnabled,
     }) => {
         const [accordionValue, setAccordionValue] = useState<string | undefined>(() => {
-            return localStorage.getItem('agenticContextCell.accordionValue') || undefined
+            return localStorage.getItem('agenticContextCell.accordionValue') || CELL_NAME
         })
 
         const hasError = processes?.some(p => p.error) ?? false
@@ -159,20 +159,23 @@ const CHAT_STATES = {
             loading: 'searching...',
             completed: 'completed',
             failed: 'failed',
-            default: 'reviewing',
+
+            default: 'searching',
         },
     },
     chat: {
         title: 'Agentic Chat',
         icon: BrainIcon,
         states: {
-            loading: 'reviewing...',
+            loading: 'thinking...',
             completed: 'completed',
             failed: 'failed',
-            default: 'reviewing',
+
+            default: 'thinking',
         },
     },
 } as const
+
 export const getDisplayConfig = (
     intent: ChatMessage['intent'],
     isContextLoading: boolean,
@@ -186,11 +189,7 @@ export const getDisplayConfig = (
         ? hasError
             ? config.states.failed
             : config.states.completed
-        : intent === 'search'
-          ? config.states.loading
-          : processes?.findLast(p => p.type !== 'tool' && p.type !== 'confirmation')?.title ||
-            config.states.default
-
+        : config.states.loading
     return {
         title: config.title,
         icon: config.icon,
