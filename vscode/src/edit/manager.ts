@@ -473,15 +473,15 @@ export class EditManager implements vscode.Disposable {
                         contextloggerRequestId
                     )
                 if (smartApplyContext) {
-                    const { metadata, privateMetadata } = splitSafeMetadata({
-                        ...smartApplyContext,
-                    })
+                    const { metadata, privateMetadata } = splitSafeMetadata(smartApplyContext)
                     telemetryRecorder.recordEvent('cody.smart-apply.context', 'applied', {
                         metadata: {
                             ...metadata,
                             recordsPrivateMetadataTranscript: 1,
                         },
-                        privateMetadata,
+                        privateMetadata: {
+                            smartApplyContext: privateMetadata,
+                        },
                         billingMetadata: { product: 'cody', category: 'billable' },
                     })
                 }

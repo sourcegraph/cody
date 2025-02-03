@@ -120,7 +120,7 @@ export class SmartApplyContextLogger {
         if (!request) {
             return undefined
         }
-        if (!this.shouldLogSmartApplyContextItem(request.isPublic)) {
+        if (!this.shouldLogSmartApplyContextItem()) {
             return undefined
         }
         const requestSize = this.calculateCurrentRequestSizeInBytes(request)
@@ -143,9 +143,9 @@ export class SmartApplyContextLogger {
         return this.activeRequests.get(requestId)
     }
 
-    private shouldLogSmartApplyContextItem(isPublicRepo: boolean | undefined): boolean {
-        if (isDotComAuthed() && isPublicRepo && this.isSmartApplyContextDataCollectionFlagEnabled()) {
-            // 🚨 SECURITY: included only for DotCom users with public repos and for users in the feature flag.
+    private shouldLogSmartApplyContextItem(): boolean {
+        if (isDotComAuthed() && this.isSmartApplyContextDataCollectionFlagEnabled()) {
+            // 🚨 SECURITY: included only for DotCom users and for users in the feature flag.
             return true
         }
         return false
@@ -162,7 +162,7 @@ export class SmartApplyContextLogger {
         return {
             repoName: gitIdentifiersForFile.repoName,
             commit: gitIdentifiersForFile?.commit,
-            isPublic: repoMetadata?.isPublic,
+            isPublic: repoMetadata?.isPublic ?? false,
         }
     }
 
