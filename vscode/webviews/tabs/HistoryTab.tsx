@@ -1,16 +1,19 @@
-import type { CodyIDE, SerializedChatTranscript, UserLocalHistory } from '@sourcegraph/cody-shared'
+import type { CodyIDE, UserLocalHistory } from '@sourcegraph/cody-shared'
 import { useExtensionAPI, useObservable } from '@sourcegraph/prompt-editor'
-import { HistoryIcon, MessageSquarePlusIcon, MessageSquareTextIcon, TrashIcon } from 'lucide-react'
+import { HistoryIcon, MessageSquarePlusIcon, TrashIcon } from 'lucide-react'
 import type React from 'react'
-import { useCallback, useMemo } from 'react'
+import { useCallback, useMemo, useState } from 'react'
+
 import type { WebviewType } from '../../src/chat/protocol'
 import { getRelativeChatPeriod } from '../../src/common/time-date'
 import { LoadingDots } from '../chat/components/LoadingDots'
-import { CollapsiblePanel } from '../components/CollapsiblePanel'
 import { Button } from '../components/shadcn/ui/button'
+import { Input } from '../components/shadcn/ui/input'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
 import { View } from './types'
 import { getCreateNewChatCommand } from './utils'
+
+import styles from './HistoryTab.module.css'
 
 interface HistoryTabProps {
     IDE: CodyIDE
@@ -21,6 +24,7 @@ interface HistoryTabProps {
 
 export const HistoryTab: React.FC<HistoryTabProps> = props => {
     const userHistory = useUserHistory()
+
     const chats = useMemo(
         () => (userHistory ? Object.values(userHistory.chat) : userHistory),
         [userHistory]
@@ -44,21 +48,6 @@ export const HistoryTabWithData: React.FC<
 > = ({ IDE, webviewType, multipleWebviewsEnabled, setView, chats }) => {
     const nonEmptyChats = useMemo(() => chats.filter(chat => chat.interactions.length > 0), [chats])
 
-    const chatByPeriod = useMemo(
-        () =>
-            Array.from(
-                nonEmptyChats
-                    .filter(chat => chat.interactions.length)
-                    .reverse()
-                    .reduce((acc, chat) => {
-                        const period = getRelativeChatPeriod(new Date(chat.lastInteractionTimestamp))
-                        acc.set(period, [...(acc.get(period) || []), chat])
-                        return acc
-                    }, new Map<string, SerializedChatTranscript[]>())
-            ),
-        [nonEmptyChats]
-    )
-
     const onDeleteButtonClick = useCallback(
         (id: string) => {
             if (chats.find(chat => chat.id === id)) {
@@ -80,45 +69,77 @@ export const HistoryTabWithData: React.FC<
         setView(View.Chat)
     }
 
+    //add history search
+    const [searchText, setSearchText] = useState('')
+
+    const filteredChats = useMemo(() => {
+        const searchTerm = searchText.trim().toLowerCase()
+        if (!searchTerm) {
+            return nonEmptyChats
+        }
+        //return the chats from nonEmptyChats where the humange messages contain the search term
+        return nonEmptyChats.filter(chat => {
+            return chat.interactions.some(c => {
+                return c.humanMessage?.text?.trim()?.toLowerCase()?.includes(searchTerm)
+            })
+        })
+    }, [nonEmptyChats, searchText])
+
+    const sortedChatsByPeriod = useMemo(
+        () =>
+            Array.from(
+                filteredChats
+                    .filter(chat => chat.interactions.length)
+                    .reverse()
+                    .reduce((acc, chat) => {
+                        const period = getRelativeChatPeriod(new Date(chat.lastInteractionTimestamp))
+                        acc.set(period, [...(acc.get(period) || []), chat])
+                        return acc
+                    }, new Map<string, typeof filteredChats>())
+            ),
+        [filteredChats]
+    )
+
     return (
-        <div className="tw-flex tw-flex-col tw-gap-10">
-            {chatByPeriod.map(([period, chats]) => (
-                <CollapsiblePanel
-                    id={`history-${period}`.replaceAll(' ', '-').toLowerCase()}
-                    key={period}
-                    storageKey={`history.${period}`}
-                    title={period}
-                    initialOpen={true}
-                >
+        <div className="tw-flex tw-flex-col">
+            <div className="tw-flex tw-py-2">
+                <Input
+                    className="tw-flex-1 tw-h-12 tw-py-3 tw-border-none tw-text-sm"
+                    placeholder="Search chat history"
+                    value={searchText}
+                    onChange={event => setSearchText(event.target.value)}
+                />
+            </div>
+
+            {sortedChatsByPeriod.map(([period, chats]) => (
+                <div key={period} className="tw-flex tw-flex-col">
+                    <h4 className="tw-font-semibold tw-text-muted-foreground tw-py-2 tw-my-4">
+                        {period}
+                    </h4>
                     {chats.map(({ interactions, id }) => {
                         const lastMessage =
                             interactions[interactions.length - 1]?.humanMessage?.text?.trim()
                         return (
-                            <div key={id} className="tw-inline-flex tw-justify-between">
+                            <div key={id} className={`tw-flex tw-flex-row tw-p-1 ${styles.historyRow}`}>
                                 <Button
-                                    key={id}
                                     variant="ghost"
-                                    title={lastMessage}
+                                    className={`tw-text-left tw-truncate tw-w-full ${styles.historyItem}`}
                                     onClick={() =>
                                         getVSCodeAPI().postMessage({
                                             command: 'restoreHistory',
                                             chatID: id,
                                         })
                                     }
-                                    className="tw-text-left tw-truncate tw-w-full"
                                 >
-                                    <MessageSquareTextIcon
-                                        className="tw-w-8 tw-h-8 tw-opacity-80"
-                                        size={16}
-                                        strokeWidth="1.25"
-                                    />
                                     <span className="tw-truncate tw-w-full">{lastMessage}</span>
                                 </Button>
                                 <Button
-                                    key={id}
                                     variant="ghost"
                                     title="Delete chat"
+                                    aria-label="Delete chat"
+                                    className={`${styles.historyDeleteBtn}`}
                                     onClick={() => onDeleteButtonClick(id)}
+                                    onKeyDown={() => onDeleteButtonClick(id)}
                                 >
                                     <TrashIcon
                                         className="tw-w-8 tw-h-8 tw-opacity-80"
@@ -129,7 +150,7 @@ export const HistoryTabWithData: React.FC<
                             </div>
                         )
                     })}
-                </CollapsiblePanel>
+                </div>
             ))}
 
             {nonEmptyChats.length === 0 && (
@@ -145,7 +166,7 @@ export const HistoryTabWithData: React.FC<
                     </span>
 
                     <span className="tw-text-sm tw-text-muted-foreground tw-mb-8">
-                        Explore all your previous chats here. Track and <br /> search through what you’ve
+                        Explore all your previous chats here. Track and <br /> search through what you've
                         been working on.
                     </span>
 
