@@ -268,16 +268,12 @@ const ProcessItem: FC<{
         </div>
     )
 }
-const getStateStyles = (state: string) => {
+const getStateStyles = (state: 'error' | 'success' | 'pending' | string) => {
     switch (state) {
         case 'error':
             return 'tw-text-red-700'
-        case 'completed':
+        case 'success':
             return 'tw-text-green-700'
-        case 'analyzing':
-            return 'tw-text-blue-600'
-        case 'searching':
-            return 'tw-text-purple-600'
         case 'pending':
             return 'tw-text-foreground'
         default:

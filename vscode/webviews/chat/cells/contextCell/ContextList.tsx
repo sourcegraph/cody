@@ -22,12 +22,10 @@ export const ContextList: React.FC<{
 }) => {
     const hasNoContext = !contextItems || contextItems.length === 0
 
-    // First handle search responses
     if (!isAgenticChat && hasNoContext && isSearchResponse) {
         return null
     }
 
-    // For agentic chat, always show either context or "no context" message
     if (isAgenticChat) {
         if (hasNoContext) {
             return (
@@ -80,12 +78,10 @@ export const ContextList: React.FC<{
         )
     }
 
-    // Handle non-agentic cases
     if (hasNoContext) {
         return null
     }
 
-    // Show context list for non-agentic chat with context
     return (
         <div className="tw-flex tw-flex-col tw-gap-2 tw-my-2 tw-border-t tw-border-t-muted tw-pt-4">
             <div className="tw-text-sm tw-font-medium tw-text-foreground tw-flex tw-items-center tw-gap-3">

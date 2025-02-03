@@ -341,7 +341,7 @@ export const SearchResults = ({
                             <ul className="tw-list-none tw-flex tw-flex-col">
                                 {resultsToShow.map((result, i) => {
                                     if (
-                                        typeof firstNonBoostedRepoIndex === 'number' &&
+                                        firstNonBoostedRepoIndex !== undefined &&
                                         i === firstNonBoostedRepoIndex
                                     ) {
                                         const otherReposResultsCount =
@@ -395,7 +395,7 @@ export const SearchResults = ({
 
                                     // Only render non-boosted repo results if expanded
                                     if (
-                                        typeof firstNonBoostedRepoIndex === 'number' &&
+                                        firstNonBoostedRepoIndex !== undefined &&
                                         i > firstNonBoostedRepoIndex &&
                                         !otherReposExpanded
                                     ) {

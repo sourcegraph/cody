@@ -711,7 +711,6 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                 />
             )}
             {humanMessage.agent && (
-<<<<<<< HEAD
                 <>
                     <AgenticContextCell
                         key={`${humanMessage.index}-${humanMessage.intent}-process`}
@@ -733,26 +732,6 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                 </>
             )}
             {!(humanMessage.agent === 'deep-cody') &&
-=======
-                <AgenticContextCell
-                    key={`${humanMessage.index}-${humanMessage.intent}-process`}
-                    isContextLoading={Boolean(
-                        humanMessage.contextFiles === undefined &&
-                            isLastSentInteraction &&
-                            assistantMessage?.text === undefined &&
-                            assistantMessage?.subMessages === undefined
-                    )}
-                    processes={humanMessage?.processes ?? undefined}
-                    intent={isSearchIntent ? 'search' : 'chat'}
-                    onSwitchIntent={isSearchIntent ? reSubmitWithChatIntent : reSubmitWithSearchIntent}
-                />
-            )}{' '}
-            {!isSearchIntent &&
-                humanMessage.agent &&
-                isContextLoading &&
-                assistantMessage?.isLoading && <ApprovalCell vscodeAPI={vscodeAPI} />}
-            {!(humanMessage.agent && isContextLoading) &&
->>>>>>> 0d7905323 (Merged agentic chat and intent detection)
                 (humanMessage.contextFiles || assistantMessage || isContextLoading) &&
                 !isSearchIntent && (
                     <ContextCell

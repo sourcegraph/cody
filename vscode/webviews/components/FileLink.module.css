@@ -1,4 +1,4 @@
-L.path {
+.path {
     white-space: nowrap;
     text-overflow: ellipsis;
     overflow: hidden;
