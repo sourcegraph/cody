@@ -67,7 +67,6 @@ export interface CompletionParameters {
         type: 'content'
         content: string
     }
-    base64Image?: string
 }
 
 export interface SerializedCompletionParameters extends Omit<CompletionParameters, 'messages'> {
