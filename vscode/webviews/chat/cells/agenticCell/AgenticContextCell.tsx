@@ -1,4 +1,5 @@
 import type { ChatMessage, ContextItem, ProcessingStep } from '@sourcegraph/cody-shared'
+import clsx from 'clsx'
 import {
     BrainIcon,
     Check,
@@ -249,9 +250,11 @@ const ProcessItem: FC<{
             </div>
             <div className="tw-flex-grow tw-min-w-0">
                 <div
-                    className={`tw-truncate tw-max-w-full tw-text-sm ${
-                        styles.stateText
-                    } ${getStateStyles(process.state)}`}
+                    className={clsx('tw-truncate tw-max-w-full tw-text-sm', styles.stateText, {
+                        'tw-text-red-700': process.state === 'error',
+                        'tw-text-muted-foreground': process.state === 'success' || !process.state,
+                        'tw-text-foreground': process.state === 'pending',
+                    })}
                 >
                     <span>{process.type !== 'tool' ? process.title : process.title ?? process.id}</span>
                     {process.content && (
@@ -266,16 +269,4 @@ const ProcessItem: FC<{
             </div>
         </div>
     )
-}
-const getStateStyles = (state: 'error' | 'success' | 'pending' | string) => {
-    switch (state) {
-        case 'error':
-            return 'tw-text-red-700'
-        case 'success':
-            return 'tw-text-muted-foreground'
-        case 'pending':
-            return 'tw-text-foreground'
-        default:
-            return 'tw-text-muted-foreground'
-    }
 }
