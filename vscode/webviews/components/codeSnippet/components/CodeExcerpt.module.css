@@ -14,8 +14,6 @@
     :global(.line) {
         min-width: 1.5rem;
         text-align: right;
-        -webkit-user-select: none;
-        user-select: none;
         cursor: pointer;
         color: var(--vscode-editorLineNumber-foreground);
         transition: opacity 0.2s ease;

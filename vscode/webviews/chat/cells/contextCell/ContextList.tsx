@@ -58,6 +58,7 @@ export const ContextList: React.FC<{
                 </div>
                 <ul className="tw-list-none tw-flex tw-flex-col tw-gap-1">
                     {contextItems?.map((item, i) => (
+                        // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
                         <li key={i} data-testid="context-item">
                             <FileLink
                                 uri={item.uri}
@@ -93,6 +94,7 @@ export const ContextList: React.FC<{
             </div>
             <ul className="tw-list-none tw-flex tw-flex-col tw-gap-1">
                 {contextItems?.map((item, i) => (
+                    // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
                     <li key={i} data-testid="context-item">
                         <FileLink
                             uri={item.uri}

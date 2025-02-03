@@ -5,14 +5,7 @@ import {
     isDefined,
 } from '@sourcegraph/cody-shared'
 import classNames from 'classnames'
-import {
-    ArrowDown,
-    ChevronRight,
-    FilterIcon,
-    FilterX,
-    OctagonX,
-    PanelLeftClose,
-} from 'lucide-react'
+import { ArrowDown, ChevronRight, FilterIcon, FilterX, OctagonX, PanelLeftClose } from 'lucide-react'
 import { useCallback, useContext, useLayoutEffect, useMemo, useReducer, useState } from 'react'
 import {
     createContextItem,
@@ -410,6 +403,7 @@ export const SearchResults = ({
                                     }
 
                                     return (
+                                        // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
                                         <li key={i}>
                                             <NLSResultSnippet
                                                 result={result}
