@@ -106,6 +106,7 @@ export const Toolbar: FunctionComponent<{
                         className="tw-opacity-60"
                         imageFile={imageFile}
                         onClick={setImageFile}
+                        submitting={submitState === 'waitingResponseComplete'}
                     />
                 )}
                 <ModelSelectFieldToolbarItem

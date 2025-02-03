@@ -1,5 +1,5 @@
 import { ImageIcon, XIcon } from 'lucide-react'
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Button } from '../../../../../../components/shadcn/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '../../../../../../components/shadcn/ui/tooltip'
 
@@ -7,10 +7,25 @@ interface UploadImageButtonProps {
     className?: string
     imageFile?: File
     onClick: (file: File | undefined) => void
+    submitting?: boolean
 }
 
 export const UploadImageButton = (props: UploadImageButtonProps) => {
     const fileInputRef = useRef<HTMLInputElement>(null)
+
+    // Use local state to persist the uploaded file while submission is in progress.
+    const [persistedFile, setPersistedFile] = useState<File | undefined>(props.imageFile)
+
+    useEffect(() => {
+        // When not submitting, update persistedFile to the current imageFile.
+        // When submitting, we do not want to clear the value even if props.imageFile is now undefined.
+        if (!props.submitting) {
+            setPersistedFile(props.imageFile)
+        }
+    }, [props.imageFile, props.submitting])
+
+    // During submission, use the persisted file so that the blue image remains visible.
+    const displayFile = props.submitting ? persistedFile : props.imageFile
 
     useEffect(() => {
         const handlePaste = async (event: ClipboardEvent) => {
@@ -53,7 +68,7 @@ export const UploadImageButton = (props: UploadImageButtonProps) => {
                         onClick={handleButtonClick}
                     >
                         <div className="tw-flex tw-items-center tw-gap-2">
-                            {props.imageFile ? (
+                            {displayFile ? (
                                 <>
                                     <ImageIcon
                                         className="tw-w-6 tw-h-6 tw-text-blue-600"
@@ -64,6 +79,7 @@ export const UploadImageButton = (props: UploadImageButtonProps) => {
                                         className="tw-h-6 tw-w-6 hover:tw-text-red-500 tw-transition-colors"
                                         onClick={e => {
                                             e.stopPropagation()
+                                            setPersistedFile(undefined)
                                             props.onClick(undefined)
                                         }}
                                     />
@@ -78,8 +94,8 @@ export const UploadImageButton = (props: UploadImageButtonProps) => {
                     </Button>
                 </TooltipTrigger>
                 <TooltipContent side="bottom">
-                    {props.imageFile
-                        ? `Remove image (${props.imageFile.name})`
+                    {displayFile
+                        ? `Remove image (${displayFile.name})`
                         : 'Upload an image or paste (Ctrl+V)'}
                 </TooltipContent>
             </Tooltip>

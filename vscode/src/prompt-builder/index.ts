@@ -48,28 +48,28 @@ export class PromptBuilder {
         if (this.contextItems.length > 0) {
             this.buildContextMessages()
         }
-        this.buildImageMessages()
+        // this.buildImageMessaxges()
         return this.prefixMessages.concat([...this.reverseMessages].reverse())
     }
 
-    private buildImageMessages(): void {
-        for (const image of this.images) {
-            // Detect image type from the base64 header
-            const imageType = detectImageType(image)
-            const imageMessage: Message = {
-                speaker: 'human',
-                content: [
-                    {
-                        type: 'image_url',
-                        image_url: {
-                            url: `data:${imageType};base64,${image}`,
-                        },
-                    },
-                ],
-            }
-            this.reverseMessages.push(...[ASSISTANT_MESSAGE, imageMessage])
-        }
-    }
+    // private buildImageMessages(): void {
+    //     for (const image of this.images) {
+    //         // Detect image type from the base64 header
+    //         const imageType = detectImageType(image)
+    //         const imageMessage: Message = {
+    //             speaker: 'human',
+    //             content: [
+    //                 {
+    //                     type: 'image_url',
+    //                     image_url: {
+    //                         url: `data:${imageType};base64,${image}`,
+    //                     },
+    //                 },
+    //             ],
+    //         }
+    //         this.reverseMessages.push(...[ASSISTANT_MESSAGE, imageMessage])
+    //     }
+    // }
 
     private buildContextMessages(): void {
         for (const item of this.contextItems) {
@@ -97,8 +97,7 @@ export class PromptBuilder {
      * Stops adding when the character limit would be exceeded.
      */
     public tryAddMessages(reverseTranscript: ChatMessage[]): number | undefined {
-        // All Human message is expected to be followed by response from Assistant,
-        // except for the Human message at the last index that Assistant hasn't responded yet.
+        // All Human messages are expected in the reverse transcript.
         const lastHumanMsgIndex = reverseTranscript.findIndex(msg => msg.speaker === 'human')
         for (let i = lastHumanMsgIndex; i < reverseTranscript.length; i += 2) {
             const humanMsg = reverseTranscript[i]
@@ -111,7 +110,6 @@ export class PromptBuilder {
                 assistantMsg,
             ])
             if (!withinLimit) {
-                // Throw error if the limit was exceeded and no message was added.
                 if (!this.reverseMessages.length) {
                     throw new Error(
                         'The chat input has exceeded the token limit. If you are copying and pasting a file into the chat, try using the @-mention feature to attach the file instead.'
@@ -123,8 +121,25 @@ export class PromptBuilder {
                 this.reverseMessages.push(assistantMsg)
             }
             this.reverseMessages.push(humanMsg)
+
+            // Immediately inject an image message if there is a base64 image on the human message.
+            if (humanMsg.base64Image) {
+                const imageType = detectImageType(humanMsg.base64Image)
+                const imageMessage: Message = {
+                    speaker: 'human',
+                    content: [
+                        {
+                            type: 'image_url',
+                            image_url: {
+                                url: `data:${imageType};base64,${humanMsg.base64Image}`,
+                            },
+                        },
+                    ],
+                }
+                this.reverseMessages.push(imageMessage)
+            }
         }
-        // All messages were added successfully.
+        // All messages processed successfully.
         return undefined
     }
 
