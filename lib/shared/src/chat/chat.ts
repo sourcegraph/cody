@@ -36,8 +36,11 @@ export class ChatClient {
             currentSiteVersion(),
             await firstValueFrom(authStatus),
         ])
-        if (!versions) {
-            throw new Error('unable to determine Cody API version')
+        if (versions instanceof Error) {
+            throw new Error(
+                'unable to determine Cody API version',
+                versions
+            )
         }
         if (!authStatus_.authenticated) {
             throw new Error('not authenticated')
