@@ -40,6 +40,11 @@ interface ContextItemCommon {
 
     /**
      * The source of this context item.
+     *
+     * NOTE: For item explicitly added by the user, the source should be 'user' as
+     * it will be used to determine the {@link ChatContextTokenUsage} type, which is also
+     * used for prioritizing context items where user-added items are prioritized over
+     * non-user-added items, such as {@link getContextItemTokenUsageType}.
      */
     source?: ContextItemSource
 
