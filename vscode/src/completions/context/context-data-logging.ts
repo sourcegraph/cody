@@ -6,7 +6,6 @@ import {
 } from '@sourcegraph/cody-shared'
 import type * as vscode from 'vscode'
 import { logDebug } from '../../output-channel-logger'
-import { GitHubDotComRepoMetadata } from '../../repository/githubRepoMetadata'
 import { completionProviderConfig } from '../completion-provider-config'
 import type { ContextRetriever } from '../types'
 import type { RetrievedContextResults } from './completions-context-ranker'
@@ -29,7 +28,6 @@ export class ContextRetrieverDataCollection implements vscode.Disposable {
     private disposables: vscode.Disposable[] = []
     private static readonly MAX_PAYLOAD_SIZE_BYTES = 1024 * 1024 // 1 MB
     private dataCollectionFlagState = false
-    private gitMetadataInstance = GitHubDotComRepoMetadata.getInstance()
 
     private readonly retrieverConfigs: RetrieverConfig[] = [
         // Recent edits can be very granual at line level, so the individual changes can be very small but there can lots of changes.
@@ -95,12 +93,11 @@ export class ContextRetrieverDataCollection implements vscode.Disposable {
         return dataLoggingContext
     }
 
-    public shouldCollectContextDatapoint(repoName: string | undefined): boolean {
-        if (!repoName || !isDotComAuthed() || this.dataCollectionRetrievers.length === 0) {
+    public shouldCollectContextDatapoint(): boolean {
+        if (!isDotComAuthed() || this.dataCollectionRetrievers.length === 0) {
             return false
         }
-        const gitRepoMetadata = this.gitMetadataInstance.getRepoMetadataIfCached(repoName)
-        return gitRepoMetadata?.isPublic ?? false
+        return true
     }
 
     private createRetriever(config: RetrieverConfig): ContextRetriever | undefined {

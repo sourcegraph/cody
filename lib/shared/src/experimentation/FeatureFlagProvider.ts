@@ -34,6 +34,7 @@ export enum FeatureFlag {
 
     // Data collection variants used for completions and next edit completions
     CodyAutocompleteDataCollectionFlag = 'cody-autocomplete-logs-collection-flag',
+    SmartApplyContextDataCollectionFlag = 'cody-smart-apply-context-logs-collection-flag',
 
     // Enables fast-path HTTP client for PLG-users
     CodyAutocompleteFastPath = 'cody-autocomplete-fast-path',
