@@ -11,11 +11,11 @@ import org.jetbrains.annotations.NotNull;
 public class SourcegraphJBCefBrowser extends JBCefBrowser {
   private final JavaToJSBridge javaToJSBridge;
 
-  public SourcegraphJBCefBrowser(@NotNull JSToJavaBridgeRequestHandler requestHandler) {
-    super("http://sourcegraph/html/index.html");
-    // Create and set up JCEF browser
-    CefApp.getInstance()
-        .registerSchemeHandlerFactory("http", "sourcegraph", new HttpSchemeHandlerFactory());
+  public SourcegraphJBCefBrowser(
+      @NotNull JSToJavaBridgeRequestHandler requestHandler, String endpointUrl) {
+    super(endpointUrl.replaceAll("/+$", "").replace("https://", "http://") + "/html/index.html");
+
+    CefApp.getInstance().registerSchemeHandlerFactory("http", null, new HttpSchemeHandlerFactory());
 
     // Create bridges, set up handlers, then run init function
     String initJSCode = "window.initializeSourcegraph();";

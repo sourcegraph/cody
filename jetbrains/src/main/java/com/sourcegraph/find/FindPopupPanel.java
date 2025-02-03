@@ -16,6 +16,7 @@ import com.intellij.ui.jcef.JBCefApp;
 import com.intellij.util.ui.JBUI;
 import com.intellij.util.ui.components.BorderLayoutPanel;
 import com.sourcegraph.Icons;
+import com.sourcegraph.cody.auth.CodyAuthService;
 import com.sourcegraph.common.NotificationGroups;
 import com.sourcegraph.common.ui.DumbAwareEDTAction;
 import com.sourcegraph.find.browser.BrowserAndLoadingPanel;
@@ -64,7 +65,9 @@ public class FindPopupPanel extends BorderLayoutPanel implements Disposable {
     browserAndLoadingPanel = new BrowserAndLoadingPanel(project);
     JSToJavaBridgeRequestHandler requestHandler =
         new JSToJavaBridgeRequestHandler(project, this, findService);
-    browser = JBCefApp.isSupported() ? new SourcegraphJBCefBrowser(requestHandler) : null;
+    String endpointUrl = CodyAuthService.getInstance(project).getEndpoint().getUrl();
+
+    browser = JBCefApp.isSupported() ? new SourcegraphJBCefBrowser(requestHandler, endpointUrl) : null;
     if (browser == null) {
       showNoBrowserErrorNotification();
       Logger logger = Logger.getInstance(JSToJavaBridgeRequestHandler.class);
