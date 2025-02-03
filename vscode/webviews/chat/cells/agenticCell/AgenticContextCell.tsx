@@ -273,7 +273,7 @@ const getStateStyles = (state: 'error' | 'success' | 'pending' | string) => {
         case 'error':
             return 'tw-text-red-700'
         case 'success':
-            return 'tw-text-green-700'
+            return 'tw-text-muted-foreground'
         case 'pending':
             return 'tw-text-foreground'
         default:
