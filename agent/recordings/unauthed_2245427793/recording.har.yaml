@@ -1077,5 +1077,114 @@ log:
         send: 0
         ssl: -1
         wait: 309
+    - _id: 088f4011556a3aad423d546bd2bd19fe
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 0
+        cookies: []
+        headers:
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_1858aad0e1ff07ae26d4042086acb9da455866ad617afd2cb9ab9419e1be1104
+          - _fromType: array
+            name: user-agent
+            value: unauthed/v1 (Node.js v22.6.0)
+          - _fromType: array
+            name: x-requested-with
+            value: unauthed v1
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - name: host
+            value: sourcegraph.sourcegraph.com
+        headersSize: 328
+        httpVersion: HTTP/1.1
+        method: GET
+        queryString: []
+        url: https://sourcegraph.sourcegraph.com/.api/modelconfig/supported-models.json
+      response:
+        bodySize: 1442
+        content:
+          encoding: base64
+          mimeType: text/plain; charset=utf-8
+          size: 1442
+          text: "[\"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\
+            t9BeDgFl7StFBOrRA6MpkPoTidZTjH1\",\"Fg+m2G1HDB5GrZvdcDreCoN9yzGmsG8\
+            5hhxWWt2TdaGOxJcGwx8u/F35IMSSRhvTc9eVEAOT3hgvinbnQtR9juIWPAkKZT2ylU\
+            kT268/Im+fP0OoQEaSa6ryXrLLSMjLUTxZ/7f8FseiBOFq+UmOZz/yrnrZG4y9IYvVh\
+            Zl+6aXcNPmCi3wXePHVmQZVmCf5NT6d/BsAAP//mtEAydlGAAA=\"]"
+        cookies: []
+        headers:
+          - name: date
+            value: Mon, 03 Feb 2025 17:08:57 GMT
+          - name: content-type
+            value: text/plain; charset=utf-8
+          - name: content-length
+            value: "1442"
+          - name: connection
+            value: close
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: content-encoding
+            value: gzip
+          - name: vary
+            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
+              Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1422
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2025-02-03T17:08:57.160Z
+      time: 300
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 300
   pages: []
   version: "1.2"
