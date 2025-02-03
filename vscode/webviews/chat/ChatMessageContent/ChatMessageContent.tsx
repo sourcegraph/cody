@@ -49,17 +49,17 @@ interface StreamingContent {
 const extractThinkContent = (content: string): StreamingContent => {
     const thinkRegex = /<think>([\s\S]*?)<\/think>/g
     const thinkMatches = [...content.matchAll(thinkRegex)]
-    
+
     // Check if content has an unclosed think tag
-    const hasOpenThinkTag = content.includes('<think>') && 
-        (content.lastIndexOf('<think>') > content.lastIndexOf('</think>'))
-    
+    const hasOpenThinkTag =
+        content.includes('<think>') && content.lastIndexOf('<think>') > content.lastIndexOf('</think>')
+
     // Collect all think content, including partial content from unclosed tag
     let thinkContent = thinkMatches
         .map(match => match[1].trim())
         .filter(Boolean)
         .join('\n\n')
-    
+
     if (hasOpenThinkTag) {
         const lastThinkContent = content.slice(content.lastIndexOf('<think>') + 7)
         thinkContent = thinkContent ? `${thinkContent}\n\n${lastThinkContent}` : lastThinkContent
@@ -72,11 +72,11 @@ const extractThinkContent = (content: string): StreamingContent => {
         displayContent = displayContent.slice(0, displayContent.lastIndexOf('<think>'))
     }
 
-    return { 
-        displayContent, 
+    return {
+        displayContent,
         thinkContent,
         hasThinkTag: thinkMatches.length > 0 || hasOpenThinkTag,
-        isThinking: hasOpenThinkTag
+        isThinking: hasOpenThinkTag,
     }
 }
 
@@ -253,83 +253,54 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
     return (
         <div ref={rootRef} data-testid="chat-message-content">
             {hasThinkTag && (
-                <details 
-                    open 
-                    className={clsx(
-                        "tw-container tw-mb-4",
-                        "tw-border tw-border-gray-600/15 dark:tw-border-gray-500/20",
-                        "tw-rounded-lg tw-overflow-hidden",
-                        "tw-bg-gray-50/50 dark:tw-bg-gray-900/50",
-                        "tw-backdrop-blur-sm tw-shadow-sm"
-                    )}
-                >
-                    <summary className={clsx(
-                        "tw-flex tw-items-center tw-justify-between",
-                        "tw-px-4 tw-py-3",
-                        "tw-bg-gray-100/70 dark:tw-bg-gray-800/70",
-                        "tw-cursor-pointer hover:tw-bg-gray-200/70 dark:hover:tw-bg-gray-700/70",
-                        "tw-select-none tw-transition-all"
-                    )}>
-                        <div className="tw-flex tw-items-center tw-gap-2">
-                            <div className="tw-flex tw-items-center tw-justify-center tw-w-5 tw-h-5">
-                                <svg 
-                                    className={clsx(
-                                        "tw-w-4 tw-h-4 tw-text-blue-500/80 dark:tw-text-blue-400/80",
-                                        isThinking && "tw-animate-pulse"
-                                    )}
-                                    viewBox="0 0 24 24" 
-                                    fill="none" 
-                                    stroke="currentColor" 
+                <details open className={styles.thinkContainer}>
+                    <summary className={styles.thinkSummary}>
+                        <div className={styles.thinkTitleContainer}>
+                            <div className={styles.thinkIconContainer}>
+                                <svg
+                                    className={clsx(styles.thinkIcon, isThinking && styles.thinking)}
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
                                     strokeWidth="2"
+                                    role="img"
+                                    aria-label="Thinking indicator"
                                 >
-                                    <path 
-                                        strokeLinecap="round" 
-                                        strokeLinejoin="round" 
+                                    <title>Thinking indicator</title>
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
                                         d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707"
                                     />
                                 </svg>
                             </div>
-                            <span className="tw-text-sm tw-font-medium tw-text-gray-700 dark:tw-text-gray-200">
-                                {isThinking ? "Thinking..." : "Thought Process"}
+                            <span className={styles.thinkTitle}>
+                                {isThinking ? 'Thinking...' : 'Thought Process'}
                             </span>
                         </div>
-                        <div className="tw-flex tw-items-center tw-gap-2">
-                            <div className={clsx(
-                                "tw-flex tw-items-center tw-justify-center",
-                                "tw-w-6 tw-h-6 tw-rounded-md",
-                                "tw-bg-gray-200/50 dark:tw-bg-gray-700/50",
-                                "tw-text-gray-500 dark:tw-text-gray-400",
-                                "group-hover:tw-bg-gray-300/50 dark:group-hover:tw-bg-gray-600/50",
-                                "tw-transition-colors"
-                            )}>
-                                <svg 
-                                    className="tw-w-4 tw-h-4 tw-transition-transform details-toggle" 
-                                    viewBox="0 0 24 24" 
-                                    fill="none" 
-                                    stroke="currentColor" 
+                        <div className={styles.thinkToggleContainer}>
+                            <div className={styles.thinkToggleButton}>
+                                <svg
+                                    className={styles.thinkToggleIcon}
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
                                     strokeWidth="2"
+                                    role="img"
+                                    aria-label="Toggle thought process"
                                 >
-                                    <path 
-                                        strokeLinecap="round" 
-                                        strokeLinejoin="round" 
+                                    <title>Toggle thought process</title>
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
                                         d="M19 9l-7 7-7-7"
                                     />
                                 </svg>
                             </div>
                         </div>
                     </summary>
-                    <div className={clsx(
-                        "tw-px-4 tw-py-3",
-                        "tw-border-t tw-border-gray-200/30 dark:tw-border-gray-700/30",
-                        "tw-bg-gray-50/30 dark:tw-bg-gray-900/30"
-                    )}>
-                        <MarkdownFromCody 
-                            className={clsx(
-                                "tw-text-sm tw-text-gray-600 dark:tw-text-gray-300",
-                                "tw-prose dark:tw-prose-invert tw-max-w-none",
-                                "tw-leading-relaxed"
-                            )}
-                        >
+                    <div className={styles.thinkContent}>
+                        <MarkdownFromCody className={styles.thinkMarkdown}>
                             {thinkContent}
                         </MarkdownFromCody>
                     </div>

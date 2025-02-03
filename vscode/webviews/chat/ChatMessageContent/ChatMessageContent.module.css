@@ -217,3 +217,140 @@ body[data-vscode-theme-kind='vscode-light'] .content pre > code {
     color: var(--vscode-descriptionForeground);
     margin-left: auto;
 }
+
+/* Think Container Styles */
+.thinkContainer {
+    margin-bottom: 1rem;
+    border: 1px solid;
+    border-color: rgba(75, 85, 99, 0.15);
+    border-radius: 0.5rem;
+    overflow: hidden;
+    background-color: rgba(249, 250, 251, 0.5);
+    backdrop-filter: blur(4px);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+:global([data-vscode-theme-kind="vscode-dark"]) .thinkContainer {
+    border-color: rgba(107, 114, 128, 0.2);
+    background-color: rgba(17, 24, 39, 0.5);
+}
+
+.thinkSummary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 1rem;
+    background-color: rgba(243, 244, 246, 0.7);
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.2s;
+}
+
+.thinkSummary:hover {
+    background-color: rgba(229, 231, 235, 0.7);
+}
+
+:global([data-vscode-theme-kind="vscode-dark"]) .thinkSummary {
+    background-color: rgba(31, 41, 55, 0.7);
+}
+
+:global([data-vscode-theme-kind="vscode-dark"]) .thinkSummary:hover {
+    background-color: rgba(55, 65, 81, 0.7);
+}
+
+.thinkTitleContainer {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.thinkIconContainer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.25rem;
+    height: 1.25rem;
+}
+
+.thinkIcon {
+    width: 1rem;
+    height: 1rem;
+    color: rgba(59, 130, 246, 0.8);
+}
+
+:global([data-vscode-theme-kind="vscode-dark"]) .thinkIcon {
+    color: rgba(96, 165, 250, 0.8);
+}
+
+.thinking {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.thinkTitle {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: rgb(55, 65, 81);
+}
+
+:global([data-vscode-theme-kind="vscode-dark"]) .thinkTitle {
+    color: rgb(229, 231, 235);
+}
+
+.thinkToggleContainer {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.thinkToggleButton {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 0.375rem;
+    background-color: rgba(229, 231, 235, 0.5);
+    color: rgb(107, 114, 128);
+    transition: background-color 0.2s;
+}
+
+:global([data-vscode-theme-kind="vscode-dark"]) .thinkToggleButton {
+    background-color: rgba(55, 65, 81, 0.5);
+    color: rgb(156, 163, 175);
+}
+
+.thinkToggleIcon {
+    width: 1rem;
+    height: 1rem;
+    transition: transform 0.2s;
+}
+
+details[open] .thinkToggleIcon {
+    transform: rotate(180deg);
+}
+
+.thinkContent {
+    padding: 0.75rem 1rem;
+    border-top: 1px solid rgba(229, 231, 235, 0.3);
+    background-color: rgba(249, 250, 251, 0.3);
+}
+
+:global([data-vscode-theme-kind="vscode-dark"]) .thinkContent {
+    border-top-color: rgba(55, 65, 81, 0.3);
+    background-color: rgba(17, 24, 39, 0.3);
+}
+
+.thinkMarkdown {
+    font-size: 0.875rem;
+    color: rgb(75, 85, 99);
+    line-height: 1.625;
+}
+
+:global([data-vscode-theme-kind="vscode-dark"]) .thinkMarkdown {
+    color: rgb(209, 213, 219);
+}
