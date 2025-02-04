@@ -352,14 +352,16 @@ export * from './token'
 export * from './token/constants'
 export * from './configuration'
 export {
-    setOpenCtx,
-    openCtx,
+    setOpenCtxControllerObservable,
+    openctxController,
+    type OpenCtxController,
     REMOTE_REPOSITORY_PROVIDER_URI,
     REMOTE_FILE_PROVIDER_URI,
     REMOTE_DIRECTORY_PROVIDER_URI,
     WEB_PROVIDER_URI,
     GIT_OPENCTX_PROVIDER_URI,
     CODE_SEARCH_PROVIDER_URI,
+    currentOpenCtxController,
 } from './context/openctx/api'
 export * from './context/openctx/context'
 export * from './lexicalEditor/editorState'
