@@ -345,7 +345,7 @@ export class EditManager implements vscode.Disposable {
                 const replacementCode = PromptString.unsafe_fromLLMResponse(configuration.replacement)
 
                 const versions = await currentSiteVersion()
-                if (!versions) {
+                if (versions instanceof Error) {
                     throw new Error('unable to determine site version')
                 }
 
