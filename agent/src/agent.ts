@@ -394,7 +394,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
             }
 
             this.workspace.workspaceRootUri = clientInfo.workspaceRootUri
-                ? vscode.Uri.parse(clientInfo.workspaceRootUri).with({ scheme: 'file' })
+                ? vscode.Uri.parse(clientInfo.workspaceRootUri)
                 : vscode.Uri.from({
                       scheme: 'file',
                       path: clientInfo.workspaceRootPath ?? undefined,
