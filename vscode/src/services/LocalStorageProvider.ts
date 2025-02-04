@@ -115,26 +115,26 @@ class LocalStorage implements LocalStorageForModelPreferences {
      * would give an inconsistent view of the state.
      */
     public async saveEndpointAndToken(
-        credentials: Pick<AuthCredentials, 'serverEndpoint' | 'accessToken' | 'tokenSource'>
+        auth: Pick<AuthCredentials, 'serverEndpoint' | 'credentials'>
     ): Promise<void> {
-        if (!credentials.serverEndpoint) {
+        if (!auth.serverEndpoint) {
             return
         }
         // Do not save an access token as the last-used endpoint, to prevent user mistakes.
-        if (isSourcegraphToken(credentials.serverEndpoint)) {
+        if (isSourcegraphToken(auth.serverEndpoint)) {
             return
         }
 
-        const serverEndpoint = new URL(credentials.serverEndpoint).href
+        const serverEndpoint = new URL(auth.serverEndpoint).href
 
         // Pass `false` to avoid firing the change event until we've stored all of the values.
         await this.set(this.LAST_USED_ENDPOINT, serverEndpoint, false)
         await this.addEndpointHistory(serverEndpoint, false)
-        if (credentials.accessToken) {
+        if (auth.credentials && 'token' in auth.credentials) {
             await secretStorage.storeToken(
                 serverEndpoint,
-                credentials.accessToken,
-                credentials.tokenSource
+                auth.credentials.token,
+                auth.credentials.source
             )
         }
         this.onChange.fire()

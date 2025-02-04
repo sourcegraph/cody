@@ -24,7 +24,7 @@ describe('FeatureFlagProvider', () => {
     beforeAll(() => {
         vi.useFakeTimers()
         mockResolvedConfig({
-            auth: { accessToken: null, serverEndpoint: 'https://example.com' },
+            auth: { credentials: undefined, serverEndpoint: 'https://example.com' },
         })
         mockAuthStatus(AUTH_STATUS_FIXTURE_AUTHED)
     })
