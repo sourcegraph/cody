@@ -851,6 +851,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     },
                     postMessageInProgress: (message: ChatMessage): void => {
                         messageInProgress = message
+                        console.log('postMessageInProgress')
                         this.postViewTranscript(message)
                     },
                     postStatuses: (steps: ProcessingStep[]): void => {
@@ -1057,6 +1058,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
     private submitOrEditOperation: AbortController | undefined
     public startNewSubmitOrEditOperation(): Promise<AbortSignal> {
+        console.log('startNewSubmitOrEditOperation')
         this.submitOrEditOperation?.abort()
 
         return new Promise(resolve => {
@@ -1072,7 +1074,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             this.submitOrEditOperation = undefined
         }
 
-        return this.saveSession()
+        //return this.saveSession()
     }
 
     private async reevaluateSearchWithSelectedFilters({
@@ -1232,7 +1234,11 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     }
 
     private async handleAbort(): Promise<void> {
+        console.log('>>>>>>>>>>>>>>>>>>>>>>>>>>> handleAbort before <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
+        console.time('abort')
         await this.cancelSubmitOrEditOperation()
+        console.time('abort')
+        console.log('>>>>>>>>>>>>>>>>>>>>>>>>>>> handleAbort after <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
         // Notify the webview there is no message in progress.
         this.postViewTranscript()
         telemetryRecorder.recordEvent('cody.sidebar.abortButton', 'clicked', {
@@ -1352,6 +1358,13 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         if (messageInProgress) {
             messages.push(messageInProgress)
         }
+
+        console.log('postViewTranscript', {
+            type: 'transcript',
+            isMessageInProgress: !!messageInProgress,
+            chatID: this.chatBuilder.sessionID,
+        })
+        //console.trace()
 
         // We never await on postMessage, because it can sometimes hang indefinitely:
         // https://github.com/microsoft/vscode/issues/159431

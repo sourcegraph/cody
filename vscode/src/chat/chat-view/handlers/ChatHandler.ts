@@ -133,6 +133,7 @@ export class ChatHandler implements AgentHandler {
         let lastContent = ''
         const typewriter = new Typewriter({
             update: content => {
+                console.log('typewrite update', content.length)
                 lastContent = content
                 callbacks.update(content)
             },
@@ -143,6 +144,14 @@ export class ChatHandler implements AgentHandler {
                 callbacks.error(lastContent, error)
             },
         })
+
+        /*
+        abortSignal.addEventListener('abort', () => {
+            console.log('abort signal handler, cancling typewriter')
+            typewriter.stop()
+            typewriter.close()
+        }, {once: true})
+        */
 
         try {
             const contextWindow = await firstResultFromOperation(
@@ -161,8 +170,10 @@ export class ChatHandler implements AgentHandler {
 
             const stream = await this.chatClient.chat(prompt, params, abortSignal, requestID)
             for await (const message of stream) {
+                console.log('await stream chatClient chat', message.type)
                 switch (message.type) {
                     case 'change': {
+                        console.log('await stream chatClient change', message.text)
                         typewriter.update(message.text)
                         break
                     }

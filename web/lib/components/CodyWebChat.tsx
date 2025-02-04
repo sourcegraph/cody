@@ -251,6 +251,7 @@ const CodyWebPanel: FC<CodyWebPanelProps> = props => {
                     const deserializedMessages = message.messages.map(
                         PromptString.unsafe_deserializeChatMessage
                     )
+                    console.log('codywebchat', {message: deserializedMessages[deserializedMessages.length-1].text?.length, deserializedMessages})
                     if (message.isMessageInProgress) {
                         const msgLength = deserializedMessages.length - 1
                         handleTranscriptChange(deserializedMessages.slice(0, msgLength))

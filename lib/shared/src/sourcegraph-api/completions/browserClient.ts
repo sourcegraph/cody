@@ -116,6 +116,11 @@ export class SourcegraphBrowserCompletionsClient extends SourcegraphCompletionsC
             abort.abort()
             console.error(error)
         })
+
+        signal?.addEventListener('abort', () => {
+            cb.onComplete()
+        })
+
     }
 
     protected async _fetchWithCallbacks(

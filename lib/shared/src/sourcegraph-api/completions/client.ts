@@ -150,9 +150,11 @@ export abstract class SourcegraphCompletionsClient {
         }
         const callbacks: CompletionCallbacks = {
             onChange(text) {
+                console.log('onChange')
                 send({ type: 'change', text })
             },
             onComplete() {
+                console.log('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> complete <<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
                 send({ type: 'complete' })
             },
             onError(error, statusCode) {

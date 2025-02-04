@@ -1584,6 +1584,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
                         panel.isMessageInProgress = message.isMessageInProgress
                         panel.messageInProgressChange.fire(message)
                     }
+                    console.log('registerWebviewHandlers', {message: {...message}})
                 } else if (message.type === 'errors') {
                     panel.messageInProgressChange.fire(message)
                 } else if (message.type === 'attribution') {
