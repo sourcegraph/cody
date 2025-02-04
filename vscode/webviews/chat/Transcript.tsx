@@ -731,7 +731,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                         assistantMessage?.isLoading && <ApprovalCell vscodeAPI={vscodeAPI} />}
                 </>
             )}
-            {!(humanMessage.agent === 'deep-cody') &&
+            !humanMessage.agent &&
                 (humanMessage.contextFiles || assistantMessage || isContextLoading) &&
                 !isSearchIntent && (
                     <ContextCell
