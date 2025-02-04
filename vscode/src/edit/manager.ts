@@ -334,6 +334,7 @@ export class EditManager implements vscode.Disposable {
 
                 const contextloggerRequestId =
                     await this.smartApplyContextLogger.createSmartApplyLoggingRequest({
+                        model: model,
                         userQuery: configuration.instruction.toString(),
                         replacementCodeBlock: replacementCode.toString(),
                         document: configuration.document,

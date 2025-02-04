@@ -1,4 +1,5 @@
 import {
+    type EditModel,
     FeatureFlag,
     displayPathWithoutWorkspaceFolderPrefix,
     featureFlagProvider,
@@ -21,6 +22,7 @@ interface RepoContext {
 }
 
 interface SmartApplyBaseContext extends RepoContext {
+    smartApplyModel: EditModel
     userQuery: string
     replacementCodeBlock: string
     filePath: string
@@ -60,6 +62,7 @@ export class SmartApplyContextLogger {
     )
 
     public createSmartApplyLoggingRequest(params: {
+        model: EditModel
         userQuery: string
         replacementCodeBlock: string
         document: vscode.TextDocument
@@ -70,6 +73,7 @@ export class SmartApplyContextLogger {
         const fileContent = params.document.getText()
 
         const baseContext: SmartApplyBaseContext = {
+            smartApplyModel: params.model,
             ...baseRepoContext,
             userQuery: params.userQuery,
             replacementCodeBlock: params.replacementCodeBlock,
