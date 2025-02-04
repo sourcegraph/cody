@@ -53,6 +53,8 @@ jobs:
           echo "Latest Release: $RELEASE_LATEST_RELEASE"
           ./changelog update-as-pr \
             --github.repo=$GH_REPO \
+            --github.branch="kalan/update-changelog-gen-M66" \
+            --releaseregistry.commit=${RELEASE_LATEST_RELEASE} \ 
             --output.repo.base="main" \
             --output.repo=$GH_REPO \
             --output.pr.branch="release/vscode-%s" \
@@ -60,7 +62,7 @@ jobs:
             --output.pr.body="Automated release and changelog for VS code Cody %s" \
             --output.changelog="vscode/CHANGELOG.md" \
             --output.changelog.marker='<!--- {/_ CHANGELOG_START _/} -->' \
-            --releaseregistry.version=$text
+            --releaseregistry.version=${VERSION}
 
           #   --title "VS Code: Release v$VERSION" \
           #   --body "Automated release and changelog for VS code Cody" \
