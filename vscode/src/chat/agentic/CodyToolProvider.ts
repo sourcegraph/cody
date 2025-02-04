@@ -181,11 +181,9 @@ class ToolFactory {
         const defaultConfig = Object.entries(OPENCTX_TOOL_CONFIG).find(
             c => provider.id.toLowerCase().includes(c[0]) || provider.title.toLowerCase().includes(c[0])
         )
-        if (defaultConfig) {
-            return defaultConfig[1]
-        }
-        return {
-            title: provider.title,
+        return (
+            defaultConfig?.[1] ?? {
+                title: provider.title,
             tags: {
                 tag: PromptString.unsafe_fromUserQuery(this.generateToolName(provider)),
                 subTag: ps`get`,
