@@ -36,7 +36,14 @@ export class ChatClient {
             currentSiteVersion(),
             await firstValueFrom(authStatus),
         ])
-        if (versions instanceof Error) {
+        const [authStatus_, versions] = await Promise.all([
+            await firstValueFrom(authStatus),
+            currentSiteVersion(),
+        ])
+        if (!authStatus_.authenticated) {
+            throw new Error('not authenticated')
+        }
+        if (params.model?.includes('claude-3') && versions instanceof Error) {
             throw new Error('unable to determine Cody API version', versions)
         }
         if (!authStatus_.authenticated) {
