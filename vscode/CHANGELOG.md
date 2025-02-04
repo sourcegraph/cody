@@ -4,6 +4,48 @@ This is a log of all notable changes to Cody for VS Code.
 
 <!--- {/_ CHANGELOG_START _/} -->
 
+## 1.66.0
+
+### Reverts
+
+  There were no reverts for this release
+
+### Uncategorized
+
+#### Others
+
+- Update Cody Web 0.27.0 [#6760](https://github.com/sourcegraph/cody/pull/6760)
+- disable omnibox on dotcom [#6755](https://github.com/sourcegraph/cody/pull/6755)
+- Update Cody Web 0.26.0 [#6752](https://github.com/sourcegraph/cody/pull/6752)
+- Disable Intent Detection if Code Search Disabled [#6750](https://github.com/sourcegraph/cody/pull/6750)
+- Update Cody Web 0.25.0 [#6746](https://github.com/sourcegraph/cody/pull/6746)
+
+### Untracked
+
+The following PRs were merged onto the previous release branch but could not be automatically mapped to a corresponding commit in this release:
+
+- Bump package version and update changelog for 1.64 [#6877](https://github.com/sourcegraph/cody/pull/6877)
+- update listing description [#6874](https://github.com/sourcegraph/cody/pull/6874)
+- fix cta typo [#6857](https://github.com/sourcegraph/cody/pull/6857)
+- fix temperature value to be low for output consistency [#6854](https://github.com/sourcegraph/cody/pull/6854)
+- fix the temperature value regression with the auto-edit [#6851](https://github.com/sourcegraph/cody/pull/6851)
+- [VS Code] Release Omnibox: remove feature flag [#6849](https://github.com/sourcegraph/cody/pull/6849)
+- [VS Code] Temp add Omnibox FF [#6846](https://github.com/sourcegraph/cody/pull/6846)
+- handle missing spaces around @ mentions in cody chat [#6843](https://github.com/sourcegraph/cody/pull/6843)
+- define all base64 characters [#6840](https://github.com/sourcegraph/cody/pull/6840)
+- Backport 6833 to vscode.v1.64.x [#6835](https://github.com/sourcegraph/cody/pull/6835)
+- update display name for agentic model [#6828](https://github.com/sourcegraph/cody/pull/6828)
+- update CTAs and eligibility logic [#6825](https://github.com/sourcegraph/cody/pull/6825)
+- add billing metadata to `onebox` events [#6822](https://github.com/sourcegraph/cody/pull/6822)
+- Allow workspace to pre-populate URL for quick sign-in (#6653) [#6817](https://github.com/sourcegraph/cody/pull/6817)
+- improved support for special characters around @ mentions [#6814](https://github.com/sourcegraph/cody/pull/6814)
+- [Backport vscode-v1.64.x] Revert commits 9719dc4, 1c16f35, 1ed8392, 03c93f9 [#6810](https://github.com/sourcegraph/cody/pull/6810)
+- [Backport vscode-v1.64.x] omnibox: open results locally if possible [#6799](https://github.com/sourcegraph/cody/pull/6799)
+- Fix intent telemetry (#6779) [#6795](https://github.com/sourcegraph/cody/pull/6795)
+- added extension banner to web [#6777](https://github.com/sourcegraph/cody/pull/6777)
+- [Backport vscode-v1.64.x] Disable Intent Detection if Code Search Disabled [#6754](https://github.com/sourcegraph/cody/pull/6754)
+
+
 ## Unreleased
 
 ### Added
