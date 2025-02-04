@@ -198,6 +198,7 @@ describe('server sent models', async () => {
     const result = await firstValueFrom(
         syncModels({
             resolvedConfig: Observable.of({
+                auth: { serverEndpoint: AUTH_STATUS_FIXTURE_AUTHED.endpoint },
                 configuration: {},
                 clientState: { modelPreferences: {} },
             } satisfies PartialDeep<ResolvedConfiguration> as ResolvedConfiguration),
@@ -255,10 +256,14 @@ describe('syncModels', () => {
             const configOverwritesSubject = new Subject<CodyLLMSiteConfiguration | null>()
             const clientConfigSubject = new Subject<CodyClientConfig>()
             const syncModelsObservable = syncModels({
-                resolvedConfig: Observable.of({
-                    configuration: {},
-                    clientState: { modelPreferences: {} },
-                } satisfies PartialDeep<ResolvedConfiguration> as ResolvedConfiguration),
+                resolvedConfig: authStatusSubject.pipe(shareReplay()).map(
+                    authStatus =>
+                        ({
+                            auth: { serverEndpoint: authStatus.endpoint },
+                            configuration: {},
+                            clientState: { modelPreferences: {} },
+                        }) satisfies PartialDeep<ResolvedConfiguration> as ResolvedConfiguration
+                ),
                 authStatus: authStatusSubject.pipe(shareReplay()),
                 configOverwrites: configOverwritesSubject.pipe(shareReplay()),
                 clientConfig: clientConfigSubject.pipe(shareReplay()),
@@ -508,6 +513,7 @@ describe('syncModels', () => {
         const result = await firstValueFrom(
             syncModels({
                 resolvedConfig: Observable.of({
+                    auth: { serverEndpoint: AUTH_STATUS_FIXTURE_AUTHED.endpoint },
                     configuration: {},
                     clientState: { modelPreferences: {} },
                 } satisfies PartialDeep<ResolvedConfiguration> as ResolvedConfiguration),
@@ -600,6 +606,7 @@ describe('syncModels', () => {
             return firstValueFrom(
                 syncModels({
                     resolvedConfig: Observable.of({
+                        auth: { serverEndpoint: DOTCOM_URL.toString() },
                         configuration: {},
                         clientState: { modelPreferences: {} },
                     } satisfies PartialDeep<ResolvedConfiguration> as ResolvedConfiguration),

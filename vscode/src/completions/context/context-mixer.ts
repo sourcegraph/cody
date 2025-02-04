@@ -106,10 +106,7 @@ export class ContextMixer implements vscode.Disposable {
         const start = performance.now()
 
         const { name: strategy, retrievers } = await this.strategyFactory.getStrategy(options.document)
-        const retrieversWithDataLogging = this.maybeAddDataLoggingRetrievers(
-            options.repoName,
-            retrievers
-        )
+        const retrieversWithDataLogging = this.maybeAddDataLoggingRetrievers(retrievers)
 
         if (retrieversWithDataLogging.length === 0) {
             return {
@@ -249,17 +246,14 @@ export class ContextMixer implements vscode.Disposable {
         return resultsWithDataLogging.filter(result => originalIdentifiers.has(result.identifier))
     }
 
-    private maybeAddDataLoggingRetrievers(
-        repoName: string | undefined,
-        originalRetrievers: ContextRetriever[]
-    ): ContextRetriever[] {
-        const dataCollectionRetrievers = this.getDataCollectionRetrievers(repoName)
+    private maybeAddDataLoggingRetrievers(originalRetrievers: ContextRetriever[]): ContextRetriever[] {
+        const dataCollectionRetrievers = this.getDataCollectionRetrievers()
         const combinedRetrievers = [...originalRetrievers, ...dataCollectionRetrievers]
         return dedupeWith(combinedRetrievers, 'identifier')
     }
 
-    private getDataCollectionRetrievers(repoName: string | undefined): ContextRetriever[] {
-        if (!this.contextDataCollector?.shouldCollectContextDatapoint(repoName)) {
+    private getDataCollectionRetrievers(): ContextRetriever[] {
+        if (!this.contextDataCollector?.shouldCollectContextDatapoint()) {
             return []
         }
         return this.contextDataCollector.dataCollectionRetrievers

@@ -1,4 +1,4 @@
-name: vscode-stable-release
+name: release-vscode-stable
 
 on:
   push:

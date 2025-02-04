@@ -10,7 +10,6 @@ import { logDebug } from '../logger'
 import {
     combineLatest,
     distinctUntilChanged,
-    pick,
     promiseFactoryToObservable,
     shareReplay,
     startWith,
@@ -115,16 +114,10 @@ export function syncModels({
         distinctUntilChanged()
     )
 
-    const userModelPreferences: Observable<DefaultsAndUserPreferencesForEndpoint> = combineLatest(
-        resolvedConfig.pipe(
-            map(config => config.clientState.modelPreferences),
-            distinctUntilChanged()
-        ),
-        authStatus.pipe(pick('endpoint'), distinctUntilChanged())
-    ).pipe(
-        map(([modelPreferences, { endpoint }]) => {
+    const userModelPreferences: Observable<DefaultsAndUserPreferencesForEndpoint> = resolvedConfig.pipe(
+        map(config => {
             // Deep clone so it's not readonly and we can mutate it, for convenience.
-            const prevPreferences = modelPreferences[endpoint]
+            const prevPreferences = config.clientState.modelPreferences[config.auth.serverEndpoint]
             return deepClone(prevPreferences ?? EMPTY_PREFERENCES)
         }),
         distinctUntilChanged(),
@@ -140,7 +133,11 @@ export function syncModels({
     const remoteModelsData: Observable<RemoteModelsData | Error | typeof pendingOperation> =
         combineLatest(relevantConfig, authStatus, userProductSubscription).pipe(
             switchMapReplayOperation(([config, authStatus, userProductSubscription]) => {
-                if (authStatus.pendingValidation || userProductSubscription === pendingOperation) {
+                if (
+                    authStatus.endpoint !== config.auth.serverEndpoint ||
+                    authStatus.pendingValidation ||
+                    userProductSubscription === pendingOperation
+                ) {
                     return Observable.of(pendingOperation)
                 }
 

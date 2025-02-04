@@ -19,7 +19,23 @@ export type Event = DoneEvent | CompletionEvent | ErrorEvent
 export interface Message {
     // Note: The unified API only supports one system message passed as the first message
     speaker: 'human' | 'assistant' | 'system'
+    // content used to be text, but starting from api-version 7, we require Cody clients to
+    // stop using text and send content to instead to respect the official API contract and
+    // mirrors what OpenAI and Anthropic expect
     text?: PromptString
+    cache_enabled?: boolean | null
+}
+
+export interface CompletionUsage {
+    completion_tokens: number | null
+    prompt_tokens: number | null
+    total_tokens: number | null
+    prompt_tokens_details?: PromptTokensDetails | null
+}
+
+export interface PromptTokensDetails {
+    cached_tokens?: number | null
+    cache_read_input_tokens?: number | null
 }
 
 export interface CompletionResponse {

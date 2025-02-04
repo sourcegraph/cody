@@ -34,6 +34,7 @@ export enum FeatureFlag {
 
     // Data collection variants used for completions and next edit completions
     CodyAutocompleteDataCollectionFlag = 'cody-autocomplete-logs-collection-flag',
+    SmartApplyContextDataCollectionFlag = 'cody-smart-apply-context-logs-collection-flag',
 
     // Enables fast-path HTTP client for PLG-users
     CodyAutocompleteFastPath = 'cody-autocomplete-fast-path',
@@ -90,6 +91,7 @@ export enum FeatureFlag {
      * some standard out-of-the-box prompts like documentation and explain code prompts)
      */
     CodyUnifiedPrompts = 'cody-unified-prompts',
+    CodyDeepSeekChat = 'cody-deepseek-chat',
 
     /**
      * For internal use only. New Prompts UI and logic is behind this feature flag
