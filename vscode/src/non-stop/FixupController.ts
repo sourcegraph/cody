@@ -598,6 +598,7 @@ export class FixupController
         const originalCodeCounts = countCode(task.original)
 
         const legacyMetadata = {
+            taskId: task.id,
             intent: EditIntentTelemetryMetadataMapping[task.intent] || task.intent,
             mode: EditModeTelemetryMetadataMapping[task.mode] || task.mode,
             source:
