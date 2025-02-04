@@ -124,6 +124,13 @@ export class SourcegraphBrowserCompletionsClient extends SourcegraphCompletionsC
             abort.abort()
             console.error(error)
         })
+
+
+        // 'fetchEventSource' does not emit any event/message when the signal gets abborted. Instead,
+        // the returned promise gets resolved. However we cannot really differentiate between the
+        // promising resolving because the signal got abborted and the stream ended.
+        // That's why we subscribe to the signal directly and trigger the completion callback.
+        signal?.addEventListener('abort', cb.onComplete, {once: true})
     }
 
     protected async _fetchWithCallbacks(
