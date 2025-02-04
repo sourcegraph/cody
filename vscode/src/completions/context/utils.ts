@@ -9,6 +9,7 @@ export enum RetrieverIdentifier {
     RecentCopyRetriever = 'recent-copy',
     DiagnosticsRetriever = 'diagnostics',
     RecentViewPortRetriever = 'recent-view-port',
+    RulesRetriever = 'rules',
 }
 
 export interface ShouldUseContextParams {

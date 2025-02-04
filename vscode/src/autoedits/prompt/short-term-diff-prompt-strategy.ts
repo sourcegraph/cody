@@ -18,6 +18,7 @@ import {
     getRecentCopyPrompt,
     getRecentEditsPrompt,
     getRecentlyViewedSnippetsPrompt,
+    getRulesPrompt,
     joinPromptsWithNewlineSeparator,
 } from './prompt-utils'
 
@@ -29,6 +30,13 @@ export class ShortTermPromptStrategy extends AutoeditsUserPromptStrategy {
             context,
             tokenBudget.contextSpecificTokenLimit
         )
+
+        const rulesPrompt = getPromptForTheContextSource(
+            contextItemMapping.get(RetrieverIdentifier.RulesRetriever) || [],
+            constants.RULES_INSTRUCTION,
+            getRulesPrompt
+        )
+
         const { shortTermViewPrompt, longTermViewPrompt } = this.getRecentSnippetViewPrompt(
             contextItemMapping.get(RetrieverIdentifier.RecentViewPortRetriever) || []
         )
@@ -62,6 +70,7 @@ export class ShortTermPromptStrategy extends AutoeditsUserPromptStrategy {
 
         const finalPrompt = joinPromptsWithNewlineSeparator(
             getPromptWithNewline(constants.BASE_USER_PROMPT),
+            getPromptWithNewline(rulesPrompt),
             getPromptWithNewline(jaccardSimilarityPrompt),
             getPromptWithNewline(longTermViewPrompt),
             getPromptWithNewline(currentFilePrompt),

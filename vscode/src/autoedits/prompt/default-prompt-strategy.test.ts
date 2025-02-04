@@ -62,6 +62,7 @@ describe('DefaultUserPromptStrategy', () => {
                 [RetrieverIdentifier.RecentCopyRetriever]: 100,
                 [RetrieverIdentifier.JaccardSimilarityRetriever]: 100,
                 [RetrieverIdentifier.DiagnosticsRetriever]: 100,
+                [RetrieverIdentifier.RulesRetriever]: 100,
             },
         }
 

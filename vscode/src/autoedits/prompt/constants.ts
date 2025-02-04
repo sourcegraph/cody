@@ -19,6 +19,10 @@ export const AREA_FOR_CODE_MARKER_OPEN = ps`<area_around_code_to_rewrite>`
 export const AREA_FOR_CODE_MARKER_CLOSE = ps`</area_around_code_to_rewrite>`
 export const CODE_TO_REWRITE_TAG_CLOSE = ps`</code_to_rewrite>`
 export const CODE_TO_REWRITE_TAG_OPEN = ps`<code_to_rewrite>`
+export const RULES_TAG_OPEN = ps`<rules>`
+export const RULES_TAG_CLOSE = ps`</rules>`
+export const RULE_TAG_OPEN = ps`<rule>`
+export const RULE_TAG_CLOSE = ps`</rule>`
 
 // Some common prompt instructions
 export const SYSTEM_PROMPT = ps`You are an intelligent programmer named CodyBot. You are an expert at coding. Your goal is to help your colleague finish a code change.`
@@ -31,3 +35,4 @@ export const LINT_ERRORS_INSTRUCTION = ps`Here are some linter errors from the c
 export const RECENT_COPY_INSTRUCTION = ps`Here is some recent code I copied from the editor.`
 export const CURRENT_FILE_INSTRUCTION = ps`Here is the file that I am looking at `
 export const SHORT_TERM_SNIPPET_VIEWS_INSTRUCTION = ps`Here are some snippets of code I just looked at:`
+export const RULES_INSTRUCTION = ps`Your response MUST comply with the following rules: `

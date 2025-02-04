@@ -36,6 +36,7 @@ const defaultTokenLimit = {
         [RetrieverIdentifier.RecentCopyRetriever]: 500,
         [RetrieverIdentifier.DiagnosticsRetriever]: 500,
         [RetrieverIdentifier.RecentViewPortRetriever]: 2500,
+        [RetrieverIdentifier.RulesRetriever]: 1000,
     },
 } as const satisfies AutoEditsTokenLimit
 

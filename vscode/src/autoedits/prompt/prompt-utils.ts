@@ -389,6 +389,24 @@ export function getJaccardSimilarityPrompt(contextItems: AutocompleteContextSnip
     )
 }
 
+export function getRulesPrompt(contextItems: AutocompleteContextSnippet[]): PromptString {
+    if (contextItems.length === 0) {
+        return ps``
+    }
+    const rulesPrompts = contextItems.map(item =>
+        joinPromptsWithNewlineSeparator(
+            constants.RULE_TAG_OPEN,
+            PromptString.fromAutocompleteContextSnippet(item).content,
+            constants.RULE_TAG_CLOSE
+        )
+    )
+    return joinPromptsWithNewlineSeparator(
+        constants.RULES_TAG_OPEN,
+        PromptString.join(rulesPrompts, ps`\n`),
+        constants.RULES_TAG_CLOSE
+    )
+}
+
 //  Helper functions
 export function getContextItemMappingWithTokenLimit(
     contextItems: AutocompleteContextSnippet[],
