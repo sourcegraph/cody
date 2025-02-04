@@ -35,6 +35,7 @@ import type { DecorationInfo } from './renderer/decorators/base'
 import { DefaultDecorator } from './renderer/decorators/default-decorator'
 import { InlineDiffDecorator } from './renderer/decorators/inline-diff-decorator'
 import { getDecorationInfo } from './renderer/diff-utils'
+import { initImageSuggestionService } from './renderer/image-gen'
 import { AutoEditsInlineRendererManager } from './renderer/inline-manager'
 import { AutoEditsDefaultRendererManager, type AutoEditsRendererManager } from './renderer/manager'
 import {
@@ -81,9 +82,15 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
     private readonly onSelectionChangeDebounced: DebouncedFunc<typeof this.onSelectionChange>
     public readonly rendererManager: AutoEditsRendererManager
     private readonly modelAdapter: AutoeditsModelAdapter
+
+    /**
+     * Default: Current supported renderer
+     * Inline: Experimental renderer that uses inline decorations to show additions
+     * Image: Experimental renderer that uses images to show additions.
+     */
     private readonly enabledRenderer = vscode.workspace
         .getConfiguration()
-        .get<'default' | 'inline'>('cody.experimental.autoedit.renderer', 'default')
+        .get<'default' | 'inline' | 'image'>('cody.experimental.autoedit.renderer', 'default')
 
     private readonly promptStrategy = new ShortTermPromptStrategy()
     public readonly filterPrediction = new FilterPredictionBasedOnRecentEdits()
@@ -101,6 +108,12 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             chatClient: chatClient,
         })
 
+        if (this.enabledRenderer === 'image') {
+            // Initialise the canvas renderer for image generation.
+            // TODO: Consider moving this if we decide to enable this by default.
+            initImageSuggestionService()
+        }
+
         this.rendererManager =
             this.enabledRenderer === 'inline'
                 ? new AutoEditsInlineRendererManager(
@@ -108,7 +121,10 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                       fixupController
                   )
                 : new AutoEditsDefaultRendererManager(
-                      (editor: vscode.TextEditor) => new DefaultDecorator(editor),
+                      (editor: vscode.TextEditor) =>
+                          new DefaultDecorator(editor, {
+                              shouldRenderImage: this.enabledRenderer === 'image',
+                          }),
                       fixupController
                   )
 
