@@ -1,5 +1,5 @@
-import type { FC } from 'react'
-import { CodyWebChat, type InitialContext } from '../lib'
+import { type FC, useEffect, useState } from 'react'
+import { type CodyWebAgent, CodyWebChat, type InitialContext, createCodyAgent } from '../lib'
 
 // @ts-ignore
 import AgentWorker from '../lib/agent/agent.worker.ts?worker'
@@ -40,16 +40,23 @@ if (!accessToken) {
 }
 
 export const App: FC = () => {
+    const [agent, setAgent] = useState<CodyWebAgent | null>(null)
+
+    useEffect(() => {
+        createCodyAgent({
+            accessToken,
+            serverEndpoint,
+            createAgentWorker: CREATE_AGENT_WORKER,
+            telemetryClientName: 'codydemo.testing',
+        }).then(agent => {
+            agent?.createNewChat()
+            setAgent(agent)
+        }, setAgent)
+    }, [])
+
     return (
         <div className={styles.root}>
-            <CodyWebChat
-                accessToken={accessToken}
-                serverEndpoint={serverEndpoint}
-                createAgentWorker={CREATE_AGENT_WORKER}
-                telemetryClientName="codydemo.testing"
-                initialContext={MOCK_INITIAL_CONTEXT}
-                viewType="sidebar"
-            />
+            <CodyWebChat agent={agent} initialContext={MOCK_INITIAL_CONTEXT} viewType="sidebar" />
         </div>
     )
 }
