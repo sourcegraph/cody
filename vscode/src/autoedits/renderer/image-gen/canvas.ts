@@ -37,6 +37,8 @@ export async function initCanvas(): Promise<void> {
             canvasKit = await CanvasKitInit()
         })()
     }
+
+    await canvasKitInitPromise
 }
 
 /**
