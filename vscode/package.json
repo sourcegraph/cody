@@ -1245,7 +1245,6 @@
         "openctx.providers": {
           "type": "object",
           "markdownDescription": "OpenCtx providers configuration.",
-          "default": {},
           "properties": {
             "mcp": {
               "type": "object",
@@ -1262,7 +1261,8 @@
                 },
                 "toolNameQuery": {
                   "type": "string",
-                  "markdownDescription": "Regex for the MCP provider tools in OpenCtx.",
+                  "markdownDescription": "Regex for the MCP provider tools in OpenCtx. If you have multiple tools in the MCP, you can use this to select the one you want to use using regex. For example, if you have tools named 'tool1', 'tool2', and 'tool3', you can use the regex 'tool[1-2]' to select 'tool1' and 'tool2'.",
+                  "example": "tool[1-2]",
                   "default": ""
                 }
               }
