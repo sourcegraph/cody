@@ -7,7 +7,6 @@ import type {
     CompletionGeneratorValue,
     CompletionParameters,
 } from '../sourcegraph-api/completions/types'
-import { currentSiteVersion } from '../sourcegraph-api/siteVersion'
 
 type ChatParameters = Omit<CompletionParameters, 'messages'>
 
@@ -38,14 +37,21 @@ export class ChatClient {
             throw new Error('not authenticated')
         }
 
-        const useApiV1 = params.model?.includes('claude-3') && messages[0]?.speaker === 'system'
-        const useApiV2 = !params.model?.includes('claude-3') && messages[0]?.speaker === 'system'
+        // Determine API version based on model and message type
+        const hasSystemMessage = messages[0]?.speaker === 'system'
+        const isClaude3Model = params.model?.includes('claude-3')
+
+        const getApiVersion = (): number => {
+            if (!hasSystemMessage) return 0
+            if (isClaude3Model) return 1
+            return 2
+        }
         const isLastMessageFromHuman = messages.length > 0 && messages.at(-1)!.speaker === 'human'
 
         const isFireworks =
             params?.model?.startsWith('fireworks/') || params?.model?.startsWith('fireworks::')
         const augmentedMessages =
-            isFireworks || useApiV1
+            isFireworks || getApiVersion() > 0
                 ? sanitizeMessages(messages)
                 : isLastMessageFromHuman
                   ? messages.concat([{ speaker: 'assistant' }])
@@ -74,7 +80,7 @@ export class ChatClient {
         return this.completions.stream(
             completionParams,
             {
-                apiVersion: useApiV1 ? (useApiV2 ? 2 : 1) : 0,
+                apiVersion: getApiVersion(),
                 interactionId: interactionId,
                 customHeaders,
             },
