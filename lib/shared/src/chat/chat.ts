@@ -32,23 +32,14 @@ export class ChatClient {
             params.model = sonnetModel.id
         }
 
-        const [versions, authStatus_] = await Promise.all([
-            currentSiteVersion(),
-            await firstValueFrom(authStatus),
-        ])
+        const [authStatus_] = await Promise.all([await firstValueFrom(authStatus)])
 
         if (!authStatus_.authenticated) {
             throw new Error('not authenticated')
         }
 
-        // Only check the API version if it's a claude-3 model. Claude-3 models are being deprecated already,
-        // but old sg instances might still have them.
-        if (params.model?.includes('claude-3') && versions instanceof Error) {
-            throw new Error('unable to determine Cody API version')
-        }
-
-        const useApiV1 =
-            params.model?.includes('claude-3') && !(versions instanceof Error) && versions.codyAPIVersion
+        const useApiV1 = params.model?.includes('claude-3') && messages[0]?.speaker === 'system'
+        const useApiV2 = !params.model?.includes('claude-3') && messages[0]?.speaker === 'system'
         const isLastMessageFromHuman = messages.length > 0 && messages.at(-1)!.speaker === 'human'
 
         const isFireworks =
@@ -83,7 +74,7 @@ export class ChatClient {
         return this.completions.stream(
             completionParams,
             {
-                apiVersion: useApiV1 ? versions.codyAPIVersion : 0,
+                apiVersion: useApiV1 ? (useApiV2 ? 2 : 1) : 0,
                 interactionId: interactionId,
                 customHeaders,
             },
