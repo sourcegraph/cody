@@ -69,7 +69,7 @@
     --jetbrains-DisclosureButton-pressedOverlay: rgb(255 255 255 / 0);
     --jetbrains-TextArea-selectionForeground: rgb(223 225 229 / 1);
     --jetbrains-Plugins-Button-updateBorderColor: rgb(54 106 206 / 1);
-    --jetbrains-MenuBar-background: rgb(43 45 48 / 1);
+    --jetbrains-MenuBar-background: rgb(255, 0, 243);
     --jetbrains-HelpBrowser-HelpBrowserMessage-Snippet-MoreLines-background: rgb(43 45 48 / 1);
     --jetbrains-ToolBar-light: rgb(8 74 217 / 1);
     --jetbrains-SpeedSearch-errorForeground: rgb(219 92 92 / 1);
@@ -1989,7 +1989,7 @@
     --jetbrains-Notification-Shadow-topRight1Color: rgb(0 0 0 / 0);
     --jetbrains-RecentProject-Color2-Avatar-End: rgb(187 127 25 / 1);
     --jetbrains-UIDesigner-Canvas-background: rgb(43 45 48 / 1);
-    --jetbrains-font-size: 0px;
+    --jetbrains-font-size: 14px;
 
     --vscode-actionBar-toggledBackground: var(--jetbrains-ToolbarComboWidget-background);
     --vscode-activityBar-background: var(--jetbrains-ToolBar-background);

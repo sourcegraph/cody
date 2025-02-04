@@ -1,5 +1,5 @@
 .outer-container {
-  background-color: var(--vscode-sideBar-background);
+  background-color: var(--background-01);
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
@@ -17,8 +17,8 @@
   flex-direction: row;
   display: flex;
   padding: 1rem;
-  color: var(--vscode-input-foreground);
-  background-color: var(--vscode-inputValidation-errorBackground);
+  color: var(--text);
+  background-color: var(--background-03);
   min-height: 2rem;
   position: relative;
   overflow: auto;
@@ -31,7 +31,7 @@
   right: 0.65rem;
   background: none;
   border: none;
-  color: var(--vscode-input-foreground);
+  color: var(--text);
   cursor: pointer;
 }
 

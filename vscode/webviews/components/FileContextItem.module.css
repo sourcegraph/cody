@@ -19,7 +19,7 @@
 .context-item-link {
     background: none;
     border: none;
-    color: var(--vscode-textLink-foreground);
+    color: red;
     font-size: inherit;
     padding: 0;
     margin: 0;

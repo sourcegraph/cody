@@ -24,7 +24,7 @@
         &::before {
             /* draw line number with css so it cannot be copied to clipboard */
             content: attr(data-line);
-            color: var(--cody-chat-code-text-muted);
+            color: var(--text-disabled);
         }
     }
 

@@ -1,5 +1,5 @@
 :root {
-    --cody-chat-code-background: var(--code-background);
+    --cody-chat-code-background: var(--background-03);
     --cody-chat-code-header-background: var(--vscode-editorGroupHeader-tabsBackground);
     --cody-chat-code-subtle-background: var(--vscode-titleBar-inactiveBackground);
     --cody-chat-code-border-color: var(--vscode-widget-border);
@@ -12,8 +12,8 @@
 .result-container {
     contain: paint;
     :global(.match-highlight) {
-        color: var(--cody-chat-code-text-highlighted);
-        background-color: var(--cody-chat-code-mark-background) !important;
+        color: var(--highlight-background-text);
+        background-color: var(--highlight-background) !important;
     }
 
     :global(.sr-only) {
@@ -30,10 +30,10 @@
 }
 
 .header {
-    background-color: var(--vscode-editor-background);
+    background-color: var(--background-03);
     position: sticky;
     top: 0;
-    border-bottom: solid 1px var(--cody-chat-code-border-color);
+    border-bottom: solid 1px var(--border-subtle);
 
     /* Show on top of search result contents */
     z-index: 1;
@@ -46,8 +46,8 @@
 }
 
 .result {
-    border-bottom: solid 1px var(--cody-chat-code-border-color);
-    background-color: var(--vscode-editor-background);
+    border-bottom: solid 1px var(--border-subtle);
+    background-color: var(--background-02);
 
     code {
         padding: 0 !important;
@@ -66,13 +66,13 @@
 
 .horizontal-divider-between {
     &:not(:last-child) {
-        border-bottom: 1px solid var(--cody-chat-code-border-color);
+        border-bottom: 1px solid var(--border-subtle);
     }
 }
 
 .focusable-block {
     &:focus-visible {
-        box-shadow: inset 0 0 0 1px var(--cody-chat-code-focus-border);
+        box-shadow: inset 0 0 0 1px var(--cody-chat-code-focus-border); //todo
     }
 }
 
@@ -122,8 +122,8 @@
     text-align: left;
     border: none;
     padding: 0.25rem 0.5rem;
-    border-top: 1px solid var(--cody-chat-code-border-color);
-    color: var(--cody-chat-code-text-muted);
+    border-top: 1px solid var(--border);
+    color: var(--text-muted);
     font-size: theme('fontSize.sm');
 
     &:hover {
@@ -141,5 +141,5 @@
 }
 
 .addToContextLabel {
-    color: var(--cody-chat-code-text-muted);
+    color: var(--text-muted);
 }

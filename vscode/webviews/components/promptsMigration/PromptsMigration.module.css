@@ -71,12 +71,12 @@
 }
 
 .error {
-    color: #de3400;
-    background-color: #f7bcbc;
+    color: var(--error-text);
+    background-color: var(--error-background);
     line-height: 150%;
     padding: 0.5rem;
     word-break: break-word;
-    border-left: 0.5rem solid #d8000c;
+    border-left: 0.5rem solid var(--error-border);
     font-weight: bold;
 }
 

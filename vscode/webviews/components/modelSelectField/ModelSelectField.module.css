@@ -29,7 +29,7 @@
 }
 
 .model-title-with-icon .model-icon {
-    opacity: 0.5;
+    opacity: 0.7;
 }
 
 .right-icon {
@@ -42,7 +42,7 @@
     font-size: 11px;
     border-radius: 2px;
     padding: 0 5px;
-    border: 1px solid var(--vscode-contrastBorder);
+    border: 1px solid var(--highlight-border);
 }
 
 button > .model-title-with-icon .model-name {

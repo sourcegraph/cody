@@ -20,8 +20,8 @@
     padding: 0;
     flex-direction: column;
     justify-content: space-between;
-    border-bottom: 1px solid var(--vscode-dropdown-border);
-    background-color: var(--vscode-sideBar-background);
+    border-bottom: 1px solid var(--border);
+    background-color: var(--background-01);
 }
 
 .tabs {
@@ -30,7 +30,7 @@
     gap: 2px;
     width: 100%;
     padding: 0 8px;
-    border-bottom: 1px solid var(--vscode-dropdown-border);
+    border-bottom: 1px solid var(--border);
 
     & > * {
         flex-shrink: 0;
@@ -83,7 +83,7 @@
     &-overlay {
         inset: 0;
         position: fixed;
-        background-color: var(--vscode-overlay-background);
+        background-color: red;
     }
 
     &-content {

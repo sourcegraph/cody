@@ -319,7 +319,7 @@ const TabButton = forwardRef<HTMLButtonElement, TabButtonProps>((props, ref) => 
                     className={clsx(
                         'tw-flex tw-gap-2 tw-items-center !tw-font-normal !tw-text-inherit tw-leading-none tw-p-2 tw-opacity-80 hover:tw-opacity-100 tw-border-transparent tw-transition tw-translate-y-[1px] tw-text-sm',
                         {
-                            '!tw-opacity-100 !tw-border-[var(--vscode-tab-activeBorderTop)] tw-border-b-[1px]':
+                            '!tw-opacity-100 !tw-border-[var(--border-active)] tw-border-b-[1px]':
                                 isActive,
                             '!tw-opacity-100': prominent,
                         }

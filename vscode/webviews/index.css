@@ -19,7 +19,7 @@
 #root {
     height: 100%;
     margin: 0 auto;
-    font-family: var(--vscode-font-family);
+    font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
     color: var(--vscode-sideBar-foreground);
     background-color: var(--vscode-sideBar-background);
     /* Override VS Code Webview Toolkit elements */
