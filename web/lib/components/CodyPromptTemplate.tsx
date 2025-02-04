@@ -36,7 +36,7 @@ import { useClientActionDispatcher } from 'cody-ai/webviews/client/clientState'
 import { ComposedWrappers, type Wrapper } from 'cody-ai/webviews/utils/composeWrappers'
 import { createWebviewTelemetryRecorder } from 'cody-ai/webviews/utils/telemetry'
 
-import { useCodyWebAgent } from './use-cody-agent'
+import type { CodyWebAgent } from './use-cody-agent'
 
 // Include global Cody Web styles to the styles bundle
 import '../global-styles/styles.css'
@@ -52,11 +52,7 @@ setDisplayPathEnvInfo({
 })
 
 export interface CodyPromptTemplateProps {
-    serverEndpoint: string
-    accessToken: string | null
-    createAgentWorker: () => Worker
-    telemetryClientName?: string
-    customHeaders?: Record<string, string>
+    agent: CodyWebAgent | Error | null
     className?: string
 
     initialEditorState?: SerializedPromptEditorState | undefined
@@ -76,30 +72,18 @@ export interface CodyPromptTemplateProps {
  * to run this with @ mentions in the prompt template editor.
  */
 export const CodyPromptTemplate: FunctionComponent<CodyPromptTemplateProps> = ({
-    serverEndpoint,
-    accessToken,
-    createAgentWorker,
-    telemetryClientName,
-    customHeaders,
+    agent,
     className,
     disabled,
     initialEditorState,
     placeholder,
     onEditorApiReady,
 }) => {
-    const { client, vscodeAPI } = useCodyWebAgent({
-        serverEndpoint,
-        accessToken,
-        createAgentWorker,
-        telemetryClientName,
-        customHeaders,
-    })
-
-    if (isErrorLike(client)) {
-        return <p>Cody Web client agent error: {client.message}</p>
+    if (isErrorLike(agent)) {
+        return <p>Cody Web client agent error: {agent.message}</p>
     }
 
-    if (client === null || vscodeAPI === null) {
+    if (agent === null) {
         return <PromptTemplateSkeleton className={classNames(className, styles.root)} />
     }
 
@@ -107,7 +91,7 @@ export const CodyPromptTemplate: FunctionComponent<CodyPromptTemplateProps> = ({
         <AppWrapper>
             <div className={classNames(className, styles.root)}>
                 <CodyPromptTemplatePanel
-                    vscodeAPI={vscodeAPI}
+                    vscodeAPI={agent.vscodeAPI}
                     className={styles.container}
                     disabled={disabled}
                     initialEditorState={initialEditorState}
