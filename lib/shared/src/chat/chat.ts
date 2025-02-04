@@ -51,10 +51,9 @@ export class ChatClient {
         }
 
         const useApiV1 =
+            params.model?.includes('claude-3') &&
             !(versions instanceof Error) &&
-            versions.codyAPIVersion !== undefined &&
-            versions.codyAPIVersion >= 1 &&
-            params.model?.includes('claude-3')
+            versions.codyAPIVersion
         const isLastMessageFromHuman = messages.length > 0 && messages.at(-1)!.speaker === 'human'
 
         const isFireworks =
