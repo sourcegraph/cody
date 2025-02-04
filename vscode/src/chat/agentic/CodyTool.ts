@@ -6,9 +6,9 @@ import {
     type ContextMentionProviderMetadata,
     ProcessType,
     PromptString,
+    currentOpenCtxController,
     firstValueFrom,
     logDebug,
-    openCtx,
     parseMentionQuery,
     pendingOperation,
     ps,
@@ -305,7 +305,7 @@ export class OpenCtxTool extends CodyTool {
 
     async execute(span: Span, queries: string[]): Promise<ContextItem[]> {
         span.addEvent('executeOpenCtxTool')
-        const openCtxClient = openCtx.controller
+        const openCtxClient = currentOpenCtxController()
         if (!queries?.length || !openCtxClient) {
             return []
         }

@@ -103,6 +103,7 @@ export const buildInteraction = async ({
             precedingText,
             selectedText,
             instruction: task.instruction,
+            rules: task.rules,
             document,
         })
     const promptBuilder = await PromptBuilder.create(modelsService.getContextWindowByID(model))

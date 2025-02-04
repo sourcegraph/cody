@@ -269,6 +269,11 @@ export const ContextCell: FunctionComponent<{
                                                         isTooLarge={item.isTooLarge}
                                                         isTooLargeReason={item.isTooLargeReason}
                                                         isIgnored={item.isIgnored}
+                                                        providerUri={
+                                                            item.type === 'openctx'
+                                                                ? item.providerUri
+                                                                : undefined
+                                                        }
                                                         linkClassName={styles.contextItemLink}
                                                         className={clsx(
                                                             styles.linkContainer,

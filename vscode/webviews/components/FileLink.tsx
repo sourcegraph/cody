@@ -3,12 +3,14 @@ import type React from 'react'
 
 import {
     type ContextItemSource,
+    RULES_PROVIDER_URI,
     type RangeData,
     displayLineRange,
     displayPath,
     webviewOpenURIForContextItem,
 } from '@sourcegraph/cody-shared'
 
+import { BookCheckIcon } from 'lucide-react'
 import { useCallback, useMemo } from 'react'
 import type { URI } from 'vscode-uri'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
@@ -27,6 +29,7 @@ interface FileLinkProps {
     isTooLarge?: boolean
     isTooLargeReason?: string
     isIgnored?: boolean
+    providerUri?: string
 }
 
 const LIMIT_WARNING = 'Excluded due to context window limit'
@@ -61,6 +64,7 @@ export const FileLink: React.FunctionComponent<
     isTooLarge,
     isTooLargeReason,
     isIgnored,
+    providerUri,
     className,
     linkClassName,
 }) => {
@@ -151,7 +155,11 @@ export const FileLink: React.FunctionComponent<
                     href={linkDetails.href}
                     target={linkDetails.target}
                 >
-                    <i className="codicon codicon-file" title={iconTitle} />
+                    {providerUri === RULES_PROVIDER_URI ? (
+                        <BookCheckIcon size={16} strokeWidth={1.75} />
+                    ) : (
+                        <i className="codicon codicon-file" title={iconTitle} />
+                    )}
                     <div
                         className={clsx(styles.path, (isTooLarge || isIgnored) && styles.excluded)}
                         data-source={source || 'unknown'}

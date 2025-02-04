@@ -16,6 +16,12 @@ const textDecoder = new TextDecoder('utf-8')
 export async function gitRemoteUrlsForUri(uri: vscode.Uri, signal?: AbortSignal): Promise<string[]> {
     let remoteUrls = gitRemoteUrlsFromGitExtension(uri)
 
+    // HACK(sqs) TODO!(sqs)
+    if (uri.toString().startsWith('https://github.com/')) {
+        const parts = uri.toString().split('/').slice(0, 5)
+        return [parts.join('/')]
+    }
+
     // If not results from the Git extension API, try crawling the file system.
     if (!remoteUrls || remoteUrls.length === 0) {
         remoteUrls = await gitRemoteUrlsFromParentDirs(uri, signal)

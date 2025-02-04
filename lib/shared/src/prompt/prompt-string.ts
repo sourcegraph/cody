@@ -1,5 +1,6 @@
 import dedent from 'dedent'
 import type * as vscode from 'vscode'
+import { URI } from 'vscode-uri'
 import type { ChatMessage, SerializedChatMessage } from '../chat/transcript/messages'
 import type { ContextItem } from '../codebase-context/messages'
 import type { ContextFiltersProvider } from '../cody-ignore/context-filters-provider'
@@ -17,6 +18,7 @@ import { createGitDiff } from '../editor/create-git-diff'
 import { displayPath, displayPathWithLines } from '../editor/displayPath'
 import { getEditorInsertSpaces, getEditorTabSize } from '../editor/utils'
 import { logDebug } from '../logger'
+import { type Rule, ruleTitle } from '../rules/rules'
 import { telemetryRecorder } from '../telemetry-v2/singleton'
 
 // This module is designed to encourage, and to some degree enforce, safe
@@ -394,6 +396,19 @@ export class PromptString {
                 ? internal_createPromptString(contextItem.repoName, ref)
                 : undefined,
             title: contextItem.title ? internal_createPromptString(contextItem.title, ref) : undefined,
+        }
+    }
+
+    public static fromRule(rule: Rule): {
+        title: PromptString
+        description: PromptString | null
+        instruction: PromptString
+    } {
+        const ref = [URI.parse(rule.uri)]
+        return {
+            title: internal_createPromptString(ruleTitle(rule), ref),
+            description: rule.description ? internal_createPromptString(rule.description, ref) : null,
+            instruction: internal_createPromptString(rule.instruction ?? '', ref),
         }
     }
 

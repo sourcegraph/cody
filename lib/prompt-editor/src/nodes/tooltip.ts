@@ -32,7 +32,7 @@ export function tooltipForContextItem(item: SerializedContextItem): string | und
         return item.mention.data.tooltip
     }
     if (item.type === 'openctx') {
-        return item.uri
+        return item.description ?? item.uri
     }
     return undefined
 }

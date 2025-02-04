@@ -1,5 +1,5 @@
 import type { FC } from 'react'
-import { CodyWebChat, type InitialContext } from '../lib'
+import { CodyWebChat } from '../lib'
 
 // @ts-ignore
 import AgentWorker from '../lib/agent/agent.worker.ts?worker'
@@ -21,16 +21,6 @@ const serverEndpoint = localStorage.getItem('serverEndpoint') || DEFAULT_SERVER_
 const accessTokenStorageKey = `accessToken:${serverEndpoint}`
 let accessToken = localStorage.getItem(accessTokenStorageKey)
 
-const MOCK_INITIAL_CONTEXT: InitialContext = {
-    fileURL: 'web/demo',
-    fileRange: null,
-    isDirectory: true,
-    repository: {
-        id: 'UmVwb3NpdG9yeToyNzU5OQ==',
-        name: 'github.com/sourcegraph/cody',
-    },
-}
-
 if (!accessToken) {
     accessToken = window.prompt(`Enter an access token for ${serverEndpoint}:`)
     if (!accessToken) {
@@ -47,7 +37,6 @@ export const App: FC = () => {
                 serverEndpoint={serverEndpoint}
                 createAgentWorker={CREATE_AGENT_WORKER}
                 telemetryClientName="codydemo.testing"
-                initialContext={MOCK_INITIAL_CONTEXT}
                 viewType="sidebar"
             />
         </div>

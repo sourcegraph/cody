@@ -15,6 +15,7 @@ import { LineLevelDiffStrategy } from './retrievers/recent-user-actions/recent-e
 import { UnifiedDiffStrategy } from './retrievers/recent-user-actions/recent-edits-diff-helpers/unified-diff'
 import { RecentEditsRetriever } from './retrievers/recent-user-actions/recent-edits-retriever'
 import { RecentViewPortRetriever } from './retrievers/recent-user-actions/recent-view-port'
+import { RulesRetriever } from './retrievers/rules-retriever'
 import { loadTscRetriever } from './retrievers/tsc/load-tsc-retriever'
 
 export type ContextStrategy =
@@ -151,6 +152,7 @@ export class DefaultContextStrategyFactory implements ContextStrategyFactory {
                                     maxTrackedViewPorts: 50,
                                     maxRetrievedViewPorts: 10,
                                 }),
+                                new RulesRetriever(),
                             ]
                             break
                         case 'jaccard-similarity':

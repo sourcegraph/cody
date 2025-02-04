@@ -116,6 +116,7 @@ export class AgentFixupControls extends FixupCodeLenses {
             instruction: task.instruction?.toString().trim(),
             model: task.model.toString().trim(),
             originalText: task.original,
+            rules: task.rules,
         }
     }
 }

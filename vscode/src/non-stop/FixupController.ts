@@ -5,6 +5,7 @@ import {
     type EditModel,
     type EventSource,
     type PromptString,
+    type Rule,
     currentAuthStatus,
     displayPathBasename,
     telemetryRecorder,
@@ -375,6 +376,7 @@ export class FixupController
                     initialSelectedContextItems: task.userContextItems,
                     initialModel: task.model,
                     initialIntent: task.intent,
+                    initialRules: task.rules,
                 },
                 source
             ))
@@ -441,6 +443,7 @@ export class FixupController
         expandedRange: vscode.Range | undefined,
         mode: EditMode,
         model: EditModel,
+        rules: Rule[] | null,
         intent: EditIntent,
         source: EventSource,
         telemetryMetadata?: FixupTelemetryMetadata
@@ -453,6 +456,7 @@ export class FixupController
                 initialModel: model,
                 initialIntent: intent,
                 initialInputValue: preInstruction,
+                initialRules: rules,
             },
             source
         )
@@ -468,6 +472,7 @@ export class FixupController
             input.intent,
             input.mode,
             input.model,
+            input.rules,
             source,
             undefined,
             undefined,
@@ -492,6 +497,7 @@ export class FixupController
         intent: EditIntent,
         mode: EditMode,
         model: EditModel,
+        rules: Rule[] | null,
         source?: EventSource,
         destinationFile?: vscode.Uri,
         insertionPoint?: vscode.Position,
@@ -510,6 +516,7 @@ export class FixupController
             selectionRange,
             mode,
             overriddenModel,
+            rules,
             source,
             destinationFile,
             insertionPoint,

@@ -6,6 +6,7 @@ import type {
     EditModel,
     EventSource,
     PromptString,
+    Rule,
 } from '@sourcegraph/cody-shared'
 
 import type { FixupTask, FixupTaskID, FixupTelemetryMetadata } from '../non-stop/FixupTask'
@@ -45,6 +46,7 @@ export interface ExecuteEditArguments {
         intent?: EditIntent
         mode?: EditMode
         model?: EditModel
+        rules?: Rule[] | null
         // The file to write the edit to. If not provided, the edit will be applied to the current file.
         destinationFile?: vscode.Uri
         insertionPoint?: vscode.Position

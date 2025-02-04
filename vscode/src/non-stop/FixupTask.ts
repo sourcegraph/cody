@@ -5,6 +5,7 @@ import {
     type EditModel,
     type EventSource,
     type PromptString,
+    type Rule,
     ps,
 } from '@sourcegraph/cody-shared'
 
@@ -70,6 +71,7 @@ export class FixupTask {
         /* The mode indicates how code should be inserted */
         public readonly mode: EditMode,
         public readonly model: EditModel,
+        public readonly rules: Rule[] | null,
         /* the source of the instruction, e.g. 'code-action', 'doc', etc */
         public source?: EventSource,
         /* The file to write the edit to. If not provided, the edit will be applied to the fixupFile. */
