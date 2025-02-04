@@ -195,10 +195,7 @@ export class DeepCodyAgent {
         span.addEvent('reviewLoop')
         for (let i = 0; i < maxLoops && !chatAbortSignal.aborted; i++) {
             this.stats.loop++
-            const step = this.stepsManager.addStep({
-                title: 'Reflecting',
-                state: 'pending', // Explicitly set pending state
-            })
+            const step = this.stepsManager.addStep({ title: 'Reflecting' })
             const newContext = await this.review(requestID, span, chatAbortSignal)
             this.statusCallback.onComplete(step.id)
             if (!newContext.length) break
