@@ -866,10 +866,12 @@ export const vsCodeMocks = {
         onDidChangeTextDocument() {},
         onDidOpenTextDocument() {},
         onDidCloseTextDocument() {},
+        onDidCreateFiles() {},
         onDidRenameFiles() {},
         onDidDeleteFiles() {},
         textDocuments: vscodeWorkspaceTextDocuments,
         workspaceFolders: undefined,
+        getWorkspaceFolder: () => undefined,
         onDidChangeWorkspaceFolders: () => {},
     },
     ConfigurationTarget: {

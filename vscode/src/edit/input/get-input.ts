@@ -3,15 +3,19 @@ import {
     type EditModel,
     type EventSource,
     FILE_CONTEXT_MENTION_PROVIDER,
+    FeatureFlag,
     GENERAL_HELP_LABEL,
     LARGE_FILE_WARNING_LABEL,
     ModelUsage,
     PromptString,
+    type Rule,
     SYMBOL_CONTEXT_MENTION_PROVIDER,
     checkIfEnterpriseUser,
     currentUserProductSubscription,
     displayLineRange,
+    featureFlagProvider,
     firstResultFromOperation,
+    firstValueFrom,
     modelsService,
     parseMentionQuery,
     scanForMentionTriggerInUserTextInput,
@@ -24,6 +28,7 @@ import { ACCOUNT_UPGRADE_URL } from '../../chat/protocol'
 import { executeDocCommand, executeTestEditCommand } from '../../commands/execute'
 import { getEditor } from '../../editor/active-editor'
 import { type TextChange, updateRangeMultipleChanges } from '../../non-stop/tracked-range'
+import { ruleService } from '../../rules/service'
 import type { EditIntent, EditMode } from '../types'
 import { isGenerateIntent } from '../utils/edit-intent'
 import { CURSOR_RANGE_ITEM, EXPANDED_RANGE_ITEM, SELECTION_RANGE_ITEM } from './get-items/constants'
@@ -53,6 +58,9 @@ export interface QuickPickInput {
     intent: EditIntent
     /** The derived mode from the users' selected range */
     mode: EditMode
+
+    /** Rules to apply. */
+    rules: Rule[] | null
 }
 
 export interface EditInputInitialValues {
@@ -62,6 +70,7 @@ export interface EditInputInitialValues {
     initialIntent: EditIntent
     initialInputValue?: PromptString
     initialSelectedContextItems?: ContextItem[]
+    initialRules?: Rule[] | null
 }
 
 const PREVIEW_RANGE_DECORATION = vscode.window.createTextEditorDecorationType({
@@ -134,6 +143,12 @@ export const getInput = async (
     }
     updateActiveTitle(activeRange)
 
+    const rulesEnabled =
+        (await firstValueFrom(featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.Rules))) || true // TODO!(sqs)
+    const rulesToApply: Rule[] | null = rulesEnabled
+        ? await firstValueFrom(ruleService.rulesForPaths([document.uri]))
+        : null
+
     /**
      * Listens for text document changes and updates the range when changes occur.
      * This allows the range to stay in sync if the user continues editing after
@@ -178,7 +193,7 @@ export const getInput = async (
     // Start fetching symbols early, so they can be used immediately if an option is selected
     const symbolsPromise = fetchDocumentSymbols(document)
 
-    return new Promise(resolve => {
+    return new Promise<QuickPickInput | null>(resolve => {
         const modelInput = createQuickPick({
             title: activeTitle,
             placeHolder: 'Select a model',
@@ -321,7 +336,8 @@ export const getInput = async (
                     editInput.input.value,
                     activeRangeItem,
                     activeModelItem,
-                    showModelSelector
+                    showModelSelector,
+                    rulesToApply
                 )
             },
             onDidHide: () => editor.setDecorations(PREVIEW_RANGE_DECORATION, []),
@@ -360,7 +376,8 @@ export const getInput = async (
                         input.value,
                         activeRangeItem,
                         activeModelItem,
-                        showModelSelector
+                        showModelSelector,
+                        rulesToApply
                     ).items
                     return
                 }
@@ -488,6 +505,7 @@ export const getInput = async (
                     range: activeRange,
                     intent: isGenerate ? 'add' : 'edit',
                     mode: isGenerate ? 'insert' : 'edit',
+                    rules: rulesToApply,
                 })
             },
         })

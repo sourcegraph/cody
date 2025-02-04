@@ -23,6 +23,7 @@ describe('Edit Prompts', () => {
             'typescript',
             uri.toString()
         ),
+        rules: [{ uri: 'file:///a.rule.md', display_name: 'a', instruction: 'My instruction' }],
     }
 
     function normalize(text: string): string {

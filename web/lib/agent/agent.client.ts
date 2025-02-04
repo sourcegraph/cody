@@ -70,7 +70,9 @@ export async function createAgentClient({
         version: '0.0.1',
         // Empty root URI leads to openctx configuration resolution failure, any non-empty
         // mock value (Cody Web doesn't really use any workspace related features)
-        workspaceRootUri: 'sourcegraph/cody',
+        //
+        // TODO!(sqs): figure out sane default for this
+        workspaceRootUri: 'https://github.com/sourcegraph/review-agent-sandbox',
         capabilities: {
             edit: 'none',
             completions: 'none',

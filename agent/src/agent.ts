@@ -394,7 +394,8 @@ export class Agent extends MessageHandler implements ExtensionClient {
             }
 
             this.workspace.workspaceRootUri = clientInfo.workspaceRootUri
-                ? vscode.Uri.parse(clientInfo.workspaceRootUri).with({ scheme: 'file' })
+                ? // TODO!(sqs): why was this previously set to always be file scheme?
+                  vscode.Uri.parse(clientInfo.workspaceRootUri)
                 : vscode.Uri.from({
                       scheme: 'file',
                       path: clientInfo.workspaceRootPath ?? undefined,
@@ -1148,6 +1149,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 range: vscodeRange(params.range),
                 intent: 'edit',
                 mode: params.mode,
+                rules: params.rules,
             }
 
             if (!this.fixups) return Promise.reject()
