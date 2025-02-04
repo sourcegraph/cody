@@ -24,7 +24,6 @@ import {
 import type { FixupController } from '../../non-stop/FixupController'
 import { CodyTaskState } from '../../non-stop/state'
 import type { AutoEditsDecorator, DecorationInfo } from './decorators/base'
-import { initImageSuggestionService } from './image-gen'
 
 export interface TryMakeInlineCompletionsArgs {
     requestId: AutoeditRequestID
@@ -98,8 +97,6 @@ export class AutoEditsDefaultRendererManager implements AutoEditsRendererManager
         protected createDecorator: (editor: vscode.TextEditor) => AutoEditsDecorator,
         protected fixupController: FixupController
     ) {
-        initImageSuggestionService()
-
         this.disposables.push(
             vscode.commands.registerCommand('cody.supersuggest.accept', () => this.acceptActiveEdit()),
             vscode.commands.registerCommand('cody.supersuggest.dismiss', () => this.rejectActiveEdit()),

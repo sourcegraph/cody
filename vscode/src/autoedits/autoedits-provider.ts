@@ -35,6 +35,7 @@ import type { DecorationInfo } from './renderer/decorators/base'
 import { DefaultDecorator } from './renderer/decorators/default-decorator'
 import { InlineDiffDecorator } from './renderer/decorators/inline-diff-decorator'
 import { getDecorationInfo } from './renderer/diff-utils'
+import { initImageSuggestionService } from './renderer/image-gen'
 import { AutoEditsInlineRendererManager } from './renderer/inline-manager'
 import { AutoEditsDefaultRendererManager, type AutoEditsRendererManager } from './renderer/manager'
 import {
@@ -106,6 +107,12 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             isChatModel: autoeditsProviderConfig.isChatModel,
             chatClient: chatClient,
         })
+
+        if (this.enabledRenderer === 'image') {
+            // Initialise the canvas renderer for image generation.
+            // TODO: Consider moving this if we decide to enable this by default.
+            initImageSuggestionService()
+        }
 
         this.rendererManager =
             this.enabledRenderer === 'inline'
