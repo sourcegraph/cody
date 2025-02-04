@@ -133,12 +133,23 @@ export default {
                     from: { height: 'var(--radix-collapsible-content-height)' },
                     to: { height: '0' },
                 },
+                'fast-pulse': {
+                    '0%, 100%': { opacity: '1' },
+                    '50%': { opacity: '0.7' },
+                },
+                'border-travel': {
+                    '0%': { 'background-position': '0% 50%' },
+                    '100%': { 'background-position': '200% 50%' },
+                },
             },
             animation: {
                 'accordion-down': 'accordion-down 0.15s ease-out',
                 'accordion-up': 'accordion-up 0.15s ease-out',
                 'collapsible-down': 'collapsible-down 0.15s ease-out',
                 'collapsible-up': 'collapsible-up 0.15s ease-out',
+                'fast-pulse': 'fast-pulse 0.8s ease-in-out infinite',
+                'border-travel': 'border-travel 2s ease infinite',
+                'border-travel-fast': 'border-travel 1.2s linear infinite',
             },
         },
     },
