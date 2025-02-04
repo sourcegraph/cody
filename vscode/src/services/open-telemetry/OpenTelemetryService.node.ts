@@ -11,6 +11,7 @@ import {
     combineLatest,
     featureFlagProvider,
     resolvedConfig,
+    startWith,
 } from '@sourcegraph/cody-shared'
 
 import { DiagConsoleLogger, DiagLogLevel, diag } from '@opentelemetry/api'
@@ -59,7 +60,7 @@ export class OpenTelemetryService {
         this.configSubscription = combineLatest(
             resolvedConfig,
             featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyAutocompleteTracing),
-            externalAuthRefresh
+            externalAuthRefresh.pipe(startWith(undefined))
         ).subscribe(([{ configuration, auth }, codyAutocompleteTracingFlag]) => {
             this.reconfigurePromiseMutex = this.reconfigurePromiseMutex
                 .then(async () => {
