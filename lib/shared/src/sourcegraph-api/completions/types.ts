@@ -41,6 +41,7 @@ export interface PromptTokensDetails {
 export interface CompletionResponse {
     completion: string
     stopReason?: string
+    reasoning_content?: string
 }
 
 export interface CompletionParameters {

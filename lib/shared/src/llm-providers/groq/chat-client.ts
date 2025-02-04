@@ -37,11 +37,16 @@ export async function groqChatClient({
     // Support [Cortex](https://jan.ai/cortex) experimentally, which commonly uses this port.
     const isCortex = config?.endpoint?.includes(':1337')
 
+    // Removes the last message if its role is 'assistant'.
+    const chatMessages = params.messages.filter(
+        (_, i, arr) => i !== arr.length - 1 || arr[i].speaker !== 'assistant'
+    )
+
     const chatParams = {
         ...config?.options,
         model: config?.model,
         messages: await Promise.all(
-            params.messages.map(async msg => ({
+            chatMessages.map(async msg => ({
                 role: msg.speaker === 'human' ? 'user' : 'assistant',
                 content: (await msg.text?.toFilteredString(contextFiltersProvider)) ?? '',
             }))
@@ -58,6 +63,7 @@ export async function groqChatClient({
 
     const completionResponse: CompletionResponse = {
         completion: '',
+        reasoning_content: undefined,
         stopReason: CompletionStopReason.RequestFinished,
     }
 
@@ -79,6 +85,7 @@ export async function groqChatClient({
             }
 
             const { choices } = await response.json()
+            completionResponse.reasoning_content = choices[0]?.message?.reasoning_content
             completionResponse.completion = choices[0]?.message?.content ?? ''
             cb.onChange(completionResponse.completion)
             cb.onComplete()
