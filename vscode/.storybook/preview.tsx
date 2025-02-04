@@ -60,6 +60,7 @@ const preview: Preview = {
                     { value: Theme.LightModern, title: 'Light Modern Theme' },
                     { value: Theme.LightHighContrast, title: 'Light High Contrast Theme' },
                     { value: Theme.Red, title: 'Red Theme' },
+                    { value: Theme.JetBrains, title: 'JetBrains Light' },
                 ],
                 dynamicTitle: true,
             },

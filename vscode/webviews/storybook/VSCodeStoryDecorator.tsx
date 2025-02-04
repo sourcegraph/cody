@@ -22,6 +22,7 @@ export enum Theme {
     LightModern = 'light-modern',
     LightHighContrast = 'light-high-contrast',
     Red = 'red',
+    JetBrains = 'jetbrains',
 }
 
 const themeClassnames = {
@@ -32,6 +33,7 @@ const themeClassnames = {
     [Theme.LightModern]: 'vscode-light',
     [Theme.LightHighContrast]: 'vscode-high-contrast-light',
     [Theme.Red]: 'vscode-dark',
+    [Theme.JetBrains]: 'vscode-light',
 } satisfies Record<Theme, string>
 
 /**
