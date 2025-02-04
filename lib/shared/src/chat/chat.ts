@@ -46,9 +46,6 @@ export class ChatClient {
         if (params.model?.includes('claude-3') && versions instanceof Error) {
             throw new Error('unable to determine Cody API version')
         }
-        if (!authStatus_.authenticated) {
-            throw new Error('not authenticated')
-        }
 
         const useApiV1 =
             params.model?.includes('claude-3') &&
