@@ -51,7 +51,7 @@ export class ChatClient {
         const isFireworks =
             params?.model?.startsWith('fireworks/') || params?.model?.startsWith('fireworks::')
         const augmentedMessages =
-            isFireworks || getApiVersion() > 0
+            isFireworks || isClaude3Model
                 ? sanitizeMessages(messages)
                 : isLastMessageFromHuman
                   ? messages.concat([{ speaker: 'assistant' }])
