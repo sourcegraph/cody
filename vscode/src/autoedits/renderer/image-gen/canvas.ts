@@ -158,6 +158,8 @@ export function drawDecorationsToCanvas(
     }
 ): EmulatedCanvas2D {
     if (!canvasKit || !fontCache) {
+        // TODO: Log these errors, useful to see if we run into issues where we're not correctly
+        // initializing the canvas
         throw new Error('Canvas not initialized')
     }
 

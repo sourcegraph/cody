@@ -116,7 +116,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 : new AutoEditsDefaultRendererManager(
                       (editor: vscode.TextEditor) =>
                           new DefaultDecorator(editor, {
-                              imageRendering: this.enabledRenderer === 'image',
+                              shouldRenderImage: this.enabledRenderer === 'image',
                           }),
                       fixupController
                   )

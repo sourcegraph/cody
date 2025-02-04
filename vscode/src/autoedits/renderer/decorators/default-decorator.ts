@@ -47,7 +47,7 @@ interface DiffDecorationInfo {
 
 interface DefaultDecoratorOptions {
     /** Experimentally render added lines as images in the editor */
-    imageRendering?: boolean
+    shouldRenderImage?: boolean
 }
 
 export class DefaultDecorator implements AutoEditsDecorator {
@@ -106,9 +106,15 @@ export class DefaultDecorator implements AutoEditsDecorator {
     }
 
     public canRenderDecoration(decorationInfo: DecorationInfo): boolean {
+        if (this.options.shouldRenderImage) {
+            // Image decorations can expand beyond the editor boundaries, so we can always render them.
+            return true
+        }
+
         if (!this.diffDecorationInfo) {
             this.diffDecorationInfo = this.getDiffDecorationsInfo(decorationInfo)
         }
+
         const { addedLinesInfo } = this.diffDecorationInfo
         if (addedLinesInfo) {
             // Check if there are enough lines in the editor to render the diff decorations
@@ -164,7 +170,7 @@ export class DefaultDecorator implements AutoEditsDecorator {
             return
         }
 
-        if (this.options.imageRendering) {
+        if (this.options.shouldRenderImage) {
             this.renderAddedLinesImageDecorations(
                 addedLinesInfo.addedLinesDecorationInfo,
                 addedLinesInfo.startLine,
