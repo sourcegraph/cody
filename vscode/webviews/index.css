@@ -22,6 +22,7 @@
     font-family: var(--vscode-font-family);
     color: var(--vscode-sideBar-foreground);
     background-color: var(--vscode-sideBar-background);
+
     /* Override VS Code Webview Toolkit elements */
     --border-width: none;
     color:var(--text);
@@ -52,8 +53,8 @@
 
     /* Highlight */
     --highlight-background: color-mix(in srgb, var(--vscode-button-background) 40%, transparent 10%);
-    --highlight-background-text: #ffffff;
-    --highlight-border: #391ed3;
+    --highlight-background-text: var(--text);
+    --highlight-border: color-mix(in srgb, var(--vscode-button-background) 50%, white 20%);
 
     /* Links */
     --link-color: var(--vscode-button-background);
@@ -64,46 +65,8 @@
     --button-primary-background: var(--vscode-button-background);
     --button-primary-background-hover: var(--vscode-button-hoverBackground);
     --button-primary-border: var(--vscode-button-border);
-    --button-primary-border-hover: #8e00ff;
-    --button-primary-disabled: #A6B6D9;
+    --button-primary-border-hover: var(--vscode-button-border);
 
-    /* Secondary Button */
-    --button-secondary-text: #313940;
-    --button-secondary-background: #ff0000;
-    --button-secondary-background-hover: #F9FAFB;
-    --button-secondary-border: #ff00f4;
-    --button-secondary-border-hover: #00ee1a;
-    --button-secondary-disabled: #A6B6D9;
-
-    /* Semantic Colors */
-    /* Error */
-    --error-background: #fff5f5;  /* red 0 */
-    --error-border: #ff8787;      /* red 4 */
-    --error-text: #c92a2a;        /* red 9 */
-
-    /* Warning */
-    --warning-background: #fff4e6;  /* orange 0 */
-    --warning-border: #ffa94d;      /* orange 4 */
-    --warning-text: #d9480f;        /* orange 9 */
-
-    /* Success */
-    --success-background: #ebfbee;  /* green 0 */
-    --success-border: #40c057;      /* green 6 */
-    --success-text: #2b8a3e;        /* green 9 */
-
-    /* Shadows */
-    --shadow: 0 0 0 1px rgba(0, 0, 0, 0.1);
-    --shadow-hover: 0 0 0 1px rgba(0, 0, 0, 0.1);
-    --shadow-xl: 0 0 0 1px rgba(0, 0, 0, 0.1);
-
-
-    /* storybook fixes */
-    --vscode-editor-foreground: var(--text);
-    --vscode-editor-background: var(--background-01);
-    --vscode-font-size: 14px;
-    --vscode-tab-border: var(--border);
-    --vscode-sideBar-background: var(--background-01);
-    --vscode-sideBar-border: orange;
 }
 
 html,

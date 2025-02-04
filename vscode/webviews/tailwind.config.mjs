@@ -72,7 +72,7 @@ export default {
                 },
                 muted: {
                     DEFAULT: 'var(--background-03)',
-                    transparent: 'color-mix(in lch, currentColor 15%, transparent)',
+                    transparent: 'color-mix(in lch, currentColor 10%, transparent)',
                     foreground: 'var(--text-muted)',
                 },
                 accent: {

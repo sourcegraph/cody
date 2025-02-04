@@ -14,7 +14,7 @@ h4{
 
 .history-item:hover {
     cursor: pointer;
-    color: var(--vscode-list-highlightForeground);
+    color: var(--text-primary);
 }
 
 .history-delete-btn {
