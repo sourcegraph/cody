@@ -33,8 +33,8 @@
     "update-agent-recordings": "pnpm build && CODY_KEEP_UNUSED_RECORDINGS=false CODY_RECORD_IF_MISSING=true vitest agent/src && cd jetbrains && ./gradlew :recordingIntegrationTest -PforceAgentBuild=true",
     "update-agent-recordings-windows": "PowerShell -ExecutionPolicy Bypass -Command \"pnpm build; if ($?) { $Env:CODY_KEEP_UNUSED_RECORDINGS='false'; $Env:CODY_RECORD_IF_MISSING='true'; vitest agent/src; cd jetbrains; ./gradlew :recordingIntegrationTest -PforceAgentBuild=true }\"",
     "update-rewrite-recordings": "rm -rf recordings && CODY_RECORD_IF_MISSING=true CODY_RECORDING_MODE=record vitest vscode/src/local-context/rewrite-keyword-query.test.ts",
-    "openctx:link": "cd ../openctx && pnpm -C lib/client link --global && pnpm -C lib/schema link --global && pnpm -C lib/protocol link --global && pnpm -C client/vscode-lib link --global && cd ../cody && pnpm link --global @openctx/client && pnpm link --global @openctx/schema &&  pnpm link --global @openctx/protocol && cd vscode && pnpm link --global @openctx/vscode-lib",
-    "openctx:unlink": "pnpm unlink --global @openctx/client && pnpm unlink --global @openctx/schema &&  pnpm unlink --global @openctx/protocol && cd vscode && pnpm unlink --global @openctx/vscode-lib"
+    "openctx:link": "cd ../openctx && pnpm -C lib/client link --global && pnpm -C lib/schema link --global && pnpm -C lib/protocol link --global && pnpm -C client/vscode-lib link --global && pnpm -C provider/modelcontextprotocoltools link --global && cd ../cody && pnpm link --global @openctx/client && pnpm link --global @openctx/schema && pnpm link --global @openctx/protocol && pnpm link --global @openctx/provider-modelcontextprotocoltools && cd vscode && pnpm link --global @openctx/vscode-lib",
+    "openctx:unlink": "pnpm unlink --global @openctx/client && pnpm unlink --global @openctx/schema &&  pnpm unlink --global @openctx/protocol && cd vscode && pnpm unlink --global @openctx/vscode-lib",
   },
   "devDependencies": {
     "@biomejs/biome": "1.7.2",
@@ -64,6 +64,7 @@
   },
   "dependencies": {
     "@openctx/client": "^0.0.30",
+    "@openctx/provider-modelcontextprotocoltools": "^0.0.14",
     "@opentelemetry/sdk-trace-web": "^1.18.1",
     "@sourcegraph/telemetry": "^0.18.0",
     "observable-fns": "^0.6.1",

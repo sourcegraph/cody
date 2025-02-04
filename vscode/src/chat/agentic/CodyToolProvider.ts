@@ -1,5 +1,6 @@
 import {
     type ContextMentionProviderMetadata,
+    MODEL_CONTEXT_PROVIDER_URI,
     type ProcessingStep,
     PromptString,
     type Unsubscribable,
@@ -10,6 +11,7 @@ import {
     switchMap,
 } from '@sourcegraph/cody-shared'
 import { map } from 'observable-fns'
+import * as vscode from 'vscode'
 import type { ContextRetriever } from '../chat-view/ContextRetriever'
 import { type CodyTool, type CodyToolConfig, OpenCtxTool, TOOL_CONFIGS } from './CodyTool'
 import { toolboxManager } from './ToolboxManager'
@@ -96,19 +98,69 @@ class ToolFactory {
             .filter(isDefined)
     }
 
-    public createOpenCtxTools(providers: ContextMentionProviderMetadata[]): CodyTool[] {
-        return providers
-            .map(provider => {
+    public async createOpenCtxTools(providers: ContextMentionProviderMetadata[]): Promise<CodyTool[]> {
+        const tools: CodyTool[] = []
+
+        for (const provider of providers) {
+            if (provider.id === MODEL_CONTEXT_PROVIDER_URI) {
+                // NOTE: For MCP, the single provider can create multiple tools
+
+                // toolNameQuery helps filter the tools by name so that only the matching nameQuery regex are created
+                const toolNameQuery = vscode.workspace
+                    .getConfiguration()
+                    .get<string>('openctx.providers.mcp.toolNameQuery', '')
+
+                // For MCP providers, get available tools through the mentions() function
+                const mcpTools =
+                    (await openCtx.controller?.mentions(
+                        { query: toolNameQuery },
+                        { providerUri: provider.id }
+                    )) ?? []
+
+                for (const mcpTool of mcpTools) {
+                    const toolName = this.generateToolName({
+                        ...provider,
+                        title: mcpTool.title ?? provider.title,
+                    })
+                    const config = this.createModelContextConfig(
+                        {
+                            title: mcpTool.title ?? '',
+                            description: mcpTool.description ?? '',
+                            data: mcpTool.data,
+                        },
+                        toolName
+                    )
+
+                    this.register({
+                        name: toolName,
+                        ...config,
+                        createInstance: cfg => new OpenCtxTool(provider, cfg),
+                    })
+
+                    const tool = this.createTool(toolName)
+                    if (tool) {
+                        tools.push(tool)
+                    }
+                }
+            } else {
+                // For regular providers, create a single tool as before
                 const toolName = this.generateToolName(provider)
                 const config = this.getToolConfig(provider)
+
                 this.register({
                     name: toolName,
                     ...config,
                     createInstance: cfg => new OpenCtxTool(provider, cfg),
                 })
-                return this.createTool(toolName)
-            })
-            .filter(isDefined)
+
+                const tool = this.createTool(toolName)
+                if (tool) {
+                    tools.push(tool)
+                }
+            }
+        }
+
+        return tools
     }
 
     private generateToolName(provider: ContextMentionProviderMetadata): string {
@@ -129,20 +181,82 @@ class ToolFactory {
         const defaultConfig = Object.entries(OPENCTX_TOOL_CONFIG).find(
             c => provider.id.toLowerCase().includes(c[0]) || provider.title.toLowerCase().includes(c[0])
         )
-        return (
-            defaultConfig?.[1] ?? {
-                title: provider.title,
-                tags: {
-                    tag: PromptString.unsafe_fromUserQuery(this.generateToolName(provider)),
-                    subTag: ps`get`,
-                },
-                prompt: {
-                    instruction: PromptString.unsafe_fromUserQuery(provider.queryLabel),
-                    placeholder: ps`QUERY`,
-                    examples: [],
-                },
-            }
+        if (defaultConfig) {
+            return defaultConfig[1]
+        }
+        return {
+            title: provider.title,
+            tags: {
+                tag: PromptString.unsafe_fromUserQuery(this.generateToolName(provider)),
+                subTag: ps`get`,
+            },
+            prompt: {
+                instruction: PromptString.unsafe_fromUserQuery(provider.queryLabel),
+                placeholder: ps`QUERY`,
+                examples: [],
+            },
+        }
+    }
+    // TODO: Handles this in getToolConfig instead of
+    // having a separate function specific to model context protocol
+    private createModelContextConfig(
+        mention: {
+            title: string
+            description: string
+            data?: any
+        },
+        tagName: string
+    ): CodyToolConfig {
+        // Extract schema properties for better instruction formatting
+        const schemaProperties = mention.data?.properties || {}
+        // Create an example object with sample values based on the schema
+        const exampleValues = Object.entries(schemaProperties).reduce(
+            (acc, [key, schema]: [string, any]) => {
+                // Generate sample values based on type
+                acc[key] = this.generateSampleValue(schema.type, key)
+                return acc
+            },
+            {} as Record<string, any>
         )
+        const tags = {
+            tag: PromptString.unsafe_fromUserQuery(tagName),
+            subTag: ps`input`,
+        }
+        return {
+            title: mention.title,
+            tags,
+            prompt: {
+                instruction: PromptString.unsafe_fromUserQuery(
+                    `Use ${mention.title} to ${mention.description || 'retrieve context'}. ` +
+                        `Input must follow this schema::\n<${tags.subTag}>${JSON.stringify(
+                            schemaProperties,
+                            null,
+                            2
+                        )}</${tags.subTag}>` +
+                        'Ensure all required properties are provided and types match the schema.'
+                ),
+                placeholder: PromptString.unsafe_fromUserQuery('INPUT'),
+                examples: [
+                    PromptString.unsafe_fromUserQuery(
+                        `To use ${mention.title} with valid input: \`<${tags.subTag}>${JSON.stringify(
+                            exampleValues
+                        )}</${tags.subTag}>\``
+                    ),
+                ],
+            },
+        }
+    }
+    private generateSampleValue(type: string, key: string): any {
+        switch (type.toLowerCase()) {
+            case 'string':
+                return 'sample-string'
+            case 'number':
+                return 42
+            case 'boolean':
+                return true
+            default:
+                return 'sample-value'
+        }
     }
 }
 

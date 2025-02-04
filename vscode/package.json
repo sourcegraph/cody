@@ -1245,7 +1245,29 @@
         "openctx.providers": {
           "type": "object",
           "markdownDescription": "OpenCtx providers configuration.",
-          "default": {}
+          "default": {},
+          "properties": {
+            "mcp": {
+              "type": "object",
+              "properties": {
+                "enable": {
+                  "type": "boolean",
+                  "markdownDescription": "Enable OpenCtx providers for MCP servers.",
+                  "default": false
+                },
+                "uri": {
+                  "type": "string",
+                  "markdownDescription": "URI for the MCP provider tools in OpenCtx.",
+                  "default": ""
+                },
+                "toolNameQuery": {
+                  "type": "string",
+                  "markdownDescription": "Regex for the MCP provider tools in OpenCtx.",
+                  "default": ""
+                }
+              }
+            }
+          }
         },
         "cody.internal.unstable": {
           "order": 999,

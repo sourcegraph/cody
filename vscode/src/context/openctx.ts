@@ -8,6 +8,7 @@ import {
     GIT_OPENCTX_PROVIDER_URI,
     type OpenCtxController,
     RULES_PROVIDER_URI,
+    MODEL_CONTEXT_PROVIDER_URI,
     WEB_PROVIDER_URI,
     authStatus,
     clientCapabilities,
@@ -40,6 +41,7 @@ import { logDebug } from '../output-channel-logger'
 import { createCodeSearchProvider } from './openctx/codeSearch'
 import { gitMentionsProvider } from './openctx/git'
 import LinearIssuesProvider from './openctx/linear-issues'
+import { createModelContextProvider } from './openctx/modelContextProvider'
 import RemoteDirectoryProvider, { createRemoteDirectoryProvider } from './openctx/remoteDirectorySearch'
 import RemoteFileProvider, { createRemoteFileProvider } from './openctx/remoteFileSearch'
 import RemoteRepositorySearch, { createRemoteRepositoryProvider } from './openctx/remoteRepositorySearch'
@@ -205,6 +207,33 @@ export function getOpenCtxProviders(
                     provider: createCodeSearchProvider(),
                     providerUri: CODE_SEARCH_PROVIDER_URI,
                 })
+            }
+            const isMcpEnabled = vscode.workspace
+                .getConfiguration()
+                .get<boolean>('openctx.providers.mcp.enable', true)
+
+            // if mcp is enabled, add the mcp provider to the providers
+            if (isMcpEnabled) {
+                const modelContextProviderToolsURI = vscode.workspace
+                    .getConfiguration()
+                    .get<string>('openctx.providers.mcp.uri', '')
+                const modelContextProviderArgs = vscode.workspace
+                    .getConfiguration()
+                    .get<string[]>('openctx.providers.mcp.args', [])
+                if (modelContextProviderToolsURI) {
+                    providers.push({
+                        settings: true,
+                        provider: createModelContextProvider(
+                            modelContextProviderToolsURI,
+                            modelContextProviderArgs
+                        ),
+                        providerUri: MODEL_CONTEXT_PROVIDER_URI,
+                    })
+                    logDebug(
+                        'OpenCtx',
+                        `MCP provider added to the providers with uri: ${modelContextProviderToolsURI}`
+                    )
+                }
             }
 
             return providers

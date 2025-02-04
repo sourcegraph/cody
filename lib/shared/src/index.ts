@@ -363,6 +363,7 @@ export {
     CODE_SEARCH_PROVIDER_URI,
     currentOpenCtxController,
     RULES_PROVIDER_URI,
+    MODEL_CONTEXT_PROVIDER_URI,
 } from './context/openctx/api'
 export * from './context/openctx/context'
 export * from './lexicalEditor/editorState'
