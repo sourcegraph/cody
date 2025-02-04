@@ -20,7 +20,7 @@ import {
     fromVSCodeEvent,
     isDotCom,
     isError,
-    openCtx,
+    openctxController,
     pendingOperation,
     shareReplay,
     startWith,
@@ -265,53 +265,52 @@ export function getCorpusContextItemsForEditorState(): Observable<
 }
 
 function getOpenCtxContextItems(): Observable<ContextItem[] | typeof pendingOperation> {
-    const openctxController = openCtx.controller
-    if (!openctxController) {
-        return Observable.of([])
-    }
-
-    return openctxController.metaChanges({}).pipe(
-        switchMap((providers): Observable<ContextItem[] | typeof pendingOperation> => {
-            const providersWithAutoInclude = providers.filter(meta => meta.mentions?.autoInclude)
-            if (providersWithAutoInclude.length === 0) {
-                return Observable.of([])
-            }
-
-            return activeTextEditor.pipe(
-                debounceTime(50),
-                switchMap(() => activeEditorContextForOpenCtxMentions),
-                switchMap(activeEditorContext => {
-                    if (activeEditorContext === pendingOperation) {
-                        return Observable.of(pendingOperation)
-                    }
-                    if (isError(activeEditorContext)) {
+    return openctxController.pipe(
+        switchMap(c =>
+            c.metaChanges({}, {}).pipe(
+                switchMap((providers): Observable<ContextItem[] | typeof pendingOperation> => {
+                    const providersWithAutoInclude = providers.filter(meta => meta.mentions?.autoInclude)
+                    if (providersWithAutoInclude.length === 0) {
                         return Observable.of([])
                     }
-                    return combineLatest(
-                        ...providersWithAutoInclude.map(provider =>
-                            openctxController.mentionsChanges(
-                                { ...activeEditorContext, autoInclude: true },
-                                provider
+
+                    return activeTextEditor.pipe(
+                        debounceTime(50),
+                        switchMap(() => activeEditorContextForOpenCtxMentions),
+                        switchMap(activeEditorContext => {
+                            if (activeEditorContext === pendingOperation) {
+                                return Observable.of(pendingOperation)
+                            }
+                            if (isError(activeEditorContext)) {
+                                return Observable.of([])
+                            }
+                            return combineLatest(
+                                ...providersWithAutoInclude.map(provider =>
+                                    c.mentionsChanges(
+                                        { ...activeEditorContext, autoInclude: true },
+                                        provider
+                                    )
+                                )
+                            ).pipe(
+                                map(mentionsResults =>
+                                    mentionsResults.flat().map(
+                                        mention =>
+                                            ({
+                                                ...mention,
+                                                provider: 'openctx',
+                                                type: 'openctx',
+                                                uri: URI.parse(mention.uri),
+                                                source: ContextItemSource.Initial,
+                                                mention, // include the original mention to pass to `items` later
+                                            }) satisfies ContextItem
+                                    )
+                                ),
+                                startWith(pendingOperation)
                             )
-                        )
-                    ).pipe(
-                        map(mentionsResults =>
-                            mentionsResults.flat().map(
-                                mention =>
-                                    ({
-                                        ...mention,
-                                        provider: 'openctx',
-                                        type: 'openctx',
-                                        uri: URI.parse(mention.uri),
-                                        source: ContextItemSource.Initial,
-                                        mention, // include the original mention to pass to `items` later
-                                    }) satisfies ContextItem
-                            )
-                        ),
-                        startWith(pendingOperation)
+                        })
                     )
                 })
             )
-        })
+        )
     )
 }
