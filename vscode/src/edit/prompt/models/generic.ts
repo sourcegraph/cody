@@ -1,4 +1,5 @@
-import { PromptString, psDedent } from '@sourcegraph/cody-shared'
+import { PromptString, isDefined, ps, psDedent } from '@sourcegraph/cody-shared'
+import { formatRuleForPrompt } from '@sourcegraph/cody-shared/src/rules/rules'
 import type { EditIntent } from '../../types'
 import { PROMPT_TOPICS } from '../constants'
 import type { GetLLMInteractionOptions, LLMPrompt } from '../type'
@@ -114,14 +115,22 @@ const GENERIC_PROMPTS: Record<EditIntent, PromptVariant> = {
 
 export const buildGenericPrompt = (
     intent: EditIntent,
-    { instruction, selectedText, uri }: GetLLMInteractionOptions
+    { instruction, selectedText, uri, rules }: GetLLMInteractionOptions
 ): LLMPrompt => {
+    const instructionWithRules = PromptString.join(
+        [
+            instruction,
+            rules ? ps`Follow these rules:` : undefined,
+            ...(rules?.map(formatRuleForPrompt) ?? []),
+        ].filter(isDefined),
+        ps`\n`
+    )
     switch (intent) {
         case 'edit':
             return {
                 system: GENERIC_PROMPTS.edit.system,
                 instruction: GENERIC_PROMPTS.edit.instruction
-                    .replaceAll('{instruction}', instruction)
+                    .replaceAll('{instruction}', instructionWithRules)
                     .replaceAll('{selectedText}', selectedText)
                     .replaceAll('{filePath}', PromptString.fromDisplayPath(uri)),
             }
@@ -129,14 +138,14 @@ export const buildGenericPrompt = (
             return {
                 system: GENERIC_PROMPTS.add.system,
                 instruction: GENERIC_PROMPTS.add.instruction
-                    .replaceAll('{instruction}', instruction)
+                    .replaceAll('{instruction}', instructionWithRules)
                     .replaceAll('{filePath}', PromptString.fromDisplayPath(uri)),
             }
         case 'fix':
             return {
                 system: GENERIC_PROMPTS.fix.system,
                 instruction: GENERIC_PROMPTS.fix.instruction
-                    .replaceAll('{instruction}', instruction)
+                    .replaceAll('{instruction}', instructionWithRules)
                     .replaceAll('{selectedText}', selectedText)
                     .replaceAll('{filePath}', PromptString.fromDisplayPath(uri)),
             }
@@ -144,7 +153,7 @@ export const buildGenericPrompt = (
             return {
                 system: GENERIC_PROMPTS.test.system,
                 instruction: GENERIC_PROMPTS.test.instruction
-                    .replaceAll('{instruction}', instruction)
+                    .replaceAll('{instruction}', instructionWithRules)
                     .replaceAll('{selectedText}', selectedText)
                     .replaceAll('{filePath}', PromptString.fromDisplayPath(uri)),
             }
@@ -152,7 +161,7 @@ export const buildGenericPrompt = (
             return {
                 system: GENERIC_PROMPTS.doc.system,
                 instruction: GENERIC_PROMPTS.doc.instruction
-                    .replaceAll('{instruction}', instruction)
+                    .replaceAll('{instruction}', instructionWithRules)
                     .replaceAll('{selectedText}', selectedText)
                     .replaceAll('{filePath}', PromptString.fromDisplayPath(uri)),
             }

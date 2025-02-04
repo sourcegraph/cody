@@ -13,7 +13,7 @@ export interface CodyExternalApi {
 }
 
 export interface Repository {
-    id: string
+    id: string | null
     name: string
 }
 
