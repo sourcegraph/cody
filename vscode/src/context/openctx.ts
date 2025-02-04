@@ -7,6 +7,7 @@ import {
     FeatureFlag,
     GIT_OPENCTX_PROVIDER_URI,
     type OpenCtxController,
+    RULES_PROVIDER_URI,
     WEB_PROVIDER_URI,
     authStatus,
     clientCapabilities,
@@ -18,6 +19,7 @@ import {
     graphqlClient,
     isDotCom,
     isError,
+    isRulesEnabled,
     logError,
     pluck,
     promiseFactoryToObservable,
@@ -41,6 +43,7 @@ import LinearIssuesProvider from './openctx/linear-issues'
 import RemoteDirectoryProvider, { createRemoteDirectoryProvider } from './openctx/remoteDirectorySearch'
 import RemoteFileProvider, { createRemoteFileProvider } from './openctx/remoteFileSearch'
 import RemoteRepositorySearch, { createRemoteRepositoryProvider } from './openctx/remoteRepositorySearch'
+import { createRulesProvider } from './openctx/rules'
 import { createWebProvider } from './openctx/web'
 
 /**
@@ -149,6 +152,14 @@ export function getOpenCtxProviders(
                 },
             ]
 
+            if (isRulesEnabled(config)) {
+                providers.push({
+                    settings: true,
+                    provider: createRulesProvider(),
+                    providerUri: RULES_PROVIDER_URI,
+                })
+            }
+
             if (!isDotCom(authStatus)) {
                 // Remote repository and remote files should be available for non-dotcom users.
                 providers.push({
@@ -203,8 +214,9 @@ export function getOpenCtxProviders(
 
 function getCodyWebOpenCtxProviders(): Observable<ImportedProviderConfiguration[]> {
     return combineLatest(
+        resolvedConfig.pipe(pluck('configuration'), distinctUntilChanged()),
         ClientConfigSingleton.getInstance().changes.pipe(skipPendingOperation(), distinctUntilChanged())
-    ).map(([clientConfig]) => {
+    ).map(([config, clientConfig]) => {
         const providers = [
             {
                 settings: true,
@@ -227,6 +239,14 @@ function getCodyWebOpenCtxProviders(): Observable<ImportedProviderConfiguration[
                 provider: createWebProvider(true),
             },
         ]
+
+        if (isRulesEnabled(config)) {
+            providers.push({
+                settings: true,
+                provider: createRulesProvider(),
+                providerUri: RULES_PROVIDER_URI,
+            })
+        }
 
         if (clientConfig?.omniBoxEnabled) {
             providers.push({
