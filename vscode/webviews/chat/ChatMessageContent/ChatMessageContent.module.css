@@ -239,7 +239,7 @@ body[data-vscode-theme-kind='vscode-light'] .content pre > code {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0.75rem 1rem;
+    padding: 0.15rem 0.5rem;
     background-color: rgba(243, 244, 246, 0.7);
     cursor: pointer;
     user-select: none;
