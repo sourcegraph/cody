@@ -216,10 +216,6 @@ export function shouldLogEditContextItem<T>(
     payload: T,
     isFeatureFlagEnabledForLogging: boolean
 ): boolean {
-    console.log('shouldLogEditContextItem', payload)
-    console.log('isDotComAuthed', isDotComAuthed())
-    console.log('isFeatureFlagEnabledForLogging', isFeatureFlagEnabledForLogging)
-
     // 🚨 SECURITY: included only for DotCom users and for users in the feature flag.
     if (isDotComAuthed() && isFeatureFlagEnabledForLogging) {
         const payloadSize = calculatePayloadSizeInBytes(payload)
