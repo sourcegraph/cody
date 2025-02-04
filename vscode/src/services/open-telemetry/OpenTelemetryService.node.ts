@@ -7,13 +7,16 @@ import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions'
 import {
     FeatureFlag,
     type Unsubscribable,
+    addAuthHeaders,
     combineLatest,
     featureFlagProvider,
     resolvedConfig,
+    startWith,
 } from '@sourcegraph/cody-shared'
 
 import { DiagConsoleLogger, DiagLogLevel, diag } from '@opentelemetry/api'
 import { BatchSpanProcessor } from '@opentelemetry/sdk-trace-base'
+import { externalAuthRefresh } from '@sourcegraph/cody-shared/src/configuration/auth-resolver'
 import { isEqual } from 'lodash'
 import { version } from '../../version'
 import { CodyTraceExporter } from './CodyTraceExport'
@@ -22,7 +25,7 @@ import { ConsoleBatchSpanExporter } from './console-batch-span-exporter'
 export interface OpenTelemetryServiceConfig {
     isTracingEnabled: boolean
     traceUrl: string
-    accessToken: string | null
+    authHeaders: Record<string, string>
     debugVerbose: boolean
 }
 export class OpenTelemetryService {
@@ -31,7 +34,6 @@ export class OpenTelemetryService {
     private unloadInstrumentations?: () => void
     private isTracingEnabled = false
 
-    // We use a single promise object that we chain on to, to avoid multiple reconfigure calls to
     // be run in parallel
     private lastConfig: OpenTelemetryServiceConfig | undefined
     private reconfigurePromiseMutex: Promise<void> = Promise.resolve()
@@ -40,6 +42,10 @@ export class OpenTelemetryService {
     private diagLogger: DiagConsoleLogger = new DiagConsoleLogger()
     private currentLogLevel: DiagLogLevel = DiagLogLevel.ERROR
 
+    // TODO: CODY-4720 - Race between config and auth update can lead to easy to make errors.
+    // `externalAuthRefresh` or `resolvedConfig` can emit before `auth` is updated, leading to potentially incoherent state.
+    // E.g. url endpoint may not match the endpoint for which headers were generated
+    // `addAuthHeaders` function have internal guard against this, but it would be better to solve this issue on the architecture level
     constructor() {
         // Initialize once and never replace
         this.tracerProvider = new NodeTracerProvider({
@@ -53,20 +59,24 @@ export class OpenTelemetryService {
 
         this.configSubscription = combineLatest(
             resolvedConfig,
-            featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyAutocompleteTracing)
+            featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyAutocompleteTracing),
+            externalAuthRefresh.pipe(startWith(undefined))
         ).subscribe(([{ configuration, auth }, codyAutocompleteTracingFlag]) => {
             this.reconfigurePromiseMutex = this.reconfigurePromiseMutex
                 .then(async () => {
                     this.isTracingEnabled =
                         configuration.experimentalTracing || codyAutocompleteTracingFlag
 
-                    const traceUrl = new URL('/-/debug/otlp/v1/traces', auth.serverEndpoint).toString()
+                    const traceUrl = new URL('/-/debug/otlp/v1/traces', auth.serverEndpoint)
+
+                    const headers = new Headers()
+                    await addAuthHeaders(auth, headers, traceUrl)
 
                     const newConfig = {
                         isTracingEnabled: this.isTracingEnabled,
-                        traceUrl: traceUrl,
+                        traceUrl: traceUrl.toString(),
                         debugVerbose: configuration.debugVerbose,
-                        accessToken: auth.accessToken,
+                        authHeaders: Object.fromEntries(headers.entries()),
                     }
 
                     if (isEqual(this.lastConfig, newConfig)) {

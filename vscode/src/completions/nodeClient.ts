@@ -13,6 +13,7 @@ import {
     NetworkError,
     RateLimitError,
     SourcegraphCompletionsClient,
+    addAuthHeaders,
     addClientInfoParams,
     addCodyClientIdentificationHeaders,
     currentResolvedConfig,
@@ -95,13 +96,20 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                 // responses afterwards.
                 'Accept-Encoding': 'gzip;q=0',
                 'X-Sourcegraph-Interaction-ID': interactionId || '',
-                ...(auth.accessToken ? { Authorization: `token ${auth.accessToken}` } : null),
                 ...configuration?.customHeaders,
                 ...requestParams.customHeaders,
                 ...getTraceparentHeaders(),
                 Connection: 'keep-alive',
             })
             addCodyClientIdentificationHeaders(headers)
+
+            try {
+                await addAuthHeaders(auth, headers, url)
+            } catch (error: any) {
+                log?.onError(error.message, error)
+                onErrorOnce(error)
+                return
+            }
 
             const request = requestFn(
                 url,
@@ -299,7 +307,6 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                 const headers = new Headers({
                     'Content-Type': 'application/json',
                     'Accept-Encoding': 'gzip;q=0',
-                    ...(auth.accessToken ? { Authorization: `token ${auth.accessToken}` } : null),
                     ...configuration.customHeaders,
                     ...requestParams.customHeaders,
                     ...getTraceparentHeaders(),
@@ -307,6 +314,7 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                 })
 
                 addCodyClientIdentificationHeaders(headers)
+                await addAuthHeaders(auth, headers, url)
 
                 const response = await fetch(url.toString(), {
                     method: 'POST',

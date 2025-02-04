@@ -62,7 +62,22 @@ export interface EnterpriseUserDotComError {
     enterprise: string
 }
 
-export type AuthenticationError = NetworkAuthError | InvalidAccessTokenError | EnterpriseUserDotComError
+export interface AuthConfigError {
+    type: 'auth-config-error'
+    message: string
+}
+
+export interface ExternalAuthProviderError {
+    type: 'external-auth-provider-error'
+    message: string
+}
+
+export type AuthenticationError =
+    | NetworkAuthError
+    | InvalidAccessTokenError
+    | EnterpriseUserDotComError
+    | AuthConfigError
+    | ExternalAuthProviderError
 
 export interface AuthenticationErrorMessage {
     title?: string
@@ -89,6 +104,16 @@ export function getAuthErrorMessage(error: AuthenticationError): AuthenticationE
                     `${error.enterprise}. To get access to all your features please sign ` +
                     "in through your organization's enterprise instance instead. If you need assistance " +
                     'please contact your Sourcegraph admin.',
+            }
+        case 'auth-config-error':
+            return {
+                title: 'Auth Config Error',
+                message: error.message,
+            }
+        case 'external-auth-provider-error':
+            return {
+                title: 'External Auth Provider Error',
+                message: error.message,
             }
     }
 }
