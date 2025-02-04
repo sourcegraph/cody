@@ -47,7 +47,8 @@ export class ChatClient {
             throw new Error('unable to determine Cody API version')
         }
 
-        const useApiV1 = params.model?.includes('claude-3')·&&·!(versions·instanceof·Error)·&&·versions.codyAPIVersion
+        const useApiV1 =
+            params.model?.includes('claude-3') && !(versions instanceof Error) && versions.codyAPIVersion
         const isLastMessageFromHuman = messages.length > 0 && messages.at(-1)!.speaker === 'human'
 
         const isFireworks =
