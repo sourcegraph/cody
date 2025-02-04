@@ -36,7 +36,7 @@ import type { Config } from 'cody-ai/webviews/utils/useConfig'
 
 import type { CodyExternalApi, InitialContext } from '../types'
 
-import { useCodyWebAgent } from './use-cody-agent'
+import type { CodyWebAgent } from './use-cody-agent'
 
 // Include global Cody Web styles to the styles bundle
 import '../global-styles/styles.css'
@@ -87,12 +87,8 @@ export interface CodyWebChatController {
 }
 
 export interface CodyWebChatProps {
-    serverEndpoint: string
-    accessToken: string | null
-    createAgentWorker: () => Worker
-    telemetryClientName?: string
+    agent: CodyWebAgent | Error | null
     initialContext?: InitialContext
-    customHeaders?: Record<string, string>
     className?: string
 
     /** A controller that allows the host system to control the behavior of the chat. */
@@ -117,32 +113,18 @@ export interface CodyWebChatProps {
  * You can see the demo usage of this component in demo/App.tsx
  */
 export const CodyWebChat: FunctionComponent<CodyWebChatProps> = ({
-    serverEndpoint,
-    accessToken,
-    createAgentWorker,
+    agent,
     initialContext,
-    telemetryClientName,
-    customHeaders,
     className,
     onExternalApiReady,
     controller,
     viewType,
 }) => {
-    const { client, vscodeAPI } = useCodyWebAgent({
-        serverEndpoint,
-        accessToken,
-        createAgentWorker,
-        initialContext,
-        telemetryClientName,
-        customHeaders,
-        repository: initialContext?.repository.name,
-    })
-
-    if (isErrorLike(client)) {
-        return <p>Cody Web client agent error: {client.message}</p>
+    if (isErrorLike(agent)) {
+        return <p>Cody Web client agent error: {agent.message}</p>
     }
 
-    if (client === null || vscodeAPI === null) {
+    if (agent === null) {
         return <ChatSkeleton className={classNames(className, styles.root)} />
     }
 
@@ -150,7 +132,7 @@ export const CodyWebChat: FunctionComponent<CodyWebChatProps> = ({
         <AppWrapper>
             <div className={classNames(className, styles.root)}>
                 <CodyWebPanel
-                    vscodeAPI={vscodeAPI}
+                    vscodeAPI={agent.vscodeAPI}
                     initialContext={initialContext}
                     className={styles.container}
                     onExternalApiReady={onExternalApiReady}
