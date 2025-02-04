@@ -147,7 +147,7 @@ export async function handleCodeFromInsertAtCursor(text: string): Promise<void> 
 
 function getSmartApplyExperimentModel(): Observable<EditModel | undefined> {
     const defaultModel: EditModel = 'anthropic/claude-3-5-sonnet-20240620'
-    const haikuModel: EditModel = 'anthropic/claude-3-5-haiku-20241022'
+    const haikuModel: EditModel = 'anthropic::2024-10-22::claude-3-5-haiku-latest'
 
     return combineLatest(
         featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodySmartApplyExperimentEnabledFeatureFlag),
