@@ -44,7 +44,7 @@ export class ChatClient {
         // Only check the API version if it's a claude-3 model. Claude-3 models are being deprecated already,
         // but old sg instances might still have them.
         if (params.model?.includes('claude-3') && versions instanceof Error) {
-            throw new Error('unable to determine Cody API version', { cause: versions })
+            throw new Error('unable to determine Cody API version')
         }
         if (!authStatus_.authenticated) {
             throw new Error('not authenticated')
