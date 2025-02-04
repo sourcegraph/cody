@@ -19,11 +19,92 @@
 #root {
     height: 100%;
     margin: 0 auto;
-    font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+    font-family: var(--vscode-font-family);
     color: var(--vscode-sideBar-foreground);
     background-color: var(--vscode-sideBar-background);
     /* Override VS Code Webview Toolkit elements */
     --border-width: none;
+
+    color:var(--text);
+
+    /* Backgrounds */
+    --background-01: #FFFFFF;  /* Main page background */
+    --background-02: #F9FAFB;  /* Cards, panels, etc. */
+    --background-03: #EFF2F5;  /* Slightly darker surface */
+
+    /* Text */
+    --text: var(--vscode-input-border);
+    --text-subtle: #343A4D;
+    --text-muted: #5E6E8C;
+    --text-primary: #1C7ED6;
+    --text-primary-subtle: #228BE6;
+    --text-primary-muted: #228BE6;
+    --text-disabled: #798BAF;
+    --text-link-color: #1C7ED6;
+    --text-link-hover-color: #228BE6;
+    --text-white: #FFFFFF;
+
+    /* Borders */
+    --border: #DBE2F0;
+    --border-subtle: #E6EBF2;
+    --border-disabled: #EFF2F5;
+    --border-active: #1C7ED6;
+    --border-hover: #228BE6;
+
+    /* Highlight */
+    --highlight-background: #84a6bc;
+    --highlight-background-text: #0F111A;
+    --highlight-border: #1c7ed6;
+
+    /* Links */
+    --link-color: #1C7ED6;
+    --link-hover-color: #228BE6;
+
+    /* Primary Button */
+    --button-primary-text: #FFFFFF;
+    --button-primary-background: #1C7ED6;
+    --button-primary-background-hover: #228BE6;
+    --button-primary-border: #1C7ED6;
+    --button-primary-border-hover: #228BE6;
+    --button-primary-disabled: #A6B6D9;
+
+    /* Secondary Button */
+    --button-secondary-text: #1C7ED6;
+    --button-secondary-background: #FFFFFF;
+    --button-secondary-background-hover: #F9FAFB;
+    --button-secondary-border: #1C7ED6;
+    --button-secondary-border-hover: #228BE6;
+    --button-secondary-disabled: #A6B6D9;
+
+    /* Semantic Colors */
+    /* Error */
+    --error-background: #fff5f5;  /* red 0 */
+    --error-border: #ff8787;      /* red 4 */
+    --error-text: #c92a2a;        /* red 9 */
+
+    /* Warning */
+    --warning-background: #fff4e6;  /* orange 0 */
+    --warning-border: #ffa94d;      /* orange 4 */
+    --warning-text: #d9480f;        /* orange 9 */
+
+    /* Success */
+    --success-background: #ebfbee;  /* green 0 */
+    --success-border: #40c057;      /* green 6 */
+    --success-text: #2b8a3e;        /* green 9 */
+
+    /* Shadows */
+    --shadow: 0 0 0 1px rgba(0, 0, 0, 0.1);
+    --shadow-hover: 0 0 0 1px rgba(0, 0, 0, 0.1);
+    --shadow-xl: 0 0 0 1px rgba(0, 0, 0, 0.1);
+
+
+    /* storybook fixes */
+    --vscode-editor-foreground: var(--text);
+    --vscode-editor-background: var(--background-01);
+    --vscode-font-size: 14px;
+    --vscode-tab-border: var(--border);
+    --vscode-sideBar-background: var(--background-01);
+    --vscode-sideBar-border: orange;
 }
 
 html,

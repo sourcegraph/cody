@@ -45,8 +45,8 @@
 }
 
 .button--primary {
-    color: var(--vscode-button-foreground);
-    background-color: var(--vscode-button-background);
+    color: var(--button-primary-text);
+    background-color: var(--button-primary-background);
 
     &.button--no-icon-start {
         padding-left: calc(2*var(--padding-x));
@@ -59,7 +59,7 @@
 
 .button--secondary {
     opacity: 0.6;
-    color: var(--vscode-input-foreground);
+    color: var(--button-secondary-text);
     background-color: unset;
 
     &:enabled:is(:hover, :focus-within) {

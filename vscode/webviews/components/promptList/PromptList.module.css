@@ -14,11 +14,11 @@
         margin: 0.5rem;
         padding: 0.5rem;
         border-radius: 3px;
-        background-color: var(--vscode-input-background);
-        color: var(--vscode-input-foreground);
+        background-color: var(--background-02);
+        color: var(--text);
 
         &:focus {
-            box-shadow: 0 0 0 0.125rem var(--vscode-focusBorder)
+            box-shadow: 0 0 0 0.125rem var(--border-active)
         }
     }
 
@@ -44,11 +44,11 @@
             padding: 0.25rem 0.5rem;
 
             &[aria-selected="true"] {
-                border-color: var(--vscode-list-activeSelectionBackground);
+                border-color: var(--highlight-background);
             }
 
             &:not([aria-selected="true"]) {
-                background-color: var(--vscode-dropdown-background);
+                background-color: var(--background-03);
             }
         }
     }

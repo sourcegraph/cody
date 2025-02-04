@@ -56,7 +56,7 @@ export const WelcomeMessage: FunctionComponent<WelcomeMessageProps> = ({
                         className="tw-justify-center tw-basis-0 tw-whitespace-nowrap"
                         onClick={handleRecentlyUsed}
                     >
-                        Recently used{' '}
+                        Recently usadasdassed{' '}
                         {IDE === CodyIDE.VSCode && <Kbd macOS="opt+p" linuxAndWindows="alt+p" />}
                     </Button>
 

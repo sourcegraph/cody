@@ -1,4 +1,5 @@
 :root {
+
     /* Backgrounds */
     --background-01: #FFFFFF;  /* Main page background */
     --background-02: #F9FAFB;  /* Cards, panels, etc. */
@@ -24,8 +25,8 @@
     --border-hover: #228BE6;
 
     /* Highlight */
-    --highlight-background: #84a6bc;
-    --highlight-background-text: #0F111A;
+    --highlight-background: #d8e8fa;
+    --highlight-background-text: #ffffff;
     --highlight-border: #1c7ed6;
 
     /* Links */
@@ -41,7 +42,7 @@
     --button-primary-disabled: #A6B6D9;
 
     /* Secondary Button */
-    --button-secondary-text: #1C7ED6;
+    --button-secondary-text: #313940;
     --button-secondary-background: #FFFFFF;
     --button-secondary-background-hover: #F9FAFB;
     --button-secondary-border: #1C7ED6;
@@ -71,10 +72,10 @@
 
 
     /* storybook fixes */
-    --vscode-editor-foreground: red;
+    --vscode-editor-foreground: var(--text);
     --vscode-editor-background: var(--background-01);
     --vscode-font-size: 14px;
-    --vscode-tab-border: gold;
-    --vscode-sideBar-background: purple;
+    --vscode-tab-border: var(--border);
+    --vscode-sideBar-background: var(--background-01);
     --vscode-sideBar-border: orange;
 }

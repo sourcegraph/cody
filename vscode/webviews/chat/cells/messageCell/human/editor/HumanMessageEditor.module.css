@@ -8,12 +8,11 @@
     flex-direction: column;
     gap: var(--human-message-editor-gap);
     border-radius: 4px;
-    background-color: color-mix(in srgb, var(--vscode-input-background) 50%, transparent);
-    color: var(--vscode-input-foreground);
-    outline: solid 1px var(--vscode-input-border);
+    background-color: color-mix(in srgb, var(--background-03) 50%, transparent);
+    color: var(--text);
+    outline: solid 1px var(--border);
     outline-offset: -1px;
     cursor: text;
-
     .editor {
         scrollbar-gutter: stable;
         padding: var(--prompt-editor-padding-y) var(--prompt-editor-padding-x);
@@ -41,13 +40,13 @@
 }
 
 .container:hover, .container:has(:focus-within, menu>button:focus) {
-    background-color: var(--vscode-input-background);
+    background-color: var(--background-02);
 }
 
 /* Show focus ring when the input is focused or a toolbar button within the input container is
    focused, but NOT if something in a toolbar button's popover is focused. */
 .container:has([data-lexical-editor='true']:focus-within, menu>button:focus) {
-    outline-color: var(--vscode-focusBorder);
+    outline-color: var(--border-active);
 }
 
 .editor-content-editable {
