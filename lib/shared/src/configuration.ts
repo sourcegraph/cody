@@ -112,6 +112,7 @@ interface RawClientConfiguration {
     experimentalMinionAnthropicKey: string | undefined
     experimentalNoxideEnabled: boolean
     experimentalGuardrailsTimeoutSeconds: number | undefined
+    experimentalImageUpload: boolean
 
     //#region Unstable
     internalUnstable: boolean

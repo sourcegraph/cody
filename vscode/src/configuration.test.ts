@@ -138,6 +138,8 @@ describe('getConfiguration', () => {
                         return false
                     case 'cody.agentic.context.experimentalOptions':
                         return { shell: { allow: ['git'] } }
+                    case 'cody.experimental.imageUpload':
+                        return false
                     default:
                         assert(false, `unexpected key: ${key}`)
                 }
@@ -206,6 +208,7 @@ describe('getConfiguration', () => {
 
             overrideAuthToken: undefined,
             overrideServerEndpoint: undefined,
+            experimentalImageUpload: false,
         } satisfies ClientConfiguration)
     })
 })
