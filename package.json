@@ -23,6 +23,7 @@
     "check:css": "stylelint --quiet --cache '**/*.css'",
     "check:build": "pnpm run -C vscode check:build",
     "biome": "biome check --apply --error-on-warnings .",
+    "format": "pnpm biome",
     "test": "vitest",
     "test:unit": "vitest run",
     "test:integration": "pnpm -C vscode test:integration",
