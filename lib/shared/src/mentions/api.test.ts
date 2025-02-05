@@ -1,4 +1,6 @@
-import { describe, expect, it } from 'vitest'
+import { Observable } from 'observable-fns'
+import { describe, expect, it, vi } from 'vitest'
+import * as openctxAPI from '../context/openctx/api'
 import { firstValueFrom } from '../misc/observable'
 import {
     FILE_CONTEXT_MENTION_PROVIDER,
@@ -7,6 +9,15 @@ import {
 } from './api'
 
 describe('mentionProvidersMetadata', () => {
+    vi.spyOn(openctxAPI, 'openctxController', 'get').mockReturnValue(
+        Observable.of({
+            metaChanges: () => Observable.of([]),
+        } satisfies Pick<
+            openctxAPI.OpenCtxController,
+            'metaChanges'
+        > as unknown as openctxAPI.OpenCtxController)
+    )
+
     it('should return all providers when no options are provided', async () => {
         const providers = await firstValueFrom(mentionProvidersMetadata())
         expect(providers.length).toBeGreaterThanOrEqual(2)

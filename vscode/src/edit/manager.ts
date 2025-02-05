@@ -168,6 +168,7 @@ export class EditManager implements vscode.Disposable {
                 intent,
                 mode,
                 model,
+                configuration.rules ?? null,
                 source,
                 configuration.destinationFile,
                 configuration.insertionPoint,
@@ -182,6 +183,7 @@ export class EditManager implements vscode.Disposable {
                 expandedRange,
                 mode,
                 model,
+                configuration.rules ?? null,
                 intent,
                 source,
                 telemetryMetadata
@@ -227,6 +229,7 @@ export class EditManager implements vscode.Disposable {
             intent: task.intent,
             mode: task.mode,
             source: task.source,
+            taskId: task.id,
             ...telemetryMetadata,
             editContext: editContextData,
         }
@@ -305,6 +308,7 @@ export class EditManager implements vscode.Disposable {
                         'add',
                         'insert',
                         model,
+                        null,
                         source,
                         configuration.document.uri,
                         undefined,
@@ -434,6 +438,7 @@ export class EditManager implements vscode.Disposable {
                         'add',
                         'insert',
                         model,
+                        null,
                         source,
                         configuration.document.uri,
                         undefined,
@@ -469,7 +474,7 @@ export class EditManager implements vscode.Disposable {
                 // Just using the replacement code from the response is not enough, as it may contain parts that are not suitable to apply,
                 // e.g. // ...
                 const applyStartTime = Date.now()
-                await this.executeEdit({
+                const task = await this.executeEdit({
                     configuration: {
                         id: configuration.id,
                         document: configuration.document,
@@ -482,27 +487,12 @@ export class EditManager implements vscode.Disposable {
                     source,
                 })
                 const applyTimeTakenMs = Date.now() - applyStartTime
-                this.smartApplyContextLogger.addSmartApplyFinalContext(
+                this.smartApplyContextLogger.addApplyContext(
                     contextloggerRequestId,
-                    applyTimeTakenMs
+                    applyTimeTakenMs,
+                    task?.id
                 )
-                const smartApplyContext =
-                    await this.smartApplyContextLogger.getSmartApplyLoggingContext(
-                        contextloggerRequestId
-                    )
-                if (smartApplyContext) {
-                    const { metadata, privateMetadata } = splitSafeMetadata(smartApplyContext)
-                    telemetryRecorder.recordEvent('cody.smart-apply.context', 'applied', {
-                        metadata: {
-                            ...metadata,
-                            recordsPrivateMetadataTranscript: 1,
-                        },
-                        privateMetadata: {
-                            smartApplyContext: privateMetadata,
-                        },
-                        billingMetadata: { product: 'cody', category: 'billable' },
-                    })
-                }
+                this.smartApplyContextLogger.logSmartApplyContextToTelemetry(contextloggerRequestId)
                 return
             })
         })

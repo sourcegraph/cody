@@ -352,14 +352,17 @@ export * from './token'
 export * from './token/constants'
 export * from './configuration'
 export {
-    setOpenCtx,
-    openCtx,
+    setOpenCtxControllerObservable,
+    openctxController,
+    type OpenCtxController,
     REMOTE_REPOSITORY_PROVIDER_URI,
     REMOTE_FILE_PROVIDER_URI,
     REMOTE_DIRECTORY_PROVIDER_URI,
     WEB_PROVIDER_URI,
     GIT_OPENCTX_PROVIDER_URI,
     CODE_SEARCH_PROVIDER_URI,
+    currentOpenCtxController,
+    RULES_PROVIDER_URI,
 } from './context/openctx/api'
 export * from './context/openctx/context'
 export * from './lexicalEditor/editorState'
@@ -409,3 +412,12 @@ export { isS2, isWorkspaceInstance } from './sourcegraph-api/environments'
 export { createGitDiff } from './editor/create-git-diff'
 
 export { serialize, deserialize } from './lexicalEditor/atMentionsSerializer'
+
+export { type Rule, isRuleFilename, ruleTitle, parseRuleFile, ruleSearchPaths } from './rules/rules'
+export {
+    type CandidateRule,
+    type RuleProvider,
+    createRuleService,
+    type RuleService,
+    isRulesEnabled,
+} from './rules/service'

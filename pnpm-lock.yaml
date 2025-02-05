@@ -442,6 +442,9 @@ importers:
       vscode-uri:
         specifier: ^3.0.8
         version: 3.0.8
+      yaml:
+        specifier: ^2.3.4
+        version: 2.3.4
     devDependencies:
       '@sourcegraph/cody-context-filters-test-dataset':
         specifier: ^1.0.0
@@ -18209,7 +18212,6 @@ packages:
   /yaml@2.3.4:
     resolution: {integrity: sha512-8aAvwVUSHpfEqTQ4w/KMlf3HcRdt50E5ODIQJBw1fQ5RL34xabzxtUlzTXVqc4rkZsPbvrXKWnABCD7kWSmocA==}
     engines: {node: '>= 14'}
-    dev: true
 
   /yaml@2.4.2:
     resolution: {integrity: sha512-B3VqDZ+JAg1nZpaEmWtTXUlBneoGx6CPM9b0TENK6aoSu5t73dItudwdgmi6tHlIZZId4dZ9skcAQ2UbcyAeVA==}

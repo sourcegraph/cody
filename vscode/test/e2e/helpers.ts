@@ -648,6 +648,7 @@ export function mockEnterpriseRepoMapping(server: MockServer, repoName: string):
 }
 
 const STABILIZED_NUMBER_VALUE_FOR_SNAPSHOT = 9999
+const STABILIZED_STRING_VALUE_FOR_SNAPSHOT = '9999'
 
 /**
  * Stabilizes metadata values in telemetry event parameters for consistent snapshot testing.
@@ -664,6 +665,17 @@ export function stabilizeMetadataValues(keys: string[], event?: TelemetryEventIn
                 typeof param.value === 'number'
                     ? STABILIZED_NUMBER_VALUE_FOR_SNAPSHOT
                     : 'stabilized_value_for_snapshot'
+        }
+    }
+}
+
+export function stabilizePrivateMetadataValues(keys: string[], event?: TelemetryEventInput | null) {
+    if (!event?.parameters?.privateMetadata) {
+        return
+    }
+    for (const key of keys) {
+        if (key in event.parameters.privateMetadata) {
+            event.parameters.privateMetadata[key] = STABILIZED_STRING_VALUE_FOR_SNAPSHOT
         }
     }
 }

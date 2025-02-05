@@ -1,6 +1,6 @@
 import { URI } from 'vscode-uri'
 import { type ContextItemOpenCtx, ContextItemSource } from '../../codebase-context/messages'
-import { openCtx } from './api'
+import { currentOpenCtxController } from './api'
 
 // getContextForChatMessage returns context items for a given chat message from the OpenCtx providers.
 export const getContextForChatMessage = async (
@@ -8,7 +8,7 @@ export const getContextForChatMessage = async (
     signal?: AbortSignal
 ): Promise<ContextItemOpenCtx[]> => {
     try {
-        const openCtxClient = openCtx.controller
+        const openCtxClient = currentOpenCtxController()
         if (!openCtxClient) {
             return []
         }
@@ -52,7 +52,7 @@ export const getContextForChatMessage = async (
                         content: item.ai?.content || '',
                         provider: 'openctx',
                         source: ContextItemSource.User, // To indicate that this is a user-added item.
-                    }) as ContextItemOpenCtx
+                    }) satisfies ContextItemOpenCtx
             )
     } catch {
         return []

@@ -6,6 +6,8 @@ import {
     type CodyClientConfig,
     FeatureFlag,
     GIT_OPENCTX_PROVIDER_URI,
+    type OpenCtxController,
+    RULES_PROVIDER_URI,
     WEB_PROVIDER_URI,
     authStatus,
     clientCapabilities,
@@ -17,11 +19,11 @@ import {
     graphqlClient,
     isDotCom,
     isError,
+    isRulesEnabled,
     logError,
     pluck,
     promiseFactoryToObservable,
     resolvedConfig,
-    setOpenCtx,
     skipPendingOperation,
     switchMap,
 } from '@sourcegraph/cody-shared'
@@ -41,12 +43,17 @@ import LinearIssuesProvider from './openctx/linear-issues'
 import RemoteDirectoryProvider, { createRemoteDirectoryProvider } from './openctx/remoteDirectorySearch'
 import RemoteFileProvider, { createRemoteFileProvider } from './openctx/remoteFileSearch'
 import RemoteRepositorySearch, { createRemoteRepositoryProvider } from './openctx/remoteRepositorySearch'
+import { createRulesProvider } from './openctx/rules'
 import { createWebProvider } from './openctx/web'
 
-export function exposeOpenCtxClient(
+/**
+ * DO NOT USE except in `main.ts` initial activation. Instead, ise the global `openctxController`
+ * observable to obtain the OpenCtx controller.
+ */
+export function observeOpenCtxController(
     context: Pick<vscode.ExtensionContext, 'extension' | 'secrets'>,
     createOpenCtxController: typeof createController | undefined
-): Observable<void> {
+): Observable<OpenCtxController> {
     void warnIfOpenCtxExtensionConflict()
 
     return combineLatest(
@@ -76,7 +83,7 @@ export function exposeOpenCtxClient(
             async () => createOpenCtxController ?? (await import('@openctx/vscode-lib')).createController
         )
     ).pipe(
-        createDisposables(([{ experimentalNoodle }, isValidSiteVersion, createController]) => {
+        map(([{ experimentalNoodle }, isValidSiteVersion, createController]) => {
             try {
                 // Enable fetching of openctx configuration from Sourcegraph instance
                 const mergeConfiguration = experimentalNoodle
@@ -106,18 +113,15 @@ export function exposeOpenCtxClient(
                           ),
                     mergeConfiguration,
                 })
-                setOpenCtx({
-                    controller: controller.controller,
-                    disposable: controller.disposable,
-                })
                 CodyToolProvider.setupOpenCtxProviderListener()
-                return controller.disposable
+                return controller
             } catch (error) {
                 logDebug('openctx', `Failed to load OpenCtx client: ${error}`)
-                return undefined
+                throw error
             }
         }),
-        map(() => undefined)
+        createDisposables(controller => controller.disposable),
+        map(controller => controller.controller)
     )
 }
 
@@ -147,6 +151,14 @@ export function getOpenCtxProviders(
                     providerUri: WEB_PROVIDER_URI,
                 },
             ]
+
+            if (isRulesEnabled(config)) {
+                providers.push({
+                    settings: true,
+                    provider: createRulesProvider(),
+                    providerUri: RULES_PROVIDER_URI,
+                })
+            }
 
             if (!isDotCom(authStatus)) {
                 // Remote repository and remote files should be available for non-dotcom users.
@@ -202,8 +214,9 @@ export function getOpenCtxProviders(
 
 function getCodyWebOpenCtxProviders(): Observable<ImportedProviderConfiguration[]> {
     return combineLatest(
+        resolvedConfig.pipe(pluck('configuration'), distinctUntilChanged()),
         ClientConfigSingleton.getInstance().changes.pipe(skipPendingOperation(), distinctUntilChanged())
-    ).map(([clientConfig]) => {
+    ).map(([config, clientConfig]) => {
         const providers = [
             {
                 settings: true,
@@ -226,6 +239,14 @@ function getCodyWebOpenCtxProviders(): Observable<ImportedProviderConfiguration[
                 provider: createWebProvider(true),
             },
         ]
+
+        if (isRulesEnabled(config)) {
+            providers.push({
+                settings: true,
+                provider: createRulesProvider(),
+                providerUri: RULES_PROVIDER_URI,
+            })
+        }
 
         if (clientConfig?.omniBoxEnabled) {
             providers.push({
