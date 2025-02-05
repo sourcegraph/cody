@@ -161,55 +161,8 @@ const CodyPromptTemplatePanel: FC<PanelProps> = props => {
 
     const staticDefaultContext = useMemo<DefaultContext>((): DefaultContext => {
         const initialContext: ContextItem[] = []
-        const corpusContext: ContextItem[] = [
-            {
-                type: 'current-selection',
-                id: 'current-selection',
-                name: 'current-selection',
-                title: 'Current Selection',
-                uri: Uri.parse('cody://selection'),
-                description: 'Picks the current selection',
-                icon: 'square-dashed-mouse-pointer',
-            } as ContextItemCurrentSelection,
-            {
-                type: 'current-file',
-                id: 'current-file',
-                name: 'current-file',
-                title: 'Current File',
-                uri: Uri.parse('cody://current-file'),
-                description: 'Picks the current file',
-                icon: 'file',
-            } as ContextItemCurrentFile,
-            {
-                type: 'current-repository',
-                id: 'current-repository',
-                name: 'current-repository',
-                title: 'Current Repository',
-                uri: Uri.parse('cody://repository'),
-                description: 'Picks the current repository',
-                icon: 'git-folder',
-            } as ContextItemCurrentRepository,
-            {
-                type: 'current-directory',
-                id: 'current-directory',
-                name: 'current-directory',
-                title: 'Current Directory',
-                uri: Uri.parse('cody://current-dir'),
-                description: 'Picks the current directory',
-                icon: 'folder',
-            } as ContextItemCurrentDirectory,
-            {
-                type: 'current-open-tabs',
-                id: 'current-open-tabs',
-                name: 'current-open-tabs',
-                title: 'Currently Open Tabs',
-                uri: Uri.parse('cody://tabs'),
-                description: 'Picks all currently open tabs',
-                icon: 'layout-menubar',
-            } as ContextItemCurrentOpenTabs,
-        ]
 
-        return { initialContext, corpusContext }
+        return { initialContext, corpusContext: DYNAMIC_MENTIONS }
     }, [])
 
     const wrappers = useMemo<Wrapper[]>(
@@ -257,3 +210,51 @@ const CodyPromptTemplatePanel: FC<PanelProps> = props => {
         </div>
     )
 }
+
+const DYNAMIC_MENTIONS: ContextItem[] = [
+    {
+        type: 'current-selection',
+        id: 'current-selection',
+        name: 'current-selection',
+        title: 'Current Selection',
+        uri: Uri.parse('cody://selection'),
+        description: 'Picks the current selection',
+        icon: 'square-dashed-mouse-pointer',
+    } as ContextItemCurrentSelection,
+    {
+        type: 'current-file',
+        id: 'current-file',
+        name: 'current-file',
+        title: 'Current File',
+        uri: Uri.parse('cody://current-file'),
+        description: 'Picks the current file',
+        icon: 'file',
+    } as ContextItemCurrentFile,
+    {
+        type: 'current-repository',
+        id: 'current-repository',
+        name: 'current-repository',
+        title: 'Current Repository',
+        uri: Uri.parse('cody://repository'),
+        description: 'Picks the current repository',
+        icon: 'git-folder',
+    } as ContextItemCurrentRepository,
+    {
+        type: 'current-directory',
+        id: 'current-directory',
+        name: 'current-directory',
+        title: 'Current Directory',
+        uri: Uri.parse('cody://current-dir'),
+        description: 'Picks the current directory',
+        icon: 'folder',
+    } as ContextItemCurrentDirectory,
+    {
+        type: 'current-open-tabs',
+        id: 'current-open-tabs',
+        name: 'current-open-tabs',
+        title: 'Currently Open Tabs',
+        uri: Uri.parse('cody://tabs'),
+        description: 'Picks all currently open tabs',
+        icon: 'layout-menubar',
+    } as ContextItemCurrentOpenTabs,
+]

@@ -14,7 +14,7 @@ function unicodeSafeAtob(str: string) {
     return decodeURIComponent(atob(str))
 }
 
-const CURRENT_TO_HYDRATABLE = {
+const DYNAMIC_MENTION_TO_HYDRATABLE: Record<string, string> = {
     'current-selection': 'cody://selection',
     'current-file': 'cody://current-file',
     'current-repository': 'cody://repository',
@@ -22,8 +22,8 @@ const CURRENT_TO_HYDRATABLE = {
     'current-open-tabs': 'cody://tabs',
 }
 
-function isCurrentKey(value: string): value is keyof typeof CURRENT_TO_HYDRATABLE {
-    return Object.keys(CURRENT_TO_HYDRATABLE).includes(value)
+function isDynamicMentionKey(value: string): value is keyof typeof DYNAMIC_MENTION_TO_HYDRATABLE {
+    return !!DYNAMIC_MENTION_TO_HYDRATABLE[value];
 }
 
 /**
@@ -42,8 +42,8 @@ export function serialize(m: SerializedPromptEditorValue): string {
         } else if (n.type === 'contextItemMention') {
             const contextItemMention: SerializedContextItem = (n as SerializedContextItemMentionNode)
                 .contextItem
-            if (isCurrentKey(contextItemMention.type)) {
-                t += CURRENT_TO_HYDRATABLE[contextItemMention.type]
+            if (isDynamicMentionKey(contextItemMention.type)) {
+                t += DYNAMIC_MENTION_TO_HYDRATABLE[contextItemMention.type]
             } else {
                 t +=
                     `${AT_MENTION_SERIALIZED_PREFIX}?data=${unicodeSafeBtoa(
