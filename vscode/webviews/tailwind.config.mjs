@@ -1,6 +1,5 @@
 /** @type {import('tailwindcss').Config} */
 import plugin from 'tailwindcss/plugin'
-// const plugin = require('tailwindcss/plugin')
 
 export default {
     content: {
