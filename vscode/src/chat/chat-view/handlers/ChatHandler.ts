@@ -19,6 +19,7 @@ import {
     inputTextWithoutContextChipsFromPromptEditorState,
     isAbortErrorOrSocketHangUp,
     modelsService,
+    storeLastValue,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
 import { resolveContextItems } from '../../../editor/utils/editor-context'
@@ -37,6 +38,10 @@ export class ChatHandler implements AgentHandler {
         protected readonly editor: ChatControllerOptions['editor'],
         protected chatClient: ChatControllerOptions['chatClient']
     ) {}
+
+    private promptCachingIsEnabled = storeLastValue(
+        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyPromptCachingOnMessages)
+    )
 
     public async handle(
         {
@@ -84,7 +89,8 @@ export class ChatHandler implements AgentHandler {
             throw new Error('unable to determine site version')
         }
         let { prompt } = await this.buildPrompt(prompter, chatBuilder, signal, versions.codyAPIVersion)
-        if (featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyPromptCachingOnMessages)) {
+
+        if (this.promptCachingIsEnabled.value) {
             prompt = promptCachingProcessing(prompt)
         }
 
