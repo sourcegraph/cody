@@ -2,7 +2,7 @@ import type { URI } from 'vscode-uri'
 
 import { isWindows as _isWindows, isMacOS } from './platform'
 
-interface PathFunctions {
+export interface PathFunctions {
     /**
      * All but the last element of path, or "." if that would be the empty path.
      */

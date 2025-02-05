@@ -1232,6 +1232,11 @@
             }
           }
         },
+        "cody.rules.enabled": {
+          "type": "boolean",
+          "markdownDescription": "[EXPERIMENTAL] Apply Sourcegraph rules (from `*.rule.md` files) to Cody chats and inline edits.",
+          "default": false
+        },
         "openctx.enable": {
           "type": "boolean",
           "markdownDescription": "Enable OpenCtx providers for Cody.",
