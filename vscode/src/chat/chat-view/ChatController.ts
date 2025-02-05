@@ -128,6 +128,7 @@ import { getChatPanelTitle } from './chat-helpers'
 import { OmniboxTelemetry } from './handlers/OmniboxTelemetry'
 import { getAgent } from './handlers/registry'
 import { getPromptsMigrationInfo, startPromptsMigration } from './prompts-migration'
+import { DeepCodyAgent } from '../agentic/DeepCody'
 
 export interface ChatControllerOptions {
     extensionUri: vscode.Uri
@@ -667,7 +668,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     firstResultFromOperation(ChatBuilder.resolvedModelForChat(this.chatBuilder))
                 )
                 this.chatBuilder.setSelectedModel(model)
-                const selectedAgent = model?.includes('deep-cody') ? 'deep-cody' : undefined
+                const selectedAgent = model?.includes(DeepCodyAgent.id) ? DeepCodyAgent.id : undefined
 
                 this.chatBuilder.addHumanMessage({
                     text: inputText,
@@ -792,7 +793,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         }
 
         this.chatBuilder.setSelectedModel(model)
-        const chatAgent = model.includes('deep-cody') ? 'deep-cody' : undefined
+        const chatAgent = model.includes(DeepCodyAgent.id) ? DeepCodyAgent.id : undefined
 
         const recorder = await OmniboxTelemetry.create({
             requestID,

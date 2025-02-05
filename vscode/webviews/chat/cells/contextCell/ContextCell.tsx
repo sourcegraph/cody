@@ -26,6 +26,7 @@ import { LoadingDots } from '../../components/LoadingDots'
 import { Cell } from '../Cell'
 import { NON_HUMAN_CELL_AVATAR_SIZE } from '../messageCell/assistant/AssistantMessageCell'
 import styles from './ContextCell.module.css'
+import { DeepCodyAgent } from '../../../../src/chat/agentic/DeepCody'
 
 export const __ContextCellStorybookContext = createContext<{ initialOpen: boolean } | null>(null)
 
@@ -133,7 +134,7 @@ export const ContextCell: FunctionComponent<{
 
         const telemetryRecorder = useTelemetryRecorder()
 
-        const isAgenticChat = model?.includes('deep-cody') || agent === 'deep-cody'
+        const isAgenticChat = model?.includes(DeepCodyAgent.id) || agent === DeepCodyAgent.id
 
         // Text for top header text
         const headerText: { main: string; sub?: string } = {

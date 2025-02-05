@@ -31,6 +31,7 @@ import { BaseMessageCell, MESSAGE_CELL_AVATAR_SIZE } from '../BaseMessageCell'
 import { ContextFocusActions } from './ContextFocusActions'
 import { SearchResults } from './SearchResults'
 import { SubMessageCell } from './SubMessageCell'
+import { DeepCodyAgent } from '../../../../../src/chat/agentic/DeepCody'
 
 /**
  * A component that displays a chat message from the assistant.
@@ -103,7 +104,7 @@ export const AssistantMessageCell: FunctionComponent<{
                     isSearchIntent ? undefined : (
                         <span data-testid="chat-model">
                             {chatModel
-                                ? chatModel.id.includes('deep-cody')
+                                ? chatModel.id.includes(DeepCodyAgent.id)
                                     ? 'Claude 3.5 Sonnet (New)'
                                     : chatModel.title ?? `Model ${chatModel.id} by ${chatModel.provider}`
                                 : 'Model'}
@@ -284,7 +285,7 @@ function useChatModelByID(
         (model
             ? {
                   id: model,
-                  title: model?.includes('deep-cody') ? 'Deep Cody (Experimental)' : model,
+                  title: model?.includes(DeepCodyAgent.id) ? 'Deep Cody (Experimental)' : model,
                   provider: 'unknown',
                   tags: [],
               }

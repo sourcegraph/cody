@@ -58,6 +58,7 @@ import ApprovalCell from './cells/agenticCell/ApprovalCell'
 import { DidYouMeanNotice } from './cells/messageCell/assistant/DidYouMean'
 import { SwitchIntent } from './cells/messageCell/assistant/SwitchIntent'
 import { LastEditorContext } from './context'
+import { DeepCodyAgent } from '../../src/chat/agentic/DeepCody'
 
 interface TranscriptProps {
     activeChatContext?: Context
@@ -759,7 +760,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                                 ? EditContextButtonSearch
                                 : EditContextButtonChat
                         }
-                        defaultOpen={isContextLoading && humanMessage.agent === 'deep-cody'}
+                        defaultOpen={isContextLoading && humanMessage.agent === DeepCodyAgent.id}
                         processes={humanMessage?.processes ?? undefined}
                         agent={humanMessage?.agent ?? undefined}
                     />

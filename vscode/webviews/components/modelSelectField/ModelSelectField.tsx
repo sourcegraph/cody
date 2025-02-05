@@ -2,6 +2,7 @@ import { type Model, ModelTag, isCodyProModel, isWaitlistModel } from '@sourcegr
 import { clsx } from 'clsx'
 import { BookOpenIcon, BrainIcon, BuildingIcon, ExternalLinkIcon } from 'lucide-react'
 import { type FunctionComponent, type ReactNode, useCallback, useMemo } from 'react'
+import { DeepCodyAgent } from '../../../src/chat/agentic/DeepCody'
 import type { UserAccountInfo } from '../../Chat'
 import { getVSCodeAPI } from '../../utils/VSCodeApi'
 import { useTelemetryRecorder } from '../../utils/telemetry'
@@ -303,7 +304,7 @@ function modelAvailability(
 }
 
 function getTooltip(model: Model, availability: string): string {
-    if (model.id.includes('deep-cody')) {
+    if (model.id.includes(DeepCodyAgent.id)) {
         return 'Agentic chat reflects on your request and uses tools to dynamically retrieve relevant context, improving accuracy and response quality.'
     }
 
@@ -358,7 +359,7 @@ const ModelTitleWithIcon: React.FC<{
     return (
         <span className={clsx(styles.modelTitleWithIcon, { [styles.disabled]: isDisabled })}>
             {showIcon ? (
-                model.id.includes('deep-cody') ? (
+                model.id.includes(DeepCodyAgent.id) ? (
                     <BrainIcon size={16} className={styles.modelIcon} />
                 ) : (
                     <ChatModelIcon model={model.provider} className={styles.modelIcon} />
@@ -398,7 +399,7 @@ const ModelUIGroup: Record<string, string> = {
 }
 
 const getModelDropDownUIGroup = (model: Model): string => {
-    if (['deep-cody', 'tool-cody'].some(id => model.id.includes(id))) return ModelUIGroup.Agents
+    if ([DeepCodyAgent.id, 'tool-cody'].some(id => model.id.includes(id))) return ModelUIGroup.Agents
     if (model.tags.includes(ModelTag.Power)) return ModelUIGroup.Power
     if (model.tags.includes(ModelTag.Balanced)) return ModelUIGroup.Balanced
     if (model.tags.includes(ModelTag.Speed)) return ModelUIGroup.Speed

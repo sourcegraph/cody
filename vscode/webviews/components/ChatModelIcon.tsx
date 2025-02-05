@@ -7,6 +7,7 @@ import {
     OllamaLogo,
     OpenAILogo,
 } from '../icons/LLMProviderIcons'
+import { DeepCodyAgent } from '../../src/chat/agentic/DeepCody'
 
 export function chatModelIconComponent(
     model: string
@@ -15,7 +16,7 @@ export function chatModelIconComponent(
     if (model.startsWith('openai') || model.includes('gpt')) {
         return OpenAILogo
     }
-    if (model.includes('anthropic') || model.includes('deep-cody')) {
+    if (model.includes('anthropic') || model.includes(DeepCodyAgent.id)) {
         return AnthropicLogo
     }
     if (model.startsWith('google') || model.includes('gemini')) {

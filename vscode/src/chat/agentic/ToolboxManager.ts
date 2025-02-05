@@ -51,7 +51,7 @@ class ToolboxManager {
         const shellError = this.getFeatureError('shell')
         // TODO: Remove hard-coded agent once we have a proper agentic chat selection UI
         return {
-            agent: { name: this.isRateLimited ? undefined : 'deep-cody' },
+            agent: { name: this.isRateLimited ? undefined : DeepCodyAgent.id },
             shell: {
                 enabled: shellError === undefined,
                 error: shellError,
