@@ -130,7 +130,9 @@ const CONTEXT_ITEMS = {
 export function deserializeParagraph(s: string): SerializedLexicalNode[] {
     const parts = s.split(
         new RegExp(
-            `(${AT_MENTION_SERIALIZED_PREFIX}\\?data=${BASE_64_CHARACTERS}${AT_MENTION_SERIALIZATION_END})`,
+            `(${AT_MENTION_SERIALIZED_PREFIX}\\?data=${BASE_64_CHARACTERS}${AT_MENTION_SERIALIZATION_END}|${Object.keys(
+                CONTEXT_ITEMS
+            ).join('|')})`,
             'g'
         )
     )
@@ -153,7 +155,7 @@ export function deserializeParagraph(s: string): SerializedLexicalNode[] {
                 }
             }
             for (const [uri, item] of Object.entries(CONTEXT_ITEMS)) {
-                if (part.includes(uri)) {
+                if (part === uri) {
                     return createContextItemMention(item, uri)
                 }
             }
