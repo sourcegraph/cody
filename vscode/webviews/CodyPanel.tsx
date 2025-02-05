@@ -81,11 +81,10 @@ export const CodyPanel: FunctionComponent<CodyPanelProps> = ({
     const { value: chatModels } = useObservable(useMemo(() => api.chatModels(), [api.chatModels]))
     const isPromptsV2Enabled = useFeatureFlag(FeatureFlag.CodyPromptsV2)
     // workspace upgrade eligibility should be that the flag is set, is on dotcom and only has one account. This prevents enterprise customers that are logged into multiple endpoints from seeing the CTA
-    // const isWorkspacesUpgradeCtaEnabled =
-    //     useFeatureFlag(FeatureFlag.SourcegraphTeamsUpgradeCTA) &&
-    //     isDotComUser &&
-    //     config.endpointHistory?.length === 1
-    const isWorkspacesUpgradeCtaEnabled = true
+    const isWorkspacesUpgradeCtaEnabled =
+        useFeatureFlag(FeatureFlag.SourcegraphTeamsUpgradeCTA) &&
+        isDotComUser &&
+        config.endpointHistory?.length === 1
     useEffect(() => {
         onExternalApiReady?.(externalAPI)
     }, [onExternalApiReady, externalAPI])
