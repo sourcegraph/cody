@@ -14,7 +14,7 @@ import type { VSCodeWrapper } from './utils/VSCodeApi'
 
 import type { Context } from '@opentelemetry/api'
 import styles from './Chat.module.css'
-import WelcomeFooter from './chat/components/WelcomeFooter'
+import { QuickStart } from './chat/components/QuickStart'
 import { WelcomeMessage } from './chat/components/WelcomeMessage'
 import { WelcomeNotice } from './chat/components/WelcomeNotice'
 import { ScrollDown } from './components/ScrollDown'
@@ -219,13 +219,14 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             />
             {transcript.length === 0 && showWelcomeMessage && (
                 <>
+
                     <WelcomeMessage
                         IDE={userInfo.IDE}
                         setView={setView}
                         isPromptsV2Enabled={isPromptsV2Enabled}
                     />
-                    <WelcomeFooter IDE={userInfo.IDE} />
-                    {isWorkspacesUpgradeCtaEnabled && userInfo.IDE !== CodyIDE.Web && (
+                    <QuickStart />
+                    {isWorkspacesUpgradeCtaEnabled && (
                         <div className="tw-absolute tw-bottom-0 tw-left-1/2 tw-transform tw--translate-x-1/2 tw-w-[95%] tw-z-1 tw-mb-4 tw-max-h-1/2">
                             <WelcomeNotice />
                         </div>

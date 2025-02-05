@@ -6,12 +6,20 @@
     color: var(--vscode-input-placeholderForeground)
 }
 
+
+.quickstart-header {
+    display: flex;
+    flex-flow: row nowrap;
+    justify-content: space-between;
+    width: 100%;
+    gap: 0.5rem;
+}
+
 .cheatsheet {
     display: flex;
     flex-flow: column nowrap;
     width: 100%;
     gap: 0.5rem;
-    padding: 1rem 0;
 }
 
 .title {
