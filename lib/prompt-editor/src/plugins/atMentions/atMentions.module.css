@@ -18,7 +18,7 @@
 
 .popover {
     overflow: auto;
-    background: var(--vscode-sideBar-background);
+    background: var(--background-01);
     color: var(--vscode-sideBar-foreground);
     box-shadow: 0 0 8px 2px var(--vscode-widget-shadow);
     border: 1px solid var(--vscode-dropdown-border);

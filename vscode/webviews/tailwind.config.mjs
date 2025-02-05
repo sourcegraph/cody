@@ -44,7 +44,7 @@ export default {
             colors: {
                 border: 'var(--border)',
                 ring: 'var(--border-active)',
-                background: 'var(--background)',
+                background: 'var(--background-01)',
                 foreground: 'var(--text)',
                 input: {
                     foreground: 'var(--vscode-input-foreground)',

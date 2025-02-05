@@ -15,5 +15,5 @@
 }
 
 .experimental {
-    background: var(--vscode-inputOption-activeBackground);
+    background: var(--highlight-background);
 }

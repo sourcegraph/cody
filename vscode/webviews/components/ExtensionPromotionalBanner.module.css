@@ -3,7 +3,7 @@
     flex-flow: row nowrap;
     justify-content: space-between;
     padding: 0.5rem 1rem;
-    background: var(--vscode-editor-background);
+    background: var(--background-01);
     border: 1px solid var(--vscode-widget-border);
     margin: 0 auto;
     border-radius: 6px;
@@ -11,7 +11,7 @@
     h3 {
         margin: 0;
         font-size: 0.875rem;
-        color: var(--vscode-editor-foreground);
+        color: var(--text);
         font-weight: 500;
     }
 }
@@ -22,7 +22,7 @@
     padding: 0.25rem 0.75rem;
     font-weight: 500;
     background: var(--vscode-button-secondaryBackground);
-    color: var(--vscode-editor-foreground);
+    color: var(--text);
     text-decoration: none;
     border-radius: 4px;
     height: 32px;
@@ -30,7 +30,7 @@
 
 .download-button:hover {
     background: var(--vscode-button-hoverBackground);
-    color: var(--vscode-editor-foreground);
+    color: var(--text);
 }
 
 .banner {

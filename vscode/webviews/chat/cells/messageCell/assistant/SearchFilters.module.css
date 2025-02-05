@@ -1,9 +1,9 @@
 .filter {
-    background-color: var(--vscode-sidebar-background);
-    color: var(--vscode-input-foreground);
+    background-color: var(--background);
+    color: var(--text);
 
     &.selected, &.selected:hover {
-        background-color: var(--vscode-button-background);
-        color: var(--vscode-button-foreground);
+        background-color: var(--background-02);
+        color: var(--text);
     }
 }

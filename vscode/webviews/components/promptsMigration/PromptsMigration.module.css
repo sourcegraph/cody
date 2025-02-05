@@ -56,7 +56,7 @@
     margin-top: 0.5rem;
     margin-bottom: 0.5rem;
     border-radius: 3px;
-    background-color: var(--vscode-editor-background);
+    background-color: var(--background-01);
 
     /* Fix overflow clipping in Safari */
     /* https://gist.github.com/domske/b66047671c780a238b51c51ffde8d3a0 */
