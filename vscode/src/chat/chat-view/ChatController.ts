@@ -324,7 +324,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     currentAuthStatus(),
                     message.instruction,
                     message.fileName,
-                    message.traceparent
+                    message.traceparent,
+                    message.regex
                 )
                 break
             case 'trace-export':

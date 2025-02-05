@@ -18,7 +18,13 @@ export interface CodeBlockActionsProps {
     copyButtonOnSubmit: (text: string, event?: 'Keydown' | 'Button') => void
     insertButtonOnSubmit: (text: string, newFile?: boolean) => void
     smartApply: {
-        onSubmit: (id: string, text: string, instruction?: PromptString, fileName?: string) => void
+        onSubmit: (
+            id: string,
+            text: string,
+            instruction?: PromptString,
+            fileName?: string,
+            regex?: string
+        ) => void
         onAccept: (id: string) => void
         onReject: (id: string) => void
     }
@@ -64,13 +70,13 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
 
         return {
             ...smartApply,
-            onSubmit(id, text, instruction, fileName) {
+            onSubmit(id, text, instruction, fileName, regex) {
                 // We intercept the `onSubmit` to mark this task as working as early as we can.
                 // In reality, this will happen once we determine the task selection and _then_ start the task.
                 // The user does not need to be aware of this, for their purposes this is a single operation.
                 // We can re-use the `Working` state to simplify our UI logic.
                 setSmartApplyStates(prev => ({ ...prev, [id]: CodyTaskState.Working }))
-                return smartApply.onSubmit(id, text, instruction, fileName)
+                return smartApply.onSubmit(id, text, instruction, fileName, regex)
             },
         }
     }, [smartApply])
@@ -116,6 +122,7 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
                 // This allows us to intelligently apply code to the suitable file.
                 const codeElement = preElement.querySelectorAll('code')?.[0]
                 const fileName = codeElement?.getAttribute('data-file-path') || undefined
+                const regex = codeElement?.getAttribute('regex') || undefined // Get the regex attribute
                 // Check if the code element has either 'language-bash' or 'language-shell' class
                 const isShellCommand =
                     codeElement?.classList.contains('language-bash') ||
@@ -136,7 +143,8 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
                         config.config.hasEditCapability ? insertButtonOnSubmit : undefined,
                         smartApplyInterceptor,
                         smartApplyId,
-                        smartApplyState
+                        smartApplyState,
+                        regex
                     )
                 } else {
                     buttons = createButtons(

@@ -86,7 +86,8 @@ export function createButtonsExperimentalUI(
     insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit'],
     smartApply?: CodeBlockActionsProps['smartApply'],
     smartApplyId?: string,
-    smartApplyState?: CodyTaskState
+    smartApplyState?: CodyTaskState,
+    regex?: string
 ): HTMLElement {
     const container = document.createElement('div')
     container.className = styles.buttonsContainer
@@ -117,7 +118,8 @@ export function createButtonsExperimentalUI(
                           smartApply,
                           smartApplyId,
                           smartApplyState,
-                          codeBlockName
+                          codeBlockName,
+                          regex
                       )
             smartButton.title = isExecutable ? 'Execute in Terminal' : 'Apply in Editor'
             buttons.append(smartButton)
@@ -270,7 +272,8 @@ function createApplyButton(
     smartApply: CodeBlockActionsProps['smartApply'],
     smartApplyId: FixupTaskID,
     smartApplyState?: CodyTaskState,
-    fileName?: string
+    fileName?: string,
+    regex?: string
 ): HTMLElement {
     const button = document.createElement('button')
     button.className = styles.button
@@ -298,13 +301,14 @@ function createApplyButton(
             button.prepend(iconContainer)
 
             button.addEventListener('click', () =>
-                smartApply.onSubmit(smartApplyId, preText, humanMessage?.text, fileName)
+                smartApply.onSubmit(smartApplyId, preText, humanMessage?.text, fileName, regex)
             )
 
             break
         }
         default: {
-            button.innerHTML = 'Apply'
+            // TODO (bee) temporary for debugging purpose - remove before merging
+            button.innerHTML = regex ? `Instance (${regex})` : 'Apply'
 
             // Add Sparkle Icon
             const iconContainer = document.createElement('div')
@@ -313,7 +317,7 @@ function createApplyButton(
             button.prepend(iconContainer)
 
             button.addEventListener('click', () =>
-                smartApply.onSubmit(smartApplyId, preText, humanMessage?.text, fileName)
+                smartApply.onSubmit(smartApplyId, preText, humanMessage?.text, fileName, regex)
             )
         }
     }

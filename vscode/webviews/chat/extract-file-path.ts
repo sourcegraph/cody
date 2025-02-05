@@ -5,6 +5,7 @@ import { visit } from 'unist-util-visit'
 interface CodeNodeData {
     hProperties?: {
         'data-file-path'?: string
+        regex?: string
     }
 }
 
@@ -18,11 +19,11 @@ const LANG_FILE_PATH_REGEX = /^(\w+):(.+)$/
  * read later in the code.
  *
  * Example:
- * ```typescript:path/to/file.ts
+ * ```typescript:path/to/file.ts regex="^(\w+):(.+)$"
  * console.log()
  * ```
  * becomes ->
- * <code data-file-path="path/to/file.ts">
+ * <code data-file-path="path/to/file.ts" regex:^(\w+):(.+)$>
  * console.log()
  * </code>
  */
@@ -33,17 +34,22 @@ export const remarkAttachFilePathToCodeBlocks: Plugin<[], Root> = () => {
             if (match) {
                 const [, language, filePath] = match
 
-                // Update the node's lang to remove the file path
                 node.lang = language
+
+                const hProperties: CodeNodeData['hProperties'] = {
+                    ...(node.data as CodeNodeData)?.hProperties,
+                    // We sanitize spaces in markdown path files using `PromptString` class, now we can convert them back
+                    'data-file-path': filePath.trim().replaceAll('%20', ' '),
+                }
+
+                if (node.meta?.startsWith('regex:')) {
+                    hProperties.regex = node.meta.replace('regex:', '').trim()
+                }
 
                 // Update node data
                 node.data = {
                     ...node.data,
-                    hProperties: {
-                        ...(node.data as CodeNodeData)?.hProperties,
-                        // We sanitize spaces in markdown path files using `PromptString` class, now we can convert them back
-                        'data-file-path': filePath.trim().replaceAll('%20', ' '),
-                    },
+                    hProperties,
                 }
             }
         })

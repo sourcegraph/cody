@@ -137,7 +137,8 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                 id: string,
                 text: string,
                 instruction?: PromptString,
-                fileName?: string
+                fileName?: string,
+                regex?: string
             ): void => {
                 const spanManager = new SpanManager('cody-webview')
                 const span = spanManager.startSpan('smartApplySubmit', {
@@ -156,6 +157,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                     code: text.replace(/\n$/, ''),
                     fileName,
                     traceparent,
+                    regex,
                 })
                 span.end()
             },

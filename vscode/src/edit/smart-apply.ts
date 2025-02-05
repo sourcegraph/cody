@@ -12,6 +12,7 @@ export interface SmartApplyArguments {
         model?: EditModel
         isNewFile?: boolean
         traceparent: string | undefined | null
+        range?: vscode.Range | undefined | null
     }
     source?: EventSource
 }

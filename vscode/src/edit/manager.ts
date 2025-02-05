@@ -273,9 +273,36 @@ export class EditManager implements vscode.Disposable {
                     return
                 }
 
-                const document = configuration.document
+                const { document, replacement, range } = configuration
                 if (await isUriIgnoredByContextFilterWithNotification(document.uri, 'edit')) {
                     return
+                }
+
+                // For the cases where a replacement with range has been provided, we can apply the edit directly.
+                if (replacement && range) {
+                    // Create a task that covers the entire document
+                    const fullDocRange = new vscode.Range(
+                        document.positionAt(0),
+                        document.positionAt(document.getText().length)
+                    )
+                    // Create a task with the regex replacement as the instruction
+                    const task = await this.options.controller.createTask(
+                        document,
+                        ps``,
+                        [],
+                        fullDocRange,
+                        'edit',
+                        'edit',
+                        'manual',
+                        'chat',
+                        document.uri
+                    )
+                    // If the task has failed, we would fallback to smart apply.
+                    if (task) {
+                        const provider = this.getProviderForTask(task)
+                        await provider.applyEdit(replacement)
+                        return task
+                    }
                 }
 
                 const model =
