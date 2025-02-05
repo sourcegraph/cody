@@ -356,6 +356,14 @@ export class DefaultDecorator implements AutoEditsDecorator {
                 })
             }
         }
+
+        const startLineLength = this.editor.document.lineAt(startLine).range.end.character
+        this.editor.setDecorations(this.insertMarkerDecorationType, [
+            {
+                range: new vscode.Range(startLine, 0, startLine, startLineLength),
+            },
+        ])
+        this.editor.setDecorations(this.addedLinesDecorationType, replacerDecorations)
     }
 
     private renderAddedLinesImageDecorations(
