@@ -56,7 +56,6 @@ import { useIntentDetectionConfig } from '../components/omnibox/intentDetection'
 import { AgenticContextCell } from './cells/agenticCell/AgenticContextCell'
 import ApprovalCell from './cells/agenticCell/ApprovalCell'
 import { DidYouMeanNotice } from './cells/messageCell/assistant/DidYouMean'
-import { SwitchIntent } from './cells/messageCell/assistant/SwitchIntent'
 import { LastEditorContext } from './context'
 
 interface TranscriptProps {
@@ -704,17 +703,6 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                 intent={manuallySelectedIntent || intentResults?.intent}
                 manuallySelectIntent={setManuallySelectedIntent}
             />
-            {experimentalOneBoxEnabled && (
-                <SwitchIntent
-                    intent={humanMessage.intent}
-                    manuallySelected={!!humanMessage.manuallySelectedIntent}
-                    onSwitch={
-                        humanMessage.intent === 'search'
-                            ? reSubmitWithChatIntent
-                            : reSubmitWithSearchIntent
-                    }
-                />
-            )}
             {experimentalOneBoxEnabled && assistantMessage?.didYouMeanQuery && (
                 <DidYouMeanNotice
                     query={assistantMessage?.didYouMeanQuery}
@@ -722,48 +710,52 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                     switchToSearch={() => editAndSubmitSearch(assistantMessage?.didYouMeanQuery ?? '')}
                 />
             )}
-            {!isSearchIntent && humanMessage.agent && (
-                <AgenticContextCell
-                    key={`${humanMessage.index}-${humanMessage.intent}-process`}
-                    isContextLoading={isContextLoading}
-                    processes={humanMessage?.processes ?? undefined}
-                />
-            )}
-            {!isSearchIntent &&
-                humanMessage.agent &&
-                isContextLoading &&
-                assistantMessage?.isLoading && <ApprovalCell vscodeAPI={vscodeAPI} />}
-
-            {!(humanMessage.agent && isContextLoading) &&
-                (humanMessage.contextFiles || assistantMessage || isContextLoading) &&
-                !isSearchIntent && (
-                    <ContextCell
-                        experimentalOneBoxEnabled={experimentalOneBoxEnabled}
-                        intent={humanMessage.intent}
-                        resubmitWithRepoContext={
-                            corpusContextItems.length > 0 &&
-                            !mentionsContainRepository &&
-                            assistantMessage
-                                ? resubmitWithRepoContext
-                                : undefined
-                        }
-                        key={`${humanMessage.index}-${humanMessage.intent}-context`}
-                        contextItems={humanMessage.contextFiles}
-                        contextAlternatives={humanMessage.contextAlternatives}
-                        model={assistantMessage?.model}
-                        isForFirstMessage={humanMessage.index === 0}
+            {humanMessage.agent && (
+                <>
+                    <AgenticContextCell
+                        key={`${humanMessage.index}-${humanMessage.intent}-process`}
                         isContextLoading={isContextLoading}
-                        onManuallyEditContext={manuallyEditContext}
-                        editContextNode={
-                            humanMessage.intent === 'search'
-                                ? EditContextButtonSearch
-                                : EditContextButtonChat
-                        }
-                        defaultOpen={isContextLoading && humanMessage.agent === 'deep-cody'}
                         processes={humanMessage?.processes ?? undefined}
-                        agent={humanMessage?.agent ?? undefined}
+                        intent={isSearchIntent ? 'search' : 'chat'}
+                        onSwitchIntent={
+                            isSearchIntent ? reSubmitWithChatIntent : reSubmitWithSearchIntent
+                        }
+                        contextItems={humanMessage.contextFiles}
+                        isForFirstMessage={humanMessage.index === 0}
+                        model={assistantMessage?.model}
+                        experimentalOneBoxEnabled={experimentalOneBoxEnabled}
                     />
-                )}
+                    {!isSearchIntent &&
+                        humanMessage.agent &&
+                        isContextLoading &&
+                        assistantMessage?.isLoading && <ApprovalCell vscodeAPI={vscodeAPI} />}
+                </>
+            )}
+            !humanMessage.agent && (humanMessage.contextFiles || assistantMessage || isContextLoading) &&
+            !isSearchIntent && (
+            <ContextCell
+                experimentalOneBoxEnabled={experimentalOneBoxEnabled}
+                intent={humanMessage.intent}
+                resubmitWithRepoContext={
+                    corpusContextItems.length > 0 && !mentionsContainRepository && assistantMessage
+                        ? resubmitWithRepoContext
+                        : undefined
+                }
+                key={`${humanMessage.index}-${humanMessage.intent}-context`}
+                contextItems={humanMessage.contextFiles}
+                contextAlternatives={humanMessage.contextAlternatives}
+                model={assistantMessage?.model}
+                isForFirstMessage={humanMessage.index === 0}
+                isContextLoading={isContextLoading}
+                onManuallyEditContext={manuallyEditContext}
+                editContextNode={
+                    humanMessage.intent === 'search' ? EditContextButtonSearch : EditContextButtonChat
+                }
+                defaultOpen={isContextLoading && humanMessage.agent === 'deep-cody'}
+                processes={humanMessage?.processes ?? undefined}
+                agent={humanMessage?.agent ?? undefined}
+            />
+            )
             {assistantMessage &&
                 (!isContextLoading ||
                     (assistantMessage.subMessages && assistantMessage.subMessages.length > 0)) && (

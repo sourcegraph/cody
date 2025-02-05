@@ -5,7 +5,7 @@ import {
     isDefined,
 } from '@sourcegraph/cody-shared'
 import classNames from 'classnames'
-import { ArrowDown, FilterIcon, FilterX, OctagonX, PanelLeftClose, Search } from 'lucide-react'
+import { ArrowDown, ChevronRight, FilterIcon, FilterX, OctagonX, PanelLeftClose } from 'lucide-react'
 import { useCallback, useContext, useLayoutEffect, useMemo, useReducer, useState } from 'react'
 import {
     createContextItem,
@@ -55,7 +55,7 @@ export const SearchResults = ({
     const [showAll, setShowAll] = useState(false)
     const [showFiltersModal, setShowFiltersModal] = useState(false)
     const [showFiltersSidebar, setShowFiltersSidebar] = useState(true)
-
+    const [otherReposExpanded, setOtherReposExpanded] = useState(true)
     const totalResults = useMemo(
         () =>
             message.search.response?.results.results.filter(
@@ -73,11 +73,6 @@ export const SearchResults = ({
     // just pull the boosted repo name from the query if it exists. This will break if we
     // change how the current repo is boosted, but it at least doesn't depend on VSCode-specific APIs.
     const boostedRepo = message.search.query.match(/boost:repo\(([^)]+)\)/)?.[1]
-    const firstNonBoostedRepoIndex = boostedRepo
-        ? resultsToShow.findIndex(
-              result => result.__typename === 'FileMatch' && result.repository.name !== boostedRepo
-          )
-        : undefined
     // don't show filter on first search that returns no results
     // show filter on subsquent filtered searches, we want users to be able to deselect their choices
     const hasResults = initialResults?.length > 0 ? initialResults?.length > 0 : resultsToShow.length > 0
@@ -178,7 +173,7 @@ export const SearchResults = ({
                         !!message.search.selectedFilters?.length) && (
                         <div
                             className={classNames(
-                                'tw-min-w-[250px] tw-w-[250px] tw-relative tw-mt-2 tw-p-4 tw-border-r tw-border-border tw-shadow',
+                                'tw-min-w-[250px] tw-w-[250px] tw-relative tw-mt-2 tw-p-4 tw-border-r tw-border-border',
                                 styles.filtersSidebar
                             )}
                         >
@@ -245,7 +240,6 @@ export const SearchResults = ({
                                         </>
                                     )}
                                     <div className="tw-flex tw-gap-4 tw-items-center tw-font-medium tw-text-sm tw-text-muted-foreground tw-px-2">
-                                        <Search className="tw-size-6 md:tw-size-8 tw-flex-shrink-0" />
                                         Displaying {resultsToShow.length} code search results
                                     </div>
                                 </div>
@@ -339,30 +333,121 @@ export const SearchResults = ({
                             </InfoMessage>
                         )}
                         {resultsToShow.length ? (
-                            <ul className="tw-list-none tw-flex tw-flex-col">
-                                {resultsToShow.map((result, i) => (
-                                    <li
-                                        // biome-ignore lint/correctness/useJsxKeyInIterable:
-                                        // biome-ignore lint/suspicious/noArrayIndexKey: stable order
-                                        key={i}
-                                    >
-                                        {i === firstNonBoostedRepoIndex && (
-                                            <h6 className="tw-border-b tw-border-border tw-text-muted-foreground tw-p-4 tw-pt-8">
-                                                Results from other repositories
-                                            </h6>
-                                        )}
-                                        <NLSResultSnippet
-                                            result={result}
-                                            selectedForContext={selectedFollowUpResults.has(result)}
-                                            onSelectForContext={
-                                                enableContextSelection
-                                                    ? handleSelectForContext
-                                                    : undefined
+                            <>
+                                {(() => {
+                                    const { boostedResults, nonBoostedResults } = useMemo(() => {
+                                        if (!boostedRepo) {
+                                            return {
+                                                boostedResults: resultsToShow,
+                                                nonBoostedResults: [],
                                             }
-                                        />
-                                    </li>
-                                ))}
-                            </ul>
+                                        }
+                                        return {
+                                            boostedResults: resultsToShow.filter(
+                                                result =>
+                                                    result.__typename === 'FileMatch' &&
+                                                    result.repository.name === boostedRepo
+                                            ),
+                                            nonBoostedResults: resultsToShow.filter(
+                                                result =>
+                                                    result.__typename === 'FileMatch' &&
+                                                    result.repository.name !== boostedRepo
+                                            ),
+                                        }
+                                    }, [])
+
+                                    return (
+                                        <div className="results-container">
+                                            {/* Render boosted results */}
+                                            <ul className="tw-list-none tw-flex tw-flex-col">
+                                                {boostedResults.map((result, i) => (
+                                                    <li
+                                                        key={`boosted-${
+                                                            // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
+                                                            i
+                                                        }`}
+                                                    >
+                                                        <NLSResultSnippet
+                                                            result={result}
+                                                            selectedForContext={selectedFollowUpResults.has(
+                                                                result
+                                                            )}
+                                                            onSelectForContext={
+                                                                enableContextSelection
+                                                                    ? handleSelectForContext
+                                                                    : undefined
+                                                            }
+                                                        />
+                                                    </li>
+                                                ))}
+                                            </ul>
+
+                                            {/* Render non-boosted results with collapsible section */}
+                                            {nonBoostedResults.length > 0 && (
+                                                <div className="non-boosted-results">
+                                                    <div
+                                                        className="tw-border-b tw-border-border tw-text-muted-foreground tw-p-4 tw-pt-8 tw-flex tw-justify-between tw-items-center tw-cursor-pointer hover:tw-bg-secondary/50"
+                                                        onClick={() =>
+                                                            setOtherReposExpanded(!otherReposExpanded)
+                                                        }
+                                                        onKeyDown={e => {
+                                                            if (e.key === 'Enter' || e.key === ' ') {
+                                                                setOtherReposExpanded(
+                                                                    !otherReposExpanded
+                                                                )
+                                                            }
+                                                        }}
+                                                        role="button"
+                                                        tabIndex={0}
+                                                    >
+                                                        <div className="tw-flex tw-items-center tw-gap-2 hover:tw-text-foreground">
+                                                            <ChevronRight
+                                                                className={classNames(
+                                                                    'tw-size-8 tw-transition-transform',
+                                                                    otherReposExpanded
+                                                                        ? 'tw-rotate-90'
+                                                                        : ''
+                                                                )}
+                                                            />
+                                                            <span className="tw-font-medium tw-text-sm">
+                                                                Results from other repositories
+                                                            </span>
+                                                            <span className="tw-bg-muted tw-text-muted-foreground tw-rounded-full tw-mx-2 tw-px-3 tw-py-2 tw-text-xs tw-font-semibold tw-leading-none">
+                                                                {nonBoostedResults.length}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+
+                                                    {otherReposExpanded && (
+                                                        <ul className="tw-list-none tw-flex tw-flex-col">
+                                                            {nonBoostedResults.map((result, i) => (
+                                                                <li
+                                                                    key={`non-boosted-${
+                                                                        // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
+                                                                        i
+                                                                    }`}
+                                                                >
+                                                                    <NLSResultSnippet
+                                                                        result={result}
+                                                                        selectedForContext={selectedFollowUpResults.has(
+                                                                            result
+                                                                        )}
+                                                                        onSelectForContext={
+                                                                            enableContextSelection
+                                                                                ? handleSelectForContext
+                                                                                : undefined
+                                                                        }
+                                                                    />
+                                                                </li>
+                                                            ))}
+                                                        </ul>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
+                                    )
+                                })()}{' '}
+                            </>
                         ) : (
                             <div className="tw-flex tw-flex-col tw-gap-4 tw-justify-center tw-items-center tw-my-20 tw-text-muted-foreground">
                                 <OctagonX className="tw-size-8" />

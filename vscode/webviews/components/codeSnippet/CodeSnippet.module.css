@@ -5,8 +5,13 @@
     --cody-chat-code-border-color: var(--vscode-widget-border);
     --cody-chat-code-text-muted: var(--vscode-input-placeholderForeground);
     --cody-chat-code-focus-border: var(--vscode-focusBorder);
-    --cody-chat-code-mark-background: #f8e688;
-    --cody-chat-code-text-highlighted: #566880;
+    --cody-chat-code-mark-background: #f6d365;
+    --cody-chat-code-text-highlighted: #2d3748;
+}
+
+[data-vscode-theme-kind="vscode-light"] {
+    --cody-chat-code-mark-background: #f6d365;
+    --cody-chat-code-text-highlighted: #2d3748;
 }
 
 .result-container {
