@@ -729,7 +729,8 @@ function registerAutoEdits(
                 authStatus,
                 featureFlagProvider.evaluatedFeatureFlag(
                     FeatureFlag.CodyAutoEditExperimentEnabledFeatureFlag
-                )
+                ),
+                featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyAutoEditImageRendering)
             )
                 .pipe(
                     distinctUntilChanged((a, b) => {
@@ -739,15 +740,23 @@ function registerAutoEdits(
                             isEqual(a[2], b[2])
                         )
                     }),
-                    switchMap(([config, authStatus, autoeditsFeatureFlagEnabled]) => {
-                        return createAutoEditsProvider({
+                    switchMap(
+                        ([
                             config,
                             authStatus,
-                            chatClient,
-                            autoeditsFeatureFlagEnabled,
-                            fixupController,
-                        })
-                    }),
+                            autoeditFeatureFlagEnabled,
+                            autoeditImageRenderingEnabled,
+                        ]) => {
+                            return createAutoEditsProvider({
+                                config,
+                                authStatus,
+                                chatClient,
+                                autoeditFeatureFlagEnabled,
+                                autoeditImageRenderingEnabled,
+                                fixupController,
+                            })
+                        }
+                    ),
                     catchError(error => {
                         autoeditsOutputChannelLogger.logError('registerAutoedits', 'Error', error)
                         return NEVER
