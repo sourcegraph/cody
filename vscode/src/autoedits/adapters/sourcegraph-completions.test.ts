@@ -57,7 +57,7 @@ describe('SourcegraphCompletionsAdapter', () => {
         expect(params).toMatchObject({
             model: 'anthropic/claude-2',
             maxTokensToSample: getMaxOutputTokensForAutoedits(options.codeToRewrite),
-            temperature: 0,
+            temperature: 0.001,
             messages: [{ speaker: 'human', text: ps`user message` }],
             prediction: {
                 type: 'content',

@@ -4,6 +4,7 @@ import type { SerializedContextItem, SerializedContextItemMentionNode } from './
 
 export const AT_MENTION_SERIALIZED_PREFIX = 'cody://serialized.v1'
 const AT_MENTION_SERIALIZATION_END = '_'
+const BASE_64_CHARACTERS = '[A-Za-z0-9+/]+={0,2}'
 
 function unicodeSafeBtoa(str: string) {
     return btoa(encodeURIComponent(str))
@@ -87,7 +88,7 @@ const NEW_LINE_NODE = {
     version: 1,
 }
 
-export function deserializeContextMentionItem(s: string) {
+function deserializeContextMentionItem(s: string) {
     return JSON.parse(
         unicodeSafeAtob(new URL(s).searchParams.get('data')?.replace(AT_MENTION_SERIALIZATION_END, '')!)
     )
@@ -126,6 +127,50 @@ const CONTEXT_ITEMS = {
     },
 } as const
 
+export function deserializeParagraph(s: string): SerializedLexicalNode[] {
+    const parts = s.split(
+        new RegExp(
+            `(${AT_MENTION_SERIALIZED_PREFIX}\\?data=${BASE_64_CHARACTERS}${AT_MENTION_SERIALIZATION_END})`,
+            'g'
+        )
+    )
+    return parts
+        .map(part => {
+            if (part.startsWith(AT_MENTION_SERIALIZED_PREFIX)) {
+                try {
+                    return deserializeContextMentionItem(part)
+                } catch (e) {
+                    console.warn(e)
+                    return {
+                        type: 'text',
+                        text: part,
+                        detail: 0,
+                        format: 0,
+                        mode: 'normal',
+                        style: '',
+                        version: 1,
+                    }
+                }
+            }
+            for (const [uri, item] of Object.entries(CONTEXT_ITEMS)) {
+                if (part.includes(uri)) {
+                    return createContextItemMention(item, uri)
+                }
+            }
+            return {
+                type: 'text',
+                text: part,
+                detail: 0,
+                format: 0,
+                mode: 'normal',
+                style: '',
+                version: 1,
+            }
+        })
+        .filter(node => node.text !== '')
+}
+
+
 function createContextItemMention(
     item: (typeof CONTEXT_ITEMS)[keyof typeof CONTEXT_ITEMS],
     uri: string
@@ -161,43 +206,6 @@ export function splitToWords(s: string): string[] {
      */
     const pattern = /(cody:\/\/(?:serialized[^_]+_|[^_\s.]+))/
     return s.split(pattern)
-}
-
-function deserializeParagraph(s: string): SerializedLexicalNode[] {
-    return splitToWords(s)
-        .map(part => {
-            if (part.startsWith(AT_MENTION_SERIALIZED_PREFIX)) {
-                try {
-                    return deserializeContextMentionItem(part)
-                } catch (e) {
-                    console.warn(e)
-                    return {
-                        type: 'text',
-                        text: part,
-                        detail: 0,
-                        format: 0,
-                        mode: 'normal',
-                        style: '',
-                        version: 1,
-                    }
-                }
-            }
-            for (const [uri, item] of Object.entries(CONTEXT_ITEMS)) {
-                if (part.includes(uri)) {
-                    return createContextItemMention(item, uri)
-                }
-            }
-            return {
-                type: 'text',
-                text: part,
-                detail: 0,
-                format: 0,
-                mode: 'normal',
-                style: '',
-                version: 1,
-            }
-        })
-        .filter(node => node.text !== '')
 }
 
 function deserializeDoc(s: string): SerializedLexicalNode[] {

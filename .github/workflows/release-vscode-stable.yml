@@ -1,9 +1,13 @@
-name: vscode-stable-release
+name: release-vscode-stable
 
 on:
   push:
     tags:
       - vscode-v*
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   release:
@@ -78,7 +82,7 @@ jobs:
           echo "VERSION_ANCHOR=$version_anchor" >> $GITHUB_ENV
           echo "CURRENT_RELEASE_BRANCH=vscode-v$major.$minor.x" >> $GITHUB_ENV
           echo "NEXT_RELEASE_BRANCH=vscode-v$major.$next_minor.x" >> $GITHUB_ENV
-      - name: 'Slack notification'
+      - name: "Slack notification"
         run: |
           echo "Posting release announcement to Slack"
           ANNOUNCE_EDITORS_SLACK_WEBHOOK_URL=${{ secrets.ANNOUNCE_EDITORS_SLACK_WEBHOOK_URL }}

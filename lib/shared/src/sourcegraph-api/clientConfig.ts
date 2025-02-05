@@ -1,4 +1,4 @@
-import { Observable, Subject, interval, map, merge } from 'observable-fns'
+import { Observable, interval, map } from 'observable-fns'
 import semver from 'semver'
 import type { AuthStatus } from '..'
 import { authStatus } from '../auth/authStatus'
@@ -10,6 +10,7 @@ import {
     filter,
     firstValueFrom,
     promiseFactoryToObservable,
+    retry,
     startWith,
     switchMap,
 } from '../misc/observable'
@@ -20,12 +21,7 @@ import {
 } from '../misc/observableOperation'
 import { isError } from '../utils'
 import { isAbortError } from './errors'
-import {
-    type CodyConfigFeatures,
-    type GraphQLAPIClientConfig,
-    type TemporarySettings,
-    graphqlClient,
-} from './graphql/client'
+import { type CodyConfigFeatures, type GraphQLAPIClientConfig, graphqlClient } from './graphql/client'
 
 export interface CodyNotice {
     key: string
@@ -63,14 +59,11 @@ export interface CodyClientConfig {
     userShouldUseEnterprise: boolean
 
     // Whether the user should be able to use the intent detection feature.
-    // `opt-in` means the user must explicitly enable it.
-    intentDetection: 'disabled' | 'enabled' | 'opt-in'
+    intentDetection: 'disabled' | 'enabled'
 
     // List of global instance-level cody notice/banners (set only by admins in global
     // instance configuration file
     notices: CodyNotice[]
-
-    temporarySettings: Partial<TemporarySettings>
 
     // The version of the Sourcegraph instance.
     siteVersion?: string
@@ -91,7 +84,6 @@ export const dummyClientConfigForTest: CodyClientConfig = {
     modelsAPIEnabled: true,
     userShouldUseEnterprise: false,
     intentDetection: 'enabled',
-    temporarySettings: {},
     notices: [],
     siteVersion: undefined,
     omniBoxEnabled: false,
@@ -119,47 +111,33 @@ export class ClientConfigSingleton {
         attribution: false,
     }
 
-    private readonly forceUpdateSubject = new Subject<any>()
-
-    /**
-     * Forces an immediate update of the client configuration by triggering a new fetch.
-     * This method is called when temporary settings are edited from the client to ensure
-     * the configuration is immediately synchronized with the latest changes.
-     *
-     * @returns A promise that resolves to the updated CodyClientConfig or undefined
-     */
-    public async forceUpdate(): Promise<CodyClientConfig | undefined> {
-        this.forceUpdateSubject.next(true)
-        return firstValueFrom(this.changes.pipe(skipPendingOperation()))
-    }
     /**
      * An observable that immediately emits the last-cached value (or fetches it if needed) and then
      * emits changes.
      */
-    public readonly changes: Observable<CodyClientConfig | undefined | typeof pendingOperation> = merge(
-        authStatus,
-        this.forceUpdateSubject
-    ).pipe(
-        debounceTime(0), // wait a tick for graphqlClient's auth to be updated
-        switchMapReplayOperation(authStatus =>
-            authStatus.authenticated
-                ? interval(ClientConfigSingleton.REFETCH_INTERVAL).pipe(
-                      map(() => undefined),
-                      // Don't update if the editor is in the background, to avoid network
-                      // activity that can cause OS warnings or authorization flows when the
-                      // user is not using Cody. See
-                      // linear.app/sourcegraph/issue/CODY-3745/codys-background-periodic-network-access-causes-2fa.
-                      filter((_value): _value is undefined => editorWindowIsFocused()),
-                      startWith(undefined),
-                      switchMap(() =>
-                          promiseFactoryToObservable(signal => this.fetchConfig(authStatus, signal))
+    public readonly changes: Observable<CodyClientConfig | undefined | typeof pendingOperation> =
+        authStatus.pipe(
+            debounceTime(0), // wait a tick for graphqlClient's auth to be updated
+            switchMapReplayOperation(authStatus =>
+                authStatus.authenticated
+                    ? interval(ClientConfigSingleton.REFETCH_INTERVAL).pipe(
+                          map(() => undefined),
+                          // Don't update if the editor is in the background, to avoid network
+                          // activity that can cause OS warnings or authorization flows when the
+                          // user is not using Cody. See
+                          // linear.app/sourcegraph/issue/CODY-3745/codys-background-periodic-network-access-causes-2fa.
+                          filter((_value): _value is undefined => editorWindowIsFocused()),
+                          startWith(undefined),
+                          switchMap(() =>
+                              promiseFactoryToObservable(signal => this.fetchConfig(authStatus, signal))
+                          ),
+                          retry(3)
                       )
-                  )
-                : Observable.of(undefined)
-        ),
-        map(value => (isError(value) ? undefined : value)),
-        distinctUntilChanged()
-    )
+                    : Observable.of(undefined)
+            ),
+            map(value => (isError(value) ? undefined : value)),
+            distinctUntilChanged()
+        )
 
     public readonly updates: Observable<CodyClientConfig> = this.changes.pipe(
         filter(value => value !== undefined && value !== pendingOperation),
@@ -238,14 +216,12 @@ export class ClientConfigSingleton {
 
             return Promise.all([
                 graphqlClient.viewerSettings(signal),
-                graphqlClient.temporarySettings(signal),
                 graphqlClient.codeSearchEnabled(signal),
-            ]).then(([viewerSettings, temporarySettings, codeSearchEnabled]) => {
+            ]).then(([viewerSettings, codeSearchEnabled]) => {
                 const config: CodyClientConfig = {
                     ...clientConfig,
                     intentDetection: 'enabled',
                     notices: [],
-                    temporarySettings: {},
                     siteVersion: isError(siteVersion) ? undefined : siteVersion,
                     omniBoxEnabled,
                     codeSearchEnabled: isError(codeSearchEnabled) ? true : codeSearchEnabled,
@@ -253,7 +229,7 @@ export class ClientConfigSingleton {
 
                 // Don't fail the whole chat because of viewer setting (used only to show banners)
                 if (!isError(viewerSettings)) {
-                    config.intentDetection = ['disabled', 'enabled', 'opt-in'].includes(
+                    config.intentDetection = ['disabled', 'enabled'].includes(
                         viewerSettings['omnibox.intentDetection']
                     )
                         ? viewerSettings['omnibox.intentDetection']
@@ -272,10 +248,6 @@ export class ClientConfigSingleton {
 
                 if (codeSearchEnabled === false) {
                     config.intentDetection = 'disabled'
-                }
-
-                if (!isError(temporarySettings)) {
-                    config.temporarySettings = temporarySettings
                 }
 
                 return config
@@ -308,7 +280,6 @@ export class ClientConfigSingleton {
             modelsAPIEnabled: false,
             userShouldUseEnterprise: false,
             notices: [],
-            temporarySettings: {},
             omniBoxEnabled: false,
             codeSearchEnabled: false,
         }

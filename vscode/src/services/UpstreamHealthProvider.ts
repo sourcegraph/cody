@@ -1,6 +1,5 @@
 import {
     type BrowserOrNodeResponse,
-    addAuthHeaders,
     addCodyClientIdentificationHeaders,
     addTraceparent,
     currentResolvedConfig,
@@ -95,10 +94,11 @@ class UpstreamHealthProvider implements vscode.Disposable {
             addTraceparent(sharedHeaders)
             addCodyClientIdentificationHeaders(sharedHeaders)
 
-            const url = new URL('/healthz', auth.serverEndpoint)
             const upstreamHeaders = new Headers(sharedHeaders)
-            await addAuthHeaders(auth, upstreamHeaders, url)
-
+            if (auth.accessToken) {
+                upstreamHeaders.set('Authorization', `token ${auth.accessToken}`)
+            }
+            const url = new URL('/healthz', auth.serverEndpoint)
             const upstreamResult = await wrapInActiveSpan('upstream-latency.upstream', span => {
                 span.setAttribute('sampled', true)
                 return measureLatencyToUri(upstreamHeaders, url.toString())

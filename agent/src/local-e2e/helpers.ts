@@ -96,10 +96,7 @@ export class LocalSGInstance {
         // for checking the LLM configuration section.
         this.gqlclient = SourcegraphGraphQLAPIClient.withStaticConfig({
             configuration: { customHeaders: headers, telemetryLevel: 'agent' },
-            auth: {
-                credentials: { token: this.params.accessToken },
-                serverEndpoint: this.params.serverEndpoint,
-            },
+            auth: { accessToken: this.params.accessToken, serverEndpoint: this.params.serverEndpoint },
             clientState: { anonymousUserID: null },
         })
     }
