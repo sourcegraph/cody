@@ -2,7 +2,7 @@ import { CodyIDE } from '@sourcegraph/cody-shared'
 import type { FunctionComponent } from 'react'
 import { PromptList } from '../../components/promptList/PromptList'
 import { useActionSelect } from '../../prompts/PromptsTab'
-import { View } from '../../tabs'
+import type { View } from '../../tabs'
 import { PromptMigrationWidget } from './../../components/promptsMigration/PromptsMigration'
 
 const localStorageKey = 'chat.welcome-message-dismissed'
