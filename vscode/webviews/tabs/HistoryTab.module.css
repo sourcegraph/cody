@@ -1,6 +1,6 @@
 
 h4{
-    border-bottom: 1px solid var(--vscode-editorWidget-border);
+    border-bottom: 1px solid var(--border);
 }
 
 .history-row {
@@ -25,4 +25,3 @@ h4{
 .history-row:hover .history-delete-btn {
     opacity: 1;
 }
-

@@ -1,7 +1,7 @@
 .context-item-mention-node {
     --mention-color-opacity: 70%;
-    color: color-mix(in lch, var(--vscode-inputOption-activeForeground) calc(1.2*var(--mention-color-opacity)), transparent);
-    background-color: color-mix(in lch, var(--vscode-inputOption-activeBackground) var(--mention-color-opacity), transparent);
+    color: var(--highlight-text);
+    background-color: var(--highlight-background);
     border-radius: 2px;
     white-space: normal;
     padding: 0 3px;
@@ -27,7 +27,7 @@
 
 .context-item-mention-node.context-item-mention-chip-node--focused {
     --mention-color-opacity: 100%;
-    outline: solid 1px var(--vscode-inputOption-activeBorder);
+    outline: solid 1px var(--border-active);
 }
 
 .context-item-mention-node.is-too-large-or-ignored {
@@ -36,5 +36,5 @@
 }
 
 body:is([data-vscode-theme-kind='vscode-high-contrast'], [data-vscode-theme-kind='vscode-high-contrast-light']) .context-item-mention-node:not(.context-item-mention-chip-node--focused) {
-    outline: solid 1px var(--vscode-input-foreground);
+    outline: solid 1px var(--text);
 }

@@ -53,7 +53,7 @@
 
     /* Highlight */
     --highlight-background: color-mix(in srgb, var(--vscode-button-background) 40%, transparent 10%);
-    --highlight-background-text: var(--text);
+    --highlight-text: color-mix(in srgb, var(--vscode-button-background) 40%, white 80%);
     --highlight-border: color-mix(in srgb, var(--vscode-button-background) 50%, white 20%);
 
     /* Links */
