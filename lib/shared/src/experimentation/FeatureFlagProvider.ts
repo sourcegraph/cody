@@ -61,6 +61,9 @@ export enum FeatureFlag {
 
     CodyAutoEditExperimentEnabledFeatureFlag = 'cody-autoedit-experiment-enabled-flag',
 
+    // Enables image-based rendering of autoedit suggestions
+    CodyAutoEditImageRendering = 'cody-autoedit-image-rendering',
+
     // Enables gpt-4o-mini as a default Edit model
     CodyEditDefaultToGpt4oMini = 'cody-edit-default-to-gpt-4o-mini',
 
