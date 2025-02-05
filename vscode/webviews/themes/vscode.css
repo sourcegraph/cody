@@ -1,0 +1,64 @@
+body.vscode-dark {
+    background: transparent; /* in vscode we should let the color of the underlying UI set the background of the sidebar*/
+    /* Override VS Code Webview Toolkit elements */
+    --border-width: none;
+    color:var(--text);
+
+    --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+    --font-editor: 'Monaco', 'Consolas', monospace;
+    --font-size: 13px;
+
+    --vscode-font-family: var(--font);
+
+    /* PRIMITIVES FROM EDITOR */
+    --editor-background: var(--vscode-panel-background);
+    --editor-border: var(--vscode-panel-border);
+    --editor-accent: var(--vscode-button-background);
+    --editor-text:var(--vscode-foreground);
+
+    /* Primary Button */
+    --button-primary-text: var(--vscode-button-foreground);
+    --button-primary-background: var(--editor-accent);
+    --button-primary-background-hover: var(--vscode-button-hoverBackground);
+    --button-primary-border: var(--vscode-button-border);
+    --button-primary-border-hover: var(--vscode-button-border);
+
+    /* Backgrounds */
+    --background-01: var(--editor-background);  /* Main page background */
+    --background-02: color-mix(in srgb, var(--background-01), black 5%);  /* Slightly darker */
+    --background-03: color-mix(in srgb, var(--background-01), black 10%);  /* Even darker */
+
+    /* Text */
+    --text: var(--editor-text);
+    --text-subtle: color-mix(in srgb, var(--text) 70%, transparent 30%);  /* Slightly transparent */
+    --text-muted: color-mix(in srgb, var(--text) 50%, transparent 50%);  /* More transparent */
+    --text-primary: var(--editor-text);
+    --text-primary-subtle: color-mix(in srgb, var(--text-primary)  70%, transparent 30%);  /* Subtle primary */
+    --text-primary-muted: color-mix(in srgb, var(--text-primary)  50%, transparent 50%);  /* Muted primary */
+    --text-disabled: color-mix(in srgb, var(--text-primary) 30%, transparent 70%);  /* Highly transparent */
+
+    /* Links */
+    --text-link-color: var(--editor-accent);
+    --text-link-hover-color: #ff4c00;
+    --text-white: #FFFFFF;
+
+    /* Borders */
+    --border: var(--editor-border);
+    --border-subtle: color-mix(in srgb, var(--border) 70%, transparent 30%);  /* Subtle border */
+    --border-disabled: color-mix(in srgb, var(--border) 30%, transparent 70%);  /* Disabled border */
+    --border-active: color-mix(in srgb, var(--editor-accent), transparent 30%);  /* Active border with hint of blue */
+    --border-hover: color-mix(in srgb, var(--border) 75%, white 25%);  /* Hover border with more vibrant blue */
+
+    /* Highlight */
+    --highlight-background: color-mix(in srgb, var(--editor-accent), transparent 40%);
+    --highlight-text: color-mix(in srgb, var(--text), white 90%);
+    --highlight-border: color-mix(in srgb, var(--editor-accent) 50%, white 20%);
+
+    /* Links */
+    --link-color: var(--editor-accent);
+    --link-hover-color: color-mix(in srgb, var(--editor-accent) 75%, white 25%);
+}
+
+body.vscode-light {
+    background:pink !important;
+}

@@ -1,7 +1,7 @@
 .context-item-mention-node {
     --mention-color-opacity: 70%;
-    color: var(--highlight-text);
-    background-color: var(--highlight-background);
+    color: var(--text);
+    background-color: color-mix(in srgb, var(--editor-accent), transparent 70%);
     border-radius: 2px;
     white-space: normal;
     padding: 0 3px;
@@ -19,6 +19,7 @@
     margin-right: 2px;
     opacity: 0.8;
     transform: translateY(-1px);
+    color: var(--text);
 }
 
 .context-item-mention-node + .context-item-mention-node {

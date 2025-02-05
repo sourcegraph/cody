@@ -4,7 +4,7 @@
     overflow: hidden;
 
     /* Makes ellipsis show in default text color, we show the basename in link color below */
-    color: var(--text-muted);
+    color: var(--text-subtle);
 }
 
 .excluded {
@@ -12,7 +12,7 @@
 }
 
 .basename {
-    color: var(--text-sutle);
+    color: var(--text);
 }
 
 .repoShortName {
