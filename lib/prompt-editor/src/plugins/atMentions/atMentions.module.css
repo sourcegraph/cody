@@ -19,9 +19,9 @@
 .popover {
     overflow: auto;
     background: var(--background-01);
-    color: var(--vscode-sideBar-foreground);
-    box-shadow: 0 0 8px 2px var(--vscode-widget-shadow);
-    border: 1px solid var(--vscode-dropdown-border);
+    color: var(--text);
+    box-shadow: 0 0 8px 2px var(--background-03);
+    border: 1px solid var(--border);
     border-radius: 3px;
     max-height: calc(var(--max-items)*var(--mention-item-height) + 2px);
 }

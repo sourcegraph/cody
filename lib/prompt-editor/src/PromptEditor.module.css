@@ -14,7 +14,7 @@
 }
 
 .editor:not(.seamless) {
-    background-color: var(--vscode-input-background);
+    background-color: var(--background-02);
     color: var(--vscode-input-foreground);
     box-sizing: border-box;
     border: 1px solid transparent;

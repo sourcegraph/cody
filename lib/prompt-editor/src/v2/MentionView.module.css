@@ -1,8 +1,8 @@
 .mention {
     --mention-color-opacity: 70%;
 
-    color: color-mix(in lch, var(--vscode-inputOption-activeForeground) calc(1.2*var(--mention-color-opacity)), transparent);
-    background-color: color-mix(in lch, var(--vscode-inputOption-activeBackground) var(--mention-color-opacity), transparent);
+    color: color-mix(in lch, var(--text-primary) calc(1.2*var(--mention-color-opacity)), transparent);
+    background-color: color-mix(in lch, var(--background-01) var(--mention-color-opacity), transparent);
     border-radius: 2px;
     white-space: normal;
     padding: 0 3px;
@@ -13,7 +13,7 @@
 
     &--focused {
         --mention-color-opacity: 100%;
-        outline: solid 1px var(--vscode-inputOption-activeBorder);
+        outline: solid 1px var(--border-active);
     }
 
     svg {
