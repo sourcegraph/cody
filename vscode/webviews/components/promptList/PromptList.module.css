@@ -40,7 +40,7 @@
 
         .list--item {
             border-radius: 3px;
-            border: 1px solid var(--vscode-dropdown-border, transparent);
+            border: 1px solid var(--border, transparent);
             padding: 0.25rem 0.5rem;
 
             &[aria-selected="true"] {

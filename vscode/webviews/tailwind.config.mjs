@@ -44,11 +44,11 @@ export default {
             colors: {
                 border: 'var(--border)',
                 ring: 'var(--border-active)',
-                background: 'var(--background-01)',
+                background: 'var(--background-01, orange)',
                 foreground: 'var(--text)',
                 input: {
-                    foreground: 'var(--vscode-input-foreground)',
-                    background: 'var(--vscode-input-background)',
+                    foreground: 'var(--text)',
+                    background: 'var(--background-02)',
                     border: 'var(--vscode-input-border)',
                 },
                 button: {

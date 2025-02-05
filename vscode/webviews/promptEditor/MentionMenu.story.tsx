@@ -29,8 +29,8 @@ const meta: Meta<typeof MentionMenu> = {
             <div style={{ margin: '20px' }}>
                 <div
                     style={{
-                        border: 'solid 1px var(--vscode-input-border)',
-                        backgroundColor: 'var(--vscode-input-background)',
+                        border: 'solid 1px var(--border)',
+                        backgroundColor: 'var(--background)',
                         padding: '5px',
                         marginBottom: '10px',
                     }}

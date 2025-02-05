@@ -23,7 +23,7 @@
 
 .editor:not(.seamless) {
     background-color: var(--background-02);
-    color: var(--vscode-input-foreground);
+    color: var(--text);
     box-sizing: border-box;
     border: 1px solid transparent;
     border-radius: 2px;
@@ -33,16 +33,16 @@
 .editor:not(.seamless):focus,
 .editor:not(.seamless):focus-visible,
 .editor:not(.seamless):focus-within {
-    outline: 1px solid var(--vscode-focusBorder);
+    outline: 1px solid var(--border-active);
     outline-offset: -1px;
 }
 
 .editor:not(.seamless) {
-    border-color: var(--vscode-input-border, transparent);
+    border-color: var(--border, transparent);
 }
 
 .disabled {
-    color: var(--vscode-input-foreground);
+    color: var(--text-muted);
     opacity: 0.5;
 }
 

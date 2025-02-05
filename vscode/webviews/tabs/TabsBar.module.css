@@ -21,7 +21,6 @@
     flex-direction: column;
     justify-content: space-between;
     border-bottom: 1px solid var(--border);
-    background-color: var(--background-01);
 }
 
 .tabs {
@@ -96,7 +95,7 @@
         transform: translate(-50%, -50%);
         padding: 25px;
         border-radius: 6px;
-        background-color: var(--vscode-modal-background);
+        background-color: var(--background-02);
         box-shadow:
             hsl(206deg 22% 7% / 35%) 0 10px 38px -10px,
             hsl(206deg 22% 7% / 20%) 0 10px 20px -15px;

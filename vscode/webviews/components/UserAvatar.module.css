@@ -2,8 +2,8 @@
     isolation: isolate;
     display: inline-flex;
     border-radius: 50%;
-    background-color: var(--vscode-inputOption-activeBackground);
-    color: var(--vscode-inputOption-activeForeground);
+    background-color: var(--background-03);
+    color: var(--text);
     align-items: center;
     justify-content: center;
 }

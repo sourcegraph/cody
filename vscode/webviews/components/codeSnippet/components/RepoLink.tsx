@@ -66,7 +66,7 @@ export const RepoFileLink: React.FunctionComponent<React.PropsWithChildren<Props
     return (
         <span
             className={cn(className, 'tw-flex tw-items-center tw-w-full tw-text-md')}
-            style={{ color: 'var(--vscode-textLink-foreground)' }}
+            style={{ color: 'var(--text-link-color)' }}
         >
             {collapsible && (
                 <Chevron

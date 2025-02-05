@@ -1,5 +1,5 @@
 .outer-container {
-  background-color: var(--background-01);
+  background-color: transparent;
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
@@ -39,3 +39,5 @@
 kbd {
   all: unset;
 }
+
+

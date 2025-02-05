@@ -1,7 +1,7 @@
 :root {
     --cody-chat-code-background: var(--background-03);
-    --cody-chat-code-header-background: var(--vscode-editorGroupHeader-tabsBackground);
-    --cody-chat-code-subtle-background: var(--vscode-titleBar-inactiveBackground);
+    --cody-chat-code-header-background: var(--background-02);
+    --cody-chat-code-subtle-background: var(--background-03);
     --cody-chat-code-border-color: var(--border-subtle);
     --cody-chat-code-text-muted: var(--text-disabled);
     --cody-chat-code-focus-border: var(--text-primary-subtle);

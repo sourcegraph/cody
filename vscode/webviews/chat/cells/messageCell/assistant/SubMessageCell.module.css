@@ -1,5 +1,5 @@
 .step-container {
-  border-left: 3px solid var(--vscode-sideBar-border);
+  border-left: 3px solid var(--border);
   padding: 0.25rem 0.5rem 0.25rem 0.5rem;
   margin: 0.5rem 0 0.5rem 1rem;
   background-color: color-mix(in srgb, var(--background-01), var(--text-primary-subtle) 10%);

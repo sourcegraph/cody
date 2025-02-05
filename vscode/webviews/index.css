@@ -1,7 +1,8 @@
 @import '@vscode/codicons/dist/codicon';
+@import url(./themes/index.css);
 @import url(./utils/highlight.css);
 @import url(./components/shadcn/shadcn.css);
-@import url(./themes/index.css);
+
 
 @font-face {
     font-family: cody-icons;
@@ -19,54 +20,6 @@
 #root {
     height: 100%;
     margin: 0 auto;
-    font-family: var(--vscode-font-family);
-    color: var(--vscode-sideBar-foreground);
-    background-color: var(--vscode-sideBar-background);
-
-    /* Override VS Code Webview Toolkit elements */
-    --border-width: none;
-    color:var(--text);
-
-    /* Backgrounds */
-    --background-01: var(--vscode-panel-background);  /* Main page background */
-    --background-02: color-mix(in srgb, var(--vscode-panel-background) 85%, black 15%);  /* Slightly darker */
-    --background-03: color-mix(in srgb, var(--vscode-panel-background) 70%, black 30%);  /* Even darker */
-
-    /* Text */
-    --text: var(--vscode-foreground);
-    --text-subtle: color-mix(in srgb, var(--vscode-foreground) 70%, transparent 30%);  /* Slightly transparent */
-    --text-muted: color-mix(in srgb, var(--vscode-foreground) 50%, transparent 50%);  /* More transparent */
-    --text-primary: var(--vscode-button-background);
-    --text-primary-subtle: color-mix(in srgb, var(--vscode-button-background)  70%, transparent 30%);  /* Subtle primary */
-    --text-primary-muted: color-mix(in srgb, var(--vscode-button-background)  50%, transparent 50%);  /* Muted primary */
-    --text-disabled: color-mix(in srgb, var(--vscode-foreground) 30%, transparent 70%);  /* Highly transparent */
-    --text-link-color: #5d9b2f;
-    --text-link-hover-color: #ff4c00;
-    --text-white: #FFFFFF;
-
-    /* Borders */
-    --border: var(--vscode-panel-border);
-    --border-subtle: color-mix(in srgb, var(--vscode-panel-border) 70%, transparent 30%);  /* Subtle border */
-    --border-disabled: color-mix(in srgb, var(--vscode-panel-border) 30%, transparent 70%);  /* Disabled border */
-    --border-active: color-mix(in srgb, var(--vscode-button-background) 90%, transparent 30%);  /* Active border with hint of blue */
-    --border-hover: color-mix(in srgb, var(--vscode-panel-border) 75%, white 25%);  /* Hover border with more vibrant blue */
-
-    /* Highlight */
-    --highlight-background: color-mix(in srgb, var(--vscode-button-background) 40%, transparent 10%);
-    --highlight-text: color-mix(in srgb, var(--vscode-button-background) 40%, white 80%);
-    --highlight-border: color-mix(in srgb, var(--vscode-button-background) 50%, white 20%);
-
-    /* Links */
-    --link-color: var(--vscode-button-background);
-    --link-hover-color: color-mix(in srgb, var(--vscode-button-background) 75%, white 25%);
-
-    /* Primary Button */
-    --button-primary-text: var(--vscode-button-foreground);
-    --button-primary-background: var(--vscode-button-background);
-    --button-primary-background-hover: var(--vscode-button-hoverBackground);
-    --button-primary-border: var(--vscode-button-border);
-    --button-primary-border-hover: var(--vscode-button-border);
-
 }
 
 html,
@@ -74,7 +27,6 @@ body {
     margin: 0;
     padding: 0;
     height: 100%;
-    background-color: var(--vscode-sideBar-background);
 }
 
 a {
