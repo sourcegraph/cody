@@ -50,25 +50,6 @@ export const WelcomeMessage: FunctionComponent<WelcomeMessageProps> = ({
                     telemetryLocation="WelcomeAreaPrompts"
                     onSelect={item => runAction(item, setView)}
                 />
-                <div className={clsx(styles.actions, 'tw-flex tw-py-2 tw-gap-8 tw-justify-center')}>
-                    <Button
-                        variant="ghost"
-                        className="tw-justify-center tw-basis-0 tw-whitespace-nowrap"
-                        onClick={handleRecentlyUsed}
-                    >
-                        Recently used{' '}
-                        {IDE === CodyIDE.VSCode && <Kbd macOS="opt+p" linuxAndWindows="alt+p" />}
-                    </Button>
-
-                    <Button
-                        variant="ghost"
-                        className="tw-justify-center tw-basis-0 tw-whitespace-nowrap"
-                        onClick={() => setView(View.Prompts)}
-                    >
-                        <BookCopy width={16} />
-                        All Prompts
-                    </Button>
-                </div>
             </div>
         </div>
     )
