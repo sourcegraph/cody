@@ -1,6 +1,22 @@
 
 /* Mimic rules injected by VSCode */
 
+html[data-ide='JetBrains'] {
+
+    /* Mimic rules injected by VSCode */
+    --vscode-font-family: var(--font-family);
+    --vscode-font-weight: var(--font-weight);
+    --vscode-font-size: var(--jetbrains-font-size);
+
+    --vscode-editor-font-family: var(--font-family);
+    --vscode-editor-font-weight: var(--font-weight);
+    --vscode-editor-font-size: var(--type-ramp-minus1-font-size);
+
+    --vscode-widget-shadow: rgba(0, 0, 0, 0.36);
+    scrollbar-color: var(--vscode-scrollbarSlider-background) var(--vscode-editor-background);
+}
+
+
 html[data-ide='JetBrains'] body {
     overscroll-behavior-x: none;
     background-color: var(--vscode-sideBar-background);
@@ -29,6 +45,10 @@ html[data-ide='JetBrains'] body {
     --editor-border: var(--jetbrains-Menu-borderColor);
     --editor-accent: var(--jetbrains-Button-default-endBackground);
     --editor-text:var(--jetbrains-text);
+
+
+    
+
 
     /* Primary Button */
     --button-primary-text: var(--jetbrains-Button-default-foreground);
