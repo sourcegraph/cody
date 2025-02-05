@@ -423,33 +423,10 @@ function promptCachingProcessing(messages: Message[]): Message[] {
         }
         i += 1
     }
-    return insertCombinedCodeContext(messageMap, roleFirstIndex, finalMessages)
-}
 
-function insertCombinedCodeContext(
-    messageMap: Record<string, Message>,
-    roleFirstIndex: Record<string, number>,
-    finalMessages: Message[]
-): Message[] {
-    // Insert the combined code context back to the messages
-    type kv = {
-        Key: string
-        Value: number
-    }
-
-    const sortedFirstIndex: kv[] = []
-    for (const [k, v] of Object.entries(roleFirstIndex)) {
-        sortedFirstIndex.push({ Key: k, Value: v })
-    }
-
-    sortedFirstIndex.sort((a, b) => a.Value - b.Value)
-
-    for (const pair of sortedFirstIndex) {
-        const insertPosition = pair.Value
-        const insertValue = messageMap[pair.Key]
-        console.log(`cache_enabled is ${insertValue.cache_enabled}`)
-
-        finalMessages.splice(insertPosition, 0, insertValue)
+    // Insert combined context message at the original position
+    for (const [speaker, position] of Object.entries(roleFirstIndex).sort(([, a], [, b]) => a - b)) {
+        finalMessages.splice(position, 0, messageMap[speaker])
     }
     return finalMessages
 }
