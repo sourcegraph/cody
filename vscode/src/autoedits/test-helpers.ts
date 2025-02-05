@@ -15,6 +15,7 @@ import {
     type AutoeditsResult,
     INLINE_COMPLETION_DEFAULT_DEBOUNCE_INTERVAL_MS,
 } from './autoedits-provider'
+import { CodyStatusBar } from '../services/StatusBar'
 
 /**
  * A helper to be used for the autoedits integration tests.
@@ -85,7 +86,8 @@ export async function autoeditResultFor(
     const chatClient = null as unknown as ChatClient
     const extensionClient = defaultVSCodeExtensionClient()
     const fixupController = new FixupController(extensionClient)
-    const provider = existingProvider ?? new AutoeditsProvider(chatClient, fixupController)
+    const statusBar = CodyStatusBar.init()
+    const provider = existingProvider ?? new AutoeditsProvider(chatClient, fixupController, statusBar)
 
     let result: AutoeditsResult | null = null
 

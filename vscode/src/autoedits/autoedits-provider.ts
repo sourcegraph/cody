@@ -43,6 +43,7 @@ import {
 } from './renderer/mock-renderer'
 import { shrinkPredictionUntilSuffix } from './shrink-prediction'
 import { areSameUriDocs, isPredictedTextAlreadyInSuffix } from './utils'
+import type { CodyStatusBar } from '../services/StatusBar'
 
 const AUTOEDITS_CONTEXT_STRATEGY = 'auto-edit'
 export const INLINE_COMPLETION_DEFAULT_DEBOUNCE_INTERVAL_MS = 150
@@ -92,8 +93,9 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         contextRankingStrategy: ContextRankingStrategy.TimeBased,
         dataCollectionEnabled: false,
     })
+    private readonly statusBar: CodyStatusBar
 
-    constructor(chatClient: ChatClient, fixupController: FixupController) {
+    constructor(chatClient: ChatClient, fixupController: FixupController, statusBar: CodyStatusBar) {
         autoeditsOutputChannelLogger.logDebug('Constructor', 'Constructing AutoEditsProvider')
         this.modelAdapter = createAutoeditsModelAdapter({
             providerName: autoeditsProviderConfig.provider,
@@ -125,6 +127,8 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 this.onDidChangeTextDocument(event)
             })
         )
+
+        this.statusBar = statusBar
     }
 
     private onDidChangeTextDocument(event: vscode.TextDocumentChangeEvent): void {
@@ -158,6 +162,8 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         inlineCompletionContext: vscode.InlineCompletionContext,
         token?: vscode.CancellationToken
     ): Promise<AutoeditsResult | null> {
+        let stopLoading: (() => void) | undefined
+
         try {
             const start = getTimeNowInMillis()
             const controller = new AbortController()
@@ -174,6 +180,11 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 )
                 return null
             }
+
+            stopLoading = this.statusBar.addLoader({
+                title: 'Auto-edits are being generated',
+                timeout: 30_000,
+            })
 
             autoeditsOutputChannelLogger.logDebugIfVerbose(
                 'provideInlineCompletionItems',
@@ -432,6 +443,8 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
 
             autoeditAnalyticsLogger.logError(errorToReport)
             return null
+        } finally {
+            stopLoading?.()
         }
     }
 

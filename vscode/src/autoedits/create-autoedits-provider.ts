@@ -20,6 +20,7 @@ import type { FixupController } from '../non-stop/FixupController'
 
 import { AutoeditsProvider } from './autoedits-provider'
 import { autoeditsOutputChannelLogger } from './output-channel-logger'
+import type { CodyStatusBar } from '../services/StatusBar'
 
 const AUTOEDITS_NON_ELIGIBILITY_MESSAGES = {
     ONLY_VSCODE_SUPPORT: 'Auto-edit is currently only supported in VS Code.',
@@ -49,7 +50,8 @@ interface AutoeditsItemProviderArgs {
     authStatus: AuthStatus
     chatClient: ChatClient
     autoeditsFeatureFlagEnabled: boolean
-    fixupController: FixupController
+    fixupController: FixupController,
+    statusBar: CodyStatusBar,
 }
 
 export function createAutoEditsProvider({
@@ -58,6 +60,7 @@ export function createAutoEditsProvider({
     chatClient,
     autoeditsFeatureFlagEnabled,
     fixupController,
+    statusBar,
 }: AutoeditsItemProviderArgs): Observable<void> {
     if (!configuration.experimentalAutoEditEnabled) {
         return NEVER
@@ -85,7 +88,7 @@ export function createAutoEditsProvider({
                 return []
             }
 
-            const provider = new AutoeditsProvider(chatClient, fixupController)
+            const provider = new AutoeditsProvider(chatClient, fixupController, statusBar)
             return [
                 vscode.commands.registerCommand('cody.command.autoedit-manual-trigger', async () => {
                     await vscode.commands.executeCommand('editor.action.inlineSuggest.hide')
