@@ -170,7 +170,6 @@ export function deserializeParagraph(s: string): SerializedLexicalNode[] {
         .filter(node => node.text !== '')
 }
 
-
 function createContextItemMention(
     item: (typeof CONTEXT_ITEMS)[keyof typeof CONTEXT_ITEMS],
     uri: string
