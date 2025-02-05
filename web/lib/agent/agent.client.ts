@@ -9,7 +9,7 @@ import {
 } from 'vscode-jsonrpc/browser'
 
 // TODO(sqs): dedupe with agentClient.ts in [experimental Cody CLI](https://github.com/sourcegraph/cody/pull/3418)
-interface AgentClient {
+export interface AgentClient {
     serverInfo: ServerInfo
     rpc: MessageConnection
     dispose(): void
