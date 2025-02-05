@@ -4,11 +4,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type {
     AuthenticatedAuthStatus,
     ChatMessage,
-    CodyIDE,
     Guardrails,
     Model,
     PromptString,
 } from '@sourcegraph/cody-shared'
+import { CodyIDE } from '@sourcegraph/cody-shared'
 import { Transcript, focusLastHumanMessageEditor } from './chat/Transcript'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 
