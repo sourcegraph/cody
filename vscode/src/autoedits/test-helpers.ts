@@ -86,10 +86,13 @@ export async function autoeditResultFor(
     const chatClient = null as unknown as ChatClient
     const extensionClient = defaultVSCodeExtensionClient()
     const fixupController = new FixupController(extensionClient)
-    const statusBar = CodyStatusBar.init()
+    const mockStatusBar = {
+        addLoader: () => () => {},
+        init: () => mockStatusBar,
+    } as any as CodyStatusBar
     const provider =
         existingProvider ??
-        new AutoeditsProvider(chatClient, fixupController, statusBar, { shouldRenderImage: false })
+        new AutoeditsProvider(chatClient, fixupController, mockStatusBar, { shouldRenderImage: false })
 
     let result: AutoeditsResult | null = null
 
