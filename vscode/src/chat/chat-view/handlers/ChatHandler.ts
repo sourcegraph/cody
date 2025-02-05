@@ -90,7 +90,7 @@ export class ChatHandler implements AgentHandler {
         }
         let { prompt } = await this.buildPrompt(prompter, chatBuilder, signal, versions.codyAPIVersion)
 
-        if (this.promptCachingIsEnabled.value) {
+        if (this.promptCachingIsEnabled.value.last) {
             prompt = promptCachingProcessing(prompt)
         }
 
