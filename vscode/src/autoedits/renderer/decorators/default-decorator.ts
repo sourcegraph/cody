@@ -171,7 +171,6 @@ export class DefaultDecorator implements AutoEditsDecorator {
         }
 
         if (this.options.shouldRenderImage) {
-            console.log('RENDERING IMAGE...')
             this.renderAddedLinesImageDecorations(
                 addedLinesInfo.addedLinesDecorationInfo,
                 addedLinesInfo.startLine,
@@ -180,7 +179,6 @@ export class DefaultDecorator implements AutoEditsDecorator {
             return
         }
 
-        console.log('RENDERING NORMAL..')
         this.renderAddedLinesDecorations(
             addedLinesInfo.addedLinesDecorationInfo,
             addedLinesInfo.startLine,
