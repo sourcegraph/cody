@@ -37,6 +37,18 @@ describe('Edit Prompts', () => {
         expect(normalize(editPrompt.system?.toString() || '')).toMatchSnapshot('edit.system')
         expect(normalize(editPrompt.instruction?.toString())).toMatchSnapshot('edit.instruction')
 
+        // With rules provided.
+        const { prompt: editPromptWithRules } = fn.getEdit({
+            ...fixupTask,
+            rules: [{ uri: 'file:///a.rule.md', display_name: 'a', instruction: 'My instruction' }],
+        })
+        expect(normalize(editPromptWithRules.system?.toString() || '')).toMatchSnapshot(
+            'edit-with-rules.system'
+        )
+        expect(normalize(editPromptWithRules.instruction?.toString())).toMatchSnapshot(
+            'edit-with-rules.instruction'
+        )
+
         const { prompt: docPrompt } = fn.getDoc(fixupTask)
         expect(normalize(docPrompt.system?.toString() || '')).toMatchSnapshot('doc.system')
         expect(normalize(docPrompt.instruction?.toString())).toMatchSnapshot('doc.instruction')

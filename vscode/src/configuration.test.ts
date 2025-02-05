@@ -138,6 +138,10 @@ describe('getConfiguration', () => {
                         return false
                     case 'cody.agentic.context.experimentalOptions':
                         return { shell: { allow: ['git'] } }
+                    case 'cody.auth.externalProviders':
+                        return []
+                    case 'cody.rules.enabled':
+                        return false
                     default:
                         assert(false, `unexpected key: ${key}`)
                 }
@@ -206,6 +210,8 @@ describe('getConfiguration', () => {
 
             overrideAuthToken: undefined,
             overrideServerEndpoint: undefined,
+            authExternalProviders: [],
+            rulesEnabled: false,
         } satisfies ClientConfiguration)
     })
 })

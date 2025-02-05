@@ -136,6 +136,7 @@ export const CodyWebChat: FunctionComponent<CodyWebChatProps> = ({
         initialContext,
         telemetryClientName,
         customHeaders,
+        repository: initialContext?.repository.name,
     })
 
     if (isErrorLike(client)) {
@@ -290,7 +291,7 @@ const CodyWebPanel: FC<CodyWebPanelProps> = props => {
     const staticDefaultContext = useMemo<DefaultContext>((): DefaultContext => {
         const { repository, fileURL, isDirectory } = initialContextData ?? {}
 
-        if (!repository) {
+        if (!repository || !repository.id) {
             return { initialContext: [], corpusContext: [] }
         }
 

@@ -1,6 +1,6 @@
 <!-- Plugin description -->
 
-# Sourcegraph: Cody + Code Search
+# Cody: AI Code Assistant
 
 Use Cody, the AI coding assistant, plus Code Search directly from your JetBrains IDE.
 
@@ -9,64 +9,59 @@ Use Cody, the AI coding assistant, plus Code Search directly from your JetBrains
 
 ## Cody Features
 
+### Agentic Chat
+
+Designed to simplify and accelerate developer workflows, Sourcegraph uses intent detection and a combination of search, AI chat, and prompts in a single interface to streamline how you explore, understand, and generate code.
+
+<img src="https://storage.googleapis.com/sourcegraph-assets/vscode-marketplace/2025/agentic_chat.png" width="700" alt="Agentic Chat">
+
+### Prompts
+
+Streamline your development process by using prompts to understand, improve, fix, document, and generate unit tests for your code. You can also create your own prompts and save them in the Prompt Library to tailor Sourcegraph to your workflow.
+
+<img src="https://storage.googleapis.com/sourcegraph-assets/vscode-marketplace/2025/cody_prompt_library.png" width="700" alt="Prompts">
+
 ### Autocomplete
 
-Cody autocompletes single lines or whole functions in any programming language, configuration file, or documentation. It’s powered by the latest instant LLMs for accuracy and performance.
+Autocompletes single lines, or whole functions, in any programming language, configuration file, or documentation. It’s powered by the latest instant LLM models, for accuracy and performance.
 
-![Example of using code autocomplete](https://storage.googleapis.com/sourcegraph-assets/website/Product%20Animations/AutoCompletion_IntelliJ_SS.jpg)
+<img src="https://storage.googleapis.com/sourcegraph-assets/vscode-marketplace/cody-autocomplete.gif" width="700" alt="Cody autocomplete">
 
-### Chat
+### Works with your favorite IDEs
 
-Answer questions about your entire codebase, specific files and symbols, or general programming topics.
+Sourcegraph is available on the IDEs you use today. Get AI chat, autocomplete, and inline edit without changing your workflow.
 
-For example, you can ask Cody:
+### The best context
 
-- "How is our app's secret storage implemented on Linux?"
-- "Where is the CI config for the web integration tests?"
-- "Write a new GraphQL resolver for the AuditLog"
-- "Why is the UserConnectionResolver giving an "unknown user" error, and how do I fix it?"
-- "Add helpful debug log statements"
-- "Make this work" _(seriously, it often works—try it!)_
+When tools focus solely on individual productivity, teams face inconsistent and poor-quality results. Sourcegraph focuses on team productivity using whole codebase context and shared prompts to ensure quality and consistency across your enterprise.
 
-![Example of chatting with Cody](https://storage.googleapis.com/sourcegraph-assets/website/Product%20Animations/Chat_IntelliJ_SS.jpg)
+<img src="https://storage.googleapis.com/sourcegraph-assets/vscode-marketplace/2025/context_providers.png" width="700" alt="context">
 
-### Built-in prompts
+### The best models
 
-Streamline your development process by using prompts to understand, improve, fix, document, and generate unit tests for your code. Cody supports one-click prompts such as:
+Sourcegraph users can select the LLM they want to use for chat and experiment to choose the best model for the job. Choose from multiple options including Claude 3.5 Sonnet, Gemini 1.5 Pro, and Mixtral 8x7B. Cody Pro users can also select Claude 3 Opus and GPT-4o. [See the full list of model options here](https://sourcegraph.com/docs/cody/capabilities/supported-models).
 
-- Explain code
-- Generate unit tests
-- Smell code
+<img src="https://storage.googleapis.com/sourcegraph-assets/vscode-marketplace/2025/llm-choices-2025.png" width="700" alt="LLM Choices">
 
-### Choose your LLM
+## Choose Your LLM
 
 Cody users can select the LLM they want to use for chat and experiment to choose the best model for the job. Choose from multiple options including Claude 3.5 Sonnet, Gemini 1.5 Pro, and Mixtral 8x7B. Cody Pro users can also select Claude 3 Opus and GPT-4o. [See the full list of model options here](https://sourcegraph.com/docs/cody/capabilities/supported-models).
 
 Administrators for Sourcegraph Enterprise instances can configure which model options to let team members choose from.
 
-### Usage
+## Engineered for the enterprise
 
-This plugin works for all Cody plans, including Cody Free, Cody Pro, and Cody Enterprise.
+Sourcegraph is built to support the needs of the largest enterprises, with flexible deployment and support for enterprise security and compliance.
 
-You can find detailed information about Cody's available plans [on our website](https://sourcegraph.com/pricing?utm_source=plugins.jetbrains.com&utm_medium=referral).
+## Usage
 
-### Programming language support
+This extension works for all Cody plans, including Cody Free, Cody Pro, and Cody Enterprise.
+
+You can find detailed information about Cody's available plans [on our website](https://sourcegraph.com/pricing?utm_source=marketplace.visualstudio.com&utm_medium=referral).
+
+## Programming Languages
 
 Cody works for any programming language because it uses LLMs trained on broad data. Cody works great with Python, Go, JavaScript, and TypeScript code.
-
-### Code search
-
-Cody is powered by Sourcegraph’s code search and uses context of your codebase to extend its capabilities. By using context from your chosen repositories, Cody is able to give more accurate answers and generate idiomatic code.
-
-For example:
-
-- Ask Cody to generate an API call. Cody can gather context on your API schema to inform the code it writes.
-- Ask Cody to find where in your codebase a specific component is defined. Cody can retrieve and describe the exact files where that component is written.
-- Ask Cody questions that require an understanding of multiple files. For example, ask Cody how frontend data is populated in a React app; Cody can find the React component definitions to understand what data is being passed and where it originates.
-
-### Cody Enterprise
-
-Cody Enterprise can retrieve context from your entire remote codebase using code search. This allows Cody to understand and answer questions about any of your code, even the repositories that don't live on your local machine.
 
 [Contact us](https://about.sourcegraph.com/contact/request-info?utm_source=plugins.jetbrains.com&utm_medium=referral) to set up a trial of Cody Enterprise. If you’re an existing Sourcegraph Enterprise customer, contact your technical advisor.
 

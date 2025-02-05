@@ -20,6 +20,7 @@ import type { FixupController } from '../non-stop/FixupController'
 
 import { AutoeditsProvider } from './autoedits-provider'
 import { autoeditsOutputChannelLogger } from './output-channel-logger'
+import { initImageSuggestionService } from './renderer/image-gen'
 import type { CodyStatusBar } from '../services/StatusBar'
 
 const AUTOEDITS_NON_ELIGIBILITY_MESSAGES = {
@@ -49,16 +50,18 @@ interface AutoeditsItemProviderArgs {
     config: PickResolvedConfiguration<{ configuration: true }>
     authStatus: AuthStatus
     chatClient: ChatClient
-    autoeditsFeatureFlagEnabled: boolean
+    autoeditFeatureFlagEnabled: boolean
+    autoeditImageRenderingEnabled: boolean
     fixupController: FixupController,
-    statusBar: CodyStatusBar,
+    statusBar: CodyStatusBar
 }
 
 export function createAutoEditsProvider({
     config: { configuration },
     authStatus,
     chatClient,
-    autoeditsFeatureFlagEnabled,
+    autoeditFeatureFlagEnabled,
+    autoeditImageRenderingEnabled,
     fixupController,
     statusBar,
 }: AutoeditsItemProviderArgs): Observable<void> {
@@ -79,7 +82,7 @@ export function createAutoEditsProvider({
         skipPendingOperation(),
         createDisposables(([userProductSubscription]) => {
             const userEligibilityInfo = isUserEligibleForAutoeditsFeature(
-                autoeditsFeatureFlagEnabled,
+                autoeditFeatureFlagEnabled,
                 authStatus,
                 userProductSubscription
             )
@@ -88,7 +91,15 @@ export function createAutoEditsProvider({
                 return []
             }
 
-            const provider = new AutoeditsProvider(chatClient, fixupController, statusBar)
+            if (autoeditImageRenderingEnabled) {
+                // Initialise the canvas renderer for image generation.
+                // TODO: Consider moving this if we decide to enable this by default.
+                initImageSuggestionService()
+            }
+
+            const provider = new AutoeditsProvider(chatClient, fixupController, statusBar, {
+                shouldRenderImage: autoeditImageRenderingEnabled,
+            })
             return [
                 vscode.commands.registerCommand('cody.command.autoedit-manual-trigger', async () => {
                     await vscode.commands.executeCommand('editor.action.inlineSuggest.hide')

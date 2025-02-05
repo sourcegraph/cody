@@ -2,8 +2,8 @@ import { promises as fs } from 'node:fs'
 import { appendFileSync } from 'node:fs'
 
 const SIZE_LIMITS = {
-    extension: 15 * 1024 * 1024, // 15MB
-    webview: 10 * 1024 * 1024, // 10MB
+    extension: 20 * 1024 * 1024, // 20MB
+    webview: 15 * 1024 * 1024, // 15MB
 }
 
 function prettyPrintMB(bytes: number): string {

@@ -9,5 +9,6 @@ data class EditTask(
   val instruction: String? = null,
   val model: String? = null,
   val originalText: String? = null,
+  val rules: List<Rule>? = null,
 )
 

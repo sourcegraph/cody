@@ -1,16 +1,21 @@
 import {
+    type EditModel,
     FeatureFlag,
     displayPathWithoutWorkspaceFolderPrefix,
     featureFlagProvider,
     isDotComAuthed,
     storeLastValue,
+    telemetryRecorder,
 } from '@sourcegraph/cody-shared'
 import { LRUCache } from 'lru-cache'
 import * as uuid from 'uuid'
 import type * as vscode from 'vscode'
-import type { SmartSelectionType } from '../edit/prompt/smart-apply'
 import { gitMetadataForCurrentEditor } from '../repository/git-metadata-for-editor'
 import { GitHubDotComRepoMetadata } from '../repository/githubRepoMetadata'
+import { splitSafeMetadata } from '../services/telemetry-v2'
+import type { SmartSelectionType } from './prompt/smart-apply'
+
+const MAX_LOGGING_PAYLOAD_SIZE_BYTES = 1024 * 1024 // 1 MB
 
 export type SmartApplyLoggingRequestId = string
 
@@ -21,6 +26,7 @@ interface RepoContext {
 }
 
 interface SmartApplyBaseContext extends RepoContext {
+    smartApplyModel: EditModel
     userQuery: string
     replacementCodeBlock: string
     filePath: string
@@ -35,12 +41,43 @@ interface SmartApplySelectionContext extends SmartApplyBaseContext {
 
 interface SmartApplyFinalContext extends SmartApplySelectionContext {
     applyTimeMs: number
+    applyTaskId?: string
+}
+
+interface EditLoggingContext {
+    userQuery: string
+    filePath: string
+    fileContent: string
+    selectionRange: [number, number]
 }
 
 export type SmartApplyLoggingState =
     | SmartApplyBaseContext
     | SmartApplySelectionContext
     | SmartApplyFinalContext
+
+export class EditLoggingFeatureFlagManager implements vscode.Disposable {
+    private featureFlagSmartApplyContextDataCollection = storeLastValue(
+        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.SmartApplyContextDataCollectionFlag)
+    )
+
+    private featureFlagEditContextDataCollection = storeLastValue(
+        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.EditContextDataCollectionFlag)
+    )
+
+    public isSmartApplyContextDataCollectionFlagEnabled(): boolean {
+        return !!this.featureFlagSmartApplyContextDataCollection.value.last
+    }
+
+    public isEditContextDataCollectionFlagEnabled(): boolean {
+        return !!this.featureFlagEditContextDataCollection.value.last
+    }
+
+    public dispose(): void {
+        this.featureFlagSmartApplyContextDataCollection.subscription.unsubscribe()
+        this.featureFlagEditContextDataCollection.subscription.unsubscribe()
+    }
+}
 
 /**
  * Logs the context used to generate the smart-apply selection.
@@ -53,13 +90,14 @@ export class SmartApplyContextLogger {
         max: 20,
     })
     private repoMetaDataInstance = GitHubDotComRepoMetadata.getInstance()
-    private static readonly MAX_PAYLOAD_SIZE_BYTES = 1024 * 1024 // 1 MB
+    private loggingFeatureFlagManagerInstance: EditLoggingFeatureFlagManager
 
-    private featureFlagSmartApplyContextDataCollection = storeLastValue(
-        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.SmartApplyContextDataCollectionFlag)
-    )
+    constructor(loggingFeatureFlagManagerInstance: EditLoggingFeatureFlagManager) {
+        this.loggingFeatureFlagManagerInstance = loggingFeatureFlagManagerInstance
+    }
 
     public createSmartApplyLoggingRequest(params: {
+        model: EditModel
         userQuery: string
         replacementCodeBlock: string
         document: vscode.TextDocument
@@ -70,6 +108,7 @@ export class SmartApplyContextLogger {
         const fileContent = params.document.getText()
 
         const baseContext: SmartApplyBaseContext = {
+            smartApplyModel: params.model,
             ...baseRepoContext,
             userQuery: params.userQuery,
             replacementCodeBlock: params.replacementCodeBlock,
@@ -102,7 +141,11 @@ export class SmartApplyContextLogger {
         })
     }
 
-    public addSmartApplyFinalContext(requestId: SmartApplyLoggingRequestId, applyTimeMs: number): void {
+    public addApplyContext(
+        requestId: SmartApplyLoggingRequestId,
+        applyTimeMs: number,
+        applyTaskId: string | undefined
+    ): void {
         const request = this.getRequest(requestId)
         if (!request) {
             return
@@ -110,21 +153,41 @@ export class SmartApplyContextLogger {
         this.activeRequests.set(requestId, {
             ...request,
             applyTimeMs,
+            applyTaskId,
         })
     }
 
-    public getSmartApplyLoggingContext(
+    public logSmartApplyContextToTelemetry(requestId: SmartApplyLoggingRequestId): void {
+        const context = this.getSmartApplyLoggingContext(requestId)
+        if (!context) {
+            return
+        }
+        const { metadata, privateMetadata } = splitSafeMetadata(context)
+        telemetryRecorder.recordEvent('cody.smart-apply.context', 'applied', {
+            metadata: {
+                ...metadata,
+                recordsPrivateMetadataTranscript: 1,
+            },
+            privateMetadata: {
+                smartApplyContext: privateMetadata,
+            },
+            billingMetadata: { product: 'cody', category: 'billable' },
+        })
+    }
+
+    private getSmartApplyLoggingContext(
         requestId: SmartApplyLoggingRequestId
     ): SmartApplyFinalContext | undefined {
         const request = this.activeRequests.get(requestId)
         if (!request) {
             return undefined
         }
-        if (!this.shouldLogSmartApplyContextItem()) {
-            return undefined
-        }
-        const requestSize = this.calculateCurrentRequestSizeInBytes(request)
-        if (requestSize > SmartApplyContextLogger.MAX_PAYLOAD_SIZE_BYTES) {
+        if (
+            !shouldLogEditContextItem(
+                request,
+                this.loggingFeatureFlagManagerInstance.isSmartApplyContextDataCollectionFlagEnabled()
+            )
+        ) {
             return undefined
         }
         // Verify that the request has the final property required.
@@ -134,21 +197,8 @@ export class SmartApplyContextLogger {
         return request as SmartApplyFinalContext
     }
 
-    private calculateCurrentRequestSizeInBytes(request: SmartApplyLoggingState): number {
-        const snippetSizeBytes = Buffer.byteLength(JSON.stringify(request) || '', 'utf8')
-        return snippetSizeBytes
-    }
-
     private getRequest(requestId: SmartApplyLoggingRequestId): SmartApplyLoggingState | undefined {
         return this.activeRequests.get(requestId)
-    }
-
-    private shouldLogSmartApplyContextItem(): boolean {
-        if (isDotComAuthed() && this.isSmartApplyContextDataCollectionFlagEnabled()) {
-            // 🚨 SECURITY: included only for DotCom users and for users in the feature flag.
-            return true
-        }
-        return false
     }
 
     private getBaseRepoContext(): RepoContext | undefined {
@@ -165,12 +215,46 @@ export class SmartApplyContextLogger {
             isPublic: repoMetadata?.isPublic ?? false,
         }
     }
+}
 
-    private isSmartApplyContextDataCollectionFlagEnabled(): boolean {
-        return !!this.featureFlagSmartApplyContextDataCollection.value.last
+export function getEditLoggingContext(param: {
+    isFeatureFlagEnabledForLogging: boolean
+    instruction: string
+    document: vscode.TextDocument
+    selectionRange: vscode.Range
+}): EditLoggingContext | undefined {
+    const context: EditLoggingContext = {
+        userQuery: param.instruction,
+        filePath: displayPathWithoutWorkspaceFolderPrefix(param.document.uri),
+        fileContent: param.document.getText(),
+        selectionRange: [
+            param.document.offsetAt(param.selectionRange.start),
+            param.document.offsetAt(param.selectionRange.end),
+        ],
     }
+    if (!shouldLogEditContextItem(context, param.isFeatureFlagEnabledForLogging)) {
+        return undefined
+    }
+    return context
+}
 
-    public dispose(): void {
-        this.featureFlagSmartApplyContextDataCollection.subscription.unsubscribe()
+export function shouldLogEditContextItem<T>(
+    payload: T,
+    isFeatureFlagEnabledForLogging: boolean
+): boolean {
+    // 🚨 SECURITY: included only for DotCom users and for users in the feature flag.
+    if (isDotComAuthed() && isFeatureFlagEnabledForLogging) {
+        const payloadSize = calculatePayloadSizeInBytes(payload)
+        return payloadSize !== undefined && payloadSize < MAX_LOGGING_PAYLOAD_SIZE_BYTES
+    }
+    return false
+}
+
+export function calculatePayloadSizeInBytes<T>(payload: T): number | undefined {
+    try {
+        const snippetSizeBytes = Buffer.byteLength(JSON.stringify(payload) || '', 'utf8')
+        return snippetSizeBytes
+    } catch (error) {
+        return undefined
     }
 }

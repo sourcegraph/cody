@@ -760,6 +760,7 @@ function ignoreReason(isIgnore: IsIgnored): string | null {
 
 interface StatusBarLoaderArgs {
     title: string
+    // The number of milliseconds to wait
     timeout?: Milliseconds
     kind?: 'startup' | 'feature'
 }
@@ -772,6 +773,7 @@ interface StatusBarErrorArgs {
     description: string
     errorType: StatusBarErrorType
     removeAfterSelected: boolean
+    // The number of milliseconds to wait
     timeout?: Milliseconds
     onShow?: () => void
     onSelect?: () => void | Promise<void>

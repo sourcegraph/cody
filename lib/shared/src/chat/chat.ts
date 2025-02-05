@@ -36,14 +36,19 @@ export class ChatClient {
             currentSiteVersion(),
             await firstValueFrom(authStatus),
         ])
-        if (!versions) {
-            throw new Error('unable to determine Cody API version')
-        }
+
         if (!authStatus_.authenticated) {
             throw new Error('not authenticated')
         }
 
-        const useApiV1 = versions.codyAPIVersion >= 1 && params.model?.includes('claude-3')
+        // Only check the API version if it's a claude-3 model. Claude-3 models are being deprecated already,
+        // but old sg instances might still have them.
+        if (params.model?.includes('claude-3') && versions instanceof Error) {
+            throw new Error('unable to determine Cody API version')
+        }
+
+        const useApiV1 =
+            params.model?.includes('claude-3') && !(versions instanceof Error) && versions.codyAPIVersion
         const isLastMessageFromHuman = messages.length > 0 && messages.at(-1)!.speaker === 'human'
 
         const isFireworks =

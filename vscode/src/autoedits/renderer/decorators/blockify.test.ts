@@ -21,7 +21,9 @@ function blockifyAndExtractForTest(
         expect(highlightedText).toBe(expectedText)
 
         addedLines.push({
-            ranges: [[range.start.character, range.end.character]],
+            highlightedRanges: [
+                { type: 'diff-added', range: [range.start.character, range.end.character] },
+            ],
             afterLine: range.start.line,
             lineText: document.lineAt(range.start.line).text,
         })
@@ -30,7 +32,9 @@ function blockifyAndExtractForTest(
     const blockified = blockify(document, addedLines)
     return {
         code: blockified.map(({ lineText }) => lineText).join('\n'),
-        ranges: blockified.flatMap(({ ranges }) => ranges),
+        ranges: blockified.flatMap(({ highlightedRanges }) =>
+            highlightedRanges.map(({ range }) => range)
+        ),
     }
 }
 

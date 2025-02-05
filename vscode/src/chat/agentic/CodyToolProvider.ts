@@ -4,9 +4,10 @@ import {
     PromptString,
     type Unsubscribable,
     isDefined,
-    openCtx,
     openCtxProviderMetadata,
+    openctxController,
     ps,
+    switchMap,
 } from '@sourcegraph/cody-shared'
 import { map } from 'observable-fns'
 import type { ContextRetriever } from '../chat-view/ContextRetriever'
@@ -190,10 +191,19 @@ export class CodyToolProvider {
         if (provider && !CodyToolProvider.configSubscription) {
             CodyToolProvider.configSubscription = toolboxManager.observable.subscribe({})
         }
-        if (provider && !CodyToolProvider.openCtxSubscription && openCtx.controller) {
-            CodyToolProvider.openCtxSubscription = openCtx.controller
-                .metaChanges({}, {})
-                .pipe(map(providers => providers.filter(p => !!p.mentions).map(openCtxProviderMetadata)))
+        if (provider && !CodyToolProvider.openCtxSubscription) {
+            CodyToolProvider.openCtxSubscription = openctxController
+                .pipe(
+                    switchMap(c =>
+                        c
+                            .metaChanges({}, {})
+                            .pipe(
+                                map(providers =>
+                                    providers.filter(p => !!p.mentions).map(openCtxProviderMetadata)
+                                )
+                            )
+                    )
+                )
                 .subscribe(providerMeta => provider.factory.createOpenCtxTools(providerMeta))
         }
     }

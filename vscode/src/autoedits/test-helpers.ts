@@ -8,6 +8,7 @@ import { defaultVSCodeExtensionClient } from '../extension-client'
 import { FixupController } from '../non-stop/FixupController'
 import { WorkspaceEdit, vsCodeMocks } from '../testutils/mocks'
 
+import { CodyStatusBar } from '../services/StatusBar'
 import * as adapters from './adapters/utils'
 import { autoeditTriggerKind } from './analytics-logger'
 import {
@@ -15,7 +16,6 @@ import {
     type AutoeditsResult,
     INLINE_COMPLETION_DEFAULT_DEBOUNCE_INTERVAL_MS,
 } from './autoedits-provider'
-import { CodyStatusBar } from '../services/StatusBar'
 
 /**
  * A helper to be used for the autoedits integration tests.
@@ -87,7 +87,9 @@ export async function autoeditResultFor(
     const extensionClient = defaultVSCodeExtensionClient()
     const fixupController = new FixupController(extensionClient)
     const statusBar = CodyStatusBar.init()
-    const provider = existingProvider ?? new AutoeditsProvider(chatClient, fixupController, statusBar)
+    const provider =
+        existingProvider ??
+        new AutoeditsProvider(chatClient, fixupController, statusBar, { shouldRenderImage: false })
 
     let result: AutoeditsResult | null = null
 

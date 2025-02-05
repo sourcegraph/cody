@@ -35,6 +35,7 @@ export enum FeatureFlag {
     // Data collection variants used for completions and next edit completions
     CodyAutocompleteDataCollectionFlag = 'cody-autocomplete-logs-collection-flag',
     SmartApplyContextDataCollectionFlag = 'cody-smart-apply-context-logs-collection-flag',
+    EditContextDataCollectionFlag = 'cody-edit-context-logs-collection-flag',
 
     // Enables fast-path HTTP client for PLG-users
     CodyAutocompleteFastPath = 'cody-autocomplete-fast-path',
@@ -55,7 +56,13 @@ export enum FeatureFlag {
     CodyAutocompleteContextExperimentVariant4 = 'cody-autocomplete-context-experiment-variant-4',
     CodyAutocompleteContextExperimentControl = 'cody-autocomplete-context-experiment-control',
 
+    CodySmartApplyExperimentEnabledFeatureFlag = 'cody-smart-apply-experiment-enabled-flag',
+    CodySmartApplyExperimentVariant1 = 'cody-smart-apply-experiment-variant-1',
+
     CodyAutoEditExperimentEnabledFeatureFlag = 'cody-autoedit-experiment-enabled-flag',
+
+    // Enables image-based rendering of autoedit suggestions
+    CodyAutoEditImageRendering = 'cody-autoedit-image-rendering',
 
     // Enables gpt-4o-mini as a default Edit model
     CodyEditDefaultToGpt4oMini = 'cody-edit-default-to-gpt-4o-mini',
