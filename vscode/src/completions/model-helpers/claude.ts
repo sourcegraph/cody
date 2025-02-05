@@ -114,6 +114,7 @@ export class Claude extends DefaultModel {
                         'symbol' in snippet
                             ? this.symbolSnippetToPromptString(snippet)
                             : this.fileSnippetToPromptString(snippet),
+                    is_context: true,
                 },
                 {
                     speaker: 'assistant',
