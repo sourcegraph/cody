@@ -16,6 +16,7 @@ import { getCurrentDocContext } from '../completions/get-current-doc-context'
 import { isRunningInsideAgent } from '../jsonrpc/isRunningInsideAgent'
 import type { FixupController } from '../non-stop/FixupController'
 
+import type { CodyStatusBar } from '../services/StatusBar'
 import type { AutoeditsModelAdapter, AutoeditsPrompt } from './adapters/base'
 import { createAutoeditsModelAdapter } from './adapters/create-adapter'
 import {
@@ -43,7 +44,6 @@ import {
 } from './renderer/mock-renderer'
 import { shrinkPredictionUntilSuffix } from './shrink-prediction'
 import { areSameUriDocs, isPredictedTextAlreadyInSuffix } from './utils'
-import type { CodyStatusBar } from '../services/StatusBar'
 
 const AUTOEDITS_CONTEXT_STRATEGY = 'auto-edit'
 export const INLINE_COMPLETION_DEFAULT_DEBOUNCE_INTERVAL_MS = 150

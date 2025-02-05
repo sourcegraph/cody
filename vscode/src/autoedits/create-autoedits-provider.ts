@@ -18,10 +18,10 @@ import {
 import { isRunningInsideAgent } from '../jsonrpc/isRunningInsideAgent'
 import type { FixupController } from '../non-stop/FixupController'
 
+import type { CodyStatusBar } from '../services/StatusBar'
 import { AutoeditsProvider } from './autoedits-provider'
 import { autoeditsOutputChannelLogger } from './output-channel-logger'
 import { initImageSuggestionService } from './renderer/image-gen'
-import type { CodyStatusBar } from '../services/StatusBar'
 
 const AUTOEDITS_NON_ELIGIBILITY_MESSAGES = {
     ONLY_VSCODE_SUPPORT: 'Auto-edit is currently only supported in VS Code.',
@@ -52,7 +52,7 @@ interface AutoeditsItemProviderArgs {
     chatClient: ChatClient
     autoeditFeatureFlagEnabled: boolean
     autoeditImageRenderingEnabled: boolean
-    fixupController: FixupController,
+    fixupController: FixupController
     statusBar: CodyStatusBar
 }
 
