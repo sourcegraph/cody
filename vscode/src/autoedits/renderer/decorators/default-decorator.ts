@@ -171,6 +171,7 @@ export class DefaultDecorator implements AutoEditsDecorator {
         }
 
         if (this.options.shouldRenderImage) {
+            console.log('RENDERING IMAGE...')
             this.renderAddedLinesImageDecorations(
                 addedLinesInfo.addedLinesDecorationInfo,
                 addedLinesInfo.startLine,
@@ -179,6 +180,7 @@ export class DefaultDecorator implements AutoEditsDecorator {
             return
         }
 
+        console.log('RENDERING NORMAL..')
         this.renderAddedLinesDecorations(
             addedLinesInfo.addedLinesDecorationInfo,
             addedLinesInfo.startLine,
@@ -356,6 +358,14 @@ export class DefaultDecorator implements AutoEditsDecorator {
                 })
             }
         }
+
+        const startLineLength = this.editor.document.lineAt(startLine).range.end.character
+        this.editor.setDecorations(this.insertMarkerDecorationType, [
+            {
+                range: new vscode.Range(startLine, 0, startLine, startLineLength),
+            },
+        ])
+        this.editor.setDecorations(this.addedLinesDecorationType, replacerDecorations)
     }
 
     private renderAddedLinesImageDecorations(
