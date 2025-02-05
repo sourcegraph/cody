@@ -8,6 +8,7 @@ import {
     type ExpectedV2Events,
     test as baseTest,
     stabilizeMetadataValues,
+    stabilizePrivateMetadataValues,
 } from './helpers'
 
 const test = baseTest.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL })
@@ -99,6 +100,7 @@ test.extend<ExpectedV2Events>({
         event => event.testId === 'cody.fixup.apply:succeeded'
     )
     stabilizeMetadataValues(['latency'], fixupApplySuccessEvent)
+    stabilizePrivateMetadataValues(['taskId'], fixupApplySuccessEvent)
     expect(JSON.stringify(fixupApplySuccessEvent?.parameters, null, 2)).toMatchSnapshot()
 })
 

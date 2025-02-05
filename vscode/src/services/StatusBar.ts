@@ -122,7 +122,7 @@ export class CodyStatusBar implements vscode.Disposable {
 
     addError(args: StatusBarErrorArgs) {
         const now = Date.now()
-        const ttl = args.timeout !== undefined ? Math.min(ONE_HOUR, args.timeout - now) : ONE_HOUR
+        const ttl = args.timeout !== undefined ? Math.min(ONE_HOUR, args.timeout) : ONE_HOUR
 
         const errorHandle = {}
         const remove = () => {
@@ -162,7 +162,7 @@ export class CodyStatusBar implements vscode.Disposable {
 
     addLoader<T>(args: StatusBarLoaderArgs) {
         const now = Date.now()
-        const ttl = args.timeout !== undefined ? Math.min(ONE_HOUR, args.timeout - now) : ONE_HOUR
+        const ttl = args.timeout !== undefined ? Math.min(ONE_HOUR, args.timeout) : ONE_HOUR
         const loaderHandle = {}
         const remove = () => {
             this.loaders.mutate(draft => {
@@ -760,6 +760,7 @@ function ignoreReason(isIgnore: IsIgnored): string | null {
 
 interface StatusBarLoaderArgs {
     title: string
+    // The number of milliseconds to wait
     timeout?: Milliseconds
     kind?: 'startup' | 'feature'
 }
@@ -772,6 +773,7 @@ interface StatusBarErrorArgs {
     description: string
     errorType: StatusBarErrorType
     removeAfterSelected: boolean
+    // The number of milliseconds to wait
     timeout?: Milliseconds
     onShow?: () => void
     onSelect?: () => void | Promise<void>

@@ -33,6 +33,7 @@ import {
     setClientNameVersion,
     setEditorWindowIsFocused,
     setLogger,
+    setOpenCtxControllerObservable,
     setResolvedConfigurationObservable,
     startWith,
     subscriptionDisposable,
@@ -79,7 +80,7 @@ import type { CodyCommandArgs } from './commands/types'
 import { newCodyCommandArgs } from './commands/utils/get-commands'
 import { createInlineCompletionItemProvider } from './completions/create-inline-completion-item-provider'
 import { getConfiguration } from './configuration'
-import { exposeOpenCtxClient } from './context/openctx'
+import { observeOpenCtxController } from './context/openctx'
 import { logGlobalStateEmissions } from './dev/helpers'
 import { EditManager } from './edit/manager'
 import { manageDisplayPathEnvInfoForExtension } from './editor/displayPathEnvInfo'
@@ -232,6 +233,8 @@ const register = async (
     // Initialize singletons
     await initializeSingletons(platform, disposables)
 
+    setOpenCtxControllerObservable(observeOpenCtxController(context, platform.createOpenCtxController))
+
     // Ensure Git API is available
     disposables.push(await initVSCodeGitApi())
 
@@ -275,14 +278,7 @@ const register = async (
 
     CodyToolProvider.initialize(contextRetriever)
 
-    disposables.push(
-        chatsController,
-        ghostHintDecorator,
-        editManager,
-        subscriptionDisposable(
-            exposeOpenCtxClient(context, platform.createOpenCtxController).subscribe({})
-        )
-    )
+    disposables.push(chatsController, ghostHintDecorator, editManager)
 
     const statusBar = CodyStatusBar.init()
     disposables.push(statusBar)
@@ -729,7 +725,8 @@ function registerAutoEdits(
                 authStatus,
                 featureFlagProvider.evaluatedFeatureFlag(
                     FeatureFlag.CodyAutoEditExperimentEnabledFeatureFlag
-                )
+                ),
+                featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyAutoEditImageRendering)
             )
                 .pipe(
                     distinctUntilChanged((a, b) => {
@@ -739,15 +736,23 @@ function registerAutoEdits(
                             isEqual(a[2], b[2])
                         )
                     }),
-                    switchMap(([config, authStatus, autoeditsFeatureFlagEnabled]) => {
-                        return createAutoEditsProvider({
+                    switchMap(
+                        ([
                             config,
                             authStatus,
-                            chatClient,
-                            autoeditsFeatureFlagEnabled,
-                            fixupController,
-                        })
-                    }),
+                            autoeditFeatureFlagEnabled,
+                            autoeditImageRenderingEnabled,
+                        ]) => {
+                            return createAutoEditsProvider({
+                                config,
+                                authStatus,
+                                chatClient,
+                                autoeditFeatureFlagEnabled,
+                                autoeditImageRenderingEnabled,
+                                fixupController,
+                            })
+                        }
+                    ),
                     catchError(error => {
                         autoeditsOutputChannelLogger.logError('registerAutoedits', 'Error', error)
                         return NEVER

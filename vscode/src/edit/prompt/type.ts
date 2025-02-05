@@ -1,4 +1,4 @@
-import type { PromptString } from '@sourcegraph/cody-shared'
+import type { PromptString, Rule } from '@sourcegraph/cody-shared'
 import type * as vscode from 'vscode'
 
 export interface LLMPrompt {
@@ -21,6 +21,7 @@ export interface GetLLMInteractionOptions {
     followingText: PromptString
     uri: vscode.Uri
     document: vscode.TextDocument
+    rules?: Rule[] | null
 }
 
 type LLMInteractionBuilder = (options: GetLLMInteractionOptions) => LLMInteraction

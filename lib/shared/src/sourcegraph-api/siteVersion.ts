@@ -66,12 +66,12 @@ const authStatusAuthed: Observable<AuthStatus> = authStatus.filter(
 /**
  * Get the current site version. If authentication is pending, it awaits successful authentication.
  */
-export async function currentSiteVersion(): Promise<SiteAndCodyAPIVersions | null> {
+export async function currentSiteVersion(): Promise<SiteAndCodyAPIVersions | Error> {
     const authStatus = await firstResultFromOperation(authStatusAuthed)
     const siteVersion = await graphqlClient.getSiteVersion()
     if (isError(siteVersion)) {
         logError('siteVersion', `Failed to get site version from ${authStatus.endpoint}: ${siteVersion}`)
-        return null
+        return siteVersion
     }
     return {
         siteVersion,
@@ -88,7 +88,7 @@ interface CheckVersionInput {
 export async function isValidVersion({ minimumVersion }: { minimumVersion: string }): Promise<boolean> {
     const currentVersion = await currentSiteVersion()
 
-    if (currentVersion === null) {
+    if (currentVersion instanceof Error) {
         return false
     }
 

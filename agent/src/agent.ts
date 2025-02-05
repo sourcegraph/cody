@@ -1148,6 +1148,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 range: vscodeRange(params.range),
                 intent: 'edit',
                 mode: params.mode,
+                rules: params.rules ?? null,
             }
 
             if (!this.fixups) return Promise.reject()
