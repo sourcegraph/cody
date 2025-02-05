@@ -75,8 +75,7 @@ export function QuickStart() {
     return (
         <>
             <div
-                className={`tw-mx-auto tw-my-2 tw-flex tw-max-w-3xl tw-max-w-[768px] tw-flex-col tw-py-2 tw-my-2 tw-text-sm tw-text-muted-foreground tw-rounded-lg tw-transition-colors tw-duration-200'
-                    }`}
+                className={styles.quickstartContainer}
                 tabIndex={0}
             >
                 <div
@@ -112,7 +111,18 @@ export function QuickStart() {
                             onKeyDown={handleCollapseKeyDown}
                             aria-label="Close quick start guide"
                         >
-                            {isCollapsed ? <Expand className="tw-h-8 tw-w-8" /> : <Minimize className="tw-h-8 tw-w-8" />}
+                            {isCollapsed
+                                ? (
+                                    <div className={styles.expandButton}>
+                                        <Expand className="tw-h-8 tw-w-8" />
+                                        <span>Expand</span>
+                                    </div>
+                                ) : (
+                                    <div className={styles.expandButton}>
+                                        <Minimize className="tw-h-8 tw-w-8" />
+                                        <span>Minimize</span>
+                                    </div>
+                                )}
                         </button>
                     </div>
                     {!isCollapsed && (

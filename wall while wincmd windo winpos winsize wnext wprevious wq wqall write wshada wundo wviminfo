@@ -33,7 +33,7 @@
     justify-content: flex-end;
     align-items: center;
     gap: 0.5rem;
-    color: var(--vscode-input-foreground);
+    color: var(--text-muted);
 }
 
 .title {
