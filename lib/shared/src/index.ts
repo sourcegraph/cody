@@ -421,3 +421,6 @@ export {
     type RuleService,
     isRulesEnabled,
 } from './rules/service'
+
+export * as openapi from './sourcegraph-api/openapi.generated'
+export { type ThreadService, threadService } from './threads/service'
