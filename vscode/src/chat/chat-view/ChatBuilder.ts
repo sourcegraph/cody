@@ -92,7 +92,7 @@ export class ChatBuilder {
          */
         public selectedModel?: ChatModel | undefined,
 
-        public readonly sessionID: string = new Date(Date.now()).toUTCString(),
+        public readonly sessionID?: string,
         private messages: ChatMessage[] = [],
         private customChatTitle?: string
     ) {}

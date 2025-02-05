@@ -6,7 +6,7 @@ import type { ChatMessage, SerializedChatMessage } from './messages'
  */
 export interface SerializedChatTranscript {
     /** A unique and opaque identifier for this transcript. */
-    id: string
+    id?: string
 
     chatTitle?: string
     interactions: SerializedChatInteraction[]

@@ -1,6 +1,12 @@
 import { type Observable, interval } from 'observable-fns'
 import createClient, { type Middleware } from 'openapi-fetch'
-import { fetch } from '../fetch'
+import {
+    addAuthHeaders,
+    addCodyClientIdentificationHeaders,
+    addTraceparent,
+    currentResolvedConfig,
+} from '..'
+import type { SerializedChatTranscript } from '../chat/transcript'
 import { promiseFactoryToObservable } from '../misc/observable'
 import { type pendingOperation, switchMapReplayOperation } from '../misc/observableOperation'
 import type { components, paths } from '../sourcegraph-api/openapi.generated'
@@ -15,7 +21,9 @@ export interface ThreadService {
     createThread(create: ThreadCreate): Promise<Thread>
     updateThread(id: Thread['id'], update: ThreadUpdate): Promise<Thread>
     deleteThread(id: Thread['id']): Promise<void>
-    getThread(id: Thread['id']): Promise<Thread | undefined>
+    getThread(id: Thread['id']): Promise<Thread | null>
+
+    toTranscript(thread: Pick<Thread, 'data'>): SerializedChatTranscript
 }
 
 const detectResponseError: Middleware = {
@@ -43,31 +51,49 @@ function isErrorMessage(body: any): body is ErrorMessage {
 }
 
 export function createThreadService(): ThreadService {
-    // TODO!(sqS): baseUrl
     const client = createClient<paths>({
-        fetch: fetch as any,
-        baseUrl: 'https://sourcegraph.test:3443',
+        baseUrl: 'https://sourcegraph.test:3443', // TODO!(sqs)
     })
     client.use(detectResponseError)
+
+    async function getFetchHeaders(): Promise<HeadersInit> {
+        // TODO!(sqs)
+        const config = await currentResolvedConfig()
+        const headers = new Headers()
+        await addAuthHeaders(config.auth, headers, new URL(config.auth.serverEndpoint))
+        addTraceparent(headers)
+        addCodyClientIdentificationHeaders(headers)
+        return headers
+    }
 
     return {
         observeThreads() {
             return interval(5000).pipe(
                 switchMapReplayOperation(() =>
                     promiseFactoryToObservable(
-                        async signal => (await client.GET('/.api/threads', { signal })).data!.threads
+                        async signal =>
+                            (
+                                await client.GET('/.api/threads', {
+                                    signal,
+                                    headers: await getFetchHeaders(),
+                                })
+                            ).data!.threads
                     )
                 )
             )
         },
         async createThread(create) {
-            const resp = await client.POST('/.api/threads', { body: create })
+            const resp = await client.POST('/.api/threads', {
+                body: create,
+                headers: await getFetchHeaders(),
+            })
             return resp.data!
         },
         async updateThread(id, update) {
             const resp = await client.PATCH('/.api/threads/{thread_id}', {
                 params: { path: { thread_id: id.toString() } },
                 body: update,
+                headers: await getFetchHeaders(),
             })
             if (!resp.data) {
                 throw new Error('Failed to update thread')
@@ -77,13 +103,21 @@ export function createThreadService(): ThreadService {
         async deleteThread(id) {
             await client.DELETE('/.api/threads/{thread_id}', {
                 params: { path: { thread_id: id.toString() } },
+                headers: await getFetchHeaders(),
             })
         },
         async getThread(id) {
             const resp = await client.GET('/.api/threads/{thread_id}', {
                 params: { path: { thread_id: id.toString() } },
+                headers: await getFetchHeaders(),
             })
-            return resp.data
+            return resp.data ?? null
+        },
+        toTranscript(thread) {
+            if (!thread.data) {
+                return { interactions: [] }
+            }
+            return JSON.parse(atob(thread.data as string /* TODO!(sqs) */))
         },
     }
 }

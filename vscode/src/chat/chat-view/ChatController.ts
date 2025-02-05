@@ -61,6 +61,7 @@ import {
     startWith,
     subscriptionDisposable,
     telemetryRecorder,
+    threadService,
     tracer,
     truncatePromptString,
     userProductSubscription,
@@ -1471,12 +1472,12 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     // history. If it does, then saves the current session and cancels the
     // current in-progress completion. If the chat does not exist, then this
     // is a no-op.
-    public restoreSession(sessionID: string): void {
+    public async restoreSession(sessionID: string): Promise<void> {
         const authStatus = currentAuthStatus()
         if (!authStatus.authenticated) {
             return
         }
-        const oldTranscript = chatHistory.getChat(authStatus, sessionID)
+        const oldTranscript = await chatHistory.getChat(authStatus, sessionID)
         if (!oldTranscript) {
             return
         }
@@ -1529,9 +1530,14 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
     public async clearAndRestartSession(chatMessages?: ChatMessage[]): Promise<void> {
         this.cancelSubmitOrEditOperation()
-        void this.saveSession()
+        await this.saveSession()
 
-        this.chatBuilder = new ChatBuilder(this.chatBuilder.selectedModel, undefined, chatMessages)
+        const newThread = await threadService.createThread({})
+        this.chatBuilder = new ChatBuilder(
+            this.chatBuilder.selectedModel,
+            newThread.id.toString(),
+            chatMessages
+        )
         this.postViewTranscript()
     }
 
@@ -1557,6 +1563,13 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         // If so, returns early to avoid creating a duplicate.
         if (this.webviewPanelOrView) {
             return this.webviewPanelOrView
+        }
+
+        // TODO!(sqs): hack
+        if (!this.chatBuilder.sessionID) {
+            const newChat = await threadService.createThread({})
+            console.log('AA', newChat)
+            this.chatBuilder.sessionID = newChat.id.toString()
         }
 
         const viewType = CodyChatEditorViewType

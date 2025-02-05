@@ -1610,15 +1610,11 @@ export class SourcegraphGraphQLAPIClient {
         )
     }
 
-    // Performs an authenticated request to our non-GraphQL HTTP / REST API.
-    public async fetchHTTP<T>(
-        queryName: string,
-        method: string,
+    public async getHeaders(
         urlPath: string,
-        body?: string,
-        signal?: AbortSignal,
-        configOverride?: GraphQLAPIClientConfig
-    ): Promise<T | Error> {
+        configOverride?: GraphQLAPIClientConfig,
+        signal?: AbortSignal
+    ): Promise<{ headers: Headers; url: URL }> {
         const config =
             configOverride ??
             (await (async () => {
@@ -1630,6 +1626,7 @@ export class SourcegraphGraphQLAPIClient {
                 return resolvedConfig
             })())
 
+        // TODO!(sqS): handle when customheaders is set and the input is an object
         const headers = new Headers(config.configuration?.customHeaders as HeadersInit | undefined)
         headers.set('Content-Type', 'application/json; charset=utf-8')
         if (config.clientState.anonymousUserID && !process.env.CODY_WEB_DONT_SET_SOME_HEADERS) {
@@ -1641,23 +1638,31 @@ export class SourcegraphGraphQLAPIClient {
         addTraceparent(headers)
         addCodyClientIdentificationHeaders(headers)
 
-        try {
-            await addAuthHeaders(config.auth, headers, url)
-        } catch (error: any) {
-            return error
-        }
+        await addAuthHeaders(config.auth, headers, url)
+        return { headers, url }
+    }
 
+    // Performs an authenticated request to our non-GraphQL HTTP / REST API.
+    public async fetchHTTP<T>(
+        queryName: string,
+        method: string,
+        urlPath: string,
+        body?: string | null,
+        signal?: AbortSignal,
+        configOverride?: GraphQLAPIClientConfig
+    ): Promise<T | Error> {
+        const { headers, url } = await this.getHeaders(urlPath, configOverride, signal)
         const { abortController, timeoutSignal } = dependentAbortControllerWithTimeout(signal)
         return wrapInActiveSpan(`httpapi.fetch${queryName ? `.${queryName}` : ''}`, () =>
             fetch(url, {
                 method: method,
                 body: body,
-                headers,
                 signal: abortController.signal,
+                headers,
             })
                 .then(verifyResponseCode)
                 .then(response => response.json() as T)
-                .catch(catchHTTPError(url.href, timeoutSignal))
+                .catch(catchHTTPError(urlPath, timeoutSignal))
         )
     }
 }
