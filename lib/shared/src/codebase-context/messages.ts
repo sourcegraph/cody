@@ -236,7 +236,7 @@ export type ContextItemWithContent = ContextItem & { content: string }
 /**
  * A system chat message that adds a context item to the conversation.
  */
-export interface ContextMessage extends Required<Omit<Message, 'cache_enabled' | 'is_context'>> {
+export interface ContextMessage extends Required<Omit<Message, 'cacheEnabled' | 'isContext'>> {
     /**
      * Context messages are always "from" the human. (In the future, this could be from "system" for
      * LLMs that support that kind of message, but that `speaker` value is not currently supported
@@ -248,8 +248,8 @@ export interface ContextMessage extends Required<Omit<Message, 'cache_enabled' |
      * The context item that this message introduces into the conversation.
      */
     file: ContextItem
-    cache_enabled?: boolean | null
-    is_context?: boolean | null
+    cacheEnabled?: boolean | null
+    isContext?: boolean | null
 }
 
 export const GENERAL_HELP_LABEL = 'Search for a file to include, or type # for symbols...'

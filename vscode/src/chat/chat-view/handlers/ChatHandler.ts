@@ -379,7 +379,7 @@ function promptCachingProcessing(messages: Message[]): Message[] {
         const textString = msg.text?.toString() || ''
 
         // Combine codebase context
-        if (msg.is_context) {
+        if (msg.isContext) {
             if (!roleFirstIndex[msg.speaker]) {
                 // Get the index of the codebase context message so that we can add it back later
                 roleFirstIndex[msg.speaker] = i - count
@@ -395,7 +395,7 @@ function promptCachingProcessing(messages: Message[]): Message[] {
                     const textMessage: Message = {
                         speaker: msg.speaker,
                         text: messageMap[msg.speaker].text,
-                        cache_enabled: true,
+                        cacheEnabled: true,
                     }
                     messageMap[msg.speaker] = textMessage
                 }
@@ -403,7 +403,7 @@ function promptCachingProcessing(messages: Message[]): Message[] {
                 messageMap[msg.speaker] = {
                     speaker: msg.speaker,
                     text: PromptString.unsafe_fromUserQuery(textString),
-                    cache_enabled: true,
+                    cacheEnabled: true,
                 }
             }
             // Each codebase context message is followed by an assistance message
