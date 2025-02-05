@@ -4,7 +4,7 @@
     justify-content: space-between;
     padding: 0.5rem 1rem;
     background: var(--background-01);
-    border: 1px solid var(--vscode-widget-border);
+    border: 1px solid var(--border-subtle);
     margin: 0 auto;
     border-radius: 6px;
 
@@ -29,7 +29,7 @@
 }
 
 .download-button:hover {
-    background: var(--vscode-button-hoverBackground);
+    background: var(--button-primary-background-hover);
     color: var(--text);
 }
 

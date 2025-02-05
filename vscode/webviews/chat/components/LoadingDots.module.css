@@ -10,7 +10,7 @@
     width: 0.25rem !important;
     height: 0.25rem !important;
     border-radius: 100%;
-    background-color: var(--vscode-input-foreground);
+    background-color: var(--text-primary-muted);
     opacity: 0.25;
 }
 

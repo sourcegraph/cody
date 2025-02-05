@@ -126,7 +126,7 @@
 {
     padding: 1px 2px;
     box-sizing: border-box;
-    background-color: color-mix(in srgb, var(--vscode-textLink-foreground) 15%, transparent);
+    background-color: color-mix(in srgb, var(--text-link-color) 15%, transparent);
     border-radius: 2px;
     font-style: normal;
     word-break: break-all;

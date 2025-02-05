@@ -46,7 +46,7 @@
     }
 
     &--icon {
-        color: var(--vscode-input-placeholderForeground);
+        color: var(--text-disabled);
     }
 
     &--content {
@@ -70,7 +70,7 @@
     }
 
     &--description {
-        color: var(--vscode-input-placeholderForeground);
+        color: var(--text-disabled);
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;

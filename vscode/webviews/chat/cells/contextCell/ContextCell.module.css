@@ -49,7 +49,7 @@
 .context-item-link {
     background: none;
     border: none;
-    color: var(--vscode-textLink-foreground);
+    color: var(--text-link-color);
     font-size: inherit;
     padding: 0;
     margin: 0;
@@ -61,7 +61,7 @@
     overflow: hidden;
 }
 
-/* In light high contrast, --vscode-textLink-foreground provides little
+/* In light high contrast, --text-link-color provides little
    contrast; instead inherit the --code-foreground color from the container. */
 body[data-vscode-theme-kind='vscode-high-contrast-light'] .context-item-link {
     color: inherit;
