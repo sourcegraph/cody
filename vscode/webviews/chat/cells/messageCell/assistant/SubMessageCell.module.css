@@ -2,5 +2,5 @@
   border-left: 3px solid var(--vscode-sideBar-border);
   padding: 0.25rem 0.5rem 0.25rem 0.5rem;
   margin: 0.5rem 0 0.5rem 1rem;
-  background-color: color-mix(in srgb, var(--vscode-editor-background), var(--vscode-focusBorder) 10%);
+  background-color: color-mix(in srgb, var(--background-01), var(--text-primary-subtle) 10%);
 }

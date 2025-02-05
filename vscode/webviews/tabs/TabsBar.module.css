@@ -1,6 +1,6 @@
 :root {
     --vscode-overlay-background: rgb(0 0 0 / 50%);
-    --vscode-modal-background: var(--vscode-sideBar-background);
+    --vscode-modal-background: var(--background-02);
 }
 
 /*

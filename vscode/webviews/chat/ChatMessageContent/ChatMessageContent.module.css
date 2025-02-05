@@ -214,6 +214,6 @@ body[data-vscode-theme-kind='vscode-light'] .content pre > code {
 }
 
 .file-name-container {
-    color: var(--vscode-descriptionForeground);
+    color: var(--text-subtle);
     margin-left: auto;
 }
