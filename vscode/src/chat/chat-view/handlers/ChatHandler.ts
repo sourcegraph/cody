@@ -401,7 +401,7 @@ function promptCachingProcessing(messages: Message[]): Message[] {
                 }
             }
             // Each codebase context message is followed by an assistance message
-            // Assistance message: speaker: Assistance, Content.Parts.Text: Ok
+            // Assistance message: speaker: Assistance, Text: Ok
             // Skip the next message every time we combine a new codebase context message
             i += 1
             combinedContext = true
@@ -409,7 +409,7 @@ function promptCachingProcessing(messages: Message[]): Message[] {
         } else {
             if (combinedContext) {
                 combinedContext = false
-                // Add the skipped message once (speaker: Assistance, Content.Parts.Text: Ok)
+                // Add the skipped message once (speaker: Assistance, Text: Ok)
                 finalMessages.push(messages[i - 1])
             }
             // Add messages that are not part of the combined code context
