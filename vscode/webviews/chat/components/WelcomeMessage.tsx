@@ -1,15 +1,9 @@
 import { CodyIDE } from '@sourcegraph/cody-shared'
-import { BookCopy } from 'lucide-react'
 import type { FunctionComponent } from 'react'
-import { Kbd } from '../../components/Kbd'
 import { PromptList } from '../../components/promptList/PromptList'
-import { Button } from '../../components/shadcn/ui/button'
 import { useActionSelect } from '../../prompts/PromptsTab'
 import { View } from '../../tabs'
 import { PromptMigrationWidget } from './../../components/promptsMigration/PromptsMigration'
-
-import { clsx } from 'clsx'
-import styles from './WelcomeMessage.module.css'
 
 const localStorageKey = 'chat.welcome-message-dismissed'
 
@@ -29,9 +23,6 @@ export const WelcomeMessage: FunctionComponent<WelcomeMessageProps> = ({
     localStorage.removeItem(localStorageKey)
 
     const runAction = useActionSelect()
-    const handleRecentlyUsed = () => {
-        document.querySelector<HTMLButtonElement>("button[aria-label='Insert prompt']")?.click()
-    }
 
     return (
         <div className="tw-flex-1 tw-flex tw-flex-col tw-items-start tw-w-full tw-px-8 tw-gap-6 tw-transition-all tw-relative">
