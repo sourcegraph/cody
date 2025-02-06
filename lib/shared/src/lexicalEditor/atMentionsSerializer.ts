@@ -23,7 +23,7 @@ const DYNAMIC_MENTION_TO_HYDRATABLE: Record<string, string> = {
 }
 
 function isDynamicMentionKey(value: string): value is keyof typeof DYNAMIC_MENTION_TO_HYDRATABLE {
-    return !!DYNAMIC_MENTION_TO_HYDRATABLE[value];
+    return !!DYNAMIC_MENTION_TO_HYDRATABLE[value]
 }
 
 /**
