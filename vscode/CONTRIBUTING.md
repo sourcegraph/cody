@@ -70,6 +70,10 @@ To open the Cody sidebar, autocomplete trace view, etc., when debugging starts, 
 VS Code user settings. See [`src/dev/helpers.ts`](src/dev/helpers.ts) for a list of available
 options.
 
+Run the web build from /web  `pnpm install && pnpm dev` to reduce time spent waiting on extension builds. This is helpful for roughing in features, but you should always test the extensions in their proper environments.
+
+Run `pnpm biome` to discover buildtime errors early.
+
 ### Wasm tree sitter modules
 
 We use tree-sitter parser for a better code analysis in post completion process. In order to be able

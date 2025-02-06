@@ -85,7 +85,9 @@ export async function autoeditResultFor(
     const chatClient = null as unknown as ChatClient
     const extensionClient = defaultVSCodeExtensionClient()
     const fixupController = new FixupController(extensionClient)
-    const provider = existingProvider ?? new AutoeditsProvider(chatClient, fixupController)
+    const provider =
+        existingProvider ??
+        new AutoeditsProvider(chatClient, fixupController, { shouldRenderImage: false })
 
     let result: AutoeditsResult | null = null
 

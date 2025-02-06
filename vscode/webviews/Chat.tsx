@@ -4,11 +4,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type {
     AuthenticatedAuthStatus,
     ChatMessage,
-    CodyIDE,
     Guardrails,
     Model,
     PromptString,
 } from '@sourcegraph/cody-shared'
+import { CodyIDE } from '@sourcegraph/cody-shared'
 import { Transcript, focusLastHumanMessageEditor } from './chat/Transcript'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 
@@ -261,7 +261,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                         isPromptsV2Enabled={isPromptsV2Enabled}
                     />
                     <WelcomeFooter IDE={userInfo.IDE} />
-                    {isWorkspacesUpgradeCtaEnabled && (
+                    {isWorkspacesUpgradeCtaEnabled && userInfo.IDE !== CodyIDE.Web && (
                         <div className="tw-absolute tw-bottom-0 tw-left-1/2 tw-transform tw--translate-x-1/2 tw-w-[95%] tw-z-1 tw-mb-4 tw-max-h-1/2">
                             <WelcomeNotice />
                         </div>

@@ -20,6 +20,7 @@ import type { FixupController } from '../non-stop/FixupController'
 
 import { AutoeditsProvider } from './autoedits-provider'
 import { autoeditsOutputChannelLogger } from './output-channel-logger'
+import { initImageSuggestionService } from './renderer/image-gen'
 
 const AUTOEDITS_NON_ELIGIBILITY_MESSAGES = {
     ONLY_VSCODE_SUPPORT: 'Auto-edit is currently only supported in VS Code.',
@@ -48,7 +49,8 @@ interface AutoeditsItemProviderArgs {
     config: PickResolvedConfiguration<{ configuration: true }>
     authStatus: AuthStatus
     chatClient: ChatClient
-    autoeditsFeatureFlagEnabled: boolean
+    autoeditFeatureFlagEnabled: boolean
+    autoeditImageRenderingEnabled: boolean
     fixupController: FixupController
 }
 
@@ -56,7 +58,8 @@ export function createAutoEditsProvider({
     config: { configuration },
     authStatus,
     chatClient,
-    autoeditsFeatureFlagEnabled,
+    autoeditFeatureFlagEnabled,
+    autoeditImageRenderingEnabled,
     fixupController,
 }: AutoeditsItemProviderArgs): Observable<void> {
     if (!configuration.experimentalAutoEditEnabled) {
@@ -76,7 +79,7 @@ export function createAutoEditsProvider({
         skipPendingOperation(),
         createDisposables(([userProductSubscription]) => {
             const userEligibilityInfo = isUserEligibleForAutoeditsFeature(
-                autoeditsFeatureFlagEnabled,
+                autoeditFeatureFlagEnabled,
                 authStatus,
                 userProductSubscription
             )
@@ -85,7 +88,15 @@ export function createAutoEditsProvider({
                 return []
             }
 
-            const provider = new AutoeditsProvider(chatClient, fixupController)
+            if (autoeditImageRenderingEnabled) {
+                // Initialise the canvas renderer for image generation.
+                // TODO: Consider moving this if we decide to enable this by default.
+                initImageSuggestionService()
+            }
+
+            const provider = new AutoeditsProvider(chatClient, fixupController, {
+                shouldRenderImage: autoeditImageRenderingEnabled,
+            })
             return [
                 vscode.commands.registerCommand('cody.command.autoedit-manual-trigger', async () => {
                     await vscode.commands.executeCommand('editor.action.inlineSuggest.hide')
@@ -102,13 +113,28 @@ export function createAutoEditsProvider({
     )
 }
 
+/**
+ * Displays an error notification to the user about non-eligibility for auto edits,
+ * but only if the user is currently in the Settings view (to avoid spamming them).
+ *
+ * This is because because of the flaky network issues we could evaluate the default feature flag value to false
+ * and show the non eligibility notification to the user even if they have access to the feature.
+ * Generally the users should see the notification only when they manually change the vscode config which could be either
+ * through the settings UI or `settings.json` file.
+ *
+ * @param {string | undefined} nonEligibilityReason - The reason why the user is currently not eligible
+ *                                                   for auto edits. If not provided, no notification occurs.
+ */
 export async function handleAutoeditsNotificationForNonEligibleUser(
     nonEligibilityReason?: string
 ): Promise<void> {
-    const switchToAutocompleteText = 'Switch to autocomplete'
+    if (!nonEligibilityReason || !isSettingsEditorOpen()) {
+        return
+    }
 
+    const switchToAutocompleteText = 'Switch to autocomplete'
     const selection = await vscode.window.showErrorMessage(
-        `Error: ${nonEligibilityReason ?? AUTOEDITS_NON_ELIGIBILITY_MESSAGES.FEATURE_FLAG_NOT_ELIGIBLE}`,
+        `Error: ${nonEligibilityReason}`,
         switchToAutocompleteText
     )
     if (selection === switchToAutocompleteText) {
@@ -120,6 +146,42 @@ export async function handleAutoeditsNotificationForNonEligibleUser(
                 vscode.ConfigurationTarget.Global
             )
     }
+}
+
+/**
+ * Checks whether the current view in VS Code is the Settings editor (JSON or UI).
+ *
+ * This function performs two checks:
+ *   1. Detect if the active text editor points to a known settings file (e.g., settings.json, settings.jsonc).
+ *   2. If there's no text editor open, examine the "Tab" label to see if it's the built-in Settings UI.
+ *
+ * Note: Using the tab's label is locale-specific; if a user runs VS Code in a non-English locale,
+ *       or if the label changes in future VS Code versions, this heuristic may fail.
+ *
+ * @returns {boolean} True if the user is most likely viewing the Settings editor (JSON or UI), false otherwise.
+ */
+function isSettingsEditorOpen(): boolean {
+    const activeEditor = vscode.window.activeTextEditor
+
+    // 1) If there's an active text editor, check if the file name matches typical settings files
+    if (activeEditor) {
+        const fsPath = activeEditor.document.uri.fsPath
+        if (fsPath.endsWith('settings.json') || fsPath.endsWith('settings.jsonc')) {
+            return true
+        }
+        return false
+    }
+
+    // 2) If there's no activeTextEditor, the user might be in the graphical Settings UI or have no editor at all
+    const activeTab = vscode.window.tabGroups.activeTabGroup?.activeTab
+    if (!activeTab) {
+        // No tab at all: definitely not a JSON settings file;
+        // could be just an empty Editor area, Start page, or something else
+        return false
+    }
+
+    // The built-in Settings UI tab typically has the label "Settings" (in English).
+    return activeTab.label === 'Settings'
 }
 
 export function isUserEligibleForAutoeditsFeature(

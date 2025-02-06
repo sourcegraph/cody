@@ -129,6 +129,8 @@ export function getConfiguration(
          */
         agenticContextExperimentalOptions: config.get(CONFIG_KEY.agenticContextExperimentalOptions, {}),
 
+        authExternalProviders: config.get(CONFIG_KEY.authExternalProviders, []),
+
         /**
          * Hidden settings for internal use only.
          */
@@ -162,6 +164,8 @@ export function getConfiguration(
         experimentalMinionAnthropicKey: getHiddenSetting('experimental.minion.anthropicKey', undefined),
         experimentalNoxideEnabled: getHiddenSetting('experimental.noxide.enabled', true),
         experimentalGuardrailsTimeoutSeconds: getHiddenSetting('experimental.guardrailsTimeoutSeconds'),
+
+        rulesEnabled: config.get(CONFIG_KEY.rulesEnabled, false),
 
         autocompleteExperimentalOllamaOptions: getHiddenSetting(
             'autocomplete.experimental.ollamaOptions',

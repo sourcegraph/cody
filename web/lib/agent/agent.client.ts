@@ -21,6 +21,7 @@ interface AgentClientOptions {
     createAgentWorker: () => Worker
     telemetryClientName?: string
     customHeaders?: Record<string, string>
+    repository?: string
     debug?: boolean
     trace?: boolean
 }
@@ -30,6 +31,7 @@ export async function createAgentClient({
     accessToken,
     createAgentWorker,
     customHeaders,
+    repository,
     telemetryClientName,
     debug = true,
     trace = false,
@@ -70,7 +72,7 @@ export async function createAgentClient({
         version: '0.0.1',
         // Empty root URI leads to openctx configuration resolution failure, any non-empty
         // mock value (Cody Web doesn't really use any workspace related features)
-        workspaceRootUri: 'sourcegraph/cody',
+        workspaceRootUri: `repo:${repository ?? ''}`,
         capabilities: {
             edit: 'none',
             completions: 'none',
@@ -88,6 +90,7 @@ export async function createAgentClient({
             customConfiguration: {
                 'cody.suggestions.mode': CodyAutoSuggestionMode.Off,
                 'cody.experimental.urlContext': true,
+                'cody.rules.enabled': true,
                 // Will be replaced with vite in build time
                 // @ts-ignore
                 'cody.internal.debug.state': import.meta.env.MODE === 'development',

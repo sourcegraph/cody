@@ -1,17 +1,25 @@
+import { Observable } from 'observable-fns'
 import * as vscode from 'vscode'
 
 import {
     type AuthStatus,
     type EditModel,
+    FeatureFlag,
     PromptString,
+    combineLatest,
+    distinctUntilChanged,
+    featureFlagProvider,
+    firstValueFrom,
     isDotCom,
+    skipPendingOperation,
+    switchMap,
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
-
 import { doesFileExist } from '../../commands/utils/workspace-files'
 import { executeSmartApply } from '../../edit/smart-apply'
 import { getEditor } from '../../editor/active-editor'
 import type { VSCodeEditor } from '../../editor/vscode-editor'
+import { isRunningInsideAgent } from '../../jsonrpc/isRunningInsideAgent'
 
 import { countCode, matchCodeSnippets } from './code-count'
 import { resolveRelativeOrAbsoluteUri } from './edit-create-file'
@@ -38,7 +46,6 @@ type LastStoredCode = {
  */
 let lastStoredCode: LastStoredCode = { ...defaultLastStoredCode }
 let insertInProgress = false
-let lastClipboardText = ''
 
 /**
  * SourceMetadataMapping is used to map the source to a numerical value, so telemetry can be recorded on `metadata`.
@@ -106,10 +113,6 @@ function setLastStoredCode({
     })
 }
 
-async function setLastTextFromClipboard(clipboardText?: string): Promise<void> {
-    lastClipboardText = clipboardText || (await vscode.env.clipboard.readText())
-}
-
 /**
  * Handles insert event to insert text from code block at cursor position
  * Replace selection if there is one and then log insert event
@@ -137,7 +140,30 @@ export async function handleCodeFromInsertAtCursor(text: string): Promise<void> 
     await vscode.workspace.applyEdit(workspaceEdit)
 }
 
-function getSmartApplyModel(authStatus: AuthStatus): EditModel | undefined {
+function getSmartApplyExperimentModel(): Observable<EditModel | undefined> {
+    const defaultModel: EditModel = 'anthropic/claude-3-5-sonnet-20240620'
+    const haikuModel: EditModel = 'anthropic::2024-10-22::claude-3-5-haiku-latest'
+
+    return combineLatest(
+        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodySmartApplyExperimentEnabledFeatureFlag),
+        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodySmartApplyExperimentVariant1)
+    ).pipe(
+        switchMap(([isExperimentEnabled, isVariant1Enabled]) => {
+            // We run fine tuning experiment for VSC client only.
+            // We disable for all agent clients like the JetBrains plugin.
+            if (isRunningInsideAgent() || !isExperimentEnabled) {
+                return Observable.of(defaultModel)
+            }
+            if (isVariant1Enabled) {
+                return Observable.of(haikuModel)
+            }
+            return Observable.of(defaultModel)
+        }),
+        distinctUntilChanged()
+    )
+}
+
+async function getSmartApplyModel(authStatus: AuthStatus): Promise<EditModel | undefined> {
     if (!isDotCom(authStatus)) {
         // We cannot be sure what model we're using for enterprise, we will let this fall through
         // to the default edit/smart apply behaviour where we use the configured enterprise model.
@@ -147,10 +173,12 @@ function getSmartApplyModel(authStatus: AuthStatus): EditModel | undefined {
     /**
      * For PLG, we have a greater model choice. We default this to Claude 3.5 Sonnet
      * as it is the most reliable model for smart apply from our testing.
-     * Right now we should prioritise reliability over latency, take this into account before changing
-     * this value.
+     * We choose the model based on the feature flag but default to the sonnet model if the flag is not enabled or as default model.
      */
-    return 'anthropic/claude-3-5-sonnet-20240620'
+    const smartApplyModel = await firstValueFrom(
+        getSmartApplyExperimentModel().pipe(skipPendingOperation())
+    )
+    return smartApplyModel
 }
 
 export async function handleSmartApply(
@@ -194,7 +222,7 @@ export async function handleSmartApply(
             id,
             document,
             instruction: PromptString.unsafe_fromUserQuery(instruction || ''),
-            model: getSmartApplyModel(authStatus),
+            model: await getSmartApplyModel(authStatus),
             replacement: code,
             isNewFile,
             traceparent,
@@ -262,10 +290,5 @@ export async function isCodeFromChatCodeBlockAction(
         return { ...storedCode, operation: 'insert' }
     }
 
-    await setLastTextFromClipboard()
-    if (matchCodeSnippets(storedCode.code, lastClipboardText)) {
-        return { ...storedCode, operation: 'paste' }
-    }
-
-    return null
+    return { ...storedCode, operation: 'paste' }
 }

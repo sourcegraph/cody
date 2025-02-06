@@ -17,8 +17,18 @@ export type TokenSource = 'redirect' | 'paste'
  */
 export interface AuthCredentials {
     serverEndpoint: string
-    accessToken: string | null
-    tokenSource?: TokenSource | undefined
+    credentials: HeaderCredential | TokenCredential | undefined
+    error?: any
+}
+
+export interface HeaderCredential {
+    // We use function instead of property to prevent accidential top level serialization - we never want to store this data
+    getHeaders(): Promise<Record<string, string>>
+}
+
+export interface TokenCredential {
+    token: string
+    source?: TokenSource
 }
 
 export interface AutoEditsTokenLimit {
@@ -71,6 +81,19 @@ export interface AgenticContextConfiguration {
     }
 }
 
+export interface ExternalAuthCommand {
+    commandLine: readonly string[]
+    environment?: Record<string, string>
+    shell?: string
+    timeout?: number
+    windowsHide?: boolean
+}
+
+export interface ExternalAuthProvider {
+    endpoint: string
+    executable: ExternalAuthCommand
+}
+
 interface RawClientConfiguration {
     net: NetConfiguration
     codebase?: string
@@ -112,6 +135,8 @@ interface RawClientConfiguration {
     experimentalMinionAnthropicKey: string | undefined
     experimentalNoxideEnabled: boolean
     experimentalGuardrailsTimeoutSeconds: number | undefined
+
+    rulesEnabled?: boolean | undefined
 
     //#region Unstable
     internalUnstable: boolean
@@ -165,6 +190,8 @@ interface RawClientConfiguration {
      */
     overrideServerEndpoint?: string | undefined
     overrideAuthToken?: string | undefined
+
+    authExternalProviders: ExternalAuthProvider[]
 }
 
 /**

@@ -5,6 +5,7 @@ import type { ChatMessage, EventSource } from '../../chat/transcript/messages'
 import { type ContextItem, ContextItemSource } from '../../codebase-context/messages'
 import type { DefaultChatCommands } from '../../commands/types'
 import {
+    CODE_SEARCH_PROVIDER_URI,
     GIT_OPENCTX_PROVIDER_URI,
     REMOTE_DIRECTORY_PROVIDER_URI,
     REMOTE_FILE_PROVIDER_URI,
@@ -237,6 +238,7 @@ function publicContextSummary(globalPrefix: string, context: ContextItem[]) {
         [REMOTE_DIRECTORY_PROVIDER_URI]: cloneDeep(defaultSharedItemCount),
         [WEB_PROVIDER_URI]: cloneDeep(defaultSharedItemCount),
         [GIT_OPENCTX_PROVIDER_URI]: cloneDeep(defaultSharedItemCount),
+        [CODE_SEARCH_PROVIDER_URI]: cloneDeep(defaultSharedItemCount),
         other: cloneDeep(defaultSharedItemCount),
     }
 

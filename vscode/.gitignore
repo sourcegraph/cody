@@ -11,3 +11,6 @@ tsconfig.typehacks.json
 
 # these are snapshots that haven't been accepted
 *.new.json
+
+# jest-image-snapshot debugging files
+__diff_output__

@@ -1,5 +1,6 @@
 import type { ServerModelConfiguration } from '../../models/modelsService'
 
+import { type AuthCredentials, addAuthHeaders } from '../..'
 import { fetch } from '../../fetch'
 import { logError } from '../../logger'
 import { addTraceparent, wrapInActiveSpan } from '../../tracing'
@@ -20,30 +21,37 @@ import { verifyResponseCode } from '../graphql/client'
  */
 export class RestClient {
     /**
-     * @param endpointUrl URL to the sourcegraph instance, e.g. "https://sourcegraph.acme.com".
-     * @param accessToken User access token to contact the sourcegraph instance.
-     * @param customHeaders Custom headers (primary is used by Cody Web case when Sourcegraph client
-     * providers set of custom headers to make sure that auth flow will work properly
+     * Creates a new REST client to interact with a Sourcegraph instance.
+     * @param auth Authentication credentials containing endpoint URL and access token
+     * @param customHeaders Additional headers for requests (used by Cody Web to ensure proper auth flow)
      */
     constructor(
-        private endpointUrl: string,
-        private accessToken: string | undefined,
+        private auth: AuthCredentials,
         private customHeaders: Record<string, string> | undefined
     ) {}
 
     // Make an authenticated HTTP request to the Sourcegraph instance.
     // "name" is a developer-friendly term to label the request's trace span.
-    private getRequest<T>(name: string, urlSuffix: string, signal?: AbortSignal): Promise<T | Error> {
+    private async getRequest<T>(
+        name: string,
+        urlSuffix: string,
+        signal?: AbortSignal
+    ): Promise<T | Error> {
         const headers = new Headers(this.customHeaders)
-        if (this.accessToken) {
-            headers.set('Authorization', `token ${this.accessToken}`)
-        }
+
+        const endpoint = new URL(this.auth.serverEndpoint)
+        endpoint.pathname = urlSuffix
+        const url = endpoint.href
+
         addCodyClientIdentificationHeaders(headers)
         addTraceparent(headers)
 
-        const endpoint = new URL(this.endpointUrl)
-        endpoint.pathname = urlSuffix
-        const url = endpoint.href
+        try {
+            await addAuthHeaders(this.auth, headers, endpoint)
+        } catch (error: any) {
+            return error
+        }
+
         return wrapInActiveSpan(`rest-api.${name}`, () =>
             fetch(url, {
                 method: 'GET',

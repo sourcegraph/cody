@@ -81,6 +81,11 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
     private readonly onSelectionChangeDebounced: DebouncedFunc<typeof this.onSelectionChange>
     public readonly rendererManager: AutoEditsRendererManager
     private readonly modelAdapter: AutoeditsModelAdapter
+
+    /**
+     * Default: Current supported renderer
+     * Inline: Experimental renderer that uses inline decorations to show additions
+     */
     private readonly enabledRenderer = vscode.workspace
         .getConfiguration()
         .get<'default' | 'inline'>('cody.experimental.autoedit.renderer', 'default')
@@ -93,7 +98,11 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         dataCollectionEnabled: false,
     })
 
-    constructor(chatClient: ChatClient, fixupController: FixupController) {
+    constructor(
+        chatClient: ChatClient,
+        fixupController: FixupController,
+        options: { shouldRenderImage: boolean }
+    ) {
         autoeditsOutputChannelLogger.logDebug('Constructor', 'Constructing AutoEditsProvider')
         this.modelAdapter = createAutoeditsModelAdapter({
             providerName: autoeditsProviderConfig.provider,
@@ -108,7 +117,8 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                       fixupController
                   )
                 : new AutoEditsDefaultRendererManager(
-                      (editor: vscode.TextEditor) => new DefaultDecorator(editor),
+                      (editor: vscode.TextEditor) =>
+                          new DefaultDecorator(editor, { shouldRenderImage: options.shouldRenderImage }),
                       fixupController
                   )
 

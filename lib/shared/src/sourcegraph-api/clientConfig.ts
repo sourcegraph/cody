@@ -1,6 +1,5 @@
 import { Observable, interval, map } from 'observable-fns'
 import semver from 'semver'
-import type { AuthStatus } from '..'
 import { authStatus } from '../auth/authStatus'
 import { editorWindowIsFocused } from '../editor/editorState'
 import { logDebug, logError } from '../logger'
@@ -33,7 +32,8 @@ export interface CodyNotice {
 //
 // This is fetched from the Sourcegraph instance and is specific to the current user.
 //
-// For the canonical type definition, see https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/internal/clientconfig/types.go
+// For the canonical type definition, see model ClientConfig in https://sourcegraph.sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/internal/openapi/internal.tsp
+// API Spec: https://sourcegraph.sourcegraph.com/api/openapi/internal#get-api-client-config
 export interface CodyClientConfig {
     // Whether the site admin allows this user to make use of the Cody chat feature.
     chatEnabled: boolean
@@ -73,6 +73,9 @@ export interface CodyClientConfig {
 
     // Whether code search is enabled for the SG instance.
     codeSearchEnabled: boolean
+
+    // The latest supported completions stream API version.
+    latestSupportedCompletionsStreamAPIVersion?: number
 }
 
 export const dummyClientConfigForTest: CodyClientConfig = {
@@ -129,7 +132,7 @@ export class ClientConfigSingleton {
                           filter((_value): _value is undefined => editorWindowIsFocused()),
                           startWith(undefined),
                           switchMap(() =>
-                              promiseFactoryToObservable(signal => this.fetchConfig(authStatus, signal))
+                              promiseFactoryToObservable(signal => this.fetchConfig(signal))
                           ),
                           retry(3)
                       )
@@ -165,99 +168,103 @@ export class ClientConfigSingleton {
         return await firstValueFrom(this.changes.pipe(skipPendingOperation()), signal)
     }
 
-    private async fetchConfig(authStatus: AuthStatus, signal?: AbortSignal): Promise<CodyClientConfig> {
+    private async fetchConfig(signal?: AbortSignal): Promise<CodyClientConfig> {
         logDebug('ClientConfigSingleton', 'refreshing configuration')
+        let omniBoxEnabled = false
 
-        try {
-            // Determine based on the site version if /.api/client-config is available.
-            const siteVersion = await graphqlClient.getSiteVersion(signal)
-
-            signal?.throwIfAborted()
-
-            let supportsClientConfig = false
-
-            let omniBoxEnabled = false
-
-            if (isError(siteVersion)) {
-                if (isAbortError(siteVersion)) {
-                    throw siteVersion
+        // Determine based on the site version if /.api/client-config is available.
+        return graphqlClient
+            .getSiteVersion(signal)
+            .then(siteVersion => {
+                signal?.throwIfAborted()
+                if (isError(siteVersion)) {
+                    if (isAbortError(siteVersion)) {
+                        throw siteVersion
+                    }
+                    logError(
+                        'ClientConfigSingleton',
+                        'Failed to determine site version, GraphQL error',
+                        siteVersion
+                    )
+                    return false // assume /.api/client-config is not supported
                 }
-                logError(
-                    'ClientConfigSingleton',
-                    'Failed to determine site version, GraphQL error',
-                    siteVersion
-                )
 
-                supportsClientConfig = false
-            } else {
                 // Insiders and dev builds support the new /.api/client-config endpoint
                 const insiderBuild = siteVersion.length > 12 || siteVersion.includes('dev')
+                if (insiderBuild) {
+                    omniBoxEnabled = true
+                    return true
+                }
+
+                if (!semver.lt(siteVersion, '6.0.0')) {
+                    omniBoxEnabled = true
+                }
 
                 // Sourcegraph instances before 5.5.0 do not support the new /.api/client-config endpoint.
-                supportsClientConfig = insiderBuild || !semver.lt(siteVersion, '5.5.0')
-
-                const isDotCom =
-                    !authStatus.authenticated ||
-                    authStatus.endpoint.startsWith('https://sourcegraph.com')
-                // Enable OmniBox for Sourcegraph instances 6.0.0 and above or dev instances
-                omniBoxEnabled = !isDotCom && (insiderBuild || semver.gte(siteVersion, '6.0.0'))
-            }
-
-            signal?.throwIfAborted()
-
-            // If /.api/client-config is not available, fallback to the myriad of GraphQL
-            // requests that we previously used to determine the client configuration
-            const clientConfig = await (supportsClientConfig
-                ? this.fetchConfigEndpoint(signal)
-                : this.fetchClientConfigLegacy(signal))
-
-            signal?.throwIfAborted()
-            logDebug('ClientConfigSingleton', 'refreshed', JSON.stringify(clientConfig))
-
-            return Promise.all([
-                graphqlClient.viewerSettings(signal),
-                graphqlClient.codeSearchEnabled(signal),
-            ]).then(([viewerSettings, codeSearchEnabled]) => {
-                const config: CodyClientConfig = {
-                    ...clientConfig,
-                    intentDetection: 'enabled',
-                    notices: [],
-                    siteVersion: isError(siteVersion) ? undefined : siteVersion,
-                    omniBoxEnabled,
-                    codeSearchEnabled: isError(codeSearchEnabled) ? true : codeSearchEnabled,
+                if (semver.lt(siteVersion, '5.5.0')) {
+                    return false
                 }
-
-                // Don't fail the whole chat because of viewer setting (used only to show banners)
-                if (!isError(viewerSettings)) {
-                    config.intentDetection = ['disabled', 'enabled'].includes(
-                        viewerSettings['omnibox.intentDetection']
-                    )
-                        ? viewerSettings['omnibox.intentDetection']
-                        : 'enabled'
-                    // Make sure that notice object will have all important field (notices come from
-                    // instance global JSONC configuration so they can have any arbitrary field values.
-                    config.notices = Array.from<Partial<CodyNotice>, CodyNotice>(
-                        viewerSettings['cody.notices'] ?? [],
-                        (notice, index) => ({
-                            key: notice?.key ?? index.toString(),
-                            title: notice?.title ?? '',
-                            message: notice?.message ?? '',
-                        })
-                    )
-                }
-
-                if (codeSearchEnabled === false) {
-                    config.intentDetection = 'disabled'
-                }
-
-                return config
+                return true
             })
-        } catch (e) {
-            if (!isAbortError(e)) {
-                logError('ClientConfigSingleton', 'failed to refresh client config', e)
-            }
-            throw e
-        }
+            .then(supportsClientConfig => {
+                signal?.throwIfAborted()
+
+                // If /.api/client-config is not available, fallback to the myriad of GraphQL
+                // requests that we previously used to determine the client configuration
+                if (!supportsClientConfig) {
+                    return this.fetchClientConfigLegacy(signal)
+                }
+
+                return this.fetchConfigEndpoint(signal)
+            })
+            .then(async clientConfig => {
+                signal?.throwIfAborted()
+                logDebug('ClientConfigSingleton', 'refreshed', JSON.stringify(clientConfig))
+
+                return Promise.all([
+                    graphqlClient.viewerSettings(signal),
+                    graphqlClient.codeSearchEnabled(signal),
+                ]).then(([viewerSettings, codeSearchEnabled]) => {
+                    const config: CodyClientConfig = {
+                        ...clientConfig,
+                        intentDetection: 'enabled',
+                        notices: [],
+                        omniBoxEnabled,
+                        codeSearchEnabled: isError(codeSearchEnabled) ? true : codeSearchEnabled,
+                    }
+
+                    // Don't fail the whole chat because of viewer setting (used only to show banners)
+                    if (!isError(viewerSettings)) {
+                        config.intentDetection = ['disabled', 'enabled'].includes(
+                            viewerSettings['omnibox.intentDetection']
+                        )
+                            ? viewerSettings['omnibox.intentDetection']
+                            : 'enabled'
+                        // Make sure that notice object will have all important field (notices come from
+                        // instance global JSONC configuration so they can have any arbitrary field values.
+                        config.notices = Array.from<Partial<CodyNotice>, CodyNotice>(
+                            viewerSettings['cody.notices'] ?? [],
+                            (notice, index) => ({
+                                key: notice?.key ?? index.toString(),
+                                title: notice?.title ?? '',
+                                message: notice?.message ?? '',
+                            })
+                        )
+                    }
+
+                    if (codeSearchEnabled === false) {
+                        config.intentDetection = 'disabled'
+                    }
+
+                    return config
+                })
+            })
+            .catch(e => {
+                if (!isAbortError(e)) {
+                    logError('ClientConfigSingleton', 'failed to refresh client config', e)
+                }
+                throw e
+            })
     }
 
     private async fetchClientConfigLegacy(signal?: AbortSignal): Promise<CodyClientConfig> {
@@ -317,6 +324,7 @@ export class ClientConfigSingleton {
                 if (isError(clientConfig)) {
                     throw clientConfig
                 }
+                latestCodyClientConfig = clientConfig
                 return clientConfig
             })
     }
@@ -328,4 +336,13 @@ export class ClientConfigSingleton {
     ): Promise<CodyClientConfig | undefined> {
         return this.fetchConfigEndpoint(signal, config)
     }
+}
+// It's really complicated to access CodyClientConfig from functions like utils.ts
+export let latestCodyClientConfig: CodyClientConfig | undefined
+
+export function serverSupportsPromptCaching(): boolean {
+    return (
+        latestCodyClientConfig?.latestSupportedCompletionsStreamAPIVersion !== undefined &&
+        latestCodyClientConfig?.latestSupportedCompletionsStreamAPIVersion >= 7
+    )
 }

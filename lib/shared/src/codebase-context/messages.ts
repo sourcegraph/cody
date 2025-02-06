@@ -40,6 +40,11 @@ interface ContextItemCommon {
 
     /**
      * The source of this context item.
+     *
+     * NOTE: For item explicitly added by the user, the source should be 'user' as
+     * it will be used to determine the {@link ChatContextTokenUsage} type, which is also
+     * used for prioritizing context items where user-added items are prioritized over
+     * non-user-added items, such as {@link getContextItemTokenUsageType}.
      */
     source?: ContextItemSource
 
@@ -255,7 +260,7 @@ export type ContextItemWithContent = ContextItem & { content: string }
 /**
  * A system chat message that adds a context item to the conversation.
  */
-export interface ContextMessage extends Required<Message> {
+export interface ContextMessage extends Required<Omit<Message, 'cache_enabled'>> {
     /**
      * Context messages are always "from" the human. (In the future, this could be from "system" for
      * LLMs that support that kind of message, but that `speaker` value is not currently supported
@@ -267,6 +272,7 @@ export interface ContextMessage extends Required<Message> {
      * The context item that this message introduces into the conversation.
      */
     file: ContextItem
+    cache_enabled?: boolean | null
 }
 
 export const GENERAL_HELP_LABEL = 'Search for a file to include, or type # for symbols...'

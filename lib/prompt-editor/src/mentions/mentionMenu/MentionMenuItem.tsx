@@ -8,6 +8,7 @@ import {
     REMOTE_DIRECTORY_PROVIDER_URI,
     REMOTE_FILE_PROVIDER_URI,
     REMOTE_REPOSITORY_PROVIDER_URI,
+    RULES_PROVIDER_URI,
     SYMBOL_CONTEXT_MENTION_PROVIDER,
     WEB_PROVIDER_URI,
     displayLineRange,
@@ -18,6 +19,7 @@ import {
 import { clsx } from 'clsx'
 import {
     ArrowRightIcon,
+    BookCheckIcon,
     BoxIcon,
     DatabaseIcon,
     ExternalLinkIcon,
@@ -180,6 +182,7 @@ export const iconForProvider: Record<
     [REMOTE_FILE_PROVIDER_URI]: FileIcon,
     [REMOTE_DIRECTORY_PROVIDER_URI]: FolderGitIcon,
     [WEB_PROVIDER_URI]: LinkIcon,
+    [RULES_PROVIDER_URI]: BookCheckIcon,
 }
 
 export const iconForItem: Record<
