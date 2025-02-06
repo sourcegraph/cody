@@ -1,15 +1,19 @@
 import {
     type ChatMessage,
     type ContextItem,
+    FeatureFlag,
     type Message,
     type ModelContextWindow,
     PromptString,
     TokenCounter,
     contextFiltersProvider,
+    featureFlagProvider,
     ps,
+    storeLastValue,
 } from '@sourcegraph/cody-shared'
 import type { ContextTokenUsageType } from '@sourcegraph/cody-shared/src/token'
 import { sortContextItemsIfInTest } from '../chat/chat-view/agentContextSorting'
+import { logFirstEnrollmentEvent } from '../services/utils/enrollment-event'
 import { getUniqueContextItems, isUniqueContextItem } from './unique-context'
 import { getContextItemTokenUsageType, renderContextItem } from './utils'
 
@@ -44,6 +48,21 @@ export class PromptBuilder {
 
     private constructor(private readonly tokenCounter: TokenCounter) {}
 
+    private _isCacheEnabled: boolean | undefined
+    private get isCacheEnabled(): boolean {
+        if (this._isCacheEnabled === undefined) {
+            this._isCacheEnabled = logFirstEnrollmentEvent(
+                FeatureFlag.CodyPromptCachingOnMessages,
+                !!storeLastValue(
+                    featureFlagProvider.evaluatedFeatureFlag(
+                        FeatureFlag.SmartApplyContextDataCollectionFlag
+                    )
+                ).value
+            )
+        }
+        return this._isCacheEnabled
+    }
+
     public build(): Message[] {
         if (this.contextItems.length > 0) {
             this.buildContextMessages()
@@ -57,25 +76,35 @@ export class PromptBuilder {
      * assistant messages come first because the transcript is in reversed order.
      */
     private buildContextMessages(): void {
-        const messages = []
-        for (const item of this.contextItems) {
-            const contextMessage = renderContextItem(item)
-            if (contextMessage) {
-                messages.push(contextMessage)
+        if (this.isCacheEnabled) {
+            const messages = []
+            for (const item of this.contextItems) {
+                const contextMessage = renderContextItem(item)
+                if (contextMessage) {
+                    messages.push(contextMessage)
+                }
             }
+            // Group all context messages
+            const groupedText = PromptString.join(
+                messages.map(m => m.text),
+                ps`\n\n`
+            )
+            const groupedContextMessage = {
+                speaker: 'human',
+                text: groupedText,
+                cacheEnabled: true,
+            } as Message
+            const messagePair = [ASSISTANT_MESSAGE, groupedContextMessage]
+            messagePair && this.reverseMessages.push(...messagePair)
+            return
         }
-        // Group all context messages
-        const groupedText = PromptString.join(
-            messages.map(m => m.text),
-            ps`\n`
-        )
-        const groupedContextMessage = {
-            speaker: 'human',
-            text: groupedText,
-            cacheEnabled: true,
-        } as Message
-        const messagePair = [ASSISTANT_MESSAGE, groupedContextMessage]
-        messagePair && this.reverseMessages.push(...messagePair)
+        for (const item of this.contextItems) {
+            // Create context messages for each context item, where
+            // assistant messages come first because the transcript is in reversed order.
+            const contextMessage = renderContextItem(item)
+            const messagePair = contextMessage && [ASSISTANT_MESSAGE, contextMessage]
+            messagePair && this.reverseMessages.push(...messagePair)
+        }
     }
 
     public tryAddToPrefix(messages: Message[]): boolean {
