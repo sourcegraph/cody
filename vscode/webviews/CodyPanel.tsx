@@ -85,7 +85,6 @@ export const CodyPanel: FunctionComponent<CodyPanelProps> = ({
         useFeatureFlag(FeatureFlag.SourcegraphTeamsUpgradeCTA) &&
         isDotComUser &&
         config.endpointHistory?.length === 1
-
     useEffect(() => {
         onExternalApiReady?.(externalAPI)
     }, [onExternalApiReady, externalAPI])
