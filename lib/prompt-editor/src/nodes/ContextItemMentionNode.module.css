@@ -1,7 +1,8 @@
 .context-item-mention-node {
     --mention-color-opacity: 70%;
     color: var(--text-inverted);
-    background-color: color-mix(in srgb, var(--editor-accent), transparent 50%);
+    background-color: color-mix(in srgb, var(--editor-accent), transparent 80%);
+    border: 1px solid color-mix(in srgb, var(--editor-accent), transparent 30%);
     border-radius: 2px;
     white-space: normal;
     padding: 0 3px;
@@ -9,7 +10,6 @@
     align-items: baseline;
     outline-offset: -1px;
     cursor: pointer;
-    mix-blend-mode: lighten; /*Helps with contrast on diff themes*/
 }
 
 .context-item-mention-node:hover {
@@ -24,7 +24,7 @@
     margin-right: 2px;
     opacity: 0.8;
     transform: translateY(-1px);
-    color: var(--text-white);
+    color: var(--text-inverted);
 }
 
 .context-item-mention-node + .context-item-mention-node {

@@ -25,12 +25,10 @@
 .dirname {
     color: var(--text-inverted);
     font-size: smaller;
-    mix-blend-mode: multiply;
 }
 
 .range {
     color: var(--text-inverted);
-    mix-blend-mode: multiply;
     font-size: smaller;
     font-weight: bold;
 }

@@ -73,7 +73,7 @@ html[data-ide='JetBrains'] body {
     /* Links */
     --text-link-color: var(--editor-accent);
     --text-link-hover-color: #ff4c00;
-    --text-white: #FFFFFF;
+    --text-inverted: #FFFFFF;
 
     /* Borders */
     --border: var(--editor-border);

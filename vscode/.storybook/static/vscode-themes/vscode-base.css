@@ -65,3 +65,12 @@
     --vscode-sideBar-background: var(--background-01);
     --vscode-sideBar-border: orange;
 }
+
+.vscode-light {
+    --text-inverted: #000;
+
+    --background-02: color-mix(in srgb, var(--background-01), white 5%);  /* Slightly lighter */
+    --background-03: color-mix(in srgb, var(--background-01), white 10%);  /* Even lighter */
+
+    --highlight-text: color-mix(in srgb, var(--text), black 90%);
+}

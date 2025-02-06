@@ -15,18 +15,18 @@ setDisplayPathEnvInfo({
 })
 
 export enum Theme {
-    DarkPlus = 'dark-plus',
-    DarkModern = 'dark-modern',
-    DarkHighContrast = 'dark-high-contrast',
-    DarkAyuMirage = 'dark-ayu-mirage',
-    DarkGithubDimmed = 'dark-github-dimmed',
-    DarkShadesOfPurple = 'dark-shades-of-purple',
-    LightPlus = 'light-plus',
-    LightModern = 'light-modern',
-    LightHighContrast = 'light-high-contrast',
-    LightMonokaiProLight = 'light-monokai-pro-light',
-    LightSolarized = 'light-solarized',
-    Red = 'red',
+    DarkPlus = 'vscode-dark-plus',
+    DarkModern = 'vscode-dark-modern',
+    DarkHighContrast = 'vscode-dark-high-contrast',
+    DarkAyuMirage = 'vscode-dark-ayu-mirage',
+    DarkGithubDimmed = 'vscode-dark-github-dimmed',
+    DarkShadesOfPurple = 'vscode-dark-shades-of-purple',
+    LightPlus = 'vscode-light-plus',
+    LightModern = 'vscode-light-modern',
+    LightHighContrast = 'vscode-light-high-contrast',
+    LightMonokaiProLight = 'vscode-light-monokai-pro-light',
+    LightSolarized = 'vscode-light-solarized',
+    Red = 'vscode-dark-red',
     JetBrainsDark = 'jetbrains-dark',
     JetBrainsLight = 'jetbrains-light',
 }
@@ -34,18 +34,18 @@ export enum Theme {
 const themeClassnames = {
     [Theme.DarkPlus]: 'vscode-dark',
     [Theme.DarkModern]: 'vscode-dark',
-    [Theme.DarkHighContrast]: 'vscode-high-contrast',
+    [Theme.DarkHighContrast]: 'vscode-dark',
     [Theme.DarkAyuMirage]: 'vscode-dark',
     [Theme.DarkGithubDimmed]: 'vscode-dark',
     [Theme.DarkShadesOfPurple]: 'vscode-dark',
     [Theme.LightPlus]: 'vscode-light',
     [Theme.LightModern]: 'vscode-light',
-    [Theme.LightHighContrast]: 'vscode-high-contrast-light',
+    [Theme.LightHighContrast]: 'vscode-light',
     [Theme.LightMonokaiProLight]: 'vscode-light',
     [Theme.LightSolarized]: 'vscode-light',
     [Theme.Red]: 'vscode-dark',
-    [Theme.JetBrainsDark]: 'vscode-dark',
-    [Theme.JetBrainsLight]: 'vscode-light',
+    [Theme.JetBrainsDark]: 'jetbrains-dark',
+    [Theme.JetBrainsLight]: 'jetbrains-light',
 } satisfies Record<Theme, string>
 
 /**

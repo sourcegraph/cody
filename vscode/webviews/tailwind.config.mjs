@@ -98,7 +98,7 @@ export default {
                 },
                 badge: {
                     border: 'var(--highlight-border)',
-                    foreground: 'var(--text-white)',
+                    foreground: 'var(--text-inverted)',
                     background: 'var(--link-color)',
                 },
                 'status-offline': {
