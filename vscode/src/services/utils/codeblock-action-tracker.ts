@@ -256,8 +256,6 @@ export async function isCodeFromChatCodeBlockAction(
         insertInProgress = false
         return { ...storedCode, operation: 'insert' }
     }
-    if (storedCode.eventName === 'copyButton' || storedCode.eventName === 'keyDown.Copy') {
-        return { ...storedCode, operation: 'paste' }
-    }
-    return null
+
+    return { ...storedCode, operation: 'paste' }
 }
