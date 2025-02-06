@@ -13,6 +13,7 @@ import {
     reformatBotMessageForChat,
     serializedPromptEditorStateFromChatMessage,
 } from '@sourcegraph/cody-shared'
+import { DeepCodyAgentID } from '@sourcegraph/cody-shared/src/models/client'
 import type { PromptEditorRefAPI } from '@sourcegraph/prompt-editor'
 import isEqual from 'lodash/isEqual'
 import { type FunctionComponent, type RefObject, memo, useMemo } from 'react'
@@ -96,7 +97,7 @@ export const AssistantMessageCell: FunctionComponent<{
                     isSearchIntent ? undefined : (
                         <span data-testid="chat-model">
                             {chatModel
-                                ? chatModel.id.includes('deep-cody')
+                                ? chatModel.id.includes(DeepCodyAgentID)
                                     ? 'Claude 3.5 Sonnet (New)'
                                     : chatModel.title ?? `Model ${chatModel.id} by ${chatModel.provider}`
                                 : 'Model'}
@@ -254,7 +255,7 @@ function useChatModelByID(
         (model
             ? {
                   id: model,
-                  title: model?.includes('deep-cody') ? 'Deep Cody (Experimental)' : model,
+                  title: model?.includes(DeepCodyAgentID) ? 'Deep Cody (Experimental)' : model,
                   provider: 'unknown',
                   tags: [],
               }

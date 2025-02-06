@@ -6,6 +6,7 @@ import type {
     RankedContext,
 } from '@sourcegraph/cody-shared'
 import { pluralize } from '@sourcegraph/cody-shared'
+import { DeepCodyAgentID } from '@sourcegraph/cody-shared/src/models/client'
 import { MENTION_CLASS_NAME } from '@sourcegraph/prompt-editor'
 import { clsx } from 'clsx'
 import { BrainIcon, FilePenLine, MessagesSquareIcon } from 'lucide-react'
@@ -27,7 +28,9 @@ import { Cell } from '../Cell'
 import { NON_HUMAN_CELL_AVATAR_SIZE } from '../messageCell/assistant/AssistantMessageCell'
 import styles from './ContextCell.module.css'
 
-export const __ContextCellStorybookContext = createContext<{ initialOpen: boolean } | null>(null)
+export const __ContextCellStorybookContext = createContext<{
+    initialOpen: boolean
+} | null>(null)
 
 /**
  * A component displaying the context for a human message.
@@ -133,7 +136,7 @@ export const ContextCell: FunctionComponent<{
 
         const telemetryRecorder = useTelemetryRecorder()
 
-        const isAgenticChat = model?.includes('deep-cody') || agent === 'deep-cody'
+        const isAgenticChat = model?.includes(DeepCodyAgentID) || agent === DeepCodyAgentID
 
         // Text for top header text
         const headerText: { main: string; sub?: string } = {
