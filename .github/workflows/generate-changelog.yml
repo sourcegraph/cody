@@ -99,7 +99,7 @@ jobs:
             --output.changelog="$CHANGELOG_PATH" \
             --output.changelog.marker='<!--- {/_ CHANGELOG_START _/} -->' \
             --releaseregistry.version=${VERSION} \
-            --releaseregistry.commit=${RELEASE_LATEST_RELEASE}
+            # --releaseregistry.commit=${RELEASE_LATEST_RELEASE}
       - name: Update version
         if: github.event.inputs.editor == 'VS Code'
         env:
