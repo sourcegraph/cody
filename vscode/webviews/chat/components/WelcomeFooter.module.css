@@ -45,7 +45,7 @@
     border: 1px solid var(--border-subtle);
     background-color: var(--background-02);
     font-family: var(--vscode-editor-font-family);
-    font-size: var(--vscode-editor-font-size);
+    font-size: var(--font);
 }
 
 .tips {

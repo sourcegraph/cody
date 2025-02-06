@@ -146,7 +146,7 @@ export const FileLink: React.FunctionComponent<
             )}
             {source === 'unified' || uri.scheme === 'http' || uri.scheme === 'https' ? (
                 <a
-                    className={`${linkClassName} tw-truncate hover:tw-no-underline !tw-p-0`}
+                    className={`${linkClassName} tw-truncate hover:tw-no-underline !tw-text-inherit !tw-p-0`}
                     title={linkDetails.tooltip}
                     href={linkDetails.href}
                     target={linkDetails.target}
@@ -165,7 +165,7 @@ export const FileLink: React.FunctionComponent<
                 </a>
             ) : (
                 <Button
-                    className={`${linkClassName} tw-truncate hover:tw-no-underline !tw-p-0`}
+                    className={`${linkClassName} tw-truncate hover:tw-no-underline !tw-text-inherit !tw-p-0`}
                     title={linkDetails.tooltip}
                     variant="link"
                     onClick={onFileLinkClicked}

@@ -49,7 +49,7 @@
 .context-item-link {
     background: none;
     border: none;
-    color: var(--text);
+    color: var(--text-inverted);
     font-size: inherit;
     padding: 0;
     margin: 0;

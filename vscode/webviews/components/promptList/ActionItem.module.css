@@ -46,7 +46,7 @@
     }
 
     &--icon {
-        color: var(--text-disabled);
+        color: var(--text-muted);
     }
 
     &--content {
@@ -70,7 +70,7 @@
     }
 
     &--description {
-        color: var(--text-disabled);
+        color: var(--text-muted);
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;

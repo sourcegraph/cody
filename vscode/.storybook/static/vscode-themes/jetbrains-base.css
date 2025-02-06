@@ -1,22 +1,23 @@
 
 /* Mimic rules injected by VSCode */
 
-html[data-ide='JetBrains'] {
+html{
 
+    background-color: var(--jetbrains-MainToolbar-background);
     /* Mimic rules injected by VSCode */
     --vscode-font-weight: var(--font-weight);
     --vscode-font-size: var(--jetbrains-font-size);
 
-    --vscode-editor-font-family: var(--font-family);
+    --vscode-editor-font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;;
     --vscode-editor-font-weight: var(--font-weight);
-    --vscode-editor-font-size: var(--type-ramp-minus1-font-size);
+    --vscode-editor-font-size: 13px;
 
     --vscode-widget-shadow: rgba(0, 0, 0, 0.36);
     scrollbar-color: var(--vscode-scrollbarSlider-background) var(--vscode-editor-background);
 }
 
 
-html[data-ide='JetBrains'] body {
+body {
     overscroll-behavior-x: none;
     background-color: var(--vscode-sideBar-background);
     color: var(--vscode-editor-foreground);
@@ -45,10 +46,6 @@ html[data-ide='JetBrains'] body {
     --editor-accent: var(--jetbrains-Button-default-endBackground);
     --editor-text:var(--jetbrains-text);
 
-
-
-
-
     /* Primary Button */
     --button-primary-text: var(--jetbrains-Button-default-foreground);
     --button-primary-background: var(--editor-accent);
@@ -73,7 +70,7 @@ html[data-ide='JetBrains'] body {
     /* Links */
     --text-link-color: var(--editor-accent);
     --text-link-hover-color: #ff4c00;
-    --text-white: #FFFFFF;
+    --text-inverted: #FFFFFF;
 
     /* Borders */
     --border: var(--editor-border);
@@ -93,112 +90,33 @@ html[data-ide='JetBrains'] body {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 }
 
-html[data-ide='JetBrains'] :matches(img, video) {
+html :matches(img, video) {
     max-width: 100%;
     max-height: 100%;
 }
 
-html[data-ide='JetBrains'] :matches(a, a code) {
-    color: var(--vscode-textLink-foreground);
-}
 
-html[data-ide='JetBrains'] a:hover {
-    color: var(--vscode-textLink-activeForeground);
-}
-
-html[data-ide='JetBrains'] :matches(a, input, select, textarea):focus {
-    outline: 1px solid -webkit-focus-ring-color;
-    outline-offset: -1px;
-}
-
-html[data-ide='JetBrains'] code {
-    font-family: monospace; /* todo: get proper font from hosting platform */
-    font-size: 0.8rem;
-    color: var(--vscode-textPreformat-foreground);
-    background-color: var(--vscode-textPreformat-background);
-    padding: 1px 3px;
-    border-radius: 4px;
-}
-
-html[data-ide='JetBrains'] pre code {
-    padding: 0;
-}
-
-
-html[data-ide='JetBrains'] blockquote {
-    background: var(--vscode-textBlockQuote-background);
-    border-color: var(--vscode-textBlockQuote-border);
-}
-
-/* color-mix is not supported on JetBrains webview */
-html[data-ide='JetBrains'] .context-item-mention-node {
-    color: var(--vscode-inputOption-activeForeground);
-    background-color: var(--vscode-badge-background);
-    gap: 0.2rem;
-
-    .icon {
-        width: 1rem;
-        height: 1rem;
-    }
-}
-
-html[data-ide='JetBrains'] .container {
-    background-color: var(--vscode-input-background);
-}
-
-html[data-ide='JetBrains'] .tw-bg-muted-transparent:hover {
-    background-color: var(--jetbrains-ActionButton-hoverBackground);
-}
-
-html[data-ide='JetBrains'] .tw-border-input-border {
-    border-style: solid;
-    border-width: thin;
-}
-
-/* Custom rule for cmdk heading:
- * VSCode uses input background for headings.
- * JetBrains needs different styling to distinguish headings because input background are the same as pane background. */
-
-html[data-ide='JetBrains'] [cmdk-group-heading] {
-    background: var(--jetbrains-EditorPane-inactiveBackground);
-}
-
-html[data-ide='JetBrains'] body *::-webkit-scrollbar {
+html body *::-webkit-scrollbar {
     width: 14px;
     height: 8px;
     background-color: transparent;
 }
 
-html[data-ide='JetBrains'] body *::-webkit-scrollbar-thumb {
+html body *::-webkit-scrollbar-thumb {
     background: var(--scrollbar-slider-active-background);
     border-radius: 100px;
     border: 3px solid var(--jetbrains-Desktop-background);
 }
 
-html[data-ide='JetBrains'] pre::-webkit-scrollbar {
+html pre::-webkit-scrollbar {
     width: 14px;
     height: 14px;
     background-color: transparent;
 }
 
-html[data-ide='JetBrains'] pre::-webkit-scrollbar-thumb {
+html pre::-webkit-scrollbar-thumb {
     background: rgba(255, 255, 255, 0.15);
     border-radius: 100px;
     border: 3px solid var(--code-background);

@@ -12,8 +12,8 @@
 
 .dot {
     animation: 1s flash 0.5s infinite;
-    width: calc(var(--vscode-editor-font-size) / 2) !important;
-    height: calc(var(--vscode-editor-font-size) / 2) !important;
+    width: calc(var(--font) / 2) !important;
+    height: calc(var(--font) / 2) !important;
     border-radius: 100%;
     background-color: #b200f8;
     opacity: 0.25;

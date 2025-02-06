@@ -5,6 +5,8 @@
 
     /* Makes ellipsis show in default text color, we show the basename in link color below */
     color: var(--text-subtle);
+    background:transparent;
+
 }
 
 .excluded {
@@ -12,19 +14,24 @@
 }
 
 .basename {
-    color: var(--text);
+    color: var(--text-inverted);
 }
 
 .repoShortName {
-    color: var(--text-disabled);
+    color: var(--text-inverted);
     font-size: smaller;
 }
 
 .dirname {
-    color: var(--text-disabled);
+    color: var(--text-inverted);
     font-size: smaller;
+    mix-blend-mode: multiply;
 }
 
 .range {
-    color: var(--text-disabled);
+    color: var(--text-inverted);
+    mix-blend-mode: multiply;
+    font-size: smaller;
+    font-weight: bold;
 }
+

@@ -18,24 +18,34 @@ export enum Theme {
     DarkPlus = 'dark-plus',
     DarkModern = 'dark-modern',
     DarkHighContrast = 'dark-high-contrast',
+    DarkAyuMirage = 'dark-ayu-mirage',
+    DarkGithubDimmed = 'dark-github-dimmed',
+    DarkShadesOfPurple = 'dark-shades-of-purple',
     LightPlus = 'light-plus',
     LightModern = 'light-modern',
     LightHighContrast = 'light-high-contrast',
+    LightMonokaiProLight = 'light-monokai-pro-light',
+    LightSolarized = 'light-solarized',
     Red = 'red',
     JetBrainsDark = 'jetbrains-dark',
-    MainTheme = 'main-theme',
+    JetBrainsLight = 'jetbrains-light',
 }
 
 const themeClassnames = {
     [Theme.DarkPlus]: 'vscode-dark',
     [Theme.DarkModern]: 'vscode-dark',
     [Theme.DarkHighContrast]: 'vscode-high-contrast',
+    [Theme.DarkAyuMirage]: 'vscode-dark',
+    [Theme.DarkGithubDimmed]: 'vscode-dark',
+    [Theme.DarkShadesOfPurple]: 'vscode-dark',
     [Theme.LightPlus]: 'vscode-light',
     [Theme.LightModern]: 'vscode-light',
     [Theme.LightHighContrast]: 'vscode-high-contrast-light',
+    [Theme.LightMonokaiProLight]: 'vscode-light',
+    [Theme.LightSolarized]: 'vscode-light',
     [Theme.Red]: 'vscode-dark',
     [Theme.JetBrainsDark]: 'vscode-dark',
-    [Theme.MainTheme]: 'vscode-light',
+    [Theme.JetBrainsLight]: 'vscode-light',
 } satisfies Record<Theme, string>
 
 /**

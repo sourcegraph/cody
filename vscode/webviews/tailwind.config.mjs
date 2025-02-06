@@ -44,7 +44,7 @@ export default {
             colors: {
                 border: 'var(--border)',
                 ring: 'var(--border-active)',
-                background: 'var(--background-01, orange)',
+                background: 'var(--background-01)',
                 foreground: 'var(--text)',
                 input: {
                     foreground: 'var(--text)',

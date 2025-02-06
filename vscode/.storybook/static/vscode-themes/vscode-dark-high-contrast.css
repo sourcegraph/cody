@@ -1,3 +1,6 @@
+@import "vscode-base.css";
+
+
 :root {
     --vscode-actionBar-toggledBackground: #383a49;
     --vscode-activityBar-background: #000000;
