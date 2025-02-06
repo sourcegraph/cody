@@ -13,5 +13,6 @@ export const SMART_APPLY_SYSTEM_PROMPT = ps`If your answer contains fenced code 
 The regex pattern must precisely match the modified code enclosed in each code block. The code block content will replace the matched code so ONLY includes regex pattern for replacable code in a code block:
 -Capture from the function declaration to end of file: regex:(functionName[\s\S]*$)
 -Capture the entire file: regex:.*
+-Literal match: regex:stringToMatch
 When showing code context, put code outside the replacement area in separate code blocks.
-For executable commands, enclose each command in individual "bash" language code block without comments and new lines inside.`
+For executable commands, enclose each command in individual "bash" language code block without comments and new lines inside. `
