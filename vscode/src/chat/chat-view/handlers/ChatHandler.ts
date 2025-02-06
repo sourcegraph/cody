@@ -408,9 +408,9 @@ function promptCachingProcessing(messages: Message[]): Message[] {
             // Each codebase context message is followed by an assistance message
             // Assistance message: speaker: Assistance, Text: Ok
             // Skip the next message every time we combine a new codebase context message
-            i += 1
+            i++
             combinedContext = true
-            count += 1
+            count++
         } else {
             if (combinedContext) {
                 combinedContext = false
