@@ -96,7 +96,6 @@ const getContextFromIntent = async ({
                     speaker: 'human',
                     text: populateCodeContextTemplate(truncatedPrecedingText, uri, undefined, 'edit'),
                     file: { type: 'file', uri, source: ContextItemSource.Editor, range: prefix.range },
-                    isContext: true,
                 })
             }
             if (truncatedFollowingText.trim().length > 0) {
@@ -104,7 +103,6 @@ const getContextFromIntent = async ({
                     speaker: 'human',
                     text: populateCodeContextTemplate(truncatedFollowingText, uri, undefined, 'edit'),
                     file: { type: 'file', uri, source: ContextItemSource.Editor, range: suffix.range },
-                    isContext: true,
                 })
             }
             return contextMessages
@@ -137,7 +135,6 @@ const getContextFromIntent = async ({
                                 speaker: 'human' as const,
                                 text: populateCodeContextTemplate(text, uri, undefined, 'edit'),
                                 file: { type: 'file', uri, source: ContextItemSource.Editor },
-                                isContext: true,
                             }) satisfies ContextMessage
                     ),
             ]

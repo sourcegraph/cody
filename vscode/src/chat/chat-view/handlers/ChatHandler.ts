@@ -378,7 +378,7 @@ function promptCachingProcessing(messages: Message[]): Message[] {
         const textString = msg.text?.toString() || ''
 
         // Combine codebase context
-        if (msg.isContext) {
+        if (textString.includes('Codebase context from')) {
             if (!roleFirstIndex[msg.speaker]) {
                 // Get the index of the codebase context message so that we can add it back later
                 roleFirstIndex[msg.speaker] = i - count

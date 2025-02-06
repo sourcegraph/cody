@@ -23,8 +23,7 @@ export interface Message {
     // stop using text and send content to instead to respect the official API contract and
     // mirrors what OpenAI and Anthropic expect
     text?: PromptString
-    cacheEnabled?: boolean | null
-    isContext?: boolean | null
+    cache_enabled?: boolean | null
 }
 
 export interface CompletionUsage {
