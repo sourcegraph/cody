@@ -3,9 +3,9 @@ import type { Meta, StoryObj } from '@storybook/react'
 import { VSCodeStandaloneComponent } from '../../storybook/VSCodeStoryDecorator'
 
 import { type Model, ModelTag, ModelUsage, getMockedDotComClientModels } from '@sourcegraph/cody-shared'
+import { DeepCodyAgentID } from '@sourcegraph/cody-shared/src/models/client'
 import { useArgs } from '@storybook/preview-api'
 import { ModelSelectField } from './ModelSelectField'
-import { DeepCodyAgent } from '../../../src/chat/agentic/DeepCody'
 
 const MODELS: Model[] = [
     ...getMockedDotComClientModels(),
@@ -20,7 +20,7 @@ const MODELS: Model[] = [
     {
         title: 'Deep Cody',
         provider: 'sourcegraph',
-        id: DeepCodyAgent.id,
+        id: DeepCodyAgentID,
         contextWindow: { input: 100, output: 100 },
         usage: [ModelUsage.Chat],
         tags: [ModelTag.Pro, ModelTag.Experimental],

@@ -11,6 +11,7 @@ import {
     startWith,
     userProductSubscription,
 } from '@sourcegraph/cody-shared'
+import { DeepCodyAgentID } from '@sourcegraph/cody-shared/src/models/client'
 import { type Observable, Subject, map } from 'observable-fns'
 import { env } from 'vscode'
 import { DeepCodyAgent } from './DeepCody'
@@ -51,7 +52,7 @@ class ToolboxManager {
         const shellError = this.getFeatureError('shell')
         // TODO: Remove hard-coded agent once we have a proper agentic chat selection UI
         return {
-            agent: { name: this.isRateLimited ? undefined : DeepCodyAgent.id },
+            agent: { name: this.isRateLimited ? undefined : DeepCodyAgentID },
             shell: {
                 enabled: shellError === undefined,
                 error: shellError,

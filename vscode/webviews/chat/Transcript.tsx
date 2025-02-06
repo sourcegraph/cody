@@ -50,6 +50,7 @@ import {
 import { HumanMessageCell } from './cells/messageCell/human/HumanMessageCell'
 
 import { type Context, type Span, context, trace } from '@opentelemetry/api'
+import { DeepCodyAgentID } from '@sourcegraph/cody-shared/src/models/client'
 import { isCodeSearchContextItem } from '../../src/context/openctx/codeSearch'
 import { TELEMETRY_INTENT } from '../../src/telemetry/onebox'
 import { useIntentDetectionConfig } from '../components/omnibox/intentDetection'
@@ -58,7 +59,6 @@ import ApprovalCell from './cells/agenticCell/ApprovalCell'
 import { DidYouMeanNotice } from './cells/messageCell/assistant/DidYouMean'
 import { SwitchIntent } from './cells/messageCell/assistant/SwitchIntent'
 import { LastEditorContext } from './context'
-import { DeepCodyAgent } from '../../src/chat/agentic/DeepCody'
 
 interface TranscriptProps {
     activeChatContext?: Context
@@ -327,9 +327,15 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
             const {
                 intent,
                 intentScores,
-            }: { intent: ChatMessage['intent']; intentScores: IntentResults['allScores'] } =
+            }: {
+                intent: ChatMessage['intent']
+                intentScores: IntentResults['allScores']
+            } =
                 query === intentResults?.query
-                    ? { intent: intentResults.intent, intentScores: intentResults.allScores }
+                    ? {
+                          intent: intentResults.intent,
+                          intentScores: intentResults.allScores,
+                      }
                     : { intent: undefined, intentScores: [] }
 
             const commonProps = {
@@ -760,7 +766,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                                 ? EditContextButtonSearch
                                 : EditContextButtonChat
                         }
-                        defaultOpen={isContextLoading && humanMessage.agent === DeepCodyAgent.id}
+                        defaultOpen={isContextLoading && humanMessage.agent === DeepCodyAgentID}
                         processes={humanMessage?.processes ?? undefined}
                         agent={humanMessage?.agent ?? undefined}
                     />

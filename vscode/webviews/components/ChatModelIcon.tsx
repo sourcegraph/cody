@@ -1,3 +1,4 @@
+import { DeepCodyAgentID } from '@sourcegraph/cody-shared/src/models/client'
 import type { FunctionComponent } from 'react'
 import { CodyLogoBW } from '../icons/CodyLogo'
 import {
@@ -7,7 +8,6 @@ import {
     OllamaLogo,
     OpenAILogo,
 } from '../icons/LLMProviderIcons'
-import { DeepCodyAgent } from '../../src/chat/agentic/DeepCody'
 
 export function chatModelIconComponent(
     model: string
@@ -16,7 +16,7 @@ export function chatModelIconComponent(
     if (model.startsWith('openai') || model.includes('gpt')) {
         return OpenAILogo
     }
-    if (model.includes('anthropic') || model.includes(DeepCodyAgent.id)) {
+    if (model.includes('anthropic') || model.includes(DeepCodyAgentID)) {
         return AnthropicLogo
     }
     if (model.startsWith('google') || model.includes('gemini')) {

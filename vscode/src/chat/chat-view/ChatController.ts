@@ -73,6 +73,7 @@ import { type Span, context } from '@opentelemetry/api'
 import { captureException } from '@sentry/core'
 import type { SubMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { resolveAuth } from '@sourcegraph/cody-shared/src/configuration/auth-resolver'
+import { DeepCodyAgentID } from '@sourcegraph/cody-shared/src/models/client'
 import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
 import { Subject, map } from 'observable-fns'
 import type { URI } from 'vscode-uri'
@@ -128,7 +129,6 @@ import { getChatPanelTitle } from './chat-helpers'
 import { OmniboxTelemetry } from './handlers/OmniboxTelemetry'
 import { getAgent } from './handlers/registry'
 import { getPromptsMigrationInfo, startPromptsMigration } from './prompts-migration'
-import { DeepCodyAgent } from '../agentic/DeepCody'
 
 export interface ChatControllerOptions {
     extensionUri: vscode.Uri
@@ -459,7 +459,10 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                         let auth: AuthCredentials | undefined = undefined
 
                         if (token) {
-                            auth = { credentials: { token, source: 'paste' }, serverEndpoint: endpoint }
+                            auth = {
+                                credentials: { token, source: 'paste' },
+                                serverEndpoint: endpoint,
+                            }
                         } else {
                             const { configuration } = await currentResolvedConfig()
                             auth = await resolveAuth(endpoint, configuration, secretStorage)
@@ -668,7 +671,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     firstResultFromOperation(ChatBuilder.resolvedModelForChat(this.chatBuilder))
                 )
                 this.chatBuilder.setSelectedModel(model)
-                const selectedAgent = model?.includes(DeepCodyAgent.id) ? DeepCodyAgent.id : undefined
+                const selectedAgent = model?.includes(DeepCodyAgentID) ? DeepCodyAgentID : undefined
 
                 this.chatBuilder.addHumanMessage({
                     text: inputText,
@@ -793,7 +796,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         }
 
         this.chatBuilder.setSelectedModel(model)
-        const chatAgent = model.includes(DeepCodyAgent.id) ? DeepCodyAgent.id : undefined
+        const chatAgent = model.includes(DeepCodyAgentID) ? DeepCodyAgentID : undefined
 
         const recorder = await OmniboxTelemetry.create({
             requestID,
@@ -897,7 +900,11 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
                         // Now that we have the confirmation, proceed based on the user's choice
 
-                        this.postViewTranscript({ speaker: 'assistant', processes: [step], model })
+                        this.postViewTranscript({
+                            speaker: 'assistant',
+                            processes: [step],
+                            model,
+                        })
                         return confirmation
                     },
                     postDone: (op?: { abort: boolean }): void => {
