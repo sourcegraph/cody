@@ -111,21 +111,33 @@ function computeDiffOperations(originalLines: string[], modifiedLines: string[])
 
         // Process remaining deletions (removed lines)
         for (let j = i; j < numDeletions; j++) {
+            const text = modifiedLines[originalStart + j]
             lineInfos.push({
                 id: uuid.v4(),
                 type: 'removed',
                 originalLineNumber: originalStart + j,
-                text: originalLines[originalStart + j],
+                text,
+                highlight: {
+                    range: new vscode.Range(originalStart + j, 0, originalStart + j, text.length),
+                    backgroundColor: '#ff0000',
+                    type: 'diff-removed',
+                },
             })
         }
 
         // Process remaining insertions (added lines)
         for (let j = i; j < numInsertions; j++) {
+            const text = modifiedLines[modifiedStart + j]
             lineInfos.push({
                 id: uuid.v4(),
                 type: 'added',
                 modifiedLineNumber: modifiedStart + j,
-                text: modifiedLines[modifiedStart + j],
+                text,
+                highlight: {
+                    range: new vscode.Range(modifiedStart + j, 0, modifiedStart + j, text.length),
+                    backgroundColor: '#00ff00',
+                    type: 'diff-added',
+                },
             })
         }
 

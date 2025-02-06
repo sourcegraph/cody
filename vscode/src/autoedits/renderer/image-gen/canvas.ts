@@ -1,11 +1,8 @@
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import CanvasKitInit, { type EmulatedCanvas2D } from 'canvaskit-wasm'
-import type {
-    AddedLinesDecorationInfo,
-    DiffedTextDecorationRange,
-    SyntaxHighlightedTextDecorationRange,
-} from '../decorators/default-decorator'
+import * as vscode from 'vscode'
+import { DecoratedDiff, SyntaxHighlightedArea } from '.'
 import type { SYNTAX_HIGHLIGHT_MODE } from './highlight'
 
 type CanvasKitType = Awaited<ReturnType<typeof CanvasKitInit>>
@@ -88,25 +85,21 @@ function createCanvas(
 
 function drawText(
     ctx: CanvasRenderingContext2D,
-    line: AddedLinesDecorationInfo,
+    line: SyntaxHighlightedArea,
     position: { x: number; y: number },
     mode: SYNTAX_HIGHLIGHT_MODE,
     config: RenderConfig
 ): number {
-    const syntaxRanges = line.highlightedRanges.filter(
-        (range): range is SyntaxHighlightedTextDecorationRange => range.type === 'syntax-highlighted'
-    )
-
-    if (syntaxRanges.length === 0) {
-        // No syntax highlighting, we probably don't support this language via Shiki
-        // Default to white or black depending on the theme
-        ctx.fillStyle = mode === 'dark' ? '#ffffff' : '#000000'
-        ctx.fillText(line.lineText, position.x, position.y + config.fontSize)
-        return ctx.measureText(line.lineText).width
-    }
+    // if (syntaxRanges.length === 0) {
+    //     // No syntax highlighting, we probably don't support this language via Shiki
+    //     // Default to white or black depending on the theme
+    //     ctx.fillStyle = mode === 'dark' ? '#ffffff' : '#000000'
+    //     ctx.fillText(line.lineText, position.x, position.y + config.fontSize)
+    //     return ctx.measureText(line.lineText).width
+    // }
 
     let xPos = position.x
-    for (const token of syntaxRanges) {
+    for (const token of line) {
         const content = line.lineText.substring(token.range[0], token.range[1])
         ctx.fillStyle = token.color
         ctx.fillText(content, xPos, position.y + config.fontSize)
@@ -118,25 +111,38 @@ function drawText(
 
 function drawDiffColors(
     ctx: CanvasRenderingContext2D,
-    line: AddedLinesDecorationInfo,
+    line: DecoratedDiff['diff'][0],
     position: { x: number; y: number },
     config: RenderConfig
 ): void {
-    const addedRanges = line.highlightedRanges.filter(
-        (range): range is DiffedTextDecorationRange => range.type === 'diff-added'
-    )
+    const lineText = line.type === 'modified' ? line.newText : line.text
+    const additions: vscode.Range[] = []
+    if (line.type === 'added') {
+        additions.push(
+            new vscode.Range(line.modifiedLineNumber, 0, line.modifiedLineNumber, line.text.length)
+        )
+    }
+    if (line.type === 'modified') {
+        additions.push(
+            ...line.changes.map(
+                change => new vscode.Range(change.modifiedRange.start, change.modifiedRange.end)
+            )
+        )
+    }
 
-    if (addedRanges.length === 0) {
+    if (additions.length === 0) {
         return
     }
 
     ctx.fillStyle = config.diffHighlightColor
 
-    for (const range of addedRanges) {
+    for (const range of additions) {
         // Calculate width of text before the highlight
-        const preHighlightWidth = ctx.measureText(line.lineText.slice(0, range.range[0])).width
+        const preHighlightWidth = ctx.measureText(lineText.slice(0, range.start.character)).width
         // Calculate width of the highlighted section
-        const highlightWidth = ctx.measureText(line.lineText.slice(range.range[0], range.range[1])).width
+        const highlightWidth = ctx.measureText(
+            lineText.slice(range.start.character, range.end.character)
+        ).width
 
         // Draw highlight at correct position
         ctx.fillRect(position.x + preHighlightWidth, position.y, highlightWidth, config.lineHeight)
@@ -144,7 +150,7 @@ function drawDiffColors(
 }
 
 export function drawDecorationsToCanvas(
-    decorations: AddedLinesDecorationInfo[],
+    decoratedDiff: DecoratedDiff,
     mode: SYNTAX_HIGHLIGHT_MODE,
     /**
      * Specific configuration to determine how we render the canvas.
@@ -178,7 +184,9 @@ export function drawDecorationsToCanvas(
     // and the required height of the canvas (number of lines determined by their line height)
     let tempYPos = renderConfig.padding.y
     let requiredWidth = 0
-    for (const { lineText } of decorations) {
+    for (const line of decoratedDiff.diff) {
+        // We're using nextText for modified lines here, we may want to change this to support the unified diff
+        const lineText = line.type === 'modified' ? line.newText : line.text
         const measure = tempCtx.measureText(lineText)
         requiredWidth = Math.max(requiredWidth, renderConfig.padding.x + measure.width)
         tempYPos += renderConfig.lineHeight
@@ -206,11 +214,17 @@ export function drawDecorationsToCanvas(
 
     // Paint text and colors onto the canvas
     let yPos = renderConfig.padding.y
-    for (const line of decorations) {
+    for (const line of decoratedDiff.diff) {
         const position = { x: renderConfig.padding.x, y: yPos }
 
         // Paint any background diff colors first, we will render the text over the top
         drawDiffColors(ctx, line, position, renderConfig)
+
+        yPos += renderConfig.lineHeight
+    }
+
+    for (const line of decoratedDiff.syntaxHighlighting[mode]) {
+        const position = { x: renderConfig.padding.x, y: yPos }
 
         // Draw the text, this may or may not be syntax highlighted depending on language support
         drawText(ctx, line, position, mode, renderConfig)

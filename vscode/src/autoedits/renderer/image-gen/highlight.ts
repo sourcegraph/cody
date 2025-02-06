@@ -1,7 +1,8 @@
 import type { BundledLanguage, HighlighterGeneric } from 'shiki/types.mjs'
+import * as vscode from 'vscode'
 
 import type { MultiLineSupportedLanguage } from '../../../completions/detect-multiline'
-import type { AddedLinesDecorationInfo } from '../decorators/default-decorator'
+import { AddedLineInfo, ModifiedLineInfo, UnchangedLineInfo } from '../decorators/base'
 import { SYNTAX_HIGHLIGHTING_LANGUAGES, SYNTAX_HIGHLIGHTING_THEMES, getShiki } from './shiki'
 
 let syntaxHighlighter: HighlighterGeneric<BundledLanguage, string> | null = null
@@ -21,60 +22,56 @@ export async function initSyntaxHighlighter(): Promise<void> {
  * See: https://github.com/microsoft/vscode/issues/32813
  */
 export function syntaxHighlightDecorations(
-    decorations: AddedLinesDecorationInfo[],
+    sortedDiff: (AddedLineInfo | ModifiedLineInfo | UnchangedLineInfo)[],
     lang: string,
     mode: SYNTAX_HIGHLIGHT_MODE
-): AddedLinesDecorationInfo[] {
+): { range: vscode.Range; color: string; text: string }[] {
     if (!syntaxHighlighter) {
         throw new Error('Syntax highlighter not initialized')
     }
 
     const highlightLang = SYNTAX_HIGHLIGHTING_LANGUAGES[lang as MultiLineSupportedLanguage]?.name
     if (!highlightLang) {
-        // We have tried to highlight this language, but it is not supported.
-        // Return unhighlighted decorations, we can still render the diff decorations.
-        return decorations
+        return []
     }
 
-    // Rebuild the codeblock ready for it to be highlighted
-    const code = decorations.map(({ lineText }) => lineText).join('\n')
+    // Rebuild the codeblock from the diff
+    const code = sortedDiff
+        .map(line => {
+            if ('modifiedText' in line) return line.modifiedText
+            if ('text' in line) return line.text
+            return ''
+        })
+        .join('\n')
 
     const { tokens } = syntaxHighlighter.codeToTokens(code, {
         theme: SYNTAX_HIGHLIGHTING_THEMES[mode].name,
         lang: highlightLang,
     })
 
-    // It is not guaranteed we will have a color to paint the text, so we differentiate between
-    // white or black text depending on the theme
     const defaultColour = mode === 'dark' ? '#ffffff' : '#000000'
+    const syntaxHighlighting: { range: vscode.Range; color: string; text: string }[] = []
 
-    // Process each line's tokens and merge them into highlightedRanges
-    return decorations.map((decoration, lineIndex) => {
-        const lineTokens = tokens[lineIndex] || []
-        const newHighlightedRanges: AddedLinesDecorationInfo['highlightedRanges'] = [
-            ...decoration.highlightedRanges,
-        ]
-
+    // Process each line's tokens
+    tokens.forEach((lineTokens, lineIndex) => {
         let currentPosition = 0
         for (const token of lineTokens) {
             const tokenLength = token.content.length
-            const startPos = currentPosition
-            const endPos = currentPosition + tokenLength
 
-            newHighlightedRanges.push({
-                type: 'syntax-highlighted',
-                range: [startPos, endPos],
+            syntaxHighlighting.push({
+                range: new vscode.Range(
+                    lineIndex,
+                    currentPosition,
+                    lineIndex,
+                    currentPosition + tokenLength
+                ),
                 color: token.color || defaultColour,
+                text: token.content,
             })
+
             currentPosition += tokenLength
         }
-
-        // Sort merged ranges by start position
-        newHighlightedRanges.sort((a, b) => a.range[0] - b.range[0])
-
-        return {
-            ...decoration,
-            highlightedRanges: newHighlightedRanges,
-        }
     })
+
+    return syntaxHighlighting
 }
