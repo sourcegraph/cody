@@ -129,7 +129,6 @@ To fix this problem, update the HTTP recordings with the following command:
 ```sh
 # tokens are redacted in the recordings
 source agent/scripts/export-cody-http-recording-tokens.sh
-src login                                     # confirm you are authenticated to sourcegraph.com
 pnpm update-agent-recordings                  # run tests to update recordings
 # If test fails, press `u` to update the vitest snapshot assertion.
 pnpm run test agent/src/index.test.ts         # validate that tests are passing successfully in replay mode
