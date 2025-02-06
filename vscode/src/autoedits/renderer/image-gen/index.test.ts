@@ -50,6 +50,7 @@ async function generateImageForTest(
     const { light, dark } = generateSuggestionAsImage({
         decorations,
         lang,
+        newDecorationInfo: {} as any,
     })
 
     return {
