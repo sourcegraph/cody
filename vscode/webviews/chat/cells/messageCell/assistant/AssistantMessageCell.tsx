@@ -26,10 +26,8 @@ import {
 } from '../../../ChatMessageContent/ChatMessageContent'
 import { ErrorItem, RequestErrorItem } from '../../../ErrorItem'
 import { type Interaction, editHumanMessage } from '../../../Transcript'
-import { FeedbackButtons } from '../../../components/FeedbackButtons'
 import { LoadingDots } from '../../../components/LoadingDots'
 import { BaseMessageCell, MESSAGE_CELL_AVATAR_SIZE } from '../BaseMessageCell'
-import { ContextFocusActions } from './ContextFocusActions'
 import { SearchResults } from './SearchResults'
 import { SubMessageCell } from './SubMessageCell'
 
@@ -45,9 +43,6 @@ export const AssistantMessageCell: FunctionComponent<{
     userInfo: UserAccountInfo
     chatEnabled: boolean
     isLoading: boolean
-
-    showFeedbackButtons: boolean
-    feedbackButtonsOnSubmit?: (text: string) => void
 
     copyButtonOnSubmit?: CodeBlockActionsProps['copyButtonOnSubmit']
     insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit']
@@ -67,8 +62,6 @@ export const AssistantMessageCell: FunctionComponent<{
         userInfo,
         chatEnabled,
         isLoading,
-        showFeedbackButtons,
-        feedbackButtonsOnSubmit,
         copyButtonOnSubmit,
         insertButtonOnSubmit,
         postMessage,
@@ -129,8 +122,6 @@ export const AssistantMessageCell: FunctionComponent<{
                             <SearchResults
                                 message={message as ChatMessageWithSearch}
                                 onSelectedFiltersUpdate={onSelectedFiltersUpdate}
-                                showFeedbackButtons={showFeedbackButtons}
-                                feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
                                 enableContextSelection={isLastInteraction}
                             />
                         )}
@@ -176,27 +167,6 @@ export const AssistantMessageCell: FunctionComponent<{
                                     Output stream stopped
                                 </div>
                             )}
-                            <div className="tw-flex tw-items-center tw-divide-x tw-transition tw-divide-muted tw-opacity-65 hover:tw-opacity-100">
-                                {showFeedbackButtons &&
-                                    feedbackButtonsOnSubmit &&
-                                    !(experimentalOneBoxEnabled && isSearchIntent) && (
-                                        <FeedbackButtons
-                                            feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
-                                            className="tw-pr-4"
-                                        />
-                                    )}
-                                {!isLoading && (!message.error || isAborted) && !isSearchIntent && (
-                                    <ContextFocusActions
-                                        humanMessage={humanMessage}
-                                        longResponseTime={hasLongerResponseTime}
-                                        className={
-                                            showFeedbackButtons && feedbackButtonsOnSubmit
-                                                ? 'tw-pl-5'
-                                                : undefined
-                                        }
-                                    />
-                                )}
-                            </div>
                         </div>
                     )
                 }
