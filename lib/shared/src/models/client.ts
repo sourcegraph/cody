@@ -35,10 +35,13 @@ function getDeepCodyServerModel(): ServerModel {
     }
 }
 
+export const ToolCodyModelRef = 'sourcegraph::2024-12-31::tool-cody'
+export const ToolCodyModelName = 'tool-cody'
+
 export const TOOL_CODY_MODEL: ServerModel = {
-    modelRef: 'sourcegraph::2024-12-31::tool-cody',
+    modelRef: ToolCodyModelRef,
     displayName: 'Tool Cody',
-    modelName: 'tool-cody',
+    modelName: ToolCodyModelName,
     capabilities: ['chat'],
     category: 'accuracy',
     status: 'internal' as ModelTag.Internal,

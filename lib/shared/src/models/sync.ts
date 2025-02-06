@@ -26,7 +26,7 @@ import { RestClient } from '../sourcegraph-api/rest/client'
 import type { UserProductSubscription } from '../sourcegraph-api/userProductSubscription'
 import { CHAT_INPUT_TOKEN_BUDGET } from '../token/constants'
 import { isError } from '../utils'
-import { TOOL_CODY_MODEL, getExperimentalClientModelByFeatureFlag } from './client'
+import { TOOL_CODY_MODEL, ToolCodyModelName, getExperimentalClientModelByFeatureFlag } from './client'
 import { type Model, type ServerModel, createModel, createModelFromServerModel } from './model'
 import type {
     DefaultsAndUserPreferencesForEndpoint,
@@ -265,7 +265,7 @@ export function syncModels({
                                                 }
 
                                                 const hasToolCody = data.primaryModels.some(m =>
-                                                    m.id.includes('tool-cody')
+                                                    m.id.includes(ToolCodyModelName)
                                                 )
                                                 if (!hasToolCody && isToolCodyEnabled) {
                                                     clientModels.push(TOOL_CODY_MODEL)

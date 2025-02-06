@@ -50,7 +50,7 @@ import {
 import { HumanMessageCell } from './cells/messageCell/human/HumanMessageCell'
 
 import { type Context, type Span, context, trace } from '@opentelemetry/api'
-import { DeepCodyAgentID } from '@sourcegraph/cody-shared/src/models/client'
+import { DeepCodyAgentID, ToolCodyModelName } from '@sourcegraph/cody-shared/src/models/client'
 import { isCodeSearchContextItem } from '../../src/context/openctx/codeSearch'
 import { TELEMETRY_INTENT } from '../../src/telemetry/onebox'
 import { useIntentDetectionConfig } from '../components/omnibox/intentDetection'
@@ -291,7 +291,9 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
     const lastEditorRef = useContext(LastEditorContext)
     useImperativeHandle(parentEditorRef, () => humanEditorRef.current)
 
-    const { doIntentDetection } = useIntentDetectionConfig()
+    const usingToolCody = assistantMessage?.model?.includes(ToolCodyModelName)
+    const doIntentDetection = useIntentDetectionConfig().doIntentDetection && !usingToolCody
+
     const onUserAction = useCallback(
         (action: 'edit' | 'submit', intentFromSubmit?: ChatMessage['intent']) => {
             // Start the span as soon as the user initiates the action
@@ -396,7 +398,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
     )
 
     const extensionAPI = useExtensionAPI()
-    const experimentalOneBoxEnabled = useOmniBox()
+    const experimentalOneBoxEnabled = useOmniBox() && !usingToolCody
 
     const prefetchIntent = useMemo(() => {
         const handler = async (editorValue: SerializedPromptEditorValue) => {
@@ -689,6 +691,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
             }),
         [humanMessage]
     )
+
     return (
         <>
             <HumanMessageCell
@@ -729,7 +732,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                     switchToSearch={() => editAndSubmitSearch(assistantMessage?.didYouMeanQuery ?? '')}
                 />
             )}
-            {!isSearchIntent && humanMessage.agent && (
+            {!usingToolCody && !isSearchIntent && humanMessage.agent && (
                 <AgenticContextCell
                     key={`${humanMessage.index}-${humanMessage.intent}-process`}
                     isContextLoading={isContextLoading}
@@ -741,7 +744,8 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                 isContextLoading &&
                 assistantMessage?.isLoading && <ApprovalCell vscodeAPI={vscodeAPI} />}
 
-            {!(humanMessage.agent && isContextLoading) &&
+            {!usingToolCody &&
+                !(humanMessage.agent && isContextLoading) &&
                 (humanMessage.contextFiles || assistantMessage || isContextLoading) &&
                 !isSearchIntent && (
                     <ContextCell

@@ -1,5 +1,5 @@
 import { type Model, ModelTag, isCodyProModel, isWaitlistModel } from '@sourcegraph/cody-shared'
-import { DeepCodyAgentID } from '@sourcegraph/cody-shared/src/models/client'
+import { DeepCodyAgentID, ToolCodyModelName } from '@sourcegraph/cody-shared/src/models/client'
 import { clsx } from 'clsx'
 import { BookOpenIcon, BrainIcon, BuildingIcon, ExternalLinkIcon } from 'lucide-react'
 import { type FunctionComponent, type ReactNode, useCallback, useMemo } from 'react'
@@ -403,7 +403,8 @@ const ModelUIGroup: Record<string, string> = {
 }
 
 const getModelDropDownUIGroup = (model: Model): string => {
-    if ([DeepCodyAgentID, 'tool-cody'].some(id => model.id.includes(id))) return ModelUIGroup.Agents
+    if ([DeepCodyAgentID, ToolCodyModelName].some(id => model.id.includes(id)))
+        return ModelUIGroup.Agents
     if (model.tags.includes(ModelTag.Power)) return ModelUIGroup.Power
     if (model.tags.includes(ModelTag.Balanced)) return ModelUIGroup.Balanced
     if (model.tags.includes(ModelTag.Speed)) return ModelUIGroup.Speed

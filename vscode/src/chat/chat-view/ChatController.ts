@@ -73,7 +73,11 @@ import { type Span, context } from '@opentelemetry/api'
 import { captureException } from '@sentry/core'
 import type { SubMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { resolveAuth } from '@sourcegraph/cody-shared/src/configuration/auth-resolver'
-import { DeepCodyAgentID } from '@sourcegraph/cody-shared/src/models/client'
+import {
+    DeepCodyAgentID,
+    ToolCodyModelName,
+    ToolCodyModelRef,
+} from '@sourcegraph/cody-shared/src/models/client'
 import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
 import { Subject, map } from 'observable-fns'
 import type { URI } from 'vscode-uri'
@@ -671,7 +675,10 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     firstResultFromOperation(ChatBuilder.resolvedModelForChat(this.chatBuilder))
                 )
                 this.chatBuilder.setSelectedModel(model)
-                const selectedAgent = model?.includes(DeepCodyAgentID) ? DeepCodyAgentID : undefined
+                let selectedAgent = model?.includes(DeepCodyAgentID) ? DeepCodyAgentID : undefined
+                if (model?.includes(ToolCodyModelName)) {
+                    selectedAgent = ToolCodyModelRef
+                }
 
                 this.chatBuilder.addHumanMessage({
                     text: inputText,
@@ -796,7 +803,10 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         }
 
         this.chatBuilder.setSelectedModel(model)
-        const chatAgent = model.includes(DeepCodyAgentID) ? DeepCodyAgentID : undefined
+        let chatAgent = model.includes(DeepCodyAgentID) ? DeepCodyAgentID : undefined
+        if (model.includes(ToolCodyModelName)) {
+            chatAgent = ToolCodyModelRef
+        }
 
         const recorder = await OmniboxTelemetry.create({
             requestID,
