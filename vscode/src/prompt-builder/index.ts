@@ -3,6 +3,7 @@ import {
     type ContextItem,
     type Message,
     type ModelContextWindow,
+    PromptString,
     TokenCounter,
     contextFiltersProvider,
     ps,
@@ -51,14 +52,30 @@ export class PromptBuilder {
         return this.prefixMessages.concat([...this.reverseMessages].reverse())
     }
 
+    /**
+     * Create context messages for each context item, where
+     * assistant messages come first because the transcript is in reversed order.
+     */
     private buildContextMessages(): void {
+        const messages = []
         for (const item of this.contextItems) {
-            // Create context messages for each context item, where
-            // assistant messages come first because the transcript is in reversed order.
             const contextMessage = renderContextItem(item)
-            const messagePair = contextMessage && [ASSISTANT_MESSAGE, contextMessage]
-            messagePair && this.reverseMessages.push(...messagePair)
+            if (contextMessage) {
+                messages.push(contextMessage)
+            }
         }
+        // Group all context messages
+        const groupedText = PromptString.join(
+            messages.map(m => m.text),
+            ps`\n`
+        )
+        const groupedContextMessage = {
+            speaker: 'human',
+            text: groupedText,
+            cacheEnabled: true,
+        } as Message
+        const messagePair = [ASSISTANT_MESSAGE, groupedContextMessage]
+        messagePair && this.reverseMessages.push(...messagePair)
     }
 
     public tryAddToPrefix(messages: Message[]): boolean {

@@ -6,14 +6,12 @@ import {
     type ContextItem,
     type ContextItemOpenCtx,
     ContextItemSource,
-    FeatureFlag,
     type Message,
     PromptString,
     type RankedContext,
     type SerializedPromptEditorState,
     Typewriter,
     currentSiteVersion,
-    featureFlagProvider,
     firstResultFromOperation,
     getContextForChatMessage,
     inputTextWithoutContextChipsFromPromptEditorState,
@@ -23,7 +21,6 @@ import {
 } from '@sourcegraph/cody-shared'
 import { resolveContextItems } from '../../../editor/utils/editor-context'
 import { getCategorizedMentions } from '../../../prompt-builder/utils'
-import { logFirstEnrollmentEvent } from '../../../services/utils/enrollment-event'
 import { ChatBuilder } from '../ChatBuilder'
 import type { ChatControllerOptions } from '../ChatController'
 import { type ContextRetriever, toStructuredMentions } from '../ContextRetriever'
@@ -84,15 +81,15 @@ export class ChatHandler implements AgentHandler {
         if (versions instanceof Error) {
             throw new Error('unable to determine site version')
         }
-        let { prompt } = await this.buildPrompt(prompter, chatBuilder, signal, versions.codyAPIVersion)
+        const { prompt } = await this.buildPrompt(prompter, chatBuilder, signal, versions.codyAPIVersion)
 
-        const promptCachingIsEnabled = await featureFlagProvider.evaluateFeatureFlagEphemerally(
-            FeatureFlag.CodyPromptCachingOnMessages
-        )
-        logFirstEnrollmentEvent(FeatureFlag.CodyPromptCachingOnMessages, promptCachingIsEnabled)
-        if (promptCachingIsEnabled) {
-            prompt = promptCachingProcessing(prompt)
-        }
+        // const promptCachingIsEnabled = await featureFlagProvider.evaluateFeatureFlagEphemerally(
+        //     FeatureFlag.CodyPromptCachingOnMessages
+        // )
+        // logFirstEnrollmentEvent(FeatureFlag.CodyPromptCachingOnMessages, promptCachingIsEnabled)
+        // if (promptCachingIsEnabled) {
+        //     prompt = promptCachingProcessing(prompt)
+        // }
 
         recorder.recordChatQuestionExecuted(corpusContext, { addMetadata: true, current: span })
 
@@ -360,71 +357,71 @@ function combineContext(
     return [explicitMentions, openCtxContext, priorityContext, retrievedContext].flat()
 }
 
-/**
- * promptCachingProcessing combines codebase context messages and add prompt caching to the codebase context.
- * We combine the codebase context to only use 1 cache breakpoint in total (limit is 4 cache breakpoints).
- * Docs: https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching
- */
-function promptCachingProcessing(messages: Message[]): Message[] {
-    const messageMap: Record<string, Message> = {}
-    const roleFirstIndex: Record<string, number> = {}
-    const finalMessages: Message[] = []
+// /**
+//  * promptCachingProcessing combines codebase context messages and add prompt caching to the codebase context.
+//  * We combine the codebase context to only use 1 cache breakpoint in total (limit is 4 cache breakpoints).
+//  * Docs: https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching
+//  */
+// function promptCachingProcessing(messages: Message[]): Message[] {
+//     const messageMap: Record<string, Message> = {}
+//     const roleFirstIndex: Record<string, number> = {}
+//     const finalMessages: Message[] = []
 
-    let count = 0
-    let combinedContext = false
+//     let count = 0
+//     let combinedContext = false
 
-    for (let i = 0; i < messages.length; i++) {
-        const msg = messages[i]
-        const textString = msg.text?.toString() || ''
+//     for (let i = 0; i < messages.length; i++) {
+//         const msg = messages[i]
+//         const textString = msg.text?.toString() || ''
 
-        // Combine codebase context
-        if (textString.includes('Codebase context from')) {
-            if (!roleFirstIndex[msg.speaker]) {
-                // Get the index of the codebase context message so that we can add it back later
-                roleFirstIndex[msg.speaker] = i - count
-            }
+//         // Combine codebase context
+//         if (textString.includes('Codebase context from')) {
+//             if (!roleFirstIndex[msg.speaker]) {
+//                 // Get the index of the codebase context message so that we can add it back later
+//                 roleFirstIndex[msg.speaker] = i - count
+//             }
 
-            // Update messageMap[msg.speaker] with combined code context message
-            if (messageMap[msg.speaker]) {
-                const existingText = messageMap[msg.speaker].text
-                if (existingText) {
-                    messageMap[msg.speaker].text = existingText.concat(
-                        PromptString.unsafe_fromUserQuery(textString)
-                    )
-                    const textMessage: Message = {
-                        speaker: msg.speaker,
-                        text: messageMap[msg.speaker].text,
-                        cacheEnabled: true,
-                    }
-                    messageMap[msg.speaker] = textMessage
-                }
-            } else {
-                messageMap[msg.speaker] = {
-                    speaker: msg.speaker,
-                    text: PromptString.unsafe_fromUserQuery(textString),
-                    cacheEnabled: true,
-                }
-            }
-            // Each codebase context message is followed by an assistance message
-            // Assistance message: speaker: Assistance, Text: Ok
-            // Skip the next message every time we combine a new codebase context message
-            i++
-            combinedContext = true
-            count++
-        } else {
-            if (combinedContext) {
-                combinedContext = false
-                // Add the skipped message once (speaker: Assistance, Text: Ok)
-                finalMessages.push(messages[i - 1])
-            }
-            // Add messages that are not part of the combined code context
-            finalMessages.push(msg)
-        }
-    }
+//             // Update messageMap[msg.speaker] with combined code context message
+//             if (messageMap[msg.speaker]) {
+//                 const existingText = messageMap[msg.speaker].text
+//                 if (existingText) {
+//                     messageMap[msg.speaker].text = existingText.concat(
+//                         PromptString.unsafe_fromUserQuery(textString)
+//                     )
+//                     const textMessage: Message = {
+//                         speaker: msg.speaker,
+//                         text: messageMap[msg.speaker].text,
+//                         cacheEnabled: true,
+//                     }
+//                     messageMap[msg.speaker] = textMessage
+//                 }
+//             } else {
+//                 messageMap[msg.speaker] = {
+//                     speaker: msg.speaker,
+//                     text: PromptString.unsafe_fromUserQuery(textString),
+//                     cacheEnabled: true,
+//                 }
+//             }
+//             // Each codebase context message is followed by an assistance message
+//             // Assistance message: speaker: Assistance, Text: Ok
+//             // Skip the next message every time we combine a new codebase context message
+//             i++
+//             combinedContext = true
+//             count++
+//         } else {
+//             if (combinedContext) {
+//                 combinedContext = false
+//                 // Add the skipped message once (speaker: Assistance, Text: Ok)
+//                 finalMessages.push(messages[i - 1])
+//             }
+//             // Add messages that are not part of the combined code context
+//             finalMessages.push(msg)
+//         }
+//     }
 
-    // Insert combined context message at the original position
-    for (const [speaker, position] of Object.entries(roleFirstIndex).sort(([, a], [, b]) => a - b)) {
-        finalMessages.splice(position, 0, messageMap[speaker])
-    }
-    return finalMessages
-}
+//     // Insert combined context message at the original position
+//     for (const [speaker, position] of Object.entries(roleFirstIndex).sort(([, a], [, b]) => a - b)) {
+//         finalMessages.splice(position, 0, messageMap[speaker])
+//     }
+//     return finalMessages
+// }
