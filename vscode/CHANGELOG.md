@@ -4,6 +4,79 @@ This is a log of all notable changes to Cody for VS Code.
 
 <!--- {/_ CHANGELOG_START _/} -->
 
+## 1.66.0
+
+### Fix
+
+#### Auto-Edit
+
+- fix the cody status bar with new suggestion mode [#6691](https://github.com/sourcegraph/cody/pull/6691)
+
+#### Ci
+
+- add cross-env dep and use with LOG_BUNDLE_SIZE [#6819](https://github.com/sourcegraph/cody/pull/6819)
+
+#### Web
+
+- Don't show CTA on Cody Web for PLG [#6957](https://github.com/sourcegraph/cody/pull/6957)
+
+#### Others
+
+- remove code search button [#6855](https://github.com/sourcegraph/cody/pull/6855)
+
+### Chore
+
+#### Build
+
+- Teach JetBrains push-git-tag-for-next-release.sh about release branches [#6884](https://github.com/sourcegraph/cody/pull/6884)
+
+#### Ci
+
+- handle concurrency with github actions [#6798](https://github.com/sourcegraph/cody/pull/6798)
+
+#### Marketing
+
+- Update marketplace and in product logos [#6970](https://github.com/sourcegraph/cody/pull/6970)
+- update JetBrains plugin logo and description #jb [#6933](https://github.com/sourcegraph/cody/pull/6933)
+
+#### Release
+
+- Give release scripts consistent names & some clean up [#6883](https://github.com/sourcegraph/cody/pull/6883)
+
+#### Others
+
+- disable flaky test [#6783](https://github.com/sourcegraph/cody/pull/6783)
+
+### Reverts
+
+  There were no reverts for this release
+
+### Uncategorized
+
+#### Others
+
+- [Backport M66] Use IntelliJ API which is present in all IntelliJ versions [#6946](https://github.com/sourcegraph/cody/pull/6946)
+- Fix jetbrains recordings [#6821](https://github.com/sourcegraph/cody/pull/6821)
+- Fix OpenTelemetryService initialization+observables code and  fix the span closure of Chat Spans [#6807](https://github.com/sourcegraph/cody/pull/6807)
+- Fix typo in protocol.md [#6787](https://github.com/sourcegraph/cody/pull/6787)
+- mention menu: migrate from codicon to lucide [#6780](https://github.com/sourcegraph/cody/pull/6780)
+- Fix intent telemetry [#6779](https://github.com/sourcegraph/cody/pull/6779)
+- Update Cody Web 0.27.0 [#6760](https://github.com/sourcegraph/cody/pull/6760)
+- disable omnibox on dotcom [#6755](https://github.com/sourcegraph/cody/pull/6755)
+- Update Cody Web 0.26.0 [#6752](https://github.com/sourcegraph/cody/pull/6752)
+- Disable Intent Detection if Code Search Disabled [#6750](https://github.com/sourcegraph/cody/pull/6750)
+- Update Cody Web 0.25.0 [#6746](https://github.com/sourcegraph/cody/pull/6746)
+
+### Untracked
+
+The following PRs were merged onto the previous release branch but could not be automatically mapped to a corresponding commit in this release:
+
+- [VS Code] Release Omnibox: remove feature flag [#6849](https://github.com/sourcegraph/cody/pull/6849)
+- [VS Code] Temp add Omnibox FF [#6846](https://github.com/sourcegraph/cody/pull/6846)
+- Fix intent telemetry (#6779) [#6795](https://github.com/sourcegraph/cody/pull/6795)
+- [Backport vscode-v1.64.x] Disable Intent Detection if Code Search Disabled [#6754](https://github.com/sourcegraph/cody/pull/6754)
+
+
 ## Unreleased
 
 ### Added
