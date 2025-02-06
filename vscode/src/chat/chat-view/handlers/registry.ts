@@ -1,6 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk'
+import { DeepCodyAgentID } from '@sourcegraph/cody-shared/src/models/client'
 import { getConfiguration } from '../../../configuration'
-import { DeepCodyAgent } from '../../agentic/DeepCody'
 import { ChatHandler } from './ChatHandler'
 import { DeepCodyHandler } from './DeepCodyHandler'
 import { EditHandler } from './EditHandler'
@@ -20,7 +20,7 @@ function registerAgent(id: string, ctr: (id: string, tools: AgentTools) => Agent
 
 export function getAgent(id: string, modelId: string, tools: AgentTools): AgentHandler {
     const { contextRetriever, editor, chatClient } = tools
-    if (id === DeepCodyAgent.id) {
+    if (id === DeepCodyAgentID) {
         return new DeepCodyHandler(modelId, contextRetriever, editor, chatClient)
     }
     if (agentRegistry.has(id)) {
