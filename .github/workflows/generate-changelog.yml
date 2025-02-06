@@ -90,7 +90,7 @@ jobs:
           ./changelog update-as-pr \
             --github.repo=$GH_REPO \
             --github.branch="kalan/update-changelog-gen-M66" \
-            --github.fetch-strategy="since-commit" \
+            --github.fetch-strategy="merge-base" \
             --output.repo.base="main" \
             --output.repo=$GH_REPO \
             --output.pr.branch="$PR_BRANCH" \
