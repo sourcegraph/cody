@@ -343,7 +343,9 @@ tasks {
       return destinationDir
     }
 
-    val sourcegraphDir = unzipCodeSearch()
+    val codeSearchDirOverride = System.getenv("CODE_SEARCH_DIR_OVERRIDE")
+    val sourcegraphDir: File =
+        if (codeSearchDirOverride != null) file(codeSearchDirOverride) else unzipCodeSearch()
     exec {
       workingDir(sourcegraphDir.toString())
       commandLine(*pnpmPath, "install", "--frozen-lockfile", "--fix-lockfile")

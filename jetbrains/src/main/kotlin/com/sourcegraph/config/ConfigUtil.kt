@@ -111,21 +111,25 @@ object ConfigUtil {
   }
 
   @JvmStatic
-  fun getConfigAsJson(project: Project): JsonObject {
+  fun getAuthorizationHeadersAsJson(project: Project): JsonObject {
     val endpoint = CodyAuthService.getInstance(project).getEndpoint()
-    val authHeadersString = CompletableFuture<String>()
-
+    val authHeaders = CompletableFuture<Map<String, String>>()
     CodyAgentService.withAgent(project) { agent ->
       agent.server.internal_getAuthHeaders(endpoint.url).thenAccept { headers ->
-        val x = headers.map { (key, value) -> "$key,$value" }.joinToString(",")
-        authHeadersString.complete(x)
+        authHeaders.complete(headers)
       }
     }
 
+    val jsonObject = JsonObject()
+    authHeaders.get().forEach { (key, value) -> jsonObject.addProperty(key, value) }
+    return jsonObject
+  }
+
+  @JvmStatic
+  fun getConfigAsJson(project: Project): JsonObject {
     return JsonObject().apply {
-      addProperty("instanceURL", endpoint.url)
+      addProperty("instanceURL", CodyAuthService.getInstance(project).getEndpoint().url)
       addProperty("pluginVersion", getPluginVersion())
-      addProperty("customRequestHeadersAsString", authHeadersString.get())
       addProperty("anonymousUserId", CodyApplicationSettings.instance.anonymousUserId)
     }
   }

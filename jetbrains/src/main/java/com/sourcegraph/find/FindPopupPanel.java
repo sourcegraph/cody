@@ -67,7 +67,8 @@ public class FindPopupPanel extends BorderLayoutPanel implements Disposable {
         new JSToJavaBridgeRequestHandler(project, this, findService);
     String endpointUrl = CodyAuthService.getInstance(project).getEndpoint().getUrl();
 
-    browser = JBCefApp.isSupported() ? new SourcegraphJBCefBrowser(requestHandler, endpointUrl) : null;
+    browser =
+        JBCefApp.isSupported() ? new SourcegraphJBCefBrowser(requestHandler, endpointUrl) : null;
     if (browser == null) {
       showNoBrowserErrorNotification();
       Logger logger = Logger.getInstance(JSToJavaBridgeRequestHandler.class);
