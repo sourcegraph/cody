@@ -122,7 +122,7 @@ export enum FeatureFlag {
     /**
      * Whether the user will see the CTA about upgrading to Sourcegraph Teams
      */
-    SourcegraphTeamsUpgradeCTA = 'teams-upgrade-available-cta',
+    SourcegraphTeamsUpgradeCTA = 'teams-upgrade-available-cta-editors',
 }
 
 const ONE_HOUR = 60 * 60 * 1000
