@@ -4,6 +4,33 @@ This is a log of all notable changes to Cody for VS Code.
 
 <!--- {/_ CHANGELOG_START _/} -->
 
+## 1.64.0
+
+### Chore
+
+#### Build
+
+- Teach JetBrains push-git-tag-for-next-release.sh about release branches [#6884](https://github.com/sourcegraph/cody/pull/6884)
+
+#### Marketing
+
+- update JetBrains plugin logo and description #jb [#6933](https://github.com/sourcegraph/cody/pull/6933)
+
+#### Release
+
+- Give release scripts consistent names & some clean up [#6883](https://github.com/sourcegraph/cody/pull/6883)
+
+### Reverts
+
+  There were no reverts for this release
+
+### Uncategorized
+
+#### Others
+
+- [Backport M66] Use IntelliJ API which is present in all IntelliJ versions [#6946](https://github.com/sourcegraph/cody/pull/6946)
+
+
 ## Unreleased
 
 ### Added
