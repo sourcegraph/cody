@@ -4,6 +4,112 @@ This is a log of all notable changes to Cody for VS Code.
 
 <!--- {/_ CHANGELOG_START _/} -->
 
+## 1.64.0
+
+### Features
+
+#### Auth
+
+- Allow workspace to pre-populate URL for quick sign-in (#6653) [#6812](https://github.com/sourcegraph/cody/pull/6812)
+
+#### Auto-Edit
+
+- fix the temperature value regression with the auto-edit [#6848](https://github.com/sourcegraph/cody/pull/6848)
+
+### Fix
+
+#### Auto-Edit
+
+- fix temperature value to be low for output consistency [#6853](https://github.com/sourcegraph/cody/pull/6853)
+- fix the cody status bar with new suggestion mode [#6691](https://github.com/sourcegraph/cody/pull/6691)
+
+#### Ci
+
+- add cross-env dep and use with LOG_BUNDLE_SIZE [#6819](https://github.com/sourcegraph/cody/pull/6819)
+
+#### Models
+
+- ensure Tool Cody is only added when enabled [#6753](https://github.com/sourcegraph/cody/pull/6753)
+
+#### Release
+
+- remove checkout and pull steps to keep workflow referen… [#6737](https://github.com/sourcegraph/cody/pull/6737)
+
+#### Telemetry
+
+- add billing metadata to `onebox` events [#6802](https://github.com/sourcegraph/cody/pull/6802)
+
+#### Web
+
+- Don't show CTA on Cody Web for PLG [#6957](https://github.com/sourcegraph/cody/pull/6957)
+
+#### Others
+
+- remove code search button [#6855](https://github.com/sourcegraph/cody/pull/6855)
+- handle missing spaces around @ mentions in cody chat [#6842](https://github.com/sourcegraph/cody/pull/6842)
+- define all base64 characters [#6837](https://github.com/sourcegraph/cody/pull/6837)
+- improved support for special characters around @ mentions [#6797](https://github.com/sourcegraph/cody/pull/6797)
+- added extension banner to web [#6757](https://github.com/sourcegraph/cody/pull/6757)
+
+### Chore
+
+#### Build
+
+- Teach JetBrains push-git-tag-for-next-release.sh about release branches [#6884](https://github.com/sourcegraph/cody/pull/6884)
+
+#### Ci
+
+- handle concurrency with github actions [#6798](https://github.com/sourcegraph/cody/pull/6798)
+
+#### Client
+
+- update display name for agentic model [#6827](https://github.com/sourcegraph/cody/pull/6827)
+
+#### Es
+
+- fix cta typo [#6856](https://github.com/sourcegraph/cody/pull/6856)
+- update CTAs and eligibility logic [#6803](https://github.com/sourcegraph/cody/pull/6803)
+
+#### Marketing
+
+- Update marketplace and in product logos [#6970](https://github.com/sourcegraph/cody/pull/6970)
+- update JetBrains plugin logo and description #jb [#6933](https://github.com/sourcegraph/cody/pull/6933)
+- update listing description [#6862](https://github.com/sourcegraph/cody/pull/6862)
+
+#### Release
+
+- Give release scripts consistent names & some clean up [#6883](https://github.com/sourcegraph/cody/pull/6883)
+- Bump package version and update changelog for 1.64 [#6876](https://github.com/sourcegraph/cody/pull/6876)
+
+#### Others
+
+- disable flaky test [#6783](https://github.com/sourcegraph/cody/pull/6783)
+
+### Reverts
+
+- Revert "Support endpoint param in auth flow (workspaces vscode sign-in flow) [#-1](https://github.com/sourcegraph/cody/pull/6751)
+
+### Uncategorized
+
+#### Others
+
+- [Backport M66] Use IntelliJ API which is present in all IntelliJ versions [#6946](https://github.com/sourcegraph/cody/pull/6946)
+- Make Play Button stateful and remove intent toggle [#6833](https://github.com/sourcegraph/cody/pull/6833)
+- Fix jetbrains recordings [#6821](https://github.com/sourcegraph/cody/pull/6821)
+- Fix OpenTelemetryService initialization+observables code and  fix the span closure of Chat Spans [#6807](https://github.com/sourcegraph/cody/pull/6807)
+- Fix typo in protocol.md [#6787](https://github.com/sourcegraph/cody/pull/6787)
+- omnibox: open results locally if possible [#6781](https://github.com/sourcegraph/cody/pull/6781)
+- mention menu: migrate from codicon to lucide [#6780](https://github.com/sourcegraph/cody/pull/6780)
+- Fix intent telemetry [#6779](https://github.com/sourcegraph/cody/pull/6779)
+- Update Cody Web 0.27.0 [#6760](https://github.com/sourcegraph/cody/pull/6760)
+- disable omnibox on dotcom [#6755](https://github.com/sourcegraph/cody/pull/6755)
+- Update Cody Web 0.26.0 [#6752](https://github.com/sourcegraph/cody/pull/6752)
+- Disable Intent Detection if Code Search Disabled [#6750](https://github.com/sourcegraph/cody/pull/6750)
+- Update Cody Web 0.25.0 [#6746](https://github.com/sourcegraph/cody/pull/6746)
+- Support endpoint param in auth flow (workspaces vscode sign-in flow) [#6730](https://github.com/sourcegraph/cody/pull/6730)
+- Release Omnibox: remove feature flag [#6710](https://github.com/sourcegraph/cody/pull/6710)
+
+
 ## Unreleased
 
 ### Added
