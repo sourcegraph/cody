@@ -1,4 +1,5 @@
-body.vscode-dark {
+:root {
+
     background: transparent; /* in vscode we should let the color of the underlying UI set the background of the sidebar*/
     /* Override VS Code Webview Toolkit elements */
     --border-width: none;
@@ -55,10 +56,21 @@ body.vscode-dark {
     /* Links */
     --link-color: var(--editor-accent);
     --link-hover-color: color-mix(in srgb, var(--editor-accent) 75%, white 25%);
+
+    /* storybook fixes */
+    --vscode-editor-foreground: var(--text);
+    --vscode-editor-background: var(--background-01);
+    --vscode-font-size: 14px;
+    --vscode-tab-border: var(--border);
+    --vscode-sideBar-background: var(--background-01);
+    --vscode-sideBar-border: orange;
 }
 
 body.vscode-light {
-    background:pink !important;
+    --text-inverted: #000;
 
-    --text-inverted: black;
+    --background-02: color-mix(in srgb, var(--background-01), white 5%);  /* Slightly lighter */
+    --background-03: color-mix(in srgb, var(--background-01), white 10%);  /* Even lighter */
+
+    --highlight-text: color-mix(in srgb, var(--text), black 90%);
 }
