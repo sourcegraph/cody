@@ -19,11 +19,11 @@ import {
     inputTextWithoutContextChipsFromPromptEditorState,
     isAbortErrorOrSocketHangUp,
     modelsService,
-    storeLastValue,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
 import { resolveContextItems } from '../../../editor/utils/editor-context'
 import { getCategorizedMentions } from '../../../prompt-builder/utils'
+import { logFirstEnrollmentEvent } from '../../../services/utils/enrollment-event'
 import { ChatBuilder } from '../ChatBuilder'
 import type { ChatControllerOptions } from '../ChatController'
 import { type ContextRetriever, toStructuredMentions } from '../ContextRetriever'
@@ -38,10 +38,6 @@ export class ChatHandler implements AgentHandler {
         protected readonly editor: ChatControllerOptions['editor'],
         protected chatClient: ChatControllerOptions['chatClient']
     ) {}
-
-    private promptCachingIsEnabled = storeLastValue(
-        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyPromptCachingOnMessages)
-    )
 
     public async handle(
         {
@@ -90,7 +86,11 @@ export class ChatHandler implements AgentHandler {
         }
         let { prompt } = await this.buildPrompt(prompter, chatBuilder, signal, versions.codyAPIVersion)
 
-        if (this.promptCachingIsEnabled.value.last) {
+        const promptCachingIsEnabled = await featureFlagProvider.evaluateFeatureFlagEphemerally(
+            FeatureFlag.CodyPromptCachingOnMessages
+        )
+        logFirstEnrollmentEvent(FeatureFlag.CodyPromptCachingOnMessages, promptCachingIsEnabled)
+        if (promptCachingIsEnabled) {
             prompt = promptCachingProcessing(prompt)
         }
 
@@ -371,10 +371,9 @@ function promptCachingProcessing(messages: Message[]): Message[] {
     const finalMessages: Message[] = []
 
     let count = 0
-    let i = 0
     let combinedContext = false
 
-    while (i < messages.length) {
+    for (let i = 0; i < messages.length; i++) {
         const msg = messages[i]
         const textString = msg.text?.toString() || ''
 
@@ -421,7 +420,6 @@ function promptCachingProcessing(messages: Message[]): Message[] {
             // Add messages that are not part of the combined code context
             finalMessages.push(msg)
         }
-        i += 1
     }
 
     // Insert combined context message at the original position

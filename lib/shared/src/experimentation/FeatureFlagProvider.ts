@@ -104,7 +104,7 @@ export enum FeatureFlag {
     CodyPromptsV2 = 'prompt-creation-v2',
 
     // Enables Anthropic's prompt caching feature on messages for Cody Clients
-    CodyPromptCachingOnMessages = 'cody-prompt-caching-on-messages',
+    CodyPromptCachingOnMessages = 'cody-experimental-prompt-caching-on-messages',
 
     /** Whether user has access to the experimental agentic chat (fka Deep Cody) feature.
      * This replaces the old 'cody-deep-reflection' & 'deep-cody' that was used for internal testing.
