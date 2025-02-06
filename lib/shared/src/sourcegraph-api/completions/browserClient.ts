@@ -1,6 +1,6 @@
 import { fetchEventSource } from '@microsoft/fetch-event-source'
 
-import { dependentAbortController } from '../../common/abortController'
+import { dependentAbortController, onAbort } from '../../common/abortController'
 import { currentResolvedConfig } from '../../configuration/resolver'
 import { isError } from '../../utils'
 import { addClientInfoParams, addCodyClientIdentificationHeaders } from '../client-name-version'
@@ -125,12 +125,11 @@ export class SourcegraphBrowserCompletionsClient extends SourcegraphCompletionsC
             console.error(error)
         })
 
-
         // 'fetchEventSource' does not emit any event/message when the signal gets abborted. Instead,
         // the returned promise gets resolved. However we cannot really differentiate between the
         // promising resolving because the signal got abborted and the stream ended.
         // That's why we subscribe to the signal directly and trigger the completion callback.
-        signal?.addEventListener('abort', cb.onComplete, {once: true})
+        onAbort(signal, cb.onComplete)
     }
 
     protected async _fetchWithCallbacks(
