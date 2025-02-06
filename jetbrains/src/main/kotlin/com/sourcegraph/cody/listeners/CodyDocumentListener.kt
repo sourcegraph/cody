@@ -5,32 +5,14 @@ import com.intellij.openapi.editor.event.BulkAwareDocumentListener
 import com.intellij.openapi.editor.event.DocumentEvent
 import com.intellij.openapi.project.Project
 import com.sourcegraph.cody.agent.CodyAgentService
-import com.sourcegraph.cody.agent.protocol_extensions.BillingMetadata
 import com.sourcegraph.cody.agent.protocol_extensions.ProtocolTextDocumentExt
-import com.sourcegraph.cody.agent.protocol_generated.BillingMetadataParams
 import com.sourcegraph.cody.agent.protocol_generated.CompletionItemParams
 import com.sourcegraph.cody.autocomplete.CodyAutocompleteManager
 import com.sourcegraph.cody.autocomplete.action.AcceptCodyAutocompleteAction
-import com.sourcegraph.cody.telemetry.TelemetryV2
 import com.sourcegraph.cody.vscode.InlineCompletionTriggerKind
 import com.sourcegraph.utils.CodyEditorUtil
 
 class CodyDocumentListener(val project: Project) : BulkAwareDocumentListener {
-
-  // TODO (CODY-4121) Fix keyDown:paste telemetry events logging
-  private fun logCodeCopyPastedFromChat(event: DocumentEvent) {
-    val pastedCode = event.newFragment.toString()
-    if (pastedCode.isNotBlank() && lastCopiedText == pastedCode) {
-      lastCopiedText = null
-      TelemetryV2.sendCodeGenerationEvent(
-          project,
-          feature = "keyDown",
-          action = "paste",
-          pastedCode,
-          billingMetadata =
-              BillingMetadataParams(BillingMetadata.Product.CODY, BillingMetadata.Category.CORE))
-    }
-  }
 
   override fun documentChangedNonBulk(event: DocumentEvent) {
     try {
@@ -50,7 +32,6 @@ class CodyDocumentListener(val project: Project) : BulkAwareDocumentListener {
       return
     }
 
-    logCodeCopyPastedFromChat(event)
     CodyAutocompleteManager.instance.clearAutocompleteSuggestions(editor)
 
     // IMPORTANT: we must do document synchronization even if autocomplete isn't auto-triggered.
@@ -75,9 +56,5 @@ class CodyDocumentListener(val project: Project) : BulkAwareDocumentListener {
             editor, changeOffset, InlineCompletionTriggerKind.AUTOMATIC)
       }
     }
-  }
-
-  companion object {
-    var lastCopiedText: String? = null
   }
 }

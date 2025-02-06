@@ -46,7 +46,6 @@ type LastStoredCode = {
  */
 let lastStoredCode: LastStoredCode = { ...defaultLastStoredCode }
 let insertInProgress = false
-let lastClipboardText = ''
 
 /**
  * SourceMetadataMapping is used to map the source to a numerical value, so telemetry can be recorded on `metadata`.
@@ -112,10 +111,6 @@ function setLastStoredCode({
             category: 'core',
         },
     })
-}
-
-async function setLastTextFromClipboard(clipboardText?: string): Promise<void> {
-    lastClipboardText = clipboardText || (await vscode.env.clipboard.readText())
 }
 
 /**
@@ -295,10 +290,5 @@ export async function isCodeFromChatCodeBlockAction(
         return { ...storedCode, operation: 'insert' }
     }
 
-    await setLastTextFromClipboard()
-    if (matchCodeSnippets(storedCode.code, lastClipboardText)) {
-        return { ...storedCode, operation: 'paste' }
-    }
-
-    return null
+    return { ...storedCode, operation: 'paste' }
 }
