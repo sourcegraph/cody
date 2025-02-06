@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import styles from './WelcomeFooter.module.css'
+import styles from './QuickStart.module.css'
 
 import {
     Minimize,
