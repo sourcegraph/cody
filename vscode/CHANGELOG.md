@@ -4,6 +4,22 @@ This is a log of all notable changes to Cody for VS Code.
 
 <!--- {/_ CHANGELOG_START _/} -->
 
+## 1.66.0
+
+### Reverts
+
+  There were no reverts for this release
+
+### Untracked
+
+The following PRs were merged onto the previous release branch but could not be automatically mapped to a corresponding commit in this release:
+
+- Update marketplace and in product logos [#6970](https://github.com/sourcegraph/cody/pull/6970)
+- Don't show CTA on Cody Web for PLG [#6957](https://github.com/sourcegraph/cody/pull/6957)
+- [Backport M66] Use IntelliJ API which is present in all IntelliJ versions [#6946](https://github.com/sourcegraph/cody/pull/6946)
+- update JetBrains plugin logo and description #jb [#6933](https://github.com/sourcegraph/cody/pull/6933)
+
+
 ## Unreleased
 
 ### Added
