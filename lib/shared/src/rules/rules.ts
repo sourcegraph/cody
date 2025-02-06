@@ -1,5 +1,5 @@
 import type { URI } from 'vscode-uri'
-import YAML from 'yaml'
+import * as YAML from 'yaml'
 import { isDefined } from '../common'
 import { pathFunctionsForURI, posixFilePaths } from '../common/path'
 import { PromptString, ps } from '../prompt/prompt-string'

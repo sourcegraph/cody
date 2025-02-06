@@ -70,7 +70,8 @@ interface TranscriptProps {
     messageInProgress: ChatMessage | null
     guardrails?: Guardrails
     postMessage?: ApiPostMessage
-
+    lastHumanEditorRef: React.RefObject<PromptEditorRefAPI>
+    feedbackButtonsOnSubmit: (text: string) => void
     copyButtonOnSubmit: CodeBlockActionsProps['copyButtonOnSubmit']
     insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit']
     smartApply?: CodeBlockActionsProps['smartApply']
@@ -87,6 +88,7 @@ export const Transcript: FC<TranscriptProps> = props => {
         userInfo,
         messageInProgress,
         guardrails,
+        lastHumanEditorRef,
         postMessage,
         copyButtonOnSubmit,
         insertButtonOnSubmit,
@@ -98,8 +100,6 @@ export const Transcript: FC<TranscriptProps> = props => {
         () => transcriptToInteractionPairs(transcript, messageInProgress),
         [transcript, messageInProgress]
     )
-
-    const lastHumanEditorRef = useRef<PromptEditorRefAPI | null>(null)
 
     const onAddToFollowupChat = useCallback(
         ({

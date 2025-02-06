@@ -22,6 +22,7 @@ import type { View } from './tabs'
 import { SpanManager } from './utils/spanManager'
 import { getTraceparentFromSpanContext } from './utils/telemetry'
 import { useUserAccountInfo } from './utils/useConfig'
+import { PromptEditorRefAPI } from '@sourcegraph/prompt-editor'
 interface ChatboxProps {
     chatEnabled: boolean
     messageInProgress: ChatMessage | null
@@ -55,6 +56,8 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
 }) => {
     const transcriptRef = useRef(transcript)
     transcriptRef.current = transcript
+
+    const lastHumanEditorRef = useRef<PromptEditorRefAPI | null>(null)
 
     const userInfo = useUserAccountInfo()
 
@@ -193,7 +196,12 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
 
         focusLastHumanMessageEditor()
     }, [transcript])
+
     const [activeChatContext, setActiveChatContext] = useState<Context>()
+
+    const updateInput = (exampleInput: string) => {
+        lastHumanEditorRef.current?.appendText(exampleInput)
+    }
 
     return (
         <>
@@ -211,6 +219,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                 copyButtonOnSubmit={copyButtonOnSubmit}
                 insertButtonOnSubmit={insertButtonOnSubmit}
                 smartApply={smartApply}
+                lastHumanEditorRef={lastHumanEditorRef}
                 userInfo={userInfo}
                 chatEnabled={chatEnabled}
                 postMessage={postMessage}
@@ -225,7 +234,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                         setView={setView}
                         isPromptsV2Enabled={isPromptsV2Enabled}
                     />
-                    <QuickStart />
+                    <QuickStart updateInput={updateInput} />
                     {isWorkspacesUpgradeCtaEnabled && (
                         <div className="tw-absolute tw-bottom-0 tw-left-1/2 tw-transform tw--translate-x-1/2 tw-w-[95%] tw-z-1 tw-mb-4 tw-max-h-1/2">
                             <WelcomeNotice />

@@ -11,27 +11,31 @@ interface Example {
     input: string
     description: string
     maxWidth?: string
+    step?: number
 }
 
 interface ExampleGroup {
-    title?: string
-    input?: string
-    description?: string
-    examples?: Example[]
+    title: string
+    examples: Example[]
 }
 
-export function QuickStart() {
+interface QuickStartProps {
+    updateInput: (exampleText: string) => void
+}
+
+export function QuickStart({ updateInput }: QuickStartProps): JSX.Element | null {
     const [isCollapsed, setIsCollapsed] = useState(() => {
         const saved = localStorage.getItem('quickStartCollapsed')
         return saved ? JSON.parse(saved) : false
     })
+
     const examples: Example[] = [
         {
             input: '= useCallback(',
             description: 'Deterministically find symbols',
         },
         {
-            input: '"// TODO"',
+            input: '"I love Sourcegraph"',
             description: 'Find string literals',
         },
         {
@@ -40,16 +44,18 @@ export function QuickStart() {
         },
     ]
 
-    const allExamples: ExampleGroup[] = [
+    const allExamples: (Example | ExampleGroup)[] = [
         ...examples,
         {
             title: 'Combine search and chat for power usage',
             examples: [
                 {
+                    step: 1,
                     input: 'HttpError',
                     description: 'Start with a search query',
                 },
                 {
+                    step: 2,
                     input: 'Analyze these error handling implementations and explain our retry and timeout strategy',
                     description: 'Follow-up with a question about the results returned',
                     maxWidth: '320px',
@@ -82,7 +88,6 @@ export function QuickStart() {
                     className="
                         tw-w-full
                         tw-max-h-[90vh]
-                        tw-max-w-2xl
                         tw-rounded-xl
                         tw-bg-background
                         tw-p-4
@@ -141,24 +146,28 @@ export function QuickStart() {
                                             </h4>
                                         )}
                                         {'examples' in example ? (
-                                            <div className="tw-flex tw-flex-row tw-flex-wrap tw-gap-4">
-                                                {example.examples?.map(ex => (
+                                            <div className="tw-flex tw-flex-row tw-flex-wrap tw-gap-6">
+                                                {example.examples?.map((ex) => (
                                                     <div
                                                         key={`nested-example-${ex.input}`}
-                                                        className={styles.example}
+                                                        className={styles.exampleSteps}
                                                         style={
                                                             ex.maxWidth
                                                                 ? { maxWidth: ex.maxWidth }
                                                                 : undefined
                                                         }
                                                     >
-                                                        <div
-                                                            className={`${styles.exampleInput} tw-px-4 tw-py-2 md:tw-px-4 md:tw-py-2 md:tw-text-md`}
-                                                        >
-                                                            {ex.input}
-                                                        </div>
-                                                        <div className="tw-py-2 tw-text-sm tw-text-muted-foreground md:tw-text-md">
-                                                            {ex.description}
+                                                        <p>step {ex.step}</p>
+                                                        <div>
+                                                            <div
+                                                                className={`${styles.exampleInput} tw-px-4 tw-py-2 md:tw-px-4 md:tw-py-2 md:tw-text-md`}
+                                                                onClick={() => updateInput(ex.input)}
+                                                            >
+                                                                {ex.input}
+                                                            </div>
+                                                            <div className="tw-py-2 tw-text-sm tw-text-muted-foreground md:tw-text-md">
+                                                                {ex.description}
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 ))}
@@ -167,6 +176,7 @@ export function QuickStart() {
                                             <>
                                                 <div
                                                     className={`${styles.exampleInput} tw-px-4 tw-py-2 md:tw-px-4 md:tw-py-2 md:tw-text-md`}
+                                                    onClick={() => updateInput(example.input)}
                                                 >
                                                     {example.input}
                                                 </div>
