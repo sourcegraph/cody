@@ -228,12 +228,12 @@ function drawDiffColors(
 
 const DIFF_COLORS = {
     inserted: {
-        line: 'rgba(155, 185, 85, 0.2)',
-        text: 'rgba(156, 204, 44, 0.2);',
+        line: 'rgba(155, 185, 85, 0.1)',
+        text: 'rgba(155, 185, 85, 0.15)',
     },
     removed: {
-        line: 'rgba(255, 0, 0, 0.2)',
-        text: 'rgba(255, 0, 0, 0.2)',
+        line: 'rgba(255, 0, 0, 0.1)',
+        text: 'rgba(255, 0, 0, 0.15)',
     },
 }
 
