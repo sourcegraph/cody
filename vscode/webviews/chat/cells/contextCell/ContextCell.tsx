@@ -1,15 +1,9 @@
-import type {
-    ChatMessage,
-    ContextItem,
-    Model,
-    ProcessingStep,
-    RankedContext,
-} from '@sourcegraph/cody-shared'
+import type { ChatMessage, ContextItem, Model, RankedContext } from '@sourcegraph/cody-shared'
 import { pluralize } from '@sourcegraph/cody-shared'
 import { DeepCodyAgentID } from '@sourcegraph/cody-shared/src/models/client'
 import { MENTION_CLASS_NAME } from '@sourcegraph/prompt-editor'
 import { clsx } from 'clsx'
-import { BrainIcon, FilePenLine, MessagesSquareIcon } from 'lucide-react'
+import { BrainIcon, MessagesSquareIcon } from 'lucide-react'
 import { type FunctionComponent, createContext, memo, useCallback, useContext, useState } from 'react'
 import { FileLink } from '../../../components/FileLink'
 import {
@@ -18,14 +12,11 @@ import {
     AccordionItem,
     AccordionTrigger,
 } from '../../../components/shadcn/ui/accordion'
-import { Button } from '../../../components/shadcn/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '../../../components/shadcn/ui/tooltip'
-import { SourcegraphLogo } from '../../../icons/SourcegraphLogo'
 import { useTelemetryRecorder } from '../../../utils/telemetry'
 import { useConfig } from '../../../utils/useConfig'
 import { LoadingDots } from '../../components/LoadingDots'
 import { Cell } from '../Cell'
-import { NON_HUMAN_CELL_AVATAR_SIZE } from '../messageCell/assistant/AssistantMessageCell'
 import styles from './ContextCell.module.css'
 
 export const __ContextCellStorybookContext = createContext<{
@@ -39,7 +30,6 @@ export const ContextCell: FunctionComponent<{
     isContextLoading: boolean
     contextItems: ContextItem[] | undefined
     contextAlternatives?: RankedContext[]
-    resubmitWithRepoContext?: () => Promise<void>
 
     isForFirstMessage: boolean
 
@@ -49,27 +39,20 @@ export const ContextCell: FunctionComponent<{
     defaultOpen?: boolean
     intent: ChatMessage['intent']
 
-    onManuallyEditContext: () => void
-    editContextNode: React.ReactNode
     experimentalOneBoxEnabled?: boolean
-    processes?: ProcessingStep[]
     agent?: string
 }> = memo(
     ({
         contextItems,
         contextAlternatives,
-        resubmitWithRepoContext,
 
         model,
         isForFirstMessage,
         className,
         defaultOpen,
         isContextLoading,
-        onManuallyEditContext,
-        editContextNode,
         intent,
         experimentalOneBoxEnabled,
-        processes,
         agent,
     }) => {
         const __storybook__initialOpen = useContext(__ContextCellStorybookContext)?.initialOpen ?? false
@@ -125,11 +108,6 @@ export const ContextCell: FunctionComponent<{
             })
         }, [excludedContext.length, usedContext])
 
-        const onEditContext = useCallback(() => {
-            triggerAccordion()
-            onManuallyEditContext()
-        }, [triggerAccordion, onManuallyEditContext])
-
         const {
             config: { internalDebugContext },
         } = useConfig()
@@ -164,8 +142,14 @@ export const ContextCell: FunctionComponent<{
                           : itemCountLabel,
         }
 
+        const hasContent =
+            isContextLoading ||
+            (contextItemsToDisplay && contextItemsToDisplay.length > 0) ||
+            !isForFirstMessage ||
+            isAgenticChat
+
         return (
-            <div className="tw-flex tw-flex-col tw-justify-center tw-w-full tw-gap-2 tw-py-1 tw-px-4">
+            <div className="tw-flex tw-flex-col tw-justify-center tw-w-full tw-gap-2 tw-py-1">
                 <Accordion
                     type="single"
                     collapsible={true}
@@ -180,17 +164,13 @@ export const ContextCell: FunctionComponent<{
                                     onClick={triggerAccordion}
                                     title={itemCountLabel}
                                     className="tw-flex tw-items-center tw-gap-4"
-                                    disabled={isContextLoading}
+                                    disabled={isContextLoading || !hasContent}
                                 >
-                                    <SourcegraphLogo
-                                        width={NON_HUMAN_CELL_AVATAR_SIZE}
-                                        height={NON_HUMAN_CELL_AVATAR_SIZE}
-                                    />
                                     <span className="tw-flex tw-items-baseline">
                                         {headerText.main}
                                         {headerText.sub && (
                                             <span className="tw-opacity-60 tw-text-sm tw-ml-2">
-                                                &mdash; {headerText.sub}
+                                                — {headerText.sub}
                                             </span>
                                         )}
                                     </span>
@@ -205,43 +185,16 @@ export const ContextCell: FunctionComponent<{
                             ) : (
                                 <>
                                     <AccordionContent
-                                        className="tw-ml-6 tw-flex tw-flex-col tw-gap-2"
+                                        className="tw-flex tw-flex-col tw-gap-2"
                                         overflow={false}
                                     >
-                                        <div className={styles.contextSuggestedActions}>
-                                            {contextItems &&
-                                                contextItems.length > 0 &&
-                                                !isAgenticChat && (
-                                                    <Button
-                                                        size="sm"
-                                                        variant="outline"
-                                                        className={clsx(
-                                                            'tw-pr-4',
-                                                            styles.contextItemEditButton
-                                                        )}
-                                                        onClick={onEditContext}
-                                                    >
-                                                        {editContextNode}
-                                                    </Button>
-                                                )}
-                                            {resubmitWithRepoContext && !isAgenticChat && (
-                                                <Button
-                                                    size="sm"
-                                                    variant="outline"
-                                                    onClick={resubmitWithRepoContext}
-                                                    type="button"
-                                                >
-                                                    Resend with current repository context
-                                                </Button>
-                                            )}
-                                        </div>
                                         {internalDebugContext && contextAlternatives && (
                                             <div>
                                                 <button onClick={prevSelectedAlternative} type="button">
-                                                    &larr;
+                                                    ←
                                                 </button>
                                                 <button onClick={nextSelectedAlternative} type="button">
-                                                    &rarr;
+                                                    →
                                                 </button>{' '}
                                                 Ranking mechanism:{' '}
                                                 {selectedAlternative === undefined
@@ -332,31 +285,6 @@ export const ContextCell: FunctionComponent<{
                                                     </Tooltip>
                                                 </li>
                                             )}
-                                            {!isContextLoading && !isAgenticChat && (
-                                                <li>
-                                                    <Tooltip>
-                                                        <TooltipTrigger asChild>
-                                                            <span
-                                                                className={clsx(
-                                                                    styles.contextItem,
-                                                                    'tw-flex tw-items-center tw-gap-2 tw-text-muted-foreground'
-                                                                )}
-                                                            >
-                                                                <BrainIcon
-                                                                    size={14}
-                                                                    className="tw-ml-1"
-                                                                />
-                                                                <span>Public knowledge</span>
-                                                            </span>
-                                                        </TooltipTrigger>
-                                                        <TooltipContent side="bottom">
-                                                            Information and general reasoning
-                                                            capabilities trained into the model{' '}
-                                                            {model && <code>{model}</code>}
-                                                        </TooltipContent>
-                                                    </Tooltip>
-                                                </li>
-                                            )}
                                         </ul>
                                     </AccordionContent>
                                 </>
@@ -376,7 +304,6 @@ export const ContextCell: FunctionComponent<{
         )
     }
 )
-
 const getContextInfo = (items?: ContextItem[], isFirst?: boolean) => {
     const { usedContext, excludedContext, count } = (items ?? []).reduce(
         (acc, item) => {
@@ -429,18 +356,4 @@ const ExcludedContextWarning: React.FC<{ message: string }> = ({ message }) => (
             .
         </span>
     </div>
-)
-
-export const EditContextButtonSearch = (
-    <>
-        <FilePenLine size={'1em'} />
-        <div>Edit results</div>
-    </>
-)
-
-export const EditContextButtonChat = (
-    <>
-        <FilePenLine size={'1em'} />
-        <div>Edit context</div>
-    </>
 )
