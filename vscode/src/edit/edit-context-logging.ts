@@ -17,7 +17,7 @@ import type { SmartSelectionType } from './prompt/smart-apply'
 
 const MAX_LOGGING_PAYLOAD_SIZE_BYTES = 1024 * 1024 // 1 MB
 
-export type SmartApplyLoggingRequestId = string
+type SmartApplyLoggingRequestId = string
 
 interface RepoContext {
     repoName?: string
@@ -51,7 +51,7 @@ interface EditLoggingContext {
     selectionRange: [number, number]
 }
 
-export type SmartApplyLoggingState =
+type SmartApplyLoggingState =
     | SmartApplyBaseContext
     | SmartApplySelectionContext
     | SmartApplyFinalContext
@@ -238,7 +238,7 @@ export function getEditLoggingContext(param: {
     return context
 }
 
-export function shouldLogEditContextItem<T>(
+function shouldLogEditContextItem<T>(
     payload: T,
     isFeatureFlagEnabledForLogging: boolean
 ): boolean {

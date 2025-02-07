@@ -27,7 +27,7 @@ export interface RemoteRepo {
 
 const MAX_REPO_COUNT = 10
 
-export const workspaceFolders: Observable<readonly vscode.WorkspaceFolder[] | undefined> =
+const workspaceFolders: Observable<readonly vscode.WorkspaceFolder[] | undefined> =
     fromVSCodeEvent(vscode.workspace.onDidChangeWorkspaceFolders).pipe(
         startWith(undefined),
         map(() => vscode.workspace.workspaceFolders)

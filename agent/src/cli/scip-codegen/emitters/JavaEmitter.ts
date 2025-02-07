@@ -267,7 +267,7 @@ export class JavaEmitter implements Emitter {
     }
 }
 
-export class JavaFormatter extends Formatter {
+class JavaFormatter extends Formatter {
     public options: LanguageOptions = {
         typeNameSeparator: '_',
         typeAnnotations: 'before',

@@ -2,12 +2,7 @@ import { type DebouncedFunc, debounce } from 'lodash'
 import { Observable } from 'observable-fns'
 import * as vscode from 'vscode'
 
-import {
-    type ChatClient,
-    type DocumentContext,
-    currentResolvedConfig,
-    tokensToChars,
-} from '@sourcegraph/cody-shared'
+import { type ChatClient, currentResolvedConfig, tokensToChars } from '@sourcegraph/cody-shared'
 
 import { ContextRankingStrategy } from '../completions/context/completions-context-ranker'
 import { ContextMixer } from '../completions/context/context-mixer'
@@ -49,18 +44,6 @@ const AUTOEDITS_CONTEXT_STRATEGY = 'auto-edit'
 export const INLINE_COMPLETION_DEFAULT_DEBOUNCE_INTERVAL_MS = 150
 const ON_SELECTION_CHANGE_DEFAULT_DEBOUNCE_INTERVAL_MS = 150
 const RESET_SUGGESTION_ON_CURSOR_CHANGE_AFTER_INTERVAL_MS = 60 * 1000
-
-export interface AutoEditsProviderOptions {
-    document: vscode.TextDocument
-    position: vscode.Position
-    docContext: DocumentContext
-    abortSignal?: AbortSignal
-}
-
-export interface AutoeditsSuggestion {
-    codeToReplaceData: CodeToReplaceData
-    prediction: string
-}
 
 export interface AutoeditsResult extends vscode.InlineCompletionList {
     requestId: AutoeditRequestID

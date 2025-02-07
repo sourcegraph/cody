@@ -459,7 +459,7 @@ export class DefaultDecorator implements AutoEditsDecorator {
 /**
  * Checks if the only changes for modified lines are additions of text.
  */
-export function isOnlyAddingTextForModifiedLines(modifiedLines: ModifiedLineInfo[]): boolean {
+function isOnlyAddingTextForModifiedLines(modifiedLines: ModifiedLineInfo[]): boolean {
     for (const modifiedLine of modifiedLines) {
         if (modifiedLine.changes.some(change => change.type === 'delete')) {
             return false
