@@ -2,13 +2,13 @@ import type { Meta, StoryObj } from '@storybook/react'
 
 import { VSCodeStandaloneComponent } from '../../storybook/VSCodeStoryDecorator'
 
-import { type Model, ModelTag, ModelUsage, getMockedDotComClientModels } from '@sourcegraph/cody-shared'
+import { FIXTURE_MODELS, type Model, ModelTag, ModelUsage } from '@sourcegraph/cody-shared'
 import { DeepCodyAgentID } from '@sourcegraph/cody-shared/src/models/client'
 import { useArgs } from '@storybook/preview-api'
 import { ModelSelectField } from './ModelSelectField'
 
 const MODELS: Model[] = [
-    ...getMockedDotComClientModels(),
+    ...FIXTURE_MODELS,
     {
         title: 'Llama 3 q4_K f16',
         provider: 'Ollama',

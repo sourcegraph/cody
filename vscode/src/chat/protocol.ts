@@ -292,8 +292,6 @@ export const ACCOUNT_USAGE_URL = new URL('https://sourcegraph.com/cody/manage')
 export const ACCOUNT_LIMITS_INFO_URL = new URL(
     'https://sourcegraph.com/docs/cody/troubleshooting#autocomplete-rate-limits'
 )
-// TODO: Update this URL to the correct one when the Cody model waitlist is available
-export const CODY_BLOG_URL_o1_WAITLIST = new URL('https://sourcegraph.com/blog/openai-o1-for-cody')
 
 // TODO: Update to live link https://linear.app/sourcegraph/issue/CORE-535/cody-clients-migrate-ctas-to-live-links
 export const ENTERPRISE_STARTER_LEARN_MORE_URL = new URL('https://sourcegraph.com/enterprise-starter')

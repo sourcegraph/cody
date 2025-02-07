@@ -40,8 +40,6 @@ class LocalStorage implements LocalStorageForModelPreferences {
     private readonly AUTO_EDITS_ONBOARDING_NOTIFICATION_COUNT = 'cody-auto-edit-notification-info'
 
     public readonly keys = {
-        // LLM waitlist for the 09/12/2024 openAI o1 models
-        waitlist_o1: 'CODY_WAITLIST_LLM_09122024',
         deepCodyLastUsedDate: 'DEEP_CODY_LAST_USED_DATE',
         deepCodyDailyUsageCount: 'DEEP_CODY_DAILY_CHAT_USAGE',
     }
@@ -77,7 +75,6 @@ class LocalStorage implements LocalStorageForModelPreferences {
             anonymousUserID: this.anonymousUserID(),
             lastUsedChatModality: this.getLastUsedChatModality(),
             modelPreferences: this.getModelPreferences(),
-            waitlist_o1: this.get(this.keys.waitlist_o1),
         }
     }
 
@@ -88,14 +85,6 @@ class LocalStorage implements LocalStorageForModelPreferences {
             map(() => this.getClientState()),
             distinctUntilChanged()
         )
-    }
-
-    public async setOrDeleteWaitlistO1(value: boolean): Promise<void> {
-        if (value) {
-            await this.set(this.keys.waitlist_o1, value)
-        } else {
-            await this.delete(this.keys.waitlist_o1)
-        }
     }
 
     public getEndpoint(): string | null {

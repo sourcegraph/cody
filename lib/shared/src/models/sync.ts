@@ -54,7 +54,7 @@ export function syncModels({
         PickResolvedConfiguration<{
             configuration: true
             auth: true
-            clientState: 'modelPreferences' | 'waitlist_o1'
+            clientState: 'modelPreferences'
         }>
     >
     authStatus: Observable<AuthStatus>
@@ -102,13 +102,9 @@ export function syncModels({
                         devModels: config.configuration.devModels,
                     },
                     auth: config.auth,
-                    clientState: {
-                        waitlist_o1: config.clientState.waitlist_o1,
-                    },
                 }) satisfies PickResolvedConfiguration<{
                     configuration: 'providerLimitPrompt' | 'customHeaders' | 'devModels'
                     auth: true
-                    clientState: 'waitlist_o1'
                 }>
         ),
         distinctUntilChanged()
@@ -216,8 +212,7 @@ export function syncModels({
                                                 isToolCodyEnabled,
                                             ]) => {
                                                 // TODO(sqs): remove waitlist from localStorage when user has access
-                                                const isOnWaitlist = config.clientState.waitlist_o1
-                                                if (isDotComUser && (hasEarlyAccess || isOnWaitlist)) {
+                                                if (isDotComUser && hasEarlyAccess) {
                                                     data.primaryModels = data.primaryModels.map(
                                                         model => {
                                                             if (model.tags.includes(ModelTag.Waitlist)) {
