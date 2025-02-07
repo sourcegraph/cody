@@ -800,8 +800,19 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
 export function focusLastHumanMessageEditor(): void {
     const elements = document.querySelectorAll<HTMLElement>('[data-lexical-editor]')
     const lastEditor = elements.item(elements.length - 1)
-    lastEditor?.focus()
-    lastEditor?.scrollIntoView()
+    if (!lastEditor) {
+        return
+    }
+
+    lastEditor.focus()
+
+    // Only scroll the nearest scrollable ancestor container, not all scrollable ancestors, to avoid
+    // a bug in VS Code where the iframe is pushed up by ~5px.
+    const container = lastEditor?.closest('[data-scrollable]')
+    const editorScrollItemInContainer = lastEditor.parentElement
+    if (container && container instanceof HTMLElement && editorScrollItemInContainer) {
+        container.scrollTop = editorScrollItemInContainer.offsetTop - container.offsetTop
+    }
 }
 
 export function editHumanMessage({
