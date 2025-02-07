@@ -31,7 +31,7 @@ import type { UserAccountInfo } from '../Chat'
 import type { ApiPostMessage } from '../Chat'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
 import { SpanManager } from '../utils/spanManager'
-import { getTraceparentFromSpanContext, useTelemetryRecorder } from '../utils/telemetry'
+import { getTraceparentFromSpanContext } from '../utils/telemetry'
 import { useOmniBox } from '../utils/useOmniBox'
 import type { CodeBlockActionsProps } from './ChatMessageContent/ChatMessageContent'
 import {
@@ -43,13 +43,11 @@ import { HumanMessageCell } from './cells/messageCell/human/HumanMessageCell'
 import { type Context, type Span, context, trace } from '@opentelemetry/api'
 import { DeepCodyAgentID, ToolCodyModelName } from '@sourcegraph/cody-shared/src/models/client'
 import { isCodeSearchContextItem } from '../../src/context/openctx/codeSearch'
-import { TELEMETRY_INTENT } from '../../src/telemetry/onebox'
 import { useIntentDetectionConfig } from '../components/omnibox/intentDetection'
 import { AgenticContextCell } from './cells/agenticCell/AgenticContextCell'
 import ApprovalCell from './cells/agenticCell/ApprovalCell'
 import { ContextCell } from './cells/contextCell/ContextCell'
 import { DidYouMeanNotice } from './cells/messageCell/assistant/DidYouMean'
-import { SwitchIntent } from './cells/messageCell/assistant/SwitchIntent'
 import { LastEditorContext } from './context'
 
 interface TranscriptProps {
@@ -587,37 +585,6 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
         return null
     }, [humanMessage, assistantMessage, isContextLoading])
 
-    const telemetryRecorder = useTelemetryRecorder()
-    const reSubmitWithIntent = useCallback(
-        (intent: ChatMessage['intent']) => {
-            const editorState = humanEditorRef.current?.getSerializedValue()
-            if (editorState) {
-                onEditSubmit(intent)
-                telemetryRecorder.recordEvent('onebox.intentCorrection', 'clicked', {
-                    metadata: {
-                        initialIntent:
-                            humanMessage.intent === 'search'
-                                ? TELEMETRY_INTENT.SEARCH
-                                : TELEMETRY_INTENT.CHAT,
-                        selectedIntent:
-                            intent === 'search' ? TELEMETRY_INTENT.SEARCH : TELEMETRY_INTENT.CHAT,
-                    },
-                    privateMetadata: {
-                        query: editorState.text,
-                    },
-                    billingMetadata: { product: 'cody', category: 'billable' },
-                })
-            }
-        },
-        [onEditSubmit, telemetryRecorder, humanMessage]
-    )
-
-    const reSubmitWithChatIntent = useCallback(() => reSubmitWithIntent('chat'), [reSubmitWithIntent])
-    const reSubmitWithSearchIntent = useCallback(
-        () => reSubmitWithIntent('search'),
-        [reSubmitWithIntent]
-    )
-
     const onHumanMessageSubmit = useCallback(
         (intent?: ChatMessage['intent']) => {
             if (humanMessage.isUnsentFollowup) {
@@ -675,17 +642,6 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                 intent={manuallySelectedIntent || intentResults?.intent}
                 manuallySelectIntent={setManuallySelectedIntent}
             />
-            {experimentalOneBoxEnabled && (
-                <SwitchIntent
-                    intent={humanMessage.intent}
-                    manuallySelected={!!humanMessage.manuallySelectedIntent}
-                    onSwitch={
-                        humanMessage.intent === 'search'
-                            ? reSubmitWithChatIntent
-                            : reSubmitWithSearchIntent
-                    }
-                />
-            )}
             {experimentalOneBoxEnabled && assistantMessage?.didYouMeanQuery && (
                 <DidYouMeanNotice
                     query={assistantMessage?.didYouMeanQuery}
