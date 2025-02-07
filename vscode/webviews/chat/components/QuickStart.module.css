@@ -40,9 +40,29 @@
 
 .expand-button:hover {
     background-color: var(--vscode-input-background);
+    border-radius: 4px;
 }
 
 .examples-container {
     padding: 0.5rem 1rem;
 
 }
+
+.divider {
+    width: 100%;
+    border-top: 1px solid var(--vscode-input-background);
+    margin: 1rem 0;
+}
+
+.exampleGroupTitle {
+    padding-bottom: 0.5rem;
+}
+
+// Example component css
+
+.step-badge {
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    background-color: var(--vscode-input-background);
+}
+

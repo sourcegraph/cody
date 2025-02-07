@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import styles from './QuickStart.module.css'
 
 import {
@@ -65,6 +65,10 @@ export function QuickStart({ updateInput }: QuickStartProps): JSX.Element | null
         },
     ]
 
+    useEffect(() => {
+        console.log(allExamples)
+    }, [])
+
     const toggleCollapse = () => {
         setIsCollapsed((prevState: boolean) => {
             const newState = !prevState
@@ -123,25 +127,51 @@ export function QuickStart({ updateInput }: QuickStartProps): JSX.Element | null
                     </div>
                     {!isCollapsed && (
                         <div className={styles.examplesContainer}>
-                            {allExamples.map((example, i) => {
-                                return (
-                                    <>
-                                        {'title' in example &&
-                                            <div className={styles.exampleGroupTitle}>{example.title}</div>
-                                        }
-                                        {'input' in example ? (
-                                            <div>regular example</div>
-                                        ) : (
-                                            <div>nested Example</div>
-                                        )}
-                                    </>
-                                )
-                            })}
-                            Start over
-                        </div>
+                            {allExamples.map((example, i) =>
+                                <>
+                                    {'title' in example &&
+                                        <>
+                                            {/*
+                                                This divider will work for now, because we only
+                                                need to account for 1 example group. If more are
+                                                added, we will need to rethink this.
+                                            */}
+                                            <div className={styles.divider} />
+                                            <div className={styles.exampleGroupTitle}>
+                                                {example.title}
+                                                {example.examples[0].input}
+                                            </div>
+                                            {example.examples.map((ex) => (
+                                                <Example example={ex} />
+                                            ))}
+                                        </>
+                                    }
+
+                                    {'input' in example && (
+                                        <>
+                                            {'maxWidth' in example ? (
+                                                <div style={{ maxWidth: '500px' }}>
+                                                    <Example example={example} />
+                                                </div>
+                                            ) : (
+                                                <Example example={example} />
+                                            )}
+                                        </>
+                                    )}
+                                </>
+                            )}
+                        </div >
                     )}
                 </div>
             </div >
         </>
     )
 }
+
+const Example = ({ example }: { example: Example }) =>
+    <div>
+        <div>{example.input}</div>
+        <div>{example.description}</div>
+    </div>
+
+
