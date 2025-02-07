@@ -99,24 +99,45 @@ export function makeVisualDiff(
     const lastRelevantLine = sortedDiff.findLastIndex(line => line.type !== 'unchanged')
     const relevantDiff = sortedDiff.slice(firstRelevantLine, lastRelevantLine + 1)
 
+    if (mode === 'additions') {
+        // We do not need to do anything else for additions. An ordered diff is enough
+        // for us to start rendering.
+        return { lines: relevantDiff }
+    }
+
+    // We need to transform the diff into a unified diff
+    // This will involve splitting modified lines into two lines and grouping additions and deletions together
     const lines: VisualDiffLine[] = []
+    const deletions: VisualDiffLine[] = []
+    const additions: VisualDiffLine[] = []
+
     for (let i = 0; i < relevantDiff.length; i++) {
         const line = relevantDiff[i]
-        if (line.type === 'modified' && mode === 'unified') {
-            // Split the modified line into two lines, one for the removed and one for the added text
-            const modifiedLine = line as ModifiedLineInfo
-            const removedLine: ModifiedLineInfoRemoved = {
-                ...modifiedLine,
-                type: 'modified-removed',
+
+        if (line.type === 'modified') {
+            // Split modified lines into two, ensuring the removed line is shown first
+            deletions.push({ ...line, type: 'modified-removed' })
+            additions.push({ ...line, type: 'modified-added' })
+        } else if (line.type === 'removed') {
+            deletions.push(line)
+        } else if (line.type === 'added') {
+            additions.push(line)
+        } else {
+            // We have hit an unchanged line, we can now flush any pending deletions/additions
+            // in the desired order, and continue with the unchanged line
+            if (deletions.length > 0 || additions.length > 0) {
+                lines.push(...deletions, ...additions)
+                // Clear the arrays
+                deletions.length = 0
+                additions.length = 0
             }
-            const addedLine: ModifiedLineInfoAdded = {
-                ...modifiedLine,
-                type: 'modified-added',
-            }
-            lines.push(removedLine, addedLine)
-            continue
+            lines.push(line)
         }
-        lines.push(line)
+    }
+
+    // End of the diff, ensure we have flushed any pending deletions/additions
+    if (deletions.length > 0 || additions.length > 0) {
+        lines.push(...deletions, ...additions)
     }
 
     return { lines }
