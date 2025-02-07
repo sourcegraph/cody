@@ -294,6 +294,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 break
             }
             case 'edit': {
+                await this.cancelSubmitOrEditOperation()
+
                 await this.handleEdit({
                     requestID: uuid.v4(),
                     text: PromptString.unsafe_fromUserQuery(message.text),
@@ -1081,16 +1083,12 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     }
 
     private submitOrEditOperation: AbortController | undefined
-    public startNewSubmitOrEditOperation(): Promise<AbortSignal> {
+    public startNewSubmitOrEditOperation(): AbortSignal {
         this.submitOrEditOperation?.abort()
-
-        return new Promise(resolve => {
-            setTimeout(() => {
-                this.submitOrEditOperation = new AbortController()
-                resolve(this.submitOrEditOperation.signal)
-            }, 500)
-        })
+        this.submitOrEditOperation = new AbortController()
+        return this.submitOrEditOperation.signal
     }
+
     private cancelSubmitOrEditOperation(): Promise<void> {
         if (this.submitOrEditOperation) {
             this.submitOrEditOperation.abort()
@@ -1222,7 +1220,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         preDetectedIntentScores?: { intent: string; score: number }[] | undefined | null
         manuallySelectedIntent?: ChatMessage['intent'] | undefined | null
     }): Promise<void> {
-        const abortSignal = await this.startNewSubmitOrEditOperation()
+        const abortSignal = this.startNewSubmitOrEditOperation()
 
         telemetryRecorder.recordEvent('cody.editChatButton', 'clicked', {
             billingMetadata: {
