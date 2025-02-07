@@ -155,7 +155,7 @@ function drawDiffColors(
 ): void {
     const isRemoval = line.type === 'removed' || line.type === 'modified-removed'
 
-    if (mode === 'unified') {
+    if (mode === 'unified' && line.type !== 'unchanged') {
         // For unified diffs we ensure we highlight the entire line first
         // This helps the user see exactly which lines are shown as added or deleted.
         // We will apply character level highlighting on top to highlight the changes
