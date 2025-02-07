@@ -20,12 +20,10 @@ import {
 } from '../../../components/shadcn/ui/accordion'
 import { Button } from '../../../components/shadcn/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '../../../components/shadcn/ui/tooltip'
-import { SourcegraphLogo } from '../../../icons/SourcegraphLogo'
 import { useTelemetryRecorder } from '../../../utils/telemetry'
 import { useConfig } from '../../../utils/useConfig'
 import { LoadingDots } from '../../components/LoadingDots'
 import { Cell } from '../Cell'
-import { NON_HUMAN_CELL_AVATAR_SIZE } from '../messageCell/assistant/AssistantMessageCell'
 import styles from './ContextCell.module.css'
 
 export const __ContextCellStorybookContext = createContext<{
@@ -165,7 +163,7 @@ export const ContextCell: FunctionComponent<{
         }
 
         return (
-            <div className="tw-flex tw-flex-col tw-justify-center tw-w-full tw-gap-2 tw-py-1 tw-px-4">
+            <div className="tw-flex tw-flex-col tw-justify-center tw-w-full tw-gap-2 tw-py-1">
                 <Accordion
                     type="single"
                     collapsible={true}
@@ -182,10 +180,6 @@ export const ContextCell: FunctionComponent<{
                                     className="tw-flex tw-items-center tw-gap-4"
                                     disabled={isContextLoading}
                                 >
-                                    <SourcegraphLogo
-                                        width={NON_HUMAN_CELL_AVATAR_SIZE}
-                                        height={NON_HUMAN_CELL_AVATAR_SIZE}
-                                    />
                                     <span className="tw-flex tw-items-baseline">
                                         {headerText.main}
                                         {headerText.sub && (
@@ -205,7 +199,7 @@ export const ContextCell: FunctionComponent<{
                             ) : (
                                 <>
                                     <AccordionContent
-                                        className="tw-ml-6 tw-flex tw-flex-col tw-gap-2"
+                                        className="tw-flex tw-flex-col tw-gap-2"
                                         overflow={false}
                                     >
                                         <div className={styles.contextSuggestedActions}>

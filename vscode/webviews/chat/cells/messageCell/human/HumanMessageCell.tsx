@@ -93,7 +93,6 @@ const HumanMessageCellContent = memo<HumanMessageCellContent>(props => {
 
     return (
         <BaseMessageCell
-            speakerTitle={isFirstMessage && (userInfo.user.displayName ?? userInfo.user.username)}
             cellAction={
                 <div className="tw-flex tw-gap-2 tw-items-center tw-justify-end">
                     {isFirstMessage && <OpenInNewEditorAction />}
