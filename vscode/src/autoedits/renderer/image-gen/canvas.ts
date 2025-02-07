@@ -103,22 +103,19 @@ function drawText(
 ): number {
     if (line.type === 'removed' || line.type === 'modified-removed') {
         // Handle deletions first
-        const lineText = line.type === 'modified-removed' ? line.oldText : line.text
-        const highlights =
-            line.type === 'modified-removed' ? line.oldHighlights[mode] : line.highlights[mode]
-
+        const highlights = line.highlights[mode]
         if (highlights.length === 0) {
             // No syntax highlighting, we probably don't support this language via Shiki
             // Default to white or black depending on the theme
             ctx.fillStyle = DEFAULT_HIGHLIGHT_COLORS[mode]
-            ctx.fillText(lineText, position.x, position.y + config.fontSize)
-            return ctx.measureText(lineText).width
+            ctx.fillText(line.text, position.x, position.y + config.fontSize)
+            return ctx.measureText(line.text).width
         }
 
         let xPos = position.x
         for (const { range, color } of highlights) {
             const [start, end] = range
-            const content = lineText.substring(start, end)
+            const content = line.text.substring(start, end)
             ctx.fillStyle = color
             ctx.fillText(content, xPos, position.y + config.fontSize)
             xPos += ctx.measureText(content).width
@@ -173,10 +170,9 @@ function drawDiffColors(
     if (isRemoval) {
         // Handle deletions first
         ctx.fillStyle = config.diffColors.removed.text
-        const lineText = line.type === 'modified-removed' ? line.oldText : line.text
         const removals: [number, number][] = []
         if (line.type === 'removed') {
-            removals.push([0, lineText.length])
+            removals.push([0, line.text.length])
         }
         if (line.type === 'modified-removed') {
             const modifiedRemovals = line.changes.filter(change => change.type === 'delete')
@@ -190,9 +186,9 @@ function drawDiffColors(
 
         for (const [start, end] of removals) {
             // Calculate width of text before the highlight
-            const preHighlightWidth = ctx.measureText(lineText.slice(0, start)).width
+            const preHighlightWidth = ctx.measureText(line.text.slice(0, start)).width
             // Calculate width of the highlighted section
-            const highlightWidth = ctx.measureText(lineText.slice(start, end)).width
+            const highlightWidth = ctx.measureText(line.text.slice(start, end)).width
 
             // Draw highlight at correct position
             ctx.fillRect(position.x + preHighlightWidth, position.y, highlightWidth, config.lineHeight)
@@ -223,9 +219,9 @@ function drawDiffColors(
 
     for (const [start, end] of additions) {
         // Calculate width of text before the highlight
-        const preHighlightWidth = ctx.measureText(lineText.slice(0, start)).width
+        const preHighlightWidth = ctx.measureText(lineText!.slice(0, start)).width
         // Calculate width of the highlighted section
-        const highlightWidth = ctx.measureText(lineText.slice(start, end)).width
+        const highlightWidth = ctx.measureText(lineText!.slice(start, end)).width
 
         // Draw highlight at correct position
         ctx.fillRect(position.x + preHighlightWidth, position.y, highlightWidth, config.lineHeight)
@@ -298,9 +294,7 @@ export function drawDecorationsToCanvas(
     let tempYPos = renderConfig.padding.y
     let requiredWidth = 0
     for (const line of lines) {
-        // This is a bit hacky, maybe revisit. We don't know if we're in a unified diff so we need to ensure
-        // we get the right line.
-        const text = 'newText' in line ? line.newText : 'oldText' in line ? line.oldText : line.text
+        const text = 'newText' in line ? line.newText : line.text
         const measure = tempCtx.measureText(text)
         requiredWidth = Math.max(requiredWidth, renderConfig.padding.x + measure.width)
         tempYPos += renderConfig.lineHeight

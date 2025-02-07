@@ -3,6 +3,7 @@ import type {
     AddedLineInfo,
     DecorationInfo,
     DecorationLineInfo,
+    LineChange,
     ModifiedLineInfo,
     RemovedLineInfo,
     SyntaxHighlight,
@@ -52,18 +53,23 @@ export function makeDecoratedDiff(
     }
 }
 
+interface BaseModifiedLineSplit {
+    type: 'modified-added' | 'modified-removed'
+    changes: LineChange[]
+    originalLineNumber: number
+    modifiedLineNumber: number
+}
+
 // TODO: Remove `newText` and `newHighlights` from this interface
 // makes the code a lot simpler and new/old doesn't make sense for these types
-export interface ModifiedLineInfoAdded
-    extends Omit<ModifiedLineInfo, 'type' | 'oldText' | 'oldHighlights'> {
+export interface ModifiedLineInfoAdded extends BaseModifiedLineSplit {
     type: 'modified-added'
     text: string
     highlights: SyntaxHighlight
 }
 // TODO: Remove `oldText` and `oldHighlights` from this interface
 // makes the code a lot simpler and new/old doesn't make sense for these types
-export interface ModifiedLineInfoRemoved
-    extends Omit<ModifiedLineInfo, 'type' | 'newText' | 'newHighlights'> {
+export interface ModifiedLineInfoRemoved extends BaseModifiedLineSplit {
     type: 'modified-removed'
     text: string
     highlights: SyntaxHighlight
@@ -130,16 +136,20 @@ export function makeVisualDiff(
         if (line.type === 'modified') {
             // Split modified lines into two, ensuring the removed line is shown first
             deletions.push({
-                ...line,
                 type: 'modified-removed',
                 text: line.oldText,
                 highlights: line.oldHighlights,
+                changes: line.changes,
+                originalLineNumber: line.originalLineNumber,
+                modifiedLineNumber: line.modifiedLineNumber,
             })
             additions.push({
-                ...line,
                 type: 'modified-added',
                 text: line.newText,
                 highlights: line.newHighlights,
+                changes: line.changes,
+                originalLineNumber: line.originalLineNumber,
+                modifiedLineNumber: line.modifiedLineNumber,
             })
         } else if (line.type === 'removed') {
             deletions.push(line)

@@ -114,9 +114,7 @@ export function syntaxHighlightDecorations(
             // the added code. We need to apply the same highlighting to the removed code as the added code.
             const lineTokens = previousHighlights.get(line.originalLineNumber)
             if (lineTokens) {
-                const highlights =
-                    line.type === 'modified-removed' ? line.oldHighlights : line.highlights
-                processTokens(lineTokens, highlights[mode], mode)
+                processTokens(lineTokens, line.highlights[mode], mode)
             }
             return line
         }
