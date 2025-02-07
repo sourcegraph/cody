@@ -6,6 +6,7 @@ import {
     Expand,
     Zap,
 } from 'lucide-react'
+import classNames from 'classnames'
 
 interface Example {
     input: string
@@ -81,37 +82,27 @@ export function QuickStart({ updateInput }: QuickStartProps): JSX.Element | null
     return (
         <>
             <div
-                className={styles.quickstartContainer}
+                className={styles.container}
                 tabIndex={0}
             >
                 <div
-                    className="
-                        tw-w-full
-                        tw-max-h-[90vh]
-                        tw-rounded-xl
-                        tw-bg-background
-                        tw-p-4
-                        tw-animate-[slideUp_0.2s_ease-in-out]
-                        tw-shadow-lg"
+                    className={classNames(
+                        styles.qsHeaderContainer,
+                        "tw-rounded-xl tw-animate-[slideUp_0.2s_ease-in-out] tw-shadow-lg")}
                     role="dialog"
                     aria-modal="true"
-                    style={{
-                        animation: 'fadeIn 0.25s ease-in-out, slideUp 0.25s ease-in-out',
-                    }}
                 >
-                    <div className={styles.quickstartHeader}>
+                    <div className={styles.qsHeader}>
                         <div
-                            className="tw-flex tw-items-center tw-gap-4 tw-font-medium tw-text-foreground text-md md:tw-text-base"
-                            onClick={() => {
-                                toggleCollapse()
-                            }}
+                            className={styles.header}
                         >
                             <Zap className="tw-h-8 tw-w-8" strokeWidth={1.25} />
-                            Quick Start
+                            {/* TODO (jason): won't listen to spacing. shouldn't use nbsp */}
+                            &nbsp;
+                            <div>Quick Start</div>
                         </div>
                         <button
                             type="button"
-                            className="tw-rounded-full tw-p-1 hover:tw-bg-muted"
                             onClick={() => toggleCollapse()}
                             onKeyDown={handleCollapseKeyDown}
                             aria-label="Close quick start guide"
@@ -131,67 +122,26 @@ export function QuickStart({ updateInput }: QuickStartProps): JSX.Element | null
                         </button>
                     </div>
                     {!isCollapsed && (
-                        <div className={styles.cheatsheet}>
-                            <div className={styles.examples}>
-                                {/* Render all examples including nested ones */}
-                                {allExamples.map(example => (
-                                    <div
-                                        key={`overlay-example-${'input' in example ? example.input : example.title
-                                            }`}
-                                        className={styles.example}
-                                    >
-                                        {'title' in example && (
-                                            <h4 className="tw-mb-2 tw-pt-8 tw-text-md tw-font-medium tw-text-foreground">
-                                                {example.title}
-                                            </h4>
-                                        )}
-                                        {'examples' in example ? (
-                                            <div className="tw-flex tw-flex-row tw-flex-wrap tw-gap-6">
-                                                {example.examples?.map((ex) => (
-                                                    <div
-                                                        key={`nested-example-${ex.input}`}
-                                                        className={styles.exampleSteps}
-                                                        style={
-                                                            ex.maxWidth
-                                                                ? { maxWidth: ex.maxWidth }
-                                                                : undefined
-                                                        }
-                                                    >
-                                                        <p>step {ex.step}</p>
-                                                        <div>
-                                                            <div
-                                                                className={`${styles.exampleInput} tw-px-4 tw-py-2 md:tw-px-4 md:tw-py-2 md:tw-text-md`}
-                                                                onClick={() => updateInput(ex.input)}
-                                                            >
-                                                                {ex.input}
-                                                            </div>
-                                                            <div className="tw-py-2 tw-text-sm tw-text-muted-foreground md:tw-text-md">
-                                                                {ex.description}
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                ))}
-                                            </div>
+                        <div className={styles.examplesContainer}>
+                            {allExamples.map((example, i) => {
+                                return (
+                                    <>
+                                        {'title' in example &&
+                                            <div className={styles.exampleGroupTitle}>{example.title}</div>
+                                        }
+                                        {'input' in example ? (
+                                            <div>regular example</div>
                                         ) : (
-                                            <>
-                                                <div
-                                                    className={`${styles.exampleInput} tw-px-4 tw-py-2 md:tw-px-4 md:tw-py-2 md:tw-text-md`}
-                                                    onClick={() => updateInput(example.input)}
-                                                >
-                                                    {example.input}
-                                                </div>
-                                                <div className="tw-py-2 tw-text-sm tw-text-muted-foreground md:tw-text-md">
-                                                    {example.description}
-                                                </div>
-                                            </>
+                                            <div>nested Example</div>
                                         )}
-                                    </div>
-                                ))}
-                            </div>
+                                    </>
+                                )
+                            })}
+                            Start over
                         </div>
                     )}
                 </div>
-            </div>
+            </div >
         </>
     )
 }

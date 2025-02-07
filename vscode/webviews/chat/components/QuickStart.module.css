@@ -1,9 +1,17 @@
-.quickstart-container{
+.container {
     margin: 1rem;
     max-width: 100%;
 }
 
-.quickstart-header {
+.qs-header-container {
+    width: 100%;
+    max-height: 90vh;
+    background-color: color-mix(in srgb, var(--vscode-input-background) 50%, transparent);
+    padding: 0.5rem;
+    border-radius: 4px;
+}
+
+.qs-header {
     display: flex;
     flex-flow: row nowrap;
     justify-content: space-between;
@@ -12,57 +20,29 @@
     gap: 0.5rem;
 }
 
-.cheatsheet {
+.header {
     display: flex;
-    flex-flow: column nowrap;
-    width: 100%;
-    gap: 0.5rem;
+    align-items: center;
+    justify-content: start;
+    gap: 0.75;
+    font-size: 1rem;
+    color: var(vscode-input-foreground);
 }
 
 .expand-button {
     display: flex;
     flex-flow: row nowrap;
-    justify-content: flex-end;
     align-items: center;
+    justify-content: flex-end;
     gap: 0.5rem;
-    color: var(--vscode-input-foreground);
+    padding: 0.25rem 0.5rem;
 }
 
-.examples {
-    display: flex;
-    flex-flow: row wrap;
-    gap: 0.25rem 1rem;
-    padding: 0 0.5rem;
+.expand-button:hover {
+    background-color: var(--vscode-input-background);
 }
 
-.example {
-    display: flex;
-    flex-flow: column nowrap;
-    align-items: flex-start;
-    gap: 0.5rem;
-    padding: 0.25rem 0;
-}
+.examples-container {
+    padding: 0.5rem 1rem;
 
-.example-steps {
-    display: flex;
-    flex-flow: row nowrap;
-    justify-content: start;
-    align-items: start;
-    gap: 0.5rem;
-}
-
-.example-input {
-    display: flex;
-    flex-flow: row wrap;
-    border-radius: 4px;
-    color: var(--vscode-input-foreground);
-    border: 1px solid var(--vscode-button-secondaryBackground);
-    background-color: var(--vscode-editor-background);
-    font-family: var(--vscode-editor-font-family);
-    font-size: var(--vscode-editor-font-size);
-    cursor: pointer;
-}
-
-.example-input:hover {
-    background-color: var(--vscode-badge-background)
 }

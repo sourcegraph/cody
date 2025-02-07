@@ -131,7 +131,7 @@ export const Transcript: FC<TranscriptProps> = props => {
                 },
             ])
         },
-        []
+        [lastHumanEditorRef]
     )
 
     return (
@@ -149,6 +149,8 @@ export const Transcript: FC<TranscriptProps> = props => {
                         models={models}
                         chatEnabled={chatEnabled}
                         userInfo={userInfo}
+                        lastHumanEditorRef={lastHumanEditorRef}
+                        feedbackButtonsOnSubmit={props.feedbackButtonsOnSubmit}
                         interaction={interaction}
                         guardrails={guardrails}
                         postMessage={postMessage}
@@ -172,7 +174,6 @@ export const Transcript: FC<TranscriptProps> = props => {
         </div>
     )
 }
-
 /** A human-assistant message-and-response pair. */
 export interface Interaction {
     /** The human message, either sent or not. */
