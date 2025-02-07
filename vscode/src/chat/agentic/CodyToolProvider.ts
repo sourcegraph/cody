@@ -24,10 +24,7 @@ export interface ToolStatusCallback {
     onUpdate(id: string, content: string): void
     onStream(step: Partial<ProcessingStep>): void
     onComplete(id?: string, error?: Error): void
-    onConfirmationNeeded(
-        id: string,
-        step: Omit<ProcessingStep, 'id' | 'type' | 'state'>
-    ): Promise<boolean>
+    onConfirmationNeeded(id: string, step: Omit<ProcessingStep, 'id' | 'state'>): Promise<boolean>
 }
 
 /**

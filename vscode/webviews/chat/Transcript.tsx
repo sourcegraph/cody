@@ -55,6 +55,8 @@ import { TELEMETRY_INTENT } from '../../src/telemetry/onebox'
 import { useIntentDetectionConfig } from '../components/omnibox/intentDetection'
 import { AgenticContextCell } from './cells/agenticCell/AgenticContextCell'
 import ApprovalCell from './cells/agenticCell/ApprovalCell'
+import { PlanningCell } from './cells/agenticCell/PlanningCell'
+import { ThinkingCell } from './cells/agenticCell/ThinkingCell'
 import { DidYouMeanNotice } from './cells/messageCell/assistant/DidYouMean'
 import { SwitchIntent } from './cells/messageCell/assistant/SwitchIntent'
 import { LastEditorContext } from './context'
@@ -729,11 +731,6 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                     processes={humanMessage?.processes ?? undefined}
                 />
             )}
-            {!isSearchIntent &&
-                humanMessage.agent &&
-                isContextLoading &&
-                assistantMessage?.isLoading && <ApprovalCell vscodeAPI={vscodeAPI} />}
-
             {!(humanMessage.agent && isContextLoading) &&
                 (humanMessage.contextFiles || assistantMessage || isContextLoading) &&
                 !isSearchIntent && (
@@ -764,6 +761,9 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                         agent={humanMessage?.agent ?? undefined}
                     />
                 )}
+            {humanMessage?.processes?.some(p => p.type === 'thought') && (
+                <ThinkingCell processes={humanMessage?.processes?.filter(p => p.type === 'thought')} />
+            )}
             {assistantMessage &&
                 (!isContextLoading ||
                     (assistantMessage.subMessages && assistantMessage.subMessages.length > 0)) && (
@@ -791,6 +791,16 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                         isLastSentInteraction={isLastSentInteraction}
                     />
                 )}
+            {humanMessage?.processes?.some(p => p.type === 'plan') && (
+                <PlanningCell
+                    processes={humanMessage?.processes?.filter(p => p.type === 'plan')}
+                    vscodeAPI={vscodeAPI}
+                />
+            )}
+            {!isSearchIntent &&
+                humanMessage.agent &&
+                isContextLoading &&
+                assistantMessage?.isLoading && <ApprovalCell vscodeAPI={vscodeAPI} />}
         </>
     )
 }, isEqual)

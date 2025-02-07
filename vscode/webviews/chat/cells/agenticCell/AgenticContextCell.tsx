@@ -106,12 +106,14 @@ const ProcessList: FC<{
     )
 }
 
+const excludedProcessTypes = ['confirmation', 'plan', 'thought']
+
 const ProcessItem: FC<{
     process: ProcessingStep
     isContextLoading: boolean
     headerIconClassName?: string
 }> = ({ process, isContextLoading, headerIconClassName }) => {
-    if (!process.id || process.type === 'confirmation') {
+    if (!process.id || (process.type && excludedProcessTypes.includes(process.type))) {
         return null
     }
 

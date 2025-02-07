@@ -64,6 +64,18 @@ export enum ProcessType {
      */
     Tool = 'tool',
     /**
+     * TODO: TBC
+     */
+    Plan = 'plan',
+    /**
+     * TODO: TBC
+     */
+    Action = 'action',
+    /**
+     * TODO: TBC
+     */
+    Thought = 'thought',
+    /**
      * A process that prompts the user confirmation.
      */
     Confirmation = 'confirmation',
@@ -111,6 +123,8 @@ export interface ProcessingStep {
      * Error information if the step failed
      */
     error?: ChatError | undefined | null
+
+    subSteps?: ProcessingStep[] | undefined | null
 }
 
 export type ChatMessageWithSearch = ChatMessage & { search: ChatMessageSearch }

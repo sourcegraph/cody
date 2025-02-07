@@ -8,7 +8,6 @@ import {
     type Message,
     type ProcessingStep,
     type PromptMixin,
-    PromptString,
     clientCapabilities,
     getClientPromptString,
     isDefined,
@@ -25,8 +24,11 @@ import type { ChatBuilder } from '../chat-view/ChatBuilder'
 import { DefaultPrompter } from '../chat-view/prompt'
 import type { CodyTool } from './CodyTool'
 import { CodyToolProvider, type ToolStatusCallback } from './CodyToolProvider'
+import { PlanningAgent } from './PlanningAgent'
 import { ProcessManager } from './ProcessManager'
-import { ACTIONS_TAGS, CODYAGENT_PROMPTS } from './prompts'
+import { CODYAGENT_PROMPTS } from './prompts'
+import { ACTIONS_TAGS } from './prompts/reflection'
+import { RawTextProcessor } from './utils/processors'
 
 /**
  * A DeepCodyAgent handles advanced context retrieval and analysis for chat interactions.
@@ -51,8 +53,8 @@ export class DeepCodyAgent {
     protected readonly multiplexer = new BotResponseMultiplexer()
     protected readonly promptMixins: PromptMixin[] = []
     protected readonly tools: CodyTool[]
-    protected statusCallback: ToolStatusCallback
-    private stepsManager: ProcessManager
+    public statusCallback: ToolStatusCallback
+    public stepsManager: ProcessManager
 
     protected context: ContextItem[] = []
     /**
@@ -61,6 +63,8 @@ export class DeepCodyAgent {
      * - loop: how many loop was run.
      */
     private stats = { context: 0, loop: 0 }
+
+    public isChatRequest = true
 
     constructor(
         protected readonly chatBuilder: ChatBuilder,
@@ -92,6 +96,18 @@ export class DeepCodyAgent {
                 return this.stepsManager.addConfirmationStep(id, step)
             },
         }
+    }
+
+    public getNextAgent(): PlanningAgent | undefined {
+        if (!this.isChatRequest) {
+            return new PlanningAgent(
+                this.chatBuilder,
+                this.chatClient,
+                this.statusCallback,
+                this.stepsManager
+            )
+        }
+        return undefined
     }
 
     /**
@@ -227,6 +243,10 @@ export class DeepCodyAgent {
                 return []
             }
 
+            if (isEditRequest(res)) {
+                this.isChatRequest = false
+            }
+
             const step = this.stepsManager.addStep({ title: 'Retrieving context' })
 
             const results = await Promise.all(
@@ -341,50 +361,8 @@ export class DeepCodyAgent {
     }
 }
 
-/**
- * Handles building and managing raw text returned by LLM with support for:
- * - Incremental string building
- * - XML-style tag content extraction
- * - Length tracking
- * - String joining with custom connectors
- */
-export class RawTextProcessor {
-    private parts: string[] = []
-
-    public append(str: string): void {
-        this.parts.push(str)
-    }
-
-    // Destructive read that clears state
-    public consumeAndClear(): string {
-        const joined = this.parts.join('')
-        this.reset()
-        return joined
-    }
-
-    public get length(): number {
-        return this.parts.reduce((acc, part) => acc + part.length, 0)
-    }
-
-    private reset(): void {
-        this.parts = []
-    }
-
-    public static extract(response: string, tag: string): string[] {
-        const tagLength = tag.length
-        return (
-            response
-                .match(new RegExp(`<${tag}>(.*?)<\/${tag}>`, 'g'))
-                ?.map(m => m.slice(tagLength + 2, -(tagLength + 3))) || []
-        )
-    }
-
-    public static join(prompts: PromptString[], connector = ps`\n`) {
-        return PromptString.join(prompts, connector)
-    }
-}
-
 const answerTag = ACTIONS_TAGS.ANSWER.toString()
 const contextTag = ACTIONS_TAGS.CONTEXT.toString()
-const isReadyToAnswer = (text: string) => text === `<${answerTag}>`
+const isReadyToAnswer = (text: string) => text === `<${answerTag}>answer</${answerTag}>`
+const isEditRequest = (text: string) => text.includes(`<${answerTag}>edit</${answerTag}>`)
 const toPlural = (num: number, text: string) => `${num} ${text}${num > 1 ? 's' : ''}`

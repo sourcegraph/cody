@@ -866,11 +866,13 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                         const confirmationId = step.id
 
                         // Send the confirmation request to the webview
-                        this.postMessage({
-                            type: 'action/confirmationRequest',
-                            id: confirmationId,
-                            step,
-                        })
+                        if (step.type === 'confirmation') {
+                            this.postMessage({
+                                type: 'action/confirmationRequest',
+                                id: confirmationId,
+                                step,
+                            })
+                        }
 
                         // Wait for the webview to respond with the confirmation
                         const confirmation = new Promise<boolean>(resolve => {
@@ -888,7 +890,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                         })
 
                         // Now that we have the confirmation, proceed based on the user's choice
-
                         this.postViewTranscript({ speaker: 'assistant', processes: [step], model })
                         return confirmation
                     },

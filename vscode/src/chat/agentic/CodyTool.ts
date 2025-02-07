@@ -22,7 +22,7 @@ import { getChatContextItemsForMention } from '../context/chatContext'
 import { getCorpusContextItemsForEditorState } from '../initialContext'
 import { CodyChatMemory } from './CodyChatMemory'
 import type { ToolStatusCallback } from './CodyToolProvider'
-import { RawTextProcessor } from './DeepCody'
+import { RawTextProcessor } from './utils/processors'
 
 /**
  * Configuration interface for CodyTool instances.

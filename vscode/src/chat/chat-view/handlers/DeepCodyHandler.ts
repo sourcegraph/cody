@@ -4,6 +4,7 @@ import {
     type ProcessingStep,
     type SerializedPromptEditorState,
     featureFlagProvider,
+    logDebug,
     storeLastValue,
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
@@ -17,6 +18,7 @@ import type { AgentHandler, AgentHandlerDelegate } from './interfaces'
 // NOTE: Skip query rewrite for Deep Cody as it will be done during review step.
 const skipQueryRewriteForDeepCody = true
 
+// TODO: Rename to AgenticChatHandler
 export class DeepCodyHandler extends ChatHandler implements AgentHandler {
     private featureDeepCodyRateLimitBase = storeLastValue(
         featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.DeepCodyRateLimitBase)
@@ -81,13 +83,25 @@ export class DeepCodyHandler extends ChatHandler implements AgentHandler {
         }
 
         const baseContext = baseContextResult.contextItems ?? []
-        const agent = new DeepCodyAgent(
+        const contextAgent = new DeepCodyAgent(
             chatBuilder,
             this.chatClient,
             (steps: ProcessingStep[]) => delegate.postStatuses(steps),
             (step: ProcessingStep) => delegate.postRequest(step)
         )
+        const agenticContext = await contextAgent.getContext(requestID, signal, baseContext)
 
-        return { contextItems: await agent.getContext(requestID, signal, baseContext) }
+        const planningAgent = contextAgent.getNextAgent()
+        if (!planningAgent) {
+            return { contextItems: agenticContext }
+        }
+
+        const plan = await planningAgent.getPlan(requestID, signal, agenticContext)
+        logDebug('Deep Cody Handler', 'Plan', { verbose: { plan } })
+        if (plan) {
+            await planningAgent.executePlan(plan, requestID, signal)
+        }
+
+        return { contextItems: agenticContext, abort: !!plan }
     }
 }

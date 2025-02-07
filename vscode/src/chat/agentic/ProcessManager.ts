@@ -14,7 +14,7 @@ export class ProcessManager {
     public addStep(_step: Partial<ProcessingStep>): ProcessingStep {
         const step: ProcessingStep = {
             ..._step,
-            id: _step.id ?? uuid.v4(),
+            id: _step.id || uuid.v4(),
             type: _step.type,
             state: 'pending',
             title: _step.title || undefined,
@@ -26,7 +26,11 @@ export class ProcessManager {
     }
 
     public async addConfirmationStep(id: string, _step: Partial<ProcessingStep>): Promise<boolean> {
-        const step = this.addStep({ ..._step, id, type: ProcessType.Confirmation })
+        const step = this.addStep({
+            ..._step,
+            id,
+            type: _step.type === ProcessType.Plan ? ProcessType.Plan : ProcessType.Confirmation,
+        })
         return this.onRequest(step)
     }
 
