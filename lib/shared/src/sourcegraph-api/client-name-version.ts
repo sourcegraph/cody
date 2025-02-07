@@ -39,8 +39,15 @@ export function getClientIdentificationHeaders() {
               : 'Unknown environment'
     const headers: { [header: string]: string } = {
         'User-Agent': `${clientName}/${clientVersion} (${runtimeInfo})`,
-        'X-Requested-With': `${clientName} ${clientVersion}`,
     }
+
+    // Only set these headers in non-demo mode, because the demo mode is
+    // running in a local server and thus the backend will regard it as an
+    // untrusted cross-origin request.
+    if (!process.env.CODY_WEB_DEMO) {
+        headers['X-Requested-With'] = `${clientName} ${clientVersion}`
+    }
+
     return headers
 }
 
