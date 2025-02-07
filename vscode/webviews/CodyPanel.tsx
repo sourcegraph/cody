@@ -129,7 +129,7 @@ export const CodyPanel: FunctionComponent<CodyPanelProps> = ({
                     />
                 )}
                 {errorMessages && <ErrorBanner errors={errorMessages} setErrors={setErrorMessages} />}
-                <TabContainer value={view} ref={tabContainerRef}>
+                <TabContainer value={view} ref={tabContainerRef} data-scrollable>
                     {view === View.Chat && (
                         <Chat
                             chatEnabled={chatEnabled}
