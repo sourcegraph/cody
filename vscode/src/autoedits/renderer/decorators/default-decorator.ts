@@ -379,6 +379,10 @@ export class DefaultDecorator implements AutoEditsDecorator {
         const { dark, light } = generateSuggestionAsImage({
             decorations: decorationInfo,
             lang: this.editor.document.languageId,
+            // TODO: Determine correct mode based on environment
+            // VS Code: 'additions'
+            // Client capabilities === decorations: 'additions'
+            // Client capabiliies === image: 'unified'
             mode: 'unified',
         })
         const startLineEndColumn = this.getEndColumn(this.editor.document.lineAt(startLine))
@@ -397,6 +401,7 @@ export class DefaultDecorator implements AutoEditsDecorator {
             scale: '0.5',
             'transform-origin': '0px 0px',
             height: 'auto',
+            'line-height': '0',
         })
 
         this.editor.setDecorations(this.addedLinesDecorationType, [
