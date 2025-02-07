@@ -51,10 +51,7 @@ interface EditLoggingContext {
     selectionRange: [number, number]
 }
 
-type SmartApplyLoggingState =
-    | SmartApplyBaseContext
-    | SmartApplySelectionContext
-    | SmartApplyFinalContext
+type SmartApplyLoggingState = SmartApplyBaseContext | SmartApplySelectionContext | SmartApplyFinalContext
 
 export class EditLoggingFeatureFlagManager implements vscode.Disposable {
     private featureFlagSmartApplyContextDataCollection = storeLastValue(
@@ -238,10 +235,7 @@ export function getEditLoggingContext(param: {
     return context
 }
 
-function shouldLogEditContextItem<T>(
-    payload: T,
-    isFeatureFlagEnabledForLogging: boolean
-): boolean {
+function shouldLogEditContextItem<T>(payload: T, isFeatureFlagEnabledForLogging: boolean): boolean {
     // 🚨 SECURITY: included only for DotCom users and for users in the feature flag.
     if (isDotComAuthed() && isFeatureFlagEnabledForLogging) {
         const payloadSize = calculatePayloadSizeInBytes(payload)
