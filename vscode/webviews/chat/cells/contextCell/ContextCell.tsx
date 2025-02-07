@@ -1,15 +1,9 @@
-import type {
-    ChatMessage,
-    ContextItem,
-    Model,
-    ProcessingStep,
-    RankedContext,
-} from '@sourcegraph/cody-shared'
+import type { ChatMessage, ContextItem, Model, RankedContext } from '@sourcegraph/cody-shared'
 import { pluralize } from '@sourcegraph/cody-shared'
 import { DeepCodyAgentID } from '@sourcegraph/cody-shared/src/models/client'
 import { MENTION_CLASS_NAME } from '@sourcegraph/prompt-editor'
 import { clsx } from 'clsx'
-import { BrainIcon, FilePenLine, MessagesSquareIcon } from 'lucide-react'
+import { BrainIcon, MessagesSquareIcon } from 'lucide-react'
 import { type FunctionComponent, createContext, memo, useCallback, useContext, useState } from 'react'
 import { FileLink } from '../../../components/FileLink'
 import {
@@ -18,7 +12,6 @@ import {
     AccordionItem,
     AccordionTrigger,
 } from '../../../components/shadcn/ui/accordion'
-import { Button } from '../../../components/shadcn/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '../../../components/shadcn/ui/tooltip'
 import { useTelemetryRecorder } from '../../../utils/telemetry'
 import { useConfig } from '../../../utils/useConfig'
@@ -37,7 +30,6 @@ export const ContextCell: FunctionComponent<{
     isContextLoading: boolean
     contextItems: ContextItem[] | undefined
     contextAlternatives?: RankedContext[]
-    resubmitWithRepoContext?: () => Promise<void>
 
     isForFirstMessage: boolean
 
@@ -47,27 +39,20 @@ export const ContextCell: FunctionComponent<{
     defaultOpen?: boolean
     intent: ChatMessage['intent']
 
-    onManuallyEditContext: () => void
-    editContextNode: React.ReactNode
     experimentalOneBoxEnabled?: boolean
-    processes?: ProcessingStep[]
     agent?: string
 }> = memo(
     ({
         contextItems,
         contextAlternatives,
-        resubmitWithRepoContext,
 
         model,
         isForFirstMessage,
         className,
         defaultOpen,
         isContextLoading,
-        onManuallyEditContext,
-        editContextNode,
         intent,
         experimentalOneBoxEnabled,
-        processes,
         agent,
     }) => {
         const __storybook__initialOpen = useContext(__ContextCellStorybookContext)?.initialOpen ?? false
@@ -122,11 +107,6 @@ export const ContextCell: FunctionComponent<{
                 return prev ? '' : 'item-1'
             })
         }, [excludedContext.length, usedContext])
-
-        const onEditContext = useCallback(() => {
-            triggerAccordion()
-            onManuallyEditContext()
-        }, [triggerAccordion, onManuallyEditContext])
 
         const {
             config: { internalDebugContext },
@@ -202,33 +182,6 @@ export const ContextCell: FunctionComponent<{
                                         className="tw-flex tw-flex-col tw-gap-2"
                                         overflow={false}
                                     >
-                                        <div className={styles.contextSuggestedActions}>
-                                            {contextItems &&
-                                                contextItems.length > 0 &&
-                                                !isAgenticChat && (
-                                                    <Button
-                                                        size="sm"
-                                                        variant="outline"
-                                                        className={clsx(
-                                                            'tw-pr-4',
-                                                            styles.contextItemEditButton
-                                                        )}
-                                                        onClick={onEditContext}
-                                                    >
-                                                        {editContextNode}
-                                                    </Button>
-                                                )}
-                                            {resubmitWithRepoContext && !isAgenticChat && (
-                                                <Button
-                                                    size="sm"
-                                                    variant="outline"
-                                                    onClick={resubmitWithRepoContext}
-                                                    type="button"
-                                                >
-                                                    Resend with current repository context
-                                                </Button>
-                                            )}
-                                        </div>
                                         {internalDebugContext && contextAlternatives && (
                                             <div>
                                                 <button onClick={prevSelectedAlternative} type="button">
@@ -423,18 +376,4 @@ const ExcludedContextWarning: React.FC<{ message: string }> = ({ message }) => (
             .
         </span>
     </div>
-)
-
-export const EditContextButtonSearch = (
-    <>
-        <FilePenLine size={'1em'} />
-        <div>Edit results</div>
-    </>
-)
-
-export const EditContextButtonChat = (
-    <>
-        <FilePenLine size={'1em'} />
-        <div>Edit context</div>
-    </>
 )

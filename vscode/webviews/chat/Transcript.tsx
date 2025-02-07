@@ -11,11 +11,7 @@ import {
     isAbortErrorOrSocketHangUp,
     serializedPromptEditorStateFromText,
 } from '@sourcegraph/cody-shared'
-import {
-    type PromptEditorRefAPI,
-    useDefaultContextForChat,
-    useExtensionAPI,
-} from '@sourcegraph/prompt-editor'
+import { type PromptEditorRefAPI, useExtensionAPI } from '@sourcegraph/prompt-editor'
 import { clsx } from 'clsx'
 import { isEqual } from 'lodash'
 import debounce from 'lodash/debounce'
@@ -39,11 +35,6 @@ import { getTraceparentFromSpanContext, useTelemetryRecorder } from '../utils/te
 import { useOmniBox } from '../utils/useOmniBox'
 import type { CodeBlockActionsProps } from './ChatMessageContent/ChatMessageContent'
 import {
-    ContextCell,
-    EditContextButtonChat,
-    EditContextButtonSearch,
-} from './cells/contextCell/ContextCell'
-import {
     AssistantMessageCell,
     makeHumanMessageInfo,
 } from './cells/messageCell/assistant/AssistantMessageCell'
@@ -56,6 +47,7 @@ import { TELEMETRY_INTENT } from '../../src/telemetry/onebox'
 import { useIntentDetectionConfig } from '../components/omnibox/intentDetection'
 import { AgenticContextCell } from './cells/agenticCell/AgenticContextCell'
 import ApprovalCell from './cells/agenticCell/ApprovalCell'
+import { ContextCell } from './cells/contextCell/ContextCell'
 import { DidYouMeanNotice } from './cells/messageCell/assistant/DidYouMean'
 import { SwitchIntent } from './cells/messageCell/assistant/SwitchIntent'
 import { LastEditorContext } from './context'
@@ -620,38 +612,11 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
         [onEditSubmit, telemetryRecorder, humanMessage]
     )
 
-    const { corpusContext: corpusContextItems } = useDefaultContextForChat()
-    const resubmitWithRepoContext = useCallback(async () => {
-        const editorState = humanEditorRef.current?.getSerializedValue()
-        if (editorState) {
-            const editor = humanEditorRef.current
-            if (corpusContextItems.length === 0 || !editor) {
-                return
-            }
-            await editor.addMentions(corpusContextItems, 'before', ' ')
-            onEditSubmit('chat')
-        }
-    }, [corpusContextItems, onEditSubmit])
-
     const reSubmitWithChatIntent = useCallback(() => reSubmitWithIntent('chat'), [reSubmitWithIntent])
     const reSubmitWithSearchIntent = useCallback(
         () => reSubmitWithIntent('search'),
         [reSubmitWithIntent]
     )
-
-    const manuallyEditContext = useCallback(() => {
-        const contextFiles = humanMessage.contextFiles
-        const editor = humanEditorRef.current
-        if (!contextFiles || !editor) {
-            return
-        }
-        editor.filterMentions(item => item.type !== 'repository')
-        editor.addMentions(contextFiles, 'before', '\n')
-    }, [humanMessage.contextFiles])
-
-    const mentionsContainRepository = humanEditorRef.current
-        ?.getSerializedValue()
-        .contextItems.some(item => item.type === 'repository')
 
     const onHumanMessageSubmit = useCallback(
         (intent?: ChatMessage['intent']) => {
@@ -747,27 +712,13 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                     <ContextCell
                         experimentalOneBoxEnabled={experimentalOneBoxEnabled}
                         intent={humanMessage.intent}
-                        resubmitWithRepoContext={
-                            corpusContextItems.length > 0 &&
-                            !mentionsContainRepository &&
-                            assistantMessage
-                                ? resubmitWithRepoContext
-                                : undefined
-                        }
                         key={`${humanMessage.index}-${humanMessage.intent}-context`}
                         contextItems={humanMessage.contextFiles}
                         contextAlternatives={humanMessage.contextAlternatives}
                         model={assistantMessage?.model}
                         isForFirstMessage={humanMessage.index === 0}
                         isContextLoading={isContextLoading}
-                        onManuallyEditContext={manuallyEditContext}
-                        editContextNode={
-                            humanMessage.intent === 'search'
-                                ? EditContextButtonSearch
-                                : EditContextButtonChat
-                        }
                         defaultOpen={isContextLoading && humanMessage.agent === DeepCodyAgentID}
-                        processes={humanMessage?.processes ?? undefined}
                         agent={humanMessage?.agent ?? undefined}
                     />
                 )}
