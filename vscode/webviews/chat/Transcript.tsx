@@ -704,7 +704,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                 intent={manuallySelectedIntent || intentResults?.intent}
                 manuallySelectIntent={setManuallySelectedIntent}
             />
-            {experimentalOneBoxEnabled && (
+            {experimentalOneBoxEnabled && !userInfo.isCodyProUser && (
                 <SwitchIntent
                     intent={humanMessage.intent}
                     manuallySelected={!!humanMessage.manuallySelectedIntent}
