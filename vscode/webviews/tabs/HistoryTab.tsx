@@ -104,7 +104,7 @@ export const HistoryTabWithData: React.FC<
         <div className="tw-flex tw-flex-col">
             <div className="tw-flex tw-py-2">
                 <Input
-                    className="tw-flex-1 tw-h-12 tw-py-3 tw-border-none tw-text-sm"
+                    className="tw-flex-1"
                     placeholder="Search chat history"
                     value={searchText}
                     onChange={event => setSearchText(event.target.value)}
