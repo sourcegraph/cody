@@ -184,17 +184,19 @@ class ToolFactory {
         return (
             defaultConfig?.[1] ?? {
                 title: provider.title,
-            tags: {
-                tag: PromptString.unsafe_fromUserQuery(this.generateToolName(provider)),
-                subTag: ps`get`,
-            },
-            prompt: {
-                instruction: PromptString.unsafe_fromUserQuery(provider.queryLabel),
-                placeholder: ps`QUERY`,
-                examples: [],
-            },
-        }
+                tags: {
+                    tag: PromptString.unsafe_fromUserQuery(this.generateToolName(provider)),
+                    subTag: ps`get`,
+                },
+                prompt: {
+                    instruction: PromptString.unsafe_fromUserQuery(provider.queryLabel),
+                    placeholder: ps`QUERY`,
+                    examples: [],
+                },
+            }
+        )
     }
+
     // TODO: Handles this in getToolConfig instead of
     // having a separate function specific to model context protocol
     private createModelContextConfig(
