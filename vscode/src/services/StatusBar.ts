@@ -5,11 +5,7 @@ import {
     type ClientConfiguration,
     CodyAutoSuggestionMode,
     CodyIDE,
-<<<<<<< HEAD
     FeatureFlag,
-    InvalidAccessTokenError,
-=======
->>>>>>> c08e15619 (Refactor errors localtion)
     InvisibleStatusBarTag,
     type IsIgnored,
     Mutable,
