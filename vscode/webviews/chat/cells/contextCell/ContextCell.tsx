@@ -142,6 +142,12 @@ export const ContextCell: FunctionComponent<{
                           : itemCountLabel,
         }
 
+        const hasContent =
+            isContextLoading ||
+            (contextItemsToDisplay && contextItemsToDisplay.length > 0) ||
+            !isForFirstMessage ||
+            isAgenticChat
+
         return (
             <div className="tw-flex tw-flex-col tw-justify-center tw-w-full tw-gap-2 tw-py-1">
                 <Accordion
@@ -158,13 +164,13 @@ export const ContextCell: FunctionComponent<{
                                     onClick={triggerAccordion}
                                     title={itemCountLabel}
                                     className="tw-flex tw-items-center tw-gap-4"
-                                    disabled={isContextLoading}
+                                    disabled={isContextLoading || !hasContent}
                                 >
                                     <span className="tw-flex tw-items-baseline">
                                         {headerText.main}
                                         {headerText.sub && (
                                             <span className="tw-opacity-60 tw-text-sm tw-ml-2">
-                                                &mdash; {headerText.sub}
+                                                — {headerText.sub}
                                             </span>
                                         )}
                                     </span>
@@ -185,10 +191,10 @@ export const ContextCell: FunctionComponent<{
                                         {internalDebugContext && contextAlternatives && (
                                             <div>
                                                 <button onClick={prevSelectedAlternative} type="button">
-                                                    &larr;
+                                                    ←
                                                 </button>
                                                 <button onClick={nextSelectedAlternative} type="button">
-                                                    &rarr;
+                                                    →
                                                 </button>{' '}
                                                 Ranking mechanism:{' '}
                                                 {selectedAlternative === undefined
@@ -279,31 +285,6 @@ export const ContextCell: FunctionComponent<{
                                                     </Tooltip>
                                                 </li>
                                             )}
-                                            {!isContextLoading && !isAgenticChat && (
-                                                <li>
-                                                    <Tooltip>
-                                                        <TooltipTrigger asChild>
-                                                            <span
-                                                                className={clsx(
-                                                                    styles.contextItem,
-                                                                    'tw-flex tw-items-center tw-gap-2 tw-text-muted-foreground'
-                                                                )}
-                                                            >
-                                                                <BrainIcon
-                                                                    size={14}
-                                                                    className="tw-ml-1"
-                                                                />
-                                                                <span>Public knowledge</span>
-                                                            </span>
-                                                        </TooltipTrigger>
-                                                        <TooltipContent side="bottom">
-                                                            Information and general reasoning
-                                                            capabilities trained into the model{' '}
-                                                            {model && <code>{model}</code>}
-                                                        </TooltipContent>
-                                                    </Tooltip>
-                                                </li>
-                                            )}
                                         </ul>
                                     </AccordionContent>
                                 </>
@@ -323,7 +304,6 @@ export const ContextCell: FunctionComponent<{
         )
     }
 )
-
 const getContextInfo = (items?: ContextItem[], isFirst?: boolean) => {
     const { usedContext, excludedContext, count } = (items ?? []).reduce(
         (acc, item) => {
