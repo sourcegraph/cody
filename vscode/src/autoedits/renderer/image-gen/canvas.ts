@@ -160,10 +160,8 @@ function drawDiffColors(
         // This helps the user see exactly which lines are shown as added or deleted.
         // We will apply character level highlighting on top to highlight the changes
 
-        // TODO: Consider changing this to the length of the text on the line.
-        // Will need to blockify the text first so all lines are the same length
-        const endOfLine = config.maxWidth
         ctx.fillStyle = isRemoval ? config.diffColors.removed.line : config.diffColors.inserted.line
+        const endOfLine = ctx.measureText('newText' in line ? line.newText : line.text).width
         ctx.fillRect(position.x, position.y, endOfLine, config.lineHeight)
     }
 
