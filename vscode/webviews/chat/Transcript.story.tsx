@@ -37,7 +37,6 @@ const meta: Meta<typeof Transcript> = {
     args: {
         transcript: FIXTURE_TRANSCRIPT.simple,
         messageInProgress: null,
-        feedbackButtonsOnSubmit: () => {},
         copyButtonOnSubmit: () => {},
         insertButtonOnSubmit: () => {},
         userInfo: FIXTURE_USER_ACCOUNT_INFO,

@@ -70,7 +70,6 @@ interface TranscriptProps {
     guardrails?: Guardrails
     postMessage?: ApiPostMessage
 
-    feedbackButtonsOnSubmit: (text: string) => void
     copyButtonOnSubmit: CodeBlockActionsProps['copyButtonOnSubmit']
     insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit']
     smartApply?: CodeBlockActionsProps['smartApply']
@@ -88,7 +87,6 @@ export const Transcript: FC<TranscriptProps> = props => {
         messageInProgress,
         guardrails,
         postMessage,
-        feedbackButtonsOnSubmit,
         copyButtonOnSubmit,
         insertButtonOnSubmit,
         smartApply,
@@ -153,7 +151,6 @@ export const Transcript: FC<TranscriptProps> = props => {
                         interaction={interaction}
                         guardrails={guardrails}
                         postMessage={postMessage}
-                        feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
                         copyButtonOnSubmit={copyButtonOnSubmit}
                         insertButtonOnSubmit={insertButtonOnSubmit}
                         isFirstInteraction={i === 0}
@@ -267,7 +264,6 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
         priorAssistantMessageIsLoading,
         userInfo,
         chatEnabled,
-        feedbackButtonsOnSubmit,
         postMessage,
         guardrails,
         insertButtonOnSubmit,
@@ -773,18 +769,12 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                         models={models}
                         chatEnabled={chatEnabled}
                         message={assistantMessage}
-                        feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
                         copyButtonOnSubmit={copyButtonOnSubmit}
                         insertButtonOnSubmit={insertButtonOnSubmit}
                         postMessage={postMessage}
                         guardrails={guardrails}
                         humanMessage={humanMessageInfo}
                         isLoading={assistantMessage.isLoading}
-                        showFeedbackButtons={
-                            !assistantMessage.isLoading &&
-                            !assistantMessage.error &&
-                            isLastSentInteraction
-                        }
                         smartApply={smartApply}
                         smartApplyEnabled={smartApplyEnabled}
                         onSelectedFiltersUpdate={onSelectedFiltersUpdate}
