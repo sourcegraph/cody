@@ -4,6 +4,19 @@ This is a log of all notable changes to Cody for VS Code.
 
 <!--- {/_ CHANGELOG_START _/} -->
 
+## 1.66.0
+
+### Fix
+
+#### Auto-Edit
+
+- fix the false notification for auto-edit non eligibility [#7002](https://github.com/sourcegraph/cody/pull/7002)
+
+### Reverts
+
+  There were no reverts for this release
+
+
 ## 1.66.1
 
 ### Fixed
