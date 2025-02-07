@@ -200,6 +200,7 @@ export const PromptList: FC<PromptListProps> = props => {
             className={clsx(className, styles.list, {
                 [styles.listChips]: appearanceMode === 'chips-list',
             })}
+            disablePointerSelection={true}
         >
             <CommandList className={className}>
                 {showSearch && (
