@@ -1,9 +1,6 @@
-name: release-vscode-nightly
+name: release-vscode-experimental
 
 on:
-  schedule:
-    # Run every day at 00:00 UTC
-    - cron: "0 0 * * *"
   workflow_dispatch:
 
 concurrency:
@@ -51,7 +48,7 @@ jobs:
           service_account: "bundle-size-tracker@cody-core-dev.iam.gserviceaccount.com"
           create_credentials_file: true
           export_environment_variables: true
-      - run: CODY_RELEASE_TYPE=nightly pnpm -C vscode run release
+      - run: CODY_RELEASE_TYPE=experimental pnpm -C vscode run release
         id: create_release
         if: github.repository == 'sourcegraph/cody'
         env:
@@ -72,7 +69,7 @@ jobs:
         env:
           EXTENSION_BUNDLE_SIZE_MB: ${{ env.EXTENSION_BUNDLE_SIZE_MB }}
           WEBVIEW_BUNDLE_SIZE_MB: ${{ env.WEBVIEW_BUNDLE_SIZE_MB }}
-      - name: Tag nightly release
+      - name: Tag experimental release
         uses: actions/github-script@v6
         with:
           script: |
@@ -89,7 +86,7 @@ jobs:
           SLACK_CHANNEL: wg-cody-vscode
           SLACK_ICON: https://github.com/sourcegraph.png?size=48
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
-          SLACK_MESSAGE: Nightly build failed
+          SLACK_MESSAGE: Experimental build failed
           SLACK_COLOR: danger
           SLACK_FOOTER: ""
           MSG_MINIMAL: actions url

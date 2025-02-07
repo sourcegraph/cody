@@ -31,8 +31,13 @@ if (!packageJSONVersion) {
 }
 
 enum ReleaseType {
+    // sourcegraph.cody-ai - Stable channel
     Stable = 'stable',
+    // sourcegraph.cody-ai - Pre-release channel
     Insiders = 'insiders',
+    // sourcegraph.cody-testing - Stable channel
+    Experimental = 'experimental',
+    // sourcegraph.cody-testing - Pre-release channel
     Nightly = 'nightly',
 }
 const releaseType = process.env.CODY_RELEASE_TYPE
@@ -48,15 +53,15 @@ function validateReleaseType(releaseType: string | undefined): asserts releaseTy
 }
 validateReleaseType(releaseType)
 const isInsiderBuild = releaseType === ReleaseType.Insiders || releaseType === ReleaseType.Nightly
-function updatePackageForNightly(): void {
-    if (releaseType === ReleaseType.Nightly) {
-        packageJSON.name = 'cody-ai-nightly'
-        packageJSON.displayName = 'Cody: AI Code Assistant - Nightly'
+function updatePackageForTestingExtension(): void {
+    if (releaseType === ReleaseType.Nightly || releaseType === ReleaseType.Experimental) {
+        packageJSON.name = 'cody-testing'
+        packageJSON.displayName = 'Testing Extension'
         packageJSONWasModified = true
         writeJsonFileSync('package.json', packageJSON)
     }
 }
-updatePackageForNightly()
+updatePackageForTestingExtension()
 
 const dryRun = Boolean(process.env.CODY_RELEASE_DRY_RUN)
 const customDefaultSettingsFile = process.env.CODY_RELEASE_CUSTOM_DEFAULT_SETTINGS_FILE
