@@ -593,6 +593,32 @@
       {
         "command": "cody.chat.toggle",
         "key": "alt+l",
+        "mac": "alt+l",
+        "when": "cody.activated && editorHasSelection",
+        "args": {
+          "editorFocus": true
+        }
+      },
+      {
+        "command": "cody.chat.toggle",
+        "key": "alt+l",
+        "mac": "alt+l",
+        "when": "cody.activated && !editorHasSelection",
+        "args": {
+          "editorFocus": false
+        }
+      },
+      {
+        "command": "cody.chat.toggle",
+        "key": "alt+l",
+        "when": "cody.activated && !editorTextFocus",
+        "args": {
+          "editorFocus": false
+        }
+      },
+      {
+        "command": "cody.chat.toggle",
+        "key": "alt+l",
         "when": "cody.activated && editorTextFocus",
         "args": {
           "editorFocus": true
@@ -607,39 +633,13 @@
         }
       },
       {
-        "command": "cody.chat.toggle",
-        "key": "alt+/",
-        "when": "cody.activated && editorTextFocus",
-        "args": {
-          "editorFocus": true
-        }
-      },
-      {
-        "command": "cody.chat.toggle",
-        "key": "alt+/",
-        "when": "cody.activated && !editorTextFocus",
-        "args": {
-          "editorFocus": false
-        }
-      },
-      {
         "command": "cody.mention.selection",
-        "key": "shift+alt+l",
-        "when": "cody.activated && editorTextFocus && editorHasSelection"
-      },
-      {
-        "command": "cody.mention.selection",
-        "key": "shift+alt+/",
+        "key": "alt+shift+l",
         "when": "cody.activated && editorTextFocus && editorHasSelection"
       },
       {
         "command": "cody.chat.new",
-        "key": "shift+alt+l",
-        "when": "cody.activated && !editorTextFocus"
-      },
-      {
-        "command": "cody.chat.new",
-        "key": "shift+alt+/",
+        "key": "alt+l",
         "when": "cody.activated && !editorTextFocus"
       },
       {
