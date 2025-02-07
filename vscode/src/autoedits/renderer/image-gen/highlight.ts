@@ -1,8 +1,8 @@
 import type { BundledLanguage, HighlighterGeneric, ThemedToken } from 'shiki/types.mjs'
 
-import type { DecoratedDiff } from '.'
+import type { ModifiedLineInfoAdded, ModifiedLineInfoRemoved, VisualDiff, VisualDiffLine } from '.'
 import type { MultiLineSupportedLanguage } from '../../../completions/detect-multiline'
-import type { AddedLineInfo, DecorationLineInfo, RemovedLineInfo } from '../decorators/base'
+import type { AddedLineInfo, RemovedLineInfo } from '../decorators/base'
 import { SYNTAX_HIGHLIGHTING_LANGUAGES, SYNTAX_HIGHLIGHTING_THEMES, getShiki } from './shiki'
 
 let syntaxHighlighter: HighlighterGeneric<BundledLanguage, string> | null = null
@@ -44,6 +44,29 @@ function getHighlightTokens(
     return result
 }
 
+export const DEFAULT_HIGHLIGHT_COLORS: Record<SYNTAX_HIGHLIGHT_MODE, string> = {
+    dark: '#ffffff',
+    light: '#000000',
+}
+
+function processTokens(
+    lineTokens: ThemedToken[],
+    highlights: { range: [number, number]; color: string }[],
+    mode: SYNTAX_HIGHLIGHT_MODE
+): void {
+    let currentPosition = 0
+    for (const token of lineTokens) {
+        const tokenLength = token.content.length
+        const startPos = currentPosition
+        const endPos = currentPosition + tokenLength
+        highlights.push({
+            range: [startPos, endPos],
+            color: token.color || DEFAULT_HIGHLIGHT_COLORS[mode],
+        })
+        currentPosition += tokenLength
+    }
+}
+
 /**
  * Given a list of added lines, rebuild the code snippet and apply syntax highlighting to it.
  * Highlighting colors and themes are provided by Shiki.
@@ -51,19 +74,25 @@ function getHighlightTokens(
  * See: https://github.com/microsoft/vscode/issues/32813
  */
 export function syntaxHighlightDecorations(
-    diff: DecoratedDiff,
+    diff: VisualDiff,
     lang: string,
     mode: SYNTAX_HIGHLIGHT_MODE
-): DecoratedDiff {
-    const defaultColour = mode === 'dark' ? '#ffffff' : '#000000'
-
-    // Rebuild the codeblock
+): VisualDiff {
+    // Rebuild the codeblocks
     const suggestedLines = diff.lines.filter(
-        (line): line is Exclude<DecorationLineInfo, RemovedLineInfo> =>
-            ['added', 'modified', 'unchanged'].includes(line.type)
+        (line): line is Exclude<VisualDiffLine, RemovedLineInfo | ModifiedLineInfoRemoved> =>
+            ['added', 'modified', 'modified-added', 'unchanged'].includes(line.type)
     )
+    const previousLines = diff.lines.filter(
+        (line): line is Exclude<VisualDiffLine, AddedLineInfo | ModifiedLineInfoAdded> =>
+            ['removed', 'modified', 'modified-removed', 'unchanged'].includes(line.type)
+    )
+
     const suggestedCode = suggestedLines
-        .map(line => (line.type === 'modified' ? line.newText : line.text))
+        .map(line => ('newText' in line ? line.newText : line.text))
+        .join('\n')
+    const previousCode = previousLines
+        .map(line => ('oldText' in line ? line.oldText : line.text))
         .join('\n')
 
     const suggestedHighlights = getHighlightTokens(
@@ -72,14 +101,6 @@ export function syntaxHighlightDecorations(
         mode,
         suggestedLines[0].modifiedLineNumber
     )
-
-    const previousLines = diff.lines.filter(
-        (line: DecorationLineInfo): line is Exclude<DecorationLineInfo, AddedLineInfo> =>
-            ['removed', 'modified', 'unchanged'].includes(line.type)
-    )
-    const previousCode = previousLines
-        .map(line => (line.type === 'modified' ? line.oldText : line.text))
-        .join('\n')
     const previousHighlights = getHighlightTokens(
         previousCode,
         lang,
@@ -88,80 +109,23 @@ export function syntaxHighlightDecorations(
     )
 
     const lines = diff.lines.map(line => {
-        if (line.type === 'removed') {
-            const targetLine = line.originalLineNumber
-            const lineTokens = previousHighlights.get(targetLine)
-            if (!lineTokens) {
-                return line
-            }
-
-            let currentPosition = 0
-            for (const token of lineTokens) {
-                const tokenLength = token.content.length
-                const startPos = currentPosition
-                const endPos = currentPosition + tokenLength
-                line.highlights[mode].push({
-                    range: [startPos, endPos],
-                    color: token.color || defaultColour,
-                })
-                currentPosition += tokenLength
+        if (line.type === 'removed' || line.type === 'modified-removed') {
+            // We have to handle removals separately. This is because the removed code may have different highlighting to
+            // the added code. We need to apply the same highlighting to the removed code as the added code.
+            const lineTokens = previousHighlights.get(line.originalLineNumber)
+            if (lineTokens) {
+                const highlights =
+                    line.type === 'modified-removed' ? line.oldHighlights : line.highlights
+                processTokens(lineTokens, highlights[mode], mode)
             }
             return line
         }
 
-        if (line.type === 'modified') {
-            const previousTargetLine = line.originalLineNumber
-            const previousLineTokens = previousHighlights.get(previousTargetLine)
-            if (!previousLineTokens) {
-                return line
-            }
-
-            let currentPositionPrevious = 0
-            for (const token of previousLineTokens) {
-                const tokenLength = token.content.length
-                const startPos = currentPositionPrevious
-                const endPos = currentPositionPrevious + tokenLength
-                line.oldHighlights[mode].push({
-                    range: [startPos, endPos],
-                    color: token.color || defaultColour,
-                })
-                currentPositionPrevious += tokenLength
-            }
-
-            const addedTargetLine = line.modifiedLineNumber
-            const addedLineTokens = suggestedHighlights.get(addedTargetLine)
-            if (!addedLineTokens) {
-                return line
-            }
-            let currentPositionAdded = 0
-            for (const token of addedLineTokens) {
-                const tokenLength = token.content.length
-                const startPos = currentPositionAdded
-                const endPos = currentPositionAdded + tokenLength
-                line.newHighlights[mode].push({
-                    range: [startPos, endPos],
-                    color: token.color || defaultColour,
-                })
-                currentPositionAdded += tokenLength
-            }
-            return line
-        }
-
-        const targetLine = line.modifiedLineNumber
-        const lineTokens = suggestedHighlights.get(targetLine)
-        if (!lineTokens) {
-            return line
-        }
-        let currentPositionAdded = 0
-        for (const token of lineTokens) {
-            const tokenLength = token.content.length
-            const startPos = currentPositionAdded
-            const endPos = currentPositionAdded + tokenLength
-            line.highlights[mode].push({
-                range: [startPos, endPos],
-                color: token.color || defaultColour,
-            })
-            currentPositionAdded += tokenLength
+        const lineTokens = suggestedHighlights.get(line.modifiedLineNumber)
+        if (lineTokens) {
+            // We have already handle any deletions above, so we always use incoming highlights where possible
+            const highlights = 'newHighlights' in line ? line.newHighlights : line.highlights
+            processTokens(lineTokens, highlights[mode], mode)
         }
         return line
     })

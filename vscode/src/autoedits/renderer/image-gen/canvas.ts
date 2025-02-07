@@ -1,9 +1,9 @@
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import CanvasKitInit, { type EmulatedCanvas2D } from 'canvaskit-wasm'
-import type { DecoratedDiff } from '.'
-import type { DecorationLineInfo, RemovedLineInfo } from '../decorators/base'
-import type { SYNTAX_HIGHLIGHT_MODE } from './highlight'
+import type { ModifiedLineInfoAdded, ModifiedLineInfoRemoved, VisualDiff, VisualDiffLine } from '.'
+import type { RemovedLineInfo } from '../decorators/base'
+import { DEFAULT_HIGHLIGHT_COLORS, type SYNTAX_HIGHLIGHT_MODE } from './highlight'
 
 type CanvasKitType = Awaited<ReturnType<typeof CanvasKitInit>>
 type RenderContext = {
@@ -17,7 +17,10 @@ type RenderConfig = {
     padding: { x: number; y: number }
     maxWidth: number
     pixelRatio: number
-    diffHighlightColor: string
+    diffColors: {
+        added: string
+        removed: string
+    }
 }
 
 let canvasKit: CanvasKitType | null = null
@@ -85,17 +88,43 @@ function createCanvas(
 
 function drawText(
     ctx: CanvasRenderingContext2D,
-    line: Exclude<DecorationLineInfo, RemovedLineInfo>,
+    line: VisualDiffLine,
     position: { x: number; y: number },
     mode: SYNTAX_HIGHLIGHT_MODE,
     config: RenderConfig
 ): number {
-    const lineText = line.type === 'modified' ? line.newText : line.text
-    const highlights = line.type === 'modified' ? line.newHighlights[mode] : line.highlights[mode]
+    if (line.type === 'removed' || line.type === 'modified-removed') {
+        // Handle deletions first
+        const lineText = line.type === 'modified-removed' ? line.oldText : line.text
+        const highlights =
+            line.type === 'modified-removed' ? line.oldHighlights[mode] : line.highlights[mode]
+
+        if (highlights.length === 0) {
+            // No syntax highlighting, we probably don't support this language via Shiki
+            // Default to white or black depending on the theme
+            ctx.fillStyle = DEFAULT_HIGHLIGHT_COLORS[mode]
+            ctx.fillText(lineText, position.x, position.y + config.fontSize)
+            return ctx.measureText(lineText).width
+        }
+
+        let xPos = position.x
+        for (const { range, color } of highlights) {
+            const [start, end] = range
+            const content = lineText.substring(start, end)
+            ctx.fillStyle = color
+            ctx.fillText(content, xPos, position.y + config.fontSize)
+            xPos += ctx.measureText(content).width
+        }
+
+        return xPos
+    }
+
+    const lineText = 'newText' in line ? line.newText : line.text
+    const highlights = 'newHighlights' in line ? line.newHighlights[mode] : line.highlights[mode]
     if (highlights.length === 0) {
         // No syntax highlighting, we probably don't support this language via Shiki
         // Default to white or black depending on the theme
-        ctx.fillStyle = mode === 'dark' ? '#ffffff' : '#000000'
+        ctx.fillStyle = DEFAULT_HIGHLIGHT_COLORS[mode]
         ctx.fillText(lineText, position.x, position.y + config.fontSize)
         return ctx.measureText(lineText).width
     }
@@ -114,16 +143,50 @@ function drawText(
 
 function drawDiffColors(
     ctx: CanvasRenderingContext2D,
-    line: Exclude<DecorationLineInfo, RemovedLineInfo>,
+    line: VisualDiffLine,
     position: { x: number; y: number },
     config: RenderConfig
 ): void {
-    const lineText = line.type === 'modified' ? line.newText : line.text
+    if (line.type === 'removed' || line.type === 'modified-removed') {
+        // Handle deletions first
+        ctx.fillStyle = config.diffColors.removed
+        const lineText = line.type === 'modified-removed' ? line.oldText : line.text
+        const removals: [number, number][] = []
+        if (line.type === 'removed') {
+            console.log('UMPOX: REMOVED LINE', lineText)
+            removals.push([0, lineText.length])
+        }
+        if (line.type === 'modified-removed') {
+            const modifiedRemovals = line.changes.filter(change => change.type === 'delete')
+            removals.push(
+                ...modifiedRemovals.map(
+                    ({ originalRange }) =>
+                        [originalRange.start.character, originalRange.end.character] as [number, number]
+                )
+            )
+        }
+
+        for (const [start, end] of removals) {
+            // Calculate width of text before the highlight
+            const preHighlightWidth = ctx.measureText(lineText.slice(0, start)).width
+            // Calculate width of the highlighted section
+            const highlightWidth = ctx.measureText(lineText.slice(start, end)).width
+
+            // Draw highlight at correct position
+            ctx.fillRect(position.x + preHighlightWidth, position.y, highlightWidth, config.lineHeight)
+        }
+
+        return
+    }
+
+    // Now handle any additions
+    ctx.fillStyle = config.diffColors.added
+    const lineText = 'newText' in line ? line.newText : line.text
     const additions: [number, number][] = []
     if (line.type === 'added') {
         additions.push([0, lineText.length])
     }
-    if (line.type === 'modified') {
+    if (line.type === 'modified' || line.type === 'modified-added') {
         const modifiedAdditions = line.changes.filter(change => change.type === 'insert')
         additions.push(
             ...modifiedAdditions.map(
@@ -135,12 +198,6 @@ function drawDiffColors(
             )
         )
     }
-
-    if (additions.length === 0) {
-        return
-    }
-
-    ctx.fillStyle = config.diffHighlightColor
 
     for (const [start, end] of additions) {
         // Calculate width of text before the highlight
@@ -154,8 +211,9 @@ function drawDiffColors(
 }
 
 export function drawDecorationsToCanvas(
-    diff: DecoratedDiff,
-    mode: SYNTAX_HIGHLIGHT_MODE,
+    diff: VisualDiff,
+    theme: SYNTAX_HIGHLIGHT_MODE,
+    mode: 'additions' | 'unified',
     /**
      * Specific configuration to determine how we render the canvas.
      * Consider changing this, or supporting configuration from the user (e.g. font-size)
@@ -166,7 +224,10 @@ export function drawDecorationsToCanvas(
         padding: { x: 6, y: 2 },
         maxWidth: 600,
         pixelRatio: 2,
-        diffHighlightColor: 'rgba(35, 134, 54, 0.2)',
+        diffColors: {
+            added: 'rgba(35, 134, 54, 0.2)',
+            removed: 'rgba(211, 47, 47, 0.2)',
+        },
     }
 ): EmulatedCanvas2D {
     if (!canvasKit || !fontCache) {
@@ -180,9 +241,20 @@ export function drawDecorationsToCanvas(
         font: fontCache,
     }
 
-    // We don't render removed lines right now, we want to soon
-    // when we display a unified diff
-    const lines = diff.lines.filter(line => line.type !== 'removed')
+    const lines =
+        mode === 'additions'
+            ? diff.lines.filter(
+                  (
+                      line
+                  ): line is Exclude<
+                      VisualDiffLine,
+                      RemovedLineInfo | ModifiedLineInfoRemoved | ModifiedLineInfoAdded
+                  > =>
+                      line.type !== 'removed' &&
+                      line.type !== 'modified-removed' &&
+                      line.type !== 'modified-added'
+              )
+            : diff.lines
 
     // In order for us to draw to the canvas, we must first determine the correct
     // dimensions for the canvas. We can do this with a temporary Canvas that uses the same font
@@ -193,7 +265,9 @@ export function drawDecorationsToCanvas(
     let tempYPos = renderConfig.padding.y
     let requiredWidth = 0
     for (const line of lines) {
-        const text = line.type === 'modified' ? line.newText : line.text
+        // This is a bit hacky, maybe revisit. We don't know if we're in a unified diff so we need to ensure
+        // we get the right line.
+        const text = 'newText' in line ? line.newText : 'oldText' in line ? line.oldText : line.text
         const measure = tempCtx.measureText(text)
         requiredWidth = Math.max(requiredWidth, renderConfig.padding.x + measure.width)
         tempYPos += renderConfig.lineHeight
@@ -228,7 +302,7 @@ export function drawDecorationsToCanvas(
         drawDiffColors(ctx, line, position, renderConfig)
 
         // Draw the text, this may or may not be syntax highlighted depending on language support
-        drawText(ctx, line, position, mode, renderConfig)
+        drawText(ctx, line, position, theme, renderConfig)
 
         yPos += renderConfig.lineHeight
     }
