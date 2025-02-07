@@ -46,12 +46,6 @@ export const App: FC = () => {
                 telemetryClientName="codydemo.testing"
                 initialContext={INITIAL_CONTEXT}
                 viewType="sidebar"
-            //     customHeaders={{
-            //         'X-Requested-With': 'Sourcegraph',
-            //         'X-Sourcegraph-Api-Client-Name': 'web',
-            //         'X-Sourcegraph-Api-Client-Version': '311182_2025-02-07_6.0-0368076adabd',
-            //         'X-Sourcegraph-Client': 'https://sourcegraph.sourcegraph.com'
-            // }}
             />
         </div>
     )
