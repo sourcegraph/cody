@@ -8,7 +8,7 @@ import { defaultVSCodeExtensionClient } from '../extension-client'
 import { FixupController } from '../non-stop/FixupController'
 import { WorkspaceEdit, vsCodeMocks } from '../testutils/mocks'
 
-import { CodyStatusBar } from '../services/StatusBar'
+import type { CodyStatusBar } from '../services/StatusBar'
 import * as adapters from './adapters/utils'
 import { autoeditTriggerKind } from './analytics-logger'
 import {
@@ -87,8 +87,8 @@ export async function autoeditResultFor(
     const extensionClient = defaultVSCodeExtensionClient()
     const fixupController = new FixupController(extensionClient)
     const mockStatusBar = {
-        addLoader: () => () => {},
-        init: () => mockStatusBar,
+        addLoader: vi.fn(),
+        init: vi.fn(),
     } as any as CodyStatusBar
     const provider =
         existingProvider ??
