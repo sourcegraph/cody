@@ -1,6 +1,7 @@
 import { toMatchImageSnapshot } from 'jest-image-snapshot'
 import { describe, expect, it } from 'vitest'
 import { generateSuggestionAsImage, initImageSuggestionService } from '..'
+import { document } from '../../../../completions/test-helpers'
 import type { DecorationInfo } from '../../decorators/base'
 import { MOCK_DIFF } from './mock-diff'
 
@@ -11,8 +12,9 @@ async function generateImageForTest(
     lang: string,
     mode: 'additions' | 'unified'
 ): Promise<{ darkBuffer: Buffer; lightBuffer: Buffer }> {
+    const doc = document('')
     await initImageSuggestionService()
-    const { light, dark } = generateSuggestionAsImage({ decorations, lang, mode })
+    const { light, dark } = generateSuggestionAsImage({ decorations, lang, mode, document: doc })
     return {
         // These suggestions are generated as dataURLs, so let's convert them back to a useful Buffer for testing
         darkBuffer: Buffer.from(dark.split(',')[1], 'base64'),

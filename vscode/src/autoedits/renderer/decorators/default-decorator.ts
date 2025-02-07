@@ -172,10 +172,9 @@ export class DefaultDecorator implements AutoEditsDecorator {
 
         if (this.options.shouldRenderImage) {
             this.renderAddedLinesImageDecorations(
-                addedLinesInfo.addedLinesDecorationInfo,
+                decorationInfo,
                 addedLinesInfo.startLine,
-                addedLinesInfo.replacerCol,
-                decorationInfo
+                addedLinesInfo.replacerCol
             )
             return
         }
@@ -368,13 +367,12 @@ export class DefaultDecorator implements AutoEditsDecorator {
     }
 
     private renderAddedLinesImageDecorations(
-        addedLinesInfo: AddedLinesDecorationInfo[],
+        decorationInfo: DecorationInfo,
         startLine: number,
-        replacerCol: number,
-        decorationInfo: DecorationInfo
+        replacerCol: number
     ): void {
         // Blockify the added lines so they are suitable to be rendered together as a VS Code decoration
-        const blockifiedAddedLines = blockify(this.editor.document, addedLinesInfo)
+        // const blockifiedAddedLines = blockify(this.editor.document, addedLinesInfo)
 
         const { dark, light } = generateSuggestionAsImage({
             decorations: decorationInfo,
@@ -384,6 +382,7 @@ export class DefaultDecorator implements AutoEditsDecorator {
             // Client capabilities === decorations: 'additions'
             // Client capabiliies === image: 'unified'
             mode: 'unified',
+            document: this.editor.document,
         })
         const startLineEndColumn = this.getEndColumn(this.editor.document.lineAt(startLine))
 

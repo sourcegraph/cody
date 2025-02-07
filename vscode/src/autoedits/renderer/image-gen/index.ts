@@ -1,11 +1,14 @@
+import type * as vscode from 'vscode'
 import type {
     AddedLineInfo,
     DecorationInfo,
     DecorationLineInfo,
     ModifiedLineInfo,
     RemovedLineInfo,
+    SyntaxHighlight,
     UnchangedLineInfo,
 } from '../decorators/base'
+import { blockify } from '../decorators/blockify-new'
 import { drawDecorationsToCanvas, initCanvas } from './canvas'
 import { initSyntaxHighlighter, syntaxHighlightDecorations } from './highlight'
 
@@ -17,13 +20,14 @@ interface SuggestionOptions {
     decorations: DecorationInfo
     lang: string
     mode: 'additions' | 'unified'
+    document: vscode.TextDocument
 }
 
-export function generateSuggestionAsImage({ lang, decorations, mode }: SuggestionOptions): {
+export function generateSuggestionAsImage({ lang, decorations, mode, document }: SuggestionOptions): {
     light: string
     dark: string
 } {
-    const diff = makeDecoratedDiff(decorations, lang, mode)
+    const diff = makeDecoratedDiff(decorations, lang, mode, document)
     return {
         dark: drawDecorationsToCanvas(diff.dark, 'dark', mode).toDataURL('image/png'),
         light: drawDecorationsToCanvas(diff.light, 'light', mode).toDataURL('image/png'),
@@ -37,23 +41,32 @@ export interface DecoratedDiff {
 export function makeDecoratedDiff(
     decorationInfo: DecorationInfo,
     lang: string,
-    mode: 'additions' | 'unified'
+    mode: 'additions' | 'unified',
+    document: vscode.TextDocument
 ): { dark: VisualDiff; light: VisualDiff } {
     const visualDiff = makeVisualDiff(decorationInfo, mode)
+    const blockifiedDiff = blockify(visualDiff, mode, document)
     return {
-        dark: syntaxHighlightDecorations(visualDiff, lang, 'dark'),
-        light: syntaxHighlightDecorations(visualDiff, lang, 'light'),
+        dark: syntaxHighlightDecorations(blockifiedDiff, lang, 'dark'),
+        light: syntaxHighlightDecorations(blockifiedDiff, lang, 'light'),
     }
 }
 
+// TODO: Remove `newText` and `newHighlights` from this interface
+// makes the code a lot simpler and new/old doesn't make sense for these types
 export interface ModifiedLineInfoAdded
     extends Omit<ModifiedLineInfo, 'type' | 'oldText' | 'oldHighlights'> {
     type: 'modified-added'
+    text: string
+    highlights: SyntaxHighlight
 }
-
+// TODO: Remove `oldText` and `oldHighlights` from this interface
+// makes the code a lot simpler and new/old doesn't make sense for these types
 export interface ModifiedLineInfoRemoved
     extends Omit<ModifiedLineInfo, 'type' | 'newText' | 'newHighlights'> {
     type: 'modified-removed'
+    text: string
+    highlights: SyntaxHighlight
 }
 
 export type VisualDiffLine =
@@ -116,8 +129,18 @@ export function makeVisualDiff(
 
         if (line.type === 'modified') {
             // Split modified lines into two, ensuring the removed line is shown first
-            deletions.push({ ...line, type: 'modified-removed' })
-            additions.push({ ...line, type: 'modified-added' })
+            deletions.push({
+                ...line,
+                type: 'modified-removed',
+                text: line.oldText,
+                highlights: line.oldHighlights,
+            })
+            additions.push({
+                ...line,
+                type: 'modified-added',
+                text: line.newText,
+                highlights: line.newHighlights,
+            })
         } else if (line.type === 'removed') {
             deletions.push(line)
         } else if (line.type === 'added') {
