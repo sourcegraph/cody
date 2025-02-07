@@ -129,12 +129,13 @@ const HumanMessageCellContent = memo<HumanMessageCellContent>(props => {
         />
     )
 }, isEqual)
+
 const OpenInNewEditorAction = () => {
     const {
-        config: { multipleWebviewsEnabled },
+        config: { multipleWebviewsEnabled, webviewType },
     } = useConfig()
 
-    if (!multipleWebviewsEnabled) {
+    if (!multipleWebviewsEnabled || webviewType !== 'sidebar') {
         return null
     }
 
