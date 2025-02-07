@@ -294,3 +294,31 @@ test('autoedits: does not show any suggestion if the suffix decoration spans fur
     expect(suggestedEvent).toBeUndefined()
     expect(acceptedEvent).toBeUndefined()
 })
+
+test('autoedits: shows loading indicator in status bar while generating', async ({ page, sidebar }) => {
+    await sidebarSignin(page, sidebar)
+    await sidebarExplorer(page).click()
+    await page.getByRole('treeitem', { name: 'auto-edit' }).locator('a').click()
+    await page.getByRole('treeitem', { name: 'inline-decoration-example-2.ts' }).locator('a').click()
+
+    // Start watching for the loading state before triggering the action
+    const statusBarItem = page.locator('#sourcegraph\\.cody-ai\\.extension-status')
+    const loadingPromise = statusBarItem
+        .locator('.codicon.codicon-loading.codicon-modifier-spin')
+        .waitFor({
+            state: 'attached',
+            timeout: 5000,
+        })
+
+    await executeCommandInPalette(page, 'Cody: Autoedits Manual Trigger')
+
+    // Wait for loading state to appear
+    await loadingPromise
+
+    // Wait for autoedit to complete and verify loading spinner is gone
+    await expect(
+        statusBarItem.locator('.codicon.codicon-loading.codicon-modifier-spin')
+    ).not.toBeVisible({
+        timeout: 5000,
+    })
+})

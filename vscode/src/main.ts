@@ -464,7 +464,7 @@ async function registerCodyCommands(
     )
 
     // Initialize autoedit provider if experimental feature is enabled
-    registerAutoEdits(chatClient, fixupController, disposables)
+    registerAutoEdits(chatClient, fixupController, statusBar, disposables)
 
     // Initialize autoedit tester
     disposables.push(
@@ -716,6 +716,7 @@ async function tryRegisterTutorial(
 function registerAutoEdits(
     chatClient: ChatClient,
     fixupController: FixupController,
+    statusBar: CodyStatusBar,
     disposables: vscode.Disposable[]
 ): void {
     disposables.push(
@@ -750,6 +751,7 @@ function registerAutoEdits(
                                 autoeditFeatureFlagEnabled,
                                 autoeditImageRenderingEnabled,
                                 fixupController,
+                                statusBar,
                             })
                         }
                     ),
