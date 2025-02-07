@@ -13,7 +13,7 @@ import type {
 } from '@sourcegraph/cody-shared'
 import type { TelemetryEventMarketingTrackingInput } from '@sourcegraph/telemetry'
 
-import { AuthError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
+import type { AuthError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
 import type { ExtensionMessage, WebviewMessage } from '../chat/protocol'
 import type { CompletionBookkeepingEvent, CompletionItemID } from '../completions/analytics-logger'
 import type { FixupTaskID } from '../non-stop/FixupTask'
