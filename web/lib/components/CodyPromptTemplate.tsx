@@ -160,9 +160,7 @@ const CodyPromptTemplatePanel: FC<PanelProps> = props => {
     const telemetryRecorder = useMemo(() => createWebviewTelemetryRecorder(vscodeAPI), [vscodeAPI])
 
     const staticDefaultContext = useMemo<DefaultContext>((): DefaultContext => {
-        const initialContext: ContextItem[] = []
-
-        return { initialContext, corpusContext: DYNAMIC_MENTIONS }
+        return { initialContext: [], corpusContext: DYNAMIC_MENTIONS }
     }, [])
 
     const wrappers = useMemo<Wrapper[]>(
