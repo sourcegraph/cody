@@ -17,7 +17,6 @@ import type { PromptEditorRefAPI } from '@sourcegraph/prompt-editor'
 import isEqual from 'lodash/isEqual'
 import { type FunctionComponent, type RefObject, memo, useMemo } from 'react'
 import type { ApiPostMessage, UserAccountInfo } from '../../../../Chat'
-import { chatModelIconComponent } from '../../../../components/ChatModelIcon'
 import { useOmniBox } from '../../../../utils/useOmniBox'
 import {
     ChatMessageContent,
@@ -26,7 +25,7 @@ import {
 import { ErrorItem, RequestErrorItem } from '../../../ErrorItem'
 import { type Interaction, editHumanMessage } from '../../../Transcript'
 import { LoadingDots } from '../../../components/LoadingDots'
-import { BaseMessageCell, MESSAGE_CELL_AVATAR_SIZE } from '../BaseMessageCell'
+import { BaseMessageCell } from '../BaseMessageCell'
 import { SearchResults } from './SearchResults'
 import { SubMessageCell } from './SubMessageCell'
 
@@ -76,7 +75,6 @@ export const AssistantMessageCell: FunctionComponent<{
         )
 
         const chatModel = useChatModelByID(message.model, models)
-        const ModelIcon = chatModel ? chatModelIconComponent(chatModel.id) : null
         const isAborted = isAbortErrorOrSocketHangUp(message.error)
 
         const hasLongerResponseTime = chatModel?.tags?.includes(ModelTag.StreamDisabled)
@@ -87,22 +85,6 @@ export const AssistantMessageCell: FunctionComponent<{
 
         return (
             <BaseMessageCell
-                speakerIcon={
-                    ModelIcon && (!isSearchIntent || isLoading) ? (
-                        <ModelIcon size={NON_HUMAN_CELL_AVATAR_SIZE} />
-                    ) : null
-                }
-                speakerTitle={
-                    isSearchIntent ? undefined : (
-                        <span data-testid="chat-model">
-                            {chatModel
-                                ? chatModel.id.includes('deep-cody')
-                                    ? 'Claude 3.5 Sonnet (New)'
-                                    : chatModel.title ?? `Model ${chatModel.id} by ${chatModel.provider}`
-                                : 'Model'}
-                        </span>
-                    )
-                }
                 content={
                     <>
                         {message.error && !isAborted ? (
@@ -174,9 +156,6 @@ export const AssistantMessageCell: FunctionComponent<{
     },
     isEqual
 )
-
-export const NON_HUMAN_CELL_AVATAR_SIZE =
-    MESSAGE_CELL_AVATAR_SIZE * 0.83 /* make them "look" the same size as the human avatar icons */
 
 export interface HumanMessageInitialContextInfo {
     repositories: boolean

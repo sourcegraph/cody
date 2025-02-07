@@ -11,11 +11,7 @@ import {
     isAbortErrorOrSocketHangUp,
     serializedPromptEditorStateFromText,
 } from '@sourcegraph/cody-shared'
-import {
-    type PromptEditorRefAPI,
-    useDefaultContextForChat,
-    useExtensionAPI,
-} from '@sourcegraph/prompt-editor'
+import { type PromptEditorRefAPI, useExtensionAPI } from '@sourcegraph/prompt-editor'
 import { clsx } from 'clsx'
 import { isEqual } from 'lodash'
 import debounce from 'lodash/debounce'
@@ -35,14 +31,9 @@ import type { UserAccountInfo } from '../Chat'
 import type { ApiPostMessage } from '../Chat'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
 import { SpanManager } from '../utils/spanManager'
-import { getTraceparentFromSpanContext, useTelemetryRecorder } from '../utils/telemetry'
+import { getTraceparentFromSpanContext } from '../utils/telemetry'
 import { useOmniBox } from '../utils/useOmniBox'
 import type { CodeBlockActionsProps } from './ChatMessageContent/ChatMessageContent'
-import {
-    ContextCell,
-    EditContextButtonChat,
-    EditContextButtonSearch,
-} from './cells/contextCell/ContextCell'
 import {
     AssistantMessageCell,
     makeHumanMessageInfo,
@@ -51,12 +42,11 @@ import { HumanMessageCell } from './cells/messageCell/human/HumanMessageCell'
 
 import { type Context, type Span, context, trace } from '@opentelemetry/api'
 import { isCodeSearchContextItem } from '../../src/context/openctx/codeSearch'
-import { TELEMETRY_INTENT } from '../../src/telemetry/onebox'
 import { useIntentDetectionConfig } from '../components/omnibox/intentDetection'
 import { AgenticContextCell } from './cells/agenticCell/AgenticContextCell'
 import ApprovalCell from './cells/agenticCell/ApprovalCell'
+import { ContextCell } from './cells/contextCell/ContextCell'
 import { DidYouMeanNotice } from './cells/messageCell/assistant/DidYouMean'
-import { SwitchIntent } from './cells/messageCell/assistant/SwitchIntent'
 import { LastEditorContext } from './context'
 
 interface TranscriptProps {
@@ -135,7 +125,7 @@ export const Transcript: FC<TranscriptProps> = props => {
 
     return (
         <div
-            className={clsx(' tw-px-8 tw-pb-6 tw-pt-2 tw-flex tw-flex-col', {
+            className={clsx(' tw-px-8 tw-pb-6 tw-flex tw-flex-col', {
                 'tw-flex-grow': transcript.length > 0,
             })}
         >
@@ -586,64 +576,6 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
         return null
     }, [humanMessage, assistantMessage, isContextLoading])
 
-    const telemetryRecorder = useTelemetryRecorder()
-    const reSubmitWithIntent = useCallback(
-        (intent: ChatMessage['intent']) => {
-            const editorState = humanEditorRef.current?.getSerializedValue()
-            if (editorState) {
-                onEditSubmit(intent)
-                telemetryRecorder.recordEvent('onebox.intentCorrection', 'clicked', {
-                    metadata: {
-                        initialIntent:
-                            humanMessage.intent === 'search'
-                                ? TELEMETRY_INTENT.SEARCH
-                                : TELEMETRY_INTENT.CHAT,
-                        selectedIntent:
-                            intent === 'search' ? TELEMETRY_INTENT.SEARCH : TELEMETRY_INTENT.CHAT,
-                    },
-                    privateMetadata: {
-                        query: editorState.text,
-                    },
-                    billingMetadata: { product: 'cody', category: 'billable' },
-                })
-            }
-        },
-        [onEditSubmit, telemetryRecorder, humanMessage]
-    )
-
-    const { corpusContext: corpusContextItems } = useDefaultContextForChat()
-    const resubmitWithRepoContext = useCallback(async () => {
-        const editorState = humanEditorRef.current?.getSerializedValue()
-        if (editorState) {
-            const editor = humanEditorRef.current
-            if (corpusContextItems.length === 0 || !editor) {
-                return
-            }
-            await editor.addMentions(corpusContextItems, 'before', ' ')
-            onEditSubmit('chat')
-        }
-    }, [corpusContextItems, onEditSubmit])
-
-    const reSubmitWithChatIntent = useCallback(() => reSubmitWithIntent('chat'), [reSubmitWithIntent])
-    const reSubmitWithSearchIntent = useCallback(
-        () => reSubmitWithIntent('search'),
-        [reSubmitWithIntent]
-    )
-
-    const manuallyEditContext = useCallback(() => {
-        const contextFiles = humanMessage.contextFiles
-        const editor = humanEditorRef.current
-        if (!contextFiles || !editor) {
-            return
-        }
-        editor.filterMentions(item => item.type !== 'repository')
-        editor.addMentions(contextFiles, 'before', '\n')
-    }, [humanMessage.contextFiles])
-
-    const mentionsContainRepository = humanEditorRef.current
-        ?.getSerializedValue()
-        .contextItems.some(item => item.type === 'repository')
-
     const onHumanMessageSubmit = useCallback(
         (intent?: ChatMessage['intent']) => {
             if (humanMessage.isUnsentFollowup) {
@@ -700,17 +632,6 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                 intent={manuallySelectedIntent || intentResults?.intent}
                 manuallySelectIntent={setManuallySelectedIntent}
             />
-            {experimentalOneBoxEnabled && (
-                <SwitchIntent
-                    intent={humanMessage.intent}
-                    manuallySelected={!!humanMessage.manuallySelectedIntent}
-                    onSwitch={
-                        humanMessage.intent === 'search'
-                            ? reSubmitWithChatIntent
-                            : reSubmitWithSearchIntent
-                    }
-                />
-            )}
             {experimentalOneBoxEnabled && assistantMessage?.didYouMeanQuery && (
                 <DidYouMeanNotice
                     query={assistantMessage?.didYouMeanQuery}
@@ -736,27 +657,13 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                     <ContextCell
                         experimentalOneBoxEnabled={experimentalOneBoxEnabled}
                         intent={humanMessage.intent}
-                        resubmitWithRepoContext={
-                            corpusContextItems.length > 0 &&
-                            !mentionsContainRepository &&
-                            assistantMessage
-                                ? resubmitWithRepoContext
-                                : undefined
-                        }
                         key={`${humanMessage.index}-${humanMessage.intent}-context`}
                         contextItems={humanMessage.contextFiles}
                         contextAlternatives={humanMessage.contextAlternatives}
                         model={assistantMessage?.model}
                         isForFirstMessage={humanMessage.index === 0}
                         isContextLoading={isContextLoading}
-                        onManuallyEditContext={manuallyEditContext}
-                        editContextNode={
-                            humanMessage.intent === 'search'
-                                ? EditContextButtonSearch
-                                : EditContextButtonChat
-                        }
                         defaultOpen={isContextLoading && humanMessage.agent === 'deep-cody'}
-                        processes={humanMessage?.processes ?? undefined}
                         agent={humanMessage?.agent ?? undefined}
                     />
                 )}
