@@ -1,4 +1,4 @@
-import { type Model, ModelTag, isCodyProModel, isWaitlistModel } from '@sourcegraph/cody-shared'
+import { type Model, ModelTag, isCodyProModel } from '@sourcegraph/cody-shared'
 import { DeepCodyAgentID, ToolCodyModelName } from '@sourcegraph/cody-shared/src/models/client'
 import { clsx } from 'clsx'
 import { BookOpenIcon, BrainIcon, BuildingIcon, ExternalLinkIcon } from 'lucide-react'
@@ -79,12 +79,6 @@ export const ModelSelectField: React.FunctionComponent<{
                     value: 'https://sourcegraph.com/cody/subscription',
                 })
                 return
-            }
-            if (isWaitlistModel(model)) {
-                getVSCodeAPI().postMessage({
-                    command: 'links',
-                    value: 'waitlist',
-                })
             }
             parentOnModelSelect(model)
         },

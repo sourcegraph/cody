@@ -42,7 +42,7 @@ export {
     ModelUsage,
     type ModelContextWindow,
 } from './models/types'
-export { getMockedDotComClientModels, getMockedDotComServerModels } from './models/dotcom'
+export { FIXTURE_MODELS } from './models/fixtures'
 export { ModelTag } from './models/tags'
 export {
     getProviderName,

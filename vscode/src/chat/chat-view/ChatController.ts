@@ -115,13 +115,12 @@ import type { MessageErrorType } from '../MessageProvider'
 import { getMentionMenuData } from '../context/chatContext'
 import type { ChatIntentAPIClient } from '../context/chatIntentAPIClient'
 import { observeDefaultContext } from '../initialContext'
-import {
-    CODY_BLOG_URL_o1_WAITLIST,
-    type ConfigurationSubsetForWebview,
-    type ExtensionMessage,
-    type LocalEnv,
-    type SmartApplyResult,
-    type WebviewMessage,
+import type {
+    ConfigurationSubsetForWebview,
+    ExtensionMessage,
+    LocalEnv,
+    SmartApplyResult,
+    WebviewMessage,
 } from '../protocol'
 import { countGeneratedCode } from '../utils'
 import { ChatBuilder, prepareChatMessage } from './ChatBuilder'
@@ -347,15 +346,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 vscode.commands.executeCommand('vscode.open', message.uri)
                 break
             case 'links': {
-                let link = message.value
-                if (message.value === 'waitlist') {
-                    const authStatus = currentAuthStatusAuthed()
-                    const waitlistURI = CODY_BLOG_URL_o1_WAITLIST
-                    waitlistURI.searchParams.append('userId', authStatus?.username)
-                    link = waitlistURI.toString()
-                    void joinModelWaitlist()
-                }
-                void openExternalLinks(link)
+                void openExternalLinks(message.value)
                 break
             }
             case 'openFileLink':
@@ -1891,9 +1882,4 @@ export function manipulateWebviewHTML(html: string, options: TransformHTMLOption
     }
 
     return html
-}
-
-async function joinModelWaitlist(): Promise<void> {
-    await localStorage.setOrDeleteWaitlistO1(true)
-    telemetryRecorder.recordEvent('cody.joinLlmWaitlist', 'clicked')
 }
