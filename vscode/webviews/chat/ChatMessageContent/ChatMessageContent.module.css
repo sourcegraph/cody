@@ -141,6 +141,7 @@
     overflow-x: auto;
     border-bottom: none;
     margin: 1rem 0;
+    border:1px solid var(--vscode-input-background);
 }
 
 .content code,
@@ -153,7 +154,6 @@
 .content pre,
 .content pre > code {
     /* Our syntax highlighter emits colors intended for dark backgrounds only. */
-    background-color: var(--code-background);
     color: var(--code-foreground);
     margin-bottom: 0;
 }
