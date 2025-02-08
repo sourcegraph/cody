@@ -87,6 +87,7 @@
             "*.snap.json",
             "lib/noxide/node",
             "jetbrains/**",
+            "ui/",
             "pollyjs/**"
         ]
     },

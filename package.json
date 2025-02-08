@@ -37,7 +37,7 @@
     "openctx:unlink": "pnpm unlink --global @openctx/client && pnpm unlink --global @openctx/schema &&  pnpm unlink --global @openctx/protocol && cd vscode && pnpm unlink --global @openctx/vscode-lib"
   },
   "devDependencies": {
-    "@biomejs/biome": "1.7.2",
+    "@biomejs/biome": "1.9.4",
     "@sourcegraph/tsconfig": "^4.0.1",
     "@storybook/addon-essentials": "^8.0.5",
     "@storybook/react": "^8.0.5",
@@ -82,7 +82,10 @@
       "tslib": "2.1.0",
       "@lexical/react": "https://storage.googleapis.com/sourcegraph-assets/npm/lexical-react-sourcegraph-fork-31065486.tgz"
     },
-    "neverBuiltDependencies": ["deasync", "playwright"],
+    "neverBuiltDependencies": [
+      "deasync",
+      "playwright"
+    ],
     "patchedDependencies": {
       "highlight.js@11.8.0": "patches/highlight.js@11.8.0.patch"
     }

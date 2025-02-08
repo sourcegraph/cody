@@ -1,0 +1,122 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+	body {
+		font-family:
+			'SF Pro Display',
+			system-ui,
+			-apple-system,
+			BlinkMacSystemFont,
+			'Segoe UI',
+			Roboto,
+			sans-serif;
+	}
+
+	:root {
+		color-scheme: light dark;
+
+		--radius: 0.5rem;
+		--map-point: red;
+		--map-point-text: white;
+		--map-line: red;
+	}
+
+	:root {
+		@media (prefers-color-scheme: light) {
+			--background: 0 0% 100%;
+			--foreground: 0 0% 3.9%;
+			--muted: 0 0% 96.1%;
+			--muted-foreground: 0 0% 45.1%;
+			--popover: 0 0% 100%;
+			--popover-foreground: 0 0% 3.9%;
+			--card: 0 0% 100%;
+			--card-foreground: 0 0% 3.9%;
+			--border: 0 0% 89.8%;
+			--input: 0 0% 89.8%;
+			--primary: 0 0% 9%;
+			--primary-foreground: 0 0% 98%;
+			--secondary: 0 0% 96.1%;
+			--secondary-foreground: 0 0% 9%;
+			--accent: 0 0% 96.1%;
+			--accent-foreground: 0 0% 9%;
+			--warning: 41.2 99.8% 55.3%;
+			--warning-foreground: 0 0% 9%;
+			--destructive: 0 72.2% 50.6%;
+			--destructive-foreground: 0 0% 98%;
+			--ring: 0 0% 3.9%;
+			--sidebar-background: 0 0% 98%;
+			--sidebar-foreground: 240 5.3% 26.1%;
+			--sidebar-primary: 240 5.9% 10%;
+			--sidebar-primary-foreground: 0 0% 98%;
+			--sidebar-accent: 240 4.8% 95.9%;
+			--sidebar-accent-foreground: 240 5.9% 10%;
+			--sidebar-border: 220 13% 91%;
+			--sidebar-ring: 217.2 91.2% 59.8%;
+			--map-land: #222;
+			--map-border: #777;
+		}
+
+		@media (prefers-color-scheme: dark) {
+			--background: 0 0% 3.9%;
+			--foreground: 0 0% 98%;
+			--muted: 0 0% 14.9%;
+			--muted-foreground: 0 0% 63.9%;
+			--popover: 0 0% 3.9%;
+			--popover-foreground: 0 0% 98%;
+			--card: 0 0% 3.9%;
+			--card-foreground: 0 0% 98%;
+			--border: 0 0% 14.9%;
+			--input: 0 0% 14.9%;
+			--primary: 0 0% 98%;
+			--primary-foreground: 0 0% 9%;
+			--secondary: 0 0% 14.9%;
+			--secondary-foreground: 0 0% 98%;
+			--accent: 0 0% 14.9%;
+			--accent-foreground: 0 0% 98%;
+			--warning: 41.2 99.8% 55.3%;
+			--warning-foreground: 0 0% 9%;
+			--destructive: 0 62.8% 45.6%;
+			--destructive-foreground: 0 0% 98%;
+			--ring: 0 0% 83.1%;
+			--sidebar-background: 240 5.9% 10%;
+			--sidebar-foreground: 240 4.8% 95.9%;
+			--sidebar-primary: 224.3 76.3% 48%;
+			--sidebar-primary-foreground: 0 0% 100%;
+			--sidebar-accent: 240 3.7% 15.9%;
+			--sidebar-accent-foreground: 240 4.8% 95.9%;
+			--sidebar-border: 240 3.7% 15.9%;
+			--sidebar-ring: 217.2 91.2% 59.8%;
+			--map-land: #888;
+			--map-border: #aaa;
+		}
+	}
+}
+
+@layer base {
+	* {
+		@apply border-border;
+	}
+	body {
+		@apply bg-background text-foreground;
+	}
+
+	.stretched-link-container {
+		position: relative;
+	}
+	.stretched-link::after {
+		position: absolute;
+		top: 0;
+		right: 0;
+		bottom: 0;
+		left: 0;
+		z-index: 1;
+		content: '';
+	}
+	.stretched-link-container [data-tooltip-trigger] {
+		/* Still show tooltips inside of .stretched-link-container. */
+		position: relative;
+		z-index: 2;
+	}
+}
