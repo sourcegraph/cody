@@ -345,6 +345,11 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             case 'openURI':
                 vscode.commands.executeCommand('vscode.open', message.uri)
                 break
+            case 'openURIWithRange':
+                vscode.commands.executeCommand('vscode.open', message.uri, {
+                    selection: message.range,
+                })
+                break
             case 'links': {
                 void openExternalLinks(message.value)
                 break

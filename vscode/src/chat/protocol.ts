@@ -75,6 +75,12 @@ export type WebviewMessage =
     | { command: 'links'; value: string }
     | { command: 'openURI'; uri: Uri }
     | {
+          command: 'openURIWithRange'
+          uri: Uri
+          range?: RangeData | undefined | null
+          source?: ContextItemSource | undefined | null
+      }
+    | {
           // Open a file from a Sourcegraph URL
           command: 'openRemoteFile'
           uri: Uri

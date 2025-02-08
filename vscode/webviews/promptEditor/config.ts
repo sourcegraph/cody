@@ -22,10 +22,19 @@ export const promptEditorConfig: PromptEditorConfig = {
     onContextItemMentionNodeMetaClick: (contextItem: SerializedContextItem) => {
         if (contextItem.uri) {
             const uri = URI.parse(contextItem.uri)
-            getVSCodeAPI().postMessage({
-                command: 'openURI',
-                uri,
-            })
+            if (contextItem.range) {
+                getVSCodeAPI().postMessage({
+                    command: 'openURIWithRange',
+                    uri,
+                    range: contextItem.range,
+                    source: contextItem.source,
+                })
+            } else {
+                getVSCodeAPI().postMessage({
+                    command: 'openURI',
+                    uri,
+                })
+            }
         }
     },
     badgeComponents: {
