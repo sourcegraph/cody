@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { TranscriptMessage } from '$lib/types'
 	import PromptEditor from '../prompt-editor/prompt-editor.svelte'
-	import TranscriptThinkingRow from './transcript-thinking-row.svelte'
+	import TranscriptThinkAction from './actions/think-action.svelte'
 
 	let { messages }: { messages: TranscriptMessage[] } = $props()
 </script>
@@ -10,12 +10,14 @@
 	{#each messages as message}
 		{#if message.type === 'user'}
 			<PromptEditor value={message.content} compact />
-		{:else if message.type === 'assistant'}
-			{#if message.think && message.content === undefined}
-				<TranscriptThinkingRow think={message.think} />
-			{:else}
-				{message.content}
-			{/if}
+		{:else if message.type === 'agent'}
+			{#each message.steps as step}
+				{#if step.type === 'think'}
+					<TranscriptThinkAction {step} />
+				{:else}
+					<p>{step.content}</p>
+				{/if}
+			{/each}
 		{/if}
 	{/each}
 </div>

@@ -69,6 +69,7 @@ const config: Config = {
                 lg: 'var(--radius)',
                 md: 'calc(var(--radius) - 2px)',
                 sm: 'calc(var(--radius) - 4px)',
+                xs: 'calc(var(--radius) - 6px)',
             },
             fontFamily: {
                 sans: [...fontFamily.sans],
@@ -104,6 +105,7 @@ const config: Config = {
             fontSize: {
                 base: ['0.8125rem', { lineHeight: '1.25rem' }],
                 sm: ['0.75rem', { lineHeight: '1rem' }],
+                xs: ['0.7rem', { lineHeight: '0.85rem' }],
                 xxs: ['0.625rem', { lineHeight: '.75rem' }],
             },
         },

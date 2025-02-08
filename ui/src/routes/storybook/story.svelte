@@ -23,7 +23,7 @@
 
 <Collapsible.Root class="w-full" bind:open>
 	<Collapsible.Trigger class="focus:outline-none">
-		<h2 class="text-lg font-semibold mb-1">
+		<h2 class="font-semibold mb-1">
 			{title}
 			{#if open}
 				<X class="w-4 h-4 inline" />
@@ -32,7 +32,7 @@
 			{/if}
 		</h2>
 	</Collapsible.Trigger>
-	<Collapsible.Content class="rounded border p-2">
+	<Collapsible.Content class="mb-12">
 		{@render children()}
 	</Collapsible.Content>
 </Collapsible.Root>
