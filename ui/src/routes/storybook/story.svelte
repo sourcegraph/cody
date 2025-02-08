@@ -23,16 +23,16 @@
 
 <Collapsible.Root class="w-full" bind:open>
 	<Collapsible.Trigger class="focus:outline-none">
-		<h2 class="font-semibold mb-1">
+		<h2 class="text-muted-foreground mb-1 text-sm [&>svg]:size-3 flex items-center gap-0.5">
 			{title}
 			{#if open}
-				<X class="w-4 h-4 inline" />
+				<X />
 			{:else}
-				<ChevronsUpDown class="w-4 h-4 inline" />
+				<ChevronsUpDown />
 			{/if}
 		</h2>
 	</Collapsible.Trigger>
-	<Collapsible.Content class="mb-12">
+	<Collapsible.Content class="mt-4 mb-12">
 		{@render children()}
 	</Collapsible.Content>
 </Collapsible.Root>

@@ -27,6 +27,12 @@ export type TranscriptAction =
           pendingUserApproval?: boolean
       }
     | {
+          type: 'references'
+          symbol: string
+          results?: string[]
+          pending?: boolean
+      }
+    | {
           type: 'message'
           content: string
       }

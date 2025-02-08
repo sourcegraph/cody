@@ -29,7 +29,7 @@
 	/>
 </Story>
 
-<Story title="Transcript response" component={Transcript}>
+<Story title="Transcript - Hello world" component={Transcript}>
 	<Transcript
 		messages={[
 			{ type: 'user', content: 'Write a TypeScript "Hello, world" program.' },
@@ -79,6 +79,28 @@
 						cwd: '~/src/github.com/evanw/esbuild',
 						command: 'node --experimental-strip-types src/hello-world.ts',
 						pendingUserApproval: true,
+					},
+				],
+			},
+		]}
+	/>
+</Story>
+
+<Story title="Transcript - Generate test" component={Transcript}>
+	<Transcript
+		messages={[
+			{ type: 'user', content: 'Generate unit tests for parseFlightNumber.' },
+			{
+				type: 'agent',
+				steps: [
+					{
+						type: 'message',
+						content: 'Let me see how parseFlightNumber is being called.',
+					},
+					{
+						type: 'references',
+						symbol: 'parseFlightNumber',
+						results: ['a', 'b', 'c', 'd'],
 					},
 				],
 			},
