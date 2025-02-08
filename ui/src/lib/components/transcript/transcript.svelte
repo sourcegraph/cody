@@ -2,6 +2,8 @@
 	import type { TranscriptMessage } from '$lib/types'
 	import PromptEditor from '../prompt-editor/prompt-editor.svelte'
 	import CreateFileAction from './actions/create-file-action.svelte'
+	import DefinitionAction from './actions/definition-action.svelte'
+	import EditFileAction from './actions/edit-file-action.svelte'
 	import ReadFilesAction from './actions/read-files-action.svelte'
 	import ReferencesAction from './actions/references-action.svelte'
 	import TerminalCommandAction from './actions/terminal-command-action.svelte'
@@ -22,8 +24,12 @@
 					<ReadFilesAction {step} />
 				{:else if step.type === 'create-file'}
 					<CreateFileAction {step} />
+				{:else if step.type === 'edit-file'}
+					<EditFileAction {step} />
 				{:else if step.type === 'terminal-command'}
 					<TerminalCommandAction {step} />
+				{:else if step.type === 'definition'}
+					<DefinitionAction {step} />
 				{:else if step.type === 'references'}
 					<ReferencesAction {step} />
 				{:else if step.type === 'message'}

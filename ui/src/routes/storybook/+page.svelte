@@ -95,12 +95,81 @@
 				steps: [
 					{
 						type: 'message',
+						content:
+							'Let me read the definition of parseFlightNumber, see how it is being called, and see what tests already exist for it or similar functions.',
+					},
+					{
+						type: 'definition',
+						symbol: 'parseFlightNumber',
+					},
+					{
+						type: 'message',
 						content: 'Let me see how parseFlightNumber is being called.',
 					},
 					{
 						type: 'references',
 						symbol: 'parseFlightNumber',
-						results: ['a', 'b', 'c', 'd'],
+						results: [
+							'airline, number, err := parseFlightNumber("AA123")',
+							'if _, _, err := parseFlightNumber("DL456"); err != nil {',
+							'airline, _, err := parseFlightNumber(flightNumber)',
+							'_, num, _ = parseFlightNumber(input)',
+						],
+						repositories: [
+							'github.com/foo/bar',
+							'github.com/baz/qux',
+							'github.com/bat/quux',
+						],
+					},
+					{
+						type: 'message',
+						content: 'Let me see what tests already exist for parseFlightNumber.',
+					},
+					{
+						type: 'read-files',
+						files: [
+							'flight_number_test.go',
+							'flights_test.go',
+							'airlines_test.go',
+							'util_test.go',
+						],
+					},
+					{
+						type: 'message',
+						content: 'OK, I will consider all the cases we need to test.',
+					},
+					{
+						type: 'think',
+						content:
+							'OK, we need to check for when it is valid, when it is invalid, and when it is empty. Airline codes appear to be 2-letter IATA codes, and I do not see any cases where a 3-letter ICAO code is used. If so, it would introduce ambiguity because IATA and ICAO codes can contain numbers, and we would not know when the airline code ended and the flight number began.',
+					},
+					{
+						type: 'message',
+						content: 'Here are the unit tests for parseFlightNumber:',
+					},
+					{
+						type: 'edit-file',
+						file: 'flight_number_test.go',
+						diff: '@@ 123,456\n+ func TestParseFlightNumber(t *testing.T) {\n  ctx := context.Background()\n',
+						diffStat: {
+							added: 51,
+							changed: 3,
+							deleted: 0,
+						},
+					},
+					{
+						type: 'message',
+						content: 'Let me run it to see if it works:',
+					},
+					{
+						type: 'terminal-command',
+						cwd: '~/src/github.com/evanw/esbuild',
+						command: 'go test -run=TestParseFlightNumber',
+						output: 'ok      github.com/foo/airline    0.005s',
+					},
+					{
+						type: 'message',
+						content: 'Great! The new unit test passes.',
 					},
 				],
 			},

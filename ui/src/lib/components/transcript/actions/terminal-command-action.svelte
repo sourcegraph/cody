@@ -30,9 +30,11 @@
 {:else}
 	<CollapsibleActionBlock>
 		{#snippet summary()}
-			Executed
-			<span class="text-muted-foreground font-mono text-xxs">
-				{step.command}
+			<span>
+				Executed
+				<span class="text-muted-foreground font-mono text-xxs">
+					{step.command}
+				</span>
 			</span>
 		{/snippet}
 

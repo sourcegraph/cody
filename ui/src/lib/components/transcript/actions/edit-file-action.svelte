@@ -1,26 +1,26 @@
 <script lang="ts">
+	import DiffStat from '$lib/components/diff-stat.svelte'
 	import type { TranscriptAction } from '$lib/types'
-	import DiffStat from '../../diff-stat.svelte'
 	import CollapsibleActionBlock from '../structure/collapsible-action-block.svelte'
 
-	let { step }: { step: Omit<Extract<TranscriptAction, { type: 'create-file' }>, 'type'> } =
+	let { step }: { step: Omit<Extract<TranscriptAction, { type: 'edit-file' }>, 'type'> } =
 		$props()
 </script>
 
 <CollapsibleActionBlock expandable={!step.pending}>
 	{#snippet summary()}
 		{#if step.pending}
-			<span>Creating <span class="text-muted-foreground">{step.file}</span></span>
+			<span>Editing <span class="text-muted-foreground">{step.file}</span></span>
 		{:else}
 			<span class="mr-0.5">
-				Created
+				Edited
 				<span class="text-muted-foreground">
 					{step.file}
 				</span>
 			</span>
-			<DiffStat added={step.content.split('\n').length} />
+			<DiffStat {...step.diffStat} />
 		{/if}
 	{/snippet}
 
-	<pre class="text-xxs mt-2 mb-1">{step.content}</pre>
+	<pre class="text-xxs mt-2 mb-1">{step.diff}</pre>
 </CollapsibleActionBlock>

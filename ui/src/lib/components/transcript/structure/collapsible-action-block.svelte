@@ -30,7 +30,7 @@
 				{:else}
 					<ChevronRight />
 				{/if}
-				<span>{@render summary()}</span>
+				{@render summary()}
 			</Collapsible.Trigger>
 			<Collapsible.Content class="mt-0.5">
 				{@render children()}
