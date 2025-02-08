@@ -127,6 +127,7 @@ async function runNLSSearch(examples: Example[]): Promise<ExampleOutput[]> {
         }
         exampleOutputs.push({
             ...example,
+            rewrittenQuery: '',
             actualContext,
         })
     }
