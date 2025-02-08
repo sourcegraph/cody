@@ -3,6 +3,7 @@
 	import * as Tooltip from '$lib/components/ui/tooltip/index.js'
 	import Plus from '@lucide/svelte/icons/plus'
 	import '../app.css'
+	import { STORYBOOK_CONFIG } from './storybook/config'
 
 	let { children } = $props()
 </script>
@@ -13,6 +14,9 @@
 			<Navbar.Item path="/chat" title="Chat" />
 			<Navbar.Item path="/prompts" title="Prompts" />
 			<Navbar.Item path="/history" title="History" />
+			{#if STORYBOOK_CONFIG.enabled}
+				<Navbar.Item path="/storybook" title="Storybook" />
+			{/if}
 
 			<aside class="ml-auto flex gap-2">
 				<Navbar.Action title="New Chat" icon={Plus} />
