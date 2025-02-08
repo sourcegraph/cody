@@ -119,6 +119,9 @@ type ExtensionActivate = (
 // file, and we copy it over to the `extensionPath` so the VS Code logic works
 // without changes.
 function copyExtensionRelativeResources(extensionPath: string, extensionClient: ExtensionClient): void {
+    if (process.env.USER === 'sqs') {
+        return // TODO!(sqs)
+    }
     const copySources = (relativeSource: string): void => {
         const source = path.join(__dirname, relativeSource)
         const target = path.join(extensionPath, 'dist', relativeSource)

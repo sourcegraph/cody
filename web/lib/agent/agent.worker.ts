@@ -9,8 +9,6 @@ import {
 } from 'vscode-jsonrpc/browser'
 import { IndexDBStorage } from './index-db-storage'
 
-console.log('AGENT')
-
 const conn = createMessageConnection(new BrowserMessageReader(self), new BrowserMessageWriter(self))
 
 const agent = new Agent({

@@ -92,4 +92,7 @@ export default defineProjectWithDefaults(__dirname, {
                   ),
               }),
     },
+    server: {
+        port: 5133,
+    },
 })
