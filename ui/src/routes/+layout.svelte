@@ -1,32 +1,34 @@
 <script lang="ts">
-    import "../app.css";
-    import TabsRoot from "$lib/components/tabs/tabs-root.svelte";
+	import '../app.css'
+	import TabsRoot from '$lib/components/tabs/tabs-root.svelte'
 
-    let { children } = $props();
+	let { children } = $props()
 
-    let activeTab = "chat";
+	let activeTab = 'chat'
 
-    const tabs = [
-        {
-            id: "chat",
-            label: "Chat",
-            content: () => children?.(),
-        },
-        {
-            id: "prompts",
-            label: "Prompts",
-            content: () => "",
-        },
-        {
-            id: "history",
-            label: "History",
-            content: () => "",
-        },
-    ];
+	const tabs = [
+		{
+			id: 'chat',
+			label: 'Chat',
+			content: () => children?.(),
+		},
+		{
+			id: 'prompts',
+			label: 'Prompts',
+			content: () => '',
+		},
+		{
+			id: 'history',
+			label: 'History',
+			content: () => '',
+		},
+	]
 
-    function handleTabChange(tabId: string) {
-        activeTab = tabId;
-    }
+	function handleTabChange(tabId: string) {
+		activeTab = tabId
+	}
 </script>
 
 <TabsRoot {tabs} {activeTab} onTabChange={handleTabChange} />
+
+{@render children()}
