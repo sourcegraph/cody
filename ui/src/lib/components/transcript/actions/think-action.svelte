@@ -7,15 +7,15 @@
 </script>
 
 {#if step.pending}
-	<ActionBlock border={false}>
+	<ActionBlock>
 		<span
 			class="animate-shimmer bg-gradient-to-r text-foreground/50 from-transparent via-foreground to-transparent bg-clip-text bg-[length:35%_150%] bg-no-repeat"
 		>
-			{step.content}
+			Thinking...
 		</span>
 	</ActionBlock>
 {:else}
-	<CollapsibleActionBlock border={false}>
+	<CollapsibleActionBlock>
 		{#snippet summary()}
 			Thought
 		{/snippet}

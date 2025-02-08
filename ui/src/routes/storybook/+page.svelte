@@ -42,8 +42,13 @@
 							'If the user said TypeScript, they probably mean JavaScript is OK as well. When they say program, they want something that prints out that "Hello, world" string. Because they did not give much detail, they probably want the simplest program that works.',
 					},
 					{
+						type: 'message',
+						content:
+							'Let me first check if there are any existing files in the workspace that might help.',
+					},
+					{
 						type: 'read-files',
-						files: ['foo.go'],
+						files: ['foo.go', 'bar.go', 'baz.go', 'src/view/qux.ts'],
 					},
 					{
 						type: 'message',

@@ -24,14 +24,14 @@
 			<Collapsible.Trigger
 				class="focus:outline-none [&>svg]:size-3.5 [&>svg]:inline [&>svg]:-ml-0.5 inline-flex items-center gap-[2px] leading-none"
 			>
-				{@render summary()}
 				{#if open}
 					<ChevronDown />
 				{:else}
 					<ChevronRight />
 				{/if}
+				<span>{@render summary()}</span>
 			</Collapsible.Trigger>
-			<Collapsible.Content class="pl-2 mt-1 border-l-2">
+			<Collapsible.Content class="mt-0.5">
 				{@render children()}
 			</Collapsible.Content>
 		</Collapsible.Root>

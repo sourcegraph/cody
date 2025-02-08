@@ -15,7 +15,7 @@
 
 <div
 	class={cn(
-		'py-1 text-sm text-muted-foreground',
+		'py-1 text-sm text-foreground/90',
 		width === 'full' ? 'flex' : 'inline-flex',
 		border ? 'border rounded-xs px-1.5' : '',
 	)}
