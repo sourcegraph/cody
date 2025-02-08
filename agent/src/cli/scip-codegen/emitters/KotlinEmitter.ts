@@ -241,7 +241,7 @@ export class KotlinEmitter implements Emitter {
     }
 }
 
-export class KotlinFormatter extends Formatter {
+class KotlinFormatter extends Formatter {
     public options: LanguageOptions = {
         typeNameSeparator: '_',
         typeAnnotations: 'after',

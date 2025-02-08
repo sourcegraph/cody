@@ -70,7 +70,7 @@ export type CodyWebChatMessage =
     | { type: 'view.change'; view: View }
 
 export type MessageHandler = (message: ControllerMessage) => void
-export type Unsubscriber = () => void
+type Unsubscriber = () => void
 
 /**
  * The host system can pass an instance of this controller to the Cody Web Chat component to have finer control over its behavior.

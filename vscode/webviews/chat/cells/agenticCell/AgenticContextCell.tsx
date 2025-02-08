@@ -1,6 +1,6 @@
 import type { ProcessingStep } from '@sourcegraph/cody-shared'
 import { BrainIcon, CircleXIcon, Loader2Icon } from 'lucide-react'
-import { type FC, type FunctionComponent, createContext, memo, useCallback, useState } from 'react'
+import { type FC, type FunctionComponent, memo, useCallback, useState } from 'react'
 import {
     Accordion,
     AccordionContent,
@@ -8,8 +8,6 @@ import {
     AccordionTrigger,
 } from '../../../components/shadcn/ui/accordion'
 import { Cell } from '../Cell'
-
-export const __ProcessCellStorybookContext = createContext<{ initialOpen: boolean } | null>(null)
 
 const CELL_NAME = 'agentic-chat-items'
 /**

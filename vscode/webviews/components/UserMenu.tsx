@@ -557,4 +557,4 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
     )
 }
 
-export const USER_MENU_AVATAR_SIZE = 16
+const USER_MENU_AVATAR_SIZE = 16

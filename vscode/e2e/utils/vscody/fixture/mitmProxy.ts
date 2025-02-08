@@ -356,7 +356,7 @@ function sourcegraphProxyReqHandler(
 /**
  * Any function that resolves once the delay is over. Compatible with @pollyjs/core Timing
  */
-export type ResponseDelayFn = (
+type ResponseDelayFn = (
     currentResponseTime: number,
     req: IncomingMessage,
     res: ServerResponse<IncomingMessage>

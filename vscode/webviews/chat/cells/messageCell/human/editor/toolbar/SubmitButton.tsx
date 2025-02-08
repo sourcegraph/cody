@@ -291,7 +291,7 @@ export const SubmitButton: FC<{
     )
 }
 
-export const PopoverItem: FunctionComponent<
+const PopoverItem: FunctionComponent<
     PropsWithChildren<{
         popoverContent: (close: () => void) => React.ReactNode
 

@@ -183,7 +183,7 @@ export const iconForProvider: Record<
     [RULES_PROVIDER_URI]: BookCheckIcon,
 }
 
-export const iconForItem: Record<
+const iconForItem: Record<
     string,
     React.ComponentType<{
         size?: string | number

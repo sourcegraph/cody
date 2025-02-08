@@ -263,7 +263,7 @@ interface AutoeditBaseState {
     phase: Phase
 }
 
-export interface StartedState extends AutoeditBaseState {
+interface StartedState extends AutoeditBaseState {
     phase: 'started'
     /** Time (ms) when we started computing or requesting the suggestion. */
     startedAt: number
@@ -283,7 +283,7 @@ export interface ContextLoadedState extends Omit<StartedState, 'phase'> {
     payload: AutoeditContextLoadedMetadata
 }
 
-export interface LoadedState extends Omit<ContextLoadedState, 'phase'> {
+interface LoadedState extends Omit<ContextLoadedState, 'phase'> {
     phase: 'loaded'
     /** Timestamp when the suggestion completed generation/loading. */
     loadedAt: number
@@ -333,7 +333,7 @@ export interface RejectedState extends Omit<SuggestedState, 'phase'> {
     payload: AutoeditRejectedEventPayload
 }
 
-export interface DiscardedState extends Omit<StartedState, 'phase'> {
+interface DiscardedState extends Omit<StartedState, 'phase'> {
     phase: 'discarded'
     /** Timestamp when the suggestion was logged to our analytics backend. This is to avoid double-logging. */
     suggestionLoggedAt?: number
@@ -360,7 +360,7 @@ type PreviousPossiblePhaseFrom<T extends Phase> = {
     [F in Phase]: T extends (typeof validRequestTransitions)[F][number] ? PhaseStates[F] : never
 }[Phase]
 
-export type AutoeditRequestState = PhaseStates[Phase]
+type AutoeditRequestState = PhaseStates[Phase]
 
 type AutoeditEventAction =
     | 'suggested'

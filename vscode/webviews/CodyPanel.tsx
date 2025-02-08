@@ -189,13 +189,13 @@ const ErrorBanner: React.FunctionComponent<{ errors: string[]; setErrors: (error
         </div>
     )
 
-export interface ExternalPrompt {
+interface ExternalPrompt {
     text: string
     autoSubmit: boolean
     mode?: ChatMessage['intent']
 }
 
-export interface CodyExternalApi {
+interface CodyExternalApi {
     runPrompt: (action: ExternalPrompt) => Promise<void>
 }
 

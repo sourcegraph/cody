@@ -28,7 +28,7 @@ export function blockify(
     return paddingAdded
 }
 
-export function convertToSpaceIndentation(
+function convertToSpaceIndentation(
     document: vscode.TextDocument,
     addedLines: AddedLinesDecorationInfo[]
 ): AddedLinesDecorationInfo[] {

@@ -12,7 +12,7 @@ interface Scroller {
     getClientHeight: () => number
 }
 
-export function createScrollerAPI(element: HTMLElement): Scroller {
+function createScrollerAPI(element: HTMLElement): Scroller {
     return {
         root: element,
         getObserveElement: () => element.firstElementChild!,

@@ -338,7 +338,7 @@ export class ClientConfigSingleton {
     }
 }
 // It's really complicated to access CodyClientConfig from functions like utils.ts
-export let latestCodyClientConfig: CodyClientConfig | undefined
+let latestCodyClientConfig: CodyClientConfig | undefined
 
 export function serverSupportsPromptCaching(): boolean {
     return (

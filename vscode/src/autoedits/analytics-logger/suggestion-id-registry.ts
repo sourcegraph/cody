@@ -7,13 +7,13 @@ import type { AutoeditSuggestionID } from './analytics-logger'
 /**
  * A specialized string type for the stable “suggestion key” in caches.
  */
-export type AutoeditSuggestionKey = string & { readonly _brand: 'AutoeditSuggestionKey' }
+type AutoeditSuggestionKey = string & { readonly _brand: 'AutoeditSuggestionKey' }
 
 /**
  * A small helper class that generates or retrieves stable AutoeditSuggestionIDs.
  * This encapsulates the logic of deduplicating identical suggestions.
  */
-export class AutoeditSuggestionIdRegistry {
+class AutoeditSuggestionIdRegistry {
     private suggestionIdCache = new LRUCache<AutoeditSuggestionKey, AutoeditSuggestionID>({ max: 50 })
 
     /**
