@@ -99,6 +99,7 @@ const config: Config = {
 				'caret-blink': 'caret-blink 1.25s ease-out infinite',
 			},
 			fontSize: {
+				base: ['0.8125rem', { lineHeight: '1.25rem' }],
 				xxs: ['0.625rem', { lineHeight: '.75rem' }],
 			},
 		},

@@ -1,34 +1,24 @@
 <script lang="ts">
+	import * as Navbar from '$lib/components/ui/navbar/index.js'
+	import * as Tooltip from '$lib/components/ui/tooltip/index.js'
+	import Plus from '@lucide/svelte/icons/plus'
 	import '../app.css'
-	import TabsRoot from '$lib/components/tabs/tabs-root.svelte'
 
 	let { children } = $props()
-
-	let activeTab = 'chat'
-
-	const tabs = [
-		{
-			id: 'chat',
-			label: 'Chat',
-			content: () => children?.(),
-		},
-		{
-			id: 'prompts',
-			label: 'Prompts',
-			content: () => '',
-		},
-		{
-			id: 'history',
-			label: 'History',
-			content: () => '',
-		},
-	]
-
-	function handleTabChange(tabId: string) {
-		activeTab = tabId
-	}
 </script>
 
-<TabsRoot {tabs} {activeTab} onTabChange={handleTabChange} />
+<Tooltip.Provider delayDuration={500} disableHoverableContent={true}>
+	<Navbar.Root>
+		<Navbar.Item path="/chat" title="Chat" />
+		<Navbar.Item path="/prompts" title="Prompts" />
+		<Navbar.Item path="/history" title="History" />
 
-{@render children()}
+		<aside class="ml-auto flex gap-2">
+			<Navbar.Action title="New Chat" icon={Plus} />
+		</aside>
+	</Navbar.Root>
+
+	<div class="p-2">
+		{@render children()}
+	</div>
+</Tooltip.Provider>

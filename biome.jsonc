@@ -87,7 +87,6 @@
             "*.snap.json",
             "lib/noxide/node",
             "jetbrains/**",
-            "ui/",
             "pollyjs/**"
         ]
     },
@@ -133,6 +132,18 @@
                         "noFocusedTests": "warn"
                     }
                 }
+            }
+        },
+        {
+            "include": ["*.svelte"],
+            "linter": {
+                "enabled": false
+            },
+            "formatter": {
+                "enabled": false
+            },
+            "organizeImports": {
+                "enabled": false
             }
         }
     ],
