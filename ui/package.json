@@ -23,6 +23,7 @@
     "format": "prettier --write ."
   },
   "dependencies": {
+    "@sourcegraph/cody-shared": "workspace:*",
     "@sourcegraph/cody-web": "workspace:*"
   },
   "devDependencies": {

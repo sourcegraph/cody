@@ -426,3 +426,5 @@ export {
     type RuleService,
     isRulesEnabled,
 } from './rules/service'
+
+export * from './threads/interactive/session'

@@ -10,5 +10,8 @@
 		"sourceMap": true,
 		"strict": true,
 		"moduleResolution": "bundler",
-  }
+  },
+  "references": [
+    {"path": "../lib/shared"}
+  ]
 }
