@@ -169,6 +169,7 @@ export type {
 } from './editor'
 export {
     displayPath,
+    displayPathWithLines,
     displayPathBasename,
     uriHasPrefix,
     displayPathDirname,
