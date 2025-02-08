@@ -11,11 +11,7 @@
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
-  "files": [
-    "dist",
-    "src",
-    "!**/*.test.*"
-  ],
+  "files": ["dist", "src", "!**/*.test.*"],
   "sideEffects": false,
   "scripts": {
     "dev": "vite dev",
@@ -25,6 +21,9 @@
     "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
     "lint": "eslint . && prettier --check .",
     "format": "prettier --write ."
+  },
+  "dependencies": {
+    "@sourcegraph/cody-web": "workspace:*"
   },
   "devDependencies": {
     "@eslint/compat": "^1.2.6",

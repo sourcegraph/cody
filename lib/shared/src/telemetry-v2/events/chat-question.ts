@@ -1,5 +1,4 @@
 import type { Span } from '@opentelemetry/api'
-import { cloneDeep, isArray } from 'lodash'
 import type { AuthStatus } from '../../auth/types'
 import type { ChatMessage, EventSource } from '../../chat/transcript/messages'
 import { type ContextItem, ContextItemSource } from '../../codebase-context/messages'
@@ -47,7 +46,9 @@ export const events = [
                 const recordTranscript = params.authStatus.endpoint && isDotCom(params.authStatus)
 
                 const gitMetadata =
-                    isDotCom(params.authStatus) && params.repoIsPublic && isArray(params.repoMetadata)
+                    isDotCom(params.authStatus) &&
+                    params.repoIsPublic &&
+                    Array.isArray(params.repoMetadata)
                         ? params.repoMetadata
                         : undefined
 
@@ -202,6 +203,9 @@ export const events = [
 ]
 
 function publicContextSummary(globalPrefix: string, context: ContextItem[]) {
+    function cloneDeep(v: any): any {
+        return JSON.parse(JSON.stringify(v))
+    }
     const global = cloneDeep(defaultSharedItemCount)
     const bySource = {
         [ContextItemSource.User]: cloneDeep(defaultBySourceCount),

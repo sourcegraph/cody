@@ -1,4 +1,5 @@
-import { SHA256, enc } from 'crypto-js'
+import hex from 'crypto-js/enc-hex'
+import sha256 from 'crypto-js/sha256'
 
 export function dotcomTokenToGatewayToken(dotcomToken?: string | null): string | undefined {
     if (!dotcomToken) {
@@ -19,7 +20,7 @@ export function dotcomTokenToGatewayToken(dotcomToken?: string | null): string |
         return undefined
     }
 
-    const accessTokenBytes = enc.Hex.parse(hexEncodedAccessTokenBytes)
-    const gatewayTokenBytes = SHA256(SHA256(accessTokenBytes)).toString()
+    const accessTokenBytes = hex.parse(hexEncodedAccessTokenBytes)
+    const gatewayTokenBytes = sha256(sha256(accessTokenBytes)).toString()
     return 'sgd_' + gatewayTokenBytes
 }

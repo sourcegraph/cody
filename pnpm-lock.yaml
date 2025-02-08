@@ -478,6 +478,10 @@ importers:
         version: 4.26.1
 
   ui:
+    dependencies:
+      '@sourcegraph/cody-web':
+        specifier: workspace:*
+        version: link:../web
     devDependencies:
       '@eslint/compat':
         specifier: ^1.2.6

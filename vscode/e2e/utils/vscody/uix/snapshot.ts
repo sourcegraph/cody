@@ -28,7 +28,7 @@ export const expect = {
         const testInfo = test.info() as TestInfo & { _projectInternal: any }
         let normalized: any = received
         for (const normalizer of options?.normalizers ?? []) {
-            normalized = _.isArray(normalized)
+            normalized = Array.isArray(normalized)
                 ? normalized.map(v => produce(v, normalizer))
                 : produce(normalized, normalizer)
         }
@@ -154,7 +154,7 @@ export namespace Normalizers {
     ) => {
         return (draft: any) => {
             const item = _.get(draft, path)
-            if (_.isArray(item)) {
+            if (Array.isArray(item)) {
                 const sorted = _.sortBy(item, ...args)
                 _.set(draft, path, sorted)
                 // item.splice(0, item.length, ...sorted)

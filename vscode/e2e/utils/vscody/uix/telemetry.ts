@@ -1,5 +1,4 @@
 import type { telemetryEvents } from '@sourcegraph/cody-shared'
-import { isArray } from 'lodash'
 import type { LiteralUnion } from 'type-fest'
 import type { UIXContextFnContext } from '.'
 import type { RecordedTelemetryEvent } from '../fixture/telemetry'
@@ -68,7 +67,7 @@ export class TelemetrySnapshot {
             if (typeof m === 'function') {
                 return input.filter(v => m(v) === shouldMatch)
             }
-            const propMatcher = isArray(m) ? m : [m]
+            const propMatcher = Array.isArray(m) ? m : [m]
             const matcherFn = propMatchFn(...propMatcher)
             return input.filter(v => matcherFn(v) === shouldMatch)
         }
