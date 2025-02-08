@@ -89,31 +89,31 @@
 <Story title="Transcript - Generate test" component={Transcript}>
 	<Transcript
 		messages={[
-			{ type: 'user', content: 'Generate unit tests for parseFlightNumber.' },
+			{ type: 'user', content: 'Generate unit tests for ParseFlightNumber.' },
 			{
 				type: 'agent',
 				steps: [
 					{
 						type: 'message',
 						content:
-							'Let me read the definition of parseFlightNumber, see how it is being called, and see what tests already exist for it or similar functions.',
+							'Let me read the definition of ParseFlightNumber, see how it is being called, and see what tests already exist for it or similar functions.',
 					},
 					{
 						type: 'definition',
-						symbol: 'parseFlightNumber',
+						symbol: 'ParseFlightNumber',
 					},
 					{
 						type: 'message',
-						content: 'Let me see how parseFlightNumber is being called.',
+						content: 'Let me see how ParseFlightNumber is being called.',
 					},
 					{
 						type: 'references',
-						symbol: 'parseFlightNumber',
+						symbol: 'ParseFlightNumber',
 						results: [
-							'airline, number, err := parseFlightNumber("AA123")',
-							'if _, _, err := parseFlightNumber("DL456"); err != nil {',
-							'airline, _, err := parseFlightNumber(flightNumber)',
-							'_, num, _ = parseFlightNumber(input)',
+							'airline, number, err := airline.ParseFlightNumber("AA123")',
+							'if _, _, err := airline.ParseFlightNumber("DL456"); err != nil {',
+							'airline, _, err := ParseFlightNumber(flightNumber)',
+							'_, num, _ = airline.ParseFlightNumber(input)',
 						],
 						repositories: [
 							'github.com/foo/bar',
@@ -123,7 +123,7 @@
 					},
 					{
 						type: 'message',
-						content: 'Let me see what tests already exist for parseFlightNumber.',
+						content: 'Let me see what tests already exist for ParseFlightNumber.',
 					},
 					{
 						type: 'read-files',
@@ -145,7 +145,7 @@
 					},
 					{
 						type: 'message',
-						content: 'Here are the unit tests for parseFlightNumber:',
+						content: 'Here are the unit tests for ParseFlightNumber:',
 					},
 					{
 						type: 'edit-file',
