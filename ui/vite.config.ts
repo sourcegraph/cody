@@ -17,6 +17,7 @@ const fakeProcessEnv: Record<string, string | boolean> = {
     LSP_LIGHT_LOGGING_ENABLED: false,
     LSP_LIGHT_CACHE_DISABLED: false,
     language: 'en-US',
+    CODY_WEB_DEMO: true,
 }
 
 export default defineProjectWithDefaults(__dirname, {
