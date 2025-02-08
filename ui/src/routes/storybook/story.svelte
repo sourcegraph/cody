@@ -1,12 +1,38 @@
 <script lang="ts">
-	import type { Snippet } from 'svelte'
+	import * as Collapsible from '$lib/components/ui/collapsible/index.js'
+	import ChevronsUpDown from '@lucide/svelte/icons/chevrons-up-down'
+	import X from '@lucide/svelte/icons/x'
+	import type { Component, Snippet } from 'svelte'
 
-	let { title, children }: { title: string; children: Snippet } = $props()
+	let {
+		title,
+		component,
+		children,
+	}: { title: string; component: Component<any>; children: Snippet } = $props()
+
+	let key = `dev:storybook:${title}`
+	let open = $state(localStorage.getItem(key) === 'true')
+	$effect(() => {
+		if (open) {
+			localStorage.setItem(key, 'true')
+		} else {
+			localStorage.removeItem(key)
+		}
+	})
 </script>
 
-<section>
-	<h2 class="text-lg font-semibold mb-1">{title}</h2>
-	<div class="border rounded-sm p-2">
+<Collapsible.Root class="w-full" bind:open>
+	<Collapsible.Trigger class="focus:outline-none">
+		<h2 class="text-lg font-semibold mb-1">
+			{title}
+			{#if open}
+				<X class="w-4 h-4 inline" />
+			{:else}
+				<ChevronsUpDown class="w-4 h-4 inline" />
+			{/if}
+		</h2>
+	</Collapsible.Trigger>
+	<Collapsible.Content class="rounded border p-2">
 		{@render children()}
-	</div>
-</section>
+	</Collapsible.Content>
+</Collapsible.Root>
