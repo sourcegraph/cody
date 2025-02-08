@@ -160,7 +160,6 @@
 body[data-vscode-theme-kind='vscode-light'] .content pre,
 body[data-vscode-theme-kind='vscode-light'] .content pre > code {
     /* Our syntax highlighter emits colors intended for dark backgrounds only. */
-    background-color: var(--code-background);
     color: var(--code-foreground);
 }
 
