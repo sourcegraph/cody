@@ -247,11 +247,7 @@ describe('Transcript', () => {
                 ]}
             />
         )
-        expectCells([
-            { message: 'Foo' },
-            { context: {} },
-            { message: 'Model\n\nRequest Failed: some error' },
-        ])
+        expectCells([{ message: 'Foo' }, { context: {} }, { message: 'Request Failed: some error' }])
     })
 
     test('does not clobber user input into followup while isPendingPriorResponse when it completes', async () => {

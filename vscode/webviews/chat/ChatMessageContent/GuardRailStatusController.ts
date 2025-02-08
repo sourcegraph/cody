@@ -1,5 +1,3 @@
-import { ShieldIcon } from '../../icons/CodeBlockActionIcons'
-
 import styles from './ChatMessageContent.module.css'
 
 /*
@@ -19,18 +17,16 @@ export class GuardrailsStatusController {
     private status: HTMLElement
 
     constructor(public container: HTMLElement) {
-        this.findOrAppend(this.iconClass, () => {
-            const icon = document.createElement('div')
-            icon.innerHTML = ShieldIcon
-            icon.classList.add(styles.attributionIcon, this.iconClass)
-            icon.setAttribute('data-testid', 'attribution-indicator')
-            return icon
-        })
-        this.status = this.findOrAppend(this.statusClass, () => {
+        const elements = this.container.getElementsByClassName(this.statusClass)
+        if (elements.length > 0) {
+            this.status = elements[0] as HTMLElement
+        } else {
             const status = document.createElement('div')
             status.classList.add(styles.status, this.statusClass)
-            return status
-        })
+            status.setAttribute('data-testid', 'attribution-indicator')
+            this.container.append(status)
+            this.status = status
+        }
     }
 
     /**
@@ -71,16 +67,6 @@ export class GuardrailsStatusController {
         this.container.classList.add(styles.attributionIconUnavailable)
         this.container.title = `Guardrails API error: ${error.message}`
         this.status.innerHTML = this.statusUnavailable
-    }
-
-    private findOrAppend(className: string, make: () => HTMLElement): HTMLElement {
-        const elements = this.container.getElementsByClassName(className)
-        if (elements.length > 0) {
-            return elements[0] as HTMLElement
-        }
-        const newElement = make()
-        this.container.append(newElement)
-        return newElement
     }
 
     private tooltip(repos: string[], limitHit: boolean) {
