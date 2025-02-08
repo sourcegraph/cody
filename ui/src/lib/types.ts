@@ -20,6 +20,13 @@ export type TranscriptAction =
           pending?: boolean
       }
     | {
+          type: 'terminal-command'
+          cwd?: string
+          command: string
+          output?: string
+          pendingUserApproval?: boolean
+      }
+    | {
           type: 'message'
           content: string
       }

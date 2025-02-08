@@ -61,11 +61,24 @@
 					},
 					{
 						type: 'message',
-						content: 'You can run it with the following command:',
+						content: 'Let me run it to see if it works:',
 					},
 					{
-						type: 'shell-command',
+						type: 'terminal-command',
+						cwd: '~/src/github.com/evanw/esbuild',
 						command: 'node --experimental-strip-types src/hello-world.ts',
+						output: 'Hello, world!',
+					},
+					{
+						type: 'message',
+						content:
+							'Great! It works. You can now run it yourself with the following command:',
+					},
+					{
+						type: 'terminal-command',
+						cwd: '~/src/github.com/evanw/esbuild',
+						command: 'node --experimental-strip-types src/hello-world.ts',
+						pendingUserApproval: true,
 					},
 				],
 			},
