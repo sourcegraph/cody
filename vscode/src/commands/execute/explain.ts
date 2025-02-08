@@ -45,7 +45,7 @@ export async function explainCommand(
 
     prompt = prompt.replaceAll(
         'the selected code',
-        selectedCodePromptWithExtraFiles(contextItems[0], contextItems.slice(1))
+        selectedCodePromptWithExtraFiles(contextItems[0], [])
     )
 
     return {
