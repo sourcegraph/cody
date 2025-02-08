@@ -8,26 +8,34 @@
 	let {
 		summary,
 		children,
+		expandable = true,
 		...restProps
-	}: { summary: Snippet } & Omit<ComponentProps<typeof ActionBlock>, 'width'> = $props()
+	}: { summary: Snippet; expandable?: boolean } & Omit<
+		ComponentProps<typeof ActionBlock>,
+		'width'
+	> = $props()
 
 	let open = $state(false)
 </script>
 
 <ActionBlock {...restProps} width="full">
-	<Collapsible.Root class="w-full flex flex-col" bind:open>
-		<Collapsible.Trigger
-			class="focus:outline-none [&>svg]:size-3.5 [&>svg]:inline [&>svg]:-ml-0.5 inline-flex items-center gap-[2px] leading-none"
-		>
-			{@render summary()}
-			{#if open}
-				<ChevronDown />
-			{:else}
-				<ChevronRight />
-			{/if}
-		</Collapsible.Trigger>
-		<Collapsible.Content class="pl-2 mt-1 border-l-2">
-			{@render children()}
-		</Collapsible.Content>
-	</Collapsible.Root>
+	{#if expandable}
+		<Collapsible.Root class="w-full flex flex-col" bind:open>
+			<Collapsible.Trigger
+				class="focus:outline-none [&>svg]:size-3.5 [&>svg]:inline [&>svg]:-ml-0.5 inline-flex items-center gap-[2px] leading-none"
+			>
+				{@render summary()}
+				{#if open}
+					<ChevronDown />
+				{:else}
+					<ChevronRight />
+				{/if}
+			</Collapsible.Trigger>
+			<Collapsible.Content class="pl-2 mt-1 border-l-2">
+				{@render children()}
+			</Collapsible.Content>
+		</Collapsible.Root>
+	{:else}
+		{@render summary()}
+	{/if}
 </ActionBlock>

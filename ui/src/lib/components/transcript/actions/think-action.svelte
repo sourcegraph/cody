@@ -19,8 +19,6 @@
 		{#snippet summary()}
 			Thought
 		{/snippet}
-		{#if !step.pending}
-			{step.content}
-		{/if}
+		{step.content}
 	</CollapsibleActionBlock>
 {/if}

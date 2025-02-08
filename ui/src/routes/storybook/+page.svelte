@@ -42,6 +42,10 @@
 							'If the user said TypeScript, they probably mean JavaScript is OK as well. When they say program, they want something that prints out that "Hello, world" string. Because they did not give much detail, they probably want the simplest program that works.',
 					},
 					{
+						type: 'read-files',
+						files: ['foo.go'],
+					},
+					{
 						type: 'message',
 						content:
 							'Here is a TypeScript "Hello, world" program:\n\n```typescript\nconsole.log("Hello, world!")\n```',

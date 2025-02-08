@@ -1,7 +1,8 @@
 <script lang="ts">
 	import type { TranscriptMessage } from '$lib/types'
 	import PromptEditor from '../prompt-editor/prompt-editor.svelte'
-	import TranscriptThinkAction from './actions/think-action.svelte'
+	import ReadFilesAction from './actions/read-files-action.svelte'
+	import ThinkAction from './actions/think-action.svelte'
 
 	let { messages }: { messages: TranscriptMessage[] } = $props()
 </script>
@@ -13,8 +14,10 @@
 		{:else if message.type === 'agent'}
 			{#each message.steps as step}
 				{#if step.type === 'think'}
-					<TranscriptThinkAction {step} />
-				{:else}
+					<ThinkAction {step} />
+				{:else if step.type === 'read-files'}
+					<ReadFilesAction {step} />
+				{:else if step.type === 'message'}
 					<p>{step.content}</p>
 				{/if}
 			{/each}

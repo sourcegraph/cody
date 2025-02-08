@@ -9,6 +9,11 @@ export type TranscriptAction =
           pending?: boolean
       }
     | {
+          type: 'read-files'
+          files: string[]
+          pending?: boolean
+      }
+    | {
           type: 'message'
           content: string
       }
