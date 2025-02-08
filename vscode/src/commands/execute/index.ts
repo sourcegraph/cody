@@ -76,7 +76,10 @@ export function selectedCodePromptWithExtraFiles(
     const otherMentions = other.map(
         item => ps`@${PromptString.fromDisplayPathLineRange(item.uri, item.range)}`
     )
-    return ps`${primaryMention}${
-        otherMentions.length > 0 ? ps` ( ${PromptString.join(otherMentions, ps` `)} )` : ''
-    }`
+    if (otherMentions.length === 0) {
+        return primaryMention
+    }
+
+    const joinedMentions = PromptString.join(otherMentions, ps` `)
+    return ps`${primaryMention} ${joinedMentions}`
 }
