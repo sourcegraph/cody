@@ -59,8 +59,8 @@
     "stylelint-config-standard": "^34.0.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.5.4",
-    "vite": "^5.4.2",
-    "vitest": "^2.0.5"
+    "vite": "^6.1.0",
+    "vitest": "^3.0.5"
   },
   "dependencies": {
     "@openctx/client": "^0.0.30",

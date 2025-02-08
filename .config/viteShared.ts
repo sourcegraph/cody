@@ -1,7 +1,7 @@
 import { basename } from 'node:path'
 
 import { type UserConfig, mergeConfig } from 'vite'
-import { type UserWorkspaceConfig, configDefaults, defineProject } from 'vitest/config'
+import { type UserWorkspaceConfig, defineProject } from 'vitest/config'
 
 /**
  * Default configuration for a project in a workspace.
@@ -19,9 +19,6 @@ const defaultProjectConfig: UserWorkspaceConfig = {
     },
     css: { modules: { localsConvention: 'camelCaseOnly' } },
     test: {
-        fakeTimers: {
-            toFake: [...configDefaults.fakeTimers.toFake, 'performance'],
-        },
         testTimeout: 500,
     },
 }
