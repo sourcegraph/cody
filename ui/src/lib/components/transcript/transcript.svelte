@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { TranscriptMessage } from '$lib/types'
 	import PromptEditor from '../prompt-editor/prompt-editor.svelte'
+	import CreateFileAction from './actions/create-file-action.svelte'
 	import ReadFilesAction from './actions/read-files-action.svelte'
 	import ThinkAction from './actions/think-action.svelte'
 
@@ -17,6 +18,8 @@
 					<ThinkAction {step} />
 				{:else if step.type === 'read-files'}
 					<ReadFilesAction {step} />
+				{:else if step.type === 'create-file'}
+					<CreateFileAction {step} />
 				{:else if step.type === 'message'}
 					<p>{step.content}</p>
 				{/if}

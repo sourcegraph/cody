@@ -5,12 +5,18 @@ export type TranscriptMessage =
 export type TranscriptAction =
     | {
           type: 'think'
-          content: string
+          content?: string
           pending?: boolean
       }
     | {
           type: 'read-files'
           files: string[]
+          pending?: boolean
+      }
+    | {
+          type: 'create-file'
+          file: string
+          content: string
           pending?: boolean
       }
     | {

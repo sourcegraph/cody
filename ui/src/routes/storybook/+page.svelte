@@ -23,7 +23,7 @@
 			{ type: 'user', content: 'Write a TypeScript "Hello, world" program.' },
 			{
 				type: 'agent',
-				steps: [{ type: 'think', content: 'Generating...', pending: true }],
+				steps: [{ type: 'think', pending: true }],
 			},
 		]}
 	/>
@@ -52,8 +52,20 @@
 					},
 					{
 						type: 'message',
-						content:
-							'Here is a TypeScript "Hello, world" program:\n\n```typescript\nconsole.log("Hello, world!")\n```',
+						content: 'Here is a TypeScript "Hello, world" program:',
+					},
+					{
+						type: 'create-file',
+						file: 'src/hello-world.ts',
+						content: 'console.log("Hello, world!")',
+					},
+					{
+						type: 'message',
+						content: 'You can run it with the following command:',
+					},
+					{
+						type: 'shell-command',
+						command: 'node --experimental-strip-types src/hello-world.ts',
 					},
 				],
 			},

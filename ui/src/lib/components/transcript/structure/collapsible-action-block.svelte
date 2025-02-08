@@ -9,8 +9,9 @@
 		summary,
 		children,
 		expandable = true,
+		disabled = false,
 		...restProps
-	}: { summary: Snippet; expandable?: boolean } & Omit<
+	}: { summary: Snippet; expandable?: boolean; disabled?: boolean } & Omit<
 		ComponentProps<typeof ActionBlock>,
 		'width'
 	> = $props()
@@ -20,9 +21,9 @@
 
 <ActionBlock {...restProps} width="full">
 	{#if expandable}
-		<Collapsible.Root class="w-full flex flex-col" bind:open>
+		<Collapsible.Root class="w-full flex flex-col " bind:open {disabled}>
 			<Collapsible.Trigger
-				class="focus:outline-none [&>svg]:size-3.5 [&>svg]:inline [&>svg]:-ml-0.5 inline-flex items-center gap-[2px] leading-none"
+				class="focus:outline-none [&>svg]:size-3.5 [&>svg]:inline [&>svg]:-ml-0.5 inline-flex items-center gap-[2px] leading-none [&:disabled>svg]:opacity-50"
 			>
 				{#if open}
 					<ChevronDown />
