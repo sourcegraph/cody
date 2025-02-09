@@ -2,15 +2,33 @@ import { describe, expect, it } from 'vitest'
 import { ruleAppliesToFile } from './filters'
 
 describe('ruleAppliesToFile', () => {
-    const testFile: Parameters<typeof ruleAppliesToFile>[1] = {
+    const testFile1: Parameters<typeof ruleAppliesToFile>[1] = {
         repo: 'github.com/sourcegraph/sourcegraph',
         path: 'lib/shared/src/example.ts',
         languages: ['typescript'],
         textContent: 'const x = 1',
     }
+    const testFile2: Parameters<typeof ruleAppliesToFile>[1] = {
+        repo: 'github.com/sourcegraph/sourcegraph',
+        path: 'lib/shared/src/example.cpp',
+        languages: ['C++'],
+        textContent: 'int main() { return 0; }',
+    }
+    const testFile3: Parameters<typeof ruleAppliesToFile>[1] = {
+        repo: 'github.com/sourcegraph/sourcegraph',
+        path: 'lib/shared/src/example.c',
+        languages: ['C'],
+        textContent: 'int main() { return 0; }',
+    }
+    const testFile4: Parameters<typeof ruleAppliesToFile>[1] = {
+        repo: 'github.com/sourcegraph/sourcegraph',
+        path: 'lib/shared/src/Example.java',
+        languages: ['Java'],
+        textContent: 'public class Example { public static void main(String[] args) { } }',
+    }
 
     it('returns true when no filters are specified', () => {
-        expect(ruleAppliesToFile({}, testFile)).toBe(true)
+        expect(ruleAppliesToFile({}, testFile1)).toBe(true)
     })
 
     it('matches repo filters', () => {
@@ -22,7 +40,7 @@ describe('ruleAppliesToFile', () => {
                         exclude: ['github.com/sourcegraph/other'],
                     },
                 },
-                testFile
+                testFile1
             )
         ).toBe(true)
         expect(
@@ -32,7 +50,7 @@ describe('ruleAppliesToFile', () => {
                         include: ['github.com/other/.*'],
                     },
                 },
-                testFile
+                testFile1
             )
         ).toBe(false)
     })
@@ -46,7 +64,7 @@ describe('ruleAppliesToFile', () => {
                         exclude: ['.*/test/.*'],
                     },
                 },
-                testFile
+                testFile1
             )
         ).toBe(true)
         expect(
@@ -56,7 +74,7 @@ describe('ruleAppliesToFile', () => {
                         include: ['.*/test/.*'],
                     },
                 },
-                testFile
+                testFile1
             )
         ).toBe(false)
     })
@@ -70,7 +88,7 @@ describe('ruleAppliesToFile', () => {
                         exclude: ['javascript'],
                     },
                 },
-                testFile
+                testFile1
             )
         ).toBe(true)
         expect(
@@ -80,7 +98,77 @@ describe('ruleAppliesToFile', () => {
                         include: ['go'],
                     },
                 },
-                testFile
+                testFile1
+            )
+        ).toBe(false)
+        expect(
+            ruleAppliesToFile(
+                {
+                    language_filters: {
+                        include: ['c++'], // Ensure languages with special chars (C++) can still match
+                    },
+                },
+                testFile2
+            )
+        ).toBe(true)
+        expect(
+            ruleAppliesToFile(
+                {
+                    language_filters: {
+                        include: ['c'], // Ensure a filter for C files doesn't match C++ files (no substring match)
+                    },
+                },
+                testFile2
+            )
+        ).toBe(false)
+        expect(
+            ruleAppliesToFile(
+                {
+                    language_filters: {
+                        include: ['c'],
+                    },
+                },
+                testFile3
+            )
+        ).toBe(true)
+        expect(
+            ruleAppliesToFile(
+                {
+                    language_filters: {
+                        include: ['c++'],
+                    },
+                },
+                testFile3
+            )
+        ).toBe(false)
+        expect(
+            ruleAppliesToFile(
+                {
+                    language_filters: {
+                        include: ['csharp'],
+                    },
+                },
+                testFile3
+            )
+        ).toBe(false)
+        expect(
+            ruleAppliesToFile(
+                {
+                    language_filters: {
+                        include: ['java'],
+                    },
+                },
+                testFile4
+            )
+        ).toBe(true)
+        expect(
+            ruleAppliesToFile(
+                {
+                    language_filters: {
+                        include: ['javascript'],
+                    },
+                },
+                testFile4
             )
         ).toBe(false)
     })
@@ -94,7 +182,7 @@ describe('ruleAppliesToFile', () => {
                         exclude: ['function'],
                     },
                 },
-                testFile
+                testFile1
             )
         ).toBe(true)
         expect(
@@ -104,7 +192,7 @@ describe('ruleAppliesToFile', () => {
                         include: ['function'],
                     },
                 },
-                testFile
+                testFile1
             )
         ).toBe(false)
     })
@@ -118,7 +206,7 @@ describe('ruleAppliesToFile', () => {
                     language_filters: { include: ['typescript'] },
                     text_content_filters: { include: ['const.*='] },
                 },
-                testFile
+                testFile1
             )
         ).toBe(true)
         expect(
@@ -127,7 +215,7 @@ describe('ruleAppliesToFile', () => {
                     repo_filters: { include: ['github.com/sourcegraph/.*'] },
                     path_filters: { include: ['.*/test/.*'] },
                 },
-                testFile
+                testFile1
             )
         ).toBe(false)
     })
