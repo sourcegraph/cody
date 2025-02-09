@@ -1,8 +1,8 @@
 <script lang="ts">
-	import type { TranscriptAction } from '$lib/types'
+	import type { ThreadStep } from '$lib/types'
 	import CollapsibleActionBlock from '../structure/collapsible-action-block.svelte'
 
-	let { step }: { step: Omit<Extract<TranscriptAction, { type: 'references' }>, 'type'> } =
+	let { step }: { step: Omit<Extract<ThreadStep, { type: 'references' }>, 'type'> } =
 		$props()
 </script>
 

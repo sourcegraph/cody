@@ -1,9 +1,9 @@
 <script lang="ts">
-	import type { TranscriptAction } from '$lib/types'
+	import type { ThreadStep } from '$lib/types'
 	import File from '@lucide/svelte/icons/file'
 	import CollapsibleActionBlock from '../structure/collapsible-action-block.svelte'
 
-	let { step }: { step: Omit<Extract<TranscriptAction, { type: 'read-files' }>, 'type'> } =
+	let { step }: { step: Omit<Extract<ThreadStep, { type: 'read-files' }>, 'type'> } =
 		$props()
 </script>
 

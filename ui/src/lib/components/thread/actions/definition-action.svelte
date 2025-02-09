@@ -1,8 +1,8 @@
 <script lang="ts">
-	import type { TranscriptAction } from '$lib/types'
+	import type { ThreadStep } from '$lib/types'
 	import ActionBlock from '../structure/action-block.svelte'
 
-	let { step }: { step: Omit<Extract<TranscriptAction, { type: 'definition' }>, 'type'> } =
+	let { step }: { step: Omit<Extract<ThreadStep, { type: 'definition' }>, 'type'> } =
 		$props()
 </script>
 

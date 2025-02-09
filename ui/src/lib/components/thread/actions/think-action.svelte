@@ -1,8 +1,8 @@
 <script lang="ts">
-	import type { TranscriptAction } from '$lib/types'
+	import type { ThreadStep } from '$lib/types'
 	import CollapsibleActionBlock from '../structure/collapsible-action-block.svelte'
 
-	let { step }: { step: Omit<Extract<TranscriptAction, { type: 'think' }>, 'type'> } = $props()
+	let { step }: { step: Omit<Extract<ThreadStep, { type: 'think' }>, 'type'> } = $props()
 </script>
 
 <CollapsibleActionBlock disabled={!step.content}>

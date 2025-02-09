@@ -1,10 +1,11 @@
 import { Observable } from 'observable-fns'
 
-export type TranscriptMessage =
-    | { type: 'user'; content?: string }
-    | { type: 'agent'; steps: TranscriptAction[] }
-
-export type TranscriptAction =
+export type ThreadStep =
+    | { type: 'human-message'; content: string }
+    | {
+          type: 'agent-message'
+          content: string
+      }
     | {
           type: 'think'
           content?: string
@@ -47,10 +48,6 @@ export type TranscriptAction =
           repositories?: string[]
           pending?: boolean
       }
-    | {
-          type: 'message'
-          content: string
-      }
 
 export interface InteractiveThread {
     /**
@@ -65,7 +62,7 @@ export interface InteractiveThread {
     /**
      * The contents of the thread.
      */
-    transcript: TranscriptMessage[]
+    steps: ThreadStep[]
 }
 
 export interface InteractiveThreadService {
@@ -127,7 +124,9 @@ export function localStorageThreadStorage(storage: Storage): ThreadStorage {
             return stored ? JSON.parse(stored) : null
         },
         store(thread) {
-            storage.setItem(`thread:${thread.id}`, JSON.stringify(thread))
+            if (thread.steps.length > 0) {
+                storage.setItem(`thread:${thread.id}`, JSON.stringify(thread))
+            }
         },
     }
 }
@@ -146,7 +145,7 @@ export function createInteractiveThreadService(threadStorage: ThreadStorage): In
                     thread = {
                         v: 0,
                         id: threadID,
-                        transcript: [],
+                        steps: [],
                     }
                     threadStorage.store(thread)
                 }
@@ -178,9 +177,9 @@ export function createInteractiveThreadService(threadStorage: ThreadStorage): In
 
             switch (update.type) {
                 case 'append-human-message':
-                    updatedThread.transcript = [
-                        ...updatedThread.transcript,
-                        { type: 'user', content: update.content },
+                    updatedThread.steps = [
+                        ...updatedThread.steps,
+                        { type: 'human-message', content: update.content },
                     ]
                     break
                 case 'ping':

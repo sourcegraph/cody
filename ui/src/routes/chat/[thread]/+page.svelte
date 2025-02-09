@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { page } from '$app/state'
-	import InteractiveChat from '$lib/components/interactive-chat/interactive-chat.svelte'
+	import InteractiveChat from '$lib/components/interactive-thread/interactive-thread.svelte'
 
 	let { data } = $props()
 </script>

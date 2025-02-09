@@ -1,2 +1,2 @@
-import type { TranscriptAction, TranscriptMessage } from '@sourcegraph/cody-shared'
-export type { TranscriptAction, TranscriptMessage }
+import type { ThreadStep } from '@sourcegraph/cody-shared'
+export type { ThreadStep }

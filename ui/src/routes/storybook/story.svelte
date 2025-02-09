@@ -32,7 +32,7 @@
 			{/if}
 		</h2>
 	</Collapsible.Trigger>
-	<Collapsible.Content class="mt-4 mb-12">
+	<Collapsible.Content class="mt-4 mb-12 space-y-4">
 		{@render children()}
 	</Collapsible.Content>
 </Collapsible.Root>

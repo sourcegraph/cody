@@ -1,9 +1,9 @@
 <script lang="ts">
 	import DiffStat from '$lib/components/diff-stat.svelte'
-	import type { TranscriptAction } from '$lib/types'
+	import type { ThreadStep } from '$lib/types'
 	import CollapsibleActionBlock from '../structure/collapsible-action-block.svelte'
 
-	let { step }: { step: Omit<Extract<TranscriptAction, { type: 'edit-file' }>, 'type'> } =
+	let { step }: { step: Omit<Extract<ThreadStep, { type: 'edit-file' }>, 'type'> } =
 		$props()
 </script>
 

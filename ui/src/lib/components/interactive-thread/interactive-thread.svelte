@@ -1,6 +1,6 @@
 <script lang="ts">
 	import PromptEditor from '$lib/components/prompt-editor/prompt-editor.svelte'
-	import Transcript from '$lib/components/transcript/transcript.svelte'
+	import Thread from '$lib/components/thread/thread.svelte'
 	import { type InteractiveThread, type InteractiveThreadService } from '@sourcegraph/cody-shared'
 	import { Observable } from 'observable-fns'
 
@@ -31,11 +31,11 @@
 				null,
 				2,
 			)}</pre>
-		{#if thread.transcript.length === 0}
+		{#if thread.steps.length === 0}
 			<PromptEditor onsubmit={handleSubmit} />
 		{/if}
-		<Transcript messages={thread.transcript} />
-		{#if thread.transcript.length >= 1}
+		<Thread {thread} />
+		{#if thread.steps.length >= 1}
 			<footer class="mt-auto">
 				<PromptEditor onsubmit={handleSubmit} />
 			</footer>
