@@ -26,7 +26,7 @@
 {#if thread}
 	<div class="flex flex-col gap-4">
 		<pre
-			class="overflow-auto mah-h-[200px] bg-input/30 text-xxs p-2 rounded-xs">{JSON.stringify(
+			class="overflow-auto max-h-[200px] bg-input/30 text-xxs p-2 rounded-xs">{JSON.stringify(
 				thread,
 				null,
 				2,

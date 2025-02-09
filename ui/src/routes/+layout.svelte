@@ -1,6 +1,7 @@
 <script lang="ts">
 	import * as Navbar from '$lib/components/ui/navbar/index.js'
 	import * as Tooltip from '$lib/components/ui/tooltip/index.js'
+	import { route } from '$lib/route-helpers'
 	import Plus from '@lucide/svelte/icons/plus'
 	import '../app.css'
 	import { STORYBOOK_CONFIG } from './storybook/config'
@@ -19,7 +20,7 @@
 			{/if}
 
 			<aside class="ml-auto flex gap-2">
-				<Navbar.Action title="New Chat" icon={Plus} />
+				<Navbar.Action title="New Chat" icon={Plus} href={route('/chat/new')} />
 			</aside>
 		</Navbar.Root>
 

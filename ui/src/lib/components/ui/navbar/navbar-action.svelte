@@ -9,18 +9,22 @@
 		path,
 		title,
 		icon: Icon,
+		href,
 		class: className,
 	}: {
+		/** If set, element is only rendered at or below this path. */
 		path?: string
+
 		title?: string
 		icon: ComponentType
+		href?: string
 	} & HTMLAttributes<HTMLButtonElement> = $props()
 </script>
 
 {#if path === undefined || isActiveURL(path)}
 	<Tooltip.Root>
 		<Tooltip.Trigger>
-			<Button variant="ghost" size="iconSm" class={className}>
+			<Button variant="ghost" size="iconSm" class={className} {href}>
 				<Icon />
 			</Button>
 		</Tooltip.Trigger>
