@@ -1,31 +1,31 @@
 <script lang="ts">
-	import type { ThreadStep } from '$lib/types'
 	import File from '@lucide/svelte/icons/file'
+	import type { BuiltinTools } from '@sourcegraph/cody-shared'
+	import type { ToolCallStepProps } from '../steps/tool-call-step.svelte'
 	import CollapsibleActionBlock from '../structure/collapsible-action-block.svelte'
 
-	let { step }: { step: Omit<Extract<ThreadStep, { type: 'read-files' }>, 'type'> } =
-		$props()
+	let { step, toolInvocation }: ToolCallStepProps<BuiltinTools['read-files']> = $props()
 </script>
 
-<CollapsibleActionBlock expandable={!step.pending}>
+<CollapsibleActionBlock expandable={toolInvocation.invocation.status === 'done'}>
 	{#snippet summary()}
-		{#if step.pending}
+		{#if toolInvocation.invocation.status !== 'done'}
 			Reading files...
 		{:else}
 			Read
 			<span class="text-muted-foreground">
-				{#if step.files.length === 1}
-					foo.go
+				{#if toolInvocation.args.files.length === 1}
+					{toolInvocation.args.files[0]}
 				{:else}
-					{step.files.length} files
+					{toolInvocation.args.files.length} files
 				{/if}
 			</span>
 		{/if}
 	{/snippet}
 
-	{#if !step.pending}
+	{#if toolInvocation.invocation.status === 'done'}
 		<ol class="pl-2 ml-1 border-l border-foreground/30 flex flex-col gap-0.5">
-			{#each step.files as file}
+			{#each toolInvocation.args.files as file}
 				<li
 					class="[&>svg]:size-2.5 [&>svg]:text-muted-foreground inline-flex items-center gap-1 text-xs"
 				>

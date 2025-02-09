@@ -17,7 +17,7 @@
 
 <div
 	class={cn(
-		'py-1 text-sm text-foreground/75',
+		'py-1.5 text-sm text-foreground/75',
 		width === 'full' ? 'flex' : 'inline-flex',
 		border ? 'border rounded-xs px-1.5' : '',
 		className,

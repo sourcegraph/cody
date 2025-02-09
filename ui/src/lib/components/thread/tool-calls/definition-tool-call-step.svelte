@@ -1,9 +1,9 @@
 <script lang="ts">
-	import type { ThreadStep } from '$lib/types'
+	import type { BuiltinTools } from '@sourcegraph/cody-shared'
+	import type { ToolCallStepProps } from '../steps/tool-call-step.svelte'
 	import ActionBlock from '../structure/action-block.svelte'
 
-	let { step }: { step: Omit<Extract<ThreadStep, { type: 'definition' }>, 'type'> } =
-		$props()
+	let { step }: ToolCallStepProps<BuiltinTools['definition']> = $props()
 </script>
 
 <ActionBlock>

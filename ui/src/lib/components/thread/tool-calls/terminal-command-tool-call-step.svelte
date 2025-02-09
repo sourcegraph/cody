@@ -1,30 +1,30 @@
 <script lang="ts">
 	import { Button } from '$lib/components/ui/button'
-	import type { ThreadStep, ThreadUpdateCallback } from '$lib/types'
+	import type { BuiltinTools } from '@sourcegraph/cody-shared'
+	import type { ToolCallStepProps } from '../steps/tool-call-step.svelte'
 	import ActionBlock from '../structure/action-block.svelte'
 	import CollapsibleActionBlock from '../structure/collapsible-action-block.svelte'
 
 	let {
 		step,
+		toolInvocation,
+		userInput,
 		updateThread,
-	}: {
-		step: Omit<Extract<ThreadStep, { type: 'terminal-command' }>, 'type'>
-		updateThread?: ThreadUpdateCallback<'terminal-command:user-choice'>
-	} = $props()
+	}: ToolCallStepProps<BuiltinTools['terminal-command']> = $props()
 </script>
 
-{#if step.userChoice === 'waiting'}
+{#if !userInput}
 	<ActionBlock class="flex-col gap-2">
 		<h2>Suggested terminal command</h2>
 		<div class="space-y-1">
-			{#if step.cwd}
+			{#if toolInvocation.args.cwd}
 				<div class="font-mono text-xxs text-muted-foreground">
-					{step.cwd}
+					{toolInvocation.args.cwd}
 				</div>
 			{/if}
 			<pre
 				class="bg-muted/50 rounded-xs text-xs border border-border/75 p-2 before:content-['$_'] before:text-muted-foreground"><code
-					>{step.command}</code
+					>{toolInvocation.args.command}</code
 				></pre>
 		</div>
 		{#if updateThread}
@@ -60,13 +60,19 @@
 	<CollapsibleActionBlock>
 		{#snippet summary()}
 			<span>
-				Executed
+				{#if toolInvocation.invocation.status === 'done'}
+					Executed
+				{:else}
+					Executing
+				{/if}
 				<span class="text-muted-foreground font-mono text-xxs">
-					{step.command}
+					{toolInvocation.args.command}
 				</span>
 			</span>
 		{/snippet}
 
-		<pre class="text-xxs mt-2 mb-1">{step.output}</pre>
+		{#if toolInvocation.invocation.status === 'done'}
+			<pre class="text-xxs mt-1.5">{toolInvocation.invocation.result.output}</pre>
+		{/if}
 	</CollapsibleActionBlock>
 {/if}

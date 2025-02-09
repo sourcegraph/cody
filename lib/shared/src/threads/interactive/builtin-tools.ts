@@ -3,40 +3,38 @@ import type { ToolCallFunc, ToolDefinition, ToolService } from './tool-service'
 
 type CheckToolDefinition<ToolDef extends ToolDefinition> = ToolDef
 
-type BuiltinTools = {
+export type BuiltinTools = {
     'read-files': CheckToolDefinition<{
         id: 'read-files'
-        argsFromModel: { files: string[] }
+        args: { files: string[] }
         result: { [file: string]: string }
     }>
     'create-file': CheckToolDefinition<{
         id: 'create-file'
-        argsFromModel: { file: string; content: string }
+        args: { file: string; content: string }
         result: undefined
     }>
     'edit-file': CheckToolDefinition<{
         id: 'edit-file'
-        argsFromModel: { file: string; diff: string }
-        argsFromUser: Record<string, never>
+        args: { file: string; diff: string }
         argsMeta: { diffStat: { added: number; changed: number; deleted: number } }
         progress: { [doneApplyingToFile: string]: boolean }
         result: undefined
     }>
     'terminal-command': CheckToolDefinition<{
         id: 'terminal-command'
-        argsFromModel: { cwd?: string; command: string }
-        argsFromUser: Record<string, never>
+        args: { cwd?: string; command: string }
         progress: { output: string }
         result: { output: string; exitCode: number }
     }>
     definition: CheckToolDefinition<{
         id: 'definition'
-        argsFromModel: { symbol: string }
+        args: { symbol: string }
         result: { content: string }
     }>
     references: CheckToolDefinition<{
         id: 'references'
-        argsFromModel: { symbol: string }
+        args: { symbol: string }
         result: { references: string[]; repositories: string[] }
     }>
 }
@@ -70,7 +68,7 @@ const readFilesTool: ToolCallFunc<BuiltinTools['read-files']> = args => {
         status: 'done',
         progress: {},
         result: Object.fromEntries(
-            args.model.files.map(file => [file, `TODO!(sqs): file contents for \`${file}\``])
+            args.files.map(file => [file, `TODO!(sqs): file contents for \`${file}\``])
         ),
     })
 }

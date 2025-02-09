@@ -1,20 +1,15 @@
 <script lang="ts">
 	import type { ThreadUpdateCallback } from '$lib/types'
-	import type { InteractiveThread } from '@sourcegraph/cody-shared'
+	import { toolCallInfo, type InteractiveThread } from '@sourcegraph/cody-shared'
 	import PromptEditor from '../prompt-editor/prompt-editor.svelte'
-	import CreateFileAction from './actions/create-file-action.svelte'
-	import DefinitionAction from './actions/definition-action.svelte'
-	import EditFileAction from './actions/edit-file-action.svelte'
-	import ReadFilesAction from './actions/read-files-action.svelte'
-	import ReferencesAction from './actions/references-action.svelte'
-	import TerminalCommandAction from './actions/terminal-command-action.svelte'
-	import ThinkAction from './actions/think-action.svelte'
+	import ThinkStep from './steps/think-step.svelte'
+	import ToolCallStep from './steps/tool-call-step.svelte'
 
 	let {
 		thread,
 		updateThread,
 	}: {
-		thread: Pick<InteractiveThread, 'steps'>
+		thread: Pick<InteractiveThread, 'steps' | 'toolInvocations' | 'userInput'>
 		updateThread?: ThreadUpdateCallback
 	} = $props()
 </script>
@@ -26,19 +21,11 @@
 		{:else if step.type === 'agent-message'}
 			<p>{step.content}</p>
 		{:else if step.type === 'think'}
-			<ThinkAction {step} />
-		{:else if step.type === 'read-files'}
-			<ReadFilesAction {step} />
-		{:else if step.type === 'create-file'}
-			<CreateFileAction {step} />
-		{:else if step.type === 'edit-file'}
-			<EditFileAction {step} />
-		{:else if step.type === 'terminal-command'}
-			<TerminalCommandAction {step} {updateThread} />
-		{:else if step.type === 'definition'}
-			<DefinitionAction {step} />
-		{:else if step.type === 'references'}
-			<ReferencesAction {step} />
+			<ThinkStep {step} />
+		{:else if step.type === 'tool'}
+			<ToolCallStep {step} {...toolCallInfo(thread, step.id)} {updateThread} />
+		{:else}
+			<p>UNKNOWN STEP: {step.type} <!-- TODO!(sqs) --></p>
 		{/if}
 	{/each}
 </div>

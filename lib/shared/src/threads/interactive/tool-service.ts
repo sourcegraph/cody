@@ -1,12 +1,14 @@
 import { Observable } from 'observable-fns'
+import type { ThreadStepUserInput } from './thread'
 
 type Primitive = string | number | boolean | null
 type Dict = Record<string, Primitive | readonly Primitive[] | Record<string, Primitive>>
 
+export type ToolCallArgs = Dict
+
 export type ToolDefinition = {
     id: string
-    argsFromModel: Dict
-    argsFromUser?: Dict
+    args: Dict
     argsMeta?: Dict
     progress?: Dict
     result: Dict | undefined
@@ -21,20 +23,18 @@ export type ToolInvocation<ToolDef extends ToolDefinition = ToolDefinition> = {
     /**
      * Arguments to the tool, provided by the model.
      */
-    args: {
-        /**
-         * Arguments to the tool that were provided by the model.
-         */
-        model: ToolDef['argsFromModel']
+    args: ToolDef['args']
 
-        /**
-         * Arguments to the tool that were provided by the user.
-         */
-        user: ToolDef['argsFromUser']
-    }
+    /**
+     * Arguments to the tool that were provided by the user.
+     */
+    userInput?: ThreadStepUserInput
 
     /**
      * Information derived from the args, computed by the tool handler.
+     *
+     * Example: normalized file paths for display in the UI in file-related tool calls (vs. the raw
+     * paths in the model's args).
      *
      * Example: `diffStat` in the `edit-file` tool, which is derived from the args by parsing the
      * diff and computing the diff stat.

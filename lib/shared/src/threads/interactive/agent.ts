@@ -6,14 +6,8 @@ import {
     startWith,
 } from '../../misc/observable'
 import { registerBuiltinTools } from './builtin-tools'
-import {
-    type InteractiveThread,
-    type InteractiveThreadService,
-    type ThreadID,
-    type ThreadStep,
-    isToolCallStep,
-    newThreadStepID,
-} from './session'
+import type { InteractiveThreadService } from './session'
+import { type InteractiveThread, type ThreadID, type ThreadStep, newThreadStepID } from './thread'
 import { toolService } from './tool-service'
 
 export function createAgentForInteractiveThread(
@@ -63,11 +57,7 @@ function workItemFromThread(thread: InteractiveThread): AgentWorkItem | null {
         return { type: 'new-human-message', step: newHumanMessage }
     }
 
-    if (lastStep.type === 'terminal-command' && lastStep.userChoice !== 'waiting') {
-        return { type: 'call-tool', step: lastStep }
-    }
-
-    if (isToolCallStep(lastStep) && lastStep.pending) {
+    if (lastStep.type === 'tool') {
         return { type: 'call-tool', step: lastStep }
     }
 
@@ -75,14 +65,12 @@ function workItemFromThread(thread: InteractiveThread): AgentWorkItem | null {
 }
 
 function agentStateFromThread(thread: InteractiveThread): AgentState {
-    if (thread.steps.some(step => step.type === 'terminal-command' && step.userChoice === 'waiting')) {
-        return 'waiting-for-human-choice'
-    }
+    // TODO!(sqs): waiting for human choice
     if (thread.steps.some(step => 'pending' in step && step.pending)) {
         // TODO!(sqs): better way to figure this out
         return 'waiting-for-tool-call'
     }
-    if (thread.steps.length === 0 || thread.steps.at(-1)?.type === 'agent-stop') {
+    if (thread.steps.length === 0 || thread.steps.at(-1)?.type === 'agent-turn-done') {
         return 'waiting-for-human-message'
     }
     return 'working'
@@ -95,16 +83,18 @@ async function handle(
     signal: AbortSignal
 ): Promise<void> {
     if (workItem.type === 'call-tool') {
-        if (workItem.step.type === 'terminal-command') {
-            await sleep(500)
-            signal.throwIfAborted()
-
-            threadService.update(thread.id, {
-                type: 'set-step-results',
-                step: workItem.step.id,
-                mergeDataTODO: { output: 'Hello, world - tests passed', pending: false },
-            })
+        if (workItem.step.type !== 'tool') {
+            throw new Error('unexpected step type')
         }
+
+        await sleep(500)
+        signal.throwIfAborted()
+
+        threadService.update(thread.id, {
+            type: 'set-step-results',
+            step: workItem.step.id,
+            mergeDataTODO: { output: 'Hello, world - tests passed', pending: false },
+        })
     } else if (workItem.type === 'new-human-message') {
         await sleep(500)
         signal.throwIfAborted()

@@ -428,5 +428,7 @@ export {
 } from './rules/service'
 
 export * from './threads/interactive/session'
+export * from './threads/interactive/thread'
 export * from './threads/interactive/agent'
 export * from './threads/interactive/tool-service'
+export * from './threads/interactive/builtin-tools'

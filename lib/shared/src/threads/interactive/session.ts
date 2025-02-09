@@ -1,54 +1,11 @@
 import { Observable } from 'observable-fns'
-import type { ToolInvocation } from './tool-service'
-
-export type ThreadStep = { id: ThreadStepID } & (
-    | { type: 'human-message'; content: string }
-    | {
-          type: 'agent-message'
-          content: string
-      }
-    | {
-          type: 'think'
-          content?: string
-          pending?: boolean
-      }
-    | ({
-          type: 'tool'
-          tool: string
-      } & ToolInvocation)
-    | { type: 'agent-stop' }
-)
-
-const toolCallStepTypes = [
-    'read-files',
-    'create-file',
-    'edit-file',
-    'terminal-command',
-    'definition',
-    'references',
-] as const
-
-export function isToolCallStep(
-    step: ThreadStep
-): step is Extract<ThreadStep, { type: (typeof toolCallStepTypes)[number] }> {
-    return (toolCallStepTypes satisfies readonly string[] as readonly string[]).includes(step.type)
-}
-
-export interface InteractiveThread {
-    /**
-     * A monotonically increasing integer that represents the version of this data. Each time the
-     * rest of the data structure changes, this field is incremented.
-     */
-    v: number
-
-    /** The thread ID. */
-    id: ThreadID
-
-    /**
-     * The contents of the thread.
-     */
-    steps: ThreadStep[]
-}
+import {
+    type InteractiveThread,
+    type ThreadID,
+    type ThreadStep,
+    type ThreadStepID,
+    newThreadStepID,
+} from './thread'
 
 export interface InteractiveThreadService {
     /**
@@ -230,26 +187,4 @@ export function createInteractiveThreadService(threadStorage: ThreadStorage): In
             return thread
         },
     }
-}
-
-type UUID = `${string}-${string}-${string}-${string}-${string}`
-
-export type ThreadID = `T-${UUID}`
-
-export type ThreadStepID = `S-${UUID}`
-
-export function newThreadID(): ThreadID {
-    return `T-${crypto.randomUUID()}`
-}
-
-export function isThreadID(id: string): id is ThreadID {
-    return id.startsWith('T-')
-}
-
-export function newThreadStepID(): ThreadStepID {
-    return `S-${crypto.randomUUID()}`
-}
-
-export function isThreadStepID(id: string): id is ThreadStepID {
-    return id.startsWith('S-')
 }
