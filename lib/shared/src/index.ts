@@ -428,3 +428,4 @@ export {
 } from './rules/service'
 
 export * from './threads/interactive/session'
+export * from './threads/interactive/agent'

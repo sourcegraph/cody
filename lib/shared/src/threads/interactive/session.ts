@@ -1,6 +1,6 @@
 import { Observable } from 'observable-fns'
 
-export type ThreadStep =
+export type ThreadStep = { id: string } & (
     | { type: 'human-message'; content: string }
     | {
           type: 'agent-message'
@@ -48,6 +48,7 @@ export type ThreadStep =
           repositories?: string[]
           pending?: boolean
       }
+)
 
 export interface InteractiveThread {
     /**
@@ -98,6 +99,10 @@ type ThreadUpdate =
           type: 'append-human-message'
           content: string
       }
+    | {
+          type: 'append-agent-message'
+          content: string
+      }
     | { type: 'ping' }
 
 interface ThreadStorage {
@@ -124,9 +129,7 @@ export function localStorageThreadStorage(storage: Storage): ThreadStorage {
             return stored ? JSON.parse(stored) : null
         },
         store(thread) {
-            if (thread.steps.length > 0) {
-                storage.setItem(`thread:${thread.id}`, JSON.stringify(thread))
-            }
+            storage.setItem(`thread:${thread.id}`, JSON.stringify(thread))
         },
     }
 }
@@ -179,7 +182,13 @@ export function createInteractiveThreadService(threadStorage: ThreadStorage): In
                 case 'append-human-message':
                     updatedThread.steps = [
                         ...updatedThread.steps,
-                        { type: 'human-message', content: update.content },
+                        { id: newThreadStepID(), type: 'human-message', content: update.content },
+                    ]
+                    break
+                case 'append-agent-message':
+                    updatedThread.steps = [
+                        ...updatedThread.steps,
+                        { id: newThreadStepID(), type: 'agent-message', content: update.content },
                     ]
                     break
                 case 'ping':
@@ -197,4 +206,8 @@ export function createInteractiveThreadService(threadStorage: ThreadStorage): In
 
 export function newThreadID(): string {
     return crypto.randomUUID()
+}
+
+export function newThreadStepID(): string {
+    return crypto.randomUUID().slice(0, 8)
 }
