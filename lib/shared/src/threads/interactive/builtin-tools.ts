@@ -1,3 +1,4 @@
+import { Observable } from 'observable-fns'
 import { observableOfTimedSequence } from '../../misc/observable'
 import type { ToolCallFunc, ToolDefinition, ToolService } from './tool-service'
 
@@ -63,7 +64,7 @@ export function registerBuiltinTools(toolService: ToolService): Disposable {
     }
 }
 
-const readFilesTool: ToolCallFunc<BuiltinTools['read-files']> = args => {
+const readFilesTool: ToolCallFunc<BuiltinTools['read-files']> = ({ args }) => {
     return observableOfTimedSequence(250, {
         status: 'done',
         progress: {},
@@ -73,7 +74,11 @@ const readFilesTool: ToolCallFunc<BuiltinTools['read-files']> = args => {
     })
 }
 
-const terminalCommandTool: ToolCallFunc<BuiltinTools['terminal-command']> = args => {
+const terminalCommandTool: ToolCallFunc<BuiltinTools['terminal-command']> = ({ args, userInput }) => {
+    // For security, require explicit user approval before running terminal commands.
+    if (!userInput?.accepted) {
+        return Observable.of({ status: 'blocked-on-user' })
+    }
     return observableOfTimedSequence(
         100,
         {

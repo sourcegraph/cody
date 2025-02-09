@@ -5,5 +5,5 @@ import type { PageLoad } from './$types'
 
 export const load: PageLoad = async () => {
     const threadID = newThreadID()
-    redirect(303, route('/chat/[thread=threadID]', { params: { 'thread=threadID': threadID } }))
+    redirect(303, route('/chat/[thread=threadID]', { params: { thread: threadID } }))
 }

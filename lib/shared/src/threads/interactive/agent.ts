@@ -40,12 +40,6 @@ type AgentWorkItem =
     | { type: 'new-human-message'; step: Extract<ThreadStep, { type: 'human-message' }> }
     | { type: 'call-tool'; step: ThreadStep }
 
-export type AgentState =
-    | 'waiting-for-human-message'
-    | 'waiting-for-human-choice'
-    | 'waiting-for-tool-call'
-    | 'working'
-
 function workItemFromThread(thread: InteractiveThread): AgentWorkItem | null {
     const lastStep = thread.steps.at(-1)
     if (!lastStep) {
@@ -64,15 +58,41 @@ function workItemFromThread(thread: InteractiveThread): AgentWorkItem | null {
     return null
 }
 
+export type AgentState =
+    | 'waiting-for-human-message'
+    | 'blocked-on-user-input-for-tool-call'
+    | 'tool-call-in-progress'
+    | 'working'
+
 function agentStateFromThread(thread: InteractiveThread): AgentState {
-    // TODO!(sqs): waiting for human choice
-    if (thread.steps.some(step => 'pending' in step && step.pending)) {
-        // TODO!(sqs): better way to figure this out
-        return 'waiting-for-tool-call'
-    }
-    if (thread.steps.length === 0 || thread.steps.at(-1)?.type === 'agent-turn-done') {
+    if (thread.steps.length === 0) {
         return 'waiting-for-human-message'
     }
+
+    // Check if any tools are blocked on user input.
+    const blockedInvocation =
+        thread.toolInvocations &&
+        Object.entries(thread.toolInvocations).find(
+            ([step, { invocation }]) => invocation.status === 'blocked-on-user'
+        )
+    if (blockedInvocation) {
+        return 'blocked-on-user-input-for-tool-call'
+    }
+
+    // Check if any tools are running.
+    const inProgressInvocation =
+        thread.toolInvocations &&
+        Object.entries(thread.toolInvocations).find(
+            ([step, { invocation }]) => invocation.status === 'in-progress'
+        )
+    if (inProgressInvocation) {
+        return 'tool-call-in-progress'
+    }
+
+    if (thread.steps.at(-1)?.type === 'agent-turn-done') {
+        return 'waiting-for-human-message'
+    }
+
     return 'working'
 }
 
@@ -117,15 +137,17 @@ async function handle(
             steps: [
                 {
                     id: newThreadStepID(),
-                    type: 'read-files',
-                    files: [
-                        'index.ts',
-                        'package.json',
-                        'src/main.ts',
-                        'src/debug.ts',
-                        'src/routes/+page.svelte',
-                    ],
-                    pending: false,
+                    type: 'tool',
+                    tool: 'read-files',
+                    args: {
+                        files: [
+                            'index.ts',
+                            'package.json',
+                            'src/main.ts',
+                            'src/debug.ts',
+                            'src/routes/+page.svelte',
+                        ],
+                    },
                 },
             ],
         })
@@ -150,11 +172,12 @@ async function handle(
             steps: [
                 {
                     id: newThreadStepID(),
-                    type: 'terminal-command',
-                    cwd: '~/src/github.com/stellora/airline',
-                    command: 'pnpm run test',
-                    userChoice: 'waiting',
-                    pending: true,
+                    type: 'tool',
+                    tool: 'terminal-command',
+                    args: {
+                        cwd: '~/src/github.com/stellora/airline',
+                        command: 'pnpm run test',
+                    },
                 },
             ],
         })

@@ -67,7 +67,7 @@ export type ToolInvocation<ToolDef extends ToolDefinition = ToolDefinition> = {
 }
 
 export type ToolCallFunc<ToolDef extends ToolDefinition> = (
-    args: ToolInvocation<ToolDef>['args']
+    data: Pick<ToolInvocation<ToolDef>, 'args' | 'userInput'>
 ) => Observable<ToolInvocation<ToolDef>['invocation']>
 
 export interface ToolService {
@@ -77,7 +77,7 @@ export interface ToolService {
     ): Disposable
     invokeTool<ToolDef extends ToolDefinition>(
         id: ToolDef['id'],
-        args: ToolInvocation<ToolDef>['args']
+        args: Pick<ToolInvocation<ToolDef>, 'args' | 'userInput'>
     ): Observable<ToolInvocation<ToolDef>['invocation']>
 }
 
