@@ -429,3 +429,4 @@ export {
 
 export * from './threads/interactive/session'
 export * from './threads/interactive/agent'
+export * from './threads/interactive/tools'

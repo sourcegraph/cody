@@ -1,4 +1,5 @@
 import { Observable } from 'observable-fns'
+import { ToolCallSteps } from './tools'
 
 export type ThreadStep = { id: ThreadStepID } & (
     | { type: 'human-message'; content: string }
@@ -11,44 +12,9 @@ export type ThreadStep = { id: ThreadStepID } & (
           content?: string
           pending?: boolean
       }
-    | {
-          type: 'read-files'
-          files: string[]
-          pending?: boolean
-      }
-    | {
-          type: 'create-file'
-          file: string
-          content: string
-          pending?: boolean
-      }
-    | {
-          type: 'edit-file'
-          file: string
-          diff: string
-          diffStat: {
-              added: number
-              changed: number
-              deleted: number
-          }
-          pending?: boolean
-      }
-    | {
-          type: 'terminal-command'
-          cwd?: string
-          command: string
-          output?: string
-          userChoice: 'waiting' | 'run' | 'ignore'
-          pending?: boolean
-      }
-    | { type: 'definition'; symbol: string; pending?: boolean }
-    | {
-          type: 'references'
-          symbol: string
-          results?: string[]
-          repositories?: string[]
-          pending?: boolean
-      }
+    | ({
+          type: 'tool'
+      } & ToolCallSteps)
     | { type: 'agent-stop' }
 )
 
