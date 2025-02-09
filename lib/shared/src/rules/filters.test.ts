@@ -5,7 +5,7 @@ describe('ruleAppliesToFile', () => {
     const testFile1: Parameters<typeof ruleAppliesToFile>[1] = {
         repo: 'github.com/sourcegraph/sourcegraph',
         path: 'lib/shared/src/example.ts',
-        languages: ['typescript'],
+        languages: ['TypeScript'],
         textContent: 'const x = 1',
     }
     const testFile2: Parameters<typeof ruleAppliesToFile>[1] = {
