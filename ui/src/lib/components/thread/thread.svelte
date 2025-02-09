@@ -15,7 +15,7 @@
 		updateThread,
 	}: {
 		thread: Pick<InteractiveThread, 'steps'>
-		updateThread: ThreadUpdateCallback
+		updateThread?: ThreadUpdateCallback
 	} = $props()
 </script>
 

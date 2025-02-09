@@ -13,7 +13,7 @@
 	} = $props()
 </script>
 
-{#if step.userChoice === 'pending'}
+{#if step.userChoice === 'waiting'}
 	<ActionBlock class="flex-col gap-2">
 		<h2>Suggested terminal command</h2>
 		<div class="space-y-1">

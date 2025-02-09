@@ -249,7 +249,7 @@ export function promiseFactoryToObservable<T>(
 
         return () => {
             unsubscribed = true
-            abortController.abort()
+            abortController.abort({ message: 'aborted' })
         }
     })
 }

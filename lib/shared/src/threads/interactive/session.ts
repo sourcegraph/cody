@@ -38,7 +38,8 @@ export type ThreadStep = { id: ThreadStepID } & (
           cwd?: string
           command: string
           output?: string
-          userChoice: 'pending' | 'run' | 'ignore'
+          userChoice: 'waiting' | 'run' | 'ignore'
+          pending?: boolean
       }
     | { type: 'definition'; symbol: string; pending?: boolean }
     | {
@@ -48,7 +49,23 @@ export type ThreadStep = { id: ThreadStepID } & (
           repositories?: string[]
           pending?: boolean
       }
+    | { type: 'agent-stop' }
 )
+
+const toolCallStepTypes = [
+    'read-files',
+    'create-file',
+    'edit-file',
+    'terminal-command',
+    'definition',
+    'references',
+] as const
+
+export function isToolCallStep(
+    step: ThreadStep
+): step is Extract<ThreadStep, { type: (typeof toolCallStepTypes)[number] }> {
+    return (toolCallStepTypes satisfies readonly string[] as readonly string[]).includes(step.type)
+}
 
 export interface InteractiveThread {
     /**
@@ -108,6 +125,7 @@ export type ThreadUpdate =
           step: ThreadStepID
           choice: 'run' | 'ignore'
       }
+    | { type: 'set-step-results'; step: ThreadStepID; mergeDataTODO: any /* TODO!(sqs) */ }
     | { type: 'ping' }
 
 interface ThreadStorage {
@@ -203,7 +221,7 @@ export function createInteractiveThreadService(threadStorage: ThreadStorage): In
                         if (step.type !== 'terminal-command') {
                             throw new Error(`step ${update.step} type is not terminal-command`)
                         }
-                        if (step.userChoice !== 'pending') {
+                        if (step.userChoice !== 'waiting') {
                             throw new Error(`step ${update.step} already has user choice`)
                         }
                         thread.steps = thread.steps.map(step => {
@@ -211,6 +229,23 @@ export function createInteractiveThreadService(threadStorage: ThreadStorage): In
                                 return {
                                     ...step,
                                     userChoice: update.choice,
+                                }
+                            }
+                            return step
+                        })
+                    }
+                    break
+                case 'set-step-results':
+                    {
+                        const step = thread.steps.find(step => step.id === update.step)
+                        if (!step) {
+                            throw new Error(`step ${update.step} not found`)
+                        }
+                        thread.steps = thread.steps.map(step => {
+                            if (step.id === update.step) {
+                                return {
+                                    ...step,
+                                    ...update.mergeDataTODO,
                                 }
                             }
                             return step
