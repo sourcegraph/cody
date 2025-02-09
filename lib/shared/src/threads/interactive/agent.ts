@@ -23,7 +23,7 @@ export function createAgentForInteractiveThread(
     const thread = threadService.observe(threadID, {})
     return thread.pipe(
         distinctUntilChanged(),
-        debounceTime(1000),
+        debounceTime(200),
         mergeMap(thread => {
             const workItem = workItemFromThread(thread)
             const agentState = agentStateFromThread(thread)
@@ -216,6 +216,12 @@ async function handle(
                             diff: '@@ 123,456\n+ func TestParseFlightNumber(t *testing.T) {\n  ctx := context.Background()\n',
                         },
                     },
+                ],
+            })
+        } else if (numSteps === 7) {
+            threadService.update(thread.id, {
+                type: 'append-agent-steps',
+                steps: [
                     {
                         id: newThreadStepID(),
                         type: 'agent-message',
@@ -239,7 +245,7 @@ async function handle(
                     {
                         id: newThreadStepID(),
                         type: 'agent-message',
-                        content: 'Great! The new unit test  passes.',
+                        content: 'Great! The new unit test passes.',
                     },
                     {
                         id: newThreadStepID(),

@@ -59,6 +59,33 @@
 	/>
 </Story>
 
+<Story title="Transcript - in progress" component={Transcript}>
+	<Transcript
+		thread={{
+			steps: [
+				{
+					id: readFilesStepID,
+					type: 'tool',
+					tool: 'read-files',
+					args: { files: ['foo.go', 'bar.go', 'baz.go', 'src/view/qux.ts'] },
+				},
+			],
+			toolInvocations: {
+				[readFilesStepID]: {
+					args: {
+						files: ['foo.go', 'bar.go', 'baz.go', 'src/view/qux.ts'],
+					},
+					meta: undefined,
+					invocation: {
+						status: 'in-progress',
+						progress: undefined,
+					},
+				} satisfies ToolInvocation<BuiltinTools['read-files']>,
+			},
+		}}
+	/>
+</Story>
+
 <Story title="Transcript - Hello world" component={Transcript}>
 	<Transcript
 		thread={{

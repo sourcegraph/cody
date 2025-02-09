@@ -1,4 +1,5 @@
 import { Observable } from 'observable-fns'
+import type { BuiltinTools } from './builtin-tools'
 import {
     type InteractiveThread,
     type ThreadID,
@@ -135,16 +136,18 @@ export function createInteractiveThreadService(threadStorage: ThreadStorage): In
             function resetToolInvocation(
                 step: Extract<ThreadStep, { type: 'tool' }>,
                 userInput: ThreadStepUserInput | undefined
-            ): void {
+            ): ToolInvocation {
                 if (!thread.toolInvocations) {
                     thread.toolInvocations = {}
                 }
-                thread.toolInvocations[step.id] = {
+                const toolInvocation: ToolInvocation = {
                     args: step.args,
                     userInput,
                     meta: undefined,
                     invocation: { status: 'queued' },
                 }
+                thread.toolInvocations[step.id] = toolInvocation
+                return toolInvocation
             }
 
             switch (update.type) {
@@ -161,7 +164,13 @@ export function createInteractiveThreadService(threadStorage: ThreadStorage): In
                         // Invoke tools for any new tool-call steps.
                         for (const step of update.steps) {
                             if (step.type === 'tool') {
-                                resetToolInvocation(step, undefined)
+                                const invocation = resetToolInvocation(step, undefined)
+                                // TODO!(sqs)
+                                if (step.tool === 'edit-file') {
+                                    invocation.meta = {
+                                        diffStat: { added: 37, changed: 3, deleted: 1 },
+                                    } as BuiltinTools['edit-file']['meta']
+                                }
                             }
                         }
                     }

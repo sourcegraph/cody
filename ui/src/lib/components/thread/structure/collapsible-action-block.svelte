@@ -23,7 +23,7 @@
 	{#if expandable}
 		<Collapsible.Root class="w-full flex flex-col " bind:open {disabled}>
 			<Collapsible.Trigger
-				class="focus:outline-none [&>svg]:size-3.5 [&>svg]:inline [&>svg]:-ml-0.5 inline-flex items-center gap-[2px] leading-none [&:disabled>svg]:opacity-50"
+				class="focus:outline-none [&>svg]:size-3 [&>svg]:inline [&>svg]:-ml-0.5 inline-flex items-center gap-[2px] leading-none [&:disabled>svg]:opacity-50"
 			>
 				{#if open}
 					<ChevronDown />
@@ -37,6 +37,6 @@
 			</Collapsible.Content>
 		</Collapsible.Root>
 	{:else}
-		{@render summary()}
+		<span class="leading-none">{@render summary()}</span>
 	{/if}
 </ActionBlock>

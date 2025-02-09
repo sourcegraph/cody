@@ -50,6 +50,7 @@ export function registerBuiltinTools(toolService: ToolService): Disposable {
 
     const disposables: Disposable[] = [
         toolService.registerTool<BuiltinTools['read-files']>('read-files', readFilesTool),
+        toolService.registerTool<BuiltinTools['edit-file']>('edit-file', editFileTool),
         toolService.registerTool<BuiltinTools['terminal-command']>(
             'terminal-command',
             terminalCommandTool
@@ -71,6 +72,14 @@ const readFilesTool: ToolCallFunc<BuiltinTools['read-files']> = ({ args }) => {
         result: Object.fromEntries(
             args.files.map(file => [file, `TODO!(sqs): file contents for \`${file}\``])
         ),
+    })
+}
+
+const editFileTool: ToolCallFunc<BuiltinTools['edit-file']> = ({ args, userInput }) => {
+    return observableOfTimedSequence(250, {
+        status: 'done',
+        progress: {},
+        result: undefined,
     })
 }
 
