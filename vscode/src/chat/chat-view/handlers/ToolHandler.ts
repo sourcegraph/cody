@@ -420,10 +420,10 @@ function runRipGrep(input: {
         cwd: input.search_directory,
         env: process.env,
         windowsHide: true,
+        stdio: ['ignore', 'pipe', 'pipe'],
     }
 
     return new Promise((resolve, reject) => {
-        console.log('spawning ripgrep')
         const process = spawn('rg', rgArgs, spawnOptions)
         let stdout = ''
         let stderr = ''
