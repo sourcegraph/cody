@@ -35,8 +35,8 @@
 					onclick={() =>
 						updateThread({
 							step: step.id,
-							type: 'terminal-command:user-choice',
-							choice: 'run',
+							type: 'user-input',
+							value: { accepted: true },
 						})}
 				>
 					Run
@@ -47,11 +47,11 @@
 					onclick={() =>
 						updateThread({
 							step: step.id,
-							type: 'terminal-command:user-choice',
-							choice: 'ignore',
+							type: 'user-input',
+							value: { accepted: false },
 						})}
 				>
-					Ignore
+					Reject
 				</Button>
 			</div>
 		{/if}

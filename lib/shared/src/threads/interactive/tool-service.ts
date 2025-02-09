@@ -9,7 +9,7 @@ export type ToolCallArgs = Dict
 export type ToolDefinition = {
     id: string
     args: Dict
-    argsMeta?: Dict
+    meta?: Dict
     progress?: Dict
     result: Dict | undefined
     error?: ToolInvocationError
@@ -39,7 +39,7 @@ export type ToolInvocation<ToolDef extends ToolDefinition = ToolDefinition> = {
      * Example: `diffStat` in the `edit-file` tool, which is derived from the args by parsing the
      * diff and computing the diff stat.
      */
-    argsMeta: ToolDef['argsMeta']
+    meta: ToolDef['meta']
 
     /**
      * The status and result of calling the tool.

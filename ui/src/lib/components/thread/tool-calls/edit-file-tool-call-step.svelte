@@ -21,7 +21,7 @@
 					{toolInvocation.args.file}
 				</span>
 			</span>
-			<DiffStat {...toolInvocation.argsMeta.diffStat} />
+			<DiffStat {...toolInvocation.meta.diffStat} />
 		{/if}
 	{/snippet}
 

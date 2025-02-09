@@ -4,6 +4,7 @@ import {
     type ThreadID,
     type ThreadStep,
     type ThreadStepID,
+    type ThreadStepUserInput,
     newThreadStepID,
 } from './thread'
 
@@ -45,9 +46,9 @@ export type ThreadUpdate =
           steps: Exclude<ThreadStep, { type: 'human-message' }>[]
       }
     | {
-          type: 'terminal-command:user-choice'
+          type: 'user-input'
           step: ThreadStepID
-          choice: 'run' | 'ignore'
+          value: ThreadStepUserInput
       }
     | { type: 'set-step-results'; step: ThreadStepID; mergeDataTODO: any /* TODO!(sqs) */ }
     | { type: 'ping' }
@@ -136,27 +137,19 @@ export function createInteractiveThreadService(threadStorage: ThreadStorage): In
                 case 'append-agent-steps':
                     thread.steps = [...thread.steps, ...update.steps]
                     break
-                case 'terminal-command:user-choice':
+                case 'user-input':
                     {
                         const step = thread.steps.find(step => step.id === update.step)
                         if (!step) {
                             throw new Error(`step ${update.step} not found`)
                         }
-                        if (step.type !== 'terminal-command') {
-                            throw new Error(`step ${update.step} type is not terminal-command`)
+                        if (thread.userInput?.[update.step]) {
+                            throw new Error(`step ${update.step} already has user input`)
                         }
-                        if (step.userChoice !== 'waiting') {
-                            throw new Error(`step ${update.step} already has user choice`)
+                        if (!thread.userInput) {
+                            thread.userInput = {}
                         }
-                        thread.steps = thread.steps.map(step => {
-                            if (step.id === update.step) {
-                                return {
-                                    ...step,
-                                    userChoice: update.choice,
-                                }
-                            }
-                            return step
-                        })
+                        thread.userInput[update.step] = update.value
                     }
                     break
                 case 'set-step-results':

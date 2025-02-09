@@ -17,7 +17,7 @@ export type BuiltinTools = {
     'edit-file': CheckToolDefinition<{
         id: 'edit-file'
         args: { file: string; diff: string }
-        argsMeta: { diffStat: { added: number; changed: number; deleted: number } }
+        meta: { diffStat: { added: number; changed: number; deleted: number } }
         progress: { [doneApplyingToFile: string]: boolean }
         result: undefined
     }>

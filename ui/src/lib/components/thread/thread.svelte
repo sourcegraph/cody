@@ -24,8 +24,10 @@
 			<ThinkStep {step} />
 		{:else if step.type === 'tool'}
 			<ToolCallStep {step} {...toolCallInfo(thread, step.id)} {updateThread} />
+		{:else if step.type === 'agent-turn-done'}
+			<span></span><!-- TODO!(sqs) -->
 		{:else}
-			<p>UNKNOWN STEP: {step.type} <!-- TODO!(sqs) --></p>
+			<p>UNKNOWN STEP: {(step as any).type} <!-- TODO!(sqs) --></p>
 		{/if}
 	{/each}
 </div>

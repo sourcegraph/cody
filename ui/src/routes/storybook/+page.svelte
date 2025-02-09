@@ -4,6 +4,7 @@
 		default as TranscriptThinkAction,
 		default as TranscriptThinkingRow,
 	} from '$lib/components/thread/steps/think-step.svelte'
+	import type { ThreadUpdateCallback } from '$lib/types'
 	import {
 		type BuiltinTools,
 		newThreadStepID,
@@ -21,10 +22,15 @@
 	let runHelloWorldStepID = stepID()
 	let runHelloWorldAgainStepID = stepID()
 
+	let readExistingTestFilesStepID = stepID()
 	let definitionStepID = stepID()
 	let referencesStepID = stepID()
 	let editFileStepID = stepID()
 	let runTestStepID = stepID()
+
+	let fakeUpdateThread: ThreadUpdateCallback = (update) => {
+		alert('Called updateThread')
+	}
 </script>
 
 <Story title="Thinking" component={TranscriptThinkingRow}>
@@ -129,7 +135,7 @@
 					args: {
 						files: ['foo.go', 'bar.go', 'baz.go', 'src/view/qux.ts'],
 					},
-					argsMeta: undefined,
+					meta: undefined,
 					invocation: {
 						status: 'done',
 						progress: undefined,
@@ -146,7 +152,7 @@
 						file: 'src/hello-world.ts',
 						content: 'console.log("Hello, world!")',
 					},
-					argsMeta: undefined,
+					meta: undefined,
 					invocation: {
 						status: 'done',
 						progress: undefined,
@@ -159,7 +165,7 @@
 						command: 'node --experimental-strip-types src/hello-world.ts',
 					},
 					userInput: { accepted: true },
-					argsMeta: undefined,
+					meta: undefined,
 					invocation: {
 						status: 'done',
 						progress: { output: 'Hello, world!' },
@@ -175,7 +181,7 @@
 						command: 'node --experimental-strip-types src/hello-world.ts',
 					},
 					userInput: undefined, // not yet approved
-					argsMeta: undefined,
+					meta: undefined,
 					invocation: {
 						status: 'done',
 						progress: { output: 'Hello, world!' },
@@ -190,6 +196,7 @@
 				[runHelloWorldStepID]: { accepted: true },
 			},
 		}}
+		updateThread={fakeUpdateThread}
 	/>
 </Story>
 
@@ -204,12 +211,12 @@
 				},
 				{
 					id: stepID(),
-					type: 'human-message',
+					type: 'agent-message',
 					content:
 						'Let me read the definition of ParseFlightNumber, see how it is being called, and see what tests already exist for it or similar functions.',
 				},
 				{
-					id: stepID(),
+					id: definitionStepID,
 					type: 'tool',
 					tool: 'definition',
 					args: {
@@ -218,11 +225,11 @@
 				},
 				{
 					id: stepID(),
-					type: 'human-message',
+					type: 'agent-message',
 					content: 'Let me see how ParseFlightNumber is being called.',
 				},
 				{
-					id: stepID(),
+					id: referencesStepID,
 					type: 'tool',
 					tool: 'references',
 					args: {
@@ -231,11 +238,11 @@
 				},
 				{
 					id: stepID(),
-					type: 'human-message',
+					type: 'agent-message',
 					content: 'Let me see what tests already exist for ParseFlightNumber.',
 				},
 				{
-					id: stepID(),
+					id: readExistingTestFilesStepID,
 					type: 'tool',
 					tool: 'read-files',
 					args: {
@@ -249,7 +256,7 @@
 				},
 				{
 					id: stepID(),
-					type: 'human-message',
+					type: 'agent-message',
 					content: 'OK, I will consider all the cases we need to test.',
 				},
 				{
@@ -260,7 +267,7 @@
 				},
 				{
 					id: stepID(),
-					type: 'human-message',
+					type: 'agent-message',
 					content: 'Here are the unit tests for ParseFlightNumber:',
 				},
 				{
@@ -274,7 +281,7 @@
 				},
 				{
 					id: stepID(),
-					type: 'human-message',
+					type: 'agent-message',
 					content: 'Let me run it to see if it works:',
 				},
 				{
@@ -288,16 +295,41 @@
 				},
 				{
 					id: stepID(),
-					type: 'human-message',
+					type: 'agent-message',
 					content: 'Great! The new unit test passes.',
+				},
+				{
+					id: stepID(),
+					type: 'agent-turn-done',
 				},
 			],
 			toolInvocations: {
+				[readExistingTestFilesStepID]: {
+					args: {
+						files: [
+							'flight_number_test.go',
+							'flights_test.go',
+							'airlines_test.go',
+							'util_test.go',
+						],
+					},
+					meta: undefined,
+					invocation: {
+						status: 'done',
+						progress: undefined,
+						result: {
+							'flight_number_test.go': 'package airline',
+							'flights_test.go': 'package airline',
+							'airlines_test.go': 'package airline',
+							'util_test.go': 'package airline',
+						},
+					},
+				} satisfies ToolInvocation<BuiltinTools['read-files']>,
 				[definitionStepID]: {
 					args: {
 						symbol: 'ParseFlightNumber',
 					},
-					argsMeta: undefined,
+					meta: undefined,
 					invocation: {
 						status: 'done',
 						progress: undefined,
@@ -311,7 +343,7 @@
 					args: {
 						symbol: 'ParseFlightNumber',
 					},
-					argsMeta: undefined,
+					meta: undefined,
 					invocation: {
 						status: 'done',
 						progress: undefined,
@@ -335,7 +367,7 @@
 						file: 'flight_number_test.go',
 						diff: '@@ 123,456 @@\n+ func TestParseFlightNumber(t *testing.T) {\n  ctx := context.Background()\n',
 					},
-					argsMeta: {
+					meta: {
 						diffStat: {
 							added: 51,
 							changed: 3,
@@ -353,7 +385,7 @@
 						cwd: '~/src/github.com/evanw/esbuild',
 						command: 'go test -run=TestParseFlightNumber',
 					},
-					argsMeta: undefined,
+					meta: undefined,
 					invocation: {
 						status: 'done',
 						progress: { output: 'ok      github.com/foo/airline    0.005s' },
@@ -368,5 +400,6 @@
 				[runTestStepID]: { accepted: true },
 			},
 		}}
+		updateThread={fakeUpdateThread}
 	/>
 </Story>
