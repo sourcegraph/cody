@@ -1,6 +1,6 @@
 import { Observable } from 'observable-fns'
 
-export type ThreadStep = { id: string } & (
+export type ThreadStep = { id: ThreadStepID } & (
     | { type: 'human-message'; content: string }
     | {
           type: 'agent-message'
@@ -38,7 +38,7 @@ export type ThreadStep = { id: string } & (
           cwd?: string
           command: string
           output?: string
-          pendingUserApproval?: boolean
+          userChoice: 'pending' | 'run' | 'ignore'
       }
     | { type: 'definition'; symbol: string; pending?: boolean }
     | {
@@ -58,7 +58,7 @@ export interface InteractiveThread {
     v: number
 
     /** The thread ID. */
-    id: string
+    id: ThreadID
 
     /**
      * The contents of the thread.
@@ -71,7 +71,7 @@ export interface InteractiveThreadService {
      * Observe a chat thread. The returned {@link Observable} emits whenever there are any changes
      * to the chat thread.
      */
-    observe(threadID: string, options: ObserveThreadOptions): Observable<InteractiveThread>
+    observe(threadID: ThreadID, options: ObserveThreadOptions): Observable<InteractiveThread>
 
     /**
      * Perform an update action on the thread.
@@ -80,7 +80,7 @@ export interface InteractiveThreadService {
      * emitted by {@link InteractiveThreadService.observe}'s observable until the observable emits a
      * newer version.
      */
-    update(threadID: string, update: ThreadUpdate): Promise<InteractiveThread>
+    update(threadID: ThreadID, update: ThreadUpdate): Promise<InteractiveThread>
 }
 
 interface ObserveThreadOptions {
@@ -94,14 +94,19 @@ interface ObserveThreadOptions {
     getOrCreate?: boolean
 }
 
-type ThreadUpdate =
+export type ThreadUpdate =
     | {
           type: 'append-human-message'
           content: string
       }
     | {
-          type: 'append-agent-message'
-          content: string
+          type: 'append-agent-steps'
+          steps: Exclude<ThreadStep, { type: 'human-message' }>[]
+      }
+    | {
+          type: 'terminal-command:user-choice'
+          step: ThreadStepID
+          choice: 'run' | 'ignore'
       }
     | { type: 'ping' }
 
@@ -111,7 +116,7 @@ interface ThreadStorage {
 }
 
 export function mapThreadStorage(): ThreadStorage {
-    const storage = new Map<string, InteractiveThread>()
+    const storage = new Map<ThreadID, InteractiveThread>()
     return {
         get(threadID) {
             return storage.get(threadID) ?? null
@@ -135,10 +140,10 @@ export function localStorageThreadStorage(storage: Storage): ThreadStorage {
 }
 
 export function createInteractiveThreadService(threadStorage: ThreadStorage): InteractiveThreadService {
-    const subscribers = new Map<string, Set<(thread: InteractiveThread) => void>>()
+    const subscribers = new Map<ThreadID, Set<(thread: InteractiveThread) => void>>()
 
     return {
-        observe(threadID: string, options: ObserveThreadOptions): Observable<InteractiveThread> {
+        observe(threadID: ThreadID, options: ObserveThreadOptions): Observable<InteractiveThread> {
             return new Observable<InteractiveThread>(subscriber => {
                 let thread = threadStorage.get(threadID)
                 if (options.create && !thread) {
@@ -170,44 +175,79 @@ export function createInteractiveThreadService(threadStorage: ThreadStorage): In
             })
         },
 
-        async update(threadID: string, update: ThreadUpdate): Promise<InteractiveThread> {
-            const thread = threadStorage.get(threadID)
-            if (!thread) {
+        async update(threadID: ThreadID, update: ThreadUpdate): Promise<InteractiveThread> {
+            const prev = threadStorage.get(threadID)
+            if (!prev) {
                 throw new Error(`thread ${threadID} not found`)
             }
 
-            const updatedThread: InteractiveThread = { ...thread, v: thread.v + 1 }
+            const thread = JSON.parse(JSON.stringify(prev)) as InteractiveThread
+            thread.v++
 
             switch (update.type) {
                 case 'append-human-message':
-                    updatedThread.steps = [
-                        ...updatedThread.steps,
+                    thread.steps = [
+                        ...thread.steps,
                         { id: newThreadStepID(), type: 'human-message', content: update.content },
                     ]
                     break
-                case 'append-agent-message':
-                    updatedThread.steps = [
-                        ...updatedThread.steps,
-                        { id: newThreadStepID(), type: 'agent-message', content: update.content },
-                    ]
+                case 'append-agent-steps':
+                    thread.steps = [...thread.steps, ...update.steps]
+                    break
+                case 'terminal-command:user-choice':
+                    {
+                        const step = thread.steps.find(step => step.id === update.step)
+                        if (!step) {
+                            throw new Error(`step ${update.step} not found`)
+                        }
+                        if (step.type !== 'terminal-command') {
+                            throw new Error(`step ${update.step} type is not terminal-command`)
+                        }
+                        if (step.userChoice !== 'pending') {
+                            throw new Error(`step ${update.step} already has user choice`)
+                        }
+                        thread.steps = thread.steps.map(step => {
+                            if (step.id === update.step) {
+                                return {
+                                    ...step,
+                                    userChoice: update.choice,
+                                }
+                            }
+                            return step
+                        })
+                    }
                     break
                 case 'ping':
                     break
             }
 
-            threadStorage.store(updatedThread)
+            threadStorage.store(thread)
             for (const callback of subscribers.get(threadID) ?? []) {
-                callback(updatedThread)
+                callback(thread)
             }
-            return updatedThread
+            return thread
         },
     }
 }
 
-export function newThreadID(): string {
-    return crypto.randomUUID()
+type UUID = `${string}-${string}-${string}-${string}-${string}`
+
+export type ThreadID = `T-${UUID}`
+
+export type ThreadStepID = `S-${UUID}`
+
+export function newThreadID(): ThreadID {
+    return `T-${crypto.randomUUID()}`
 }
 
-export function newThreadStepID(): string {
-    return crypto.randomUUID().slice(0, 8)
+export function isThreadID(id: string): id is ThreadID {
+    return id.startsWith('T-')
+}
+
+export function newThreadStepID(): ThreadStepID {
+    return `S-${crypto.randomUUID()}`
+}
+
+export function isThreadStepID(id: string): id is ThreadStepID {
+    return id.startsWith('S-')
 }

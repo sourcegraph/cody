@@ -1,14 +1,19 @@
 <script lang="ts">
 	import { Button } from '$lib/components/ui/button'
-	import type { ThreadStep } from '$lib/types'
+	import type { ThreadStep, ThreadUpdateCallback } from '$lib/types'
 	import ActionBlock from '../structure/action-block.svelte'
 	import CollapsibleActionBlock from '../structure/collapsible-action-block.svelte'
 
-	let { step }: { step: Omit<Extract<ThreadStep, { type: 'terminal-command' }>, 'type'> } =
-		$props()
+	let {
+		step,
+		updateThread,
+	}: {
+		step: Omit<Extract<ThreadStep, { type: 'terminal-command' }>, 'type'>
+		updateThread?: ThreadUpdateCallback<'terminal-command:user-choice'>
+	} = $props()
 </script>
 
-{#if step.pendingUserApproval}
+{#if step.userChoice === 'pending'}
 	<ActionBlock class="flex-col gap-2">
 		<h2>Suggested terminal command</h2>
 		<div class="space-y-1">
@@ -22,10 +27,34 @@
 					>{step.command}</code
 				></pre>
 		</div>
-		<div class="space-x-1 mb-1">
-			<Button variant="default" size="sm">Run</Button>
-			<Button variant="secondary" size="sm">Ignore</Button>
-		</div>
+		{#if updateThread}
+			<div class="space-x-1 mb-1">
+				<Button
+					variant="default"
+					size="sm"
+					onclick={() =>
+						updateThread({
+							step: step.id,
+							type: 'terminal-command:user-choice',
+							choice: 'run',
+						})}
+				>
+					Run
+				</Button>
+				<Button
+					variant="secondary"
+					size="sm"
+					onclick={() =>
+						updateThread({
+							step: step.id,
+							type: 'terminal-command:user-choice',
+							choice: 'ignore',
+						})}
+				>
+					Ignore
+				</Button>
+			</div>
+		{/if}
 	</ActionBlock>
 {:else}
 	<CollapsibleActionBlock>

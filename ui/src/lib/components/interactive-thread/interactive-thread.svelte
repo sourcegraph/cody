@@ -1,6 +1,7 @@
 <script lang="ts">
 	import PromptEditor from '$lib/components/prompt-editor/prompt-editor.svelte'
 	import Thread from '$lib/components/thread/thread.svelte'
+	import type { ThreadID, ThreadUpdate } from '$lib/types'
 	import { type InteractiveThread, type InteractiveThreadService } from '@sourcegraph/cody-shared'
 	import { Observable } from 'observable-fns'
 
@@ -9,7 +10,7 @@
 		thread: threadObservable,
 		threadService,
 	}: {
-		threadID: string
+		threadID: ThreadID
 		thread: Observable<InteractiveThread>
 		threadService: InteractiveThreadService
 	} = $props()
@@ -20,6 +21,10 @@
 
 	async function handleSubmit(value: string): Promise<void> {
 		threadService.update(threadID, { type: 'append-human-message', content: value })
+	}
+
+	function updateThread(update: ThreadUpdate): void {
+		threadService.update(threadID, update)
 	}
 </script>
 
@@ -34,7 +39,7 @@
 		{#if thread.steps.length === 0}
 			<PromptEditor onsubmit={handleSubmit} />
 		{/if}
-		<Thread {thread} />
+		<Thread {thread} {updateThread} />
 		{#if thread.steps.length >= 1}
 			<footer class="mt-auto">
 				<PromptEditor onsubmit={handleSubmit} />

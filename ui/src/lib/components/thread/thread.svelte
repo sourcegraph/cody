@@ -1,4 +1,5 @@
 <script lang="ts">
+	import type { ThreadUpdateCallback } from '$lib/types'
 	import type { InteractiveThread } from '@sourcegraph/cody-shared'
 	import PromptEditor from '../prompt-editor/prompt-editor.svelte'
 	import CreateFileAction from './actions/create-file-action.svelte'
@@ -9,7 +10,13 @@
 	import TerminalCommandAction from './actions/terminal-command-action.svelte'
 	import ThinkAction from './actions/think-action.svelte'
 
-	let { thread }: { thread: Pick<InteractiveThread, 'steps'> } = $props()
+	let {
+		thread,
+		updateThread,
+	}: {
+		thread: Pick<InteractiveThread, 'steps'>
+		updateThread: ThreadUpdateCallback
+	} = $props()
 </script>
 
 <div class="space-y-4">
@@ -27,7 +34,7 @@
 		{:else if step.type === 'edit-file'}
 			<EditFileAction {step} />
 		{:else if step.type === 'terminal-command'}
-			<TerminalCommandAction {step} />
+			<TerminalCommandAction {step} {updateThread} />
 		{:else if step.type === 'definition'}
 			<DefinitionAction {step} />
 		{:else if step.type === 'references'}

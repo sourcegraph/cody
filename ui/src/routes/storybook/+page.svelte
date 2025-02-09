@@ -93,7 +93,7 @@
 					type: 'terminal-command',
 					cwd: '~/src/github.com/evanw/esbuild',
 					command: 'node --experimental-strip-types src/hello-world.ts',
-					pendingUserApproval: true,
+					pendingUserChoice: true,
 				},
 			],
 		}}
