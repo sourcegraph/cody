@@ -8,7 +8,7 @@ export type ToolCallArgs = Dict
 
 export type ToolDefinition = {
     id: string
-    args: Dict
+    args: Dict | null
     meta?: Dict
     progress?: Dict
     result: Dict | undefined

@@ -49,7 +49,7 @@ export interface InteractiveThread {
      * A monotonically increasing integer that represents the version of this data. Each time the
      * rest of the data structure changes, this field is incremented.
      */
-    v: number
+    // TODO!(sqs): v: number
 
     /**
      * The contents of the thread.

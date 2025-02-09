@@ -104,6 +104,41 @@ export async function firstValueFrom<T>(observable: Observable<T>, signal?: Abor
 }
 
 /**
+ * Return the last value emitted by an {@link Observable}, or throw an error if the observable
+ * completes without emitting a value.
+ */
+export async function lastValueFrom<T>(observable: Observable<T>, signal?: AbortSignal): Promise<T> {
+    return new Promise<T>((resolve, reject) => {
+        let lastValue: T | undefined
+        const subscription = observable.subscribe({
+            next: value => {
+                lastValue = value
+            },
+            error: reject,
+            complete: () => {
+                subscription.unsubscribe()
+                if (lastValue !== undefined) {
+                    resolve(lastValue)
+                } else {
+                    reject('Observable completed without emitting a value')
+                }
+            },
+        })
+
+        if (signal) {
+            signal.addEventListener(
+                'abort',
+                () => {
+                    subscription.unsubscribe()
+                    reject(new DOMException('Aborted', 'AbortError'))
+                },
+                { once: true }
+            )
+        }
+    })
+}
+
+/**
  * Converts the observable factory to an async function that returns the first value emitted by the
  * created observable.
  */

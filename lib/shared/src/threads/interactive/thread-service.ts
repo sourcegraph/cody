@@ -7,6 +7,7 @@ import {
     type ThreadStepUserInput,
     newThreadStepID,
 } from './thread'
+import type { ToolInvocation } from './tool-service'
 
 export interface InteractiveThreadService {
     /**
@@ -50,7 +51,11 @@ export type ThreadUpdate =
           step: ThreadStepID
           value: ThreadStepUserInput
       }
-    | { type: 'set-step-results'; step: ThreadStepID; mergeDataTODO: any /* TODO!(sqs) */ }
+    | {
+          type: 'update-tool-invocation'
+          step: ThreadStepID
+          invocation: ToolInvocation['invocation']
+      }
     | { type: 'ping' }
 
 interface ThreadStorage {
@@ -94,7 +99,7 @@ export function createInteractiveThreadService(threadStorage: ThreadStorage): In
                 }
                 if ((options.create || options.getOrCreate) && !thread) {
                     thread = {
-                        v: 0,
+                        // v: 0, TODO!(sqs)
                         id: threadID,
                         steps: [],
                     }
@@ -125,7 +130,22 @@ export function createInteractiveThreadService(threadStorage: ThreadStorage): In
             }
 
             const thread = JSON.parse(JSON.stringify(prev)) as InteractiveThread
-            thread.v++
+            // thread.v++ TODO!(sqs)
+
+            function resetToolInvocation(
+                step: Extract<ThreadStep, { type: 'tool' }>,
+                userInput: ThreadStepUserInput | undefined
+            ): void {
+                if (!thread.toolInvocations) {
+                    thread.toolInvocations = {}
+                }
+                thread.toolInvocations[step.id] = {
+                    args: step.args,
+                    userInput,
+                    meta: undefined,
+                    invocation: { status: 'queued' },
+                }
+            }
 
             switch (update.type) {
                 case 'append-human-message':
@@ -135,7 +155,16 @@ export function createInteractiveThreadService(threadStorage: ThreadStorage): In
                     ]
                     break
                 case 'append-agent-steps':
-                    thread.steps = [...thread.steps, ...update.steps]
+                    {
+                        thread.steps = [...thread.steps, ...update.steps]
+
+                        // Invoke tools for any new tool-call steps.
+                        for (const step of update.steps) {
+                            if (step.type === 'tool') {
+                                resetToolInvocation(step, undefined)
+                            }
+                        }
+                    }
                     break
                 case 'user-input':
                     {
@@ -143,30 +172,23 @@ export function createInteractiveThreadService(threadStorage: ThreadStorage): In
                         if (!step) {
                             throw new Error(`step ${update.step} not found`)
                         }
-                        if (thread.userInput?.[update.step]) {
-                            throw new Error(`step ${update.step} already has user input`)
-                        }
                         if (!thread.userInput) {
                             thread.userInput = {}
                         }
                         thread.userInput[update.step] = update.value
+
+                        if (step.type === 'tool') {
+                            resetToolInvocation(step, update.value)
+                        }
                     }
                     break
-                case 'set-step-results':
+                case 'update-tool-invocation':
                     {
-                        const step = thread.steps.find(step => step.id === update.step)
-                        if (!step) {
-                            throw new Error(`step ${update.step} not found`)
+                        const toolInvocation = thread.toolInvocations?.[update.step]
+                        if (!toolInvocation) {
+                            throw new Error(`tool invocation ${update.step} not found`)
                         }
-                        thread.steps = thread.steps.map(step => {
-                            if (step.id === update.step) {
-                                return {
-                                    ...step,
-                                    ...update.mergeDataTODO,
-                                }
-                            }
-                            return step
-                        })
+                        toolInvocation.invocation = update.invocation
                     }
                     break
                 case 'ping':
