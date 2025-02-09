@@ -1415,6 +1415,12 @@ export class Agent extends MessageHandler implements ExtensionClient {
             contextFiltersProvider.setTestingContextFilters(contextFilters)
             return null
         })
+
+        this.registerAuthenticatedRequest('ui3/window/new', async () => {
+            // TODO!(sqs): create new ui3 handler
+            const panelId = await this.createUI3Window()
+            return { windowId }
+        })
     }
 
     private pushPendingPromise(pendingPromise: Promise<unknown>): void {
@@ -1655,6 +1661,8 @@ export class Agent extends MessageHandler implements ExtensionClient {
         }
         return AgentFixupControls.serialize(result.task)
     }
+
+    private async createUI3Window(): Promise<string> {}
 
     private async createChatPanel(commandResult: Thenable<CommandResult | undefined>): Promise<string> {
         const result = (await commandResult) ?? { type: 'empty-command-result' }

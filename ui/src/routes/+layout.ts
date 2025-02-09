@@ -7,16 +7,23 @@ import AgentWorker from '@sourcegraph/cody-web/lib/agent/agent.worker?worker'
 
 const CREATE_AGENT_WORKER = (): Worker => new AgentWorker() as Worker
 
-const useAgent = false
+const useAgent = true
 
 export const load: LayoutLoad = async () => {
     const agentClient = useAgent
-        ? createAgentClient({
+        ? await createAgentClient({
               serverEndpoint: 'https://sourcegraph.test:3443',
-              accessToken: 'my-access-token',
+              // TODO!(sqs)
+              //
+              // localStorage.accessToken='foo';location.reload()
+              accessToken: localStorage.getItem('accessToken') ?? '',
               createAgentWorker: CREATE_AGENT_WORKER,
           })
         : null
+    const chat = await agentClient?.rpc.sendRequest<{ panelId: string; chatId?: string }>(
+        'chat/web/new',
+        null
+    )
 
     const threadService = createInteractiveThreadService(localStorageThreadStorage(window.localStorage))
 
