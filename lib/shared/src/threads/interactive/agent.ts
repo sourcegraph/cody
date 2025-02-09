@@ -5,6 +5,7 @@ import {
     promiseFactoryToObservable,
     startWith,
 } from '../../misc/observable'
+import { registerBuiltinTools } from './builtin-tools'
 import {
     type InteractiveThread,
     type InteractiveThreadService,
@@ -13,18 +14,20 @@ import {
     isToolCallStep,
     newThreadStepID,
 } from './session'
+import { toolService } from './tool-service'
 
 export function createAgentForInteractiveThread(
     threadService: InteractiveThreadService,
     threadID: ThreadID
 ): Observable<AgentState> {
+    registerBuiltinTools(toolService)
+
     const thread = threadService.observe(threadID, {})
     return thread.pipe(
         distinctUntilChanged(),
         mergeMap(thread => {
             const workItem = workItemFromThread(thread)
             const agentState = agentStateFromThread(thread)
-            console.log('W', workItem)
             if (workItem) {
                 // Run async and do not await.
                 //

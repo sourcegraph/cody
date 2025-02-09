@@ -1,5 +1,5 @@
 import { Observable } from 'observable-fns'
-import { ToolCallSteps } from './tools'
+import type { ToolInvocation } from './tool-service'
 
 export type ThreadStep = { id: ThreadStepID } & (
     | { type: 'human-message'; content: string }
@@ -14,7 +14,8 @@ export type ThreadStep = { id: ThreadStepID } & (
       }
     | ({
           type: 'tool'
-      } & ToolCallSteps)
+          tool: string
+      } & ToolInvocation)
     | { type: 'agent-stop' }
 )
 
