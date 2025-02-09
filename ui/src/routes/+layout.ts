@@ -1,3 +1,4 @@
+import { createInteractiveThreadService, localStorageThreadStorage } from '@sourcegraph/cody-shared'
 import type { LayoutLoad } from './$types'
 
 import { createAgentClient } from '@sourcegraph/cody-web/lib/agent/agent.client'
@@ -12,8 +13,12 @@ export const load: LayoutLoad = async () => {
         accessToken: 'my-access-token',
         createAgentWorker: CREATE_AGENT_WORKER,
     })
+
+    const threadService = createInteractiveThreadService(localStorageThreadStorage(window.localStorage))
+
     return {
         agentClient,
+        threadService,
     }
 }
 

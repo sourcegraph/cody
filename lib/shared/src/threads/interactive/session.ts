@@ -91,6 +91,9 @@ interface ObserveThreadOptions {
      * ID already exists.
      */
     create?: boolean
+
+    // TODO!(sqs): remove this probably
+    getOrCreate?: boolean
 }
 
 type ThreadUpdate =
@@ -100,25 +103,54 @@ type ThreadUpdate =
       }
     | { type: 'ping' }
 
-export function createInteractiveThreadService(): InteractiveThreadService {
-    const threads = new Map<string, InteractiveThread>()
+interface ThreadStorage {
+    get(threadID: InteractiveThread['id']): InteractiveThread | null
+    store(thread: InteractiveThread): void
+}
+
+export function mapThreadStorage(): ThreadStorage {
+    const storage = new Map<string, InteractiveThread>()
+    return {
+        get(threadID) {
+            return storage.get(threadID) ?? null
+        },
+        store(thread) {
+            storage.set(thread.id, thread)
+        },
+    }
+}
+
+export function localStorageThreadStorage(storage: Storage): ThreadStorage {
+    return {
+        get(threadID) {
+            const stored = storage.getItem(`thread:${threadID}`)
+            return stored ? JSON.parse(stored) : null
+        },
+        store(thread) {
+            storage.setItem(`thread:${thread.id}`, JSON.stringify(thread))
+        },
+    }
+}
+
+export function createInteractiveThreadService(threadStorage: ThreadStorage): InteractiveThreadService {
     const subscribers = new Map<string, Set<(thread: InteractiveThread) => void>>()
 
     return {
         observe(threadID: string, options: ObserveThreadOptions): Observable<InteractiveThread> {
             return new Observable<InteractiveThread>(subscriber => {
-                if (options.create) {
-                    if (threads.has(threadID)) {
-                        throw new Error(`thread ${threadID} already exists`)
-                    }
-                    threads.set(threadID, {
+                let thread = threadStorage.get(threadID)
+                if (options.create && !thread) {
+                    throw new Error(`thread ${threadID} already exists`)
+                }
+                if ((options.create || options.getOrCreate) && !thread) {
+                    thread = {
                         v: 0,
                         id: threadID,
                         transcript: [],
-                    })
+                    }
+                    threadStorage.store(thread)
                 }
 
-                const thread = threads.get(threadID)
                 if (!thread) {
                     throw new Error(`thread ${threadID} not found`)
                 }
@@ -137,7 +169,7 @@ export function createInteractiveThreadService(): InteractiveThreadService {
         },
 
         async update(threadID: string, update: ThreadUpdate): Promise<InteractiveThread> {
-            const thread = threads.get(threadID)
+            const thread = threadStorage.get(threadID)
             if (!thread) {
                 throw new Error(`thread ${threadID} not found`)
             }
@@ -155,11 +187,15 @@ export function createInteractiveThreadService(): InteractiveThreadService {
                     break
             }
 
-            threads.set(threadID, updatedThread)
+            threadStorage.store(updatedThread)
             for (const callback of subscribers.get(threadID) ?? []) {
                 callback(updatedThread)
             }
             return updatedThread
         },
     }
+}
+
+export function newThreadID(): string {
+    return crypto.randomUUID()
 }
