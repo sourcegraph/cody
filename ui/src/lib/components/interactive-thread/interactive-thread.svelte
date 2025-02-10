@@ -64,7 +64,7 @@
 		{/if}
 		{#if showState}
 			<span class="text-xxs rounded-lg px-2 py-1 bg-muted text-muted-foreground self-start">
-				Agent: {agentState ?? 'not running'}
+				<em>debug</em> Agent: {agentState ?? 'not running'}
 			</span>
 		{/if}
 		{#if thread.steps.length === 0}
