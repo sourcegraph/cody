@@ -9,10 +9,14 @@ import {
     addMessageListenersForExtensionAPI,
     authStatus,
     createAgentForInteractiveThread,
+    createMessageAPIForExtension,
+    newWindowID,
     promiseFactoryToObservable,
 } from '@sourcegraph/cody-shared'
+import * as vscode from 'vscode'
+import { createUI3WebviewManager } from './webview'
 
-export interface UI3Service {
+export interface UI3Service extends vscode.Disposable {
     createWindow(
         id: WindowID,
         messageAPI: MessageAPI<ResponseMessage, RequestMessage>
@@ -27,33 +31,55 @@ export function createUI3Service({ interactiveThreadService }: UI3Deps): UI3Serv
     type UI3WindowInternal = UI3Window & {
         messageAPI: MessageAPI<ResponseMessage, RequestMessage>
     }
+
     const windows = new Map<WindowID, UI3WindowInternal>()
+
+    const webviewManager = createUI3WebviewManager()
+
+    async function createWindow(
+        id: WindowID,
+        messageAPI: MessageAPI<ResponseMessage, RequestMessage>
+    ): Promise<UI3Window> {
+        if (windows.has(id)) {
+            throw new Error(`window ${id} already exists`)
+        }
+
+        const w: UI3WindowInternal = {
+            id,
+            messageAPI,
+        }
+        windows.set(id, w)
+
+        addMessageListenersForExtensionAPI<UI3WebviewToExtensionAPI>(messageAPI, {
+            authStatus: () => authStatus,
+            observeThread: (...args) => interactiveThreadService.observe(...args),
+            updateThread: (...args) =>
+                promiseFactoryToObservable(() => interactiveThreadService.update(...args)),
+            startAgentForThread: (...args) =>
+                createAgentForInteractiveThread(interactiveThreadService, ...args),
+            observeHistory: () => interactiveThreadService.observeHistory(),
+        })
+
+        return w
+    }
+
+    vscode.commands.registerCommand('cody.ui3.createWindow', async () => {
+        const webview = await webviewManager.createWebview('editor')
+        const messageAPI = createMessageAPIForExtension({
+            postMessage: message => webview.postMessage(message),
+            postError: error => console.error(error),
+            onMessage: callback => {
+                const disposable = webview.onDidReceiveMessage(callback)
+                return () => disposable.dispose()
+            },
+        })
+        await createWindow(newWindowID(), messageAPI)
+    })
+
     return {
-        async createWindow(
-            id: WindowID,
-            messageAPI: MessageAPI<ResponseMessage, RequestMessage>
-        ): Promise<UI3Window> {
-            if (windows.has(id)) {
-                throw new Error(`window ${id} already exists`)
-            }
-
-            const w: UI3WindowInternal = {
-                id,
-                messageAPI,
-            }
-            windows.set(id, w)
-
-            addMessageListenersForExtensionAPI<UI3WebviewToExtensionAPI>(messageAPI, {
-                authStatus: () => authStatus,
-                observeThread: (...args) => interactiveThreadService.observe(...args),
-                updateThread: (...args) =>
-                    promiseFactoryToObservable(() => interactiveThreadService.update(...args)),
-                startAgentForThread: (...args) =>
-                    createAgentForInteractiveThread(interactiveThreadService, ...args),
-                observeHistory: () => interactiveThreadService.observeHistory(),
-            })
-
-            return w
+        createWindow,
+        dispose(): void {
+            webviewManager.dispose()
         },
     }
 }

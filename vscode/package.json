@@ -34,7 +34,7 @@
     "_build:esbuild:node": "esbuild ./src/extension.node.ts --bundle --outfile=dist/extension.node.js --loader:.node=copy --external:vscode --external:typescript --alias:@sourcegraph/cody-shared=@sourcegraph/cody-shared/src/index --alias:@sourcegraph/cody-shared/src=@sourcegraph/cody-shared/src --alias:lexical=./build/lexical-package-fix --format=cjs --platform=node --sourcemap --target=es2022",
     "_build:esbuild:web": "esbuild ./src/extension.web.ts --platform=browser --bundle --outfile=dist/extension.web.js --alias:@sourcegraph/cody-shared=@sourcegraph/cody-shared/src/index --alias:@sourcegraph/cody-shared/src=@sourcegraph/cody-shared/src --alias:path=path-browserify --external:typescript --alias:node:path=path-browserify --alias:node:os=os-browserify --alias:os=os-browserify --external:vscode  --external:node:child_process  --external:node:util --external:node:fs --external:node:fs/promises --external:node:process --define:process='{\"env\":{}}' --define:window=self --format=cjs --sourcemap",
     "_build:esbuild:uninstall": "node ./uninstall/esbuild.mjs",
-    "_build:webviews": "vite -c webviews/vite.config.mts build",
+    "_build:webviews": "echo 'TODO!(sqs) disabled for ui3 build' vite -c webviews/vite.config.mts build",
     "_build:vsix_for_test": "vsce package --no-dependencies --out dist/cody.e2e.vsix",
     "release": "ts-node-transpile-only ./scripts/release.ts",
     "download-wasm": "ts-node-transpile-only ./scripts/download-wasm-modules.ts",
@@ -257,6 +257,12 @@
       ]
     },
     "commands": [
+      {
+        "command": "cody.ui3.createWindow",
+        "title": "Create UI3 window",
+        "category": "Cody",
+        "group": "Cody"
+      },
       {
         "command": "cody.welcome",
         "title": "Getting Started Guide",
@@ -753,6 +759,10 @@
     ],
     "menus": {
       "commandPalette": [
+        {
+          "command": "cody.ui3.createWindow",
+          "when": "cody.activated"
+        },
         {
           "command": "cody.command.edit-code",
           "when": "cody.activated && editorIsOpen"
@@ -1569,7 +1579,7 @@
     "@types/uuid": "^9.0.2",
     "@types/vscode": "^1.79.0",
     "@vscode/test-electron": "^2.4.0",
-    "@vscode/test-web": "^0.0.47",
+    "@vscode/test-web": "^0.0.66",
     "@vscode/vsce": "^2.22.0",
     "ajv": "^8.14.0",
     "ajv-formats": "^3.0.1",

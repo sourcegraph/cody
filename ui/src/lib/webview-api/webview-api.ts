@@ -10,7 +10,7 @@ import {
 } from '@sourcegraph/cody-shared'
 import { createAgentClient } from '@sourcegraph/cody-web/lib/agent/agent.client'
 // @ts-ignore
-import AgentWorker from '@sourcegraph/cody-web/lib/agent/agent.worker?worker'
+import AgentWorker from '@sourcegraph/cody-web/lib/agent/agent.worker?worker&inline' // TODO!(sqs): need inline for vscode cors from vscode-webview://
 import { URI } from 'vscode-uri'
 import type { ExtensionMessage, WebviewMessage } from '../../../../vscode/src/chat/protocol'
 

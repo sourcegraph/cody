@@ -114,5 +114,9 @@ export default defineProjectWithDefaults(__dirname, {
     },
     server: {
         port: 5133,
+        cors: {
+            origin: '*', // TODO!(sqs): tighten up
+        },
+        strictPort: true,
     },
 })
