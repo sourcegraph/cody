@@ -18,7 +18,7 @@ import {
 import { ActionItem } from './ActionItem'
 import styles from './PromptList.module.css'
 import { usePromptsQuery } from './usePromptsQuery'
-import { commandRowValue } from './utils'
+import { commandRowValue, shouldShowAction } from './utils'
 
 const BUILT_IN_PROMPTS_CODE: Record<string, number> = {
     'document-code': 1,
@@ -158,23 +158,37 @@ export const PromptList: FC<PromptListProps> = props => {
             error,
         ]
     )
-
     const filteredActions = useCallback(
         (actions: Action[]) => {
+            const { clientCapabilities } = useConfig()
+            const isEditEnabled = clientCapabilities.edit !== 'none'
+
+            function isEditActionLike(action: Action): boolean {
+                return action.actionType === 'prompt' ? action.mode !== 'CHAT' : action.mode !== 'ask'
+            }
+
+            // First pass: filter out edit-requiring actions if edit is disabled
+            const filteredActions = isEditEnabled
+                ? actions
+                : actions.filter(action => !isEditActionLike(action))
+
+            // Second pass: apply prompt filters based on configuration
             if (promptFilters?.core) {
-                return actions.filter(action => action.actionType === 'prompt' && action.builtin)
+                return filteredActions.filter(action => action.actionType === 'prompt' && action.builtin)
             }
-            const shouldExcludeBuiltinCommands =
+
+            const hasCustomFilters =
                 promptFilters?.promoted || promptFilters?.owner || promptFilters?.tags
-            if (shouldExcludeBuiltinCommands) {
-                return actions.filter(action => action.actionType === 'prompt' && !action.builtin)
+            if (hasCustomFilters) {
+                return filteredActions.filter(
+                    action => action.actionType === 'prompt' && !action.builtin
+                )
             }
-            return actions
+
+            return filteredActions
         },
         [promptFilters]
-    )
-
-    // Don't show builtin commands to insert in the prompt editor.
+    ) // Don't show builtin commands to insert in the prompt editor.
     const allActions = showOnlyPromptInsertableCommands
         ? result?.actions.filter(action => action.actionType === 'prompt' || action.mode === 'ask') ?? []
         : result?.actions ?? []
