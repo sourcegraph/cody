@@ -16,12 +16,14 @@ export function getExperimentalClientModelByFeatureFlag(flag: FeatureFlag): Serv
     }
 }
 
+export const DeepCodyAgentID = 'deep-cody'
+
 function getDeepCodyServerModel(): ServerModel {
     return {
         // This modelRef does not exist in the backend and is used to identify the model in the client.
         modelRef: 'sourcegraph::2023-06-01::deep-cody',
         displayName: 'Agentic chat',
-        modelName: 'deep-cody',
+        modelName: DeepCodyAgentID,
         capabilities: ['chat'],
         category: 'accuracy',
         status: 'experimental' as ModelTag.Experimental,
@@ -33,10 +35,13 @@ function getDeepCodyServerModel(): ServerModel {
     }
 }
 
+export const ToolCodyModelRef = 'sourcegraph::2024-12-31::tool-cody'
+export const ToolCodyModelName = 'tool-cody'
+
 export const TOOL_CODY_MODEL: ServerModel = {
-    modelRef: 'sourcegraph::2024-12-31::tool-cody',
+    modelRef: ToolCodyModelRef,
     displayName: 'Tool Cody',
-    modelName: 'tool-cody',
+    modelName: ToolCodyModelName,
     capabilities: ['chat'],
     category: 'accuracy',
     status: 'internal' as ModelTag.Internal,

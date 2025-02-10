@@ -68,7 +68,7 @@ export interface GetContextResult {
     contextLoggingSnippets: AutocompleteContextSnippet[]
 }
 
-export interface ContextMixerOptions {
+interface ContextMixerOptions {
     strategyFactory: ContextStrategyFactory
     contextRankingStrategy: ContextRankingStrategy
     dataCollectionEnabled?: boolean

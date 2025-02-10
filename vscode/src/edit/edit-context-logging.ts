@@ -17,7 +17,7 @@ import type { SmartSelectionType } from './prompt/smart-apply'
 
 const MAX_LOGGING_PAYLOAD_SIZE_BYTES = 1024 * 1024 // 1 MB
 
-export type SmartApplyLoggingRequestId = string
+type SmartApplyLoggingRequestId = string
 
 interface RepoContext {
     repoName?: string
@@ -51,10 +51,7 @@ interface EditLoggingContext {
     selectionRange: [number, number]
 }
 
-export type SmartApplyLoggingState =
-    | SmartApplyBaseContext
-    | SmartApplySelectionContext
-    | SmartApplyFinalContext
+type SmartApplyLoggingState = SmartApplyBaseContext | SmartApplySelectionContext | SmartApplyFinalContext
 
 export class EditLoggingFeatureFlagManager implements vscode.Disposable {
     private featureFlagSmartApplyContextDataCollection = storeLastValue(
@@ -238,10 +235,7 @@ export function getEditLoggingContext(param: {
     return context
 }
 
-export function shouldLogEditContextItem<T>(
-    payload: T,
-    isFeatureFlagEnabledForLogging: boolean
-): boolean {
+function shouldLogEditContextItem<T>(payload: T, isFeatureFlagEnabledForLogging: boolean): boolean {
     // 🚨 SECURITY: included only for DotCom users and for users in the feature flag.
     if (isDotComAuthed() && isFeatureFlagEnabledForLogging) {
         const payloadSize = calculatePayloadSizeInBytes(payload)

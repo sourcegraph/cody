@@ -432,7 +432,7 @@ function computeLineChanges({
  * Splits a line into chunks for fine-grained diffing.
  * Uses word boundaries, spaces and non-alphanumeric characters for splitting.
  */
-export function splitLineIntoChunks(line: string): string[] {
+function splitLineIntoChunks(line: string): string[] {
     // Split line into words, consecutive spaces and punctuation marks
     return line.match(/(\w+|\s+|\W)/g) || []
 }

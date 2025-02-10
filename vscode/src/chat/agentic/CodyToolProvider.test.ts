@@ -1,4 +1,5 @@
 import { type ContextItem, ContextItemSource, ps } from '@sourcegraph/cody-shared'
+import { DeepCodyAgentID } from '@sourcegraph/cody-shared/src/models/client'
 import { Observable } from 'observable-fns'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { URI } from 'vscode-uri'
@@ -91,7 +92,7 @@ describe('CodyToolProvider', () => {
 
     it('should not include CLI tool if shell is disabled', () => {
         vi.spyOn(toolboxManager, 'getSettings').mockReturnValue({
-            agent: { name: 'deep-cody' },
+            agent: { name: DeepCodyAgentID },
             shell: { enabled: false },
         })
         const tools = CodyToolProvider.getTools()
@@ -100,7 +101,7 @@ describe('CodyToolProvider', () => {
 
     it('should include CLI tool if shell is enabled', () => {
         vi.spyOn(toolboxManager, 'getSettings').mockReturnValue({
-            agent: { name: 'deep-cody' },
+            agent: { name: DeepCodyAgentID },
             shell: { enabled: true },
         })
         const tools = CodyToolProvider.getTools()

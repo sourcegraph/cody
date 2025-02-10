@@ -18,6 +18,7 @@ import {
 import { isRunningInsideAgent } from '../jsonrpc/isRunningInsideAgent'
 import type { FixupController } from '../non-stop/FixupController'
 
+import type { CodyStatusBar } from '../services/StatusBar'
 import { AutoeditsProvider } from './autoedits-provider'
 import { autoeditsOutputChannelLogger } from './output-channel-logger'
 import { initImageSuggestionService } from './renderer/image-gen'
@@ -32,7 +33,7 @@ const AUTOEDITS_NON_ELIGIBILITY_MESSAGES = {
 /**
  * Information about a user's eligibility for auto-edit functionality.
  */
-export interface AutoeditsUserEligibilityInfo {
+interface AutoeditsUserEligibilityInfo {
     /**
      * Whether the user is eligible to use auto-edit.
      */
@@ -52,6 +53,7 @@ interface AutoeditsItemProviderArgs {
     autoeditFeatureFlagEnabled: boolean
     autoeditImageRenderingEnabled: boolean
     fixupController: FixupController
+    statusBar: CodyStatusBar
 }
 
 export function createAutoEditsProvider({
@@ -61,6 +63,7 @@ export function createAutoEditsProvider({
     autoeditFeatureFlagEnabled,
     autoeditImageRenderingEnabled,
     fixupController,
+    statusBar,
 }: AutoeditsItemProviderArgs): Observable<void> {
     if (!configuration.experimentalAutoEditEnabled) {
         return NEVER
@@ -94,7 +97,7 @@ export function createAutoEditsProvider({
                 initImageSuggestionService()
             }
 
-            const provider = new AutoeditsProvider(chatClient, fixupController, {
+            const provider = new AutoeditsProvider(chatClient, fixupController, statusBar, {
                 shouldRenderImage: autoeditImageRenderingEnabled,
             })
             return [
@@ -125,7 +128,7 @@ export function createAutoEditsProvider({
  * @param {string | undefined} nonEligibilityReason - The reason why the user is currently not eligible
  *                                                   for auto edits. If not provided, no notification occurs.
  */
-export async function handleAutoeditsNotificationForNonEligibleUser(
+async function handleAutoeditsNotificationForNonEligibleUser(
     nonEligibilityReason?: string
 ): Promise<void> {
     if (!nonEligibilityReason || !isSettingsEditorOpen()) {

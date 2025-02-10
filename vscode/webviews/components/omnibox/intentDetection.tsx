@@ -1,7 +1,7 @@
 import { createContext, useContext, useMemo } from 'react'
 import { useClientConfig } from '../../utils/useClientConfig'
 
-export interface IntentDetectionConfig {
+interface IntentDetectionConfig {
     intentDetectionDisabled: boolean
     doIntentDetection: boolean
 }

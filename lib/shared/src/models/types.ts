@@ -1,4 +1,4 @@
-import type { getMockedDotComClientModels } from './dotcom'
+import type { Model } from './model'
 
 export enum ModelUsage {
     Chat = 'chat',
@@ -13,7 +13,7 @@ type HasUsage<T, I> = T extends { usage: readonly ModelUsage[] }
         : never
     : never
 
-type Models = typeof getMockedDotComClientModels
+type Models = Model[]
 
 /**
  * Available models for Edit.

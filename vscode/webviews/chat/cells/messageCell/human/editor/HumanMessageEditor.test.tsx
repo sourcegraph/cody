@@ -1,6 +1,6 @@
 import {
     FILE_MENTION_EDITOR_STATE_FIXTURE,
-    getMockedDotComClientModels,
+    FIXTURE_MODELS,
     serializedPromptEditorStateFromText,
 } from '@sourcegraph/cody-shared'
 import { fireEvent, render, screen } from '@testing-library/react'
@@ -9,8 +9,6 @@ import { type Assertion, type Mock, describe, expect, test, vi } from 'vitest'
 import { AppWrapperForTest } from '../../../../../AppWrapperForTest'
 import { FIXTURE_USER_ACCOUNT_INFO } from '../../../../fixtures'
 import { HumanMessageEditor } from './HumanMessageEditor'
-
-const MOCK_MODELS = getMockedDotComClientModels()
 
 const ENTER_KEYBOARD_EVENT_DATA: Pick<KeyboardEvent, 'key' | 'code' | 'keyCode'> = {
     key: 'Enter',
@@ -139,7 +137,7 @@ describe('HumanMessageEditor', () => {
             const { container } = renderWithMocks({})
             const modelSelector = container.querySelector('[data-testid="chat-model-selector"]')
             expect(modelSelector).not.toBeNull()
-            expect(modelSelector?.textContent).toEqual(MOCK_MODELS[0].title)
+            expect(modelSelector?.textContent).toEqual(FIXTURE_MODELS[0].title)
         })
     })
 })
@@ -172,7 +170,7 @@ function renderWithMocks(props: Partial<ComponentProps<typeof HumanMessageEditor
         onChange,
         onSubmit,
         onStop,
-        models: MOCK_MODELS,
+        models: FIXTURE_MODELS,
         manuallySelectIntent,
     }
 

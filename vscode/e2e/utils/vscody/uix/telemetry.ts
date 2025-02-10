@@ -4,9 +4,9 @@ import type { LiteralUnion } from 'type-fest'
 import type { UIXContextFnContext } from '.'
 import type { RecordedTelemetryEvent } from '../fixture/telemetry'
 
-export type TelemetrySignature = keyof typeof telemetryEvents
-export type TelemetryAction = SplitSignature<TelemetrySignature>[1]
-export type TelemetryFeature = SplitSignature<TelemetrySignature>[0]
+type TelemetrySignature = keyof typeof telemetryEvents
+type TelemetryAction = SplitSignature<TelemetrySignature>[1]
+type TelemetryFeature = SplitSignature<TelemetrySignature>[0]
 
 type Options = Pick<UIXContextFnContext, 'telemetryRecorder'>
 type Ctx = {
@@ -79,8 +79,8 @@ export class TelemetrySnapshot {
     }
 }
 
-export type MatchFn = (event: RecordedTelemetryEvent) => boolean
-export interface PropMatchFnOpts {
+type MatchFn = (event: RecordedTelemetryEvent) => boolean
+interface PropMatchFnOpts {
     signature?: LiteralUnion<TelemetrySignature, string>
     feature?: LiteralUnion<TelemetryFeature, string>
     action?: LiteralUnion<TelemetryAction, string>
