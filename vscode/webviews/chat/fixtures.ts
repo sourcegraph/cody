@@ -171,7 +171,7 @@ export const FIXTURE_TRANSCRIPT: Record<
     owned_string.push_str(string_literal);
     println!("Using push_str(): {}", owned_string);
 
-</code></pre> Hopefully that helps.`
+</code></pre> Hopefully that helps.`,
         },
     ]),
     long: transcriptFixture([
