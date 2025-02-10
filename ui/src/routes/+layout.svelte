@@ -11,6 +11,8 @@
 	let { data, children } = $props()
 
 	setWebviewAPIContext(data.webviewAPIClient.api)
+
+	let showStateDebugOverlay = false
 </script>
 
 <Tooltip.Provider delayDuration={500} disableHoverableContent={true}>
@@ -32,6 +34,8 @@
 			{@render children()}
 		</div>
 
-		<StateDebugOverlay class="flex-shrink-0" />
+		{#if showStateDebugOverlay}
+			<StateDebugOverlay class="flex-shrink-0" />
+		{/if}
 	</div>
 </Tooltip.Provider>
