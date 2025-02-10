@@ -72,6 +72,12 @@ export function responseTransformer(
 
         return formatToMatchOriginal(decodedText, task.original, task.fixupFile.uri)
     }
+    console.log({
+        "text": text,
+        "strippedText": strippedText,
+        "trimmedText": trimmedText,
+        "decodedText": decodedText,
+    })
 
     return decodedText
 }

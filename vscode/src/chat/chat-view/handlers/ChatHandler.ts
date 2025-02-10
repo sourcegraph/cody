@@ -34,7 +34,7 @@ export class ChatHandler implements AgentHandler {
         protected contextRetriever: Pick<ContextRetriever, 'retrieveContext' | 'computeDidYouMean'>,
         protected readonly editor: ChatControllerOptions['editor'],
         protected chatClient: ChatControllerOptions['chatClient']
-    ) {}
+    ) { }
 
     public async handle(
         {
@@ -292,8 +292,8 @@ export async function computeContextAlternatives(
     // Remove context chips (repo, @-mentions) from the input text for context retrieval.
     const inputTextWithoutContextChips = editorState
         ? PromptString.unsafe_fromUserQuery(
-              inputTextWithoutContextChipsFromPromptEditorState(editorState)
-          )
+            inputTextWithoutContextChipsFromPromptEditorState(editorState)
+        )
         : text
     const structuredMentions = toStructuredMentions(mentions)
     const retrievedContextPromise = contextRetriever.retrieveContext(
@@ -306,8 +306,8 @@ export async function computeContextAlternatives(
     const priorityContextPromise = skipQueryRewrite
         ? Promise.resolve([])
         : retrievedContextPromise
-              .then(p => getPriorityContext(text, editor, p))
-              .catch(() => getPriorityContext(text, editor, []))
+            .then(p => getPriorityContext(text, editor, p))
+            .catch(() => getPriorityContext(text, editor, []))
     const openCtxContextPromise = getContextForChatMessage(text.toString(), signal)
     const [priorityContext, retrievedContext, openCtxContext] = await Promise.all([
         priorityContextPromise,
