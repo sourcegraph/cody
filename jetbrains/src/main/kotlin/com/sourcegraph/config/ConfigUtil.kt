@@ -14,6 +14,7 @@ import com.intellij.openapi.project.ProjectManager
 import com.sourcegraph.cody.agent.CodyAgentService
 import com.sourcegraph.cody.agent.protocol_generated.ExtensionConfiguration
 import com.sourcegraph.cody.auth.CodyAuthService
+import com.sourcegraph.cody.auth.CodySecureStore
 import com.sourcegraph.cody.auth.SourcegraphServerPath
 import com.sourcegraph.cody.config.CodyApplicationSettings
 import com.typesafe.config.ConfigFactory
@@ -114,9 +115,17 @@ object ConfigUtil {
   fun getAuthorizationHeadersAsJson(project: Project): JsonObject {
     val endpoint = CodyAuthService.getInstance(project).getEndpoint()
     val authHeaders = CompletableFuture<Map<String, String>>()
-    CodyAgentService.withAgent(project) { agent ->
-      agent.server.internal_getAuthHeaders(endpoint.url).thenAccept { headers ->
-        authHeaders.complete(headers)
+
+    if (isCodyEnabled()) {
+      CodyAgentService.withAgent(project) { agent ->
+        agent.server.internal_getAuthHeaders(endpoint.url).thenAccept { headers ->
+          authHeaders.complete(headers)
+        }
+      }
+    } else {
+      val token = CodySecureStore.getFromSecureStore(endpoint.url)
+      if (token != null) {
+        authHeaders.complete(mapOf("Authorization" to "token $token"))
       }
     }
 

@@ -1,37 +1,26 @@
 package com.sourcegraph.find.browser;
 
-import com.intellij.openapi.util.Disposer;
 import com.intellij.ui.jcef.JBCefBrowser;
-import com.sourcegraph.config.ThemeUtil;
-import javax.swing.*;
 import org.cef.CefApp;
+import org.cef.browser.CefBrowser;
+import org.cef.handler.CefLifeSpanHandlerAdapter;
 import org.jetbrains.annotations.NotNull;
 
 public class SourcegraphJBCefBrowser extends JBCefBrowser {
-  private final JavaToJSBridge javaToJSBridge;
-
   public SourcegraphJBCefBrowser(
       @NotNull JSToJavaBridgeRequestHandler requestHandler, String endpointUrl) {
     super(endpointUrl.replaceAll("/+$", "").replace("https://", "http://") + "/html/index.html");
 
-    CefApp.getInstance().registerSchemeHandlerFactory("http", null, new HttpSchemeHandlerFactory());
-
-    // Create bridges, set up handlers, then run init function
-    String initJSCode = "window.initializeSourcegraph();";
-    JSToJavaBridge jsToJavaBridge = new JSToJavaBridge(this, requestHandler, initJSCode);
-    Disposer.register(this, jsToJavaBridge);
-    javaToJSBridge = new JavaToJSBridge(this);
-
-    UIManager.addPropertyChangeListener(
-        propertyChangeEvent -> {
-          if (propertyChangeEvent.getPropertyName().equals("lookAndFeel")) {
-            javaToJSBridge.callJS("themeChanged", ThemeUtil.getCurrentThemeAsJson());
+    // Schema registration need to happen in a callback, or it may crash in IJ 2023.2:
+    // https://youtrack.jetbrains.com/issue/JBR-5853
+    CefLifeSpanHandlerAdapter lifeSpanHandler =
+        new CefLifeSpanHandlerAdapter() {
+          public void onAfterCreated(CefBrowser browser) {
+            CefApp.getInstance()
+                .registerSchemeHandlerFactory("http", null, new HttpSchemeHandlerFactory());
           }
-        });
-  }
+        };
 
-  @NotNull
-  public JavaToJSBridge getJavaToJSBridge() {
-    return javaToJSBridge;
+    this.getJBCefClient().addLifeSpanHandler(lifeSpanHandler, this.getCefBrowser());
   }
 }

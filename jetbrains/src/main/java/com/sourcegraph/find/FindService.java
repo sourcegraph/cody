@@ -71,6 +71,7 @@ public class FindService implements Disposable {
       }
     } else {
       popup = new FindPopupDialog(project, mainPanel);
+      popup.show();
 
       // We add a manual listener to the global key handler since the editor component seems to work
       // around the
