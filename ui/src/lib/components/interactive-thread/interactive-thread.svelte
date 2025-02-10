@@ -8,7 +8,6 @@
 		type InteractiveThread,
 	} from '@sourcegraph/cody-shared'
 	import { Observable } from 'observable-fns'
-	import { onMount } from 'svelte'
 	import { getWebviewAPIContext } from '../../webview-api/context'
 
 	let {
@@ -27,12 +26,14 @@
 
 	// Start agent.
 	let agentState = $state<AgentState>()
-	onMount(() => {
-		const threadAgent = webviewAPI.startAgentForThread(threadID)
-		const subscription = threadAgent.subscribe((v) => {
+	$effect(() => {
+		const subscription = webviewAPI.startAgentForThread(threadID).subscribe((v) => {
 			agentState = v
 		})
-		return () => subscription.unsubscribe()
+		return () => {
+			subscription.unsubscribe()
+			agentState = undefined
+		}
 	})
 
 	async function handleSubmit(value: string): Promise<void> {

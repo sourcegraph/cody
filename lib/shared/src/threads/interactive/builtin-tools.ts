@@ -42,6 +42,8 @@ export type BuiltinTools = {
 
 let registered = false
 
+const fakeSleepFactor = 0
+
 export function registerBuiltinTools(toolService: ToolService): Disposable {
     if (registered) {
         return { [Symbol.dispose]: () => {} }
@@ -66,7 +68,7 @@ export function registerBuiltinTools(toolService: ToolService): Disposable {
 }
 
 const readFilesTool: ToolCallFunc<BuiltinTools['read-files']> = ({ args }) => {
-    return observableOfTimedSequence(250, {
+    return observableOfTimedSequence(fakeSleepFactor * 250, {
         status: 'done',
         progress: {},
         result: Object.fromEntries(
@@ -76,7 +78,7 @@ const readFilesTool: ToolCallFunc<BuiltinTools['read-files']> = ({ args }) => {
 }
 
 const editFileTool: ToolCallFunc<BuiltinTools['edit-file']> = ({ args, userInput }) => {
-    return observableOfTimedSequence(250, {
+    return observableOfTimedSequence(fakeSleepFactor * 250, {
         status: 'done',
         progress: {},
         result: undefined,
@@ -89,12 +91,12 @@ const terminalCommandTool: ToolCallFunc<BuiltinTools['terminal-command']> = ({ a
         return Observable.of({ status: 'blocked-on-user' })
     }
     return observableOfTimedSequence(
-        100,
+        fakeSleepFactor * 250,
         {
             status: 'in-progress',
             progress: { output: 'Running tests...' },
         },
-        750,
+        fakeSleepFactor * 750,
         {
             status: 'done',
             progress: { output: 'Running tests...' },

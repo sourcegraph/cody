@@ -145,7 +145,7 @@ async function handle(
         )
         signal.throwIfAborted()
     } else if (workItem.type === 'new-human-message') {
-        await sleep(500)
+        await fakeSleep(500)
         signal.throwIfAborted()
 
         threadService.update(thread.id, {
@@ -173,7 +173,7 @@ async function handle(
             ],
         })
     } else if (workItem.type === 'continue-agent') {
-        await sleep(500)
+        await fakeSleep(500)
         signal.throwIfAborted()
 
         const numSteps = thread.steps.length
@@ -257,6 +257,9 @@ async function handle(
     }
 }
 
-async function sleep(msec: number) {
-    return new Promise(resolve => setTimeout(resolve, msec))
+const useFakeSleep = false
+async function fakeSleep(msec: number): Promise<void> {
+    if (useFakeSleep) {
+        await new Promise(resolve => setTimeout(resolve, msec))
+    }
 }
