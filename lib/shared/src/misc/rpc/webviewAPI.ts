@@ -1,5 +1,12 @@
 import { type Observable, map } from 'observable-fns'
-import type { AuthStatus, ModelsData, ResolvedConfiguration, UserProductSubscription } from '../..'
+import type {
+    AgentState,
+    AuthStatus,
+    ModelsData,
+    ResolvedConfiguration,
+    ThreadID,
+    UserProductSubscription,
+} from '../..'
 import type { SerializedPromptEditorState } from '../..'
 import type { ChatMessage, UserLocalHistory } from '../../chat/transcript/messages'
 import type { ContextItem, DefaultContext } from '../../codebase-context/messages'
@@ -13,6 +20,7 @@ import type {
     Prompt,
     PromptTag,
 } from '../../sourcegraph-api/graphql/client'
+import type { InteractiveThreadService } from '../../threads/interactive/thread-service'
 import { type createMessageAPIForWebview, proxyExtensionAPI } from './rpc'
 
 export interface WebviewToExtensionAPI {
@@ -162,13 +170,22 @@ export function createExtensionAPI(
     }
 }
 
-export type UI3WebviewToExtensionAPI = Pick<WebviewToExtensionAPI, 'authStatus'>
+export type UI3WebviewToExtensionAPI = Pick<WebviewToExtensionAPI, 'authStatus'> & {
+    observeThread: InteractiveThreadService['observe']
+    updateThread: (
+        ...args: Parameters<InteractiveThreadService['update']>
+    ) => Observable<Awaited<ReturnType<InteractiveThreadService['update']>>>
+    startAgentForThread: (threadID: ThreadID) => Observable<AgentState>
+}
 
 export function createUI3ExtensionAPI(
     messageAPI: ReturnType<typeof createMessageAPIForWebview>
 ): UI3WebviewToExtensionAPI {
     return {
         authStatus: proxyExtensionAPI(messageAPI, 'authStatus'),
+        observeThread: proxyExtensionAPI(messageAPI, 'observeThread'),
+        updateThread: proxyExtensionAPI(messageAPI, 'updateThread'),
+        startAgentForThread: proxyExtensionAPI(messageAPI, 'startAgentForThread'),
     }
 }
 

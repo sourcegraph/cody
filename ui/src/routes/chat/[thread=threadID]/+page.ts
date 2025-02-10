@@ -1,10 +1,11 @@
 import type { PageLoad } from './$types'
 
 export const load: PageLoad = async ({ parent, params }) => {
-    const threadService = (await parent()).threadService
-    const thread = threadService.observe(params.thread, {
+    const { webviewAPIClient } = await parent()
+
+    const thread = webviewAPIClient.api.observeThread(params.thread, {
         getOrCreate: true,
     })
-
-    return { thread }
+    const threadAgent = webviewAPIClient.api.startAgentForThread(params.thread)
+    return { thread, threadAgent }
 }

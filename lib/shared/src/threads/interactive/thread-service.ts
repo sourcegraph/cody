@@ -212,3 +212,5 @@ export function createInteractiveThreadService(threadStorage: ThreadStorage): In
         },
     }
 }
+
+export const interactiveThreadService = createInteractiveThreadService(mapThreadStorage())

@@ -14,8 +14,8 @@
 </script>
 
 <Tooltip.Provider delayDuration={500} disableHoverableContent={true}>
-	<div class="flex flex-col h-[100vh]">
-		<Navbar.Root class="flex-shrink-0">
+	<div class="flex flex-col h-[100vh] overflow-hidden">
+		<Navbar.Root class="flex-shrink-0 bg-background">
 			<Navbar.Item path="/chat" title="Chat" />
 			<Navbar.Item path="/prompts" title="Prompts" />
 			<Navbar.Item path="/history" title="History" />
@@ -28,10 +28,10 @@
 			</aside>
 		</Navbar.Root>
 
-		<div class="p-2 flex-1 [&>*]:h-full">
+		<div class="p-2 flex-1 [&>*]:h-full overflow-auto">
 			{@render children()}
 		</div>
 
-		<StateDebugOverlay />
+		<StateDebugOverlay class="flex-shrink-0" />
 	</div>
 </Tooltip.Provider>

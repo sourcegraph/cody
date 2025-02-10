@@ -234,10 +234,10 @@ function callExtensionAPI<T>(
 /**
  * Create a proxy for an extension API method.
  */
-export function proxyExtensionAPI<M extends keyof WebviewToExtensionAPI>(
-    messageAPI: MessageAPI<RequestMessage, ResponseMessage>,
-    method: M
-): WebviewToExtensionAPI[M] {
+export function proxyExtensionAPI<
+    API extends Record<string, (...args: any[]) => Observable<any>>,
+    M extends keyof API,
+>(messageAPI: MessageAPI<RequestMessage, ResponseMessage>, method: M): API[M] {
     return (...args: any[]): Observable<any> => {
         logRPCMessage('W->X', () => `call method=${method} args=${JSON.stringify(args)}`)
         return callExtensionAPI(messageAPI, method, args)

@@ -3,21 +3,20 @@
 	import Thread from '$lib/components/thread/thread.svelte'
 	import type { ThreadID, ThreadUpdate } from '$lib/types'
 	import {
+		firstValueFrom,
 		type AgentState,
 		type InteractiveThread,
-		type InteractiveThreadService,
 	} from '@sourcegraph/cody-shared'
 	import { Observable } from 'observable-fns'
+	import { getWebviewAPIContext } from '../../webview-api/context'
 
 	let {
 		threadID,
 		thread: threadObservable,
-		threadService,
 		agentState,
 	}: {
 		threadID: ThreadID
 		thread: Observable<InteractiveThread>
-		threadService: InteractiveThreadService
 		agentState: AgentState
 	} = $props()
 
@@ -25,12 +24,18 @@
 		$threadObservable as InteractiveThread | undefined,
 	)
 
+	let webviewAPI = getWebviewAPIContext()
 	async function handleSubmit(value: string): Promise<void> {
-		threadService.update(threadID, { type: 'append-human-message', content: value })
+		await firstValueFrom(
+			webviewAPI.updateThread(threadID, {
+				type: 'append-human-message',
+				content: value,
+			}),
+		)
 	}
 
-	function updateThread(update: ThreadUpdate): void {
-		threadService.update(threadID, update)
+	async function updateThread(update: ThreadUpdate): Promise<void> {
+		await firstValueFrom(webviewAPI.updateThread(threadID, update))
 	}
 
 	let showDebug = false
@@ -40,7 +45,7 @@
 	<div class="flex flex-col gap-4">
 		{#if showDebug}
 			<pre
-				class="overflow-auto max-h-[200px] bg-input/30 text-xxs p-2 rounded-xs">{JSON.stringify(
+				class="overflow-auto h-[150px] bg-input/30 text-xxs p-2 rounded-xs flex-shrink-0">{JSON.stringify(
 					thread,
 					null,
 					2,

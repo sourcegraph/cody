@@ -2,10 +2,14 @@ import {
     type MessageAPI,
     type RequestMessage,
     type ResponseMessage,
+    type UI3WebviewToExtensionAPI,
     type UI3Window,
     type WindowID,
     addMessageListenersForExtensionAPI,
     authStatus,
+    createAgentForInteractiveThread,
+    interactiveThreadService,
+    promiseFactoryToObservable,
 } from '@sourcegraph/cody-shared'
 
 export interface UI3Service {
@@ -35,8 +39,13 @@ export function createUI3Service(): UI3Service {
             }
             windows.set(id, w)
 
-            addMessageListenersForExtensionAPI(messageAPI, {
+            addMessageListenersForExtensionAPI<UI3WebviewToExtensionAPI>(messageAPI, {
                 authStatus: () => authStatus,
+                observeThread: (...args) => interactiveThreadService.observe(...args),
+                updateThread: (...args) =>
+                    promiseFactoryToObservable(() => interactiveThreadService.update(...args)),
+                startAgentForThread: (...args) =>
+                    createAgentForInteractiveThread(interactiveThreadService, ...args),
             })
 
             return w
