@@ -54,9 +54,7 @@ export class PromptBuilder {
             this._isCacheEnabled = logFirstEnrollmentEvent(
                 FeatureFlag.CodyPromptCachingOnMessages,
                 !!storeLastValue(
-                    featureFlagProvider.evaluatedFeatureFlag(
-                        FeatureFlag.SmartApplyContextDataCollectionFlag
-                    )
+                    featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyPromptCachingOnMessages)
                 ).value
             )
         }
