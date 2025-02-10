@@ -226,7 +226,7 @@ function drawDiffColors(
     }
 }
 
-const DIFF_COLORS = {
+export const DIFF_COLORS = {
     inserted: {
         line: 'rgba(155, 185, 85, 0.1)',
         text: 'rgba(155, 185, 85, 0.15)',

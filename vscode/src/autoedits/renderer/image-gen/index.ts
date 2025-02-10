@@ -1,4 +1,5 @@
-import type * as vscode from 'vscode'
+import { isMacOS } from '@sourcegraph/cody-shared'
+import * as vscode from 'vscode'
 import type {
     AddedLineInfo,
     DecorationInfo,
@@ -10,7 +11,7 @@ import type {
     UnchangedLineInfo,
 } from '../decorators/base'
 import { blockify } from '../decorators/blockify-new'
-import { drawDecorationsToCanvas, initCanvas } from './canvas'
+import { DIFF_COLORS, drawDecorationsToCanvas, initCanvas } from './canvas'
 import { initSyntaxHighlighter, syntaxHighlightDecorations } from './highlight'
 
 export async function initImageSuggestionService() {
@@ -29,14 +30,51 @@ export function generateSuggestionAsImage({ lang, decorations, mode, document }:
     dark: string
 } {
     const diff = makeDecoratedDiff(decorations, lang, mode, document)
+    const { fontSize, lineHeight } = getFontSizeAndLineHeight()
+    const renderConfig = {
+        fontSize,
+        lineHeight,
+        padding: { x: 2, y: 2 },
+        maxWidth: 600,
+        pixelRatio: 2,
+        diffColors: DIFF_COLORS,
+    }
     return {
-        dark: drawDecorationsToCanvas(diff.dark, 'dark', mode).toDataURL('image/png'),
-        light: drawDecorationsToCanvas(diff.light, 'light', mode).toDataURL('image/png'),
+        dark: drawDecorationsToCanvas(diff.dark, 'dark', mode, renderConfig).toDataURL('image/png'),
+        light: drawDecorationsToCanvas(diff.light, 'light', mode, renderConfig).toDataURL('image/png'),
     }
 }
 
 export interface DecoratedDiff {
     lines: DecorationLineInfo[]
+}
+
+export function getDefaultLineHeight(fontSize: number): number {
+    // TODO: What about Linux?
+    const GOLDEN_LINE_HEIGHT_RATIO = isMacOS() ? 1.5 : 1.35
+    const MINIMUM_LINE_HEIGHT = 8
+
+    const userSpecifiedLineHeight =
+        vscode.workspace.getConfiguration('editor').get<number>('lineHeight') || 0
+
+    if (userSpecifiedLineHeight === 0) {
+        // 0 is the default
+        return Math.round(GOLDEN_LINE_HEIGHT_RATIO * fontSize) // fontSize is editor.fontSize
+    }
+
+    if (userSpecifiedLineHeight < MINIMUM_LINE_HEIGHT) {
+        // VS Code won't use this line height, lets return the safe minimum
+        return MINIMUM_LINE_HEIGHT
+    }
+
+    // Return the user preference
+    return userSpecifiedLineHeight
+}
+
+export function getFontSizeAndLineHeight(): { fontSize: number; lineHeight: number } {
+    const fontSize = vscode.workspace.getConfiguration('editor').get<number>('fontSize') || 12
+    const lineHeight = getDefaultLineHeight(fontSize)
+    return { fontSize, lineHeight }
 }
 
 export function makeDecoratedDiff(
