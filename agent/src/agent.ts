@@ -10,10 +10,12 @@ import {
     CodyIDE,
     ModelUsage,
     checkIfEnterpriseUser,
+    createMessageAPIForExtension,
     currentAuthStatus,
     currentAuthStatusAuthed,
     firstNonPendingAuthStatus,
     firstResultFromOperation,
+    isWindowID,
     resolvedConfig,
     telemetryRecorder,
     waitUntilComplete,
@@ -1419,8 +1421,42 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
         this.registerAuthenticatedRequest('ui3/window/new', async () => {
             // TODO!(sqs): create new ui3 handler
-            const window = await ui3Service.createWindow()
+            const onMessageCallbacks: ((message: Extract<WebviewMessage, {command:'rpc/request'}>) => void)[] = []
+            const messageAPI = createMessageAPIForExtension({
+                postMessage: msg => this.conn.sendNotification('webview/postMessage', msg),
+                postError: error => {
+                    console.error(error)
+                },
+                onMessage: callback => {
+                    // TODO!(sqs)
+                    // const handler: (event: MessageEvent) => void = event => {
+                    //     callback(event.data)
+                    // }
+                    // self.addEventListener('message', handler)
+                    // return () => self.removeEventListener('message', handler)
+                    onMessageCallbacks.push(callback)
+                    return () => {
+                        const index = onMessageCallbacks.indexOf(callback)
+                        if (index !== -1) {
+                            onMessageCallbacks.splice(index, 1)
+                        }
+                    }
+                },
+            })
+            const window = await ui3Service.createWindow(messageAPI, (msg:WebviewMessage) => {
+                for (const c of onMessageCallbacks) {
+                    console.log('Message2 command=',msg.command)
+                    c(msg)
+                }
+            })
             return { id: window.id }
+        })
+        this.registerNotification('ui3/webview/receiveMessage', async ({ id, message }) => {
+            if (!isWindowID(id)) {
+                throw new Error(`invalid window id ${id}`)
+            }
+            console.log('Message command=', message.command)
+             ui3Service.receiveMessage(id, message)
         })
     }
 

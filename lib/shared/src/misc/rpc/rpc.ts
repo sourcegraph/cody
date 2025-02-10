@@ -67,7 +67,7 @@ function generateStreamId(): string {
     return Math.random().toString(36).slice(4) + Date.now().toString(36)
 }
 
-interface MessageAPI<
+export interface MessageAPI<
     TSend extends RequestMessage | ResponseMessage,
     TReceive extends RequestMessage | ResponseMessage,
 > {
@@ -83,7 +83,7 @@ interface MessageAPI<
 }
 
 export function createMessageAPIForExtension<
-    TWebviewMessage extends { command: 'rpc/request'; message: RequestMessage } | { command: string },
+    TWebviewMessage extends { command: 'rpc/request'; message: RequestMessage } ,
     TExtensionMessage extends { type: 'rpc/response'; message: ResponseMessage },
 >(
     webviewAPI: GenericWebviewAPIWrapper<TWebviewMessage, TExtensionMessage>

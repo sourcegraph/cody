@@ -39,6 +39,7 @@ export async function createWebviewAPIClient(): Promise<WebviewAPIClient> {
         serverEndpoint,
         accessToken,
         createAgentWorker: CREATE_AGENT_WORKER,
+        trace:true,
     })
     const win = await agentClient?.rpc.sendRequest<{ id: WindowID }>('ui3/window/new', null)
 
@@ -55,7 +56,8 @@ export async function createWebviewAPIClient(): Promise<WebviewAPIClient> {
             } else {
                 // TODO!(sqs)
                 console.error(
-                    'Got webview/postMessage for another window, this is unnecessary and just slows stuff down'
+                    'Got webview/postMessage for another window, this is unnecessary and just slows stuff down',
+                    {messageWindowID: id, ourWindowID:win.id}
                 )
             }
         }
@@ -74,10 +76,14 @@ export async function createWebviewAPIClient(): Promise<WebviewAPIClient> {
 
  type VSCodeWrapper = GenericVSCodeWrapper<WebviewMessage, ExtensionMessage>
 
+ /**
+  * When running in the browser (not in a VS Code webview), this is how we communicate with the
+  * agent running in the Web Worker.
+  */
  function createVSCodeWrapperForBrowser(agentClient: Awaited<ReturnType<typeof createAgentClient>>,win:UI3Window,onMessageCallbacks: ((message: ExtensionMessage) => void)[]):VSCodeWrapper {
     return {
     postMessage: message => {
-        agentClient.rpc.sendRequest('webview/receiveMessage', {
+        agentClient.rpc.sendNotification('ui3/webview/receiveMessage', {
             id: win.id,
             message: forceHydration(message),
         })
@@ -109,8 +115,11 @@ interface VSCodeApi {
     postMessage: (message: unknown) => void
 }
 
-
- function createVSCodeWrapperForVSCodeWebview(): VSCodeWrapper {
+/**
+  * When running in a VS Code webview (not a web browser), this is how we communicate with the agent
+  * running in the extension host.
+  */
+function createVSCodeWrapperForVSCodeWebview(): VSCodeWrapper {
         const vsCodeApi = acquireVsCodeApi()
         return {
             postMessage: message => vsCodeApi.postMessage(forceHydration(message)),

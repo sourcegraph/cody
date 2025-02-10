@@ -381,6 +381,8 @@ export type ClientNotifications = {
     'secrets/didChange': [{ key: string }]
 
     'window/didChangeFocus': [{ focused: boolean }]
+
+    'ui3/webview/receiveMessage': [{ id: string; message: WebviewMessage }]
 }
 
 // ================

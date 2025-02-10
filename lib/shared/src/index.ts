@@ -387,6 +387,7 @@ export {
     type RequestMessage,
     type GenericVSCodeWrapper,
     type GenericWebviewAPIWrapper,
+    type MessageAPI,
     createMessageAPIForExtension,
 } from './misc/rpc/rpc'
 export * from './misc/observable'
