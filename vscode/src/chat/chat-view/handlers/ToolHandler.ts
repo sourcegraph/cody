@@ -21,7 +21,6 @@ interface ToolCall {
     input: any
 }
 
-// <function>{"description": "Find snippets of code from the codebase most relevant to the search query. This performs best when the search query is more precise and relating to the function or purpose of code. Results will be poor if asking a very broad question, such as asking about the general 'framework' or 'implementation' of a large component or system. Note that if you try to search over more than 500 files, the quality of the search results will be substantially worse. Try to only search over a large number of files if it is really necessary.", "name": "codebase_search", "parameters": {"$schema": "https://json-schema.org/draft/2020-12/schema", "additionalProperties": false, "properties": {"Query": {"description": "Search query", "type": "string"}, "TargetDirectories": {"description": "List of absolute paths to directories to search over", "items": {"type": "string"}, "type": "array"}}, "required": ["Query", "TargetDirectories"], "type": "object"}}</function>
 // <function>{"description": "View the contents of a file. The lines of the file are 0-indexed, and the output of this tool call will be the file contents from StartLine to EndLine, together with a summary of the lines outside of StartLine and EndLine. Note that this call can view at most 200 lines at a time.\n\nWhen using this tool to gather information, it's your responsibility to ensure you have the COMPLETE context. Specifically, each time you call this command you should:\n1) Assess if the file contents you viewed are sufficient to proceed with your task.\n2) Take note of where there are lines not shown. These are represented by <... XX more lines from [code item] not shown ...> in the tool response.\n3) If the file contents you have viewed are insufficient, and you suspect they may be in lines not shown, proactively call the tool again to view those lines.\n4) When in doubt, call this tool again to gather more information. Remember that partial file views may miss critical dependencies, imports, or functionality.\n", "name": "view_file", "parameters": {"$schema": "https://json-schema.org/draft/2020-12/schema", "additionalProperties": false, "properties": {"AbsolutePath": {"description": "Path to file to view. Must be an absolute path.", "type": "string"}, "EndLine": {"description": "Endline to view. This cannot be more than 200 lines away from StartLine", "type": "integer"}, "StartLine": {"description": "Startline to view", "type": "integer"}}, "required": ["AbsolutePath", "StartLine", "EndLine"], "type": "object"}}</function>
 // <function>{"description": "View the content of a code item node, such as a class or a function in a file. You must use a fully qualified code item name. Such as those return by the grep_search tool. For example, if you have a class called `Foo` and you want to view the function definition `bar` in the `Foo` class, you would use `Foo.bar` as the NodeName. Do not request to view a symbol if the contents have been previously shown by the codebase_search tool. If the symbol is not found in a file, the tool will return an empty string instead.", "name": "view_code_item", "parameters": {"$schema": "https://json-schema.org/draft/2020-12/schema", "additionalProperties": false, "properties": {"AbsolutePath": {"description": "Path to the file to find the code node", "type": "string"}, "NodeName": {"description": "The name of the node to view", "type": "string"}}, "required": ["AbsolutePath", "NodeName"], "type": "object"}}</function>
 // <function>{"description": "Finds other files that are related to or commonly used with the input file. Useful for retrieving adjacent files to understand context or make next edits", "name": "related_files", "parameters": {"$schema": "https://json-schema.org/draft/2020-12/schema", "additionalProperties": false, "properties": {"absolutepath": {"description": "Input file absolute path", "type": "string"}}, "required": ["absolutepath"], "type": "object"}}</function>
@@ -299,27 +298,77 @@ const allTools: CodyTool[] = [
     },
 ]
 
+type CursorLocation = {
+    line: number
+    column: number
+}
+
+type CurrentMessageMetadata = {
+    workspacePaths: string[]
+    openFile?: string
+    otherOpenFiles?: string[]
+    cursorLocation?: CursorLocation
+    cursorLocationLine?: string
+}
+
+function getCurrentMessageMetadata(): CurrentMessageMetadata {
+    const workspaceFolders = vscode.workspace.workspaceFolders
+    if (!workspaceFolders || workspaceFolders.length === 0) {
+        throw new Error('No workspace folder found')
+    }
+    const paths = workspaceFolders.map(workspaceFolder => workspaceFolder.uri.path)
+    const activeEditor = vscode.window.activeTextEditor
+    const openEditors = vscode.window.visibleTextEditors
+
+    let cursorLocation: CursorLocation | undefined
+    let cursorLocationLine: string | undefined
+    let openFile: string | undefined
+    if (activeEditor) {
+        const position = activeEditor.selection.active
+        const line = activeEditor.document.lineAt(position.line)
+
+        openFile = activeEditor.document.uri.path
+        cursorLocation = {
+            line: position.line + 1,
+            column: position.character + 1,
+        }
+        cursorLocationLine = line.text
+    }
+
+    const otherOpenFiles = openEditors
+        .filter(editor => editor.document.uri.path !== openFile)
+        .slice(0, 10)
+        .map(editor => editor.document.uri.path)
+
+    return {
+        workspacePaths: paths,
+        openFile,
+        cursorLocation,
+        cursorLocationLine,
+        otherOpenFiles,
+    }
+}
+
 export class ExperimentalToolHandler implements AgentHandler {
     constructor(private anthropicAPI: Anthropic) {}
 
     public async handle({ inputText }: AgentRequest, delegate: AgentHandlerDelegate): Promise<void> {
+        const metadata = getCurrentMessageMetadata()
+        const hiddenMetadata = `<hiddenMetadata>${JSON.stringify(metadata)}</hiddenMetadata>`
+
         const maxTurns = 10
         let turns = 0
+
         const subTranscript: Array<MessageParam> = [
             {
                 role: 'user',
-                content: inputText.toString(),
+                content: `${inputText.toString()}\n${hiddenMetadata}`,
             },
         ]
         const subViewTranscript: SubMessage[] = []
         let messageInProgress: SubMessage | undefined
 
-        const workspaceFolder = vscode.workspace.workspaceFolders?.[0]
-        if (!workspaceFolder) {
-            throw new Error('No workspace folder found')
-        }
-        const path = workspaceFolder.uri.path
-        const system = SYSTEM_PROMPT.replace('${workspacePaths}', path)
+        const system = SYSTEM_PROMPT.replace('${workspacePaths}', metadata.workspacePaths.join(', '))
 
         while (true) {
             const toolCalls: ToolCall[] = []
