@@ -1,21 +1,7 @@
+import { type UI3Window, type WindowID, newWindowID } from '@sourcegraph/cody-shared'
+
 export interface UI3Service {
     createWindow(): Promise<UI3Window>
-}
-
-type UUID = `${string}-${string}-${string}-${string}-${string}`
-
-export type WindowID = `W-${UUID}`
-
-export function newWindowID(): WindowID {
-    return `W-${crypto.randomUUID()}`
-}
-
-export function isWindowID(id: string): id is WindowID {
-    return id.startsWith('W-')
-}
-
-export interface UI3Window {
-    id: WindowID
 }
 
 export function createUI3Service(): UI3Service {

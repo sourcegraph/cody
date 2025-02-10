@@ -4,9 +4,13 @@
 	import { route } from '$lib/route-helpers'
 	import Plus from '@lucide/svelte/icons/plus'
 	import '../app.css'
+	import StateDebugOverlay from '../lib/components/state-debug-overlay.svelte'
+	import { setWebviewAPIContext } from '../lib/webview-api/context'
 	import { STORYBOOK_CONFIG } from './storybook/config'
 
-	let { children } = $props()
+	let { data, children } = $props()
+
+	setWebviewAPIContext(data.webviewAPIClient.api)
 </script>
 
 <Tooltip.Provider delayDuration={500} disableHoverableContent={true}>
@@ -27,5 +31,7 @@
 		<div class="p-2 flex-1 [&>*]:h-full">
 			{@render children()}
 		</div>
+
+		<StateDebugOverlay />
 	</div>
 </Tooltip.Provider>
