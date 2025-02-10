@@ -1,4 +1,5 @@
 import {
+    type InteractiveThreadService,
     type MessageAPI,
     type RequestMessage,
     type ResponseMessage,
@@ -8,7 +9,6 @@ import {
     addMessageListenersForExtensionAPI,
     authStatus,
     createAgentForInteractiveThread,
-    interactiveThreadService,
     promiseFactoryToObservable,
 } from '@sourcegraph/cody-shared'
 
@@ -19,7 +19,11 @@ export interface UI3Service {
     ): Promise<UI3Window>
 }
 
-export function createUI3Service(): UI3Service {
+interface UI3Deps {
+    interactiveThreadService: InteractiveThreadService
+}
+
+export function createUI3Service({ interactiveThreadService }: UI3Deps): UI3Service {
     type UI3WindowInternal = UI3Window & {
         messageAPI: MessageAPI<ResponseMessage, RequestMessage>
     }
@@ -46,6 +50,7 @@ export function createUI3Service(): UI3Service {
                     promiseFactoryToObservable(() => interactiveThreadService.update(...args)),
                 startAgentForThread: (...args) =>
                     createAgentForInteractiveThread(interactiveThreadService, ...args),
+                historyThreadIDs: () => interactiveThreadService.observeHistoryThreadIDs(),
             })
 
             return w
@@ -53,4 +58,15 @@ export function createUI3Service(): UI3Service {
     }
 }
 
-export const ui3Service = createUI3Service()
+let globalUI3Service: UI3Service | undefined
+
+export function getUI3Service(): UI3Service {
+    if (!globalUI3Service) {
+        throw new Error('UI3Service not initialized')
+    }
+    return globalUI3Service
+}
+
+export function setUI3Service(ui3Service: UI3Service): void {
+    globalUI3Service = ui3Service
+}

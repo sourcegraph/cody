@@ -20,6 +20,7 @@ import {
     combineLatest,
     contextFiltersProvider,
     createDisposables,
+    createInteractiveThreadService,
     currentAuthStatus,
     currentUserProductSubscription,
     distinctUntilChanged,
@@ -113,6 +114,7 @@ import {
 import { openCodyIssueReporter } from './services/utils/issue-reporter'
 import { SupercompletionProvider } from './supercompletions/supercompletion-provider'
 import { parseAllVisibleDocuments, updateParseTreeOnEdit } from './tree-sitter/parse-tree-cache'
+import { createUI3Service, setUI3Service } from './ui3/ui3'
 import { version } from './version'
 
 /**
@@ -308,6 +310,9 @@ const register = async (
     registerDebugCommands(context, disposables)
     registerUpgradeHandlers(disposables)
     disposables.push(charactersLogger)
+
+    const interactiveThreadService = createInteractiveThreadService(localStorage.storage)
+    setUI3Service(createUI3Service({ interactiveThreadService }))
 
     // INC-267 do NOT await on this promise. This promise triggers
     // `vscode.window.showInformationMessage()`, which only resolves after the

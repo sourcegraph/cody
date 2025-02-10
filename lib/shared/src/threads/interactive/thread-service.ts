@@ -1,4 +1,6 @@
 import { Observable } from 'observable-fns'
+import type { Memento } from 'vscode'
+import { NEVER, concat } from '../../misc/observable'
 import type { BuiltinTools } from './builtin-tools'
 import {
     type InteractiveThread,
@@ -6,6 +8,7 @@ import {
     type ThreadStep,
     type ThreadStepID,
     type ThreadStepUserInput,
+    isThreadID,
     newThreadStepID,
 } from './thread'
 import type { ToolInvocation } from './tool-service'
@@ -25,6 +28,8 @@ export interface InteractiveThreadService {
      * newer version.
      */
     update(threadID: ThreadID, update: ThreadUpdate): Promise<InteractiveThread>
+
+    observeHistoryThreadIDs(): Observable<ThreadID[]>
 }
 
 interface ObserveThreadOptions {
@@ -88,13 +93,13 @@ export function localStorageThreadStorage(storage: Storage): ThreadStorage {
     }
 }
 
-export function createInteractiveThreadService(threadStorage: ThreadStorage): InteractiveThreadService {
+export function createInteractiveThreadService(storage: Memento): InteractiveThreadService {
     const subscribers = new Map<ThreadID, Set<(thread: InteractiveThread) => void>>()
 
     return {
         observe(threadID: ThreadID, options: ObserveThreadOptions): Observable<InteractiveThread> {
             return new Observable<InteractiveThread>(subscriber => {
-                let thread = threadStorage.get(threadID)
+                let thread = storage.get<InteractiveThread>(threadID)
                 if (options.create && !thread) {
                     throw new Error(`thread ${threadID} already exists`)
                 }
@@ -104,7 +109,7 @@ export function createInteractiveThreadService(threadStorage: ThreadStorage): In
                         id: threadID,
                         steps: [],
                     }
-                    threadStorage.store(thread)
+                    storage.update(thread.id, thread) // TODO!(sqs): await
                 }
 
                 if (!thread) {
@@ -125,7 +130,7 @@ export function createInteractiveThreadService(threadStorage: ThreadStorage): In
         },
 
         async update(threadID: ThreadID, update: ThreadUpdate): Promise<InteractiveThread> {
-            const prev = threadStorage.get(threadID)
+            const prev = storage.get(threadID)
             if (!prev) {
                 throw new Error(`thread ${threadID} not found`)
             }
@@ -204,13 +209,15 @@ export function createInteractiveThreadService(threadStorage: ThreadStorage): In
                     break
             }
 
-            threadStorage.store(thread)
+            await storage.update(thread.id, thread)
             for (const callback of subscribers.get(threadID) ?? []) {
                 callback(thread)
             }
             return thread
         },
+        observeHistoryThreadIDs(): Observable<ThreadID[]> {
+            const threadIDs = storage.keys().filter(isThreadID)
+            return concat(Observable.of(threadIDs), NEVER)
+        },
     }
 }
-
-export const interactiveThreadService = createInteractiveThreadService(mapThreadStorage())

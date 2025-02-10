@@ -51,7 +51,7 @@ class LocalStorage implements LocalStorageForModelPreferences {
      */
     private _storage: Memento | null = null
 
-    private get storage(): Memento {
+    public get storage(): Memento {
         if (!this._storage) {
             throw new Error('LocalStorage not initialized')
         }

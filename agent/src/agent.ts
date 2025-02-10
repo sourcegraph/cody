@@ -75,7 +75,7 @@ import type { FixupControlApplicator } from '../../vscode/src/non-stop/strategie
 import { authProvider } from '../../vscode/src/services/AuthProvider'
 import { localStorage } from '../../vscode/src/services/LocalStorageProvider'
 import { AgentWorkspaceEdit } from '../../vscode/src/testutils/AgentWorkspaceEdit'
-import { ui3Service } from '../../vscode/src/ui3/ui3'
+import { getUI3Service } from '../../vscode/src/ui3/ui3'
 import { AgentAuthHandler } from './AgentAuthHandler'
 import { AgentFixupControls } from './AgentFixupControls'
 import { AgentProviders } from './AgentProviders'
@@ -1427,7 +1427,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
         >()
         this.registerAuthenticatedRequest('ui3/window/new', async () => {
             const id = newWindowID()
-            const window = await ui3Service.createWindow(
+            const window = await getUI3Service().createWindow(
                 id,
                 createMessageAPIForExtension({
                     postMessage: message =>

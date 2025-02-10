@@ -176,6 +176,7 @@ export type UI3WebviewToExtensionAPI = Pick<WebviewToExtensionAPI, 'authStatus'>
         ...args: Parameters<InteractiveThreadService['update']>
     ) => Observable<Awaited<ReturnType<InteractiveThreadService['update']>>>
     startAgentForThread: (threadID: ThreadID) => Observable<AgentState>
+    historyThreadIDs(): Observable<ThreadID[]>
 }
 
 export function createUI3ExtensionAPI(
@@ -186,6 +187,7 @@ export function createUI3ExtensionAPI(
         observeThread: proxyExtensionAPI(messageAPI, 'observeThread'),
         updateThread: proxyExtensionAPI(messageAPI, 'updateThread'),
         startAgentForThread: proxyExtensionAPI(messageAPI, 'startAgentForThread'),
+        historyThreadIDs: proxyExtensionAPI(messageAPI, 'historyThreadIDs'),
     }
 }
 
