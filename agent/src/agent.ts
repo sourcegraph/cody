@@ -71,6 +71,7 @@ import type { FixupControlApplicator } from '../../vscode/src/non-stop/strategie
 import { authProvider } from '../../vscode/src/services/AuthProvider'
 import { localStorage } from '../../vscode/src/services/LocalStorageProvider'
 import { AgentWorkspaceEdit } from '../../vscode/src/testutils/AgentWorkspaceEdit'
+import { ui3Service } from '../../vscode/src/ui3/ui3'
 import { AgentAuthHandler } from './AgentAuthHandler'
 import { AgentFixupControls } from './AgentFixupControls'
 import { AgentProviders } from './AgentProviders'
@@ -1418,8 +1419,8 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
         this.registerAuthenticatedRequest('ui3/window/new', async () => {
             // TODO!(sqs): create new ui3 handler
-            const panelId = await this.createUI3Window()
-            return { windowId }
+            const window = await ui3Service.createWindow()
+            return { id: window.id }
         })
     }
 
@@ -1661,8 +1662,6 @@ export class Agent extends MessageHandler implements ExtensionClient {
         }
         return AgentFixupControls.serialize(result.task)
     }
-
-    private async createUI3Window(): Promise<string> {}
 
     private async createChatPanel(commandResult: Thenable<CommandResult | undefined>): Promise<string> {
         const result = (await commandResult) ?? { type: 'empty-command-result' }

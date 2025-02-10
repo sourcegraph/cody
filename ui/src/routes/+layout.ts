@@ -20,10 +20,8 @@ export const load: LayoutLoad = async () => {
               createAgentWorker: CREATE_AGENT_WORKER,
           })
         : null
-    const chat = await agentClient?.rpc.sendRequest<{ panelId: string; chatId?: string }>(
-        'chat/web/new',
-        null
-    )
+    const w = await agentClient?.rpc.sendRequest<{ id: string }>('ui3/window/new', null)
+    console.log('UI3 window', w)
 
     const threadService = createInteractiveThreadService(localStorageThreadStorage(window.localStorage))
 

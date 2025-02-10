@@ -280,7 +280,7 @@ export type ClientRequests = {
     // Attempts to wipe out any state that the extension has stored.
     'extension/reset': [null, null]
 
-    'ui3/window/new': [null, { windowId: string }]
+    'ui3/window/new': [null, { id: string }]
 }
 
 // ================

@@ -56,13 +56,13 @@ export async function createAgentClient({
     rpc.listen()
 
     rpc.onNotification('debug/message', message => {
-        if (debug) {
-            console.debug('agent: debug:', message)
+        if (debug && (message.level !== 'trace' || trace)) {
+            console.debug('agent: debug:', message.message)
         }
     })
     rpc.onNotification('webview/postMessage', message => {
         if (debug) {
-            console.debug('agent: debug:', message)
+            console.debug('agent: debug:', message.message)
         }
     })
 
