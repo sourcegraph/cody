@@ -295,88 +295,7 @@ const allTools: CodyTool[] = [
                 additionalProperties: false,
             },
         },
-        invoke: async (input: {
-            search_directory: string
-            pattern: string
-            includes?: string[]
-            excludes?: string[]
-            max_depth?: number
-            type?: 'file' | 'directory'
-        }) => {
-            const workspaceFolder = vscode.workspace.workspaceFolders?.[0]
-            if (!workspaceFolder) {
-                throw new Error('No workspace folder found')
-            }
-
-            const sanitizedPath = sanitizePathInWorkspace(workspaceFolder, input.search_directory)
-            const results: string[] = []
-
-            async function searchDirectory(
-                currentPath: vscode.Uri,
-                currentDepth: number
-            ): Promise<void> {
-                if (input.max_depth !== undefined && currentDepth > input.max_depth) {
-                    return
-                }
-
-                const entries = await vscode.workspace.fs.readDirectory(currentPath)
-
-                for (const [name, fileType] of entries) {
-                    const fullPath = vscode.Uri.joinPath(currentPath, name)
-                    const relativePath = path.relative(sanitizedPath.path, fullPath.path)
-
-                    if (input.excludes?.some(pattern => minimatch(relativePath, pattern))) {
-                        continue
-                    }
-
-                    const matchesPattern = minimatch(relativePath, input.pattern)
-                    const matchesIncludes =
-                        !input.includes?.length ||
-                        input.includes.some(pattern => minimatch(relativePath, pattern))
-
-                    if (fileType === vscode.FileType.Directory) {
-                        await searchDirectory(fullPath, currentDepth + 1)
-                    }
-
-                    if (
-                        fileType === vscode.FileType.File &&
-                        (!input.type || input.type === 'file') &&
-                        matchesPattern &&
-                        matchesIncludes
-                    ) {
-                        const stat = await vscode.workspace.fs.stat(fullPath)
-                        results.push(
-                            JSON.stringify({
-                                path: relativePath,
-                                type: 'file',
-                                size: stat.size,
-                                mtime: stat.mtime,
-                            })
-                        )
-                    }
-
-                    if (
-                        fileType === vscode.FileType.Directory &&
-                        input.type === 'directory' &&
-                        matchesPattern &&
-                        matchesIncludes
-                    ) {
-                        const stat = await vscode.workspace.fs.stat(fullPath)
-                        results.push(
-                            JSON.stringify({
-                                path: relativePath,
-                                type: 'directory',
-                                size: stat.size,
-                                mtime: stat.mtime,
-                            })
-                        )
-                    }
-                }
-            }
-
-            await searchDirectory(sanitizedPath, 0)
-            return results.join('\n')
-        },
+        invoke: invokeFindByName,
     },
 ]
 
@@ -663,4 +582,84 @@ function runCommand(
             }
         })
     })
+}
+
+async function invokeFindByName(input: {
+    search_directory: string
+    pattern: string
+    includes?: string[]
+    excludes?: string[]
+    max_depth?: number
+    type?: 'file' | 'directory'
+}): Promise<string> {
+    const workspaceFolder = vscode.workspace.workspaceFolders?.[0]
+    if (!workspaceFolder) {
+        throw new Error('No workspace folder found')
+    }
+
+    const sanitizedPath = sanitizePathInWorkspace(workspaceFolder, input.search_directory)
+    const results: string[] = []
+
+    async function searchDirectory(currentPath: vscode.Uri, currentDepth: number): Promise<void> {
+        if (input.max_depth !== undefined && currentDepth > input.max_depth) {
+            return
+        }
+
+        const entries = await vscode.workspace.fs.readDirectory(currentPath)
+
+        for (const [name, fileType] of entries) {
+            const fullPath = vscode.Uri.joinPath(currentPath, name)
+            const relativePath = path.relative(sanitizedPath.path, fullPath.path)
+
+            if (input.excludes?.some(pattern => minimatch(relativePath, pattern))) {
+                continue
+            }
+
+            const matchesPattern = minimatch(relativePath, input.pattern)
+            const matchesIncludes =
+                !input.includes?.length ||
+                input.includes.some(pattern => minimatch(relativePath, pattern))
+
+            if (fileType === vscode.FileType.Directory) {
+                await searchDirectory(fullPath, currentDepth + 1)
+            }
+
+            if (
+                fileType === vscode.FileType.File &&
+                (!input.type || input.type === 'file') &&
+                matchesPattern &&
+                matchesIncludes
+            ) {
+                const stat = await vscode.workspace.fs.stat(fullPath)
+                results.push(
+                    JSON.stringify({
+                        path: relativePath,
+                        type: 'file',
+                        size: stat.size,
+                        mtime: stat.mtime,
+                    })
+                )
+            }
+
+            if (
+                fileType === vscode.FileType.Directory &&
+                input.type === 'directory' &&
+                matchesPattern &&
+                matchesIncludes
+            ) {
+                const stat = await vscode.workspace.fs.stat(fullPath)
+                results.push(
+                    JSON.stringify({
+                        path: relativePath,
+                        type: 'directory',
+                        size: stat.size,
+                        mtime: stat.mtime,
+                    })
+                )
+            }
+        }
+    }
+
+    await searchDirectory(sanitizedPath, 0)
+    return results.join('\n')
 }
