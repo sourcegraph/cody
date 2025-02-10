@@ -247,10 +247,9 @@ export function proxyExtensionAPI<M extends keyof WebviewToExtensionAPI>(
 /**
  * Set up the extension to handle API requests from the webview.
  */
-export function addMessageListenersForExtensionAPI(
-    messageAPI: MessageAPI<ResponseMessage, RequestMessage>,
-    api: WebviewToExtensionAPI
-): { dispose: () => void } {
+export function addMessageListenersForExtensionAPI<
+    API extends Pick<WebviewToExtensionAPI, 'authStatus'>,
+>(messageAPI: MessageAPI<ResponseMessage, RequestMessage>, api: API): { dispose: () => void } {
     const activeListeners: Pick<AbortController, 'abort'>[] = []
     function messageListener({ data }: Pick<MessageEvent<RequestMessage>, 'data'>): void {
         if (!('method' in data)) {
@@ -286,7 +285,7 @@ export function addMessageListenersForExtensionAPI(
             messageAPI.removeEventListener('message', abortListener)
         }
 
-        const methodImpl = api[method as keyof WebviewToExtensionAPI]
+        const methodImpl = api[method as keyof API]
         if (!methodImpl) {
             removeFromActiveListeners()
             throw new Error(`invalid RPC call for method ${JSON.stringify(method)}`)

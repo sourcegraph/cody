@@ -162,6 +162,16 @@ export function createExtensionAPI(
     }
 }
 
+export type UI3WebviewToExtensionAPI = Pick<WebviewToExtensionAPI, 'authStatus'>
+
+export function createUI3ExtensionAPI(
+    messageAPI: ReturnType<typeof createMessageAPIForWebview>
+): UI3WebviewToExtensionAPI {
+    return {
+        authStatus: proxyExtensionAPI(messageAPI, 'authStatus'),
+    }
+}
+
 export interface MentionMenuData {
     providers: ContextMentionProviderMetadata[]
     items: (ContextItem & { icon?: string })[] | undefined

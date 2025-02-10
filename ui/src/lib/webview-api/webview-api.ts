@@ -1,10 +1,10 @@
 import {
     type GenericVSCodeWrapper,
+    type UI3WebviewToExtensionAPI,
     type UI3Window,
-    type WebviewToExtensionAPI,
     type WindowID,
-    createExtensionAPI,
     createMessageAPIForWebview,
+    createUI3ExtensionAPI,
     forceHydration,
     hydrateAfterPostMessage,
 } from '@sourcegraph/cody-shared'
@@ -18,7 +18,7 @@ const CREATE_AGENT_WORKER = (): Worker => new AgentWorker() as Worker
 
 interface WebviewAPIClient {
     window: UI3Window
-    api: WebviewToExtensionAPI
+    api: UI3WebviewToExtensionAPI
 }
 
 export async function createWebviewAPIClient(): Promise<WebviewAPIClient> {
@@ -73,7 +73,7 @@ export async function createWebviewAPIClient(): Promise<WebviewAPIClient> {
         ? createVSCodeWrapperForVSCodeWebview()
         : createVSCodeWrapperForBrowser(agentClient, win, onMessageCallbacks)
 
-    const api = createExtensionAPI(createMessageAPIForWebview(vscodeAPI))
+    const api = createUI3ExtensionAPI(createMessageAPIForWebview(vscodeAPI))
     return { window: win, api }
 }
 
