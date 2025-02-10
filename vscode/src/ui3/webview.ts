@@ -26,6 +26,11 @@ export function createUI3WebviewManager(): UI3WebviewService {
                 // state should include the location
                 const storedState = state as StoredWebviewState
                 await reviveWebviewPanel(panel, storedState || { location: 'editor' })
+
+                // TODO!(sqs): dedupe
+                panel.webview.html = await htmlForWebview(panel)
+                activeWebviews.add(panel)
+                panel.onDidDispose(() => activeWebviews.delete(panel))
             },
         })
     )
@@ -100,8 +105,10 @@ async function htmlForWebview(panel: vscode.WebviewPanel): Promise<string> {
     // TODO!(sqs): use csp from panel.webview.cspSource
     const { auth } = await currentResolvedConfig()
     const accessToken = auth.credentials && 'token' in auth.credentials ? auth.credentials.token : ''
-    return html.replace(
-        '</head>',
-        `<base href="${DEV_SERVER_URL}" /><meta name="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' ${DEV_SERVER_URL}; worker-src 'unsafe-inline' ${DEV_SERVER_URL}; style-src 'unsafe-inline';"><script>localStorage.serverEndpoint='https://sourcegraph.test:3443';localStorage.accessToken=${JSON.stringify(accessToken)};</script> </head>`
-    )
+    return html
+        .replace(
+            '</head>',
+            `<meta name="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' ${DEV_SERVER_URL}; worker-src 'unsafe-inline' ${DEV_SERVER_URL}; style-src 'unsafe-inline';"><script>localStorage.serverEndpoint='https://sourcegraph.test:3443';localStorage.accessToken=${JSON.stringify(accessToken)};</script> </head>`
+        )
+        .replaceAll('import("/@fs/', 'import("http://localhost:5133/@fs/')
 }

@@ -10,14 +10,11 @@ import {
 } from '@sourcegraph/cody-shared'
 import { createAgentClient } from '@sourcegraph/cody-web/lib/agent/agent.client'
 // @ts-ignore
-import AgentWorker from '@sourcegraph/cody-web/lib/agent/agent.worker?worker&inline' // TODO!(sqs): need inline for vscode cors from vscode-webview://
+import AgentWorker from '@sourcegraph/cody-web/lib/agent/agent.worker?worker'
 import { URI } from 'vscode-uri'
 import type { ExtensionMessage, WebviewMessage } from '../../../../vscode/src/chat/protocol'
 
-const CREATE_AGENT_WORKER = (): Worker => new AgentWorker() as Worker
-
 interface WebviewAPIClient {
-    window: UI3Window
     api: UI3WebviewToExtensionAPI
 }
 
@@ -35,49 +32,51 @@ export async function createWebviewAPIClient(): Promise<WebviewAPIClient> {
         )
     }
 
-    const agentClient = await createAgentClient({
-        serverEndpoint,
-        accessToken,
-        createAgentWorker: CREATE_AGENT_WORKER,
-        // trace: true,
-    })
-    const { windowID } = await agentClient.rpc.sendRequest<{ windowID: WindowID }>(
-        'ui3/window/new',
-        null
-    )
-    const win: UI3Window = { id: windowID }
-
-    const onMessageCallbacks: ((message: ExtensionMessage) => void)[] = []
-
-    // Set up transport.
-    agentClient.rpc.onNotification(
-        'ui3/window/message-from-extension',
-        ({ windowID, message }: { windowID: string; message: ExtensionMessage }) => {
-            if (win.id === windowID) {
-                for (const callback of onMessageCallbacks) {
-                    callback(hydrateAfterPostMessage(message, uri => URI.from(uri as any)))
-                }
-            } else {
-                // TODO!(sqs)
-                console.error(
-                    'Got webview/postMessage for another window, this is unnecessary and just slows stuff down',
-                    { messageWindowID: windowID, ourWindowID: win.id, message }
-                )
-            }
-        }
-    )
-
-    // Set up VS Code API wrapper.
+    let vscodeAPI: VSCodeWrapper
     const isVSCodeWebview = typeof acquireVsCodeApi !== 'undefined'
-    const vscodeAPI: VSCodeWrapper = isVSCodeWebview
-        ? createVSCodeWrapperForVSCodeWebview()
-        : createVSCodeWrapperForBrowser(agentClient, win, onMessageCallbacks)
+    if (isVSCodeWebview) {
+        vscodeAPI = createVSCodeWrapperForVSCodeWebview()
+    } else {
+        const agentClient = await createAgentClient({
+            serverEndpoint,
+            accessToken,
+            createAgentWorker: CREATE_AGENT_WORKER,
+            // trace: true,
+        })
+        const { windowID } = await agentClient.rpc.sendRequest<{ windowID: WindowID }>(
+            'ui3/window/new',
+            null
+        )
+        const win: UI3Window = { id: windowID }
+        const onMessageCallbacks: ((message: ExtensionMessage) => void)[] = []
+
+        // Set up transport.
+        agentClient.rpc.onNotification(
+            'ui3/window/message-from-extension',
+            ({ windowID, message }: { windowID: string; message: ExtensionMessage }) => {
+                if (win.id === windowID) {
+                    for (const callback of onMessageCallbacks) {
+                        callback(hydrateAfterPostMessage(message, uri => URI.from(uri as any)))
+                    }
+                } else {
+                    // TODO!(sqs)
+                    console.error(
+                        'Got webview/postMessage for another window, this is unnecessary and just slows stuff down',
+                        { messageWindowID: windowID, ourWindowID: win.id, message }
+                    )
+                }
+            }
+        )
+        vscodeAPI = createVSCodeWrapperForBrowser(agentClient, win, onMessageCallbacks)
+    }
 
     const api = createUI3ExtensionAPI(createMessageAPIForWebview(vscodeAPI))
-    return { window: win, api }
+    return { api }
 }
 
 type VSCodeWrapper = GenericVSCodeWrapper<WebviewMessage, ExtensionMessage>
+
+const CREATE_AGENT_WORKER = (): Worker => new AgentWorker() as Worker
 
 /**
  * When running in the browser (not in a VS Code webview), this is how we communicate with the
@@ -122,14 +121,22 @@ interface VSCodeApi {
     postMessage: (message: unknown) => void
 }
 
+let vsCodeApi: VSCodeApi | undefined
+
 /**
  * When running in a VS Code webview (not a web browser), this is how we communicate with the agent
  * running in the extension host.
  */
 function createVSCodeWrapperForVSCodeWebview(): VSCodeWrapper {
-    const vsCodeApi = acquireVsCodeApi()
+    if (!vsCodeApi) {
+        vsCodeApi = acquireVsCodeApi()
+    }
+    const api = vsCodeApi
     return {
-        postMessage: message => vsCodeApi.postMessage(forceHydration(message)),
+        postMessage: message => {
+            console.log('POSTMESSAGE FROM W TO X', message)
+            api.postMessage(forceHydration(message))
+        },
         onMessage: callback => {
             const listener = (event: MessageEvent<ExtensionMessage>): void => {
                 callback(hydrateAfterPostMessage(event.data, uri => URI.from(uri as any)))
@@ -137,7 +144,7 @@ function createVSCodeWrapperForVSCodeWebview(): VSCodeWrapper {
             window.addEventListener('message', listener)
             return () => window.removeEventListener('message', listener)
         },
-        setState: newState => vsCodeApi.setState(newState),
-        getState: () => vsCodeApi.getState(),
+        setState: newState => api.setState(newState),
+        getState: () => api.getState(),
     }
 }
