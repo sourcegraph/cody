@@ -3,11 +3,13 @@ import {
     CLIENT_CAPABILITIES_FIXTURE,
     type ContextItem,
     ContextItemSource,
+    FeatureFlag,
     type Message,
     ModelUsage,
     type ModelsData,
     contextFiltersProvider,
     createModel,
+    featureFlagProvider,
     graphqlClient,
     mockAuthStatus,
     mockClientCapabilities,
@@ -19,13 +21,29 @@ import { Observable } from 'observable-fns'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import * as vscode from 'vscode'
 import { PromptBuilder } from '../../prompt-builder'
+import { mockLocalStorage } from '../../services/LocalStorageProvider'
 import { ChatBuilder } from './ChatBuilder'
 import { DefaultPrompter } from './prompt'
 
 describe('DefaultPrompter', () => {
+    const localStorageData: { [key: string]: unknown } = {
+        'cody-experimental-prompt-caching-on-messages': false,
+    }
+    mockLocalStorage({
+        get: (key: string) => localStorageData[key] || [], // Return empty array as default
+        update: (key: string, value: unknown) => {
+            localStorageData[key] = value
+        },
+    } as any)
+
     beforeEach(() => {
         vi.spyOn(contextFiltersProvider, 'isUriIgnored').mockResolvedValue(false)
         vi.spyOn(graphqlClient, 'fetchSourcegraphAPI').mockResolvedValue(true)
+        vi.spyOn(featureFlagProvider, 'evaluatedFeatureFlag').mockImplementation((flag: FeatureFlag) =>
+            flag === FeatureFlag.CodyPromptCachingOnMessages
+                ? Observable.of(false)
+                : Observable.of(false)
+        )
         mockAuthStatus(AUTH_STATUS_FIXTURE_AUTHED)
         mockResolvedConfig({ configuration: {} })
         mockClientCapabilities(CLIENT_CAPABILITIES_FIXTURE)
@@ -247,7 +265,7 @@ describe('DefaultPrompter', () => {
 
     function checkPrompt(prompt: Message[], expectedPrefixes: string[]): void {
         for (let i = 0; i < expectedPrefixes.length; i++) {
-            const actual = prompt[i].text?.toString()
+            const actual = prompt[i].text?.toString() || ''
             const expected = expectedPrefixes[i]
             if (!actual?.includes(expected)) {
                 expect.fail(
