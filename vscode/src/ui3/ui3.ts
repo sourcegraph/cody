@@ -50,7 +50,7 @@ export function createUI3Service({ interactiveThreadService }: UI3Deps): UI3Serv
                     promiseFactoryToObservable(() => interactiveThreadService.update(...args)),
                 startAgentForThread: (...args) =>
                     createAgentForInteractiveThread(interactiveThreadService, ...args),
-                historyThreadIDs: () => interactiveThreadService.observeHistoryThreadIDs(),
+                observeHistory: () => interactiveThreadService.observeHistory(),
             })
 
             return w

@@ -1,5 +1,6 @@
 import { Observable } from 'observable-fns'
 import type { Memento } from 'vscode'
+import { isDefined } from '../../common'
 import { NEVER, concat } from '../../misc/observable'
 import type { BuiltinTools } from './builtin-tools'
 import {
@@ -29,7 +30,7 @@ export interface InteractiveThreadService {
      */
     update(threadID: ThreadID, update: ThreadUpdate): Promise<InteractiveThread>
 
-    observeHistoryThreadIDs(): Observable<ThreadID[]>
+    observeHistory(): Observable<InteractiveThread[]>
 }
 
 interface ObserveThreadOptions {
@@ -107,6 +108,7 @@ export function createInteractiveThreadService(storage: Memento): InteractiveThr
                     thread = {
                         // v: 0, TODO!(sqs)
                         id: threadID,
+                        created: Date.now(),
                         steps: [],
                     }
                     storage.update(thread.id, thread) // TODO!(sqs): await
@@ -215,9 +217,14 @@ export function createInteractiveThreadService(storage: Memento): InteractiveThr
             }
             return thread
         },
-        observeHistoryThreadIDs(): Observable<ThreadID[]> {
+        observeHistory(): Observable<InteractiveThread[]> {
             const threadIDs = storage.keys().filter(isThreadID)
-            return concat(Observable.of(threadIDs), NEVER)
+            const threads = threadIDs
+                .map(id => storage.get<InteractiveThread>(id))
+                .filter(isDefined)
+                .filter(thread => thread.steps.length > 0)
+                .toSorted((a, b) => b.created - a.created)
+            return concat(Observable.of(threads), NEVER)
         },
     }
 }

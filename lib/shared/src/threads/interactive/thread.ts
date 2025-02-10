@@ -45,6 +45,9 @@ export interface InteractiveThread {
     /** The thread ID. */
     id: ThreadID
 
+    /** Unix timestamp of creation time (in UTC). */
+    created: number
+
     /**
      * A monotonically increasing integer that represents the version of this data. Each time the
      * rest of the data structure changes, this field is incremented.
