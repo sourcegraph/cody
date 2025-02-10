@@ -1430,8 +1430,11 @@ export class Agent extends MessageHandler implements ExtensionClient {
             const window = await ui3Service.createWindow(
                 id,
                 createMessageAPIForExtension({
-                    postMessage: msg =>
-                        this.conn.sendNotification('ui3/window/message-from-extension', msg),
+                    postMessage: message =>
+                        this.conn.sendNotification('ui3/window/message-from-extension', {
+                            windowID: id,
+                            message,
+                        }),
                     postError: error => {
                         console.error(error)
                     },

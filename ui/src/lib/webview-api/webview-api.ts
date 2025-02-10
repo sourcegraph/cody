@@ -61,7 +61,7 @@ export async function createWebviewAPIClient(): Promise<WebviewAPIClient> {
                 // TODO!(sqs)
                 console.error(
                     'Got webview/postMessage for another window, this is unnecessary and just slows stuff down',
-                    { messageWindowID: windowID, ourWindowID: win.id }
+                    { messageWindowID: windowID, ourWindowID: win.id, message }
                 )
             }
         }
