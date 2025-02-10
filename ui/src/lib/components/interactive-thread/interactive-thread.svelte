@@ -8,16 +8,15 @@
 		type InteractiveThread,
 	} from '@sourcegraph/cody-shared'
 	import { Observable } from 'observable-fns'
+	import { onMount } from 'svelte'
 	import { getWebviewAPIContext } from '../../webview-api/context'
 
 	let {
 		threadID,
 		thread: threadObservable,
-		agentState,
 	}: {
 		threadID: ThreadID
 		thread: Observable<InteractiveThread>
-		agentState: AgentState
 	} = $props()
 
 	let thread = $derived<InteractiveThread | undefined>(
@@ -25,6 +24,17 @@
 	)
 
 	let webviewAPI = getWebviewAPIContext()
+
+	// Start agent.
+	let agentState = $state<AgentState>()
+	onMount(() => {
+		const threadAgent = webviewAPI.startAgentForThread(threadID)
+		const subscription = threadAgent.subscribe((v) => {
+			agentState = v
+		})
+		return () => subscription.unsubscribe()
+	})
+
 	async function handleSubmit(value: string): Promise<void> {
 		await firstValueFrom(
 			webviewAPI.updateThread(threadID, {
@@ -39,6 +49,7 @@
 	}
 
 	let showDebug = false
+	let showState = true
 </script>
 
 {#if thread}
@@ -50,6 +61,8 @@
 					null,
 					2,
 				)}</pre>
+		{/if}
+		{#if showState}
 			<span class="text-xxs rounded-lg px-2 py-1 bg-muted text-muted-foreground self-start">
 				Agent: {agentState ?? 'not running'}
 			</span>
