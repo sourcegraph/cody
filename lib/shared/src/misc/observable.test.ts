@@ -15,6 +15,7 @@ import {
     fromVSCodeEvent,
     lifecycle,
     memoizeLastValue,
+    merge,
     observableOfSequence,
     observableOfTimedSequence,
     promiseFactoryToObservable,
@@ -318,6 +319,16 @@ describe('fromLateSetSource', () => {
         setSource(observableOfSequence(1, 2, 3), false)
         expect(await firstValueFrom(derived)).toBe(1)
         subscription.unsubscribe()
+    })
+})
+
+describe('merge', { timeout: 500 }, () => {
+    test('emits values from all inputs', async () => {
+        vi.useRealTimers()
+        const input1 = observableOfTimedSequence(0, 'A', 10, 'B', 10, 'C')
+        const input2 = observableOfTimedSequence(5, 'x', 10, 'y', 15, 'z')
+        const observable = merge(input1, input2)
+        expect(await allValuesFrom(observable)).toEqual(['A', 'x', 'B', 'y', 'C', 'z'])
     })
 })
 

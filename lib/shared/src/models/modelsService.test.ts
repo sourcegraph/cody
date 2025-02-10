@@ -8,7 +8,7 @@ import { DOTCOM_URL } from '../sourcegraph-api/environments'
 import * as userProductSubscriptionModule from '../sourcegraph-api/userProductSubscription'
 import type { UserProductSubscription } from '../sourcegraph-api/userProductSubscription'
 import { CHAT_INPUT_TOKEN_BUDGET, CHAT_OUTPUT_TOKEN_BUDGET } from '../token/constants'
-import { getMockedDotComClientModels } from './dotcom'
+import { FIXTURE_MODELS } from './fixtures'
 import type { Model } from './model'
 import { createModel } from './model'
 import { type ModelsData, ModelsService, TestLocalStorageForModelPreferences } from './modelsService'
@@ -69,7 +69,7 @@ describe('modelsService', () => {
         })
 
         it('returns max token limit for known DotCom chat model ', () => {
-            const models = getMockedDotComClientModels()
+            const models = FIXTURE_MODELS
             const modelsService = modelsServiceWithModels(models)
             expect(models[0].id).toBeDefined()
             const cw = modelsService.getContextWindowByID(models[0].id)
@@ -77,8 +77,7 @@ describe('modelsService', () => {
         })
 
         it('returns max token limit for known DotCom chat model with higher context window (claude 3)', () => {
-            const models = getMockedDotComClientModels()
-            const modelsService = modelsServiceWithModels(models)
+            const modelsService = modelsServiceWithModels(FIXTURE_MODELS)
             const claude3SonnetSubString = 'claude-3-5-sonnet-latest'
             const claude3SonnetModel = modelsService.getModelByIDSubstringOrError(claude3SonnetSubString)
             expect(claude3SonnetModel?.contextWindow?.context?.user).greaterThan(0)
@@ -112,7 +111,7 @@ describe('modelsService', () => {
         })
 
         it('returns max token limit for known chat model', () => {
-            const models = getMockedDotComClientModels()
+            const models = FIXTURE_MODELS
             const modelsService = modelsServiceWithModels(models)
             const knownModel = models[0]
             const { output } = modelsService.getContextWindowByID(knownModel.id)

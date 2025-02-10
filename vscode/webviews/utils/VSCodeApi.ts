@@ -42,24 +42,3 @@ export function getVSCodeAPI(): VSCodeWrapper {
 export function setVSCodeWrapper(value: VSCodeWrapper): void {
     api = value
 }
-
-let genericApi: GenericVSCodeWrapper<any, any>
-
-export function getGenericVSCodeAPI<W, E>(): GenericVSCodeWrapper<W, E> {
-    if (!genericApi) {
-        const vsCodeApi = acquireVsCodeApi()
-        genericApi = {
-            postMessage: (message: W) => vsCodeApi.postMessage(message),
-            onMessage: callback => {
-                const listener = (event: MessageEvent<E>): void => {
-                    callback(hydrateAfterPostMessage(event.data, uri => URI.from(uri as any)))
-                }
-                window.addEventListener('message', listener)
-                return () => window.removeEventListener('message', listener)
-            },
-            setState: newState => vsCodeApi.setState(newState),
-            getState: () => vsCodeApi.getState(),
-        }
-    }
-    return genericApi
-}

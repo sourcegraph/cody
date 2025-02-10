@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { deserialize, serialize } from './atMentionsSerializer'
+import { deserialize, serialize, splitToWords } from './atMentionsSerializer'
 import type { SerializedPromptEditorValue } from './editorState'
 
 describe('atMentionsSerializer', () => {
@@ -158,6 +158,117 @@ describe('atMentionsSerializer', () => {
         // Verify emoji content is preserved
         const serializedAgain = serialize(deserialized!)
         expect(serializedAgain).toBe(serialized)
+    })
+
+    it('serializes a current file correctly', () => {
+        const input = {
+            text: 'test current file',
+            contextItems: [],
+            editorState: {
+                v: 'lexical-v1',
+                minReaderV: 'lexical-v1',
+                lexicalEditorState: {
+                    root: {
+                        type: 'root',
+                        children: [
+                            {
+                                type: 'paragraph',
+                                children: [
+                                    {
+                                        type: 'text',
+                                        text: 'explain ',
+                                        detail: 0,
+                                        format: 0,
+                                        mode: 'normal',
+                                        style: '',
+                                        version: 1,
+                                    },
+                                    {
+                                        contextItem: {
+                                            description: 'Picks the current file',
+                                            id: 'current-file',
+                                            name: 'current-file',
+                                            title: 'Current File',
+                                            type: 'current-file',
+                                            uri: 'cody://current-file',
+                                        },
+                                        isFromInitialContext: false,
+                                        text: 'current file',
+                                        type: 'contextItemMention',
+                                        version: 1,
+                                    },
+                                    {
+                                        type: 'text',
+                                        text: '. Thank you!',
+                                        detail: 0,
+                                        format: 0,
+                                        mode: 'normal',
+                                        style: '',
+                                        version: 1,
+                                    },
+                                ],
+                                direction: 'ltr',
+                                format: '',
+                                indent: 0,
+                                version: 1,
+                                textStyle: '',
+                                textFormat: 0,
+                            },
+                        ],
+                        format: '',
+                        indent: 0,
+                        version: 1,
+                        direction: 'ltr',
+                    },
+                },
+            },
+        }
+
+        const serialized = serialize(input as SerializedPromptEditorValue)
+        expect(serialized).toBe('explain cody://current-file. Thank you!')
+
+        const deserialized = deserialize(serialized)
+        expect(deserialized).toBeDefined()
+
+        const serializedAgain = serialize(deserialized!)
+        expect(serializedAgain).toBe(serialized)
+    })
+
+    describe('splitToWords', () => {
+        it('extracts built-in shortcuts', () => {
+            const input = 'explain cody://tabs and more'
+            expect(splitToWords(input)).toEqual(['explain ', 'cody://tabs', ' and more'])
+        })
+
+        it('extracts serialized mentions', () => {
+            const input = 'explain cody://serialized.v1?data=123_ and more'
+            expect(splitToWords(input)).toEqual([
+                'explain ',
+                'cody://serialized.v1?data=123_',
+                ' and more',
+            ])
+        })
+
+        it('handles mentions at end of sentence', () => {
+            const input = 'explain cody://tabs.'
+            expect(splitToWords(input)).toEqual(['explain ', 'cody://tabs', '.'])
+        })
+
+        it('handles multiple mentions in one sentence', () => {
+            const input = 'explain cody://tabs and cody://serialized.v1?data=123_.'
+            expect(splitToWords(input)).toEqual([
+                'explain ',
+                'cody://tabs',
+                ' and ',
+                'cody://serialized.v1?data=123_',
+                '.',
+            ])
+        })
+
+        it('handles mentions with surrounding whitespace', () => {
+            const input = 'explain\tcody://tabs\nand more'
+            expect(splitToWords(input)).toEqual(['explain\t', 'cody://tabs', '\nand more'])
+        })
     })
 
     describe('various deserialization edge cases', () => {

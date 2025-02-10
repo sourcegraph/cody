@@ -141,7 +141,7 @@ export class Session {
     }
 }
 
-export interface EvalScriptContext {
+interface EvalScriptContext {
     vscode: typeof vscode
     window: typeof vscode.window
     execSync: typeof execSync
@@ -152,7 +152,7 @@ export interface EvalScriptContext {
         substitutePathVars: (path: string, relativeDocument?: vscode.TextDocument) => string
     }
 }
-export type JavascriptFn<Args extends Array<any> = [], Return = void> = (
+type JavascriptFn<Args extends Array<any> = [], Return = void> = (
     this: EvalScriptContext,
     ...args: Args
 ) => Promise<Return>

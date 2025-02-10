@@ -39,6 +39,7 @@ interface UseCodyWebAgentInput {
     telemetryClientName?: string
     initialContext?: InitialContext
     customHeaders?: Record<string, string>
+    repository?: string
 }
 
 interface UseCodyWebAgentResult {
@@ -52,7 +53,14 @@ interface UseCodyWebAgentResult {
  * main and web-worker threads, see agent.client.ts for more details
  */
 export function useCodyWebAgent(input: UseCodyWebAgentInput): UseCodyWebAgentResult {
-    const { serverEndpoint, accessToken, telemetryClientName, customHeaders, createAgentWorker } = input
+    const {
+        serverEndpoint,
+        accessToken,
+        telemetryClientName,
+        customHeaders,
+        repository,
+        createAgentWorker,
+    } = input
 
     const activeWebviewPanelIDRef = useRef<string>('')
     const [client, setClient] = useState<AgentClient | Error | null>(null)
@@ -64,6 +72,7 @@ export function useCodyWebAgent(input: UseCodyWebAgentInput): UseCodyWebAgentRes
             createAgentWorker,
             serverEndpoint: serverEndpoint,
             accessToken: accessToken ?? '',
+            repository,
         })
             .then(setClient)
             .catch(error => {

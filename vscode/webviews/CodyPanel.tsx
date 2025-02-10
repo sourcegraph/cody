@@ -85,7 +85,6 @@ export const CodyPanel: FunctionComponent<CodyPanelProps> = ({
         useFeatureFlag(FeatureFlag.SourcegraphTeamsUpgradeCTA) &&
         isDotComUser &&
         config.endpointHistory?.length === 1
-
     useEffect(() => {
         onExternalApiReady?.(externalAPI)
     }, [onExternalApiReady, externalAPI])
@@ -130,7 +129,7 @@ export const CodyPanel: FunctionComponent<CodyPanelProps> = ({
                     />
                 )}
                 {errorMessages && <ErrorBanner errors={errorMessages} setErrors={setErrorMessages} />}
-                <TabContainer value={view} ref={tabContainerRef}>
+                <TabContainer value={view} ref={tabContainerRef} data-scrollable>
                     {view === View.Chat && (
                         <Chat
                             chatEnabled={chatEnabled}
@@ -190,13 +189,13 @@ const ErrorBanner: React.FunctionComponent<{ errors: string[]; setErrors: (error
         </div>
     )
 
-export interface ExternalPrompt {
+interface ExternalPrompt {
     text: string
     autoSubmit: boolean
     mode?: ChatMessage['intent']
 }
 
-export interface CodyExternalApi {
+interface CodyExternalApi {
     runPrompt: (action: ExternalPrompt) => Promise<void>
 }
 

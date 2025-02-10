@@ -5,17 +5,19 @@ import {
     featureFlagProvider,
     isDotComAuthed,
     storeLastValue,
+    telemetryRecorder,
 } from '@sourcegraph/cody-shared'
 import { LRUCache } from 'lru-cache'
 import * as uuid from 'uuid'
 import type * as vscode from 'vscode'
 import { gitMetadataForCurrentEditor } from '../repository/git-metadata-for-editor'
 import { GitHubDotComRepoMetadata } from '../repository/githubRepoMetadata'
+import { splitSafeMetadata } from '../services/telemetry-v2'
 import type { SmartSelectionType } from './prompt/smart-apply'
 
 const MAX_LOGGING_PAYLOAD_SIZE_BYTES = 1024 * 1024 // 1 MB
 
-export type SmartApplyLoggingRequestId = string
+type SmartApplyLoggingRequestId = string
 
 interface RepoContext {
     repoName?: string
@@ -39,6 +41,7 @@ interface SmartApplySelectionContext extends SmartApplyBaseContext {
 
 interface SmartApplyFinalContext extends SmartApplySelectionContext {
     applyTimeMs: number
+    applyTaskId?: string
 }
 
 interface EditLoggingContext {
@@ -48,10 +51,7 @@ interface EditLoggingContext {
     selectionRange: [number, number]
 }
 
-export type SmartApplyLoggingState =
-    | SmartApplyBaseContext
-    | SmartApplySelectionContext
-    | SmartApplyFinalContext
+type SmartApplyLoggingState = SmartApplyBaseContext | SmartApplySelectionContext | SmartApplyFinalContext
 
 export class EditLoggingFeatureFlagManager implements vscode.Disposable {
     private featureFlagSmartApplyContextDataCollection = storeLastValue(
@@ -138,7 +138,11 @@ export class SmartApplyContextLogger {
         })
     }
 
-    public addSmartApplyFinalContext(requestId: SmartApplyLoggingRequestId, applyTimeMs: number): void {
+    public addApplyContext(
+        requestId: SmartApplyLoggingRequestId,
+        applyTimeMs: number,
+        applyTaskId: string | undefined
+    ): void {
         const request = this.getRequest(requestId)
         if (!request) {
             return
@@ -146,10 +150,29 @@ export class SmartApplyContextLogger {
         this.activeRequests.set(requestId, {
             ...request,
             applyTimeMs,
+            applyTaskId,
         })
     }
 
-    public getSmartApplyLoggingContext(
+    public logSmartApplyContextToTelemetry(requestId: SmartApplyLoggingRequestId): void {
+        const context = this.getSmartApplyLoggingContext(requestId)
+        if (!context) {
+            return
+        }
+        const { metadata, privateMetadata } = splitSafeMetadata(context)
+        telemetryRecorder.recordEvent('cody.smart-apply.context', 'applied', {
+            metadata: {
+                ...metadata,
+                recordsPrivateMetadataTranscript: 1,
+            },
+            privateMetadata: {
+                smartApplyContext: privateMetadata,
+            },
+            billingMetadata: { product: 'cody', category: 'billable' },
+        })
+    }
+
+    private getSmartApplyLoggingContext(
         requestId: SmartApplyLoggingRequestId
     ): SmartApplyFinalContext | undefined {
         const request = this.activeRequests.get(requestId)
@@ -212,10 +235,7 @@ export function getEditLoggingContext(param: {
     return context
 }
 
-export function shouldLogEditContextItem<T>(
-    payload: T,
-    isFeatureFlagEnabledForLogging: boolean
-): boolean {
+function shouldLogEditContextItem<T>(payload: T, isFeatureFlagEnabledForLogging: boolean): boolean {
     // 🚨 SECURITY: included only for DotCom users and for users in the feature flag.
     if (isDotComAuthed() && isFeatureFlagEnabledForLogging) {
         const payloadSize = calculatePayloadSizeInBytes(payload)

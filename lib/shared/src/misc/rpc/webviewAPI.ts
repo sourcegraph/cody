@@ -1,4 +1,4 @@
-import { Observable } from 'observable-fns'
+import { type Observable, map } from 'observable-fns'
 import type { AuthStatus, ModelsData, ResolvedConfiguration, UserProductSubscription } from '../..'
 import type { SerializedPromptEditorState } from '../..'
 import type { ChatMessage, UserLocalHistory } from '../../chat/transcript/messages'
@@ -132,9 +132,24 @@ export function createExtensionAPI(
         hydratePromptMessage: promptText =>
             hydratePromptMessage(promptText, staticDefaultContext?.initialContext),
         setChatModel: proxyExtensionAPI(messageAPI, 'setChatModel'),
-        defaultContext: staticDefaultContext
-            ? () => Observable.of(staticDefaultContext)
-            : proxyExtensionAPI(messageAPI, 'defaultContext'),
+        defaultContext: () =>
+            proxyExtensionAPI(messageAPI, 'defaultContext')().pipe(
+                map(result =>
+                    staticDefaultContext
+                        ? ({
+                              ...result,
+                              corpusContext: [
+                                  ...result.corpusContext,
+                                  ...staticDefaultContext.corpusContext,
+                              ],
+                              initialContext: [
+                                  ...result.initialContext,
+                                  ...staticDefaultContext.initialContext,
+                              ],
+                          } satisfies DefaultContext)
+                        : result
+                )
+            ),
         detectIntent: proxyExtensionAPI(messageAPI, 'detectIntent'),
         promptsMigrationStatus: proxyExtensionAPI(messageAPI, 'promptsMigrationStatus'),
         startPromptsMigration: proxyExtensionAPI(messageAPI, 'startPromptsMigration'),

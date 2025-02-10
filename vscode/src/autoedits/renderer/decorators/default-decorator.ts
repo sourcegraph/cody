@@ -356,6 +356,14 @@ export class DefaultDecorator implements AutoEditsDecorator {
                 })
             }
         }
+
+        const startLineLength = this.editor.document.lineAt(startLine).range.end.character
+        this.editor.setDecorations(this.insertMarkerDecorationType, [
+            {
+                range: new vscode.Range(startLine, 0, startLine, startLineLength),
+            },
+        ])
+        this.editor.setDecorations(this.addedLinesDecorationType, replacerDecorations)
     }
 
     private renderAddedLinesImageDecorations(
@@ -451,7 +459,7 @@ export class DefaultDecorator implements AutoEditsDecorator {
 /**
  * Checks if the only changes for modified lines are additions of text.
  */
-export function isOnlyAddingTextForModifiedLines(modifiedLines: ModifiedLineInfo[]): boolean {
+function isOnlyAddingTextForModifiedLines(modifiedLines: ModifiedLineInfo[]): boolean {
     for (const modifiedLine of modifiedLines) {
         if (modifiedLine.changes.some(change => change.type === 'delete')) {
             return false

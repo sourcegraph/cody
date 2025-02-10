@@ -73,6 +73,11 @@ import { type Span, context } from '@opentelemetry/api'
 import { captureException } from '@sentry/core'
 import type { SubMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { resolveAuth } from '@sourcegraph/cody-shared/src/configuration/auth-resolver'
+import {
+    DeepCodyAgentID,
+    ToolCodyModelName,
+    ToolCodyModelRef,
+} from '@sourcegraph/cody-shared/src/models/client'
 import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
 import { Subject, map } from 'observable-fns'
 import type { URI } from 'vscode-uri'
@@ -110,13 +115,12 @@ import type { MessageErrorType } from '../MessageProvider'
 import { getMentionMenuData } from '../context/chatContext'
 import type { ChatIntentAPIClient } from '../context/chatIntentAPIClient'
 import { observeDefaultContext } from '../initialContext'
-import {
-    CODY_BLOG_URL_o1_WAITLIST,
-    type ConfigurationSubsetForWebview,
-    type ExtensionMessage,
-    type LocalEnv,
-    type SmartApplyResult,
-    type WebviewMessage,
+import type {
+    ConfigurationSubsetForWebview,
+    ExtensionMessage,
+    LocalEnv,
+    SmartApplyResult,
+    WebviewMessage,
 } from '../protocol'
 import { countGeneratedCode } from '../utils'
 import { ChatBuilder, prepareChatMessage } from './ChatBuilder'
@@ -289,6 +293,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 break
             }
             case 'edit': {
+                await this.cancelSubmitOrEditOperation()
+
                 await this.handleEdit({
                     requestID: uuid.v4(),
                     text: PromptString.unsafe_fromUserQuery(message.text),
@@ -340,15 +346,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 vscode.commands.executeCommand('vscode.open', message.uri)
                 break
             case 'links': {
-                let link = message.value
-                if (message.value === 'waitlist') {
-                    const authStatus = currentAuthStatusAuthed()
-                    const waitlistURI = CODY_BLOG_URL_o1_WAITLIST
-                    waitlistURI.searchParams.append('userId', authStatus?.username)
-                    link = waitlistURI.toString()
-                    void joinModelWaitlist()
-                }
-                void openExternalLinks(link)
+                void openExternalLinks(message.value)
                 break
             }
             case 'openFileLink':
@@ -458,7 +456,10 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                         let auth: AuthCredentials | undefined = undefined
 
                         if (token) {
-                            auth = { credentials: { token, source: 'paste' }, serverEndpoint: endpoint }
+                            auth = {
+                                credentials: { token, source: 'paste' },
+                                serverEndpoint: endpoint,
+                            }
                         } else {
                             const { configuration } = await currentResolvedConfig()
                             auth = await resolveAuth(endpoint, configuration, secretStorage)
@@ -667,7 +668,10 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     firstResultFromOperation(ChatBuilder.resolvedModelForChat(this.chatBuilder))
                 )
                 this.chatBuilder.setSelectedModel(model)
-                const selectedAgent = model?.includes('deep-cody') ? 'deep-cody' : undefined
+                let selectedAgent = model?.includes(DeepCodyAgentID) ? DeepCodyAgentID : undefined
+                if (model?.includes(ToolCodyModelName)) {
+                    selectedAgent = ToolCodyModelRef
+                }
 
                 this.chatBuilder.addHumanMessage({
                     text: inputText,
@@ -792,7 +796,10 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         }
 
         this.chatBuilder.setSelectedModel(model)
-        const chatAgent = model.includes('deep-cody') ? 'deep-cody' : undefined
+        let chatAgent = model.includes(DeepCodyAgentID) ? DeepCodyAgentID : undefined
+        if (model.includes(ToolCodyModelName)) {
+            chatAgent = ToolCodyModelRef
+        }
 
         const recorder = await OmniboxTelemetry.create({
             requestID,
@@ -896,7 +903,11 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
                         // Now that we have the confirmation, proceed based on the user's choice
 
-                        this.postViewTranscript({ speaker: 'assistant', processes: [step], model })
+                        this.postViewTranscript({
+                            speaker: 'assistant',
+                            processes: [step],
+                            model,
+                        })
                         return confirmation
                     },
                     postDone: (op?: { abort: boolean }): void => {
@@ -1063,16 +1074,12 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     }
 
     private submitOrEditOperation: AbortController | undefined
-    public startNewSubmitOrEditOperation(): Promise<AbortSignal> {
+    public startNewSubmitOrEditOperation(): AbortSignal {
         this.submitOrEditOperation?.abort()
-
-        return new Promise(resolve => {
-            setTimeout(() => {
-                this.submitOrEditOperation = new AbortController()
-                resolve(this.submitOrEditOperation.signal)
-            }, 500)
-        })
+        this.submitOrEditOperation = new AbortController()
+        return this.submitOrEditOperation.signal
     }
+
     private cancelSubmitOrEditOperation(): Promise<void> {
         if (this.submitOrEditOperation) {
             this.submitOrEditOperation.abort()
@@ -1204,7 +1211,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         preDetectedIntentScores?: { intent: string; score: number }[] | undefined | null
         manuallySelectedIntent?: ChatMessage['intent'] | undefined | null
     }): Promise<void> {
-        const abortSignal = await this.startNewSubmitOrEditOperation()
+        const abortSignal = this.startNewSubmitOrEditOperation()
 
         telemetryRecorder.recordEvent('cody.editChatButton', 'clicked', {
             billingMetadata: {
@@ -1875,9 +1882,4 @@ export function manipulateWebviewHTML(html: string, options: TransformHTMLOption
     }
 
     return html
-}
-
-async function joinModelWaitlist(): Promise<void> {
-    await localStorage.setOrDeleteWaitlistO1(true)
-    telemetryRecorder.recordEvent('cody.joinLlmWaitlist', 'clicked')
 }

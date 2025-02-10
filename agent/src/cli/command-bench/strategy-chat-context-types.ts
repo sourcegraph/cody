@@ -12,7 +12,7 @@ export interface ClientOptions {
     textResultsCount: number
 }
 
-export interface EvalOutput {
+interface EvalOutput {
     evaluatedAt: string
     codyClientVersion: string
     clientOptions?: ClientOptions
@@ -197,7 +197,7 @@ function exampleToCsvRecord(example: ExampleOutput): any {
     }
 }
 
-export function contextItemFromString(item: string): EvalContextItem {
+function contextItemFromString(item: string): EvalContextItem {
     // To handle clickable link format which is "https://sourcegraph.sourcegraph.com/github.com/sourcegraph-testing/pinned-cody/-/blob/README.md?L42-43"
     const url = new URL(item)
     const pathParts = url.pathname.split('/-/blob/')
@@ -215,6 +215,6 @@ export function contextItemFromString(item: string): EvalContextItem {
     }
 }
 
-export function contextItemToString(item: EvalContextItem): string {
+function contextItemToString(item: EvalContextItem): string {
     return `${item.retriever}:https://sourcegraph.sourcegraph.com/github.com/${item.repoName}/-/blob/${item.path}?L${item.startLine}-${item.endLine}`
 }

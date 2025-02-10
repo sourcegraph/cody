@@ -15,6 +15,7 @@ import {
     type SymbolKind,
     TokenCounterUtils,
     contextFiltersProvider,
+    currentOpenCtxController,
     currentResolvedConfig,
     displayPath,
     firstValueFrom,
@@ -24,7 +25,6 @@ import {
     isErrorLike,
     isWindows,
     logError,
-    openCtx,
     toRangeData,
 } from '@sourcegraph/cody-shared'
 
@@ -431,7 +431,7 @@ async function resolveContextMentionProviderContextItem(
         return []
     }
 
-    const openCtxClient = openCtx.controller
+    const openCtxClient = currentOpenCtxController()
     if (!openCtxClient) {
         return []
     }

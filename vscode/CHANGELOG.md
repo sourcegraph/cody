@@ -4,15 +4,52 @@ This is a log of all notable changes to Cody for VS Code.
 
 <!--- {/_ CHANGELOG_START _/} -->
 
-## Unreleased
-
-### Added
+## 1.66.1
 
 ### Fixed
+- AutoEdits
+  - fix(auto-edit): fix the false notification for auto-edit non eligibility  [pull/7002](https://github.com/sourcegraph/cody/pull/7002)
+Manually backport b54029c9299d40fbbf2efa3e25a8e2d2a7adf1d8 #6971
+
+## 1.66.0
+
+### Added
+- Support for Enterprise Starter
+  - chore(ES): fix cta typo  [pull/6856](https://github.com/sourcegraph/cody/pull/6856)
+  - chore(ES): update CTAs and eligibility logic  [pull/6803](https://github.com/sourcegraph/cody/pull/6803)
+
+- Chat
+  - fix: added extension banner to web  [pull/6757](https://github.com/sourcegraph/cody/pull/6757)
+
+### Fixed
+- AutoEdits
+  - fix(auto-edit): fix the cody status bar with new suggestion mode  [pull/6691](https://github.com/sourcegraph/cody/pull/6691)
+  - fix(auto-edit): fix temperature value to be low for output consistency  [pull/6853](https://github.com/sourcegraph/cody/pull/6853)
+  - feat(auto-edit): fix the temperature value regression with the auto-edit  [pull/6848](https://github.com/sourcegraph/cody/pull/6848)
+
+- Chat
+  - fix: handle missing spaces around @ mentions in cody chat  [pull/6842](https://github.com/sourcegraph/cody/pull/6842)
+  - fix: define all base64 characters  [pull/6837](https://github.com/sourcegraph/cody/pull/6837)
+  - fix(models): ensure Tool Cody is only added when enabled  [pull/6753](https://github.com/sourcegraph/cody/pull/6753)
+
+- Authentication
+  - Reverted various recent changes related to sign-in (commits 9719dc4, 1c16f35, 1ed8392, 03c93f9) to improve stability [pull/6788](https://github.com/sourcegraph/cody/pull/6788)
+
+- Telemetry & Metrics
+  - Fix OpenTelemetryService initialization+observables code and  fix the span closure of Chat Spans  [pull/6807](https://github.com/sourcegraph/cody/pull/6807)
+  - fix(telemetry): add billing metadata to `onebox` events  [pull/6802](https://github.com/sourcegraph/cody/pull/6802)
 
 ### Changed
+- Branding & Marketing
+  - [Backport M66] chore(marketing): Update marketplace and in product logos  [pull/6970](https://github.com/sourcegraph/cody/pull/6970)
+  - chore(marketing): update listing description  [pull/6862](https://github.com/sourcegraph/cody/pull/6862)
 
-### Uncategorized
+- Chat
+  - chore(client): update display name for agentic model  [pull/6827](https://github.com/sourcegraph/cody/pull/6827)
+  - Make Play Button stateful and remove intent toggle  [pull/6833](https://github.com/sourcegraph/cody/pull/6833)
+  - omnibox: open results locally if possible  [pull/6781](https://github.com/sourcegraph/cody/pull/6781)
+  - mention menu: migrate from codicon to lucide  [pull/6780](https://github.com/sourcegraph/cody/pull/6780)
+  - fix: remove code search button  [pull/6855](https://github.com/sourcegraph/cody/pull/6855)
 
 ## 1.64.0
 

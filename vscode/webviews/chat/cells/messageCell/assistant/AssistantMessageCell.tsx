@@ -13,11 +13,11 @@ import {
     reformatBotMessageForChat,
     serializedPromptEditorStateFromChatMessage,
 } from '@sourcegraph/cody-shared'
+import { DeepCodyAgentID } from '@sourcegraph/cody-shared/src/models/client'
 import type { PromptEditorRefAPI } from '@sourcegraph/prompt-editor'
 import isEqual from 'lodash/isEqual'
 import { type FunctionComponent, type RefObject, memo, useMemo } from 'react'
 import type { ApiPostMessage, UserAccountInfo } from '../../../../Chat'
-import { chatModelIconComponent } from '../../../../components/ChatModelIcon'
 import { useOmniBox } from '../../../../utils/useOmniBox'
 import {
     ChatMessageContent,
@@ -25,10 +25,8 @@ import {
 } from '../../../ChatMessageContent/ChatMessageContent'
 import { ErrorItem, RequestErrorItem } from '../../../ErrorItem'
 import { type Interaction, editHumanMessage } from '../../../Transcript'
-import { FeedbackButtons } from '../../../components/FeedbackButtons'
 import { LoadingDots } from '../../../components/LoadingDots'
-import { BaseMessageCell, MESSAGE_CELL_AVATAR_SIZE } from '../BaseMessageCell'
-import { ContextFocusActions } from './ContextFocusActions'
+import { BaseMessageCell } from '../BaseMessageCell'
 import { SearchResults } from './SearchResults'
 import { SubMessageCell } from './SubMessageCell'
 
@@ -44,9 +42,6 @@ export const AssistantMessageCell: FunctionComponent<{
     userInfo: UserAccountInfo
     chatEnabled: boolean
     isLoading: boolean
-
-    showFeedbackButtons: boolean
-    feedbackButtonsOnSubmit?: (text: string) => void
 
     copyButtonOnSubmit?: CodeBlockActionsProps['copyButtonOnSubmit']
     insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit']
@@ -66,8 +61,6 @@ export const AssistantMessageCell: FunctionComponent<{
         userInfo,
         chatEnabled,
         isLoading,
-        showFeedbackButtons,
-        feedbackButtonsOnSubmit,
         copyButtonOnSubmit,
         insertButtonOnSubmit,
         postMessage,
@@ -83,7 +76,6 @@ export const AssistantMessageCell: FunctionComponent<{
         )
 
         const chatModel = useChatModelByID(message.model, models)
-        const ModelIcon = chatModel ? chatModelIconComponent(chatModel.id) : null
         const isAborted = isAbortErrorOrSocketHangUp(message.error)
 
         const hasLongerResponseTime = chatModel?.tags?.includes(ModelTag.StreamDisabled)
@@ -94,22 +86,6 @@ export const AssistantMessageCell: FunctionComponent<{
 
         return (
             <BaseMessageCell
-                speakerIcon={
-                    ModelIcon && (!isSearchIntent || isLoading) ? (
-                        <ModelIcon size={NON_HUMAN_CELL_AVATAR_SIZE} />
-                    ) : null
-                }
-                speakerTitle={
-                    isSearchIntent ? undefined : (
-                        <span data-testid="chat-model">
-                            {chatModel
-                                ? chatModel.id.includes('deep-cody')
-                                    ? 'Claude 3.5 Sonnet (New)'
-                                    : chatModel.title ?? `Model ${chatModel.id} by ${chatModel.provider}`
-                                : 'Model'}
-                        </span>
-                    )
-                }
                 content={
                     <>
                         {message.error && !isAborted ? (
@@ -128,8 +104,6 @@ export const AssistantMessageCell: FunctionComponent<{
                             <SearchResults
                                 message={message as ChatMessageWithSearch}
                                 onSelectedFiltersUpdate={onSelectedFiltersUpdate}
-                                showFeedbackButtons={showFeedbackButtons}
-                                feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
                                 enableContextSelection={isLastInteraction}
                             />
                         )}
@@ -175,27 +149,6 @@ export const AssistantMessageCell: FunctionComponent<{
                                     Output stream stopped
                                 </div>
                             )}
-                            <div className="tw-flex tw-items-center tw-divide-x tw-transition tw-divide-muted tw-opacity-65 hover:tw-opacity-100">
-                                {showFeedbackButtons &&
-                                    feedbackButtonsOnSubmit &&
-                                    !(experimentalOneBoxEnabled && isSearchIntent) && (
-                                        <FeedbackButtons
-                                            feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
-                                            className="tw-pr-4"
-                                        />
-                                    )}
-                                {!isLoading && (!message.error || isAborted) && !isSearchIntent && (
-                                    <ContextFocusActions
-                                        humanMessage={humanMessage}
-                                        longResponseTime={hasLongerResponseTime}
-                                        className={
-                                            showFeedbackButtons && feedbackButtonsOnSubmit
-                                                ? 'tw-pl-5'
-                                                : undefined
-                                        }
-                                    />
-                                )}
-                            </div>
                         </div>
                     )
                 }
@@ -204,9 +157,6 @@ export const AssistantMessageCell: FunctionComponent<{
     },
     isEqual
 )
-
-export const NON_HUMAN_CELL_AVATAR_SIZE =
-    MESSAGE_CELL_AVATAR_SIZE * 0.83 /* make them "look" the same size as the human avatar icons */
 
 export interface HumanMessageInitialContextInfo {
     repositories: boolean
@@ -284,7 +234,7 @@ function useChatModelByID(
         (model
             ? {
                   id: model,
-                  title: model?.includes('deep-cody') ? 'Deep Cody (Experimental)' : model,
+                  title: model?.includes(DeepCodyAgentID) ? 'Deep Cody (Experimental)' : model,
                   provider: 'unknown',
                   tags: [],
               }
