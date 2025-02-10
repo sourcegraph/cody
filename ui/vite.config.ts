@@ -68,6 +68,24 @@ export default defineProjectWithDefaults(__dirname, {
                 replacement: resolve(webDirname, 'lib/agent/shims/inline-completion-item-provider.ts'),
             },
 
+            // Other things that aren't used on web.
+            {
+                find: './chat/chat-view/ChatsController',
+                replacement: resolve(webDirname, 'lib/agent/shims/ChatsController.ts'),
+            },
+            {
+                find: './autoedits/create-autoedits-provider',
+                replacement: resolve(webDirname, 'lib/agent/shims/create-autoedits-provider.ts'),
+            },
+            {
+                find: '../autoedits/create-autoedits-provider',
+                replacement: resolve(webDirname, 'lib/agent/shims/create-autoedits-provider.ts'),
+            },
+            {
+                find: './autoedits/renderer/mock-renderer',
+                replacement: resolve(webDirname, 'lib/agent/shims/mock-renderer.ts'),
+            },
+
             {
                 find: /^cody-ai\/(.*)$/,
                 replacement: resolve(webDirname, '../vscode/$1'),
