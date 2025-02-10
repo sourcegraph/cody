@@ -231,15 +231,17 @@ export function getCorpusContextItemsForEditorState(): Observable<
                     })
                 }
                 if (remoteReposForAllWorkspaceFolders.length === 0) {
-                    items.push({
-                        type: 'open-link',
-                        title: 'Current Repository',
-                        badge: 'Not yet available',
-                        content: null,
-                        uri: URI.parse('https://sourcegraph.com/docs/admin/code_hosts'),
-                        name: '',
-                        icon: 'folder',
-                    })
+                    if (!clientCapabilities().isCodyWeb) {
+                        items.push({
+                            type: 'open-link',
+                            title: 'Current Repository',
+                            badge: 'Not yet available',
+                            content: null,
+                            uri: URI.parse('https://sourcegraph.com/docs/admin/code_hosts'),
+                            name: '',
+                            icon: 'folder',
+                        })
+                    }
                 }
             } else {
                 // TODO(sqs): Support multi-root. Right now, this only supports the 1st workspace root.
