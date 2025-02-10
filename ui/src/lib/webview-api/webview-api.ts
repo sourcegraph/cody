@@ -39,17 +39,21 @@ export async function createWebviewAPIClient(): Promise<WebviewAPIClient> {
         serverEndpoint,
         accessToken,
         createAgentWorker: CREATE_AGENT_WORKER,
-        trace:true,
+        // trace: true,
     })
-    const win = await agentClient?.rpc.sendRequest<{ id: WindowID }>('ui3/window/new', null)
+    const { windowID } = await agentClient.rpc.sendRequest<{ windowID: WindowID }>(
+        'ui3/window/new',
+        null
+    )
+    const win: UI3Window = { id: windowID }
 
     const onMessageCallbacks: ((message: ExtensionMessage) => void)[] = []
 
     // Set up transport.
     agentClient.rpc.onNotification(
-        'webview/postMessage',
-        ({ id, message }: { id: string; message: ExtensionMessage }) => {
-            if (win.id === id) {
+        'ui3/window/message-from-extension',
+        ({ windowID, message }: { windowID: string; message: ExtensionMessage }) => {
+            if (win.id === windowID) {
                 for (const callback of onMessageCallbacks) {
                     callback(hydrateAfterPostMessage(message, uri => URI.from(uri as any)))
                 }
@@ -57,7 +61,7 @@ export async function createWebviewAPIClient(): Promise<WebviewAPIClient> {
                 // TODO!(sqs)
                 console.error(
                     'Got webview/postMessage for another window, this is unnecessary and just slows stuff down',
-                    {messageWindowID: id, ourWindowID:win.id}
+                    { messageWindowID: windowID, ourWindowID: win.id }
                 )
             }
         }
@@ -73,41 +77,44 @@ export async function createWebviewAPIClient(): Promise<WebviewAPIClient> {
     return { window: win, api }
 }
 
+type VSCodeWrapper = GenericVSCodeWrapper<WebviewMessage, ExtensionMessage>
 
- type VSCodeWrapper = GenericVSCodeWrapper<WebviewMessage, ExtensionMessage>
-
- /**
-  * When running in the browser (not in a VS Code webview), this is how we communicate with the
-  * agent running in the Web Worker.
-  */
- function createVSCodeWrapperForBrowser(agentClient: Awaited<ReturnType<typeof createAgentClient>>,win:UI3Window,onMessageCallbacks: ((message: ExtensionMessage) => void)[]):VSCodeWrapper {
+/**
+ * When running in the browser (not in a VS Code webview), this is how we communicate with the
+ * agent running in the Web Worker.
+ */
+function createVSCodeWrapperForBrowser(
+    agentClient: Awaited<ReturnType<typeof createAgentClient>>,
+    win: UI3Window,
+    onMessageCallbacks: ((message: ExtensionMessage) => void)[]
+): VSCodeWrapper {
     return {
-    postMessage: message => {
-        agentClient.rpc.sendNotification('ui3/webview/receiveMessage', {
-            id: win.id,
-            message: forceHydration(message),
-        })
-    },
-    onMessage: callback => {
-        onMessageCallbacks.push(callback)
-        return () => {
-            // On dispose, remove callback from onMessageCallbacks.
-            const index = onMessageCallbacks.indexOf(callback)
-            if (index >= 0) {
-                onMessageCallbacks.splice(index, 1)
+        postMessage: message => {
+            agentClient.rpc.sendNotification('ui3/window/message-from-webview', {
+                windowID: win.id,
+                message: forceHydration(message),
+            })
+        },
+        onMessage: callback => {
+            onMessageCallbacks.push(callback)
+            return () => {
+                // On dispose, remove callback from onMessageCallbacks.
+                const index = onMessageCallbacks.indexOf(callback)
+                if (index >= 0) {
+                    onMessageCallbacks.splice(index, 1)
+                }
             }
-        }
-    },
-    getState: () => {
-        throw new Error('not implemented')
-    },
-    setState: () => {
-        throw new Error('not implemented')
-    },
+        },
+        getState: () => {
+            throw new Error('not implemented')
+        },
+        setState: () => {
+            throw new Error('not implemented')
+        },
+    }
 }
- }
 
- declare const acquireVsCodeApi: () => VSCodeApi
+declare const acquireVsCodeApi: () => VSCodeApi
 
 interface VSCodeApi {
     getState: () => unknown
@@ -116,21 +123,21 @@ interface VSCodeApi {
 }
 
 /**
-  * When running in a VS Code webview (not a web browser), this is how we communicate with the agent
-  * running in the extension host.
-  */
+ * When running in a VS Code webview (not a web browser), this is how we communicate with the agent
+ * running in the extension host.
+ */
 function createVSCodeWrapperForVSCodeWebview(): VSCodeWrapper {
-        const vsCodeApi = acquireVsCodeApi()
-        return {
-            postMessage: message => vsCodeApi.postMessage(forceHydration(message)),
-            onMessage: callback => {
-                const listener = (event: MessageEvent<ExtensionMessage>): void => {
-                    callback(hydrateAfterPostMessage(event.data, uri => URI.from(uri as any)))
-                }
-                window.addEventListener('message', listener)
-                return () => window.removeEventListener('message', listener)
-            },
-            setState: newState => vsCodeApi.setState(newState),
-            getState: () => vsCodeApi.getState(),
-        }
+    const vsCodeApi = acquireVsCodeApi()
+    return {
+        postMessage: message => vsCodeApi.postMessage(forceHydration(message)),
+        onMessage: callback => {
+            const listener = (event: MessageEvent<ExtensionMessage>): void => {
+                callback(hydrateAfterPostMessage(event.data, uri => URI.from(uri as any)))
+            }
+            window.addEventListener('message', listener)
+            return () => window.removeEventListener('message', listener)
+        },
+        setState: newState => vsCodeApi.setState(newState),
+        getState: () => vsCodeApi.getState(),
+    }
 }

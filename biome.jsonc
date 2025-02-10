@@ -8,7 +8,6 @@
         "rules": {
             "recommended": true,
             "nursery": {
-                "noDuplicateJsonKeys": "error",
                 "noRestrictedImports": {
                     "level": "error",
                     "options": {
@@ -87,7 +86,8 @@
             "*.snap.json",
             "lib/noxide/node",
             "jetbrains/**",
-            "pollyjs/**"
+            "pollyjs/**",
+            "ui/**/*.svelte"
         ]
     },
     "overrides": [
@@ -132,18 +132,6 @@
                         "noFocusedTests": "warn"
                     }
                 }
-            }
-        },
-        {
-            "include": ["*.svelte"],
-            "linter": {
-                "enabled": false
-            },
-            "formatter": {
-                "enabled": false
-            },
-            "organizeImports": {
-                "enabled": false
             }
         }
     ],

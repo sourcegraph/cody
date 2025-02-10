@@ -83,7 +83,7 @@ export interface MessageAPI<
 }
 
 export function createMessageAPIForExtension<
-    TWebviewMessage extends { command: 'rpc/request'; message: RequestMessage } ,
+    TWebviewMessage extends { command: 'rpc/request'; message: RequestMessage },
     TExtensionMessage extends { type: 'rpc/response'; message: ResponseMessage },
 >(
     webviewAPI: GenericWebviewAPIWrapper<TWebviewMessage, TExtensionMessage>
@@ -239,7 +239,7 @@ export function proxyExtensionAPI<M extends keyof WebviewToExtensionAPI>(
     method: M
 ): WebviewToExtensionAPI[M] {
     return (...args: any[]): Observable<any> => {
-        logRPCMessage('X->W', () => `call method=${method} args=${JSON.stringify(args)}`)
+        logRPCMessage('W->X', () => `call method=${method} args=${JSON.stringify(args)}`)
         return callExtensionAPI(messageAPI, method, args)
     }
 }
@@ -333,7 +333,7 @@ export function addMessageListenersForExtensionAPI(
     }
 }
 
-const LOG_RPC_MESSAGES = process.env.CODY_LOG_WEBVIEW_RPC_MESSAGES === 'true'
+const LOG_RPC_MESSAGES = true // process.env.CODY_LOG_WEBVIEW_RPC_MESSAGES === 'true'
 
 /**
  * Write the RPC message to the output log.

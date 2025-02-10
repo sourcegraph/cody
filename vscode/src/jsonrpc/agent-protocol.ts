@@ -280,7 +280,7 @@ export type ClientRequests = {
     // Attempts to wipe out any state that the extension has stored.
     'extension/reset': [null, null]
 
-    'ui3/window/new': [null, { id: string }]
+    'ui3/window/new': [null, { windowID: string }]
 }
 
 // ================
@@ -382,7 +382,7 @@ export type ClientNotifications = {
 
     'window/didChangeFocus': [{ focused: boolean }]
 
-    'ui3/webview/receiveMessage': [{ id: string; message: WebviewMessage }]
+    'ui3/window/message-from-webview': [{ windowID: string; message: WebviewMessage }]
 }
 
 // ================
@@ -457,6 +457,8 @@ export type ServerNotifications = {
     'window/didChangeContext': [{ key: string; value?: string | undefined | null }]
     // Client should move the focus to the sidebar.
     'window/focusSidebar': [null]
+
+    'ui3/window/message-from-extension': [{ windowID: string; message: ExtensionMessage }]
 }
 
 export interface WebviewCreateWebviewPanelOptions {

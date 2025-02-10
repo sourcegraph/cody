@@ -7,7 +7,7 @@
 	// TODO!(sqs)
 	let x = webviewAPI.authStatus()
 	onMount(() => {
-		x.subscribe((v) => console.log('AUTHSTATUS', v))
+		// x.subscribe((v) => console.log('AUTHSTATUS', v))
 	})
 </script>
 
