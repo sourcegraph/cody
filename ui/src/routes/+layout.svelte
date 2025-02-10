@@ -19,7 +19,6 @@
 	<div class="flex flex-col h-[100vh] overflow-hidden">
 		<Navbar.Root class="flex-shrink-0 bg-background">
 			<Navbar.Item path="/chat" title="Chat" />
-			<Navbar.Item path="/prompts" title="Prompts" />
 			<Navbar.Item path="/history" title="History" />
 			{#if STORYBOOK_CONFIG.enabled}
 				<Navbar.Item path="/storybook" title="Storybook" />
