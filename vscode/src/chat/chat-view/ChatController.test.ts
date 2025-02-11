@@ -83,7 +83,6 @@ describe('ChatController', () => {
             extensionClient: mockExtensionClient,
             guardrails: mockGuardrails,
             contextRetriever: mockContextRetriever,
-            chatIntentAPIClient: null,
         })
     })
 

@@ -78,12 +78,6 @@ export interface WebviewToExtensionAPI {
      */
     defaultContext(): Observable<DefaultContext>
 
-    detectIntent(
-        text: string
-    ): Observable<
-        { intent: ChatMessage['intent']; allScores: { intent: string; score: number }[] } | undefined
-    >
-
     /**
      * Observe the current resolved configuration (same as the global {@link resolvedConfig}
      * observable).
@@ -150,7 +144,6 @@ export function createExtensionAPI(
                         : result
                 )
             ),
-        detectIntent: proxyExtensionAPI(messageAPI, 'detectIntent'),
         promptsMigrationStatus: proxyExtensionAPI(messageAPI, 'promptsMigrationStatus'),
         startPromptsMigration: proxyExtensionAPI(messageAPI, 'startPromptsMigration'),
         resolvedConfig: proxyExtensionAPI(messageAPI, 'resolvedConfig'),
