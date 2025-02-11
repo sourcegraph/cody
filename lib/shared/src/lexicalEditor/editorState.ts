@@ -10,11 +10,6 @@ import {
 import type { ChatMessage } from '../chat/transcript/messages'
 import { type ContextItem, ContextItemSource } from '../codebase-context/messages'
 import type { RangeData } from '../common/range'
-import {
-    REMOTE_DIRECTORY_PROVIDER_URI,
-    REMOTE_FILE_PROVIDER_URI,
-    REMOTE_REPOSITORY_PROVIDER_URI,
-} from '../context/openctx/api'
 import { displayPath } from '../editor/displayPath'
 import type { PromptString } from '../prompt/prompt-string'
 import { AT_MENTION_SERIALIZED_PREFIX, deserializeParagraph } from './atMentionsSerializer'
@@ -205,54 +200,6 @@ export function inputTextWithoutContextChipsFromPromptEditorState(
     state = filterLexicalNodes(state, node => !isSerializedContextItemMentionNode(node))
 
     return textContentFromSerializedLexicalNode(state.lexicalEditorState.root).trim()
-}
-
-// maps mentions to placeholders for intent detection
-export function inputTextWithMappedContextChipsFromPromptEditorState(
-    state: SerializedPromptEditorState
-): string {
-    const newTextNode = (text: string): SerializedTextNode => ({
-        type: 'text',
-        version: 1,
-        text,
-        detail: 0,
-        format: 0,
-        mode: 'normal',
-        style: '',
-    })
-
-    const mentionToTextNode = (node: SerializedContextItemMentionNode): SerializedTextNode => {
-        switch (node.contextItem.type) {
-            case 'repository':
-                return newTextNode('@repo')
-            case 'file':
-                return newTextNode('@file')
-            case 'tree':
-                return newTextNode('@dir')
-            case 'symbol':
-                return newTextNode('@symbol')
-            case 'openctx':
-                switch (node.contextItem.providerUri) {
-                    case REMOTE_REPOSITORY_PROVIDER_URI:
-                        return newTextNode('@repo')
-                    case REMOTE_DIRECTORY_PROVIDER_URI:
-                        return newTextNode('@dir')
-                    case REMOTE_FILE_PROVIDER_URI:
-                        return newTextNode('@file')
-                }
-        }
-        // If unknown type, just remove it
-        return newTextNode('')
-    }
-
-    state = mapLexicalNodes(state, node => {
-        if (!isSerializedContextItemMentionNode(node)) {
-            return node
-        }
-        return mentionToTextNode(node)
-    })
-
-    return textContentFromSerializedLexicalNode(state.lexicalEditorState.root).trimStart()
 }
 
 export function filterContextItemsFromPromptEditorValue(
@@ -495,29 +442,6 @@ function filterLexicalNodes(
     forEachPreOrder(copy.root, node => {
         if (node && 'children' in node && Array.isArray(node.children)) {
             node.children = node.children.filter(child => predicate(child))
-        }
-    })
-
-    return {
-        ...editorState,
-        lexicalEditorState: copy,
-    }
-}
-
-/**
- * returns a copy of editorState with mapped nodes
- */
-function mapLexicalNodes(
-    editorState: SerializedPromptEditorState,
-    f: (node: SupportedSerializedNodes) => SupportedSerializedNodes
-): SerializedPromptEditorState {
-    const copy: typeof editorState.lexicalEditorState = JSON.parse(
-        JSON.stringify(editorState.lexicalEditorState)
-    )
-
-    forEachPreOrder(copy.root, node => {
-        if (node && 'children' in node && Array.isArray(node.children)) {
-            node.children = node.children.map(f)
         }
     })
 

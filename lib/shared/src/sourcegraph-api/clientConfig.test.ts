@@ -16,7 +16,6 @@ const CLIENT_CONFIG_FIXTURE: CodyClientConfig = {
     smartContextWindowEnabled: true,
     modelsAPIEnabled: false,
     userShouldUseEnterprise: false,
-    intentDetection: 'enabled',
     notices: [],
     omniBoxEnabled: false,
     codeSearchEnabled: true,

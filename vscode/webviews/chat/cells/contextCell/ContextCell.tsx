@@ -1,4 +1,4 @@
-import type { ChatMessage, ContextItem, Model, RankedContext } from '@sourcegraph/cody-shared'
+import type { ContextItem, Model, RankedContext } from '@sourcegraph/cody-shared'
 import { pluralize } from '@sourcegraph/cody-shared'
 import { DeepCodyAgentID } from '@sourcegraph/cody-shared/src/models/client'
 import { MENTION_CLASS_NAME } from '@sourcegraph/prompt-editor'
@@ -37,9 +37,6 @@ export const ContextCell: FunctionComponent<{
     className?: string
 
     defaultOpen?: boolean
-    intent: ChatMessage['intent']
-
-    experimentalOneBoxEnabled?: boolean
     agent?: string
 }> = memo(
     ({
@@ -51,8 +48,6 @@ export const ContextCell: FunctionComponent<{
         className,
         defaultOpen,
         isContextLoading,
-        intent,
-        experimentalOneBoxEnabled,
         agent,
     }) => {
         const __storybook__initialOpen = useContext(__ContextCellStorybookContext)?.initialOpen ?? false
@@ -118,28 +113,18 @@ export const ContextCell: FunctionComponent<{
 
         // Text for top header text
         const headerText: { main: string; sub?: string } = {
-            main:
-                experimentalOneBoxEnabled && !intent
-                    ? 'Reviewing query'
-                    : isAgenticChat
-                      ? 'Agentic context'
-                      : isContextLoading
-                        ? 'Fetching context'
-                        : 'Context',
-            sub:
-                experimentalOneBoxEnabled && !intent
-                    ? 'Figuring out query intent...'
-                    : isContextLoading
-                      ? isAgenticChat
-                          ? 'Thinking…'
-                          : 'Retrieving codebase files…'
-                      : contextItems === undefined
-                        ? 'none requested'
-                        : contextItems.length === 0
-                          ? isAgenticChat
-                              ? 'none'
-                              : 'none fetched'
-                          : itemCountLabel,
+            main: isAgenticChat ? 'Agentic context' : isContextLoading ? 'Fetching context' : 'Context',
+            sub: isContextLoading
+                ? isAgenticChat
+                    ? 'Thinking…'
+                    : 'Retrieving codebase files…'
+                : contextItems === undefined
+                  ? 'none requested'
+                  : contextItems.length === 0
+                    ? isAgenticChat
+                        ? 'none'
+                        : 'none fetched'
+                    : itemCountLabel,
         }
 
         const hasContent =
