@@ -352,19 +352,34 @@ function getCurrentMessageMetadata(): CurrentMessageMetadata {
 export class ExperimentalToolHandler implements AgentHandler {
     constructor(private anthropicAPI: Anthropic) {}
 
-    public async handle({ inputText }: AgentRequest, delegate: AgentHandlerDelegate): Promise<void> {
+    public async handle(
+        { inputText, chatBuilder }: AgentRequest,
+        delegate: AgentHandlerDelegate
+    ): Promise<void> {
         const metadata = getCurrentMessageMetadata()
         const hiddenMetadata = `<hiddenMetadata>${JSON.stringify(metadata)}</hiddenMetadata>`
 
         const maxTurns = 10
         let turns = 0
 
+        const previous: Array<MessageParam> = chatBuilder
+            .getMessages()
+            .filter(message => message.speaker === 'assistant' || message.speaker === 'human')
+            .map(message => {
+                return {
+                    role: message.speaker === 'human' ? 'user' : 'assistant',
+                    content: message.text?.toString() || '',
+                }
+            })
+
         const subTranscript: Array<MessageParam> = [
+            ...previous,
             {
                 role: 'user',
                 content: `${inputText.toString()}\n${hiddenMetadata}`,
             },
         ]
+
         const subViewTranscript: SubMessage[] = []
         let messageInProgress: SubMessage | undefined
 
