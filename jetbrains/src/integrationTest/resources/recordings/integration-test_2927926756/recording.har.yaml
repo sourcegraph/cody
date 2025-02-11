@@ -5,6 +5,75 @@ log:
     name: Polly.JS
     version: 6.0.6
   entries:
+    - _id: 6e977d3842ddb417bf941a0f568426d9
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 20
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: authorization
+            value: token
+              REDACTED_fc324d3667e841181b0779375f26dedc911d26b303d23b29b1a2d7ee63dc77eb
+          - name: user-agent
+            value: OTel-OTLP-Exporter-JavaScript/0.45.1
+          - name: host
+            value: sourcegraph.com
+        headersSize: 253
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            resourceSpans: []
+        queryString: []
+        url: https://sourcegraph.com/-/debug/otlp/v1/traces
+      response:
+        bodySize: 21
+        content:
+          mimeType: application/json
+          size: 21
+          text: "{\"partialSuccess\":{}}"
+        cookies: []
+        headers:
+          - name: date
+            value: Tue, 11 Feb 2025 11:45:03 GMT
+          - name: content-type
+            value: application/json
+          - name: content-length
+            value: "21"
+          - name: connection
+            value: keep-alive
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: vary
+            value: Cookie,Authorization,Cookie,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1181
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2025-02-11T11:45:03.002Z
+      time: 634
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 634
     - _id: 897d3731ab8e15a1549f29445eafd1e1
       _order: 0
       cache: {}
@@ -33,7 +102,7 @@ log:
             value: gzip,deflate
           - name: host
             value: sourcegraph.com
-        headersSize: 358
+        headersSize: 431
         httpVersion: HTTP/1.1
         method: GET
         queryString: []
@@ -316,7 +385,7 @@ log:
           params: []
           textJSON:
             query: >
-              
+
               query CodeSearchEnabled {
                   codeSearchEnabled: enterpriseLicenseHasFeature(feature:"code-search")
               }
@@ -412,7 +481,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentSiteCodyLlmConfiguration {
                   site {
                       codyLLMConfiguration {
@@ -523,7 +592,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentSiteCodyLlmConfiguration {
                   site {
                       codyLLMConfiguration {
@@ -537,18 +606,14 @@ log:
             value: null
         url: https://sourcegraph.com/.api/graphql?CurrentSiteCodyLlmConfiguration
       response:
-        bodySize: 136
+        bodySize: 143
         content:
           encoding: base64
           mimeType: application/json
-          size: 136
-          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdHJ+SmVPj6+zvl5aZnppUWJJZn5eWD53MSiE\
-            uf8vJLUipLwzLyU/HIlK6WUzOLEpJzUFKXa2tpaAAAAAP//AwArMNn0TAAAAA==\"]"
-          textDecoded:
-            data:
-              site:
-                codyLLMConfiguration:
-                  smartContextWindow: disabled
+          size: 143
+          text: "[\"H4sIAAAAAAAAAwAAAP//\",\"qlZKSSxJVLKqVirOLEkF0cn5KZU+Pr7O+XlpmemlRYkl\
+            mfl5YPncxKIS5/y8ktSKkvDMvJT8ciUrpZTM4sSknNQUpdra2loAAAAA//8DACsw2fR\
+            MAAAA\"]"
         cookies: []
         headers:
           - name: date
@@ -632,7 +697,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentSiteCodyLlmProvider {
                   site {
                       codyLLMConfiguration {
@@ -647,11 +712,14 @@ log:
         url: https://sourcegraph.com/.api/graphql?CurrentSiteCodyLlmProvider
       response:
         bodySize: 131
+        bodySize: 131
         content:
           encoding: base64
           mimeType: application/json
           size: 131
+          size: 131
           text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlY=\",\"Ks4sSQXRyfkplT4+vs75eWmZ6aVFiSWZ+Xkg\
+            8YKi/LLMlNQiJSul4vzSouTU9KLEggyl2traWgAAAAD//wMAHxQFwEUAAAA=\"]"
             8YKi/LLMlNQiJSul4vzSouTU9KLEggyl2traWgAAAAD//wMAHxQFwEUAAAA=\"]"
         cookies: []
         headers:
@@ -729,6 +797,7 @@ log:
           - name: host
             value: sourcegraph.com
         headersSize: 459
+        headersSize: 459
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -736,7 +805,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentUser {
                   currentUser {
                       id
@@ -762,9 +831,29 @@ log:
         url: https://sourcegraph.com/.api/graphql?CurrentUser
       response:
         bodySize: 376
+        bodySize: 376
         content:
           encoding: base64
           mimeType: application/json
+          size: 376
+          text: "[\"H4sIAAAAAAAAA2RPy07CQBT9l7tuaQ1R2klIFAQXaOMjNBjj4nZ6aaePmToPFJr+O2kwc\
+            eHunJzHvaeHHC0C64E7rUnarSE9UpEDg3SXNLxSp+T+5eqp4nPwoESTkhZ7QfmqRdEA\
+            s9qRB7kwXYPHBFsCBm/KaU6Fxq5cKOvHYRiCB86QlheD+TNkysa1v5ffrQMP8IAW9fb\
+            1ERiU1naGBUFTTieFUkVDYwNX0pK0E67aAIO7ZREpvlnjV/ZOblFn1XW+Xp1+omyXRj\
+            gTU5Nmm2XynM4eQnc81HMT3/gcPOi0aFEff0f0QBfw77PbYhTGazB4oHSBUpzQCiXNG\
+            JMqJwPs43MYhuEMAAD//wMASoyTP04BAAA=\"]"
+          textDecoded:
+            data:
+              currentUser:
+                avatarURL: https://lh3.googleusercontent.com/a/ACg8ocKFaqbYeuBkbj5dFEzx8bXV8a7i3sVbKCNPV7G0uyvk=s96-c
+                displayName: SourcegraphBot-9000
+                hasVerifiedEmail: true
+                id: VXNlcjozNDQ1Mjc=
+                organizations:
+                  nodes: []
+                primaryEmail:
+                  email: sourcegraphbot9k@gmail.com
+                username: sourcegraphbot9k-fnwmu
           size: 376
           text: "[\"H4sIAAAAAAAAA2RPy07CQBT9l7tuaQ1R2klIFAQXaOMjNBjj4nZ6aaePmToPFJr+O2kwc\
             eHunJzHvaeHHC0C64E7rUnarSE9UpEDg3SXNLxSp+T+5eqp4nPwoESTkhZ7QfmqRdEA\
@@ -867,7 +956,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentUserCodySubscription {
                   currentUser {
                       codySubscription {
@@ -986,7 +1075,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query SiteProductVersion {
                   site {
                       productVersion
@@ -1089,7 +1178,7 @@ log:
           params: []
           textJSON:
             query: |
-              
+
               query ViewerSettings {
                 viewerSettings {
                   final
