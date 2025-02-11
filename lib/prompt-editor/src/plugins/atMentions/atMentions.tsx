@@ -229,15 +229,17 @@ export const MentionsPlugin: FunctionComponent<{
                         // max height of the visible menu. This ensures that the menu does not
                         // flip orientation as the user is typing if it suddenly has less
                         // results. It also makes the positioning less glitchy.
-                        <div data-at-mention-menu="" className={clsx(styles.popoverDimensions)}>
-                            <div className={styles.popover}>
-                                <MentionMenu
-                                    params={params}
-                                    updateMentionMenuParams={updateMentionMenuParams}
-                                    setEditorQuery={setEditorQuery}
-                                    data={data}
-                                    selectOptionAndCleanUp={selectOptionAndCleanUp}
-                                />
+                        <div className={styles.popoverContainer}>
+                            <div data-at-mention-menu="" className={clsx(styles.popoverDimensions)}>
+                                <div className={styles.popover}>
+                                    <MentionMenu
+                                        params={params}
+                                        updateMentionMenuParams={updateMentionMenuParams}
+                                        setEditorQuery={setEditorQuery}
+                                        data={data}
+                                        selectOptionAndCleanUp={selectOptionAndCleanUp}
+                                    />
+                                </div>
                             </div>
                         </div>,
                         anchorElementRef.current
