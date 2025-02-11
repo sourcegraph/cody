@@ -366,7 +366,7 @@ function lexicalEditorStateFromPromptString(
 
     let children: SupportedSerializedNodes[] = []
     let lastTextNode: SerializedTextNode | undefined
-    const words = input.toString().split(' ')
+    const words = input.toString().split(/(\s+)/g)
 
     for (const word of words) {
         if (word.includes(AT_MENTION_SERIALIZED_PREFIX)) {
@@ -404,8 +404,6 @@ function lexicalEditorStateFromPromptString(
                     text: contextItemMentionNodeDisplayText(contextItem),
                 } satisfies SerializedContextItemMentionNode)
 
-                // Add whitespace after inserted mention node
-                lastTextNode = textNode(' ')
                 continue
             }
 
@@ -426,8 +424,6 @@ function lexicalEditorStateFromPromptString(
                     text: contextItemMentionNodeDisplayText(contextItem),
                 } satisfies SerializedContextItemMentionNode)
 
-                // Add whitespace after inserted mention node
-                lastTextNode = textNode(' ')
                 continue
             }
         }
@@ -435,7 +431,7 @@ function lexicalEditorStateFromPromptString(
         if (!lastTextNode) {
             lastTextNode = textNode('')
         }
-        lastTextNode.text += `${word} `
+        lastTextNode.text += `${word}`
     }
 
     if (lastTextNode) {
