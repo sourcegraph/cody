@@ -3,7 +3,6 @@ import {
     CLIENT_CAPABILITIES_FIXTURE,
     type ContextItem,
     ContextItemSource,
-    FeatureFlag,
     type Message,
     ModelUsage,
     type ModelsData,
@@ -26,6 +25,7 @@ import { ChatBuilder } from './ChatBuilder'
 import { DefaultPrompter } from './prompt'
 
 describe('DefaultPrompter', () => {
+    process.env.DISABLE_FEATURE_FLAGS = 'true'
     const localStorageData: { [key: string]: unknown } = {
         'cody-experimental-prompt-caching-on-messages': false,
     }
@@ -37,18 +37,28 @@ describe('DefaultPrompter', () => {
     } as any)
 
     beforeEach(() => {
+        process.env.DISABLE_FEATURE_FLAGS = 'true'
         vi.spyOn(contextFiltersProvider, 'isUriIgnored').mockResolvedValue(false)
         vi.spyOn(graphqlClient, 'fetchSourcegraphAPI').mockResolvedValue(true)
-        vi.spyOn(featureFlagProvider, 'evaluatedFeatureFlag').mockImplementation((flag: FeatureFlag) =>
-            flag === FeatureFlag.CodyPromptCachingOnMessages
-                ? Observable.of(false)
-                : Observable.of(false)
-        )
+        vi.spyOn(featureFlagProvider, 'evaluatedFeatureFlag').mockReturnValue(Observable.of(false))
+        // Also mock the enrollment event to ensure false
+        vi.mock('@sourcegraph/cody-shared', async () => {
+            const actual = (await vi.importActual('@sourcegraph/cody-shared')) as object
+            return {
+                ...actual,
+                logFirstEnrollmentEvent: () => false,
+                featureFlagProvider: {
+                    evaluatedFeatureFlag: () => Observable.of(false),
+                },
+            }
+        })
+        process.env.DISABLE_FEATURE_FLAGS = 'true'
         mockAuthStatus(AUTH_STATUS_FIXTURE_AUTHED)
         mockResolvedConfig({ configuration: {} })
         mockClientCapabilities(CLIENT_CAPABILITIES_FIXTURE)
     })
     afterEach(() => {
+        // delete process.env.DISABLE_FEATURE_FLAGS
         vi.restoreAllMocks()
     })
 
@@ -265,7 +275,7 @@ describe('DefaultPrompter', () => {
 
     function checkPrompt(prompt: Message[], expectedPrefixes: string[]): void {
         for (let i = 0; i < expectedPrefixes.length; i++) {
-            const actual = prompt[i].text?.toString() || ''
+            const actual = prompt[i].text?.toString()
             const expected = expectedPrefixes[i]
             if (!actual?.includes(expected)) {
                 expect.fail(
