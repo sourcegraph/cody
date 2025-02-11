@@ -394,6 +394,8 @@ export class DefaultDecorator implements AutoEditsDecorator {
             scale: '0.5',
             'transform-origin': '0px 0px',
             height: 'auto',
+            // The decoration will be entirely taken up by the image.
+            // Setting the line-height to 0 ensures that there is no additional padding added by the decoration area.
             'line-height': '0',
         })
 
