@@ -27,7 +27,10 @@ describe('DefaultPrompter', () => {
     beforeEach(async () => {
         vi.spyOn(localStorage, 'getEnrollmentHistory').mockReturnValue(false)
         vi.spyOn(contextFiltersProvider, 'isUriIgnored').mockResolvedValue(false)
-        vi.spyOn(graphqlClient, 'fetchSourcegraphAPI').mockResolvedValue(true)
+        vi.spyOn(graphqlClient, 'fetchSourcegraphAPI').mockResolvedValue({
+            data: null,
+            errors: null,
+        })
         mockAuthStatus(AUTH_STATUS_FIXTURE_AUTHED)
         mockResolvedConfig({ configuration: {} })
         mockClientCapabilities(CLIENT_CAPABILITIES_FIXTURE)
