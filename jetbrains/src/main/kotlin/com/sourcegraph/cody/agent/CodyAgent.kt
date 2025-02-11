@@ -99,7 +99,9 @@ private constructor(
     private val logger = Logger.getInstance(CodyAgent::class.java)
     private val PLUGIN_ID = PluginId.getId("com.sourcegraph.jetbrains")
     private const val DEFAULT_AGENT_DEBUG_PORT = 3113 // Also defined in agent/src/cli/jsonrpc.ts
-    private val globalState = if (ConfigUtil.isIntegrationTestModeEnabled()) ClientCapabilities.GlobalStateEnum.Stateless else ClientCapabilities.GlobalStateEnum.`Server-managed`
+    private val globalState =
+        if (ConfigUtil.isIntegrationTestModeEnabled()) ClientCapabilities.GlobalStateEnum.Stateless
+        else ClientCapabilities.GlobalStateEnum.`Server-managed`
     @JvmField val executorService: ExecutorService = Executors.newCachedThreadPool()
 
     enum class Debuggability {
