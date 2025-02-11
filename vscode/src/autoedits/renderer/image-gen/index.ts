@@ -8,6 +8,20 @@ export async function initImageSuggestionService() {
     return Promise.all([initSyntaxHighlighter(), initCanvas()])
 }
 
+function getFontSizeFromUserSettings(): number | undefined {
+    // Extract the font size from VS Code user settings.
+    // Note: VS Code warns but technically supports string-based font sizes, e.g. "14".
+    // TODO: Support this for other editors. We should respect the font size in editors like JetBrains.
+    const userFontSize = Number(vscode.workspace.getConfiguration('editor').get('fontSize'))
+
+    if (Number.isNaN(userFontSize) || userFontSize <= 0) {
+        // We cannot use this font size, we will use a platform specific default
+        return
+    }
+
+    return userFontSize
+}
+
 interface SuggestionOptions {
     decorations: AddedLinesDecorationInfo[]
     lang: string
@@ -22,8 +36,7 @@ export function generateSuggestionAsImage(options: SuggestionOptions): { light: 
     const { decorations, lang } = options
     const renderConfig: UserProvidedRenderConfig = options.config || {
         // The image should be rendered using the same font size as the existing text in the editor.
-        // TODO: It should be possible for this value to be set by different clients (e.g. JetBrains)
-        fontSize: vscode.workspace.getConfiguration('editor').get<number>('fontSize'),
+        fontSize: getFontSizeFromUserSettings(),
     }
 
     const darkDecorations = syntaxHighlightDecorations(decorations, lang, 'dark')

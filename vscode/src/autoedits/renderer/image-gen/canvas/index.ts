@@ -154,7 +154,7 @@ export function drawDecorationsToCanvas(
 
     // In order for us to draw to the canvas, we must first determine the correct
     // dimensions for the canvas. We can do this with a temporary Canvas that uses the same font
-    const { ctx: tempCtx } = createCanvas({ height: 10, width: 10, fontSize: 12 }, context)
+    const { ctx: tempCtx } = createCanvas({ height: 10, width: 10, fontSize: config.fontSize }, context)
 
     // Iterate through each token line, and determine the required width of the canvas (maximum line length)
     // and the required height of the canvas (number of lines determined by their line height)
