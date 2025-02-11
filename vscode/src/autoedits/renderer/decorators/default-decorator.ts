@@ -394,6 +394,7 @@ export class DefaultDecorator implements AutoEditsDecorator {
             scale: '0.5',
             'transform-origin': '0px 0px',
             height: 'auto',
+            'line-height': '0',
         })
 
         this.editor.setDecorations(this.addedLinesDecorationType, [
