@@ -8,6 +8,7 @@ import {
     type SerializedPromptEditorValue,
     deserializeContextItem,
     isAbortErrorOrSocketHangUp,
+    serializedPromptEditorStateFromText,
 } from '@sourcegraph/cody-shared'
 import type { PromptEditorRefAPI } from '@sourcegraph/prompt-editor'
 import { clsx } from 'clsx'
@@ -43,6 +44,7 @@ import { isCodeSearchContextItem } from '../../src/context/openctx/codeSearch'
 import { AgenticContextCell } from './cells/agenticCell/AgenticContextCell'
 import ApprovalCell from './cells/agenticCell/ApprovalCell'
 import { ContextCell } from './cells/contextCell/ContextCell'
+import { DidYouMeanNotice } from './cells/messageCell/assistant/DidYouMean'
 import { LastEditorContext } from './context'
 
 interface TranscriptProps {
@@ -502,6 +504,20 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
         [humanMessage.index]
     )
 
+    const editAndSubmitSearch = useCallback(
+        (text: string) =>
+            editHumanMessage({
+                messageIndexInTranscript: humanMessage.index,
+                editorValue: {
+                    text,
+                    contextItems: [],
+                    editorState: serializedPromptEditorStateFromText(text),
+                },
+                manuallySelectedIntent: 'search',
+            }),
+        [humanMessage]
+    )
+
     return (
         <>
             <HumanMessageCell
@@ -523,6 +539,13 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                 intent={manuallySelectedIntent}
                 manuallySelectIntent={setManuallySelectedIntent}
             />
+            {omniboxEnabled && assistantMessage?.didYouMeanQuery && (
+                <DidYouMeanNotice
+                    query={assistantMessage?.didYouMeanQuery}
+                    disabled={!!assistantMessage?.isLoading}
+                    switchToSearch={() => editAndSubmitSearch(assistantMessage?.didYouMeanQuery ?? '')}
+                />
+            )}
             {!usingToolCody && !isSearchIntent && humanMessage.agent && (
                 <AgenticContextCell
                     key={`${humanMessage.index}-${humanMessage.intent}-process`}
