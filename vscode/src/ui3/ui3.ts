@@ -66,10 +66,7 @@ export function createUI3Service({ interactiveThreadService }: UI3Deps): UI3Serv
     vscode.commands.registerCommand('cody.ui3.createWindow', async () => {
         const webview = await webviewManager.createWebview('editor')
 
-        console.log('WEBVIEW ON DID RECEIVE')
-        webview.onDidReceiveMessage(e => {
-            console.log('WEBVIEW DID RECEIVE', e)
-        })
+        webview.onDidReceiveMessage(e => {})
         const messageAPI = createMessageAPIForExtension({
             postMessage: message => webview.postMessage(message),
             postError: error => console.error(error),

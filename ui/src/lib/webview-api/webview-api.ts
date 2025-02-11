@@ -22,7 +22,6 @@ export async function createWebviewAPIClient(): Promise<WebviewAPIClient> {
     const serverEndpoint = localStorage.getItem('serverEndpoint')
     const accessToken = localStorage.getItem('accessToken')
     if (!serverEndpoint || !accessToken) {
-
         alert(`You need to set an endpoint and token in your browser devtools console by running these commands:
         localStorage.serverEndpoint = 'https://sourcegraph.sourcegraph.com/'
         localStorage.accessToken = 'sgp_MY_TOKEN'
@@ -135,7 +134,6 @@ function createVSCodeWrapperForVSCodeWebview(): VSCodeWrapper {
     const api = vsCodeApi
     return {
         postMessage: message => {
-            console.log('POSTMESSAGE FROM W TO X', message)
             api.postMessage(forceHydration(message))
         },
         onMessage: callback => {

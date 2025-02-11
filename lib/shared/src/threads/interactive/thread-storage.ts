@@ -123,7 +123,7 @@ export function createFileSystemThreadStorage(
                     })
                 )
                 signal?.throwIfAborted()
-                return threads.filter(t => t !== null)
+                return threads.filter(t => t !== null).toSorted((a, b) => b.created - a.created)
             })
         )
     }

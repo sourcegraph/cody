@@ -33,7 +33,6 @@ export function createAgentForInteractiveThread(
 
             const workItem = workItemFromThread(thread)
             const agentState = agentStateFromThread(thread)
-            console.log('WORKITEM', workItem, 'AGENTSTATE', agentState)
             if (workItem) {
                 // Run async and do not await.
                 //
