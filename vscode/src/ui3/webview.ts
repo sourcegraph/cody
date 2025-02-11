@@ -48,7 +48,7 @@ export function createUI3WebviewManager(): UI3WebviewService {
         const panel = vscode.window.createWebviewPanel(
             WEBVIEW_VIEW_TYPE,
             'ui3',
-            vscode.ViewColumn.Beside,
+            vscode.ViewColumn.Active,
             {
                 retainContextWhenHidden: false,
                 enableScripts: true,

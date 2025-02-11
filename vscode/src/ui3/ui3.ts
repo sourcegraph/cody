@@ -80,6 +80,7 @@ export function createUI3Service({ interactiveThreadService }: UI3Deps): UI3Serv
         })
         await createWindow(newWindowID(), messageAPI)
     })
+    setTimeout(() => vscode.commands.executeCommand('cody.ui3.createWindow'), 500)
 
     return {
         createWindow,

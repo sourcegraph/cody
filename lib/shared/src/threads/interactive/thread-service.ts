@@ -65,37 +65,26 @@ export type ThreadUpdate =
       }
     | { type: 'ping' }
 
-interface ThreadStorage {
-    get(threadID: InteractiveThread['id']): InteractiveThread | null
-    store(thread: InteractiveThread): void
-}
-
-export function mapThreadStorage(): ThreadStorage {
-    const storage = new Map<ThreadID, InteractiveThread>()
-    return {
-        get(threadID) {
-            return storage.get(threadID) ?? null
-        },
-        store(thread) {
-            storage.set(thread.id, thread)
-        },
-    }
-}
-
-export function localStorageThreadStorage(storage: Storage): ThreadStorage {
-    return {
-        get(threadID) {
-            const stored = storage.getItem(`thread:${threadID}`)
-            return stored ? JSON.parse(stored) : null
-        },
-        store(thread) {
-            storage.setItem(`thread:${thread.id}`, JSON.stringify(thread))
-        },
-    }
-}
-
 export function createInteractiveThreadService(storage: Memento): InteractiveThreadService {
     const subscribers = new Map<ThreadID, Set<(thread: InteractiveThread) => void>>()
+
+    async function update(threadID: ThreadID, update: ThreadUpdate): Promise<InteractiveThread> {
+        const prev = storage.get<InteractiveThread>(threadID)
+        if (!prev) {
+            throw new Error(`thread ${threadID} not found`)
+        }
+        const thread = JSON.parse(JSON.stringify(prev)) as InteractiveThread // copy
+
+        updateThread(thread, update)
+
+        await storage.update(threadID, thread)
+        // TODO!(sqs)
+        console.log('UPDATE TEST', { updatedTo: thread, threadID, justGotAgain: storage.get(threadID) })
+        for (const callback of subscribers.get(threadID) ?? []) {
+            callback(thread)
+        }
+        return thread
+    }
 
     return {
         observe(threadID: ThreadID, options: ObserveThreadOptions): Observable<InteractiveThread> {
@@ -130,93 +119,7 @@ export function createInteractiveThreadService(storage: Memento): InteractiveThr
                 }
             })
         },
-
-        async update(threadID: ThreadID, update: ThreadUpdate): Promise<InteractiveThread> {
-            const prev = storage.get(threadID)
-            if (!prev) {
-                throw new Error(`thread ${threadID} not found`)
-            }
-
-            const thread = JSON.parse(JSON.stringify(prev)) as InteractiveThread
-            // thread.v++ TODO!(sqs)
-
-            function resetToolInvocation(
-                step: Extract<ThreadStep, { type: 'tool' }>,
-                userInput: ThreadStepUserInput | undefined
-            ): ToolInvocation {
-                if (!thread.toolInvocations) {
-                    thread.toolInvocations = {}
-                }
-                const toolInvocation: ToolInvocation = {
-                    args: step.args,
-                    userInput,
-                    meta: undefined,
-                    invocation: { status: 'queued' },
-                }
-                thread.toolInvocations[step.id] = toolInvocation
-                return toolInvocation
-            }
-
-            switch (update.type) {
-                case 'append-human-message':
-                    thread.steps = [
-                        ...thread.steps,
-                        { id: newThreadStepID(), type: 'human-message', content: update.content },
-                    ]
-                    break
-                case 'append-agent-steps':
-                    {
-                        thread.steps = [...thread.steps, ...update.steps]
-
-                        // Invoke tools for any new tool-call steps.
-                        for (const step of update.steps) {
-                            if (step.type === 'tool') {
-                                const invocation = resetToolInvocation(step, undefined)
-                                // TODO!(sqs)
-                                if (step.tool === 'edit-file') {
-                                    invocation.meta = {
-                                        diffStat: { added: 37, changed: 3, deleted: 1 },
-                                    } as BuiltinTools['edit-file']['meta']
-                                }
-                            }
-                        }
-                    }
-                    break
-                case 'user-input':
-                    {
-                        const step = thread.steps.find(step => step.id === update.step)
-                        if (!step) {
-                            throw new Error(`step ${update.step} not found`)
-                        }
-                        if (!thread.userInput) {
-                            thread.userInput = {}
-                        }
-                        thread.userInput[update.step] = update.value
-
-                        if (step.type === 'tool') {
-                            resetToolInvocation(step, update.value)
-                        }
-                    }
-                    break
-                case 'update-tool-invocation':
-                    {
-                        const toolInvocation = thread.toolInvocations?.[update.step]
-                        if (!toolInvocation) {
-                            throw new Error(`tool invocation ${update.step} not found`)
-                        }
-                        toolInvocation.invocation = update.invocation
-                    }
-                    break
-                case 'ping':
-                    break
-            }
-
-            await storage.update(thread.id, thread)
-            for (const callback of subscribers.get(threadID) ?? []) {
-                callback(thread)
-            }
-            return thread
-        },
+        update: singleFlight(update),
         observeHistory(): Observable<InteractiveThread[]> {
             const threadIDs = storage.keys().filter(isThreadID)
             const threads = threadIDs
@@ -226,5 +129,126 @@ export function createInteractiveThreadService(storage: Memento): InteractiveThr
                 .toSorted((a, b) => b.created - a.created)
             return concat(Observable.of(threads), NEVER)
         },
+    }
+}
+
+/**
+ * Update (mutating in-place) {@link thread}.
+ */
+function updateThread(thread: InteractiveThread, update: ThreadUpdate): void {
+    console.log('X updateThread', update, thread)
+
+    // thread.v++ TODO!(sqs)
+
+    function resetToolInvocation(
+        step: Extract<ThreadStep, { type: 'tool' }>,
+        userInput: ThreadStepUserInput | undefined
+    ): ToolInvocation {
+        if (!thread.toolInvocations) {
+            thread.toolInvocations = {}
+        }
+        const toolInvocation: ToolInvocation = {
+            args: step.args,
+            userInput,
+            meta: undefined,
+            invocation: { status: 'queued' },
+        }
+        thread.toolInvocations[step.id] = toolInvocation
+        return toolInvocation
+    }
+
+    switch (update.type) {
+        case 'append-human-message':
+            thread.steps = [
+                ...thread.steps,
+                { id: newThreadStepID(), type: 'human-message', content: update.content },
+            ]
+            break
+        case 'append-agent-steps':
+            {
+                thread.steps = [...thread.steps, ...update.steps]
+
+                // Invoke tools for any new tool-call steps.
+                for (const step of update.steps) {
+                    if (step.type === 'tool') {
+                        const invocation = resetToolInvocation(step, undefined)
+                        // TODO!(sqs)
+                        if (step.tool === 'edit-file') {
+                            invocation.meta = {
+                                diffStat: { added: 37, changed: 3, deleted: 1 },
+                            } as BuiltinTools['edit-file']['meta']
+                        }
+                    }
+                }
+            }
+            break
+        case 'user-input':
+            {
+                const step = thread.steps.find(step => step.id === update.step)
+                if (!step) {
+                    throw new Error(`step ${update.step} not found`)
+                }
+                if (!thread.userInput) {
+                    thread.userInput = {}
+                }
+                thread.userInput[update.step] = update.value
+
+                if (step.type === 'tool') {
+                    resetToolInvocation(step, update.value)
+                }
+            }
+            break
+        case 'update-tool-invocation':
+            {
+                const toolInvocation = thread.toolInvocations?.[update.step]
+                if (!toolInvocation) {
+                    throw new Error(`tool invocation ${update.step} not found`)
+                }
+                toolInvocation.invocation = update.invocation
+            }
+            break
+        case 'ping':
+            break
+    }
+}
+
+/**
+ * Creates a single-flighted version of a function where only one call can be in flight at a time.
+ * Subsequent calls are queued and executed in order after the current call completes.
+ */
+function singleFlight<T, Args extends any[]>(
+    fn: (...args: Args) => Promise<T>
+): (...args: Args) => Promise<T> {
+    const queue: Array<{
+        args: Args
+        resolve: (value: T | PromiseLike<T>) => void
+        reject: (reason?: any) => void
+    }> = []
+    let inFlight = false
+
+    return async (...args: Args): Promise<T> => {
+        return new Promise((resolve, reject) => {
+            queue.push({ args, resolve, reject })
+            void processQueue()
+        })
+    }
+
+    async function processQueue(): Promise<void> {
+        if (inFlight || queue.length === 0) {
+            return
+        }
+
+        inFlight = true
+        const { args, resolve, reject } = queue.shift()!
+
+        try {
+            const result = await fn(...args)
+            resolve(result)
+        } catch (error) {
+            reject(error)
+        } finally {
+            inFlight = false
+            void processQueue()
+        }
     }
 }
