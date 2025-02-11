@@ -1,0 +1,45 @@
+.outer-container {
+<<<<<<< HEAD
+  background-color: transparent;
+=======
+>>>>>>> refs/heads/main
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+.error-container {
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 0.5rem;
+}
+
+.error {
+  flex-direction: row;
+  display: flex;
+  padding: 1rem;
+  color: var(--text);
+  background-color: var(--background-03);
+  min-height: 2rem;
+  position: relative;
+  overflow: auto;
+  align-items: baseline;
+}
+
+.close-btn {
+  position: absolute;
+  top: 0.65rem;
+  right: 0.65rem;
+  background: none;
+  border: none;
+  color: var(--text);
+  cursor: pointer;
+}
+
+/* Undo the UA stylesheet set by vscode */
+kbd {
+  all: unset;
+}
+
+
