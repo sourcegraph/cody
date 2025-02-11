@@ -176,9 +176,9 @@ export interface ChatSession {
 export class ChatController implements vscode.Disposable, vscode.WebviewViewProvider, ChatSession {
     private chatBuilder: ChatBuilder
 
-    private readonly chatClient: Pick<ChatClient, 'chat'>
+    private readonly chatClient: ChatControllerOptions['chatClient']
 
-    private readonly contextRetriever: Pick<ContextRetriever, 'retrieveContext' | 'computeDidYouMean'>
+    private readonly contextRetriever: ChatControllerOptions['contextRetriever']
 
     private readonly editor: ChatControllerOptions['editor']
     private readonly extensionClient: ChatControllerOptions['extensionClient']
@@ -627,7 +627,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         signal: AbortSignal
         source?: EventSource
         command?: DefaultChatCommands
-        manuallySelectedIntent?: ChatMessage['intent']
+        manuallySelectedIntent?: ChatMessage['intent'] | undefined | null
         traceparent?: string | undefined | null
     }): Promise<void> {
         return context.with(extractContextFromTraceparent(traceparent), () => {
