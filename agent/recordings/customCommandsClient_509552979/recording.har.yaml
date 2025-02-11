@@ -541,7 +541,7 @@ log:
           - name: content-type
             value: application/json
           - name: traceparent
-            value: 00-27fe4b2a2eb77f024d75528862896002-6dffb2840ba571a6-01
+            value: 00-89c8a378d827e06424ac34ea658fe332-ae5725fefad9db64-01
           - name: user-agent
             value: customcommandsclient/v1 (Node.js v20.4.0)
           - name: x-requested-with
@@ -644,13 +644,15 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 10 Feb 2025 19:57:16 GMT
+            value: Tue, 11 Feb 2025 18:54:44 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
             value: chunked
           - name: connection
             value: keep-alive
+          - name: retry-after
+            value: "67"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -668,13 +670,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1299
+        headersSize: 1405
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-02-10T19:57:13.306Z
-      time: 3629
+      startedDateTime: 2025-02-11T18:54:42.446Z
+      time: 1894
       timings:
         blocked: -1
         connect: -1
@@ -682,7 +684,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 3629
+        wait: 1894
     - _id: 82aefa70a5ee53eee9a9b81eefc59c60
       _order: 0
       cache: {}
@@ -700,7 +702,7 @@ log:
           - name: content-type
             value: application/json
           - name: traceparent
-            value: 00-d8ad7f9c56a0d85c7ba155eb9ad6436f-b4d4dbc5ddab2d09-01
+            value: 00-00ff2202f4b178a0c3ada66f2d21ba34-48a16ab077ec4be1-01
           - name: user-agent
             value: customcommandsclient/v1 (Node.js v20.4.0)
           - name: x-requested-with
@@ -799,14 +801,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=customcommandsclient&client-version=v1
       response:
-        bodySize: 545
+        bodySize: 451
         content:
           mimeType: text/event-stream
-          size: 545
+          size: 451
           text: >+
             event: completion
 
-            data: {"deltaText":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean\n    logAnimalName(): void\n}\n/* SELECTION_END */\n","stopReason":"stop_sequence"}
+            data: {"deltaText":"export interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean\n    logName(): void\n}","stopReason":"stop_sequence"}
 
 
             event: done
@@ -816,13 +818,15 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 10 Feb 2025 19:57:19 GMT
+            value: Tue, 11 Feb 2025 18:54:46 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
             value: chunked
           - name: connection
             value: keep-alive
+          - name: retry-after
+            value: "65"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -840,13 +844,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1299
+        headersSize: 1405
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-02-10T19:57:16.951Z
-      time: 2442
+      startedDateTime: 2025-02-11T18:54:44.359Z
+      time: 1762
       timings:
         blocked: -1
         connect: -1
@@ -854,7 +858,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 2442
+        wait: 1762
     - _id: f1b1cde4cd57488b7f0137954f0302f5
       _order: 0
       cache: {}
