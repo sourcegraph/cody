@@ -20,7 +20,9 @@ import {
     combineLatest,
     contextFiltersProvider,
     createDisposables,
+    createFileSystemThreadStorage,
     createInteractiveThreadService,
+    createMementoThreadStorage,
     currentAuthStatus,
     currentUserProductSubscription,
     distinctUntilChanged,
@@ -311,7 +313,12 @@ const register = async (
     registerUpgradeHandlers(disposables)
     disposables.push(charactersLogger)
 
-    const interactiveThreadService = createInteractiveThreadService(localStorage.storage)
+    // TODO!(sqs): in web we need to use indexeddb, otherwise use fs
+    const interactiveThreadService = createInteractiveThreadService(
+        platform.createStorage
+            ? createMementoThreadStorage(localStorage.storage)
+            : createFileSystemThreadStorage(vscode.workspace.fs, context.globalStorageUri)
+    )
     setUI3Service(createUI3Service({ interactiveThreadService }))
 
     // INC-267 do NOT await on this promise. This promise triggers

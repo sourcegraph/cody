@@ -294,7 +294,7 @@ export type {
 } from './sourcegraph-api/graphql/client'
 export { RestClient } from './sourcegraph-api/rest/client'
 export { GraphQLTelemetryExporter } from './sourcegraph-api/telemetry/GraphQLTelemetryExporter'
-export { type BillingCategory, type BillingProduct } from './telemetry-v2'
+export type { BillingCategory, BillingProduct } from './telemetry-v2'
 export {
     MockServerTelemetryRecorderProvider,
     NoOpTelemetryRecorderProvider,
@@ -430,6 +430,7 @@ export {
 
 export * from './threads/interactive/thread-service'
 export * from './threads/interactive/thread'
+export * from './threads/interactive/thread-storage'
 export * from './threads/interactive/agent'
 export * from './threads/interactive/tool-service'
 export * from './threads/interactive/builtin-tools'

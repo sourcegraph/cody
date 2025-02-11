@@ -1,3 +1,4 @@
+import isEqual from 'lodash/isEqual'
 import { Observable } from 'observable-fns'
 import {
     debounceTime,
@@ -22,7 +23,7 @@ export function createAgentForInteractiveThread(
 
     const thread = threadService.observe(threadID, {})
     return thread.pipe(
-        distinctUntilChanged(),
+        distinctUntilChanged((a, b) => isEqual({ ...a, v: null }, { ...b, v: null })),
         debounceTime(200),
         mergeMap(thread => {
             const workItem = workItemFromThread(thread)
