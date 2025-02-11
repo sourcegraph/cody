@@ -1059,8 +1059,7 @@ export class SourcegraphGraphQLAPIClient {
         first: number,
         signal?: AbortSignal
     ): Promise<{ name: string; id: string }[] | Error> {
-        console.log('GETTING REPO IDS...')
-        const result = this.fetchSourcegraphAPI<APIResponse<RepositoryIdsResponse>>(
+        return this.fetchSourcegraphAPI<APIResponse<RepositoryIdsResponse>>(
             REPOSITORY_IDS_QUERY,
             {
                 names,
@@ -1068,12 +1067,6 @@ export class SourcegraphGraphQLAPIClient {
             },
             signal
         ).then(response => extractDataOrError(response, data => data.repositories?.nodes || []))
-
-        result.then(() => {
-            console.log('RESOLVED RESULT', result)
-        })
-
-        return result
     }
 
     public async getRepoName(cloneURL: string, signal?: AbortSignal): Promise<string | null> {
