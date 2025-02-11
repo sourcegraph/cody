@@ -44,7 +44,7 @@ const preview: Preview = {
         },
         theme: {
             description: 'VS Code theme',
-            defaultValue: 'dark-modern',
+            defaultValue: 'darkModern',
             toolbar: {
                 title: 'VS Code Theme',
                 icon: 'photo',
