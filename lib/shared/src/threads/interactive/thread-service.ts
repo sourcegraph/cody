@@ -17,7 +17,7 @@ export interface InteractiveThreadService {
      * Observe a chat thread. The returned {@link Observable} emits whenever there are any changes
      * to the chat thread.
      */
-    observe(threadID: ThreadID, options: ObserveThreadOptions): Observable<InteractiveThread>
+    observe(threadID: ThreadID, options: ObserveThreadOptions): Observable<InteractiveThread | null>
 
     /**
      * Perform an update action on the thread.
@@ -84,7 +84,10 @@ export function createInteractiveThreadService(storage: ThreadStorage): Interact
     }
 
     return {
-        observe(threadID: ThreadID, options: ObserveThreadOptions): Observable<InteractiveThread> {
+        observe(
+            threadID: ThreadID,
+            options: ObserveThreadOptions
+        ): Observable<InteractiveThread | null> {
             const initialValue = promiseFactoryToObservable(async signal => {
                 let thread = await storage.get(threadID)
                 signal?.throwIfAborted()
@@ -100,10 +103,8 @@ export function createInteractiveThreadService(storage: ThreadStorage): Interact
                         steps: [],
                     }
                     await storage.set(thread.id, thread)
+                    updates.next(thread)
                     signal?.throwIfAborted()
-                }
-                if (!thread) {
-                    throw new Error(`thread ${threadID} not found`)
                 }
                 return thread
             })

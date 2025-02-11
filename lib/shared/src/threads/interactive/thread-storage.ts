@@ -61,8 +61,10 @@ export function createFileSystemThreadStorage(
 ): ThreadStorage {
     const changes = new Subject<void>()
 
+    const threadsDir = Utils.joinPath(storageUri, 'threads')
+
     function threadFilePath(id: ThreadID): URI {
-        return Utils.joinPath(storageUri, `${id}.json`)
+        return Utils.joinPath(threadsDir, `${id}.json`)
     }
 
     async function get(id: ThreadID): Promise<InteractiveThread | null> {
@@ -79,7 +81,9 @@ export function createFileSystemThreadStorage(
 
     async function set(id: ThreadID, value: InteractiveThread): Promise<void> {
         const content = new TextEncoder().encode(JSON.stringify(value, null, 2))
-        await fs.writeFile(threadFilePath(id), content)
+        const uri = threadFilePath(id)
+        await fs.createDirectory(Utils.joinPath(uri, '..'))
+        await fs.writeFile(uri, content)
         changes.next()
     }
 
@@ -87,7 +91,17 @@ export function createFileSystemThreadStorage(
         return changes.pipe(
             startWith(undefined),
             abortableOperation(async (_, signal) => {
-                const files = await fs.readDirectory(storageUri)
+                let files: Awaited<ReturnType<typeof fs.readDirectory>>
+                try {
+                    files = await fs.readDirectory(threadsDir)
+                } catch (error) {
+                    if ((error as any).code === 'FileNotFound') {
+                        // The `storageUri` or `threadsDir` dirs might not exist, which means there
+                        // are no threads.
+                        return []
+                    }
+                    throw error
+                }
                 signal?.throwIfAborted()
                 const threads = await Promise.all(
                     files.map(async ([name]) => {

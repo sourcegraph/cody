@@ -1,6 +1,7 @@
 import isEqual from 'lodash/isEqual'
 import { Observable } from 'observable-fns'
 import {
+    catchError,
     debounceTime,
     distinctUntilChanged,
     filter,
@@ -26,6 +27,10 @@ export function createAgentForInteractiveThread(
         distinctUntilChanged((a, b) => isEqual({ ...a, v: null }, { ...b, v: null })),
         debounceTime(200),
         mergeMap(thread => {
+            if (!thread) {
+                return Observable.of<AgentState>('thread-not-found')
+            }
+
             const workItem = workItemFromThread(thread)
             const agentState = agentStateFromThread(thread)
             console.log('WORKITEM', workItem, 'AGENTSTATE', agentState)
@@ -42,6 +47,10 @@ export function createAgentForInteractiveThread(
             }
 
             return Observable.of(agentState)
+        }),
+        catchError(error => {
+            console.log('Agent error:', error)
+            return Observable.of<AgentState>('error')
         })
     )
 }
@@ -80,10 +89,12 @@ function workItemFromThread(thread: InteractiveThread): AgentWorkItem | null {
 }
 
 export type AgentState =
+    | 'thread-not-found'
     | 'waiting-for-human-message'
     | 'blocked-on-user-input-for-tool-call'
     | 'tool-call-in-progress'
     | 'working'
+    | 'error'
 
 function agentStateFromThread(thread: InteractiveThread): AgentState {
     if (thread.steps.length === 0) {

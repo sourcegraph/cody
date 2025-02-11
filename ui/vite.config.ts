@@ -17,6 +17,7 @@ const fakeProcessEnv: Record<string, string | boolean> = {
     LSP_LIGHT_LOGGING_ENABLED: false,
     LSP_LIGHT_CACHE_DISABLED: false,
     CODY_LOG_WEBVIEW_RPC_MESSAGES: false,
+    DISABLE_TELEMETRY: true,
     ENABLE_SENTRY: false,
     language: 'en-US',
     CODY_WEB_DEMO: true,

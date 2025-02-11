@@ -34,9 +34,9 @@ export function activate(
         .getConfiguration()
         .get<boolean>('cody.experimental.symf.enabled', true)
 
-    const isTelemetryEnabled = vscode.workspace
-        .getConfiguration()
-        .get<boolean>('cody.experimental.telemetry.enabled', true)
+    const isTelemetryEnabled =
+        vscode.workspace.getConfiguration().get<boolean>('cody.experimental.telemetry.enabled', true) &&
+        !process.env.DISABLE_TELEMETRY
 
     const isNoxideLibEnabled = vscode.workspace
         .getConfiguration()
@@ -49,9 +49,10 @@ export function activate(
         createCommandsProvider: () => new CommandsProvider(),
         createSymfRunner: isSymfEnabled ? (...args) => new SymfRunner(...args) : undefined,
         createSentryService: (...args) => new NodeSentryService(...args),
-        createOpenTelemetryService: isTelemetryEnabled
-            ? (...args) => new OpenTelemetryService(...args)
-            : undefined,
+        createOpenTelemetryService:
+            isTelemetryEnabled && false /* TODO!(sqs) */
+                ? (...args) => new OpenTelemetryService(...args)
+                : undefined,
         startTokenReceiver: (...args) => startTokenReceiver(...args),
         extensionClient,
     })
