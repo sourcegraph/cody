@@ -49,3 +49,4 @@ test-results
 agent/bindings/kotlin/lib/bin/
 .aider.*
 .aiderignore
+*.orig
