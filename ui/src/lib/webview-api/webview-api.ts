@@ -22,11 +22,12 @@ export async function createWebviewAPIClient(): Promise<WebviewAPIClient> {
     const serverEndpoint = localStorage.getItem('serverEndpoint')
     const accessToken = localStorage.getItem('accessToken')
     if (!serverEndpoint || !accessToken) {
-        // To set your endpoint and token, run the following in your browser devtools console:
-        //
-        //   localStorage.serverEndpoint = 'https://sourcegraph.sourcegraph.com/'
-        //   localStorage.accessToken = 'sgp_MY_TOKEN'
-        //   location.reload()
+
+        alert(`You need to set an endpoint and token in your browser devtools console by running these commands:
+        localStorage.serverEndpoint = 'https://sourcegraph.sourcegraph.com/'
+        localStorage.accessToken = 'sgp_MY_TOKEN'
+        location.reload()`)
+
         throw new Error(
             'serverEndpoint and/or accessToken not set (see the source code where this error was thrown for instructions)'
         )
