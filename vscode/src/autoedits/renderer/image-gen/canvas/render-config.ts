@@ -42,7 +42,7 @@ export interface UserProvidedRenderConfig {
 
 export function getRenderConfig(userProvidedConfig: UserProvidedRenderConfig): RenderConfig {
     const fontSize = userProvidedConfig.fontSize || DEFAULT_FONT_SIZE
-    const lineHeight = getLineHeight(fontSize)
+    const lineHeight = userProvidedConfig.lineHeight || getLineHeight(fontSize)
     return {
         fontSize,
         lineHeight,
