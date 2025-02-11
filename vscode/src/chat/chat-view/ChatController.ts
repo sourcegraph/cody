@@ -743,8 +743,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
         recorder.setIntentInfo({
             userSpecifiedIntent: manuallySelectedIntent ?? 'chat',
-            detectedIntent: undefined,
-            detectedIntentScores: [],
         })
 
         this.postEmptyMessageInProgress(model)
