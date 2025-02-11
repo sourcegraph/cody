@@ -8,7 +8,6 @@ import {
     type ModelsData,
     contextFiltersProvider,
     createModel,
-    featureFlagProvider,
     graphqlClient,
     mockAuthStatus,
     mockClientCapabilities,
@@ -20,45 +19,20 @@ import { Observable } from 'observable-fns'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import * as vscode from 'vscode'
 import { PromptBuilder } from '../../prompt-builder'
-import { mockLocalStorage } from '../../services/LocalStorageProvider'
+import { localStorage } from '../../services/LocalStorageProvider'
 import { ChatBuilder } from './ChatBuilder'
 import { DefaultPrompter } from './prompt'
 
 describe('DefaultPrompter', () => {
-    process.env.DISABLE_FEATURE_FLAGS = 'true'
-    const localStorageData: { [key: string]: unknown } = {
-        'cody-experimental-prompt-caching-on-messages': false,
-    }
-    mockLocalStorage({
-        get: (key: string) => localStorageData[key] || [], // Return empty array as default
-        update: (key: string, value: unknown) => {
-            localStorageData[key] = value
-        },
-    } as any)
-
-    beforeEach(() => {
-        process.env.DISABLE_FEATURE_FLAGS = 'true'
+    beforeEach(async () => {
+        vi.spyOn(localStorage, 'getEnrollmentHistory').mockReturnValue(false)
         vi.spyOn(contextFiltersProvider, 'isUriIgnored').mockResolvedValue(false)
         vi.spyOn(graphqlClient, 'fetchSourcegraphAPI').mockResolvedValue(true)
-        vi.spyOn(featureFlagProvider, 'evaluatedFeatureFlag').mockReturnValue(Observable.of(false))
-        // Also mock the enrollment event to ensure false
-        vi.mock('@sourcegraph/cody-shared', async () => {
-            const actual = (await vi.importActual('@sourcegraph/cody-shared')) as object
-            return {
-                ...actual,
-                logFirstEnrollmentEvent: () => false,
-                featureFlagProvider: {
-                    evaluatedFeatureFlag: () => Observable.of(false),
-                },
-            }
-        })
-        process.env.DISABLE_FEATURE_FLAGS = 'true'
         mockAuthStatus(AUTH_STATUS_FIXTURE_AUTHED)
         mockResolvedConfig({ configuration: {} })
         mockClientCapabilities(CLIENT_CAPABILITIES_FIXTURE)
     })
     afterEach(() => {
-        // delete process.env.DISABLE_FEATURE_FLAGS
         vi.restoreAllMocks()
     })
 
