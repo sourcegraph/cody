@@ -202,7 +202,7 @@ query Repository($name: String!) {
 }`
 
 export const REPOSITORY_IDS_QUERY = `
-query RepositoryIds($names: [String!]!, $first: Int!) {
+query Repositories($names: [String!]!, $first: Int!) {
     repositories(names: $names, first: $first) {
       nodes {
         name

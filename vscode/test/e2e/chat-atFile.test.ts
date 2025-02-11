@@ -367,7 +367,9 @@ test.extend<ExpectedV2Events>({
 
 test.extend<ExpectedV2Events>({
     expectedV2Events: ['cody.addChatContext:clicked'],
-})('Add Selection to Cody Chat', async ({ page, sidebar }) => {
+})('Add Selection to Cody Chat', async ({ page, sidebar, server }) => {
+    mockEnterpriseRepoIdMapping(server)
+
     await sidebarSignin(page, sidebar)
 
     await openFileInEditorTab(page, 'buzz.ts')

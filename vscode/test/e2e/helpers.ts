@@ -651,7 +651,7 @@ export function mockEnterpriseRepoMapping(server: MockServer, repoName: string):
 }
 
 export function mockEnterpriseRepoIdMapping(server: MockServer, repoName?: string): void {
-    server.onGraphQl('RepositoryIds').replyJson({
+    server.onGraphQl('Repositories').replyJson({
         data: {
             repositories: {
                 nodes: repoName ? [{ id: 'WOOZL', name: repoName }] : [],
