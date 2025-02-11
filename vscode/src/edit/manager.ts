@@ -25,11 +25,15 @@ import { isUriIgnoredByContextFilterWithNotification } from '../cody-ignore/cont
 import type { ExtensionClient } from '../extension-client'
 import { ACTIVE_TASK_STATES } from '../non-stop/codelenses/constants'
 import { splitSafeMetadata } from '../services/telemetry-v2'
+import {
+    EditLoggingFeatureFlagManager,
+    SmartApplyContextLogger,
+    getEditLoggingContext,
+} from './edit-context-logging'
 import type { ExecuteEditArguments } from './execute'
 import { SMART_APPLY_FILE_DECORATION, getSmartApplySelection } from './prompt/smart-apply'
 import { EditProvider } from './provider'
 import type { SmartApplyArguments } from './smart-apply'
-import { SmartApplyContextLogger } from './smart-apply-context-logging'
 import { getEditIntent } from './utils/edit-intent'
 import { getEditMode } from './utils/edit-mode'
 import { getEditLineSelection, getEditSmartSelection } from './utils/edit-selection'
@@ -48,7 +52,8 @@ export interface EditManagerOptions {
 export class EditManager implements vscode.Disposable {
     private disposables: vscode.Disposable[] = []
     private editProviders = new WeakMap<FixupTask, EditProvider>()
-    private smartApplyContextLogger = new SmartApplyContextLogger()
+    private loggingFeatureFlagManagerInstance = new EditLoggingFeatureFlagManager()
+    private smartApplyContextLogger = new SmartApplyContextLogger(this.loggingFeatureFlagManagerInstance)
 
     constructor(public options: EditManagerOptions) {
         /**
@@ -92,7 +97,7 @@ export class EditManager implements vscode.Disposable {
             editCommand,
             smartApplyCommand,
             startCommand,
-            this.smartApplyContextLogger
+            this.loggingFeatureFlagManagerInstance
         )
     }
 
@@ -163,6 +168,7 @@ export class EditManager implements vscode.Disposable {
                 intent,
                 mode,
                 model,
+                configuration.rules ?? null,
                 source,
                 configuration.destinationFile,
                 configuration.insertionPoint,
@@ -177,6 +183,7 @@ export class EditManager implements vscode.Disposable {
                 expandedRange,
                 mode,
                 model,
+                configuration.rules ?? null,
                 intent,
                 source,
                 telemetryMetadata
@@ -210,15 +217,28 @@ export class EditManager implements vscode.Disposable {
         const isFixCommand = configuration.intent === 'fix' ? 'fix' : undefined
         const eventName = isDocCommand ?? isUnitTestCommand ?? isFixCommand ?? 'edit'
 
+        const editContextData = getEditLoggingContext({
+            isFeatureFlagEnabledForLogging:
+                this.loggingFeatureFlagManagerInstance.isEditContextDataCollectionFlagEnabled(),
+            instruction: task.instruction.toString(),
+            document,
+            selectionRange: task.selectionRange,
+        })
+
         const legacyMetadata = {
             intent: task.intent,
             mode: task.mode,
             source: task.source,
+            taskId: task.id,
             ...telemetryMetadata,
+            editContext: editContextData,
         }
         const { metadata, privateMetadata } = splitSafeMetadata(legacyMetadata)
         telemetryRecorder.recordEvent(`cody.command.${eventName}`, 'executed', {
-            metadata,
+            metadata: {
+                ...metadata,
+                recordsPrivateMetadataTranscript: editContextData === undefined ? 0 : 1,
+            },
             privateMetadata: {
                 ...privateMetadata,
                 model: task.model,
@@ -288,6 +308,7 @@ export class EditManager implements vscode.Disposable {
                         'add',
                         'insert',
                         model,
+                        null,
                         source,
                         configuration.document.uri,
                         undefined,
@@ -328,12 +349,13 @@ export class EditManager implements vscode.Disposable {
                 const replacementCode = PromptString.unsafe_fromLLMResponse(configuration.replacement)
 
                 const versions = await currentSiteVersion()
-                if (!versions) {
+                if (versions instanceof Error) {
                     throw new Error('unable to determine site version')
                 }
 
                 const contextloggerRequestId =
                     await this.smartApplyContextLogger.createSmartApplyLoggingRequest({
+                        model: model,
                         userQuery: configuration.instruction.toString(),
                         replacementCodeBlock: replacementCode.toString(),
                         document: configuration.document,
@@ -416,6 +438,7 @@ export class EditManager implements vscode.Disposable {
                         'add',
                         'insert',
                         model,
+                        null,
                         source,
                         configuration.document.uri,
                         undefined,
@@ -451,7 +474,7 @@ export class EditManager implements vscode.Disposable {
                 // Just using the replacement code from the response is not enough, as it may contain parts that are not suitable to apply,
                 // e.g. // ...
                 const applyStartTime = Date.now()
-                await this.executeEdit({
+                const task = await this.executeEdit({
                     configuration: {
                         id: configuration.id,
                         document: configuration.document,
@@ -464,27 +487,12 @@ export class EditManager implements vscode.Disposable {
                     source,
                 })
                 const applyTimeTakenMs = Date.now() - applyStartTime
-                this.smartApplyContextLogger.addSmartApplyFinalContext(
+                this.smartApplyContextLogger.addApplyContext(
                     contextloggerRequestId,
-                    applyTimeTakenMs
+                    applyTimeTakenMs,
+                    task?.id
                 )
-                const smartApplyContext =
-                    await this.smartApplyContextLogger.getSmartApplyLoggingContext(
-                        contextloggerRequestId
-                    )
-                if (smartApplyContext) {
-                    const { metadata, privateMetadata } = splitSafeMetadata(smartApplyContext)
-                    telemetryRecorder.recordEvent('cody.smart-apply.context', 'applied', {
-                        metadata: {
-                            ...metadata,
-                            recordsPrivateMetadataTranscript: 1,
-                        },
-                        privateMetadata: {
-                            smartApplyContext: privateMetadata,
-                        },
-                        billingMetadata: { product: 'cody', category: 'billable' },
-                    })
-                }
+                this.smartApplyContextLogger.logSmartApplyContextToTelemetry(contextloggerRequestId)
                 return
             })
         })

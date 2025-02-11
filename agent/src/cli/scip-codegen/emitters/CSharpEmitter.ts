@@ -279,7 +279,7 @@ export class CSharpEmitter implements Emitter {
     }
 }
 
-export class CSharpFormatter extends Formatter {
+class CSharpFormatter extends Formatter {
     override options: LanguageOptions = {
         typeNameSeparator: '',
         typeAnnotations: 'before',

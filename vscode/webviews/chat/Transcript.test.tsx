@@ -1,9 +1,4 @@
-import {
-    type ChatMessage,
-    errorToChatError,
-    getMockedDotComClientModels,
-    ps,
-} from '@sourcegraph/cody-shared'
+import { type ChatMessage, FIXTURE_MODELS, errorToChatError, ps } from '@sourcegraph/cody-shared'
 import { fireEvent, getQueriesForElement, render as render_, screen } from '@testing-library/react'
 import type { ComponentProps } from 'react'
 import { type Assertion, describe, expect, test, vi } from 'vitest'
@@ -12,17 +7,14 @@ import { AppWrapperForTest } from '../AppWrapperForTest'
 import { type Interaction, Transcript, transcriptToInteractionPairs } from './Transcript'
 import { FIXTURE_USER_ACCOUNT_INFO } from './fixtures'
 
-const MOCK_MODELS = getMockedDotComClientModels()
-
 const PROPS: Omit<ComponentProps<typeof Transcript>, 'transcript'> = {
     messageInProgress: null,
-    feedbackButtonsOnSubmit: () => {},
     copyButtonOnSubmit: () => {},
     insertButtonOnSubmit: () => {},
     userInfo: FIXTURE_USER_ACCOUNT_INFO,
     chatEnabled: true,
     postMessage: () => {},
-    models: MOCK_MODELS,
+    models: FIXTURE_MODELS,
     setActiveChatContext: () => {},
 }
 
@@ -57,18 +49,18 @@ describe('Transcript', () => {
         // Check if the model selector is rendered
         const modelSelector = container.querySelector('[data-testid="chat-model-selector"]')
         expect(modelSelector).not.toBeNull()
-        expect(modelSelector?.textContent).toEqual(MOCK_MODELS[0].title)
+        expect(modelSelector?.textContent).toEqual(FIXTURE_MODELS[0].title)
 
         // Open the menu on click
         fireEvent.click(modelSelector!)
         const modelPopover = container?.querySelectorAll('[data-testid="chat-model-popover"]')[0]
         const modelMenu = modelPopover!.querySelector('[data-testid="chat-model-popover-option"]')
         const modelOptions = modelMenu!.querySelectorAll('[data-testid="chat-model-popover-option"]')
-        expect(modelOptions).toHaveLength(MOCK_MODELS.length)
+        expect(modelOptions).toHaveLength(FIXTURE_MODELS.length)
 
         // Check if the model titles are correct
         const modelTitles = Array.from(modelOptions!).map(option => option.textContent)
-        expect(modelTitles.some(title => title === MOCK_MODELS[0].title)).toBe(true)
+        expect(modelTitles.some(title => title === FIXTURE_MODELS[0].title)).toBe(true)
     })
 
     test('interaction without context', () => {
@@ -248,12 +240,7 @@ describe('Transcript', () => {
                 ]}
             />
         )
-        expectCells([
-            { message: 'Foo' },
-            { context: {} },
-            { message: 'Model\n\nRequest Failed: some error' },
-        ])
-        expect(screen.queryByText('Try again with different context')).toBeNull()
+        expectCells([{ message: 'Foo' }, { context: {} }, { message: 'Request Failed: some error' }])
     })
 
     test('does not clobber user input into followup while isPendingPriorResponse when it completes', async () => {

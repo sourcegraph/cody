@@ -5,6 +5,7 @@ import type { ChatMessage, EventSource } from '../../chat/transcript/messages'
 import { type ContextItem, ContextItemSource } from '../../codebase-context/messages'
 import type { DefaultChatCommands } from '../../commands/types'
 import {
+    CODE_SEARCH_PROVIDER_URI,
     GIT_OPENCTX_PROVIDER_URI,
     REMOTE_DIRECTORY_PROVIDER_URI,
     REMOTE_FILE_PROVIDER_URI,
@@ -225,6 +226,11 @@ function publicContextSummary(globalPrefix: string, context: ContextItem[]) {
             ...cloneDeep(defaultByTypeCount),
             isWorkspaceRoot: undefined as number | undefined,
         },
+        'current-selection': cloneDeep(defaultByTypeCount),
+        'current-file': cloneDeep(defaultByTypeCount),
+        'current-repository': cloneDeep(defaultByTypeCount),
+        'current-directory': cloneDeep(defaultByTypeCount),
+        'current-open-tabs': cloneDeep(defaultByTypeCount),
     }
     const byOpenctxProvider = {
         [REMOTE_REPOSITORY_PROVIDER_URI]: cloneDeep(defaultSharedItemCount),
@@ -232,6 +238,7 @@ function publicContextSummary(globalPrefix: string, context: ContextItem[]) {
         [REMOTE_DIRECTORY_PROVIDER_URI]: cloneDeep(defaultSharedItemCount),
         [WEB_PROVIDER_URI]: cloneDeep(defaultSharedItemCount),
         [GIT_OPENCTX_PROVIDER_URI]: cloneDeep(defaultSharedItemCount),
+        [CODE_SEARCH_PROVIDER_URI]: cloneDeep(defaultSharedItemCount),
         other: cloneDeep(defaultSharedItemCount),
     }
 
@@ -365,6 +372,11 @@ const defaultBySourceCount: BySourceCount = {
         tree: undefined,
         openctx: undefined,
         symbol: undefined,
+        'current-selection': undefined,
+        'current-file': undefined,
+        'current-repository': undefined,
+        'current-directory': undefined,
+        'current-open-tabs': undefined,
     },
 }
 

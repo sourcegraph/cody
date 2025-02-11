@@ -22,7 +22,7 @@ export interface ProtocolSymbol {
 }
 
 export type ConstantType = string | boolean | number
-export type ConstantTypeType = 'string' | 'boolean' | 'number'
+type ConstantTypeType = 'string' | 'boolean' | 'number'
 
 export function typeOfUnion(union: DiscriminatedUnion): ConstantTypeType {
     if (union.members.length === 0) {

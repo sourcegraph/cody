@@ -6,7 +6,7 @@ data class Model(
   val usage: List<ModelUsage>,
   val contextWindow: ModelContextWindow,
   val clientSideConfig: ClientSideConfig? = null,
-  val provider: String,
+  val provider: String? = null,
   val title: String,
   val tags: List<ModelTag>? = null,
   val modelRef: ModelRef? = null,

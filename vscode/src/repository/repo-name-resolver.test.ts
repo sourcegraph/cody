@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import {
     AUTH_STATUS_FIXTURE_AUTHED,
@@ -11,6 +11,8 @@ import {
     mockResolvedConfig,
 } from '@sourcegraph/cody-shared'
 
+import { Uri } from 'vscode'
+import * as vscode from 'vscode'
 import * as remoteUrlsFromParentDirs from './remote-urls-from-parent-dirs'
 import { RepoNameResolver } from './repo-name-resolver'
 import { mockFsCalls } from './test-helpers'
@@ -18,6 +20,10 @@ import { mockFsCalls } from './test-helpers'
 vi.mock('../services/AuthProvider')
 
 describe('getRepoNamesContainingUri', () => {
+    afterEach(() => {
+        vi.resetAllMocks()
+    })
+
     function prepareEnterpriseMocks() {
         const repoNameResolver = new RepoNameResolver()
         mockAuthStatus(AUTH_STATUS_FIXTURE_AUTHED)
@@ -105,5 +111,21 @@ describe('getRepoNamesContainingUri', () => {
             await firstResultFromOperation(repoNameResolver.getRepoNamesContainingUri(fileUri))
         ).toEqual(['github.com/sourcegraph/cody'])
         expect(getRepoNameGraphQLMock).not.toBeCalled()
+    })
+
+    it('resolves the repo name repo: workspace folders if any', async () => {
+        vi.spyOn(vscode.workspace, 'getWorkspaceFolder').mockReturnValue({
+            uri: Uri.parse('repo:my/repo'),
+            name: 'repo',
+            index: 0,
+        })
+
+        const repoNameResolver = new RepoNameResolver()
+        mockAuthStatus(AUTH_STATUS_FIXTURE_AUTHED)
+
+        const file = Uri.parse('repo:my/repo/my/file.txt')
+        expect(await firstResultFromOperation(repoNameResolver.getRepoNamesContainingUri(file))).toEqual(
+            ['my/repo']
+        )
     })
 })

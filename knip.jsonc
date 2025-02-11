@@ -4,6 +4,7 @@
         "vscode": {
             "entry": [
                 "src/extension.*.ts",
+                "uninstall/post-uninstall.ts",
                 "scripts/*.ts",
                 "test/integration/*.ts",
                 "webviews/index.tsx",

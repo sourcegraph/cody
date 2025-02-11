@@ -14,7 +14,7 @@ import { vscodeFixture } from './vscode'
 export interface WorkerContext {
     validWorkerOptions: WorkerOptions
 }
-export type Directory = string
+type Directory = string
 export interface TestContext {
     vscodeUI: {
         url: string

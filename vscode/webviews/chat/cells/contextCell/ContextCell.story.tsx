@@ -4,7 +4,7 @@ import { ContextItemSource } from '@sourcegraph/cody-shared'
 import type { ComponentProps } from 'react'
 import { URI } from 'vscode-uri'
 import { VSCodeStandaloneComponent } from '../../../storybook/VSCodeStoryDecorator'
-import { ContextCell, EditContextButtonChat, __ContextCellStorybookContext } from './ContextCell'
+import { ContextCell, __ContextCellStorybookContext } from './ContextCell'
 
 const renderWithInitialOpen = (args: ComponentProps<typeof ContextCell>) => {
     return (
@@ -20,7 +20,6 @@ const meta: Meta<typeof ContextCell> = {
     decorators: [VSCodeStandaloneComponent],
     args: {
         isForFirstMessage: true,
-        editContextNode: EditContextButtonChat,
     },
     render: renderWithInitialOpen,
 }
@@ -158,7 +157,6 @@ export const ExcludedContext: Story = {
 export const NoContextRequested: Story = {
     args: {
         contextItems: undefined,
-        resubmitWithRepoContext: () => Promise.resolve(),
         isForFirstMessage: true,
     },
 }

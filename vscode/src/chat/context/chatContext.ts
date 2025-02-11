@@ -11,12 +11,12 @@ import {
     SYMBOL_CONTEXT_MENTION_PROVIDER,
     clientCapabilities,
     combineLatest,
+    currentOpenCtxController,
     firstResultFromOperation,
     fromVSCodeEvent,
     isAbortError,
     isError,
     mentionProvidersMetadata,
-    openCtx,
     pendingOperation,
     promiseFactoryToObservable,
     skipPendingOperation,
@@ -153,11 +153,7 @@ export async function getChatContextItemsForMention(
         }
 
         default: {
-            if (!openCtx.controller) {
-                return []
-            }
-
-            const items = await openCtx.controller.mentions(
+            const items = await currentOpenCtxController().mentions(
                 {
                     query: mentionQuery.text,
                     ...(await firstResultFromOperation(activeEditorContextForOpenCtxMentions)),

@@ -345,7 +345,7 @@ export class ModelsService {
                 ): PickResolvedConfiguration<{
                     configuration: true
                     auth: true
-                    clientState: 'modelPreferences' | 'waitlist_o1'
+                    clientState: 'modelPreferences'
                 }> => config
             ),
             distinctUntilChanged()

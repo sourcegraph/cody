@@ -1,8 +1,6 @@
 .outer-container {
-  background-color: transparent;
   display: flex;
   flex-direction: column;
-  box-sizing: border-box;
   height: 100%;
   overflow: hidden;
 }

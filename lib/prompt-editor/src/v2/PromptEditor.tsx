@@ -59,7 +59,7 @@ interface Props extends KeyboardEventPluginProps {
     editorRef?: React.RefObject<PromptEditorRefAPI>
 }
 
-export interface PromptEditorRefAPI {
+interface PromptEditorRefAPI {
     getSerializedValue(): SerializedPromptEditorValue
     setFocus(focus: boolean, options?: { moveCursorToEnd?: boolean }): Promise<void>
     appendText(text: string): Promise<void>

@@ -7,7 +7,7 @@
         Sourcegraph
     </vendor>
     <change-notes>
-        <![CDATA[Update notes are available on <a href="https://github.com/sourcegraph/jetbrains/releases">GitHub</a>.]]></change-notes>
+        <![CDATA[<a href="https://github.com/sourcegraph/cody/releases?q=JetBrains&expanded=true">Update notes are available on GitHub.</a>]]></change-notes>
 
     <depends>com.intellij.modules.json</depends>
     <depends>com.intellij.modules.platform</depends>

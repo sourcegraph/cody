@@ -58,7 +58,7 @@ export const RepoFileLink: React.FunctionComponent<React.PropsWithChildren<Props
         }
     }, [pathMatchRanges, fileName])
 
-    const Chevron = collapsed ? ChevronDown : ChevronRight
+    const Chevron = collapsed ? ChevronRight : ChevronDown
     const {
         clientCapabilities: { agentIDE },
     } = useConfig()

@@ -136,6 +136,11 @@ export type ContextItem =
     | ContextItemSymbol
     | ContextItemOpenCtx
     | ContextItemOpenLink // Not a context item, but opens a link to documentation.
+    | ContextItemCurrentSelection
+    | ContextItemCurrentFile
+    | ContextItemCurrentRepository
+    | ContextItemCurrentDirectory
+    | ContextItemCurrentOpenTabs
 
 /**
  * Context items to show by default in the chat input, or as suggestions in the chat UI.
@@ -193,6 +198,25 @@ export interface ContextItemOpenCtx extends ContextItemCommon {
     }
 }
 
+export interface ContextItemCurrentSelection extends ContextItemCommon {
+    type: 'current-selection'
+}
+
+export interface ContextItemCurrentFile extends ContextItemCommon {
+    type: 'current-file'
+}
+
+export interface ContextItemCurrentRepository extends ContextItemCommon {
+    type: 'current-repository'
+}
+
+export interface ContextItemCurrentDirectory extends ContextItemCommon {
+    type: 'current-directory'
+}
+
+export interface ContextItemCurrentOpenTabs extends ContextItemCommon {
+    type: 'current-open-tabs'
+}
 /**
  * A file (or a subset of a file given by a range) that is included as context in a chat message.
  */

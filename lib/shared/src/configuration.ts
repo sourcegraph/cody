@@ -136,6 +136,8 @@ interface RawClientConfiguration {
     experimentalNoxideEnabled: boolean
     experimentalGuardrailsTimeoutSeconds: number | undefined
 
+    rulesEnabled?: boolean | undefined
+
     //#region Unstable
     internalUnstable: boolean
     internalDebugContext?: boolean

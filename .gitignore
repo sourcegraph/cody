@@ -47,4 +47,5 @@ test-results
 .vscode-test/
 .envrc
 agent/bindings/kotlin/lib/bin/
-vscode/webviews/replace-vscode-vars.js
+.aider.*
+.aiderignore
