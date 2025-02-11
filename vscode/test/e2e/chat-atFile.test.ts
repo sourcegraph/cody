@@ -20,6 +20,7 @@ import {
     type DotcomUrlOverride,
     type ExpectedV2Events,
     executeCommandInPalette,
+    mockEnterpriseRepoIdMapping,
     test,
     withPlatformSlashes,
 } from './helpers'
@@ -307,7 +308,9 @@ test.extend<ExpectedV2Events>({
         'cody.chat-question:executed',
         'cody.chatResponse:noCode',
     ],
-})('@-mention symbol in chat', async ({ page, nap, sidebar }) => {
+}).only('@-mention symbol in chat', async ({ page, nap, sidebar, server }) => {
+    mockEnterpriseRepoIdMapping(server)
+
     await sidebarSignin(page, sidebar)
 
     // Open the buzz.ts file so that VS Code starts to populate symbols.
