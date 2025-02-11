@@ -1,26 +1,32 @@
-import type { BundledLanguage, HighlighterGeneric, ThemedToken } from 'shiki/types.mjs'
+import { syntaxHighlighter } from '.'
+import type { SYNTAX_HIGHLIGHT_THEME } from './types'
 
-import type { ModifiedLineInfoAdded, ModifiedLineInfoRemoved, VisualDiff, VisualDiffLine } from '.'
-import type { MultiLineSupportedLanguage } from '../../../completions/detect-multiline'
-import type { AddedLineInfo, RemovedLineInfo } from '../decorators/base'
-import { SYNTAX_HIGHLIGHTING_LANGUAGES, SYNTAX_HIGHLIGHTING_THEMES, getShiki } from './shiki'
+import type { ThemedToken } from 'shiki/types.mjs'
 
-let syntaxHighlighter: HighlighterGeneric<BundledLanguage, string> | null = null
+import type { MultiLineSupportedLanguage } from '../../../../completions/detect-multiline'
+import type { AddedLineInfo, RemovedLineInfo } from '../../decorators/base'
+import type {
+    ModifiedLineInfoAdded,
+    ModifiedLineInfoRemoved,
+    VisualDiff,
+    VisualDiffLine,
+} from '../decorated-diff/types'
+import { DEFAULT_HIGHLIGHT_COLORS } from './constants'
+import { SYNTAX_HIGHLIGHTING_LANGUAGES, SYNTAX_HIGHLIGHTING_THEMES } from './shiki'
 
-export type SYNTAX_HIGHLIGHT_MODE = 'light' | 'dark'
-
-export async function initSyntaxHighlighter(): Promise<void> {
-    if (!syntaxHighlighter) {
-        syntaxHighlighter = await getShiki()
-    }
+interface GetHighlightTokensParams {
+    code: string
+    lang: string
+    theme: SYNTAX_HIGHLIGHT_THEME
+    offset: number
 }
 
-function getHighlightTokens(
-    code: string,
-    lang: string,
-    mode: SYNTAX_HIGHLIGHT_MODE,
-    offset: number
-): Map<number, ThemedToken[]> {
+function getHighlightTokens({
+    code,
+    lang,
+    theme,
+    offset,
+}: GetHighlightTokensParams): Map<number, ThemedToken[]> {
     if (!syntaxHighlighter) {
         throw new Error('Syntax highlighter not initialized')
     }
@@ -31,7 +37,7 @@ function getHighlightTokens(
     }
 
     const { tokens } = syntaxHighlighter.codeToTokens(code, {
-        theme: SYNTAX_HIGHLIGHTING_THEMES[mode].name,
+        theme: SYNTAX_HIGHLIGHTING_THEMES[theme].name,
         lang: highlightLang,
     })
 
@@ -44,15 +50,10 @@ function getHighlightTokens(
     return result
 }
 
-export const DEFAULT_HIGHLIGHT_COLORS: Record<SYNTAX_HIGHLIGHT_MODE, string> = {
-    dark: '#ffffff',
-    light: '#000000',
-}
-
 function processTokens(
     lineTokens: ThemedToken[],
     highlights: { range: [number, number]; color: string }[],
-    mode: SYNTAX_HIGHLIGHT_MODE
+    theme: SYNTAX_HIGHLIGHT_THEME
 ): void {
     let currentPosition = 0
     for (const token of lineTokens) {
@@ -61,7 +62,7 @@ function processTokens(
         const endPos = currentPosition + tokenLength
         highlights.push({
             range: [startPos, endPos],
-            color: token.color || DEFAULT_HIGHLIGHT_COLORS[mode],
+            color: token.color || DEFAULT_HIGHLIGHT_COLORS[theme],
         })
         currentPosition += tokenLength
     }
@@ -76,8 +77,10 @@ function processTokens(
 export function syntaxHighlightDecorations(
     diff: VisualDiff,
     lang: string,
-    mode: SYNTAX_HIGHLIGHT_MODE
+    theme: SYNTAX_HIGHLIGHT_THEME
 ): VisualDiff {
+    const mode = diff.type
+
     // Rebuild the codeblocks
     const suggestedLines = diff.lines.filter(
         (line): line is Exclude<VisualDiffLine, RemovedLineInfo | ModifiedLineInfoRemoved> =>
@@ -95,18 +98,18 @@ export function syntaxHighlightDecorations(
         .map(line => ('oldText' in line ? line.oldText : line.text))
         .join('\n')
 
-    const suggestedHighlights = getHighlightTokens(
-        suggestedCode,
+    const suggestedHighlights = getHighlightTokens({
+        code: suggestedCode,
         lang,
-        mode,
-        suggestedLines[0].modifiedLineNumber
-    )
-    const previousHighlights = getHighlightTokens(
-        previousCode,
+        theme,
+        offset: suggestedLines[0].modifiedLineNumber,
+    })
+    const previousHighlights = getHighlightTokens({
+        code: previousCode,
         lang,
-        mode,
-        previousLines[0].originalLineNumber
-    )
+        theme,
+        offset: previousLines[0].originalLineNumber,
+    })
 
     const lines = diff.lines.map(line => {
         if (line.type === 'removed' || line.type === 'modified-removed') {
@@ -114,7 +117,7 @@ export function syntaxHighlightDecorations(
             // the added code. We need to apply the same highlighting to the removed code as the added code.
             const lineTokens = previousHighlights.get(line.originalLineNumber)
             if (lineTokens) {
-                processTokens(lineTokens, line.highlights[mode], mode)
+                processTokens(lineTokens, line.highlights[theme], theme)
             }
             return line
         }
@@ -123,10 +126,10 @@ export function syntaxHighlightDecorations(
         if (lineTokens) {
             // We have already handle any deletions above, so we always use incoming highlights where possible
             const highlights = 'newHighlights' in line ? line.newHighlights : line.highlights
-            processTokens(lineTokens, highlights[mode], mode)
+            processTokens(lineTokens, highlights[theme], theme)
         }
         return line
     })
 
-    return { lines }
+    return { type: mode, lines }
 }

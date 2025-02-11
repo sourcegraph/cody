@@ -1,78 +1,16 @@
-import fs from 'node:fs/promises'
-import path from 'node:path'
-import CanvasKitInit, { type EmulatedCanvas2D } from 'canvaskit-wasm'
-import type { RemovedLineInfo } from '../decorators/base'
+import type { EmulatedCanvas2D } from 'canvaskit-wasm'
+import { canvasKit, fontCache } from '.'
+import type { RemovedLineInfo } from '../../decorators/base'
 import type {
     ModifiedLineInfoAdded,
     ModifiedLineInfoRemoved,
     VisualDiff,
     VisualDiffLine,
-} from './decorated-diff/types'
-import { DEFAULT_HIGHLIGHT_COLORS } from './highlight/constants'
-import type { SYNTAX_HIGHLIGHT_THEME } from './highlight/types'
-
-type CanvasKitType = Awaited<ReturnType<typeof CanvasKitInit>>
-interface RenderContext {
-    CanvasKit: CanvasKitType
-    font: ArrayBuffer
-}
-
-interface DiffColors {
-    inserted: {
-        line: string
-        text: string
-    }
-    removed: {
-        line: string
-        text: string
-    }
-}
-
-interface RenderConfig {
-    fontSize: number
-    lineHeight: number
-    padding: { x: number; y: number }
-    maxWidth: number
-    pixelRatio: number
-    diffColors: DiffColors
-}
-
-let canvasKit: CanvasKitType | null = null
-let canvasKitInitPromise: Promise<void> | null = null
-let fontCache: ArrayBuffer | null = null
-
-export async function initCanvas(): Promise<void> {
-    if (!fontCache) {
-        fontCache = await initFont()
-    }
-
-    if (!canvasKitInitPromise) {
-        canvasKitInitPromise = (async () => {
-            canvasKit = await CanvasKitInit()
-        })()
-    }
-
-    await canvasKitInitPromise
-}
-
-/**
- * Load the DejaVuSansMono font, suitable for rendering text onto the canvas.
- * Note: This font was selected as it is available in the public domains and renders code clearly.
- * It is also what the default system font for MacOS (Menlo) is based on, meaning should be familiar for many users.
- *
- * We can consider changing this, or allowing the user to provide their own font in the future.
- */
-async function initFont(): Promise<ArrayBuffer> {
-    // Note: The font path will be slightly different in tests to production.
-    // Relative to the test file for our tests, but relative to the dist directory in production
-    const fontPath =
-        process.env.NODE_ENV === 'test'
-            ? path.join(__dirname, '../../../../resources/DejaVuSansMono.ttf')
-            : path.join(__dirname, 'DejaVuSansMono.ttf')
-
-    const buffer = await fs.readFile(fontPath)
-    return new Uint8Array(buffer).buffer
-}
+} from '../decorated-diff/types'
+import { DEFAULT_HIGHLIGHT_COLORS } from '../highlight/constants'
+import type { SYNTAX_HIGHLIGHT_THEME } from '../highlight/types'
+import { DIFF_COLORS } from './constants'
+import type { RenderConfig, RenderContext } from './types'
 
 function createCanvas(
     options: {
@@ -230,17 +168,6 @@ function drawDiffColors(
         // Draw highlight at correct position
         ctx.fillRect(position.x + preHighlightWidth, position.y, highlightWidth, config.lineHeight)
     }
-}
-
-const DIFF_COLORS = {
-    inserted: {
-        line: 'rgba(155, 185, 85, 0.1)',
-        text: 'rgba(155, 185, 85, 0.15)',
-    },
-    removed: {
-        line: 'rgba(255, 0, 0, 0.1)',
-        text: 'rgba(255, 0, 0, 0.15)',
-    },
 }
 
 export function drawDecorationsToCanvas(

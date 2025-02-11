@@ -1,7 +1,7 @@
 import { getEditorTabSize } from '@sourcegraph/cody-shared'
 import detectIndent from 'detect-indent'
 import * as vscode from 'vscode'
-import type { VisualDiff } from '../image-gen'
+import type { VisualDiff } from '../image-gen/decorated-diff/types'
 import type { LineChange, SyntaxHighlight } from './base'
 
 export const UNICODE_SPACE = '\u00A0'
@@ -56,7 +56,7 @@ export function convertToSpaceIndentation(document: vscode.TextDocument, diff: V
             }
         })
 
-        return { lines }
+        return { ...diff, lines }
     }
 
     // The incoming indentation is tab-based, but this will not render correctly in VS Code decorations.
@@ -88,7 +88,7 @@ export function convertToSpaceIndentation(document: vscode.TextDocument, diff: V
         }
     })
 
-    return { lines }
+    return { ...diff, lines }
 }
 
 function removeLeadingWhitespaceBlock(diff: VisualDiff): VisualDiff {
@@ -136,18 +136,18 @@ function removeLeadingWhitespaceBlock(diff: VisualDiff): VisualDiff {
         }
     })
 
-    return { lines }
+    return { ...diff, lines }
 }
 
 // TODO: Do we need to handle unified better here? Are we not handling if the deleted line is the longest
-function padTrailingWhitespaceBlock(visualDiff: VisualDiff, mode: 'additions' | 'unified'): VisualDiff {
+function padTrailingWhitespaceBlock(diff: VisualDiff, mode: 'additions' | 'unified'): VisualDiff {
     let maxLineWidth = 0
-    for (const line of visualDiff.lines) {
+    for (const line of diff.lines) {
         const text = 'newText' in line ? line.newText : line.text
         maxLineWidth = Math.max(maxLineWidth, text.length)
     }
 
-    const lines = visualDiff.lines.map(line => {
+    const lines = diff.lines.map(line => {
         if (line.type === 'modified') {
             return {
                 ...line,
@@ -162,7 +162,7 @@ function padTrailingWhitespaceBlock(visualDiff: VisualDiff, mode: 'additions' | 
         }
     })
 
-    return { lines }
+    return { ...diff, lines }
 }
 
 function shiftHighlights(highlights: SyntaxHighlight, offset: number): SyntaxHighlight {
