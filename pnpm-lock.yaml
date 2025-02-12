@@ -666,7 +666,7 @@ importers:
         specifier: ^4.0.16
         version: 4.3.0
       minimatch:
-        specifier: ^9.0.3
+        specifier: ^9.0.4
         version: 9.0.4
       mkdirp:
         specifier: ^3.0.1

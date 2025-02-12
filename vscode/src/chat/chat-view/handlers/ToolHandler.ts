@@ -2,18 +2,11 @@ import { spawn } from 'node:child_process'
 import type { SpawnOptions, StdioOptions } from 'node:child_process'
 import * as path from 'node:path'
 import type Anthropic from '@anthropic-ai/sdk'
-import type {
-    ContentBlock,
-    ContentBlockParam,
-    MessageParam,
-    Tool,
-    ToolResultBlockParam,
-} from '@anthropic-ai/sdk/resources'
-import { ProcessType, PromptString, isDefined, ps } from '@sourcegraph/cody-shared'
-import type { ChatMessage, SubMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import type { ContentBlock, MessageParam, Tool, ToolResultBlockParam } from '@anthropic-ai/sdk/resources'
+import { ProcessType, PromptString } from '@sourcegraph/cody-shared'
+import type { SubMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { minimatch } from 'minimatch'
 import * as vscode from 'vscode'
-import { ChatBuilder } from '../ChatBuilder'
 import type { AgentHandler, AgentHandlerDelegate, AgentRequest } from './interfaces'
 import SYSTEM_PROMPT from './system_prompt.txt'
 
@@ -539,18 +532,18 @@ export class ExperimentalToolHandler implements AgentHandler {
             }
         }
 
-        for (const message of subTranscript) {
-            if (message.role === 'assistant') {
-                const text = PromptString.unsafe_fromLLMResponse(message.content)
-                const chatMessage: ChatMessage = {
-                    speaker: 'assistant',
-                    text: ps`${message.content}`,
-                }
-                chatBuilder.addBotMessage(chatMessage, chatBuilder.selectedModel ?? ChatBuilder.NO_MODEL)
-            } else {
-                // chatBuilder.addUserMessage(message)
-            }
-        }
+        // for (const message of subTranscript) {
+        //     if (message.role === 'assistant') {
+        //         const text = PromptString.unsafe_fromLLMResponse(message.content)
+        //         const chatMessage: ChatMessage = {
+        //             speaker: 'assistant',
+        //             text: ps`${message.content}`,
+        //         }
+        //         chatBuilder.addBotMessage(chatMessage, chatBuilder.selectedModel ?? ChatBuilder.NO_MODEL)
+        //     } else {
+        //         // chatBuilder.addUserMessage(message)
+        //     }
+        // }
         delegate.postDone()
     }
 }

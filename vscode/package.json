@@ -1577,7 +1577,7 @@
     "lucide-react": "^0.378.0",
     "mac-ca": "^2.0.3",
     "marked": "^4.0.16",
-    "minimatch": "^9.0.3",
+    "minimatch": "^9.0.4",
     "mkdirp": "^3.0.1",
     "os-browserify": "^0.3.0",
     "postcss-scss": "^4.0.9",

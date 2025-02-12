@@ -24,6 +24,7 @@ import type { VSCodeWrapper } from './utils/VSCodeApi'
 import { useUserAccountInfo } from './utils/useConfig'
 import { useFeatureFlag } from './utils/useFeatureFlags'
 import { TabViewContext } from './utils/useTabView'
+import { ToolCodyChat } from './ToolCodyChat'
 
 interface CodyPanelProps {
     view: View
@@ -160,6 +161,23 @@ export const CodyPanel: FunctionComponent<CodyPanelProps> = ({
                             IDE={clientCapabilities.agentIDE}
                             setView={setView}
                             isPromptsV2Enabled={isPromptsV2Enabled}
+                        />
+                    )}
+                    {view === View.ToolCody && (
+                        <ToolCodyChat
+                            chatEnabled={chatEnabled}
+                            messageInProgress={messageInProgress}
+                            transcript={transcript}
+                            models={chatModels || []}
+                            vscodeAPI={vscodeAPI}
+                            guardrails={attributionEnabled ? guardrails : undefined}
+                            showIDESnippetActions={showIDESnippetActions}
+                            showWelcomeMessage={showWelcomeMessage}
+                            scrollableParent={tabContainerRef.current}
+                            smartApplyEnabled={smartApplyEnabled}
+                            isPromptsV2Enabled={isPromptsV2Enabled}
+                            setView={setView}
+                            isWorkspacesUpgradeCtaEnabled={isWorkspacesUpgradeCtaEnabled}
                         />
                     )}
                     {view === View.Settings && <SettingsTab />}

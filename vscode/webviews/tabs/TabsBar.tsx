@@ -10,6 +10,7 @@ import {
     MessageSquarePlusIcon,
     MessagesSquareIcon,
     Trash2Icon,
+    WrenchIcon,
 } from 'lucide-react'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
 import { View } from './types'
@@ -403,6 +404,12 @@ function useTabs(input: Pick<TabsBarProps, 'user'>): TabConfig[] {
                         view: View.Prompts,
                         title: 'Prompts',
                         Icon: BookTextIcon,
+                        changesView: true,
+                    },
+                    {
+                        view: View.ToolCody,
+                        title: 'ToolCody',
+                        Icon: WrenchIcon,
                         changesView: true,
                     },
                 ] as (TabConfig | null)[]
