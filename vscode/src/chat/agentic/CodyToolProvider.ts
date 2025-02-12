@@ -170,7 +170,6 @@ export class CodyToolProvider {
     public factory: ToolFactory
 
     private static instance: CodyToolProvider | undefined
-    public static configSubscription: Unsubscribable | undefined
     public static openCtxSubscription: Unsubscribable | undefined
 
     private constructor(contextRetriever: Retriever) {
@@ -187,9 +186,6 @@ export class CodyToolProvider {
 
     public static setupOpenCtxProviderListener(): void {
         const provider = CodyToolProvider.instance
-        if (provider && !CodyToolProvider.configSubscription) {
-            CodyToolProvider.configSubscription = toolboxManager.observable.subscribe({})
-        }
         if (provider && !CodyToolProvider.openCtxSubscription) {
             CodyToolProvider.openCtxSubscription = openctxController
                 .pipe(
@@ -212,8 +208,6 @@ export class CodyToolProvider {
             CodyToolProvider.openCtxSubscription.unsubscribe()
             CodyToolProvider.openCtxSubscription = undefined
         }
-        CodyToolProvider.configSubscription?.unsubscribe()
-        CodyToolProvider.configSubscription = undefined
     }
 }
 
