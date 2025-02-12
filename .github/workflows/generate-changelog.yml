@@ -89,6 +89,7 @@ jobs:
           export RELEASE_LATEST_COMMIT=$(git rev-parse HEAD)
           echo "Latest Commit: $RELEASE_LATEST_COMMIT"
           echo "Latest Release: $RELEASE_LATEST_RELEASE"
+          pwd
           ./changelog update-as-pr \
             --github.repo=$GH_REPO \
             --github.fetch-strategy="between-commit" \
