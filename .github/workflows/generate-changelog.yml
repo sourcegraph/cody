@@ -92,6 +92,7 @@ jobs:
           pwd
           git -C . log 
           WORKING_DIR=$(pwd)
+          export SRC_LOG_LEVEL=dbug
           ./changelog update-as-pr \
             --github.repo=$GH_REPO \
             --github.fetch-strategy="between-commit" \
