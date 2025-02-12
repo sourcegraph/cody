@@ -44,7 +44,7 @@ test
     })(
     'using actively invoked commands and autocomplete shows a error',
     async ({ page, server, sidebar }) => {
-        mockEnterpriseRepoIdMapping(server)
+        mockEnterpriseRepoIdMapping(server, 'github.com/sourcegraph/sourcegraph')
         server.onGraphQl('ContextFilters').replyJson({
             data: {
                 site: {
