@@ -17,6 +17,11 @@ on:
           Ex - 1.60.0
         required: true
         type: string
+      bump_version:
+        description: 'Bump VS Code version? If checked, the VS Code version will be bumped to the specified version from above.'
+        required: true
+        type: boolean
+        default: false
       release_tag:
         description: |
           Optional: Generate changelog since a specific release. ex - vscode-v1.58
@@ -100,15 +105,14 @@ jobs:
             --releaseregistry.version=${VERSION}
 
       - name: Update version
+        if: ${{ github.event.inputs.bump_version == 'true' }}
         env:
           VERSION: ${{ github.event.inputs.version }}
         run: |
           set +x
-          # git checkout -b version-update/$VERSION
           sed -i 's/"version": "[0-9]\+\.[0-9]\+\.[0-9]\+"/"version": "'$VERSION'"/' vscode/package.json
-          # This will get tagged along with the changelog PR
           git add vscode/package.json
           git pull
-          git checkout release/vscode-$VERSION
+          git checkout $PR_BRANCH
           git commit -m "Update version to $VERSION"
           git push
