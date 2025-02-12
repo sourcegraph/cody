@@ -95,7 +95,7 @@ jobs:
           ./changelog update-as-pr \
             --github.repo=$GH_REPO \
             --github.fetch-strategy="between-commit" \
-            --repo.dir=$WORKING_DIR \
+            --repo.dir="$WORKING_DIR" \
             --output.repo.base="main" \
             --output.repo=$GH_REPO \
             --output.pr.branch="$PR_BRANCH" \
