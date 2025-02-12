@@ -1,6 +1,6 @@
 export type SearchMatch = ContentMatch
 
-export interface ContentMatch {
+interface ContentMatch {
     type: 'content'
     path: string
     repository: string
@@ -15,7 +15,7 @@ export interface ContentMatch {
     debug?: string
 }
 
-export interface LineMatch {
+interface LineMatch {
     line: string
     lineNumber: number
     offsetAndLengths: number[][]

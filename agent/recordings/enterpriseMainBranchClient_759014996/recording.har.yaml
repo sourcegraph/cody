@@ -237,6 +237,104 @@ log:
         send: 0
         ssl: -1
         wait: 637
+    - _id: 5d0e29776bf0857beffb22b778ce488b
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 136
+        cookies: []
+        headers:
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_1858aad0e1ff07ae26d4042086acb9da455866ad617afd2cb9ab9419e1be1104
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: enterprisemainbranchclient/v1 (Node.js v20.4.0)
+          - _fromType: array
+            name: x-requested-with
+            value: enterprisemainbranchclient v1
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "136"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - name: host
+            value: sourcegraph.sourcegraph.com
+        headersSize: 497
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            query: >
+              
+              query CodeSearchEnabled {
+                  codeSearchEnabled: enterpriseLicenseHasFeature(feature:"code-search")
+              }
+            variables: {}
+        queryString:
+          - name: CodeSearchEnabled
+            value: null
+        url: https://sourcegraph.sourcegraph.com/.api/graphql?CodeSearchEnabled
+      response:
+        bodySize: 35
+        content:
+          mimeType: application/json
+          size: 35
+          text: "{\"data\":{\"codeSearchEnabled\":true}}"
+        cookies: []
+        headers:
+          - name: date
+            value: Wed, 22 Jan 2025 14:39:53 GMT
+          - name: content-type
+            value: application/json
+          - name: content-length
+            value: "35"
+          - name: connection
+            value: close
+          - name: retry-after
+            value: "274"
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: vary
+            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
+              Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1319
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2025-01-22T14:39:53.108Z
+      time: 683
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 683
     - _id: 58da5ef844152e12a476118b9211dca4
       _order: 0
       cache: {}
@@ -909,6 +1007,163 @@ log:
         send: 0
         ssl: -1
         wait: 240
+    - _id: 5bd989e3646d0bf40fc6f70fca0f6464
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 101
+        cookies: []
+        headers:
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_1858aad0e1ff07ae26d4042086acb9da455866ad617afd2cb9ab9419e1be1104
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: enterprisemainbranchclient/v1 (Node.js v20.4.0)
+          - _fromType: array
+            name: x-requested-with
+            value: enterprisemainbranchclient v1
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "101"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - name: host
+            value: sourcegraph.sourcegraph.com
+        headersSize: 497
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            query: |
+              
+              query TemporarySettings {
+                temporarySettings {
+                  contents
+                }
+              }
+            variables: {}
+        queryString:
+          - name: TemporarySettings
+            value: null
+        url: https://sourcegraph.sourcegraph.com/.api/graphql?TemporarySettings
+      response:
+        bodySize: 734
+        content:
+          encoding: base64
+          mimeType: application/json
+          size: 734
+          text: "[\"H4sIAAAAAAAA/9SV34/iNhDH/5Uo0r4dSciGYzdSVdHltkXtLajQh6r0wXEG4sOxffY4I\
+            UX875VJ2M12Qaqq24e+JfPL33zGmTn4OUHipwcfoVRSE90sAZGJrXFGKgWCQOOn/mHt\
+            WwM64MTglDQTiqyCtZ96a/+zFN6TrLzh0IujOFn7H7wuOCeNaSMfpBXowpNnpwEQE4v\
+            FQsuK5aCNc/9xWPuUMxA4m7bV23JCLtlWzISzbQg34IzM/GAZR3ayorYnowFdMQqv03\
+            NmFCfNEyk7zV2i55QIUsJAEWNqqXOPWCxAIKMEmRRteldz1aguPTuf2yu+0LBhe+cXl\
+            nPn0PDVMg35o9TuQ/96Jf71Ob/9+stZ7/GD9wZCNALYEJokeZyT/I6O7hL4t2Cerf8g\
+            UyAqk4bhlmFhs4DKMrwC60eGP9nsCoo2/T+QODfsCogwcI5OXcjllonvFf3upPrmdnI\
+            TP97Ejy/a3fvt5OZ2chnVJaizahjcjcYZjZM4jpKP96P727dQzzLfhak3UcpbxoOltJ\
+            rCVhNV/E8wX4Z3CfOZiXn5xqD/7CC1IgwpeVgCEjeUvsX1TsOwrutA7pCcjoH97s5S3\
+            Fk9rz+NFslwlI+v9Ge+O0t40won8x3+/D6EUx+ujAJJkmKs4vrLz5+nhv/+5eP9+FuN\
+            gl5bBpRLmz+ju0Kpd2+9uQJNULo5fhlbr7jsYt8R44XTXq73ZS3HP13dGrIn2GNQA6e\
+            yhHkFmpMmyJkpmTGQ938qoczS6gqaoCBm1a1QxptpP7hHnWhaBIUsQZEtBF8t6ObTnp\
+            SKg3lod61LOKz9DeOwIFh06DQNKxPWUu8yELQI3WLWLAtpQTDMtKwN6NPLTCiLC6Ixw\
+            K4PGpQ0DKXuta03nkpGtTRyg2FlqMy7reK2/AOhBeQrVoJBUqo20y34QXQ/iJPVcJwO\
+            kzSKB9E4jaK1fzz6x+Px7wAAAP//KgsiRVIIAAA=\"]"
+          textDecoded:
+            data:
+              temporarySettings:
+                contents: "{\"user.lastDayActive\": \"Mon Nov 11 2024\",
+                  \"user.daysActiveCount\": 4, \"user.seenAuthProviders\":
+                  [{\"clientID\": \"\", \"noSignIn\": false, \"isBuiltin\":
+                  true, \"serviceID\": \"\", \"displayName\": \"Builtin
+                  username-password authentication\", \"serviceType\":
+                  \"builtin\", \"displayPrefix\": null, \"requiredForAuthz\":
+                  false, \"authenticationURL\": \"\"}, {\"clientID\":
+                  \"05eefac44d2dad8c584e\", \"noSignIn\": false, \"isBuiltin\":
+                  false, \"serviceID\": \"https://github.com/\",
+                  \"displayName\": \"GitHub\", \"serviceType\": \"github\",
+                  \"displayPrefix\": null, \"requiredForAuthz\": true,
+                  \"authenticationURL\":
+                  \"/.auth/github/login?pc=https%3A%2F%2Fgithub.com%2F%3A%3A05e\
+                  efac44d2dad8c584e\"}, {\"clientID\": \"Iv1.857bc24220469593\",
+                  \"noSignIn\": true, \"isBuiltin\": false, \"serviceID\":
+                  \"https://github.com/\", \"displayName\": \"GitHub App
+                  S2-Sourcegraph\", \"serviceType\": \"github\",
+                  \"displayPrefix\": null, \"requiredForAuthz\": true,
+                  \"authenticationURL\":
+                  \"/.auth/github/login?pc=https%3A%2F%2Fgithub.com%2F%3A%3AIv1\
+                  .857bc24220469593\"}, {\"clientID\":
+                  \"https://sourcegraph.sourcegraph.com/.auth/saml/metadata\",
+                  \"noSignIn\": false, \"isBuiltin\": false, \"serviceID\":
+                  \"http://www.okta.com/exk8uctkurOwE5P415d7\", \"displayName\":
+                  \"Okta\", \"serviceType\": \"saml\", \"displayPrefix\": null,
+                  \"requiredForAuthz\": false, \"authenticationURL\":
+                  \"/.auth/saml/login\"}, {\"clientID\":
+                  \"0oa4h7p2wjKMDslYj697\", \"noSignIn\": false, \"isBuiltin\":
+                  false, \"serviceID\": \"https://sourcegraph-cloud.okta.com\",
+                  \"displayName\": \"Sourcegraph Operators\", \"serviceType\":
+                  \"sourcegraph-operator\", \"displayPrefix\": null,
+                  \"requiredForAuthz\": false, \"authenticationURL\":
+                  \"/.auth/sourcegraph-operator/login?pc=sourcegraph-operator\"\
+                  }], \"webNext.welcomeOverlay.dismissed\": true,
+                  \"npsSurvey.hasTemporarilyDismissed\": false,
+                  \"search.homepage.queryExamplesContent\": {\"filePath\":
+                  \"src/vs/workbench/contrib/chat/browser/chatInputPart.ts\",
+                  \"repositoryName\": \"github.com/microsoft/vscode\",
+                  \"lastCachedTimestamp\": \"2024-09-24T17:14:02-07:00\"}}"
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 17 Jan 2025 13:17:22 GMT
+          - name: content-type
+            value: application/json
+          - name: content-length
+            value: "734"
+          - name: connection
+            value: close
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: content-encoding
+            value: gzip
+          - name: vary
+            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
+              Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1412
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2025-01-17T13:17:21.329Z
+      time: 773
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 773
     - _id: 58db5729e7d9b6a2c9f5fd6d707dfc97
       _order: 0
       cache: {}

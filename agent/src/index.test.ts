@@ -10,8 +10,6 @@ import {
     ModelUsage,
     type SerializedChatTranscript,
 } from '@sourcegraph/cody-shared'
-
-import { getMockedDotComServerModelConfiguration } from '@sourcegraph/cody-shared/dist/models/dotcom'
 import * as uuid from 'uuid'
 import { ResponseError } from 'vscode-jsonrpc'
 import { CodyJsonRpcErrorCode } from '../../vscode/src/jsonrpc/CodyJsonRpcErrorCode'
@@ -130,7 +128,7 @@ describe('Agent', () => {
         // JetBrains client does and there was a bug where everything worked
         // fine as long as we didn't send the second unauthenticated config
         // change.
-        const initModelName = getMockedDotComServerModelConfiguration().defaultModels.chat
+        const initModelName = 'anthropic::2024-10-22::claude-3-5-sonnet-latest'
         const { models } = await client.request('chat/models', { modelUsage: ModelUsage.Chat })
         expect(models[0].model.id).toStrictEqual(initModelName)
 
@@ -210,7 +208,7 @@ describe('Agent', () => {
 
     describe('Chat', () => {
         it('chat/submitMessage (short message)', async () => {
-            await setChatModel(getMockedDotComServerModelConfiguration().defaultModels.chat)
+            await setChatModel('anthropic::2024-10-22::claude-3-5-sonnet-latest')
             const lastMessage = await client.sendSingleMessageToNewChat('Hello!')
             expect(lastMessage).toMatchSnapshot()
             // telemetry assertion, to validate the expected events fired during the test run
@@ -486,7 +484,7 @@ describe('Agent', () => {
                         ])
                     )
                 },
-                { timeout: mayRecord ? 10_000 : undefined }
+                { timeout: mayRecord ? 10_000 : 5000 }
             )
 
             it('edits messages by index', async () => {

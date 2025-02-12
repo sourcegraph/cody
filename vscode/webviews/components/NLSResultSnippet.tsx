@@ -37,6 +37,7 @@ export const NLSResultSnippet: FC<NLSResultSnippetProps> = ({
         if (result.__typename === 'FileMatch') {
             telemetryRecorder.recordEvent('onebox.searchResult', 'clicked', {
                 privateMetadata: { filename: result.file.path },
+                billingMetadata: { product: 'cody', category: 'core' },
             })
         }
     }, [telemetryRecorder, result])

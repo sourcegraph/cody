@@ -1,6 +1,6 @@
 import { fetchEventSource } from '@microsoft/fetch-event-source'
 
-import { dependentAbortController } from '../../common/abortController'
+import { dependentAbortController, onAbort } from '../../common/abortController'
 import { currentResolvedConfig } from '../../configuration/resolver'
 import { isError } from '../../utils'
 import { addClientInfoParams, addCodyClientIdentificationHeaders } from '../client-name-version'
@@ -40,8 +40,16 @@ export class SourcegraphBrowserCompletionsClient extends SourcegraphCompletionsC
             ...requestParams.customHeaders,
         } as HeadersInit)
         addCodyClientIdentificationHeaders(headersInstance)
-        addAuthHeaders(config.auth, headersInstance, url)
         headersInstance.set('Content-Type', 'application/json; charset=utf-8')
+
+        try {
+            await addAuthHeaders(config.auth, headersInstance, url)
+        } catch (error: any) {
+            cb.onError(error.message)
+            abort.abort()
+            console.error(error)
+            return
+        }
 
         const parameters = new URLSearchParams(globalThis.location.search)
         const trace = parameters.get('trace')
@@ -116,6 +124,12 @@ export class SourcegraphBrowserCompletionsClient extends SourcegraphCompletionsC
             abort.abort()
             console.error(error)
         })
+
+        // 'fetchEventSource' does not emit any event/message when the signal gets abborted. Instead,
+        // the returned promise gets resolved. However we cannot really differentiate between the
+        // promising resolving because the signal got abborted and the stream ended.
+        // That's why we subscribe to the signal directly and trigger the completion callback.
+        onAbort(signal, cb.onComplete)
     }
 
     protected async _fetchWithCallbacks(
@@ -132,12 +146,13 @@ export class SourcegraphBrowserCompletionsClient extends SourcegraphCompletionsC
             ...requestParams.customHeaders,
         })
         addCodyClientIdentificationHeaders(headersInstance)
-        addAuthHeaders(auth, headersInstance, url)
 
         if (new URLSearchParams(globalThis.location.search).get('trace')) {
             headersInstance.set('X-Sourcegraph-Should-Trace', 'true')
         }
         try {
+            await addAuthHeaders(auth, headersInstance, url)
+
             const response = await fetch(url.toString(), {
                 method: 'POST',
                 headers: headersInstance,

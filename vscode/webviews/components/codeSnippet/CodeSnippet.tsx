@@ -132,6 +132,9 @@ export const FileMatchSearchResult: FC<PropsWithChildren<FileMatchSearchResultPr
     } = useConfig()
     const openRemoteFile = useCallback(
         (line?: number) => {
+            // Call the "onSelect" callback when opening a remote file to log
+            // an event for interacting with the search result.
+            onSelect()
             const urlWithLineNumber = line ? `${fileURL}?L${line}` : fileURL
             if (agentIDE !== CodyIDE.VSCode) {
                 getVSCodeAPI().postMessage({
@@ -146,9 +149,10 @@ export const FileMatchSearchResult: FC<PropsWithChildren<FileMatchSearchResultPr
             getVSCodeAPI().postMessage({
                 command: 'openRemoteFile',
                 uri,
+                tryLocal: true,
             })
         },
-        [fileURL, agentIDE]
+        [fileURL, agentIDE, onSelect]
     )
 
     const handleVisibility = useCallback(
@@ -210,7 +214,7 @@ export const FileMatchSearchResult: FC<PropsWithChildren<FileMatchSearchResultPr
             repoName={result.repository.name}
             repoURL={repoAtRevisionURL}
             filePath={result.file.path}
-            onFilePathClick={openRemoteFile}
+            onFilePathClick={() => openRemoteFile(expandedGroups.at(0)?.startLine)}
             pathMatchRanges={result.pathMatches ?? []}
             fileURL={fileURL}
             repoDisplayName={
@@ -249,7 +253,6 @@ export const FileMatchSearchResult: FC<PropsWithChildren<FileMatchSearchResultPr
         <ResultContainer
             ref={rootRef}
             title={title}
-            onResultClicked={onSelect}
             className={className}
             collapsed={hidden}
             actions={actions}
@@ -287,7 +290,6 @@ export const FileMatchSearchResult: FC<PropsWithChildren<FileMatchSearchResultPr
         </ResultContainer>
     )
 }
-
 interface ResultContainerProps {
     title: React.ReactNode
     titleClassName?: string
@@ -333,7 +335,13 @@ const ResultContainer: ForwardReferenceExoticComponent<
             onClick={onResultClicked}
         >
             <article>
-                <header className={styles.header} data-result-header={true}>
+                <header
+                    className={clsx(
+                        styles.header,
+                        'tw-flex tw-py-2 tw-px-4 tw-items-center tw-gap-2 md:tw-py-3 md:tw-px-6 '
+                    )}
+                    data-result-header={true}
+                >
                     {/* Add a result type to be read out to screen readers only, so that screen reader users can
                     easily scan the search results list (for example, by navigating by landmarks). */}
                     <span className="sr-only">

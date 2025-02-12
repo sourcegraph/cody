@@ -30,7 +30,7 @@ export function logFirstEnrollmentEvent(key: FeatureFlag, isEnabled: boolean): b
  * Matches the feature flag key to the corresponding event name.
  * NOTE: Used for logging events for the feature flag.
  */
-export function getFeatureFlagEventName(key: FeatureFlag): string {
+function getFeatureFlagEventName(key: FeatureFlag): string {
     switch (key) {
         case FeatureFlag.CodyInteractiveTutorial:
             return 'interactiveTutorial'

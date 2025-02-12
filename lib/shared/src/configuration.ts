@@ -23,8 +23,7 @@ export interface AuthCredentials {
 
 export interface HeaderCredential {
     // We use function instead of property to prevent accidential top level serialization - we never want to store this data
-    getHeaders(): Record<string, string>
-    expiration: number | undefined
+    getHeaders(): Promise<Record<string, string>>
 }
 
 export interface TokenCredential {
@@ -136,6 +135,8 @@ interface RawClientConfiguration {
     experimentalMinionAnthropicKey: string | undefined
     experimentalNoxideEnabled: boolean
     experimentalGuardrailsTimeoutSeconds: number | undefined
+
+    rulesEnabled?: boolean | undefined
 
     //#region Unstable
     internalUnstable: boolean

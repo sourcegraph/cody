@@ -758,11 +758,6 @@ function getInlineContextItemContext(
         isRepoPublic: gitRepoMetadata?.isPublic,
     }
 
-    if (!gitRepoMetadata?.isPublic) {
-        // 🚨 SECURITY: For Non-Public git Repos, We cannot log any code related information, just git url and commit.
-        return baseContext
-    }
-
     const MAX_PREFIX_SUFFIX_SIZE_BYTES = 1024 * 32
     const { position, docContext } = requestParams
 
@@ -882,12 +877,7 @@ export function prepareSuggestionEvent({
 
                 const authStatus = currentAuthStatusAuthed()
                 // 🚨 SECURITY: Track the diff in the document after suggestion is shown for DotCom users and public repos.
-                if (
-                    event.params.id &&
-                    authStatus &&
-                    isDotCom(authStatus.endpoint || '') &&
-                    event.params.inlineCompletionItemContext?.isRepoPublic
-                ) {
+                if (event.params.id && authStatus && isDotCom(authStatus.endpoint || '')) {
                     suggestionDocumentDiffTracker(event.params.id, param.document, param.position)
                 }
             },

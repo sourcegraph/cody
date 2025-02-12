@@ -75,6 +75,7 @@
     }
   ],
   "privateMetadata": {
+    "taskId": "9999",
     "languageId": "typescript",
     "model": "anthropic::2023-06-01::claude-3.5-sonnet"
   },

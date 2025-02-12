@@ -1,72 +1,69 @@
 .context-item {
-  display: inline-flex;
-  padding: 2px 4px 2px 2px;
+    display: inline-flex;
 }
 
 .context-item-metadata {
-  color: var(--vscode-disabledForeground);
-  padding-left: 0.1rem;
-  text-wrap: nowrap;
+    color: var(--vscode-disabledForeground);
+    padding-left: 0.1rem;
+    text-wrap: nowrap;
 }
 
 .context-item-edit-button {
-  /* display: flex; */
-  display: none;
-  align-items: center;
-
-  flex-wrap: nowrap;
+    /* display: flex; */
+    display: none;
+    align-items: center;
+    flex-wrap: nowrap;
 }
 
 .context-item-edit-button-icon {
-  height: 20%;
-  margin-right: 0.5rem;
+    height: 20%;
+    margin-right: 0.5rem;
 }
 
 .context-suggested-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.25rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
 }
 
 .root {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
 }
 
 .link-container {
-  display: inline-flex;
-  padding: 2px 4px 2px 2px;
-  min-width: 0;
+    display: inline-flex;
+    min-width: 0;
 }
 
 .header {
-  display: flex;
-  gap: 0.25rem;
-  align-items: center;
+    display: flex;
+    gap: 0.25rem;
+    align-items: center;
 }
 
 .context-item-link {
-  background: none;
-  border: none;
-  color: var(--vscode-textLink-foreground);
-  font-size: inherit;
-  padding: 0;
-  margin: 0;
-  text-align: left;
-  font-weight: normal;
-  display: flex;
-  align-items: center;
-  gap: 0.125rem;
-  overflow: hidden;
+    background: none;
+    border: none;
+    color: var(--vscode-textLink-foreground);
+    font-size: inherit;
+    padding: 0;
+    margin: 0;
+    text-align: left;
+    font-weight: normal;
+    display: flex;
+    align-items: center;
+    gap: 0.125rem;
+    overflow: hidden;
 }
 
 /* In light high contrast, --vscode-textLink-foreground provides little
    contrast; instead inherit the --code-foreground color from the container. */
 body[data-vscode-theme-kind='vscode-high-contrast-light'] .context-item-link {
-  color: inherit;
+    color: inherit;
 }
 
 .code-block {
-  margin-bottom: 0.25rem;
+    margin-bottom: 0.25rem;
 }

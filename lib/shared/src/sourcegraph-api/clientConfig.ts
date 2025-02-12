@@ -9,6 +9,7 @@ import {
     filter,
     firstValueFrom,
     promiseFactoryToObservable,
+    retry,
     startWith,
     switchMap,
 } from '../misc/observable'
@@ -31,7 +32,8 @@ export interface CodyNotice {
 //
 // This is fetched from the Sourcegraph instance and is specific to the current user.
 //
-// For the canonical type definition, see https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/internal/clientconfig/types.go
+// For the canonical type definition, see model ClientConfig in https://sourcegraph.sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/internal/openapi/internal.tsp
+// API Spec: https://sourcegraph.sourcegraph.com/api/openapi/internal#get-api-client-config
 export interface CodyClientConfig {
     // Whether the site admin allows this user to make use of the Cody chat feature.
     chatEnabled: boolean
@@ -59,6 +61,18 @@ export interface CodyClientConfig {
     // List of global instance-level cody notice/banners (set only by admins in global
     // instance configuration file
     notices: CodyNotice[]
+
+    // The version of the Sourcegraph instance.
+    siteVersion?: string
+
+    // Whether the user should be able to use the omnibox feature.
+    omniBoxEnabled: boolean
+
+    // Whether code search is enabled for the SG instance.
+    codeSearchEnabled: boolean
+
+    // The latest supported completions stream API version.
+    latestSupportedCompletionsStreamAPIVersion?: number
 }
 
 export const dummyClientConfigForTest: CodyClientConfig = {
@@ -70,6 +84,9 @@ export const dummyClientConfigForTest: CodyClientConfig = {
     modelsAPIEnabled: true,
     userShouldUseEnterprise: false,
     notices: [],
+    siteVersion: undefined,
+    omniBoxEnabled: false,
+    codeSearchEnabled: false,
 }
 
 /**
@@ -110,7 +127,10 @@ export class ClientConfigSingleton {
                           // linear.app/sourcegraph/issue/CODY-3745/codys-background-periodic-network-access-causes-2fa.
                           filter((_value): _value is undefined => editorWindowIsFocused()),
                           startWith(undefined),
-                          switchMap(() => promiseFactoryToObservable(signal => this.fetchConfig(signal)))
+                          switchMap(() =>
+                              promiseFactoryToObservable(signal => this.fetchConfig(signal))
+                          ),
+                          retry(3)
                       )
                     : Observable.of(undefined)
             ),
@@ -146,6 +166,7 @@ export class ClientConfigSingleton {
 
     private async fetchConfig(signal?: AbortSignal): Promise<CodyClientConfig> {
         logDebug('ClientConfigSingleton', 'refreshing configuration')
+        let omniBoxEnabled = false
 
         // Determine based on the site version if /.api/client-config is available.
         return graphqlClient
@@ -167,7 +188,12 @@ export class ClientConfigSingleton {
                 // Insiders and dev builds support the new /.api/client-config endpoint
                 const insiderBuild = siteVersion.length > 12 || siteVersion.includes('dev')
                 if (insiderBuild) {
+                    omniBoxEnabled = true
                     return true
+                }
+
+                if (!semver.lt(siteVersion, '6.0.0')) {
+                    omniBoxEnabled = true
                 }
 
                 // Sourcegraph instances before 5.5.0 do not support the new /.api/client-config endpoint.
@@ -187,28 +213,36 @@ export class ClientConfigSingleton {
 
                 return this.fetchConfigEndpoint(signal)
             })
-            .then(clientConfig => {
+            .then(async clientConfig => {
                 signal?.throwIfAborted()
                 logDebug('ClientConfigSingleton', 'refreshed', JSON.stringify(clientConfig))
-                return graphqlClient.viewerSettings(signal).then(viewerSettings => {
-                    // Don't fail the whole chat because of viewer setting (used only to show banners)
-                    if (isError(viewerSettings)) {
-                        return { ...clientConfig, notices: [] }
+
+                return Promise.all([
+                    graphqlClient.viewerSettings(signal),
+                    graphqlClient.codeSearchEnabled(signal),
+                ]).then(([viewerSettings, codeSearchEnabled]) => {
+                    const config: CodyClientConfig = {
+                        ...clientConfig,
+                        notices: [],
+                        omniBoxEnabled,
+                        codeSearchEnabled: isError(codeSearchEnabled) ? true : codeSearchEnabled,
                     }
 
-                    return {
-                        ...clientConfig,
+                    // Don't fail the whole chat because of viewer setting (used only to show banners)
+                    if (!isError(viewerSettings)) {
                         // Make sure that notice object will have all important field (notices come from
                         // instance global JSONC configuration so they can have any arbitrary field values.
-                        notices: Array.from<Partial<CodyNotice>, CodyNotice>(
+                        config.notices = Array.from<Partial<CodyNotice>, CodyNotice>(
                             viewerSettings['cody.notices'] ?? [],
                             (notice, index) => ({
                                 key: notice?.key ?? index.toString(),
                                 title: notice?.title ?? '',
                                 message: notice?.message ?? '',
                             })
-                        ),
+                        )
                     }
+
+                    return config
                 })
             })
             .catch(e => {
@@ -238,6 +272,8 @@ export class ClientConfigSingleton {
             modelsAPIEnabled: false,
             userShouldUseEnterprise: false,
             notices: [],
+            omniBoxEnabled: false,
+            codeSearchEnabled: false,
         }
     }
 
@@ -273,6 +309,7 @@ export class ClientConfigSingleton {
                 if (isError(clientConfig)) {
                     throw clientConfig
                 }
+                latestCodyClientConfig = clientConfig
                 return clientConfig
             })
     }
@@ -284,4 +321,13 @@ export class ClientConfigSingleton {
     ): Promise<CodyClientConfig | undefined> {
         return this.fetchConfigEndpoint(signal, config)
     }
+}
+// It's really complicated to access CodyClientConfig from functions like utils.ts
+let latestCodyClientConfig: CodyClientConfig | undefined
+
+export function serverSupportsPromptCaching(): boolean {
+    return (
+        latestCodyClientConfig?.latestSupportedCompletionsStreamAPIVersion !== undefined &&
+        latestCodyClientConfig?.latestSupportedCompletionsStreamAPIVersion >= 7
+    )
 }

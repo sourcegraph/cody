@@ -1,8 +1,12 @@
 .code-excerpt {
     :global(.line),
     :global(.code) {
-        /* stylelint-disable-next-line declaration-property-unit-allowed-list */
-        height: 18px;
+        height: 16px;
+
+        @media (min-width: 768px) {
+            height: 18px;
+        }
+
         vertical-align: middle;
         padding: 0;
     }
@@ -11,6 +15,11 @@
         min-width: 1.5rem;
         text-align: right;
         user-select: none;
+        cursor: pointer;
+
+        &:hover {
+            text-decoration: none;
+        }
 
         &::before {
             /* draw line number with css so it cannot be copied to clipboard */

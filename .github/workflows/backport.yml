@@ -5,6 +5,10 @@ on:
       - closed
       - labeled
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   backport:
     name: Backport
@@ -24,5 +28,6 @@ jobs:
       - uses: sourcegraph/backport@v2
         with:
           github_token: ${{ secrets.BACKPORT_GITHUB_TOKEN }}
-          label_pattern: '^backport (?<base>(jb|vscode)-v\d+\.\d+\.x)$'
-          team_reviews: 'cody-core'
+          # TODO: Remove the jb, vscode parts of the pattern after VSCode v1.66 and JetBrains v7.66 reach stable
+          label_pattern: '^backport (?<base>((jb|vscode)-v\d+\.\d+\.x)|(M\d+))$'
+          team_reviews: "cody-core"

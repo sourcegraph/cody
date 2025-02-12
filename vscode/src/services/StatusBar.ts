@@ -3,26 +3,32 @@ import * as vscode from 'vscode'
 import {
     type AuthStatus,
     type ClientConfiguration,
+    CodyAutoSuggestionMode,
     CodyIDE,
+    FeatureFlag,
     InvisibleStatusBarTag,
     type IsIgnored,
     Mutable,
     type ResolvedConfiguration,
+    type UserProductSubscription,
     assertUnreachable,
     authStatus,
     combineLatest,
     contextFiltersProvider,
+    currentUserProductSubscription,
     distinctUntilChanged,
+    featureFlagProvider,
     firstValueFrom,
     fromVSCodeEvent,
     logError,
     promise,
+    promiseFactoryToObservable,
     resolvedConfig,
     shareReplay,
 } from '@sourcegraph/cody-shared'
-
 import { type Subscription, map } from 'observable-fns'
 import type { LiteralUnion, ReadonlyDeep } from 'type-fest'
+import { isUserEligibleForAutoeditsFeature } from '../autoedits/create-autoedits-provider'
 import { getGhostHintEnablement } from '../commands/GhostHintDecorator'
 import { getReleaseNotesURLByIDE } from '../release'
 import { version } from '../version'
@@ -82,7 +88,9 @@ export class CodyStatusBar implements vscode.Disposable {
         resolvedConfig,
         this.errors.changes,
         this.loaders.changes,
-        this.ignoreStatus
+        this.ignoreStatus,
+        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyAutoEditExperimentEnabledFeatureFlag),
+        promiseFactoryToObservable(async () => await currentUserProductSubscription())
     ).pipe(
         map((combined): StatusBarState | undefined => {
             return {
@@ -114,7 +122,7 @@ export class CodyStatusBar implements vscode.Disposable {
 
     addError(args: StatusBarErrorArgs) {
         const now = Date.now()
-        const ttl = args.timeout !== undefined ? Math.min(ONE_HOUR, args.timeout - now) : ONE_HOUR
+        const ttl = args.timeout !== undefined ? Math.min(ONE_HOUR, args.timeout) : ONE_HOUR
 
         const errorHandle = {}
         const remove = () => {
@@ -154,7 +162,7 @@ export class CodyStatusBar implements vscode.Disposable {
 
     addLoader<T>(args: StatusBarLoaderArgs) {
         const now = Date.now()
-        const ttl = args.timeout !== undefined ? Math.min(ONE_HOUR, args.timeout - now) : ONE_HOUR
+        const ttl = args.timeout !== undefined ? Math.min(ONE_HOUR, args.timeout) : ONE_HOUR
         const loaderHandle = {}
         const remove = () => {
             this.loaders.mutate(draft => {
@@ -258,7 +266,9 @@ export class CodyStatusBar implements vscode.Disposable {
         config: ResolvedConfiguration,
         errors: ReadonlySet<StatusBarError>,
         loaders: ReadonlySet<StatusBarLoader>,
-        ignoreStatus: IsIgnored
+        ignoreStatus: IsIgnored,
+        autoeditsFeatureFlagEnabled: boolean,
+        userProductSubscription: UserProductSubscription | null
     ): Partial<StatusBarState> & Pick<StatusBarState, 'interact' | 'tooltip'> {
         const tags = new Set<InvisibleStatusBarTag>()
 
@@ -319,6 +329,9 @@ export class CodyStatusBar implements vscode.Disposable {
                     config,
                     errors,
                     isIgnored: ignoreStatus,
+                    autoeditsFeatureFlagEnabled,
+                    userProductSubscription,
+                    authStatus,
                 }),
             }
         }
@@ -356,6 +369,9 @@ export class CodyStatusBar implements vscode.Disposable {
                     config,
                     errors,
                     isIgnored: ignoreStatus,
+                    autoeditsFeatureFlagEnabled,
+                    userProductSubscription,
+                    authStatus,
                 }),
             }
         }
@@ -371,6 +387,9 @@ export class CodyStatusBar implements vscode.Disposable {
                     config,
                     errors,
                     isIgnored: ignoreStatus,
+                    autoeditsFeatureFlagEnabled,
+                    userProductSubscription,
+                    authStatus,
                 }),
             }
         }
@@ -381,6 +400,9 @@ export class CodyStatusBar implements vscode.Disposable {
                 config,
                 errors,
                 isIgnored: ignoreStatus,
+                autoeditsFeatureFlagEnabled,
+                userProductSubscription,
+                authStatus,
             }),
         }
     }
@@ -406,9 +428,17 @@ function interactDefault({
     config,
     errors,
     isIgnored,
-}: { config: ResolvedConfiguration; errors: ReadonlySet<StatusBarError>; isIgnored: IsIgnored }): (
-    abort: AbortSignal
-) => Promise<void> {
+    autoeditsFeatureFlagEnabled,
+    userProductSubscription,
+    authStatus,
+}: {
+    config: ResolvedConfiguration
+    errors: ReadonlySet<StatusBarError>
+    isIgnored: IsIgnored
+    autoeditsFeatureFlagEnabled: boolean
+    userProductSubscription: UserProductSubscription | null
+    authStatus: AuthStatus
+}): (abort: AbortSignal) => Promise<void> {
     return async (abort: AbortSignal) => {
         const [interactionDone] = promise<void>()
         // this QuickPick could probably be made reactive but that's a bit overkill.
@@ -436,6 +466,13 @@ function interactDefault({
             config.configuration,
             vscode.workspace.getConfiguration()
         )
+        const createFeatureEnumChoice = featureCodySuggestionEnumBuilder(
+            vscode.workspace.getConfiguration()
+        )
+
+        const currentSuggestionMode = await getCurrentCodySuggestionMode(
+            vscode.workspace.getConfiguration()
+        )
 
         quickPick.items = [
             // These description should stay in sync with the settings in package.json
@@ -460,25 +497,6 @@ function interactDefault({
                       },
                   ]
                 : []),
-            { label: 'enable/disable features', kind: vscode.QuickPickItemKind.Separator },
-            await createFeatureToggle(
-                'Code Autocomplete',
-                undefined,
-                'Enable Cody-powered code autocompletions',
-                'cody.autocomplete.enabled',
-                c => c.autocomplete,
-                false,
-                [
-                    {
-                        iconPath: new vscode.ThemeIcon('settings-more-action'),
-                        tooltip: 'Autocomplete Settings',
-                        onClick: () =>
-                            vscode.commands.executeCommand('workbench.action.openSettings', {
-                                query: '@ext:sourcegraph.cody-ai autocomplete',
-                            }),
-                    } as vscode.QuickInputButton,
-                ]
-            ),
             await createFeatureToggle(
                 'Code Actions',
                 undefined,
@@ -502,6 +520,13 @@ function interactDefault({
                     const enablement = await getGhostHintEnablement()
                     return enablement.Document || enablement.EditOrChat || enablement.Generate
                 }
+            ),
+            { label: currentSuggestionMode, kind: vscode.QuickPickItemKind.Separator },
+            await createFeatureEnumChoice(
+                'Code Suggestion Settings',
+                autoeditsFeatureFlagEnabled,
+                userProductSubscription,
+                authStatus
             ),
             { label: 'settings', kind: vscode.QuickPickItemKind.Separator },
             {
@@ -571,6 +596,100 @@ function interactDefault({
     }
 }
 
+function featureCodySuggestionEnumBuilder(workspaceConfig: vscode.WorkspaceConfiguration) {
+    return async (
+        name: string,
+        autoeditsFeatureFlagEnabled: boolean,
+        userProductSubscription: UserProductSubscription | null,
+        authStatus: AuthStatus
+    ): Promise<StatusBarItem> => {
+        const currentSuggestionMode = await getCurrentCodySuggestionMode(workspaceConfig)
+        const { isUserEligible } = isUserEligibleForAutoeditsFeature(
+            autoeditsFeatureFlagEnabled,
+            authStatus,
+            userProductSubscription
+        )
+
+        // Build the set of modes to display
+        const suggestionModes = [
+            {
+                label: CodyStatusBarSuggestionModeLabels.Autocomplete,
+                detail: 'Show code completions for the rest of the line or block',
+                value: CodyAutoSuggestionMode.Autocomplete,
+            },
+            ...(isUserEligible
+                ? [
+                      {
+                          label: CodyStatusBarSuggestionModeLabels.AutoEdit,
+                          detail: 'Show suggested code changes around the cursor based on file changes',
+                          value: CodyAutoSuggestionMode.Autoedit,
+                      },
+                  ]
+                : []),
+            {
+                label: CodyStatusBarSuggestionModeLabels.Disabled,
+                detail: 'No code suggestions',
+                value: CodyAutoSuggestionMode.Off,
+            },
+        ]
+
+        // Sort the modes so that the current mode is first
+        suggestionModes.sort((a, b) =>
+            a.value === currentSuggestionMode ? -1 : b.value === currentSuggestionMode ? 1 : 0
+        )
+
+        const autocompleteSettings = [
+            { label: 'autocomplete settings', kind: vscode.QuickPickItemKind.Separator },
+            {
+                label: '$(gear) Open Autocomplete Settings',
+            },
+        ]
+
+        return {
+            label: `$(code) ${name}`,
+            async onSelect() {
+                const quickPick = vscode.window.createQuickPick()
+                quickPick.title = 'Code Suggestion Settings'
+                quickPick.placeholder = 'Choose an option'
+                quickPick.items = [
+                    { label: 'current mode', kind: vscode.QuickPickItemKind.Separator },
+                    ...suggestionModes.map(mode => ({
+                        label: mode.label,
+                        detail: mode.detail,
+                    })),
+                    ...(currentSuggestionMode === CodyAutoSuggestionMode.Autocomplete
+                        ? autocompleteSettings
+                        : []),
+                ]
+
+                quickPick.onDidAccept(async () => {
+                    const selected = quickPick.selectedItems[0]
+                    if (!selected) {
+                        quickPick.hide()
+                        return
+                    }
+                    const chosenMode = suggestionModes.find(mode => mode.label === selected.label)
+                    if (chosenMode) {
+                        await workspaceConfig.update(
+                            getCodySuggestionModeKey(),
+                            chosenMode.value,
+                            vscode.ConfigurationTarget.Global
+                        )
+                        vscode.window.showInformationMessage(`${name} is set to “${chosenMode.label}”.`)
+                    } else if (selected.label.includes('Open Autocomplete Settings')) {
+                        await vscode.commands.executeCommand(
+                            'workbench.action.openSettings',
+                            '@ext:sourcegraph.cody-ai cody.autocomplete'
+                        )
+                    }
+                    quickPick.hide()
+                })
+                quickPick.show()
+            },
+        }
+    }
+}
+
 function featureToggleBuilder(
     config: ReadonlyDeep<ClientConfiguration>,
     workspaceConfig: vscode.WorkspaceConfiguration
@@ -608,6 +727,19 @@ function featureToggleBuilder(
     }
 }
 
+async function getCurrentCodySuggestionMode(
+    workspaceConfig: vscode.WorkspaceConfiguration
+): Promise<string> {
+    const suggestionModeKey = getCodySuggestionModeKey()
+    const currentSuggestionMode =
+        (await workspaceConfig.get<string>(suggestionModeKey)) ?? CodyAutoSuggestionMode.Autocomplete
+    return currentSuggestionMode
+}
+
+function getCodySuggestionModeKey(): string {
+    return 'cody.suggestions.mode'
+}
+
 function ignoreReason(isIgnore: IsIgnored): string | null {
     switch (isIgnore) {
         case false:
@@ -628,6 +760,7 @@ function ignoreReason(isIgnore: IsIgnored): string | null {
 
 interface StatusBarLoaderArgs {
     title: string
+    // The number of milliseconds to wait
     timeout?: Milliseconds
     kind?: 'startup' | 'feature'
 }
@@ -640,6 +773,7 @@ interface StatusBarErrorArgs {
     description: string
     errorType: StatusBarErrorType
     removeAfterSelected: boolean
+    // The number of milliseconds to wait
     timeout?: Milliseconds
     onShow?: () => void
     onSelect?: () => void | Promise<void>
@@ -658,6 +792,12 @@ interface StatusBarLoader {
     createdAt: number
     title: string
     kind: 'startup' | 'feature'
+}
+
+enum CodyStatusBarSuggestionModeLabels {
+    Autocomplete = 'Autocomplete',
+    AutoEdit = 'Auto-edit (experimental)',
+    Disabled = 'Disabled',
 }
 
 type StatusBarErrorType = 'auth' | 'RateLimitError' | 'AutoCompleteDisabledByAdmin' | 'Networking'

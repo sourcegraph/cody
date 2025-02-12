@@ -23,6 +23,7 @@ import {
     BUILTIN_PROMPTS_QUERY,
     CHANGE_PROMPT_VISIBILITY,
     CHAT_INTENT_QUERY,
+    CODE_SEARCH_ENABLED_QUERY,
     CONTEXT_FILTERS_QUERY,
     CONTEXT_SEARCH_EVAL_DEBUG_QUERY,
     CONTEXT_SEARCH_QUERY,
@@ -478,7 +479,7 @@ export interface ContextSearchResult {
     ranges: Range[]
 }
 
-export interface ContextSearchEvalDebugResult {
+interface ContextSearchEvalDebugResult {
     name: string
     contextList: ContextSearchResult[]
 }
@@ -511,7 +512,7 @@ export interface Prompt {
     }
 }
 
-export interface PromptInput {
+interface PromptInput {
     owner: string
     name: string
     description: string
@@ -621,6 +622,10 @@ interface EvaluateFeatureFlagResponse {
 
 interface ViewerSettingsResponse {
     viewerSettings: { final: string }
+}
+
+interface CodeSearchEnabledResponse {
+    codeSearchEnabled: boolean
 }
 
 function extractDataOrError<T, R>(response: APIResponse<T> | Error, extract: (data: T) => R): R | Error {
@@ -1547,6 +1552,15 @@ export class SourcegraphGraphQLAPIClient {
         return extractDataOrError(response, data => JSON.parse(data.viewerSettings.final))
     }
 
+    public async codeSearchEnabled(signal?: AbortSignal): Promise<boolean | Error> {
+        const response = await this.fetchSourcegraphAPI<APIResponse<CodeSearchEnabledResponse>>(
+            CODE_SEARCH_ENABLED_QUERY,
+            {},
+            signal
+        )
+        return extractDataOrError(response, data => data.codeSearchEnabled)
+    }
+
     public async fetchSourcegraphAPI<T>(
         query: string,
         variables: Record<string, any> = {},
@@ -1573,7 +1587,12 @@ export class SourcegraphGraphQLAPIClient {
 
         addTraceparent(headers)
         addCodyClientIdentificationHeaders(headers)
-        addAuthHeaders(config.auth, headers, url)
+
+        try {
+            await addAuthHeaders(config.auth, headers, url)
+        } catch (error: any) {
+            return error
+        }
 
         const queryName = query.match(QUERY_TO_NAME_REGEXP)?.[1]
 
@@ -1621,7 +1640,12 @@ export class SourcegraphGraphQLAPIClient {
 
         addTraceparent(headers)
         addCodyClientIdentificationHeaders(headers)
-        addAuthHeaders(config.auth, headers, url)
+
+        try {
+            await addAuthHeaders(config.auth, headers, url)
+        } catch (error: any) {
+            return error
+        }
 
         const { abortController, timeoutSignal } = dependentAbortControllerWithTimeout(signal)
         return wrapInActiveSpan(`httpapi.fetch${queryName ? `.${queryName}` : ''}`, () =>

@@ -10,8 +10,7 @@ import isEqual from 'lodash/isEqual'
 import { ColumnsIcon } from 'lucide-react'
 import { type FC, memo, useMemo } from 'react'
 import type { UserAccountInfo } from '../../../../Chat'
-import { UserAvatar } from '../../../../components/UserAvatar'
-import { BaseMessageCell, MESSAGE_CELL_AVATAR_SIZE } from '../BaseMessageCell'
+import { BaseMessageCell } from '../BaseMessageCell'
 import { HumanMessageEditor } from './editor/HumanMessageEditor'
 
 import { Tooltip, TooltipContent, TooltipTrigger } from '../../../../components/shadcn/ui/tooltip'
@@ -45,6 +44,9 @@ interface HumanMessageCellProps {
     className?: string
     editorRef?: React.RefObject<PromptEditorRefAPI | null>
 
+    intent: ChatMessage['intent']
+    manuallySelectIntent: (intent: ChatMessage['intent']) => void
+
     /** For use in storybooks only. */
     __storybook__focus?: boolean
 }
@@ -60,18 +62,11 @@ export const HumanMessageCell: FC<HumanMessageCellProps> = ({ message, ...otherP
         [messageJSON]
     )
 
-    return (
-        <HumanMessageCellContent
-            {...otherProps}
-            initialEditorState={initialEditorState}
-            intent={message.manuallySelectedIntent}
-        />
-    )
+    return <HumanMessageCellContent {...otherProps} initialEditorState={initialEditorState} />
 }
 
 type HumanMessageCellContent = {
     initialEditorState: SerializedPromptEditorState
-    intent: ChatMessage['intent']
 } & Omit<HumanMessageCellProps, 'message'>
 const HumanMessageCellContent = memo<HumanMessageCellContent>(props => {
     const {
@@ -93,18 +88,11 @@ const HumanMessageCellContent = memo<HumanMessageCellContent>(props => {
         __storybook__focus,
         onEditorFocusChange,
         intent,
+        manuallySelectIntent,
     } = props
 
     return (
         <BaseMessageCell
-            speakerIcon={
-                <UserAvatar
-                    user={userInfo.user}
-                    size={MESSAGE_CELL_AVATAR_SIZE}
-                    sourcegraphGradientBorder={true}
-                />
-            }
-            speakerTitle={userInfo.user.displayName ?? userInfo.user.username}
             cellAction={
                 <div className="tw-flex tw-gap-2 tw-items-center tw-justify-end">
                     {isFirstMessage && <OpenInNewEditorAction />}
@@ -133,7 +121,8 @@ const HumanMessageCellContent = memo<HumanMessageCellContent>(props => {
                     editorRef={editorRef}
                     __storybook__focus={__storybook__focus}
                     onEditorFocusChange={onEditorFocusChange}
-                    initialIntent={intent}
+                    intent={intent}
+                    manuallySelectIntent={manuallySelectIntent}
                 />
             }
             className={className}
@@ -143,10 +132,10 @@ const HumanMessageCellContent = memo<HumanMessageCellContent>(props => {
 
 const OpenInNewEditorAction = () => {
     const {
-        config: { multipleWebviewsEnabled },
+        config: { multipleWebviewsEnabled, webviewType },
     } = useConfig()
 
-    if (!multipleWebviewsEnabled) {
+    if (!multipleWebviewsEnabled || webviewType !== 'sidebar') {
         return null
     }
 
@@ -162,6 +151,8 @@ const OpenInNewEditorAction = () => {
                         })
                     }}
                     className="tw-flex tw-gap-3 tw-items-center tw-leading-none tw-transition"
+                    aria-label="Open in Editor"
+                    title="Open in Editor"
                 >
                     <ColumnsIcon size={16} strokeWidth={1.25} className="tw-w-8 tw-h-8" />
                 </button>

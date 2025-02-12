@@ -87,7 +87,8 @@ export const CodeExcerpt: FC<Props> = props => {
                                 key={startLine + i}
                             >
                                 <td
-                                    className="line hover:tw-underline tw-cursor-pointer"
+                                    //number is rendered in css
+                                    className="line hover:tw-underline"
                                     data-line={startLine + i + 1}
                                     onClick={handleLineClick}
                                     onKeyDown={handleLineClick}
@@ -135,8 +136,13 @@ export const CodeExcerpt: FC<Props> = props => {
     }, [highlightRanges, startLine, endLine, tableContainerElement, table])
 
     return (
-        <Code className={clsx(styles.codeExcerpt, className)} data-code-excerpt={true}>
-            <div ref={setTableContainerElement}>{table}</div>
+        <Code
+            className={clsx(styles.codeExcerpt, 'tw-relative tw-overflow-auto tw-text-sm', className)}
+            data-code-excerpt={true}
+        >
+            <div ref={setTableContainerElement} className="tw-w-full">
+                {table}
+            </div>
         </Code>
     )
 }

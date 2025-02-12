@@ -1,6 +1,11 @@
 import React, { useCallback, useMemo } from 'react'
 
 import { type ChatError, RateLimitError } from '@sourcegraph/cody-shared'
+import { Tooltip, TooltipContent, TooltipTrigger } from '../components/shadcn/ui/tooltip'
+import type {
+    HumanMessageInitialContextInfo as InitialContextInfo,
+    PriorHumanMessageInfo,
+} from './cells/messageCell/assistant/AssistantMessageCell'
 
 import type { UserAccountInfo } from '../Chat'
 import type { ApiPostMessage } from '../Chat'
@@ -16,7 +21,8 @@ export const ErrorItem: React.FunctionComponent<{
     error: Omit<ChatError, 'isChatErrorGuard'>
     userInfo: Pick<UserAccountInfo, 'isCodyProUser' | 'isDotComUser'>
     postMessage?: ApiPostMessage
-}> = ({ error, userInfo, postMessage }) => {
+    humanMessage?: PriorHumanMessageInfo | null
+}> = ({ error, userInfo, postMessage, humanMessage }) => {
     if (typeof error !== 'string' && error.name === RateLimitError.errorName && postMessage) {
         return (
             <RateLimitErrorItem
@@ -26,22 +32,64 @@ export const ErrorItem: React.FunctionComponent<{
             />
         )
     }
-
-    return <RequestErrorItem error={error.message} />
+    return <RequestErrorItem error={error} humanMessage={humanMessage} />
 }
 
 /**
  * Renders a generic error message for chat request failures.
  */
 export const RequestErrorItem: React.FunctionComponent<{
-    error: string
-}> = ({ error }) => (
-    <div className={styles.requestError}>
-        <span className={styles.requestErrorTitle}>Request Failed: </span>
-        {error}
-    </div>
-)
+    error: Error
+    humanMessage?: PriorHumanMessageInfo | null
+}> = ({ error, humanMessage }) => {
+    const isApiVersionError = error.message.includes('unable to determine Cody API version')
 
+    const actions =
+        isApiVersionError && humanMessage
+            ? [
+                  {
+                      label: 'Try again',
+                      tooltip: 'Retry request without code context',
+                      onClick: () => {
+                          const options: InitialContextInfo = {
+                              repositories: false,
+                              files: false,
+                          }
+                          humanMessage.rerunWithDifferentContext(options)
+                      },
+                  },
+              ]
+            : []
+
+    return (
+        <div className={styles.requestError}>
+            <div className={styles.errorContent}>
+                <span className={styles.requestErrorTitle}>Request Failed: </span>
+                {error.message}
+            </div>
+            {actions.length > 0 && (
+                <menu className="tw-flex tw-gap-2 tw-text-sm tw-text-muted-foreground">
+                    <div className="tw-flex tw-flex-wrap tw-items-center tw-gap-x-4 tw-gap-y-2">
+                        <ul className="tw-whitespace-nowrap tw-flex tw-gap-2 tw-flex-wrap">
+                            {actions.map(({ label, tooltip, onClick }) => (
+                                <li key={label}>
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <Button variant="outline" size="sm" onClick={onClick}>
+                                                {label}
+                                            </Button>
+                                        </TooltipTrigger>
+                                        <TooltipContent>{tooltip}</TooltipContent>
+                                    </Tooltip>
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                </menu>
+            )}
+        </div>
+    )
+}
 /**
  * An error message shown in the chat.
  */
@@ -121,20 +169,20 @@ const RateLimitErrorItem: React.FunctionComponent<{
                     )}
                 </div>
                 {error.retryMessage && <p className={styles.retryMessage}>{error.retryMessage}</p>}
-            </div>
-            {canUpgrade && (
-                <div className={styles.bannerContainer}>
-                    <div
-                        className={styles.banner}
-                        role="button"
-                        tabIndex={-1}
-                        onClick={() => onButtonClick('upgrade', 'upgrade')}
-                        onKeyDown={() => onButtonClick('upgrade', 'upgrade')}
-                    >
-                        Go Pro
+                {canUpgrade && (
+                    <div className={styles.bannerContainer}>
+                        <div
+                            className={styles.banner}
+                            role="button"
+                            tabIndex={-1}
+                            onClick={() => onButtonClick('upgrade', 'upgrade')}
+                            onKeyDown={() => onButtonClick('upgrade', 'upgrade')}
+                        >
+                            Go Pro
+                        </div>
                     </div>
-                </div>
-            )}
+                )}
+            </div>
         </div>
     )
 }

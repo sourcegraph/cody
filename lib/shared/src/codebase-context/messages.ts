@@ -40,6 +40,11 @@ interface ContextItemCommon {
 
     /**
      * The source of this context item.
+     *
+     * NOTE: For item explicitly added by the user, the source should be 'user' as
+     * it will be used to determine the {@link ChatContextTokenUsage} type, which is also
+     * used for prioritizing context items where user-added items are prioritized over
+     * non-user-added items, such as {@link getContextItemTokenUsageType}.
      */
     source?: ContextItemSource
 
@@ -79,6 +84,11 @@ interface ContextItemCommon {
      * can help a user or dev working on Cody understand why this item is appearing in context.
      */
     metadata?: string[]
+
+    /**
+     * Optional badge to display with the context item.
+     */
+    badge?: string
 }
 
 /**
@@ -125,6 +135,12 @@ export type ContextItem =
     | ContextItemTree
     | ContextItemSymbol
     | ContextItemOpenCtx
+    | ContextItemOpenLink // Not a context item, but opens a link to documentation.
+    | ContextItemCurrentSelection
+    | ContextItemCurrentFile
+    | ContextItemCurrentRepository
+    | ContextItemCurrentDirectory
+    | ContextItemCurrentOpenTabs
 
 /**
  * Context items to show by default in the chat input, or as suggestions in the chat UI.
@@ -158,6 +174,15 @@ export interface ContextItemTree extends ContextItemCommon {
 }
 
 /**
+ * Not a context item, but an item that can be presented with context choices and opens a link to documentation.
+ */
+export interface ContextItemOpenLink extends ContextItemCommon {
+    type: 'open-link'
+    content: null
+    name: string
+}
+
+/**
  * An OpenCtx context item returned from a provider.
  */
 export interface ContextItemOpenCtx extends ContextItemCommon {
@@ -173,6 +198,25 @@ export interface ContextItemOpenCtx extends ContextItemCommon {
     }
 }
 
+export interface ContextItemCurrentSelection extends ContextItemCommon {
+    type: 'current-selection'
+}
+
+export interface ContextItemCurrentFile extends ContextItemCommon {
+    type: 'current-file'
+}
+
+export interface ContextItemCurrentRepository extends ContextItemCommon {
+    type: 'current-repository'
+}
+
+export interface ContextItemCurrentDirectory extends ContextItemCommon {
+    type: 'current-directory'
+}
+
+export interface ContextItemCurrentOpenTabs extends ContextItemCommon {
+    type: 'current-open-tabs'
+}
 /**
  * A file (or a subset of a file given by a range) that is included as context in a chat message.
  */
@@ -216,7 +260,7 @@ export type ContextItemWithContent = ContextItem & { content: string }
 /**
  * A system chat message that adds a context item to the conversation.
  */
-export interface ContextMessage extends Required<Message> {
+export interface ContextMessage extends Required<Omit<Message, 'cache_enabled'>> {
     /**
      * Context messages are always "from" the human. (In the future, this could be from "system" for
      * LLMs that support that kind of message, but that `speaker` value is not currently supported
@@ -228,6 +272,7 @@ export interface ContextMessage extends Required<Message> {
      * The context item that this message introduces into the conversation.
      */
     file: ContextItem
+    cache_enabled?: boolean | null
 }
 
 export const GENERAL_HELP_LABEL = 'Search for a file to include, or type # for symbols...'

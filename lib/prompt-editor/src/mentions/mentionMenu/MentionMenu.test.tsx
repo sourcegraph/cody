@@ -62,6 +62,9 @@ const PROPS: Pick<
 }
 
 const CONFIG: PromptEditorConfig = {
+    badgeComponents: {
+        Badge: () => <div />,
+    },
     commandComponents: {
         Command,
         CommandInput,

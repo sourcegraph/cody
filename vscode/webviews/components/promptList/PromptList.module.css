@@ -23,10 +23,19 @@
     }
 
     &-chips {
+       --gap: 0.5rem;
+       --min-width: 240px;
+       --max-width: calc(50% - (var(--gap)/2));
+
        [cmdk-list-sizer] {
-           display: flex;
-           flex-direction: column;
-           gap: 0.5rem
+           display: grid;
+           /*
+            * This creates a responsive grid with one or two columns, depending on the available space.
+            * See https://css-tricks.com/an-auto-filling-css-grid-with-max-columns/ for more information.
+            */
+           grid-template-columns: repeat(auto-fill, minmax(max(var(--min-width), var(--max-width)), 1fr));
+           gap: var(--gap);
+
        }
 
         .list--item {

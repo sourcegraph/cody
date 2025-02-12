@@ -1,3 +1,4 @@
+import { type Rule, ruleTitle } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import type { GetItemsResult } from '../quick-pick'
 import { getItemLabel } from '../utils'
@@ -9,6 +10,11 @@ export const RANGE_ITEM: vscode.QuickPickItem = {
 
 export const MODEL_ITEM: vscode.QuickPickItem = {
     label: 'Model',
+    alwaysShow: true,
+}
+
+const RULES_ITEM: vscode.QuickPickItem = {
+    label: 'Rules',
     alwaysShow: true,
 }
 
@@ -36,11 +42,12 @@ export const getEditInputItems = (
     activeValue: string,
     activeRangeItem: vscode.QuickPickItem,
     activeModelItem: vscode.QuickPickItem | undefined,
-    showModelSelector: boolean
+    showModelSelector: boolean,
+    rulesToApply: Rule[] | null
 ): GetItemsResult => {
     const hasActiveValue = activeValue.trim().length > 0
     const submitItems = hasActiveValue ? [SUBMIT_SEPARATOR, SUBMIT_ITEM] : []
-    const commandItems = hasActiveValue
+    const commandItems: vscode.QuickPickItem[] = hasActiveValue
         ? []
         : [
               {
@@ -50,7 +57,7 @@ export const getEditInputItems = (
               DOCUMENT_ITEM,
               TEST_ITEM,
           ]
-    const editItems = [
+    const editItems: vscode.QuickPickItem[] = [
         {
             label: 'edit options',
             kind: vscode.QuickPickItemKind.Separator,
@@ -59,11 +66,10 @@ export const getEditInputItems = (
         showModelSelector
             ? { ...MODEL_ITEM, detail: activeModelItem ? getItemLabel(activeModelItem) : undefined }
             : null,
-    ]
+        rulesToApply !== null && rulesToApply.length > 0
+            ? { ...RULES_ITEM, detail: rulesToApply.map(ruleTitle).join(', ') }
+            : null,
+    ].filter(v => v !== null)
 
-    const items = [...submitItems, ...editItems, ...commandItems].filter(
-        Boolean
-    ) as vscode.QuickPickItem[]
-
-    return { items }
+    return { items: [...submitItems, ...editItems, ...commandItems] }
 }

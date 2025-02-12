@@ -34,6 +34,8 @@ export enum FeatureFlag {
 
     // Data collection variants used for completions and next edit completions
     CodyAutocompleteDataCollectionFlag = 'cody-autocomplete-logs-collection-flag',
+    SmartApplyContextDataCollectionFlag = 'cody-smart-apply-context-logs-collection-flag',
+    EditContextDataCollectionFlag = 'cody-edit-context-logs-collection-flag',
 
     // Enables fast-path HTTP client for PLG-users
     CodyAutocompleteFastPath = 'cody-autocomplete-fast-path',
@@ -54,7 +56,13 @@ export enum FeatureFlag {
     CodyAutocompleteContextExperimentVariant4 = 'cody-autocomplete-context-experiment-variant-4',
     CodyAutocompleteContextExperimentControl = 'cody-autocomplete-context-experiment-control',
 
+    CodySmartApplyExperimentEnabledFeatureFlag = 'cody-smart-apply-experiment-enabled-flag',
+    CodySmartApplyExperimentVariant1 = 'cody-smart-apply-experiment-variant-1',
+
     CodyAutoEditExperimentEnabledFeatureFlag = 'cody-autoedit-experiment-enabled-flag',
+
+    // Enables image-based rendering of autoedit suggestions
+    CodyAutoEditImageRendering = 'cody-autoedit-image-rendering',
 
     // Enables gpt-4o-mini as a default Edit model
     CodyEditDefaultToGpt4oMini = 'cody-edit-default-to-gpt-4o-mini',
@@ -74,15 +82,10 @@ export enum FeatureFlag {
 
     GitMentionProvider = 'git-mention-provider',
 
-    /** Enable experimental One Box feature in Cody */
-    CodyExperimentalOneBox = 'cody-experimental-one-box',
     /** Enable debug mode for One Box feature in Cody */
     CodyExperimentalOneBoxDebug = 'cody-experimental-one-box-debug',
     /** Enable use of new prosemirror prompt editor */
     CodyExperimentalPromptEditor = 'cody-experimental-prompt-editor',
-
-    /** Show Edit Code option in the Cody message submit dropdown */
-    CodyExperimentalShowEditCodeIntent = 'cody-experimental-show-edit-code-intent',
 
     /** Whether user has access to early-acess models. */
     CodyEarlyAccess = 'cody-early-access',
@@ -92,6 +95,7 @@ export enum FeatureFlag {
      * some standard out-of-the-box prompts like documentation and explain code prompts)
      */
     CodyUnifiedPrompts = 'cody-unified-prompts',
+    CodyDeepSeekChat = 'cody-deepseek-chat',
 
     /**
      * For internal use only. New Prompts UI and logic is behind this feature flag
@@ -124,7 +128,7 @@ export enum FeatureFlag {
     /**
      * Whether the user will see the CTA about upgrading to Sourcegraph Teams
      */
-    SourcegraphTeamsUpgradeCTA = 'teams-upgrade-available-cta',
+    SourcegraphTeamsUpgradeCTA = 'teams-upgrade-available-cta-editors',
 }
 
 const ONE_HOUR = 60 * 60 * 1000

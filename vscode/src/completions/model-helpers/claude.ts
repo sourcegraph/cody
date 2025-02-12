@@ -20,12 +20,6 @@ import {
 import { messagesToText } from '../utils'
 import { DefaultModel, type GetOllamaPromptParams, type GetPromptParams } from './default'
 
-export const GEMINI_MARKERS = {
-    Prefix: ps`<|prefix|>`,
-    Suffix: ps`<|suffix|>`,
-    Response: ps`<|fim|>`,
-}
-
 interface GetIntroMessagesParams {
     fileName: PromptString
     /**

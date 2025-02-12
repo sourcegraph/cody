@@ -18,6 +18,7 @@ import {
     telemetryRecorder,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
+import { DeepCodyAgentID } from '@sourcegraph/cody-shared/src/models/client'
 import { OmniboxHandlers } from '@sourcegraph/cody-shared/src/models/model'
 import { getContextFromRelativePath } from '../../commands/context/file-path'
 import { forkSignal } from '../../completions/utils'
@@ -166,6 +167,7 @@ export class DeepCodyAgent {
                 requestID,
                 model: DeepCodyAgent.model,
                 traceId: span.spanContext().traceId,
+                chatAgent: DeepCodyAgentID,
             },
             metadata: {
                 loop: this.stats.loop, // Number of loops run.

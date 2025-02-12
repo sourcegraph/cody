@@ -5,8 +5,8 @@
 # this script will gather all the changes between 2 versions and add them to the uncategorized section of the changelog.
 # to use this script, you will need to run `vscode/scripts/changelog.sh <from-commit> <to-commit>`
 
-# you can find the commits at each release branch using:
-# git ls-remote https://github.com/sourcegraph/cody | grep "refs/heads/vscode-v1\.[0-9]\+\.x" | sort -r | head -n 5
+# you can find the commits at each release using:
+# git ls-remote https://github.com/sourcegraph/cody | grep "refs/tags/vscode-\(insiders-\)\?v1\.[0-9]\+\.[0-9]\+" | less
 
 git log $1..$2 --pretty='%s' --boundary | sed -E 's/^(.*)\(#(.*)\)$/- \1 [pull\/\2](https:\/\/github.com\/sourcegraph\/cody\/pull\/\2)/' > temp_changes.txt
 

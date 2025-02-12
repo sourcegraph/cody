@@ -125,15 +125,15 @@ function maxPosition(a: Position, b: Position): Position {
 }
 
 // RangeData comparison functions
-export function isRangeEqual(a: RangeData, b: RangeData): boolean {
+function isRangeEqual(a: RangeData, b: RangeData): boolean {
     return isPositionEqual(a.start, b.start) && isPositionEqual(a.end, b.end)
 }
 
-export function isRangeLessThan(a: RangeData, b: RangeData): boolean {
+function isRangeLessThan(a: RangeData, b: RangeData): boolean {
     return isPositionLessThan(a.end, b.start)
 }
 
-export function isRangeGreaterThan(a: RangeData, b: RangeData): boolean {
+function isRangeGreaterThan(a: RangeData, b: RangeData): boolean {
     return isPositionGreaterThan(a.start, b.end)
 }
 
@@ -160,10 +160,4 @@ export function mergeRanges(a: RangeData, b: RangeData): RangeData {
         start: minPosition(a.start, b.start),
         end: maxPosition(a.end, b.end),
     }
-}
-
-export function compareRanges(a: RangeData, b: RangeData): -1 | 0 | 1 {
-    if (isRangeEqual(a, b)) return 0
-    if (isRangeLessThan(a, b)) return -1
-    return 1
 }

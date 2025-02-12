@@ -35,7 +35,8 @@
     "ollama": "^0.5.1",
     "re2js": "^0.4.1",
     "semver": "^7.5.4",
-    "vscode-uri": "^3.0.8"
+    "vscode-uri": "^3.0.8",
+    "yaml": "^2.3.4"
   },
   "devDependencies": {
     "@sourcegraph/cody-context-filters-test-dataset": "^1.0.0",

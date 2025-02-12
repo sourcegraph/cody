@@ -62,8 +62,14 @@ export interface EnterpriseUserDotComError {
     enterprise: string
 }
 
-export interface AuthConfigError extends AuthenticationErrorMessage {
+export interface AuthConfigError {
     type: 'auth-config-error'
+    message: string
+}
+
+export interface ExternalAuthProviderError {
+    type: 'external-auth-provider-error'
+    message: string
 }
 
 export type AuthenticationError =
@@ -71,6 +77,7 @@ export type AuthenticationError =
     | InvalidAccessTokenError
     | EnterpriseUserDotComError
     | AuthConfigError
+    | ExternalAuthProviderError
 
 export interface AuthenticationErrorMessage {
     title?: string
@@ -99,7 +106,15 @@ export function getAuthErrorMessage(error: AuthenticationError): AuthenticationE
                     'please contact your Sourcegraph admin.',
             }
         case 'auth-config-error':
-            return error
+            return {
+                title: 'Auth Config Error',
+                message: error.message,
+            }
+        case 'external-auth-provider-error':
+            return {
+                title: 'External Auth Provider Error',
+                message: error.message,
+            }
     }
 }
 

@@ -2,10 +2,15 @@ name: Sourcegraph
 on:
   push:
     paths:
-      - '**.kt'
-      - '**.java'
-      - '**.kts'
-      - '.github/workflows/scip-java.yml'
+      - "**.kt"
+      - "**.java"
+      - "**.kts"
+      - ".github/workflows/scip-java.yml"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   scip-java:
     if: github.repository == 'sourcegraph/cody'
@@ -33,7 +38,7 @@ jobs:
             ${{ runner.os }}-gradle-
       - uses: coursier/setup-action@v1
         with:
-          jvm: 'zulu:17'
+          jvm: "zulu:17"
           apps: scip-java
       - name: Generate SCIP File
         run: |

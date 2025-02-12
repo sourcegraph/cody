@@ -9,6 +9,7 @@ import type {
     Model,
     ModelAvailabilityStatus,
     ModelUsage,
+    Rule,
     SerializedChatTranscript,
 } from '@sourcegraph/cody-shared'
 import type { TelemetryEventMarketingTrackingInput } from '@sourcegraph/telemetry'
@@ -118,6 +119,7 @@ export type ClientRequests = {
             model: string
             mode: 'edit' | 'insert'
             range: Range
+            rules?: Rule[] | undefined | null
         },
         EditTask,
     ]
@@ -865,6 +867,7 @@ export interface EditTask {
     instruction?: string | undefined | null
     model?: string | undefined | null
     originalText?: string | undefined | null
+    rules?: Rule[] | undefined | null
 }
 
 export interface CodyError {

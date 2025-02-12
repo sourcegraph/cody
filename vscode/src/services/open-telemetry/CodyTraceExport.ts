@@ -1,32 +1,25 @@
 import type { ExportResult } from '@opentelemetry/core'
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http'
 import type { ReadableSpan } from '@opentelemetry/sdk-trace-base'
-import { type AuthCredentials, addAuthHeaders } from '@sourcegraph/cody-shared'
+import type { OpenTelemetryServiceConfig } from './OpenTelemetryService.node'
 
 const MAX_TRACE_RETAIN_MS = 60 * 1000
 
 export class CodyTraceExporter extends OTLPTraceExporter {
-    private isTracingEnabled = false
     private queuedSpans: Map<string, { span: ReadableSpan; enqueuedAt: number }> = new Map()
 
-    constructor({
-        traceUrl,
-        auth,
-        isTracingEnabled,
-    }: { traceUrl: string; auth: AuthCredentials | null; isTracingEnabled: boolean }) {
-        const headers = new Headers()
-        if (auth) addAuthHeaders(auth, headers, new URL(traceUrl))
-
+    constructor(private configAccessor: () => OpenTelemetryServiceConfig | null) {
         super({
-            url: traceUrl,
+            url: configAccessor()?.traceUrl,
+            headers: configAccessor()?.authHeaders,
             httpAgentOptions: { rejectUnauthorized: false },
-            headers: Object.fromEntries(headers.entries()),
         })
-        this.isTracingEnabled = isTracingEnabled
     }
 
     export(spans: ReadableSpan[], resultCallback: (result: ExportResult) => void): void {
-        if (!this.isTracingEnabled) {
+        const config = this.configAccessor()
+        if (!config?.isTracingEnabled) {
+            this.queuedSpans.clear()
             return
         }
 

@@ -1,6 +1,6 @@
 import {
     FILE_MENTION_EDITOR_STATE_FIXTURE,
-    getMockedDotComClientModels,
+    FIXTURE_MODELS,
     serializedPromptEditorStateFromText,
 } from '@sourcegraph/cody-shared'
 import { fireEvent, render, screen } from '@testing-library/react'
@@ -9,8 +9,6 @@ import { type Assertion, type Mock, describe, expect, test, vi } from 'vitest'
 import { AppWrapperForTest } from '../../../../../AppWrapperForTest'
 import { FIXTURE_USER_ACCOUNT_INFO } from '../../../../fixtures'
 import { HumanMessageEditor } from './HumanMessageEditor'
-
-const MOCK_MODELS = getMockedDotComClientModels()
 
 const ENTER_KEYBOARD_EVENT_DATA: Pick<KeyboardEvent, 'key' | 'code' | 'keyCode'> = {
     key: 'Enter',
@@ -58,7 +56,11 @@ describe('HumanMessageEditor', () => {
                     initialEditorState: serializedPromptEditorStateFromText('abc'),
                     isSent: false,
                 }),
-                { toolbarVisible: true, submitButtonEnabled: true, submitButtonText: /send/i }
+                {
+                    toolbarVisible: true,
+                    submitButtonEnabled: true,
+                    submitButtonText: /send/i,
+                }
             )
         })
 
@@ -78,35 +80,29 @@ describe('HumanMessageEditor', () => {
                     initialEditorState: undefined,
                     isPendingPriorResponse: true,
                 }),
-                { toolbarVisible: true, submitButtonEnabled: true, submitButtonText: /stop/i }
+                {
+                    toolbarVisible: true,
+                    submitButtonEnabled: true,
+                    submitButtonText: /stop/i,
+                }
             )
         })
     })
 
     describe('submitting', () => {
-        function testNoSubmitting({
-            editor,
-            submitButton,
-            onSubmit,
-        }: ReturnType<typeof renderWithMocks>): void {
-            if (submitButton) {
-                expect(submitButton).toBeDisabled()
-                // Click
-                fireEvent.click(submitButton!)
-                expect(onSubmit).toHaveBeenCalledTimes(0)
-            }
+        test('empty editor', () => {
+            const { submitButton, editor, onSubmit } = renderWithMocks({
+                initialEditorState: FILE_MENTION_EDITOR_STATE_FIXTURE,
+            })
+            expect(submitButton).toBeEnabled()
+
+            // Click
+            fireEvent.click(submitButton!)
+            expect(onSubmit).toHaveBeenCalledTimes(1)
 
             // Enter
             fireEvent.keyDown(editor, ENTER_KEYBOARD_EVENT_DATA)
-            expect(onSubmit).toHaveBeenCalledTimes(0)
-        }
-
-        test('empty editor', () => {
-            testNoSubmitting(
-                renderWithMocks({
-                    initialEditorState: undefined,
-                })
-            )
+            expect(onSubmit).toHaveBeenCalledTimes(2)
         })
 
         test('isPendingPriorResponse', () => {
@@ -141,12 +137,14 @@ describe('HumanMessageEditor', () => {
             const { container } = renderWithMocks({})
             const modelSelector = container.querySelector('[data-testid="chat-model-selector"]')
             expect(modelSelector).not.toBeNull()
-            expect(modelSelector?.textContent).toEqual(MOCK_MODELS[0].title)
+            expect(modelSelector?.textContent).toEqual(FIXTURE_MODELS[0].title)
         })
     })
 })
 
-type EditorHTMLElement = HTMLDivElement & { dataset: { lexicalEditor: 'true' } }
+type EditorHTMLElement = HTMLDivElement & {
+    dataset: { lexicalEditor: 'true' }
+}
 
 function renderWithMocks(props: Partial<ComponentProps<typeof HumanMessageEditor>>): {
     container: HTMLElement
@@ -160,6 +158,7 @@ function renderWithMocks(props: Partial<ComponentProps<typeof HumanMessageEditor
     const onChange = vi.fn()
     const onSubmit = vi.fn()
     const onStop = vi.fn()
+    const manuallySelectIntent = vi.fn()
 
     const DEFAULT_PROPS: React.ComponentProps<typeof HumanMessageEditor> = {
         userInfo: FIXTURE_USER_ACCOUNT_INFO,
@@ -171,7 +170,8 @@ function renderWithMocks(props: Partial<ComponentProps<typeof HumanMessageEditor
         onChange,
         onSubmit,
         onStop,
-        models: MOCK_MODELS,
+        models: FIXTURE_MODELS,
+        manuallySelectIntent,
     }
 
     const { container } = render(<HumanMessageEditor {...DEFAULT_PROPS} {...props} />, {
@@ -180,7 +180,10 @@ function renderWithMocks(props: Partial<ComponentProps<typeof HumanMessageEditor
     return {
         container,
         editor: container.querySelector<EditorHTMLElement>('[data-lexical-editor="true"]')!,
-        addContextButton: screen.queryByRole('button', { name: 'Add context', hidden: true }),
+        addContextButton: screen.queryByRole('button', {
+            name: 'Add context',
+            hidden: true,
+        }),
         submitButton: screen.queryByRole('button', {
             name: /send|stop/i,
             hidden: true,

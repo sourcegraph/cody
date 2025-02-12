@@ -11,6 +11,13 @@ import {
 
 import {
     type CodyClientConfig,
+    type ContextItem,
+    type ContextItemCurrentDirectory,
+    type ContextItemCurrentFile,
+    type ContextItemCurrentOpenTabs,
+    type ContextItemCurrentRepository,
+    type ContextItemCurrentSelection,
+    type DefaultContext,
     type SerializedPromptEditorState,
     isErrorLike,
     setDisplayPathEnvInfo,
@@ -33,6 +40,7 @@ import { useCodyWebAgent } from './use-cody-agent'
 
 // Include global Cody Web styles to the styles bundle
 import '../global-styles/styles.css'
+import { Uri } from 'vscode'
 import styles from './CodyPromptTemplate.module.css'
 import { PromptTemplateSkeleton } from './skeleton/ChatSkeleton'
 
@@ -151,6 +159,10 @@ const CodyPromptTemplatePanel: FC<PanelProps> = props => {
     // V2 telemetry recorder
     const telemetryRecorder = useMemo(() => createWebviewTelemetryRecorder(vscodeAPI), [vscodeAPI])
 
+    const staticDefaultContext = useMemo<DefaultContext>((): DefaultContext => {
+        return { initialContext: [], corpusContext: DYNAMIC_MENTIONS }
+    }, [])
+
     const wrappers = useMemo<Wrapper[]>(
         () =>
             getAppWrappers({
@@ -158,9 +170,9 @@ const CodyPromptTemplatePanel: FC<PanelProps> = props => {
                 telemetryRecorder,
                 config: null,
                 clientConfig,
-                staticDefaultContext: undefined,
+                staticDefaultContext,
             }),
-        [vscodeAPI, telemetryRecorder, clientConfig]
+        [vscodeAPI, telemetryRecorder, clientConfig, staticDefaultContext]
     )
 
     const CONTEXT_MENTIONS_SETTINGS = useMemo<ChatMentionsSettings>(() => {
@@ -169,6 +181,12 @@ const CodyPromptTemplatePanel: FC<PanelProps> = props => {
             remoteRepositoriesNames: [],
         }
     }, [])
+
+    const openExternalLink = (uri: string) =>
+        void vscodeAPI.postMessage({
+            command: 'openURI',
+            uri: Uri.parse(uri),
+        })
 
     return (
         <div className={className} data-cody-web-chat={true}>
@@ -183,9 +201,58 @@ const CodyPromptTemplatePanel: FC<PanelProps> = props => {
                         contextWindowSizeInTokens={4096}
                         editorClassName={styles.editor}
                         contentEditableClassName={styles.editorContentEditable}
+                        openExternalLink={openExternalLink}
                     />
                 </ComposedWrappers>
             </ChatMentionContext.Provider>
         </div>
     )
 }
+
+const DYNAMIC_MENTIONS: ContextItem[] = [
+    {
+        type: 'current-selection',
+        id: 'current-selection',
+        name: 'current-selection',
+        title: 'Current Selection',
+        uri: Uri.parse('cody://selection'),
+        description: 'Picks the current selection',
+        icon: 'square-dashed-mouse-pointer',
+    } as ContextItemCurrentSelection,
+    {
+        type: 'current-file',
+        id: 'current-file',
+        name: 'current-file',
+        title: 'Current File',
+        uri: Uri.parse('cody://current-file'),
+        description: 'Picks the current file',
+        icon: 'file',
+    } as ContextItemCurrentFile,
+    {
+        type: 'current-repository',
+        id: 'current-repository',
+        name: 'current-repository',
+        title: 'Current Repository',
+        uri: Uri.parse('cody://repository'),
+        description: 'Picks the current repository',
+        icon: 'git-folder',
+    } as ContextItemCurrentRepository,
+    {
+        type: 'current-directory',
+        id: 'current-directory',
+        name: 'current-directory',
+        title: 'Current Directory',
+        uri: Uri.parse('cody://current-dir'),
+        description: 'Picks the current directory',
+        icon: 'folder',
+    } as ContextItemCurrentDirectory,
+    {
+        type: 'current-open-tabs',
+        id: 'current-open-tabs',
+        name: 'current-open-tabs',
+        title: 'Currently Open Tabs',
+        uri: Uri.parse('cody://tabs'),
+        description: 'Picks all currently open tabs',
+        icon: 'layout-menubar',
+    } as ContextItemCurrentOpenTabs,
+]

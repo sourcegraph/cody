@@ -1,7 +1,7 @@
 import type { MetaResult } from '@openctx/client'
-import { Observable, map } from 'observable-fns'
-import { openCtx } from '../context/openctx/api'
-import { distinctUntilChanged } from '../misc/observable'
+import { type Observable, map } from 'observable-fns'
+import { openctxController } from '../context/openctx/api'
+import { distinctUntilChanged, switchMap } from '../misc/observable'
 
 /**
  * Props required by context item providers to return possible context items.
@@ -73,18 +73,17 @@ export function openCtxProviderMetadata(
 }
 
 function openCtxMentionProviders(): Observable<ContextMentionProviderMetadata[]> {
-    const controller = openCtx.controller
-    if (!controller) {
-        return Observable.of([])
-    }
-
-    return controller.metaChanges({}, {}).pipe(
-        map(providers =>
-            providers
-                .filter(provider => !!provider.mentions)
-                .map(openCtxProviderMetadata)
-                .sort((a, b) => (a.title > b.title ? 1 : -1))
-        ),
-        distinctUntilChanged()
+    return openctxController.pipe(
+        switchMap(c =>
+            c.metaChanges({}, {}).pipe(
+                map(providers =>
+                    providers
+                        .filter(provider => !!provider.mentions)
+                        .map(openCtxProviderMetadata)
+                        .sort((a, b) => (a.title > b.title ? 1 : -1))
+                ),
+                distinctUntilChanged()
+            )
+        )
     )
 }

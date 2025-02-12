@@ -2,7 +2,7 @@ import type * as React from 'react'
 import { useEffect, useRef } from 'react'
 
 import { CodyIDE } from '@sourcegraph/cody-shared'
-import { ChevronDown, ChevronUp } from 'lucide-react'
+import { ChevronDown, ChevronRight } from 'lucide-react'
 import { useConfig } from '../../../utils/useConfig'
 import { cn } from '../../shadcn/utils'
 import { highlightNode } from '../highlights'
@@ -58,13 +58,16 @@ export const RepoFileLink: React.FunctionComponent<React.PropsWithChildren<Props
         }
     }, [pathMatchRanges, fileName])
 
-    const Chevron = collapsed ? ChevronDown : ChevronUp
+    const Chevron = collapsed ? ChevronRight : ChevronDown
     const {
         clientCapabilities: { agentIDE },
     } = useConfig()
 
     return (
-        <span className={cn(className, 'tw-flex tw-items-center tw-w-full')}>
+        <span
+            className={cn(className, 'tw-flex tw-items-center tw-w-full tw-text-md')}
+            style={{ color: 'var(--vscode-textLink-foreground)' }}
+        >
             {collapsible && (
                 <Chevron
                     size={16}
@@ -72,7 +75,7 @@ export const RepoFileLink: React.FunctionComponent<React.PropsWithChildren<Props
                     onClick={onToggleCollapse}
                 />
             )}
-            <span className="tw-flex-1">
+            <span className="tw-flex-1 tw-gap-3 tw-text-sm md:tw-text-md">
                 <a href={repoURL} target="_blank" rel="noreferrer">
                     {repoDisplayName || displayRepoName(repoName)}
                 </a>
@@ -86,7 +89,7 @@ export const RepoFileLink: React.FunctionComponent<React.PropsWithChildren<Props
                     onClick={() => onFilePathClick?.()}
                 >
                     {fileBase ? `${fileBase}/` : null}
-                    <strong>{fileName}</strong>
+                    <span className="tw-font-semibold">{fileName}</span>
                 </a>
             </span>
         </span>

@@ -39,7 +39,7 @@ export function $selectEnd(): void {
     }
 }
 
-export function $selectAfter(node: ElementNode | TextNode | DecoratorNode<unknown>): void {
+function $selectAfter(node: ElementNode | TextNode | DecoratorNode<unknown>): void {
     const key = node.getKey()
     const offset = $isElementNode(node)
         ? node.getChildrenSize()

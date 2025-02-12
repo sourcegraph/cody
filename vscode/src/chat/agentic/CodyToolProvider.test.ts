@@ -1,7 +1,8 @@
-import { type ContextItem, ContextItemSource, openCtx, ps } from '@sourcegraph/cody-shared'
+import { type ContextItem, ContextItemSource, ps } from '@sourcegraph/cody-shared'
 import { Observable } from 'observable-fns'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { URI } from 'vscode-uri'
+import * as openctxAPI from '../../../../lib/shared/src/context/openctx/api'
 import { mockLocalStorage } from '../../services/LocalStorageProvider'
 import type { ContextRetriever } from '../chat-view/ContextRetriever'
 import { CodyTool, type CodyToolConfig } from './CodyTool'
@@ -61,7 +62,7 @@ describe('CodyToolProvider', () => {
     beforeEach(() => {
         vi.clearAllMocks()
         CodyToolProvider.initialize(mockContextRetriever)
-        openCtx.controller = mockController
+        vi.spyOn(openctxAPI, 'openctxController', 'get').mockReturnValue(Observable.of(mockController))
     })
 
     it('should register default tools on initialization', () => {
@@ -72,9 +73,9 @@ describe('CodyToolProvider', () => {
     })
 
     it('should set up OpenCtx provider listener and build OpenCtx tools from provider metadata', async () => {
-        openCtx.controller = mockController
         CodyToolProvider.setupOpenCtxProviderListener()
-        expect(openCtx.controller?.metaChanges).toHaveBeenCalled()
+        await new Promise(resolve => setTimeout(resolve, 0))
+        expect(mockController.metaChanges).toHaveBeenCalled()
         // Wait for the observable to emit
         await new Promise(resolve => setTimeout(resolve, 0))
 

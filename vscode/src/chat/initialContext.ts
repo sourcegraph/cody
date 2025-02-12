@@ -20,7 +20,7 @@ import {
     fromVSCodeEvent,
     isDotCom,
     isError,
-    openCtx,
+    openctxController,
     pendingOperation,
     shareReplay,
     startWith,
@@ -93,7 +93,9 @@ const activeTextEditor = fromVSCodeEvent(
 
 function getCurrentFileOrSelection({
     chatBuilder,
-}: { chatBuilder: Observable<ChatBuilder> }): Observable<ContextItem[] | typeof pendingOperation> {
+}: {
+    chatBuilder: Observable<ChatBuilder>
+}): Observable<ContextItem[] | typeof pendingOperation> {
     /**
      * If the active text editor changes, this observable immediately emits.
      *
@@ -225,12 +227,23 @@ export function getCorpusContextItemsForEditorState(): Observable<
                         title: 'Current Repository',
                         description: repo.name,
                         source: ContextItemSource.Initial,
-                        icon: 'folder',
+                        icon: 'git-folder',
                     })
                 }
-            }
-
-            if (items.length === 0) {
+                if (remoteReposForAllWorkspaceFolders.length === 0) {
+                    if (!clientCapabilities().isCodyWeb) {
+                        items.push({
+                            type: 'open-link',
+                            title: 'Current Repository',
+                            badge: 'Not yet available',
+                            content: null,
+                            uri: URI.parse('https://sourcegraph.com/docs/admin/code_hosts'),
+                            name: '',
+                            icon: 'folder',
+                        })
+                    }
+                }
+            } else {
                 // TODO(sqs): Support multi-root. Right now, this only supports the 1st workspace root.
                 const workspaceFolder = vscode.workspace.workspaceFolders?.at(0)
                 if (workspaceFolder) {
@@ -254,53 +267,52 @@ export function getCorpusContextItemsForEditorState(): Observable<
 }
 
 function getOpenCtxContextItems(): Observable<ContextItem[] | typeof pendingOperation> {
-    const openctxController = openCtx.controller
-    if (!openctxController) {
-        return Observable.of([])
-    }
-
-    return openctxController.metaChanges({}).pipe(
-        switchMap((providers): Observable<ContextItem[] | typeof pendingOperation> => {
-            const providersWithAutoInclude = providers.filter(meta => meta.mentions?.autoInclude)
-            if (providersWithAutoInclude.length === 0) {
-                return Observable.of([])
-            }
-
-            return activeTextEditor.pipe(
-                debounceTime(50),
-                switchMap(() => activeEditorContextForOpenCtxMentions),
-                switchMap(activeEditorContext => {
-                    if (activeEditorContext === pendingOperation) {
-                        return Observable.of(pendingOperation)
-                    }
-                    if (isError(activeEditorContext)) {
+    return openctxController.pipe(
+        switchMap(c =>
+            c.metaChanges({}, {}).pipe(
+                switchMap((providers): Observable<ContextItem[] | typeof pendingOperation> => {
+                    const providersWithAutoInclude = providers.filter(meta => meta.mentions?.autoInclude)
+                    if (providersWithAutoInclude.length === 0) {
                         return Observable.of([])
                     }
-                    return combineLatest(
-                        ...providersWithAutoInclude.map(provider =>
-                            openctxController.mentionsChanges(
-                                { ...activeEditorContext, autoInclude: true },
-                                provider
+
+                    return activeTextEditor.pipe(
+                        debounceTime(50),
+                        switchMap(() => activeEditorContextForOpenCtxMentions),
+                        switchMap(activeEditorContext => {
+                            if (activeEditorContext === pendingOperation) {
+                                return Observable.of(pendingOperation)
+                            }
+                            if (isError(activeEditorContext)) {
+                                return Observable.of([])
+                            }
+                            return combineLatest(
+                                ...providersWithAutoInclude.map(provider =>
+                                    c.mentionsChanges(
+                                        { ...activeEditorContext, autoInclude: true },
+                                        provider
+                                    )
+                                )
+                            ).pipe(
+                                map(mentionsResults =>
+                                    mentionsResults.flat().map(
+                                        mention =>
+                                            ({
+                                                ...mention,
+                                                provider: 'openctx',
+                                                type: 'openctx',
+                                                uri: URI.parse(mention.uri),
+                                                source: ContextItemSource.Initial,
+                                                mention, // include the original mention to pass to `items` later
+                                            }) satisfies ContextItem
+                                    )
+                                ),
+                                startWith(pendingOperation)
                             )
-                        )
-                    ).pipe(
-                        map(mentionsResults =>
-                            mentionsResults.flat().map(
-                                mention =>
-                                    ({
-                                        ...mention,
-                                        provider: 'openctx',
-                                        type: 'openctx',
-                                        uri: URI.parse(mention.uri),
-                                        source: ContextItemSource.Initial,
-                                        mention, // include the original mention to pass to `items` later
-                                    }) satisfies ContextItem
-                            )
-                        ),
-                        startWith(pendingOperation)
+                        })
                     )
                 })
             )
-        })
+        )
     )
 }

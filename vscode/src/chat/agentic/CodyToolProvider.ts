@@ -4,9 +4,10 @@ import {
     PromptString,
     type Unsubscribable,
     isDefined,
-    openCtx,
     openCtxProviderMetadata,
+    openctxController,
     ps,
+    switchMap,
 } from '@sourcegraph/cody-shared'
 import { map } from 'observable-fns'
 import type { ContextRetriever } from '../chat-view/ContextRetriever'
@@ -82,7 +83,6 @@ class ToolFactory {
     }
 
     public getInstances(): CodyTool[] {
-        // Create fresh instances of all registered tools
         return Array.from(this.tools.entries())
             .filter(([name]) => name !== 'CliTool')
             .map(([_, config]) => config.createInstance(config, this.contextRetriever))
@@ -170,6 +170,7 @@ export class CodyToolProvider {
     public factory: ToolFactory
 
     private static instance: CodyToolProvider | undefined
+    public static configSubscription: Unsubscribable | undefined
     public static openCtxSubscription: Unsubscribable | undefined
 
     private constructor(contextRetriever: Retriever) {
@@ -186,10 +187,22 @@ export class CodyToolProvider {
 
     public static setupOpenCtxProviderListener(): void {
         const provider = CodyToolProvider.instance
-        if (provider && !CodyToolProvider.openCtxSubscription && openCtx.controller) {
-            CodyToolProvider.openCtxSubscription = openCtx.controller
-                .metaChanges({}, {})
-                .pipe(map(providers => providers.filter(p => !!p.mentions).map(openCtxProviderMetadata)))
+        if (provider && !CodyToolProvider.configSubscription) {
+            CodyToolProvider.configSubscription = toolboxManager.observable.subscribe({})
+        }
+        if (provider && !CodyToolProvider.openCtxSubscription) {
+            CodyToolProvider.openCtxSubscription = openctxController
+                .pipe(
+                    switchMap(c =>
+                        c
+                            .metaChanges({}, {})
+                            .pipe(
+                                map(providers =>
+                                    providers.filter(p => !!p.mentions).map(openCtxProviderMetadata)
+                                )
+                            )
+                    )
+                )
                 .subscribe(providerMeta => provider.factory.createOpenCtxTools(providerMeta))
         }
     }
@@ -199,6 +212,8 @@ export class CodyToolProvider {
             CodyToolProvider.openCtxSubscription.unsubscribe()
             CodyToolProvider.openCtxSubscription = undefined
         }
+        CodyToolProvider.configSubscription?.unsubscribe()
+        CodyToolProvider.configSubscription = undefined
     }
 }
 

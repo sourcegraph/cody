@@ -31,12 +31,13 @@ export const RepositorySelector = ({ onSelect }: IProps) => {
                     setOpen(true)
                     setQuery(e.target.value)
                 }}
+                className="!tw-bg-background !tw-text-foreground !tw-border-border !tw-ring-offset-background !tw-py-4 !tw-px-4 !tw-h-14"
             />
 
             {open && (
                 <div
                     onMouseDown={e => e.preventDefault()}
-                    className="tw-w-[100%] tw-mt-4 tw-absolute tw-top-10 tw-left-0 tw-bg-white tw-border tw-border-gray-200 tw-rounded-md tw-shadow-md tw-overflow-y-auto tw-max-h-[300px]"
+                    className="tw-w-[100%] tw-mt-4 tw-absolute tw-top-10 tw-left-0 tw-bg-background tw-text-foreground tw-border tw-border-border tw-rounded-md tw-shadow-md tw-overflow-y-auto tw-max-h-[300px] tw-z-10"
                 >
                     {repos.value?.map(repo => (
                         <Tooltip key={repo.id}>

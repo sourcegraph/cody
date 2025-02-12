@@ -4,15 +4,182 @@ This is a log of all notable changes to Cody for VS Code.
 
 <!--- {/_ CHANGELOG_START _/} -->
 
-## Unreleased
+## 1.66.1
+
+### Fixed
+- AutoEdits
+  - fix(auto-edit): fix the false notification for auto-edit non eligibility  [pull/7002](https://github.com/sourcegraph/cody/pull/7002)
+Manually backport b54029c9299d40fbbf2efa3e25a8e2d2a7adf1d8 #6971
+
+## 1.66.0
+
+### Added
+- Support for Enterprise Starter
+  - chore(ES): fix cta typo  [pull/6856](https://github.com/sourcegraph/cody/pull/6856)
+  - chore(ES): update CTAs and eligibility logic  [pull/6803](https://github.com/sourcegraph/cody/pull/6803)
+
+- Chat
+  - fix: added extension banner to web  [pull/6757](https://github.com/sourcegraph/cody/pull/6757)
+
+### Fixed
+- AutoEdits
+  - fix(auto-edit): fix the cody status bar with new suggestion mode  [pull/6691](https://github.com/sourcegraph/cody/pull/6691)
+  - fix(auto-edit): fix temperature value to be low for output consistency  [pull/6853](https://github.com/sourcegraph/cody/pull/6853)
+  - feat(auto-edit): fix the temperature value regression with the auto-edit  [pull/6848](https://github.com/sourcegraph/cody/pull/6848)
+
+- Chat
+  - fix: handle missing spaces around @ mentions in cody chat  [pull/6842](https://github.com/sourcegraph/cody/pull/6842)
+  - fix: define all base64 characters  [pull/6837](https://github.com/sourcegraph/cody/pull/6837)
+  - fix(models): ensure Tool Cody is only added when enabled  [pull/6753](https://github.com/sourcegraph/cody/pull/6753)
+
+- Authentication
+  - Reverted various recent changes related to sign-in (commits 9719dc4, 1c16f35, 1ed8392, 03c93f9) to improve stability [pull/6788](https://github.com/sourcegraph/cody/pull/6788)
+
+- Telemetry & Metrics
+  - Fix OpenTelemetryService initialization+observables code and  fix the span closure of Chat Spans  [pull/6807](https://github.com/sourcegraph/cody/pull/6807)
+  - fix(telemetry): add billing metadata to `onebox` events  [pull/6802](https://github.com/sourcegraph/cody/pull/6802)
+
+### Changed
+- Branding & Marketing
+  - [Backport M66] chore(marketing): Update marketplace and in product logos  [pull/6970](https://github.com/sourcegraph/cody/pull/6970)
+  - chore(marketing): update listing description  [pull/6862](https://github.com/sourcegraph/cody/pull/6862)
+
+- Chat
+  - chore(client): update display name for agentic model  [pull/6827](https://github.com/sourcegraph/cody/pull/6827)
+  - Make Play Button stateful and remove intent toggle  [pull/6833](https://github.com/sourcegraph/cody/pull/6833)
+  - omnibox: open results locally if possible  [pull/6781](https://github.com/sourcegraph/cody/pull/6781)
+  - mention menu: migrate from codicon to lucide  [pull/6780](https://github.com/sourcegraph/cody/pull/6780)
+  - fix: remove code search button  [pull/6855](https://github.com/sourcegraph/cody/pull/6855)
+
+## 1.64.0
+
+Introducing Sourcegraph’s AI coding agents: built to automate repetitive tasks so your developers can focus on innovation. Learn more about our vision for the future [here](https://sourcegraph.com/blog/introducing-enterprise-ai-agents).
 
 ### Added
 
+- Release Omnibox: remove feature flag [pull/6849](https://github.com/sourcegraph/cody/pull/6849)
+- omnibox: open results locally if possible [pull/6799](https://github.com/sourcegraph/cody/pull/6799)
+- omnibox: add callout for results from other repos [pull/6732](https://github.com/sourcegraph/cody/pull/6732)
+- omnibox: link file path to the line of the first match [pull/6705](https://github.com/sourcegraph/cody/pull/6705)
+- feat: omnibox cheatsheet [pull/6676](https://github.com/sourcegraph/cody/pull/6676)
+- omnibox: add "Did you mean" notice [pull/6655](https://github.com/sourcegraph/cody/pull/6655)
+- feat(auth): Allow workspace to pre-populate URL for quick sign-in (#6653) [pull/6817](https://github.com/sourcegraph/cody/pull/6817)
+- Support endpoint param in auth flow (workspaces vscode sign-in flow) [pull/6742](https://github.com/sourcegraph/cody/pull/6742)
+- feat: at mentions for prompt templates editor [pull/6638](https://github.com/sourcegraph/cody/pull/6638)
+
 ### Fixed
+
+- fix(auto-edit): fix temperature value to be low for output consistency [pull/6854](https://github.com/sourcegraph/cody/pull/6854)
+- feat(auto-edit): fix the temperature value regression with the auto-edit [pull/6851](https://github.com/sourcegraph/cody/pull/6851)
+- chore(audo-edit): fix the illegal line runtime error [pull/6727](https://github.com/sourcegraph/cody/pull/6727)
+- feat(autoedit): Fix blockify range logic for tab indentation [pull/6701](https://github.com/sourcegraph/cody/pull/6701)
+- fix: handle missing spaces around @ mentions in cody chat [pull/6843](https://github.com/sourcegraph/cody/pull/6843)
+- fix: improved support for special characters around @ mentions [pull/6814](https://github.com/sourcegraph/cody/pull/6814)
+- fix: define all base64 characters [pull/6840](https://github.com/sourcegraph/cody/pull/6840)
+- fix(telemetry): add billing metadata to `onebox` events [pull/6822](https://github.com/sourcegraph/cody/pull/6822)
+- Fix intent telemetry (#6779) [pull/6795](https://github.com/sourcegraph/cody/pull/6795)
+- Disable Intent Detection if Code Search Disabled [pull/6754](https://github.com/sourcegraph/cody/pull/6754)
+- fix(models): ensure Tool Cody is only added when enabled [pull/6758](https://github.com/sourcegraph/cody/pull/6758)
+- fix(omnibox): add conditional rendering to buttons [pull/6731](https://github.com/sourcegraph/cody/pull/6731)
+- fix(omnibox): fix available filters when deselecting [pull/6717](https://github.com/sourcegraph/cody/pull/6717)
+- Various styling updates [pull/6723](https://github.com/sourcegraph/cody/pull/6723)
+- fix/context: Link to helpful resource when current repo not indexed in non-dotcom [pull/6695](https://github.com/sourcegraph/cody/pull/6695)
+- Update UI and fix intent bug [pull/6720](https://github.com/sourcegraph/cody/pull/6720)
+- fix: Search results in Cody visual update [pull/6714](https://github.com/sourcegraph/cody/pull/6714)
+- fix/agentic-context: Reveal hidden switch in context popup [pull/6694](https://github.com/sourcegraph/cody/pull/6694)
+- fix: add z-index to quick start modal [pull/6711](https://github.com/sourcegraph/cody/pull/6711)
+- fix: only log on open file [pull/6704](https://github.com/sourcegraph/cody/pull/6704)
+- Fix pointer cursor displaying on line numbers in search results [pull/6681](https://github.com/sourcegraph/cody/pull/6681)
+- Fixing Css logic to correctly show rate limit banners in the correct place [pull/6464](https://github.com/sourcegraph/cody/pull/6464)
+- fix: unicode support, remove current repo mention [pull/6688](https://github.com/sourcegraph/cody/pull/6688)
+- fix/intent: Insert detected intent scores into telemetry event metadata in acceptable format [pull/6686](https://github.com/sourcegraph/cody/pull/6686)
+- fix: Intent handling logic fixes [pull/6637](https://github.com/sourcegraph/cody/pull/6637)
+- fix(auto-edit): fix the feature name [pull/6682](https://github.com/sourcegraph/cody/pull/6682)
+- fix/accounts: Do not prefill the dotcom URL in the Enterprise login field [pull/6418](https://github.com/sourcegraph/cody/pull/6418)
+- chore/webview: Fix webview-extension RPC logging to contain message payloads [pull/6671](https://github.com/sourcegraph/cody/pull/6671)
+- fix(agentic-chat): fix prompt-mixin for deep-cody agent [pull/6654](https://github.com/sourcegraph/cody/pull/6654)
 
 ### Changed
 
 - Removed "agentic chat" toolbox UI.
+- chore(marketing): update listing description [pull/6874](https://github.com/sourcegraph/cody/pull/6874)
+- chore(ES): fix cta typo [pull/6857](https://github.com/sourcegraph/cody/pull/6857)
+- chore(client): update display name for agentic model [pull/6828](https://github.com/sourcegraph/cody/pull/6828)
+- chore(ES): update CTAs and eligibility logic [pull/6825](https://github.com/sourcegraph/cody/pull/6825)
+- refactor(agentic chat): move into model dropdown [pull/6718](https://github.com/sourcegraph/cody/pull/6718)
+- refactor(agentic-context): update status messaging [pull/6670](https://github.com/sourcegraph/cody/pull/6670)
+- Refactor external auth providers to re-generate headers on demand [pull/6687](https://github.com/sourcegraph/cody/pull/6687)
+- chore(autocomplete): use the correct output channel label [pull/6709](https://github.com/sourcegraph/cody/pull/6709)
+- omnibox: remove code search external link [pull/6706](https://github.com/sourcegraph/cody/pull/6706)
+- chore(audo-edit): encapsulate prompt components [pull/6672](https://github.com/sourcegraph/cody/pull/6672)
+- chore(audo-edit): add backward compatible setting value [pull/6673](https://github.com/sourcegraph/cody/pull/6673)
+- chore(webviews): remove teams upgrade notice [pull/6651](https://github.com/sourcegraph/cody/pull/6651)
+
+## 1.62.0
+
+### Added
+
+- feat(audo-edit): target vim normal mode only [pull/6647](https://github.com/sourcegraph/cody/pull/6647)
+- feat(autoedit): Add telemetry and accept behaviour to E2E tests [pull/6575](https://github.com/sourcegraph/cody/pull/6575)
+- feat(auto-edit): fix problem with vim extension supressing the tab [pull/6640](https://github.com/sourcegraph/cody/pull/6640)
+- feat(auto-edits): fix the suffix duplication on inline accept [pull/6583](https://github.com/sourcegraph/cody/pull/6583)
+- feat(auto-edits): fix tab not working when decorations are triggered on conflicting decorations [pull/6581](https://github.com/sourcegraph/cody/pull/6581)
+- feat(auto-edit): improve error logging [pull/6609](https://github.com/sourcegraph/cody/pull/6609)
+- feat(autoedits): Correctly produce decorations for files that use Tab indentation [pull/6617](https://github.com/sourcegraph/cody/pull/6617)
+- feat(autoedit): Add more E2E test scenarios [pull/6573](https://github.com/sourcegraph/cody/pull/6573)
+- feat(auto-edits): add test case for setting context [pull/6592](https://github.com/sourcegraph/cody/pull/6592)
+- feat(auto-edits): fix the partial decoration issue when not enough lines in the editor [pull/6582](https://github.com/sourcegraph/cody/pull/6582)
+- feat(autoedit): E2E tests, adjust color threshold [pull/6616](https://github.com/sourcegraph/cody/pull/6616)
+- feat(auto-edits): add telemetry for auto-edits notification [pull/6594](https://github.com/sourcegraph/cody/pull/6594)
+- feat(audoedit): update billing categories [pull/6591](https://github.com/sourcegraph/cody/pull/6591)
+- feat(agentic context): add agentic context component [pull/6598](https://github.com/sourcegraph/cody/pull/6598)
+- refactor(agentic-context): rename experimental feature flags [pull/6644](https://github.com/sourcegraph/cody/pull/6644)
+- feat(agentic-context): disable setting by default [pull/6641](https://github.com/sourcegraph/cody/pull/6641)
+- feat(webviews): add Sourcegraph Workspaces CTA [pull/6604](https://github.com/sourcegraph/cody/pull/6604)
+- refactor(webviews): remove "Upgrade to Team" from context menu [pull/6621](https://github.com/sourcegraph/cody/pull/6621)
+- chore/build: Do not complain about GITHUB_ENV when building locally [pull/6586](https://github.com/sourcegraph/cody/pull/6586)
+- Add disabled to recording modes [pull/6615](https://github.com/sourcegraph/cody/pull/6615)
+- bench/context: Cache repo IDs [pull/6569](https://github.com/sourcegraph/cody/pull/6569)
+
+### Fixed
+
+- chore(audo-edit): fix the illegal line runtime error [pull/6729](https://github.com/sourcegraph/cody/pull/6729)
+- chore(audo-edit): add backward compatible setting value [pull/6674](https://github.com/sourcegraph/cody/pull/6674)
+- fix(autoedits): Fix E2E tests on main [pull/6576](https://github.com/sourcegraph/cody/pull/6576)
+- fix(agentic chat): exclude deep-cody prompt for o1 models (#6725) [pull/6733](https://github.com/sourcegraph/cody/pull/6733)
+- fix(agentic-context): update search tool prompt and examples [pull/6632](https://github.com/sourcegraph/cody/pull/6632)
+- feat(agentic-context): add feature flag for session usage limit [pull/6623](https://github.com/sourcegraph/cody/pull/6623)
+- fix(webview): reorder human editor menu buttons [pull/6660](https://github.com/sourcegraph/cody/pull/6660)
+- fix(release): fix generate changelog template string [pull/6728](https://github.com/sourcegraph/cody/pull/6728)
+- fix: changelog generator with titles instead of changelog entries [pull/6712](https://github.com/sourcegraph/cody/pull/6712)
+- fix: Hide search result checkboxes instead of disabling them [pull/6568](https://github.com/sourcegraph/cody/pull/6568)
+- Fix repo name resolver cache miss due to using separate RepoNameResol… [pull/6570](https://github.com/sourcegraph/cody/pull/6570)
+- fix(cody): fix chat context review logic [pull/6602](https://github.com/sourcegraph/cody/pull/6602)
+- fix/context: Nit, remove duplicate "this" from Agentic context popover [pull/6633](https://github.com/sourcegraph/cody/pull/6633)
+- Fix: Can actually run the changelog github action [pull/6645](https://github.com/sourcegraph/cody/pull/6645)
+
+### Changed
+
+- chore(audoedit): ensure consistent auto-edit name [pull/6611](https://github.com/sourcegraph/cody/pull/6611)
+- chore(audoedit): simplify output channel logger [pull/6610](https://github.com/sourcegraph/cody/pull/6610)
+- refactor(agentic context): update agent context settings [pull/6596](https://github.com/sourcegraph/cody/pull/6596)
+- feat(agentic chat): showing error for toolbox settings status [pull/6579](https://github.com/sourcegraph/cody/pull/6579)
+- chore/release: Bump package version and update changelog for 1.60 [pull/6666](https://github.com/sourcegraph/cody/pull/6666)
+- Fix: Changelog generator action frfr no cap [pull/6659](https://github.com/sourcegraph/cody/pull/6659)
+- Improve reporting auth errors [pull/6639](https://github.com/sourcegraph/cody/pull/6639)
+- Open remote files locally in VSCode [pull/6475](https://github.com/sourcegraph/cody/pull/6475)
+- Make sure precomputed intent is not stale [pull/6572](https://github.com/sourcegraph/cody/pull/6572)
+- feat: changelog generation + version update action [pull/6597](https://github.com/sourcegraph/cody/pull/6597)
+- External Authentication Providers Support for Cody [pull/6526](https://github.com/sourcegraph/cody/pull/6526)
+- NLS: escape backslashes in query string [pull/6585](https://github.com/sourcegraph/cody/pull/6585)
+- Bench: add option to disable Polly [pull/6557](https://github.com/sourcegraph/cody/pull/6557)
+- Simplify jetbrains account management [pull/6558](https://github.com/sourcegraph/cody/pull/6558)
+- Allow to force usage of pre-defined endpoint [pull/6574](https://github.com/sourcegraph/cody/pull/6574)
+- Implement showWindowsMessage in JetBrains [pull/6577](https://github.com/sourcegraph/cody/pull/6577)
+- chore/release: Remove the changelog section from the PR template. [pull/6470](https://github.com/sourcegraph/cody/pull/6470)
+- Update Cody Web 0.22.0 [pull/6578](https://github.com/sourcegraph/cody/pull/6578)
+- Pass query as 'content' in NLS bench [pull/6565](https://github.com/sourcegraph/cody/pull/6565)
+- chore/release: Bump package version and update changelog for 1.58 [pull/6566](https://github.com/sourcegraph/cody/pull/6566)
 
 ### Uncategorized
 

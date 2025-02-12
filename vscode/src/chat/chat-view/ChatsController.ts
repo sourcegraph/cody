@@ -29,7 +29,6 @@ import {
     handleCodeFromSaveToNewFile,
 } from '../../services/utils/codeblock-action-tracker'
 import { CodyToolProvider } from '../agentic/CodyToolProvider'
-import type { ChatIntentAPIClient } from '../context/chatIntentAPIClient'
 import type { SmartApplyResult } from '../protocol'
 import {
     ChatController,
@@ -69,7 +68,6 @@ export class ChatsController implements vscode.Disposable {
         private chatClient: ChatClient,
         private readonly contextRetriever: ContextRetriever,
         private readonly guardrails: Guardrails,
-        private readonly chatIntentAPIClient: ChatIntentAPIClient | null,
         private readonly extensionClient: ExtensionClient
     ) {
         logDebug('ChatsController:constructor', 'init')
@@ -374,7 +372,7 @@ export class ChatsController implements vscode.Disposable {
         if (submitType === 'new-chat') {
             await provider.clearAndRestartSession()
         }
-        const abortSignal = provider.startNewSubmitOrEditOperation()
+        const abortSignal = await provider.startNewSubmitOrEditOperation()
         const editorState = editorStateFromPromptString(text)
         await provider.handleUserMessage({
             requestID: uuid.v4(),
@@ -532,7 +530,6 @@ export class ChatsController implements vscode.Disposable {
             chatClient: this.chatClient,
             guardrails: this.guardrails,
             startTokenReceiver: this.options.startTokenReceiver,
-            chatIntentAPIClient: this.chatIntentAPIClient,
             contextRetriever: this.contextRetriever,
             extensionClient: this.extensionClient,
         })

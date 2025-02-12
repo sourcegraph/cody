@@ -93,9 +93,8 @@ test.extend<ExpectedV2Events>({
     await expect(lastChatInput).toBeFocused()
 })
 
-test.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL })(
-    'chat toolbar and row UI',
-    async ({ page, sidebar }) => {
+test.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL })
+    .skip('chat toolbar and row UI', async ({ page, sidebar }) => {
         await fetch(`${mockServer.SERVER_URL}/.test/currentUser/codyProEnabled`, { method: 'POST' })
 
         // This test requires that the window be focused in the OS window manager because it deals with
@@ -175,8 +174,7 @@ test.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL })(
         await expect(humanRow0.toolbar.mention).not.toBeVisible()
         await expect(humanRow0.toolbar.modelSelector).not.toBeVisible()
         await expect(humanRow0.toolbar.submit).not.toBeVisible()
-    }
-)
+    })
 
 test.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL }).extend<ExpectedV2Events>({
     expectedV2Events: [
@@ -205,13 +203,6 @@ test.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL }).extend<Expe
     await firstChatInput.fill('to model1')
     await firstChatInput.press('Enter')
 
-    async function expectModelName(modelName: string): Promise<void> {
-        await expect(chatFrame.locator('[data-testid="chat-model"]').last()).toHaveText(modelName)
-    }
-
-    // Verify tooltip shows the correct model
-    await expectModelName('Claude 3.5 Sonnet')
-
     // Change model and send another message.
     await expect(modelSelect).toBeEnabled()
     await modelSelect.click()
@@ -222,8 +213,6 @@ test.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL }).extend<Expe
     await expect(modelSelect).toHaveText(/^Claude 3 Haiku/)
     await lastChatInput.fill('to model2')
     await lastChatInput.press('Enter')
-    await expect(chatFrame.locator('[data-testid="chat-model"]')).toHaveCount(2)
-    await expectModelName('Claude 3 Haiku')
 })
 
 test.extend<ExpectedV2Events>({

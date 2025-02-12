@@ -7,17 +7,16 @@ import {
     type ContextItemSymbol,
     EMPTY,
     FILE_CONTEXT_MENTION_PROVIDER,
+    FIXTURE_MODELS,
     FeatureFlag,
     type ModelsData,
     type ResolvedConfiguration,
     SYMBOL_CONTEXT_MENTION_PROVIDER,
     type SymbolKind,
     type UserLocalHistory,
-    getMockedDotComClientModels,
     promiseFactoryToObservable,
     serializedPromptEditorStateFromText,
 } from '@sourcegraph/cody-shared'
-import { getMockedDotComHandlers } from '@sourcegraph/cody-shared/src/models/dotcom'
 import { ExtensionAPIProviderForTestsOnly } from '@sourcegraph/prompt-editor'
 import { Observable } from 'observable-fns'
 import { type ComponentProps, type FunctionComponent, type ReactNode, useMemo } from 'react'
@@ -102,11 +101,11 @@ export const AppWrapperForTest: FunctionComponent<{ children: ReactNode }> = ({ 
                     models: () =>
                         Observable.of({
                             localModels: [],
-                            primaryModels: getMockedDotComClientModels(),
+                            primaryModels: FIXTURE_MODELS,
                             preferences: { defaults: {}, selected: {} },
                         } satisfies ModelsData),
-                    chatModels: () => Observable.of(getMockedDotComClientModels()),
-                    handlers: () => Observable.of(getMockedDotComHandlers()),
+                    chatModels: () => Observable.of(FIXTURE_MODELS),
+                    handlers: () => Observable.of(FIXTURE_MODELS),
                     setChatModel: () => EMPTY,
                     setHandler: () => EMPTY,
                     defaultContext: () => Observable.of({ corpusContext: [], initialContext: [] }),
@@ -114,7 +113,6 @@ export const AppWrapperForTest: FunctionComponent<{ children: ReactNode }> = ({ 
                         Observable.of(serializedPromptEditorStateFromText(text)),
                     promptsMigrationStatus: () => Observable.of({ type: 'no_migration_needed' }),
                     startPromptsMigration: () => Observable.of(),
-                    detectIntent: () => Observable.of(),
                     resolvedConfig: () =>
                         Observable.of({
                             auth: {

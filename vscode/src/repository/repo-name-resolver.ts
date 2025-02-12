@@ -1,6 +1,6 @@
 import { LRUCache } from 'lru-cache'
 import { Observable, map } from 'observable-fns'
-import type * as vscode from 'vscode'
+import * as vscode from 'vscode'
 
 import {
     ContextFiltersProvider,
@@ -39,6 +39,17 @@ export class RepoNameResolver {
      * conversion function. ❗️
      */
     public getRepoNamesContainingUri(uri: vscode.Uri): MaybePendingObservable<RepoName[]> {
+        // Fast-path (for Cody Web): if a workspace root is `repo:my/repo`, then files under it
+        // have repo name `my/repo`.
+        const root = vscode.workspace.getWorkspaceFolder(uri)
+        if (root && root.uri.scheme === 'repo') {
+            const repoName: RepoName = [root.uri.authority, root.uri.path]
+                .filter(isDefined)
+                .join('/')
+                .replace(/^\/(.*?)\/?$/g, '$1') // trim leading/trailing slashes
+            return Observable.of([repoName])
+        }
+
         return combineLatest(
             promiseFactoryToObservable(signal => this.getRemoteUrlsCached(uri, signal)),
             authStatus
