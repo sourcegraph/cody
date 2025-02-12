@@ -215,7 +215,6 @@ export function syncModels({
                                                                 const newTags = model.tags.filter(
                                                                     tag => tag !== ModelTag.Waitlist
                                                                 )
-                                                                newTags.push(ModelTag.EarlyAccess)
                                                                 return { ...model, tags: newTags }
                                                             }
                                                             return model
