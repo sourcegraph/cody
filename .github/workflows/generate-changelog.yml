@@ -100,7 +100,7 @@ jobs:
             --output.repo=$GH_REPO \
             --output.pr.branch="$PR_BRANCH" \
             --output.pr.title="Changelog for %s" \
-            --output.pr.body="Automated release and changelog for VS code Cody %s" \
+            --output.pr.body="Automated release and changelog for VS code Cody %s \n ## Test plan \n N/A - changelog update" \
             --output.changelog="$CHANGELOG_PATH" \
             --output.changelog.marker='<!--- {/_ CHANGELOG_START _/} -->' \
             --releaseregistry.version=${VERSION}
