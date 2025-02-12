@@ -6,6 +6,7 @@ import {
     type ExpectedV2Events,
     type WorkspaceDirectory,
     executeCommandInPalette,
+    mockEnterpriseRepoIdMapping,
     spawn,
     test,
     withTempDir,
@@ -43,6 +44,7 @@ test
     })(
     'using actively invoked commands and autocomplete shows a error',
     async ({ page, server, sidebar }) => {
+        mockEnterpriseRepoIdMapping(server)
         server.onGraphQl('ContextFilters').replyJson({
             data: {
                 site: {
