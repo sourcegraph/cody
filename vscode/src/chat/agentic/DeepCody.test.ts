@@ -50,7 +50,7 @@ describe('DeepCody', () => {
     let mockRequestCallback: (steps: ProcessingStep) => Promise<boolean>
 
     mockLocalStorage({
-        get: (key: string) => localStorageData[key],
+        get: (key: string) => localStorageData[key] || [], // Return empty array as default
         update: (key: string, value: unknown) => {
             localStorageData[key] = value
         },
