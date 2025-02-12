@@ -37,10 +37,6 @@ export interface OmniboxHandlerOption {
 export type HandlerID = OmniboxHandlerOption['id']
 
 export const OmniboxHandlers = {
-    Auto: {
-        id: 'auto',
-        title: 'Auto (chat or file search)',
-    },
     DeepCody: {
         id: 'deep-cody',
         title: 'Agentic chat',

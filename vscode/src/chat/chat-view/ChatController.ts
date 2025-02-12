@@ -1777,7 +1777,6 @@ function getOmniboxHandlers(): Observable<OmniboxHandlerOption[]> {
     return combineLatest(enableToolCody, models).pipe(
         map(([enableToolCody, models]) => {
             const handlers: OmniboxHandlerOption[] = []
-            handlers.push(OmniboxHandlers.Auto)
             handlers.push(OmniboxHandlers.DeepCody)
             if (enableToolCody) {
                 handlers.push({
@@ -1798,5 +1797,5 @@ function getOmniboxHandlers(): Observable<OmniboxHandlerOption[]> {
 }
 
 function getDefaultOmniboxHandler(): OmniboxHandlerOption {
-    return OmniboxHandlers.Auto
+    return OmniboxHandlers.DeepCody
 }

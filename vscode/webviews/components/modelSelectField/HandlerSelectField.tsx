@@ -1,14 +1,7 @@
 import { ModelTag, isCodyProModel, isWaitlistModel } from '@sourcegraph/cody-shared'
 import { type OmniboxHandlerOption, OmniboxHandlers } from '@sourcegraph/cody-shared/src/models/model'
 import { clsx } from 'clsx'
-import {
-    BookOpenIcon,
-    BrainIcon,
-    BuildingIcon,
-    ExternalLinkIcon,
-    SearchIcon,
-    SparklesIcon,
-} from 'lucide-react'
+import { BookOpenIcon, BrainIcon, BuildingIcon, ExternalLinkIcon, SearchIcon } from 'lucide-react'
 import { type FunctionComponent, type ReactNode, useCallback, useMemo } from 'react'
 import type { UserAccountInfo } from '../../Chat'
 import { getVSCodeAPI } from '../../utils/VSCodeApi'
@@ -327,9 +320,6 @@ function getTooltip(handler: OmniboxHandlerOption, availability: string): string
         if (handler.id === OmniboxHandlers.DeepCody.id) {
             return 'An agent powered by Claude 3.5 Sonnet (New) and other models with tool-use capabilities to gather contextual information for better responses.'
         }
-        if (handler.id === OmniboxHandlers.Auto.id) {
-            return 'Auto-switch between chat and search'
-        }
         if (handler.id === OmniboxHandlers.KeywordSearch.id) {
             return 'Fuzzy keyword search of the codebase.'
         }
@@ -398,8 +388,6 @@ const HandlerTitleWithIcon: React.FC<{
             {showIcon ? (
                 handler.id === OmniboxHandlers.DeepCody.id ? (
                     <BrainIcon size={16} className={styles.modelIcon} />
-                ) : handler.id === OmniboxHandlers.Auto.id ? (
-                    <SparklesIcon size={16} className={styles.modelIcon} />
                 ) : handler.id === OmniboxHandlers.KeywordSearch.id ? (
                     <SearchIcon size={16} className={styles.modelIcon} />
                 ) : model ? (
@@ -451,7 +439,6 @@ const getHandlerDropdownGroup = (handler: OmniboxHandlerOption): string => {
         if (model.tags.includes(ModelTag.Ollama)) return HandlerGroup.Ollama
     }
     // HACK(beyang): should specify group in OmniboxHandlers
-    if (handler.id === OmniboxHandlers.Auto.id) return HandlerGroup.Agents
     if (handler.id === OmniboxHandlers.DeepCody.id) return HandlerGroup.Agents
     if (handler.id === OmniboxHandlers.KeywordSearch.id) return HandlerGroup.Tools
     return HandlerGroup.Other
