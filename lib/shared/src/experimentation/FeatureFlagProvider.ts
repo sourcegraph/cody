@@ -87,9 +87,6 @@ export enum FeatureFlag {
     /** Enable use of new prosemirror prompt editor */
     CodyExperimentalPromptEditor = 'cody-experimental-prompt-editor',
 
-    /** Show Edit Code option in the Cody message submit dropdown */
-    CodyExperimentalShowEditCodeIntent = 'cody-experimental-show-edit-code-intent',
-
     /** Whether user has access to early-acess models. */
     CodyEarlyAccess = 'cody-early-access',
 

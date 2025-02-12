@@ -111,7 +111,6 @@ export const AppWrapperForTest: FunctionComponent<{ children: ReactNode }> = ({ 
                         Observable.of(serializedPromptEditorStateFromText(text)),
                     promptsMigrationStatus: () => Observable.of({ type: 'no_migration_needed' }),
                     startPromptsMigration: () => Observable.of(),
-                    detectIntent: () => Observable.of(),
                     resolvedConfig: () =>
                         Observable.of({
                             auth: {

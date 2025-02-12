@@ -377,7 +377,7 @@ interface RepositoryNameResponse {
     repository: { name: string } | null
 }
 
-interface RepositoryIdsResponse {
+export interface RepositoryIdsResponse {
     repositories: {
         nodes: { name: string; id: string }[]
     }

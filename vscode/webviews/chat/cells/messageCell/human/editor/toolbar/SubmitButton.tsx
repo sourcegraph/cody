@@ -16,20 +16,13 @@ import {
     Pencil,
     Play,
     Search,
-    Sparkles,
     Square,
 } from 'lucide-react'
 import type { FC, FunctionComponent, KeyboardEventHandler, PropsWithChildren } from 'react'
 import { useCallback, useMemo, useRef, useState } from 'react'
 import { Kbd } from '../../../../../../components/Kbd'
-import { useIntentDetectionConfig } from '../../../../../../components/omnibox/intentDetection'
 import { Badge } from '../../../../../../components/shadcn/ui/badge'
-import {
-    Command,
-    CommandItem,
-    CommandList,
-    CommandSeparator,
-} from '../../../../../../components/shadcn/ui/command'
+import { Command, CommandItem, CommandList } from '../../../../../../components/shadcn/ui/command'
 import { useConfig } from '../../../../../../utils/useConfig'
 import { useOmniBox } from '../../../../../../utils/useOmniBox'
 
@@ -47,54 +40,23 @@ interface IntentOption {
 function getIntentOptions({
     ide,
     isDotComUser,
-    detectedIntent,
-    intentDetectionDisabled,
+    omniBoxEnabled,
 }: {
     ide: CodyIDE
     isDotComUser: boolean
-    detectedIntent: ChatMessage['intent']
-    intentDetectionDisabled: boolean
+    omniBoxEnabled: boolean
 }): IntentOption[] {
-    const intentDetectionAvailable = !isDotComUser && !intentDetectionDisabled
-
     const standardOneBoxIntents: IntentOption[] = [
-        {
-            title: (
-                <div className="tw-flex tw-flex-col tw-self-start">
-                    <p>Run detected intent</p>
-                    {detectedIntent && (
-                        <p className="tw-text-sm tw-text-muted-foreground tw-min-h-10">
-                            {isDotComUser
-                                ? 'Detects intent and runs appropriately'
-                                : `Currently: ${detectedIntent === 'search' ? 'Search' : 'Chat'}`}
-                        </p>
-                    )}
-                </div>
-            ),
-            icon: Sparkles,
-            intent: undefined,
-            hidden: !intentDetectionAvailable,
-            disabled: isDotComUser,
-            shortcut: isDotComUser ? (
-                <Badge>
-                    Enterprise <InfoIcon className="tw-size-4 tw-ml-1" />
-                </Badge>
-            ) : (
-                <Kbd macOS="return" linuxAndWindows="return" />
-            ),
-        },
         {
             title: 'Run as chat',
             icon: MessageSquare,
             intent: 'chat',
-            shortcut: (
-                <>
-                    {intentDetectionAvailable && <Kbd macOS="cmd" linuxAndWindows="ctrl" />}
-                    <Kbd macOS="return" linuxAndWindows="return" />
-                </>
-            ),
+            shortcut: <Kbd macOS="return" linuxAndWindows="return" />,
         },
-        {
+    ]
+
+    if (omniBoxEnabled) {
+        standardOneBoxIntents.push({
             title: (
                 <span className="tw-inline-flex tw-items-center tw-gap-4">
                     <span>Run as search</span>
@@ -115,8 +77,8 @@ function getIntentOptions({
                     <Kbd macOS="return" linuxAndWindows="return" />
                 </>
             ),
-        },
-    ]
+        })
+    }
 
     if (ide === CodyIDE.Web) {
         return standardOneBoxIntents
@@ -146,20 +108,17 @@ export const SubmitButton: FC<{
     detectedIntent?: ChatMessage['intent']
     manuallySelectIntent: (intent?: ChatMessage['intent']) => void
 }> = ({ onClick, state = 'submittable', detectedIntent, manuallySelectIntent }) => {
-    const experimentalOneBoxEnabled = useOmniBox()
     const {
         clientCapabilities: { agentIDE },
         isDotComUser,
     } = useConfig()
-
-    const { intentDetectionDisabled } = useIntentDetectionConfig()
+    const omniBoxEnabled = useOmniBox()
 
     const { intentOptions, availableIntentOptions, disabledIntentOptions } = useMemo(() => {
         const intentOptions = getIntentOptions({
             ide: agentIDE,
-            detectedIntent,
-            intentDetectionDisabled,
             isDotComUser,
+            omniBoxEnabled,
         }).filter(option => !option.hidden)
 
         return {
@@ -167,7 +126,7 @@ export const SubmitButton: FC<{
             availableIntentOptions: intentOptions.filter(option => !option.disabled),
             disabledIntentOptions: intentOptions.filter(option => option.disabled),
         }
-    }, [agentIDE, detectedIntent, intentDetectionDisabled, isDotComUser])
+    }, [agentIDE, isDotComUser, omniBoxEnabled])
 
     const inProgress = state === 'waitingResponseComplete'
 
@@ -178,7 +137,7 @@ export const SubmitButton: FC<{
         detectedIntentOption?.intent === 'search' ? '' : 'tw-fill-current'
     }`
 
-    if (!experimentalOneBoxEnabled || inProgress) {
+    if (!omniBoxEnabled || inProgress) {
         return (
             <div className="tw-flex">
                 <button
@@ -242,7 +201,6 @@ export const SubmitButton: FC<{
                                     )}
                                 </CommandItem>
                             ))}
-                            {disabledIntentOptions.length > 0 && <CommandSeparator />}
                             {disabledIntentOptions.map(option => (
                                 <CommandItem
                                     key={option.intent || 'auto'}
@@ -309,7 +267,6 @@ const PopoverItem: FunctionComponent<
     popoverRootProps,
     popoverContentProps,
     children,
-    ...props
 }) => {
     const [isOpen, setIsOpen] = useState(defaultOpen)
     const anchorRef = useRef<HTMLButtonElement>(null)
