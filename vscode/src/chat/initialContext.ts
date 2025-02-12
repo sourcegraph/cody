@@ -205,84 +205,78 @@ export function getCorpusContextItemsForEditorState(): Observable<
         distinctUntilChanged()
     )
 
-    return combineLatest(
-        relevantAuthStatus,
-        remoteReposForAllWorkspaceFolders,
-        webInitialContext.pipe(distinctUntilChanged())
-    ).pipe(
-        abortableOperation(
-            async ([authStatus, remoteReposForAllWorkspaceFolders, webContext], signal) => {
-                const items: ContextItem[] = []
+    return combineLatest(relevantAuthStatus, remoteReposForAllWorkspaceFolders).pipe(
+        abortableOperation(async ([authStatus, remoteReposForAllWorkspaceFolders], signal) => {
+            const items: ContextItem[] = []
 
-                // TODO(sqs): Make this consistent between self-serve (no remote search) and enterprise (has
-                // remote search). There should be a single internal thing in Cody that lets you monitor the
-                // user's current codebase.
-                if (authStatus.allowRemoteContext) {
-                    if (remoteReposForAllWorkspaceFolders === pendingOperation) {
-                        return pendingOperation
+            // TODO(sqs): Make this consistent between self-serve (no remote search) and enterprise (has
+            // remote search). There should be a single internal thing in Cody that lets you monitor the
+            // user's current codebase.
+            if (authStatus.allowRemoteContext) {
+                if (remoteReposForAllWorkspaceFolders === pendingOperation) {
+                    return pendingOperation
+                }
+                if (isError(remoteReposForAllWorkspaceFolders)) {
+                    throw remoteReposForAllWorkspaceFolders
+                }
+                for (const repo of remoteReposForAllWorkspaceFolders) {
+                    if (await contextFiltersProvider.isRepoNameIgnored(repo.name)) {
+                        continue
                     }
-                    if (isError(remoteReposForAllWorkspaceFolders)) {
-                        throw remoteReposForAllWorkspaceFolders
+                    if (repo.id === undefined) {
+                        continue
                     }
-                    for (const repo of remoteReposForAllWorkspaceFolders) {
-                        if (await contextFiltersProvider.isRepoNameIgnored(repo.name)) {
-                            continue
-                        }
-                        if (repo.id === undefined) {
-                            continue
-                        }
+                    items.push({
+                        ...contextItemMentionFromOpenCtxItem(
+                            await createRepositoryMention(
+                                {
+                                    id: repo.id,
+                                    name: repo.name,
+                                    url: repo.name,
+                                },
+                                REMOTE_REPOSITORY_PROVIDER_URI,
+                                authStatus
+                            )
+                        ),
+                        title: 'Current Repository',
+                        description: repo.name,
+                        source: ContextItemSource.Initial,
+                        icon: 'git-folder',
+                    })
+                }
+                if (remoteReposForAllWorkspaceFolders.length === 0) {
+                    if (!clientCapabilities().isCodyWeb) {
                         items.push({
-                            ...contextItemMentionFromOpenCtxItem(
-                                await createRepositoryMention(
-                                    {
-                                        id: repo.id,
-                                        name: repo.name,
-                                        url: repo.name,
-                                    },
-                                    REMOTE_REPOSITORY_PROVIDER_URI,
-                                    authStatus
-                                )
-                            ),
+                            type: 'open-link',
                             title: 'Current Repository',
-                            description: repo.name,
-                            source: ContextItemSource.Initial,
-                            icon: 'git-folder',
+                            badge: 'Not yet available',
+                            content: null,
+                            uri: URI.parse('https://sourcegraph.com/docs/admin/code_hosts'),
+                            name: '',
+                            icon: 'folder',
                         })
                     }
-                    if (remoteReposForAllWorkspaceFolders.length === 0) {
-                        if (!clientCapabilities().isCodyWeb) {
-                            items.push({
-                                type: 'open-link',
-                                title: 'Current Repository',
-                                badge: 'Not yet available',
-                                content: null,
-                                uri: URI.parse('https://sourcegraph.com/docs/admin/code_hosts'),
-                                name: '',
-                                icon: 'folder',
-                            })
-                        }
-                    }
-                } else {
-                    // TODO(sqs): Support multi-root. Right now, this only supports the 1st workspace root.
-                    const workspaceFolder = vscode.workspace.workspaceFolders?.at(0)
-                    if (workspaceFolder) {
-                        items.push({
-                            type: 'tree',
-                            uri: workspaceFolder.uri,
-                            title: 'Current Repository',
-                            name: workspaceFolder.name,
-                            description: workspaceFolder.name,
-                            isWorkspaceRoot: true,
-                            content: null,
-                            source: ContextItemSource.Initial,
-                            icon: 'folder',
-                        } satisfies ContextItemTree)
-                    }
                 }
-
-                return items
+            } else {
+                // TODO(sqs): Support multi-root. Right now, this only supports the 1st workspace root.
+                const workspaceFolder = vscode.workspace.workspaceFolders?.at(0)
+                if (workspaceFolder) {
+                    items.push({
+                        type: 'tree',
+                        uri: workspaceFolder.uri,
+                        title: 'Current Repository',
+                        name: workspaceFolder.name,
+                        description: workspaceFolder.name,
+                        isWorkspaceRoot: true,
+                        content: null,
+                        source: ContextItemSource.Initial,
+                        icon: 'folder',
+                    } satisfies ContextItemTree)
+                }
             }
-        )
+
+            return items
+        })
     )
 }
 
