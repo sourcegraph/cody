@@ -539,46 +539,20 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                 intent={manuallySelectedIntent}
                 manuallySelectIntent={setManuallySelectedIntent}
             />
-            {/* <<<<<<< HEAD
-            {experimentalOneBoxEnabled && showIntent && (
-                <SwitchIntent
-                    intent={humanMessage.intent}
-                    disabled={!!assistantMessage?.isLoading}
-                    manuallySelected={!!humanMessage.manuallySelectedIntent}
-                    onSwitch={
-                        humanMessage.intent === 'search'
-                            ? reSubmitWithChatIntent
-                            : reSubmitWithSearchIntent
-                    }
-                />
-            )}
-            {experimentalOneBoxEnabled && assistantMessage?.didYouMeanQuery && (
-======= */}
             {omniboxEnabled && assistantMessage?.didYouMeanQuery && (
-                // >>>>>>> origin/main
                 <DidYouMeanNotice
                     query={assistantMessage?.didYouMeanQuery}
                     disabled={!!assistantMessage?.isLoading}
                     switchToSearch={() => editAndSubmitSearch(assistantMessage?.didYouMeanQuery ?? '')}
                 />
             )}
-            {/* <<<<<<< HEAD
-            {humanMessage.agent === OmniboxHandlers.DeepCody.id && (
-======= */}
             {!usingToolCody && !isSearchIntent && humanMessage.agent && (
-                // >>>>>>> origin/main
                 <AgenticContextCell
                     key={`${humanMessage.index}-${humanMessage.intent}-process`}
                     isContextLoading={isContextLoading}
                     processes={humanMessage?.processes ?? undefined}
                 />
             )}
-            {/* <<<<<<< HEAD
-            {humanMessage.agent === OmniboxHandlers.DeepCody.id &&
-                isContextLoading &&
-                assistantMessage?.isLoading && <ApprovalCell vscodeAPI={vscodeAPI} />}
-            {!(humanMessage.agent === OmniboxHandlers.DeepCody.id && isContextLoading) &&
-======= */}
             {!isSearchIntent &&
                 humanMessage.agent &&
                 isContextLoading &&
@@ -586,7 +560,6 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
 
             {!usingToolCody &&
                 !(humanMessage.agent && isContextLoading) &&
-                // >>>>>>> origin/main
                 (humanMessage.contextFiles || assistantMessage || isContextLoading) &&
                 !isSearchIntent && (
                     <ContextCell
@@ -596,20 +569,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                         model={assistantMessage?.model}
                         isForFirstMessage={humanMessage.index === 0}
                         isContextLoading={isContextLoading}
-                        // <<<<<<< HEAD
-                        //                         onManuallyEditContext={manuallyEditContext}
-                        //                         editContextNode={
-                        //                             humanMessage.intent === 'search'
-                        //                                 ? EditContextButtonSearch
-                        //                                 : EditContextButtonChat
-                        //                         }
-                        //                         defaultOpen={
-                        //                             isContextLoading && humanMessage.agent === OmniboxHandlers.DeepCody.id
-                        //                         }
-                        //                         processes={humanMessage?.processes ?? undefined}
-                        // =======
                         defaultOpen={isContextLoading && humanMessage.agent === DeepCodyAgentID}
-                        // >>>>>>> origin/main
                         agent={humanMessage?.agent ?? undefined}
                     />
                 )}
