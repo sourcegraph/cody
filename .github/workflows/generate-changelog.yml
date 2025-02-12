@@ -61,11 +61,6 @@ jobs:
           EDITOR: ${{ github.event.inputs.editor }}
         run: |
           set +x
-          export CHANGELOG_SKIP_NO_CHANGELOG="false"
-          export CHANGELOG_COMPACT="false"
-          # Get previous tag's commit
-          PREV_TAG=$(git tag --sort=-v:refname | grep '^vscode-v' |  head -n 2 | tail -n 1)
-          export RELEASE_LATEST_RELEASE=$(git rev-parse $PREV_TAG)
 
           # Use provided release tag if available, otherwise get previous tag
           if [ -n "$RELEASE_TAG" ]; then
@@ -75,6 +70,7 @@ jobs:
             if [ "$EDITOR" = "VS Code" ]; then
               PREV_TAG=$(git tag --sort=-v:refname | grep '^vscode-v' | head -n 2 | tail -n 1)
             else
+              # not used at the moment as we don't support JetBrains only changelog
               PREV_TAG=$(git tag --sort=-v:refname | grep '^jb-v' | head -n 2 | tail -n 1)
             fi
             export RELEASE_LATEST_RELEASE=$(git rev-parse $PREV_TAG)
@@ -90,13 +86,10 @@ jobs:
           export RELEASE_LATEST_COMMIT=$(git rev-parse HEAD)
           echo "Latest Commit: $RELEASE_LATEST_COMMIT"
           echo "Latest Release: $RELEASE_LATEST_RELEASE"
-          pwd
-          WORKING_DIR=$(pwd)                    
-          export SRC_LOG_LEVEL=dbug
+
           ./changelog update-as-pr \
             --github.repo=$GH_REPO \
             --github.fetch-strategy="between-commit" \
-            --repo.dir="$WORKING_DIR" \
             --output.repo.base="main" \
             --output.repo=$GH_REPO \
             --output.pr.branch="$PR_BRANCH" \
