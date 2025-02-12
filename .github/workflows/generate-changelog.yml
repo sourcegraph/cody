@@ -18,8 +18,8 @@ on:
         required: true
         type: string
       bump_version:
-        description: 'Bump VS Code version? If checked, the VS Code version will be bumped to the specified version from above.'
-        required: true
+        description: 'Optional: Bump VS Code version - If checked, the VS Code version will be bumped to the specified version from above.'
+        required: false
         type: boolean
         default: false
       release_tag:
