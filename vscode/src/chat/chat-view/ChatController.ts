@@ -343,9 +343,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 await vscode.commands.executeCommand('cody.fixup.codelens.undo', message.id)
                 break
             case 'openURI':
-                vscode.commands.executeCommand('vscode.open', message.uri)
-                break
-            case 'openURIWithRange':
                 vscode.commands.executeCommand('vscode.open', message.uri, {
                     selection: message.range,
                 })
