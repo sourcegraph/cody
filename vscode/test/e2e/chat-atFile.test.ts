@@ -46,7 +46,9 @@ test
         // To exercise the "current directory" filename filtering without a git repository
         // for the workspace, simulate dotcom.
         dotcomUrl: mockServer.SERVER_URL,
-    })('@-mention file in chat', async ({ page, sidebar, workspaceDirectory }) => {
+    })('@-mention file in chat', async ({ page, sidebar, workspaceDirectory, server }) => {
+    mockEnterpriseRepoIdMapping(server)
+
     // This test requires that the window be focused in the OS window manager because it deals with
     // focus.
     await page.bringToFront()
