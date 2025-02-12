@@ -112,7 +112,7 @@ jobs:
           set +x
           sed -i 's/"version": "[0-9]\+\.[0-9]\+\.[0-9]\+"/"version": "'$VERSION'"/' vscode/package.json
           git add vscode/package.json
-          git pull
-          git checkout release/vscode-v$VERSION
+          # git pull
+          # git checkout release/vscode-v$VERSION
           git commit -m "Update version to $VERSION"
           git push
