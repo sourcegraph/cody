@@ -110,11 +110,9 @@ jobs:
           VERSION: ${{ github.event.inputs.version }}
         run: |
           set +x
-          sed -i 's/"version": "[0-9]\+\.[0-9]\+\.[0-9]\+"/"version": "'$VERSION'"/' vscode/package.json
-          git stash push vscode/package.json
           git pull
           git checkout release/vscode-v$VERSION
-          git stash apply
+          sed -i 's/"version": "[0-9]\+\.[0-9]\+\.[0-9]\+"/"version": "'$VERSION'"/' vscode/package.json
           git add vscode/package.json
           git commit -m "Update version to $VERSION"
           git push
