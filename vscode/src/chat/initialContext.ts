@@ -6,6 +6,7 @@ import {
     type DefaultContext,
     FeatureFlag,
     REMOTE_REPOSITORY_PROVIDER_URI,
+    type RangeData,
     abortableOperation,
     authStatus,
     clientCapabilities,
@@ -26,17 +27,30 @@ import {
     startWith,
     switchMap,
 } from '@sourcegraph/cody-shared'
-import { Observable, map } from 'observable-fns'
+import { Observable, Subject, map } from 'observable-fns'
 import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
 import { getSelectionOrFileContext } from '../commands/context/selection'
 import { createRepositoryMention } from '../context/openctx/common/get-repository-mentions'
-import { remoteReposForAllWorkspaceFolders } from '../repository/remoteRepos'
+import { type RemoteRepo, remoteReposForAllWorkspaceFolders } from '../repository/remoteRepos'
 import { ChatBuilder } from './chat-view/ChatBuilder'
 import {
     activeEditorContextForOpenCtxMentions,
     contextItemMentionFromOpenCtxItem,
 } from './context/chatContext'
+
+export type InitialWebContextData = {
+    repository?: RemoteRepo
+    fileURL?: string | undefined | null
+    range: RangeData | undefined | null
+}
+
+const webInitialContextSubject = new Subject<InitialWebContextData>()
+export const webInitialContext = webInitialContextSubject.pipe(shareReplay())
+
+export function setWebInitialContext(repo: InitialWebContextData): void {
+    webInitialContextSubject.next(repo)
+}
 
 /**
  * Observe the initial context that should be populated in the chat message input field.
@@ -191,78 +205,84 @@ export function getCorpusContextItemsForEditorState(): Observable<
         distinctUntilChanged()
     )
 
-    return combineLatest(relevantAuthStatus, remoteReposForAllWorkspaceFolders).pipe(
-        abortableOperation(async ([authStatus, remoteReposForAllWorkspaceFolders], signal) => {
-            const items: ContextItem[] = []
+    return combineLatest(
+        relevantAuthStatus,
+        remoteReposForAllWorkspaceFolders,
+        webInitialContext.pipe(distinctUntilChanged())
+    ).pipe(
+        abortableOperation(
+            async ([authStatus, remoteReposForAllWorkspaceFolders, webContext], signal) => {
+                const items: ContextItem[] = []
 
-            // TODO(sqs): Make this consistent between self-serve (no remote search) and enterprise (has
-            // remote search). There should be a single internal thing in Cody that lets you monitor the
-            // user's current codebase.
-            if (authStatus.allowRemoteContext) {
-                if (remoteReposForAllWorkspaceFolders === pendingOperation) {
-                    return pendingOperation
-                }
-                if (isError(remoteReposForAllWorkspaceFolders)) {
-                    throw remoteReposForAllWorkspaceFolders
-                }
-                for (const repo of remoteReposForAllWorkspaceFolders) {
-                    if (await contextFiltersProvider.isRepoNameIgnored(repo.name)) {
-                        continue
+                // TODO(sqs): Make this consistent between self-serve (no remote search) and enterprise (has
+                // remote search). There should be a single internal thing in Cody that lets you monitor the
+                // user's current codebase.
+                if (authStatus.allowRemoteContext) {
+                    if (remoteReposForAllWorkspaceFolders === pendingOperation) {
+                        return pendingOperation
                     }
-                    if (repo.id === undefined) {
-                        continue
+                    if (isError(remoteReposForAllWorkspaceFolders)) {
+                        throw remoteReposForAllWorkspaceFolders
                     }
-                    items.push({
-                        ...contextItemMentionFromOpenCtxItem(
-                            await createRepositoryMention(
-                                {
-                                    id: repo.id,
-                                    name: repo.name,
-                                    url: repo.name,
-                                },
-                                REMOTE_REPOSITORY_PROVIDER_URI,
-                                authStatus
-                            )
-                        ),
-                        title: 'Current Repository',
-                        description: repo.name,
-                        source: ContextItemSource.Initial,
-                        icon: 'git-folder',
-                    })
-                }
-                if (remoteReposForAllWorkspaceFolders.length === 0) {
-                    if (!clientCapabilities().isCodyWeb) {
+                    for (const repo of remoteReposForAllWorkspaceFolders) {
+                        if (await contextFiltersProvider.isRepoNameIgnored(repo.name)) {
+                            continue
+                        }
+                        if (repo.id === undefined) {
+                            continue
+                        }
                         items.push({
-                            type: 'open-link',
+                            ...contextItemMentionFromOpenCtxItem(
+                                await createRepositoryMention(
+                                    {
+                                        id: repo.id,
+                                        name: repo.name,
+                                        url: repo.name,
+                                    },
+                                    REMOTE_REPOSITORY_PROVIDER_URI,
+                                    authStatus
+                                )
+                            ),
                             title: 'Current Repository',
-                            badge: 'Not yet available',
-                            content: null,
-                            uri: URI.parse('https://sourcegraph.com/docs/admin/code_hosts'),
-                            name: '',
-                            icon: 'folder',
+                            description: repo.name,
+                            source: ContextItemSource.Initial,
+                            icon: 'git-folder',
                         })
                     }
+                    if (remoteReposForAllWorkspaceFolders.length === 0) {
+                        if (!clientCapabilities().isCodyWeb) {
+                            items.push({
+                                type: 'open-link',
+                                title: 'Current Repository',
+                                badge: 'Not yet available',
+                                content: null,
+                                uri: URI.parse('https://sourcegraph.com/docs/admin/code_hosts'),
+                                name: '',
+                                icon: 'folder',
+                            })
+                        }
+                    }
+                } else {
+                    // TODO(sqs): Support multi-root. Right now, this only supports the 1st workspace root.
+                    const workspaceFolder = vscode.workspace.workspaceFolders?.at(0)
+                    if (workspaceFolder) {
+                        items.push({
+                            type: 'tree',
+                            uri: workspaceFolder.uri,
+                            title: 'Current Repository',
+                            name: workspaceFolder.name,
+                            description: workspaceFolder.name,
+                            isWorkspaceRoot: true,
+                            content: null,
+                            source: ContextItemSource.Initial,
+                            icon: 'folder',
+                        } satisfies ContextItemTree)
+                    }
                 }
-            } else {
-                // TODO(sqs): Support multi-root. Right now, this only supports the 1st workspace root.
-                const workspaceFolder = vscode.workspace.workspaceFolders?.at(0)
-                if (workspaceFolder) {
-                    items.push({
-                        type: 'tree',
-                        uri: workspaceFolder.uri,
-                        title: 'Current Repository',
-                        name: workspaceFolder.name,
-                        description: workspaceFolder.name,
-                        isWorkspaceRoot: true,
-                        content: null,
-                        source: ContextItemSource.Initial,
-                        icon: 'folder',
-                    } satisfies ContextItemTree)
-                }
-            }
 
-            return items
-        })
+                return items
+            }
+        )
     )
 }
 

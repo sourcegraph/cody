@@ -3,6 +3,7 @@ import {
     authStatus,
     combineLatest,
     debounceTime,
+    distinctUntilChanged,
     firstValueFrom,
     fromVSCodeEvent,
     graphqlClient,
@@ -14,6 +15,7 @@ import {
 } from '@sourcegraph/cody-shared'
 import { Observable, map } from 'observable-fns'
 import * as vscode from 'vscode'
+import { webInitialContext } from '../chat/initialContext'
 import { vscodeGitAPI } from './git-extension-api'
 import { repoNameResolver } from './repo-name-resolver'
 
@@ -44,12 +46,15 @@ export const remoteReposForAllWorkspaceFolders: Observable<
         // The vscode.git extension has a delay before we can fetch a workspace folder's remote.
         debounceTime(vscodeGitAPI ? 2000 : 0)
     ),
-    authStatus
+    authStatus,
+    webInitialContext.pipe(distinctUntilChanged())
 ).pipe(
     switchMapReplayOperation(
-        ([workspaceFolders]): Observable<RemoteRepo[] | typeof pendingOperation> => {
+        ([workspaceFolders, _, webContext]): Observable<RemoteRepo[] | typeof pendingOperation> => {
+            const webRepoContext = webContext?.repository
             if (!workspaceFolders) {
-                return Observable.of([])
+                // If we have a web context, we can use it to resolve the repo name.
+                return Observable.of(webRepoContext ? [webRepoContext] : [])
             }
 
             return combineLatest(
@@ -62,6 +67,11 @@ export const remoteReposForAllWorkspaceFolders: Observable<
                         .filter((names): names is string[] => Array.isArray(names))
                         .flat()
                         .filter((name): name is string => typeof name === 'string')
+
+                    // Include webContextRepo if it exists and isn't already in results
+                    if (webRepoContext && !completedResults.includes(webRepoContext.name)) {
+                        completedResults.push(webRepoContext.name)
+                    }
 
                     // Return completed results if available, otherwise an empty array
                     // This prevents hanging on pendingOperations for caught errors that returns an empty array/value

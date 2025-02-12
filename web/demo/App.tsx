@@ -30,7 +30,7 @@ if (!accessToken) {
 }
 
 const INITIAL_CONTEXT: InitialContext = {
-    repository: { id: null, name: 'github.com/sourcegraph/review-agent-sandbox' },
+    repository: { id: 'UmVwb3NpdG9yeToyNzU5OQ==', name: 'github.com/sourcegraph/cody' },
     fileRange: null,
     fileURL: null,
     isDirectory: true,

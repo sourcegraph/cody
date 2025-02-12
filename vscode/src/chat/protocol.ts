@@ -26,6 +26,7 @@ import type { Uri } from 'vscode'
 import type { View } from '../../webviews/tabs/types'
 import type { FixupTaskID } from '../non-stop/FixupTask'
 import type { CodyTaskState } from '../non-stop/state'
+import type { InitialWebContextData } from './initialContext'
 
 /**
  * DO NOT USE DIRECTLY - ALWAYS USE a TelemetryRecorder from
@@ -156,6 +157,7 @@ export type WebviewMessage =
           selectedFilters: NLSSearchDynamicFilter[]
       }
     | { command: 'action/confirmation'; id: string; response: boolean }
+    | { command: 'web/setInitialContextData'; data: InitialWebContextData }
 
 export interface SmartApplyResult {
     taskId: FixupTaskID
