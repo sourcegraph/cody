@@ -91,8 +91,9 @@ jobs:
           echo "Latest Release: $RELEASE_LATEST_RELEASE"
           pwd
           git -C . log 
-          WORKING_DIR=$(pwd)
-          git -C $WORKING_DIR log
+          WORKING_DIR=$(pwd)          
+          git -C . log 
+          git -C $WORKING_DIR log --pretty=format:%H---%s --boundary $RELEASE_LATEST_RELEASE..$RELEASE_LATEST_COMMIT
           export SRC_LOG_LEVEL=dbug
           ./changelog update-as-pr \
             --github.repo=$GH_REPO \
