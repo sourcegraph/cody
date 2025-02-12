@@ -90,6 +90,7 @@ jobs:
           echo "Latest Commit: $RELEASE_LATEST_COMMIT"
           echo "Latest Release: $RELEASE_LATEST_RELEASE"
           pwd
+          git -C . log 
           ./changelog update-as-pr \
             --github.repo=$GH_REPO \
             --github.fetch-strategy="between-commit" \
