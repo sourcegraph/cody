@@ -2,16 +2,24 @@ import { spawn } from 'node:child_process'
 import type { SpawnOptions, StdioOptions } from 'node:child_process'
 import * as path from 'node:path'
 import type Anthropic from '@anthropic-ai/sdk'
-import type { ContentBlock, MessageParam, Tool, ToolResultBlockParam } from '@anthropic-ai/sdk/resources'
-import { ProcessType, PromptString } from '@sourcegraph/cody-shared'
-import type { SubMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import type {
+    ContentBlock,
+    ContentBlockParam,
+    MessageParam,
+    Tool,
+    ToolResultBlockParam,
+} from '@anthropic-ai/sdk/resources'
+import { ProcessType, PromptString, isDefined, ps } from '@sourcegraph/cody-shared'
+import type { ChatMessage, SubMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { minimatch } from 'minimatch'
 import * as vscode from 'vscode'
+import { ChatBuilder } from '../ChatBuilder'
 import type { AgentHandler, AgentHandlerDelegate, AgentRequest } from './interfaces'
 import SYSTEM_PROMPT from './system_prompt.txt'
 
 interface CodyTool {
     spec: Tool
+    requiresConfirmation?: boolean
     invoke: (input: any) => Promise<string>
 }
 
@@ -163,6 +171,7 @@ const allTools: CodyTool[] = [
                 required: ['command'],
             },
         },
+        requiresConfirmation: true,
         invoke: async (input: { command: string }) => {
             if (typeof input.command !== 'string') {
                 throw new Error(
@@ -365,12 +374,15 @@ export class ExperimentalToolHandler implements AgentHandler {
         const previous: Array<MessageParam> = chatBuilder
             .getMessages()
             .filter(message => message.speaker === 'assistant' || message.speaker === 'human')
+            .slice(0, -1)
             .map(message => {
                 return {
                     role: message.speaker === 'human' ? 'user' : 'assistant',
                     content: message.text?.toString() || '',
                 }
             })
+
+        console.log('--->', previous)
 
         const subTranscript: Array<MessageParam> = [
             ...previous,
@@ -379,6 +391,7 @@ export class ExperimentalToolHandler implements AgentHandler {
                 content: `${inputText.toString()}\n${hiddenMetadata}`,
             },
         ]
+        console.log(subTranscript)
 
         const subViewTranscript: SubMessage[] = []
         let messageInProgress: SubMessage | undefined
@@ -404,6 +417,7 @@ export class ExperimentalToolHandler implements AgentHandler {
                         }
                     )
                     .on('text', (_textDelta, textSnapshot) => {
+                        console.log('text', _textDelta)
                         messageInProgress = {
                             text: PromptString.unsafe_fromLLMResponse(textSnapshot),
                         }
@@ -413,6 +427,7 @@ export class ExperimentalToolHandler implements AgentHandler {
                         ])
                     })
                     .on('contentBlock', (contentBlock: ContentBlock) => {
+                        console.log('contentBlock', contentBlock.type)
                         switch (contentBlock.type) {
                             case 'tool_use':
                                 toolCalls.push({
@@ -423,15 +438,17 @@ export class ExperimentalToolHandler implements AgentHandler {
                                 subViewTranscript.push(
                                     messageInProgress || {
                                         step: {
-                                            id: contentBlock.name,
-                                            content: `Invoking tool ${
-                                                contentBlock.name
-                                            }(${JSON.stringify(contentBlock.input)})`,
+                                            id: contentBlock.id,
+                                            title: `Invoking tool ${contentBlock.name}...`,
+                                            description: `Input: ${JSON.stringify(contentBlock.input)}`,
+                                            content: 'Pending...',
                                             state: 'pending',
                                             type: ProcessType.Tool,
                                         },
                                     }
                                 )
+                                delegate.experimentalPostMessageInProgress([...subViewTranscript])
+
                                 messageInProgress = undefined
                                 break
                             case 'text':
@@ -467,21 +484,71 @@ export class ExperimentalToolHandler implements AgentHandler {
                 if (!tool) {
                     continue
                 }
-                const output = await tool.invoke(toolCall.input)
+
+                // this does not work
+                // if (tool.requiresConfirmation) {
+                //     const confirmed = await delegate.postRequest({
+                //         type: ProcessType.Tool,
+                //         id: toolCall.id,
+                //         content: `Invoking tool ${toolCall.name}(${JSON.stringify(toolCall.input)})`,
+                //         state: 'pending',
+                //     })
+                //     if (!confirmed) {
+                //         continue
+                //     }
+                // }
+
+                const subMessage = subViewTranscript.find(
+                    message =>
+                        message.step?.type === ProcessType.Tool && message.step?.id === toolCall.id
+                )
+
+                let output: string | undefined
+                let errorMessage: string | undefined
+                try {
+                    output = await tool.invoke(toolCall.input)
+                } catch (error) {
+                    errorMessage = `${error}`
+                }
+
                 toolResults.push({
                     type: 'tool_result',
                     tool_use_id: toolCall.id,
-                    content: output,
+                    content: output || errorMessage,
+                    is_error: errorMessage !== undefined,
                 })
+
+                if (subMessage !== undefined && subMessage.step !== undefined) {
+                    subMessage.step = {
+                        ...subMessage.step,
+                        content: errorMessage ? `Failed to execute tool: ${errorMessage}` : output || '',
+                        state: errorMessage ? 'error' : 'success',
+                    }
+                }
             }
             subTranscript.push({
                 role: 'user',
                 content: toolResults,
             })
+            delegate.experimentalPostMessageInProgress([...subViewTranscript])
+
             turns++
             if (turns > maxTurns) {
                 console.error('Max turns reached')
                 break
+            }
+        }
+
+        for (const message of subTranscript) {
+            if (message.role === 'assistant') {
+                const text = PromptString.unsafe_fromLLMResponse(message.content)
+                const chatMessage: ChatMessage = {
+                    speaker: 'assistant',
+                    text: ps`${message.content}`,
+                }
+                chatBuilder.addBotMessage(chatMessage, chatBuilder.selectedModel ?? ChatBuilder.NO_MODEL)
+            } else {
+                // chatBuilder.addUserMessage(message)
             }
         }
         delegate.postDone()

@@ -813,9 +813,6 @@ importers:
       '@types/marked':
         specifier: ^5.0.0
         version: 5.0.0
-      '@types/minimatch':
-        specifier: ^5.1.2
-        version: 5.1.2
       '@types/mocha':
         specifier: ^10.0.6
         version: 10.0.6

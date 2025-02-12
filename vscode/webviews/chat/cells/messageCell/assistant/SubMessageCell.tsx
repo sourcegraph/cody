@@ -1,7 +1,9 @@
 import type { SubMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { WrenchIcon } from 'lucide-react'
 import type { FunctionComponent } from 'react'
+import { MarkdownFromCody } from '../../../../components/MarkdownFromCody'
 import { ChatMessageContent } from '../../../ChatMessageContent/ChatMessageContent'
+import { LoadingDots } from '../../../components/LoadingDots'
 import styles from './SubMessageCell.module.css'
 
 export const SubMessageCell: FunctionComponent<{
@@ -22,7 +24,15 @@ export const SubMessageCell: FunctionComponent<{
                     <div className="tw-self-start tw-mt-1">
                         <WrenchIcon className="tw-w-8 tw-h-8" />
                     </div>
-                    <div>{piece.step.content}</div>
+                    <div>
+                        {piece.step.state === 'pending' ? (
+                            <>
+                                <LoadingDots />
+                            </>
+                        ) : (
+                            <MarkdownFromCody>{piece.step.content}</MarkdownFromCody>
+                        )}
+                    </div>
                 </div>
             )}
         </>
