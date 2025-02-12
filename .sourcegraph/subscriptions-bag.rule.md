@@ -1,6 +1,7 @@
 ---
 title: Subscription Bag for Cleanup
 description: Use a Subscription bag to manage and unsubscribe from RxJS subscriptions and other cleanup tasks.
+tags: ["RxJS"]
 lang: typescript
 ---
 

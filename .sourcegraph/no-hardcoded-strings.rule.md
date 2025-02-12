@@ -1,6 +1,7 @@
 ---
 title: No hardcoded strings
 description: Avoid using and comparing against hardcoded strings
+tags: ["style"]
 ---
 
 Avoid using a hardcoded string in multiple places. Instead, use a constant or variable.

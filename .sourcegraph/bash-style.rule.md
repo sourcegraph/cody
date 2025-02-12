@@ -1,6 +1,7 @@
 ---
 title: Bash style suggestions
 description: General style suggestions for writing Bash scripts.
+tags: ["style", "shell"]
 lang: sh
 ---
 

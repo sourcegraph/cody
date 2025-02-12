@@ -1,6 +1,7 @@
 ---
 title: TypeScript style suggestions
 description: General style suggestions for writing TypeScript code.
+tags: ["style"]
 lang: typescript
 ---
 
