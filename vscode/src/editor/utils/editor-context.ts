@@ -18,7 +18,7 @@ import {
     currentOpenCtxController,
     currentResolvedConfig,
     displayPath,
-    firstValueFrom,
+    firstResultFromOperation,
     graphqlClient,
     isAbortError,
     isDefined,
@@ -319,8 +319,8 @@ async function createContextFileFromUri(
     symbolName?: string
 ): Promise<ContextItem[]> {
     const range = toRangeData(selectionRange)
-    const repoNames = await firstValueFrom(repoNameResolver.getRepoNamesContainingUri(uri))
-    const repoName: string = Array.isArray(repoNames) ? repoNames[0] : repoNames.toString()
+    const repoNames = await firstResultFromOperation(repoNameResolver.getRepoNamesContainingUri(uri))
+    const repoName: string | undefined = repoNames[0]
 
     return [
         type === 'file'
