@@ -508,6 +508,21 @@ export class ModelsService {
         await this.storage.setModelPreferences(currentPrefs)
     }
 
+    public getDefaultModels(): Observable<
+        DefaultsAndUserPreferencesForEndpoint['defaults'] | typeof pendingOperation
+    > {
+        return this.modelsChanges.pipe(
+            map(data => {
+                if (data === pendingOperation) {
+                    return pendingOperation
+                }
+                return data.preferences.defaults
+            }),
+            distinctUntilChanged(),
+            shareReplay()
+        )
+    }
+
     public isModelAvailable(model: string | Model): Observable<boolean | typeof pendingOperation> {
         return combineLatest(authStatus, this.modelsChanges, userProductSubscription).pipe(
             map(([authStatus, modelsData, userProductSubscription]) =>
