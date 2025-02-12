@@ -58,7 +58,6 @@ jobs:
           VERSION: ${{ github.event.inputs.version }}
           RELEASE_TAG: ${{ github.event.inputs.release_tag }}
           EDITOR: ${{ github.event.inputs.editor }}
-          VERSION: ${{ github.event.inputs.version }}
         run: |
           set +x
           export CHANGELOG_SKIP_NO_CHANGELOG="false"
