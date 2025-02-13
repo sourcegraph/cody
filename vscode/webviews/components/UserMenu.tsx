@@ -46,7 +46,7 @@ interface UserMenuProps {
     isWorkspacesUpgradeCtaEnabled?: boolean
 }
 
-type MenuView = 'main' | 'switch' | 'add' | 'remove'
+type MenuView = 'main' | 'switch' | 'add' | 'remove' | 'debug' | 'help'
 
 export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
     isProUser,
@@ -259,6 +259,91 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
                                     <span className="tw-flex-grow tw-rounded-md tw-text-center">
                                         Cancel
                                     </span>
+                                </CommandItem>
+                            </CommandGroup>
+                        </CommandList>
+                    ) : userMenuView === 'debug' ? (
+                        <CommandList>
+                            <CommandGroup title="Debug Menu">
+                                <CommandItem onSelect={() => onMenuViewChange('main')}>
+                                    <ChevronLeftIcon size={16} strokeWidth={1.25} className="tw-mr-2" />
+                                    <span className="tw-flex-grow">Back</span>
+                                </CommandItem>
+                            </CommandGroup>
+                            <CommandGroup>
+                                <CommandItem
+                                    onSelect={() => {
+                                        getVSCodeAPI().postMessage({
+                                            command: 'command',
+                                            id: 'cody.debug.export.logs',
+                                        })
+                                        close()
+                                    }}
+                                >
+                                    <span className="tw-flex-grow">Export Logs</span>
+                                </CommandItem>
+
+                                <CommandItem
+                                    onSelect={() => {
+                                        getVSCodeAPI().postMessage({
+                                            command: 'command',
+                                            id: 'cody.debug.enable.all',
+                                        })
+                                        close()
+                                    }}
+                                >
+                                    <span className="tw-flex-grow">Debug Mode</span>
+                                </CommandItem>
+
+                                <CommandItem
+                                    onSelect={() => {
+                                        getVSCodeAPI().postMessage({
+                                            command: 'command',
+                                            id: 'cody.debug.outputChannel',
+                                        })
+                                        close()
+                                    }}
+                                >
+                                    <span className="tw-flex-grow">Output Channel</span>
+                                </CommandItem>
+                            </CommandGroup>
+                        </CommandList>
+                    ) : userMenuView === 'help' ? (
+                        <CommandList>
+                            <CommandGroup title="Help Menu">
+                                <CommandItem onSelect={() => onMenuViewChange('main')}>
+                                    <ChevronLeftIcon size={16} strokeWidth={1.25} className="tw-mr-2" />
+                                    <span className="tw-flex-grow">Back</span>
+                                </CommandItem>
+                            </CommandGroup>
+                            <CommandGroup>
+                                <CommandLink
+                                    href="https://community.sourcegraph.com/"
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    onSelect={() => {
+                                        telemetryRecorder.recordEvent(
+                                            'cody.userMenu.helpLink',
+                                            'open',
+                                            {}
+                                        )
+                                        close()
+                                    }}
+                                >
+                                    <span className="tw-flex-grow">Sourcegraph Community</span>
+                                    <ExternalLinkIcon size={16} strokeWidth={1.25} />
+                                </CommandLink>
+
+                                <CommandItem
+                                    onSelect={() => {
+                                        getVSCodeAPI().postMessage({
+                                            command: 'command',
+                                            id: 'cody.debug.reportIssue',
+                                        })
+                                        close()
+                                    }}
+                                >
+                                    <span className="tw-flex-grow">Report Issue</span>
                                 </CommandItem>
                             </CommandGroup>
                         </CommandList>
@@ -498,6 +583,31 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
                             </CommandGroup>
 
                             <CommandGroup>
+                                <CommandItem
+                                    onSelect={() => {
+                                        getVSCodeAPI().postMessage({
+                                            command: 'command',
+                                            id: 'cody.welcome',
+                                        })
+                                        close()
+                                    }}
+                                >
+                                    <span className="tw-flex-grow">Getting Started Guide</span>
+                                </CommandItem>
+
+                                <CommandItem onSelect={() => onMenuViewChange('debug')}>
+                                    <span className="tw-flex-grow">Debug</span>
+                                    <ChevronRightIcon size={16} strokeWidth={1.25} />
+                                </CommandItem>
+
+                                <CommandItem onSelect={() => onMenuViewChange('help')}>
+                                    <CircleHelpIcon size={16} strokeWidth={1.25} className="tw-mr-2" />
+                                    <span className="tw-flex-grow">Help</span>
+                                    <ChevronRightIcon size={16} strokeWidth={1.25} />
+                                </CommandItem>
+                            </CommandGroup>
+
+                            <CommandGroup>
                                 {allowEndpointChange && (
                                     <CommandItem onSelect={() => onMenuViewChange('switch')}>
                                         <ArrowLeftRightIcon
@@ -513,26 +623,6 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
                                     <LogOutIcon size={16} strokeWidth={1.25} className="tw-mr-2" />
                                     <span className="tw-flex-grow">Sign Out</span>
                                 </CommandItem>
-                            </CommandGroup>
-
-                            <CommandGroup>
-                                <CommandLink
-                                    href="https://community.sourcegraph.com/"
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    onSelect={() => {
-                                        telemetryRecorder.recordEvent(
-                                            'cody.userMenu.helpLink',
-                                            'open',
-                                            {}
-                                        )
-                                        close()
-                                    }}
-                                >
-                                    <CircleHelpIcon size={16} strokeWidth={1.25} className="tw-mr-2" />
-                                    <span className="tw-flex-grow">Help</span>
-                                    <ExternalLinkIcon size={16} strokeWidth={1.25} />
-                                </CommandLink>
                             </CommandGroup>
                         </CommandList>
                     )}

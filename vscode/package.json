@@ -874,6 +874,13 @@
           "group": "other"
         }
       ],
+      "view/title": [
+        {
+          "command": "cody.menu.commands",
+          "when": "view == cody.chat && cody.activated",
+          "group": "navigation@1"
+        }
+      ],
       "editor/title": [
         {
           "command": "cody.menu.commands",
