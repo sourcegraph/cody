@@ -73,7 +73,7 @@ export type WebviewMessage =
     | ({ command: 'submit' } & WebviewSubmitMessage)
     | { command: 'restoreHistory'; chatID: string }
     | { command: 'links'; value: string }
-    | { command: 'openURI'; uri: Uri }
+    | { command: 'openURI'; uri: Uri; range?: RangeData | undefined | null }
     | {
           // Open a file from a Sourcegraph URL
           command: 'openRemoteFile'
