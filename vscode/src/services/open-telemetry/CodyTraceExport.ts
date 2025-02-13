@@ -9,7 +9,7 @@ const MAX_TRACE_RETAIN_MS = 60 * 1000
 export class CodyTraceExporter extends OTLPTraceExporter {
     private queuedSpans: Map<string, { span: ReadableSpan; enqueuedAt: number }> = new Map()
     private ide: CodyIDE
-    private agentVersion?: string
+    private extensionVersion?: string
     constructor(private configAccessor: () => OpenTelemetryServiceConfig | null) {
         super({
             url: configAccessor()?.traceUrl,
@@ -17,7 +17,7 @@ export class CodyTraceExporter extends OTLPTraceExporter {
             httpAgentOptions: { rejectUnauthorized: false },
         })
         this.ide = configAccessor()?.ide ?? CodyIDE.VSCode
-        this.agentVersion = configAccessor()?.agentVersion
+        this.extensionVersion = configAccessor()?.extensionVersion
     }
 
     export(spans: ReadableSpan[], resultCallback: (result: ExportResult) => void): void {
@@ -44,7 +44,7 @@ export class CodyTraceExporter extends OTLPTraceExporter {
         for (const span of spans) {
             spanMap.set(span.spanContext().spanId, span)
             span.attributes.ide = this.ide
-            span.attributes.agentVersion = this.agentVersion
+            span.attributes.extensionVersion = this.extensionVersion
         }
 
         const spansToExport: ReadableSpan[] = []

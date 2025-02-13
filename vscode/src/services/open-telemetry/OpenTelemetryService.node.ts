@@ -29,7 +29,8 @@ export interface OpenTelemetryServiceConfig {
     authHeaders: Record<string, string>
     debugVerbose: boolean
     ide: CodyIDE
-    agentVersion?: string
+    /** Version of the Cody VS Code extension (e.g. v1.66.0) */
+    extensionVersion?: string
 }
 export class OpenTelemetryService {
     private tracerProvider?: NodeTracerProvider
@@ -81,7 +82,7 @@ export class OpenTelemetryService {
                         debugVerbose: configuration.debugVerbose,
                         authHeaders: Object.fromEntries(headers.entries()),
                         ide: clientCapabilities().agentIDE,
-                        agentVersion: clientCapabilities().agentExtensionVersion,
+                        extensionVersion: clientCapabilities().agentExtensionVersion,
                     }
                     if (isEqual(this.lastConfig, newConfig)) {
                         return
