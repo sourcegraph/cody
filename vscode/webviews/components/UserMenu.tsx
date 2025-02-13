@@ -592,6 +592,7 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
                                         close()
                                     }}
                                 >
+                                    <UniversityIcon size={16} strokeWidth={1.25} className="tw-mr-2" />
                                     <span className="tw-flex-grow">Getting Started Guide</span>
                                 </CommandItem>
 
