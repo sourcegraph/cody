@@ -100,14 +100,6 @@ export const events = [
                     context: ContextItem[] | { used: ContextItem[]; ignored: ContextItem[] }
                     repoIsPublic: boolean
                     repoMetadata?: { commit?: string; remoteID?: string }[]
-                    detectedIntent: ChatMessage['intent']
-                    detectedIntentScores:
-                        | {
-                              intent: string
-                              score: number
-                          }[]
-                        | null
-                        | undefined
                     userSpecifiedIntent: ChatMessage['intent'] | 'auto'
                 } & SharedProperties,
                 spans: {
@@ -140,25 +132,12 @@ export const events = [
                         userSpecifiedIntent: params.userSpecifiedIntent
                             ? map.intent(params.userSpecifiedIntent)
                             : undefined,
-                        detectedIntent: params.detectedIntent
-                            ? map.intent(params.detectedIntent)
-                            : undefined,
-                        // Each intent is mapped to a `detectedIntentScores.{intent}` field inside the metadata
-                        ...params.detectedIntentScores?.reduce(
-                            (scores, intentScore) => {
-                                // intentScore.intent has a fixed set of values and is safe to use here - see ChatMessage['intent']
-                                scores['detectedIntentScores.' + intentScore.intent] = intentScore.score
-                                return scores
-                            },
-                            {} as Record<string, number>
-                        ),
                         // TODO: Remove this field when the transition from commands to prompts is complete
                         isCommand: params.command ? 1 : 0,
                         ...metadata,
                         recordsPrivateMetadataTranscript: recordTranscript ? 1 : 0,
                     }),
                     privateMetadata: {
-                        detectedIntent: params.detectedIntent,
                         // TODO: Remove this field when the transition from commands to prompts is complete
                         command: params.command,
                         userSpecifiedIntent: params.userSpecifiedIntent,
@@ -226,6 +205,11 @@ function publicContextSummary(globalPrefix: string, context: ContextItem[]) {
             ...cloneDeep(defaultByTypeCount),
             isWorkspaceRoot: undefined as number | undefined,
         },
+        'current-selection': cloneDeep(defaultByTypeCount),
+        'current-file': cloneDeep(defaultByTypeCount),
+        'current-repository': cloneDeep(defaultByTypeCount),
+        'current-directory': cloneDeep(defaultByTypeCount),
+        'current-open-tabs': cloneDeep(defaultByTypeCount),
     }
     const byOpenctxProvider = {
         [REMOTE_REPOSITORY_PROVIDER_URI]: cloneDeep(defaultSharedItemCount),
@@ -367,6 +351,11 @@ const defaultBySourceCount: BySourceCount = {
         tree: undefined,
         openctx: undefined,
         symbol: undefined,
+        'current-selection': undefined,
+        'current-file': undefined,
+        'current-repository': undefined,
+        'current-directory': undefined,
+        'current-open-tabs': undefined,
     },
 }
 

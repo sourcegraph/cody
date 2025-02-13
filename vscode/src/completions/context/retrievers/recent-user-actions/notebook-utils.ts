@@ -35,7 +35,7 @@ export function getNotebookLanguageId(notebook: vscode.NotebookDocument): string
     return cells.length > 0 ? cells[0].document.languageId : ''
 }
 
-export function getCellMarkupContent(languageId: string, text: PromptString): PromptString {
+function getCellMarkupContent(languageId: string, text: PromptString): PromptString {
     if (text.trim().length === 0) {
         return ps``
     }

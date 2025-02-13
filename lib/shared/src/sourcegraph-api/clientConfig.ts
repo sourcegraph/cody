@@ -58,9 +58,6 @@ export interface CodyClientConfig {
     // Whether the user should sign in to an enterprise instance.
     userShouldUseEnterprise: boolean
 
-    // Whether the user should be able to use the intent detection feature.
-    intentDetection: 'disabled' | 'enabled'
-
     // List of global instance-level cody notice/banners (set only by admins in global
     // instance configuration file
     notices: CodyNotice[]
@@ -86,7 +83,6 @@ export const dummyClientConfigForTest: CodyClientConfig = {
     smartContextWindowEnabled: true,
     modelsAPIEnabled: true,
     userShouldUseEnterprise: false,
-    intentDetection: 'enabled',
     notices: [],
     siteVersion: undefined,
     omniBoxEnabled: false,
@@ -227,7 +223,6 @@ export class ClientConfigSingleton {
                 ]).then(([viewerSettings, codeSearchEnabled]) => {
                     const config: CodyClientConfig = {
                         ...clientConfig,
-                        intentDetection: 'enabled',
                         notices: [],
                         omniBoxEnabled,
                         codeSearchEnabled: isError(codeSearchEnabled) ? true : codeSearchEnabled,
@@ -235,11 +230,6 @@ export class ClientConfigSingleton {
 
                     // Don't fail the whole chat because of viewer setting (used only to show banners)
                     if (!isError(viewerSettings)) {
-                        config.intentDetection = ['disabled', 'enabled'].includes(
-                            viewerSettings['omnibox.intentDetection']
-                        )
-                            ? viewerSettings['omnibox.intentDetection']
-                            : 'enabled'
                         // Make sure that notice object will have all important field (notices come from
                         // instance global JSONC configuration so they can have any arbitrary field values.
                         config.notices = Array.from<Partial<CodyNotice>, CodyNotice>(
@@ -250,10 +240,6 @@ export class ClientConfigSingleton {
                                 message: notice?.message ?? '',
                             })
                         )
-                    }
-
-                    if (codeSearchEnabled === false) {
-                        config.intentDetection = 'disabled'
                     }
 
                     return config
@@ -283,7 +269,6 @@ export class ClientConfigSingleton {
             smartContextWindowEnabled: smartContextWindow,
 
             // Things that did not exist before logically default to disabled.
-            intentDetection: 'disabled',
             modelsAPIEnabled: false,
             userShouldUseEnterprise: false,
             notices: [],
@@ -338,7 +323,7 @@ export class ClientConfigSingleton {
     }
 }
 // It's really complicated to access CodyClientConfig from functions like utils.ts
-export let latestCodyClientConfig: CodyClientConfig | undefined
+let latestCodyClientConfig: CodyClientConfig | undefined
 
 export function serverSupportsPromptCaching(): boolean {
     return (

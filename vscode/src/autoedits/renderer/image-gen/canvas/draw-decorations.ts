@@ -9,8 +9,8 @@ import type {
 } from '../decorated-diff/types'
 import { DEFAULT_HIGHLIGHT_COLORS } from '../highlight/constants'
 import type { SYNTAX_HIGHLIGHT_THEME } from '../highlight/types'
-import { DIFF_COLORS } from './constants'
-import type { RenderConfig, RenderContext } from './types'
+import { type RenderConfig, type UserProvidedRenderConfig, getRenderConfig } from './render-config'
+import type { RenderContext } from './types'
 
 function createCanvas(
     options: {
@@ -174,18 +174,7 @@ export function drawDecorationsToCanvas(
     diff: VisualDiff,
     theme: SYNTAX_HIGHLIGHT_THEME,
     mode: 'additions' | 'unified',
-    /**
-     * Specific configuration to determine how we render the canvas.
-     * Consider changing this, or supporting configuration from the user (e.g. font-size)
-     */
-    renderConfig: RenderConfig = {
-        fontSize: 12,
-        lineHeight: 14,
-        padding: { x: 2, y: 2 },
-        maxWidth: 600,
-        pixelRatio: 2,
-        diffColors: DIFF_COLORS,
-    }
+    userConfig: UserProvidedRenderConfig
 ): EmulatedCanvas2D {
     if (!canvasKit || !fontCache) {
         // TODO: Log these errors, useful to see if we run into issues where we're not correctly
@@ -197,6 +186,7 @@ export function drawDecorationsToCanvas(
         CanvasKit: canvasKit,
         font: fontCache,
     }
+    const config = getRenderConfig(userConfig)
 
     const lines =
         mode === 'additions'
@@ -215,54 +205,51 @@ export function drawDecorationsToCanvas(
 
     // In order for us to draw to the canvas, we must first determine the correct
     // dimensions for the canvas. We can do this with a temporary Canvas that uses the same font
-    const { ctx: tempCtx } = createCanvas(
-        { height: 10, width: 10, fontSize: renderConfig.fontSize },
-        context
-    )
+    const { ctx: tempCtx } = createCanvas({ height: 10, width: 10, fontSize: config.fontSize }, context)
 
     // Iterate through each token line, and determine the required width of the canvas (maximum line length)
     // and the required height of the canvas (number of lines determined by their line height)
-    let tempYPos = renderConfig.padding.y
+    let tempYPos = config.padding.y
     let requiredWidth = 0
     for (const line of lines) {
         const text = 'newText' in line ? line.newText : line.text
         const measure = tempCtx.measureText(text)
-        requiredWidth = Math.max(requiredWidth, renderConfig.padding.x + measure.width)
-        tempYPos += renderConfig.lineHeight
+        requiredWidth = Math.max(requiredWidth, config.padding.x + measure.width)
+        tempYPos += config.lineHeight
     }
 
     // Note: We limit the canvas width to avoid the image getting excessively large.
     // We should consider possible strategies here, such as tweaking this value or refusing
     // to show image decorations for such large images. This could possibly be an area where we would
     // prefer an inline decorator.
-    const canvasWidth = Math.min(requiredWidth + renderConfig.padding.x, renderConfig.maxWidth)
-    const canvasHeight = tempYPos + renderConfig.padding.y
+    const canvasWidth = Math.min(requiredWidth + config.padding.x, config.maxWidth)
+    const canvasHeight = tempYPos + config.padding.y
 
     // Now we create the actual canvas, ensuring we scale it accordingly to improve the output resolution.
     const { canvas, ctx } = createCanvas(
         {
-            height: canvasHeight * renderConfig.pixelRatio,
-            width: canvasWidth * renderConfig.pixelRatio,
-            fontSize: renderConfig.fontSize,
+            height: canvasHeight * config.pixelRatio,
+            width: canvasWidth * config.pixelRatio,
+            fontSize: config.fontSize,
             // We upscale the canvas to improve resolution, this will be brought back to the intended size
             // using the `scale` CSS property when the decoration is rendered.
-            scale: renderConfig.pixelRatio,
+            scale: config.pixelRatio,
         },
         context
     )
 
     // Paint text and colors onto the canvas
-    let yPos = renderConfig.padding.y
+    let yPos = config.padding.y
     for (const line of lines) {
-        const position = { x: renderConfig.padding.x, y: yPos }
+        const position = { x: config.padding.x, y: yPos }
 
         // Paint any background diff colors first, we will render the text over the top
-        drawDiffColors(ctx, line, position, mode, renderConfig)
+        drawDiffColors(ctx, line, position, mode, config)
 
         // Draw the text, this may or may not be syntax highlighted depending on language support
-        drawText(ctx, line, position, theme, renderConfig)
+        drawText(ctx, line, position, theme, config)
 
-        yPos += renderConfig.lineHeight
+        yPos += config.lineHeight
     }
 
     return canvas

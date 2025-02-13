@@ -136,6 +136,11 @@ export type ContextItem =
     | ContextItemSymbol
     | ContextItemOpenCtx
     | ContextItemOpenLink // Not a context item, but opens a link to documentation.
+    | ContextItemCurrentSelection
+    | ContextItemCurrentFile
+    | ContextItemCurrentRepository
+    | ContextItemCurrentDirectory
+    | ContextItemCurrentOpenTabs
 
 /**
  * Context items to show by default in the chat input, or as suggestions in the chat UI.
@@ -193,6 +198,25 @@ export interface ContextItemOpenCtx extends ContextItemCommon {
     }
 }
 
+export interface ContextItemCurrentSelection extends ContextItemCommon {
+    type: 'current-selection'
+}
+
+export interface ContextItemCurrentFile extends ContextItemCommon {
+    type: 'current-file'
+}
+
+export interface ContextItemCurrentRepository extends ContextItemCommon {
+    type: 'current-repository'
+}
+
+export interface ContextItemCurrentDirectory extends ContextItemCommon {
+    type: 'current-directory'
+}
+
+export interface ContextItemCurrentOpenTabs extends ContextItemCommon {
+    type: 'current-open-tabs'
+}
 /**
  * A file (or a subset of a file given by a range) that is included as context in a chat message.
  */
@@ -236,7 +260,7 @@ export type ContextItemWithContent = ContextItem & { content: string }
 /**
  * A system chat message that adds a context item to the conversation.
  */
-export interface ContextMessage extends Required<Omit<Message, 'cache_enabled'>> {
+export interface ContextMessage extends Required<Omit<Message, 'cacheEnabled'>> {
     /**
      * Context messages are always "from" the human. (In the future, this could be from "system" for
      * LLMs that support that kind of message, but that `speaker` value is not currently supported
@@ -248,7 +272,7 @@ export interface ContextMessage extends Required<Omit<Message, 'cache_enabled'>>
      * The context item that this message introduces into the conversation.
      */
     file: ContextItem
-    cache_enabled?: boolean | null
+    cacheEnabled?: boolean | null
 }
 
 export const GENERAL_HELP_LABEL = 'Search for a file to include, or type # for symbols...'

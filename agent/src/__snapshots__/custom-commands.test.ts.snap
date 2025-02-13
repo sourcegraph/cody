@@ -12,7 +12,7 @@ exports[`Custom Commands > commands/custom, edit command, edit mode 1`] = `
     name: string
     makeAnimalSound(): string
     isMammal: boolean
-    logAnimalName(): void
+    logName(): void
 }"
 `;
 

@@ -39,19 +39,19 @@ log:
         queryString: []
         url: https://sourcegraph.com/.api/client-config
       response:
-        bodySize: 234
+        bodySize: 227
         content:
           encoding: base64
           mimeType: text/plain; charset=utf-8
-          size: 234
+          size: 227
           text: "[\"H4sIAAAAAAAAA2w=\",\"jrEKwjAURfd+RejsLnQrwaFboaDzq3liIC+v5N2gIv67S8Ul\
             8zn3cN+dc871Vw2vU6Y1cegHh1L5sIM7oQmoQr3KlhjcXlaDilcRysHaDaDEtSJq/vM\
             bJfsJJlTgNYOfuMQc9NHsiAZONs5Tu5IIbFjqtmkBh/111GwLCpOM83TmYlFzP7hj9+\
-            m+AAAA//8=\",\"AwB175LKFQEAAA==\"]"
+            m+AAAA//8DAHXvksoVAQAA\"]"
         cookies: []
         headers:
           - name: date
-            value: Thu, 06 Feb 2025 04:08:12 GMT
+            value: Wed, 12 Feb 2025 14:44:02 GMT
           - name: content-type
             value: text/plain; charset=utf-8
           - name: transfer-encoding
@@ -82,8 +82,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-02-06T04:08:12.044Z
-      time: 315
+      startedDateTime: 2025-02-12T14:44:01.856Z
+      time: 302
       timings:
         blocked: -1
         connect: -1
@@ -91,7 +91,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 315
+        wait: 302
     - _id: c7327f699da3de5388b86581bd3a348b
       _order: 0
       cache: {}
@@ -109,7 +109,7 @@ log:
           - name: content-type
             value: application/json
           - name: traceparent
-            value: 00-31a5992942d21dc0b355d3803e6cff9f-3a1228b69cb8771d-01
+            value: 00-0b916baec7523c76be6a22e57ed0e60f-1b8da3179184aacd-01
           - name: user-agent
             value: jetbrains/6.0-localbuild (Node.js v20.12.2)
           - name: x-requested-with
@@ -221,14 +221,14 @@ log:
             value: 6.0-localbuild
         url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=jetbrains&client-version=6.0-localbuild
       response:
-        bodySize: 622
+        bodySize: 539
         content:
           mimeType: text/event-stream
-          size: 622
+          size: 539
           text: >+
             event: completion
 
-            data: {"deltaText":"\n/**\n * Generates a Fibonacci sequence and prints the first 10 values.\n * The Fibonacci sequence is a series of numbers where each number is the sum of the two preceding ones, starting from 0 and 1.\n */\n","stopReason":"stop_sequence"}
+            data: {"deltaText":"\n/**\n * Generates a Fibonacci sequence and prints the first 10 numbers.\n * The Fibonacci sequence is a series of numbers where each number is the sum of the two preceding ones, starting from 0 and 1.\n */\n","stopReason":"stop_sequence"}
 
 
             event: done
@@ -238,7 +238,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 06 Feb 2025 04:08:15 GMT
+            value: Wed, 12 Feb 2025 14:44:05 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -267,8 +267,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-02-06T04:08:13.949Z
-      time: 1294
+      startedDateTime: 2025-02-12T14:44:03.618Z
+      time: 1441
       timings:
         blocked: -1
         connect: -1
@@ -276,7 +276,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 1294
+        wait: 1441
     - _id: f1b1cde4cd57488b7f0137954f0302f5
       _order: 0
       cache: {}
@@ -334,7 +334,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 06 Feb 2025 04:08:13 GMT
+            value: Wed, 12 Feb 2025 14:44:03 GMT
           - name: content-type
             value: application/json
           - name: content-length
@@ -363,8 +363,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-02-06T04:08:13.117Z
-      time: 283
+      startedDateTime: 2025-02-12T14:44:02.821Z
+      time: 352
       timings:
         blocked: -1
         connect: -1
@@ -372,7 +372,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 283
+        wait: 352
     - _id: a376faab1c8a1993bb48c745757f0a4a
       _order: 0
       cache: {}
@@ -431,29 +431,19 @@ log:
             value: null
         url: https://sourcegraph.com/.api/graphql?CurrentSiteCodyLlmConfiguration
       response:
-        bodySize: 248
+        bodySize: 258
         content:
           encoding: base64
           mimeType: application/json
-          size: 248
-          text: "[\"H4sIAAAAAAAAA4TOTQ6CMBAF4LvMmmqDEA1btrLzAmM7QAN2SH+MhvTuBjYSNXH1ksmbL\
-            28GjQGhmsGbQEsq1s/zuanZtqaLDoNhu957DA1rGqECz9Ep6hxO/V6NGDWJw64Unq2l\
-            ANm72+DjwgNZD1VRSikzaNGH+g8lejRDhI/yxjqulOLbNNKy7xemiSZPNAjFmpy452I\
-            0gcQVPcHX78bOZXFKKaUXAAAA//8DADDh/dAaAQAA\"]"
-          textDecoded:
-            data:
-              site:
-                codyLLMConfiguration:
-                  chatModel: sourcegraph/claude-3.5-sonnet
-                  chatModelMaxTokens: 45000
-                  completionModel: sourcegraph/deepseek-coder-v2-lite-base
-                  completionModelMaxTokens: 2048
-                  fastChatModel: sourcegraph/claude-3-haiku
-                  fastChatModelMaxTokens: 7000
+          size: 258
+          text: "[\"H4sIAAAAAAAAA4TOTQ6CMBAF4Ls=\",\"zJpqgxANW7ay8wJjO0ADdkh/jIb07gY2EjVx\
+            9ZLJmy9vBo0BoZrBm0BLKtbP87mp2bamiw6DYbveewwNaxqhAs/RKeocTv1ejRg1icO\
+            uFJ6tpQDZu9vg48IDWQ9VUUopM2jRh/oPJXo0Q4SP8sY6rpTi2zTSsu8XpokmTzQIxZ\
+            qcuOdiNIHEFT3B1+/GzmVxSimlFwAAAP//\",\"AwAw4f3QGgEAAA==\"]"
         cookies: []
         headers:
           - name: date
-            value: Thu, 06 Feb 2025 04:08:12 GMT
+            value: Wed, 12 Feb 2025 14:44:02 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -484,8 +474,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-02-06T04:08:12.408Z
-      time: 359
+      startedDateTime: 2025-02-12T14:44:02.186Z
+      time: 318
       timings:
         blocked: -1
         connect: -1
@@ -493,7 +483,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 359
+        wait: 318
     - _id: 0484c4d780805faf3dd3ddabae814640
       _order: 0
       cache: {}
@@ -547,22 +537,18 @@ log:
             value: null
         url: https://sourcegraph.com/.api/graphql?CurrentSiteCodyLlmConfiguration
       response:
-        bodySize: 136
+        bodySize: 139
         content:
           encoding: base64
           mimeType: application/json
-          size: 136
-          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdHJ+SmVPj6+zvl5aZnppUWJJZn5eWD53MSiE\
-            uf8vJLUipLwzLyU/HIlK6WUzOLEpJzUFKXa2tpaAAAAAP//AwArMNn0TAAAAA==\"]"
-          textDecoded:
-            data:
-              site:
-                codyLLMConfiguration:
-                  smartContextWindow: disabled
+          size: 139
+          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlY=\",\"Ks4sSQXRyfkplT4+vs75eWmZ6aVFiSWZ+Xlg\
+            +dzEohLn/LyS1IqS8My8lPxyJSullMzixKSc1BSl2traWgAAAAD//wMAKzDZ9EwAAAA=\
+            \"]"
         cookies: []
         headers:
           - name: date
-            value: Thu, 06 Feb 2025 04:08:12 GMT
+            value: Wed, 12 Feb 2025 14:44:02 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -593,8 +579,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-02-06T04:08:12.460Z
-      time: 353
+      startedDateTime: 2025-02-12T14:44:02.226Z
+      time: 281
       timings:
         blocked: -1
         connect: -1
@@ -602,7 +588,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 353
+        wait: 281
     - _id: e141c56e63809042300db9bf8551d492
       _order: 0
       cache: {}
@@ -656,18 +642,17 @@ log:
             value: null
         url: https://sourcegraph.com/.api/graphql?CurrentSiteCodyLlmProvider
       response:
-        bodySize: 138
+        bodySize: 131
         content:
           encoding: base64
           mimeType: application/json
-          size: 138
+          size: 131
           text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlY=\",\"Ks4sSQXRyfkplT4+vs75eWmZ6aVFiSWZ+Xkg\
-            8YKi/LLMlNQiJSul4vzSouTU9KLEggyl2traWgAAAAD//w==\",\"AwAfFAXARQAAAA\
-            ==\"]"
+            8YKi/LLMlNQiJSul4vzSouTU9KLEggyl2traWgAAAAD//wMAHxQFwEUAAAA=\"]"
         cookies: []
         headers:
           - name: date
-            value: Thu, 06 Feb 2025 04:08:12 GMT
+            value: Wed, 12 Feb 2025 14:44:02 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -698,8 +683,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-02-06T04:08:12.437Z
-      time: 336
+      startedDateTime: 2025-02-12T14:44:02.208Z
+      time: 318
       timings:
         blocked: -1
         connect: -1
@@ -707,7 +692,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 336
+        wait: 318
     - _id: 5b9030a4e18d1e000c71d6000a7cef6f
       _order: 0
       cache: {}
@@ -786,7 +771,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 06 Feb 2025 04:08:12 GMT
+            value: Wed, 12 Feb 2025 14:44:01 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -817,8 +802,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-02-06T04:08:11.731Z
-      time: 304
+      startedDateTime: 2025-02-12T14:44:01.621Z
+      time: 227
       timings:
         blocked: -1
         connect: -1
@@ -826,7 +811,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 304
+        wait: 227
     - _id: aef0c9fe7483280d9c05ac8e97e37571
       _order: 0
       cache: {}
@@ -884,28 +869,19 @@ log:
             value: null
         url: https://sourcegraph.com/.api/graphql?CurrentUserCodySubscription
       response:
-        bodySize: 232
+        bodySize: 231
         content:
           encoding: base64
           mimeType: application/json
-          size: 232
-          text: "[\"H4sIAAAAAAAAAwAAAP//XMyxCsIwFIXhdzlzhSbqkq1IB0GwtNXBLTYZAjUJNzdDKXl3U\
-            RDU8fx8nBVGs4ZaMWUi6/mSLL1nMMuQ72kiF9kF/2qJNecEheYwHq8tKsRZeyh0/RkV\
-            dIzz0lHoNduTezhOUEzZVp/vzpILZmBN3DAUZC33m1psxG6UUgmhtvKGP91682Xlry2\
-            llCcAAAD//wMAXnz70MIAAAA=\"]"
-          textDecoded:
-            data:
-              currentUser:
-                codySubscription:
-                  applyProRateLimits: true
-                  currentPeriodEndAt: 2025-02-14T22:11:32Z
-                  currentPeriodStartAt: 2025-01-14T22:11:32Z
-                  plan: PRO
-                  status: ACTIVE
+          size: 231
+          text: "[\"H4sIAAAAAAAAA1zMsQrCMBSF4Xc=\",\"OXOFJuqSrUgHQbC01cEtNhkCNQk3N0MpeXdR\
+            ENTx/HycFUazhloxZSLr+ZIsvWcwy5DvaSIX2QX/aok15wSF5jAery0qxFl7KHT9GRV\
+            0jPPSUeg125N7OE5QTNlWn+/OkgtmYE3cMBRkLfebWmzEbpRSCaG28oY/3XrzZeWvLa\
+            WUJwAAAP//AwBefPvQwgAAAA==\"]"
         cookies: []
         headers:
           - name: date
-            value: Thu, 06 Feb 2025 04:08:12 GMT
+            value: Wed, 12 Feb 2025 14:44:02 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -936,8 +912,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-02-06T04:08:12.501Z
-      time: 406
+      startedDateTime: 2025-02-12T14:44:02.256Z
+      time: 425
       timings:
         blocked: -1
         connect: -1
@@ -945,7 +921,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 406
+        wait: 425
     - _id: 4504fab53d7cb602861f73dc2aa883d2
       _order: 0
       cache: {}
@@ -997,18 +973,18 @@ log:
             value: null
         url: https://sourcegraph.com/.api/graphql?SiteProductVersion
       response:
-        bodySize: 146
+        bodySize: 139
         content:
           encoding: base64
           mimeType: application/json
-          size: 146
-          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlY=\",\"Ks4sSQXRBUX5KaXJJWGpRcWZ+XlKVkrGhgaW\
-            JibxRgZGproGRroGpvFmega6icZmKakWBgbGxqnmSrW1tQAAAAD//w==\",\"AwDxtC\
-            3hSQAAAA==\"]"
+          size: 139
+          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlY=\",\"Ks4sSQXRBUX5KaXJJWGpRcWZ+XlKVkrGhoZm\
+            JkbxRgZGproGRrqGRvFmega6RinJaaYplimGySkGSrW1tQAAAAD//wMAQVLRR0kAAAA=\
+            \"]"
         cookies: []
         headers:
           - name: date
-            value: Thu, 06 Feb 2025 04:08:12 GMT
+            value: Wed, 12 Feb 2025 14:44:02 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -1039,8 +1015,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-02-06T04:08:12.482Z
-      time: 287
+      startedDateTime: 2025-02-12T14:44:02.241Z
+      time: 292
       timings:
         blocked: -1
         connect: -1
@@ -1048,7 +1024,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 287
+        wait: 292
     - _id: fd0fee4687419870bc82cba9d1023319
       _order: 0
       cache: {}
@@ -1100,20 +1076,20 @@ log:
             value: null
         url: https://sourcegraph.com/.api/graphql?ViewerSettings
       response:
-        bodySize: 290
+        bodySize: 283
         content:
           encoding: base64
           mimeType: application/json
-          size: 290
+          size: 283
           text: "[\"H4sIAAAAAAAAA4zPwUoDQRAE0H8=\",\"6XO+YG8qBgMK4pLbXDpJOdvQ9iw9vdnEZf5d\
             FgLBg+C16lFQC504mLqFzoIZ3iNCLNc1+RRjpY6WRLiMcPmCBesWHJOjJurWxvigeOX\
             v66OWQ3+14MuL5EElD+tSoi58wiaRYe7Bfhw+UCeNrWjA6zsb9E9U97t7N3rhY8gZv8\
-            RDzo7MIcXq3dZ/kKHMb5OGqNht8qlYLYqbaZtEZYTt7PkkUXw93Bq11n4AAAD//w==\
-            \",\"AwDHP3NmNgEAAA==\"]"
+            RDzo7MIcXq3dZ/kKHMb5OGqNht8qlYLYqbaZtEZYTt7PkkUXw93Bq11n4AAAD//wMAx\
+            z9zZjYBAAA=\"]"
         cookies: []
         headers:
           - name: date
-            value: Thu, 06 Feb 2025 04:08:13 GMT
+            value: Wed, 12 Feb 2025 14:44:03 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -1144,8 +1120,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-02-06T04:08:13.082Z
-      time: 314
+      startedDateTime: 2025-02-12T14:44:02.791Z
+      time: 370
       timings:
         blocked: -1
         connect: -1
@@ -1153,7 +1129,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 314
+        wait: 370
     - _id: fbb23499ae0eec5c2e188687b429531b
       _order: 0
       cache: {}
@@ -1185,45 +1161,47 @@ log:
         queryString: []
         url: https://sourcegraph.com/.api/modelconfig/supported-models.json
       response:
-        bodySize: 1995
+        bodySize: 2099
         content:
           encoding: base64
           mimeType: text/plain; charset=utf-8
-          size: 1995
-          text: "[\"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\
-            64MVjU+c=\",\"Ob43OYZ8cbQBHutYTa2SUfTVJFkc4M0WOzN3bwnCjkzdGy5+HoXB0\
-            dC1pnA0dC05LLXamZX4syKxwWmfiiL39NP2/TibgqCb7WtyHjzNevLnThMPZizS13b6\
-            hUPyycgM19nSzuY1TQ0qol9k9/jjxf8BAAD//9xTCZAKSgAA\"]"
+          size: 2099
+          text: "[\"H4sIAAAAAAAA/+ycX3ObOBDA3/spGD/dzVUuyCHJ+a1N27vOXNrMtdN7uLkHGda2JoAYI\
+            RxnOv3uNwIb/0EYqYHY1OSJwGp3QT+vVn+/vbAsyxok3hxC8hV4Qlk0GFsDZ2gPXubP\
+            OCzo+rY9tIf2bz4s1g9jzhbUB54Mxta/2S359624yoSoL8uSSMw5i6m3Kls89mkSB+T\
+            xIwlByr0u5Aqx7y8Pq55SDg+M3yc1qt8XctqqZ4zNAqjR+0cupK2UxRARWqP0UwzR6w\
+            /6SkOaCE6CGq23K6mN2uzqv1V9hsyH4GBlZhJ/w3SnSsdjbOML5NgI4/HYC0jqAxohF\
+            yUsikCggAhIRI1rN1kxazR0rc9ZMeuXj/Dw636pzIF1GV1THonJhAZUUNh9u0ICfLpf\
+            Ki85J8r7qx+F4olgLNgibOvzbrkjYMb4Y/YRPS/lxHvcdzkRRKTSWXk1KTMoKPAMfg6\
+            lZx6LBCzFPzTy2cNgvFeH+Wckyw9RnIov7B4iaebCtW1b8TohWX5KxY6kbds7ct/3zE\
+            MiaEgE+Leyrm5YItQ+pBEVGbqC3au+JC0cvIMoyqtupHSSbTzciDruvp8aP6ZqvkfIv\
+            kS2s8U3i9O6kLOG2vqkkFWjLLUi+XuyMf69YZC1qWRiDrwaSR9iDlLer8Iy5uyMqJSo\
+            6WJ51SyWqrA7J/Q+NY66f8pSuuH2kInmo61hTE1iKJPZB1Q1uvrkth1P5yoAqwKqAa0\
+            5q1lIHdlXxwqpNVDWh9SmwLzqBJfY1W7nsdsmlsN1bmmav/aZ6/Mx3ZFge0rZawFeFh\
+            gvsd0y31VmesJ7wld+Nky4Udg2gnob6S730no4nw9OZxtOPHT0uFQIqpBUiJ0dhN3Ia\
+            6/1GcQXLTOo2eQrBNUMNt229wx2n8FicmY8XjjjcSII95hfrq099D4Lwm9UcjvkVWqr\
+            B4+kgnksjAMQ0LGRJWxfXGtBht3LozGG9RFrFDAfIE4A7lHGBVpgFFABaEKSumm8twD\
+            xZ4B76yu2/qICrDeKMjv4Ec9jaSSSVwlLuQczTuL5q3wO7ZWBHz2sbcCqC6o2p+1guh\
+            hpY1mSVMNYWCqhWLZVj55ZQ9z3mDvAnowmMu9KkA9TkgZ1XeTXqWDvpLxVrKCw3qpL7\
+            uaFzH9E2R0kTaLcZuFMlfUjhUNYxsBpCJEor6JoGk0H92jWorkKWlmzqQ9qVtoqgmaW\
+            Q1pf8eHQaWb1SIBOQJCWp9t7LvW5TCM6peCjGSdRGhCOfDqdtgXogURz49pihAIaAQp\
+            gAQEKWDRDAnhYeOonMg2VGSgC5MRuz/X5cZ0vaMyhnkFII4qcoYsU33l/kWMmbDlD17\
+            orC+/Qeljvc40JTUhAIu/4HaCOjI07+hPuTx0aVzCIhzaaBiSZI1jGeiTioW29l0Wsd\
+            wcyNxWYB42d8HTkyawgOSLSE7OlTfoDndLT9rA2RNqI4p+H4J8+IHeU3rw3FHNYUHhA\
+            NkZ2KXesARplA6p3uQazGF1vu7vAP+eYQ0ewvzJYSj1qi/qYM5kbmKKumRjXWjhhoOu\
+            zah2mu787oBvdOoPcQ3bstHOPSt1nt5i6j6rrF96icbUXMccxpEv5D7peXk0QjRLBU6\
+            9uIPc2L2NdL6/e/OCkl5bZpqe/TgbLbqxDcQ22nrQBJMY/QCTGT0fykOF+zVQhd0qsO\
+            voLWpwnrmjZoXUzvL/GZ1GaK6icr11T28j0QgQzZMcOniKPhRMagX/ApX4S94yyz/xA\
+            g9V2VNmjkVloLNBF7aTC3ReF0G7GqdRzwj2kp27o737fyGybn35YfWpaWo0pkr0aLVa\
+            VkgpglXI=\",\"J0ztuY/Mmu3210X2snlg2UgH1gqpHVArZE4Y0vrQeiYDqka0OvqzC\
+            BfN85otApRkbMbw7bq9T/nZRxar2fqko/n5F7g+ECoCWt7JfZ7tu8nJKJetNfBIpHyi\
+            lYxaX1SS5QZerbEzffeGIOxI191gInXUFoOjoatN4WjoanJYqbUzA/FnRaLBBuQD++6\
+            yq/WRfas1yrfrk/s2nuY1+WMHnAymJBE3euVL5/bIlhlu8qGd1cmRBpu0XuTv+P3F/w\
+            EAAP//lvYJYZ1SAAA=\"]"
         cookies: []
         headers:
           - name: date
-            value: Thu, 06 Feb 2025 04:08:13 GMT
+            value: Wed, 12 Feb 2025 14:44:03 GMT
           - name: content-type
             value: text/plain; charset=utf-8
           - name: transfer-encoding
@@ -1254,8 +1232,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-02-06T04:08:13.413Z
-      time: 376
+      startedDateTime: 2025-02-12T14:44:03.184Z
+      time: 306
       timings:
         blocked: -1
         connect: -1
@@ -1263,6 +1241,6 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 376
+        wait: 306
   pages: []
   version: "1.2"

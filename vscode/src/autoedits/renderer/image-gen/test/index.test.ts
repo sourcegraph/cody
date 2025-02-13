@@ -14,7 +14,17 @@ async function generateImageForTest(
 ): Promise<{ darkBuffer: Buffer; lightBuffer: Buffer }> {
     const doc = document('')
     await initImageSuggestionService()
-    const { light, dark } = generateSuggestionAsImage({ decorations, lang, mode, document: doc })
+    const { light, dark } = generateSuggestionAsImage({
+        decorations,
+        lang,
+        mode,
+        document: doc, // The default render config changes depending on the platform, so we need to set it manually for tests.
+        // We're using the same defaults as VS Code on MacOS here.
+        config: {
+            fontSize: 12,
+            lineHeight: 18,
+        },
+    })
     return {
         // These suggestions are generated as dataURLs, so let's convert them back to a useful Buffer for testing
         darkBuffer: Buffer.from(dark.split(',')[1], 'base64'),

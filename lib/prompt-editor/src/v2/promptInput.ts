@@ -1170,7 +1170,7 @@ function isEditorContentOnlyInitialContext(state: EditorState): boolean {
 /**
  * Creates a mention node from a context item.
  */
-export function createMentionNode(attrs: {
+function createMentionNode(attrs: {
     item: SerializedContextItem
     isFromInitialContext?: boolean
 }): Node {

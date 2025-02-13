@@ -87,9 +87,6 @@ export enum FeatureFlag {
     /** Enable use of new prosemirror prompt editor */
     CodyExperimentalPromptEditor = 'cody-experimental-prompt-editor',
 
-    /** Show Edit Code option in the Cody message submit dropdown */
-    CodyExperimentalShowEditCodeIntent = 'cody-experimental-show-edit-code-intent',
-
     /** Whether user has access to early-acess models. */
     CodyEarlyAccess = 'cody-early-access',
 
@@ -105,6 +102,9 @@ export enum FeatureFlag {
      * will be removed as soon as commands will be deprecated.
      */
     CodyPromptsV2 = 'prompt-creation-v2',
+
+    // Enables Anthropic's prompt caching feature on messages for Cody Clients
+    CodyPromptCachingOnMessages = 'cody-experimental-prompt-caching-on-messages',
 
     /** Whether user has access to the experimental agentic chat (fka Deep Cody) feature.
      * This replaces the old 'cody-deep-reflection' & 'deep-cody' that was used for internal testing.

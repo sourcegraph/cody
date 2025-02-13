@@ -3,7 +3,7 @@ import { getPositionAfterTextInsertion } from '../../../text-processing/utils'
 import type { TextDocumentChange } from './recent-edits-diff-helpers/recent-edits-diff-strategy'
 import { applyTextDocumentChanges } from './recent-edits-diff-helpers/utils'
 
-export interface TrackedDocument {
+interface TrackedDocument {
     content: string
     languageId: string
     uri: vscode.Uri

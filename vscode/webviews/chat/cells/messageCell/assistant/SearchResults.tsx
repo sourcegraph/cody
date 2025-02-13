@@ -17,7 +17,6 @@ import { Button } from '../../../../components/shadcn/ui/button'
 import { Label } from '../../../../components/shadcn/ui/label'
 import { useTelemetryRecorder } from '../../../../utils/telemetry'
 import { useOmniBoxDebug } from '../../../../utils/useOmniBox'
-import { FeedbackButtons } from '../../../components/FeedbackButtons'
 import { InfoMessage } from '../../../components/InfoMessage'
 import { LoadingDots } from '../../../components/LoadingDots'
 import { SearchFilters } from './SearchFilters'
@@ -27,8 +26,6 @@ import styles from './SearchResults.module.css'
 
 interface SearchResultsProps {
     message: ChatMessageWithSearch
-    showFeedbackButtons?: boolean
-    feedbackButtonsOnSubmit?: (text: string) => void
     onSelectedFiltersUpdate: (filters: NLSSearchDynamicFilter[]) => void
     /**
      * Whether or not search results can be selected as context for the next interaction.
@@ -40,8 +37,6 @@ const DEFAULT_RESULTS_LIMIT = 10
 export const SearchResults = ({
     message,
     onSelectedFiltersUpdate,
-    showFeedbackButtons,
-    feedbackButtonsOnSubmit,
     enableContextSelection,
 }: SearchResultsProps) => {
     const telemetryRecorder = useTelemetryRecorder()
@@ -250,7 +245,7 @@ export const SearchResults = ({
                                     </div>
                                 </div>
                                 <div className="tw-flex tw-items-center tw-gap-6 tw-px-4 md:tw-px-2">
-                                    {showFiltersButton && (
+                                    {showFiltersButton && !showFiltersSidebar && (
                                         <>
                                             <Button
                                                 onClick={() => {
@@ -404,9 +399,6 @@ export const SearchResults = ({
                                         More results
                                     </Button>
                                 )}
-                            {showFeedbackButtons && feedbackButtonsOnSubmit && (
-                                <FeedbackButtons feedbackButtonsOnSubmit={feedbackButtonsOnSubmit} />
-                            )}
                         </div>
                     </div>
                 )}

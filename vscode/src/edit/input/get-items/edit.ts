@@ -13,7 +13,7 @@ export const MODEL_ITEM: vscode.QuickPickItem = {
     alwaysShow: true,
 }
 
-export const RULES_ITEM: vscode.QuickPickItem = {
+const RULES_ITEM: vscode.QuickPickItem = {
     label: 'Rules',
     alwaysShow: true,
 }

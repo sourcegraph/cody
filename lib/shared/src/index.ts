@@ -42,7 +42,7 @@ export {
     ModelUsage,
     type ModelContextWindow,
 } from './models/types'
-export { getMockedDotComClientModels, getMockedDotComServerModels } from './models/dotcom'
+export { FIXTURE_MODELS } from './models/fixtures'
 export { ModelTag } from './models/tags'
 export {
     getProviderName,
@@ -106,6 +106,11 @@ export {
     type SymbolKind,
     type ContextItemTree,
     type ContextItemRepository,
+    type ContextItemCurrentSelection,
+    type ContextItemCurrentFile,
+    type ContextItemCurrentRepository,
+    type ContextItemCurrentDirectory,
+    type ContextItemCurrentOpenTabs,
     FILE_RANGE_TOOLTIP_LABEL,
     GENERAL_HELP_LABEL,
     IGNORED_FILE_WARNING_LABEL,

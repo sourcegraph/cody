@@ -54,7 +54,7 @@ interface LockObject {
     updateTimeout?: NodeJS.Timeout
 }
 
-export interface LockOptions {
+interface LockOptions {
     stale?: number
     update?: number
     realpath?: boolean
@@ -85,10 +85,7 @@ const defaultLockOptions: Pick<InternalLockOptions, 'stale' | 'realpath' | 'fs' 
         throw err
     },
 }
-export async function lock(
-    file: string,
-    options?: LockOptions
-): Promise<(error?: Error) => Promise<void>> {
+async function lock(file: string, options?: LockOptions): Promise<(error?: Error) => Promise<void>> {
     ensureCleanup()
     // options.stale = Math.max(options.stale || 0, 2000)
     // options.update =

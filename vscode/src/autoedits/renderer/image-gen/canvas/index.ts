@@ -19,7 +19,7 @@ async function initFont(): Promise<ArrayBuffer> {
     // Relative to the test file for our tests, but relative to the dist directory in production
     const fontPath =
         process.env.NODE_ENV === 'test'
-            ? path.join(__dirname, '../../../../resources/DejaVuSansMono.ttf')
+            ? path.join(__dirname, '../../../../../resources/DejaVuSansMono.ttf')
             : path.join(__dirname, 'DejaVuSansMono.ttf')
 
     const buffer = await fs.readFile(fontPath)

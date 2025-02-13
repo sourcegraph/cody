@@ -15,7 +15,7 @@ type ClientActionArg = Omit<Extract<ExtensionMessage, { type: 'clientAction' }>,
 }
 
 export type ClientActionListener = (arg: ClientActionArg) => void
-export type ClientActionListenerSelector = (arg: ClientActionArg) => boolean
+type ClientActionListenerSelector = (arg: ClientActionArg) => boolean
 
 interface ClientSubscriber {
     listener: ClientActionListener

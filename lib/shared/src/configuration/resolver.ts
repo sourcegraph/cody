@@ -36,7 +36,6 @@ export interface ClientState {
     anonymousUserID: string | null
     lastUsedChatModality: 'sidebar' | 'editor'
     modelPreferences: DefaultsAndUserPreferencesByEndpoint
-    waitlist_o1: boolean | null
 }
 
 /**
