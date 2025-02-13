@@ -1,12 +1,6 @@
 import type { EmulatedCanvas2D } from 'canvaskit-wasm'
 import { canvasKit, fontCache } from '.'
-import type {
-    VisualDiff,
-    VisualDiffLine,
-    VisualModifiedLineInfoAdded,
-    VisualModifiedLineInfoRemoved,
-    VisualRemovedLineInfo,
-} from '../decorated-diff/types'
+import type { VisualDiff, VisualDiffLine } from '../decorated-diff/types'
 import { DEFAULT_HIGHLIGHT_COLORS } from '../highlight/constants'
 import type { SYNTAX_HIGHLIGHT_THEME } from '../highlight/types'
 import { type RenderConfig, type UserProvidedRenderConfig, getRenderConfig } from './render-config'
@@ -189,21 +183,6 @@ export function drawDecorationsToCanvas(
     }
     const config = getRenderConfig(userConfig)
 
-    const lines =
-        mode === 'additions'
-            ? diff.lines.filter(
-                  (
-                      line
-                  ): line is Exclude<
-                      VisualDiffLine,
-                      VisualRemovedLineInfo | VisualModifiedLineInfoRemoved | VisualModifiedLineInfoAdded
-                  > =>
-                      line.type !== 'removed' &&
-                      line.type !== 'modified-removed' &&
-                      line.type !== 'modified-added'
-              )
-            : diff.lines
-
     // In order for us to draw to the canvas, we must first determine the correct
     // dimensions for the canvas. We can do this with a temporary Canvas that uses the same font
     const { ctx: tempCtx } = createCanvas({ height: 10, width: 10, fontSize: config.fontSize }, context)
@@ -212,7 +191,7 @@ export function drawDecorationsToCanvas(
     // and the required height of the canvas (number of lines determined by their line height)
     let tempYPos = config.padding.y
     let requiredWidth = 0
-    for (const line of lines) {
+    for (const line of diff.lines) {
         const text = 'newText' in line ? line.newText : line.text
         const measure = tempCtx.measureText(text)
         requiredWidth = Math.max(requiredWidth, config.padding.x + measure.width)
@@ -241,7 +220,7 @@ export function drawDecorationsToCanvas(
 
     // Paint text and colors onto the canvas
     let yPos = config.padding.y
-    for (const line of lines) {
+    for (const line of diff.lines) {
         const position = { x: config.padding.x, y: yPos }
 
         // Paint any background diff colors first, we will render the text over the top

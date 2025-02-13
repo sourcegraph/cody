@@ -36,7 +36,6 @@ function getHighlightTokens({
     }
 
     const { code, startLine } = getCodeBlock(diff, type)
-    console.log('got code', code)
     const { tokens } = syntaxHighlighter.codeToTokens(code, {
         theme: SYNTAX_HIGHLIGHTING_THEMES[theme].name,
         lang: highlightLang,
