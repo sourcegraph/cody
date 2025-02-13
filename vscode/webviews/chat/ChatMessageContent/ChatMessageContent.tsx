@@ -39,6 +39,47 @@ interface ChatMessageContentProps {
     className?: string
 }
 
+interface StreamingContent {
+    displayContent: string
+    thinkContent: string
+    hasThinkTag: boolean
+    isThinking: boolean
+}
+
+const extractThinkContent = (content: string): StreamingContent => {
+    const thinkRegex = /<think>([\s\S]*?)<\/think>/g
+    const thinkMatches = [...content.matchAll(thinkRegex)]
+
+    // Check if content has an unclosed think tag
+    const hasOpenThinkTag =
+        content.includes('<think>') && content.lastIndexOf('<think>') > content.lastIndexOf('</think>')
+
+    // Collect all think content, including partial content from unclosed tag
+    let thinkContent = thinkMatches
+        .map(match => match[1].trim())
+        .filter(Boolean)
+        .join('\n\n')
+
+    if (hasOpenThinkTag) {
+        const lastThinkContent = content.slice(content.lastIndexOf('<think>') + 7)
+        thinkContent = thinkContent ? `${thinkContent}\n\n${lastThinkContent}` : lastThinkContent
+    }
+
+    // Remove complete think tags from display content
+    let displayContent = content.replace(thinkRegex, '')
+    // Remove any unclosed think tag and its content
+    if (hasOpenThinkTag) {
+        displayContent = displayContent.slice(0, displayContent.lastIndexOf('<think>'))
+    }
+
+    return {
+        displayContent,
+        thinkContent,
+        hasThinkTag: thinkMatches.length > 0 || hasOpenThinkTag,
+        isThinking: hasOpenThinkTag,
+    }
+}
+
 /**
  * A component presenting the content of a chat message.
  */
@@ -204,10 +245,69 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
         smartApplyStates,
     ])
 
+    const { displayContent, thinkContent, hasThinkTag, isThinking } = useMemo(
+        () => extractThinkContent(displayMarkdown),
+        [displayMarkdown]
+    )
+
     return (
         <div ref={rootRef} data-testid="chat-message-content">
+            {hasThinkTag && (
+                <details open className={styles.thinkContainer}>
+                    <summary className={styles.thinkSummary}>
+                        <div className={styles.thinkTitleContainer}>
+                            <div className={styles.thinkIconContainer}>
+                                <svg
+                                    className={clsx(styles.thinkIcon, isThinking && styles.thinking)}
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                    role="img"
+                                    aria-label="Thinking indicator"
+                                >
+                                    <title>Thinking indicator</title>
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707"
+                                    />
+                                </svg>
+                            </div>
+                            <span className={styles.thinkTitle}>
+                                {isThinking ? 'Thinking...' : 'Thought Process'}
+                            </span>
+                        </div>
+                        <div className={styles.thinkToggleContainer}>
+                            <div className={styles.thinkToggleButton}>
+                                <svg
+                                    className={styles.thinkToggleIcon}
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                    role="img"
+                                    aria-label="Toggle thought process"
+                                >
+                                    <title>Toggle thought process</title>
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        d="M19 9l-7 7-7-7"
+                                    />
+                                </svg>
+                            </div>
+                        </div>
+                    </summary>
+                    <div className={styles.thinkContent}>
+                        <MarkdownFromCody className={styles.thinkMarkdown}>
+                            {thinkContent}
+                        </MarkdownFromCody>
+                    </div>
+                </details>
+            )}
             <MarkdownFromCody className={clsx(styles.content, className)}>
-                {displayMarkdown}
+                {displayContent}
             </MarkdownFromCody>
         </div>
     )
