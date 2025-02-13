@@ -165,7 +165,7 @@ export const HistoryTabWithData: React.FC<{
             </header>
             {isDeleteAllActive && (
                 <div
-                    className="tw-my-4 tw-p-4 tw-mx-[0.5rem] tw-border tw-border-red-300 tw-rounded-lg tw-bg-red-50 dark:tw-bg-muted-transparent dark:tw-text-red-400 dark:tw-border-red-800"
+                    className="tw-my-4 tw-p-4 tw-mx-[0.5rem] tw-border tw-border-red-300 tw-rounded-lg tw-bg-muted-transparent dark:tw-text-red-400 dark:tw-border-red-800"
                     role="alert"
                 >
                     <div className="tw-flex tw-items-center">
@@ -179,6 +179,7 @@ export const HistoryTabWithData: React.FC<{
                     <div className="tw-flex">
                         <Button
                             size="sm"
+                            aria-label="Delete all chats"
                             className="tw-text-white tw-bg-red-800 hover:tw-bg-red-900 focus:tw-ring-4 focus:tw-outline-none focus:tw-ring-red-200 tw-font-medium tw-rounded-lg tw-text-xs tw-px-3 tw-py-1.5 tw-me-2 tw-text-center tw-inline-flex tw-items-center dark:tw-bg-red-600 dark:hover:tw-bg-red-700 dark:focus:tw-ring-red-800"
                             onClick={() => {
                                 onDeleteButtonClick('clear-all-no-confirm')
@@ -191,7 +192,7 @@ export const HistoryTabWithData: React.FC<{
                             size="sm"
                             className="tw-text-red-800 tw-bg-transparent tw-border tw-border-red-800 hover:tw-bg-red-900 hover:tw-text-white focus:tw-ring-4 focus:tw-outline-none focus:tw-ring-red-200 tw-font-medium tw-rounded-lg tw-text-xs tw-px-3 tw-py-1.5 tw-text-center dark:hover:tw-bg-red-600 dark:tw-border-red-600 dark:tw-text-red-400 dark:hover:tw-text-white dark:focus:tw-ring-red-800"
                             onClick={() => setIsDeleteAllActive(false)}
-                            aria-label="Close"
+                            aria-label="Cancel"
                         >
                             Cancel
                         </Button>
@@ -204,7 +205,7 @@ export const HistoryTabWithData: React.FC<{
                     onValueChange={setSearchText}
                     placeholder="Search..."
                     autoFocus={true}
-                    className="tw-m-[0.5rem] !tw-p-[0.5rem] tw-rounded tw-bg-[var(--vscode-input-background)] tw-text-[var(--vscode-input-foreground)] focus:tw-shadow-[0_0_0_0.125rem_var(--vscode-focusBorder)]"
+                    className="tw-m-[0.5rem] !tw-p-[0.5rem] tw-rounded tw-bg-input-background tw-text-input-foreground focus:tw-shadow-[0_0_0_0.125rem_var(--vscode-focusBorder)]"
                     disabled={chats.length === 0}
                 />
                 <div className="tw-flex-1 tw-overflow-y-auto tw-m-2">
