@@ -4,6 +4,7 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.sourcegraph.config.ConfigUtil
+import com.sourcegraph.config.ConfigUtil.isIntegrationTestModeEnabled
 import com.sourcegraph.find.FindService
 
 @Service(Service.Level.PROJECT)
@@ -19,7 +20,8 @@ class CodyAuthService(val project: Project) {
 
   fun setActivated(isActivated: Boolean) {
     this.isActivated = isActivated
-    if (isActivated) FindService.getInstance(project).refreshConfiguration()
+    if (isActivated && !isIntegrationTestModeEnabled())
+        FindService.getInstance(project).refreshConfiguration()
   }
 
   fun getEndpoint(): SourcegraphServerPath {
