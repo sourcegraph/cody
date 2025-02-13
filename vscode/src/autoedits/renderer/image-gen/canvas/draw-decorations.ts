@@ -1,11 +1,11 @@
 import type { EmulatedCanvas2D } from 'canvaskit-wasm'
 import { canvasKit, fontCache } from '.'
-import type { RemovedLineInfo } from '../../decorators/base'
 import type {
-    ModifiedLineInfoAdded,
-    ModifiedLineInfoRemoved,
     VisualDiff,
     VisualDiffLine,
+    VisualModifiedLineInfoAdded,
+    VisualModifiedLineInfoRemoved,
+    VisualRemovedLineInfo,
 } from '../decorated-diff/types'
 import { DEFAULT_HIGHLIGHT_COLORS } from '../highlight/constants'
 import type { SYNTAX_HIGHLIGHT_THEME } from '../highlight/types'
@@ -47,7 +47,7 @@ function drawText(
 ): number {
     if (line.type === 'removed' || line.type === 'modified-removed') {
         // Handle deletions first
-        const highlights = line.highlights[mode]
+        const highlights = line.syntaxHighlights[mode]
         if (highlights.length === 0) {
             // No syntax highlighting, we probably don't support this language via Shiki
             // Default to white or black depending on the theme
@@ -69,7 +69,8 @@ function drawText(
     }
 
     const lineText = 'newText' in line ? line.newText : line.text
-    const highlights = 'newHighlights' in line ? line.newHighlights[mode] : line.highlights[mode]
+    const highlights =
+        'newSyntaxHighlights' in line ? line.newSyntaxHighlights[mode] : line.syntaxHighlights[mode]
     if (highlights.length === 0) {
         // No syntax highlighting, we probably don't support this language via Shiki
         // Default to white or black depending on the theme
@@ -195,7 +196,7 @@ export function drawDecorationsToCanvas(
                       line
                   ): line is Exclude<
                       VisualDiffLine,
-                      RemovedLineInfo | ModifiedLineInfoRemoved | ModifiedLineInfoAdded
+                      VisualRemovedLineInfo | VisualModifiedLineInfoRemoved | VisualModifiedLineInfoAdded
                   > =>
                       line.type !== 'removed' &&
                       line.type !== 'modified-removed' &&

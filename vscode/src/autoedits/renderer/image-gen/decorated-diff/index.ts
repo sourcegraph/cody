@@ -1,8 +1,8 @@
 import type * as vscode from 'vscode'
 import type { DecorationInfo } from '../../decorators/base'
-import { blockify } from '../../decorators/blockify-new'
 import { syntaxHighlightDecorations } from '../highlight/highlight-decorations'
-import type { VisualDiff, VisualDiffAdditions, VisualDiffLine } from './types'
+import { blockify } from './blockify'
+import type { VisualDiff, VisualDiffLine } from './types'
 
 export function makeDecoratedDiff(
     decorationInfo: DecorationInfo,
@@ -44,10 +44,31 @@ export function makeVisualDiff(
 
     if (mode === 'additions') {
         // We only care about existing and new lines here.
-        const lines = relevantDiff.filter(line =>
-            ['added', 'modified', 'unchanged'].includes(line.type)
-        ) as VisualDiffAdditions[]
-        return { type: mode, lines: lines }
+        const lines = relevantDiff
+            .filter(line => ['added', 'modified', 'unchanged'].includes(line.type))
+            .map(line => {
+                if (line.type === 'modified') {
+                    return {
+                        ...line,
+                        oldSyntaxHighlights: {
+                            dark: [],
+                            light: [],
+                        },
+                        newSyntaxHighlights: {
+                            dark: [],
+                            light: [],
+                        },
+                    }
+                }
+                return {
+                    ...line,
+                    syntaxHighlights: {
+                        dark: [],
+                        light: [],
+                    },
+                }
+            })
+        return { type: mode, lines }
     }
 
     // We need to transform the diff into a unified diff
@@ -64,23 +85,41 @@ export function makeVisualDiff(
             deletions.push({
                 type: 'modified-removed',
                 text: line.oldText,
-                highlights: line.oldHighlights,
                 changes: line.changes,
                 originalLineNumber: line.originalLineNumber,
                 modifiedLineNumber: line.modifiedLineNumber,
+                syntaxHighlights: {
+                    dark: [],
+                    light: [],
+                },
             })
             additions.push({
                 type: 'modified-added',
                 text: line.newText,
-                highlights: line.newHighlights,
                 changes: line.changes,
                 originalLineNumber: line.originalLineNumber,
                 modifiedLineNumber: line.modifiedLineNumber,
+                syntaxHighlights: {
+                    dark: [],
+                    light: [],
+                },
             })
         } else if (line.type === 'removed') {
-            deletions.push(line)
+            deletions.push({
+                ...line,
+                syntaxHighlights: {
+                    dark: [],
+                    light: [],
+                },
+            })
         } else if (line.type === 'added') {
-            additions.push(line)
+            additions.push({
+                ...line,
+                syntaxHighlights: {
+                    dark: [],
+                    light: [],
+                },
+            })
         } else {
             // We have hit an unchanged line, we can now flush any pending deletions/additions
             // in the desired order, and continue with the unchanged line
@@ -90,7 +129,13 @@ export function makeVisualDiff(
                 deletions.length = 0
                 additions.length = 0
             }
-            lines.push(line)
+            lines.push({
+                ...line,
+                syntaxHighlights: {
+                    dark: [],
+                    light: [],
+                },
+            })
         }
     }
 

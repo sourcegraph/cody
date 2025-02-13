@@ -124,14 +124,6 @@ export const MOCK_DIFF = {
                     modifiedRange: new vscode.Range(18, 40, 18, 41),
                 },
             ],
-            oldHighlights: {
-                dark: [],
-                light: [],
-            },
-            newHighlights: {
-                dark: [],
-                light: [],
-            },
         },
         {
             id: '5c13f3ea-c150-4b1e-ba48-f91228bc339a',
@@ -205,14 +197,6 @@ export const MOCK_DIFF = {
                     modifiedRange: new vscode.Range(19, 32, 19, 33),
                 },
             ],
-            oldHighlights: {
-                dark: [],
-                light: [],
-            },
-            newHighlights: {
-                dark: [],
-                light: [],
-            },
         },
         {
             id: 'db96ee03-96e1-42b5-b8a4-cdbd6f99725f',
@@ -286,14 +270,6 @@ export const MOCK_DIFF = {
                     modifiedRange: new vscode.Range(20, 32, 20, 33),
                 },
             ],
-            oldHighlights: {
-                dark: [],
-                light: [],
-            },
-            newHighlights: {
-                dark: [],
-                light: [],
-            },
         },
         {
             id: 'fa4dbbbb-57eb-4095-87df-c50800ef6b4b',
@@ -367,14 +343,6 @@ export const MOCK_DIFF = {
                     modifiedRange: new vscode.Range(21, 32, 21, 33),
                 },
             ],
-            oldHighlights: {
-                dark: [],
-                light: [],
-            },
-            newHighlights: {
-                dark: [],
-                light: [],
-            },
         },
     ],
     removedLines: [],
@@ -386,10 +354,6 @@ export const MOCK_DIFF = {
             originalLineNumber: 0,
             modifiedLineNumber: 0,
             text: '"""',
-            highlights: {
-                dark: [],
-                light: [],
-            },
         },
         {
             id: '26c852e4-e4dc-46dd-9b80-0b5ed5a4729a',
@@ -397,10 +361,6 @@ export const MOCK_DIFF = {
             originalLineNumber: 1,
             modifiedLineNumber: 1,
             text: '<<<<',
-            highlights: {
-                dark: [],
-                light: [],
-            },
         },
         {
             id: 'ca6b1d89-4910-49d2-9be8-7d6bf28efef2',
@@ -408,10 +368,6 @@ export const MOCK_DIFF = {
             originalLineNumber: 2,
             modifiedLineNumber: 2,
             text: 'def debug(arr1, arr2, arr3):',
-            highlights: {
-                dark: [],
-                light: [],
-            },
         },
         {
             id: '2fd98bd4-a910-4d99-9f4b-67ce19f1d7d1',
@@ -419,10 +375,6 @@ export const MOCK_DIFF = {
             originalLineNumber: 3,
             modifiedLineNumber: 3,
             text: '    for index in range(len(arr1)):',
-            highlights: {
-                dark: [],
-                light: [],
-            },
         },
         {
             id: '222fb521-62d2-4a3f-bba4-8f48845f6bd9',
@@ -430,10 +382,6 @@ export const MOCK_DIFF = {
             originalLineNumber: 4,
             modifiedLineNumber: 4,
             text: '        print(arr1[index])',
-            highlights: {
-                dark: [],
-                light: [],
-            },
         },
         {
             id: '1a28c50a-6f8f-4dc2-b58d-903660eeabfc',
@@ -441,10 +389,6 @@ export const MOCK_DIFF = {
             originalLineNumber: 5,
             modifiedLineNumber: 5,
             text: '        print(arr2[index])',
-            highlights: {
-                dark: [],
-                light: [],
-            },
         },
         {
             id: '1be562c8-4bcb-4bcb-9619-1fd543e90dee',
@@ -452,10 +396,6 @@ export const MOCK_DIFF = {
             originalLineNumber: 6,
             modifiedLineNumber: 6,
             text: '        print(arr3[index])',
-            highlights: {
-                dark: [],
-                light: [],
-            },
         },
         {
             id: '1c1ddd24-839d-44be-ad42-250231ece0fe',
@@ -463,10 +403,6 @@ export const MOCK_DIFF = {
             originalLineNumber: 7,
             modifiedLineNumber: 7,
             text: '====',
-            highlights: {
-                dark: [],
-                light: [],
-            },
         },
         {
             id: '6be5d8f3-b935-4e13-94f9-4c85a3a1489c',
@@ -474,10 +410,6 @@ export const MOCK_DIFF = {
             originalLineNumber: 8,
             modifiedLineNumber: 8,
             text: 'def debug(arr1, arr2, arr3):',
-            highlights: {
-                dark: [],
-                light: [],
-            },
         },
         {
             id: 'c956f3f0-73f6-4f70-be56-21db04406ed1',
@@ -485,10 +417,6 @@ export const MOCK_DIFF = {
             originalLineNumber: 9,
             modifiedLineNumber: 9,
             text: '    for currentIndex in range(len(arr1)):',
-            highlights: {
-                dark: [],
-                light: [],
-            },
         },
         {
             id: 'c828b053-88a1-4eb8-ab14-0320b96c5509',
@@ -496,10 +424,6 @@ export const MOCK_DIFF = {
             originalLineNumber: 10,
             modifiedLineNumber: 10,
             text: '        print(arr1[currentIndex])',
-            highlights: {
-                dark: [],
-                light: [],
-            },
         },
         {
             id: '8f86bcfb-9cc3-4bdd-ac77-fd044d9e06df',
@@ -507,10 +431,6 @@ export const MOCK_DIFF = {
             originalLineNumber: 11,
             modifiedLineNumber: 11,
             text: '        print(arr2[currentIndex])',
-            highlights: {
-                dark: [],
-                light: [],
-            },
         },
         {
             id: 'd8a8309f-1842-4846-a346-227c449420f4',
@@ -518,10 +438,6 @@ export const MOCK_DIFF = {
             originalLineNumber: 12,
             modifiedLineNumber: 12,
             text: '        print(arr3[currentIndex])',
-            highlights: {
-                dark: [],
-                light: [],
-            },
         },
         {
             id: 'cbb2e905-4672-4ec6-b87a-f594a1b14d3b',
@@ -529,10 +445,6 @@ export const MOCK_DIFF = {
             originalLineNumber: 13,
             modifiedLineNumber: 13,
             text: '>>>>',
-            highlights: {
-                dark: [],
-                light: [],
-            },
         },
         {
             id: '1ffb7528-5298-403b-b52c-f6578a1494f7',
@@ -540,10 +452,6 @@ export const MOCK_DIFF = {
             originalLineNumber: 14,
             modifiedLineNumber: 14,
             text: '"""',
-            highlights: {
-                dark: [],
-                light: [],
-            },
         },
         {
             id: '8cdd6d67-886e-4ccf-82c1-72278233940f',
@@ -551,10 +459,6 @@ export const MOCK_DIFF = {
             originalLineNumber: 15,
             modifiedLineNumber: 15,
             text: '',
-            highlights: {
-                dark: [],
-                light: [],
-            },
         },
         {
             id: 'fef0133a-a86d-4256-a945-97492cf9ef97',
@@ -562,10 +466,6 @@ export const MOCK_DIFF = {
             originalLineNumber: 16,
             modifiedLineNumber: 16,
             text: '',
-            highlights: {
-                dark: [],
-                light: [],
-            },
         },
         {
             id: 'fac65cfd-3fa4-4bec-b312-d7e82e19e806',
@@ -573,10 +473,6 @@ export const MOCK_DIFF = {
             originalLineNumber: 17,
             modifiedLineNumber: 17,
             text: 'def debug(arr1, arr2, arr3):',
-            highlights: {
-                dark: [],
-                light: [],
-            },
         },
         {
             id: '2b74d3e9-3f2b-4466-9686-cb5c11fefd64',
@@ -584,10 +480,6 @@ export const MOCK_DIFF = {
             originalLineNumber: 22,
             modifiedLineNumber: 22,
             text: '',
-            highlights: {
-                dark: [],
-                light: [],
-            },
         },
     ],
 } satisfies DecorationInfo

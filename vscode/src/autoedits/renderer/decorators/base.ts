@@ -48,22 +48,10 @@ export interface AutoEditsDecorator extends vscode.Disposable {
  */
 export type DecorationLineInfo = AddedLineInfo | RemovedLineInfo | ModifiedLineInfo | UnchangedLineInfo
 
-export interface SyntaxHighlight {
-    dark: {
-        range: [number, number]
-        color: string
-    }[]
-    light: {
-        range: [number, number]
-        color: string
-    }[]
-}
-
 export interface AddedLineInfo {
     id: string
     type: 'added'
     text: string
-    highlights: SyntaxHighlight
     modifiedLineNumber: number
 }
 
@@ -71,7 +59,6 @@ export interface RemovedLineInfo {
     id: string
     type: 'removed'
     text: string
-    highlights: SyntaxHighlight
     originalLineNumber: number
 }
 
@@ -79,9 +66,7 @@ export interface ModifiedLineInfo {
     id: string
     type: 'modified'
     oldText: string
-    oldHighlights: SyntaxHighlight
     newText: string
-    newHighlights: SyntaxHighlight
     changes: LineChange[]
     originalLineNumber: number
     modifiedLineNumber: number
@@ -90,7 +75,6 @@ export interface UnchangedLineInfo {
     id: string
     type: 'unchanged'
     text: string
-    highlights: SyntaxHighlight
     originalLineNumber: number
     modifiedLineNumber: number
 }

@@ -72,10 +72,6 @@ function computeDiffOperations(originalLines: string[], modifiedLines: string[])
                 originalLineNumber: originalIndex,
                 modifiedLineNumber: modifiedIndex,
                 text: modifiedLines[modifiedIndex],
-                highlights: {
-                    dark: [],
-                    light: [],
-                },
             })
             originalIndex++
             modifiedIndex++
@@ -108,10 +104,6 @@ function computeDiffOperations(originalLines: string[], modifiedLines: string[])
                     originalLineNumber: originalStart + i,
                     modifiedLineNumber: modifiedStart + i,
                     text: modifiedLine,
-                    highlights: {
-                        dark: [],
-                        light: [],
-                    },
                 })
             }
             i++
@@ -125,10 +117,6 @@ function computeDiffOperations(originalLines: string[], modifiedLines: string[])
                 type: 'removed',
                 originalLineNumber: originalStart + j,
                 text,
-                highlights: {
-                    dark: [],
-                    light: [],
-                },
             })
         }
 
@@ -140,10 +128,6 @@ function computeDiffOperations(originalLines: string[], modifiedLines: string[])
                 type: 'added',
                 modifiedLineNumber: modifiedStart + j,
                 text,
-                highlights: {
-                    dark: [],
-                    light: [],
-                },
             })
         }
 
@@ -160,10 +144,6 @@ function computeDiffOperations(originalLines: string[], modifiedLines: string[])
             originalLineNumber: originalIndex,
             modifiedLineNumber: modifiedIndex,
             text: modifiedLines[modifiedIndex],
-            highlights: {
-                dark: [],
-                light: [],
-            },
         })
         originalIndex++
         modifiedIndex++
@@ -203,14 +183,6 @@ function createModifiedLineInfo({
         oldText: originalText,
         newText: modifiedText,
         changes: lineChanges,
-        oldHighlights: {
-            dark: [],
-            light: [],
-        },
-        newHighlights: {
-            dark: [],
-            light: [],
-        },
     }
 }
 

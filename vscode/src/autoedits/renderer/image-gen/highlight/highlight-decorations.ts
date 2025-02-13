@@ -4,28 +4,27 @@ import type { SYNTAX_HIGHLIGHT_THEME } from './types'
 import type { ThemedToken } from 'shiki/types.mjs'
 
 import type { MultiLineSupportedLanguage } from '../../../../completions/detect-multiline'
-import type { AddedLineInfo, RemovedLineInfo } from '../../decorators/base'
-import type {
-    ModifiedLineInfoAdded,
-    ModifiedLineInfoRemoved,
-    VisualDiff,
-    VisualDiffLine,
-} from '../decorated-diff/types'
+import type { SyntaxHighlightRanges, VisualDiff } from '../decorated-diff/types'
+import { getCodeBlock } from '../decorated-diff/utils'
 import { DEFAULT_HIGHLIGHT_COLORS } from './constants'
 import { SYNTAX_HIGHLIGHTING_LANGUAGES, SYNTAX_HIGHLIGHTING_THEMES } from './shiki'
 
 interface GetHighlightTokensParams {
-    code: string
+    diff: VisualDiff
     lang: string
     theme: SYNTAX_HIGHLIGHT_THEME
-    offset: number
+    /**
+     * The actual code we care about. We need to highlight incoming and outgoing code
+     * separately to ensure we get the correct highlighting for each side.
+     */
+    type: 'incoming' | 'outgoing'
 }
 
 function getHighlightTokens({
-    code,
+    diff,
     lang,
     theme,
-    offset,
+    type,
 }: GetHighlightTokensParams): Map<number, ThemedToken[]> {
     if (!syntaxHighlighter) {
         throw new Error('Syntax highlighter not initialized')
@@ -36,6 +35,8 @@ function getHighlightTokens({
         return new Map()
     }
 
+    const { code, startLine } = getCodeBlock(diff, type)
+    console.log('got code', code)
     const { tokens } = syntaxHighlighter.codeToTokens(code, {
         theme: SYNTAX_HIGHLIGHTING_THEMES[theme].name,
         lang: highlightLang,
@@ -44,28 +45,29 @@ function getHighlightTokens({
     const result = new Map<number, ThemedToken[]>()
     for (let i = 0; i < tokens.length; i++) {
         const lineTokens = tokens[i]
-        result.set(i + offset, lineTokens)
+        result.set(i + startLine, lineTokens)
     }
 
     return result
 }
 
-function processTokens(
+function getHighlightsForLine(
     lineTokens: ThemedToken[],
-    highlights: { range: [number, number]; color: string }[],
     theme: SYNTAX_HIGHLIGHT_THEME
-): void {
+): SyntaxHighlightRanges[] {
+    const syntaxHighlights: SyntaxHighlightRanges[] = []
     let currentPosition = 0
     for (const token of lineTokens) {
         const tokenLength = token.content.length
         const startPos = currentPosition
         const endPos = currentPosition + tokenLength
-        highlights.push({
+        syntaxHighlights.push({
             range: [startPos, endPos],
             color: token.color || DEFAULT_HIGHLIGHT_COLORS[theme],
         })
         currentPosition += tokenLength
     }
+    return syntaxHighlights
 }
 
 /**
@@ -81,52 +83,40 @@ export function syntaxHighlightDecorations(
 ): VisualDiff {
     const mode = diff.type
 
-    // Rebuild the codeblocks
-    const suggestedLines = diff.lines.filter(
-        (line): line is Exclude<VisualDiffLine, RemovedLineInfo | ModifiedLineInfoRemoved> =>
-            ['added', 'modified', 'modified-added', 'unchanged'].includes(line.type)
-    )
-    const previousLines = diff.lines.filter(
-        (line): line is Exclude<VisualDiffLine, AddedLineInfo | ModifiedLineInfoAdded> =>
-            ['removed', 'modified', 'modified-removed', 'unchanged'].includes(line.type)
-    )
-
-    const suggestedCode = suggestedLines
-        .map(line => ('newText' in line ? line.newText : line.text))
-        .join('\n')
-    const previousCode = previousLines
-        .map(line => ('oldText' in line ? line.oldText : line.text))
-        .join('\n')
-
-    const suggestedHighlights = getHighlightTokens({
-        code: suggestedCode,
+    const incomingHighlights = getHighlightTokens({
+        diff,
         lang,
         theme,
-        offset: suggestedLines[0].modifiedLineNumber,
+        type: 'incoming',
     })
-    const previousHighlights = getHighlightTokens({
-        code: previousCode,
-        lang,
-        theme,
-        offset: previousLines[0].originalLineNumber,
-    })
+
+    // We only care about outgoingHighlights for unified diffs
+    let outgoingHighlights: Map<number, ThemedToken[]> | undefined
+    if (diff.type === 'unified') {
+        outgoingHighlights = getHighlightTokens({
+            diff,
+            lang,
+            theme,
+            type: 'outgoing',
+        })
+    }
 
     const lines = diff.lines.map(line => {
         if (line.type === 'removed' || line.type === 'modified-removed') {
-            // We have to handle removals separately. This is because the removed code may have different highlighting to
-            // the added code. We need to apply the same highlighting to the removed code as the added code.
-            const lineTokens = previousHighlights.get(line.originalLineNumber)
+            const lineTokens = outgoingHighlights?.get(line.originalLineNumber)
             if (lineTokens) {
-                processTokens(lineTokens, line.highlights[theme], theme)
+                line.syntaxHighlights[theme] = getHighlightsForLine(lineTokens, theme)
             }
             return line
         }
 
-        const lineTokens = suggestedHighlights.get(line.modifiedLineNumber)
+        const lineTokens = incomingHighlights.get(line.modifiedLineNumber)
         if (lineTokens) {
-            // We have already handle any deletions above, so we always use incoming highlights where possible
-            const highlights = 'newHighlights' in line ? line.newHighlights : line.highlights
-            processTokens(lineTokens, highlights[theme], theme)
+            if ('syntaxHighlights' in line) {
+                line.syntaxHighlights[theme] = getHighlightsForLine(lineTokens, theme)
+            } else {
+                line.newSyntaxHighlights[theme] = getHighlightsForLine(lineTokens, theme)
+            }
         }
         return line
     })

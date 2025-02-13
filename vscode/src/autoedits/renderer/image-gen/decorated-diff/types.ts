@@ -3,36 +3,55 @@ import type {
     LineChange,
     ModifiedLineInfo,
     RemovedLineInfo,
-    SyntaxHighlight,
     UnchangedLineInfo,
 } from '../../decorators/base'
 
-interface BaseModifiedLineSplit {
+export interface SyntaxHighlightRanges {
+    range: [number, number]
+    color: string
+}
+
+export interface LineHighlights {
+    syntaxHighlights: {
+        dark: SyntaxHighlightRanges[]
+        light: SyntaxHighlightRanges[]
+    }
+}
+
+export type VisualAddedLineInfo = AddedLineInfo & LineHighlights
+export type VisualRemovedLineInfo = RemovedLineInfo & LineHighlights
+export type VisualUnchangedLineInfo = UnchangedLineInfo & LineHighlights
+export type VisualModifiedLineInfo = ModifiedLineInfo & {
+    oldSyntaxHighlights: LineHighlights['syntaxHighlights']
+    newSyntaxHighlights: LineHighlights['syntaxHighlights']
+}
+
+interface VisualBaseModifiedLine {
     type: 'modified-added' | 'modified-removed'
     changes: LineChange[]
     originalLineNumber: number
     modifiedLineNumber: number
+    syntaxHighlights: LineHighlights['syntaxHighlights']
 }
 
-export interface ModifiedLineInfoAdded extends BaseModifiedLineSplit {
+export type VisualModifiedLineInfoAdded = VisualBaseModifiedLine & {
     type: 'modified-added'
     text: string
-    highlights: SyntaxHighlight
 }
-export interface ModifiedLineInfoRemoved extends BaseModifiedLineSplit {
+
+export type VisualModifiedLineInfoRemoved = VisualBaseModifiedLine & {
     type: 'modified-removed'
     text: string
-    highlights: SyntaxHighlight
 }
 
-export type VisualDiffAdditions = AddedLineInfo | RemovedLineInfo | ModifiedLineInfo
+export type VisualDiffAdditions = VisualAddedLineInfo | VisualRemovedLineInfo | VisualModifiedLineInfo
 
 export type VisualDiffUnified =
-    | AddedLineInfo
-    | RemovedLineInfo
-    | ModifiedLineInfoAdded
-    | ModifiedLineInfoRemoved
-    | UnchangedLineInfo
+    | VisualAddedLineInfo
+    | VisualRemovedLineInfo
+    | VisualModifiedLineInfoAdded
+    | VisualModifiedLineInfoRemoved
+    | VisualUnchangedLineInfo
 
 export type VisualDiffLine = VisualDiffAdditions | VisualDiffUnified
 

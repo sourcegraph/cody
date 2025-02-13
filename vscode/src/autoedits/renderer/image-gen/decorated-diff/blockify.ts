@@ -1,21 +1,11 @@
 import { getEditorTabSize } from '@sourcegraph/cody-shared'
 import detectIndent from 'detect-indent'
 import * as vscode from 'vscode'
-import type { VisualDiff } from '../image-gen/decorated-diff/types'
-import type { LineChange, SyntaxHighlight } from './base'
+import type { LineChange } from '../../decorators/base'
+import type { LineHighlights, VisualDiff } from '../decorated-diff/types'
+import { getCodeBlock } from '../decorated-diff/utils'
 
 export const UNICODE_SPACE = '\u00A0'
-
-export function getCodeBlock(diff: VisualDiff, type: 'incoming' | 'outgoing'): string {
-    return diff.lines
-        .map(line => {
-            if (type === 'incoming') {
-                return 'newText' in line ? line.newText : line.text
-            }
-            return 'oldText' in line ? line.oldText : line.text
-        })
-        .join('\n')
-}
 
 export function blockify(
     diff: VisualDiff,
@@ -37,8 +27,8 @@ const transformTabsToSpaces = (text: string, tabSize: number): string =>
 const countLeadingTabs = (text: string): number => (text.match(/\t/g) || []).length
 
 export function convertToSpaceIndentation(document: vscode.TextDocument, diff: VisualDiff): VisualDiff {
-    const incomingCodeBlock = getCodeBlock(diff, 'incoming')
-    const incomingIndentation = detectIndent(incomingCodeBlock).type
+    const { code } = getCodeBlock(diff, 'incoming')
+    const incomingIndentation = detectIndent(code).type
     if (incomingIndentation === 'space') {
         // In order to reliably render spaces in VS Code decorations, we must convert them to
         // their unicode equivalent
@@ -66,12 +56,12 @@ export function convertToSpaceIndentation(document: vscode.TextDocument, diff: V
         if (line.type === 'modified') {
             return {
                 ...line,
-                oldHighlights: shiftHighlights(
-                    line.oldHighlights,
+                oldSyntaxHighlights: shiftHighlights(
+                    line.oldSyntaxHighlights,
                     countLeadingTabs(line.oldText) * (tabSize - 1)
                 ),
-                newHighlights: shiftHighlights(
-                    line.newHighlights,
+                newSyntaxHighlights: shiftHighlights(
+                    line.newSyntaxHighlights,
                     countLeadingTabs(line.newText) * (tabSize - 1)
                 ),
                 oldText: transformTabsToSpaces(line.oldText, tabSize),
@@ -83,7 +73,7 @@ export function convertToSpaceIndentation(document: vscode.TextDocument, diff: V
         return {
             ...line,
             changes: 'changes' in line ? shiftChanges(line.changes, leadingTabs * (tabSize - 1)) : [],
-            highlights: shiftHighlights(line.highlights, leadingTabs * (tabSize - 1)),
+            highlights: shiftHighlights(line.syntaxHighlights, leadingTabs * (tabSize - 1)),
             text: transformTabsToSpaces(line.text, tabSize),
         }
     })
@@ -120,8 +110,14 @@ function removeLeadingWhitespaceBlock(diff: VisualDiff): VisualDiff {
             return {
                 ...line,
                 changes: shiftChanges(line.changes, -leastCommonWhitespacePrefix.length),
-                oldHighlights: shiftHighlights(line.oldHighlights, -leastCommonWhitespacePrefix.length),
-                newHighlights: shiftHighlights(line.newHighlights, -leastCommonWhitespacePrefix.length),
+                oldHighlights: shiftHighlights(
+                    line.oldSyntaxHighlights,
+                    -leastCommonWhitespacePrefix.length
+                ),
+                newHighlights: shiftHighlights(
+                    line.newSyntaxHighlights,
+                    -leastCommonWhitespacePrefix.length
+                ),
                 oldText: line.oldText.substring(leastCommonWhitespacePrefix.length),
                 newText: line.newText.substring(leastCommonWhitespacePrefix.length),
             }
@@ -131,7 +127,7 @@ function removeLeadingWhitespaceBlock(diff: VisualDiff): VisualDiff {
             ...line,
             changes:
                 'changes' in line ? shiftChanges(line.changes, -leastCommonWhitespacePrefix.length) : [],
-            highlights: shiftHighlights(line.highlights, -leastCommonWhitespacePrefix.length),
+            highlights: shiftHighlights(line.syntaxHighlights, -leastCommonWhitespacePrefix.length),
             text: line.text.substring(leastCommonWhitespacePrefix.length),
         }
     })
@@ -165,7 +161,10 @@ function padTrailingWhitespaceBlock(diff: VisualDiff, mode: 'additions' | 'unifi
     return { ...diff, lines }
 }
 
-function shiftHighlights(highlights: SyntaxHighlight, offset: number): SyntaxHighlight {
+function shiftHighlights(
+    highlights: LineHighlights['syntaxHighlights'],
+    offset: number
+): LineHighlights['syntaxHighlights'] {
     return {
         light: highlights.light.map(({ range: [start, end], ...rest }) => {
             return {
