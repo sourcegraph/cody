@@ -2,8 +2,8 @@ import { createHighlighterCore } from 'shiki/core'
 import { createOnigurumaEngine } from 'shiki/engine/oniguruma'
 import type { BundledLanguage, BundledTheme, HighlighterGeneric } from 'shiki/types.mjs'
 import getWasm from 'shiki/wasm'
-import type { MultiLineSupportedLanguage } from '../../../completions/detect-multiline'
-import type { SYNTAX_HIGHLIGHT_MODE } from './highlight'
+import type { MultiLineSupportedLanguage } from '../../../../completions/detect-multiline'
+import type { SYNTAX_HIGHLIGHT_THEME } from './types'
 
 /**
  * Mapping of highlight modes to supported themes.
@@ -12,7 +12,7 @@ import type { SYNTAX_HIGHLIGHT_MODE } from './highlight'
  * We can consider changing this, or provide options for the user to select another theme.
  */
 export const SYNTAX_HIGHLIGHTING_THEMES: Record<
-    SYNTAX_HIGHLIGHT_MODE,
+    SYNTAX_HIGHLIGHT_THEME,
     { name: BundledTheme; module: Promise<any> }
 > = {
     light: { name: 'vitesse-light', module: import('shiki/themes/vitesse-light.mjs') },
