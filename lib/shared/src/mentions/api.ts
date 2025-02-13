@@ -30,6 +30,13 @@ export interface ContextMentionProviderMetadata {
      * Human-readable display string for when the provider has no items for the query.
      */
     emptyLabel: string
+
+    /**
+     * Prefix char used to select this item
+     *
+     * TODO(beyang): make this required
+     */
+    prefixChar?: string
 }
 
 /**
