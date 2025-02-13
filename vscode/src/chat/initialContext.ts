@@ -42,11 +42,11 @@ import {
 export type RemoteContextData = {
     repository?: RemoteRepo | undefined | null
     fileURL?: string | undefined | null
-    range: RangeData | undefined | null
+    range?: RangeData | undefined | null
 }
 
 const contextDataFromWeb = new Subject<RemoteContextData>()
-export const remoteContext = contextDataFromWeb.pipe(shareReplay())
+export const remoteContext = contextDataFromWeb.pipe(startWith(undefined))
 
 export function setRemoteContext(data: RemoteContextData): void {
     contextDataFromWeb.next(data)
