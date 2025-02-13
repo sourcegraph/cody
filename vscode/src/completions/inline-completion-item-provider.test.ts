@@ -38,12 +38,13 @@ class MockableInlineCompletionItemProvider extends InlineCompletionItemProvider 
         mockGetInlineCompletions: typeof getInlineCompletions,
         superArgs?: Partial<ConstructorParameters<typeof InlineCompletionItemProvider>[0]>
     ) {
+        const CodyStatusBar = vi.fn()
+        CodyStatusBar.prototype.clearErrors = vi.fn()
+
         super({
             completeSuggestWidgetSelection: true,
             triggerDelay: 0,
-            // Most of these are just passed directly to `getInlineCompletions`, which we've mocked, so
-            // we can just make them `null`.
-            statusBar: null as any,
+            statusBar: new CodyStatusBar(),
             provider: createProvider({
                 provider: 'anthropic',
                 source: 'local-editor-settings',
