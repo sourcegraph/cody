@@ -39,17 +39,17 @@ import {
     contextItemMentionFromOpenCtxItem,
 } from './context/chatContext'
 
-export type InitialWebContextData = {
-    repository?: RemoteRepo
+export type RemoteContextData = {
+    repository?: RemoteRepo | undefined | null
     fileURL?: string | undefined | null
     range: RangeData | undefined | null
 }
 
-const webInitialContextSubject = new Subject<InitialWebContextData>()
-export const webInitialContext = webInitialContextSubject.pipe(shareReplay())
+const contextDataFromWeb = new Subject<RemoteContextData>()
+export const remoteContext = contextDataFromWeb.pipe(shareReplay())
 
-export function setWebInitialContext(repo: InitialWebContextData): void {
-    webInitialContextSubject.next(repo)
+export function setRemoteContext(data: RemoteContextData): void {
+    contextDataFromWeb.next(data)
 }
 
 /**

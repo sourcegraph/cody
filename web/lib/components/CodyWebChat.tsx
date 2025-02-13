@@ -3,6 +3,7 @@ import {
     type FC,
     type FunctionComponent,
     useCallback,
+    useEffect,
     useLayoutEffect,
     useMemo,
     useRef,
@@ -363,7 +364,7 @@ const CodyWebPanel: FC<CodyWebPanelProps> = props => {
         }
     }, [initialContextData])
 
-    useLayoutEffect(() => {
+    useEffect(() => {
         const { fileRange, fileURL } = initialContextData ?? {}
         const { id, name } = initialContextData?.repository ?? {}
         // Makes sure view is ready before we post message to set initial context data.
@@ -371,7 +372,7 @@ const CodyWebPanel: FC<CodyWebPanelProps> = props => {
             return
         }
         vscodeAPI.postMessage({
-            command: 'web/setInitialContextData',
+            command: 'setRemoteContextData',
             data: {
                 fileURL,
                 repository: {

@@ -3,7 +3,6 @@ import {
     authStatus,
     combineLatest,
     debounceTime,
-    distinctUntilChanged,
     firstValueFrom,
     fromVSCodeEvent,
     graphqlClient,
@@ -15,7 +14,7 @@ import {
 } from '@sourcegraph/cody-shared'
 import { Observable, map } from 'observable-fns'
 import * as vscode from 'vscode'
-import { webInitialContext } from '../chat/initialContext'
+import { remoteContext } from '../chat/initialContext'
 import { vscodeGitAPI } from './git-extension-api'
 import { repoNameResolver } from './repo-name-resolver'
 
@@ -47,7 +46,7 @@ export const remoteReposForAllWorkspaceFolders: Observable<
         debounceTime(vscodeGitAPI ? 2000 : 0)
     ),
     authStatus,
-    webInitialContext.pipe(distinctUntilChanged())
+    remoteContext
 ).pipe(
     switchMapReplayOperation(
         ([workspaceFolders, _, webContext]): Observable<RemoteRepo[] | typeof pendingOperation> => {

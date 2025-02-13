@@ -112,7 +112,7 @@ import { openExternalLinks } from '../../services/utils/workspace-action'
 import { TestSupport } from '../../test-support'
 import type { MessageErrorType } from '../MessageProvider'
 import { getMentionMenuData } from '../context/chatContext'
-import { observeDefaultContext, setWebInitialContext } from '../initialContext'
+import { observeDefaultContext, setRemoteContext } from '../initialContext'
 import type {
     ConfigurationSubsetForWebview,
     ExtensionMessage,
@@ -301,11 +301,9 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 })
                 break
             }
-            case 'web/setInitialContextData':
-                logDebug('ChatController', 'setInitialContextData for Web', {
-                    verbose: { items: message.data },
-                })
-                setWebInitialContext(message.data)
+            case 'setRemoteContextData':
+                logDebug('ChatController', 'setRemoteContextData', { verbose: message.data })
+                setRemoteContext(message.data)
                 break
             case 'abort':
                 this.handleAbort()
