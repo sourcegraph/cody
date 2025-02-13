@@ -183,18 +183,11 @@ const prosemirrorActor = fromCallback<ProseMirrorMachineEvent, ProseMirrorMachin
             }
         })
 
-        function doFocus() {
-            editor.focus()
-            editor.dispatch(editor.state.tr.scrollIntoView())
-        }
-
         receive(event => {
             switch (event.type) {
                 case 'focus':
-                    doFocus()
-                    // HACK(sqs): Needed in VS Code webviews to actually get it to focus
-                    // on initial load, for some reason.
-                    setTimeout(doFocus)
+                    editor.focus()
+                    editor.dispatch(editor.state.tr.scrollIntoView())
                     break
                 case 'blur':
                     editor.dom.blur()
