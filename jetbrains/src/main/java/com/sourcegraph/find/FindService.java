@@ -46,11 +46,13 @@ public class FindService implements Disposable {
   }
 
   public void refreshConfiguration() {
-    JavaToJSBridge javaToJSBridge = mainPanel.getJavaToJSBridge();
-    if (javaToJSBridge != null) {
-      mainPanel
-          .getJavaToJSBridge()
-          .callJS("pluginSettingsChanged", ConfigUtil.getConfigAsJson(project));
+    if (popup.isVisible()) {
+      JavaToJSBridge javaToJSBridge = mainPanel.getJavaToJSBridge();
+      if (javaToJSBridge != null) {
+        mainPanel
+            .getJavaToJSBridge()
+            .callJS("pluginSettingsChanged", ConfigUtil.getConfigAsJson(project));
+      }
     }
   }
 
