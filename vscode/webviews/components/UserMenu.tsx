@@ -304,7 +304,7 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
                                         close()
                                     }}
                                 >
-                                    <span className="tw-flex-grow">Output Channel</span>
+                                    <span className="tw-flex-grow">Open Output Channel</span>
                                 </CommandItem>
                             </CommandGroup>
                         </CommandList>
