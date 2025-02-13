@@ -11,6 +11,7 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.wm.ex.WindowManagerEx;
 import com.intellij.util.ui.UIUtil;
+import com.sourcegraph.config.ConfigUtil;
 import com.sourcegraph.find.browser.BrowserAndLoadingPanel;
 import com.sourcegraph.find.browser.JavaToJSBridge;
 import java.awt.*;
@@ -31,6 +32,10 @@ public class FindService implements Disposable {
     mainPanel = new FindPopupPanel(project, this);
   }
 
+  public static FindService getInstance(@NotNull Project project) {
+    return project.getService(FindService.class);
+  }
+
   public synchronized void showPopup() {
     createOrShowPopup();
   }
@@ -38,6 +43,17 @@ public class FindService implements Disposable {
   public void hidePopup() {
     popup.hide();
     hideMaterialUiOverlay();
+  }
+
+  public void refreshConfiguration() {
+    if (popup.isVisible()) {
+      JavaToJSBridge javaToJSBridge = mainPanel.getJavaToJSBridge();
+      if (javaToJSBridge != null) {
+        mainPanel
+            .getJavaToJSBridge()
+            .callJS("pluginSettingsChanged", ConfigUtil.getConfigAsJson(project));
+      }
+    }
   }
 
   private void createOrShowPopup() {
@@ -57,6 +73,7 @@ public class FindService implements Disposable {
       }
     } else {
       popup = new FindPopupDialog(project, mainPanel);
+      popup.show();
 
       // We add a manual listener to the global key handler since the editor component seems to work
       // around the

@@ -41,3 +41,4 @@ jobs:
           popd > /dev/null
         env:
           PUBLISH_TOKEN: ${{ secrets.JETBRAINS_MARKETPLACE_PUBLISH_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.PRIVATE_SG_TOKEN }}

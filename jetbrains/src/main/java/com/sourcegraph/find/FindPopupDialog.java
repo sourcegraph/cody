@@ -48,8 +48,6 @@ public class FindPopupDialog extends DialogWrapper {
     this.setModal(false);
     // Prevent the dialog from being cancelable by any default behaviors
     myCancelAction.setEnabled(false);
-
-    super.show();
   }
 
   // Overwrite the createPeer function that is being used in the super constructor so that we can

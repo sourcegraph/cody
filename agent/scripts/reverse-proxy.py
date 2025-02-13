@@ -22,11 +22,12 @@ async def proxy_handler(request):
             del headers['Transfer-Encoding']
 
         # Use value of 'Authorization: Bearer' to fill 'X-Forwarded-User' and remove 'Authorization' header
-        if 'Authorization' in headers:
-            match = re.match('Bearer (.*)', headers['Authorization'])
-            if match:
-                headers['X-Forwarded-User'] = match.group(1)
-            del headers['Authorization']
+
+        match = re.match('Bearer (.*)', headers['Authorization'])
+        if match:
+            headers['X-Forwarded-User'] = match.group(1)
+            if 'Authorization' in headers:
+                del headers['Authorization']
 
         # Forward the request to target
         async with session.request(

@@ -14,6 +14,7 @@ import {
     currentAuthStatusAuthed,
     firstNonPendingAuthStatus,
     firstResultFromOperation,
+    getAuthHeaders,
     resolvedConfig,
     telemetryRecorder,
     waitUntilComplete,
@@ -1411,6 +1412,11 @@ export class Agent extends MessageHandler implements ExtensionClient {
         this.registerAuthenticatedRequest('testing/ignore/overridePolicy', async contextFilters => {
             contextFiltersProvider.setTestingContextFilters(contextFilters)
             return null
+        })
+
+        this.registerAuthenticatedRequest('internal/getAuthHeaders', async url => {
+            const config = await firstResultFromOperation(resolvedConfig)
+            return await getAuthHeaders(config.auth, new URL(url))
         })
     }
 
