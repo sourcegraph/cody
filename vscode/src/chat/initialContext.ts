@@ -6,6 +6,7 @@ import {
     type DefaultContext,
     FeatureFlag,
     REMOTE_REPOSITORY_PROVIDER_URI,
+    type RangeData,
     abortableOperation,
     authStatus,
     clientCapabilities,
@@ -26,17 +27,30 @@ import {
     startWith,
     switchMap,
 } from '@sourcegraph/cody-shared'
-import { Observable, map } from 'observable-fns'
+import { Observable, Subject, map } from 'observable-fns'
 import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
 import { getSelectionOrFileContext } from '../commands/context/selection'
 import { createRepositoryMention } from '../context/openctx/common/get-repository-mentions'
-import { remoteReposForAllWorkspaceFolders } from '../repository/remoteRepos'
+import { type RemoteRepo, remoteReposForAllWorkspaceFolders } from '../repository/remoteRepos'
 import { ChatBuilder } from './chat-view/ChatBuilder'
 import {
     activeEditorContextForOpenCtxMentions,
     contextItemMentionFromOpenCtxItem,
 } from './context/chatContext'
+
+export type InitialWebContextData = {
+    repository?: RemoteRepo
+    fileURL?: string | undefined | null
+    range: RangeData | undefined | null
+}
+
+const webInitialContextSubject = new Subject<InitialWebContextData>()
+export const webInitialContext = webInitialContextSubject.pipe(shareReplay())
+
+export function setWebInitialContext(repo: InitialWebContextData): void {
+    webInitialContextSubject.next(repo)
+}
 
 /**
  * Observe the initial context that should be populated in the chat message input field.

@@ -203,6 +203,7 @@ class CliTool extends CodyTool {
 
 /**
  * Tool for retrieving the full content of files in the codebase.
+ * TODO: Use remote file retrieval for Cody Web.
  */
 class FileTool extends CodyTool {
     constructor() {

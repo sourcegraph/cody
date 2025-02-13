@@ -363,6 +363,31 @@ const CodyWebPanel: FC<CodyWebPanelProps> = props => {
         }
     }, [initialContextData])
 
+    useLayoutEffect(() => {
+        const { fileRange, fileURL } = initialContextData ?? {}
+        const { id, name } = initialContextData?.repository ?? {}
+        // Makes sure view is ready before we post message to set initial context data.
+        if (!view || !id || !name) {
+            return
+        }
+        vscodeAPI.postMessage({
+            command: 'web/setInitialContextData',
+            data: {
+                fileURL,
+                repository: {
+                    id: id,
+                    name: name,
+                },
+                range: fileRange
+                    ? {
+                          start: { line: fileRange.startLine, character: 0 },
+                          end: { line: fileRange.endLine + 1, character: 0 },
+                      }
+                    : undefined,
+            },
+        })
+    }, [initialContextData, vscodeAPI, view])
+
     const isLoading = !config || !view
 
     return (
