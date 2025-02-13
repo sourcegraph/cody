@@ -80,9 +80,9 @@ export const AssistantMessageCell: FunctionComponent<{
 
         const hasLongerResponseTime = chatModel?.tags?.includes(ModelTag.StreamDisabled)
 
-        const experimentalOneBoxEnabled = useOmniBox()
+        const omniboxEnabled = useOmniBox()
 
-        const isSearchIntent = experimentalOneBoxEnabled && humanMessage?.intent === 'search'
+        const isSearchIntent = omniboxEnabled && humanMessage?.intent === 'search'
 
         return (
             <BaseMessageCell
@@ -100,7 +100,7 @@ export const AssistantMessageCell: FunctionComponent<{
                                 />
                             )
                         ) : null}
-                        {experimentalOneBoxEnabled && !isLoading && message.search && (
+                        {omniboxEnabled && !isLoading && message.search && (
                             <SearchResults
                                 message={message as ChatMessageWithSearch}
                                 onSelectedFiltersUpdate={onSelectedFiltersUpdate}
@@ -210,7 +210,6 @@ export function makeHumanMessageInfo(
                 editHumanMessage({
                     messageIndexInTranscript: assistantMessage.index - 1,
                     editorValue: newEditorValue,
-                    preDetectedIntent: humanMessage.intent,
                 })
             }
         },

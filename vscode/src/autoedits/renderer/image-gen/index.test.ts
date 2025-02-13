@@ -50,6 +50,12 @@ async function generateImageForTest(
     const { light, dark } = generateSuggestionAsImage({
         decorations,
         lang,
+        // The default render config changes depending on the platform, so we need to set it manually for tests.
+        // We're using the same defaults as VS Code on MacOS here.
+        config: {
+            fontSize: 12,
+            lineHeight: 18,
+        },
     })
 
     return {

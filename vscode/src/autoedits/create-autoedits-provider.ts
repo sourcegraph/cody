@@ -33,7 +33,7 @@ const AUTOEDITS_NON_ELIGIBILITY_MESSAGES = {
 /**
  * Information about a user's eligibility for auto-edit functionality.
  */
-export interface AutoeditsUserEligibilityInfo {
+interface AutoeditsUserEligibilityInfo {
     /**
      * Whether the user is eligible to use auto-edit.
      */
@@ -128,7 +128,7 @@ export function createAutoEditsProvider({
  * @param {string | undefined} nonEligibilityReason - The reason why the user is currently not eligible
  *                                                   for auto edits. If not provided, no notification occurs.
  */
-export async function handleAutoeditsNotificationForNonEligibleUser(
+async function handleAutoeditsNotificationForNonEligibleUser(
     nonEligibilityReason?: string
 ): Promise<void> {
     if (!nonEligibilityReason || !isSettingsEditorOpen()) {

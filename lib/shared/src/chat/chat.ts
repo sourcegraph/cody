@@ -62,10 +62,10 @@ export class ChatClient {
 
         // We only want to send up the speaker and prompt text, regardless of whatever other fields
         // might be on the messages objects (`file`, `displayText`, `contextFiles`, etc.).
-        const messagesToSend = augmentedMessages.map(({ speaker, text, cache_enabled }) => ({
+        const messagesToSend = augmentedMessages.map(({ speaker, text, cacheEnabled }) => ({
             text,
             speaker,
-            cache_enabled,
+            cacheEnabled,
         }))
 
         const completionParams = {

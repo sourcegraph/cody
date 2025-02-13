@@ -3,6 +3,11 @@ import _ from 'lodash'
 import { URI } from 'vscode-uri'
 import type {
     ContextItem,
+    ContextItemCurrentDirectory,
+    ContextItemCurrentFile,
+    ContextItemCurrentOpenTabs,
+    ContextItemCurrentRepository,
+    ContextItemCurrentSelection,
     ContextItemFile,
     ContextItemOpenCtx,
     ContextItemOpenLink,
@@ -39,6 +44,11 @@ export type SerializedContextItem = {
     | Omit<ContextItemSymbol, 'uri' | 'content' | 'source'>
     | Omit<ContextItemOpenCtx, 'uri' | 'content' | 'source'>
     | Omit<ContextItemOpenLink, 'uri' | 'content' | 'source'>
+    | Omit<ContextItemCurrentSelection, 'uri' | 'content' | 'source'>
+    | Omit<ContextItemCurrentFile, 'uri' | 'content' | 'source'>
+    | Omit<ContextItemCurrentRepository, 'uri' | 'content' | 'source'>
+    | Omit<ContextItemCurrentDirectory, 'uri' | 'content' | 'source'>
+    | Omit<ContextItemCurrentOpenTabs, 'uri' | 'content' | 'source'>
 )
 
 export type SerializedTemplateInput = {
@@ -308,6 +318,21 @@ export function contextItemMentionNodeDisplayText(contextItem: SerializedContext
 
         case 'openctx':
             return contextItem.title
+
+        case 'current-selection':
+            return 'current selection'
+
+        case 'current-file':
+            return 'current file'
+
+        case 'current-repository':
+            return 'current repository'
+
+        case 'current-directory':
+            return 'current directory'
+
+        case 'current-open-tabs':
+            return 'currently open tabs'
     }
 
     // @ts-ignore

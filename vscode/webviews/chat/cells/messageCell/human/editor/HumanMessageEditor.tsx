@@ -32,8 +32,10 @@ import type { UserAccountInfo } from '../../../../../Chat'
 import { type ClientActionListener, useClientActionListener } from '../../../../../client/clientState'
 import { promptModeToIntent } from '../../../../../prompts/PromptsTab'
 import { useTelemetryRecorder } from '../../../../../utils/telemetry'
+import { useConfig } from '../../../../../utils/useConfig'
 import { useFeatureFlag } from '../../../../../utils/useFeatureFlags'
 import { useLinkOpener } from '../../../../../utils/useLinkOpener'
+import { useOmniBox } from '../../../../../utils/useOmniBox'
 import styles from './HumanMessageEditor.module.css'
 import type { SubmitButtonState } from './toolbar/SubmitButton'
 import { Toolbar } from './toolbar/Toolbar'
@@ -160,6 +162,9 @@ export const HumanMessageEditor: FunctionComponent<{
         [submitState, parentOnSubmit, onStop, telemetryRecorder.recordEvent, isFirstMessage, isSent]
     )
 
+    const omniBoxEnabled = useOmniBox()
+    const { isDotComUser } = useConfig()
+
     const onEditorEnterKey = useCallback(
         (event: KeyboardEvent | null): void => {
             // Submit input on Enter press (without shift) when input is not empty.
@@ -169,6 +174,11 @@ export const HumanMessageEditor: FunctionComponent<{
 
             event.preventDefault()
 
+            if (!omniBoxEnabled || isDotComUser) {
+                onSubmitClick('chat')
+                return
+            }
+
             // Submit search intent query when CMD + Options + Enter is pressed.
             if ((event.metaKey || event.ctrlKey) && event.altKey) {
                 manuallySelectIntent('search')
@@ -176,16 +186,9 @@ export const HumanMessageEditor: FunctionComponent<{
                 return
             }
 
-            // Submit chat intent query when CMD + Enter is pressed.
-            if (event.metaKey || event.ctrlKey) {
-                manuallySelectIntent('chat')
-                onSubmitClick('chat')
-                return
-            }
-
-            onSubmitClick()
+            onSubmitClick('chat')
         },
-        [isEmptyEditorValue, onSubmitClick, manuallySelectIntent]
+        [isEmptyEditorValue, onSubmitClick, manuallySelectIntent, omniBoxEnabled, isDotComUser]
     )
 
     const [isEditorFocused, setIsEditorFocused] = useState(false)

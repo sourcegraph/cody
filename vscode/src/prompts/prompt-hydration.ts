@@ -27,10 +27,10 @@ import { getCurrentRepositoryInfo } from './utils'
 
 export const PROMPT_CURRENT_FILE_PLACEHOLDER: string = 'cody://current-file'
 export const PROMPT_CURRENT_SELECTION_PLACEHOLDER: string = 'cody://selection'
-export const PROMPT_CURRENT_SELECTION_OLD_PLACEHOLDER: string = 'cody://current-selection'
+const PROMPT_CURRENT_SELECTION_OLD_PLACEHOLDER: string = 'cody://current-selection'
 export const PROMPT_CURRENT_DIRECTORY_PLACEHOLDER: string = 'cody://current-dir'
 export const PROMPT_EDITOR_OPEN_TABS_PLACEHOLDER: string = 'cody://tabs'
-export const PROMPT_CURRENT_REPOSITORY_PLACEHOLDER: string = 'cody://repository'
+const PROMPT_CURRENT_REPOSITORY_PLACEHOLDER: string = 'cody://repository'
 
 /**
  * Default IDE logic itself can figure out all needed context via vscode API,

@@ -377,7 +377,7 @@ interface RepositoryNameResponse {
     repository: { name: string } | null
 }
 
-interface RepositoryIdsResponse {
+export interface RepositoryIdsResponse {
     repositories: {
         nodes: { name: string; id: string }[]
     }
@@ -479,7 +479,7 @@ export interface ContextSearchResult {
     ranges: Range[]
 }
 
-export interface ContextSearchEvalDebugResult {
+interface ContextSearchEvalDebugResult {
     name: string
     contextList: ContextSearchResult[]
 }
@@ -512,7 +512,7 @@ export interface Prompt {
     }
 }
 
-export interface PromptInput {
+interface PromptInput {
     owner: string
     name: string
     description: string

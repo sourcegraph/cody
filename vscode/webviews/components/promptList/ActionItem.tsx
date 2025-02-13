@@ -178,4 +178,4 @@ const ActionCommand: FC<ActionCommandProps> = props => {
     )
 }
 
-export const ACTION_ITEM_AVATAR_SIZE = 22
+const ACTION_ITEM_AVATAR_SIZE = 22

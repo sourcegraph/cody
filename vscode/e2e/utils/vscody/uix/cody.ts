@@ -59,7 +59,7 @@ export class WebView {
     }
 }
 
-export class StatusBarItem {
+class StatusBarItem {
     private constructor(private ctx: Pick<UIXContextFnContext, 'page' | 'workspaceDir'>) {}
 
     static with(init: Pick<UIXContextFnContext, 'page' | 'workspaceDir'>) {

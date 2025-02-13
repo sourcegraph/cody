@@ -356,3 +356,9 @@ export const WithToolUseResponse: StoryObj<typeof meta> = {
         transcript: transcriptFixture([...FIXTURE_TRANSCRIPT.toolUse]),
     },
 }
+
+export const WithCode: StoryObj<typeof meta> = {
+    args: {
+        transcript: transcriptFixture([...FIXTURE_TRANSCRIPT.generateCode]),
+    },
+}

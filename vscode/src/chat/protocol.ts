@@ -221,8 +221,6 @@ export interface WebviewSubmitMessage extends WebviewContextMessage {
 
     /** An opaque value representing the text editor's state. @see {ChatMessage.editorState} */
     editorState?: unknown | undefined | null
-    preDetectedIntent?: ChatMessage['intent'] | undefined | null
-    preDetectedIntentScores?: { intent: string; score: number }[] | undefined | null
     manuallySelectedIntent?: ChatMessage['intent'] | undefined | null
     traceparent?: string | undefined | null
     steps?: ProcessingStep[] | undefined | null
@@ -234,8 +232,6 @@ interface WebviewEditMessage extends WebviewContextMessage {
 
     /** An opaque value representing the text editor's state. @see {ChatMessage.editorState} */
     editorState?: unknown | undefined | null
-    preDetectedIntent?: ChatMessage['intent'] | undefined | null
-    preDetectedIntentScores?: { intent: string; score: number }[] | undefined | null
     manuallySelectedIntent?: ChatMessage['intent'] | undefined | null
     steps?: ProcessingStep[] | undefined | null
 }
@@ -274,9 +270,6 @@ export const SG_CHANGELOG_URL = new URL('https://sourcegraph.com/changelog')
 export const VSCODE_CHANGELOG_URL = new URL(
     'https://github.com/sourcegraph/cody/blob/main/vscode/CHANGELOG.md'
 )
-// Docs
-export const CODY_DOCS_CAPABILITIES_URL = new URL('https://sourcegraph.com/docs/cody/capabilities')
-export const CODY_DOCS_AGENTIC_CHAT_URL = new URL('agentic-chat', CODY_DOCS_CAPABILITIES_URL)
 // Community and support
 export const DISCORD_URL = new URL('https://discord.gg/s2qDtYGnAE')
 export const CODY_FEEDBACK_URL = new URL('https://github.com/sourcegraph/cody/issues/new/choose')
