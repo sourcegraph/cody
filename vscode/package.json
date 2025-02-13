@@ -874,38 +874,6 @@
           "group": "other"
         }
       ],
-      "view/title": [
-        {
-          "command": "cody.menu.commands",
-          "when": "view == cody.chat && cody.activated",
-          "group": "navigation@1"
-        },
-        {
-          "command": "cody.welcome",
-          "when": "view == cody.chat",
-          "group": "7_cody@0"
-        },
-        {
-          "command": "cody.debug.export.logs",
-          "when": "view == cody.chat",
-          "group": "8_cody@1"
-        },
-        {
-          "command": "cody.debug.enable.all",
-          "when": "view == cody.chat",
-          "group": "8_cody@0"
-        },
-        {
-          "command": "cody.debug.outputChannel",
-          "when": "view == cody.chat",
-          "group": "8_cody@2"
-        },
-        {
-          "command": "cody.debug.reportIssue",
-          "when": "view == cody.chat",
-          "group": "9_cody@1"
-        }
-      ],
       "editor/title": [
         {
           "command": "cody.menu.commands",
