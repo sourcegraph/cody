@@ -35,7 +35,7 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({
 
     const chats = useMemo(() => {
         const history = userHistory ? Object.values(userHistory.chat) : userHistory
-        return history?.filter(c => c.interactions.some(i => i.humanMessage?.text?.trim()))
+        return history?.filter(c => c.interactions.some(i => !!i.humanMessage?.text?.trim()))
     }, [userHistory])
 
     const handleStartNewChat = () => {
@@ -69,7 +69,6 @@ export const HistoryTabWithData: React.FC<{
     vscodeAPI: VSCodeWrapper
 }> = ({ chats, handleStartNewChat, vscodeAPI }) => {
     const [isDeleteAllActive, setIsDeleteAllActive] = useState<boolean>(false)
-
     const onDeleteButtonClick = useCallback(
         (id?: string) => {
             if (chats === undefined || chats.find(chat => chat.id === id)) {
@@ -88,16 +87,17 @@ export const HistoryTabWithData: React.FC<{
     const [currentPage, setCurrentPage] = useState(1)
 
     const filteredChats = useMemo(() => {
+        const filtered = chats?.filter(c => c.interactions.some(i => !!i.humanMessage?.text?.trim()))
         const searchTerm = searchText.trim().toLowerCase()
         if (!searchTerm) {
-            return chats
+            return filtered
         }
         //return the chats from nonEmptyChats where the humange messages contain the search term
-        return chats.filter(chat => {
-            return chat.interactions.some(c => {
-                return c.humanMessage?.text?.trim()?.toLowerCase()?.includes(searchTerm)
-            })
-        })
+        return filtered.filter(chat =>
+            chat.interactions.some(c =>
+                c.humanMessage?.text?.trim()?.toLowerCase()?.includes(searchTerm)
+            )
+        )
     }, [chats, searchText])
 
     const totalPages = Math.ceil(filteredChats.length / HISTORY_ITEMS_PER_PAGE)
@@ -106,7 +106,7 @@ export const HistoryTabWithData: React.FC<{
         currentPage * HISTORY_ITEMS_PER_PAGE
     )
 
-    if (!chats.length) {
+    if (!filteredChats.length && !searchText) {
         return (
             <div className="tw-flex tw-flex-col tw-items-center">
                 <HistoryIcon size={20} strokeWidth={1.25} className="tw-mb-5 tw-text-muted-foreground" />
