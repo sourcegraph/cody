@@ -301,7 +301,7 @@ export class ChatBuilder {
     public setChatTitle(title: string): void {
         const firstHumanMessage = this.messages[0]
         if (firstHumanMessage?.speaker === 'human' && this.messages.length === 1) {
-            this.customChatTitle = title.replaceAll(/"/g, '')
+            this.customChatTitle = title
             this.changeNotifications.next()
         }
     }

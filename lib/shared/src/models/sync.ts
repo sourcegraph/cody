@@ -508,6 +508,6 @@ export function defaultModelPreferencesFromServerModelsConfig(
     return {
         autocomplete: config.defaultModels.codeCompletion,
         chat: config.defaultModels.chat,
-        edit: config.defaultModels.fastChat,
+        edit: config.defaultModels.chat,
     }
 }

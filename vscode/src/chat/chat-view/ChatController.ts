@@ -662,7 +662,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     intent: manuallySelectedIntent,
                     agent: selectedAgent,
                 })
-                this.setCustomChatTitle(requestID, inputText, signal)
+                this.setCustomChatTitle(requestID, inputText, signal, model)
                 this.postViewTranscript({ speaker: 'assistant' })
 
                 await this.saveSession()
@@ -691,24 +691,16 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     private async setCustomChatTitle(
         requestID: string,
         inputText: PromptString,
-        signal: AbortSignal
+        signal: AbortSignal,
+        model?: ChatModel
     ): Promise<void> {
         // Early return if title already exists
-        if (this.chatBuilder.customChatTitle) {
+        if (this.chatBuilder.customChatTitle || !model) {
             return
         }
 
-        // Get the default fast chat model from modelsService
-        const defaultModels = await firstResultFromOperation(modelsService.getDefaultModels())
-        const fastModel = defaultModels?.edit ?? defaultModels?.chat
-        if (!fastModel) {
-            logDebug('ChatController', 'setCustomChatTitle', { verbose: 'No fast model found' })
-            return
-        }
-        const prompt = ps`You are Cody, an AI coding assistant from Sourcegraph. Your task is to generate a short title for the first message a user begins a conversation with. The title must be a summary of the <codyUserInput> shorter than 10 words without quotation enclosed.\n<codyUserInput>${inputText}</codyUserInput>`
-        // const prompt = ps`You are Cody, an AI coding assistant from Sourcegraph. Your task is to generate a concise title (<10 words without quotation) for <codyUserInput>${inputText}</codyUserInput>`
+        const prompt = ps`You are Cody, an AI coding assistant from Sourcegraph. Your task is to generate a concise title (<10 words without quotation) for <codyUserInput>${inputText}</codyUserInput>`
 
-        // Send the prompt request to the webview
         this.chatClient
             .chat(
                 [
@@ -718,7 +710,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     },
                 ],
                 {
-                    model: fastModel,
+                    model,
                     maxTokensToSample: 100,
                 },
                 signal,
@@ -732,7 +724,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     } else if (message.type === 'complete') {
                         this.chatBuilder.setChatTitle(title)
                         await this.saveSession()
-                        break // Exit loop after completion
+                        break
                     }
                 }
             })
