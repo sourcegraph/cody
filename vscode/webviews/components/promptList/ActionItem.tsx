@@ -42,16 +42,15 @@ export const ActionItem: FC<ActionItemProps> = props => {
         action.actionType === 'prompt' ? action.mode !== 'CHAT' : action.mode !== 'ask'
     const isDisabled = !isEditEnabled && isActionEditLike
 
+    if (isDisabled) {
+        return null
+    }
+
     return (
         <CommandItem
             value={commandRowValue(action)}
             disabled={isDisabled}
             className={clsx(className, styles.item)}
-            tooltip={
-                isDisabled
-                    ? 'Edit-like action is not supported in current read-only environment'
-                    : undefined
-            }
             onSelect={onSelect}
         >
             {action.actionType === 'prompt' ? (
