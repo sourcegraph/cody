@@ -34,12 +34,7 @@ export class WebviewOpenTelemetryService {
             return
         }
 
-        const {
-            isTracingEnabled = true,
-            debugVerbose = false,
-            ide,
-            agentVersion,
-        } = options || {}
+        const { isTracingEnabled = true, debugVerbose = false, ide, agentVersion } = options || {}
         this.isTracingEnabled = isTracingEnabled
         this.ide = ide
         this.agentVersion = agentVersion
