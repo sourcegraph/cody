@@ -297,6 +297,19 @@ export const MentionMenu: FunctionComponent<
                         </CommandGroup>
                     )}
 
+                    <CommandGroup>
+                        <CommandItem value="handler-selector">
+                            <MentionMenuProviderItemContent
+                                provider={{
+                                    id: 'handler-selector',
+                                    title: "Type '@' again to select agent",
+                                    queryLabel: 'Select an agent',
+                                    emptyLabel: 'No agents found',
+                                }}
+                            />
+                        </CommandItem>
+                    </CommandGroup>
+
                     {params.parentItem?.id === REMOTE_DIRECTORY_PROVIDER_URI && !!data.items?.length && (
                         <CommandLoading
                             className={clsx(

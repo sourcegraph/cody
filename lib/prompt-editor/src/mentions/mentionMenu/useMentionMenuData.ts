@@ -85,10 +85,19 @@ interface MentionMenuContextValue {
     setEditorQuery: (query: string) => void
 }
 
+// >>> NEXT: START HERE
 export function useMentionMenuData(
     params: MentionMenuParams,
     { remainingTokenBudget, limit }: { remainingTokenBudget: number; limit: number }
 ): MentionMenuData {
+    if (params.query && params.query.length >= 1) {
+        switch (params.query[0]) {
+            case '@':
+                console.log('# @ DETECTED')
+                break
+        }
+    }
+
     const { value, error } = useCallMentionMenuData(params)
     const queryLower = params.query?.toLowerCase()?.trim() ?? null
 

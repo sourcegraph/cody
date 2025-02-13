@@ -38,7 +38,7 @@ import { useLinkOpener } from '../../../../../utils/useLinkOpener'
 import { useOmniBox } from '../../../../../utils/useOmniBox'
 import styles from './HumanMessageEditor.module.css'
 import type { SubmitButtonState } from './toolbar/SubmitButton'
-import { Toolbar } from './toolbar/Toolbar'
+import { Toolbar2 } from './toolbar/Toolbar2'
 
 /**
  * A component to compose and edit human chat messages and the settings associated with them.
@@ -460,7 +460,7 @@ export const HumanMessageEditor: FunctionComponent<{
                 openExternalLink={openExternalLink}
             />
             {!disabled && (
-                <Toolbar
+                <Toolbar2
                     models={models}
                     userInfo={userInfo}
                     isEditorFocused={focused}

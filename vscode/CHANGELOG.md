@@ -210,6 +210,7 @@ Introducing Sourcegraph’s AI coding agents: built to automate repetitive tasks
 
 ### Changed
 
+- Removed "agentic chat" toolbox UI.
 - chore(marketing): update listing description [pull/6874](https://github.com/sourcegraph/cody/pull/6874)
 - chore(ES): fix cta typo [pull/6857](https://github.com/sourcegraph/cody/pull/6857)
 - chore(client): update display name for agentic model [pull/6828](https://github.com/sourcegraph/cody/pull/6828)
