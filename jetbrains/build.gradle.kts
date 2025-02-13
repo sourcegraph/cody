@@ -190,7 +190,8 @@ fun download(url: String, output: File) {
   }
   println("Downloading... $url")
 
-  // Optional: Retrieve the GitHub token if needed for authorization (require private repo access)
+  // Optional: Retrieve the GitHub token if needed for authorization
+  // (require sourcegraph/sourcegraph repo access)
   val githubToken = System.getenv("GITHUB_TOKEN")
   val connection = URL(url).openConnection() as HttpURLConnection
   try {

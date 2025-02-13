@@ -54,8 +54,6 @@ export async function getAuthHeaders(auth: AuthCredentials, url: URL): Promise<R
 
 export async function addAuthHeaders(auth: AuthCredentials, headers: Headers, url: URL): Promise<void> {
     await getAuthHeaders(auth, url).then(authHeaders => {
-        for (const [key, value] of Object.entries(authHeaders)) {
-            headers.set(key, value)
-        }
+        Object.assign(headers, new Headers(authHeaders))
     })
 }
