@@ -126,7 +126,7 @@ import { chatHistory } from './ChatHistoryManager'
 import { CodyChatEditorViewType } from './ChatsController'
 import type { ContextRetriever } from './ContextRetriever'
 import { InitDoer } from './InitDoer'
-import { getChatPanelTitle } from './chat-helpers'
+import { getChatPanelTitle, isAgentTesting } from './chat-helpers'
 import { OmniboxTelemetry } from './handlers/OmniboxTelemetry'
 import { getAgent } from './handlers/registry'
 import { getPromptsMigrationInfo, startPromptsMigration } from './prompts-migration'
@@ -662,6 +662,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     intent: manuallySelectedIntent,
                     agent: selectedAgent,
                 })
+                this.setCustomChatTitle(requestID, inputText, signal, model)
                 this.postViewTranscript({ speaker: 'assistant' })
 
                 await this.saveSession()
@@ -682,6 +683,43 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 )
             })
         })
+    }
+
+    /**
+     * Sets the custom chat title based on the first message in the interaction.
+     */
+    private async setCustomChatTitle(
+        requestID: string,
+        inputText: PromptString,
+        signal: AbortSignal,
+        model?: ChatModel
+    ): Promise<void> {
+        // Returns early if title already exists, or if this is a testing session.
+        if (!model || this.chatBuilder.customChatTitle || isAgentTesting) {
+            return
+        }
+        const prompt = ps`You are Cody, an AI coding assistant from Sourcegraph. Your task is to generate a concise title (<10 words without quotation) for <codyUserInput>${inputText}</codyUserInput>.
+        RULE: Your response should only contain the concise title and nothing else.`
+        try {
+            const stream = await this.chatClient.chat(
+                [{ speaker: 'human', text: prompt }],
+                { model, maxTokensToSample: 100 },
+                signal,
+                requestID
+            )
+            let title = ''
+            for await (const message of stream) {
+                if (message.type === 'change') {
+                    title = message.text
+                } else if (message.type === 'complete') {
+                    this.chatBuilder.setChatTitle(title)
+                    await this.saveSession()
+                    break
+                }
+            }
+        } catch (error) {
+            logDebug('ChatController', 'setCustomChatTitle', { verbose: error })
+        }
     }
 
     private async sendChat(
