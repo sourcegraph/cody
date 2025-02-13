@@ -6,12 +6,3 @@ h4 {
     display: flex;
     flex-direction: row;
 }
-
-.history-delete-btn {
-    opacity: 0;
-    transition: opacity 0.2s ease;
-}
-
-.history-row:hover .history-delete-btn {
-    opacity: 1;
-}
