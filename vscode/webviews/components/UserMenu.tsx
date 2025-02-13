@@ -596,6 +596,7 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
                                 </CommandItem>
 
                                 <CommandItem onSelect={() => onMenuViewChange('debug')}>
+                                    <BugIcon size={16} strokeWidth={1.25} className="tw-mr-2" />
                                     <span className="tw-flex-grow">Debug</span>
                                     <ChevronRightIcon size={16} strokeWidth={1.25} />
                                 </CommandItem>
