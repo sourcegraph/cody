@@ -292,7 +292,7 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
                                         close()
                                     }}
                                 >
-                                    <span className="tw-flex-grow">Debug Mode</span>
+                                    <span className="tw-flex-grow">Enable Debug Mode</span>
                                 </CommandItem>
 
                                 <CommandItem
