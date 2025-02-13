@@ -163,7 +163,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                 isTracingEnabled: true,
                 debugVerbose: true,
                 ide: config.clientCapabilities.agentIDE,
-                agentVersion: config.clientCapabilities.agentExtensionVersion,
+                codyExtensionVersion: config.clientCapabilities.agentExtensionVersion,
             })
         }
     }, [config, webviewTelemetryService])

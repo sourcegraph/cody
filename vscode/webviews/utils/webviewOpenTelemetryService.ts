@@ -15,7 +15,7 @@ export class WebviewOpenTelemetryService {
     private isTracingEnabled = false
     private isInitialized = false
     private ide?: CodyIDE
-    private agentVersion?: string
+    private codyExtensionVersion?: string
     constructor() {
         if (!WebviewOpenTelemetryService.instance) {
             WebviewOpenTelemetryService.instance = this
@@ -27,17 +27,22 @@ export class WebviewOpenTelemetryService {
         isTracingEnabled?: boolean
         debugVerbose?: boolean
         ide?: CodyIDE
-        agentVersion?: string
+        codyExtensionVersion?: string
     }): void {
         // If the service is already initialized or if it is not the instance that is being used, return
         if (this.isInitialized || WebviewOpenTelemetryService.instance !== this) {
             return
         }
 
-        const { isTracingEnabled = true, debugVerbose = false, ide, agentVersion } = options || {}
+        const {
+            isTracingEnabled = true,
+            debugVerbose = false,
+            ide,
+            codyExtensionVersion,
+        } = options || {}
         this.isTracingEnabled = isTracingEnabled
         this.ide = ide
-        this.agentVersion = agentVersion
+        this.codyExtensionVersion = codyExtensionVersion
         const logLevel = debugVerbose ? DiagLogLevel.INFO : DiagLogLevel.ERROR
         diag.setLogger(new DiagConsoleLogger(), logLevel)
 
@@ -54,7 +59,7 @@ export class WebviewOpenTelemetryService {
                         new CodyTraceExporterWeb({
                             isTracingEnabled: true,
                             ide: this.ide ?? CodyIDE.VSCode,
-                            agentVersion: this.agentVersion,
+                            codyExtensionVersion: this.codyExtensionVersion,
                         })
                     )
                 )
