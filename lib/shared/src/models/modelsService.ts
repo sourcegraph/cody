@@ -512,12 +512,7 @@ export class ModelsService {
         DefaultsAndUserPreferencesForEndpoint['defaults'] | typeof pendingOperation
     > {
         return this.modelsChanges.pipe(
-            map(data => {
-                if (data === pendingOperation) {
-                    return pendingOperation
-                }
-                return data.preferences.defaults
-            }),
+            map(data => data === pendingOperation ? data : data.preferences.defaults),
             distinctUntilChanged(),
             shareReplay()
         )
