@@ -113,17 +113,17 @@ export function checkVersion({
     return (insider && isInsiderBuild) || semver.gte(currentVersion, minimumVersion)
 }
 
-type CodyApiVersion = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8
+type CodyApiVersion = 0 | 1 | 2
 
 /** @internal Exported for testing only. */
 export function inferCodyApiVersion(version: string, isDotCom: boolean): CodyApiVersion {
     const parsedVersion = semver.valid(version)
     const isLocalBuild = parsedVersion === '0.0.0'
 
-    if (isDotCom || isLocalBuild || version.length > 12) {
+    if (isDotCom || isLocalBuild) {
         // The most recent version is api-version=2, which was merged on 2024-09-11
         // https://github.com/sourcegraph/sourcegraph/pull/470
-        return 8
+        return 2
     }
 
     // On Cloud deployments from main, the version identifier will use a format
