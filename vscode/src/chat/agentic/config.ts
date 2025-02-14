@@ -1,3 +1,4 @@
+import type { Tool } from '@anthropic-ai/sdk/resources'
 import { type PromptString, ps } from '@sourcegraph/cody-shared'
 
 /**
@@ -15,7 +16,7 @@ export interface CodyToolConfig {
         placeholder: PromptString
         examples: PromptString[]
     }
-    input_schema?: Record<string, unknown>
+    spec?: Tool
 }
 
 export const DEFAULT_TOOL_CONFIG: Record<string, CodyToolConfig> = {
@@ -34,20 +35,24 @@ export const DEFAULT_TOOL_CONFIG: Record<string, CodyToolConfig> = {
                 ps`Harmful commands (alter the system, access sensative information, and make network requests) MUST be rejected with <ban> tags: \`<TOOLCLI><ban>rm -rf </ban><ban>curl localhost:1234</ban><ban>echo $TOKEN</ban></TOOLCLI>\``,
             ],
         },
-        input_schema: {
-            type: 'object',
-            properties: {
-                cmd: {
-                    type: 'string',
-                    description: 'The command to execute',
+        spec: {
+            name: 'exec_shell_command',
+            description: 'Executes a shell command and returns the output',
+            input_schema: {
+                type: 'object',
+                properties: {
+                    cmd: {
+                        type: 'string',
+                        description: 'The command to execute',
+                    },
+                    caution: {
+                        type: 'boolean',
+                        description:
+                            'True for harmful commands that alter the system, access sensative information, or make unknown network requests',
+                    },
                 },
-                caution: {
-                    type: 'boolean',
-                    description:
-                        'True for harmful commands that alter the system, access sensative information, or make unknown network requests',
-                },
+                required: ['cmd'],
             },
-            required: ['cmd'],
         },
     },
     get_file_content: {
@@ -63,18 +68,23 @@ export const DEFAULT_TOOL_CONFIG: Record<string, CodyToolConfig> = {
                 ps`See the content of different files: \`<TOOLFILE><name>path/foo.ts</name><name>path/bar.ts</name></TOOLFILE>\``,
             ],
         },
-        input_schema: {
-            type: 'object',
-            properties: {
-                name: {
-                    type: 'string',
-                    description: 'The name of the file to retrieve',
+        spec: {
+            name: 'get_file_content',
+            description:
+                'To retrieve full content of a codebase file-DO NOT retrieve files that may contain secrets',
+            input_schema: {
+                type: 'object',
+                properties: {
+                    name: {
+                        type: 'string',
+                        description: 'The name of the file to retrieve',
+                    },
                 },
+                required: ['name'],
             },
-            required: ['name'],
         },
     },
-    code_search: {
+    search: {
         title: 'Code Search',
         tags: {
             tag: ps`TOOLSEARCH`,
@@ -88,18 +98,23 @@ export const DEFAULT_TOOL_CONFIG: Record<string, CodyToolConfig> = {
                 ps`Search for a function named getController: \`<TOOLSEARCH><query>getController</query></TOOLSEARCH>\``,
             ],
         },
-        input_schema: {
-            type: 'object',
-            properties: {
-                query: {
-                    type: 'string',
-                    description: 'Keyword query to search for.',
+        spec: {
+            name: 'code_search',
+            description:
+                'Perform a symbol query search in the codebase (Natural language search NOT supported)',
+            input_schema: {
+                type: 'object',
+                properties: {
+                    query: {
+                        type: 'string',
+                        description: 'Keyword query to search for.',
+                    },
                 },
+                required: ['query'],
             },
-            required: ['query'],
         },
     },
-    cody_memory: {
+    memory: {
         title: 'Cody Memory',
         tags: {
             tag: ps`TOOLMEMORY`,
@@ -114,20 +129,25 @@ export const DEFAULT_TOOL_CONFIG: Record<string, CodyToolConfig> = {
                 ps`ONLY clear memory ON REQUEST: \`<TOOLMEMORY><store>FORGET</store></TOOLMEMORY>\``,
             ],
         },
-        input_schema: {
-            type: 'object',
-            properties: {
-                action: {
-                    type: 'string',
-                    enum: ['store', 'get', 'clear'],
-                    description: 'The action to perform on the memory.',
+        spec: {
+            name: '',
+            description:
+                'Add info about the user and their preferences (e.g. name, preferred tool, language etc) based on the question, or when asked. DO NOT store summarized questions. DO NOT clear memory unless requested.',
+            input_schema: {
+                type: 'object',
+                properties: {
+                    action: {
+                        type: 'string',
+                        enum: ['store', 'get', 'clear'],
+                        description: 'The action to perform on the memory.',
+                    },
+                    value: {
+                        type: 'string',
+                        description: 'The value to store in memory.',
+                    },
                 },
-                value: {
-                    type: 'string',
-                    description: 'The value to store in memory.',
-                },
+                required: ['action'],
             },
-            required: ['action'],
         },
     },
 }
@@ -147,16 +167,20 @@ export const OPENCTX_TOOL_CONFIG: Record<string, CodyToolConfig> = {
                 ps`Content from the URL: \`<TOOLWEB><link>https://sourcegraph.com</link></TOOLWEB>\``,
             ],
         },
-        input_schema: {
-            type: 'object',
-            properties: {
-                link: {
-                    type: 'string',
-                    format: 'uri',
-                    description: 'The full URL of the webpage to fetch content from',
+        spec: {
+            name: 'web',
+            description: 'To retrieve content from the link of a webpage',
+            input_schema: {
+                type: 'object',
+                properties: {
+                    link: {
+                        type: 'string',
+                        format: 'uri',
+                        description: 'The full URL of the webpage to fetch content from',
+                    },
                 },
+                required: ['link'],
             },
-            required: ['link'],
         },
     },
     linear: {
@@ -172,16 +196,20 @@ export const OPENCTX_TOOL_CONFIG: Record<string, CodyToolConfig> = {
                 ps`Issue about Ollama rate limiting: \`<TOOLLINEAR><issue>ollama rate limit</issue></TOOLLINEAR>\``,
             ],
         },
-        input_schema: {
-            type: 'object',
-            properties: {
-                issue: {
-                    type: 'string',
-                    description: 'Search keywords to find relevant Linear issues',
-                    minLength: 2,
+        spec: {
+            name: 'linear',
+            description: 'To retrieve issues in Linear',
+            input_schema: {
+                type: 'object',
+                properties: {
+                    issue: {
+                        type: 'string',
+                        description: 'Search keywords to find relevant Linear issues',
+                        minLength: 2,
+                    },
                 },
+                required: ['issue'],
             },
-            required: ['issue'],
         },
     },
     fetch: {
@@ -197,16 +225,20 @@ export const OPENCTX_TOOL_CONFIG: Record<string, CodyToolConfig> = {
                 ps`Content from https://google.com: \`<TOOLFETCH><uri>https://google.com</uri></TOOLFETCH>\``,
             ],
         },
-        input_schema: {
-            type: 'object',
-            properties: {
-                uri: {
-                    type: 'string',
-                    format: 'uri',
-                    description: 'The URI to fetch content from',
+        spec: {
+            name: 'fetch',
+            description: 'To fetch content from a uri',
+            input_schema: {
+                type: 'object',
+                properties: {
+                    uri: {
+                        type: 'string',
+                        format: 'uri',
+                        description: 'The URI to fetch content from',
+                    },
                 },
+                required: ['uri'],
             },
-            required: ['uri'],
         },
     },
     'server-github': {
@@ -220,20 +252,31 @@ export const OPENCTX_TOOL_CONFIG: Record<string, CodyToolConfig> = {
             placeholder: ps`action`,
             examples: [ps`Create an issue: \`<TOOLGHMCP><action>create_issue</action></TOOLGHMCP>\``],
         },
-        input_schema: {
-            type: 'object',
-            properties: {
-                action: {
-                    type: 'string',
-                    enum: ['create_issue', 'update_issue', 'search_issues', 'create_pr', 'update_pr'],
-                    description: 'The GitHub API action to perform',
+        spec: {
+            name: 'server-github',
+            description:
+                'Access GitHub API, enabling file operations, repository management, search functionality, and more.',
+            input_schema: {
+                type: 'object',
+                properties: {
+                    action: {
+                        type: 'string',
+                        enum: [
+                            'create_issue',
+                            'update_issue',
+                            'search_issues',
+                            'create_pr',
+                            'update_pr',
+                        ],
+                        description: 'The GitHub API action to perform',
+                    },
+                    payload: {
+                        type: 'object',
+                        description: 'Additional data required for the action',
+                    },
                 },
-                payload: {
-                    type: 'object',
-                    description: 'Additional data required for the action',
-                },
+                required: ['action'],
             },
-            required: ['action'],
         },
     },
     'provider-github': {
@@ -249,16 +292,20 @@ export const OPENCTX_TOOL_CONFIG: Record<string, CodyToolConfig> = {
                 ps`Issue about authentication: \`<TOOLGHISSUE><query>authentication</query></TOOLGHISSUE>\``,
             ],
         },
-        input_schema: {
-            type: 'object',
-            properties: {
-                search: {
-                    type: 'string',
-                    description: 'Search query to find relevant GitHub issues',
-                    minLength: 2,
+        spec: {
+            name: 'provider-github',
+            description: 'To retrieve issues in Github for this codebase',
+            input_schema: {
+                type: 'object',
+                properties: {
+                    search: {
+                        type: 'string',
+                        description: 'Search query to find relevant GitHub issues',
+                        minLength: 2,
+                    },
                 },
+                required: ['search'],
             },
-            required: ['search'],
         },
     },
     'git-openctx': {
@@ -274,16 +321,20 @@ export const OPENCTX_TOOL_CONFIG: Record<string, CodyToolConfig> = {
                 ps`Get the uncommitted changes \`<TOOLGIT><diff>Uncommitted changes</diff></TOOLGITHUB>\``,
             ],
         },
-        input_schema: {
-            type: 'object',
-            properties: {
-                diff: {
-                    type: 'string',
-                    enum: ['Uncommitted changes', '@diff-vs-default-branch'],
-                    description: 'The type of diff to retrieve',
+        spec: {
+            name: 'git-openctx',
+            description: 'To retrieve git diff for current changes or against origin/main',
+            input_schema: {
+                type: 'object',
+                properties: {
+                    diff: {
+                        type: 'string',
+                        enum: ['Uncommitted changes', '@diff-vs-default-branch'],
+                        description: 'The type of diff to retrieve',
+                    },
                 },
+                required: ['diff'],
             },
-            required: ['diff'],
         },
     },
     postgres: {
@@ -299,16 +350,21 @@ export const OPENCTX_TOOL_CONFIG: Record<string, CodyToolConfig> = {
                 ps`Schema of the 'users' table \`<TOOLPOSTGRES><schema>users</schema></TOOLPOSTGRES>\``,
             ],
         },
-        input_schema: {
-            type: 'object',
-            properties: {
-                schema: {
-                    type: 'string',
-                    description: 'The name of the database table to get schema information for',
-                    pattern: '^[a-zA-Z_][a-zA-Z0-9_]*$',
+        spec: {
+            name: 'postgres',
+            description:
+                'Get schema information for a table in the PostgreSQL database, including column names and data types',
+            input_schema: {
+                type: 'object',
+                properties: {
+                    schema: {
+                        type: 'string',
+                        description: 'The name of the database table to get schema information for',
+                        pattern: '^[a-zA-Z_][a-zA-Z0-9_]*',
+                    },
                 },
+                required: ['schema'],
             },
-            required: ['schema'],
         },
     },
     batch: {
@@ -322,16 +378,20 @@ export const OPENCTX_TOOL_CONFIG: Record<string, CodyToolConfig> = {
             placeholder: ps`job`,
             examples: [ps`\`<TOOLBC><job>create migration to fix x</job></TOOLBC>\``],
         },
-        input_schema: {
-            type: 'object',
-            properties: {
-                schema: {
-                    type: 'string',
-                    description: 'Description of the batch change job',
-                    minLength: 2,
+        spec: {
+            name: 'batch',
+            description: 'Create a batch change changeset spec as PER request.',
+            input_schema: {
+                type: 'object',
+                properties: {
+                    schema: {
+                        type: 'string',
+                        description: 'Description of the batch change job',
+                        minLength: 2,
+                    },
                 },
+                required: ['job'],
             },
-            required: ['job'],
         },
     },
 }

@@ -39,7 +39,7 @@ export abstract class CodyTool {
     public getInstruction(): PromptString {
         const { tag, subTag } = this.config.tags
         const { instruction, placeholder, examples } = this.config.prompt
-        const input_schema = this.config.input_schema
+        const input_schema = this.config.spec?.input_schema
         try {
             if (input_schema) {
                 const toolDefinition = JSON.stringify(
