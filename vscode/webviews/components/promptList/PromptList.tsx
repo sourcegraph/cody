@@ -1,7 +1,7 @@
 import clsx from 'clsx'
 import { type FC, useCallback, useMemo, useState } from 'react'
 
-import type { Action, PromptsInput } from '@sourcegraph/cody-shared'
+import { CodyIDE, PromptMode, type Action, type PromptsInput } from '@sourcegraph/cody-shared'
 
 import { useLocalStorage } from '../../components/hooks'
 import { useTelemetryRecorder } from '../../utils/telemetry'
@@ -42,6 +42,7 @@ interface PromptListProps {
     recommendedOnly?: boolean
     onSelect: (item: Action) => void
     promptFilters?: PromptsFilterArgs
+    IDE?: CodyIDE
 }
 
 /**
@@ -66,6 +67,7 @@ export const PromptList: FC<PromptListProps> = props => {
         recommendedOnly,
         onSelect: parentOnSelect,
         promptFilters,
+        IDE,
     } = props
 
     const endpointURL = new URL(useConfig().authStatus.endpoint)
@@ -164,14 +166,27 @@ export const PromptList: FC<PromptListProps> = props => {
             if (promptFilters?.core) {
                 return actions.filter(action => action.actionType === 'prompt' && action.builtin)
             }
+
+            const isWebClient = IDE === CodyIDE.Web
             const shouldExcludeBuiltinCommands =
                 promptFilters?.promoted || promptFilters?.owner || promptFilters?.tags
+
+            if (shouldExcludeBuiltinCommands && isWebClient) {
+                return actions.filter(action =>
+                    action.actionType === 'prompt' &&
+                    !action.builtin &&
+                    action.mode === PromptMode.CHAT
+                )
+            }
             if (shouldExcludeBuiltinCommands) {
                 return actions.filter(action => action.actionType === 'prompt' && !action.builtin)
             }
+            if (isWebClient) {
+                return actions.filter(action => action.mode === PromptMode.CHAT)
+            }
             return actions
         },
-        [promptFilters]
+        [promptFilters, IDE]
     )
 
     // Don't show builtin commands to insert in the prompt editor.
@@ -239,7 +254,6 @@ export const PromptList: FC<PromptListProps> = props => {
                             )}
                         </CommandLoading>
                     )}
-
                 {actions.map(action => (
                     <ActionItem
                         key={commandRowValue(action)}
@@ -248,7 +262,6 @@ export const PromptList: FC<PromptListProps> = props => {
                         className={clsx(itemPaddingClass, styles.listItem)}
                     />
                 ))}
-
                 {showPromptLibraryUnsupportedMessage && result && !result.arePromptsSupported && (
                     <>
                         <CommandSeparator alwaysRender={true} />
