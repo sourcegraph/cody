@@ -47,6 +47,7 @@
 
 .result {
     border-bottom: solid 1px var(--cody-chat-code-border-color);
+    background-color: var(--vscode-editor-background);
 
     code {
         padding: 0 !important;

@@ -120,6 +120,8 @@ export const PromptList: FC<PromptListProps> = props => {
                 },
                 privateMetadata: {
                     nameWithOwner: isPrompt ? action.nameWithOwner : undefined,
+                    promptId: isPrompt ? action.id : undefined,
+                    promptName: isPrompt ? action.name : undefined,
                 },
                 billingMetadata: { product: 'cody', category: 'core' },
             })
@@ -167,7 +169,15 @@ export const PromptList: FC<PromptListProps> = props => {
             if (shouldExcludeBuiltinCommands) {
                 return actions.filter(action => action.actionType === 'prompt' && !action.builtin)
             }
-            return actions
+            return actions.filter(action => {
+                if (promptFilters?.core) {
+                    return action.actionType === 'prompt' && action.builtin
+                }
+                const isActionEditLike =
+                    action.actionType === 'prompt' ? action.mode !== 'CHAT' : action.mode !== 'ask'
+
+                return !isActionEditLike
+            })
         },
         [promptFilters]
     )
@@ -198,6 +208,7 @@ export const PromptList: FC<PromptListProps> = props => {
             className={clsx(className, styles.list, {
                 [styles.listChips]: appearanceMode === 'chips-list',
             })}
+            disablePointerSelection={true}
         >
             <CommandList className={className}>
                 {showSearch && (
@@ -236,16 +247,18 @@ export const PromptList: FC<PromptListProps> = props => {
                             )}
                         </CommandLoading>
                     )}
-
-                {actions.map(action => (
-                    <ActionItem
-                        key={commandRowValue(action)}
-                        action={action}
-                        onSelect={onSelect}
-                        className={clsx(itemPaddingClass, styles.listItem)}
-                    />
-                ))}
-
+                {actions
+                    .filter(action =>
+                        action.actionType === 'prompt' ? action.mode === 'CHAT' : action.mode === 'ask'
+                    )
+                    .map(action => (
+                        <ActionItem
+                            key={commandRowValue(action)}
+                            action={action}
+                            onSelect={onSelect}
+                            className={clsx(itemPaddingClass, styles.listItem)}
+                        />
+                    ))}
                 {showPromptLibraryUnsupportedMessage && result && !result.arePromptsSupported && (
                     <>
                         <CommandSeparator alwaysRender={true} />

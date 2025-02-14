@@ -6,6 +6,7 @@ import {
     type ExpectedV2Events,
     type WorkspaceDirectory,
     executeCommandInPalette,
+    mockEnterpriseRepoIdMapping,
     spawn,
     test,
     withTempDir,
@@ -43,6 +44,7 @@ test
     })(
     'using actively invoked commands and autocomplete shows a error',
     async ({ page, server, sidebar }) => {
+        mockEnterpriseRepoIdMapping(server, 'github.com/sourcegraph/sourcegraph')
         server.onGraphQl('ContextFilters').replyJson({
             data: {
                 site: {
@@ -67,9 +69,7 @@ test
         await page.getByRole('tab', { name: 'foo.ts' }).hover()
 
         // Cody icon in the status bar should shows that the file is being ignored
-        const statusBarButton = page.getByRole('button', {
-            name: 'ignored', //TODO(rnauta): migrate this test to e2ev2 and use StatusBar tags
-        })
+        const statusBarButton = page.getByRole('button', { name: /cody-logo-heavy-slash/ })
         await statusBarButton.hover()
         await expect(statusBarButton).toBeVisible()
 

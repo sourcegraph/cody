@@ -78,7 +78,7 @@ export interface Enum {
     members: EnumMember[]
 }
 
-export interface EnumMember {
+interface EnumMember {
     serializedName: string
     formattedName: string
 }

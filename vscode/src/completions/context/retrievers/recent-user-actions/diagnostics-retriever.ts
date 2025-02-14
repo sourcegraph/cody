@@ -10,7 +10,7 @@ import { getCellIndexInActiveNotebookEditor, getNotebookCells } from './notebook
 // XML builder instance for formatting diagnostic messages
 const XML_BUILDER = new XMLBuilder({ format: true })
 
-export interface DiagnosticsRetrieverOptions {
+interface DiagnosticsRetrieverOptions {
     contextLines: number
     useXMLForPromptRendering: boolean
     useCaretToIndicateErrorLocation?: boolean

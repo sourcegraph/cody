@@ -1,8 +1,10 @@
 import type { SerializedElementNode, SerializedLexicalNode, SerializedTextNode } from 'lexical'
 import type { SerializedPromptEditorValue } from './editorState'
+import type { SerializedContextItem, SerializedContextItemMentionNode } from './nodes'
 
 export const AT_MENTION_SERIALIZED_PREFIX = 'cody://serialized.v1'
 const AT_MENTION_SERIALIZATION_END = '_'
+const BASE_64_CHARACTERS = '[A-Za-z0-9+/]+={0,2}'
 
 function unicodeSafeBtoa(str: string) {
     return btoa(encodeURIComponent(str))
@@ -12,10 +14,22 @@ function unicodeSafeAtob(str: string) {
     return decodeURIComponent(atob(str))
 }
 
+const DYNAMIC_MENTION_TO_HYDRATABLE: Record<string, string> = {
+    'current-selection': 'cody://selection',
+    'current-file': 'cody://current-file',
+    'current-repository': 'cody://repository',
+    'current-directory': 'cody://current-dir',
+    'current-open-tabs': 'cody://tabs',
+}
+
+function isDynamicMentionKey(value: string): value is keyof typeof DYNAMIC_MENTION_TO_HYDRATABLE {
+    return !!DYNAMIC_MENTION_TO_HYDRATABLE[value]
+}
+
 /**
  * This function serializes a SerializedPromptEditorValue into a string representation that contains serialized
- * elements for contextMentionItems as a base64 encoded string. The result can be used with the deserialize function
- * to rebuild the editor state.
+ * elements for contextMentionItems as a base64 encoded string or cody:// syntax for current mentions.
+ * The result can be used with the deserialize function to rebuild the editor state.
  *
  * @param m SerializedPromptEditorValue
  */
@@ -25,10 +39,19 @@ export function serialize(m: SerializedPromptEditorValue): string {
     for (const n of nodes) {
         if (n.type === 'text') {
             t += (n as SerializedTextNode).text
+        } else if (n.type === 'contextItemMention') {
+            const contextItemMention: SerializedContextItem = (n as SerializedContextItemMentionNode)
+                .contextItem
+            if (isDynamicMentionKey(contextItemMention.type)) {
+                t += DYNAMIC_MENTION_TO_HYDRATABLE[contextItemMention.type]
+            } else {
+                t +=
+                    `${AT_MENTION_SERIALIZED_PREFIX}?data=${unicodeSafeBtoa(
+                        JSON.stringify(n, undefined, 0)
+                    )}` + AT_MENTION_SERIALIZATION_END
+            }
         } else {
-            t += `${AT_MENTION_SERIALIZED_PREFIX}?data=${unicodeSafeBtoa(
-                JSON.stringify(n, undefined, 0)
-            )}${AT_MENTION_SERIALIZATION_END}`
+            throw Error('Unhandled node type in atMentionsSerializer.serialize: ' + n.type)
         }
     }
     return t
@@ -65,14 +88,54 @@ const NEW_LINE_NODE = {
     version: 1,
 }
 
-export function deserializeContextMentionItem(s: string) {
+function deserializeContextMentionItem(s: string) {
     return JSON.parse(
         unicodeSafeAtob(new URL(s).searchParams.get('data')?.replace(AT_MENTION_SERIALIZATION_END, '')!)
     )
 }
 
-function deserializeParagraph(s: string): SerializedLexicalNode[] {
-    const parts = s.split(new RegExp(`(${AT_MENTION_SERIALIZED_PREFIX}\\?data=[^\\s]+)`, 'g'))
+const CONTEXT_ITEMS = {
+    'cody://selection': {
+        description: 'Picks the current selection',
+        type: 'current-selection',
+        title: 'Current Selection',
+        text: 'current selection',
+    },
+    'cody://current-file': {
+        description: 'Picks the current file',
+        type: 'current-file',
+        title: 'Current File',
+        text: 'current file',
+    },
+    'cody://repository': {
+        description: 'Picks the current repository',
+        type: 'current-repository',
+        title: 'Current Repository',
+        text: 'current repository',
+    },
+    'cody://current-dir': {
+        description: 'Picks the current directory',
+        type: 'current-directory',
+        title: 'Current Directory',
+        text: 'current directory',
+    },
+    'cody://tabs': {
+        description: 'Picks the current open tabs',
+        type: 'current-open-tabs',
+        title: 'Current Open Tabs',
+        text: 'current open tabs',
+    },
+} as const
+
+export function deserializeParagraph(s: string): SerializedLexicalNode[] {
+    const parts = s.split(
+        new RegExp(
+            `(${AT_MENTION_SERIALIZED_PREFIX}\\?data=${BASE_64_CHARACTERS}${AT_MENTION_SERIALIZATION_END}|${Object.keys(
+                CONTEXT_ITEMS
+            ).join('|')})`,
+            'g'
+        )
+    )
     return parts
         .map(part => {
             if (part.startsWith(AT_MENTION_SERIALIZED_PREFIX)) {
@@ -91,6 +154,11 @@ function deserializeParagraph(s: string): SerializedLexicalNode[] {
                     }
                 }
             }
+            for (const [uri, item] of Object.entries(CONTEXT_ITEMS)) {
+                if (part === uri) {
+                    return createContextItemMention(item, uri)
+                }
+            }
             return {
                 type: 'text',
                 text: part,
@@ -102,6 +170,43 @@ function deserializeParagraph(s: string): SerializedLexicalNode[] {
             }
         })
         .filter(node => node.text !== '')
+}
+
+function createContextItemMention(
+    item: (typeof CONTEXT_ITEMS)[keyof typeof CONTEXT_ITEMS],
+    uri: string
+) {
+    return {
+        contextItem: {
+            description: item.description,
+            id: item.type,
+            name: item.type,
+            type: item.type,
+            title: item.title,
+            uri,
+        },
+        isFromInitialContext: false,
+        text: item.text,
+        type: 'contextItemMention',
+        version: 1,
+    }
+}
+
+export function splitToWords(s: string): string[] {
+    /**
+     * Regular expression pattern that matches Cody context mentions in two formats:
+     * 1. Built-in shortcuts like 'cody://tabs', 'cody://selection' (defined in CONTEXT_ITEMS)
+     * 2. Serialized context items like 'cody://serialized.v1?data=base64data_'
+     *
+     * For built-in shortcuts: stops at whitespace, periods, or newlines
+     * For serialized items: includes everything between 'cody://serialized' and '_'
+     *
+     * Examples:
+     * - "cody://tabs." -> matches "cody://tabs"
+     * - "cody://serialized.v1?data=123_." -> matches "cody://serialized.v1?data=123_"
+     */
+    const pattern = /(cody:\/\/(?:serialized[^_]+_|[^_\s.]+))/
+    return s.split(pattern)
 }
 
 function deserializeDoc(s: string): SerializedLexicalNode[] {
@@ -120,6 +225,11 @@ function deserializeDoc(s: string): SerializedLexicalNode[] {
     })
 }
 
+/**
+ * Deserializes a prompt editor value from a previously serialized editor value.
+ *
+ * @param s serialized editor value
+ */
 export function deserialize(s: string): SerializedPromptEditorValue | undefined {
     const children: SerializedLexicalNode[] = deserializeDoc(s)
 

@@ -1,6 +1,21 @@
+.popover-container {
+    position: absolute;
+    left: 0;
+}
+
+@media (max-width: 300px) {
+    .popover-container {
+        position: relative;
+
+        --outside-bound-editor-width: 48px;
+        min-width: calc(100vw - var(--outside-bound-editor-width));
+    }
+}
+
 .popover-dimensions {
     margin-top: 20px; /* show on the line below the cursor */
     width: clamp(300px, 65vw, 440px);
+    max-width: 100%;
 
     --max-items: 12;
     --mention-item-height: 30px;
@@ -12,6 +27,7 @@
         flex: 1;
     }
 }
+
 :global(.typeahead-flipped) .popover-dimensions {
     align-items: end;
 }

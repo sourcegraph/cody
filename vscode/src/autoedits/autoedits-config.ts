@@ -18,7 +18,7 @@ interface BaseAutoeditsProviderConfig {
     isChatModel: boolean
 }
 
-export interface AutoeditsProviderConfig extends BaseAutoeditsProviderConfig {
+interface AutoeditsProviderConfig extends BaseAutoeditsProviderConfig {
     experimentalAutoeditsConfigOverride: AutoEditsModelConfig | undefined
     isMockResponseFromCurrentDocumentTemplateEnabled: boolean
 }
@@ -65,7 +65,7 @@ function getBaseProviderConfig(): BaseAutoeditsProviderConfig {
 /**
  * Retrieves the configuration for the AutoEdits provider by combining user settings with default values.
  */
-export function getAutoeditsProviderConfig(): AutoeditsProviderConfig {
+function getAutoeditsProviderConfig(): AutoeditsProviderConfig {
     const isMockResponseFromCurrentDocumentTemplateEnabled = vscode.workspace
         .getConfiguration()
         .get<boolean>('cody.experimental.autoedit.use-mock-responses', false)

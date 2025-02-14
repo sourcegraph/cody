@@ -51,7 +51,7 @@ export class CodyGatewayAdapter implements AutoeditsModelAdapter {
         const body: FireworksCompatibleRequestParams = {
             stream: false,
             model: options.model,
-            temperature: 0,
+            temperature: 0.1,
             max_tokens: maxTokens,
             response_format: {
                 type: 'text',

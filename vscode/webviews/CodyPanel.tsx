@@ -57,7 +57,7 @@ interface CodyPanelProps {
 export const CodyPanel: FunctionComponent<CodyPanelProps> = ({
     view,
     setView,
-    configuration: { config, clientCapabilities },
+    configuration: { config, clientCapabilities, isDotComUser },
     errorMessages,
     setErrorMessages,
     attributionEnabled,
@@ -80,8 +80,11 @@ export const CodyPanel: FunctionComponent<CodyPanelProps> = ({
     const api = useExtensionAPI()
     const { value: chatModels } = useObservable(useMemo(() => api.chatModels(), [api.chatModels]))
     const isPromptsV2Enabled = useFeatureFlag(FeatureFlag.CodyPromptsV2)
-    const isTeamsUpgradeCtaEnabled = useFeatureFlag(FeatureFlag.SourcegraphTeamsUpgradeCTA)
-
+    // workspace upgrade eligibility should be that the flag is set, is on dotcom and only has one account. This prevents enterprise customers that are logged into multiple endpoints from seeing the CTA
+    const isWorkspacesUpgradeCtaEnabled =
+        useFeatureFlag(FeatureFlag.SourcegraphTeamsUpgradeCTA) &&
+        isDotComUser &&
+        config.endpointHistory?.length === 1
     useEffect(() => {
         onExternalApiReady?.(externalAPI)
     }, [onExternalApiReady, externalAPI])
@@ -122,11 +125,11 @@ export const CodyPanel: FunctionComponent<CodyPanelProps> = ({
                         currentView={view}
                         setView={setView}
                         endpointHistory={config.endpointHistory ?? []}
-                        isTeamsUpgradeCtaEnabled={isTeamsUpgradeCtaEnabled}
+                        isWorkspacesUpgradeCtaEnabled={isWorkspacesUpgradeCtaEnabled}
                     />
                 )}
                 {errorMessages && <ErrorBanner errors={errorMessages} setErrors={setErrorMessages} />}
-                <TabContainer value={view} ref={tabContainerRef}>
+                <TabContainer value={view} ref={tabContainerRef} data-scrollable>
                     {view === View.Chat && (
                         <Chat
                             chatEnabled={chatEnabled}
@@ -141,7 +144,7 @@ export const CodyPanel: FunctionComponent<CodyPanelProps> = ({
                             smartApplyEnabled={smartApplyEnabled}
                             isPromptsV2Enabled={isPromptsV2Enabled}
                             setView={setView}
-                            isTeamsUpgradeCtaEnabled={isTeamsUpgradeCtaEnabled}
+                            isWorkspacesUpgradeCtaEnabled={isWorkspacesUpgradeCtaEnabled}
                         />
                     )}
                     {view === View.History && (
@@ -186,13 +189,13 @@ const ErrorBanner: React.FunctionComponent<{ errors: string[]; setErrors: (error
         </div>
     )
 
-export interface ExternalPrompt {
+interface ExternalPrompt {
     text: string
     autoSubmit: boolean
     mode?: ChatMessage['intent']
 }
 
-export interface CodyExternalApi {
+interface CodyExternalApi {
     runPrompt: (action: ExternalPrompt) => Promise<void>
 }
 

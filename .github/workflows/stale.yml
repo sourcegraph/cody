@@ -1,7 +1,11 @@
-name: 'Close stale issues and PRs'
+name: "Close stale issues and PRs"
 on:
   schedule:
-    - cron: '30 1 * * *'
+    - cron: "30 1 * * *"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   stale:
@@ -9,9 +13,9 @@ jobs:
     steps:
       - uses: actions/stale@v9
         with:
-          stale-issue-message: 'This issue is marked as stale because it has been open 60 days with no activity. Remove stale label or comment or this will be closed automatically in 5 days.'
-          stale-pr-message: 'This PR is marked as stale because it has been open 60 days with no activity. Remove stale label or comment or this will be closed automatically in 5 days.'
+          stale-issue-message: "This issue is marked as stale because it has been open 60 days with no activity. Remove stale label or comment or this will be closed automatically in 5 days."
+          stale-pr-message: "This PR is marked as stale because it has been open 60 days with no activity. Remove stale label or comment or this will be closed automatically in 5 days."
           days-before-stale: 60
           days-before-close: 5
-          exempt-issue-labels: 'neverstale'
-          exempt-pr-labels: 'neverstale'
+          exempt-issue-labels: "neverstale"
+          exempt-pr-labels: "neverstale"

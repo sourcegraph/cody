@@ -133,7 +133,10 @@ export class AgentTextDocument implements vscode.TextDocument {
     }
 
     public validateRange(range: vscode.Range): vscode.Range {
-        throw new Error('Method not implemented.')
+        return new vscode_shim.Range(
+            this.validatePosition(range.start),
+            this.validatePosition(range.end)
+        )
     }
 
     public validatePosition(position: vscode.Position): vscode.Position {

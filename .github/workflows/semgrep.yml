@@ -4,6 +4,10 @@ on:
   pull_request_target:
     types: [edited, opened, synchronize, ready_for_review]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   semgrep:
     permissions:

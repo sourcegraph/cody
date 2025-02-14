@@ -309,6 +309,33 @@ export const EMPTY = new Observable<never>(observer => {
 export const NEVER: Observable<never> = new Observable<never>(() => {})
 
 /**
+ * Merge all {@link Observable}s into a single {@link Observable} that emits each value emitted by
+ * any of the input observables.
+ */
+export function merge<T extends unknown[]>(
+    ...observables: { [K in keyof T]: Observable<T[K]> }
+): Observable<T[number]> {
+    return new Observable<T[number]>(observer => {
+        let completed = 0
+        const subscriptions = observables.map(observable =>
+            observable.subscribe({
+                next: value => observer.next(value),
+                error: err => observer.error(err),
+                complete: () => {
+                    completed++
+                    if (completed === observables.length) {
+                        observer.complete()
+                    }
+                },
+            })
+        )
+        return () => {
+            unsubscribeAll(subscriptions)
+        }
+    })
+}
+
+/**
  * Combine the latest values from multiple {@link Observable}s into a single {@link Observable} that
  * emits only after all input observables have emitted once.
  */
@@ -1354,4 +1381,48 @@ export async function testing__firstValueFromWithinTime<T>(
         throw error
     }
     return result
+}
+
+export function retry<T>(count: number): (source: ObservableLike<T>) => Observable<T> {
+    return (source: ObservableLike<T>) =>
+        new Observable<T>(observer => {
+            let retries = 0
+            let subscription: UnsubscribableLike | undefined = undefined
+
+            function subscribe() {
+                subscription = source.subscribe({
+                    next(value) {
+                        if (subscription) {
+                            observer.next(value)
+                            retries = 0
+                        }
+                    },
+                    error(err) {
+                        if (retries < count && subscription) {
+                            retries++
+                            unsuscribeThis()
+                            subscribe()
+                        } else {
+                            observer.error(err)
+                        }
+                    },
+                    complete() {
+                        if (subscription) {
+                            observer.complete()
+                        }
+                    },
+                })
+            }
+
+            function unsuscribeThis() {
+                if (subscription) {
+                    unsubscribe(subscription)
+                    subscription = undefined
+                }
+            }
+
+            subscribe()
+
+            return () => unsuscribeThis()
+        })
 }

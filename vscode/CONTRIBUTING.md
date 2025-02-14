@@ -43,88 +43,7 @@ We also have some build-in UI to help during the development of autocomplete req
 
 ## Releases
 
-### Stable release
-
-Follow these steps to publish a new major release to the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai) and [Open VSX Registry](https://open-vsx.org/extension/sourcegraph/cody-ai).
-
-1. **Coordinate with Marketing**: Contact the Marketing team in the Cody Slack channel approximately 2 days before the release to ensure a blog post is prepared.
-2. **Update Version**: Run `pnpm vsce-version-bump` to increment the version number for the stable release. This script will:
-   - Increment the `version` in `package.json` and `CHANGELOG.md`.
-   - Commit the version increment with a message like "VS Code: Release X.Y.0".
-3. **Create Pull Request**: Open a PR with the updated version.
-4. **Tag the Release**: After the PR is merged, create a git tag: `git tag vscode-v$(jq -r .version package.json)`
-5. **Push the Tag**: Push the tag to the remote repository: `git push --tags`
-   - This will trigger the [vscode-stable-release workflow](https://github.com/sourcegraph/cody/actions/workflows/vscode-stable-release.yml).
-6. **Monitor Publication**: Once the workflow run is complete, the new version will be published to the marketplaces.
-
-#### Release checklist
-
-Include the following checklist in the PR description when creating a new release.
-
-The `vsce-version-bump` script will automatically add this checklist to the PR description.
-
-```markdown
-Release Checklist:
-
-    - [ ] [vscode/CHANGELOG.md](./CHANGELOG.md)
-    - [ ] [vscode/package.json](./package.json)
-    - [ ] Link to PR for the release blog post
-```
-
-Note: Ensure all checklist items are completed before merging the release PR.
-
-### Patch release
-
-To publish a **patch** release to the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai) and [Open VSX Registry](https://open-vsx.org/extension/sourcegraph/cody-ai).
-
-1. Make sure all the changes for the patch are already committed to the `main` branch.
-2. Create a patch release branch if one does not already exist:
-   1. For example, if you are releasing `v1.10.<patch>`, then you should look to see if there is already a `vscode/1.10` branch.
-   2. If there is not, then create the branch using the [last stable release tag](https://github.com/sourcegraph/cody/tags) for the version you are trying to patch, e.g., `git checkout vscode-v1.10.0 -B vscode/1.10` and push this branch.
-      1. Note: Do not push your changes to this branch directly; treat it like a `main` branch where all changes that are merged should be reviewed first.
-3. Create a PR with your changes that will go into the release, and send that PR to the e.g., `vscode/1.10` branch:
-   1. Create your PR branch: `git checkout vscode/1.10 -b me/1.10.1-patch-release`
-   2. Make changes:
-      1. Cherry-pick (`git cherry-pick $COMMIT_FROM_MAIN`) the relevant patches from `main` into your PR branch. If there are any conflicts, address them in your branch.
-      2. Increment the `version` in [`package.json`](package.json)
-      3. Update the [`CHANGELOG`](CHANGELOG.md)
-      4. Update the version used in agent recordings by [following these steps](../agent/README.md#updating-the-polly-http-recordings)
-   3. Send a PR to merge your branch, e.g., `me/1.10.1-patch-release` into `vscode/1.10`
-   4. Ensure your PR branch passes CI tests, and get your PR reviewed/approved/merged.
-4. Tag the patch release:
-   1. `git tag vscode-v$(jq -r .version package.json)`
-   2. `git push --tags`
-5. Wait for the [vscode-stable-release workflow](https://github.com/sourcegraph/cody/actions/workflows/vscode-stable-release.yml) run to finish.
-6. Once the patch has been published, update `main`:
-   1. Create a new PR branch off `main`
-   2. Update the `version` in [`package.json`](package.json) if appropriate.
-   3. Update the [`CHANGELOG`](CHANGELOG.md)
-   4. Update the version used in agent recordings by [following these steps](../agent/README.md#updating-the-polly-http-recordings)
-   5. Commit the version increment, e.g., `VS Code: Release 1.10.1` and get your `main` PR merged.
-
-### Insiders builds
-
-Insiders builds are nightly (or more frequent) builds with the latest from `main`. They're less stable but have the latest changes. Only use the insiders build if you want to test the latest changes.
-
-#### Using the insiders build
-
-To use the Cody insiders build in VS Code:
-
-1. Install the extension from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai).
-1. Select **Switch to Pre-release Version** in the extension's page in VS Code.
-1. Wait for it to download and install, and then reload (by pressing **Reload Required**).
-
-#### Publishing a new insiders build
-
-Insiders builds are published automatically daily at 1500 UTC using the [vscode-insiders-release workflow](https://github.com/sourcegraph/cody/actions/workflows/vscode-insiders-release.yml).
-
-To manually trigger an insiders build:
-
-1. Open the [vscode-insiders-release workflow](https://github.com/sourcegraph/cody/actions/workflows/vscode-insiders-release.yml).
-1. Press the **Run workflow ▾** button.
-1. Select the branch you want to build from (usually `main`).
-1. Press the **Run workflow** button.
-1. Wait for the workflow run to finish.
+See [Cody Client Releases.](https://sourcegraph.notion.site/sourcegraph/Cody-Client-Releases-82244a6d1d90420d839f432b8cc00cd8)
 
 ### Running a release build locally
 
@@ -150,6 +69,10 @@ code --user-data-dir=/tmp/separate-vscode-instance --profile-temp
 To open the Cody sidebar, autocomplete trace view, etc., when debugging starts, you can set hidden
 VS Code user settings. See [`src/dev/helpers.ts`](src/dev/helpers.ts) for a list of available
 options.
+
+Run the web build from /web  `pnpm install && pnpm dev` to reduce time spent waiting on extension builds. This is helpful for roughing in features, but you should always test the extensions in their proper environments.
+
+Run `pnpm biome` to discover buildtime errors early.
 
 ### Wasm tree sitter modules
 

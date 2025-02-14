@@ -41,6 +41,8 @@ export function toStructuredMentions(mentions: ContextItem[]): StructuredMention
     const symbols: ContextItemSymbol[] = []
     const openCtx: ContextItemOpenCtx[] = []
     for (const mention of mentions) {
+        // Update source type to user to indicate that this is a user-added item.
+        mention.source = mention.source ?? ContextItemSource.User
         switch (mention.type) {
             case 'repository':
                 repos.push(mention)

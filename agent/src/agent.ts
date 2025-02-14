@@ -14,6 +14,7 @@ import {
     currentAuthStatusAuthed,
     firstNonPendingAuthStatus,
     firstResultFromOperation,
+    getAuthHeaders,
     resolvedConfig,
     telemetryRecorder,
     waitUntilComplete,
@@ -394,7 +395,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
             }
 
             this.workspace.workspaceRootUri = clientInfo.workspaceRootUri
-                ? vscode.Uri.parse(clientInfo.workspaceRootUri).with({ scheme: 'file' })
+                ? vscode.Uri.parse(clientInfo.workspaceRootUri)
                 : vscode.Uri.from({
                       scheme: 'file',
                       path: clientInfo.workspaceRootPath ?? undefined,
@@ -1148,6 +1149,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 range: vscodeRange(params.range),
                 intent: 'edit',
                 mode: params.mode,
+                rules: params.rules ?? null,
             }
 
             if (!this.fixups) return Promise.reject()
@@ -1410,6 +1412,11 @@ export class Agent extends MessageHandler implements ExtensionClient {
         this.registerAuthenticatedRequest('testing/ignore/overridePolicy', async contextFilters => {
             contextFiltersProvider.setTestingContextFilters(contextFilters)
             return null
+        })
+
+        this.registerAuthenticatedRequest('internal/getAuthHeaders', async url => {
+            const config = await firstResultFromOperation(resolvedConfig)
+            return await getAuthHeaders(config.auth, new URL(url))
         })
     }
 
