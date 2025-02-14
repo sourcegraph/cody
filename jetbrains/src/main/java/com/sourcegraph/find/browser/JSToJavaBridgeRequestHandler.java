@@ -46,6 +46,8 @@ public class JSToJavaBridgeRequestHandler {
         case "getTheme":
           JsonObject currentThemeAsJson = ThemeUtil.getCurrentThemeAsJson();
           return createSuccessResponse(currentThemeAsJson);
+        case "getCustomRequestHeaders":
+          return createSuccessResponse(ConfigUtil.getAuthorizationHeadersAsJson(project));
         case "indicateSearchError":
           arguments = request.getAsJsonObject("arguments");
           // This must run on EDT (Event Dispatch Thread) because it changes the UI.
