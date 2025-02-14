@@ -1,5 +1,5 @@
 import { Observable, map } from 'observable-fns'
-import type { AuthCredentials, ClientConfiguration } from '../configuration'
+import type { AuthCredentials, ClientConfiguration, TokenSource } from '../configuration'
 import { logError } from '../logger'
 import {
     distinctUntilChanged,
@@ -11,6 +11,7 @@ import { skipPendingOperation, switchMapReplayOperation } from '../misc/observab
 import type { DefaultsAndUserPreferencesByEndpoint } from '../models/modelsService'
 import { DOTCOM_URL } from '../sourcegraph-api/environments'
 import { type PartialDeep, type ReadonlyDeep, isError } from '../utils'
+import { resolveAuth } from './auth-resolver'
 
 /**
  * The input from various sources that is needed to compute the {@link ResolvedConfiguration}.
@@ -27,6 +28,7 @@ export interface ConfigurationInput {
 
 export interface ClientSecrets {
     getToken(endpoint: string): Promise<string | undefined>
+    getTokenSource(endpoint: string): Promise<TokenSource | undefined>
 }
 
 export interface ClientState {
@@ -34,7 +36,6 @@ export interface ClientState {
     anonymousUserID: string | null
     lastUsedChatModality: 'sidebar' | 'editor'
     modelPreferences: DefaultsAndUserPreferencesByEndpoint
-    waitlist_o1: boolean | null
 }
 
 /**
@@ -77,39 +78,31 @@ async function resolveConfiguration({
     clientSecrets,
     clientState,
     reinstall: { isReinstalling, onReinstall },
-}: ConfigurationInput): Promise<ResolvedConfiguration> {
+}: ConfigurationInput): Promise<ResolvedConfiguration | Error> {
     const isReinstall = await isReinstalling()
     if (isReinstall) {
         await onReinstall()
     }
-    // we allow for overriding the server endpoint from config if we haven't
-    // manually signed in somewhere else
-    const serverEndpoint = normalizeServerEndpointURL(
+
+    const serverEndpoint =
         clientConfiguration.overrideServerEndpoint ||
-            (clientState.lastUsedEndpoint ?? DOTCOM_URL.toString())
-    )
+        clientState.lastUsedEndpoint ||
+        DOTCOM_URL.toString()
 
-    // We must not throw here, because that would result in the `resolvedConfig` observable
-    // terminating and all callers receiving no further config updates.
-    const loadTokenFn = () =>
-        clientSecrets.getToken(serverEndpoint).catch(error => {
-            logError(
-                'resolveConfiguration',
-                `Failed to get access token for endpoint ${serverEndpoint}: ${error}`
-            )
-            return null
-        })
-    const accessToken = clientConfiguration.overrideAuthToken || ((await loadTokenFn()) ?? null)
-    return {
-        configuration: clientConfiguration,
-        clientState,
-        auth: { accessToken, serverEndpoint },
-        isReinstall,
+    try {
+        const auth = await resolveAuth(serverEndpoint, clientConfiguration, clientSecrets)
+        return { configuration: clientConfiguration, clientState, auth, isReinstall }
+    } catch (error) {
+        // We don't want to throw here, because that would cause the observable to terminate and
+        // all callers receiving no further config updates.
+        logError('resolveConfiguration', `Error resolving configuration: ${error}`)
+        const auth = {
+            credentials: undefined,
+            serverEndpoint,
+            error: error,
+        }
+        return { configuration: clientConfiguration, clientState, auth, isReinstall }
     }
-}
-
-export function normalizeServerEndpointURL(url: string): string {
-    return url.endsWith('/') ? url : `${url}/`
 }
 
 const _resolvedConfig = fromLateSetSource<ResolvedConfiguration>()

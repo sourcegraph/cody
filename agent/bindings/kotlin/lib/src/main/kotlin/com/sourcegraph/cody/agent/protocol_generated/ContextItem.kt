@@ -19,6 +19,11 @@ sealed class ContextItem {
           "symbol" -> context.deserialize<ContextItemSymbol>(element, ContextItemSymbol::class.java)
           "openctx" -> context.deserialize<ContextItemOpenCtx>(element, ContextItemOpenCtx::class.java)
           "open-link" -> context.deserialize<ContextItemOpenLink>(element, ContextItemOpenLink::class.java)
+          "current-selection" -> context.deserialize<ContextItemCurrentSelection>(element, ContextItemCurrentSelection::class.java)
+          "current-file" -> context.deserialize<ContextItemCurrentFile>(element, ContextItemCurrentFile::class.java)
+          "current-repository" -> context.deserialize<ContextItemCurrentRepository>(element, ContextItemCurrentRepository::class.java)
+          "current-directory" -> context.deserialize<ContextItemCurrentDirectory>(element, ContextItemCurrentDirectory::class.java)
+          "current-open-tabs" -> context.deserialize<ContextItemCurrentOpenTabs>(element, ContextItemCurrentOpenTabs::class.java)
           else -> throw Exception("Unknown discriminator ${element}")
         }
       }
@@ -183,6 +188,131 @@ data class ContextItemOpenLink(
 
   enum class TypeEnum {
     @SerializedName("open-link") `Open-link`,
+  }
+}
+
+data class ContextItemCurrentSelection(
+  val uri: String,
+  val range: RangeData? = null,
+  val content: String? = null,
+  val repoName: String? = null,
+  val revision: String? = null,
+  val title: String? = null,
+  val description: String? = null,
+  val source: ContextItemSource? = null, // Oneof: user, editor, search, initial, priority, unified, selection, terminal, history, agentic
+  val size: Long? = null,
+  val isIgnored: Boolean? = null,
+  val isTooLarge: Boolean? = null,
+  val isTooLargeReason: String? = null,
+  val provider: String? = null,
+  val icon: String? = null,
+  val metadata: List<String>? = null,
+  val badge: String? = null,
+  val type: TypeEnum, // Oneof: current-selection
+) : ContextItem() {
+
+  enum class TypeEnum {
+    @SerializedName("current-selection") `Current-selection`,
+  }
+}
+
+data class ContextItemCurrentFile(
+  val uri: String,
+  val range: RangeData? = null,
+  val content: String? = null,
+  val repoName: String? = null,
+  val revision: String? = null,
+  val title: String? = null,
+  val description: String? = null,
+  val source: ContextItemSource? = null, // Oneof: user, editor, search, initial, priority, unified, selection, terminal, history, agentic
+  val size: Long? = null,
+  val isIgnored: Boolean? = null,
+  val isTooLarge: Boolean? = null,
+  val isTooLargeReason: String? = null,
+  val provider: String? = null,
+  val icon: String? = null,
+  val metadata: List<String>? = null,
+  val badge: String? = null,
+  val type: TypeEnum, // Oneof: current-file
+) : ContextItem() {
+
+  enum class TypeEnum {
+    @SerializedName("current-file") `Current-file`,
+  }
+}
+
+data class ContextItemCurrentRepository(
+  val uri: String,
+  val range: RangeData? = null,
+  val content: String? = null,
+  val repoName: String? = null,
+  val revision: String? = null,
+  val title: String? = null,
+  val description: String? = null,
+  val source: ContextItemSource? = null, // Oneof: user, editor, search, initial, priority, unified, selection, terminal, history, agentic
+  val size: Long? = null,
+  val isIgnored: Boolean? = null,
+  val isTooLarge: Boolean? = null,
+  val isTooLargeReason: String? = null,
+  val provider: String? = null,
+  val icon: String? = null,
+  val metadata: List<String>? = null,
+  val badge: String? = null,
+  val type: TypeEnum, // Oneof: current-repository
+) : ContextItem() {
+
+  enum class TypeEnum {
+    @SerializedName("current-repository") `Current-repository`,
+  }
+}
+
+data class ContextItemCurrentDirectory(
+  val uri: String,
+  val range: RangeData? = null,
+  val content: String? = null,
+  val repoName: String? = null,
+  val revision: String? = null,
+  val title: String? = null,
+  val description: String? = null,
+  val source: ContextItemSource? = null, // Oneof: user, editor, search, initial, priority, unified, selection, terminal, history, agentic
+  val size: Long? = null,
+  val isIgnored: Boolean? = null,
+  val isTooLarge: Boolean? = null,
+  val isTooLargeReason: String? = null,
+  val provider: String? = null,
+  val icon: String? = null,
+  val metadata: List<String>? = null,
+  val badge: String? = null,
+  val type: TypeEnum, // Oneof: current-directory
+) : ContextItem() {
+
+  enum class TypeEnum {
+    @SerializedName("current-directory") `Current-directory`,
+  }
+}
+
+data class ContextItemCurrentOpenTabs(
+  val uri: String,
+  val range: RangeData? = null,
+  val content: String? = null,
+  val repoName: String? = null,
+  val revision: String? = null,
+  val title: String? = null,
+  val description: String? = null,
+  val source: ContextItemSource? = null, // Oneof: user, editor, search, initial, priority, unified, selection, terminal, history, agentic
+  val size: Long? = null,
+  val isIgnored: Boolean? = null,
+  val isTooLarge: Boolean? = null,
+  val isTooLargeReason: String? = null,
+  val provider: String? = null,
+  val icon: String? = null,
+  val metadata: List<String>? = null,
+  val badge: String? = null,
+  val type: TypeEnum, // Oneof: current-open-tabs
+) : ContextItem() {
+
+  enum class TypeEnum {
+    @SerializedName("current-open-tabs") `Current-open-tabs`,
   }
 }
 

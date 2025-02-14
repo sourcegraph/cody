@@ -15,16 +15,16 @@ import {
     type SymbolKind,
     TokenCounterUtils,
     contextFiltersProvider,
+    currentOpenCtxController,
     currentResolvedConfig,
     displayPath,
-    firstValueFrom,
+    firstResultFromOperation,
     graphqlClient,
     isAbortError,
     isDefined,
     isErrorLike,
     isWindows,
     logError,
-    openCtx,
     toRangeData,
 } from '@sourcegraph/cody-shared'
 
@@ -319,8 +319,8 @@ async function createContextFileFromUri(
     symbolName?: string
 ): Promise<ContextItem[]> {
     const range = toRangeData(selectionRange)
-    const repoNames = await firstValueFrom(repoNameResolver.getRepoNamesContainingUri(uri))
-    const repoName: string = Array.isArray(repoNames) ? repoNames[0] : repoNames.toString()
+    const repoNames = await firstResultFromOperation(repoNameResolver.getRepoNamesContainingUri(uri))
+    const repoName: string | undefined = repoNames[0]
 
     return [
         type === 'file'
@@ -431,7 +431,7 @@ async function resolveContextMentionProviderContextItem(
         return []
     }
 
-    const openCtxClient = openCtx.controller
+    const openCtxClient = currentOpenCtxController()
     if (!openCtxClient) {
         return []
     }

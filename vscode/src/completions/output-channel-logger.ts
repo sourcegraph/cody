@@ -13,7 +13,7 @@ import type {
 
 import { Logger } from '../output-channel-logger'
 
-export const completionsOutputChannelLogger = new Logger('Completions')
+const completionsOutputChannelLogger = new Logger('Completions')
 export const autocompleteOutputChannelLogger = new Logger('Autocomplete')
 
 function createCompletionLogger(logger: Logger) {

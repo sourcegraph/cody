@@ -40,8 +40,6 @@ class LocalStorage implements LocalStorageForModelPreferences {
     private readonly AUTO_EDITS_ONBOARDING_NOTIFICATION_COUNT = 'cody-auto-edit-notification-info'
 
     public readonly keys = {
-        // LLM waitlist for the 09/12/2024 openAI o1 models
-        waitlist_o1: 'CODY_WAITLIST_LLM_09122024',
         deepCodyLastUsedDate: 'DEEP_CODY_LAST_USED_DATE',
         deepCodyDailyUsageCount: 'DEEP_CODY_DAILY_CHAT_USAGE',
     }
@@ -77,7 +75,6 @@ class LocalStorage implements LocalStorageForModelPreferences {
             anonymousUserID: this.anonymousUserID(),
             lastUsedChatModality: this.getLastUsedChatModality(),
             modelPreferences: this.getModelPreferences(),
-            waitlist_o1: this.get(this.keys.waitlist_o1),
         }
     }
 
@@ -88,14 +85,6 @@ class LocalStorage implements LocalStorageForModelPreferences {
             map(() => this.getClientState()),
             distinctUntilChanged()
         )
-    }
-
-    public async setOrDeleteWaitlistO1(value: boolean): Promise<void> {
-        if (value) {
-            await this.set(this.keys.waitlist_o1, value)
-        } else {
-            await this.delete(this.keys.waitlist_o1)
-        }
     }
 
     public getEndpoint(): string | null {
@@ -115,26 +104,26 @@ class LocalStorage implements LocalStorageForModelPreferences {
      * would give an inconsistent view of the state.
      */
     public async saveEndpointAndToken(
-        credentials: Pick<AuthCredentials, 'serverEndpoint' | 'accessToken' | 'tokenSource'>
+        auth: Pick<AuthCredentials, 'serverEndpoint' | 'credentials'>
     ): Promise<void> {
-        if (!credentials.serverEndpoint) {
+        if (!auth.serverEndpoint) {
             return
         }
         // Do not save an access token as the last-used endpoint, to prevent user mistakes.
-        if (isSourcegraphToken(credentials.serverEndpoint)) {
+        if (isSourcegraphToken(auth.serverEndpoint)) {
             return
         }
 
-        const serverEndpoint = new URL(credentials.serverEndpoint).href
+        const serverEndpoint = new URL(auth.serverEndpoint).href
 
         // Pass `false` to avoid firing the change event until we've stored all of the values.
         await this.set(this.LAST_USED_ENDPOINT, serverEndpoint, false)
         await this.addEndpointHistory(serverEndpoint, false)
-        if (credentials.accessToken) {
+        if (auth.credentials && 'token' in auth.credentials) {
             await secretStorage.storeToken(
                 serverEndpoint,
-                credentials.accessToken,
-                credentials.tokenSource
+                auth.credentials.token,
+                auth.credentials.source
             )
         }
         this.onChange.fire()

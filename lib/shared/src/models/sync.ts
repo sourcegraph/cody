@@ -10,7 +10,6 @@ import { logDebug } from '../logger'
 import {
     combineLatest,
     distinctUntilChanged,
-    pick,
     promiseFactoryToObservable,
     shareReplay,
     startWith,
@@ -27,7 +26,7 @@ import { RestClient } from '../sourcegraph-api/rest/client'
 import type { UserProductSubscription } from '../sourcegraph-api/userProductSubscription'
 import { CHAT_INPUT_TOKEN_BUDGET } from '../token/constants'
 import { isError } from '../utils'
-import { TOOL_CODY_MODEL, getExperimentalClientModelByFeatureFlag } from './client'
+import { TOOL_CODY_MODEL, ToolCodyModelName, getExperimentalClientModelByFeatureFlag } from './client'
 import { type Model, type ServerModel, createModel, createModelFromServerModel } from './model'
 import type {
     DefaultsAndUserPreferencesForEndpoint,
@@ -55,7 +54,7 @@ export function syncModels({
         PickResolvedConfiguration<{
             configuration: true
             auth: true
-            clientState: 'modelPreferences' | 'waitlist_o1'
+            clientState: 'modelPreferences'
         }>
     >
     authStatus: Observable<AuthStatus>
@@ -103,28 +102,18 @@ export function syncModels({
                         devModels: config.configuration.devModels,
                     },
                     auth: config.auth,
-                    clientState: {
-                        waitlist_o1: config.clientState.waitlist_o1,
-                    },
                 }) satisfies PickResolvedConfiguration<{
                     configuration: 'providerLimitPrompt' | 'customHeaders' | 'devModels'
                     auth: true
-                    clientState: 'waitlist_o1'
                 }>
         ),
         distinctUntilChanged()
     )
 
-    const userModelPreferences: Observable<DefaultsAndUserPreferencesForEndpoint> = combineLatest(
-        resolvedConfig.pipe(
-            map(config => config.clientState.modelPreferences),
-            distinctUntilChanged()
-        ),
-        authStatus.pipe(pick('endpoint'), distinctUntilChanged())
-    ).pipe(
-        map(([modelPreferences, { endpoint }]) => {
+    const userModelPreferences: Observable<DefaultsAndUserPreferencesForEndpoint> = resolvedConfig.pipe(
+        map(config => {
             // Deep clone so it's not readonly and we can mutate it, for convenience.
-            const prevPreferences = modelPreferences[endpoint]
+            const prevPreferences = config.clientState.modelPreferences[config.auth.serverEndpoint]
             return deepClone(prevPreferences ?? EMPTY_PREFERENCES)
         }),
         distinctUntilChanged(),
@@ -140,7 +129,11 @@ export function syncModels({
     const remoteModelsData: Observable<RemoteModelsData | Error | typeof pendingOperation> =
         combineLatest(relevantConfig, authStatus, userProductSubscription).pipe(
             switchMapReplayOperation(([config, authStatus, userProductSubscription]) => {
-                if (authStatus.pendingValidation || userProductSubscription === pendingOperation) {
+                if (
+                    authStatus.endpoint !== config.auth.serverEndpoint ||
+                    authStatus.pendingValidation ||
+                    userProductSubscription === pendingOperation
+                ) {
                     return Observable.of(pendingOperation)
                 }
 
@@ -219,8 +212,7 @@ export function syncModels({
                                                 isToolCodyEnabled,
                                             ]) => {
                                                 // TODO(sqs): remove waitlist from localStorage when user has access
-                                                const isOnWaitlist = config.clientState.waitlist_o1
-                                                if (isDotComUser && (hasEarlyAccess || isOnWaitlist)) {
+                                                if (isDotComUser && hasEarlyAccess) {
                                                     data.primaryModels = data.primaryModels.map(
                                                         model => {
                                                             if (model.tags.includes(ModelTag.Waitlist)) {
@@ -268,7 +260,7 @@ export function syncModels({
                                                 }
 
                                                 const hasToolCody = data.primaryModels.some(m =>
-                                                    m.id.includes('tool-cody')
+                                                    m.id.includes(ToolCodyModelName)
                                                 )
                                                 if (!hasToolCody && isToolCodyEnabled) {
                                                     clientModels.push(TOOL_CODY_MODEL)
@@ -473,11 +465,7 @@ async function fetchServerSideModels(
 ): Promise<ServerModelConfiguration | undefined> {
     // Fetch the data via REST API.
     // NOTE: We may end up exposing this data via GraphQL, it's still TBD.
-    const client = new RestClient(
-        config.auth.serverEndpoint,
-        config.auth.accessToken ?? undefined,
-        config.configuration.customHeaders
-    )
+    const client = new RestClient(config.auth, config.configuration.customHeaders)
     return await client.getAvailableModels(signal)
 }
 

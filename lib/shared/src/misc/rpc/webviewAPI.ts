@@ -1,4 +1,4 @@
-import { Observable } from 'observable-fns'
+import { type Observable, map } from 'observable-fns'
 import type { AuthStatus, ModelsData, ResolvedConfiguration, UserProductSubscription } from '../..'
 import type { SerializedPromptEditorState } from '../..'
 import type { ChatMessage, UserLocalHistory } from '../../chat/transcript/messages'
@@ -78,12 +78,6 @@ export interface WebviewToExtensionAPI {
      */
     defaultContext(): Observable<DefaultContext>
 
-    detectIntent(
-        text: string
-    ): Observable<
-        { intent: ChatMessage['intent']; allScores: { intent: string; score: number }[] } | undefined
-    >
-
     /**
      * Observe the current resolved configuration (same as the global {@link resolvedConfig}
      * observable).
@@ -132,10 +126,24 @@ export function createExtensionAPI(
         hydratePromptMessage: promptText =>
             hydratePromptMessage(promptText, staticDefaultContext?.initialContext),
         setChatModel: proxyExtensionAPI(messageAPI, 'setChatModel'),
-        defaultContext: staticDefaultContext
-            ? () => Observable.of(staticDefaultContext)
-            : proxyExtensionAPI(messageAPI, 'defaultContext'),
-        detectIntent: proxyExtensionAPI(messageAPI, 'detectIntent'),
+        defaultContext: () =>
+            proxyExtensionAPI(messageAPI, 'defaultContext')().pipe(
+                map(result =>
+                    staticDefaultContext
+                        ? ({
+                              ...result,
+                              corpusContext: [
+                                  ...result.corpusContext,
+                                  ...staticDefaultContext.corpusContext,
+                              ],
+                              initialContext: [
+                                  ...result.initialContext,
+                                  ...staticDefaultContext.initialContext,
+                              ],
+                          } satisfies DefaultContext)
+                        : result
+                )
+            ),
         promptsMigrationStatus: proxyExtensionAPI(messageAPI, 'promptsMigrationStatus'),
         startPromptsMigration: proxyExtensionAPI(messageAPI, 'startPromptsMigration'),
         resolvedConfig: proxyExtensionAPI(messageAPI, 'resolvedConfig'),

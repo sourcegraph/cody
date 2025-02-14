@@ -15,14 +15,6 @@ import { publicRepoMetadataIfAllWorkspaceReposArePublic } from '../../../reposit
 
 interface IntentInfo {
     userSpecifiedIntent: ChatMessage['intent'] | 'auto'
-    detectedIntent: ChatMessage['intent']
-    detectedIntentScores:
-        | {
-              intent: string
-              score: number
-          }[]
-        | null
-        | undefined
 }
 
 /**

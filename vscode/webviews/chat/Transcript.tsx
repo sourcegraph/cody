@@ -7,18 +7,12 @@ import {
     REMOTE_FILE_PROVIDER_URI,
     type SerializedPromptEditorValue,
     deserializeContextItem,
-    inputTextWithMappedContextChipsFromPromptEditorState,
     isAbortErrorOrSocketHangUp,
     serializedPromptEditorStateFromText,
 } from '@sourcegraph/cody-shared'
-import {
-    type PromptEditorRefAPI,
-    useDefaultContextForChat,
-    useExtensionAPI,
-} from '@sourcegraph/prompt-editor'
+import type { PromptEditorRefAPI } from '@sourcegraph/prompt-editor'
 import { clsx } from 'clsx'
 import { isEqual } from 'lodash'
-import debounce from 'lodash/debounce'
 import {
     type FC,
     memo,
@@ -35,14 +29,9 @@ import type { UserAccountInfo } from '../Chat'
 import type { ApiPostMessage } from '../Chat'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
 import { SpanManager } from '../utils/spanManager'
-import { getTraceparentFromSpanContext, useTelemetryRecorder } from '../utils/telemetry'
+import { getTraceparentFromSpanContext } from '../utils/telemetry'
 import { useOmniBox } from '../utils/useOmniBox'
 import type { CodeBlockActionsProps } from './ChatMessageContent/ChatMessageContent'
-import {
-    ContextCell,
-    EditContextButtonChat,
-    EditContextButtonSearch,
-} from './cells/contextCell/ContextCell'
 import {
     AssistantMessageCell,
     makeHumanMessageInfo,
@@ -50,13 +39,12 @@ import {
 import { HumanMessageCell } from './cells/messageCell/human/HumanMessageCell'
 
 import { type Context, type Span, context, trace } from '@opentelemetry/api'
+import { DeepCodyAgentID, ToolCodyModelName } from '@sourcegraph/cody-shared/src/models/client'
 import { isCodeSearchContextItem } from '../../src/context/openctx/codeSearch'
-import { TELEMETRY_INTENT } from '../../src/telemetry/onebox'
-import { useIntentDetectionConfig } from '../components/omnibox/intentDetection'
 import { AgenticContextCell } from './cells/agenticCell/AgenticContextCell'
 import ApprovalCell from './cells/agenticCell/ApprovalCell'
+import { ContextCell } from './cells/contextCell/ContextCell'
 import { DidYouMeanNotice } from './cells/messageCell/assistant/DidYouMean'
-import { SwitchIntent } from './cells/messageCell/assistant/SwitchIntent'
 import { LastEditorContext } from './context'
 
 interface TranscriptProps {
@@ -70,7 +58,6 @@ interface TranscriptProps {
     guardrails?: Guardrails
     postMessage?: ApiPostMessage
 
-    feedbackButtonsOnSubmit: (text: string) => void
     copyButtonOnSubmit: CodeBlockActionsProps['copyButtonOnSubmit']
     insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit']
     smartApply?: CodeBlockActionsProps['smartApply']
@@ -88,7 +75,6 @@ export const Transcript: FC<TranscriptProps> = props => {
         messageInProgress,
         guardrails,
         postMessage,
-        feedbackButtonsOnSubmit,
         copyButtonOnSubmit,
         insertButtonOnSubmit,
         smartApply,
@@ -137,7 +123,7 @@ export const Transcript: FC<TranscriptProps> = props => {
 
     return (
         <div
-            className={clsx(' tw-px-8 tw-pb-6 tw-pt-2 tw-flex tw-flex-col', {
+            className={clsx(' tw-px-8 tw-pb-6 tw-flex tw-flex-col', {
                 'tw-flex-grow': transcript.length > 0,
             })}
         >
@@ -153,7 +139,6 @@ export const Transcript: FC<TranscriptProps> = props => {
                         interaction={interaction}
                         guardrails={guardrails}
                         postMessage={postMessage}
-                        feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
                         copyButtonOnSubmit={copyButtonOnSubmit}
                         insertButtonOnSubmit={insertButtonOnSubmit}
                         isFirstInteraction={i === 0}
@@ -251,12 +236,6 @@ interface TranscriptInteractionProps
     }) => void
 }
 
-interface IntentResults {
-    query: string
-    intent: ChatMessage['intent']
-    allScores?: { intent: string; score: number }[]
-}
-
 const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
     const {
         interaction: { humanMessage, assistantMessage },
@@ -267,7 +246,6 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
         priorAssistantMessageIsLoading,
         userInfo,
         chatEnabled,
-        feedbackButtonsOnSubmit,
         postMessage,
         guardrails,
         insertButtonOnSubmit,
@@ -276,7 +254,6 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
         smartApplyEnabled,
         editorRef: parentEditorRef,
     } = props
-    const [intentResults, setIntentResults] = useState<IntentResults | undefined | null>()
     const [manuallySelectedIntent, setManuallySelectedIntent] =
         useState<ChatMessage['intent']>(undefined)
 
@@ -290,7 +267,8 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
     const lastEditorRef = useContext(LastEditorContext)
     useImperativeHandle(parentEditorRef, () => humanEditorRef.current)
 
-    const { doIntentDetection } = useIntentDetectionConfig()
+    const usingToolCody = assistantMessage?.model?.includes(ToolCodyModelName)
+
     const onUserAction = useCallback(
         (action: 'edit' | 'submit', intentFromSubmit?: ChatMessage['intent']) => {
             // Start the span as soon as the user initiates the action
@@ -321,24 +299,9 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                 return
             }
 
-            const query = inputTextWithMappedContextChipsFromPromptEditorState(editorValue.editorState)
-
-            const {
-                intent,
-                intentScores,
-            }: { intent: ChatMessage['intent']; intentScores: IntentResults['allScores'] } =
-                query === intentResults?.query
-                    ? { intent: intentResults.intent, intentScores: intentResults.allScores }
-                    : { intent: undefined, intentScores: [] }
-
             const commonProps = {
                 editorValue,
-                preDetectedIntent: intent,
-                preDetectedIntentScores: intentScores,
-                manuallySelectedIntent:
-                    intentFromSubmit ||
-                    manuallySelectedIntent ||
-                    (doIntentDetection ? undefined : 'chat'),
+                manuallySelectedIntent: intentFromSubmit || manuallySelectedIntent || 'chat',
                 traceparent,
             }
 
@@ -368,9 +331,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
             setActiveChatContext,
             isLastSentInteraction,
             lastEditorRef,
-            intentResults,
             manuallySelectedIntent,
-            doIntentDetection,
         ]
     )
 
@@ -388,74 +349,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
         [onUserAction]
     )
 
-    const extensionAPI = useExtensionAPI()
-    const experimentalOneBoxEnabled = useOmniBox()
-
-    const prefetchIntent = useMemo(() => {
-        const handler = async (editorValue: SerializedPromptEditorValue) => {
-            if (!experimentalOneBoxEnabled || !doIntentDetection) {
-                return
-            }
-
-            const query = inputTextWithMappedContextChipsFromPromptEditorState(
-                editorValue.editorState
-            ).trim()
-
-            if (query.length < 2) {
-                setIntentResults(null)
-                return
-            }
-
-            // The editor value change can get changed due to multiple reasons but if the query hasn't changed, skip re-computing the intent
-            if (query === intentResults?.query) {
-                return
-            }
-
-            const subscription = extensionAPI.detectIntent(query).subscribe({
-                next: value => {
-                    const currentEditorValue = humanEditorRef.current?.getSerializedValue()
-                    if (currentEditorValue) {
-                        const currentQuery = inputTextWithMappedContextChipsFromPromptEditorState(
-                            currentEditorValue?.editorState
-                        ).trim()
-
-                        // make sure the query hasn't changed since the prefetch started
-                        if (query !== currentQuery) {
-                            return
-                        }
-                    }
-
-                    setIntentResults(value && { ...value, query })
-                },
-                error: error => {
-                    console.error('Error detecting intent:', error)
-                },
-            })
-
-            // Clean up subscription if component unmounts
-            return () => subscription.unsubscribe()
-        }
-
-        return debounce(handler, 300)
-    }, [experimentalOneBoxEnabled, extensionAPI, intentResults?.query, doIntentDetection])
-
-    useEffect(() => {
-        if (!intentResults?.intent) {
-            return
-        }
-
-        if (!doIntentDetection) {
-            setIntentResults({ intent: undefined, query: '' })
-        }
-    }, [doIntentDetection, intentResults?.intent])
-
-    useEffect(() => {
-        if (doIntentDetection) {
-            if (humanEditorRef.current) {
-                prefetchIntent(humanEditorRef.current.getSerializedValue())
-            }
-        }
-    }, [doIntentDetection, prefetchIntent])
+    const omniboxEnabled = useOmniBox() && !usingToolCody
 
     const vscodeAPI = getVSCodeAPI()
     const onStop = useCallback(() => {
@@ -464,7 +358,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
         })
     }, [vscodeAPI])
 
-    const isSearchIntent = experimentalOneBoxEnabled && humanMessage.intent === 'search'
+    const isSearchIntent = omniboxEnabled && humanMessage.intent === 'search'
 
     const isContextLoading = Boolean(
         !isSearchIntent &&
@@ -590,64 +484,6 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
         return null
     }, [humanMessage, assistantMessage, isContextLoading])
 
-    const telemetryRecorder = useTelemetryRecorder()
-    const reSubmitWithIntent = useCallback(
-        (intent: ChatMessage['intent']) => {
-            const editorState = humanEditorRef.current?.getSerializedValue()
-            if (editorState) {
-                onEditSubmit(intent)
-                telemetryRecorder.recordEvent('onebox.intentCorrection', 'clicked', {
-                    metadata: {
-                        initialIntent:
-                            humanMessage.intent === 'search'
-                                ? TELEMETRY_INTENT.SEARCH
-                                : TELEMETRY_INTENT.CHAT,
-                        selectedIntent:
-                            intent === 'search' ? TELEMETRY_INTENT.SEARCH : TELEMETRY_INTENT.CHAT,
-                    },
-                    privateMetadata: {
-                        query: editorState.text,
-                    },
-                    billingMetadata: { product: 'cody', category: 'billable' },
-                })
-            }
-        },
-        [onEditSubmit, telemetryRecorder, humanMessage]
-    )
-
-    const { corpusContext: corpusContextItems } = useDefaultContextForChat()
-    const resubmitWithRepoContext = useCallback(async () => {
-        const editorState = humanEditorRef.current?.getSerializedValue()
-        if (editorState) {
-            const editor = humanEditorRef.current
-            if (corpusContextItems.length === 0 || !editor) {
-                return
-            }
-            await editor.addMentions(corpusContextItems, 'before', ' ')
-            onEditSubmit('chat')
-        }
-    }, [corpusContextItems, onEditSubmit])
-
-    const reSubmitWithChatIntent = useCallback(() => reSubmitWithIntent('chat'), [reSubmitWithIntent])
-    const reSubmitWithSearchIntent = useCallback(
-        () => reSubmitWithIntent('search'),
-        [reSubmitWithIntent]
-    )
-
-    const manuallyEditContext = useCallback(() => {
-        const contextFiles = humanMessage.contextFiles
-        const editor = humanEditorRef.current
-        if (!contextFiles || !editor) {
-            return
-        }
-        editor.filterMentions(item => item.type !== 'repository')
-        editor.addMentions(contextFiles, 'before', '\n')
-    }, [humanMessage.contextFiles])
-
-    const mentionsContainRepository = humanEditorRef.current
-        ?.getSerializedValue()
-        .contextItems.some(item => item.type === 'repository')
-
     const onHumanMessageSubmit = useCallback(
         (intent?: ChatMessage['intent']) => {
             if (humanMessage.isUnsentFollowup) {
@@ -677,11 +513,11 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                     contextItems: [],
                     editorState: serializedPromptEditorStateFromText(text),
                 },
-                preDetectedIntent: 'search',
                 manuallySelectedIntent: 'search',
             }),
         [humanMessage]
     )
+
     return (
         <>
             <HumanMessageCell
@@ -693,7 +529,6 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                 isFirstMessage={humanMessage.index === 0}
                 isSent={!humanMessage.isUnsentFollowup}
                 isPendingPriorResponse={priorAssistantMessageIsLoading}
-                onChange={prefetchIntent}
                 onSubmit={onHumanMessageSubmit}
                 onStop={onStop}
                 isFirstInteraction={isFirstInteraction}
@@ -701,28 +536,17 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                 isEditorInitiallyFocused={isLastInteraction}
                 editorRef={humanEditorRef}
                 className={!isFirstInteraction && isLastInteraction ? 'tw-mt-auto' : ''}
-                intent={manuallySelectedIntent || intentResults?.intent}
+                intent={manuallySelectedIntent}
                 manuallySelectIntent={setManuallySelectedIntent}
             />
-            {experimentalOneBoxEnabled && (
-                <SwitchIntent
-                    intent={humanMessage.intent}
-                    manuallySelected={!!humanMessage.manuallySelectedIntent}
-                    onSwitch={
-                        humanMessage.intent === 'search'
-                            ? reSubmitWithChatIntent
-                            : reSubmitWithSearchIntent
-                    }
-                />
-            )}
-            {experimentalOneBoxEnabled && assistantMessage?.didYouMeanQuery && (
+            {omniboxEnabled && assistantMessage?.didYouMeanQuery && (
                 <DidYouMeanNotice
                     query={assistantMessage?.didYouMeanQuery}
                     disabled={!!assistantMessage?.isLoading}
                     switchToSearch={() => editAndSubmitSearch(assistantMessage?.didYouMeanQuery ?? '')}
                 />
             )}
-            {!isSearchIntent && humanMessage.agent && (
+            {!usingToolCody && !isSearchIntent && humanMessage.agent && (
                 <AgenticContextCell
                     key={`${humanMessage.index}-${humanMessage.intent}-process`}
                     isContextLoading={isContextLoading}
@@ -734,33 +558,18 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                 isContextLoading &&
                 assistantMessage?.isLoading && <ApprovalCell vscodeAPI={vscodeAPI} />}
 
-            {!(humanMessage.agent && isContextLoading) &&
+            {!usingToolCody &&
+                !(humanMessage.agent && isContextLoading) &&
                 (humanMessage.contextFiles || assistantMessage || isContextLoading) &&
                 !isSearchIntent && (
                     <ContextCell
-                        experimentalOneBoxEnabled={experimentalOneBoxEnabled}
-                        intent={humanMessage.intent}
-                        resubmitWithRepoContext={
-                            corpusContextItems.length > 0 &&
-                            !mentionsContainRepository &&
-                            assistantMessage
-                                ? resubmitWithRepoContext
-                                : undefined
-                        }
                         key={`${humanMessage.index}-${humanMessage.intent}-context`}
                         contextItems={humanMessage.contextFiles}
                         contextAlternatives={humanMessage.contextAlternatives}
                         model={assistantMessage?.model}
                         isForFirstMessage={humanMessage.index === 0}
                         isContextLoading={isContextLoading}
-                        onManuallyEditContext={manuallyEditContext}
-                        editContextNode={
-                            humanMessage.intent === 'search'
-                                ? EditContextButtonSearch
-                                : EditContextButtonChat
-                        }
-                        defaultOpen={isContextLoading && humanMessage.agent === 'deep-cody'}
-                        processes={humanMessage?.processes ?? undefined}
+                        defaultOpen={isContextLoading && humanMessage.agent === DeepCodyAgentID}
                         agent={humanMessage?.agent ?? undefined}
                     />
                 )}
@@ -773,18 +582,12 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                         models={models}
                         chatEnabled={chatEnabled}
                         message={assistantMessage}
-                        feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
                         copyButtonOnSubmit={copyButtonOnSubmit}
                         insertButtonOnSubmit={insertButtonOnSubmit}
                         postMessage={postMessage}
                         guardrails={guardrails}
                         humanMessage={humanMessageInfo}
                         isLoading={assistantMessage.isLoading}
-                        showFeedbackButtons={
-                            !assistantMessage.isLoading &&
-                            !assistantMessage.error &&
-                            isLastSentInteraction
-                        }
                         smartApply={smartApply}
                         smartApplyEnabled={smartApplyEnabled}
                         onSelectedFiltersUpdate={onSelectedFiltersUpdate}
@@ -799,21 +602,28 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
 export function focusLastHumanMessageEditor(): void {
     const elements = document.querySelectorAll<HTMLElement>('[data-lexical-editor]')
     const lastEditor = elements.item(elements.length - 1)
-    lastEditor?.focus()
-    lastEditor?.scrollIntoView()
+    if (!lastEditor) {
+        return
+    }
+
+    lastEditor.focus()
+
+    // Only scroll the nearest scrollable ancestor container, not all scrollable ancestors, to avoid
+    // a bug in VS Code where the iframe is pushed up by ~5px.
+    const container = lastEditor?.closest('[data-scrollable]')
+    const editorScrollItemInContainer = lastEditor.parentElement
+    if (container && container instanceof HTMLElement && editorScrollItemInContainer) {
+        container.scrollTop = editorScrollItemInContainer.offsetTop - container.offsetTop
+    }
 }
 
 export function editHumanMessage({
     messageIndexInTranscript,
     editorValue,
-    preDetectedIntent,
-    preDetectedIntentScores,
     manuallySelectedIntent,
 }: {
     messageIndexInTranscript: number
     editorValue: SerializedPromptEditorValue
-    preDetectedIntent?: ChatMessage['intent']
-    preDetectedIntentScores?: { intent: string; score: number }[]
     manuallySelectedIntent?: ChatMessage['intent']
 }): void {
     getVSCodeAPI().postMessage({
@@ -822,8 +632,6 @@ export function editHumanMessage({
         text: editorValue.text,
         editorState: editorValue.editorState,
         contextItems: editorValue.contextItems.map(deserializeContextItem),
-        preDetectedIntent,
-        preDetectedIntentScores,
         manuallySelectedIntent,
     })
     focusLastHumanMessageEditor()
@@ -831,14 +639,10 @@ export function editHumanMessage({
 
 function submitHumanMessage({
     editorValue,
-    preDetectedIntent,
-    preDetectedIntentScores,
     manuallySelectedIntent,
     traceparent,
 }: {
     editorValue: SerializedPromptEditorValue
-    preDetectedIntent?: ChatMessage['intent']
-    preDetectedIntentScores?: { intent: string; score: number }[]
     manuallySelectedIntent?: ChatMessage['intent']
     traceparent: string
 }): void {
@@ -847,8 +651,6 @@ function submitHumanMessage({
         text: editorValue.text,
         editorState: editorValue.editorState,
         contextItems: editorValue.contextItems.map(deserializeContextItem),
-        preDetectedIntent,
-        preDetectedIntentScores,
         manuallySelectedIntent,
         traceparent,
     })

@@ -1,4 +1,5 @@
 import {
+    type AuthCredentials,
     type AuthStatus,
     type BillingCategory,
     type BillingProduct,
@@ -38,7 +39,6 @@ import {
     forceHydration,
     graphqlClient,
     hydrateAfterPostMessage,
-    inputTextWithMappedContextChipsFromPromptEditorState,
     isAbortErrorOrSocketHangUp,
     isContextWindowLimitError,
     isDefined,
@@ -71,6 +71,12 @@ import * as vscode from 'vscode'
 import { type Span, context } from '@opentelemetry/api'
 import { captureException } from '@sentry/core'
 import type { SubMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { resolveAuth } from '@sourcegraph/cody-shared/src/configuration/auth-resolver'
+import {
+    DeepCodyAgentID,
+    ToolCodyModelName,
+    ToolCodyModelRef,
+} from '@sourcegraph/cody-shared/src/models/client'
 import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
 import { Subject, map } from 'observable-fns'
 import type { URI } from 'vscode-uri'
@@ -106,15 +112,13 @@ import { openExternalLinks } from '../../services/utils/workspace-action'
 import { TestSupport } from '../../test-support'
 import type { MessageErrorType } from '../MessageProvider'
 import { getMentionMenuData } from '../context/chatContext'
-import type { ChatIntentAPIClient } from '../context/chatIntentAPIClient'
 import { observeDefaultContext } from '../initialContext'
-import {
-    CODY_BLOG_URL_o1_WAITLIST,
-    type ConfigurationSubsetForWebview,
-    type ExtensionMessage,
-    type LocalEnv,
-    type SmartApplyResult,
-    type WebviewMessage,
+import type {
+    ConfigurationSubsetForWebview,
+    ExtensionMessage,
+    LocalEnv,
+    SmartApplyResult,
+    WebviewMessage,
 } from '../protocol'
 import { countGeneratedCode } from '../utils'
 import { ChatBuilder, prepareChatMessage } from './ChatBuilder'
@@ -130,12 +134,8 @@ import { getPromptsMigrationInfo, startPromptsMigration } from './prompts-migrat
 export interface ChatControllerOptions {
     extensionUri: vscode.Uri
     chatClient: Pick<ChatClient, 'chat'>
-
     contextRetriever: Pick<ContextRetriever, 'retrieveContext' | 'computeDidYouMean'>
-    chatIntentAPIClient: ChatIntentAPIClient | null
-
     extensionClient: Pick<ExtensionClient, 'capabilities'>
-
     editor: VSCodeEditor
     guardrails: Guardrails
     startTokenReceiver?: typeof startTokenReceiver
@@ -185,7 +185,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     private readonly guardrails: Guardrails
 
     private readonly startTokenReceiver: typeof startTokenReceiver | undefined
-    private readonly chatIntentAPIClient: ChatIntentAPIClient | null
 
     private disposables: vscode.Disposable[] = []
 
@@ -202,7 +201,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         editor,
         guardrails,
         startTokenReceiver,
-        chatIntentAPIClient,
         contextRetriever,
         extensionClient,
     }: ChatControllerOptions) {
@@ -216,7 +214,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
         this.guardrails = guardrails
         this.startTokenReceiver = startTokenReceiver
-        this.chatIntentAPIClient = chatIntentAPIClient
 
         if (TestSupport.instance) {
             TestSupport.instance.chatPanelProvider.set(this)
@@ -279,22 +276,20 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     editorState: message.editorState as SerializedPromptEditorState,
                     signal: await this.startNewSubmitOrEditOperation(),
                     source: 'chat',
-                    preDetectedIntent: message.preDetectedIntent,
-                    preDetectedIntentScores: message.preDetectedIntentScores,
                     manuallySelectedIntent: message.manuallySelectedIntent,
                     traceparent: message.traceparent,
                 })
                 break
             }
             case 'edit': {
+                await this.cancelSubmitOrEditOperation()
+
                 await this.handleEdit({
                     requestID: uuid.v4(),
                     text: PromptString.unsafe_fromUserQuery(message.text),
                     index: message.index ?? undefined,
                     contextFiles: message.contextItems ?? [],
                     editorState: message.editorState as SerializedPromptEditorState,
-                    preDetectedIntent: message.preDetectedIntent,
-                    preDetectedIntentScores: message.preDetectedIntentScores,
                     manuallySelectedIntent: message.manuallySelectedIntent,
                 })
                 break
@@ -335,18 +330,12 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 await vscode.commands.executeCommand('cody.fixup.codelens.undo', message.id)
                 break
             case 'openURI':
-                vscode.commands.executeCommand('vscode.open', message.uri)
+                vscode.commands.executeCommand('vscode.open', message.uri, {
+                    selection: message.range,
+                })
                 break
             case 'links': {
-                let link = message.value
-                if (message.value === 'waitlist') {
-                    const authStatus = currentAuthStatusAuthed()
-                    const waitlistURI = CODY_BLOG_URL_o1_WAITLIST
-                    waitlistURI.searchParams.append('userId', authStatus?.username)
-                    link = waitlistURI.toString()
-                    void joinModelWaitlist()
-                }
-                void openExternalLinks(link)
+                void openExternalLinks(message.value)
                 break
             }
             case 'openFileLink':
@@ -408,10 +397,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 )
                 break
             case 'auth': {
-                if (message.authKind === 'callback' && message.endpoint) {
-                    redirectToEndpointLogin(message.endpoint)
-                    break
-                }
                 if (message.authKind === 'simplified-onboarding') {
                     const endpoint = DOTCOM_URL.href
 
@@ -451,19 +436,31 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     }
                     break
                 }
-                if (message.authKind === 'signin' && message.endpoint) {
+                if (
+                    (message.authKind === 'signin' || message.authKind === 'callback') &&
+                    message.endpoint
+                ) {
                     try {
                         const { endpoint, value: token } = message
-                        const credentials = {
-                            serverEndpoint: endpoint,
-                            accessToken: token || (await secretStorage.getToken(endpoint)) || null,
-                            tokenSource: token ? 'paste' : await secretStorage.getTokenSource(endpoint),
+                        let auth: AuthCredentials | undefined = undefined
+
+                        if (token) {
+                            auth = {
+                                credentials: { token, source: 'paste' },
+                                serverEndpoint: endpoint,
+                            }
+                        } else {
+                            const { configuration } = await currentResolvedConfig()
+                            auth = await resolveAuth(endpoint, configuration, secretStorage)
                         }
-                        if (!credentials.accessToken) {
-                            return redirectToEndpointLogin(credentials.serverEndpoint)
+
+                        if (!auth || !auth.credentials) {
+                            return redirectToEndpointLogin(endpoint)
                         }
-                        await authProvider.validateAndStoreCredentials(credentials, 'always-store')
+
+                        await authProvider.validateAndStoreCredentials(auth, 'always-store')
                     } catch (error) {
+                        void vscode.window.showErrorMessage(`Authentication failed: ${error}`)
                         this.postError(new Error(`Authentication failed: ${error}`))
                     }
                     break
@@ -499,7 +496,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                             const authStatus = await authProvider.validateAndStoreCredentials(
                                 {
                                     serverEndpoint: DOTCOM_URL.href,
-                                    accessToken: token,
+                                    credentials: { token },
                                 },
                                 'store-if-valid'
                             )
@@ -622,8 +619,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         signal,
         source,
         command,
-        preDetectedIntent,
-        preDetectedIntentScores,
         manuallySelectedIntent,
         traceparent,
     }: {
@@ -634,8 +629,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         signal: AbortSignal
         source?: EventSource
         command?: DefaultChatCommands
-        preDetectedIntent?: ChatMessage['intent'] | undefined | null
-        preDetectedIntentScores?: { intent: string; score: number }[] | undefined | null
         manuallySelectedIntent?: ChatMessage['intent'] | undefined | null
         traceparent?: string | undefined | null
     }): Promise<void> {
@@ -660,13 +653,15 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     firstResultFromOperation(ChatBuilder.resolvedModelForChat(this.chatBuilder))
                 )
                 this.chatBuilder.setSelectedModel(model)
-                const selectedAgent = model?.includes('deep-cody') ? 'deep-cody' : undefined
+                let selectedAgent = model?.includes(DeepCodyAgentID) ? DeepCodyAgentID : undefined
+                if (model?.includes(ToolCodyModelName)) {
+                    selectedAgent = ToolCodyModelRef
+                }
 
                 this.chatBuilder.addHumanMessage({
                     text: inputText,
                     editorState,
-                    intent: manuallySelectedIntent || preDetectedIntent,
-                    manuallySelectedIntent,
+                    intent: manuallySelectedIntent,
                     agent: selectedAgent,
                 })
                 this.postViewTranscript({ speaker: 'assistant' })
@@ -683,78 +678,12 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                         signal,
                         source,
                         command,
-                        preDetectedIntent,
-                        preDetectedIntentScores,
                         manuallySelectedIntent,
                     },
                     span
                 )
             })
         })
-    }
-
-    private async isOmniBoxEnabled(): Promise<boolean> {
-        const config = await ClientConfigSingleton.getInstance().getConfig()
-
-        return !!config?.omniBoxEnabled
-    }
-
-    private async getIntentAndScores({
-        requestID,
-        input,
-        signal,
-        preDetectedIntent,
-        preDetectedIntentScores,
-        manuallySelectedIntent,
-    }: {
-        requestID: string
-        input: string
-        signal: AbortSignal
-        preDetectedIntent?: ChatMessage['intent'] | undefined | null
-        preDetectedIntentScores?: { intent: string; score: number }[] | undefined | null
-        manuallySelectedIntent?: ChatMessage['intent'] | undefined | null
-    }): Promise<{
-        intent: ChatMessage['intent']
-        detectedIntent: ChatMessage['intent'] | undefined | null
-        detectedIntentScores: { intent: string; score: number }[]
-    }> {
-        if (!(await this.isOmniBoxEnabled())) {
-            return { intent: 'chat', detectedIntent: null, detectedIntentScores: [] }
-        }
-
-        // The `preDetectedIntent` and `manuallySelectedIntent` params come from the webview.
-        // If `manuallySelectedIntent` is set, this was a user override, and we should use it.
-        // If `preDetectedIntent` is set, the intent was automatically pre-fetched for the input,
-        // meaning we don't have to fetch it again.
-        const intent = manuallySelectedIntent ?? preDetectedIntent
-
-        if (intent) {
-            return {
-                intent: intent,
-                detectedIntent: preDetectedIntent,
-                detectedIntentScores: preDetectedIntentScores || [],
-            }
-        }
-
-        const response = await this.detectChatIntent({
-            requestID,
-            text: input,
-        })
-            .then(async response => {
-                signal.throwIfAborted()
-                return response
-            })
-            .catch(() => undefined)
-
-        if (response) {
-            return {
-                intent: response.intent,
-                detectedIntent: response.intent,
-                detectedIntentScores: response.allScores,
-            }
-        }
-
-        return { intent: 'chat', detectedIntent: null, detectedIntentScores: [] }
     }
 
     private async sendChat(
@@ -766,8 +695,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             signal,
             source,
             command,
-            preDetectedIntent,
-            preDetectedIntentScores,
             manuallySelectedIntent,
         }: Parameters<typeof this.handleUserMessage>[0],
         span: Span
@@ -785,7 +712,10 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         }
 
         this.chatBuilder.setSelectedModel(model)
-        const chatAgent = model.includes('deep-cody') ? 'deep-cody' : undefined
+        let chatAgent = model.includes(DeepCodyAgentID) ? DeepCodyAgentID : undefined
+        if (model.includes(ToolCodyModelName)) {
+            chatAgent = ToolCodyModelRef
+        }
 
         const recorder = await OmniboxTelemetry.create({
             requestID,
@@ -799,23 +729,13 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         })
         recorder.recordChatQuestionSubmitted(mentions)
 
-        const { intent, detectedIntent, detectedIntentScores } = await this.getIntentAndScores({
-            requestID,
-            input: editorState
-                ? inputTextWithMappedContextChipsFromPromptEditorState(editorState)
-                : inputText.toString(),
-            preDetectedIntent,
-            preDetectedIntentScores,
-            manuallySelectedIntent,
-            signal,
-        })
         signal.throwIfAborted()
-        this.chatBuilder.setLastMessageIntent(intent)
+        this.chatBuilder.setLastMessageIntent(manuallySelectedIntent)
 
         this.postEmptyMessageInProgress(model)
 
-        const agentName = ['search', 'edit', 'insert'].includes(intent ?? '')
-            ? (intent as string)
+        const agentName = ['search', 'edit', 'insert'].includes(manuallySelectedIntent ?? '')
+            ? (manuallySelectedIntent as string)
             : chatAgent ?? 'chat'
         const agent = getAgent(agentName, model, {
             contextRetriever: this.contextRetriever,
@@ -823,12 +743,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             chatClient: this.chatClient,
         })
 
-        const omniBoxEnabled = await this.isOmniBoxEnabled()
-
         recorder.setIntentInfo({
-            userSpecifiedIntent: manuallySelectedIntent ?? (omniBoxEnabled ? 'auto' : 'chat'),
-            detectedIntent: detectedIntent,
-            detectedIntentScores: detectedIntentScores,
+            userSpecifiedIntent: manuallySelectedIntent ?? 'chat',
         })
 
         this.postEmptyMessageInProgress(model)
@@ -889,7 +805,11 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
                         // Now that we have the confirmation, proceed based on the user's choice
 
-                        this.postViewTranscript({ speaker: 'assistant', processes: [step], model })
+                        this.postViewTranscript({
+                            speaker: 'assistant',
+                            processes: [step],
+                            model,
+                        })
                         return confirmation
                     },
                     postDone: (op?: { abort: boolean }): void => {
@@ -947,37 +867,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             }
             recordErrorToSpan(span, error as Error)
         }
-    }
-
-    private async detectChatIntent({
-        requestID,
-        text,
-    }: {
-        requestID?: string
-        text: string
-    }): Promise<
-        | {
-              intent: ChatMessage['intent']
-              allScores: { intent: string; score: number }[]
-          }
-        | undefined
-    > {
-        if (process.env.CODY_SHIM_TESTING === 'true') {
-            return
-        }
-
-        const response = await wrapInActiveSpan('chat.detectChatIntent', () => {
-            return this.chatIntentAPIClient?.detectChatIntent(requestID || '', text).catch(() => null)
-        })
-
-        if (response && !isError(response)) {
-            return {
-                intent: response.intent === 'search' ? 'search' : 'chat',
-                allScores: response.allScores || [],
-            }
-        }
-
-        return
     }
 
     private async openRemoteFile(uri: vscode.Uri, tryLocal?: boolean) {
@@ -1056,16 +945,12 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     }
 
     private submitOrEditOperation: AbortController | undefined
-    public startNewSubmitOrEditOperation(): Promise<AbortSignal> {
+    public startNewSubmitOrEditOperation(): AbortSignal {
         this.submitOrEditOperation?.abort()
-
-        return new Promise(resolve => {
-            setTimeout(() => {
-                this.submitOrEditOperation = new AbortController()
-                resolve(this.submitOrEditOperation.signal)
-            }, 500)
-        })
+        this.submitOrEditOperation = new AbortController()
+        return this.submitOrEditOperation.signal
     }
+
     private cancelSubmitOrEditOperation(): Promise<void> {
         if (this.submitOrEditOperation) {
             this.submitOrEditOperation.abort()
@@ -1184,8 +1069,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         index,
         contextFiles,
         editorState,
-        preDetectedIntent,
-        preDetectedIntentScores,
         manuallySelectedIntent,
     }: {
         requestID: string
@@ -1193,11 +1076,9 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         index: number | undefined
         contextFiles: ContextItem[]
         editorState: SerializedPromptEditorState | null
-        preDetectedIntent?: ChatMessage['intent'] | undefined | null
-        preDetectedIntentScores?: { intent: string; score: number }[] | undefined | null
-        manuallySelectedIntent?: ChatMessage['intent'] | undefined | null
+        manuallySelectedIntent?: ChatMessage['intent']
     }): Promise<void> {
-        const abortSignal = await this.startNewSubmitOrEditOperation()
+        const abortSignal = this.startNewSubmitOrEditOperation()
 
         telemetryRecorder.recordEvent('cody.editChatButton', 'clicked', {
             billingMetadata: {
@@ -1219,8 +1100,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 editorState,
                 signal: abortSignal,
                 source: 'chat',
-                preDetectedIntent,
-                preDetectedIntentScores,
                 manuallySelectedIntent,
             })
         } catch (error) {
@@ -1703,17 +1582,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                         })
                     },
                     defaultContext: () => defaultContext.pipe(skipPendingOperation()),
-                    detectIntent: text =>
-                        promiseFactoryToObservable<
-                            | {
-                                  intent: ChatMessage['intent']
-                                  allScores: {
-                                      intent: string
-                                      score: number
-                                  }[]
-                              }
-                            | undefined
-                        >(() => this.detectChatIntent({ text })),
                     resolvedConfig: () => resolvedConfig,
                     authStatus: () => authStatus,
                     transcript: () =>
@@ -1868,9 +1736,4 @@ export function manipulateWebviewHTML(html: string, options: TransformHTMLOption
     }
 
     return html
-}
-
-async function joinModelWaitlist(): Promise<void> {
-    await localStorage.setOrDeleteWaitlistO1(true)
-    telemetryRecorder.recordEvent('cody.joinLlmWaitlist', 'clicked')
 }

@@ -52,13 +52,17 @@ const LANGUAGES_WITH_MULTILINE_SUPPORT = [
     'typescript',
     'typescriptreact',
     'vue',
-]
+] as const
+
+export type MultiLineSupportedLanguage = (typeof LANGUAGES_WITH_MULTILINE_SUPPORT)[number]
 
 export function detectMultiline(params: DetectMultilineParams): DetectMultilineResult {
     const { docContext, languageId, position } = params
     const { prefix, prevNonEmptyLine, nextNonEmptyLine, currentLinePrefix, currentLineSuffix } =
         docContext
-    const isMultilineSupported = LANGUAGES_WITH_MULTILINE_SUPPORT.includes(languageId)
+    const isMultilineSupported = LANGUAGES_WITH_MULTILINE_SUPPORT.includes(
+        languageId as MultiLineSupportedLanguage
+    )
 
     const blockStart = endsWithBlockStart(prefix, languageId)
     const isBlockStartActive = Boolean(blockStart)

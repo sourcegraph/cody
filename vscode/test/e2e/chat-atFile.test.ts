@@ -20,6 +20,7 @@ import {
     type DotcomUrlOverride,
     type ExpectedV2Events,
     executeCommandInPalette,
+    mockEnterpriseRepoIdMapping,
     test,
     withPlatformSlashes,
 } from './helpers'
@@ -45,7 +46,9 @@ test
         // To exercise the "current directory" filename filtering without a git repository
         // for the workspace, simulate dotcom.
         dotcomUrl: mockServer.SERVER_URL,
-    })('@-mention file in chat', async ({ page, sidebar, workspaceDirectory }) => {
+    })('@-mention file in chat', async ({ page, sidebar, workspaceDirectory, server }) => {
+    mockEnterpriseRepoIdMapping(server)
+
     // This test requires that the window be focused in the OS window manager because it deals with
     // focus.
     await page.bringToFront()
@@ -307,7 +310,9 @@ test.extend<ExpectedV2Events>({
         'cody.chat-question:executed',
         'cody.chatResponse:noCode',
     ],
-})('@-mention symbol in chat', async ({ page, nap, sidebar }) => {
+})('@-mention symbol in chat', async ({ page, nap, sidebar, server }) => {
+    mockEnterpriseRepoIdMapping(server)
+
     await sidebarSignin(page, sidebar)
 
     // Open the buzz.ts file so that VS Code starts to populate symbols.
@@ -364,7 +369,9 @@ test.extend<ExpectedV2Events>({
 
 test.extend<ExpectedV2Events>({
     expectedV2Events: ['cody.addChatContext:clicked'],
-})('Add Selection to Cody Chat', async ({ page, sidebar }) => {
+})('Add Selection to Cody Chat', async ({ page, sidebar, server }) => {
+    mockEnterpriseRepoIdMapping(server)
+
     await sidebarSignin(page, sidebar)
 
     await openFileInEditorTab(page, 'buzz.ts')

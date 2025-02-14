@@ -1,5 +1,8 @@
-name: Stable Release
-on: workflow_dispatch
+name: release-jetbrains-experimental
+on:
+  push:
+    tags: ["jb-*-experimental"]
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -26,13 +29,16 @@ jobs:
           image: tonistiigi/binfmt:latest
           platforms: all
       - name: Gradle Wrapper Validation
-        uses: gradle/wrapper-validation-action@v3
+        uses: gradle/actions/wrapper-validation@v4
       - uses: pnpm/action-setup@fe02b34f77f8bc703788d5817da081398fad5dd2 # SECURITY: pin third-party action hashes
       - run: |
-          echo "RELEASE_VERSION=$(./jetbrains/scripts/version-from-git-tag.sh)" >> $GITHUB_ENV
-      - run: |
+          echo "RELEASE_VERSION=$(./jetbrains/scripts/version-from-git-tag.sh)-experimental" >> $GITHUB_ENV
+      - name: Publish experimental version
+        run: |
+          echo "Publishing experimental version ${RELEASE_VERSION}"
           pushd jetbrains
-          ./gradlew "-PpluginVersion=$RELEASE_VERSION" publishPlugin
+          ./gradlew "-PpluginVersion=${RELEASE_VERSION}" publishPlugin
           popd > /dev/null
         env:
           PUBLISH_TOKEN: ${{ secrets.JETBRAINS_MARKETPLACE_PUBLISH_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.PRIVATE_SG_TOKEN }}

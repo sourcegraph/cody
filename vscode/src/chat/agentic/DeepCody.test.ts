@@ -50,14 +50,14 @@ describe('DeepCody', () => {
     let mockRequestCallback: (steps: ProcessingStep) => Promise<boolean>
 
     mockLocalStorage({
-        get: (key: string) => localStorageData[key],
+        get: (key: string) => localStorageData[key] || [], // Return empty array as default
         update: (key: string, value: unknown) => {
             localStorageData[key] = value
         },
     } as any)
 
     beforeEach(async () => {
-        mockResolvedConfig({ configuration: {} })
+        mockResolvedConfig({ configuration: {}, auth: { serverEndpoint: DOTCOM_URL.toString() } })
         mockClientCapabilities(CLIENT_CAPABILITIES_FIXTURE)
         mockAuthStatus(codyProAuthStatus)
         localStorageData = {}

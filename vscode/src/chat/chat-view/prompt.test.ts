@@ -8,6 +8,7 @@ import {
     type ModelsData,
     contextFiltersProvider,
     createModel,
+    graphqlClient,
     mockAuthStatus,
     mockClientCapabilities,
     mockResolvedConfig,
@@ -18,14 +19,42 @@ import { Observable } from 'observable-fns'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import * as vscode from 'vscode'
 import { PromptBuilder } from '../../prompt-builder'
+import { localStorage } from '../../services/LocalStorageProvider'
 import { ChatBuilder } from './ChatBuilder'
 import { DefaultPrompter } from './prompt'
 
 describe('DefaultPrompter', () => {
-    beforeEach(() => {
+    beforeEach(async () => {
+        vi.mock('@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider', () => ({
+            evaluateFeatureFlag: vi.fn().mockResolvedValue(false),
+            FeatureFlagProvider: {
+                evaluateFeatureFlag: vi.fn().mockResolvedValue(false),
+            },
+        }))
+        // Mock GraphQL client with proper endpoint
+        mockResolvedConfig({
+            configuration: {
+                overrideServerEndpoint: 'http://test.sourcegraph.com',
+            },
+            auth: {
+                serverEndpoint: 'https://sourcegraph.com/.api/graphql',
+            },
+        })
+        vi.spyOn(localStorage, 'getEnrollmentHistory').mockReturnValue(false)
         vi.spyOn(contextFiltersProvider, 'isUriIgnored').mockResolvedValue(false)
+        vi.spyOn(graphqlClient, 'fetchSourcegraphAPI').mockImplementation(async () => ({
+            data: {
+                evaluateFeatureFlag: true,
+                featureFlags: {
+                    evaluatedFeatureFlags: [
+                        { name: 'cody-intent-detection-api', value: true },
+                        { name: 'cody-unified-prompts', value: true },
+                        { name: 'cody-autocomplete-tracing', value: true },
+                    ],
+                },
+            },
+        }))
         mockAuthStatus(AUTH_STATUS_FIXTURE_AUTHED)
-        mockResolvedConfig({ configuration: {} })
         mockClientCapabilities(CLIENT_CAPABILITIES_FIXTURE)
     })
     afterEach(() => {
@@ -196,9 +225,9 @@ describe('DefaultPrompter', () => {
         checkPrompt(info.prompt, [
             'You are Cody, an AI coding assistant from Sourcegraph.',
             'I am Cody, an AI coding assistant from Sourcegraph.',
-            'enhanced1.ts',
+            'Codebase context from file enhanced1.ts',
             'Ok.',
-            'user1.go',
+            'Codebase context from file user1.go',
             'Ok.',
             'Hello, world!',
         ])
@@ -229,13 +258,13 @@ describe('DefaultPrompter', () => {
         checkPrompt(info.prompt, [
             'You are Cody, an AI coding assistant from Sourcegraph.',
             'I am Cody, an AI coding assistant from Sourcegraph.',
-            'enhanced1.ts',
+            'Codebase context from file enhanced1.ts',
             'Ok.',
-            'user1.go',
+            'Codebase context from file user1.go',
             'Ok.',
-            'enhanced2.ts',
+            'Codebase context from file enhanced2.ts',
             'Ok.',
-            'user2.go',
+            'Codebase context from file user2.go',
             'Ok.',
             'Hello, world!',
             'Oh hello there.',

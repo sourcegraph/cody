@@ -73,7 +73,7 @@ export type WebviewMessage =
     | ({ command: 'submit' } & WebviewSubmitMessage)
     | { command: 'restoreHistory'; chatID: string }
     | { command: 'links'; value: string }
-    | { command: 'openURI'; uri: Uri }
+    | { command: 'openURI'; uri: Uri; range?: RangeData | undefined | null }
     | {
           // Open a file from a Sourcegraph URL
           command: 'openRemoteFile'
@@ -221,8 +221,6 @@ export interface WebviewSubmitMessage extends WebviewContextMessage {
 
     /** An opaque value representing the text editor's state. @see {ChatMessage.editorState} */
     editorState?: unknown | undefined | null
-    preDetectedIntent?: ChatMessage['intent'] | undefined | null
-    preDetectedIntentScores?: { intent: string; score: number }[] | undefined | null
     manuallySelectedIntent?: ChatMessage['intent'] | undefined | null
     traceparent?: string | undefined | null
     steps?: ProcessingStep[] | undefined | null
@@ -234,8 +232,6 @@ interface WebviewEditMessage extends WebviewContextMessage {
 
     /** An opaque value representing the text editor's state. @see {ChatMessage.editorState} */
     editorState?: unknown | undefined | null
-    preDetectedIntent?: ChatMessage['intent'] | undefined | null
-    preDetectedIntentScores?: { intent: string; score: number }[] | undefined | null
     manuallySelectedIntent?: ChatMessage['intent'] | undefined | null
     steps?: ProcessingStep[] | undefined | null
 }
@@ -274,9 +270,6 @@ export const SG_CHANGELOG_URL = new URL('https://sourcegraph.com/changelog')
 export const VSCODE_CHANGELOG_URL = new URL(
     'https://github.com/sourcegraph/cody/blob/main/vscode/CHANGELOG.md'
 )
-// Docs
-export const CODY_DOCS_CAPABILITIES_URL = new URL('https://sourcegraph.com/docs/cody/capabilities')
-export const CODY_DOCS_AGENTIC_CHAT_URL = new URL('agentic-chat', CODY_DOCS_CAPABILITIES_URL)
 // Community and support
 export const DISCORD_URL = new URL('https://discord.gg/s2qDtYGnAE')
 export const CODY_FEEDBACK_URL = new URL('https://github.com/sourcegraph/cody/issues/new/choose')
@@ -292,8 +285,6 @@ export const ACCOUNT_USAGE_URL = new URL('https://sourcegraph.com/cody/manage')
 export const ACCOUNT_LIMITS_INFO_URL = new URL(
     'https://sourcegraph.com/docs/cody/troubleshooting#autocomplete-rate-limits'
 )
-// TODO: Update this URL to the correct one when the Cody model waitlist is available
-export const CODY_BLOG_URL_o1_WAITLIST = new URL('https://sourcegraph.com/blog/openai-o1-for-cody')
 
 // TODO: Update to live link https://linear.app/sourcegraph/issue/CORE-535/cody-clients-migrate-ctas-to-live-links
 export const ENTERPRISE_STARTER_LEARN_MORE_URL = new URL('https://sourcegraph.com/enterprise-starter')

@@ -186,7 +186,7 @@ export function getCodeToReplaceData(options: CurrentFilePromptOptions): CodeToR
     }
 }
 
-export function getCurrentFilePath(document: vscode.TextDocument): PromptString {
+function getCurrentFilePath(document: vscode.TextDocument): PromptString {
     const uri =
         document.uri.scheme === 'vscode-notebook-cell'
             ? getActiveNotebookUri() ?? document.uri
@@ -194,7 +194,7 @@ export function getCurrentFilePath(document: vscode.TextDocument): PromptString 
     return PromptString.fromDisplayPath(uri)
 }
 
-export function getUpdatedCurrentFilePrefixAndSuffixOutsideArea(
+function getUpdatedCurrentFilePrefixAndSuffixOutsideArea(
     document: vscode.TextDocument,
     rangePrefixBeforeArea: vscode.Range,
     rangeSuffixAfterArea: vscode.Range
@@ -221,7 +221,7 @@ export function getUpdatedCurrentFilePrefixAndSuffixOutsideArea(
     }
 }
 
-export function getPrefixAndSuffixForAreaForNotebook(document: vscode.TextDocument): {
+function getPrefixAndSuffixForAreaForNotebook(document: vscode.TextDocument): {
     prefixBeforeAreaForNotebook: PromptString
     suffixAfterAreaForNotebook: PromptString
 } {
@@ -450,7 +450,7 @@ export function getContextPromptWithPath(filePath: PromptString, content: Prompt
     return ps`(\`${filePath}\`)\n\n${content}`
 }
 
-export function getCurrentFileContextPromptWithPath(
+function getCurrentFileContextPromptWithPath(
     filePath: PromptString,
     content: PromptString
 ): PromptString {

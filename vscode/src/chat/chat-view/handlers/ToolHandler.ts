@@ -1,3 +1,5 @@
+import { spawn } from 'node:child_process'
+import type { SpawnOptions } from 'node:child_process'
 import type Anthropic from '@anthropic-ai/sdk'
 import type { ContentBlock, MessageParam, Tool, ToolResultBlockParam } from '@anthropic-ai/sdk/resources'
 import { ProcessType, PromptString } from '@sourcegraph/cody-shared'
@@ -49,6 +51,44 @@ const allTools: CodyTool[] = [
                 return Buffer.from(content).toString('utf-8')
             } catch (error) {
                 throw new Error(`Failed to read file ${input.path}: ${error}`)
+            }
+        },
+    },
+    {
+        spec: {
+            name: 'run_terminal_command',
+            description: 'Run an arbitrary terminal command at the root of the users project. ',
+            input_schema: {
+                type: 'object',
+                properties: {
+                    command: {
+                        type: 'string',
+                        description:
+                            'The command to run in the root of the users project. Must be shell escaped.',
+                    },
+                },
+                required: ['command'],
+            },
+        },
+        invoke: async (input: { command: string }) => {
+            if (typeof input.command !== 'string') {
+                throw new Error(
+                    `run_terminal_command argument must be a string, value was ${JSON.stringify(input)}`
+                )
+            }
+
+            const workspaceFolder = vscode.workspace.workspaceFolders?.[0]
+            if (!workspaceFolder) {
+                throw new Error('No workspace folder found')
+            }
+
+            try {
+                const commandResult = await runShellCommand(input.command, {
+                    cwd: workspaceFolder.uri.path,
+                })
+                return commandResult.stdout
+            } catch (error) {
+                throw new Error(`Failed to run terminal command: ${input.command}: ${error}`)
             }
         },
     },
@@ -168,4 +208,112 @@ export class ExperimentalToolHandler implements AgentHandler {
         }
         delegate.postDone()
     }
+}
+
+interface CommandOptions {
+    cwd?: string
+    env?: Record<string, string>
+}
+
+interface CommandResult {
+    stdout: string
+    stderr: string
+    code: number | null
+    signal: NodeJS.Signals | null
+}
+
+class CommandError extends Error {
+    constructor(
+        message: string,
+        public readonly result: CommandResult
+    ) {
+        super(message)
+        this.name = 'CommandError'
+    }
+}
+
+async function runShellCommand(command: string, options: CommandOptions = {}): Promise<CommandResult> {
+    const { cwd = process.cwd(), env = process.env } = options
+
+    const timeout = 10_000
+    const maxBuffer = 1024 * 1024 * 10
+    const encoding = 'utf8'
+    const spawnOptions: SpawnOptions = {
+        shell: true,
+        cwd,
+        env,
+        windowsHide: true,
+    }
+
+    return new Promise((resolve, reject) => {
+        const process = spawn(command, [], spawnOptions)
+
+        let stdout = ''
+        let stderr = ''
+        let killed = false
+        const timeoutId = setTimeout(() => {
+            killed = true
+            process.kill()
+            reject(new Error(`Command timed out after ${timeout}ms`))
+        }, timeout)
+
+        let stdoutLength = 0
+        let stderrLength = 0
+
+        if (process.stdout) {
+            process.stdout.on('data', (data: Buffer) => {
+                const chunk = data.toString(encoding)
+                stdoutLength += chunk.length
+                if (stdoutLength > maxBuffer) {
+                    killed = true
+                    process.kill()
+                    reject(new Error('stdout maxBuffer exceeded'))
+                    return
+                }
+                stdout += chunk
+            })
+        }
+
+        if (process.stderr) {
+            process.stderr.on('data', (data: Buffer) => {
+                const chunk = data.toString(encoding)
+                stderrLength += chunk.length
+                if (stderrLength > maxBuffer) {
+                    killed = true
+                    process.kill()
+                    reject(new Error('stderr maxBuffer exceeded'))
+                    return
+                }
+                stderr += chunk
+            })
+        }
+
+        process.on('error', (error: Error) => {
+            if (timeoutId) clearTimeout(timeoutId)
+            reject(new Error(`Failed to start process: ${error.message}`))
+        })
+
+        process.on('close', (code: number | null, signal: NodeJS.Signals | null) => {
+            if (timeoutId) clearTimeout(timeoutId)
+            if (killed) return
+
+            const result: CommandResult = {
+                stdout,
+                stderr,
+                code,
+                signal,
+            }
+
+            if (code === 0) {
+                resolve(result)
+            } else {
+                reject(
+                    new CommandError(
+                        `Command failed with exit code ${code}${stderr ? ': ' + stderr : ''}`,
+                        result
+                    )
+                )
+            }
+        })
+    })
 }

@@ -23,12 +23,12 @@ import {
 
 export const DEEPSEEK_CODER_V2_LITE_BASE = 'deepseek-coder-v2-lite-base'
 // Context window experiments with DeepSeek Model
-export const DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_4096 = 'deepseek-coder-v2-lite-base-context-4096'
-export const DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_8192 = 'deepseek-coder-v2-lite-base-context-8192'
-export const DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_16384 = 'deepseek-coder-v2-lite-base-context-16384'
+const DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_4096 = 'deepseek-coder-v2-lite-base-context-4096'
+const DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_8192 = 'deepseek-coder-v2-lite-base-context-8192'
+const DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_16384 = 'deepseek-coder-v2-lite-base-context-16384'
 
-export const CODE_QWEN_7B_V2P5 = 'code-qwen-7b-v2p5'
-export const CODE_LLAMA_7B = 'codellama-7b'
+const CODE_QWEN_7B_V2P5 = 'code-qwen-7b-v2p5'
+const CODE_LLAMA_7B = 'codellama-7b'
 
 // Model identifiers can be found in https://docs.fireworks.ai/explore/ and in our internal
 // conversations
@@ -133,7 +133,12 @@ class FireworksProvider extends Provider {
             typeof process !== 'undefined'
 
         if (canFastPathBeUsed) {
-            const fastPathAccessToken = dotcomTokenToGatewayToken(config.auth.accessToken)
+            // TODO (pkukielka): Check if fastpath should support custom auth providers and how
+            const accessToken =
+                config.auth.credentials && 'token' in config.auth.credentials
+                    ? config.auth.credentials.token
+                    : null
+            const fastPathAccessToken = dotcomTokenToGatewayToken(accessToken)
 
             const localFastPathAccessToken =
                 process.env.NODE_ENV === 'development'

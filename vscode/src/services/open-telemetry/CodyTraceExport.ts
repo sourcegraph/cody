@@ -11,11 +11,7 @@ export class CodyTraceExporter extends OTLPTraceExporter {
     constructor(private configAccessor: () => OpenTelemetryServiceConfig | null) {
         super({
             url: configAccessor()?.traceUrl,
-            headers: {
-                ...(configAccessor()?.accessToken
-                    ? { Authorization: `token ${configAccessor()?.accessToken}` }
-                    : {}),
-            },
+            headers: configAccessor()?.authHeaders,
             httpAgentOptions: { rejectUnauthorized: false },
         })
     }

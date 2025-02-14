@@ -20,7 +20,6 @@ import { ExtensionAPIProviderFromVSCodeAPI } from '@sourcegraph/prompt-editor'
 import { CodyPanel } from './CodyPanel'
 import { AuthenticationErrorBanner } from './components/AuthenticationErrorBanner'
 import { useSuppressKeys } from './components/hooks'
-import { IntentDetectionConfigProvider } from './components/omnibox/intentDetection'
 import { View } from './tabs'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 import { ComposedWrappers, type Wrapper } from './utils/composeWrappers'
@@ -235,9 +234,6 @@ export function getAppWrappers({
     staticDefaultContext,
 }: GetAppWrappersOptions): Wrapper[] {
     return [
-        {
-            component: IntentDetectionConfigProvider,
-        },
         {
             provider: TelemetryRecorderContext.Provider,
             value: telemetryRecorder,

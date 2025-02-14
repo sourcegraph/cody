@@ -33,7 +33,7 @@ describe('CodyGatewayAdapter', () => {
         mockResolvedConfig({
             configuration: {},
             auth: {
-                accessToken: 'sgp_local_f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0',
+                credentials: { token: 'sgp_local_f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0' },
                 serverEndpoint: DOTCOM_URL.toString(),
             },
         })
@@ -72,7 +72,7 @@ describe('CodyGatewayAdapter', () => {
             expect.objectContaining({
                 stream: false,
                 model: options.model,
-                temperature: 0,
+                temperature: 0.1,
                 response_format: { type: 'text' },
                 prediction: {
                     type: 'content',
@@ -100,7 +100,7 @@ describe('CodyGatewayAdapter', () => {
             expect.objectContaining({
                 stream: false,
                 model: options.model,
-                temperature: 0,
+                temperature: 0.1,
                 response_format: { type: 'text' },
                 prediction: {
                     type: 'content',

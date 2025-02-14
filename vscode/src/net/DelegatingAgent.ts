@@ -23,7 +23,6 @@ import {
     subscriptionDisposable,
 } from '@sourcegraph/cody-shared'
 import { Agent as AgentBase, type AgentConnectOpts } from 'agent-base'
-// import { HttpsProxyAgent, type HttpsProxyAgentOptions } from 'https-proxy-agent'
 import { HttpProxyAgent, HttpsProxyAgent } from 'hpagent'
 import { map } from 'observable-fns'
 import { ProxyAgent } from 'proxy-agent'
@@ -440,7 +439,7 @@ function resolveProxyPath(filePath: string | null | undefined): string | undefin
     }
 }
 
-export function readProxyCACert(filePath: string | null | undefined): string | undefined {
+function readProxyCACert(filePath: string | null | undefined): string | undefined {
     if (!filePath) {
         return undefined
     }

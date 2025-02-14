@@ -15,7 +15,7 @@ interface DiffHunkWithStrategy extends DiffHunk {
     diffStrategyMetadata: AutocompleteContextSnippetMetadataFields
 }
 
-export interface RecentEditsRetrieverOptions {
+interface RecentEditsRetrieverOptions {
     maxAgeMs: number
     diffStrategyList: RecentEditsRetrieverDiffStrategy[]
 }

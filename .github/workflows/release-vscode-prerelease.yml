@@ -1,4 +1,4 @@
-name: vscode-insiders-release
+name: release-vscode-prerelease
 
 on:
   workflow_dispatch:

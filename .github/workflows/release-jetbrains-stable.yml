@@ -1,7 +1,5 @@
-name: Nightly Release
-on:
-  push:
-    tags: ["jb-*-nightly"]
+name: release-jetbrains-stable
+on: workflow_dispatch
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -28,15 +26,14 @@ jobs:
           image: tonistiigi/binfmt:latest
           platforms: all
       - name: Gradle Wrapper Validation
-        uses: gradle/wrapper-validation-action@v3
+        uses: gradle/actions/wrapper-validation@v4
       - uses: pnpm/action-setup@fe02b34f77f8bc703788d5817da081398fad5dd2 # SECURITY: pin third-party action hashes
       - run: |
-          echo "RELEASE_VERSION=$(./jetbrains/scripts/version-from-git-tag.sh)-nightly" >> $GITHUB_ENV
-      - name: Publish nightly version
-        run: |
-          echo "Publishing nightly version ${RELEASE_VERSION}"
+          echo "RELEASE_VERSION=$(./jetbrains/scripts/version-from-git-tag.sh)" >> $GITHUB_ENV
+      - run: |
           pushd jetbrains
-          ./gradlew "-PpluginVersion=${RELEASE_VERSION}" publishPlugin
+          ./gradlew "-PpluginVersion=$RELEASE_VERSION" publishPlugin
           popd > /dev/null
         env:
           PUBLISH_TOKEN: ${{ secrets.JETBRAINS_MARKETPLACE_PUBLISH_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.PRIVATE_SG_TOKEN }}

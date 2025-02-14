@@ -9,6 +9,7 @@ data class EditTask_RetryParams(
   val model: String,
   val mode: ModeEnum, // Oneof: edit, insert
   val range: Range,
+  val rules: List<Rule>? = null,
 ) {
 
   enum class ModeEnum {

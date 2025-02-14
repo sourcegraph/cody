@@ -2,12 +2,7 @@ import { type DebouncedFunc, debounce } from 'lodash'
 import { Observable } from 'observable-fns'
 import * as vscode from 'vscode'
 
-import {
-    type ChatClient,
-    type DocumentContext,
-    currentResolvedConfig,
-    tokensToChars,
-} from '@sourcegraph/cody-shared'
+import { type ChatClient, currentResolvedConfig, tokensToChars } from '@sourcegraph/cody-shared'
 
 import { ContextRankingStrategy } from '../completions/context/completions-context-ranker'
 import { ContextMixer } from '../completions/context/context-mixer'
@@ -16,6 +11,7 @@ import { getCurrentDocContext } from '../completions/get-current-doc-context'
 import { isRunningInsideAgent } from '../jsonrpc/isRunningInsideAgent'
 import type { FixupController } from '../non-stop/FixupController'
 
+import type { CodyStatusBar } from '../services/StatusBar'
 import type { AutoeditsModelAdapter, AutoeditsPrompt } from './adapters/base'
 import { createAutoeditsModelAdapter } from './adapters/create-adapter'
 import {
@@ -49,18 +45,6 @@ export const INLINE_COMPLETION_DEFAULT_DEBOUNCE_INTERVAL_MS = 150
 const ON_SELECTION_CHANGE_DEFAULT_DEBOUNCE_INTERVAL_MS = 150
 const RESET_SUGGESTION_ON_CURSOR_CHANGE_AFTER_INTERVAL_MS = 60 * 1000
 
-export interface AutoEditsProviderOptions {
-    document: vscode.TextDocument
-    position: vscode.Position
-    docContext: DocumentContext
-    abortSignal?: AbortSignal
-}
-
-export interface AutoeditsSuggestion {
-    codeToReplaceData: CodeToReplaceData
-    prediction: string
-}
-
 export interface AutoeditsResult extends vscode.InlineCompletionList {
     requestId: AutoeditRequestID
     prediction: string
@@ -81,6 +65,11 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
     private readonly onSelectionChangeDebounced: DebouncedFunc<typeof this.onSelectionChange>
     public readonly rendererManager: AutoEditsRendererManager
     private readonly modelAdapter: AutoeditsModelAdapter
+
+    /**
+     * Default: Current supported renderer
+     * Inline: Experimental renderer that uses inline decorations to show additions
+     */
     private readonly enabledRenderer = vscode.workspace
         .getConfiguration()
         .get<'default' | 'inline'>('cody.experimental.autoedit.renderer', 'default')
@@ -92,8 +81,14 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         contextRankingStrategy: ContextRankingStrategy.TimeBased,
         dataCollectionEnabled: false,
     })
+    private readonly statusBar: CodyStatusBar
 
-    constructor(chatClient: ChatClient, fixupController: FixupController) {
+    constructor(
+        chatClient: ChatClient,
+        fixupController: FixupController,
+        statusBar: CodyStatusBar,
+        options: { shouldRenderImage: boolean }
+    ) {
         autoeditsOutputChannelLogger.logDebug('Constructor', 'Constructing AutoEditsProvider')
         this.modelAdapter = createAutoeditsModelAdapter({
             providerName: autoeditsProviderConfig.provider,
@@ -108,7 +103,8 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                       fixupController
                   )
                 : new AutoEditsDefaultRendererManager(
-                      (editor: vscode.TextEditor) => new DefaultDecorator(editor),
+                      (editor: vscode.TextEditor) =>
+                          new DefaultDecorator(editor, { shouldRenderImage: options.shouldRenderImage }),
                       fixupController
                   )
 
@@ -125,6 +121,8 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 this.onDidChangeTextDocument(event)
             })
         )
+
+        this.statusBar = statusBar
     }
 
     private onDidChangeTextDocument(event: vscode.TextDocumentChangeEvent): void {
@@ -158,6 +156,8 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         inlineCompletionContext: vscode.InlineCompletionContext,
         token?: vscode.CancellationToken
     ): Promise<AutoeditsResult | null> {
+        let stopLoading: (() => void) | undefined
+
         try {
             const start = getTimeNowInMillis()
             const controller = new AbortController()
@@ -174,6 +174,11 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 )
                 return null
             }
+
+            stopLoading = this.statusBar.addLoader({
+                title: 'Auto-edits are being generated',
+                timeout: 30_000,
+            })
 
             autoeditsOutputChannelLogger.logDebugIfVerbose(
                 'provideInlineCompletionItems',
@@ -432,6 +437,8 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
 
             autoeditAnalyticsLogger.logError(errorToReport)
             return null
+        } finally {
+            stopLoading?.()
         }
     }
 

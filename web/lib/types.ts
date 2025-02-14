@@ -2,7 +2,7 @@ import type { SerializedPromptEditorValue } from '@sourcegraph/cody-shared'
 
 // Copy of external prompts interface from CodyPanel component since
 // type re-exports don't work with Cody Web bundle
-export interface ExternalPrompt {
+interface ExternalPrompt {
     text: string
     autoSubmit: boolean
     mode?: 'search' | 'chat' | 'edit' | 'insert'
@@ -13,7 +13,7 @@ export interface CodyExternalApi {
 }
 
 export interface Repository {
-    id: string
+    id: string | null
     name: string
 }
 

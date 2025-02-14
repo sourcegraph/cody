@@ -7,13 +7,13 @@ import {
     type ContextItemSymbol,
     EMPTY,
     FILE_CONTEXT_MENTION_PROVIDER,
+    FIXTURE_MODELS,
     FeatureFlag,
     type ModelsData,
     type ResolvedConfiguration,
     SYMBOL_CONTEXT_MENTION_PROVIDER,
     type SymbolKind,
     type UserLocalHistory,
-    getMockedDotComClientModels,
     promiseFactoryToObservable,
     serializedPromptEditorStateFromText,
 } from '@sourcegraph/cody-shared'
@@ -101,20 +101,22 @@ export const AppWrapperForTest: FunctionComponent<{ children: ReactNode }> = ({ 
                     models: () =>
                         Observable.of({
                             localModels: [],
-                            primaryModels: getMockedDotComClientModels(),
+                            primaryModels: FIXTURE_MODELS,
                             preferences: { defaults: {}, selected: {} },
                         } satisfies ModelsData),
-                    chatModels: () => Observable.of(getMockedDotComClientModels()),
+                    chatModels: () => Observable.of(FIXTURE_MODELS),
                     setChatModel: () => EMPTY,
                     defaultContext: () => Observable.of({ corpusContext: [], initialContext: [] }),
                     hydratePromptMessage: text =>
                         Observable.of(serializedPromptEditorStateFromText(text)),
                     promptsMigrationStatus: () => Observable.of({ type: 'no_migration_needed' }),
                     startPromptsMigration: () => Observable.of(),
-                    detectIntent: () => Observable.of(),
                     resolvedConfig: () =>
                         Observable.of({
-                            auth: { accessToken: 'abc', serverEndpoint: 'https://example.com' },
+                            auth: {
+                                credentials: { token: 'abc' },
+                                serverEndpoint: 'https://example.com',
+                            },
                             configuration: {
                                 autocomplete: true,
                                 devModels: [{ model: 'my-model', provider: 'my-provider' }],

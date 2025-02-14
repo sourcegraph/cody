@@ -1,6 +1,7 @@
 package com.sourcegraph.cody.autocomplete
 
 import com.intellij.codeInsight.hint.HintManager
+import com.intellij.codeWithMe.ClientId
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.client.ClientSessionsManager
 import com.intellij.openapi.command.CommandProcessor
@@ -143,7 +144,7 @@ class CodyAutocompleteManager {
       }
       return
     }
-    val isRemoteDev = ClientSessionsManager.getAppSession()?.isRemote ?: false
+    val isRemoteDev = ClientSessionsManager.getAppSession(ClientId.current)?.isRemote ?: false
     if (isRemoteDev) {
       return
     }

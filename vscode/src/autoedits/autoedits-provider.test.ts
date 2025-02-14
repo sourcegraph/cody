@@ -60,7 +60,7 @@ describe('AutoeditsProvider', () => {
         mockResolvedConfig({
             configuration: {},
             auth: {
-                accessToken: 'sgp_local_f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0',
+                credentials: { token: 'sgp_local_f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0' },
                 serverEndpoint: DOTCOM_URL.toString(),
             },
         })

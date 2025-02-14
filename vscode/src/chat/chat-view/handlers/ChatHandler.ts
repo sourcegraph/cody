@@ -78,7 +78,7 @@ export class ChatHandler implements AgentHandler {
         const prompter = new DefaultPrompter(explicitMentions, implicitMentions, false)
 
         const versions = await currentSiteVersion()
-        if (!versions) {
+        if (versions instanceof Error) {
             throw new Error('unable to determine site version')
         }
         const { prompt } = await this.buildPrompt(prompter, chatBuilder, signal, versions.codyAPIVersion)
