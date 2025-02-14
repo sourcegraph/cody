@@ -382,9 +382,7 @@ export class DefaultDecorator implements AutoEditsDecorator {
         const { dark, light } = generateSuggestionAsImage({
             decorations: blockifiedAddedLines,
             lang: this.editor.document.languageId,
-            config: {
-                pixelRatio: pixelRatio,
-            },
+            config: { pixelRatio },
         })
         const startLineEndColumn = this.getEndColumn(this.editor.document.lineAt(startLine))
 
@@ -398,8 +396,8 @@ export class DefaultDecorator implements AutoEditsDecorator {
             position: 'absolute',
             // Make sure the decoration is rendered on top of other decorations
             'z-index': '9999',
-            // // Scale to decoration to the correct size (upscaled to boost resolution)
-            scale: String(0.9 * (1 / pixelRatio)),
+            // Scale the decoration to the correct size (upscaled to boost resolution)
+            scale: String(1 / pixelRatio),
             'transform-origin': '0px 0px',
             height: 'auto',
             // The decoration will be entirely taken up by the image.
