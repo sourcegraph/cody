@@ -717,8 +717,10 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 if (message.type === 'change') {
                     title = message.text
                 } else if (message.type === 'complete') {
-                    this.chatBuilder.setChatTitle(title)
-                    await this.saveSession()
+                    if (title) {
+                        this.chatBuilder.setChatTitle(title)
+                        await this.saveSession()
+                    }
                     break
                 }
             }
