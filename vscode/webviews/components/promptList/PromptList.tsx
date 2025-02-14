@@ -1,7 +1,7 @@
 import clsx from 'clsx'
 import { type FC, useCallback, useMemo, useState } from 'react'
 
-import { CodyIDE, PromptMode, type Action, type PromptsInput } from '@sourcegraph/cody-shared'
+import { type Action, CodyIDE, PromptMode, type PromptsInput } from '@sourcegraph/cody-shared'
 
 import { useLocalStorage } from '../../components/hooks'
 import { useTelemetryRecorder } from '../../utils/telemetry'
@@ -172,10 +172,11 @@ export const PromptList: FC<PromptListProps> = props => {
                 promptFilters?.promoted || promptFilters?.owner || promptFilters?.tags
 
             if (shouldExcludeBuiltinCommands && isWebClient) {
-                return actions.filter(action =>
-                    action.actionType === 'prompt' &&
-                    !action.builtin &&
-                    action.mode === PromptMode.CHAT
+                return actions.filter(
+                    action =>
+                        action.actionType === 'prompt' &&
+                        !action.builtin &&
+                        action.mode === PromptMode.CHAT
                 )
             }
             if (shouldExcludeBuiltinCommands) {
