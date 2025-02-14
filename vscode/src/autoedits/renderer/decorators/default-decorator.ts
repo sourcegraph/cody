@@ -378,12 +378,19 @@ export class DefaultDecorator implements AutoEditsDecorator {
         // Ideally this will follow the exact window.devicePixelRatio value.
         // To get that we need to retrieve the value from the webview.
         // This is a fallback compromise that works for both high and low DPI.
-        const pixelRatio = 1.99
+        const pixelRatio = 1.95
         const { dark, light } = generateSuggestionAsImage({
             decorations: blockifiedAddedLines,
             lang: this.editor.document.languageId,
             config: { pixelRatio },
         })
+
+        const secondImage = generateSuggestionAsImage({
+            decorations: blockifiedAddedLines,
+            lang: this.editor.document.languageId,
+            config: { pixelRatio: 2 },
+        })
+
         const startLineEndColumn = this.getEndColumn(this.editor.document.lineAt(startLine))
 
         // The padding in which to offset the decoration image away from neighbouring code
@@ -424,6 +431,31 @@ export class DefaultDecorator implements AutoEditsDecorator {
                     // Provide different highlighting for dark/light themes
                     dark: { before: { contentIconPath: vscode.Uri.parse(dark) } },
                     light: { before: { contentIconPath: vscode.Uri.parse(light) } },
+                },
+            },
+            {
+                range: new vscode.Range(
+                    startLine + 5,
+                    startLineEndColumn,
+                    startLine + 5,
+                    startLineEndColumn
+                ),
+                renderOptions: {
+                    before: {
+                        color: new vscode.ThemeColor('editorSuggestWidget.foreground'),
+                        backgroundColor: new vscode.ThemeColor('editorSuggestWidget.background'),
+                        border: '1px solid',
+                        borderColor: new vscode.ThemeColor('editorSuggestWidget.border'),
+                        textDecoration: `none;${decorationStyle}`,
+                        margin: `0 0 0 ${decorationMargin + 8}ch`,
+                    },
+                    after: {
+                        contentText: '\u00A0'.repeat(3) + '\u00A0'.repeat(startLineEndColumn),
+                        margin: `0 0 0 ${decorationMargin + 8}ch`,
+                    },
+                    // Provide different highlighting for dark/light themes
+                    dark: { before: { contentIconPath: vscode.Uri.parse(secondImage.dark) } },
+                    light: { before: { contentIconPath: vscode.Uri.parse(secondImage.light) } },
                 },
             },
         ])

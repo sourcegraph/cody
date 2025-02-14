@@ -55,6 +55,7 @@ async function generateImageForTest(
         config: {
             fontSize: 12,
             lineHeight: 18,
+            pixelRatio: 1.99,
         },
     })
 
