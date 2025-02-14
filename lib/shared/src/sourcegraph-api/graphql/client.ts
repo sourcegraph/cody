@@ -685,6 +685,21 @@ export type GraphQLAPIClientConfig = PickResolvedConfiguration<{
     clientState: 'anonymousUserID'
 }>
 
+export interface RefetchIntervalHint {
+    initialInterval: number
+    backoff: number
+}
+
+export const DURABLE_REFETCH_INTERVAL_HINT: RefetchIntervalHint = {
+    initialInterval: 60 * 60 * 1000, // 1 hour
+    backoff: 1.0,
+}
+
+export const TRANSIENT_REFETCH_INTERVAL_HINT: RefetchIntervalHint = {
+    initialInterval: 7 * 1000, // 7 seconds
+    backoff: 1.5,
+}
+
 const QUERY_TO_NAME_REGEXP = /^\s*(?:query|mutation)\s+(\w+)/m
 
 export class SourcegraphGraphQLAPIClient {
@@ -1229,7 +1244,7 @@ export class SourcegraphGraphQLAPIClient {
 
     public async contextFilters(): Promise<{
         filters: ContextFilters | Error
-        transient: boolean
+        refetchIntervalHint: RefetchIntervalHint
     }> {
         // CONTEXT FILTERS are only available on Sourcegraph 5.3.3 and later.
         const minimumVersion = '5.3.3'
@@ -1245,7 +1260,7 @@ export class SourcegraphGraphQLAPIClient {
             // Exclude everything in case of an unexpected error.
             return {
                 filters: error,
-                transient: true,
+                refetchIntervalHint: TRANSIENT_REFETCH_INTERVAL_HINT,
             }
         }
         const insiderBuild = version.length > 12 || version.includes('dev')
@@ -1253,7 +1268,7 @@ export class SourcegraphGraphQLAPIClient {
         if (!isValidVersion) {
             return {
                 filters: INCLUDE_EVERYTHING_CONTEXT_FILTERS,
-                transient: false,
+                refetchIntervalHint: DURABLE_REFETCH_INTERVAL_HINT,
             }
         }
 
@@ -1266,21 +1281,21 @@ export class SourcegraphGraphQLAPIClient {
             if (data?.site?.codyContextFilters?.raw === null) {
                 return {
                     filters: INCLUDE_EVERYTHING_CONTEXT_FILTERS,
-                    transient: false,
+                    refetchIntervalHint: DURABLE_REFETCH_INTERVAL_HINT,
                 }
             }
 
             if (data?.site?.codyContextFilters?.raw) {
                 return {
                     filters: data.site.codyContextFilters.raw,
-                    transient: false,
+                    refetchIntervalHint: DURABLE_REFETCH_INTERVAL_HINT,
                 }
             }
 
             // Exclude everything in case of an unexpected response structure.
             return {
                 filters: EXCLUDE_EVERYTHING_CONTEXT_FILTERS,
-                transient: true,
+                refetchIntervalHint: TRANSIENT_REFETCH_INTERVAL_HINT,
             }
         })
 
@@ -1290,7 +1305,17 @@ export class SourcegraphGraphQLAPIClient {
             if (hasOutdatedAPIErrorMessages(error)) {
                 return {
                     filters: INCLUDE_EVERYTHING_CONTEXT_FILTERS,
-                    transient: false,
+                    refetchIntervalHint: DURABLE_REFETCH_INTERVAL_HINT,
+                }
+            }
+
+            if (isNeedsAuthChallengeError(error)) {
+                return {
+                    filters: error,
+                    refetchIntervalHint: {
+                        initialInterval: 3 * 1000, // 3 seconds
+                        backoff: 1,
+                    },
                 }
             }
 
@@ -1298,7 +1323,7 @@ export class SourcegraphGraphQLAPIClient {
             // Exclude everything in case of an unexpected error.
             return {
                 filters: error,
-                transient: true,
+                refetchIntervalHint: TRANSIENT_REFETCH_INTERVAL_HINT,
             }
         }
 
