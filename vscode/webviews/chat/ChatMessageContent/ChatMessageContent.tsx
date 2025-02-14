@@ -77,7 +77,7 @@ const extractThinkContent = (content: string): StreamingContent => {
     return {
         displayContent,
         thinkContent,
-        hasThinkTag: thinkMatches.length > 0 || hasOpenThinkTag,
+        hasThinkTag: hasOpenThinkTag,
     }
 }
 
@@ -253,13 +253,20 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
 
     return (
         <div ref={rootRef} data-testid="chat-message-content">
-            {hasThinkTag && (
+            {thinkContent.length > 0 && (
                 <details
                     open
                     className="tw-container tw-mb-7 tw-border tw-border-gray-500/20 dark:tw-border-gray-600/40 tw-rounded-lg tw-overflow-hidden tw-backdrop-blur-sm"
                     title="Thinking / Reasoning Space."
                 >
-                    <summary className="tw-flex tw-items-center tw-gap-2 tw-px-3 tw-py-2 tw-bg-gray-100/50 dark:tw-bg-gray-800/80 tw-cursor-pointer hover:tw-bg-gray-200/50 dark:hover:tw-bg-gray-700/50 tw-select-none tw-transition-colors">
+                    <summary
+                        className={clsx(
+                            'tw-flex tw-items-center tw-gap-2 tw-px-3 tw-py-2 tw-bg-gray-100/50 dark:tw-bg-gray-800/80 tw-cursor-pointer hover:tw-bg-gray-200/50 dark:hover:tw-bg-gray-700/50 tw-select-none tw-transition-colors',
+                            {
+                                'tw-animate-pulse': hasThinkTag,
+                            }
+                        )}
+                    >
                         <PlusIcon size={16} className="tw-text-gray-500 dark:tw-text-gray-400" />
                         <span className="tw-font-medium tw-text-gray-600 dark:tw-text-gray-300">
                             Thinking...
