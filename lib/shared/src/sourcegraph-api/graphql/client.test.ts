@@ -48,7 +48,6 @@ describe('SourcegraphGraphQLClient', () => {
             )
             const result = await client.getCurrentUserInfo()
             expect(fetchMock).toHaveBeenCalled()
-            console.log('XX', result)
             expect(result).toBeInstanceOf(NeedsAuthChallengeError)
         })
     })

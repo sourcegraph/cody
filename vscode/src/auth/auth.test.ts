@@ -59,7 +59,7 @@ describe('showSignInMenu', () => {
 
         await showSignInMenu()
         expect(mockShowInputBox).not.toHaveBeenCalled()
-        expect(mockShowErrorMessage).toHaveBeenCalledWith('Sourcegraph is unreachable')
+        expect(mockShowErrorMessage).toHaveBeenCalledWith('Network Error: Sourcegraph is unreachable')
     })
 
     it('shows access token input box when authentication fails with invalid access token error', async () => {
@@ -89,7 +89,9 @@ describe('showSignInMenu', () => {
 
         await showSignInMenu()
         expect(mockShowInputBox).toHaveBeenCalled()
-        expect(mockShowErrorMessage).toHaveBeenCalledWith('The access token is invalid or has expired')
+        expect(mockShowErrorMessage).toHaveBeenCalledWith(
+            'Invalid Access Token: The access token is invalid or has expired'
+        )
     })
 })
 

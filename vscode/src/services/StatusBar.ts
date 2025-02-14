@@ -28,7 +28,6 @@ import {
 } from '@sourcegraph/cody-shared'
 
 import {
-    AuthError,
     InvalidAccessTokenError,
     isAvailabilityError,
 } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
@@ -339,11 +338,11 @@ export class CodyStatusBar implements vscode.Disposable {
         }
 
         if (!authStatus.authenticated) {
-            if (authStatus.error instanceof AuthError) {
+            if (isAvailabilityError(authStatus.error)) {
                 return {
                     icon: 'disabled',
                     tooltip: authStatus.error.message,
-                    style: authStatus.error instanceof InvalidAccessTokenError ? 'warning' : 'error',
+                    style: authStatus.error instanceof InvalidAccessTokenError ? 'error' : 'warning',
                     tags,
                     interact: isAvailabilityError(authStatus.error)
                         ? interactNetworkIssues

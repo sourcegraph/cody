@@ -340,10 +340,7 @@ export class InlineCompletionItemProvider
                     this.lastManualCompletionTimestamp > Date.now() - 500
             )
 
-            const isIgnored = await contextFiltersProvider.isUriIgnored(
-                document.uri,
-                /* foreceFetch = */ isManualCompletion
-            )
+            const isIgnored = await contextFiltersProvider.isUriIgnored(document.uri)
             if (isIgnored) {
                 this.logIgnored(document.uri, isIgnored, isManualCompletion)
                 return null
