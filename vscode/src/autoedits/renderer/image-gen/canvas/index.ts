@@ -72,6 +72,7 @@ function createCanvas(
         throw new Error('Failed to get 2D context')
     }
     ctx.font = `${fontSize}px DejaVuSansMono`
+    ctx.imageSmoothingQuality = 'high'
     if (scale) {
         ctx.scale(scale, scale)
     }

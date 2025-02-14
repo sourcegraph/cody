@@ -38,17 +38,19 @@ export interface RenderConfig {
 export interface UserProvidedRenderConfig {
     fontSize?: number
     lineHeight?: number
+    pixelRatio?: number
 }
 
 export function getRenderConfig(userProvidedConfig: UserProvidedRenderConfig): RenderConfig {
     const fontSize = userProvidedConfig.fontSize || DEFAULT_FONT_SIZE
     const lineHeight = userProvidedConfig.lineHeight || getLineHeight(fontSize)
+    const pixelRatio = userProvidedConfig.pixelRatio || 2
     return {
         fontSize,
         lineHeight,
         padding: { x: 6, y: 2 },
         maxWidth: 1200,
-        pixelRatio: 2,
+        pixelRatio,
         diffHighlightColor: 'rgba(35, 134, 54, 0.2)',
     }
 }

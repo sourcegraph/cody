@@ -374,9 +374,17 @@ export class DefaultDecorator implements AutoEditsDecorator {
         // Blockify the added lines so they are suitable to be rendered together as a VS Code decoration
         const blockifiedAddedLines = blockify(this.editor.document, addedLinesInfo)
 
+        // Note: This is a suboptimal resolution for the image.
+        // Ideally this will follow the exact window.devicePixelRatio value.
+        // To get that we need to retrieve the value from the webview.
+        // This is a fallback compromise that works for both high and low DPI.
+        const pixelRatio = 1.99
         const { dark, light } = generateSuggestionAsImage({
             decorations: blockifiedAddedLines,
             lang: this.editor.document.languageId,
+            config: {
+                pixelRatio: pixelRatio,
+            },
         })
         const startLineEndColumn = this.getEndColumn(this.editor.document.lineAt(startLine))
 
@@ -390,8 +398,8 @@ export class DefaultDecorator implements AutoEditsDecorator {
             position: 'absolute',
             // Make sure the decoration is rendered on top of other decorations
             'z-index': '9999',
-            // Scale to decoration to the correct size (upscaled to boost resolution)
-            scale: '0.5',
+            // // Scale to decoration to the correct size (upscaled to boost resolution)
+            scale: String(0.9 * (1 / pixelRatio)),
             'transform-origin': '0px 0px',
             height: 'auto',
             // The decoration will be entirely taken up by the image.
