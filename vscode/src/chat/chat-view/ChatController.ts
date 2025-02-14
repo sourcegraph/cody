@@ -16,6 +16,7 @@ import {
     type DefaultChatCommands,
     type EventSource,
     type Guardrails,
+    ModelTag,
     ModelUsage,
     type NLSSearchDynamicFilter,
     type ProcessingStep,
@@ -692,10 +693,14 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         requestID: string,
         inputText: PromptString,
         signal: AbortSignal,
-        model?: ChatModel
+        chatModel?: ChatModel
     ): Promise<void> {
+        // Get the currently available models with speed tag.
+        const speeds = modelsService.getModelsByTag(ModelTag.Speed)
+        // Use the latest Gemini flash model or the first speedy model as the default.
+        const model = (speeds.find(m => m.id.includes('flash')) || speeds?.[0])?.id ?? chatModel
         // Returns early if title already exists, or if this is a testing session.
-        if (!model || this.chatBuilder.customChatTitle || isAgentTesting) {
+        if (this.chatBuilder.customChatTitle || !model || isAgentTesting) {
             return
         }
         const prompt = ps`You are Cody, an AI coding assistant from Sourcegraph. Your task is to generate a concise title (<10 words without quotation) for <codyUserInput>${inputText}</codyUserInput>.
