@@ -1,6 +1,8 @@
-import { type AuthenticatedAuthStatus, isDotCom } from '@sourcegraph/cody-shared'
+import { type AuthenticatedAuthStatus, CodyIDE, isDotCom } from '@sourcegraph/cody-shared'
 import {
     ArrowLeftRightIcon,
+    BookOpenText,
+    BugIcon,
     ChevronLeftIcon,
     ChevronRightIcon,
     ChevronsUpDown,
@@ -44,6 +46,7 @@ interface UserMenuProps {
     __storybook__open?: boolean
     // Whether to show the Sourcegraph Teams upgrade CTA or not.
     isWorkspacesUpgradeCtaEnabled?: boolean
+    IDE: CodyIDE
 }
 
 type MenuView = 'main' | 'switch' | 'add' | 'remove' | 'debug' | 'help'
@@ -57,6 +60,7 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
     allowEndpointChange,
     __storybook__open,
     isWorkspacesUpgradeCtaEnabled,
+    IDE,
 }) => {
     const telemetryRecorder = useTelemetryRecorder()
     const { displayName, username, primaryEmail, endpoint } = authStatus
@@ -592,15 +596,17 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
                                         close()
                                     }}
                                 >
-                                    <UniversityIcon size={16} strokeWidth={1.25} className="tw-mr-2" />
+                                    <BookOpenText size={16} strokeWidth={1.25} className="tw-mr-2" />
                                     <span className="tw-flex-grow">Getting Started Guide</span>
                                 </CommandItem>
 
-                                <CommandItem onSelect={() => onMenuViewChange('debug')}>
-                                    <BugIcon size={16} strokeWidth={1.25} className="tw-mr-2" />
-                                    <span className="tw-flex-grow">Debug</span>
-                                    <ChevronRightIcon size={16} strokeWidth={1.25} />
-                                </CommandItem>
+                                {IDE === CodyIDE.VSCode && (
+                                    <CommandItem onSelect={() => onMenuViewChange('debug')}>
+                                        <BugIcon size={16} strokeWidth={1.25} className="tw-mr-2" />
+                                        <span className="tw-flex-grow">Debug</span>
+                                        <ChevronRightIcon size={16} strokeWidth={1.25} />
+                                    </CommandItem>
+                                )}
 
                                 <CommandItem onSelect={() => onMenuViewChange('help')}>
                                     <CircleHelpIcon size={16} strokeWidth={1.25} className="tw-mr-2" />
