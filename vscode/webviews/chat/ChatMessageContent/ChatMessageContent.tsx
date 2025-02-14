@@ -3,6 +3,7 @@ import type React from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { clsx } from 'clsx'
+import { PlusIcon } from 'lucide-react'
 import type { FixupTaskID } from '../../../src/non-stop/FixupTask'
 import { CodyTaskState } from '../../../src/non-stop/state'
 import { type ClientActionListener, useClientActionListener } from '../../client/clientState'
@@ -46,35 +47,37 @@ interface StreamingContent {
 }
 
 const extractThinkContent = (content: string): StreamingContent => {
-    const thinkRegex = /<think>([\s\S]*?)<\/think>/g
+    const thinkRegex = /^<think>([\s\S]*?)<\/think>/g
     const thinkMatches = [...content.matchAll(thinkRegex)]
-    
+
     // Check if content has an unclosed think tag
-    const hasOpenThinkTag = content.includes('<think>') && 
-        (content.lastIndexOf('<think>') > content.lastIndexOf('</think>'))
-    
+    const lastThinkOpenIndex = content.lastIndexOf('<think>')
+    const lastThinkCloseIndex = content.lastIndexOf('</think>')
+    const hasOpenThinkTag = lastThinkOpenIndex > lastThinkCloseIndex
+
     // Collect all think content, including partial content from unclosed tag
     let thinkContent = thinkMatches
         .map(match => match[1].trim())
         .filter(Boolean)
         .join('\n\n')
-    
+
+    // If there's an open think tag, capture everything after it
     if (hasOpenThinkTag) {
-        const lastThinkContent = content.slice(content.lastIndexOf('<think>') + 7)
-        thinkContent = thinkContent ? `${thinkContent}\n\n${lastThinkContent}` : lastThinkContent
+        const unclosedContent = content.slice(lastThinkOpenIndex + 7)
+        thinkContent = thinkContent ? `${thinkContent}\n\n${unclosedContent}` : unclosedContent
     }
 
     // Remove complete think tags from display content
     let displayContent = content.replace(thinkRegex, '')
     // Remove any unclosed think tag and its content
     if (hasOpenThinkTag) {
-        displayContent = displayContent.slice(0, displayContent.lastIndexOf('<think>'))
+        displayContent = displayContent.slice(0, lastThinkOpenIndex)
     }
 
-    return { 
-        displayContent, 
+    return {
+        displayContent,
         thinkContent,
-        hasThinkTag: thinkMatches.length > 0 || hasOpenThinkTag
+        hasThinkTag: thinkMatches.length > 0 || hasOpenThinkTag,
     }
 }
 
@@ -251,49 +254,21 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
     return (
         <div ref={rootRef} data-testid="chat-message-content">
             {hasThinkTag && (
-                <details 
-                    open 
-                    className={clsx(
-                        "tw-container tw-mb-4",
-                        "tw-border tw-border-gray-500/20 dark:tw-border-gray-600/40",
-                        "tw-rounded-lg tw-overflow-hidden",
-                        "tw-bg-gray-50/50 dark:tw-bg-gray-800/50",
-                        "tw-backdrop-blur-sm"
-                    )}
+                <details
+                    open
+                    className="tw-container tw-mb-7 tw-border tw-border-gray-500/20 dark:tw-border-gray-600/40 tw-rounded-lg tw-overflow-hidden tw-backdrop-blur-sm"
+                    title="Thinking / Reasoning Space."
                 >
-                    <summary className={clsx(
-                        "tw-flex tw-items-center tw-gap-2 tw-px-3 tw-py-2",
-                        "tw-bg-gray-100/50 dark:tw-bg-gray-800/80",
-                        "tw-cursor-pointer hover:tw-bg-gray-200/50 dark:hover:tw-bg-gray-700/50",
-                        "tw-select-none tw-transition-colors"
-                    )}>
-                        <svg 
-                            className="tw-w-4 tw-h-4 tw-text-gray-500 dark:tw-text-gray-400 tw-animate-pulse" 
-                            viewBox="0 0 24 24" 
-                            fill="none" 
-                            stroke="currentColor" 
-                            strokeWidth="2"
-                        >
-                            <path 
-                                strokeLinecap="round" 
-                                strokeLinejoin="round" 
-                                d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707"
-                            />
-                        </svg>
-                        <span className="tw-text-sm tw-font-medium tw-text-gray-600 dark:tw-text-gray-300">
+                    <summary className="tw-flex tw-items-center tw-gap-2 tw-px-3 tw-py-2 tw-bg-gray-100/50 dark:tw-bg-gray-800/80 tw-cursor-pointer hover:tw-bg-gray-200/50 dark:hover:tw-bg-gray-700/50 tw-select-none tw-transition-colors">
+                        <PlusIcon size={16} className="tw-text-gray-500 dark:tw-text-gray-400" />
+                        <span className="tw-font-medium tw-text-gray-600 dark:tw-text-gray-300">
                             Thinking...
                         </span>
                     </summary>
-                    <div className="tw-px-4 tw-py-3">
-                        <MarkdownFromCody 
-                            className={clsx(
-                                "tw-text-sm tw-text-gray-600 dark:tw-text-gray-300",
-                                "tw-prose dark:tw-prose-invert tw-max-w-none",
-                                "tw-leading-relaxed"
-                            )}
-                        >
+                    <div className="tw-px-4 tw-py-3 tw-mx-4 tw-opacity-70 hover:tw-opacity-100">
+                        <div className="tw-text-sm tw-prose dark:tw-prose-invert tw-max-w-none tw-leading-relaxed tw-text-base/7">
                             {thinkContent}
-                        </MarkdownFromCody>
+                        </div>
                     </div>
                 </details>
             )}
