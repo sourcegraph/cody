@@ -2,6 +2,7 @@ import {
     AUTH_STATUS_FIXTURE_AUTHED,
     type ClientCapabilitiesWithLegacyFields,
     CodyIDE,
+    PromptMode,
 } from '@sourcegraph/cody-shared'
 import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, test, vi } from 'vitest'
@@ -16,12 +17,11 @@ vi.mocked(usePromptsQuery).mockReturnValue({
     value: {
         query: '',
         arePromptsSupported: true,
-        actions: [{ ...FIXTURE_PROMPTS[0], actionType: 'prompt' }],
+        actions: [{ ...FIXTURE_PROMPTS[0], actionType: 'prompt', mode: PromptMode.CHAT }],
     },
     done: false,
     error: null,
 })
-
 describe('WelcomeMessage', () => {
     function openCollapsiblePanels(): void {
         const closedPanelButtons = document.querySelectorAll('button[data-state="closed"]')
