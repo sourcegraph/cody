@@ -174,8 +174,11 @@ async function runContextCommand(
                 }))
             )
         }
+
+        const rewrittenQuery = clientOpts.rewrite ? query : ''
         exampleOutputs.push({
             ...example,
+            rewrittenQuery,
             actualContext,
         })
     }
