@@ -260,6 +260,7 @@ export interface ConfigurationSubsetForWebview
     multipleWebviewsEnabled?: boolean | undefined | null
     endpointHistory?: string[] | undefined | null
     allowEndpointChange: boolean
+    experimentalPromptEditorEnabled: boolean
 }
 
 /**
