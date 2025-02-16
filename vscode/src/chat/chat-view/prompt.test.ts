@@ -1,6 +1,5 @@
 import {
     AUTH_STATUS_FIXTURE_AUTHED,
-    CHAT_PREAMBLE,
     CLIENT_CAPABILITIES_FIXTURE,
     type ContextItem,
     ContextItemSource,
@@ -84,7 +83,9 @@ describe('DefaultPrompter', () => {
           [
             {
               "speaker": "human",
-              "text": "${CHAT_PREAMBLE}",
+              "text": "You are Cody, an AI coding assistant from Sourcegraph.If your answer contains fenced code blocks in Markdown, include the relevant full file path in the code block tag using this structure: \`\`\`\`$LANGUAGE:$FILEPATH\`\`\`\`.
+          If you started a fenced code block, ensure you close it with the same number of backticks before the end of your message.
+          For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.",
             },
             {
               "speaker": "assistant",
@@ -164,7 +165,11 @@ describe('DefaultPrompter', () => {
           [
             {
               "speaker": "human",
-              "text": "${CHAT_PREAMBLE} Always respond with 🧀 emojis",
+              "text": "You are Cody, an AI coding assistant from Sourcegraph.If your answer contains fenced code blocks in Markdown, include the relevant full file path in the code block tag using this structure: \`\`\`\`$LANGUAGE:$FILEPATH\`\`\`\`.
+          If you started a fenced code block, ensure you close it with the same number of backticks before the end of your message.
+          For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
+
+          Always respond with 🧀 emojis",
             },
             {
               "speaker": "assistant",
