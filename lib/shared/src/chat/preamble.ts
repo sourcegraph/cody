@@ -13,7 +13,7 @@ const SMART_APPLY_PREAMBLE = ps`If your answer contains fenced code blocks in Ma
 If you started a fenced code block, ensure you close it with the same number of backticks before the end of your message.
 For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.`
 
-const CHAT_PREAMBLE = DEFAULT_PREAMBLE.concat(SMART_APPLY_PREAMBLE)
+export const CHAT_PREAMBLE = DEFAULT_PREAMBLE.concat(SMART_APPLY_PREAMBLE)
 
 export function getSimplePreamble(
     model: ChatModel | EditModel | undefined,
