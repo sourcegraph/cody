@@ -515,6 +515,10 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 logger(message.filterLabel, message.message)
                 break
             }
+            case 'devicePixelRatio': {
+                localStorage.setDevicePixelRatio(message.devicePixelRatio)
+                break
+            }
         }
     }
 

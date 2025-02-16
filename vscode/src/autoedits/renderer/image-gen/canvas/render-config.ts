@@ -1,4 +1,6 @@
 import { isMacOS } from '@sourcegraph/cody-shared'
+import * as vscode from 'vscode'
+import { localStorage } from '../../../../services/LocalStorageProvider'
 
 /**
  * This is the ratio that VS Code uses to automatically determine the line height based on the font size.
@@ -12,8 +14,46 @@ const GOLDEN_LINE_HEIGHT_RATIO = isMacOS() ? 1.5 : 1.35
  */
 const DEFAULT_FONT_SIZE = isMacOS() ? 12 : 14
 
-export function getLineHeight(fontSize: number): number {
+/**
+ * Use a default pixel ratio that works for both high and low DPI screens.
+ * Note: A pixel ratio is 2 is preferred for high DPI screens, however this
+ * causes significant blurriness when the image is downscaled on low DPI screens.
+ */
+const DEFAULT_PIXEL_RATIO = 1.95
+
+function getUserLineHeight(fontSize: number): number {
     return Math.round(GOLDEN_LINE_HEIGHT_RATIO * fontSize)
+}
+
+function getUserFontSize(): number | undefined {
+    // Extract the font size from VS Code user settings.
+    // Note: VS Code warns but technically supports string-based font sizes, e.g. "14".
+    // TODO: Support this for other editors. We should respect the font size in editors like JetBrains.
+    const userFontSize = Number(vscode.workspace.getConfiguration('editor').get('fontSize'))
+
+    if (Number.isNaN(userFontSize) || userFontSize <= 0) {
+        // We cannot use this font size, we will use a platform specific default
+        return
+    }
+
+    return userFontSize
+}
+
+/**
+ * In order to generate the most optimal image, we need to know the pixel ratio of the device.
+ * We cannot get this through Node, we need to interface with the Webview.
+ * This implementation is a form of progressive enhancement, where we use a suitable default that
+ * works for both high and low DPI screens. We then use the pixel ratio available from the Webview
+ * if it becomes available.
+ */
+function getUserPixelRatio(): number | undefined {
+    const devicePixelRatio = localStorage.getDevicePixelRatio()
+    if (!devicePixelRatio) {
+        // No pixel ratio available. User has not opened a Webview yet.
+        return
+    }
+
+    return Math.max(devicePixelRatio, 1)
 }
 
 /**
@@ -41,10 +81,11 @@ export interface UserProvidedRenderConfig {
     pixelRatio?: number
 }
 
-export function getRenderConfig(userProvidedConfig: UserProvidedRenderConfig): RenderConfig {
-    const fontSize = userProvidedConfig.fontSize || DEFAULT_FONT_SIZE
-    const lineHeight = userProvidedConfig.lineHeight || getLineHeight(fontSize)
-    const pixelRatio = userProvidedConfig.pixelRatio || 2
+export function getRenderConfig(userProvidedConfig?: UserProvidedRenderConfig): RenderConfig {
+    const pixelRatio = userProvidedConfig?.pixelRatio || getUserPixelRatio() || DEFAULT_PIXEL_RATIO
+    const fontSize = userProvidedConfig?.fontSize || getUserFontSize() || DEFAULT_FONT_SIZE
+    const lineHeight = userProvidedConfig?.lineHeight || getUserLineHeight(fontSize)
+
     return {
         fontSize,
         lineHeight,
