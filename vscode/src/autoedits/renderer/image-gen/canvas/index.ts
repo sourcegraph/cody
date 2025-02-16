@@ -72,7 +72,6 @@ function createCanvas(
         throw new Error('Failed to get 2D context')
     }
     ctx.font = `${fontSize}px DejaVuSansMono`
-    ctx.imageSmoothingQuality = 'high'
     if (scale) {
         ctx.scale(scale, scale)
     }
@@ -173,8 +172,10 @@ export function drawDecorationsToCanvas(
     const canvasWidth = Math.min(requiredWidth + config.padding.x, config.maxWidth)
     const canvasHeight = tempYPos + config.padding.y
 
+    // Round to the nearest pixel, using sub-pixels will cause CanvasKit to crash
     const height = Math.round(canvasHeight * config.pixelRatio)
     const width = Math.round(canvasWidth * config.pixelRatio)
+
     // Now we create the actual canvas, ensuring we scale it accordingly to improve the output resolution.
     const { canvas, ctx } = createCanvas(
         {

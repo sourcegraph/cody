@@ -377,7 +377,6 @@ export class DefaultDecorator implements AutoEditsDecorator {
             decorations: blockifiedAddedLines,
             lang: this.editor.document.languageId,
         })
-
         const startLineEndColumn = this.getEndColumn(this.editor.document.lineAt(startLine))
 
         // The padding in which to offset the decoration image away from neighbouring code
