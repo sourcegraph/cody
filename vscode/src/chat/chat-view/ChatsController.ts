@@ -237,9 +237,6 @@ export class ChatsController implements vscode.Disposable {
             vscode.commands.registerCommand('cody.mention.file', uri =>
                 this.sendEditorContextToChat(uri)
             ),
-            vscode.commands.registerCommand('cody.mention.files', async uris => 
-                await Promise.all(uris.map((uri: URI | undefined) => this.sendEditorContextToChat(uri)))
-            ),
 
             // Codeblock commands
             vscode.commands.registerCommand(

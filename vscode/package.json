@@ -520,14 +520,6 @@
         "enablement": "cody.activated && resourceSet"
       },
       {
-        "command": "cody.mention.files",
-        "category": "Cody",
-        "group": "Chat",
-        "title": "Add Files to Cody Chat",
-        "icon": "$(mention)",
-        "enablement": "cody.activated && resourceSet"
-      },
-      {
         "command": "cody.debug.export.logs",
         "category": "Cody Debug",
         "group": "Debug",
@@ -983,7 +975,7 @@
       ],
       "explorer/context": [
         {
-          "command": "cody.mention.files",
+          "command": "cody.mention.file",
           "when": "cody.activated && resourceSet && !explorerResourceIsFolder",
           "group": "4_cody"
         }
