@@ -22,6 +22,14 @@ const DEFAULT_FONT_SIZE = isMacOS() ? 12 : 14
  * This value is significantly preferrable to '2' for low DPI screens. I am unsure
  * exactly why this is the case. It possibly could be an issue with how VS Code handles image scaling.
  * You can see the diference in this PR: https://github.com/sourcegraph/cody/pull/7100
+ *
+ * Changes to this value should be manually tested, this is not covered in any CI tests.
+ * It can be difficult to manually simulate a low-DPI resolution especially on MacOS, unless you have a physical monitor to hand.
+ * One way to test this:
+ * 1. Install an Ubuntu VM via UTM, ensure retina mode is disabled in UTM display settings.
+ *    Docs: https://docs.getutm.app/guides/ubuntu/.
+ * 2. Install VS Code and Cody on the VM.
+ * 3. Test image decorations, you can confirm the pixel ratio by inspecting `window.devicePixelRatio` in VS Code DevTools.
  */
 const DEFAULT_PIXEL_RATIO = 1.95
 
