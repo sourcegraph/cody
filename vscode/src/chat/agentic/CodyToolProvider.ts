@@ -4,6 +4,7 @@ import {
     type ProcessingStep,
     PromptString,
     type Unsubscribable,
+    currentOpenCtxController,
     isDefined,
     openCtxProviderMetadata,
     openctxController,
@@ -99,68 +100,56 @@ class ToolFactory {
     }
 
     public async createOpenCtxTools(providers: ContextMentionProviderMetadata[]): Promise<CodyTool[]> {
-        const tools: CodyTool[] = []
+        return Promise.all(
+            providers.map(async provider => {
+                if (provider.id === MODEL_CONTEXT_PROVIDER_URI) {
+                    const toolNameQuery = vscode.workspace
+                        .getConfiguration()
+                        .get<string>('openctx.providers.mcp.toolNameQuery', '')
 
-        for (const provider of providers) {
-            if (provider.id === MODEL_CONTEXT_PROVIDER_URI) {
-                // NOTE: For MCP, the single provider can create multiple tools
-
-                // toolNameQuery helps filter the tools by name so that only the matching nameQuery regex are created
-                const toolNameQuery = vscode.workspace
-                    .getConfiguration()
-                    .get<string>('openctx.providers.mcp.toolNameQuery', '')
-
-                // For MCP providers, get available tools through the mentions() function
-                const mcpTools =
-                    (await openCtx.controller?.mentions(
+                    // For MCP providers, get available tools through the mentions() function
+                    const mcpTools = await currentOpenCtxController()?.mentions(
                         { query: toolNameQuery },
                         { providerUri: provider.id }
-                    )) ?? []
-
-                for (const mcpTool of mcpTools) {
-                    const toolName = this.generateToolName({
-                        ...provider,
-                        title: mcpTool.title ?? provider.title,
-                    })
-                    const config = this.createModelContextConfig(
-                        {
-                            title: mcpTool.title ?? '',
-                            description: mcpTool.description ?? '',
-                            data: mcpTool.data,
-                        },
-                        toolName
                     )
-
-                    this.register({
-                        name: toolName,
-                        ...config,
-                        createInstance: cfg => new OpenCtxTool(provider, cfg),
-                    })
-
-                    const tool = this.createTool(toolName)
-                    if (tool) {
-                        tools.push(tool)
+                    const tools: CodyTool[] = []
+                    for (const mcpTool of mcpTools) {
+                        const toolName = this.generateToolName({
+                            ...provider,
+                            title: mcpTool.title ?? provider.title,
+                        })
+                        const config = this.createModelContextConfig(
+                            {
+                                title: mcpTool.title ?? '',
+                                description: mcpTool.description ?? '',
+                                data: mcpTool.data,
+                            },
+                            toolName
+                        )
+                        this.register({
+                            name: toolName,
+                            ...config,
+                            createInstance: cfg => new OpenCtxTool(provider, cfg),
+                        })
+                        const tool = this.createTool(toolName)
+                        if (tool) {
+                            tools.push(tool)
+                        }
                     }
+                    return tools
                 }
-            } else {
-                // For regular providers, create a single tool as before
+
                 const toolName = this.generateToolName(provider)
                 const config = this.getToolConfig(provider)
-
                 this.register({
                     name: toolName,
                     ...config,
                     createInstance: cfg => new OpenCtxTool(provider, cfg),
                 })
-
                 const tool = this.createTool(toolName)
-                if (tool) {
-                    tools.push(tool)
-                }
-            }
-        }
-
-        return tools
+                return tool ? [tool] : []
+            })
+        ).then(results => results.flat().filter(isDefined))
     }
 
     private generateToolName(provider: ContextMentionProviderMetadata): string {
@@ -318,7 +307,7 @@ export class CodyToolProvider {
                             )
                     )
                 )
-                .subscribe(providerMeta => provider.factory.createOpenCtxTools(providerMeta))
+                .subscribe(async providerMeta => await provider.factory.createOpenCtxTools(providerMeta))
         }
     }
 
