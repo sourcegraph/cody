@@ -378,12 +378,12 @@ test.extend<ExpectedV2Events>({
     await selectLineRangeInEditorTab(page, 2, 5)
 
     const [, lastChatInput] = await createEmptyChatPanel(page)
-    await expect(chatInputMentions(lastChatInput)).toHaveText(['buzz.ts', 'buzz.ts:2-5'], {
+    await expect(chatInputMentions(lastChatInput)).toHaveText(['buzz.ts'], {
         timeout: 3_000,
     })
 
     await lastChatInput.press('x')
     await selectLineRangeInEditorTab(page, 7, 10)
     await executeCommandInPalette(page, 'Cody: Add Selection to Cody Chat')
-    await expect(chatInputMentions(lastChatInput)).toHaveText(['buzz.ts', 'buzz.ts:2-5', 'buzz.ts:7-10'])
+    await expect(chatInputMentions(lastChatInput)).toHaveText(['buzz.ts', 'buzz.ts:7-10'])
 })
