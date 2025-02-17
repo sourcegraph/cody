@@ -195,9 +195,6 @@ export function syncModels({
                                         distinctUntilChanged()
                                     )
                                     return combineLatest(
-                                        featureFlagProvider.evaluatedFeatureFlag(
-                                            FeatureFlag.CodyEarlyAccess
-                                        ),
                                         featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.DeepCody),
                                         featureFlagProvider.evaluatedFeatureFlag(
                                             FeatureFlag.CodyChatDefaultToClaude35Haiku
@@ -206,23 +203,17 @@ export function syncModels({
                                     ).pipe(
                                         switchMap(
                                             ([
-                                                hasEarlyAccess,
                                                 hasAgenticChatFlag,
                                                 defaultToHaiku,
                                                 isToolCodyEnabled,
                                             ]) => {
                                                 // TODO(sqs): remove waitlist from localStorage when user has access
-                                                if (isDotComUser && hasEarlyAccess) {
+                                                if (isDotComUser) {
                                                     data.primaryModels = data.primaryModels.map(
                                                         model => {
                                                             if (model.tags.includes(ModelTag.Waitlist)) {
                                                                 const newTags = model.tags.filter(
                                                                     tag => tag !== ModelTag.Waitlist
-                                                                )
-                                                                newTags.push(
-                                                                    hasEarlyAccess
-                                                                        ? ModelTag.EarlyAccess
-                                                                        : ModelTag.OnWaitlist
                                                                 )
                                                                 return { ...model, tags: newTags }
                                                             }
