@@ -12,10 +12,8 @@ import {
     combineLatest,
     contextFiltersProvider,
     debounceTime,
-    displayLineRange,
     displayPathBasename,
     distinctUntilChanged,
-    expandToLineRange,
     featureFlagProvider,
     fromVSCodeEvent,
     isDotCom,
@@ -132,8 +130,6 @@ function getCurrentFileOrSelection({
 
                 const contextFile = selectionOrFileContext[0]
                 if (contextFile) {
-                    const range = contextFile.range ? expandToLineRange(contextFile.range) : undefined
-
                     // Always add the current file item
                     items.push({
                         ...contextFile,
@@ -148,25 +144,6 @@ function getCurrentFileOrSelection({
                         source: ContextItemSource.Initial,
                         icon: 'file',
                     })
-
-                    // Add the current selection item if there's a range
-                    if (range) {
-                        items.push({
-                            ...contextFile,
-                            type: 'file',
-                            title: 'Current Selection',
-                            description: `${displayPathBasename(contextFile.uri)}:${displayLineRange(
-                                range
-                            )}`,
-                            range,
-                            isTooLarge:
-                                userContextSize !== undefined &&
-                                contextFile.size !== undefined &&
-                                contextFile.size > userContextSize,
-                            source: ContextItemSource.Initial,
-                            icon: 'list-selection',
-                        })
-                    }
                 }
                 return Observable.of(items)
             }
