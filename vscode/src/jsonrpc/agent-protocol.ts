@@ -14,7 +14,7 @@ import type {
 } from '@sourcegraph/cody-shared'
 import type { TelemetryEventMarketingTrackingInput } from '@sourcegraph/telemetry'
 
-import { HandlerID } from '@sourcegraph/cody-shared/src/models/model'
+import type { HandlerID } from '@sourcegraph/cody-shared/src/models/model'
 import type { ExtensionMessage, WebviewMessage } from '../chat/protocol'
 import type { CompletionBookkeepingEvent, CompletionItemID } from '../completions/analytics-logger'
 import type { FixupTaskID } from '../non-stop/FixupTask'
