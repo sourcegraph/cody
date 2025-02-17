@@ -31,8 +31,14 @@ if (!packageJSONVersion) {
 }
 
 enum ReleaseType {
+    // sourcegraph.cody-ai - Stable channel
     Stable = 'stable',
+    // sourcegraph.cody-ai - Pre-release channel
     Insiders = 'insiders',
+    // sourcegraph.cody-testing - Stable channel
+    Experimental = 'experimental',
+    // sourcegraph.cody-testing - Pre-release channel
+    Nightly = 'nightly',
 }
 const releaseType = process.env.CODY_RELEASE_TYPE
 function validateReleaseType(releaseType: string | undefined): asserts releaseType is ReleaseType {
@@ -46,6 +52,16 @@ function validateReleaseType(releaseType: string | undefined): asserts releaseTy
     }
 }
 validateReleaseType(releaseType)
+const isInsiderBuild = releaseType === ReleaseType.Insiders || releaseType === ReleaseType.Nightly
+function updatePackageForTestingExtension(): void {
+    if (releaseType === ReleaseType.Nightly || releaseType === ReleaseType.Experimental) {
+        packageJSON.name = 'cody-testing'
+        packageJSON.displayName = 'Testing Extension'
+        packageJSONWasModified = true
+        writeJsonFileSync('package.json', packageJSON)
+    }
+}
+updatePackageForTestingExtension()
 
 const dryRun = Boolean(process.env.CODY_RELEASE_DRY_RUN)
 const customDefaultSettingsFile = process.env.CODY_RELEASE_CUSTOM_DEFAULT_SETTINGS_FILE
@@ -124,7 +140,7 @@ if (!insidersVersion) {
 }
 
 const githubOutputPath = process.env.GITHUB_OUTPUT
-if (releaseType === ReleaseType.Insiders && githubOutputPath) {
+if (isInsiderBuild && githubOutputPath) {
     // Output a tag for the release. We only generate tags for insiders
     // releases. For stable releases the tag already exists: The release job
     // is triggered when the tag is created.
@@ -135,7 +151,7 @@ if (releaseType === ReleaseType.Insiders && githubOutputPath) {
     })
 }
 
-const version = releaseType === ReleaseType.Insiders ? insidersVersion : packageJSONVersion
+const version = isInsiderBuild ? insidersVersion : packageJSONVersion
 
 // Package (build and bundle) the extension.
 console.error(`Packaging ${releaseType} release at version ${version}...`)
@@ -143,7 +159,7 @@ execFileSync(
     'vsce',
     [
         'package',
-        ...(releaseType === ReleaseType.Insiders
+        ...(isInsiderBuild
             ? [insidersVersion, '--pre-release', '--no-update-package-json', '--no-git-tag-version']
             : []),
         '--no-dependencies',
@@ -165,7 +181,7 @@ if (dryRun) {
         'vsce',
         [
             'publish',
-            ...(releaseType === ReleaseType.Insiders ? ['--pre-release', '--no-git-tag-version'] : []),
+            ...(isInsiderBuild ? ['--pre-release', '--no-git-tag-version'] : []),
             '--packagePath',
             'dist/cody.vsix',
         ],
@@ -180,7 +196,7 @@ if (dryRun) {
         'ovsx',
         [
             'publish',
-            ...(releaseType === ReleaseType.Insiders ? ['--pre-release'] : []),
+            ...(isInsiderBuild ? ['--pre-release'] : []),
             '--packagePath',
             'dist/cody.vsix',
             '--pat',
