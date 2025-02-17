@@ -27,6 +27,7 @@ import { updateDisplayPathEnvInfoForWebview } from './utils/displayPathEnvInfo'
 import { TelemetryRecorderContext, createWebviewTelemetryRecorder } from './utils/telemetry'
 import { ClientConfigProvider } from './utils/useClientConfig'
 import { type Config, ConfigProvider } from './utils/useConfig'
+import { useDevicePixelRatioNotifier } from './utils/useDevicePixelRatio'
 import { LinkOpenerProvider } from './utils/useLinkOpener'
 
 export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vscodeAPI }) => {
@@ -167,6 +168,10 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
             })
         }
     }, [config, webviewTelemetryService])
+
+    // Notify the extension host of the device pixel ratio
+    // Currently used for image generation in auto-edit.
+    useDevicePixelRatioNotifier()
 
     const wrappers = useMemo<Wrapper[]>(
         () => getAppWrappers({ vscodeAPI, telemetryRecorder, config, clientConfig }),

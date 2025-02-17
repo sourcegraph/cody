@@ -38,6 +38,7 @@ class LocalStorage implements LocalStorageForModelPreferences {
     private readonly MODEL_PREFERENCES_KEY = 'cody-model-preferences'
     private readonly CODY_CHAT_MEMORY = 'cody-chat-memory'
     private readonly AUTO_EDITS_ONBOARDING_NOTIFICATION_COUNT = 'cody-auto-edit-notification-info'
+    private readonly DEVICE_PIXEL_RATIO = 'device-pixel-ratio'
 
     public readonly keys = {
         deepCodyLastUsedDate: 'DEEP_CODY_LAST_USED_DATE',
@@ -350,6 +351,14 @@ class LocalStorage implements LocalStorageForModelPreferences {
     public async setDeepCodyUsage(newQuota: number, lastUsed: string): Promise<void> {
         await this.set(this.keys.deepCodyDailyUsageCount, newQuota)
         await this.set(this.keys.deepCodyLastUsedDate, lastUsed)
+    }
+
+    public getDevicePixelRatio(): number | null {
+        return this.get<number>(this.DEVICE_PIXEL_RATIO)
+    }
+
+    public async setDevicePixelRatio(ratio: number): Promise<void> {
+        await this.set(this.DEVICE_PIXEL_RATIO, ratio)
     }
 
     public get<T>(key: string): T | null {
