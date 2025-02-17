@@ -18,6 +18,6 @@ describe('explainCommand', () => {
         const result = await explainCommand(null as any, {
             range: new vscode.Range(1, 2, 3, 4),
         })
-        expect(result?.text?.toString()).toMatch('Explain what foo.go ( @bar.go )')
+        expect(result?.text?.toString()).toMatch('Explain what @foo.go ( @bar.go )')
     })
 })
