@@ -22,7 +22,10 @@ interface GeneratedSuggestion {
     dark: string
     /* Base64 encoded image suitable for rendering in light editor themes */
     light: string
-    /* The pixel ratio used to generate the image. Should be used to scale the image appropriately */
+    /**
+     * The pixel ratio used to generate the image. Should be used to scale the image appropriately.
+     * Has a minimum value of 1.
+     */
     pixelRatio: number
 }
 
