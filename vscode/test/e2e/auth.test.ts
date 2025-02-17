@@ -1,6 +1,6 @@
 import { expect } from '@playwright/test'
 import { SERVER_URL, VALID_TOKEN, VALID_TOKEN_PERSON2 } from '../fixtures/mock-server'
-import { expectSignInPage, sidebarSignin } from './common'
+import { expectSignInPage, getChatInputs, getChatSidebarPanel, sidebarSignin } from './common'
 import {
     type ClientConfigSingletonRefetchIntervalOverride,
     type DotcomUrlOverride,
@@ -133,74 +133,139 @@ test.extend<ExpectedV2Events>({
         'cody.experiment.interactiveTutorial:enrolled',
         'cody.signInNotification:shown',
     ],
+})('switch account via account dropdown menu in webview', async ({ page, sidebar }) => {
+    test.slow()
+    await expect(sidebar!.getByText('Sign in to Sourcegraph')).toBeVisible()
+    await sidebar!.getByRole('button', { name: 'Sourcegraph logo Continue' }).click()
+    await sidebar!.getByText('Sourcegraph Instance URL').click()
+    await sidebar!.getByPlaceholder('Example: https://instance.').click()
+    await sidebar!.getByPlaceholder('Example: https://instance.').fill(SERVER_URL)
+
+    await sidebar!.getByText('Access Token (Optional)').click()
+
+    await sidebar!.getByPlaceholder('Access token...').click()
+    await sidebar!.getByPlaceholder('Access token...').fill(VALID_TOKEN)
+    await sidebar!.getByPlaceholder('Access token...').press('Enter')
+
+    await expect(sidebar!.getByText('Invalid access token.')).not.toBeVisible()
+    await expect(sidebar!.getByText('Sign in to Sourcegraph')).not.toBeVisible()
+    await expect(sidebar!.getByLabel('Chat message')).toBeVisible()
+
+    // Open the User Dropdown menu
+    await expect(sidebar!.getByRole('button', { name: 'New Chat' })).toBeVisible()
+    await sidebar!.getByLabel('Account Menu Button').click({ delay: 2000 })
+
+    const codeWebview = sidebar!.getByLabel('cody-webview')
+
+    // Should have logged into the default account "Person"
+    await expect(codeWebview.getByText('Enterprise')).toBeVisible()
+    await expect(codeWebview.getByText('Person', { exact: true })).toBeVisible()
+    await expect(codeWebview.getByText('person@company.com')).toBeVisible()
+
+    // Make sure the options are visible
+    await expect(sidebar!.getByRole('option', { name: 'Extension Settings' })).toBeVisible()
+    await expect(sidebar!.getByRole('option', { name: 'Switch Account' })).toBeVisible()
+    await expect(sidebar!.getByRole('option', { name: 'Sign Out' })).toBeVisible()
+    await expect(sidebar!.getByRole('option', { name: 'Help' })).toBeVisible()
+
+    await sidebar!.getByRole('option', { name: 'Switch Account' }).click()
+    await expect(sidebar!.getByText('Active')).toBeVisible()
+    await expect(sidebar!.getByText(SERVER_URL)).toBeVisible()
+
+    await sidebar!.getByText('Add another account').click()
+    await expect(sidebar!.getByText('Account Details')).toBeVisible()
+    await expect(sidebar!.getByRole('button', { name: 'Add and Switch' })).toBeVisible()
+    await sidebar!.getByLabel('Instance URL').click()
+    await sidebar!.getByLabel('Instance URL').fill(SERVER_URL)
+    await sidebar!.getByText('Access Token (Optional)').click()
+    await sidebar!.getByPlaceholder('sgp_xxx_xxx').click()
+    await sidebar!.getByPlaceholder('sgp_xxx_xxx').fill(VALID_TOKEN_PERSON2)
+    await sidebar!.getByRole('button', { name: 'Add and Switch' }).click()
+
+    // Makes sure the dropdown menu is closed.
+    await expect(sidebar!.getByText('Account Details')).not.toBeVisible()
+    await expect(sidebar!.getByRole('option', { name: 'Help' })).not.toBeVisible()
+
+    // Should have switched to the new account "Person2". It'd take a few seconds for the webview to update.
+    await sidebar!.getByText('Person 2', { exact: true }).hover()
+
+    // Open dropdown menu
+    await sidebar!.getByLabel('Account Menu Button').click({ delay: 2000 })
+
+    await expect(sidebar!.getByRole('option', { name: 'Help' })).toBeVisible()
+    await expect(codeWebview.getByText('Person', { exact: true })).not.toBeVisible()
+    await expect(codeWebview.getByText('person2@company2.com')).toBeVisible()
+
+    // Clicking on Cancel should move back to the Account Switcher view.
+    await sidebar!.getByRole('option', { name: 'Switch Account' }).click()
+    await sidebar!.getByText('Add another account').click()
+    await expect(sidebar!.getByRole('button', { name: 'Add and Switch' })).toBeVisible()
+    await sidebar!.getByRole('option', { name: 'Cancel' }).click()
+    await expect(sidebar!.getByRole('button', { name: 'Add and Switch' })).not.toBeVisible()
+    await expect(sidebar!.getByText(SERVER_URL)).toBeVisible()
 })
-    .skip('switch account via account dropwdown menu in webview', async ({ page, sidebar }) => {
-        await expect(sidebar!.getByText('Sign in to Sourcegraph')).toBeVisible()
-        await sidebar!.getByRole('button', { name: 'Sourcegraph logo Continue' }).click()
-        await sidebar!.getByText('Sourcegraph Instance URL').click()
-        await sidebar!.getByPlaceholder('Example: https://instance.').click()
-        await sidebar!.getByPlaceholder('Example: https://instance.').fill(SERVER_URL)
 
-        await sidebar!.getByText('Access Token (Optional)').click()
+test.extend<ExpectedV2Events>({
+    expectedV2Events: [
+        'cody.extension:installed',
+        'cody.auth.login:clicked',
+        'cody.auth.login:firstEver',
+        'cody.auth.login.token:clicked',
+        'cody.auth:connected',
+        'cody.userMenu:open',
+        'cody.auth:disconnected',
+        'cody.interactiveTutorial:attemptingStart',
+        'cody.experiment.interactiveTutorial:enrolled',
+        'cody.signInNotification:shown',
+    ],
+})('switching the account does not show chat from previous account', async ({ page, sidebar }) => {
+    test.slow()
+    await expect(sidebar!.getByText('Sign in to Sourcegraph')).toBeVisible()
+    await sidebar!.getByRole('button', { name: 'Sourcegraph logo Continue' }).click()
+    await sidebar!.getByText('Sourcegraph Instance URL').click()
+    await sidebar!.getByPlaceholder('Example: https://instance.').click()
+    await sidebar!.getByPlaceholder('Example: https://instance.').fill(SERVER_URL)
 
-        await sidebar!.getByPlaceholder('Access token...').click()
-        await sidebar!.getByPlaceholder('Access token...').fill(VALID_TOKEN)
-        await sidebar!.getByPlaceholder('Access token...').press('Enter')
+    await sidebar!.getByText('Access Token (Optional)').click()
 
-        await expect(sidebar!.getByText('Invalid access token.')).not.toBeVisible()
-        await expect(sidebar!.getByText('Sign in to Sourcegraph')).not.toBeVisible()
-        await expect(sidebar!.getByLabel('Chat message')).toBeVisible()
+    await sidebar!.getByPlaceholder('Access token...').click()
+    await sidebar!.getByPlaceholder('Access token...').fill(VALID_TOKEN)
+    await sidebar!.getByPlaceholder('Access token...').press('Enter')
 
-        // Open the User Dropdown menu
-        await expect(sidebar!.getByRole('button', { name: 'New Chat' })).toBeVisible()
-        await sidebar!.getByLabel('Account Menu Button').click({ delay: 2000 })
+    await expect(sidebar!.getByText('Invalid access token.')).not.toBeVisible()
+    await expect(sidebar!.getByText('Sign in to Sourcegraph')).not.toBeVisible()
+    await expect(sidebar!.getByLabel('Chat message')).toBeVisible()
 
-        const codeWebview = sidebar!.getByLabel('cody-webview')
+    const sidebarChat = getChatSidebarPanel(page)
+    const chatInput = getChatInputs(sidebarChat).first()
+    await chatInput.fill('Hello world')
+    await chatInput.press('Enter')
+    await sidebar!.getByTestId('tab-history').click()
+    await sidebar!.getByRole('button', { name: 'Hello world' }).first().click()
 
-        // Should have logged into the default account "Person"
-        await expect(codeWebview.getByText('Enterprise')).toBeVisible()
-        await expect(codeWebview.getByText('Person', { exact: true })).toBeVisible()
-        await expect(codeWebview.getByText('person@company.com')).toBeVisible()
+    // Open the User Dropdown menu
+    await expect(sidebar!.getByRole('button', { name: 'New Chat' })).toBeVisible()
+    await sidebar!.getByLabel('Account Menu Button').click({ delay: 2000 })
+    await sidebar!.getByRole('option', { name: 'Switch Account' }).click()
+    await expect(sidebar!.getByText('Active')).toBeVisible()
+    await expect(sidebar!.getByText(SERVER_URL)).toBeVisible()
 
-        // Make sure the options are visible
-        await expect(sidebar!.getByRole('option', { name: 'Extension Settings' })).toBeVisible()
-        await expect(sidebar!.getByRole('option', { name: 'Switch Account' })).toBeVisible()
-        await expect(sidebar!.getByRole('option', { name: 'Sign Out' })).toBeVisible()
-        await expect(sidebar!.getByRole('option', { name: 'Help' })).toBeVisible()
+    await sidebar!.getByText('Add another account').click()
+    await expect(sidebar!.getByText('Account Details')).toBeVisible()
+    await expect(sidebar!.getByRole('button', { name: 'Add and Switch' })).toBeVisible()
+    await sidebar!.getByLabel('Instance URL').click()
+    await sidebar!.getByLabel('Instance URL').fill(SERVER_URL)
+    await sidebar!.getByText('Access Token (Optional)').click()
+    await sidebar!.getByPlaceholder('sgp_xxx_xxx').click()
+    await sidebar!.getByPlaceholder('sgp_xxx_xxx').fill(VALID_TOKEN_PERSON2)
+    await sidebar!.getByRole('button', { name: 'Add and Switch' }).click()
 
-        await sidebar!.getByRole('option', { name: 'Switch Account' }).click()
-        await expect(sidebar!.getByText('Active')).toBeVisible()
-        await expect(sidebar!.getByText(SERVER_URL)).toBeVisible()
+    // Makes sure the dropdown menu is closed.
+    await expect(sidebar!.getByText('Account Details')).not.toBeVisible()
+    await expect(sidebar!.getByRole('option', { name: 'Help' })).not.toBeVisible()
 
-        await sidebar!.getByText('Add another account').click()
-        await expect(sidebar!.getByText('Account Details')).toBeVisible()
-        await expect(sidebar!.getByRole('button', { name: 'Add and Switch' })).toBeVisible()
-        await sidebar!.getByLabel('Instance URL').click()
-        await sidebar!.getByLabel('Instance URL').fill(SERVER_URL)
-        await sidebar!.getByText('Access Token (Optional)').click()
-        await sidebar!.getByPlaceholder('sgp_xxx_xxx').click()
-        await sidebar!.getByPlaceholder('sgp_xxx_xxx').fill(VALID_TOKEN_PERSON2)
-        await sidebar!.getByRole('button', { name: 'Add and Switch' }).click()
-
-        // Makes sure the dropdown menu is closed.
-        await expect(sidebar!.getByText('Account Details')).not.toBeVisible()
-        await expect(sidebar!.getByRole('option', { name: 'Help' })).not.toBeVisible()
-
-        // Should have switched to the new account "Person2". It'd take a few seconds for the webview to update.
-        await sidebar!.getByText('Person 2', { exact: true }).hover()
-
-        // Open dropdown menu
-        await sidebar!.getByLabel('Account Menu Button').click({ delay: 2000 })
-
-        await expect(sidebar!.getByRole('option', { name: 'Help' })).toBeVisible()
-        await expect(codeWebview.getByText('Person', { exact: true })).not.toBeVisible()
-        await expect(codeWebview.getByText('person2@company2.com')).toBeVisible()
-
-        // Clicking on Cancel should move back to the Account Switcher view.
-        await sidebar!.getByRole('option', { name: 'Switch Account' }).click()
-        await sidebar!.getByText('Add another account').click()
-        await expect(sidebar!.getByRole('button', { name: 'Add and Switch' })).toBeVisible()
-        await sidebar!.getByRole('option', { name: 'Cancel' }).click()
-        await expect(sidebar!.getByRole('button', { name: 'Add and Switch' })).not.toBeVisible()
-        await expect(sidebar!.getByText(SERVER_URL)).toBeVisible()
-    })
+    await chatInput.fill('test message')
+    await chatInput.press('Enter')
+    await sidebar!.getByTestId('tab-history').click()
+    expect(await sidebar!.getByRole('button', { name: 'Hello world' }).count()).toBe(0)
+})
