@@ -1,4 +1,5 @@
 import type { ChatMessage } from '../chat/transcript/messages'
+import { OmniboxHandlers } from '../models/model'
 import type { ChatModel } from '../models/types'
 import { PromptString, ps } from './prompt-string'
 
@@ -52,7 +53,7 @@ export class PromptMixin {
 
         // Handle agent-specific prompts
         if (
-            humanMessage.agent === 'deep-cody' &&
+            humanMessage.agent === OmniboxHandlers.DeepCody.id &&
             !newMixins.length &&
             !agenticBlockedModels.some(m => modelID?.includes(m))
         ) {

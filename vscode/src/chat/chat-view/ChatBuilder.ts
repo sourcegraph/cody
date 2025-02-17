@@ -20,6 +20,7 @@ import {
     toRangeData,
 } from '@sourcegraph/cody-shared'
 
+import type { HandlerID } from '@sourcegraph/cody-shared/src/models/model'
 import { Observable, Subject, map } from 'observable-fns'
 import { getChatPanelTitle } from './chat-helpers'
 
@@ -94,7 +95,8 @@ export class ChatBuilder {
 
         public readonly sessionID: string = new Date(Date.now()).toUTCString(),
         private messages: ChatMessage[] = [],
-        private customChatTitle?: string
+        private customChatTitle?: string,
+        private selectedChatHandler: HandlerID | undefined | null = null
     ) {}
 
     /** An observable that emits whenever the {@link ChatBuilder}'s chat changes. */
@@ -110,6 +112,14 @@ export class ChatBuilder {
     public setSelectedModel(newModelID: ChatModel | undefined): void {
         this.selectedModel = newModelID
         this.changeNotifications.next()
+    }
+
+    public setSelectedHandler(newHandlerName?: HandlerID): void {
+        this.selectedChatHandler = newHandlerName
+    }
+
+    public get selectedHandler(): HandlerID | undefined {
+        return this.selectedChatHandler ?? undefined
     }
 
     public isEmpty(): boolean {

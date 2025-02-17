@@ -5,8 +5,7 @@ import {
     type PopoverProps,
     PopoverTrigger,
 } from '@radix-ui/react-popover'
-import type { ChatMessage } from '@sourcegraph/cody-shared'
-import { CodyIDE } from '@sourcegraph/cody-shared'
+import { type ChatMessage, CodyIDE } from '@sourcegraph/cody-shared'
 import clsx from 'clsx'
 import {
     BetweenHorizonalEnd,

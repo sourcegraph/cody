@@ -1,5 +1,4 @@
 import { type ContextItem, ContextItemSource, ps } from '@sourcegraph/cody-shared'
-import { DeepCodyAgentID } from '@sourcegraph/cody-shared/src/models/client'
 import { Observable } from 'observable-fns'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { URI } from 'vscode-uri'
@@ -8,7 +7,6 @@ import { mockLocalStorage } from '../../services/LocalStorageProvider'
 import type { ContextRetriever } from '../chat-view/ContextRetriever'
 import { CodyTool, type CodyToolConfig } from './CodyTool'
 import { CodyToolProvider, TestToolFactory, type ToolConfiguration } from './CodyToolProvider'
-import { toolboxManager } from './ToolboxManager'
 
 const localStorageData: { [key: string]: unknown } = {}
 mockLocalStorage({
@@ -88,24 +86,6 @@ describe('CodyToolProvider', () => {
         expect(
             tools.some(tool => tool.config.tags.tag.toString() === 'TOOLTESTPROVIDERMCP')
         ).toBeTruthy()
-    })
-
-    it('should not include CLI tool if shell is disabled', () => {
-        vi.spyOn(toolboxManager, 'getSettings').mockReturnValue({
-            agent: { name: DeepCodyAgentID },
-            shell: { enabled: false },
-        })
-        const tools = CodyToolProvider.getTools()
-        expect(tools.some(tool => tool.config.title === 'Terminal')).toBe(false)
-    })
-
-    it('should include CLI tool if shell is enabled', () => {
-        vi.spyOn(toolboxManager, 'getSettings').mockReturnValue({
-            agent: { name: DeepCodyAgentID },
-            shell: { enabled: true },
-        })
-        const tools = CodyToolProvider.getTools()
-        expect(tools.some(tool => tool.config.title === 'Terminal')).toBe(true)
     })
 })
 

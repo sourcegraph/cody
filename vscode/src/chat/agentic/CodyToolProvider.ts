@@ -12,7 +12,6 @@ import {
 import { map } from 'observable-fns'
 import type { ContextRetriever } from '../chat-view/ContextRetriever'
 import { type CodyTool, type CodyToolConfig, OpenCtxTool, TOOL_CONFIGS } from './CodyTool'
-import { toolboxManager } from './ToolboxManager'
 import { OPENCTX_TOOL_CONFIG } from './config'
 
 type Retriever = Pick<ContextRetriever, 'retrieveContext'>
@@ -85,7 +84,7 @@ class ToolFactory {
 
     public getInstances(): CodyTool[] {
         return Array.from(this.tools.entries())
-            .filter(([name]) => name !== 'CliTool' || toolboxManager.getSettings()?.shell?.enabled)
+            .filter(([name]) => name !== 'CliTool')
             .map(([_, config]) => config.createInstance(config, this.contextRetriever))
             .filter(isDefined)
     }
@@ -171,7 +170,6 @@ export class CodyToolProvider {
     public factory: ToolFactory
 
     private static instance: CodyToolProvider | undefined
-    public static configSubscription: Unsubscribable | undefined
     public static openCtxSubscription: Unsubscribable | undefined
 
     private constructor(contextRetriever: Retriever) {
@@ -188,9 +186,6 @@ export class CodyToolProvider {
 
     public static setupOpenCtxProviderListener(): void {
         const provider = CodyToolProvider.instance
-        if (provider && !CodyToolProvider.configSubscription) {
-            CodyToolProvider.configSubscription = toolboxManager.observable.subscribe({})
-        }
         if (provider && !CodyToolProvider.openCtxSubscription) {
             CodyToolProvider.openCtxSubscription = openctxController
                 .pipe(
@@ -213,8 +208,6 @@ export class CodyToolProvider {
             CodyToolProvider.openCtxSubscription.unsubscribe()
             CodyToolProvider.openCtxSubscription = undefined
         }
-        CodyToolProvider.configSubscription?.unsubscribe()
-        CodyToolProvider.configSubscription = undefined
     }
 }
 

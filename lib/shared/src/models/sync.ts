@@ -191,7 +191,9 @@ export function syncModels({
 
                                     // For DotCom users with early access or on the waitlist, replace the waitlist tag with the appropriate tags.
                                     const enableToolCody: Observable<boolean> = resolvedConfig.pipe(
-                                        map(c => !!c.configuration.experimentalMinionAnthropicKey),
+                                        map(c => {
+                                            return !!c.configuration.experimentalMinionAnthropicKey
+                                        }),
                                         distinctUntilChanged()
                                     )
                                     return combineLatest(

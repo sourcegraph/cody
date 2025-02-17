@@ -105,7 +105,9 @@ export const AppWrapperForTest: FunctionComponent<{ children: ReactNode }> = ({ 
                             preferences: { defaults: {}, selected: {} },
                         } satisfies ModelsData),
                     chatModels: () => Observable.of(FIXTURE_MODELS),
+                    handlers: () => Observable.of(FIXTURE_MODELS),
                     setChatModel: () => EMPTY,
+                    setHandler: () => EMPTY,
                     defaultContext: () => Observable.of({ corpusContext: [], initialContext: [] }),
                     hydratePromptMessage: text =>
                         Observable.of(serializedPromptEditorStateFromText(text)),
