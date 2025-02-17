@@ -150,7 +150,7 @@ function _displayPath(
  * tests.
  */
 function fixPathSep(fsPath: string, isWindows: boolean, scheme: string): string {
-    return isWindows && scheme === 'file' ? fsPath.replaceAll('/', '\\') : fsPath
+    return isWindows && scheme === 'file' ? fsPath.replaceAll('/', '\\').replace(/^\\/, '') : fsPath
 }
 
 export function uriHasPrefix(uri: URI, prefix: URI, isWindows: boolean): boolean {
