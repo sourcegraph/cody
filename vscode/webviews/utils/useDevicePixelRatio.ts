@@ -10,7 +10,6 @@ export function useDevicePixelRatioNotifier(): void {
             })
         }
 
-        // Trigger the update immediately
         updatePixelRatio()
 
         // Listen for changes in pixel ratio (e.g., zoom in/out)

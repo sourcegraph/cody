@@ -18,6 +18,10 @@ const DEFAULT_FONT_SIZE = isMacOS() ? 12 : 14
  * Use a default pixel ratio that works for both high and low DPI screens.
  * Note: A pixel ratio is 2 is preferred for high DPI screens, however this
  * causes significant blurriness when the image is downscaled on low DPI screens.
+ *
+ * This value is significantly preferrable to '2' for low DPI screens. I am unsure
+ * exactly why this is the case. It possibly could be an issue with how VS Code handles image scaling.
+ * You can see the diference in this PR: https://github.com/sourcegraph/cody/pull/7100
  */
 const DEFAULT_PIXEL_RATIO = 1.95
 
