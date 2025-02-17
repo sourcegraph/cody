@@ -3,7 +3,7 @@
   "name": "cody-ai",
   "private": true,
   "displayName": "Cody: AI Code Assistant",
-  "version": "1.66.1",
+  "version": "1.68.0",
   "publisher": "sourcegraph",
   "license": "Apache-2.0",
   "icon": "resources/sourcegraph.png",
@@ -971,6 +971,13 @@
         {
           "command": "cody.command.insertCodeToNewFile",
           "when": "webviewSection == 'codeblock-actions'"
+        }
+      ],
+      "explorer/context": [
+        {
+          "command": "cody.mention.file",
+          "when": "cody.activated && resourceSet && !explorerResourceIsFolder",
+          "group": "4_cody"
         }
       ]
     },

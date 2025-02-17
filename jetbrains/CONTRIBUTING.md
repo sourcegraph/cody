@@ -64,6 +64,15 @@ run `sdk use java 17-zulu`. Confirm that you have Java 17 installed with `java -
 >
 > From this point, YMMV, but you should be able to build agent!
 
+> 🤞 Building Code Search:
+>
+> To build Code Search component you need to set env variable GITHUB_TOKEN,
+> so build process can access sourcegraph/sourcegraph.
+>
+> You can generate new token at https://github.com/settings/tokens
+>
+> If you don't want to set token, you can skip building Code Search component by setting SKIP_CODE_SEARCH_BUILD env variable to true.
+
 ### Running
 
 | What                                                                                                     | Command                                                                  |

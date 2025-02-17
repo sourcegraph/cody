@@ -15,6 +15,7 @@ import {
     DOTCOM_URL,
     type DefaultChatCommands,
     type EventSource,
+    FeatureFlag,
     type Guardrails,
     ModelTag,
     ModelUsage,
@@ -37,6 +38,7 @@ import {
     extractContextFromTraceparent,
     featureFlagProvider,
     firstResultFromOperation,
+    firstValueFrom,
     forceHydration,
     graphqlClient,
     hydrateAfterPostMessage,
@@ -331,7 +333,9 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 await vscode.commands.executeCommand('cody.fixup.codelens.undo', message.id)
                 break
             case 'openURI':
-                vscode.commands.executeCommand('vscode.open', message.uri)
+                vscode.commands.executeCommand('vscode.open', message.uri, {
+                    selection: message.range,
+                })
                 break
             case 'links': {
                 void openExternalLinks(message.value)
@@ -514,6 +518,10 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 logger(message.filterLabel, message.message)
                 break
             }
+            case 'devicePixelRatio': {
+                localStorage.setDevicePixelRatio(message.devicePixelRatio)
+                break
+            }
         }
     }
 
@@ -527,6 +535,9 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
     private async getConfigForWebview(): Promise<ConfigurationSubsetForWebview & LocalEnv> {
         const { configuration, auth } = await currentResolvedConfig()
+        const experimentalPromptEditorEnabled = await firstValueFrom(
+            featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyExperimentalPromptEditor)
+        )
         const sidebarViewOnly = this.extensionClient.capabilities?.webviewNativeConfig?.view === 'single'
         const isEditorViewType = this.webviewPanelOrView?.viewType === 'cody.editorPanel'
         const webviewType = isEditorViewType && !sidebarViewOnly ? 'editor' : 'sidebar'
@@ -544,6 +555,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             multipleWebviewsEnabled: !sidebarViewOnly,
             internalDebugContext: configuration.internalDebugContext,
             allowEndpointChange: configuration.overrideServerEndpoint === undefined,
+            experimentalPromptEditorEnabled,
         }
     }
 
