@@ -40,6 +40,7 @@ export const WelcomeMessage: FunctionComponent<WelcomeMessageProps> = ({
                     appearanceMode="chips-list"
                     telemetryLocation="WelcomeAreaPrompts"
                     onSelect={item => runAction(item, setView)}
+                    IDE={IDE}
                 />
             </div>
         </div>
