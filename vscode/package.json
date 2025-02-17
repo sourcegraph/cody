@@ -56,7 +56,14 @@
     "github-changelog": "ts-node-transpile-only ./scripts/github-changelog.ts",
     "measure-bundle-size": "cross-env LOG_BUNDLE_SIZE=true ts-node-transpile-only ./scripts/measure-bundle-size.ts"
   },
-  "categories": ["AI", "Chat", "Programming Languages", "Machine Learning", "Snippets", "Education"],
+  "categories": [
+    "AI",
+    "Chat",
+    "Programming Languages",
+    "Machine Learning",
+    "Snippets",
+    "Education"
+  ],
   "keywords": [
     "cody",
     "codey",
@@ -121,7 +128,11 @@
   },
   "main": "./dist/extension.node.js",
   "browser": "./dist/extension.web.js",
-  "activationEvents": ["onLanguage", "onStartupFinished", "onWebviewPanel:cody.editorPanel"],
+  "activationEvents": [
+    "onLanguage",
+    "onStartupFinished",
+    "onWebviewPanel:cody.editorPanel"
+  ],
   "contributes": {
     "walkthroughs": [
       {
@@ -582,60 +593,23 @@
     "keybindings": [
       {
         "command": "cody.chat.signIn",
-        "key": "alt+/",
+        "key": "alt+l",
         "when": "!cody.activated"
       },
       {
         "command": "cody.chat.signIn",
-        "key": "alt+l",
+        "key": "alt+k",
         "when": "!cody.activated"
       },
       {
         "command": "cody.chat.toggle",
         "key": "alt+l",
-        "when": "cody.activated && editorTextFocus",
-        "args": {
-          "editorFocus": true
-        }
+        "when": "cody.activated"
       },
       {
-        "command": "cody.chat.toggle",
+        "command": "cody.mention.selection",
         "key": "alt+l",
-        "when": "cody.activated && !editorTextFocus",
-        "args": {
-          "editorFocus": false
-        }
-      },
-      {
-        "command": "cody.chat.toggle",
-        "key": "alt+/",
-        "when": "cody.activated && editorTextFocus",
-        "args": {
-          "editorFocus": true
-        }
-      },
-      {
-        "command": "cody.chat.toggle",
-        "key": "alt+/",
-        "when": "cody.activated && !editorTextFocus",
-        "args": {
-          "editorFocus": false
-        }
-      },
-      {
-        "command": "cody.mention.selection",
-        "key": "shift+alt+l",
         "when": "cody.activated && editorTextFocus && editorHasSelection"
-      },
-      {
-        "command": "cody.mention.selection",
-        "key": "shift+alt+/",
-        "when": "cody.activated && editorTextFocus && editorHasSelection"
-      },
-      {
-        "command": "cody.chat.new",
-        "key": "shift+alt+l",
-        "when": "cody.activated && !editorTextFocus"
       },
       {
         "command": "cody.chat.new",
@@ -997,7 +971,10 @@
           "order": 2,
           "type": "string",
           "markdownDescription": "A Git repository URL to use instead of allowing Cody to infer the Git repository from the workspace.",
-          "examples": ["https://github.com/sourcegraph/cody", "ssh://git@github.com/sourcegraph/cody"]
+          "examples": [
+            "https://github.com/sourcegraph/cody",
+            "ssh://git@github.com/sourcegraph/cody"
+          ]
         },
         "cody.customHeaders": {
           "order": 4,
@@ -1070,7 +1047,9 @@
           "order": 7,
           "type": "string",
           "markdownDescription": "A custom instruction to be included at the end of all instructions for edit commands (e.g. \"Write all unit tests with Jest instead of detected framework.\")",
-          "examples": ["Write all unit tests with Jest instead of detected framework."]
+          "examples": [
+            "Write all unit tests with Jest instead of detected framework."
+          ]
         },
         "cody.codeActions.enabled": {
           "order": 11,
@@ -1122,7 +1101,10 @@
           "order": 99,
           "type": "string",
           "enum": ["all", "off"],
-          "enumDescriptions": ["Sends usage data and errors.", "Disables all extension telemetry."],
+          "enumDescriptions": [
+            "Sends usage data and errors.",
+            "Disables all extension telemetry."
+          ],
           "markdownDescription": "Controls the telemetry about Cody usage and errors. See [Cody usage and privacy notice](https://about.sourcegraph.com/terms/cody-notice).",
           "default": "all"
         },
@@ -1276,7 +1258,11 @@
           "type": "string",
           "default": "",
           "pattern": "^((http|https|socks|socks4|socks4a|socks5|socks5h)://[^:]+:\\d+|unix://(~|/|[a-zA-Z]:\\\\).+)?$",
-          "examples": ["https://localhost:7080", "socks5://1.2.3.4:1080", "unix://~/cody-proxy.sock"]
+          "examples": [
+            "https://localhost:7080",
+            "socks5://1.2.3.4:1080",
+            "unix://~/cody-proxy.sock"
+          ]
         },
         "cody.net.proxy.skipCertValidation": {
           "description": "Whether to skip proxy server CA cert validation. Useful if the proxy server uses a self-signed certificate.",
