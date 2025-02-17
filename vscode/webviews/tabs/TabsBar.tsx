@@ -4,28 +4,23 @@ import * as Tabs from '@radix-ui/react-tabs'
 import clsx from 'clsx'
 import {
     BookTextIcon,
-    DownloadIcon,
     HistoryIcon,
     type LucideProps,
     MessageSquarePlusIcon,
     MessagesSquareIcon,
-    Trash2Icon,
 } from 'lucide-react'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
 import { View } from './types'
 
 import { type AuthenticatedAuthStatus, CodyIDE, isDefined } from '@sourcegraph/cody-shared'
-import { type FC, Fragment, forwardRef, memo, useCallback, useMemo, useState } from 'react'
-import { Kbd } from '../components/Kbd'
-import { Tooltip, TooltipContent, TooltipTrigger } from '../components/shadcn/ui/tooltip'
-import { useConfig } from '../utils/useConfig'
-
-import { useExtensionAPI } from '@sourcegraph/prompt-editor'
 import { isEqual } from 'lodash'
+import { type FC, Fragment, forwardRef, memo, useCallback, useMemo, useState } from 'react'
 import type { UserAccountInfo } from '../Chat'
-import { downloadChatHistory } from '../chat/downloadChatHistory'
+import { Kbd } from '../components/Kbd'
 import { UserMenu } from '../components/UserMenu'
 import { Button } from '../components/shadcn/ui/button'
+import { Tooltip, TooltipContent, TooltipTrigger } from '../components/shadcn/ui/tooltip'
+import { useConfig } from '../utils/useConfig'
 import styles from './TabsBar.module.css'
 import { getCreateNewChatCommand } from './utils'
 
@@ -72,7 +67,7 @@ interface TabConfig {
 export const TabsBar = memo<TabsBarProps>(props => {
     const { currentView, setView, user, endpointHistory } = props
     const { isCodyProUser, IDE } = user
-    const tabItems = useTabs({ user })
+    const tabItems = useTabs()
     const {
         config: { webviewType, multipleWebviewsEnabled, allowEndpointChange },
     } = useConfig()
@@ -347,11 +342,7 @@ TabButton.displayName = 'TabButton'
  * Returns list of tabs and its sub-action buttons, used later as configuration for
  * tabs rendering in chat header.
  */
-function useTabs(input: Pick<TabsBarProps, 'user'>): TabConfig[] {
-    const IDE = input.user.IDE
-
-    const extensionAPI = useExtensionAPI<'userHistory'>()
-
+function useTabs(): TabConfig[] {
     return useMemo<TabConfig[]>(
         () =>
             (
@@ -366,37 +357,7 @@ function useTabs(input: Pick<TabsBarProps, 'user'>): TabConfig[] {
                         view: View.History,
                         title: 'History',
                         Icon: HistoryIcon,
-                        subActions: [
-                            {
-                                title: 'Export',
-                                Icon: DownloadIcon,
-                                command: 'cody.chat.history.export',
-                                callback: () => downloadChatHistory(extensionAPI),
-                            },
-                            {
-                                title: 'Delete all',
-                                Icon: Trash2Icon,
-                                command: 'cody.chat.history.clear',
 
-                                // Show Cody Chat UI confirmation modal with this message only for
-                                // Cody Web. All other IDE either implements their own native confirmation UI
-                                // or don't have confirmation UI at all.
-                                confirmation:
-                                    IDE === CodyIDE.Web
-                                        ? {
-                                              title: 'Are you sure you want to delete all of your chats?',
-                                              description:
-                                                  'You will not be able to recover them once deleted.',
-                                              confirmationAction: 'Delete all chats',
-                                          }
-                                        : undefined,
-
-                                // We don't have a way to request user confirmation in Cody Agent
-                                // (vscode.window.showWarningMessage is overridable there), so bypass
-                                // confirmation in cody agent and use confirmation UI above.
-                                arg: IDE === CodyIDE.VSCode ? undefined : 'clear-all-no-confirm',
-                            },
-                        ].filter(isDefined),
                         changesView: true,
                     },
                     {
@@ -407,6 +368,6 @@ function useTabs(input: Pick<TabsBarProps, 'user'>): TabConfig[] {
                     },
                 ] as (TabConfig | null)[]
             ).filter(isDefined),
-        [IDE, extensionAPI]
+        []
     )
 }
