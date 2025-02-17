@@ -17,7 +17,7 @@ export function populateCodeContextTemplate(
             ? ps`Codebase context from file {filePath}{inRepo}:\n{text}`
             : ps`Codebase context from file {filePath}{inRepo}:\n\`\`\`{languageID}{filePathToParse}\n{text}\`\`\``
 
-    const filePath = PromptString.fromDisplayPath(fileUri)
+    const filePath = PromptString.fromDisplayPath(fileUri).replace(/\\/g, ps`/`)
     return template
         .replaceAll('{inRepo}', repoName ? ps` in repository ${repoName}` : ps``)
         .replaceAll('{filePath}', filePath)
