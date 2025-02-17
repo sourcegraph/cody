@@ -162,8 +162,8 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
             webviewTelemetryService.configure({
                 isTracingEnabled: true,
                 debugVerbose: true,
-                agentIDE: config.clientCapabilities.agentIDE,
-                extensionAgentVersion: config.clientCapabilities.agentExtensionVersion,
+                ide: config.clientCapabilities.agentIDE,
+                codyExtensionVersion: config.clientCapabilities.agentExtensionVersion,
             })
         }
     }, [config, webviewTelemetryService])
