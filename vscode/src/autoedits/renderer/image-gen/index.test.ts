@@ -1,6 +1,7 @@
 import { toMatchImageSnapshot } from 'jest-image-snapshot'
 import { describe, expect, it } from 'vitest'
 import { generateSuggestionAsImage, initImageSuggestionService } from '.'
+import { mockLocalStorage } from '../../../services/LocalStorageProvider'
 import type {
     AddedLinesDecorationInfo,
     DiffedTextDecorationRange,
@@ -45,6 +46,7 @@ async function generateImageForTest(
     decorations: AddedLinesDecorationInfo[],
     lang: string
 ): Promise<{ darkBuffer: Buffer; lightBuffer: Buffer }> {
+    mockLocalStorage()
     await initImageSuggestionService()
 
     const { light, dark } = generateSuggestionAsImage({
