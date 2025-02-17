@@ -121,9 +121,7 @@ export const SubmitButton: FC<{
                 )}
                 title="Send"
             >
-                <div className="tw-hidden md:tw-inline tw-flex tw-items-center tw-gap-1 tw-whitespace-nowrap tw-flex-nowrap">
-                    <Icon className={iconClassName} />
-                </div>
+                <Icon className={iconClassName} />
             </button>
         </div>
     )
