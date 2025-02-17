@@ -3,7 +3,7 @@ import type React from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { clsx } from 'clsx'
-import { PlusIcon } from 'lucide-react'
+import { LoaderIcon, PlusIcon } from 'lucide-react'
 import type { FixupTaskID } from '../../../src/non-stop/FixupTask'
 import { CodyTaskState } from '../../../src/non-stop/state'
 import { type ClientActionListener, useClientActionListener } from '../../client/clientState'
@@ -257,7 +257,7 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
                 <details
                     open
                     className="tw-container tw-mb-7 tw-border tw-border-gray-500/20 dark:tw-border-gray-600/40 tw-rounded-lg tw-overflow-hidden tw-backdrop-blur-sm"
-                    title="Thinking / Reasoning Space."
+                    title="Thinking/Reasoning Space."
                 >
                     <summary
                         className={clsx(
@@ -267,9 +267,16 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
                             }
                         )}
                     >
-                        <PlusIcon size={16} className="tw-text-gray-500 dark:tw-text-gray-400" />
+                        {hasThinkTag ? (
+                            <LoaderIcon
+                                size={16}
+                                className="tw-animate-spin tw-text-gray-500 dark:tw-text-gray-400"
+                            />
+                        ) : (
+                            <PlusIcon size={16} className="tw-text-gray-500 dark:tw-text-gray-400" />
+                        )}
                         <span className="tw-font-medium tw-text-gray-600 dark:tw-text-gray-300">
-                            Thinking...
+                            {hasThinkTag ? 'Thinking...' : 'Thought Process'}
                         </span>
                     </summary>
                     <div className="tw-px-4 tw-py-3 tw-mx-4 tw-opacity-70 hover:tw-opacity-100">
