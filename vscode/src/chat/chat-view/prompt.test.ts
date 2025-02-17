@@ -18,7 +18,6 @@ import {
 import { Observable } from 'observable-fns'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import * as vscode from 'vscode'
-import { URI } from 'vscode-uri'
 import { PromptBuilder } from '../../prompt-builder'
 import { localStorage } from '../../services/LocalStorageProvider'
 import { ChatBuilder } from './ChatBuilder'
@@ -208,7 +207,7 @@ describe('DefaultPrompter', () => {
         let info = await new DefaultPrompter(
             [
                 {
-                    uri: URI.parse('user1.go'),
+                    uri: vscode.Uri.file('user1.go'),
                     type: 'file',
                     content: 'package vscode',
                     source: ContextItemSource.User,
@@ -216,7 +215,7 @@ describe('DefaultPrompter', () => {
             ],
             [
                 {
-                    uri: URI.parse('enhanced1.ts'),
+                    uri: vscode.Uri.file('enhanced1.ts'),
                     type: 'file',
                     content: 'import vscode',
                 },
@@ -241,7 +240,7 @@ describe('DefaultPrompter', () => {
         info = await new DefaultPrompter(
             [
                 {
-                    uri: URI.parse('user2.go'),
+                    uri: vscode.Uri.file('user2.go'),
                     type: 'file',
                     content: 'package vscode',
                     source: ContextItemSource.User,
@@ -249,7 +248,7 @@ describe('DefaultPrompter', () => {
             ],
             [
                 {
-                    uri: URI.parse('enhanced2.ts'),
+                    uri: vscode.Uri.file('enhanced2.ts'),
                     type: 'file',
                     content: 'import vscode',
                 },
