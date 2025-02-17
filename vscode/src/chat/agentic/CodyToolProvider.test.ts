@@ -6,9 +6,10 @@ import { URI } from 'vscode-uri'
 import * as openctxAPI from '../../../../lib/shared/src/context/openctx/api'
 import { mockLocalStorage } from '../../services/LocalStorageProvider'
 import type { ContextRetriever } from '../chat-view/ContextRetriever'
-import { CodyTool, type CodyToolConfig } from './CodyTool'
+import { CodyTool } from './CodyTool'
 import { CodyToolProvider, TestToolFactory, type ToolConfiguration } from './CodyToolProvider'
 import { toolboxManager } from './ToolboxManager'
+import type { CodyToolConfig } from './config'
 
 const localStorageData: { [key: string]: unknown } = {}
 mockLocalStorage({
