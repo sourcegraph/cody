@@ -6,7 +6,7 @@ import type {
     ExternalAuthProvider,
 } from '../configuration'
 import { logError } from '../logger'
-import { ExternalProviderAuthError } from '../sourcegraph-api/errors'
+import { ExternalAuthProviderError } from '../sourcegraph-api/errors'
 import type { ClientSecrets } from './resolver'
 
 export const externalAuthRefresh = new Subject<void>()
@@ -116,7 +116,7 @@ function createHeaderCredentials(
                     externalAuthRefresh.next()
 
                     logError('resolveAuth', `External Auth Provider Error: ${error}`)
-                    throw new ExternalProviderAuthError(
+                    throw new ExternalAuthProviderError(
                         error instanceof Error ? error.message : String(error)
                     )
                 }

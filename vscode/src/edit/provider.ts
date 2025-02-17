@@ -25,6 +25,7 @@ import {
     DEFAULT_EVENT_SOURCE,
     EventSourceTelemetryMetadataMapping,
 } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { isError } from 'lodash'
 import { workspace } from 'vscode'
 import { doesFileExist } from '../commands/utils/workspace-files'
 import { getEditor } from '../editor/active-editor'
@@ -62,8 +63,10 @@ export class EditProvider {
             const model = this.config.task.model
             const contextWindow = modelsService.getContextWindowByID(model)
             const versions = await currentSiteVersion()
-            if (versions instanceof Error) {
-                throw new Error('unable to determine site version')
+
+            if (isError(versions)) {
+                this.handleError(versions)
+                return
             }
             const {
                 messages,

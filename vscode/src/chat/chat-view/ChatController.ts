@@ -399,6 +399,10 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 )
                 break
             case 'auth': {
+                if (message.authKind === 'refresh') {
+                    authProvider.refresh()
+                    break
+                }
                 if (message.authKind === 'simplified-onboarding') {
                     const endpoint = DOTCOM_URL.href
 

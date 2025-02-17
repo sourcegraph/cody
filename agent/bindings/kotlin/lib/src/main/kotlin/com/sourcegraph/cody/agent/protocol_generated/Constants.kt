@@ -66,7 +66,7 @@ object Constants {
   const val method = "method"
   const val multiple = "multiple"
   const val native = "native"
-  const val `network-error` = "network-error"
+  const val `availability-error` = "availability-error"
   const val none = "none"
   const val notification = "notification"
   const val `object-encoded` = "object-encoded"
