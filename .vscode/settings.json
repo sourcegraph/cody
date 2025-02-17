@@ -42,5 +42,6 @@
   "[typescriptreact]": {
     "editor.defaultFormatter": "biomejs.biome"
   },
-  "rust-analyzer.procMacro.ignored": { "napi-derive": ["napi"] }
+  "rust-analyzer.procMacro.ignored": { "napi-derive": ["napi"] },
+  "cody.rules.enabled": true,
 }
