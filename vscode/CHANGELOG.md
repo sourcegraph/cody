@@ -4,6 +4,102 @@ This is a log of all notable changes to Cody for VS Code.
 
 <!--- {/_ CHANGELOG_START _/} -->
 
+## 1.70.0
+
+### Features
+
+#### Auto-Edit
+
+- Fix slightly misaligned image decorations [#7040](https://github.com/sourcegraph/cody/pull/7040)
+- Use the users' font size when generating images [#7036](https://github.com/sourcegraph/cody/pull/7036)
+
+#### Chat
+
+- Turn prompt caching on for code context messages (CODY-4808) [#6953](https://github.com/sourcegraph/cody/pull/6953)
+
+#### Others
+
+- support for dynamic mentions in @ mention menu for prompt templates [#6793](https://github.com/sourcegraph/cody/pull/6793)
+
+### Fix
+
+#### Auto-Edit
+
+- Fix low resolution images on low DPI screens [#7112](https://github.com/sourcegraph/cody/pull/7112)
+
+#### Chat
+
+- At mention menu open outside the editor window [#7045](https://github.com/sourcegraph/cody/pull/7045)
+- language filters in rules not applying correctly [#7025](https://github.com/sourcegraph/cody/pull/7025)
+- expansion of current-tab generic mention when non editor tabs are opened [#6910](https://github.com/sourcegraph/cody/pull/6910)
+
+#### Jetbrains
+
+- remove duplicate sg logo svg [#7099](https://github.com/sourcegraph/cody/pull/7099)
+
+#### Release
+
+- Update the JetBrains link to release notes. [#6976](https://github.com/sourcegraph/cody/pull/6976)
+
+#### Ui
+
+- Fix bugs in the UI [#7001](https://github.com/sourcegraph/cody/pull/7001)
+- Wire StatusBar into AutoeditsProvider (CODY-4706) [#6955](https://github.com/sourcegraph/cody/pull/6955)
+
+#### Others
+
+- Fix chevron for open/closed search results [#6978](https://github.com/sourcegraph/cody/pull/6978)
+- Stop button on cody web [#6939](https://github.com/sourcegraph/cody/pull/6939)
+
+### Chore
+
+#### Marketing
+
+- update JB plugin icon [#7085](https://github.com/sourcegraph/cody/pull/7085)
+
+#### Release
+
+- upgrade changelog generator [#7081](https://github.com/sourcegraph/cody/pull/7081)
+- Bump package version and update changelog for 1.66 [#7003](https://github.com/sourcegraph/cody/pull/7003)
+- VSCode stable release Slack announcements to point to the correct release branches [#6975](https://github.com/sourcegraph/cody/pull/6975)
+- Bump package version and update changelog for 1.66 [#6971](https://github.com/sourcegraph/cody/pull/6971)
+
+#### Others
+
+- fix kotlin bindings [#7043](https://github.com/sourcegraph/cody/pull/7043)
+- Remove hard-coded 'deep-cody' and replace with constant [#6958](https://github.com/sourcegraph/cody/pull/6958)
+
+### Reverts
+
+  There were no reverts for this release
+
+### Uncategorized
+
+#### Others
+
+- Changelog for 1.68.0 [#7089](https://github.com/sourcegraph/cody/pull/7089)
+- Update Cody Web to V0.31.0 [#7053](https://github.com/sourcegraph/cody/pull/7053)
+- Remove intent leftovers [#7051](https://github.com/sourcegraph/cody/pull/7051)
+- Fix repo name being `Symbol(@@pendingOperation)` if repo is local [#7042](https://github.com/sourcegraph/cody/pull/7042)
+- Remove Intent Detection [#7039](https://github.com/sourcegraph/cody/pull/7039)
+- Update cody web to 0.30.0 [#7033](https://github.com/sourcegraph/cody/pull/7033)
+- disable windows/macOS e2e tests on main, shard ubuntu tests [#7031](https://github.com/sourcegraph/cody/pull/7031)
+- Rrhyne/improve code border styles [#7024](https://github.com/sourcegraph/cody/pull/7024)
+- ignore aider files [#7013](https://github.com/sourcegraph/cody/pull/7013)
+- Fix cody web sandbox cors problem [#7010](https://github.com/sourcegraph/cody/pull/7010)
+- remove unused code [#6998](https://github.com/sourcegraph/cody/pull/6998)
+- simplify models fixtures [#6996](https://github.com/sourcegraph/cody/pull/6996)
+- Fix Repo filter dropdown z-index [#6994](https://github.com/sourcegraph/cody/pull/6994)
+- simplify chat UI [#6992](https://github.com/sourcegraph/cody/pull/6992)
+- fix ~5px pixel jitter when pressing Enter in chat in VS Code [#6991](https://github.com/sourcegraph/cody/pull/6991)
+- bug fix: Fix 500ms delay when submitting chat message [#6990](https://github.com/sourcegraph/cody/pull/6990)
+- Fix border on history search [#6983](https://github.com/sourcegraph/cody/pull/6983)
+- chat ui: remove user avatars, remove speaker name from follow-up message [#6981](https://github.com/sourcegraph/cody/pull/6981)
+- remove chat message feedback and "Try again with different" model/context [#6980](https://github.com/sourcegraph/cody/pull/6980)
+- experimental: Re-enable tool-cody for exploration [#6979](https://github.com/sourcegraph/cody/pull/6979)
+- Fix keyDown:paste [#6938](https://github.com/sourcegraph/cody/pull/6938)
+
+
 ## 1.68.0
 
 ### Features
