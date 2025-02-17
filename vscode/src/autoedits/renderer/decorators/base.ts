@@ -55,7 +55,7 @@ export interface AddedLineInfo {
     modifiedLineNumber: number
 }
 
-interface RemovedLineInfo {
+export interface RemovedLineInfo {
     id: string
     type: 'removed'
     text: string
@@ -71,7 +71,6 @@ export interface ModifiedLineInfo {
     originalLineNumber: number
     modifiedLineNumber: number
 }
-
 export interface UnchangedLineInfo {
     id: string
     type: 'unchanged'

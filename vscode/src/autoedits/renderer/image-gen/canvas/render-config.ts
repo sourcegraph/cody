@@ -12,8 +12,30 @@ const GOLDEN_LINE_HEIGHT_RATIO = isMacOS() ? 1.5 : 1.35
  */
 const DEFAULT_FONT_SIZE = isMacOS() ? 12 : 14
 
+const DEFAULT_DIFF_COLORS = {
+    inserted: {
+        line: 'rgba(155, 185, 85, 0.1)',
+        text: 'rgba(155, 185, 85, 0.15)',
+    },
+    removed: {
+        line: 'rgba(255, 0, 0, 0.1)',
+        text: 'rgba(255, 0, 0, 0.15)',
+    },
+} satisfies DiffColors
+
 export function getLineHeight(fontSize: number): number {
     return Math.round(GOLDEN_LINE_HEIGHT_RATIO * fontSize)
+}
+
+export interface DiffColors {
+    inserted: {
+        line: string
+        text: string
+    }
+    removed: {
+        line: string
+        text: string
+    }
 }
 
 /**
@@ -30,9 +52,9 @@ export interface RenderConfig {
      */
     pixelRatio: number
     /**
-     * The background color of added characters in the diff.
+     * The background colors of added characters and lines in the diff.
      */
-    diffHighlightColor: string
+    diffColors: DiffColors
 }
 
 export interface UserProvidedRenderConfig {
@@ -49,6 +71,6 @@ export function getRenderConfig(userProvidedConfig: UserProvidedRenderConfig): R
         padding: { x: 6, y: 2 },
         maxWidth: 1200,
         pixelRatio: 2,
-        diffHighlightColor: 'rgba(35, 134, 54, 0.2)',
+        diffColors: DEFAULT_DIFF_COLORS,
     }
 }
