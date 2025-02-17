@@ -160,6 +160,7 @@ export const TabsBar = memo<TabsBarProps>(props => {
                                 allowEndpointChange={allowEndpointChange}
                                 className="!tw-opacity-100 tw-h-full"
                                 isWorkspacesUpgradeCtaEnabled={props.isWorkspacesUpgradeCtaEnabled}
+                                IDE={IDE}
                             />
                         )}
                     </div>
