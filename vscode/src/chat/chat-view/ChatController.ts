@@ -40,6 +40,7 @@ import {
     firstResultFromOperation,
     firstValueFrom,
     forceHydration,
+    getDefaultSystemPrompt,
     graphqlClient,
     hydrateAfterPostMessage,
     isAbortErrorOrSocketHangUp,
@@ -715,7 +716,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         if (this.chatBuilder.customChatTitle || !model || isAgentTesting) {
             return
         }
-        const prompt = ps`You are Cody, an AI coding assistant from Sourcegraph. Your task is to generate a concise title (<10 words without quotation) for <codyUserInput>${inputText}</codyUserInput>.
+        const prompt = ps`${getDefaultSystemPrompt()} Your task is to generate a concise title (in about 10 words without quotation) for <codyUserInput>${inputText}</codyUserInput>.
         RULE: Your response should only contain the concise title and nothing else.`
         try {
             const stream = await this.chatClient.chat(
