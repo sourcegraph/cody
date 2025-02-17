@@ -373,8 +373,7 @@ export class DefaultDecorator implements AutoEditsDecorator {
     ): void {
         // Blockify the added lines so they are suitable to be rendered together as a VS Code decoration
         const blockifiedAddedLines = blockify(this.editor.document, addedLinesInfo)
-
-        const { dark, light } = generateSuggestionAsImage({
+        const { dark, light, pixelRatio } = generateSuggestionAsImage({
             decorations: blockifiedAddedLines,
             lang: this.editor.document.languageId,
         })
@@ -390,8 +389,8 @@ export class DefaultDecorator implements AutoEditsDecorator {
             position: 'absolute',
             // Make sure the decoration is rendered on top of other decorations
             'z-index': '9999',
-            // Scale to decoration to the correct size (upscaled to boost resolution)
-            scale: '0.5',
+            // Scale the decoration to the correct size (upscaled to boost resolution)
+            scale: String(1 / pixelRatio),
             'transform-origin': '0px 0px',
             height: 'auto',
             // The decoration will be entirely taken up by the image.
