@@ -37,7 +37,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-gradle-
       - name: Gradle Wrapper Validation
-        uses: gradle/actions/wrapper-validation@v3
+        uses: gradle/actions/wrapper-validation@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 20

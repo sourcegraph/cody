@@ -1,6 +1,7 @@
 import { toMatchImageSnapshot } from 'jest-image-snapshot'
 import { describe, expect, it } from 'vitest'
 import { generateSuggestionAsImage, initImageSuggestionService } from '.'
+import { mockLocalStorage } from '../../../services/LocalStorageProvider'
 import type {
     AddedLinesDecorationInfo,
     DiffedTextDecorationRange,
@@ -45,11 +46,18 @@ async function generateImageForTest(
     decorations: AddedLinesDecorationInfo[],
     lang: string
 ): Promise<{ darkBuffer: Buffer; lightBuffer: Buffer }> {
+    mockLocalStorage()
     await initImageSuggestionService()
 
     const { light, dark } = generateSuggestionAsImage({
         decorations,
         lang,
+        // The default render config changes depending on the platform, so we need to set it manually for tests.
+        // We're using the same defaults as VS Code on MacOS here.
+        config: {
+            fontSize: 12,
+            lineHeight: 18,
+        },
     })
 
     return {

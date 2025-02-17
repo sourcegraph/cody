@@ -11,6 +11,7 @@ import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.TextEditor
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
+import com.sourcegraph.cody.agent.CodyAgentService
 import com.sourcegraph.cody.agent.protocol_generated.ExtensionConfiguration
 import com.sourcegraph.cody.auth.CodyAuthService
 import com.sourcegraph.cody.auth.CodySecureStore
@@ -21,6 +22,7 @@ import com.typesafe.config.ConfigRenderOptions
 import com.typesafe.config.ConfigValueFactory
 import java.nio.file.Path
 import java.nio.file.Paths
+import java.util.concurrent.CompletableFuture
 import kotlin.io.path.readText
 import org.jetbrains.annotations.Contract
 import org.jetbrains.annotations.VisibleForTesting
@@ -110,12 +112,32 @@ object ConfigUtil {
   }
 
   @JvmStatic
-  fun getConfigAsJson(project: Project): JsonObject {
+  fun getAuthorizationHeadersAsJson(project: Project): JsonObject {
     val endpoint = CodyAuthService.getInstance(project).getEndpoint()
+    val authHeaders = CompletableFuture<Map<String, String>>()
+
+    if (isCodyEnabled()) {
+      CodyAgentService.withAgent(project) { agent ->
+        agent.server.internal_getAuthHeaders(endpoint.url).thenAccept { headers ->
+          authHeaders.complete(headers)
+        }
+      }
+    } else {
+      val token = CodySecureStore.getFromSecureStore(endpoint.url)
+      if (token != null) {
+        authHeaders.complete(mapOf("Authorization" to "token $token"))
+      }
+    }
+
+    val jsonObject = JsonObject()
+    authHeaders.get().forEach { (key, value) -> jsonObject.addProperty(key, value) }
+    return jsonObject
+  }
+
+  @JvmStatic
+  fun getConfigAsJson(project: Project): JsonObject {
     return JsonObject().apply {
-      addProperty("instanceURL", endpoint.url)
-      addProperty("accessToken", CodySecureStore.getFromSecureStore(endpoint.url.toString()))
-      addProperty("customRequestHeadersAsString", "")
+      addProperty("instanceURL", CodyAuthService.getInstance(project).getEndpoint().url)
       addProperty("pluginVersion", getPluginVersion())
       addProperty("anonymousUserId", CodyApplicationSettings.instance.anonymousUserId)
     }

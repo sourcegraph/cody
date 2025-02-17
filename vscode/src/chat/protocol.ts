@@ -73,7 +73,7 @@ export type WebviewMessage =
     | ({ command: 'submit' } & WebviewSubmitMessage)
     | { command: 'restoreHistory'; chatID: string }
     | { command: 'links'; value: string }
-    | { command: 'openURI'; uri: Uri }
+    | { command: 'openURI'; uri: Uri; range?: RangeData | undefined | null }
     | {
           // Open a file from a Sourcegraph URL
           command: 'openRemoteFile'
@@ -156,6 +156,7 @@ export type WebviewMessage =
           selectedFilters: NLSSearchDynamicFilter[]
       }
     | { command: 'action/confirmation'; id: string; response: boolean }
+    | { command: 'devicePixelRatio'; devicePixelRatio: number }
 
 export interface SmartApplyResult {
     taskId: FixupTaskID
@@ -221,8 +222,6 @@ export interface WebviewSubmitMessage extends WebviewContextMessage {
 
     /** An opaque value representing the text editor's state. @see {ChatMessage.editorState} */
     editorState?: unknown | undefined | null
-    preDetectedIntent?: ChatMessage['intent'] | undefined | null
-    preDetectedIntentScores?: { intent: string; score: number }[] | undefined | null
     manuallySelectedIntent?: ChatMessage['intent'] | undefined | null
     traceparent?: string | undefined | null
     steps?: ProcessingStep[] | undefined | null
@@ -234,8 +233,6 @@ interface WebviewEditMessage extends WebviewContextMessage {
 
     /** An opaque value representing the text editor's state. @see {ChatMessage.editorState} */
     editorState?: unknown | undefined | null
-    preDetectedIntent?: ChatMessage['intent'] | undefined | null
-    preDetectedIntentScores?: { intent: string; score: number }[] | undefined | null
     manuallySelectedIntent?: ChatMessage['intent'] | undefined | null
     steps?: ProcessingStep[] | undefined | null
 }
@@ -264,6 +261,7 @@ export interface ConfigurationSubsetForWebview
     multipleWebviewsEnabled?: boolean | undefined | null
     endpointHistory?: string[] | undefined | null
     allowEndpointChange: boolean
+    experimentalPromptEditorEnabled: boolean
 }
 
 /**

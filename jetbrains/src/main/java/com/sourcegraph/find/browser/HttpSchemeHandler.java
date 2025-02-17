@@ -1,9 +1,11 @@
 package com.sourcegraph.find.browser;
 
 import com.google.common.collect.ImmutableMap;
+import com.intellij.openapi.diagnostic.Logger;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URL;
 import java.util.Map;
 import java.util.Optional;
 import org.cef.callback.CefCallback;
@@ -21,11 +23,19 @@ public class HttpSchemeHandler extends CefResourceHandlerAdapter {
   private int responseHeader = 400;
   private int offset = 0;
 
+  Logger logger = Logger.getInstance(HttpSchemeHandler.class);
+
   public boolean processRequest(@NotNull CefRequest request, @NotNull CefCallback callback) {
     String extension = getExtension(request.getURL());
     mimeType = getMimeType(extension);
     String url = request.getURL();
-    String path = url.replace("http://sourcegraph", "");
+    String path;
+    try {
+      path = new URL(url).getPath();
+    } catch (Exception ignored) {
+      logger.error("Failed to parse request url: " + url);
+      return false;
+    }
 
     if (mimeType != null) {
       data = loadResource(path);

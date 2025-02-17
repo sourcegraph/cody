@@ -281,6 +281,8 @@ export type ClientRequests = {
     // Called after the extension has been uninstalled by a user action.
     // Attempts to wipe out any state that the extension has stored.
     'extension/reset': [null, null]
+
+    'internal/getAuthHeaders': [string, Record<string, string>]
 }
 
 // ================

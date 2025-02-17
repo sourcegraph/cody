@@ -4,12 +4,121 @@ This is a log of all notable changes to Cody for VS Code.
 
 <!--- {/_ CHANGELOG_START _/} -->
 
+## 1.68.0
+
+### Features
+
+#### Auto-Edit
+
+- Use the users' font size when generating images [#7055](https://github.com/sourcegraph/cody/pull/7055)
+- Fix slightly misaligned image decorations [#7054](https://github.com/sourcegraph/cody/pull/7054)
+- Enable image based rendering for dogfooding [#6950](https://github.com/sourcegraph/cody/pull/6950)
+- Support image rendering for complex diffs [#6545](https://github.com/sourcegraph/cody/pull/6545)
+
+#### Context
+
+- Add Prompt Caching to Code Context (CODY-4807) [#6878](https://github.com/sourcegraph/cody/pull/6878)
+
+#### Chat
+- Use rules (.sourcegraph/*.rule.md) in chat and inline edit [#6909](https://github.com/sourcegraph/cody/pull/6909)
+- Adds searching chat history to the history tab [#6897](https://github.com/sourcegraph/cody/pull/6897)
+
+#### Edit
+
+- Add the context for the edit command [#6924](https://github.com/sourcegraph/cody/pull/6924)
+
+#### Promptlist
+
+- Add `promptId` & `promptName` to privateMetadata [#6764](https://github.com/sourcegraph/cody/pull/6764)
+
+#### Smart-Apply
+
+- Log fixupID to track in the edit [#6943](https://github.com/sourcegraph/cody/pull/6943)
+- Add haiku 3.5 for a/b testing [#6935](https://github.com/sourcegraph/cody/pull/6935)
+- Add the context logging for smart-apply feature [#6918](https://github.com/sourcegraph/cody/pull/6918)
+- Show Reapply for applied code blocks [#6898](https://github.com/sourcegraph/cody/pull/6898)
+
+### Fix
+
+#### Auto-Edit
+
+- Restore suffix decorations [#6949](https://github.com/sourcegraph/cody/pull/6949)
+- Fix the false notification for auto-edit non eligibility [#6899](https://github.com/sourcegraph/cody/pull/6899)
+
+#### Client-Config
+
+- Simplify config fetching logic and fix omnibox flag [#6960](https://github.com/sourcegraph/cody/pull/6960)
+- Fix problem with race between auth and config causing issues with models loading [#6886](https://github.com/sourcegraph/cody/pull/6886)
+
+#### Context
+
+- Mark at-mention context items as user-added items [#6920](https://github.com/sourcegraph/cody/pull/6920)
+
+#### Chat
+- Bottom prompt buttons cut off [#6945](https://github.com/sourcegraph/cody/pull/6945)
+- Fix paragraph spacing in submit button dropdown if no intent is detected [#6952](https://github.com/sourcegraph/cody/pull/6952)
+- Remove chat message feedback and "Try again with different" model/context [#7008](https://github.com/sourcegraph/cody/pull/7008)
+- Fix 500ms delay when submitting chat message [#7007](https://github.com/sourcegraph/cody/pull/7007)
+- Fix ~5px pixel jitter when pressing Enter in chat in VS Code [#7006](https://github.com/sourcegraph/cody/pull/7006)
+- Fix crash when using TextDocument.validateRange(...) [#6948](https://github.com/sourcegraph/cody/pull/6948)
+
+#### Release
+
+- Update the JetBrains link to release notes. [#6977](https://github.com/sourcegraph/cody/pull/6977)
+
+#### Ui
+
+- Fix bugs in the UI [#7001](https://github.com/sourcegraph/cody/pull/7001)
+- Use timeout argument directly as duration instead of timestamp [#6954](https://github.com/sourcegraph/cody/pull/6954)
+- Remove user avatars, remove speaker name from follow-up message [#7009](https://github.com/sourcegraph/cody/pull/7009)
+- Simplify chat UI [#6992](https://github.com/sourcegraph/cody/pull/6992)
+
+#### Web
+
+- Don't show CTA on Cody Web for PLG [#6956](https://github.com/sourcegraph/cody/pull/6956)
+
+#### Others
+
+- Remove chat footer link removals and border fixes [#6940](https://github.com/sourcegraph/cody/pull/6940)
+
+### Chore
+
+#### Auto-Edit
+
+- Cleanup the logging with the context source for logging [#6901](https://github.com/sourcegraph/cody/pull/6901)
+
+#### Chat
+- Add a retry button for Cody API version error (CODY-4864) [#6926](https://github.com/sourcegraph/cody/pull/6926)
+
+  
+#### Marketing
+
+- Update marketplace and in product logos [#6959](https://github.com/sourcegraph/cody/pull/6959)
+
+#### Release
+
+- upgrade changelog generator [#7084](https://github.com/sourcegraph/cody/pull/7084)
+- VSCode stable release Slack announcements to point to the correct release branches [#6995](https://github.com/sourcegraph/cody/pull/6995)
+- Bump package version and update changelog for 1.66 [#6971](https://github.com/sourcegraph/cody/pull/6971)
+- Add support for milestone branch labels for backports [#6880](https://github.com/sourcegraph/cody/pull/6880)
+- Give release scripts consistent names & some clean up [#6879](https://github.com/sourcegraph/cody/pull/6879)
+- Bump package version and update changelog for 1.64 [#6876](https://github.com/sourcegraph/cody/pull/6876)
+
+#### Others
+
+- Remove hard-coded 'deep-cody' and replace with constant [#7019](https://github.com/sourcegraph/cody/pull/7019)
+- Report metadata about search result context items separately [#6951](https://github.com/sourcegraph/cody/pull/6951)
+
+### Reverts
+
+- Revert "Revert commits 9719dc4, 1c16f35, 1ed8392, 03c93f9 [#-1](https://github.com/sourcegraph/cody/pull/6788)
+
+
 ## 1.66.1
 
 ### Fixed
 - AutoEdits
   - fix(auto-edit): fix the false notification for auto-edit non eligibility  [pull/7002](https://github.com/sourcegraph/cody/pull/7002)
-Manually backport b54029c9299d40fbbf2efa3e25a8e2d2a7adf1d8 #6971
 
 ## 1.66.0
 

@@ -8,7 +8,13 @@ import {
     sidebarExplorer,
     sidebarSignin,
 } from './common'
-import { type DotcomUrlOverride, type ExpectedV2Events, executeCommandInPalette, test } from './helpers'
+import {
+    type DotcomUrlOverride,
+    type ExpectedV2Events,
+    executeCommandInPalette,
+    mockEnterpriseRepoIdMapping,
+    test,
+} from './helpers'
 
 test.extend<ExpectedV2Events>({
     expectedV2Events: [
@@ -22,7 +28,8 @@ test.extend<ExpectedV2Events>({
         'cody.chat-question:executed',
         'cody.chatResponse:hasCode',
     ],
-})('chat input focus', async ({ page, sidebar }) => {
+})('chat input focus', async ({ page, sidebar, server }) => {
+    mockEnterpriseRepoIdMapping(server)
     // This test requires that the window be focused in the OS window manager because it deals with
     // focus.
     await page.bringToFront()
