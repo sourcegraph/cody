@@ -7,11 +7,13 @@ import com.google.gson.JsonSyntaxException;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.ui.jcef.JBCefBrowserBase;
 import com.intellij.ui.jcef.JBCefJSQuery;
+import com.sourcegraph.config.ThemeUtil;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
+import javax.swing.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -25,6 +27,13 @@ public class JavaToJSBridge {
     this.browser = browser;
     this.query = JBCefJSQuery.create(browser);
     this.lock = new ReentrantLock();
+
+    UIManager.addPropertyChangeListener(
+        propertyChangeEvent -> {
+          if (propertyChangeEvent.getPropertyName().equals("lookAndFeel")) {
+            this.callJS("themeChanged", ThemeUtil.getCurrentThemeAsJson());
+          }
+        });
   }
 
   public void callJS(@NotNull String action, @Nullable JsonObject arguments) {

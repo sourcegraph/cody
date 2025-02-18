@@ -7,7 +7,7 @@ import type {
     SyntaxHighlightedTextDecorationRange,
 } from '../../decorators/default-decorator'
 import type { SYNTAX_HIGHLIGHT_MODE } from '../highlight'
-import { type RenderConfig, type UserProvidedRenderConfig, getRenderConfig } from './render-config'
+import type { RenderConfig } from './render-config'
 
 type CanvasKitType = Awaited<ReturnType<typeof CanvasKitInit>>
 type RenderContext = {
@@ -138,7 +138,7 @@ function drawDiffColors(
 export function drawDecorationsToCanvas(
     decorations: AddedLinesDecorationInfo[],
     mode: SYNTAX_HIGHLIGHT_MODE,
-    userConfig: UserProvidedRenderConfig
+    config: RenderConfig
 ): EmulatedCanvas2D {
     if (!canvasKit || !fontCache) {
         // TODO: Log these errors, useful to see if we run into issues where we're not correctly
@@ -150,7 +150,6 @@ export function drawDecorationsToCanvas(
         CanvasKit: canvasKit,
         font: fontCache,
     }
-    const config = getRenderConfig(userConfig)
 
     // In order for us to draw to the canvas, we must first determine the correct
     // dimensions for the canvas. We can do this with a temporary Canvas that uses the same font
@@ -173,11 +172,15 @@ export function drawDecorationsToCanvas(
     const canvasWidth = Math.min(requiredWidth + config.padding.x, config.maxWidth)
     const canvasHeight = tempYPos + config.padding.y
 
+    // Round to the nearest pixel, using sub-pixels will cause CanvasKit to crash
+    const height = Math.round(canvasHeight * config.pixelRatio)
+    const width = Math.round(canvasWidth * config.pixelRatio)
+
     // Now we create the actual canvas, ensuring we scale it accordingly to improve the output resolution.
     const { canvas, ctx } = createCanvas(
         {
-            height: canvasHeight * config.pixelRatio,
-            width: canvasWidth * config.pixelRatio,
+            height,
+            width,
             fontSize: config.fontSize,
             // We upscale the canvas to improve resolution, this will be brought back to the intended size
             // using the `scale` CSS property when the decoration is rendered.
