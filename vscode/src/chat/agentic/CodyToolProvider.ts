@@ -187,7 +187,7 @@ export class CodyToolProvider {
         return CodyToolProvider.instance?.factory.getInstances() ?? []
     }
 
-    public static setupOpenCtxProviderListener(): void {
+    private static setupOpenCtxProviderListener(): void {
         const provider = CodyToolProvider.instance
         if (provider && !CodyToolProvider.configSubscription) {
             CodyToolProvider.configSubscription = toolboxManager.observable.subscribe({})
