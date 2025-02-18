@@ -1,5 +1,5 @@
 import type { Action } from '@sourcegraph/cody-shared'
-import { BookText } from 'lucide-react'
+import { BookText, LibraryIcon } from 'lucide-react'
 import { useCallback } from 'react'
 import { Button } from '../../components/shadcn/ui/button'
 import { View } from '../../tabs'
@@ -43,7 +43,7 @@ export const PromptSelectField: React.FunctionComponent<{
     return (
         <ToolbarPopoverItem
             role="combobox"
-            iconEnd="chevron"
+            iconEnd={null}
             className={cn('tw-justify-between', className)}
             __storybook__open={__storybook__open}
             tooltip="Insert prompt from Prompt Library"
@@ -83,7 +83,7 @@ export const PromptSelectField: React.FunctionComponent<{
                 },
             }}
         >
-            Prompts
+            <LibraryIcon size={16} className="tw-mr-1" />
         </ToolbarPopoverItem>
     )
 }

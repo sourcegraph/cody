@@ -2,7 +2,7 @@ import { ps } from '@sourcegraph/cody-shared'
 import { getOSPromptString } from '../../os'
 
 export const ACTIONS_TAGS = {
-    ANSWER: ps`next_step`,
+    ANSWER: ps`next_step_mode`,
     CONTEXT: ps`context_list`,
 }
 
@@ -23,22 +23,23 @@ In this environment you have access to this set of tools you can use to fetch co
     <example_response>
         <{{CONTEXT_TAG}}>shared/file1.ts</{{CONTEXT_TAG}}><{{CONTEXT_TAG}}>shared/file2.ts</{{CONTEXT_TAG}}><{{CONTEXT_TAG}}>command</{{CONTEXT_TAG}}>
     <example_response>
-2. If you can answer the <user_input> fully with the context added to <{{CONTEXT_TAG}}>, add "<{{ANSWER_TAG}}>" at the end:
+2. If you can answer the <user_input> fully with the context added to <{{CONTEXT_TAG}}>, add "<{{ANSWER_TAG}}>" at the end with "answer" as the value. Change "answer" to "edit" if the request requires editing files:
     <example_response>
-        <{{CONTEXT_TAG}}>path/to/file1.ts</{{CONTEXT_TAG}}><{{CONTEXT_TAG}}>path/to/file2.ts</{{CONTEXT_TAG}}><{{CONTEXT_TAG}}>command</{{CONTEXT_TAG}}><{{ANSWER_TAG}}>
+        <{{CONTEXT_TAG}}>path/to/file1.ts</{{CONTEXT_TAG}}><{{CONTEXT_TAG}}>path/to/file2.ts</{{CONTEXT_TAG}}><{{CONTEXT_TAG}}>command</{{CONTEXT_TAG}}><{{ANSWER_TAG}}>answer</{{ANSWER_TAG}}>
     <example_response>
 3. If you need more information, use ONLY the appropriate <TOOL*> tag(s) in your response:
     <example_response>
         <TOOLFILE><name>path/to/file.ts</name></TOOLFILE><TOOLSEARCH><query>class Controller</query></TOOLSEARCH>
     <example_response>
-4. If you can answer the <user_input> fully without context, respond with ONLY the word "<{{ANSWER_TAG}}>":
+4. If you can answer the <user_input> fully without context, respond with ONLY the word "<{{ANSWER_TAG}}>answer</{{ANSWER_TAG}}>":
     <example_response>
-        <{{ANSWER_TAG}}>
+        <{{ANSWER_TAG}}>answer</{{ANSWER_TAG}}>
     <example_response>
 5. If you can answer the <user_input> fully without context, but need to use tool per <user_input>:
     <example_response>
-        <TOOLMEMORY><store>user's preferences</store></TOOLMEMORY><{{ANSWER_TAG}}>
+        <TOOLMEMORY><store>user's preferences</store></TOOLMEMORY><{{ANSWER_TAG}}>answer</{{ANSWER_TAG}}>
     <example_response>
+6. If the input specifies to ask to show search results, respond with "<{{ANSWER_TAG}}>search</{{ANSWER_TAG}}>" and nothing else.
 
 ## INVALIDE OUTPUT EXAMPLES
 - Empty context list: \`<{{CONTEXT_TAG}}></{{CONTEXT_TAG}}>\`

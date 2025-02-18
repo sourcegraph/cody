@@ -6,7 +6,6 @@ import {
     type ContextItem,
     ContextItemSource,
     type Message,
-    type ProcessingStep,
     type PromptMixin,
     PromptString,
     clientCapabilities,
@@ -18,7 +17,6 @@ import {
     telemetryRecorder,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
-import { DeepCodyAgentID } from '@sourcegraph/cody-shared/src/models/client'
 import { getContextFromRelativePath } from '../../commands/context/file-path'
 import { forkSignal } from '../../completions/utils'
 import { getCategorizedMentions, isUserAddedItem } from '../../prompt-builder/utils'
@@ -26,7 +24,7 @@ import type { ChatBuilder } from '../chat-view/ChatBuilder'
 import { DefaultPrompter } from '../chat-view/prompt'
 import type { CodyTool } from './CodyTool'
 import { CodyToolProvider, type ToolStatusCallback } from './CodyToolProvider'
-import { ProcessManager } from './ProcessManager'
+import type { ProcessManager } from './ProcessManager'
 import { ACTIONS_TAGS, CODYAGENT_PROMPTS } from './prompts'
 
 /**
@@ -52,8 +50,7 @@ export class DeepCodyAgent {
     protected readonly multiplexer = new BotResponseMultiplexer()
     protected readonly promptMixins: PromptMixin[] = []
     protected readonly tools: CodyTool[]
-    protected statusCallback: ToolStatusCallback
-    private stepsManager: ProcessManager
+    public statusCallback: ToolStatusCallback
 
     protected context: ContextItem[] = []
     /**
@@ -66,18 +63,12 @@ export class DeepCodyAgent {
     constructor(
         protected readonly chatBuilder: ChatBuilder,
         protected readonly chatClient: Pick<ChatClient, 'chat'>,
-        statusUpdateCallback: (steps: ProcessingStep[]) => void,
-        postRequest: (step: ProcessingStep) => Promise<boolean>
+        public stepsManager: ProcessManager
     ) {
         // Initialize tools, handlers and mixins in constructor
         this.tools = CodyToolProvider.getTools()
         this.initializeMultiplexer(this.tools)
         this.buildPrompt(this.tools)
-
-        this.stepsManager = new ProcessManager(
-            steps => statusUpdateCallback(steps),
-            step => postRequest(step)
-        )
 
         this.statusCallback = {
             onUpdate: (id, content) => {
@@ -165,7 +156,7 @@ export class DeepCodyAgent {
                 requestID,
                 model: DeepCodyAgent.model,
                 traceId: span.spanContext().traceId,
-                chatAgent: DeepCodyAgentID,
+                chatAgent: 'deep-cody',
             },
             metadata: {
                 loop: this.stats.loop, // Number of loops run.
@@ -178,6 +169,12 @@ export class DeepCodyAgent {
                 category: 'billable',
             },
         })
+        if (this.nextMode && this.nextMode !== 'answer') {
+            this.statusCallback.onStream({
+                title: 'New intent detected: ' + this.nextMode,
+                content: `Moving to ${this.nextMode} mode`,
+            })
+        }
         return this.context
     }
 
@@ -203,6 +200,8 @@ export class DeepCodyAgent {
         this.statusCallback.onComplete()
     }
 
+    public nextMode = ''
+
     /**
      * Reviews current context and generates new context items using configured tools.
      * The review process:
@@ -225,6 +224,11 @@ export class DeepCodyAgent {
             const res = await this.processStream(requestID, prompt, chatAbortSignal, DeepCodyAgent.model)
             // If the response is empty or only contains the answer token, it's ready to answer.
             if (!res || isReadyToAnswer(res)) {
+                return []
+            }
+
+            this.nextMode = nextMode(res)[0]
+            if (this.nextMode && this.nextMode === 'search') {
                 return []
             }
 
@@ -387,5 +391,7 @@ export class RawTextProcessor {
 
 const answerTag = ACTIONS_TAGS.ANSWER.toString()
 const contextTag = ACTIONS_TAGS.CONTEXT.toString()
-const isReadyToAnswer = (text: string) => text === `<${answerTag}>`
+const isReadyToAnswer = (text: string) => text === `<${answerTag}>answer</${answerTag}>`
+// const isEditRequest = (text: string) => text.includes(`<${answerTag}>edit</${answerTag}>`)
+const nextMode = (text: string) => RawTextProcessor.extract(text, 'next_step_mode')
 const toPlural = (num: number, text: string) => `${num} ${text}${num > 1 ? 's' : ''}`

@@ -1,8 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk'
-import { DeepCodyAgentID, ToolCodyModelRef } from '@sourcegraph/cody-shared/src/models/client'
+import { ToolCodyModelRef } from '@sourcegraph/cody-shared/src/models/client'
 import { getConfiguration } from '../../../configuration'
-import { ChatHandler } from './ChatHandler'
-import { DeepCodyHandler } from './DeepCodyHandler'
+import { AgenticHandler } from './AgenticHandler'
 import { EditHandler } from './EditHandler'
 import { SearchHandler } from './SearchHandler'
 import { ExperimentalToolHandler } from './ToolHandler'
@@ -20,14 +19,11 @@ function registerAgent(id: string, ctr: (id: string, tools: AgentTools) => Agent
 
 export function getAgent(id: string, modelId: string, tools: AgentTools): AgentHandler {
     const { contextRetriever, editor, chatClient } = tools
-    if (id === DeepCodyAgentID) {
-        return new DeepCodyHandler(modelId, contextRetriever, editor, chatClient)
-    }
     if (agentRegistry.has(id)) {
         return agentRegistry.get(id)!(id, tools)
     }
     // If id is not found, assume it's a base model
-    return new ChatHandler(modelId, contextRetriever, editor, chatClient)
+    return new AgenticHandler(modelId, contextRetriever, editor, chatClient)
 }
 
 registerAgent('search', (_id: string, _tools: AgentTools) => new SearchHandler())

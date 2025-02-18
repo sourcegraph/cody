@@ -117,6 +117,7 @@ function markdownPluginProps(): Pick<
                             ...(defaultSchema.attributes?.code || []),
                             // We use `data-file-path` to attach file path metadata to <code> blocks.
                             ['data-file-path'],
+                            ['regex'],
                             [
                                 'className',
                                 ...Object.keys(SYNTAX_HIGHLIGHTING_LANGUAGES).map(
