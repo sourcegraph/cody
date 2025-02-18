@@ -312,17 +312,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             case 'copy':
                 await handleCopiedCode(message.text, message.eventType === 'Button')
                 break
-            case 'smartApplyPrefetchSelection':
-                await handleSmartApply({
-                    id: message.id,
-                    code: message.code,
-                    authStatus: currentAuthStatus(),
-                    instruction: message.instruction || '',
-                    fileUri: message.fileName,
-                    traceparent: message.traceparent || undefined,
-                    isSelectionPrefetch: true,
-                })
-                break
+            case 'smartApplyPrefetch':
             case 'smartApplySubmit':
                 await handleSmartApply({
                     id: message.id,
@@ -331,7 +321,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     instruction: message.instruction || '',
                     fileUri: message.fileName,
                     traceparent: message.traceparent || undefined,
-                    isSelectionPrefetch: false,
+                    isPrefetch: message.command === 'smartApplyPrefetch',
                 })
                 break
             case 'trace-export':

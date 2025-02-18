@@ -128,7 +128,7 @@ export class EditManager implements vscode.Disposable {
              **/
             source = DEFAULT_EVENT_SOURCE,
             telemetryMetadata,
-            isPrefetchOnly,
+            isPrefetch,
         } = args
         const clientConfig = await ClientConfigSingleton.getInstance().getConfig()
         if (!clientConfig?.customCommandsEnabled) {
@@ -192,7 +192,7 @@ export class EditManager implements vscode.Disposable {
                 insertionPoint: configuration.insertionPoint,
                 telemetryMetadata,
                 taskId: configuration.id,
-                isPrefetch: isPrefetchOnly,
+                isPrefetch,
             })
         } else {
             task = await this.options.controller.promptUserForTask(
@@ -229,7 +229,7 @@ export class EditManager implements vscode.Disposable {
 
         const provider = this.getProviderForTask(task)
 
-        if (isPrefetchOnly) {
+        if (isPrefetch) {
             await provider.prefetchEdit()
         } else {
             this.options.controller.startDecorator(task)
@@ -443,7 +443,7 @@ export class EditManager implements vscode.Disposable {
 
     /**
      * Allows you to prefetch the smart apply response in advance (e.g., when
-     * rendering a button) so that when the user eventually trigger smartApplyEdit,
+     * rendering a button) so that when the user eventually triggers smartApplyEdit,
      * the response is already cached or in-flight.
      */
     public async prefetchSmartApply(args: SmartApplyArguments): Promise<void> {
@@ -482,7 +482,7 @@ export class EditManager implements vscode.Disposable {
                 intent: 'edit',
             },
             source: 'chat',
-            isPrefetchOnly: true,
+            isPrefetch: true,
         })
     }
 
@@ -550,6 +550,7 @@ export class EditManager implements vscode.Disposable {
         }
 
         if (!isPrefetch) {
+            console.log('logging telemetry')
             // Log the default edit command name for doc intent or test mode
             const isDocCommand = intent === 'doc' ? 'doc' : undefined
             const isUnitTestCommand = intent === 'test' ? 'test' : undefined

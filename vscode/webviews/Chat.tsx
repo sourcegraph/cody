@@ -106,15 +106,15 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             text,
             instruction,
             fileName,
-            isSelectionPrefetch,
+            isPrefetch,
         }: {
             id: string
             text: string
-            isSelectionPrefetch: boolean
+            isPrefetch: boolean
             instruction?: PromptString
             fileName?: string
         }) {
-            const command = isSelectionPrefetch ? 'smartApplyPrefetchSelection' : 'smartApplySubmit'
+            const command = isPrefetch ? 'smartApplyPrefetch' : 'smartApplySubmit'
 
             const spanManager = new SpanManager('cody-webview')
             const span = spanManager.startSpan(command, {
@@ -150,7 +150,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                 }
 
                 prefetchedEdits.set(id, true)
-                onSubmit({ isSelectionPrefetch: true, id, text, instruction, fileName })
+                onSubmit({ isPrefetch: true, id, text, instruction, fileName })
             },
             onSubmit: (
                 id: string,
@@ -158,7 +158,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                 instruction?: PromptString,
                 fileName?: string
             ): void => {
-                onSubmit({ isSelectionPrefetch: false, id, text, instruction, fileName })
+                onSubmit({ isPrefetch: false, id, text, instruction, fileName })
             },
             onAccept: (id: string) => {
                 vscodeAPI.postMessage({

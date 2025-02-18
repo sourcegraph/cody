@@ -188,7 +188,7 @@ export async function handleSmartApply({
     instruction,
     fileUri,
     traceparent,
-    isSelectionPrefetch,
+    isPrefetch,
 }: {
     id: string
     code: string
@@ -196,7 +196,7 @@ export async function handleSmartApply({
     instruction?: string | null
     fileUri?: string | null
     traceparent?: string | undefined | null
-    isSelectionPrefetch: boolean
+    isPrefetch: boolean
 }): Promise<void> {
     const activeEditor = getEditor()?.active
     const workspaceUri = vscode.workspace.workspaceFolders?.[0].uri
@@ -214,7 +214,7 @@ export async function handleSmartApply({
         throw new Error('No editor found to insert text')
     }
 
-    if (isSelectionPrefetch) {
+    if (isPrefetch) {
         executePrefetchSmartApply({
             configuration: {
                 id,
