@@ -94,7 +94,7 @@ export class ChatBuilder {
 
         public readonly sessionID: string = new Date(Date.now()).toUTCString(),
         private messages: ChatMessage[] = [],
-        public customChatTitle?: string
+        private customChatTitle?: string
     ) {}
 
     /** An observable that emits whenever the {@link ChatBuilder}'s chat changes. */
