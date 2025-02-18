@@ -36,3 +36,4 @@ pnpm test:e2e $TEST_FILE_NAME  --debug
    await page.getByLabel('.vscode', { exact: true }).hover()
    await page.getByLabel('.vscode', { exact: true }).click()
    ```
+Hello World

@@ -20,3 +20,4 @@ pnpm vitest --watch vscode/src/tree-sitter/query-tests/**/*.test.ts
 | - query start position in the source file.
 █ – query start position in the annotated file.
 ^ – characters matching the last query result.`
+Hello World
