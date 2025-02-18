@@ -23,7 +23,7 @@ export const executeSmartApply = async (args: SmartApplyArguments): Promise<Fixu
     return vscode.commands.executeCommand<FixupTask | undefined>('cody.command.smart-apply', args)
 }
 
-export const executeprefetchSmartApply = async (
+export const executePrefetchSmartApply = async (
     args: SmartApplyArguments
 ): Promise<FixupTask | undefined> => {
     return vscode.commands.executeCommand<FixupTask | undefined>(

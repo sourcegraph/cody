@@ -1,5 +1,4 @@
 import { context } from '@opentelemetry/api'
-import { LRUCache } from 'lru-cache'
 import * as vscode from 'vscode'
 
 import {
@@ -16,16 +15,17 @@ import {
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
 
+import { isUriIgnoredByContextFilterWithNotification } from '../cody-ignore/context-filter'
 import type { GhostHintDecorator } from '../commands/GhostHintDecorator'
 import { getEditor } from '../editor/active-editor'
 import type { VSCodeEditor } from '../editor/vscode-editor'
+import type { ExtensionClient } from '../extension-client'
 import type { CreateTaskOptions, FixupController } from '../non-stop/FixupController'
 import type { FixupTask } from '../non-stop/FixupTask'
-
-import { isUriIgnoredByContextFilterWithNotification } from '../cody-ignore/context-filter'
-import type { ExtensionClient } from '../extension-client'
 import { ACTIVE_TASK_STATES } from '../non-stop/codelenses/constants'
 import { splitSafeMetadata } from '../services/telemetry-v2'
+
+import { EditCacheManager } from './cache-manager'
 import {
     EditLoggingFeatureFlagManager,
     SmartApplyContextLogger,
@@ -55,14 +55,7 @@ export class EditManager implements vscode.Disposable {
     private editProviders = new WeakMap<FixupTask, EditProvider>()
     private loggingFeatureFlagManagerInstance = new EditLoggingFeatureFlagManager()
     private smartApplyContextLogger = new SmartApplyContextLogger(this.loggingFeatureFlagManagerInstance)
-
-    /**
-     * Cache to store in-progress or completed smart apply selection promises keyed by task ID
-     */
-    private inFlightSmartApplySelections = new LRUCache<
-        string,
-        Promise<ReturnType<typeof getSmartApplySelection>>
-    >({ max: 20 })
+    private cacheManager = new EditCacheManager()
 
     constructor(public options: EditManagerOptions) {
         /**
@@ -120,10 +113,10 @@ export class EditManager implements vscode.Disposable {
     }
 
     /**
-     * “executeEdit” can now optionally prefetch the LLM response by calling
-     * “provider.prefetchEdit” instead of “provider.startEdit.” This is controlled
-     * by the “prefetchOnly” parameter. If true, we kick off streaming in the background
-     * but do not immediately apply the edit to the user’s file.
+     * "executeEdit" can now optionally prefetch the LLM response by calling
+     * "provider.prefetchEdit" instead of "provider.startEdit." This is controlled
+     * by the "prefetchOnly" parameter. If true, we kick off streaming in the background
+     * but do not immediately apply the edit to the user's file.
      */
     public async executeEdit(args: ExecuteEditArguments = {}): Promise<FixupTask | undefined> {
         const {
@@ -459,7 +452,7 @@ export class EditManager implements vscode.Disposable {
             return
         }
 
-        if (this.inFlightSmartApplySelections.get(configuration.id)) {
+        if (this.cacheManager.getSelectionPromise(configuration.id)) {
             return
         }
 
@@ -498,7 +491,7 @@ export class EditManager implements vscode.Disposable {
         replacementCode: PromptString,
         model: string
     ): Promise<ReturnType<typeof getSmartApplySelection>> {
-        let inFlight = this.inFlightSmartApplySelections.get(configuration.id)
+        let inFlight = this.cacheManager.getSelectionPromise(configuration.id)
         if (!inFlight) {
             inFlight = (async (): Promise<ReturnType<typeof getSmartApplySelection>> => {
                 const versions = await currentSiteVersion()
@@ -515,12 +508,12 @@ export class EditManager implements vscode.Disposable {
                     versions.codyAPIVersion
                 )
             })()
-            this.inFlightSmartApplySelections.set(configuration.id, inFlight)
+            this.cacheManager.setSelectionPromise(configuration.id, inFlight)
         }
         try {
             return await inFlight
         } catch (error) {
-            this.inFlightSmartApplySelections.delete(configuration.id)
+            this.cacheManager.delete(configuration.id)
             throw error
         }
     }
@@ -603,7 +596,7 @@ export class EditManager implements vscode.Disposable {
         let provider = this.editProviders.get(task)
 
         if (!provider) {
-            provider = new EditProvider({ task, ...this.options })
+            provider = new EditProvider({ task, ...this.options, cacheManager: this.cacheManager })
             this.editProviders.set(task, provider)
         }
 

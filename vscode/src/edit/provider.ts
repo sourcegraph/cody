@@ -1,4 +1,3 @@
-import { LRUCache } from 'lru-cache'
 import { workspace } from 'vscode'
 import { Utils } from 'vscode-uri'
 
@@ -33,6 +32,7 @@ import { CodyTaskState } from '../non-stop/state'
 import { splitSafeMetadata } from '../services/telemetry-v2'
 import { countCode } from '../services/utils/code-count'
 import { resolveRelativeOrAbsoluteUri } from '../services/utils/edit-create-file'
+import type { EditCacheManager } from './cache-manager'
 import type { EditManagerOptions } from './manager'
 import { responseTransformer } from './output/response-transformer'
 import { buildInteraction } from './prompt'
@@ -43,39 +43,36 @@ import { isStreamedIntent } from './utils/edit-intent'
 interface EditProviderOptions extends EditManagerOptions {
     task: FixupTask
     controller: FixupController
+    cacheManager: EditCacheManager
 }
 
 /**
+ * Represents the possible states of a streaming edit session
+ */
+type StreamState = 'prefetching' | 'streaming' | 'completed'
+
+/**
  * Data structure that captures an in-progress or completed streaming session
- * for a given task. This allows both “prefetch” and “startEdit” to share
+ * for a given task. This allows both "prefetch" and "startEdit" to share
  * partial text and avoid multiple LLM requests.
  */
-interface StreamSession {
-    // Accumulates partial text as it comes in
+export interface StreamSession {
+    /** Accumulates partial text as it comes in */
     partialText: string
-    // Tracks whether streaming is fully done
-    isComplete: boolean
-    // For streaming abort
+    /** For streaming abort */
     abortController: AbortController
-    // In-flight streaming promise (so we won't start two streams for the same task)
+    /** In-flight streaming promise (so we won't start two streams for the same task) */
     streamingPromise: Promise<void> | null
-    // Multiplexer to broadcast partial content
+    /** Multiplexer to broadcast partial content */
     multiplexer: BotResponseMultiplexer
-    // TODO: hacky way to notify the streaming logic that we now want to update the UI
-    // with the response. This field is `false` initially during prefetching and is
-    // mutated to `true` when user clicks "start edit".
-    isPrefetchActive: boolean
+    /** Current state of the streaming session */
+    state: StreamState
 }
 
 /**
  * We store the streaming session in a Map keyed by task ID so prefetchEdit
- * and startEdit share the same stream if it’s in progress.
+ * and startEdit share the same stream if it's in progress.
  */
-const streamingSessions = new LRUCache<string, StreamSession>({ max: 20 })
-
-// Initiates a completion and responds to the result from the LLM. Implements
-// "tools" like directing the response into a specific file. Code is forwarded
-// to the FixupTask.
 export class EditProvider {
     private insertionQueue: { response: string; isMessageInProgress: boolean }[] = []
     private insertionInProgress = false
@@ -83,17 +80,18 @@ export class EditProvider {
     constructor(public config: EditProviderOptions) {}
 
     /**
-     * Attempt to start streaming in “prefetch mode.” If a stream is already
-     * in progress for this task, do nothing. The user has not clicked “apply”
+     * Attempt to start streaming in "prefetch mode." If a stream is already
+     * in progress for this task, do nothing. The user has not clicked "apply"
      * yet, so we do NOT call controller.startTask here.
      */
     public async prefetchEdit(): Promise<void> {
         const { task } = this.config
-        if (!streamingSessions.has(task.id)) {
+        const session = this.config.cacheManager.getStreamSession(task.id)
+        if (!session) {
             // Kick off streaming in the background (but do not mark the task as started)
-            this.performStreamingEdit({ taskId: task.id, isPrefetchActive: true }).catch(error => {
+            this.performStreamingEdit({ taskId: task.id, initialState: 'prefetching' }).catch(error => {
                 // Remove the broken session so subsequent tries can retry
-                streamingSessions.delete(task.id)
+                this.config.cacheManager.delete(task.id)
                 // Rethrow so logs are visible
                 throw error
             })
@@ -101,7 +99,7 @@ export class EditProvider {
     }
 
     /**
-     * Called when the user actually clicks the button to “start edit.” If
+     * Called when the user actually clicks the button to "start edit." If
      * streaming was prefetching in the background and is not completed, we
      * reuse the partial text. If no streaming session exists yet, we start it
      * normally. If streaming completed, we apply the final text instantly.
@@ -109,25 +107,25 @@ export class EditProvider {
     public async startEdit(): Promise<void> {
         const taskId = this.config.task.id
         const now = performance.now()
+        const session = this.config.cacheManager.getStreamSession(taskId)
         // If no streaming session or there was an error, start from scratch
-        if (!streamingSessions.has(taskId)) {
-            await this.performStreamingEdit({ taskId, isPrefetchActive: false })
+        if (!session) {
+            await this.performStreamingEdit({ taskId, initialState: 'streaming' })
             console.log(`Edit patch latency ${Math.floor(performance.now() - now)}ms`)
             return
         }
-        const session = streamingSessions.get(taskId)!
         // If streaming is already complete, just apply the final partial text
-        if (session.isComplete) {
+        if (session.state === 'completed') {
             // Mark the task started for UI
             this.config.controller.startTask(this.config.task)
             console.log(`Edit patch latency ${Math.floor(performance.now() - now)}ms`)
             // The final text is in session.partialText
             return this.handleResponse(session.partialText, false)
         }
-        // If streaming is still in progress, we “startTask” now for UI,
+        // If streaming is still in progress, we "startTask" now for UI,
         // then replay what has arrived so far, and continue to stream new tokens.
         this.config.controller.startTask(this.config.task)
-        session.isPrefetchActive = false
+        session.state = 'streaming'
         // Immediately apply what has already been streamed
         if (session.partialText) {
             await this.handleResponse(session.partialText, true)
@@ -140,7 +138,7 @@ export class EditProvider {
 
     public abortEdit(): void {
         const taskId = this.config.task.id
-        const session = streamingSessions.get(taskId)
+        const session = this.config.cacheManager.getStreamSession(taskId)
         if (session) {
             session.abortController.abort()
         }
@@ -148,7 +146,7 @@ export class EditProvider {
 
     /**
      * Called by external code to directly apply the entire response (skipping any streaming).
-     * We still call “startTask” first to ensure the UI updates accordingly.
+     * We still call "startTask" first to ensure the UI updates accordingly.
      */
     public applyEdit(response: string): Promise<void> {
         this.config.controller.startTask(this.config.task)
@@ -158,31 +156,33 @@ export class EditProvider {
     /**
      * The main streaming logic, extracted from the original startEdit. The only
      * difference is we have a parameter startTask that determines if we call
-     * “controller.startTask” right away or wait until the user actually clicks.
+     * "controller.startTask" right away or wait until the user actually clicks.
      */
     private async performStreamingEdit({
         taskId,
-        isPrefetchActive,
-    }: { taskId: string; isPrefetchActive: boolean }): Promise<void> {
+        initialState,
+    }: {
+        taskId: string
+        initialState: StreamState
+    }): Promise<void> {
         console.log('performStreamingEdit: start')
         const fetchStart = performance.now()
         // Create a new session object and store it
         const abortController = new AbortController()
         const multiplexer = new BotResponseMultiplexer()
         const session: StreamSession = {
-            isComplete: false,
-            partialText: '',
+            state: initialState,
             abortController,
             multiplexer,
             streamingPromise: null,
-            isPrefetchActive,
+            partialText: '',
         }
-        streamingSessions.set(taskId, session)
+        this.config.cacheManager.setStreamSession(taskId, session)
 
         session.streamingPromise = wrapInActiveSpan('command.edit.streaming', async span => {
             span.setAttribute('sampled', true)
 
-            if (!session.isPrefetchActive) {
+            if (session.state === 'streaming') {
                 this.config.controller.startTask(this.config.task)
             }
 
@@ -213,8 +213,8 @@ export class EditProvider {
             const typewriter = new Typewriter({
                 update: content => {
                     session.partialText = content // store partial text in session
-                    // If the user has called startEdit already, handle partial tokens
-                    if (!session.isPrefetchActive) {
+                    // If the session is in streaming state, handle partial tokens
+                    if (session.state === 'streaming') {
                         void this.handleResponse(content, true)
                     }
                 },
@@ -231,18 +231,18 @@ export class EditProvider {
                 onTurnComplete: async () => {
                     typewriter.close()
                     typewriter.stop()
-                    session.isComplete = true
+                    const wasStreaming = session.state === 'streaming'
+                    session.state = 'completed'
                     session.partialText = text
-                    // If user has started the task, pass final text to handleResponse(false)
-                    // otherwise it’s “prefetched” and not yet shown or used
-                    if (!session.isPrefetchActive) {
+                    // If session is in streaming state, apply the final text in the UI.
+                    if (wasStreaming) {
                         await this.handleResponse(text, false)
                     }
                     return Promise.resolve()
                 },
             })
 
-            // If “test” intent, handle test-file naming
+            // If "test" intent, handle test-file naming
             if (this.config.task.intent === 'test') {
                 if (this.config.task.destinationFile) {
                     // We have already provided a destination file,
@@ -261,7 +261,7 @@ export class EditProvider {
                     onResponse: async (content: string) => {
                         filepath += content
                         // handleFileCreationResponse will check if destinationFile is set
-                        if (!session.isPrefetchActive) {
+                        if (session.state === 'streaming') {
                             void this.handleFileCreationResponse(filepath, true)
                         }
                         return Promise.resolve()
@@ -320,9 +320,9 @@ export class EditProvider {
                         let err = message.error
                         logError('EditProvider:onError', err.message)
                         if (isAbortError(err)) {
-                            // Streams intentionally aborted; if user started the task,
+                            // Streams intentionally aborted; if in streaming state,
                             // pass final partial text
-                            if (!session.isPrefetchActive) {
+                            if (session.state === 'streaming') {
                                 void this.handleResponse(text, false)
                             }
                             return

@@ -16,7 +16,7 @@ import {
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
 import { doesFileExist } from '../../commands/utils/workspace-files'
-import { executeSmartApply, executeprefetchSmartApply } from '../../edit/smart-apply'
+import { executePrefetchSmartApply, executeSmartApply } from '../../edit/smart-apply'
 import { getEditor } from '../../editor/active-editor'
 import type { VSCodeEditor } from '../../editor/vscode-editor'
 import { isRunningInsideAgent } from '../../jsonrpc/isRunningInsideAgent'
@@ -215,7 +215,7 @@ export async function handleSmartApply({
     }
 
     if (isSelectionPrefetch) {
-        executeprefetchSmartApply({
+        executePrefetchSmartApply({
             configuration: {
                 id,
                 document,
