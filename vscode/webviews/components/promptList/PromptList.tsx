@@ -1,7 +1,7 @@
 import clsx from 'clsx'
 import { type FC, useCallback, useMemo, useState } from 'react'
 
-import { type Action, CodyIDE, PromptMode, type PromptsInput } from '@sourcegraph/cody-shared'
+import type { Action, PromptsInput } from '@sourcegraph/cody-shared'
 
 import { useLocalStorage } from '../../components/hooks'
 import { useTelemetryRecorder } from '../../utils/telemetry'
@@ -42,7 +42,6 @@ interface PromptListProps {
     recommendedOnly?: boolean
     onSelect: (item: Action) => void
     promptFilters?: PromptsFilterArgs
-    IDE?: CodyIDE
 }
 
 /**
@@ -67,10 +66,9 @@ export const PromptList: FC<PromptListProps> = props => {
         recommendedOnly,
         onSelect: parentOnSelect,
         promptFilters,
-        IDE,
     } = props
-
-    const endpointURL = new URL(useConfig().authStatus.endpoint)
+    const { clientCapabilities, authStatus } = useConfig()
+    const endpointURL = new URL(authStatus.endpoint)
     const telemetryRecorder = useTelemetryRecorder()
     const [lastUsedActions = {}] = useLocalStorage<Record<string, number>>('last-used-actions-v2', {})
 
@@ -167,27 +165,22 @@ export const PromptList: FC<PromptListProps> = props => {
                 return actions.filter(action => action.actionType === 'prompt' && action.builtin)
             }
 
-            const isWebClient = IDE === CodyIDE.Web
             const shouldExcludeBuiltinCommands =
                 promptFilters?.promoted || promptFilters?.owner || promptFilters?.tags
 
-            if (shouldExcludeBuiltinCommands && isWebClient) {
-                return actions.filter(
-                    action =>
-                        action.actionType === 'prompt' &&
-                        !action.builtin &&
-                        action.mode === PromptMode.CHAT
+            const isEditEnabled = clientCapabilities.edit === 'enabled'
+            if (!isEditEnabled) {
+                actions = actions.filter(action =>
+                    action.actionType === 'prompt' ? action.mode === 'CHAT' : action.mode === 'ask'
                 )
             }
             if (shouldExcludeBuiltinCommands) {
                 return actions.filter(action => action.actionType === 'prompt' && !action.builtin)
             }
-            if (isWebClient) {
-                return actions.filter(action => action.mode === PromptMode.CHAT)
-            }
+
             return actions
         },
-        [promptFilters, IDE]
+        [promptFilters, clientCapabilities.edit]
     )
 
     // Don't show builtin commands to insert in the prompt editor.
