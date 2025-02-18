@@ -1,9 +1,11 @@
 import type { Action, ChatMessage, Model } from '@sourcegraph/cody-shared'
-import { useExtensionAPI } from '@sourcegraph/prompt-editor'
+import type { OmniboxHandlerOption } from '@sourcegraph/cody-shared/src/models/model'
+import { useExtensionAPI, useObservable } from '@sourcegraph/prompt-editor'
 import clsx from 'clsx'
-import { type FunctionComponent, useCallback } from 'react'
+import { concat } from 'lodash'
+import { type FunctionComponent, useCallback, useMemo, useState } from 'react'
 import type { UserAccountInfo } from '../../../../../../Chat'
-import { ModelSelectField } from '../../../../../../components/modelSelectField/ModelSelectField'
+import { HandlerSelectField } from '../../../../../../components/modelSelectField/HandlerSelectField'
 import { PromptSelectField } from '../../../../../../components/promptSelectField/PromptSelectField'
 import toolbarStyles from '../../../../../../components/shadcn/ui/toolbar.module.css'
 import { useActionSelect } from '../../../../../../prompts/PromptsTab'
@@ -33,7 +35,6 @@ export const Toolbar: FunctionComponent<{
     hidden?: boolean
     className?: string
     intent?: ChatMessage['intent']
-
     manuallySelectIntent: (intent: ChatMessage['intent']) => void
 }> = ({
     userInfo,
@@ -80,6 +81,13 @@ export const Toolbar: FunctionComponent<{
             data-testid="chat-editor-toolbar"
         >
             <div className="tw-flex tw-items-center">
+                <ModelSelectFieldToolbarItem
+                    models={models}
+                    userInfo={userInfo}
+                    focusEditor={focusEditor}
+                    className="tw-mr-1"
+                />
+                <PromptSelectFieldToolbarItem focusEditor={focusEditor} className="tw-ml-1 tw-mr-1" />
                 {/* Can't use tw-gap-1 because the popover creates an empty element when open. */}
                 {onMentionClick && (
                     <AddContextButton
@@ -87,13 +95,6 @@ export const Toolbar: FunctionComponent<{
                         className={`tw-opacity-60 focus-visible:tw-opacity-100 hover:tw-opacity-100 tw-mr-2 tw-gap-0.5 ${toolbarStyles.button} ${toolbarStyles.buttonSmallIcon}`}
                     />
                 )}
-                <PromptSelectFieldToolbarItem focusEditor={focusEditor} className="tw-ml-1 tw-mr-1" />
-                <ModelSelectFieldToolbarItem
-                    models={models}
-                    userInfo={userInfo}
-                    focusEditor={focusEditor}
-                    className="tw-mr-1"
-                />
             </div>
             <div className="tw-flex-1 tw-flex tw-justify-end">
                 <SubmitButton
@@ -135,22 +136,39 @@ const ModelSelectFieldToolbarItem: FunctionComponent<{
     const serverSentModelsEnabled = !!clientConfig?.modelsAPIEnabled
 
     const api = useExtensionAPI()
+    const handlers =
+        useObservable<OmniboxHandlerOption[]>(useMemo(() => api.handlers(), [api.handlers])).value ?? []
+
+    // TODO(beyang): this is duplicated state with ChatBuilder.selectedAgent. Either move source of truth to that or move it here.
+    const [selectedHandler, setSelectedHandler] = useState<string>(handlers[0]?.id ?? undefined)
+    const handlerList = concat(
+        handlers.filter(a => a.id === selectedHandler) ?? [],
+        handlers.filter(a => a.id !== selectedHandler)
+    )
 
     const onModelSelect = useCallback(
-        (model: Model) => {
-            api.setChatModel(model.id).subscribe({
-                error: error => console.error('setChatModel:', error),
-            })
+        (handler: OmniboxHandlerOption) => {
+            setSelectedHandler(handler.id)
+            const { model } = handler
+            if (model) {
+                api.setHandler('model', model.id).subscribe({
+                    error: error => console.error('setHandler:', error),
+                })
+            } else {
+                api.setHandler(handler.id, undefined).subscribe({
+                    error: error => console.error('setHandler:', error),
+                })
+            }
             focusEditor?.()
         },
-        [api.setChatModel, focusEditor]
+        [focusEditor, api.setHandler]
     )
 
     return (
         !!models?.length &&
         (userInfo.isDotComUser || serverSentModelsEnabled) && (
-            <ModelSelectField
-                models={models}
+            <HandlerSelectField
+                handlers={handlerList}
                 onModelSelect={onModelSelect}
                 serverSentModelsEnabled={serverSentModelsEnabled}
                 userInfo={userInfo}
