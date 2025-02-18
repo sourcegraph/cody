@@ -95,6 +95,7 @@ import type { startTokenReceiver } from '../../auth/token-receiver'
 import { getCurrentUserId } from '../../auth/user'
 import { getContextFileFromUri } from '../../commands/context/file-path'
 import { getContextFileFromCursor } from '../../commands/context/selection'
+import { getEditor } from '../../editor/active-editor'
 import type { VSCodeEditor } from '../../editor/vscode-editor'
 import type { ExtensionClient } from '../../extension-client'
 import { migrateAndNotifyForOutdatedModels } from '../../models/modelMigrator'
@@ -1147,7 +1148,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
     public async handleGetUserEditorContext(uri?: URI): Promise<void> {
         // Get selection from the active editor
-        const selection = vscode.window.activeTextEditor?.selection
+        const selection = getEditor()?.active?.selection
 
         // Determine context based on URI presence
         const contextItem = uri
@@ -1169,7 +1170,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                           // Remove content to avoid sending large data to the webview
                           content: undefined,
                           isTooLarge: contextItem.size ? contextItem.size > userContextSize : undefined,
-                          source: ContextItemSource.User,
+                          source: ContextItemSource.Selection,
                           range: contextItem.range,
                       } satisfies ContextItem,
                   ]
