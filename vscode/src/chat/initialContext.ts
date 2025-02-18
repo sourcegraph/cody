@@ -19,6 +19,7 @@ import {
     featureFlagProvider,
     fromVSCodeEvent,
     isDotCom,
+    isEnterpriseUser,
     isError,
     openctxController,
     pendingOperation,
@@ -184,8 +185,10 @@ export function getCorpusContextItemsForEditorState(): Observable<
                     authenticated: authStatus.authenticated,
                     endpoint: authStatus.endpoint,
                     allowRemoteContext: clientCapabilities().isCodyWeb || !isDotCom(authStatus),
+                    isEnterprise: isEnterpriseUser(authStatus),
                 }) satisfies Pick<AuthStatus, 'authenticated' | 'endpoint'> & {
                     allowRemoteContext: boolean
+                    isEnterprise: boolean
                 }
         ),
         distinctUntilChanged()
@@ -231,7 +234,7 @@ export function getCorpusContextItemsForEditorState(): Observable<
                     })
                 }
                 if (remoteReposForAllWorkspaceFolders.length === 0) {
-                    if (!clientCapabilities().isCodyWeb) {
+                    if (!clientCapabilities().isCodyWeb && !authStatus.isEnterprise) {
                         items.push({
                             type: 'open-link',
                             title: 'Current Repository',
