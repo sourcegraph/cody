@@ -220,3 +220,4 @@ If you have any questions, feedback, or bug report, we appreciate if you [open a
   - Mac: Go to `IntelliJ IDEA | Preferences` (or use <kbd>⌘,</kbd>)
 - Click `Plugins` in the left-hand pane, then the `Installed` tab at the top
 - Find `Sourcegraph` → Right click → `Uninstall` (or uncheck to disable)
+Hello World
