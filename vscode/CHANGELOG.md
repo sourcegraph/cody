@@ -4,6 +4,95 @@ This is a log of all notable changes to Cody for VS Code.
 
 <!--- {/_ CHANGELOG_START _/} -->
 
+## 1.70.0
+
+### Features
+
+#### Auto-Edit
+
+- Fix slightly misaligned image decorations [#7040](https://github.com/sourcegraph/cody/pull/7040)
+- Use the users' font size when generating images [#7036](https://github.com/sourcegraph/cody/pull/7036)
+
+#### Chat
+
+- Turn prompt caching on for code context messages (CODY-4808) [#6953](https://github.com/sourcegraph/cody/pull/6953)
+- Simplify chat UI [#6992](https://github.com/sourcegraph/cody/pull/6992)
+
+#### Others
+
+- support for dynamic mentions in @ mention menu for prompt templates [#6793](https://github.com/sourcegraph/cody/pull/6793)
+
+### Fix
+
+#### Auto-Edit
+
+- Fix low resolution images on low DPI screens [#7112](https://github.com/sourcegraph/cody/pull/7112)
+
+#### Chat
+
+- At mention menu open outside the editor window [#7045](https://github.com/sourcegraph/cody/pull/7045)
+- language filters in rules not applying correctly [#7025](https://github.com/sourcegraph/cody/pull/7025)
+- expansion of current-tab generic mention when non editor tabs are opened [#6910](https://github.com/sourcegraph/cody/pull/6910)
+- Fix 500ms delay when submitting chat message [#6991](https://github.com/sourcegraph/cody/pull/6991) [#6990](https://github.com/sourcegraph/cody/pull/6990)
+- Fix Repo filter dropdown z-index [#6994](https://github.com/sourcegraph/cody/pull/6994)
+- Fix border on history search [#6983](https://github.com/sourcegraph/cody/pull/6983)
+- Fix repo name being `Symbol(@@pendingOperation)` if repo is local [#7042](https://github.com/sourcegraph/cody/pull/7042)
+- simplify models fixtures [#6996](https://github.com/sourcegraph/cody/pull/6996)
+- chat ui: remove user avatars, remove speaker name from follow-up message [#6981](https://github.com/sourcegraph/cody/pull/6981)
+- remove chat message feedback and "Try again with different" model/context [#6980](https://github.com/sourcegraph/cody/pull/6980)
+- Remove intent leftovers [#7051](https://github.com/sourcegraph/cody/pull/7051)
+- Remove Intent Detection [#7039](https://github.com/sourcegraph/cody/pull/7039)
+- Remove hard-coded 'deep-cody' and replace with constant [#6958](https://github.com/sourcegraph/cody/pull/6958)
+- Improve code border styles [#7024](https://github.com/sourcegraph/cody/pull/7024)
+- Fix keyDown:paste [#6938](https://github.com/sourcegraph/cody/pull/6938)
+
+#### Jetbrains
+
+- remove duplicate sg logo svg [#7099](https://github.com/sourcegraph/cody/pull/7099)
+
+#### Release
+
+- Update the JetBrains link to release notes. [#6976](https://github.com/sourcegraph/cody/pull/6976)
+
+#### Ui
+
+- Fix bugs in the UI [#7001](https://github.com/sourcegraph/cody/pull/7001)
+- Wire StatusBar into AutoeditsProvider (CODY-4706) [#6955](https://github.com/sourcegraph/cody/pull/6955)
+
+#### Others
+
+- Fix chevron for open/closed search results [#6978](https://github.com/sourcegraph/cody/pull/6978)
+- Stop button on cody web [#6939](https://github.com/sourcegraph/cody/pull/6939)
+
+### Chore
+
+#### Dev
+
+- fix kotlin bindings [#7043](https://github.com/sourcegraph/cody/pull/7043)
+- Fix cody web sandbox cors problem [#7010](https://github.com/sourcegraph/cody/pull/7010)
+- disable windows/macOS e2e tests on main, shard ubuntu tests [#7031](https://github.com/sourcegraph/cody/pull/7031)
+- experimental: Re-enable tool-cody for exploration [#6979](https://github.com/sourcegraph/cody/pull/6979)
+
+#### Marketing
+
+- update JB plugin icon [#7085](https://github.com/sourcegraph/cody/pull/7085)
+
+#### Release
+
+- upgrade changelog generator [#7081](https://github.com/sourcegraph/cody/pull/7081)
+- Bump package version and update changelog for 1.66 [#7003](https://github.com/sourcegraph/cody/pull/7003)
+- VSCode stable release Slack announcements to point to the correct release branches [#6975](https://github.com/sourcegraph/cody/pull/6975)
+- Bump package version and update changelog for 1.66 [#6971](https://github.com/sourcegraph/cody/pull/6971)
+- Update cody web to 0.30.0 [#7033](https://github.com/sourcegraph/cody/pull/7033)
+- Update Cody Web to V0.31.0 [#7053](https://github.com/sourcegraph/cody/pull/7053)
+- ignore aider files [#7013](https://github.com/sourcegraph/cody/pull/7013)
+- remove unused code [#6998](https://github.com/sourcegraph/cody/pull/6998)
+- Changelog for 1.68.0 [#7089](https://github.com/sourcegraph/cody/pull/7089)
+
+### Reverts
+
+- There were no reverts for this release
+
 ## 1.68.0
 
 ### Features
@@ -20,7 +109,8 @@ This is a log of all notable changes to Cody for VS Code.
 - Add Prompt Caching to Code Context (CODY-4807) [#6878](https://github.com/sourcegraph/cody/pull/6878)
 
 #### Chat
-- Use rules (.sourcegraph/*.rule.md) in chat and inline edit [#6909](https://github.com/sourcegraph/cody/pull/6909)
+
+- Use rules (.sourcegraph/\*.rule.md) in chat and inline edit [#6909](https://github.com/sourcegraph/cody/pull/6909)
 - Adds searching chat history to the history tab [#6897](https://github.com/sourcegraph/cody/pull/6897)
 
 #### Edit
@@ -55,6 +145,7 @@ This is a log of all notable changes to Cody for VS Code.
 - Mark at-mention context items as user-added items [#6920](https://github.com/sourcegraph/cody/pull/6920)
 
 #### Chat
+
 - Bottom prompt buttons cut off [#6945](https://github.com/sourcegraph/cody/pull/6945)
 - Fix paragraph spacing in submit button dropdown if no intent is detected [#6952](https://github.com/sourcegraph/cody/pull/6952)
 - Remove chat message feedback and "Try again with different" model/context [#7008](https://github.com/sourcegraph/cody/pull/7008)
@@ -88,9 +179,9 @@ This is a log of all notable changes to Cody for VS Code.
 - Cleanup the logging with the context source for logging [#6901](https://github.com/sourcegraph/cody/pull/6901)
 
 #### Chat
+
 - Add a retry button for Cody API version error (CODY-4864) [#6926](https://github.com/sourcegraph/cody/pull/6926)
 
-  
 #### Marketing
 
 - Update marketplace and in product logos [#6959](https://github.com/sourcegraph/cody/pull/6959)
@@ -113,52 +204,60 @@ This is a log of all notable changes to Cody for VS Code.
 
 - Revert "Revert commits 9719dc4, 1c16f35, 1ed8392, 03c93f9 [#-1](https://github.com/sourcegraph/cody/pull/6788)
 
-
 ## 1.66.1
 
 ### Fixed
+
 - AutoEdits
-  - fix(auto-edit): fix the false notification for auto-edit non eligibility  [pull/7002](https://github.com/sourcegraph/cody/pull/7002)
+  - fix(auto-edit): fix the false notification for auto-edit non eligibility [pull/7002](https://github.com/sourcegraph/cody/pull/7002)
 
 ## 1.66.0
 
 ### Added
+
 - Support for Enterprise Starter
-  - chore(ES): fix cta typo  [pull/6856](https://github.com/sourcegraph/cody/pull/6856)
-  - chore(ES): update CTAs and eligibility logic  [pull/6803](https://github.com/sourcegraph/cody/pull/6803)
+
+  - chore(ES): fix cta typo [pull/6856](https://github.com/sourcegraph/cody/pull/6856)
+  - chore(ES): update CTAs and eligibility logic [pull/6803](https://github.com/sourcegraph/cody/pull/6803)
 
 - Chat
-  - fix: added extension banner to web  [pull/6757](https://github.com/sourcegraph/cody/pull/6757)
+  - fix: added extension banner to web [pull/6757](https://github.com/sourcegraph/cody/pull/6757)
 
 ### Fixed
+
 - AutoEdits
-  - fix(auto-edit): fix the cody status bar with new suggestion mode  [pull/6691](https://github.com/sourcegraph/cody/pull/6691)
-  - fix(auto-edit): fix temperature value to be low for output consistency  [pull/6853](https://github.com/sourcegraph/cody/pull/6853)
-  - feat(auto-edit): fix the temperature value regression with the auto-edit  [pull/6848](https://github.com/sourcegraph/cody/pull/6848)
+
+  - fix(auto-edit): fix the cody status bar with new suggestion mode [pull/6691](https://github.com/sourcegraph/cody/pull/6691)
+  - fix(auto-edit): fix temperature value to be low for output consistency [pull/6853](https://github.com/sourcegraph/cody/pull/6853)
+  - feat(auto-edit): fix the temperature value regression with the auto-edit [pull/6848](https://github.com/sourcegraph/cody/pull/6848)
 
 - Chat
-  - fix: handle missing spaces around @ mentions in cody chat  [pull/6842](https://github.com/sourcegraph/cody/pull/6842)
-  - fix: define all base64 characters  [pull/6837](https://github.com/sourcegraph/cody/pull/6837)
-  - fix(models): ensure Tool Cody is only added when enabled  [pull/6753](https://github.com/sourcegraph/cody/pull/6753)
+
+  - fix: handle missing spaces around @ mentions in cody chat [pull/6842](https://github.com/sourcegraph/cody/pull/6842)
+  - fix: define all base64 characters [pull/6837](https://github.com/sourcegraph/cody/pull/6837)
+  - fix(models): ensure Tool Cody is only added when enabled [pull/6753](https://github.com/sourcegraph/cody/pull/6753)
 
 - Authentication
+
   - Reverted various recent changes related to sign-in (commits 9719dc4, 1c16f35, 1ed8392, 03c93f9) to improve stability [pull/6788](https://github.com/sourcegraph/cody/pull/6788)
 
 - Telemetry & Metrics
-  - Fix OpenTelemetryService initialization+observables code and  fix the span closure of Chat Spans  [pull/6807](https://github.com/sourcegraph/cody/pull/6807)
-  - fix(telemetry): add billing metadata to `onebox` events  [pull/6802](https://github.com/sourcegraph/cody/pull/6802)
+  - Fix OpenTelemetryService initialization+observables code and fix the span closure of Chat Spans [pull/6807](https://github.com/sourcegraph/cody/pull/6807)
+  - fix(telemetry): add billing metadata to `onebox` events [pull/6802](https://github.com/sourcegraph/cody/pull/6802)
 
 ### Changed
+
 - Branding & Marketing
-  - [Backport M66] chore(marketing): Update marketplace and in product logos  [pull/6970](https://github.com/sourcegraph/cody/pull/6970)
-  - chore(marketing): update listing description  [pull/6862](https://github.com/sourcegraph/cody/pull/6862)
+
+  - [Backport M66] chore(marketing): Update marketplace and in product logos [pull/6970](https://github.com/sourcegraph/cody/pull/6970)
+  - chore(marketing): update listing description [pull/6862](https://github.com/sourcegraph/cody/pull/6862)
 
 - Chat
-  - chore(client): update display name for agentic model  [pull/6827](https://github.com/sourcegraph/cody/pull/6827)
-  - Make Play Button stateful and remove intent toggle  [pull/6833](https://github.com/sourcegraph/cody/pull/6833)
-  - omnibox: open results locally if possible  [pull/6781](https://github.com/sourcegraph/cody/pull/6781)
-  - mention menu: migrate from codicon to lucide  [pull/6780](https://github.com/sourcegraph/cody/pull/6780)
-  - fix: remove code search button  [pull/6855](https://github.com/sourcegraph/cody/pull/6855)
+  - chore(client): update display name for agentic model [pull/6827](https://github.com/sourcegraph/cody/pull/6827)
+  - Make Play Button stateful and remove intent toggle [pull/6833](https://github.com/sourcegraph/cody/pull/6833)
+  - omnibox: open results locally if possible [pull/6781](https://github.com/sourcegraph/cody/pull/6781)
+  - mention menu: migrate from codicon to lucide [pull/6780](https://github.com/sourcegraph/cody/pull/6780)
+  - fix: remove code search button [pull/6855](https://github.com/sourcegraph/cody/pull/6855)
 
 ## 1.64.0
 

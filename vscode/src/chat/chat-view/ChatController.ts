@@ -15,6 +15,7 @@ import {
     DOTCOM_URL,
     type DefaultChatCommands,
     type EventSource,
+    FeatureFlag,
     type Guardrails,
     ModelUsage,
     type NLSSearchDynamicFilter,
@@ -36,6 +37,7 @@ import {
     extractContextFromTraceparent,
     featureFlagProvider,
     firstResultFromOperation,
+    firstValueFrom,
     forceHydration,
     graphqlClient,
     hydrateAfterPostMessage,
@@ -515,6 +517,10 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 logger(message.filterLabel, message.message)
                 break
             }
+            case 'devicePixelRatio': {
+                localStorage.setDevicePixelRatio(message.devicePixelRatio)
+                break
+            }
         }
     }
 
@@ -528,6 +534,9 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
     private async getConfigForWebview(): Promise<ConfigurationSubsetForWebview & LocalEnv> {
         const { configuration, auth } = await currentResolvedConfig()
+        const experimentalPromptEditorEnabled = await firstValueFrom(
+            featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyExperimentalPromptEditor)
+        )
         const sidebarViewOnly = this.extensionClient.capabilities?.webviewNativeConfig?.view === 'single'
         const isEditorViewType = this.webviewPanelOrView?.viewType === 'cody.editorPanel'
         const webviewType = isEditorViewType && !sidebarViewOnly ? 'editor' : 'sidebar'
@@ -545,6 +554,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             multipleWebviewsEnabled: !sidebarViewOnly,
             internalDebugContext: configuration.internalDebugContext,
             allowEndpointChange: configuration.overrideServerEndpoint === undefined,
+            experimentalPromptEditorEnabled,
         }
     }
 
