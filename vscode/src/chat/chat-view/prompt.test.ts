@@ -1,6 +1,5 @@
 import {
     AUTH_STATUS_FIXTURE_AUTHED,
-    CHAT_PREAMBLE,
     CLIENT_CAPABILITIES_FIXTURE,
     type ContextItem,
     ContextItemSource,
@@ -9,6 +8,7 @@ import {
     type ModelsData,
     contextFiltersProvider,
     createModel,
+    getChatPreamble,
     graphqlClient,
     mockAuthStatus,
     mockClientCapabilities,
@@ -83,7 +83,7 @@ describe('DefaultPrompter', () => {
         expect(prompt).toEqual([
             {
                 speaker: 'human',
-                text: CHAT_PREAMBLE,
+                text: getChatPreamble(),
             },
             {
                 speaker: 'assistant',
@@ -161,7 +161,7 @@ describe('DefaultPrompter', () => {
         expect(prompt).toEqual([
             {
                 speaker: 'human',
-                text: ps`${CHAT_PREAMBLE}\n\nAlways respond with 🧀 emojis`,
+                text: ps`${getChatPreamble()}\n\nAlways respond with 🧀 emojis`,
             },
             {
                 speaker: 'assistant',
@@ -218,9 +218,9 @@ describe('DefaultPrompter', () => {
         checkPrompt(info.prompt, [
             'You are Cody, an AI coding assistant from Sourcegraph.',
             'I am Cody, an AI coding assistant from Sourcegraph.',
-            'Codebase context from file enhanced1.ts',
+            'enhanced1.ts',
             'Ok.',
-            'Codebase context from file user1.go',
+            'user1.go',
             'Ok.',
             'Hello, world!',
         ])
@@ -251,13 +251,13 @@ describe('DefaultPrompter', () => {
         checkPrompt(info.prompt, [
             'You are Cody, an AI coding assistant from Sourcegraph.',
             'I am Cody, an AI coding assistant from Sourcegraph.',
-            'Codebase context from file enhanced1.ts',
+            'enhanced1.ts',
             'Ok.',
-            'Codebase context from file user1.go',
+            'user1.go',
             'Ok.',
-            'Codebase context from file enhanced2.ts',
+            'enhanced2.ts',
             'Ok.',
-            'Codebase context from file user2.go',
+            'user2.go',
             'Ok.',
             'Hello, world!',
             'Oh hello there.',

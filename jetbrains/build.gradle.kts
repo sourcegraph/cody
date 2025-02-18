@@ -198,7 +198,10 @@ fun download(url: String, output: File) {
     if (!githubToken.isNullOrEmpty()) {
       connection.setRequestProperty("Authorization", "Bearer $githubToken")
     }
+
     connection.requestMethod = "GET"
+    connection.setRequestProperty("Accept", "application/vnd.github+json")
+    connection.setRequestProperty("X-GitHub-Api-Version", "2022-11-28")
 
     val responseCode = connection.responseCode
     if (responseCode == HttpURLConnection.HTTP_OK) {
@@ -347,7 +350,7 @@ val pnpmPath =
 tasks {
   val codeSearchCommit = "048679a2e7f2a2d94a49c46bc972c954cb2b5bac"
   fun downloadCodeSearch(): File {
-    val url = "https://github.com/sourcegraph/sourcegraph/archive/$codeSearchCommit.zip"
+    val url = "https://api.github.com/repos/sourcegraph/sourcegraph/zipball/$codeSearchCommit"
     val destination = githubArchiveCache.resolve("$codeSearchCommit.zip")
     download(url, destination)
     return destination
@@ -357,7 +360,7 @@ tasks {
     val zip = downloadCodeSearch()
     val dir = githubArchiveCache.resolve("code-search")
     unzip(zip, dir, FileSystems.getDefault().getPathMatcher("glob:**.go"))
-    return dir.resolve("sourcegraph-$codeSearchCommit")
+    return dir.resolve("sourcegraph-sourcegraph-$codeSearchCommit")
   }
 
   fun buildCodeSearch(): File? {
