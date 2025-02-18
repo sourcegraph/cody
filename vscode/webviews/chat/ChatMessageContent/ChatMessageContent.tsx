@@ -13,7 +13,7 @@ import type { PriorHumanMessageInfo } from '../cells/messageCell/assistant/Assis
 import styles from './ChatMessageContent.module.css'
 import { GuardrailsStatusController } from './GuardRailStatusController'
 import { createButtons, createButtonsExperimentalUI } from './create-buttons'
-import { getCodeBlockId, getFileName } from './utils'
+import { extractThinkContent, getCodeBlockId, getFileName } from './utils'
 
 export interface CodeBlockActionsProps {
     copyButtonOnSubmit: (text: string, event?: 'Keydown' | 'Button') => void
@@ -38,47 +38,6 @@ interface ChatMessageContentProps {
 
     guardrails?: Guardrails
     className?: string
-}
-
-interface StreamingContent {
-    displayContent: string
-    thinkContent: string
-    hasThinkTag: boolean
-}
-
-const extractThinkContent = (content: string): StreamingContent => {
-    const thinkRegex = /^<think>([\s\S]*?)<\/think>/g
-    const thinkMatches = [...content.matchAll(thinkRegex)]
-
-    // Check if content has an unclosed think tag
-    const lastThinkOpenIndex = content.lastIndexOf('<think>')
-    const lastThinkCloseIndex = content.lastIndexOf('</think>')
-    const hasOpenThinkTag = lastThinkOpenIndex > lastThinkCloseIndex
-
-    // Collect all think content, including partial content from unclosed tag
-    let thinkContent = thinkMatches
-        .map(match => match[1].trim())
-        .filter(Boolean)
-        .join('\n\n')
-
-    // If there's an open think tag, capture everything after it
-    if (hasOpenThinkTag) {
-        const unclosedContent = content.slice(lastThinkOpenIndex + 7)
-        thinkContent = thinkContent ? `${thinkContent}\n\n${unclosedContent}` : unclosedContent
-    }
-
-    // Remove complete think tags from display content
-    let displayContent = content.replace(thinkRegex, '')
-    // Remove any unclosed think tag and its content
-    if (hasOpenThinkTag) {
-        displayContent = displayContent.slice(0, lastThinkOpenIndex)
-    }
-
-    return {
-        displayContent,
-        thinkContent,
-        hasThinkTag: hasOpenThinkTag,
-    }
 }
 
 /**
@@ -246,7 +205,7 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
         smartApplyStates,
     ])
 
-    const { displayContent, thinkContent, hasThinkTag } = useMemo(
+    const { displayContent, thinkContent, isThinking } = useMemo(
         () => extractThinkContent(displayMarkdown),
         [displayMarkdown]
     )
@@ -256,33 +215,28 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
             {thinkContent.length > 0 && (
                 <details
                     open
-                    className="tw-container tw-mb-7 tw-border tw-border-gray-500/20 dark:tw-border-gray-600/40 tw-rounded-lg tw-overflow-hidden tw-backdrop-blur-sm"
-                    title="Thinking/Reasoning Space."
+                    className="tw-container tw-mb-7 tw-border tw-border-gray-500/20 dark:tw-border-gray-600/40 tw-rounded-lg tw-overflow-hidden tw-backdrop-blur-sm hover:tw-bg-gray-200/50 dark:hover:tw-bg-gray-700/50"
+                    title="Thinking & Reasoning Space"
                 >
                     <summary
                         className={clsx(
-                            'tw-flex tw-items-center tw-gap-2 tw-px-3 tw-py-2 tw-bg-gray-100/50 dark:tw-bg-gray-800/80 tw-cursor-pointer hover:tw-bg-gray-200/50 dark:hover:tw-bg-gray-700/50 tw-select-none tw-transition-colors',
+                            'tw-flex tw-items-center tw-gap-2 tw-px-3 tw-py-2 tw-bg-gray-100/50 dark:tw-bg-gray-800/80 tw-cursor-pointer tw-select-none tw-transition-colors',
                             {
-                                'tw-animate-pulse': hasThinkTag,
+                                'tw-animate-pulse': isThinking,
                             }
                         )}
                     >
-                        {hasThinkTag ? (
-                            <LoaderIcon
-                                size={16}
-                                className="tw-animate-spin tw-text-gray-500 dark:tw-text-gray-400"
-                            />
+                        {isThinking ? (
+                            <LoaderIcon size={16} className="tw-animate-spin tw-text-muted-foreground" />
                         ) : (
-                            <PlusIcon size={16} className="tw-text-gray-500 dark:tw-text-gray-400" />
+                            <PlusIcon size={16} className="tw-text-muted-foreground" />
                         )}
                         <span className="tw-font-medium tw-text-gray-600 dark:tw-text-gray-300">
-                            {hasThinkTag ? 'Thinking...' : 'Thought Process'}
+                            {isThinking ? 'Thinking...' : 'Thought Process'}
                         </span>
                     </summary>
-                    <div className="tw-px-4 tw-py-3 tw-mx-4 tw-opacity-70 hover:tw-opacity-100">
-                        <div className="tw-text-sm tw-prose dark:tw-prose-invert tw-max-w-none tw-leading-relaxed tw-text-base/7">
-                            {thinkContent}
-                        </div>
+                    <div className="tw-px-4 tw-py-3 tw-mx-4 tw-text-sm tw-prose dark:tw-prose-invert tw-max-w-none tw-leading-relaxed tw-text-base/7 tw-text-muted-foreground">
+                        {thinkContent}
                     </div>
                 </details>
             )}
