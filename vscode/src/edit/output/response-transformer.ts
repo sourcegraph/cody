@@ -48,7 +48,7 @@ export function responseTransformer(
         .replaceAll(PROMPT_TOPIC_REGEX, '')
 
     // Strip Markdown syntax for code blocks, e.g. ```typescript, leaving them for markdown files
-    if (task.document.languageId !== 'markdown') {
+    if (task?.document?.languageId !== 'markdown') {
         strippedText = strippedText.replaceAll(MARKDOWN_CODE_BLOCK_REGEX, block =>
             block.replace(MARKDOWN_CODE_BLOCK_START, '').replace(MARKDOWN_CODE_BLOCK_END, '')
         )

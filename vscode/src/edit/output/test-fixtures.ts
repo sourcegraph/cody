@@ -29,26 +29,26 @@ export const RESPONSE_TEST_FIXTURES: Record<string, ResponseTestFixture> = {
         expected: CLEAN_RESPONSE,
         task: DEFAULT_TASK,
     },
-    // withMarkdownSyntax: {
-    //     response: '```\n' + CLEAN_RESPONSE + '```',
-    //     expected: CLEAN_RESPONSE,
-    //     task: DEFAULT_TASK,
-    // },
-    // withMarkdownSyntaxAndLang: {
-    //     response: '```typescript\n' + CLEAN_RESPONSE + '```',
-    //     expected: CLEAN_RESPONSE,
-    //     task: DEFAULT_TASK,
-    // },
-    // withMarkdownSyntaxAndTags: {
-    //     response:
-    //         '```\n' +
-    //         `<${PROMPT_TOPICS.OUTPUT}>` +
-    //         CLEAN_RESPONSE +
-    //         `</${PROMPT_TOPICS.OUTPUT}>` +
-    //         '```',
-    //     expected: CLEAN_RESPONSE,
-    //     task: DEFAULT_TASK,
-    // },
+    withMarkdownSyntax: {
+        response: '```\n' + CLEAN_RESPONSE + '```',
+        expected: CLEAN_RESPONSE,
+        task: DEFAULT_TASK,
+    },
+    withMarkdownSyntaxAndLang: {
+        response: '```typescript\n' + CLEAN_RESPONSE + '```',
+        expected: CLEAN_RESPONSE,
+        task: DEFAULT_TASK,
+    },
+    withMarkdownSyntaxAndTags: {
+        response:
+            '```\n' +
+            `<${PROMPT_TOPICS.OUTPUT}>` +
+            CLEAN_RESPONSE +
+            `</${PROMPT_TOPICS.OUTPUT}>` +
+            '```',
+        expected: CLEAN_RESPONSE,
+        task: DEFAULT_TASK,
+    },
     withHtmlEntities: {
         response: CLEAN_RESPONSE.replace(/</g, '&lt;').replace(/>/g, '&gt;'),
         expected: CLEAN_RESPONSE,
