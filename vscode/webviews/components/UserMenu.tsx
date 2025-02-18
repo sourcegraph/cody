@@ -587,7 +587,7 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
                             </CommandGroup>
 
                             <CommandGroup>
-                                <CommandItem
+                                {IDE === CodyIDE.VSCode && (<CommandItem
                                     onSelect={() => {
                                         getVSCodeAPI().postMessage({
                                             command: 'command',
@@ -598,7 +598,7 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
                                 >
                                     <BookOpenText size={16} strokeWidth={1.25} className="tw-mr-2" />
                                     <span className="tw-flex-grow">Getting Started Guide</span>
-                                </CommandItem>
+                                </CommandItem>)}
 
                                 {IDE === CodyIDE.VSCode && (
                                     <CommandItem onSelect={() => onMenuViewChange('debug')}>
