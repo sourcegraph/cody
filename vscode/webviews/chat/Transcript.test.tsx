@@ -1,5 +1,11 @@
 import { type ChatMessage, FIXTURE_MODELS, errorToChatError, ps } from '@sourcegraph/cody-shared'
-import { fireEvent, getQueriesForElement, render as render_, screen } from '@testing-library/react'
+import {
+    fireEvent,
+    getQueriesForElement,
+    render as render_,
+    screen,
+    waitFor,
+} from '@testing-library/react'
 import type { ComponentProps } from 'react'
 import { type Assertion, describe, expect, test, vi } from 'vitest'
 import { URI } from 'vscode-uri'
@@ -35,7 +41,7 @@ describe('Transcript', () => {
         expectCells([{ message: '' }])
     })
 
-    test('renders with provided models', () => {
+    test('renders with provided models', async () => {
         const { container } = render(
             <Transcript
                 {...PROPS}
@@ -47,8 +53,12 @@ describe('Transcript', () => {
         )
 
         // Check if the model selector is rendered
+        await waitFor(() => {
+            const modelSelector = container.querySelector('[data-testid="chat-model-selector"]')
+            return modelSelector !== null
+        })
         const modelSelector = container.querySelector('[data-testid="chat-model-selector"]')
-        expect(modelSelector).not.toBeNull()
+        expect(modelSelector).to.not.toBeNull()
         expect(modelSelector?.textContent).toEqual(FIXTURE_MODELS[0].title)
 
         // Open the menu on click

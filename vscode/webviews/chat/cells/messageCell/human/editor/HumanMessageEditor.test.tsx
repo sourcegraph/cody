@@ -3,7 +3,7 @@ import {
     FIXTURE_MODELS,
     serializedPromptEditorStateFromText,
 } from '@sourcegraph/cody-shared'
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import type { ComponentProps } from 'react'
 import { type Assertion, type Mock, describe, expect, test, vi } from 'vitest'
 import { AppWrapperForTest } from '../../../../../AppWrapperForTest'
@@ -133,8 +133,12 @@ describe('HumanMessageEditor', () => {
             expect(onSubmit).toHaveBeenCalledTimes(2)
         })
 
-        test('model selector is showing up with the default model name', () => {
+        test('model selector is showing up with the default model name', async () => {
             const { container } = renderWithMocks({})
+            await waitFor(() => {
+                const modelSelector = container.querySelector('[data-testid="chat-model-selector"]')
+                return modelSelector !== null
+            })
             const modelSelector = container.querySelector('[data-testid="chat-model-selector"]')
             expect(modelSelector).not.toBeNull()
             expect(modelSelector?.textContent).toEqual(FIXTURE_MODELS[0].title)

@@ -546,13 +546,24 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                     switchToSearch={() => editAndSubmitSearch(assistantMessage?.didYouMeanQuery ?? '')}
                 />
             )}
-            {!usingToolCody && !isSearchIntent && humanMessage.agent && (
+            {humanMessage.agent === DeepCodyAgentID ? (
                 <AgenticContextCell
                     key={`${humanMessage.index}-${humanMessage.intent}-process`}
                     isContextLoading={isContextLoading}
                     processes={humanMessage?.processes ?? undefined}
                 />
+            ) : (
+                <>
+                    {isContextLoading && (
+                        <div className="flex justify-center items-center h-full">
+                            <div className="tw-mt-6">
+                                <i className="codicon codicon-loading codicon-modifier tw-animate-spin" />
+                            </div>
+                        </div>
+                    )}
+                </>
             )}
+
             {!isSearchIntent &&
                 humanMessage.agent &&
                 isContextLoading &&

@@ -19,6 +19,35 @@ import { type ModelContextWindow, ModelUsage } from './types'
 import { getModelInfo } from './utils'
 
 /**
+ * OmniboxHandler describes a handler to handle an omnibox query.
+ */
+export interface OmniboxHandlerOption {
+    readonly id: string
+
+    readonly title?: string
+
+    /**
+     * If set, then this handler corresponds to a base model.
+     * This exists for legacy purposes, as formerly the handler
+     * selector was a list of models.
+     */
+    model?: Model
+}
+
+export type HandlerID = OmniboxHandlerOption['id']
+
+export const OmniboxHandlers = {
+    DeepCody: {
+        id: 'deep-cody',
+        title: 'Agentic chat',
+    },
+    KeywordSearch: {
+        id: 'search',
+        title: 'Fuzzy keyword search',
+    },
+}
+
+/**
  * Model describes an LLM model and its capabilities.
  */
 export interface Model {

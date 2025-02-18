@@ -1308,6 +1308,12 @@ export class Agent extends MessageHandler implements ExtensionClient {
             return null
         })
 
+        this.registerAuthenticatedRequest('chat/setHandler', async ({ id, handlerID, modelID }) => {
+            const panel = this.webPanels.getPanelOrError(id)
+            await waitUntilComplete(panel.extensionAPI.setHandler(handlerID, modelID))
+            return null
+        })
+
         const submitOrEditHandler = async (
             { id, message }: { id: string; message: WebviewMessage },
             token: vscode.CancellationToken
