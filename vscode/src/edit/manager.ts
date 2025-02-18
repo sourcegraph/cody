@@ -5,6 +5,7 @@ import {
     type ChatClient,
     ClientConfigSingleton,
     DEFAULT_EVENT_SOURCE,
+    type EventSource,
     PromptString,
     currentSiteVersion,
     extractContextFromTraceparent,
@@ -38,6 +39,14 @@ import type { SmartApplyArguments } from './smart-apply'
 import { getEditIntent } from './utils/edit-intent'
 import { getEditMode } from './utils/edit-mode'
 import { getEditLineSelection, getEditSmartSelection } from './utils/edit-selection'
+
+interface ExecuteSmartApplyEditParams {
+    configuration: SmartApplyArguments['configuration']
+    source: EventSource
+    range: vscode.Range
+    replacementCode: PromptString
+    model: string
+}
 
 export interface EditManagerOptions {
     editor: VSCodeEditor
@@ -417,17 +426,12 @@ export class EditManager implements vscode.Disposable {
                 // Just using the replacement code from the response is not enough, as it may contain parts that are not suitable to apply,
                 // e.g. // ...
                 const applyStartTime = Date.now()
-                const task = await this.executeEdit({
-                    configuration: {
-                        id: configuration.id,
-                        document: configuration.document,
-                        range: selection.range,
-                        mode: 'edit',
-                        instruction: ps`Ensuring that you do not duplicate code that is outside of the selection, apply the following change:\n${replacementCode}`,
-                        model,
-                        intent: 'edit',
-                    },
+                const task = await this.executeSmartApplyEdit({
+                    configuration,
                     source,
+                    range: selection.range,
+                    replacementCode,
+                    model,
                 })
                 const applyTimeTakenMs = Date.now() - applyStartTime
                 this.smartApplyContextLogger.addApplyContext(
@@ -471,18 +475,33 @@ export class EditManager implements vscode.Disposable {
         const selection = await this.fetchSmartApplySelection(configuration, replacementCode, model)
 
         // Once the selection is fetched, we also prefetch the LLM response.
-        await this.executeEdit({
+        await this.executeSmartApplyEdit({
+            configuration,
+            source: 'chat',
+            range: selection?.range || new vscode.Range(0, 0, 0, 0),
+            replacementCode,
+            model,
+        })
+    }
+
+    private async executeSmartApplyEdit({
+        configuration,
+        source,
+        range,
+        replacementCode,
+        model,
+    }: ExecuteSmartApplyEditParams): Promise<FixupTask | undefined> {
+        return this.executeEdit({
             configuration: {
                 id: configuration.id,
                 document: configuration.document,
-                range: selection?.range || new vscode.Range(0, 0, 0, 0),
+                range,
                 mode: 'edit',
                 instruction: ps`Ensuring that you do not duplicate code outside the selection, apply:\n${replacementCode}`,
                 model,
                 intent: 'edit',
             },
-            source: 'chat',
-            isPrefetch: true,
+            source,
         })
     }
 
