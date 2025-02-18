@@ -6,6 +6,7 @@ import type { Polly } from '@pollyjs/core'
 import { type ContextItem, ModelUsage, TokenCounterUtils, isDotCom } from '@sourcegraph/cody-shared'
 import { Command } from 'commander'
 
+import { telemetryRecorder } from '@sourcegraph/cody-shared'
 import Table from 'easy-table'
 import isError from 'lodash/isError'
 import * as vscode from 'vscode'
@@ -272,7 +273,7 @@ export async function chatAction(options: ChatOptions): Promise<number> {
         )
         return 1
     }
-
+    telemetryRecorder.recordEvent('cody.chat-question', 'submitted')
     const response = await client.request(
         'chat/submitMessage',
         {
@@ -332,6 +333,9 @@ export async function chatAction(options: ChatOptions): Promise<number> {
     streams.log(replyText + '\n')
     await client.request('shutdown', null)
     spinner.succeed()
+    telemetryRecorder.recordEvent('cody.chat-question', 'executed', {
+        billingMetadata: { product: 'cody', category: 'core' },
+    })
     return 0
 }
 
