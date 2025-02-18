@@ -162,7 +162,6 @@ export class EditProvider {
         taskId: string
         initialState: StreamState
     }): Promise<void> {
-        console.log('performStreamingEdit: start')
         const fetchStart = performance.now()
         // Create a new session object and store it
         const abortController = new AbortController()
@@ -309,7 +308,6 @@ export class EditProvider {
                         break
                     }
                     case 'complete': {
-                        console.log(`EDIT IS READY IN ${Math.floor(performance.now() - fetchStart)}ms`)
                         await multiplexer.notifyTurnComplete()
                         break
                     }

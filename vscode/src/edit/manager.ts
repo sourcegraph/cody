@@ -46,6 +46,7 @@ interface ExecuteSmartApplyEditParams {
     range: vscode.Range
     replacementCode: PromptString
     model: string
+    isPrefetch: boolean
 }
 
 export interface EditManagerOptions {
@@ -427,6 +428,7 @@ export class EditManager implements vscode.Disposable {
                     range: selection.range,
                     replacementCode,
                     model,
+                    isPrefetch: false,
                 })
                 const applyTimeTakenMs = Date.now() - applyStartTime
                 this.smartApplyContextLogger.addApplyContext(
@@ -474,6 +476,7 @@ export class EditManager implements vscode.Disposable {
             range: selection?.range || new vscode.Range(0, 0, 0, 0),
             replacementCode,
             model,
+            isPrefetch: true,
         })
     }
 
@@ -483,6 +486,7 @@ export class EditManager implements vscode.Disposable {
         range,
         replacementCode,
         model,
+        isPrefetch,
     }: ExecuteSmartApplyEditParams): Promise<FixupTask | undefined> {
         return this.executeEdit({
             configuration: {
@@ -495,6 +499,7 @@ export class EditManager implements vscode.Disposable {
                 intent: 'edit',
             },
             source,
+            isPrefetch,
         })
     }
 
