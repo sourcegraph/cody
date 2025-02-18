@@ -338,17 +338,19 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
                                     <ExternalLinkIcon size={16} strokeWidth={1.25} />
                                 </CommandLink>
 
-                                {IDE === CodyIDE.VSCode && (<CommandItem
-                                    onSelect={() => {
-                                        getVSCodeAPI().postMessage({
-                                            command: 'command',
-                                            id: 'cody.debug.reportIssue',
-                                        })
-                                        close()
-                                    }}
-                                >)}
-                                    <span className="tw-flex-grow">Report Issue</span>
-                                </CommandItem>
+                                {IDE === CodyIDE.VSCode && (
+                                    <CommandItem
+                                        onSelect={() => {
+                                            getVSCodeAPI().postMessage({
+                                                command: 'command',
+                                                id: 'cody.debug.reportIssue',
+                                            })
+                                            close()
+                                        }}
+                                    >
+                                        <span className="tw-flex-grow">Report Issue</span>
+                                    </CommandItem>
+                                )}
                             </CommandGroup>
                         </CommandList>
                     ) : userMenuView === 'switch' ? (
@@ -587,18 +589,20 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
                             </CommandGroup>
 
                             <CommandGroup>
-                                {IDE === CodyIDE.VSCode && (<CommandItem
-                                    onSelect={() => {
-                                        getVSCodeAPI().postMessage({
-                                            command: 'command',
-                                            id: 'cody.welcome',
-                                        })
-                                        close()
-                                    }}
-                                >
-                                    <BookOpenText size={16} strokeWidth={1.25} className="tw-mr-2" />
-                                    <span className="tw-flex-grow">Getting Started Guide</span>
-                                </CommandItem>)}
+                                {IDE === CodyIDE.VSCode && (
+                                    <CommandItem
+                                        onSelect={() => {
+                                            getVSCodeAPI().postMessage({
+                                                command: 'command',
+                                                id: 'cody.welcome',
+                                            })
+                                            close()
+                                        }}
+                                    >
+                                        <BookOpenText size={16} strokeWidth={1.25} className="tw-mr-2" />
+                                        <span className="tw-flex-grow">Getting Started Guide</span>
+                                    </CommandItem>
+                                )}
 
                                 {IDE === CodyIDE.VSCode && (
                                     <CommandItem onSelect={() => onMenuViewChange('debug')}>
