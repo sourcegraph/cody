@@ -30,6 +30,8 @@ interface CodyAgentServer {
   fun chat_import(params: Chat_ImportParams): CompletableFuture<Null?>
   @JsonRequest("chat/setModel")
   fun chat_setModel(params: Chat_SetModelParams): CompletableFuture<Null?>
+  @JsonRequest("chat/setHandler")
+  fun chat_setHandler(params: Chat_SetHandlerParams): CompletableFuture<Null?>
   @JsonRequest("commands/explain")
   fun commands_explain(params: Null?): CompletableFuture<String>
   @JsonRequest("commands/smell")
