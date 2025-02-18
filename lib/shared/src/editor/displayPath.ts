@@ -150,18 +150,7 @@ function _displayPath(
  * tests.
  */
 function fixPathSep(fsPath: string, isWindows: boolean, scheme: string): string {
-    if (isWindows && scheme === 'file') {
-        // First replace all forward slashes with backslashes
-        const windowsPath = fsPath.replaceAll('/', '\\')
-
-        // Preserve UNC paths that start with double backslashes
-        // but avoid creating triple or more backslashes
-        const normalizedPath = windowsPath.replace(/\\{3,}/g, '\\\\')
-
-        // Remove leading single backslash while preserving UNC paths that start with \\
-        return normalizedPath.replace(/^\\([^\\])/, '$1')
-    }
-    return fsPath
+    return isWindows && scheme === 'file' ? fsPath.replaceAll('/', '\\') : fsPath
 }
 
 export function uriHasPrefix(uri: URI, prefix: URI, isWindows: boolean): boolean {

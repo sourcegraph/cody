@@ -478,36 +478,3 @@ describe('displayPathWithLines', () => {
         }
     }
 })
-
-describe('Windows UNC paths', () => {
-    const envInfo: DisplayPathEnvInfo = { isWindows: true, workspaceFolders: [] }
-
-    test('preserves UNC path formats', () => {
-        const testCases = [
-            {
-                input: windowsFileURI('\\\\server\\share\\folder\\file.txt'),
-                expected: '\\\\server\\share\\folder\\file.txt',
-            },
-            {
-                input: windowsFileURI('\\\\?\\C:\\very\\long\\path\\file.txt'),
-                expected: '\\\\?\\C:\\very\\long\\path\\file.txt',
-            },
-            {
-                input: windowsFileURI('\\\\.\\C:\\device\\path\\file.txt'),
-                expected: '\\\\.\\C:\\device\\path\\file.txt',
-            },
-            {
-                input: windowsFileURI('\\foo\\bar.ts'),
-                expected: 'foo\\bar.ts',
-            },
-            {
-                input: windowsFileURI('\\C:\\device\\path\\file.txt'),
-                expected: 'c:\\device\\path\\file.txt',
-            },
-        ]
-
-        for (const { input, expected } of testCases) {
-            expect(withEnvInfo(envInfo, () => displayPath(input))).toBe(expected)
-        }
-    })
-})
