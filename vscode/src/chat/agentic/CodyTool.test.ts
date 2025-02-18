@@ -2,7 +2,7 @@ import type { Span } from '@opentelemetry/api'
 import { type ContextItem, ContextItemSource, ps } from '@sourcegraph/cody-shared'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { URI } from 'vscode-uri'
-import { localStorage } from '../../services/LocalStorageProvider'
+import { mockLocalStorage } from '../../services/LocalStorageProvider'
 import type { ContextRetriever } from '../chat-view/ContextRetriever'
 import { CodyTool, OpenCtxTool } from './CodyTool'
 import { TestToolFactory, type ToolStatusCallback } from './CodyToolProvider'
@@ -134,7 +134,13 @@ describe('CodyTool', () => {
     })
 
     it('should register and retrieve tools correctly', () => {
-        localStorage.setStorage('noop')
+        const localStorageData: { [key: string]: unknown } = {}
+        mockLocalStorage({
+            get: (key: string) => localStorageData[key],
+            update: (key: string, value: unknown) => {
+                localStorageData[key] = value
+            },
+        } as any)
         const tools = factory.getInstances()
         expect(tools.length).toBeGreaterThan(0)
         expect(tools.some(t => t.config.title === 'TestTool')).toBeTruthy()

@@ -663,12 +663,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 this.chatBuilder.setSelectedModel(model)
                 const selectedHandler = this.chatBuilder.selectedHandler
 
-                // TODO(beyang): conflicted code, can delete?
-                // let selectedAgent = model?.includes(DeepCodyAgentID) ? DeepCodyAgentID : undefined
-                // if (model?.includes(ToolCodyModelName)) {
-                //     selectedAgent = ToolCodyModelRef
-                // }
-
                 this.chatBuilder.addHumanMessage({
                     text: inputText,
                     editorState,
@@ -747,15 +741,9 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             selectedHandler = getDefaultOmniboxHandler().id
         }
         let agentName = selectedHandler
-        if (selectedHandler === 'auto') {
-            if (['search', 'edit', 'insert'].includes(manuallySelectedIntent ?? '')) {
-                agentName = manuallySelectedIntent ?? 'chat'
-            }
+        if (manuallySelectedIntent && ['edit', 'insert'].includes(manuallySelectedIntent)) {
+            agentName = manuallySelectedIntent
         }
-        // TODO(beyang): conflicted code
-        // const agentName = ['search', 'edit', 'insert'].includes(manuallySelectedIntent ?? '')
-        //     ? (manuallySelectedIntent as string)
-        //     : chatAgent ?? 'chat'
         const agent = getHandler(agentName, model, {
             contextRetriever: this.contextRetriever,
             editor: this.editor,
@@ -1597,7 +1585,9 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                         // Because this was a user action to change the model we will set that
                         // as a global default for chat
                         return promiseFactoryToObservable(async () => {
-                            this.chatBuilder.setSelectedHandler(undefined) // TODO(beyang): hack
+                            // TODO(beyang): hack; we should replace all references to setSelectedModel with setSelectedHandler, but
+                            // this can come as the larger refactor
+                            this.chatBuilder.setSelectedHandler(undefined)
                             this.chatBuilder.setSelectedModel(model)
                             await modelsService.setSelectedModel(ModelUsage.Chat, model)
                         })
