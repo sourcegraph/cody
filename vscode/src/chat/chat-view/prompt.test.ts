@@ -225,9 +225,9 @@ describe('DefaultPrompter', () => {
         checkPrompt(info.prompt, [
             'You are Cody, an AI coding assistant from Sourcegraph.',
             'I am Cody, an AI coding assistant from Sourcegraph.',
-            'Codebase context from file enhanced1.ts',
+            /Codebase context from file \\?enhanced1.ts/,
             'Ok.',
-            'Codebase context from file user1.go',
+            /Codebase context from file \\?user1.go/,
             'Ok.',
             'Hello, world!',
         ])
@@ -258,13 +258,13 @@ describe('DefaultPrompter', () => {
         checkPrompt(info.prompt, [
             'You are Cody, an AI coding assistant from Sourcegraph.',
             'I am Cody, an AI coding assistant from Sourcegraph.',
-            'Codebase context from file enhanced1.ts',
+            /Codebase context from file \\?enhanced1.ts/,
             'Ok.',
-            'Codebase context from file user1.go',
+            /Codebase context from file \\?user1.go/,
             'Ok.',
-            'Codebase context from file enhanced2.ts',
+            /Codebase context from file \\?enhanced2.ts/,
             'Ok.',
-            'Codebase context from file user2.go',
+            /Codebase context from file \\?user2.go/,
             'Ok.',
             'Hello, world!',
             'Oh hello there.',
@@ -272,11 +272,17 @@ describe('DefaultPrompter', () => {
         ])
     })
 
-    function checkPrompt(prompt: Message[], expectedPrefixes: string[]): void {
+    function checkPrompt(prompt: Message[], expectedPrefixes: (string | RegExp)[]): void {
         for (let i = 0; i < expectedPrefixes.length; i++) {
             const actual = prompt[i].text?.toString()
             const expected = expectedPrefixes[i]
-            if (!actual?.includes(expected)) {
+            if (expected instanceof RegExp) {
+                if (!actual?.match(expected)) {
+                    expect.fail(
+                        `Message mismatch: expected ${JSON.stringify(actual)} to match regex ${expected}`
+                    )
+                }
+            } else if (!actual?.includes(expected)) {
                 expect.fail(
                     `Message mismatch: expected ${JSON.stringify(actual)} to include ${JSON.stringify(
                         expectedPrefixes[i]
