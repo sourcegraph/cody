@@ -1779,6 +1779,7 @@ function getOmniboxHandlers(): Observable<OmniboxHandlerOption[]> {
     return combineLatest(enableToolCody, models).pipe(
         map(([enableToolCody, models]) => {
             const handlers: OmniboxHandlerOption[] = []
+            // TODO(beyang): determine whether to display Agentic Chat here
             handlers.push(OmniboxHandlers.DeepCody)
             if (enableToolCody) {
                 handlers.push({
