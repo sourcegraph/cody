@@ -180,6 +180,7 @@ export class CodyToolProvider {
 
     public static initialize(contextRetriever: Retriever): void {
         CodyToolProvider.instance = new CodyToolProvider(contextRetriever)
+        CodyToolProvider.setupOpenCtxProviderListener()
     }
 
     public static getTools(): CodyTool[] {
