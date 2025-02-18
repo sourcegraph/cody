@@ -135,7 +135,7 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
                     const smartApplyState = smartApplyStates[smartApplyId]
 
                     // Side-effect: prefetch smart apply data if possible to reduce the final latency.
-                    // TODO: trigger prefetch earlier if we can detect that the code block is complete.
+                    // TODO: use a better heuristic to determine if the code block is complete.
                     // TODO: extract this call into a separate `useEffect` call to avoid redundant calls
                     // which currently happen.
                     if (!isMessageLoading || !displayMarkdown.endsWith('```')) {

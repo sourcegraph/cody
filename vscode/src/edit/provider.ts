@@ -153,11 +153,6 @@ export class EditProvider {
         return this.handleResponse(response, false)
     }
 
-    /**
-     * The main streaming logic, extracted from the original startEdit. The only
-     * difference is we have a parameter startTask that determines if we call
-     * "controller.startTask" right away or wait until the user actually clicks.
-     */
     private async performStreamingEdit({
         taskId,
         initialState,
@@ -165,10 +160,10 @@ export class EditProvider {
         taskId: string
         initialState: StreamState
     }): Promise<void> {
-        const fetchStart = performance.now()
-        // Create a new session object and store it
         const abortController = new AbortController()
         const multiplexer = new BotResponseMultiplexer()
+
+        // Create a new session object and store it
         const session: StreamSession = {
             state: initialState,
             abortController,
