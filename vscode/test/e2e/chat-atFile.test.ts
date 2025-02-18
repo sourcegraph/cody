@@ -310,7 +310,7 @@ test.extend<ExpectedV2Events>({
         'cody.chat-question:executed',
         'cody.chatResponse:noCode',
     ],
-}).only('@-mention symbol in chat', async ({ page, nap, sidebar, server }) => {
+})('@-mention symbol in chat', async ({ page, nap, sidebar, server }) => {
     mockEnterpriseRepoIdMapping(server)
 
     await sidebarSignin(page, sidebar)
