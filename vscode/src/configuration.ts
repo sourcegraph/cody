@@ -165,6 +165,8 @@ export function getConfiguration(
         experimentalNoxideEnabled: getHiddenSetting('experimental.noxide.enabled', true),
         experimentalGuardrailsTimeoutSeconds: getHiddenSetting('experimental.guardrailsTimeoutSeconds'),
 
+        rulesEnabled: config.get(CONFIG_KEY.rulesEnabled, false),
+
         autocompleteExperimentalOllamaOptions: getHiddenSetting(
             'autocomplete.experimental.ollamaOptions',
             {

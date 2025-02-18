@@ -33,6 +33,7 @@ import {
     setClientNameVersion,
     setEditorWindowIsFocused,
     setLogger,
+    setOpenCtxControllerObservable,
     setResolvedConfigurationObservable,
     startWith,
     subscriptionDisposable,
@@ -54,7 +55,6 @@ import { CodyToolProvider } from './chat/agentic/CodyToolProvider'
 import { ChatsController, CodyChatEditorViewType } from './chat/chat-view/ChatsController'
 import { ContextRetriever } from './chat/chat-view/ContextRetriever'
 import { SourcegraphRemoteFileProvider } from './chat/chat-view/sourcegraphRemoteFile'
-import type { ChatIntentAPIClient } from './chat/context/chatIntentAPIClient'
 import {
     ACCOUNT_LIMITS_INFO_URL,
     ACCOUNT_UPGRADE_URL,
@@ -79,7 +79,7 @@ import type { CodyCommandArgs } from './commands/types'
 import { newCodyCommandArgs } from './commands/utils/get-commands'
 import { createInlineCompletionItemProvider } from './completions/create-inline-completion-item-provider'
 import { getConfiguration } from './configuration'
-import { exposeOpenCtxClient } from './context/openctx'
+import { observeOpenCtxController } from './context/openctx'
 import { logGlobalStateEmissions } from './dev/helpers'
 import { EditManager } from './edit/manager'
 import { manageDisplayPathEnvInfoForExtension } from './editor/displayPathEnvInfo'
@@ -232,6 +232,8 @@ const register = async (
     // Initialize singletons
     await initializeSingletons(platform, disposables)
 
+    setOpenCtxControllerObservable(observeOpenCtxController(context, platform.createOpenCtxController))
+
     // Ensure Git API is available
     disposables.push(await initVSCodeGitApi())
 
@@ -243,7 +245,6 @@ const register = async (
         completionsClient,
         guardrails,
         symfRunner,
-        chatIntentAPIClient,
         dispose: disposeExternalServices,
     } = await configureExternalServices(context, platform)
     disposables.push({ dispose: disposeExternalServices })
@@ -258,7 +259,6 @@ const register = async (
             chatClient,
             guardrails,
             editor,
-            chatIntentAPIClient,
             contextRetriever,
         },
         disposables
@@ -275,14 +275,7 @@ const register = async (
 
     CodyToolProvider.initialize(contextRetriever)
 
-    disposables.push(
-        chatsController,
-        ghostHintDecorator,
-        editManager,
-        subscriptionDisposable(
-            exposeOpenCtxClient(context, platform.createOpenCtxController).subscribe({})
-        )
-    )
+    disposables.push(chatsController, ghostHintDecorator, editManager)
 
     const statusBar = CodyStatusBar.init()
     disposables.push(statusBar)
@@ -468,7 +461,7 @@ async function registerCodyCommands(
     )
 
     // Initialize autoedit provider if experimental feature is enabled
-    registerAutoEdits(chatClient, fixupController, disposables)
+    registerAutoEdits(chatClient, fixupController, statusBar, disposables)
 
     // Initialize autoedit tester
     disposables.push(
@@ -624,7 +617,7 @@ function registerUpgradeHandlers(disposables: vscode.Disposable[]): void {
                 if (uri.path === '/app-done') {
                     // This is an old re-entrypoint from App that is a no-op now.
                 } else {
-                    tokenCallbackHandler(uri)
+                    void tokenCallbackHandler(uri)
                 }
             },
         }),
@@ -720,6 +713,7 @@ async function tryRegisterTutorial(
 function registerAutoEdits(
     chatClient: ChatClient,
     fixupController: FixupController,
+    statusBar: CodyStatusBar,
     disposables: vscode.Disposable[]
 ): void {
     disposables.push(
@@ -729,7 +723,8 @@ function registerAutoEdits(
                 authStatus,
                 featureFlagProvider.evaluatedFeatureFlag(
                     FeatureFlag.CodyAutoEditExperimentEnabledFeatureFlag
-                )
+                ),
+                featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyAutoEditImageRendering)
             )
                 .pipe(
                     distinctUntilChanged((a, b) => {
@@ -739,15 +734,24 @@ function registerAutoEdits(
                             isEqual(a[2], b[2])
                         )
                     }),
-                    switchMap(([config, authStatus, autoeditsFeatureFlagEnabled]) => {
-                        return createAutoEditsProvider({
+                    switchMap(
+                        ([
                             config,
                             authStatus,
-                            chatClient,
-                            autoeditsFeatureFlagEnabled,
-                            fixupController,
-                        })
-                    }),
+                            autoeditFeatureFlagEnabled,
+                            autoeditImageRenderingEnabled,
+                        ]) => {
+                            return createAutoEditsProvider({
+                                config,
+                                authStatus,
+                                chatClient,
+                                autoeditFeatureFlagEnabled,
+                                autoeditImageRenderingEnabled,
+                                fixupController,
+                                statusBar,
+                            })
+                        }
+                    ),
                     catchError(error => {
                         autoeditsOutputChannelLogger.logError('registerAutoedits', 'Error', error)
                         return NEVER
@@ -822,20 +826,11 @@ interface RegisterChatOptions {
     chatClient: ChatClient
     guardrails: Guardrails
     editor: VSCodeEditor
-    chatIntentAPIClient?: ChatIntentAPIClient
     contextRetriever: ContextRetriever
 }
 
 function registerChat(
-    {
-        context,
-        platform,
-        chatClient,
-        guardrails,
-        editor,
-        chatIntentAPIClient,
-        contextRetriever,
-    }: RegisterChatOptions,
+    { context, platform, chatClient, guardrails, editor, contextRetriever }: RegisterChatOptions,
     disposables: vscode.Disposable[]
 ): {
     chatsController: ChatsController
@@ -855,7 +850,6 @@ function registerChat(
         chatClient,
         contextRetriever,
         guardrails,
-        chatIntentAPIClient || null,
         platform.extensionClient
     )
     chatsController.registerViewsAndCommands()

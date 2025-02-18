@@ -50,11 +50,7 @@ export class DeepCodyHandler extends ChatHandler implements AgentHandler {
             skipQueryRewriteForDeepCody
         )
         // Early return if basic conditions aren't met.
-        if (
-            chatBuilder.selectedAgent !== 'deep-cody' ||
-            baseContextResult.error ||
-            baseContextResult.abort
-        ) {
+        if (baseContextResult.error || baseContextResult.abort) {
             return baseContextResult
         }
         // Check session and query constraints
@@ -81,7 +77,6 @@ export class DeepCodyHandler extends ChatHandler implements AgentHandler {
 
         const retryTime = deepCodyRateLimiter.isAtLimit()
         if (retryTime) {
-            chatBuilder.setSelectedAgent(undefined)
             return { error: deepCodyRateLimiter.getRateLimitError(retryTime), abort: true }
         }
 

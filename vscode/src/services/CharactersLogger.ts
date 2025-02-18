@@ -15,7 +15,7 @@ export const LOG_INTERVAL = 30 * 60 * 1000 // 30 minutes
 export const RAPID_CHANGE_TIMEOUT = 15
 export const SELECTION_TIMEOUT = 5000
 
-export const changeBoundaries = {
+const changeBoundaries = {
     xxxs_change: { min: 0, max: 2 },
     xxs_change: { min: 3, max: 10 },
     xs_change: { min: 11, max: 50 },

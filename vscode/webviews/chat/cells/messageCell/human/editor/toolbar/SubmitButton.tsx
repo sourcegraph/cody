@@ -16,23 +16,15 @@ import {
     Pencil,
     Play,
     Search,
-    Sparkles,
     Square,
 } from 'lucide-react'
 import type { FC, FunctionComponent, KeyboardEventHandler, PropsWithChildren } from 'react'
 import { useCallback, useMemo, useRef, useState } from 'react'
 import { Kbd } from '../../../../../../components/Kbd'
-import { useIntentDetectionConfig } from '../../../../../../components/omnibox/intentDetection'
 import { Badge } from '../../../../../../components/shadcn/ui/badge'
-import {
-    Command,
-    CommandItem,
-    CommandList,
-    CommandSeparator,
-} from '../../../../../../components/shadcn/ui/command'
-import { Switch } from '../../../../../../components/shadcn/ui/switch'
+import { Command, CommandItem, CommandList } from '../../../../../../components/shadcn/ui/command'
 import { useConfig } from '../../../../../../utils/useConfig'
-import { useExperimentalOneBox } from '../../../../../../utils/useExperimentalOneBox'
+import { useOmniBox } from '../../../../../../utils/useOmniBox'
 
 export type SubmitButtonState = 'submittable' | 'emptyEditorValue' | 'waitingResponseComplete'
 
@@ -48,56 +40,23 @@ interface IntentOption {
 function getIntentOptions({
     ide,
     isDotComUser,
-    detectedIntent,
-    intentDetectionDisabled,
-    intentDetectionToggleOn,
+    omniBoxEnabled,
 }: {
     ide: CodyIDE
     isDotComUser: boolean
-    detectedIntent: ChatMessage['intent']
-    intentDetectionDisabled: boolean
-    intentDetectionToggleOn: boolean
+    omniBoxEnabled: boolean
 }): IntentOption[] {
-    const intentDetectionAvailable = !isDotComUser && !intentDetectionDisabled && intentDetectionToggleOn
-
     const standardOneBoxIntents: IntentOption[] = [
-        {
-            title: (
-                <div className="tw-flex tw-flex-col tw-self-start">
-                    <p>Run detected intent</p>
-                    <p className="tw-text-sm tw-text-muted-foreground">
-                        {isDotComUser
-                            ? 'Detects intent and runs appropriately'
-                            : `Currently: ${
-                                  detectedIntent ? (detectedIntent === 'search' ? 'Search' : 'Chat') : ''
-                              }`}
-                    </p>
-                </div>
-            ),
-            icon: Sparkles,
-            intent: undefined,
-            hidden: !intentDetectionAvailable,
-            disabled: isDotComUser,
-            shortcut: isDotComUser ? (
-                <Badge>
-                    Enterprise <InfoIcon className="tw-size-4 tw-ml-1" />
-                </Badge>
-            ) : (
-                <Kbd macOS="return" linuxAndWindows="return" />
-            ),
-        },
         {
             title: 'Run as chat',
             icon: MessageSquare,
             intent: 'chat',
-            shortcut: (
-                <>
-                    {intentDetectionAvailable && <Kbd macOS="cmd" linuxAndWindows="ctrl" />}
-                    <Kbd macOS="return" linuxAndWindows="return" />
-                </>
-            ),
+            shortcut: <Kbd macOS="return" linuxAndWindows="return" />,
         },
-        {
+    ]
+
+    if (omniBoxEnabled) {
+        standardOneBoxIntents.push({
             title: (
                 <span className="tw-inline-flex tw-items-center tw-gap-4">
                     <span>Run as search</span>
@@ -118,8 +77,8 @@ function getIntentOptions({
                     <Kbd macOS="return" linuxAndWindows="return" />
                 </>
             ),
-        },
-    ]
+        })
+    }
 
     if (ide === CodyIDE.Web) {
         return standardOneBoxIntents
@@ -147,30 +106,29 @@ export const SubmitButton: FC<{
     isEditorFocused?: boolean
     state?: SubmitButtonState
     detectedIntent?: ChatMessage['intent']
-}> = ({ onClick, state = 'submittable', detectedIntent }) => {
-    const experimentalOneBoxEnabled = useExperimentalOneBox()
+    manuallySelectIntent: (intent?: ChatMessage['intent']) => void
+}> = ({ onClick, state = 'submittable', detectedIntent, manuallySelectIntent }) => {
     const {
         clientCapabilities: { agentIDE },
         isDotComUser,
     } = useConfig()
+    const omniBoxEnabled = useOmniBox()
 
-    const { intentDetectionDisabled, intentDetectionToggleOn, updateIntentDetectionToggle } =
-        useIntentDetectionConfig()
+    const { intentOptions, availableIntentOptions, disabledIntentOptions } = useMemo(() => {
+        const intentOptions = getIntentOptions({
+            ide: agentIDE,
+            isDotComUser,
+            omniBoxEnabled,
+        }).filter(option => !option.hidden)
 
-    const intentOptions = useMemo(
-        () =>
-            getIntentOptions({
-                ide: agentIDE,
-                detectedIntent,
-                intentDetectionDisabled,
-                intentDetectionToggleOn,
-                isDotComUser,
-            }),
-        [agentIDE, detectedIntent, intentDetectionDisabled, intentDetectionToggleOn, isDotComUser]
-    )
+        return {
+            intentOptions,
+            availableIntentOptions: intentOptions.filter(option => !option.disabled),
+            disabledIntentOptions: intentOptions.filter(option => option.disabled),
+        }
+    }, [agentIDE, isDotComUser, omniBoxEnabled])
 
     const inProgress = state === 'waitingResponseComplete'
-    const disabled = state === 'emptyEditorValue'
 
     const detectedIntentOption = intentOptions.find(option => option.intent === detectedIntent)
 
@@ -179,17 +137,12 @@ export const SubmitButton: FC<{
         detectedIntentOption?.intent === 'search' ? '' : 'tw-fill-current'
     }`
 
-    const toggleIntentDetection = useCallback(() => {
-        updateIntentDetectionToggle(!intentDetectionToggleOn)
-    }, [intentDetectionToggleOn, updateIntentDetectionToggle])
-
-    if (!experimentalOneBoxEnabled || inProgress) {
+    if (!omniBoxEnabled || inProgress) {
         return (
             <div className="tw-flex">
                 <button
                     type="submit"
                     onClick={() => onClick()}
-                    disabled={disabled}
                     className={clsx(
                         'tw-px-6 tw-py-1',
                         'tw-rounded-full',
@@ -214,7 +167,6 @@ export const SubmitButton: FC<{
             <button
                 type="submit"
                 onClick={() => onClick()}
-                disabled={disabled}
                 className={clsx(
                     'tw-px-3 tw-py-1 md:twpx-4 md:tw-py-2',
                     'tw-rounded-tl-full tw-rounded-bl-full',
@@ -231,77 +183,43 @@ export const SubmitButton: FC<{
                 popoverContent={close => (
                     <Command>
                         <CommandList className="tw-p-2">
-                            {intentOptions.map(option =>
-                                // biome-ignore lint/correctness/useJsxKeyInIterable: We don't need a key for null
-                                option.hidden || option.disabled ? null : (
-                                    <CommandItem
-                                        key={option.intent || 'auto'}
-                                        onSelect={() => {
-                                            onClick(option.intent)
-                                            close()
-                                        }}
-                                        className="tw-flex tw-text-left tw-justify-between tw-rounded-sm tw-cursor-pointer tw-px-4"
-                                    >
-                                        <div className="tw-flex tw-gap-4">
-                                            <option.icon className="tw-size-8 tw-mt-1" />
-                                            {option.title}
-                                        </div>
-                                        {option.shortcut && (
-                                            <div className="tw-flex tw-gap-2">{option.shortcut}</div>
-                                        )}
-                                    </CommandItem>
-                                )
-                            )}
-                            <CommandSeparator />
-                            {intentOptions.map(option =>
-                                // biome-ignore lint/correctness/useJsxKeyInIterable: We don't need a key for null
-                                option.hidden || !option.disabled ? null : (
-                                    <CommandItem
-                                        key={option.intent || 'auto'}
-                                        onSelect={() => {
-                                            onClick(option.intent)
-                                            close()
-                                        }}
-                                        disabled={true}
-                                        className="tw-flex tw-text-left tw-justify-between tw-rounded-sm tw-cursor-pointer"
-                                    >
-                                        <div className="tw-flex tw-gap-2">
-                                            <option.icon className="tw-size-8 tw-mt-1" />
-                                            {option.title}
-                                        </div>
-                                        {option.shortcut && (
-                                            <div className="tw-flex tw-gap-2">{option.shortcut}</div>
-                                        )}
-                                    </CommandItem>
-                                )
-                            )}
-                            {!isDotComUser && !(intentDetectionDisabled ?? false) && (
-                                <div
-                                    role="button"
-                                    tabIndex={0}
-                                    onClick={toggleIntentDetection}
-                                    onKeyDown={e => {
-                                        if (e.key === 'Enter') {
-                                            e.stopPropagation()
-                                            toggleIntentDetection()
-                                        }
+                            {availableIntentOptions.map(option => (
+                                <CommandItem
+                                    key={option.intent || 'auto'}
+                                    onSelect={() => {
+                                        manuallySelectIntent(option.intent)
+                                        close()
                                     }}
-                                    className="tw-flex tw-p-4 tw-gap-6 tw-items-center tw-cursor-pointer hover:tw-bg-button-secondary-background"
+                                    className="tw-flex tw-text-left tw-justify-between tw-rounded-sm tw-cursor-pointer tw-px-4"
                                 >
-                                    <Switch checked={intentDetectionToggleOn} />
-                                    <div className="tw-flex tw-flex-col">
-                                        <div>
-                                            <span className="tw-font-medium tw-mr-4">
-                                                Intent Detection
-                                            </span>
-                                            <Badge variant="secondary">Beta</Badge>
-                                        </div>
-                                        <p className="tw-text-sm tw-text-muted-foreground">
-                                            Automatic selection between chat and search
-                                        </p>
+                                    <div className="tw-flex tw-gap-4">
+                                        <option.icon className="tw-size-8 tw-mt-1" />
+                                        {option.title}
                                     </div>
-                                </div>
-                            )}
+                                    {option.shortcut && (
+                                        <div className="tw-flex tw-gap-2">{option.shortcut}</div>
+                                    )}
+                                </CommandItem>
+                            ))}
+                            {disabledIntentOptions.map(option => (
+                                <CommandItem
+                                    key={option.intent || 'auto'}
+                                    onSelect={() => {
+                                        onClick(option.intent)
+                                        close()
+                                    }}
+                                    disabled={true}
+                                    className="tw-flex tw-text-left tw-justify-between tw-rounded-sm tw-cursor-pointer"
+                                >
+                                    <div className="tw-flex tw-gap-2">
+                                        <option.icon className="tw-size-8 tw-mt-1" />
+                                        {option.title}
+                                    </div>
+                                    {option.shortcut && (
+                                        <div className="tw-flex tw-gap-2">{option.shortcut}</div>
+                                    )}
+                                </CommandItem>
+                            ))}
                         </CommandList>
                     </Command>
                 )}
@@ -316,7 +234,6 @@ export const SubmitButton: FC<{
             >
                 <button
                     type="button"
-                    disabled={disabled}
                     className={clsx(
                         'tw-pl-1 tw-pr-2 tw-py-1 md:pl-2 md:tw-pr-3 md:tw-py-2',
                         'tw-rounded-tr-full tw-rounded-br-full tw-border-l-0',
@@ -332,7 +249,7 @@ export const SubmitButton: FC<{
     )
 }
 
-export const PopoverItem: FunctionComponent<
+const PopoverItem: FunctionComponent<
     PropsWithChildren<{
         popoverContent: (close: () => void) => React.ReactNode
 
@@ -350,7 +267,6 @@ export const PopoverItem: FunctionComponent<
     popoverRootProps,
     popoverContentProps,
     children,
-    ...props
 }) => {
     const [isOpen, setIsOpen] = useState(defaultOpen)
     const anchorRef = useRef<HTMLButtonElement>(null)
@@ -402,6 +318,10 @@ export const PopoverItem: FunctionComponent<
                 onKeyDown={onKeyDownInPopoverContent}
                 ref={popoverContentRef}
                 {...popoverContentProps}
+                className={clsx(
+                    'tw-w-[350px] !tw-p-0 tw-z-10 tw-my-2 tw-shadow-lg tw-border tw-border-button-border tw-rounded-md',
+                    popoverContentProps?.className
+                )}
             >
                 {popoverContent(close)}
             </PopoverContent>

@@ -190,7 +190,7 @@ export class EditProvider {
             const model = this.config.task.model
             const contextWindow = modelsService.getContextWindowByID(model)
             const versions = await currentSiteVersion()
-            if (!versions) {
+            if (versions instanceof Error) {
                 throw new Error('unable to determine site version')
             }
             const {

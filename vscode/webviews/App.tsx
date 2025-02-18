@@ -20,7 +20,6 @@ import { ExtensionAPIProviderFromVSCodeAPI } from '@sourcegraph/prompt-editor'
 import { CodyPanel } from './CodyPanel'
 import { AuthenticationErrorBanner } from './components/AuthenticationErrorBanner'
 import { useSuppressKeys } from './components/hooks'
-import { IntentDetectionConfigProvider } from './components/omnibox/intentDetection'
 import { View } from './tabs'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 import { ComposedWrappers, type Wrapper } from './utils/composeWrappers'
@@ -28,6 +27,8 @@ import { updateDisplayPathEnvInfoForWebview } from './utils/displayPathEnvInfo'
 import { TelemetryRecorderContext, createWebviewTelemetryRecorder } from './utils/telemetry'
 import { ClientConfigProvider } from './utils/useClientConfig'
 import { type Config, ConfigProvider } from './utils/useConfig'
+import { useDevicePixelRatioNotifier } from './utils/useDevicePixelRatio'
+import { LinkOpenerProvider } from './utils/useLinkOpener'
 
 export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vscodeAPI }) => {
     const [config, setConfig] = useState<Config | null>(null)
@@ -162,11 +163,15 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
             webviewTelemetryService.configure({
                 isTracingEnabled: true,
                 debugVerbose: true,
-                agentIDE: config.clientCapabilities.agentIDE,
-                extensionAgentVersion: config.clientCapabilities.agentExtensionVersion,
+                ide: config.clientCapabilities.agentIDE,
+                codyExtensionVersion: config.clientCapabilities.agentExtensionVersion,
             })
         }
     }, [config, webviewTelemetryService])
+
+    // Notify the extension host of the device pixel ratio
+    // Currently used for image generation in auto-edit.
+    useDevicePixelRatioNotifier()
 
     const wrappers = useMemo<Wrapper[]>(
         () => getAppWrappers({ vscodeAPI, telemetryRecorder, config, clientConfig }),
@@ -235,9 +240,6 @@ export function getAppWrappers({
 }: GetAppWrappersOptions): Wrapper[] {
     return [
         {
-            component: IntentDetectionConfigProvider,
-        },
-        {
             provider: TelemetryRecorderContext.Provider,
             value: telemetryRecorder,
         } satisfies Wrapper<ComponentProps<typeof TelemetryRecorderContext.Provider>['value']>,
@@ -253,5 +255,9 @@ export function getAppWrappers({
             component: ClientConfigProvider,
             props: { value: clientConfig },
         } satisfies Wrapper<any, ComponentProps<typeof ClientConfigProvider>>,
+        {
+            component: LinkOpenerProvider,
+            props: { vscodeAPI },
+        } satisfies Wrapper<any, ComponentProps<typeof LinkOpenerProvider>>,
     ]
 }

@@ -3,12 +3,12 @@ import { logError } from '../../logger'
 declare const fallbackVariant: unique symbol
 // we disguise the fallbackValue as a tagged string so that it can be exported as a type
 export const fallbackValue = '__fallback__' as const
-export type MapperInput = { [key: string]: number } & (
+type MapperInput = { [key: string]: number } & (
     | { [fallbackValue]: number }
     | { [fallbackValue]?: never }
 )
 
-export type MapperInputs = Record<string, MapperInput>
+type MapperInputs = Record<string, MapperInput>
 
 type ObjWithFallback<T extends Record<string, number>> = T & {
     [fallbackValue]?: number
@@ -20,7 +20,7 @@ type HasFallback<M extends MapperInput> = M extends { [fallbackValue]: infer V }
         ? true
         : false
     : false
-export type MapperFn<M extends MapperInput> = HasFallback<M> extends true
+type MapperFn<M extends MapperInput> = HasFallback<M> extends true
     ? (v: LiteralUnion<KeyOfOmitFallback<M>, string>) => number
     : <
           V extends LiteralUnion<KeyOfOmitFallback<M>, string> = LiteralUnion<
@@ -31,7 +31,7 @@ export type MapperFn<M extends MapperInput> = HasFallback<M> extends true
           v: V
       ) => V extends KeyOfOmitFallback<M> ? number : null
 
-export type MapperFns<M extends MapperInputs> = {
+type MapperFns<M extends MapperInputs> = {
     [K in keyof M]: MapperFn<M[K]>
 }
 export type Unmapped<M extends MapperInput, Strict extends boolean = false> = Strict extends true

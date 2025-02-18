@@ -24,6 +24,7 @@ export const FIXTURE_TRANSCRIPT: Record<
     | 'explainCode'
     | 'explainCode2'
     | 'experimentalGenerateUnitTest'
+    | 'generateCode'
     | 'long'
     | 'empty'
     | 'toolUse',
@@ -150,6 +151,27 @@ export const FIXTURE_TRANSCRIPT: Record<
             contextFiles: [
                 { type: 'file', uri: URI.file('/a/b/file1.py'), source: ContextItemSource.User },
             ],
+        },
+    ]),
+    generateCode: transcriptFixture([
+        {
+            speaker: 'human',
+            text: ps`Generate a hello world in Rust.`,
+        },
+        {
+            speaker: 'assistant',
+            text: ps`This code generates a random 32-character string (nonce) using characters <pre><code>fn main() {
+    // String type - owned, mutable, heap-allocated
+    let mut owned_string = String::from("Hello");
+
+    // &str type - string slice, immutable reference
+    let string_literal = "World";
+
+    // Concatenation method 1: Using push_str()
+    owned_string.push_str(string_literal);
+    println!("Using push_str(): {}", owned_string);
+
+</code></pre> Hopefully that helps.`,
         },
     ]),
     long: transcriptFixture([

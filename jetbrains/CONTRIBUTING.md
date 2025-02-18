@@ -64,6 +64,15 @@ run `sdk use java 17-zulu`. Confirm that you have Java 17 installed with `java -
 >
 > From this point, YMMV, but you should be able to build agent!
 
+> 🤞 Building Code Search:
+>
+> To build Code Search component you need to set env variable GITHUB_TOKEN,
+> so build process can access sourcegraph/sourcegraph.
+>
+> You can generate new token at https://github.com/settings/tokens
+>
+> If you don't want to set token, you can skip building Code Search component by setting SKIP_CODE_SEARCH_BUILD env variable to true.
+
 ### Running
 
 | What                                                                                                     | Command                                                                  |
@@ -148,70 +157,28 @@ Take the steps below _before_ [running JetBrains plugin with agent](#developing-
 
 ## Publishing a New Release
 
-### Historical context
-We used to publish both stable and nightly channel versions at once. 
-In that approach QA testing and JB approval happened in parallel. 
-However, it consumed a lot of CI time and JB time for the releases that did not pass our QA 
-(and did not go public eventually). Hence, we decided to use a sequential process.
-We trigger the stable channel release only after the nightly channel release passes QA.
+See [Cody Client Releases.](https://sourcegraph.notion.site/Cody-Client-Releases-82244a6d1d90420d839f432b8cc00cd8?pvs=74)
 
-```mermaid
-graph TD;
-    Title --> nightly["Nightly Release / Experimental Release"];
-    Title["JetBrains Plugin Release"] --> stable["Stable Release"];
-    stable -->  trigger_stable["Manually trigger 'Stable Release' workflow in GitHub Actions"];
-    release_stable --> marketplace_approval["Wait for JetBrains approval"];
-    marketplace_approval --> |Automated approval, up to 48hr| unhide["unhide"];
-    unhide --> available_to_end_users_stable["Available for download"];
-    marketplace_approval --> |Manual quick-approve| slack_approval["Request JetBrains Marketplace team to manually approve it via Slack"];
-    slack_approval --> unhide["Unhide the approved release (requires admin access)"];
-    nightly --> push_tag["Run 'push-git-tag-for-next-release.sh'"];
-    trigger_stable --> release_stable["Wait for 'Stable Release' workflow to complete"];
-    push_tag --> release_nightly["Wait for 'Nightly Release' / 'Experimental Release' workflow to complete"];
-    release_nightly --> available_to_end_users_nightly["Available for download"];
-```
+### Publishing an experimental release
 
-We aim to cut a new release to "nightly" mid week, every week. If QA or dogfood find issues we backport fixes and
-do updated nightly releases. At the end of a week, we re-cut the best build as "stable".
-
-### 1. Push a git tag & publish a nightly release
-
-Use the following command for a **patch** release:
+Use the following command for a **experimental** releases:
 
 ```shell
-./scripts/push-git-tag-for-next-release.sh --patch
-```
-
-Or this one for a **minor** release:
-
-```shell
-./scripts/push-git-tag-for-next-release.sh --minor
-```
-
-Or this one for a **major** release
-(note it should be user only on special occasions):
-
-```shell
-./scripts/push-git-tag-for-next-release.sh --major
+./scripts/push-git-tag-for-next-release.sh --patch --experimental
 ```
 
 This script runs `verify-release.sh`, which takes a long time to run with a clean cache, which is why we don't run it in
 CI. When you have a local cache of IDEA installations then this script can run decently fast (~1-2min).
 
-After successfully pushing the new tag (for example: `v6.0.15`), we are now able to publish.
+After successfully pushing the new tag (for example: `jb-v7.66.3-experimental`), we are now able to publish. Wait for the `release-jetbrains-experimental` GitHub workflow to complete.
 
-Wait for the `Release to Marketplace` GitHub workflow to complete.
-
-### 2. Publish a stable release 
-
-Go to [Stable Release workflow](https://github.com/sourcegraph/cody/actions/workflows/stable-release.yml),
-click `Run workflow` and select the tag that has been pushed before (and tested by QA team), run it.
+### Expediting Stable Releases
 
 It can take up to 48hr for stable releases to get approved by the JetBrains Marketplace team.
 It's possible to expedite this process by posting a message in the `#marketplace` channel in
 the [JetBrains Slack workspace](https://plugins.jetbrains.com/slack/).
 
-### 3. Publish a New Release on GitHub
+### Release Notes on GitHub
 
 For every stable release, create a GitHub release summarizing the changes.
 
@@ -225,10 +192,10 @@ to [our first release](https://github.com/sourcegraph/jetbrains/releases/tag/v5.
 
 It's also optional create GitHub releases for nightly builds where it makes sense.
 
-### 4. Announce the New Release on our internal Slack channel
+### Announce the New Release on our internal Slack channel
 
 It is mandatory to post about both stable and nightly releases on our internal
-`#team-cody-clients` Slack channel. You can refer to past posts in the channel's
+`#team-cody-core` Slack channel. You can refer to past posts in the channel's
 history for examples.
 
 ## Enabling web view debugging

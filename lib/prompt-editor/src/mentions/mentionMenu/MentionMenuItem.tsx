@@ -8,6 +8,7 @@ import {
     REMOTE_DIRECTORY_PROVIDER_URI,
     REMOTE_FILE_PROVIDER_URI,
     REMOTE_REPOSITORY_PROVIDER_URI,
+    RULES_PROVIDER_URI,
     SYMBOL_CONTEXT_MENTION_PROVIDER,
     WEB_PROVIDER_URI,
     displayLineRange,
@@ -18,15 +19,23 @@ import {
 import { clsx } from 'clsx'
 import {
     ArrowRightIcon,
+    BookCheckIcon,
+    BoxIcon,
     DatabaseIcon,
+    ExternalLinkIcon,
     FileIcon,
     FolderGitIcon,
+    FolderOpenIcon,
+    LayoutPanelTop,
+    LayoutPanelTopIcon,
     LibraryBigIcon,
     LinkIcon,
+    ListMinusIcon,
     SmileIcon,
+    SquareDashedMousePointerIcon,
     SquareFunctionIcon,
 } from 'lucide-react'
-import type { FunctionComponent } from 'react'
+import type { FunctionComponent, ReactNode } from 'react'
 import ConfluenceLogo from '../../providerIcons/confluence.svg?react'
 import GithubLogo from '../../providerIcons/github.svg?react'
 import GoogleLogo from '../../providerIcons/google.svg?react'
@@ -56,6 +65,8 @@ function getDescription(item: ContextItem, query: MentionQuery): string {
             return '' // no description since it's duplicative
         case 'openctx':
             return item.mention?.description || defaultDescription
+        case 'open-link':
+            return ''
         default:
             return defaultDescription
     }
@@ -78,13 +89,17 @@ export function getMentionItemTitleAndDisplayName(item: ContextItem): {
 export const MentionMenuContextItemContent: FunctionComponent<{
     query: MentionQuery
     item: ContextItem
-}> = ({ query, item }) => {
+    badge?: ReactNode | undefined
+}> = ({ query, item, badge }) => {
     const isOpenCtx = item.type === 'openctx'
     const isFileType = item.type === 'file'
     const isSymbol = item.type === 'symbol'
     const isClassSymbol = isSymbol && item.kind === 'class'
+    const isLink = item.type === 'open-link'
 
-    const icon = item.icon || (isSymbol ? (isClassSymbol ? 'symbol-structure' : 'symbol-method') : null)
+    const iconId =
+        item.icon || (isSymbol ? (isClassSymbol ? 'symbol-structure' : 'symbol-method') : null)
+    const Icon = iconId ? iconForItem[iconId] : null
     const { title, displayName } = getMentionItemTitleAndDisplayName(item)
     const description = getDescription(item, query)
 
@@ -102,7 +117,12 @@ export const MentionMenuContextItemContent: FunctionComponent<{
     return (
         <>
             <div className={styles.row}>
-                {icon && <i className={`codicon codicon-${icon}`} title={isSymbol ? item.kind : ''} />}
+                {Icon && (
+                    <div className={styles.row} title={isSymbol ? item.kind : ''}>
+                        <Icon size={16} strokeWidth={1.75} />
+                        {isSymbol ? item.kind : ''}
+                    </div>
+                )}
                 <span className={clsx(styles.title, warning && styles.titleWithWarning)} title={title}>
                     {displayName}
                 </span>
@@ -111,6 +131,8 @@ export const MentionMenuContextItemContent: FunctionComponent<{
                         {description}
                     </span>
                 )}
+                {badge}
+                {isLink && <ExternalLinkIcon size={16} strokeWidth={1.25} style={{ opacity: '0.5' }} />}
             </div>
             {warning && <span className={styles.warning}>{warning}</span>}
         </>
@@ -160,4 +182,22 @@ export const iconForProvider: Record<
     [REMOTE_FILE_PROVIDER_URI]: FileIcon,
     [REMOTE_DIRECTORY_PROVIDER_URI]: FolderGitIcon,
     [WEB_PROVIDER_URI]: LinkIcon,
+    [RULES_PROVIDER_URI]: BookCheckIcon,
+}
+
+const iconForItem: Record<
+    string,
+    React.ComponentType<{
+        size?: string | number
+        strokeWidth?: string | number
+    }>
+> = {
+    'symbol-method': BoxIcon,
+    'symbol-structure': LayoutPanelTop,
+    folder: FolderOpenIcon,
+    'git-folder': FolderGitIcon,
+    'list-selection': ListMinusIcon,
+    file: FileIcon,
+    'square-dashed-mouse-pointer': SquareDashedMousePointerIcon,
+    'layout-menubar': LayoutPanelTopIcon,
 }

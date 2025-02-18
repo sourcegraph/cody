@@ -173,8 +173,10 @@ function getFullRangeofDocument(document: vscode.TextDocument): vscode.Range {
     return range
 }
 
+export type SmartSelectionType = 'insert' | 'selection' | 'entire-file'
+
 interface SmartSelection {
-    type: 'insert' | 'selection' | 'entire-file'
+    type: SmartSelectionType
     range: vscode.Range
 }
 

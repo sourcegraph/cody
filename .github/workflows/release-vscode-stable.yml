@@ -1,0 +1,110 @@
+name: release-vscode-stable
+
+on:
+  push:
+    tags:
+      - vscode-v*
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  release:
+    if: github.repository == 'sourcegraph/cody'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write # for publishing the release
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v3
+        with:
+          node-version-file: .tool-versions
+      - uses: pnpm/action-setup@fe02b34f77f8bc703788d5817da081398fad5dd2 # SECURITY: pin third-party action hashes
+        with:
+          run_install: true
+      - name: get release version
+        id: release_version
+        run: |
+          TAGGED_VERSION="${GITHUB_REF/refs\/tags\/vscode-v/}"
+
+          if [[ ! "${TAGGED_VERSION}" =~ ^[0-9]+\.[0-9]+\.[0-9]+.*$ ]]; then
+            echo "Invalid version tag '${TAGGED_VERSION}'"
+            exit 1
+          fi
+
+          echo "EXT_VERSION=${TAGGED_VERSION}" >> $GITHUB_ENV
+          WRITTEN_VERSION="$(cat vscode/package.json | jq '.version' -r)"
+
+          if [[ "${TAGGED_VERSION}" != "${WRITTEN_VERSION}" ]]; then
+            echo "Release tag and version in vscode/package.json do not match: '${TAGGED_VERSION}' vs. '${WRITTEN_VERSION}'"
+            exit 1
+          fi
+      - run: pnpm build
+      - run: pnpm run test
+      - run: xvfb-run -a pnpm -C vscode run test:integration
+      - run: xvfb-run -a pnpm -C vscode run test:e2e
+        env:
+          NO_LOG_TESTING_TELEMETRY_CALLS: true
+      - run: CODY_RELEASE_TYPE=stable pnpm -C vscode run release
+        if: github.repository == 'sourcegraph/cody'
+        env:
+          VSCODE_MARKETPLACE_TOKEN: ${{ secrets.VSCODE_MARKETPLACE_TOKEN }}
+          VSCODE_OPENVSX_TOKEN: ${{ secrets.VSCODE_OPENVSX_TOKEN }}
+      - run: pnpm -C vscode run github-changelog
+      - name: create release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Cody for VS Code ${{ env.EXT_VERSION }}
+          draft: false
+          body_path: vscode/GITHUB_CHANGELOG.md
+      - name: upload release asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./vscode/dist/cody.vsix
+          asset_name: cody-vscode-${{ env.EXT_VERSION }}.vsix
+          asset_content_type: application/zip
+      - name: Determine version numbers
+        run: |
+          tag="${{ env.EXT_VERSION }}"
+          version_anchor=$(echo $tag | sed 's/[^0-9]//g')
+          major=$(echo $tag | sed 's/\([0-9]*\)\.\([0-9]*\)\.\([0-9]*\)/\1/')
+          minor=$(echo $tag | sed 's/\([0-9]*\)\.\([0-9]*\)\.\([0-9]*\)/\2/')
+          next_minor=$(($minor + 2))
+          echo "VERSION_ANCHOR=$version_anchor" >> $GITHUB_ENV
+          echo "CURRENT_RELEASE_BRANCH=M$minor" >> $GITHUB_ENV
+          echo "NEXT_RELEASE_BRANCH=M$next_minor" >> $GITHUB_ENV
+      - name: "Slack notification"
+        run: |
+          echo "Posting release announcement to Slack"
+          ANNOUNCE_EDITORS_SLACK_WEBHOOK_URL=${{ secrets.ANNOUNCE_EDITORS_SLACK_WEBHOOK_URL }}
+          ANNOUNCE_RELEASES_SLACK_WEBHOOK_URL=${{ secrets.ANNOUNCE_RELEASES_SLACK_WEBHOOK_URL }}
+
+          # treat this like an array, add a space for the next webhook secret
+          webhooks=("$ANNOUNCE_EDITORS_SLACK_WEBHOOK_URL" "$ANNOUNCE_RELEASES_SLACK_WEBHOOK_URL")
+          for webhook in "${webhooks[@]}"; do
+            response=$(curl -s -w "%{http_code}" -X POST -H "Content-Type: application/json" -d '{
+              "type": "mrkdwn",
+              "text": ":cody: :vscode: Cody for VS Code `v${{ env.EXT_VERSION }}` has been published, see the <https://github.com/sourcegraph/cody/blob/main/vscode/CHANGELOG.md#${{ env.VERSION_ANCHOR }} | github changelog> for more details. \n\n\n :next: :next: :next: :bullettrain_side: \n\n\n The next pre-release will be built off the `${{ env.NEXT_RELEASE_BRANCH }}` branch, see a preview of all changes <https://github.com/sourcegraph/cody/compare/${{ env.CURRENT_RELEASE_BRANCH }}...${{ env.NEXT_RELEASE_BRANCH }} | here>"
+            }' "$webhook")
+            status_code=${response: -3}
+            body=${response:0:${#response}-3}
+
+            if [ "$status_code" != "200" ]; then
+              echo "❌ Unable to post message to slack, got:"
+              echo "--- raw body ---"
+              echo "$body"
+              echo "--- raw body ---"
+              exit 1
+            else
+              echo "Posted to slack."
+            fi
+          done

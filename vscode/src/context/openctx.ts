@@ -1,9 +1,13 @@
 import {
     type AuthStatus,
     CODE_SEARCH_PROVIDER_URI,
+    ClientConfigSingleton,
     type ClientConfiguration,
+    type CodyClientConfig,
     FeatureFlag,
     GIT_OPENCTX_PROVIDER_URI,
+    type OpenCtxController,
+    RULES_PROVIDER_URI,
     WEB_PROVIDER_URI,
     authStatus,
     clientCapabilities,
@@ -15,11 +19,12 @@ import {
     graphqlClient,
     isDotCom,
     isError,
+    isRulesEnabled,
     logError,
     pluck,
     promiseFactoryToObservable,
     resolvedConfig,
-    setOpenCtx,
+    skipPendingOperation,
     switchMap,
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
@@ -38,12 +43,17 @@ import LinearIssuesProvider from './openctx/linear-issues'
 import RemoteDirectoryProvider, { createRemoteDirectoryProvider } from './openctx/remoteDirectorySearch'
 import RemoteFileProvider, { createRemoteFileProvider } from './openctx/remoteFileSearch'
 import RemoteRepositorySearch, { createRemoteRepositoryProvider } from './openctx/remoteRepositorySearch'
+import { createRulesProvider } from './openctx/rules'
 import { createWebProvider } from './openctx/web'
 
-export function exposeOpenCtxClient(
+/**
+ * DO NOT USE except in `main.ts` initial activation. Instead, ise the global `openctxController`
+ * observable to obtain the OpenCtx controller.
+ */
+export function observeOpenCtxController(
     context: Pick<vscode.ExtensionContext, 'extension' | 'secrets'>,
     createOpenCtxController: typeof createController | undefined
-): Observable<void> {
+): Observable<OpenCtxController> {
     void warnIfOpenCtxExtensionConflict()
 
     return combineLatest(
@@ -73,7 +83,7 @@ export function exposeOpenCtxClient(
             async () => createOpenCtxController ?? (await import('@openctx/vscode-lib')).createController
         )
     ).pipe(
-        createDisposables(([{ experimentalNoodle }, isValidSiteVersion, createController]) => {
+        map(([{ experimentalNoodle }, isValidSiteVersion, createController]) => {
             try {
                 // Enable fetching of openctx configuration from Sourcegraph instance
                 const mergeConfiguration = experimentalNoodle
@@ -93,21 +103,25 @@ export function exposeOpenCtxClient(
                     features: clientCapabilities().isVSCode ? { annotations: true } : {},
                     providers: clientCapabilities().isCodyWeb
                         ? getCodyWebOpenCtxProviders()
-                        : getOpenCtxProviders(authStatus, isValidSiteVersion),
+                        : getOpenCtxProviders(
+                              authStatus,
+                              ClientConfigSingleton.getInstance().changes.pipe(
+                                  skipPendingOperation(),
+                                  distinctUntilChanged()
+                              ),
+                              isValidSiteVersion
+                          ),
                     mergeConfiguration,
                 })
-                setOpenCtx({
-                    controller: controller.controller,
-                    disposable: controller.disposable,
-                })
                 CodyToolProvider.setupOpenCtxProviderListener()
-                return controller.disposable
+                return controller
             } catch (error) {
                 logDebug('openctx', `Failed to load OpenCtx client: ${error}`)
-                return undefined
+                throw error
             }
         }),
-        map(() => undefined)
+        createDisposables(controller => controller.disposable),
+        map(controller => controller.controller)
     )
 }
 
@@ -115,20 +129,19 @@ let openctxOutputChannel: vscode.OutputChannel | undefined
 
 export function getOpenCtxProviders(
     authStatusChanges: Observable<Pick<AuthStatus, 'endpoint'>>,
+    clientConfigChanges: Observable<CodyClientConfig | undefined>,
     isValidSiteVersion: boolean
 ): Observable<ImportedProviderConfiguration[]> {
     return combineLatest(
         resolvedConfig.pipe(pluck('configuration'), distinctUntilChanged()),
+        clientConfigChanges,
         authStatusChanges,
-        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.GitMentionProvider),
-        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyExperimentalOneBox),
-        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.SourcegraphTeamsUpgradeCTA)
+        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.GitMentionProvider)
     ).map(
-        ([config, authStatus, gitMentionProvider, enableOneBox, showRemoteWorkspaceUpgrade]: [
+        ([config, clientConfig, authStatus, gitMentionProvider]: [
             ClientConfiguration,
+            CodyClientConfig | undefined,
             Pick<AuthStatus, 'endpoint'>,
-            boolean | undefined,
-            boolean | undefined,
             boolean | undefined,
         ]) => {
             const providers: ImportedProviderConfiguration[] = [
@@ -138,6 +151,14 @@ export function getOpenCtxProviders(
                     providerUri: WEB_PROVIDER_URI,
                 },
             ]
+
+            if (isRulesEnabled(config)) {
+                providers.push({
+                    settings: true,
+                    provider: createRulesProvider(),
+                    providerUri: RULES_PROVIDER_URI,
+                })
+            }
 
             if (!isDotCom(authStatus)) {
                 // Remote repository and remote files should be available for non-dotcom users.
@@ -178,7 +199,7 @@ export function getOpenCtxProviders(
                 })
             }
 
-            if (enableOneBox) {
+            if (clientConfig?.omniBoxEnabled) {
                 providers.push({
                     settings: true,
                     provider: createCodeSearchProvider(),
@@ -193,8 +214,9 @@ export function getOpenCtxProviders(
 
 function getCodyWebOpenCtxProviders(): Observable<ImportedProviderConfiguration[]> {
     return combineLatest(
-        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyExperimentalOneBox)
-    ).map(([enableOneBox]: [boolean | undefined]) => {
+        resolvedConfig.pipe(pluck('configuration'), distinctUntilChanged()),
+        ClientConfigSingleton.getInstance().changes.pipe(skipPendingOperation(), distinctUntilChanged())
+    ).map(([config, clientConfig]) => {
         const providers = [
             {
                 settings: true,
@@ -218,7 +240,15 @@ function getCodyWebOpenCtxProviders(): Observable<ImportedProviderConfiguration[
             },
         ]
 
-        if (enableOneBox) {
+        if (isRulesEnabled(config)) {
+            providers.push({
+                settings: true,
+                provider: createRulesProvider(),
+                providerUri: RULES_PROVIDER_URI,
+            })
+        }
+
+        if (clientConfig?.omniBoxEnabled) {
             providers.push({
                 settings: true,
                 provider: createCodeSearchProvider(),

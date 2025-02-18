@@ -183,18 +183,11 @@ const prosemirrorActor = fromCallback<ProseMirrorMachineEvent, ProseMirrorMachin
             }
         })
 
-        function doFocus() {
-            editor.focus()
-            editor.dispatch(editor.state.tr.scrollIntoView())
-        }
-
         receive(event => {
             switch (event.type) {
                 case 'focus':
-                    doFocus()
-                    // HACK(sqs): Needed in VS Code webviews to actually get it to focus
-                    // on initial load, for some reason.
-                    setTimeout(doFocus)
+                    editor.focus()
+                    editor.dispatch(editor.state.tr.scrollIntoView())
                     break
                 case 'blur':
                     editor.dom.blur()
@@ -742,6 +735,16 @@ export const promptInput = setup({
                             return
                         }
 
+                        if (item.type === 'open-link') {
+                            // "open-link" items are links to documentation, you can not commit them as mentions.
+                            enqueue({
+                                type: 'updateEditorState',
+                                params: replaceAtMention(context.editorState, schema.text('')),
+                            })
+                            // TODO: Raise an event? Enqueue a task? to open the link.
+                            return
+                        }
+
                         // In all other cases we'll insert the selected item as a mention node.
                         enqueue({
                             type: 'updateEditorState',
@@ -1160,7 +1163,7 @@ function isEditorContentOnlyInitialContext(state: EditorState): boolean {
 /**
  * Creates a mention node from a context item.
  */
-export function createMentionNode(attrs: {
+function createMentionNode(attrs: {
     item: SerializedContextItem
     isFromInitialContext?: boolean
 }): Node {

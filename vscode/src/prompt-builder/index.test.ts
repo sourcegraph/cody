@@ -1,5 +1,3 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-
 import type { ContextItem, Message } from '@sourcegraph/cody-shared'
 import {
     type ChatMessage,
@@ -8,7 +6,9 @@ import {
     displayPath,
     ps,
 } from '@sourcegraph/cody-shared'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { URI } from 'vscode-uri'
+import { mockLocalStorage } from '../services/LocalStorageProvider'
 import { PromptBuilder } from './index'
 
 describe('PromptBuilder', () => {
@@ -355,6 +355,7 @@ describe('PromptBuilder', () => {
         })
 
         it('preserves context items content', async () => {
+            mockLocalStorage('inMemory')
             const builder = await PromptBuilder.create({ input: 100, output: 100 })
             builder.tryAddToPrefix(preamble)
             builder.tryAddMessages([...chatTranscript].reverse())

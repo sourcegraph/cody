@@ -26,6 +26,11 @@ import { isUriIgnoredByContextFilterWithNotification } from '../cody-ignore/cont
 import type { ExtensionClient } from '../extension-client'
 import { ACTIVE_TASK_STATES } from '../non-stop/codelenses/constants'
 import { splitSafeMetadata } from '../services/telemetry-v2'
+import {
+    EditLoggingFeatureFlagManager,
+    SmartApplyContextLogger,
+    getEditLoggingContext,
+} from './edit-context-logging'
 import type { ExecuteEditArguments } from './execute'
 import { SMART_APPLY_FILE_DECORATION, getSmartApplySelection } from './prompt/smart-apply'
 import { EditProvider } from './provider'
@@ -48,6 +53,8 @@ export interface EditManagerOptions {
 export class EditManager implements vscode.Disposable {
     private disposables: vscode.Disposable[] = []
     private editProviders = new WeakMap<FixupTask, EditProvider>()
+    private loggingFeatureFlagManagerInstance = new EditLoggingFeatureFlagManager()
+    private smartApplyContextLogger = new SmartApplyContextLogger(this.loggingFeatureFlagManagerInstance)
 
     /**
      * Cache to store in-progress or completed smart apply selection promises keyed by task ID
@@ -107,7 +114,8 @@ export class EditManager implements vscode.Disposable {
             editCommand,
             smartApplyCommand,
             prefetchSmartApplyCommand,
-            startCommand
+            startCommand,
+            this.loggingFeatureFlagManagerInstance
         )
     }
 
@@ -185,6 +193,7 @@ export class EditManager implements vscode.Disposable {
                 intent,
                 mode,
                 model,
+                rules: configuration.rules ?? null,
                 source,
                 destinationFile: configuration.destinationFile,
                 insertionPoint: configuration.insertionPoint,
@@ -200,6 +209,7 @@ export class EditManager implements vscode.Disposable {
                 expandedRange,
                 mode,
                 model,
+                configuration.rules ?? null,
                 intent,
                 source,
                 telemetryMetadata
@@ -278,6 +288,7 @@ export class EditManager implements vscode.Disposable {
                         intent: 'add',
                         mode: 'insert',
                         model,
+                        rules: null,
                         source,
                         destinationFile: configuration.document.uri,
                         insertionPoint: undefined,
@@ -301,13 +312,32 @@ export class EditManager implements vscode.Disposable {
                 // We need to extract the proposed code, provided by the LLM, so we can use it in future
                 // queries to ask the LLM to generate a selection, and then ultimately apply the edit.
                 const replacementCode = PromptString.unsafe_fromLLMResponse(configuration.replacement)
-                const now = performance.now()
+
+                const versions = await currentSiteVersion()
+                if (versions instanceof Error) {
+                    throw new Error('unable to determine site version')
+                }
+
+                const contextloggerRequestId =
+                    this.smartApplyContextLogger.createSmartApplyLoggingRequest({
+                        model: model,
+                        userQuery: configuration.instruction.toString(),
+                        replacementCodeBlock: replacementCode.toString(),
+                        document: configuration.document,
+                    })
+
+                const selectionStartTime = Date.now()
                 const selection = await this.fetchSmartApplySelection(
                     configuration,
                     replacementCode,
                     model
                 )
-                console.log(`Smart apply selection latency: ${Math.floor(performance.now() - now)}ms`)
+                console.log(
+                    `Smart apply selection latency: ${Math.floor(
+                        performance.now() - selectionStartTime
+                    )}ms`
+                )
+                const selectionTimeTakenMs = Date.now() - selectionStartTime
 
                 // We finished prompting the LLM for the selection, we can now remove the "progress" decoration
                 // that indicated we where working on the full file.
@@ -331,6 +361,14 @@ export class EditManager implements vscode.Disposable {
                     },
                     billingMetadata: { product: 'cody', category: 'billable' },
                 })
+
+                this.smartApplyContextLogger.addSmartApplySelectionContext(
+                    contextloggerRequestId,
+                    selection.type,
+                    selection.range,
+                    selectionTimeTakenMs,
+                    configuration.document
+                )
 
                 // Move focus to the determined selection
                 editor.revealRange(selection.range, vscode.TextEditorRevealType.InCenter)
@@ -364,6 +402,7 @@ export class EditManager implements vscode.Disposable {
                         intent: 'add',
                         mode: 'insert',
                         model,
+                        rules: null,
                         source,
                         destinationFile: configuration.document.uri,
                         insertionPoint: undefined,
@@ -384,7 +423,8 @@ export class EditManager implements vscode.Disposable {
                 // we can reliably apply this edit.
                 // Just using the replacement code from the response is not enough, as it may contain parts that are not suitable to apply,
                 // e.g. // ...
-                return this.executeEdit({
+                const applyStartTime = Date.now()
+                const task = await this.executeEdit({
                     configuration: {
                         id: configuration.id,
                         document: configuration.document,
@@ -396,6 +436,14 @@ export class EditManager implements vscode.Disposable {
                     },
                     source,
                 })
+                const applyTimeTakenMs = Date.now() - applyStartTime
+                this.smartApplyContextLogger.addApplyContext(
+                    contextloggerRequestId,
+                    applyTimeTakenMs,
+                    task?.id
+                )
+                this.smartApplyContextLogger.logSmartApplyContextToTelemetry(contextloggerRequestId)
+                return
             })
         })
     }
@@ -454,7 +502,7 @@ export class EditManager implements vscode.Disposable {
         if (!inFlight) {
             inFlight = (async (): Promise<ReturnType<typeof getSmartApplySelection>> => {
                 const versions = await currentSiteVersion()
-                if (!versions) {
+                if (!versions || versions instanceof Error) {
                     throw new Error('unable to determine site version')
                 }
                 return getSmartApplySelection(
@@ -515,16 +563,28 @@ export class EditManager implements vscode.Disposable {
             const isFixCommand = intent === 'fix' ? 'fix' : undefined
             const eventName = isDocCommand ?? isUnitTestCommand ?? isFixCommand ?? 'edit'
 
+            const editContext = getEditLoggingContext({
+                isFeatureFlagEnabledForLogging:
+                    this.loggingFeatureFlagManagerInstance.isEditContextDataCollectionFlagEnabled(),
+                instruction: task.instruction.toString(),
+                document: task.document,
+                selectionRange: task.selectionRange,
+            })
+
             const legacyMetadata = {
                 intent: task.intent,
                 mode: task.mode,
                 source: task.source,
                 ...telemetryMetadata,
+                editContext,
             }
             const { metadata, privateMetadata } = splitSafeMetadata(legacyMetadata)
 
             telemetryRecorder.recordEvent(`cody.command.${eventName}`, 'executed', {
-                metadata,
+                metadata: {
+                    ...metadata,
+                    recordsPrivateMetadataTranscript: editContext === undefined ? 0 : 1,
+                },
                 privateMetadata: {
                     ...privateMetadata,
                     model: task.model,

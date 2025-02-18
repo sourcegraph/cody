@@ -3,10 +3,36 @@ name: vscode-generate-changelog
 on:
   workflow_dispatch:
     inputs:
+      editor:
+        description: 'Select editor to create changelog for'
+        required: true
+        type: choice
+        default: 'VS Code'
+        options:
+          - VS Code
       version:
-        description: 'The version to be released, for example: 1.60.0'
+        description: |
+          The version to be released, this will be used as the header of the changelog
+
+          Ex - 1.60.0
         required: true
         type: string
+      bump_version:
+        description: 'Optional: Bump VS Code version - If checked, the VS Code version will be bumped to the specified version from above.'
+        required: false
+        type: boolean
+        default: false
+      release_tag:
+        description: |
+          Optional: Generate changelog since a specific release. ex - vscode-v1.58
+        
+          If no release_tag is specified, the changelog will be generated from the latest release tag.
+        required: false
+        type: string
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   changelog:
@@ -14,14 +40,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          fetch-depth: 0
           ref: ${{ github.event.inputs.branch }}
       - name: Configure git
         run: |
           git config --global user.name 'sourcegraph-bot'
           git config --global user.email 'bot@sourcegraph.com'
           git fetch --tags origin
-          git checkout main
-          git pull
       - name: Download changelog
         env:
           GH_TOKEN: ${{ secrets.DEVX_SERVICE_GH_TOKEN }}
@@ -34,45 +59,61 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.DEVX_SERVICE_GH_TOKEN }}
           GH_REPO: "sourcegraph/cody"
-          CHANGELOG_SKIP_NO_CHANGELOG: "true"
-          CHANGELOG_COMPACT: "true"
+          CHANGELOG_SKIP_NO_CHANGELOG: "false"
+          CHANGELOG_COMPACT: "false"
           VERSION: ${{ github.event.inputs.version }}
+          RELEASE_TAG: ${{ github.event.inputs.release_tag }}
+          EDITOR: ${{ github.event.inputs.editor }}
         run: |
           set +x
-          export CHANGELOG_SKIP_NO_CHANGELOG="false"
-          export CHANGELOG_COMPACT="false"
-          # Get previous tag's commit
-          PREV_TAG=$(git tag --sort=-v:refname | grep '^vscode-v' |  head -n 2 | tail -n 1)
-          export RELEASE_LATEST_RELEASE=$(git rev-parse $PREV_TAG)
 
+          # Use provided release tag if available, otherwise get previous tag
+          if [ -n "$RELEASE_TAG" ]; then
+            export RELEASE_LATEST_RELEASE=$(git rev-parse $RELEASE_TAG)
+          else
+            # Get previous tag's commit based on editor selection
+            if [ "$EDITOR" = "VS Code" ]; then
+              PREV_TAG=$(git tag --sort=-v:refname | grep '^vscode-v' | head -n 2 | tail -n 1)
+            else
+              # not used at the moment as we don't support JetBrains only changelog
+              PREV_TAG=$(git tag --sort=-v:refname | grep '^jb-v' | head -n 2 | tail -n 1)
+            fi
+            export RELEASE_LATEST_RELEASE=$(git rev-parse $PREV_TAG)
+          fi
+
+          # Set editor-specific variables
+          if [ "$EDITOR" = "VS Code" ]; then
+            CHANGELOG_PATH="vscode/CHANGELOG.md"
+            PR_BRANCH="release/vscode-v%s"
+          fi
+          
           # Get current release commit
           export RELEASE_LATEST_COMMIT=$(git rev-parse HEAD)
           echo "Latest Commit: $RELEASE_LATEST_COMMIT"
           echo "Latest Release: $RELEASE_LATEST_RELEASE"
+
+          # see https://github.com/sourcegraph/devx-service/tree/main/cmd/changelog for binary details
           ./changelog update-as-pr \
             --github.repo=$GH_REPO \
+            --github.fetch-strategy="between-commit" \
             --output.repo.base="main" \
             --output.repo=$GH_REPO \
-            --output.pr.branch="release/vscode-%s" \
+            --output.pr.branch="$PR_BRANCH" \
             --output.pr.title="Changelog for %s" \
-            --output.pr.body="Automated release and changelog for VS code Cody %s" \
-            --output.changelog="vscode/CHANGELOG.md" \
+            --output.pr.body="Automated release and changelog for VS code Cody %s \n ## Test plan \n N/A - changelog update" \
+            --output.changelog="$CHANGELOG_PATH" \
             --output.changelog.marker='<!--- {/_ CHANGELOG_START _/} -->' \
-            --releaseregistry.version=$text
+            --releaseregistry.version=${VERSION}
 
-          #   --title "VS Code: Release v$VERSION" \
-          #   --body "Automated release and changelog for VS code Cody" \
-          #   --base main --head release/vscode-v$VERSION
       - name: Update version
+        if: ${{ github.event.inputs.bump_version == 'true' }}
         env:
           VERSION: ${{ github.event.inputs.version }}
         run: |
           set +x
-          # git checkout -b version-update/$VERSION
-          sed -i 's/"version": "[0-9]\+\.[0-9]\+\.[0-9]\+"/"version": "'$VERSION'"/' vscode/package.json
-          # This will get tagged along with the changelog PR
-          git add vscode/package.json
           git pull
-          git checkout release/vscode-$VERSION
+          git checkout release/vscode-v$VERSION
+          sed -i 's/"version": "[0-9]\+\.[0-9]\+\.[0-9]\+"/"version": "'$VERSION'"/' vscode/package.json
+          git add vscode/package.json
           git commit -m "Update version to $VERSION"
           git push

@@ -1,6 +1,7 @@
-import { type Model, ModelTag, isCodyProModel, isWaitlistModel } from '@sourcegraph/cody-shared'
+import { type Model, ModelTag, isCodyProModel } from '@sourcegraph/cody-shared'
+import { DeepCodyAgentID, ToolCodyModelName } from '@sourcegraph/cody-shared/src/models/client'
 import { clsx } from 'clsx'
-import { BookOpenIcon, BuildingIcon, ExternalLinkIcon } from 'lucide-react'
+import { BookOpenIcon, BrainIcon, BuildingIcon, ExternalLinkIcon } from 'lucide-react'
 import { type FunctionComponent, type ReactNode, useCallback, useMemo } from 'react'
 import type { UserAccountInfo } from '../../Chat'
 import { getVSCodeAPI } from '../../utils/VSCodeApi'
@@ -78,12 +79,6 @@ export const ModelSelectField: React.FunctionComponent<{
                     value: 'https://sourcegraph.com/cody/subscription',
                 })
                 return
-            }
-            if (isWaitlistModel(model)) {
-                getVSCodeAPI().postMessage({
-                    command: 'links',
-                    value: 'waitlist',
-                })
             }
             parentOnModelSelect(model)
         },
@@ -175,7 +170,7 @@ export const ModelSelectField: React.FunctionComponent<{
             disabled={readOnly}
             __storybook__open={__storybook__open}
             tooltip={readOnly ? undefined : 'Select a model'}
-            aria-label="Select a model"
+            aria-label="Select a model or an agent"
             popoverContent={close => (
                 <Command
                     loop={true}
@@ -303,6 +298,10 @@ function modelAvailability(
 }
 
 function getTooltip(model: Model, availability: string): string {
+    if (model.id.includes(DeepCodyAgentID)) {
+        return 'Agentic chat reflects on your request and uses tools to dynamically retrieve relevant context, improving accuracy and response quality.'
+    }
+
     if (model.tags.includes(ModelTag.Waitlist)) {
         return 'Request access to this new model'
     }
@@ -352,8 +351,18 @@ const ModelTitleWithIcon: React.FC<{
     const isDisabled = modelAvailability !== 'available'
 
     return (
-        <span className={clsx(styles.modelTitleWithIcon, { [styles.disabled]: isDisabled })}>
-            {showIcon ? <ChatModelIcon model={model.provider} className={styles.modelIcon} /> : null}
+        <span
+            className={clsx(styles.modelTitleWithIcon, {
+                [styles.disabled]: isDisabled,
+            })}
+        >
+            {showIcon ? (
+                model.id.includes(DeepCodyAgentID) ? (
+                    <BrainIcon size={16} className={styles.modelIcon} />
+                ) : (
+                    <ChatModelIcon model={model.provider} className={styles.modelIcon} />
+                )
+            ) : null}
             <span className={clsx('tw-flex-grow', styles.modelName)}>{model.title}</span>
             {modelBadge && (
                 <Badge
@@ -369,17 +378,17 @@ const ModelTitleWithIcon: React.FC<{
     )
 }
 
-const ChatModelIcon: FunctionComponent<{ model: string; className?: string }> = ({
-    model,
-    className,
-}) => {
+const ChatModelIcon: FunctionComponent<{
+    model: string
+    className?: string
+}> = ({ model, className }) => {
     const ModelIcon = chatModelIconComponent(model)
     return ModelIcon ? <ModelIcon size={16} className={className} /> : null
 }
 
 /** Common {@link ModelsService.uiGroup} values. */
 const ModelUIGroup: Record<string, string> = {
-    Agents: 'Agents with tools',
+    Agents: 'Agent, extensive context fetching',
     Power: 'More powerful models',
     Balanced: 'Balanced for power and speed',
     Speed: 'Faster models',
@@ -388,7 +397,8 @@ const ModelUIGroup: Record<string, string> = {
 }
 
 const getModelDropDownUIGroup = (model: Model): string => {
-    if (['deep-cody', 'tool-cody'].some(id => model.id.includes(id))) return ModelUIGroup.Agents
+    if ([DeepCodyAgentID, ToolCodyModelName].some(id => model.id.includes(id)))
+        return ModelUIGroup.Agents
     if (model.tags.includes(ModelTag.Power)) return ModelUIGroup.Power
     if (model.tags.includes(ModelTag.Balanced)) return ModelUIGroup.Balanced
     if (model.tags.includes(ModelTag.Speed)) return ModelUIGroup.Speed

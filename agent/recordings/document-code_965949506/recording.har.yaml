@@ -111,16 +111,14 @@ log:
           - name: content-type
             value: application/json
           - name: traceparent
-            value: 00-4fd9123b06401b84ccd18f0a1172a3b7-1f30130386b65f90-01
-          - name: transfer-encoding
-            value: chunked
+            value: 00-577cac87b377599574217b2049d1771d-fa0ee4555dd57c36-01
           - name: user-agent
-            value: document-code/v1 (Node.js v20.10.0)
+            value: document-code/v1 (Node.js v20.4.0)
           - name: x-requested-with
             value: document-code v1
           - name: host
             value: sourcegraph.com
-        headersSize: 496
+        headersSize: 499
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -192,14 +190,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=document-code&client-version=v1
       response:
-        bodySize: 653
+        bodySize: 551
         content:
           mimeType: text/event-stream
-          size: 653
+          size: 551
           text: >+
             event: completion
 
-            data: {"deltaText":"/**\n * Adds two numbers together and returns the result.\n * \n * @param a - The first number to add.\n * @param b - The second number to add.\n * @returns The sum of the two input numbers.\n */\n","stopReason":"stop_sequence"}
+            data: {"deltaText":"/**\n * Calculates the sum of two numbers.\n *\n * @param a - The first number to add.\n * @param b - The second number to add.\n * @returns The sum of the two input numbers.\n */","stopReason":"stop_sequence"}
 
 
             event: done
@@ -209,7 +207,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 09 Dec 2024 14:48:08 GMT
+            value: Tue, 11 Feb 2025 18:54:46 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -217,17 +215,13 @@ log:
           - name: connection
             value: keep-alive
           - name: retry-after
-            value: "587"
+            value: "65"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
             value: ""
           - name: cache-control
             value: no-cache
-          - name: observed-calculated-ip-from-forwarded-for
-            value: 80.82.18.146
-          - name: observed-x-forwarded-for
-            value: 80.82.18.146
           - name: vary
             value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
               X-Requested-With,Cookie
@@ -239,13 +233,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1503
+        headersSize: 1405
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-12-09T14:48:07.338Z
-      time: 1380
+      startedDateTime: 2025-02-11T18:54:44.802Z
+      time: 1282
       timings:
         blocked: -1
         connect: -1
@@ -253,7 +247,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 1380
+        wait: 1282
     - _id: b984569950bd99c595bdbffb24424c26
       _order: 0
       cache: {}
@@ -271,16 +265,14 @@ log:
           - name: content-type
             value: application/json
           - name: traceparent
-            value: 00-6768009ad5098b5314f0a34d18f24bb2-3896107a72c78c2c-01
-          - name: transfer-encoding
-            value: chunked
+            value: 00-5e9e9dcd0b2bc5d85b34b81df5719f4a-b4992745b5fe98d0-01
           - name: user-agent
-            value: document-code/v1 (Node.js v20.10.0)
+            value: document-code/v1 (Node.js v20.4.0)
           - name: x-requested-with
             value: document-code v1
           - name: host
             value: sourcegraph.com
-        headersSize: 496
+        headersSize: 499
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -399,14 +391,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=document-code&client-version=v1
       response:
-        bodySize: 338
+        bodySize: 312
         content:
           mimeType: text/event-stream
-          size: 338
+          size: 312
           text: >+
             event: completion
 
-            data: {"deltaText":"\n/**\n * Logs \"Hello World!\" to the console if the `shouldGreet` property is true.\n */\n","stopReason":"stop_sequence"}
+            data: {"deltaText":"\n/**\n * Greets the user if the `shouldGreet` flag is set.\n */\n","stopReason":"stop_sequence"}
 
 
             event: done
@@ -416,7 +408,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 09 Dec 2024 14:48:10 GMT
+            value: Tue, 11 Feb 2025 18:54:47 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -424,17 +416,13 @@ log:
           - name: connection
             value: keep-alive
           - name: retry-after
-            value: "586"
+            value: "64"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
             value: ""
           - name: cache-control
             value: no-cache
-          - name: observed-calculated-ip-from-forwarded-for
-            value: 80.82.18.146
-          - name: observed-x-forwarded-for
-            value: 80.82.18.146
           - name: vary
             value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
               X-Requested-With,Cookie
@@ -446,13 +434,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1503
+        headersSize: 1405
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-12-09T14:48:08.754Z
-      time: 1211
+      startedDateTime: 2025-02-11T18:54:46.115Z
+      time: 1297
       timings:
         blocked: -1
         connect: -1
@@ -460,12 +448,12 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 1211
-    - _id: d94ffaa46d88c0fbdeba278c66405b04
+        wait: 1297
+    - _id: c2cd55110c5891dd44665a65b9e6eae4
       _order: 0
       cache: {}
       request:
-        bodySize: 3047
+        bodySize: 3004
         cookies: []
         headers:
           - name: accept-encoding
@@ -478,16 +466,14 @@ log:
           - name: content-type
             value: application/json
           - name: traceparent
-            value: 00-f1629167f09528d375eab0e832c6d16f-964cf412cc2b54eb-01
-          - name: transfer-encoding
-            value: chunked
+            value: 00-bc1c2779927b127f8ce19d458438e735-141708e418ae2c04-01
           - name: user-agent
-            value: document-code/v1 (Node.js v20.10.0)
+            value: document-code/v1 (Node.js v20.4.0)
           - name: x-requested-with
             value: document-code v1
           - name: host
             value: sourcegraph.com
-        headersSize: 496
+        headersSize: 499
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -518,10 +504,19 @@ log:
                   - Only enclose your response in <CODE5711></CODE5711> XML tags. Do use any other XML tags unless they are part of the generated code.
 
                   - Do not provide any additional commentary about the changes you made. Only respond with the generated code.
-              - speaker: human
+              - cacheEnabled: true
+                speaker: human
                 text: >+
                   Codebase context from file path src/TestLogger.ts: Codebase
                   context from file src/TestLogger.ts:
+
+                          recordLog()
+                      },
+                  }
+
+
+
+                  Codebase context from file path src/TestLogger.ts: Codebase context from file src/TestLogger.ts:
 
                   const foo = 42
 
@@ -529,16 +524,6 @@ log:
                       startLogging: () => {
                           // Do some stuff
 
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: >
-                  Codebase context from file path src/TestLogger.ts: Codebase
-                  context from file src/TestLogger.ts:
-
-                          recordLog()
-                      },
-                  }
               - speaker: assistant
                 text: Ok.
               - speaker: human
@@ -581,14 +566,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=document-code&client-version=v1
       response:
-        bodySize: 216
+        bodySize: 318
         content:
           mimeType: text/event-stream
-          size: 216
+          size: 318
           text: >+
             event: completion
 
-            data: {"deltaText":"\n/**\n * Records a log message to the console.\n */\n","stopReason":"stop_sequence"}
+            data: {"deltaText":"\n/**\n * Logs a message indicating that a log is being recorded.\n */\n","stopReason":"stop_sequence"}
 
 
             event: done
@@ -598,7 +583,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 09 Dec 2024 14:48:12 GMT
+            value: Tue, 11 Feb 2025 18:54:48 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -606,17 +591,13 @@ log:
           - name: connection
             value: keep-alive
           - name: retry-after
-            value: "584"
+            value: "62"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
             value: ""
           - name: cache-control
             value: no-cache
-          - name: observed-calculated-ip-from-forwarded-for
-            value: 80.82.18.146
-          - name: observed-x-forwarded-for
-            value: 80.82.18.146
           - name: vary
             value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
               X-Requested-With,Cookie
@@ -628,13 +609,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1503
+        headersSize: 1405
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-12-09T14:48:09.986Z
-      time: 2067
+      startedDateTime: 2025-02-11T18:54:47.434Z
+      time: 862
       timings:
         blocked: -1
         connect: -1
@@ -642,12 +623,12 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 2067
-    - _id: 11242d3d661836d08d91de36ee8dd1ce
+        wait: 862
+    - _id: 7c6bfb662f305f30b728800a5f464d08
       _order: 0
       cache: {}
       request:
-        bodySize: 3300
+        bodySize: 3257
         cookies: []
         headers:
           - name: accept-encoding
@@ -660,16 +641,14 @@ log:
           - name: content-type
             value: application/json
           - name: traceparent
-            value: 00-2c18771507d6c393f5f387bcc0cc7665-0c12d24eb6330587-01
-          - name: transfer-encoding
-            value: chunked
+            value: 00-e8a4860176977ed241ec85bf791e689c-b3ec88bee0ad8b01-01
           - name: user-agent
-            value: document-code/v1 (Node.js v20.10.0)
+            value: document-code/v1 (Node.js v20.4.0)
           - name: x-requested-with
             value: document-code v1
           - name: host
             value: sourcegraph.com
-        headersSize: 496
+        headersSize: 499
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -700,10 +679,17 @@ log:
                   - Only enclose your response in <CODE5711></CODE5711> XML tags. Do use any other XML tags unless they are part of the generated code.
 
                   - Do not provide any additional commentary about the changes you made. Only respond with the generated code.
-              - speaker: human
+              - cacheEnabled: true
+                speaker: human
                 text: >
                   Codebase context from file path src/example.test.ts: Codebase
                   context from file src/example.test.ts:
+                      })
+                  })
+
+
+
+                  Codebase context from file path src/example.test.ts: Codebase context from file src/example.test.ts:
 
                   import { expect } from 'vitest'
 
@@ -723,14 +709,6 @@ log:
 
                       it('does something else', () => {
                           // This line will error due to incorrect usage of `performance.now`
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: >
-                  Codebase context from file path src/example.test.ts: Codebase
-                  context from file src/example.test.ts:
-                      })
-                  })
               - speaker: assistant
                 text: Ok.
               - speaker: human
@@ -772,14 +750,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=document-code&client-version=v1
       response:
-        bodySize: 411
+        bodySize: 446
         content:
           mimeType: text/event-stream
-          size: 411
+          size: 446
           text: >+
             event: completion
 
-            data: {"deltaText":"\n/**\n * Retrieves the current time in milliseconds since the page was loaded, for use in performance measurements.\n */\n","stopReason":"stop_sequence"}
+            data: {"deltaText":"\n/**\n * Retrieves the current time in milliseconds since the page was loaded.\n * This is useful for measuring the duration of an operation or event.\n */\n","stopReason":"stop_sequence"}
 
 
             event: done
@@ -789,7 +767,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 09 Dec 2024 14:48:13 GMT
+            value: Tue, 11 Feb 2025 18:54:49 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -797,17 +775,13 @@ log:
           - name: connection
             value: keep-alive
           - name: retry-after
-            value: "582"
+            value: "61"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
             value: ""
           - name: cache-control
             value: no-cache
-          - name: observed-calculated-ip-from-forwarded-for
-            value: 80.82.18.146
-          - name: observed-x-forwarded-for
-            value: 80.82.18.146
           - name: vary
             value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
               X-Requested-With,Cookie
@@ -819,13 +793,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1503
+        headersSize: 1405
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-12-09T14:48:12.071Z
-      time: 1694
+      startedDateTime: 2025-02-11T18:54:48.312Z
+      time: 1252
       timings:
         blocked: -1
         connect: -1
@@ -833,7 +807,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 1694
+        wait: 1252
     - _id: d4b7126134fbb6b0bd8e84cd9391d7c5
       _order: 0
       cache: {}
@@ -851,16 +825,14 @@ log:
           - name: content-type
             value: application/json
           - name: traceparent
-            value: 00-fce537c1292184f138142fdb4b12eab4-ba7745bec0ac542d-01
-          - name: transfer-encoding
-            value: chunked
+            value: 00-556b4851df49b95f96f6d4397a4ffc67-5b4f84e8b0fcb556-01
           - name: user-agent
-            value: document-code/v1 (Node.js v20.10.0)
+            value: document-code/v1 (Node.js v20.4.0)
           - name: x-requested-with
             value: document-code v1
           - name: host
             value: sourcegraph.com
-        headersSize: 496
+        headersSize: 499
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -934,14 +906,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=document-code&client-version=v1
       response:
-        bodySize: 380
+        bodySize: 306
         content:
           mimeType: text/event-stream
-          size: 380
+          size: 306
           text: >+
             event: completion
 
-            data: {"deltaText":"/**\n * Provides a greeting message.\n * @return The greeting message \"Hello, world!\"\n */","stopReason":"stop_sequence"}
+            data: {"deltaText":"/**\n * Provides a simple \"Hello, world!\" greeting.\n */\n","stopReason":"stop_sequence"}
 
 
             event: done
@@ -951,7 +923,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 09 Dec 2024 14:48:15 GMT
+            value: Tue, 11 Feb 2025 18:54:50 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -959,17 +931,13 @@ log:
           - name: connection
             value: keep-alive
           - name: retry-after
-            value: "581"
+            value: "60"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
             value: ""
           - name: cache-control
             value: no-cache
-          - name: observed-calculated-ip-from-forwarded-for
-            value: 80.82.18.146
-          - name: observed-x-forwarded-for
-            value: 80.82.18.146
           - name: vary
             value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
               X-Requested-With,Cookie
@@ -981,13 +949,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1503
+        headersSize: 1405
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-12-09T14:48:13.836Z
-      time: 1249
+      startedDateTime: 2025-02-11T18:54:49.626Z
+      time: 1372
       timings:
         blocked: -1
         connect: -1
@@ -995,7 +963,103 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 1249
+        wait: 1372
+    - _id: f1b1cde4cd57488b7f0137954f0302f5
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 136
+        cookies: []
+        headers:
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_fc324d3667e841181b0779375f26dedc911d26b303d23b29b1a2d7ee63dc77eb
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: document-code/v1 (Node.js v20.4.0)
+          - _fromType: array
+            name: x-requested-with
+            value: document-code v1
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "136"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - name: host
+            value: sourcegraph.com
+        headersSize: 434
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            query: >
+              
+              query CodeSearchEnabled {
+                  codeSearchEnabled: enterpriseLicenseHasFeature(feature:"code-search")
+              }
+            variables: {}
+        queryString:
+          - name: CodeSearchEnabled
+            value: null
+        url: https://sourcegraph.com/.api/graphql?CodeSearchEnabled
+      response:
+        bodySize: 35
+        content:
+          mimeType: application/json
+          size: 35
+          text: "{\"data\":{\"codeSearchEnabled\":true}}"
+        cookies: []
+        headers:
+          - name: date
+            value: Wed, 22 Jan 2025 14:39:58 GMT
+          - name: content-type
+            value: application/json
+          - name: content-length
+            value: "35"
+          - name: connection
+            value: close
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1436
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2025-01-22T14:39:57.772Z
+      time: 723
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 723
     - _id: a376faab1c8a1993bb48c745757f0a4a
       _order: 0
       cache: {}
@@ -1688,114 +1752,6 @@ log:
         send: 0
         ssl: -1
         wait: 557
-    - _id: 2481998e71355fc9ca2258fbaae1cf9a
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 101
-        cookies: []
-        headers:
-          - _fromType: array
-            name: authorization
-            value: token
-              REDACTED_fc324d3667e841181b0779375f26dedc911d26b303d23b29b1a2d7ee63dc77eb
-          - _fromType: array
-            name: content-type
-            value: application/json; charset=utf-8
-          - _fromType: array
-            name: user-agent
-            value: document-code/v1 (Node.js v20.4.0)
-          - _fromType: array
-            name: x-requested-with
-            value: document-code v1
-          - _fromType: array
-            name: accept
-            value: "*/*"
-          - _fromType: array
-            name: content-length
-            value: "101"
-          - _fromType: array
-            name: accept-encoding
-            value: gzip,deflate
-          - name: host
-            value: sourcegraph.com
-        headersSize: 434
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json; charset=utf-8
-          params: []
-          textJSON:
-            query: |
-              
-              query TemporarySettings {
-                temporarySettings {
-                  contents
-                }
-              }
-            variables: {}
-        queryString:
-          - name: TemporarySettings
-            value: null
-        url: https://sourcegraph.com/.api/graphql?TemporarySettings
-      response:
-        bodySize: 519
-        content:
-          encoding: base64
-          mimeType: application/json
-          size: 519
-          text: "[\"H4sIAAAAAAAAAwAAAP//\",\"xJLLTsMwEEV/xbJYVa3zIlT1DsGCfbsCg+Qm08TCsYM9\
-            BqIq/46cSIgFbCiP7cz1+Ny5c6S1REn5kSJ0vXXSDVtAVKbxsVhZg2DQU06PggYPjmn\
-            p8VoOlxWqZxCUE0F3bSBb6Em2IXmanwu6JIJWth6YNXsrXa1MwzxCH+V5bE6Tajn4ec\
-            yVDQZjM8s+e1rZrteAUEcJugBR5EG6qmXK9AGZgwoMbqcS+Ci7Owr6FMANM+Jk5BV5o\
-            +1eauKgt/yhUdiGvRBCxC8Sb4OroHGyb5OIcEYippEdcHJQGriDys5ErXRskJ2erWrV\
-            KbxRk4OD1H7iQ9WBR9n1M0BczCotV/l6l2X8PONZwcqivJ0nOPBB4/sainFJfoFfNmA\
-            weXfhk0WyONVGWrI0XX9uI/0jG9/GT3m5Zpus+OcUTssg5WXBLr46pZ/K4ENlb3HzuD\
-            qYly6cAF2ULN98ef/3Ix3H8Q0AAP//AwAcyw0bngQAAA==\"]"
-        cookies: []
-        headers:
-          - name: date
-            value: Fri, 17 Jan 2025 13:17:25 GMT
-          - name: content-type
-            value: application/json
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: close
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache, max-age=0
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-          - name: content-encoding
-            value: gzip
-        headersSize: 1468
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2025-01-17T13:17:25.049Z
-      time: 739
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 739
     - _id: fd0fee4687419870bc82cba9d1023319
       _order: 0
       cache: {}

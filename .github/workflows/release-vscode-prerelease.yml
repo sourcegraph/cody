@@ -1,0 +1,92 @@
+name: release-vscode-prerelease
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  release:
+    if: github.repository == 'sourcegraph/cody'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v3
+        with:
+          node-version-file: .tool-versions
+      - uses: pnpm/action-setup@fe02b34f77f8bc703788d5817da081398fad5dd2 # SECURITY: pin third-party action hashes
+        with:
+          run_install: true
+      - run: pnpm build
+      - run: pnpm run test
+      - run: xvfb-run -a pnpm -C vscode run test:integration
+      - run: xvfb-run -a pnpm -C vscode run test:e2e
+        env:
+          NO_LOG_TESTING_TELEMETRY_CALLS: true
+      - run: pnpm -C vscode run build
+      - name: Check bundle sizes
+        run: |
+          cd vscode
+          pnpm ts-node ./scripts/measure-bundle-size.ts
+          cd ..
+          echo "Extension Bundle Size: $EXTENSION_BUNDLE_SIZE_MB MB"
+          echo "Webview Bundle Size: $WEBVIEW_BUNDLE_SIZE_MB MB"
+        env:
+          GITHUB_ENV: $GITHUB_ENV
+      - name: Authenticate to Google Cloud
+        id: auth
+        uses: "google-github-actions/auth@v2"
+        with:
+          project_id: "cody-core-dev"
+          workload_identity_provider: "projects/39257127245/locations/global/workloadIdentityPools/github/providers/cody"
+          service_account: "bundle-size-tracker@cody-core-dev.iam.gserviceaccount.com"
+          create_credentials_file: true
+          export_environment_variables: true
+      - run: CODY_RELEASE_TYPE=insiders pnpm -C vscode run release
+        id: create_release
+        if: github.repository == 'sourcegraph/cody'
+        env:
+          VSCODE_MARKETPLACE_TOKEN: ${{ secrets.VSCODE_MARKETPLACE_TOKEN }}
+          VSCODE_OPENVSX_TOKEN: ${{ secrets.VSCODE_OPENVSX_TOKEN }}
+      - name: Insert data into BigQuery
+        run: |
+          # Compute the current date
+          current_date=$(date +'%Y-%m-%d')
+
+          # Now create the JSON and insert into BigQuery
+          echo "{\"release_version\": \"${{ steps.create_release.outputs.version_tag }}\", \"extension_bundle_size_mb\": $EXTENSION_BUNDLE_SIZE_MB, \"webview_bundle_size_mb\": $WEBVIEW_BUNDLE_SIZE_MB, \"date\": \"$current_date\"}" > data.json
+          bq load \
+            --project_id='cody-core-dev' \
+            --source_format=NEWLINE_DELIMITED_JSON \
+            cody_release.bundle_sizes \
+            data.json
+        env:
+          EXTENSION_BUNDLE_SIZE_MB: ${{ env.EXTENSION_BUNDLE_SIZE_MB }}
+          WEBVIEW_BUNDLE_SIZE_MB: ${{ env.WEBVIEW_BUNDLE_SIZE_MB }}
+      - name: Tag insiders release
+        uses: actions/github-script@v6
+        with:
+          script: |
+            github.rest.git.createRef({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: "refs/tags/${{ steps.create_release.outputs.version_tag }}",
+              sha: context.sha
+            })
+      - name: Slack Notification
+        if: ${{ failure() }}
+        uses: rtCamp/action-slack-notify@b24d75fe0e728a4bf9fc42ee217caa686d141ee8 # SECURITY: pin third-party action hashes
+        env:
+          SLACK_CHANNEL: wg-cody-vscode
+          SLACK_ICON: https://github.com/sourcegraph.png?size=48
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+          SLACK_MESSAGE: Insiders build failed
+          SLACK_COLOR: danger
+          SLACK_FOOTER: ""
+          MSG_MINIMAL: actions url

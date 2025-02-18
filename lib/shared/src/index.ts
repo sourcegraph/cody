@@ -42,7 +42,7 @@ export {
     ModelUsage,
     type ModelContextWindow,
 } from './models/types'
-export { getMockedDotComClientModels, getMockedDotComServerModels } from './models/dotcom'
+export { FIXTURE_MODELS } from './models/fixtures'
 export { ModelTag } from './models/tags'
 export {
     getProviderName,
@@ -106,6 +106,11 @@ export {
     type SymbolKind,
     type ContextItemTree,
     type ContextItemRepository,
+    type ContextItemCurrentSelection,
+    type ContextItemCurrentFile,
+    type ContextItemCurrentRepository,
+    type ContextItemCurrentDirectory,
+    type ContextItemCurrentOpenTabs,
     FILE_RANGE_TOOLTIP_LABEL,
     GENERAL_HELP_LABEL,
     IGNORED_FILE_WARNING_LABEL,
@@ -169,6 +174,7 @@ export type {
 } from './editor'
 export {
     displayPath,
+    displayPathWithLines,
     displayPathBasename,
     uriHasPrefix,
     displayPathDirname,
@@ -352,14 +358,17 @@ export * from './token'
 export * from './token/constants'
 export * from './configuration'
 export {
-    setOpenCtx,
-    openCtx,
+    setOpenCtxControllerObservable,
+    openctxController,
+    type OpenCtxController,
     REMOTE_REPOSITORY_PROVIDER_URI,
     REMOTE_FILE_PROVIDER_URI,
     REMOTE_DIRECTORY_PROVIDER_URI,
     WEB_PROVIDER_URI,
     GIT_OPENCTX_PROVIDER_URI,
     CODE_SEARCH_PROVIDER_URI,
+    currentOpenCtxController,
+    RULES_PROVIDER_URI,
 } from './context/openctx/api'
 export * from './context/openctx/context'
 export * from './lexicalEditor/editorState'
@@ -409,3 +418,12 @@ export { isS2, isWorkspaceInstance } from './sourcegraph-api/environments'
 export { createGitDiff } from './editor/create-git-diff'
 
 export { serialize, deserialize } from './lexicalEditor/atMentionsSerializer'
+
+export { type Rule, isRuleFilename, ruleTitle, parseRuleFile, ruleSearchPaths } from './rules/rules'
+export {
+    type CandidateRule,
+    type RuleProvider,
+    createRuleService,
+    type RuleService,
+    isRulesEnabled,
+} from './rules/service'

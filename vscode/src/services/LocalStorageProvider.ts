@@ -38,10 +38,9 @@ class LocalStorage implements LocalStorageForModelPreferences {
     private readonly MODEL_PREFERENCES_KEY = 'cody-model-preferences'
     private readonly CODY_CHAT_MEMORY = 'cody-chat-memory'
     private readonly AUTO_EDITS_ONBOARDING_NOTIFICATION_COUNT = 'cody-auto-edit-notification-info'
+    private readonly DEVICE_PIXEL_RATIO = 'device-pixel-ratio'
 
     public readonly keys = {
-        // LLM waitlist for the 09/12/2024 openAI o1 models
-        waitlist_o1: 'CODY_WAITLIST_LLM_09122024',
         deepCodyLastUsedDate: 'DEEP_CODY_LAST_USED_DATE',
         deepCodyDailyUsageCount: 'DEEP_CODY_DAILY_CHAT_USAGE',
     }
@@ -77,7 +76,6 @@ class LocalStorage implements LocalStorageForModelPreferences {
             anonymousUserID: this.anonymousUserID(),
             lastUsedChatModality: this.getLastUsedChatModality(),
             modelPreferences: this.getModelPreferences(),
-            waitlist_o1: this.get(this.keys.waitlist_o1),
         }
     }
 
@@ -88,14 +86,6 @@ class LocalStorage implements LocalStorageForModelPreferences {
             map(() => this.getClientState()),
             distinctUntilChanged()
         )
-    }
-
-    public async setOrDeleteWaitlistO1(value: boolean): Promise<void> {
-        if (value) {
-            await this.set(this.keys.waitlist_o1, value)
-        } else {
-            await this.delete(this.keys.waitlist_o1)
-        }
     }
 
     public getEndpoint(): string | null {
@@ -361,6 +351,14 @@ class LocalStorage implements LocalStorageForModelPreferences {
     public async setDeepCodyUsage(newQuota: number, lastUsed: string): Promise<void> {
         await this.set(this.keys.deepCodyDailyUsageCount, newQuota)
         await this.set(this.keys.deepCodyLastUsedDate, lastUsed)
+    }
+
+    public getDevicePixelRatio(): number | null {
+        return this.get<number>(this.DEVICE_PIXEL_RATIO)
+    }
+
+    public async setDevicePixelRatio(ratio: number): Promise<void> {
+        await this.set(this.DEVICE_PIXEL_RATIO, ratio)
     }
 
     public get<T>(key: string): T | null {

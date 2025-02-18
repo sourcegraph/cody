@@ -56,6 +56,8 @@ export class PromptMixin {
             !newMixins.length &&
             !agenticBlockedModels.some(m => modelID?.includes(m))
         ) {
+            // Adding hedging prevention prompt for Deep Cody as it's now pined to Sonnet.
+            mixins.push(PromptMixin.hedging)
             mixins.push(new PromptMixin(AGENTIC_CHAT))
         }
 

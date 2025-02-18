@@ -8,6 +8,10 @@ on:
     types: [opened, reopened, synchronize, ready_for_review]
   workflow_dispatch:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   # Sets a variable that is used to determine the matrix to run fast tests (unit & integration) on.
   # Everything runs on ubuntu and windows, only commits to main run on macos.
@@ -110,11 +114,7 @@ jobs:
     steps:
       - id: set-matrix
         run: |
-          if [ "$GITHUB_EVENT_NAME" == "push" ] && [ "$GITHUB_REF" == "refs/heads/main" ]; then
-            echo 'matrix=[{"runner":"ubuntu"},{"runner":"windows"},{"runner":"macos"}]' >> $GITHUB_OUTPUT
-          else
-            echo 'matrix=[{"runner":"ubuntu","shard":"1/5"},{"runner":"ubuntu","shard":"2/5"},{"runner":"ubuntu","shard":"3/5"},{"runner":"ubuntu","shard":"4/5"},{"runner":"ubuntu","shard":"5/5"}]' >> $GITHUB_OUTPUT
-          fi
+          echo 'matrix=[{"runner":"ubuntu","shard":"1/5"},{"runner":"ubuntu","shard":"2/5"},{"runner":"ubuntu","shard":"3/5"},{"runner":"ubuntu","shard":"4/5"},{"runner":"ubuntu","shard":"5/5"}]' >> $GITHUB_OUTPUT
 
   test-e2e:
     needs: slow_tests_matrix_prep

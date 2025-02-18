@@ -1,6 +1,6 @@
 import { LRUCache } from 'lru-cache'
 import { Observable, map } from 'observable-fns'
-import type * as vscode from 'vscode'
+import * as vscode from 'vscode'
 
 import {
     ContextFiltersProvider,
@@ -39,6 +39,17 @@ export class RepoNameResolver {
      * conversion function. ❗️
      */
     public getRepoNamesContainingUri(uri: vscode.Uri): MaybePendingObservable<RepoName[]> {
+        // Fast-path (for Cody Web): if a workspace root is `repo:my/repo`, then files under it
+        // have repo name `my/repo`.
+        const root = vscode.workspace.getWorkspaceFolder(uri)
+        if (root && root.uri.scheme === 'repo') {
+            const repoName: RepoName = [root.uri.authority, root.uri.path]
+                .filter(isDefined)
+                .join('/')
+                .replace(/^\/(.*?)\/?$/g, '$1') // trim leading/trailing slashes
+            return Observable.of([repoName])
+        }
+
         return combineLatest(
             promiseFactoryToObservable(signal => this.getRemoteUrlsCached(uri, signal)),
             authStatus
@@ -56,19 +67,29 @@ export class RepoNameResolver {
                     return Observable.of([])
                 }
 
-                return combineLatest(
-                    ...remoteUrls.map(remoteUrl => this.getRepoNameCached(remoteUrl))
-                ).pipe(
-                    map(repoNames =>
-                        repoNames.includes(pendingOperation)
-                            ? pendingOperation
-                            : (
-                                  repoNames as Exclude<
-                                      (typeof repoNames)[number],
-                                      typeof pendingOperation
-                                  >[]
-                              ).filter(isDefined)
-                    )
+                const remoteUrlsAndRepoNames = remoteUrls.map(url =>
+                    this.getRepoNameCached(url).map(repoName => [url, repoName] as const)
+                )
+                return combineLatest(...remoteUrlsAndRepoNames).pipe(
+                    map(remoteUrlsAndRepoNames => {
+                        const repoNames: string[] = []
+                        for (const [url, repoName] of remoteUrlsAndRepoNames) {
+                            if (repoName === pendingOperation) {
+                                return pendingOperation
+                            }
+                            // If we didn't get a repoName (means the repo is local only, not on instance),
+                            // use the git clone URL as the repo name.
+                            if (!repoName) {
+                                const convertedName = convertGitCloneURLToCodebaseName(url)
+                                if (convertedName) {
+                                    repoNames.push(convertedName)
+                                }
+                            } else {
+                                repoNames.push(repoName)
+                            }
+                        }
+                        return repoNames
+                    })
                 )
             }),
             map(value => {

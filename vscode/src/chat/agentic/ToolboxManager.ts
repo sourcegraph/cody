@@ -6,15 +6,14 @@ import {
     distinctUntilChanged,
     featureFlagProvider,
     isDotCom,
-    logDebug,
     modelsService,
     pendingOperation,
     startWith,
     userProductSubscription,
 } from '@sourcegraph/cody-shared'
+import { DeepCodyAgentID } from '@sourcegraph/cody-shared/src/models/client'
 import { type Observable, Subject, map } from 'observable-fns'
 import { env } from 'vscode'
-import { localStorage } from '../../services/LocalStorageProvider'
 import { DeepCodyAgent } from './DeepCody'
 
 // Using a readonly interface improves performance by preventing mutations
@@ -24,17 +23,12 @@ const DEFAULT_SHELL_CONFIG = Object.freeze({
     client: false,
 })
 
-type StoredToolboxSettings = {
-    readonly agent: string | undefined
-    readonly shell: boolean
-}
-
 /**
  * ToolboxManager manages the toolbox settings for the Cody chat agents.
  * NOTE: This is a Singleton class.
+ * TODO: Clean up this class and remove unused code.
  */
 class ToolboxManager {
-    private static readonly STORAGE_KEY = 'EXPERIMENTAL_CODYAGENT_TOOLBOX_SETTINGS'
     private static instance?: ToolboxManager
 
     private constructor() {
@@ -51,25 +45,16 @@ class ToolboxManager {
         return ToolboxManager.instance ? ToolboxManager.instance : new ToolboxManager()
     }
 
-    private getStoredUserSettings(): StoredToolboxSettings {
-        return (
-            localStorage.get<StoredToolboxSettings>(ToolboxManager.STORAGE_KEY) ?? {
-                agent: undefined,
-                shell: true,
-            }
-        )
-    }
-
     public getSettings(): AgentToolboxSettings | null {
         if (!this.isEnabled) {
             return null
         }
-        const { agent, shell } = this.getStoredUserSettings()
         const shellError = this.getFeatureError('shell')
+        // TODO: Remove hard-coded agent once we have a proper agentic chat selection UI
         return {
-            agent: { name: this.isRateLimited ? undefined : agent },
+            agent: { name: this.isRateLimited ? undefined : DeepCodyAgentID },
             shell: {
-                enabled: !!agent && !!shell && !shellError,
+                enabled: shellError === undefined,
                 error: shellError,
             },
         }
@@ -82,14 +67,6 @@ class ToolboxManager {
         }
     }
 
-    public async updateSettings(settings: AgentToolboxSettings): Promise<void> {
-        logDebug('ToolboxManager', 'Updating toolbox settings', { verbose: settings })
-        await localStorage.set(ToolboxManager.STORAGE_KEY, {
-            agent: settings.agent?.name,
-            shell: settings.shell?.enabled ?? false,
-        })
-        this.changeNotifications.next()
-    }
     /**
      * Returns a real-time Observable stream of toolbox settings that updates when any of the following changes:
      * - Feature flags

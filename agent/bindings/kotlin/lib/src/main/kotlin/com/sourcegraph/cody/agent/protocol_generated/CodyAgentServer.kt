@@ -136,6 +136,8 @@ interface CodyAgentServer {
   fun testing_ignore_overridePolicy(params: ContextFilters?): CompletableFuture<Null?>
   @JsonRequest("extension/reset")
   fun extension_reset(params: Null?): CompletableFuture<Null?>
+  @JsonRequest("internal/getAuthHeaders")
+  fun internal_getAuthHeaders(params: String): CompletableFuture<Map<String, String>>
 
   // =============
   // Notifications

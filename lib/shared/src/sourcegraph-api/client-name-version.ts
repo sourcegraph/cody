@@ -47,6 +47,7 @@ export function getClientIdentificationHeaders() {
     if (!process.env.CODY_WEB_DEMO) {
         headers['X-Requested-With'] = `${clientName} ${clientVersion}`
     }
+
     return headers
 }
 

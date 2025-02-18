@@ -61,172 +61,175 @@ function scanForMentionTriggerInLexicalInput(text: string) {
 
 export type setEditorQuery = (getNewQuery: (currentText: string) => [string, number?]) => void
 
-export const MentionsPlugin: FunctionComponent<{ contextWindowSizeInTokens?: number }> = memo(
-    ({ contextWindowSizeInTokens }) => {
-        const [editor] = useLexicalComposerContext()
+export const MentionsPlugin: FunctionComponent<{
+    contextWindowSizeInTokens?: number
+    openExternalLink: (uri: string) => void
+}> = memo(({ contextWindowSizeInTokens, openExternalLink }) => {
+    const [editor] = useLexicalComposerContext()
 
-        /**
-         * Total sum of tokens represented by all of the @-mentioned items.
-         */
-        const [tokenAdded, setTokenAdded] = useState<number>(0)
+    /**
+     * Total sum of tokens represented by all of the @-mentioned items.
+     */
+    const [tokenAdded, setTokenAdded] = useState<number>(0)
 
-        const { params, updateQuery, updateMentionMenuParams } = useMentionMenuParams()
+    const { params, updateQuery, updateMentionMenuParams } = useMentionMenuParams()
 
-        const setEditorQuery = useCallback<setEditorQuery>(
-            getNewQuery => {
-                if (editor) {
-                    editor.update(() => {
-                        const node = $getSelection()?.getNodes().at(-1)
-                        if (!node || !$isTextNode(node)) {
-                            return
-                        }
-
-                        const currentText = node.getTextContent()
-                        const [newText, index] = getNewQuery(currentText)
-                        if (currentText === newText) {
-                            return
-                        }
-
-                        node.setTextContent(newText)
-
-                        if (index !== undefined) {
-                            node.select(index, index)
-                        } else {
-                            // If our old text was "prefix @bar baz" and the new text is
-                            // "prefix @ baz" then our cursor should be just after @
-                            // (which is at the common prefix position)
-                            const offset = sharedPrefixLength(currentText, newText)
-                            node.select(offset, offset)
-                        }
-                    })
-                }
-            },
-            [editor]
-        )
-
-        useEffect(() => {
-            // Listen for changes to ContextItemMentionNode to update the token count.
-            // This updates the token count when a mention is added or removed.
-            const unregister = editor.registerMutationListener(ContextItemMentionNode, node => {
-                const items = toSerializedPromptEditorValue(editor)?.contextItems
-                if (!items?.length) {
-                    setTokenAdded(0)
-                    return
-                }
-                setTokenAdded(items?.reduce((acc, item) => acc + (item.size ? item.size : 0), 0) ?? 0)
-            })
-            return unregister
-        }, [editor])
-
-        const onSelectOption = useCallback(
-            (
-                selectedOption: MentionMenuOption,
-                nodeToReplace: TextNode | null,
-                closeMenu: () => void
-            ) => {
+    const setEditorQuery = useCallback<setEditorQuery>(
+        getNewQuery => {
+            if (editor) {
                 editor.update(() => {
-                    const currentInputText = nodeToReplace?.__text
-                    if (!currentInputText) {
+                    const node = $getSelection()?.getNodes().at(-1)
+                    if (!node || !$isTextNode(node)) {
                         return
                     }
 
-                    const selectedItem = selectedOption.item
-                    const isLargeFile = selectedItem.isTooLarge
-                    // When selecting a large file without range, add the selected option as text node with : at the end.
-                    // This allows users to autocomplete the file path, and provide them with the options to add range.
-                    if (isLargeFile && !selectedItem.range) {
-                        const textNode = $createContextItemTextNode(selectedItem)
-                        nodeToReplace.replace(textNode)
+                    const currentText = node.getTextContent()
+                    const [newText, index] = getNewQuery(currentText)
+                    if (currentText === newText) {
+                        return
+                    }
 
-                        // Keep at symbol because we're still in the editing mode
-                        // (since ranges haven't been presented yet)
-                        textNode.insertBefore($createTextNode('@'))
+                    node.setTextContent(newText)
 
-                        const colonNode = $createTextNode(':')
-                        textNode.insertAfter(colonNode)
-
-                        colonNode.select()
+                    if (index !== undefined) {
+                        node.select(index, index)
                     } else {
-                        const mentionNode = $createContextItemMentionNode(selectedItem)
-                        nodeToReplace.replace(mentionNode)
-                        const spaceNode = $createTextNode(' ')
-                        mentionNode.insertAfter(spaceNode)
-                        spaceNode.select()
+                        // If our old text was "prefix @bar baz" and the new text is
+                        // "prefix @ baz" then our cursor should be just after @
+                        // (which is at the common prefix position)
+                        const offset = sharedPrefixLength(currentText, newText)
+                        node.select(offset, offset)
                     }
-                    closeMenu()
                 })
-            },
-            [editor]
-        )
+            }
+        },
+        [editor]
+    )
 
-        // Close the menu when the editor loses focus.
-        const anchorElementRef2 = useRef<HTMLElement>()
-        useEffect(() => {
-            return editor.registerCommand(
-                BLUR_COMMAND,
-                event => {
-                    // Ignore clicks in the mention menu itself.
-                    const isInEditorOrMenu = Boolean(
-                        event.relatedTarget instanceof Node &&
-                            (editor.getRootElement()?.contains(event.relatedTarget) ||
-                                anchorElementRef2.current?.contains(event.relatedTarget))
-                    )
-                    if (isInEditorOrMenu) {
-                        // `editor.focus()` swallows clicks in the menu; this seems to work instead.
-                        editor.getRootElement()?.focus()
-                        return true
-                    }
+    useEffect(() => {
+        // Listen for changes to ContextItemMentionNode to update the token count.
+        // This updates the token count when a mention is added or removed.
+        const unregister = editor.registerMutationListener(ContextItemMentionNode, node => {
+            const items = toSerializedPromptEditorValue(editor)?.contextItems
+            if (!items?.length) {
+                setTokenAdded(0)
+                return
+            }
+            setTokenAdded(items?.reduce((acc, item) => acc + (item.size ? item.size : 0), 0) ?? 0)
+        })
+        return unregister
+    }, [editor])
 
-                    editor.dispatchCommand(
-                        KEY_ESCAPE_COMMAND,
-                        new KeyboardEvent('keydown', { key: 'Escape' })
-                    )
-                    return true
-                },
-                COMMAND_PRIORITY_NORMAL
-            )
-        }, [editor])
-
-        // We use the interaction ID to differentiate between different
-        // invocations of the mention-menu. That way upstream we don't trigger
-        // duplicate telemetry events for the same view
-        const interactionID = useRef(0)
-        const onClose = useCallback(() => {
-            updateMentionMenuParams({ parentItem: null, interactionID: null })
-        }, [updateMentionMenuParams])
-        const onOpen = useCallback(() => {
-            updateMentionMenuParams({ interactionID: interactionID.current++ })
-        }, [updateMentionMenuParams])
-        return (
-            <LexicalTypeaheadMenuPlugin<MentionMenuOption>
-                onQueryChange={updateQuery}
-                onSelectOption={onSelectOption}
-                onClose={onClose}
-                onOpen={onOpen}
-                triggerFn={scanForMentionTriggerInLexicalInput}
-                options={DUMMY_OPTIONS}
-                commandPriority={
-                    COMMAND_PRIORITY_NORMAL /* so Enter keypress selects option and doesn't submit form */
+    const onSelectOption = useCallback(
+        (selectedOption: MentionMenuOption, nodeToReplace: TextNode | null, closeMenu: () => void) => {
+            editor.update(() => {
+                const currentInputText = nodeToReplace?.__text
+                if (!currentInputText) {
+                    return
                 }
-                menuRenderFn={(anchorElementRef, itemProps) => {
-                    const remainingTokenBudget =
-                        contextWindowSizeInTokens === undefined
-                            ? Number.MAX_SAFE_INTEGER
-                            : contextWindowSizeInTokens - tokenAdded
-                    const data = useMentionMenuData(params, {
-                        remainingTokenBudget,
-                        limit: SUGGESTION_LIST_LENGTH_LIMIT,
-                    })
 
-                    const { selectOptionAndCleanUp } = itemProps
-                    anchorElementRef2.current = anchorElementRef.current ?? undefined
-                    return (
-                        anchorElementRef.current &&
-                        createPortal(
-                            // Use an outer container that is always the same height, which is the
-                            // max height of the visible menu. This ensures that the menu does not
-                            // flip orientation as the user is typing if it suddenly has less
-                            // results. It also makes the positioning less glitchy.
+                const selectedItem = selectedOption.item
+                const isLargeFile = selectedItem.isTooLarge
+                // When selecting a large file without range, add the selected option as text node with : at the end.
+                // This allows users to autocomplete the file path, and provide them with the options to add range.
+                if (isLargeFile && !selectedItem.range) {
+                    const textNode = $createContextItemTextNode(selectedItem)
+                    nodeToReplace.replace(textNode)
+
+                    // Keep at symbol because we're still in the editing mode
+                    // (since ranges haven't been presented yet)
+                    textNode.insertBefore($createTextNode('@'))
+
+                    const colonNode = $createTextNode(':')
+                    textNode.insertAfter(colonNode)
+
+                    colonNode.select()
+                } else if (selectedItem.type === 'open-link') {
+                    // "open-link" items are links to documentation; you can't commit them as mentions.
+                    nodeToReplace.remove()
+                    openExternalLink(selectedItem.uri.toString())
+                } else {
+                    const mentionNode = $createContextItemMentionNode(selectedItem)
+                    nodeToReplace.replace(mentionNode)
+                    const spaceNode = $createTextNode(' ')
+                    mentionNode.insertAfter(spaceNode)
+                    spaceNode.select()
+                }
+                closeMenu()
+            })
+        },
+        [editor, openExternalLink]
+    )
+
+    // Close the menu when the editor loses focus.
+    const anchorElementRef2 = useRef<HTMLElement>()
+    useEffect(() => {
+        return editor.registerCommand(
+            BLUR_COMMAND,
+            event => {
+                // Ignore clicks in the mention menu itself.
+                const isInEditorOrMenu = Boolean(
+                    event.relatedTarget instanceof Node &&
+                        (editor.getRootElement()?.contains(event.relatedTarget) ||
+                            anchorElementRef2.current?.contains(event.relatedTarget))
+                )
+                if (isInEditorOrMenu) {
+                    // `editor.focus()` swallows clicks in the menu; this seems to work instead.
+                    editor.getRootElement()?.focus()
+                    return true
+                }
+
+                editor.dispatchCommand(
+                    KEY_ESCAPE_COMMAND,
+                    new KeyboardEvent('keydown', { key: 'Escape' })
+                )
+                return true
+            },
+            COMMAND_PRIORITY_NORMAL
+        )
+    }, [editor])
+
+    // We use the interaction ID to differentiate between different
+    // invocations of the mention-menu. That way upstream we don't trigger
+    // duplicate telemetry events for the same view
+    const interactionID = useRef(0)
+    const onClose = useCallback(() => {
+        updateMentionMenuParams({ parentItem: null, interactionID: null })
+    }, [updateMentionMenuParams])
+    const onOpen = useCallback(() => {
+        updateMentionMenuParams({ interactionID: interactionID.current++ })
+    }, [updateMentionMenuParams])
+    return (
+        <LexicalTypeaheadMenuPlugin<MentionMenuOption>
+            onQueryChange={updateQuery}
+            onSelectOption={onSelectOption}
+            onClose={onClose}
+            onOpen={onOpen}
+            triggerFn={scanForMentionTriggerInLexicalInput}
+            options={DUMMY_OPTIONS}
+            commandPriority={
+                COMMAND_PRIORITY_NORMAL /* so Enter keypress selects option and doesn't submit form */
+            }
+            menuRenderFn={(anchorElementRef, itemProps) => {
+                const remainingTokenBudget =
+                    contextWindowSizeInTokens === undefined
+                        ? Number.MAX_SAFE_INTEGER
+                        : contextWindowSizeInTokens - tokenAdded
+                const data = useMentionMenuData(params, {
+                    remainingTokenBudget,
+                    limit: SUGGESTION_LIST_LENGTH_LIMIT,
+                })
+
+                const { selectOptionAndCleanUp } = itemProps
+                anchorElementRef2.current = anchorElementRef.current ?? undefined
+                return (
+                    anchorElementRef.current &&
+                    createPortal(
+                        // Use an outer container that is always the same height, which is the
+                        // max height of the visible menu. This ensures that the menu does not
+                        // flip orientation as the user is typing if it suddenly has less
+                        // results. It also makes the positioning less glitchy.
+                        <div className={styles.popoverContainer}>
                             <div data-at-mention-menu="" className={clsx(styles.popoverDimensions)}>
                                 <div className={styles.popover}>
                                     <MentionMenu
@@ -237,16 +240,15 @@ export const MentionsPlugin: FunctionComponent<{ contextWindowSizeInTokens?: num
                                         selectOptionAndCleanUp={selectOptionAndCleanUp}
                                     />
                                 </div>
-                            </div>,
-                            anchorElementRef.current
-                        )
+                            </div>
+                        </div>,
+                        anchorElementRef.current
                     )
-                }}
-            />
-        )
-    },
-    isEqual
-)
+                )
+            }}
+        />
+    )
+}, isEqual)
 
 function sharedPrefixLength(s1: string, s2: string): number {
     let i = 0

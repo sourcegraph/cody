@@ -149,6 +149,7 @@ export const FileMatchSearchResult: FC<PropsWithChildren<FileMatchSearchResultPr
             getVSCodeAPI().postMessage({
                 command: 'openRemoteFile',
                 uri,
+                tryLocal: true,
             })
         },
         [fileURL, agentIDE, onSelect]
@@ -337,7 +338,7 @@ const ResultContainer: ForwardReferenceExoticComponent<
                 <header
                     className={clsx(
                         styles.header,
-                        'tw-flex tw-items-center tw-gap-2 tw-py-2 tw-px-4 md:tw-py-3 md:tw-px-6 '
+                        'tw-flex tw-py-2 tw-px-4 tw-items-center tw-gap-2 md:tw-py-3 md:tw-px-6 '
                     )}
                     data-result-header={true}
                 >

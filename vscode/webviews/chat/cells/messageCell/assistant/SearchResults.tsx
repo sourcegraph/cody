@@ -5,15 +5,7 @@ import {
     isDefined,
 } from '@sourcegraph/cody-shared'
 import classNames from 'classnames'
-import {
-    ArrowDown,
-    ExternalLink,
-    FilterIcon,
-    FilterX,
-    OctagonX,
-    PanelLeftClose,
-    Search,
-} from 'lucide-react'
+import { ArrowDown, FilterIcon, FilterX, OctagonX, PanelLeftClose, Search } from 'lucide-react'
 import { useCallback, useContext, useLayoutEffect, useMemo, useReducer, useState } from 'react'
 import {
     createContextItem,
@@ -24,8 +16,7 @@ import { NLSResultSnippet } from '../../../../components/NLSResultSnippet'
 import { Button } from '../../../../components/shadcn/ui/button'
 import { Label } from '../../../../components/shadcn/ui/label'
 import { useTelemetryRecorder } from '../../../../utils/telemetry'
-import { useExperimentalOneBoxDebug } from '../../../../utils/useExperimentalOneBox'
-import { FeedbackButtons } from '../../../components/FeedbackButtons'
+import { useOmniBoxDebug } from '../../../../utils/useOmniBox'
 import { InfoMessage } from '../../../components/InfoMessage'
 import { LoadingDots } from '../../../components/LoadingDots'
 import { SearchFilters } from './SearchFilters'
@@ -35,8 +26,6 @@ import styles from './SearchResults.module.css'
 
 interface SearchResultsProps {
     message: ChatMessageWithSearch
-    showFeedbackButtons?: boolean
-    feedbackButtonsOnSubmit?: (text: string) => void
     onSelectedFiltersUpdate: (filters: NLSSearchDynamicFilter[]) => void
     /**
      * Whether or not search results can be selected as context for the next interaction.
@@ -48,12 +37,10 @@ const DEFAULT_RESULTS_LIMIT = 10
 export const SearchResults = ({
     message,
     onSelectedFiltersUpdate,
-    showFeedbackButtons,
-    feedbackButtonsOnSubmit,
     enableContextSelection,
 }: SearchResultsProps) => {
     const telemetryRecorder = useTelemetryRecorder()
-    const experimentalOneBoxDebug = useExperimentalOneBoxDebug()
+    const experimentalOneBoxDebug = useOmniBoxDebug()
     const lastEditorRef = useContext(LastEditorContext)
     const [selectedFollowUpResults, updateSelectedFollowUpResults] = useReducer(
         selectedResultsReducer,
@@ -76,6 +63,25 @@ export const SearchResults = ({
 
     const resultsToShow =
         initialResults?.length === totalResults?.length || showAll ? totalResults : initialResults
+
+    // mini-HACK: rather than prop drilling the current repository through to this component,
+    // just pull the boosted repo name from the query if it exists. This will break if we
+    // change how the current repo is boosted, but it at least doesn't depend on VSCode-specific APIs.
+    const boostedRepo = message.search.query.match(/boost:repo\(([^)]+)\)/)?.[1]
+    const firstNonBoostedRepoIndex = boostedRepo
+        ? resultsToShow.findIndex(
+              result => result.__typename === 'FileMatch' && result.repository.name !== boostedRepo
+          )
+        : undefined
+    // don't show filter on first search that returns no results
+    // show filter on subsquent filtered searches, we want users to be able to deselect their choices
+    const hasResults = initialResults?.length > 0 ? initialResults?.length > 0 : resultsToShow.length > 0
+
+    const showFiltersButton =
+        (hasResults && !!message.search.response?.results.dynamicFilters?.length) ||
+        message.search.selectedFilters?.length
+
+    const showAddContextCheckbox = hasResults && enableContextSelection
 
     // Select all results by default when the results are rendered the first time
     useLayoutEffect(() => {
@@ -134,7 +140,12 @@ export const SearchResults = ({
     )
 
     const onFilterSidebarClose = useCallback(() => {
-        telemetryRecorder.recordEvent('onebox.filterSidebar', 'closed')
+        telemetryRecorder.recordEvent('onebox.filterSidebar', 'closed', {
+            billingMetadata: {
+                product: 'cody',
+                category: 'billable',
+            },
+        })
         setShowFiltersSidebar(false)
     }, [telemetryRecorder])
 
@@ -162,7 +173,7 @@ export const SearchResults = ({
                         !!message.search.selectedFilters?.length) && (
                         <div
                             className={classNames(
-                                'tw-min-w-[250px] tw-w-[250px] tw-relative tw-mt-2 tw-p-4 tw-border-r tw-shadow',
+                                'tw-min-w-[250px] tw-w-[250px] tw-relative tw-mt-2 tw-p-4 tw-border-r tw-border-border tw-shadow',
                                 styles.filtersSidebar
                             )}
                         >
@@ -193,13 +204,12 @@ export const SearchResults = ({
                         {!!resultsToShow && (
                             <div
                                 className={classNames(
-                                    'tw-flex tw-items-center tw-gap-4 tw-justify-between tw-py-4 md:tw-px-4 tw-border-b',
+                                    'tw-flex tw-items-center tw-gap-4 tw-justify-between tw-py-4 md:tw-px-4 tw-border-b tw-border-border',
                                     styles.searchResultsHeader
                                 )}
                             >
                                 <div className="tw-flex tw-gap-4 tw-items-center">
-                                    {(!!message.search.response?.results.dynamicFilters?.length ||
-                                        message.search.selectedFilters?.length) && (
+                                    {showFiltersButton && (
                                         <>
                                             <Button
                                                 onClick={() => {
@@ -214,7 +224,6 @@ export const SearchResults = ({
                                                         }
                                                     )
                                                     setShowFiltersModal(true)
-                                                    setShowFiltersSidebar(true)
                                                 }}
                                                 variant="outline"
                                                 className={styles.filtersModalTrigger}
@@ -236,7 +245,37 @@ export const SearchResults = ({
                                     </div>
                                 </div>
                                 <div className="tw-flex tw-items-center tw-gap-6 tw-px-4 md:tw-px-2">
-                                    {enableContextSelection && (
+                                    {showFiltersButton && !showFiltersSidebar && (
+                                        <>
+                                            <Button
+                                                onClick={() => {
+                                                    telemetryRecorder.recordEvent(
+                                                        'onebox.filterModal',
+                                                        'opened',
+                                                        {
+                                                            billingMetadata: {
+                                                                product: 'cody',
+                                                                category: 'billable',
+                                                            },
+                                                        }
+                                                    )
+                                                    setShowFiltersSidebar(true)
+                                                }}
+                                                variant="outline"
+                                                className={styles.filtersSidebarToggle}
+                                            >
+                                                {message.search.selectedFilters?.length ? (
+                                                    <FilterX className="tw-size-6 md:tw-size-8" />
+                                                ) : (
+                                                    <FilterIcon className="tw-size-6 md:tw-size-8" />
+                                                )}
+                                                <span className={styles.searchResultsHeaderLabel}>
+                                                    Filters
+                                                </span>
+                                            </Button>
+                                        </>
+                                    )}
+                                    {showAddContextCheckbox && (
                                         <>
                                             <Label
                                                 htmlFor="search-results.select-all"
@@ -302,6 +341,11 @@ export const SearchResults = ({
                                         // biome-ignore lint/suspicious/noArrayIndexKey: stable order
                                         key={i}
                                     >
+                                        {i === firstNonBoostedRepoIndex && (
+                                            <h6 className="tw-border-b tw-border-border tw-text-muted-foreground tw-p-4 tw-pt-8">
+                                                Results from other repositories
+                                            </h6>
+                                        )}
                                         <NLSResultSnippet
                                             result={result}
                                             selectedForContext={selectedFollowUpResults.has(result)}
@@ -320,66 +364,41 @@ export const SearchResults = ({
                                 <p>No search results found</p>
                             </div>
                         )}
-                        <div className="tw-flex tw-justify-between tw-gap-4 tw-my-6 md:tw-px-6">
-                            <div className="tw-flex tw-items-center tw-gap-4">
-                                {!showAll &&
-                                    resultsToShow &&
-                                    totalResults &&
-                                    resultsToShow !== totalResults && (
-                                        <Button
-                                            onClick={() => {
-                                                telemetryRecorder.recordEvent(
-                                                    'onebox.moreResults',
-                                                    'clicked',
-                                                    {
-                                                        metadata: {
-                                                            totalResults: totalResults.length,
-                                                            resultsAdded:
-                                                                totalResults.length -
-                                                                resultsToShow.length,
-                                                        },
-                                                        billingMetadata: {
-                                                            product: 'cody',
-                                                            category: 'billable',
-                                                        },
-                                                    }
-                                                )
-                                                setShowAll(true)
-                                                updateSelectedFollowUpResults({
-                                                    type: 'add',
-                                                    results: totalResults.slice(resultsToShow.length),
-                                                })
-                                            }}
-                                            variant="outline"
-                                            size="sm"
-                                        >
-                                            <ArrowDown className="tw-size-8" />
-                                            More results
-                                        </Button>
-                                    )}
-                                {showFeedbackButtons && feedbackButtonsOnSubmit && (
-                                    <FeedbackButtons feedbackButtonsOnSubmit={feedbackButtonsOnSubmit} />
+                        <div className="tw-flex tw-items-center tw-justify-between tw-gap-4 tw-my-6 md:tw-px-6">
+                            {!showAll &&
+                                resultsToShow &&
+                                totalResults &&
+                                resultsToShow !== totalResults && (
+                                    <Button
+                                        onClick={() => {
+                                            telemetryRecorder.recordEvent(
+                                                'onebox.moreResults',
+                                                'clicked',
+                                                {
+                                                    metadata: {
+                                                        totalResults: totalResults.length,
+                                                        resultsAdded:
+                                                            totalResults.length - resultsToShow.length,
+                                                    },
+                                                    billingMetadata: {
+                                                        product: 'cody',
+                                                        category: 'billable',
+                                                    },
+                                                }
+                                            )
+                                            setShowAll(true)
+                                            updateSelectedFollowUpResults({
+                                                type: 'add',
+                                                results: totalResults.slice(resultsToShow.length),
+                                            })
+                                        }}
+                                        variant="outline"
+                                        size="sm"
+                                    >
+                                        <ArrowDown className="tw-size-8" />
+                                        More results
+                                    </Button>
                                 )}
-                            </div>
-                            <a
-                                href={'/search'}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="tw-text-foreground"
-                                onClick={() => {
-                                    telemetryRecorder.recordEvent('onebox.codeSearch', 'clicked', {
-                                        metadata: {
-                                            totalResults: totalResults.length,
-                                            resultsAdded: totalResults.length - resultsToShow.length,
-                                        },
-                                        billingMetadata: { product: 'cody', category: 'core' },
-                                    })
-                                }}
-                            >
-                                <Button variant="outline" size="sm">
-                                    Code search <ExternalLink className="tw-size-8" />
-                                </Button>
-                            </a>
                         </div>
                     </div>
                 )}

@@ -120,6 +120,8 @@ export const PromptList: FC<PromptListProps> = props => {
                 },
                 privateMetadata: {
                     nameWithOwner: isPrompt ? action.nameWithOwner : undefined,
+                    promptId: isPrompt ? action.id : undefined,
+                    promptName: isPrompt ? action.name : undefined,
                 },
                 billingMetadata: { product: 'cody', category: 'core' },
             })
@@ -198,6 +200,7 @@ export const PromptList: FC<PromptListProps> = props => {
             className={clsx(className, styles.list, {
                 [styles.listChips]: appearanceMode === 'chips-list',
             })}
+            disablePointerSelection={true}
         >
             <CommandList className={className}>
                 {showSearch && (

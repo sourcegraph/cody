@@ -1,11 +1,5 @@
-import { Observable } from 'observable-fns'
-import type {
-    AgentToolboxSettings,
-    AuthStatus,
-    ModelsData,
-    ResolvedConfiguration,
-    UserProductSubscription,
-} from '../..'
+import { type Observable, map } from 'observable-fns'
+import type { AuthStatus, ModelsData, ResolvedConfiguration, UserProductSubscription } from '../..'
 import type { SerializedPromptEditorState } from '../..'
 import type { ChatMessage, UserLocalHistory } from '../../chat/transcript/messages'
 import type { ContextItem, DefaultContext } from '../../codebase-context/messages'
@@ -18,7 +12,6 @@ import type {
     FetchHighlightFileParameters,
     Prompt,
     PromptTag,
-    TemporarySettings,
 } from '../../sourcegraph-api/graphql/client'
 import { type createMessageAPIForWebview, proxyExtensionAPI } from './rpc'
 
@@ -85,12 +78,6 @@ export interface WebviewToExtensionAPI {
      */
     defaultContext(): Observable<DefaultContext>
 
-    detectIntent(
-        text: string
-    ): Observable<
-        { intent: ChatMessage['intent']; allScores: { intent: string; score: number }[] } | undefined
-    >
-
     /**
      * Observe the current resolved configuration (same as the global {@link resolvedConfig}
      * observable).
@@ -116,19 +103,6 @@ export interface WebviewToExtensionAPI {
      * The current user's product subscription information (Cody Free/Pro).
      */
     userProductSubscription(): Observable<UserProductSubscription | null>
-
-    /**
-     * The current user's toolbox settings.
-     */
-    toolboxSettings(): Observable<AgentToolboxSettings | null>
-    /**
-     *  Update the current user's toolbox settings.
-     */
-    updateToolboxSettings(settings: AgentToolboxSettings): Observable<void>
-    /**
-     * Edit the current user's temporary settings.
-     */
-    editTemporarySettings(settingsToEdit: Partial<TemporarySettings>): Observable<boolean>
 }
 
 export function createExtensionAPI(
@@ -152,10 +126,24 @@ export function createExtensionAPI(
         hydratePromptMessage: promptText =>
             hydratePromptMessage(promptText, staticDefaultContext?.initialContext),
         setChatModel: proxyExtensionAPI(messageAPI, 'setChatModel'),
-        defaultContext: staticDefaultContext
-            ? () => Observable.of(staticDefaultContext)
-            : proxyExtensionAPI(messageAPI, 'defaultContext'),
-        detectIntent: proxyExtensionAPI(messageAPI, 'detectIntent'),
+        defaultContext: () =>
+            proxyExtensionAPI(messageAPI, 'defaultContext')().pipe(
+                map(result =>
+                    staticDefaultContext
+                        ? ({
+                              ...result,
+                              corpusContext: [
+                                  ...result.corpusContext,
+                                  ...staticDefaultContext.corpusContext,
+                              ],
+                              initialContext: [
+                                  ...result.initialContext,
+                                  ...staticDefaultContext.initialContext,
+                              ],
+                          } satisfies DefaultContext)
+                        : result
+                )
+            ),
         promptsMigrationStatus: proxyExtensionAPI(messageAPI, 'promptsMigrationStatus'),
         startPromptsMigration: proxyExtensionAPI(messageAPI, 'startPromptsMigration'),
         resolvedConfig: proxyExtensionAPI(messageAPI, 'resolvedConfig'),
@@ -163,10 +151,7 @@ export function createExtensionAPI(
         transcript: proxyExtensionAPI(messageAPI, 'transcript'),
         userHistory: proxyExtensionAPI(messageAPI, 'userHistory'),
         userProductSubscription: proxyExtensionAPI(messageAPI, 'userProductSubscription'),
-        toolboxSettings: proxyExtensionAPI(messageAPI, 'toolboxSettings'),
-        updateToolboxSettings: proxyExtensionAPI(messageAPI, 'updateToolboxSettings'),
         repos: proxyExtensionAPI(messageAPI, 'repos'),
-        editTemporarySettings: proxyExtensionAPI(messageAPI, 'editTemporarySettings'),
     }
 }
 

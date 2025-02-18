@@ -19,7 +19,7 @@ export interface UserPromptArgs {
     tokenBudget: AutoEditsTokenLimit
 }
 
-export interface UserPromptForModelArgs extends UserPromptArgs {
+interface UserPromptForModelArgs extends UserPromptArgs {
     isChatModel: boolean
 }
 

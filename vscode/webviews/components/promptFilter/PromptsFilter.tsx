@@ -7,7 +7,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '../shadcn/ui/popover'
 import { useCurrentUserId } from './useCurrentUserId'
 import { usePromptTagsQuery } from './usePromptTagsQuery'
 
-export interface PromptFilterProps {
+interface PromptFilterProps {
     promptFilters: PromptsFilterArgs
     setPromptFilters: (promptFilters: PromptsFilterArgs) => void
 }

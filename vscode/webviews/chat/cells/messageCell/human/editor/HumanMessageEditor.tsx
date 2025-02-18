@@ -1,7 +1,6 @@
 import {
     type ChatMessage,
     FAST_CHAT_INPUT_TOKEN_BUDGET,
-    FeatureFlag,
     type Model,
     ModelTag,
     type SerializedPromptEditorState,
@@ -32,7 +31,9 @@ import type { UserAccountInfo } from '../../../../../Chat'
 import { type ClientActionListener, useClientActionListener } from '../../../../../client/clientState'
 import { promptModeToIntent } from '../../../../../prompts/PromptsTab'
 import { useTelemetryRecorder } from '../../../../../utils/telemetry'
-import { useFeatureFlag } from '../../../../../utils/useFeatureFlags'
+import { useConfig } from '../../../../../utils/useConfig'
+import { useLinkOpener } from '../../../../../utils/useLinkOpener'
+import { useOmniBox } from '../../../../../utils/useOmniBox'
 import styles from './HumanMessageEditor.module.css'
 import type { SubmitButtonState } from './toolbar/SubmitButton'
 import { Toolbar } from './toolbar/Toolbar'
@@ -74,10 +75,7 @@ export const HumanMessageEditor: FunctionComponent<{
     __storybook__focus?: boolean
 
     intent?: ChatMessage['intent']
-    manuallySelectIntent: (
-        intent: ChatMessage['intent'],
-        editorState?: SerializedPromptEditorState
-    ) => void
+    manuallySelectIntent: (intent: ChatMessage['intent']) => void
 }> = ({
     models,
     userInfo,
@@ -102,7 +100,7 @@ export const HumanMessageEditor: FunctionComponent<{
     const telemetryRecorder = useTelemetryRecorder()
 
     const editorRef = useRef<PromptEditorRefAPI>(null)
-    useImperativeHandle(parentEditorRef, (): PromptEditorRefAPI | null => editorRef.current, [])
+    useImperativeHandle(parentEditorRef, (): PromptEditorRefAPI | null => editorRef.current)
 
     // The only PromptEditor state we really need to track in our own state is whether it's empty.
     const [isEmptyEditorValue, setIsEmptyEditorValue] = useState(
@@ -123,8 +121,6 @@ export const HumanMessageEditor: FunctionComponent<{
         : isEmptyEditorValue
           ? 'emptyEditorValue'
           : 'submittable'
-
-    const experimentalPromptEditorEnabled = useFeatureFlag(FeatureFlag.CodyExperimentalPromptEditor)
 
     const onSubmitClick = useCallback(
         (intent?: ChatMessage['intent'], forceSubmit?: boolean): void => {
@@ -161,6 +157,12 @@ export const HumanMessageEditor: FunctionComponent<{
         [submitState, parentOnSubmit, onStop, telemetryRecorder.recordEvent, isFirstMessage, isSent]
     )
 
+    const omniBoxEnabled = useOmniBox()
+    const {
+        isDotComUser,
+        config: { experimentalPromptEditorEnabled },
+    } = useConfig()
+
     const onEditorEnterKey = useCallback(
         (event: KeyboardEvent | null): void => {
             // Submit input on Enter press (without shift) when input is not empty.
@@ -170,6 +172,11 @@ export const HumanMessageEditor: FunctionComponent<{
 
             event.preventDefault()
 
+            if (!omniBoxEnabled || isDotComUser) {
+                onSubmitClick('chat')
+                return
+            }
+
             // Submit search intent query when CMD + Options + Enter is pressed.
             if ((event.metaKey || event.ctrlKey) && event.altKey) {
                 manuallySelectIntent('search')
@@ -177,16 +184,9 @@ export const HumanMessageEditor: FunctionComponent<{
                 return
             }
 
-            // Submit chat intent query when CMD + Enter is pressed.
-            if (event.metaKey || event.ctrlKey) {
-                manuallySelectIntent('chat')
-                onSubmitClick('chat')
-                return
-            }
-
-            onSubmitClick()
+            onSubmitClick('chat')
         },
-        [isEmptyEditorValue, onSubmitClick, manuallySelectIntent]
+        [isEmptyEditorValue, onSubmitClick, manuallySelectIntent, omniBoxEnabled, isDotComUser]
     )
 
     const [isEditorFocused, setIsEditorFocused] = useState(false)
@@ -349,7 +349,7 @@ export const HumanMessageEditor: FunctionComponent<{
                                 extensionAPI.hydratePromptMessage(setPromptAsInput.text, initialContext)
                             )
 
-                            manuallySelectIntent(promptIntent, promptEditorState)
+                            manuallySelectIntent(promptIntent)
 
                             // update editor state
                             requestAnimationFrame(async () => {
@@ -396,7 +396,9 @@ export const HumanMessageEditor: FunctionComponent<{
                 if (currentChatModel?.tags?.includes(ModelTag.StreamDisabled)) {
                     initialContext = initialContext.filter(item => item.type !== 'tree')
                 }
-                editor.setInitialContextMentions(initialContext)
+                // Remove documentation open-link items; they do not provide context.
+                const filteredItems = initialContext.filter(item => item.type !== 'open-link')
+                void editor.setInitialContextMentions(filteredItems)
             }
         }
     }, [defaultContext, isSent, isFirstMessage, currentChatModel])
@@ -414,6 +416,14 @@ export const HumanMessageEditor: FunctionComponent<{
         currentChatModel?.contextWindow?.context?.user ||
         currentChatModel?.contextWindow?.input ||
         FAST_CHAT_INPUT_TOKEN_BUDGET
+
+    const linkOpener = useLinkOpener()
+    const openExternalLink = useCallback(
+        (uri: string) => linkOpener?.openExternalLink(uri),
+        [linkOpener]
+    )
+
+    // TODO: Finish implementing "current repo not indexed" handling for v2 editor
     const Editor = experimentalPromptEditorEnabled ? PromptEditorV2 : PromptEditor
 
     return (
@@ -446,6 +456,7 @@ export const HumanMessageEditor: FunctionComponent<{
                 contextWindowSizeInTokens={contextWindowSizeInTokens}
                 editorClassName={styles.editor}
                 contentEditableClassName={styles.editorContentEditable}
+                openExternalLink={openExternalLink}
             />
             {!disabled && (
                 <Toolbar
@@ -454,6 +465,7 @@ export const HumanMessageEditor: FunctionComponent<{
                     isEditorFocused={focused}
                     onMentionClick={onMentionClick}
                     onSubmitClick={onSubmitClick}
+                    manuallySelectIntent={manuallySelectIntent}
                     submitState={submitState}
                     onGapClick={onGapClick}
                     focusEditor={focusEditor}

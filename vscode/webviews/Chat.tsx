@@ -1,30 +1,29 @@
+import type { Context } from '@opentelemetry/api'
+import { LRUCache } from 'lru-cache'
 import type React from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
-import type {
-    AuthenticatedAuthStatus,
-    ChatMessage,
+import {
+    type AuthenticatedAuthStatus,
+    type ChatMessage,
     CodyIDE,
-    Guardrails,
-    Model,
-    PromptString,
+    type Guardrails,
+    type Model,
+    type PromptString,
 } from '@sourcegraph/cody-shared'
-import { Transcript, focusLastHumanMessageEditor } from './chat/Transcript'
-import type { VSCodeWrapper } from './utils/VSCodeApi'
 
-import type { Context } from '@opentelemetry/api'
-import { truncateTextStart } from '@sourcegraph/cody-shared/src/prompt/truncation'
-import { CHAT_INPUT_TOKEN_BUDGET } from '@sourcegraph/cody-shared/src/token/constants'
-import { LRUCache } from 'lru-cache'
-import styles from './Chat.module.css'
-import WelcomeFooter from './chat/components/WelcomeFooter'
+import { Transcript, focusLastHumanMessageEditor } from './chat/Transcript'
 import { WelcomeMessage } from './chat/components/WelcomeMessage'
 import { WelcomeNotice } from './chat/components/WelcomeNotice'
 import { ScrollDown } from './components/ScrollDown'
 import type { View } from './tabs'
+import type { VSCodeWrapper } from './utils/VSCodeApi'
 import { SpanManager } from './utils/spanManager'
-import { getTraceparentFromSpanContext, useTelemetryRecorder } from './utils/telemetry'
+import { getTraceparentFromSpanContext } from './utils/telemetry'
 import { useUserAccountInfo } from './utils/useConfig'
+
+import styles from './Chat.module.css'
+
 interface ChatboxProps {
     chatEnabled: boolean
     messageInProgress: ChatMessage | null
@@ -38,7 +37,7 @@ interface ChatboxProps {
     setView: (view: View) => void
     smartApplyEnabled?: boolean
     isPromptsV2Enabled?: boolean
-    isTeamsUpgradeCtaEnabled?: boolean
+    isWorkspacesUpgradeCtaEnabled?: boolean
 }
 
 const prefetchedEdits = new LRUCache<string, true>({ max: 100 })
@@ -56,45 +55,12 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     setView,
     smartApplyEnabled,
     isPromptsV2Enabled,
-    isTeamsUpgradeCtaEnabled,
+    isWorkspacesUpgradeCtaEnabled,
 }) => {
-    const telemetryRecorder = useTelemetryRecorder()
-
     const transcriptRef = useRef(transcript)
     transcriptRef.current = transcript
 
     const userInfo = useUserAccountInfo()
-
-    const feedbackButtonsOnSubmit = useCallback(
-        (text: string) => {
-            enum FeedbackType {
-                thumbsUp = 1,
-                thumbsDown = 0,
-            }
-
-            telemetryRecorder.recordEvent('cody.feedback', 'submit', {
-                metadata: {
-                    feedbackType: text === 'thumbsUp' ? FeedbackType.thumbsUp : FeedbackType.thumbsDown,
-                    recordsPrivateMetadataTranscript: userInfo.isDotComUser ? 1 : 0,
-                },
-                privateMetadata: {
-                    FeedbackText: text,
-
-                    // 🚨 SECURITY: chat transcripts are to be included only for DotCom users AND for V2 telemetry
-                    // V2 telemetry exports privateMetadata only for DotCom users
-                    // the condition below is an aditional safegaurd measure
-                    responseText: userInfo.isDotComUser
-                        ? truncateTextStart(transcriptRef.current.toString(), CHAT_INPUT_TOKEN_BUDGET)
-                        : '',
-                },
-                billingMetadata: {
-                    product: 'cody',
-                    category: 'billable',
-                },
-            })
-        },
-        [userInfo, telemetryRecorder]
-    )
 
     const copyButtonOnSubmit = useCallback(
         (text: string, eventType: 'Button' | 'Keydown' = 'Button') => {
@@ -278,7 +244,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                 transcript={transcript}
                 models={models}
                 messageInProgress={messageInProgress}
-                feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
                 copyButtonOnSubmit={copyButtonOnSubmit}
                 insertButtonOnSubmit={insertButtonOnSubmit}
                 smartApply={smartApply}
@@ -295,8 +260,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                         setView={setView}
                         isPromptsV2Enabled={isPromptsV2Enabled}
                     />
-                    <WelcomeFooter IDE={userInfo.IDE} />
-                    {isTeamsUpgradeCtaEnabled && (
+                    {isWorkspacesUpgradeCtaEnabled && userInfo.IDE !== CodyIDE.Web && (
                         <div className="tw-absolute tw-bottom-0 tw-left-1/2 tw-transform tw--translate-x-1/2 tw-w-[95%] tw-z-1 tw-mb-4 tw-max-h-1/2">
                             <WelcomeNotice />
                         </div>

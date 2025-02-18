@@ -5,6 +5,7 @@ import {
     type EditModel,
     type EventSource,
     type PromptString,
+    type Rule,
     currentAuthStatus,
     displayPathBasename,
     telemetryRecorder,
@@ -54,6 +55,7 @@ export interface CreateTaskOptions {
     intent: EditIntent
     mode: EditMode
     model: EditModel
+    rules: Rule[] | null
     source?: EventSource
     destinationFile?: vscode.Uri
     insertionPoint?: vscode.Position
@@ -391,6 +393,7 @@ export class FixupController
                     initialSelectedContextItems: task.userContextItems,
                     initialModel: task.model,
                     initialIntent: task.intent,
+                    initialRules: task.rules,
                 },
                 source
             ))
@@ -457,6 +460,7 @@ export class FixupController
         expandedRange: vscode.Range | undefined,
         mode: EditMode,
         model: EditModel,
+        rules: Rule[] | null,
         intent: EditIntent,
         source: EventSource,
         telemetryMetadata?: FixupTelemetryMetadata
@@ -469,6 +473,7 @@ export class FixupController
                 initialModel: model,
                 initialIntent: intent,
                 initialInputValue: preInstruction,
+                initialRules: rules,
             },
             source
         )
@@ -484,6 +489,7 @@ export class FixupController
             intent: input.intent,
             mode: input.mode,
             model: input.model,
+            rules: input.rules,
             source,
             destinationFile: undefined,
             insertionPoint: undefined,
@@ -512,6 +518,7 @@ export class FixupController
         intent,
         mode,
         model,
+        rules,
         source,
         destinationFile,
         insertionPoint,
@@ -531,6 +538,7 @@ export class FixupController
             selectionRange,
             mode,
             overriddenModel,
+            rules,
             source,
             destinationFile,
             insertionPoint,
@@ -622,6 +630,7 @@ export class FixupController
         const originalCodeCounts = countCode(task.original)
 
         const legacyMetadata = {
+            taskId: task.id,
             intent: EditIntentTelemetryMetadataMapping[task.intent] || task.intent,
             mode: EditModeTelemetryMetadataMapping[task.mode] || task.mode,
             source:

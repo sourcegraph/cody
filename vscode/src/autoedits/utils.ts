@@ -42,24 +42,6 @@ export function extractInlineCompletionFromRewrittenCode(
     return completionWithSameLineSuffix.join(getNewLineChar(codeToRewritePrefix + codeToRewriteSuffix))
 }
 
-export function trimExtraNewLineCharsFromSuggestion(
-    predictedText: string,
-    codeToRewrite: string
-): string {
-    const codeToRewriteChars = getNumberOfNewLineCharsAtSuffix(codeToRewrite)
-    const predictedTextChars = getNumberOfNewLineCharsAtSuffix(predictedText)
-    const extraChars = predictedTextChars - codeToRewriteChars
-    if (extraChars <= 0) {
-        return predictedText
-    }
-    return predictedText.slice(0, -extraChars)
-}
-
-function getNumberOfNewLineCharsAtSuffix(text: string): number {
-    const match = text.match(/\n+$/)
-    return match ? match[0].length : 0
-}
-
 export function isPredictedTextAlreadyInSuffix({
     codeToRewrite,
     decorationInfo: { addedLines },

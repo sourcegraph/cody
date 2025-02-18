@@ -1,5 +1,6 @@
 import { isWindows } from '@sourcegraph/cody-shared'
 import { expect } from 'playwright/test'
+import * as mockServer from '../fixtures/mock-server'
 import {
     atMentionMenuMessage,
     chatInputMentions,
@@ -15,24 +16,39 @@ import {
     selectLineRangeInEditorTab,
     sidebarSignin,
 } from './common'
-import { type ExpectedV2Events, executeCommandInPalette, test, withPlatformSlashes } from './helpers'
+import {
+    type DotcomUrlOverride,
+    type ExpectedV2Events,
+    executeCommandInPalette,
+    mockEnterpriseRepoIdMapping,
+    test,
+    withPlatformSlashes,
+} from './helpers'
 
 // See chat-atFile.test.md for the expected behavior for this feature.
 //
 // NOTE: Creating new chats is slow, and setup is slow, so collapse these into fewer tests.
 
-test.extend<ExpectedV2Events>({
-    expectedV2Events: [
-        'cody.extension:installed',
-        'cody.auth.login:clicked',
-        'cody.auth.login:firstEver',
-        'cody.auth.login.token:clicked',
-        'cody.auth:connected',
-        'cody.chat-question:submitted',
-        'cody.chat-question:executed',
-        'cody.chatResponse:noCode',
-    ],
-})('@-mention file in chat', async ({ page, sidebar, workspaceDirectory }) => {
+test
+    .extend<ExpectedV2Events>({
+        expectedV2Events: [
+            'cody.extension:installed',
+            'cody.auth.login:clicked',
+            'cody.auth.login:firstEver',
+            'cody.auth.login.token:clicked',
+            'cody.auth:connected',
+            'cody.chat-question:submitted',
+            'cody.chat-question:executed',
+            'cody.chatResponse:noCode',
+        ],
+    })
+    .extend<DotcomUrlOverride>({
+        // To exercise the "current directory" filename filtering without a git repository
+        // for the workspace, simulate dotcom.
+        dotcomUrl: mockServer.SERVER_URL,
+    })('@-mention file in chat', async ({ page, sidebar, workspaceDirectory, server }) => {
+    mockEnterpriseRepoIdMapping(server)
+
     // This test requires that the window be focused in the OS window manager because it deals with
     // focus.
     await page.bringToFront()
@@ -294,7 +310,9 @@ test.extend<ExpectedV2Events>({
         'cody.chat-question:executed',
         'cody.chatResponse:noCode',
     ],
-})('@-mention symbol in chat', async ({ page, nap, sidebar }) => {
+})('@-mention symbol in chat', async ({ page, nap, sidebar, server }) => {
+    mockEnterpriseRepoIdMapping(server)
+
     await sidebarSignin(page, sidebar)
 
     // Open the buzz.ts file so that VS Code starts to populate symbols.
@@ -326,7 +344,7 @@ test.extend<ExpectedV2Events>({
     await chatInput.pressSequentially('fizzb', { delay: 10 })
     await expect(chatPanelFrame.getByRole('option', { name: 'fizzbuzz()' })).toBeVisible()
     await chatPanelFrame.getByRole('option', { name: 'fizzbuzz()' }).click()
-    await expect(chatInput).toHaveText(/buzz.ts (workspace|sourcegraph.cody) fizzbuzz\(\) /)
+    await expect(chatInput).toHaveText(/buzz.ts fizzbuzz\(\) /)
     await expect(chatInputMentions(chatInput)).toContainText(['buzz.ts', 'fizzbuzz()'])
 
     // Submit the message
@@ -351,34 +369,21 @@ test.extend<ExpectedV2Events>({
 
 test.extend<ExpectedV2Events>({
     expectedV2Events: ['cody.addChatContext:clicked'],
-})('Add Selection to Cody Chat', async ({ page, sidebar }) => {
+})('Add Selection to Cody Chat', async ({ page, sidebar, server }) => {
+    mockEnterpriseRepoIdMapping(server)
+
     await sidebarSignin(page, sidebar)
 
     await openFileInEditorTab(page, 'buzz.ts')
     await selectLineRangeInEditorTab(page, 2, 5)
 
     const [, lastChatInput] = await createEmptyChatPanel(page)
-    await expect(chatInputMentions(lastChatInput)).toHaveText(
-        [
-            'buzz.ts',
-            'buzz.ts:2-5',
-            // The repo context should appear in the chat, but depending
-            // on if you are running it locally or in CI, it may appear as
-            // sourcegraph/cody or workspace
-            /workspace|sourcegraph.cody/,
-        ],
-        {
-            timeout: 3_000,
-        }
-    )
+    await expect(chatInputMentions(lastChatInput)).toHaveText(['buzz.ts', 'buzz.ts:2-5'], {
+        timeout: 3_000,
+    })
 
     await lastChatInput.press('x')
     await selectLineRangeInEditorTab(page, 7, 10)
     await executeCommandInPalette(page, 'Cody: Add Selection to Cody Chat')
-    await expect(chatInputMentions(lastChatInput)).toHaveText([
-        'buzz.ts',
-        'buzz.ts:2-5',
-        /workspace|sourcegraph.cody/,
-        'buzz.ts:7-10',
-    ])
+    await expect(chatInputMentions(lastChatInput)).toHaveText(['buzz.ts', 'buzz.ts:2-5', 'buzz.ts:7-10'])
 })

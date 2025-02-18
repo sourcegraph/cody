@@ -15,7 +15,6 @@ import {
     type CodyClientConfig,
     type ContextItem,
     type ContextItemOpenCtx,
-    type ContextItemRepository,
     ContextItemSource,
     PromptString,
     REMOTE_DIRECTORY_PROVIDER_URI,
@@ -70,7 +69,7 @@ export type CodyWebChatMessage =
     | { type: 'view.change'; view: View }
 
 export type MessageHandler = (message: ControllerMessage) => void
-export type Unsubscriber = () => void
+type Unsubscriber = () => void
 
 /**
  * The host system can pass an instance of this controller to the Cody Web Chat component to have finer control over its behavior.
@@ -136,6 +135,7 @@ export const CodyWebChat: FunctionComponent<CodyWebChatProps> = ({
         initialContext,
         telemetryClientName,
         customHeaders,
+        repository: initialContext?.repository.name,
     })
 
     if (isErrorLike(client)) {
@@ -290,26 +290,12 @@ const CodyWebPanel: FC<CodyWebPanelProps> = props => {
     const staticDefaultContext = useMemo<DefaultContext>((): DefaultContext => {
         const { repository, fileURL, isDirectory } = initialContextData ?? {}
 
-        if (!repository) {
+        if (!repository || !repository.id) {
             return { initialContext: [], corpusContext: [] }
         }
 
         const initialContext: ContextItem[] = []
-        const corpusContext: ContextItem[] = [
-            {
-                type: 'repository',
-                id: repository.id,
-                name: repository.name,
-                repoID: repository.id,
-                repoName: repository.name,
-                description: repository.name,
-                uri: URI.parse(`repo:${repository.name}`),
-                content: null,
-                source: ContextItemSource.Initial,
-                icon: 'folder',
-                title: 'Current Repository', // web chat default initial context
-            } as ContextItemRepository,
-        ]
+        const corpusContext: ContextItem[] = []
 
         if (fileURL) {
             // Repository directory file url in this case is directory path
@@ -330,6 +316,7 @@ const CodyWebPanel: FC<CodyWebPanelProps> = props => {
                         },
                         description: fileURL,
                     },
+                    icon: 'git-folder',
                 } as ContextItemOpenCtx)
             } else {
                 // Common file mention with possible file range positions
@@ -347,6 +334,7 @@ const CodyWebPanel: FC<CodyWebPanelProps> = props => {
                     remoteRepositoryName: repository.name,
                     uri: URI.file(`${repository.name}/${fileURL}`),
                     source: ContextItemSource.Initial,
+                    icon: 'file',
                 })
             }
         }
