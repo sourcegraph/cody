@@ -17,6 +17,7 @@ import {
     type EventSource,
     FeatureFlag,
     type Guardrails,
+    ModelTag,
     ModelUsage,
     type NLSSearchDynamicFilter,
     type ProcessingStep,
@@ -39,6 +40,7 @@ import {
     firstResultFromOperation,
     firstValueFrom,
     forceHydration,
+    getDefaultSystemPrompt,
     graphqlClient,
     hydrateAfterPostMessage,
     isAbortErrorOrSocketHangUp,
@@ -60,6 +62,7 @@ import {
     skip,
     skipPendingOperation,
     startWith,
+    storeLastValue,
     subscriptionDisposable,
     telemetryRecorder,
     tracer,
@@ -128,7 +131,7 @@ import { chatHistory } from './ChatHistoryManager'
 import { CodyChatEditorViewType } from './ChatsController'
 import type { ContextRetriever } from './ContextRetriever'
 import { InitDoer } from './InitDoer'
-import { getChatPanelTitle } from './chat-helpers'
+import { getChatPanelTitle, isAgentTesting } from './chat-helpers'
 import { OmniboxTelemetry } from './handlers/OmniboxTelemetry'
 import { getAgent } from './handlers/registry'
 import { getPromptsMigrationInfo, startPromptsMigration } from './prompts-migration'
@@ -674,6 +677,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     intent: manuallySelectedIntent,
                     agent: selectedAgent,
                 })
+                this.setCustomChatTitle(requestID, inputText, signal, model)
                 this.postViewTranscript({ speaker: 'assistant' })
 
                 await this.saveSession()
@@ -1259,6 +1263,70 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         if (this._webviewPanelOrView && 'reveal' in this._webviewPanelOrView) {
             this._webviewPanelOrView.title = this.chatBuilder.getChatTitle()
         }
+    }
+
+    private isAutoChatTitleEnabled = storeLastValue(
+        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.ChatTitleAutoGeneration)
+    )
+
+    /**
+     * Sets the custom chat title based on the first message in the interaction.
+     */
+    private async setCustomChatTitle(
+        requestID: string,
+        inputText: PromptString,
+        signal: AbortSignal,
+        chatModel?: ChatModel
+    ): Promise<void> {
+        return tracer.startActiveSpan('chat.setCustomChatTitle', async (span): Promise<void> => {
+            // Get the currently available models with speed tag.
+            const speeds = modelsService.getModelsByTag(ModelTag.Speed)
+            // Use the latest Gemini flash model or the first speedy model as the default.
+            const model = (speeds.find(m => m.id.includes('flash')) || speeds?.[0])?.id ?? chatModel
+            const messages = this.chatBuilder.getMessages()
+            // Returns early if this is not the first message or if this is a testing session.
+            if (messages.length > 1 || !this.isAutoChatTitleEnabled || !model || isAgentTesting) {
+                return
+            }
+            const prompt = ps`${getDefaultSystemPrompt()} Your task is to generate a concise title (in about 10 words without quotation) for <codyUserInput>${inputText}</codyUserInput>.
+        RULE: Your response should only contain the concise title and nothing else.`
+            let title = ''
+            try {
+                const stream = await this.chatClient.chat(
+                    [{ speaker: 'human', text: prompt }],
+                    { model, maxTokensToSample: 100 },
+                    signal,
+                    requestID
+                )
+                for await (const message of stream) {
+                    if (message.type === 'change') {
+                        title = message.text
+                    } else if (message.type === 'complete') {
+                        if (title) {
+                            this.chatBuilder.setChatTitle(title)
+                            await this.saveSession()
+                        }
+                        break
+                    }
+                }
+            } catch (error) {
+                logDebug('ChatController', 'setCustomChatTitle', { verbose: error })
+            }
+            telemetryRecorder.recordEvent('cody.chat.customTitle', 'generated', {
+                privateMetadata: {
+                    requestID,
+                    model: model,
+                    traceId: span.spanContext().traceId,
+                },
+                metadata: {
+                    length: title.length,
+                },
+                billingMetadata: {
+                    product: 'cody',
+                    category: 'billable',
+                },
+            })
+        })
     }
 
     /**
