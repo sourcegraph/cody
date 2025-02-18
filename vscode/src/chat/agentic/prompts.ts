@@ -2,7 +2,7 @@ import { ps } from '@sourcegraph/cody-shared'
 import { getOSPromptString } from '../../os'
 
 export const ACTIONS_TAGS = {
-    ANSWER: ps`next_step_mode`,
+    ANSWER: ps`next_step`,
     CONTEXT: ps`context_list`,
 }
 
@@ -39,7 +39,7 @@ In this environment you have access to this set of tools you can use to fetch co
     <example_response>
         <TOOLMEMORY><store>user's preferences</store></TOOLMEMORY><{{ANSWER_TAG}}>answer</{{ANSWER_TAG}}>
     <example_response>
-6. If the input specifies to ask to show search results, respond with "<{{ANSWER_TAG}}>search</{{ANSWER_TAG}}>" and nothing else.
+6. If the input specifies to ask to show search results, respond with "<{{ANSWER_TAG}}>search:$keyword</{{ANSWER_TAG}}>" follow by the $keyword search query and nothing else.
 
 ## INVALIDE OUTPUT EXAMPLES
 - Empty context list: \`<{{CONTEXT_TAG}}></{{CONTEXT_TAG}}>\`
@@ -50,12 +50,15 @@ In this environment you have access to this set of tools you can use to fetch co
 - Determine if you can answer the question with the given context, or if you need more information.
 - Your response should only contains the <{{CONTEXT_TAG}}> list, and either the word "<{{ANSWER_TAG}}>" OR the appropriate <TOOL*> tag(s) and NOTHING else.
 
+## SYSTEM INFO
+1. The user is working in the {{CODY_IDE}} on ${getOSPromptString()}.
+2. Name of the file that the user is currently looking at: '{{CODY_CURRENT_FILE}}'. Use the file tool to fetch the content of this file if needed.
+
 ## RULES
 1. Only use <TOOL*> tags when additional context is necessary to answer the question.
 2. You may use multiple <TOOL*> tags in a single response if needed.
 3. Never make assumption about the provided context.
 4. NEVER request sensitive information or files such as passwords, API keys, or env files.
-5. The user is working in the {{CODY_IDE}} on ${getOSPromptString()}.
 
 <user_input>
 {{USER_INPUT_TEXT}}

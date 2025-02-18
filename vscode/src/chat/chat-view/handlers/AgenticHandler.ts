@@ -16,7 +16,6 @@ import {
     inputTextWithoutContextChipsFromPromptEditorState,
     isAbortErrorOrSocketHangUp,
     modelsService,
-    ps,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
@@ -43,7 +42,6 @@ export class AgenticHandler implements AgentHandler {
         protected readonly editor: ChatControllerOptions['editor'],
         protected chatClient: ChatControllerOptions['chatClient']
     ) {}
-    private followup = ''
     public async handle(
         {
             requestID,
@@ -87,14 +85,13 @@ export class AgenticHandler implements AgentHandler {
             return
         }
 
-        this.followup = contextAgent.nextMode
-
-        if (this.followup === 'search') {
+        const { mode, query } = contextAgent.nextActionMode
+        if (mode === 'search') {
             const search = new SearchHandler()
             await search.handle(
                 {
                     requestID,
-                    inputText: inputText.replace('search for', ps``),
+                    inputText: PromptString.unsafe_fromLLMResponse(query),
                     mentions,
                     editorState,
                     signal,
@@ -111,7 +108,7 @@ export class AgenticHandler implements AgentHandler {
         const corpusContext = contextResult.contextItems ?? []
         signal.throwIfAborted()
 
-        if (this.followup === 'edit') {
+        if (mode === 'edit') {
             return this.edit(requestID, inputText, delegate, corpusContext)
         }
 
@@ -237,9 +234,6 @@ export class AgenticHandler implements AgentHandler {
                         text: PromptString.unsafe_fromLLMResponse(content),
                         model: this.modelId,
                     })
-                    if (this.followup) {
-                        console.log(this.followup)
-                    }
                     delegate.postDone()
                 },
                 error: (partialResponse, error) => {
@@ -288,11 +282,6 @@ export class AgenticHandler implements AgentHandler {
         // Early return if basic conditions aren't met.
         if (baseContextResult.error || baseContextResult.abort) {
             return baseContextResult
-        }
-        // Check session and query constraints
-        const queryTooShort = text.split(' ').length < 3
-        if (queryTooShort) {
-            return { contextItems: [] }
         }
 
         const baseContext = baseContextResult.contextItems ?? []
@@ -347,83 +336,103 @@ export class AgenticHandler implements AgentHandler {
         }
     }
 
-    async edit(
+    protected async edit(
         requestID: string,
         inputTextWithoutContextChips: PromptString,
         delegate: AgentHandlerDelegate,
         context: ContextItem[] = []
     ): Promise<void> {
         const editor = getEditor()?.active
-        const document = editor?.document
-        if (!document) {
+        if (!editor?.document) {
             delegate.postError(new Error('No active editor'), 'transcript')
             delegate.postDone()
             return
         }
-        // Get full file range
-        const range = new vscode.Range(
-            document.positionAt(0),
-            document.positionAt(document.getText().length)
-        )
+
+        const document = editor.document
+        const fullRange = document.validateRange(new vscode.Range(0, 0, document.lineCount, 0))
+
         const task = await executeEdit({
             configuration: {
                 document,
-                range,
+                range: fullRange,
                 userContextFiles: context,
                 instruction: inputTextWithoutContextChips,
                 mode: 'edit',
                 intent: 'edit',
             },
         })
+
         if (!task) {
             delegate.postError(new Error('Failed to execute edit command'), 'transcript')
             delegate.postDone()
             return
         }
 
-        let responseMessage = `Here is the response for the ${task.intent} instruction:\n`
+        // Initialize diffs array if we only have a replacement
+        const diffs =
+            task.diff ||
+            (task.replacement
+                ? [
+                      {
+                          type: 'insertion',
+                          text: task.replacement,
+                          range: task.originalRange,
+                      },
+                  ]
+                : [])
 
-        if (!task.diff && task.replacement) {
-            task.diff = [
-                {
-                    type: 'insertion',
-                    text: task.replacement,
-                    range: task.originalRange,
-                },
-            ]
+        // Build response message using string concatenation for better performance
+        const message = [`Here is the response for the ${task.intent} instruction:`]
+
+        const lastIndex = diffs.length - 1
+        for (let i = 0; i < diffs.length; i++) {
+            const diff = diffs[i]
+            const isLast = i === lastIndex
+
+            message.push('\n```diff')
+            switch (diff.type) {
+                case 'deletion':
+                    message.push(
+                        task.document
+                            .getText(diff.range)
+                            .trimEnd()
+                            .split('\n')
+                            .map(line => `- ${line}`)
+                            .join('\n')
+                    )
+                    break
+                case 'decoratedReplacement':
+                    message.push(
+                        diff.oldText
+                            .trimEnd()
+                            .split('\n')
+                            .map(line => `- ${line}`)
+                            .join('\n'),
+                        diff.text
+                            .trimEnd()
+                            .split('\n')
+                            .map(line => `+ ${line}`)
+                            .join('\n')
+                    )
+                    break
+                case 'insertion':
+                    message.push(
+                        diff.text
+                            .trimEnd()
+                            .split('\n')
+                            .map(line => `+ ${line}`)
+                            .join('\n')
+                    )
+                    break
+            }
+            // Only add newline between diffs, not after the last one
+            message.push('```' + (isLast ? '' : '\n'))
         }
-
-        task.diff?.map(diff => {
-            responseMessage += '\n```diff\n'
-            if (diff.type === 'deletion') {
-                responseMessage += task.document
-                    .getText(diff.range)
-                    .split('\n')
-                    .map(line => `- ${line}`)
-                    .join('\n')
-            }
-            if (diff.type === 'decoratedReplacement') {
-                responseMessage += diff.oldText
-                    .split('\n')
-                    .map(line => `- ${line}`)
-                    .join('\n')
-                responseMessage += diff.text
-                    .split('\n')
-                    .map(line => `+ ${line}`)
-                    .join('\n')
-            }
-            if (diff.type === 'insertion') {
-                responseMessage += diff.text
-                    .split('\n')
-                    .map(line => `+ ${line}`)
-                    .join('\n')
-            }
-            responseMessage += '\n```'
-        })
 
         delegate.postMessageInProgress({
             speaker: 'assistant',
-            text: PromptString.unsafe_fromLLMResponse(responseMessage),
+            text: PromptString.unsafe_fromLLMResponse(message.join('\n')),
         })
         delegate.postDone()
     }

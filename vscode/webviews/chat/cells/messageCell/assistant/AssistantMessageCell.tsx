@@ -18,7 +18,6 @@ import type { PromptEditorRefAPI } from '@sourcegraph/prompt-editor'
 import isEqual from 'lodash/isEqual'
 import { type FunctionComponent, type RefObject, memo, useMemo } from 'react'
 import type { ApiPostMessage, UserAccountInfo } from '../../../../Chat'
-import { useOmniBox } from '../../../../utils/useOmniBox'
 import {
     ChatMessageContent,
     type CodeBlockActionsProps,
@@ -80,10 +79,6 @@ export const AssistantMessageCell: FunctionComponent<{
 
         const hasLongerResponseTime = chatModel?.tags?.includes(ModelTag.StreamDisabled)
 
-        const omniboxEnabled = useOmniBox()
-
-        const isSearchIntent = omniboxEnabled && humanMessage?.intent === 'search'
-
         return (
             <BaseMessageCell
                 content={
@@ -100,14 +95,7 @@ export const AssistantMessageCell: FunctionComponent<{
                                 />
                             )
                         ) : null}
-                        {omniboxEnabled && !isLoading && message.search && (
-                            <SearchResults
-                                message={message as ChatMessageWithSearch}
-                                onSelectedFiltersUpdate={onSelectedFiltersUpdate}
-                                enableContextSelection={isLastInteraction}
-                            />
-                        )}
-                        {!isSearchIntent && displayMarkdown ? (
+                        {displayMarkdown ? (
                             <ChatMessageContent
                                 displayMarkdown={displayMarkdown}
                                 isMessageLoading={isLoading}
@@ -131,6 +119,13 @@ export const AssistantMessageCell: FunctionComponent<{
                                     <LoadingDots />
                                 </div>
                             )
+                        )}
+                        {message.search && (
+                            <SearchResults
+                                message={message as ChatMessageWithSearch}
+                                onSelectedFiltersUpdate={onSelectedFiltersUpdate}
+                                enableContextSelection={isLastInteraction}
+                            />
                         )}
                         {message.subMessages?.length &&
                             message.subMessages.length > 0 &&

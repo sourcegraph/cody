@@ -19,6 +19,7 @@ import {
 } from '@sourcegraph/cody-shared'
 import { getContextFromRelativePath } from '../../commands/context/file-path'
 import { forkSignal } from '../../completions/utils'
+import { getEditor } from '../../editor/active-editor'
 import { getCategorizedMentions, isUserAddedItem } from '../../prompt-builder/utils'
 import type { ChatBuilder } from '../chat-view/ChatBuilder'
 import { DefaultPrompter } from '../chat-view/prompt'
@@ -59,6 +60,8 @@ export class DeepCodyAgent {
      * - loop: how many loop was run.
      */
     private stats = { context: 0, loop: 0 }
+
+    public nextActionMode = { mode: 'chat', query: '' }
 
     constructor(
         protected readonly chatBuilder: ChatBuilder,
@@ -106,12 +109,15 @@ export class DeepCodyAgent {
      */
     protected buildPrompt(tools: CodyTool[]): void {
         const toolInstructions = tools.map(t => t.getInstruction())
+        const currentDoc = getEditor()?.active?.document
+        const currentFile = currentDoc ? PromptString.fromDisplayPath(currentDoc.uri) : ps`none`
         const prompt = CODYAGENT_PROMPTS.review
             .replace('{{CODY_TOOLS_PLACEHOLDER}}', RawTextProcessor.join(toolInstructions, ps`\n- `))
             .replace(
                 '{{CODY_IDE}}',
                 getClientPromptString(clientCapabilities().agentIDE || CodyIDE.VSCode)
             )
+            .replace('{{CODY_CURRENT_FILE}}', currentFile)
         // logDebug('Deep Cody', 'buildPrompt', { verbose: prompt })
         this.promptMixins.push(newPromptMixin(prompt))
     }
@@ -169,10 +175,11 @@ export class DeepCodyAgent {
                 category: 'billable',
             },
         })
-        if (this.nextMode && this.nextMode !== 'answer') {
+        const knownModes = ['search', 'edit']
+        if (knownModes.includes(this.nextActionMode.mode)) {
             this.statusCallback.onStream({
-                title: 'New intent detected: ' + this.nextMode,
-                content: `Moving to ${this.nextMode} mode`,
+                title: `Switch to ${this.nextActionMode.mode} mode`,
+                content: 'New intent detected: ' + this.nextActionMode.mode,
             })
         }
         return this.context
@@ -200,8 +207,6 @@ export class DeepCodyAgent {
         this.statusCallback.onComplete()
     }
 
-    public nextMode = ''
-
     /**
      * Reviews current context and generates new context items using configured tools.
      * The review process:
@@ -227,9 +232,14 @@ export class DeepCodyAgent {
                 return []
             }
 
-            this.nextMode = nextMode(res)[0]
-            if (this.nextMode && this.nextMode === 'search') {
-                return []
+            const nextActionRes = nextMode(res)[0] || ''
+            const [mode, query] = nextActionRes.split(':')
+            if (mode) {
+                this.nextActionMode.mode = mode
+                this.nextActionMode.query = query || ''
+                if (mode === 'search') {
+                    return []
+                }
             }
 
             const step = this.stepsManager.addStep({ title: 'Retrieving context' })
@@ -392,6 +402,5 @@ export class RawTextProcessor {
 const answerTag = ACTIONS_TAGS.ANSWER.toString()
 const contextTag = ACTIONS_TAGS.CONTEXT.toString()
 const isReadyToAnswer = (text: string) => text === `<${answerTag}>answer</${answerTag}>`
-// const isEditRequest = (text: string) => text.includes(`<${answerTag}>edit</${answerTag}>`)
-const nextMode = (text: string) => RawTextProcessor.extract(text, 'next_step_mode')
+const nextMode = (text: string) => RawTextProcessor.extract(text, 'next_step')
 const toPlural = (num: number, text: string) => `${num} ${text}${num > 1 ? 's' : ''}`
