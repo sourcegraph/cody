@@ -334,11 +334,6 @@ export class EditManager implements vscode.Disposable {
                     replacementCode,
                     model
                 )
-                console.log(
-                    `Smart apply selection latency: ${Math.floor(
-                        performance.now() - selectionStartTime
-                    )}ms`
-                )
                 const selectionTimeTakenMs = Date.now() - selectionStartTime
 
                 // We finished prompting the LLM for the selection, we can now remove the "progress" decoration
@@ -460,8 +455,6 @@ export class EditManager implements vscode.Disposable {
             return
         }
 
-        console.log('prefetchSmartApply: start')
-
         if (await isUriIgnoredByContextFilterWithNotification(configuration.document.uri, 'edit')) {
             return
         }
@@ -569,7 +562,6 @@ export class EditManager implements vscode.Disposable {
         }
 
         if (!isPrefetch) {
-            console.log('logging telemetry')
             // Log the default edit command name for doc intent or test mode
             const isDocCommand = intent === 'doc' ? 'doc' : undefined
             const isUnitTestCommand = intent === 'test' ? 'test' : undefined

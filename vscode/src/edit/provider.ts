@@ -111,14 +111,12 @@ export class EditProvider {
         // If no streaming session or there was an error, start from scratch
         if (!session) {
             await this.performStreamingEdit({ taskId, initialState: 'streaming' })
-            console.log(`Edit patch latency ${Math.floor(performance.now() - now)}ms`)
             return
         }
         // If streaming is already complete, just apply the final partial text
         if (session.state === 'completed') {
             // Mark the task started for UI
             this.config.controller.startTask(this.config.task)
-            console.log(`Edit patch latency ${Math.floor(performance.now() - now)}ms`)
             // The final text is in session.partialText
             return this.handleResponse(session.partialText, false)
         }
@@ -129,7 +127,6 @@ export class EditProvider {
         // Immediately apply what has already been streamed
         if (session.partialText) {
             await this.handleResponse(session.partialText, true)
-            console.log(`Edit patch latency ${Math.floor(performance.now() - now)}ms`)
         }
         // We do NOT need to re-initiate streaming; it is already in flight.
         // We'll continue to get partial updates from the multiplexer.

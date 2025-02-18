@@ -256,8 +256,6 @@ export async function getSmartApplySelection(
         }
     }
 
-    console.log(`SELECTION IS READY IN ${Math.floor(performance.now() - fetchStart)}ms`)
-
     // We found a matching selection in the text, let's use this!
     return {
         type: 'selection',
