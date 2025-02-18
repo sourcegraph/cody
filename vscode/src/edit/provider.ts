@@ -106,13 +106,14 @@ export class EditProvider {
      */
     public async startEdit(): Promise<void> {
         const taskId = this.config.task.id
-        const now = performance.now()
         const session = this.config.cacheManager.getStreamSession(taskId)
+
         // If no streaming session or there was an error, start from scratch
         if (!session) {
             await this.performStreamingEdit({ taskId, initialState: 'streaming' })
             return
         }
+
         // If streaming is already complete, just apply the final partial text
         if (session.state === 'completed') {
             // Mark the task started for UI
@@ -120,6 +121,7 @@ export class EditProvider {
             // The final text is in session.partialText
             return this.handleResponse(session.partialText, false)
         }
+
         // If streaming is still in progress, we "startTask" now for UI,
         // then replay what has arrived so far, and continue to stream new tokens.
         this.config.controller.startTask(this.config.task)
@@ -128,6 +130,7 @@ export class EditProvider {
         if (session.partialText) {
             await this.handleResponse(session.partialText, true)
         }
+
         // We do NOT need to re-initiate streaming; it is already in flight.
         // We'll continue to get partial updates from the multiplexer.
         return

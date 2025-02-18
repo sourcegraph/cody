@@ -190,7 +190,6 @@ export async function getSmartApplySelection(
     codyApiVersion: number
 ): Promise<SmartSelection | null> {
     let originalCode: string
-    const fetchStart = performance.now()
     try {
         originalCode = await promptModelForOriginalCode(
             instruction,
