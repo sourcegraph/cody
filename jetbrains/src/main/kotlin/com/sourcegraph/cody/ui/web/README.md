@@ -31,3 +31,4 @@ This package relies on Agent being configured with these client capabilities:
   ...
 }
 ```
+Hello World
