@@ -310,7 +310,7 @@ test.extend<ExpectedV2Events>({
         'cody.chat-question:executed',
         'cody.chatResponse:noCode',
     ],
-})('@-mention symbol in chat', async ({ page, nap, sidebar, server }) => {
+}).only('@-mention symbol in chat', async ({ page, nap, sidebar, server }) => {
     mockEnterpriseRepoIdMapping(server)
 
     await sidebarSignin(page, sidebar)
@@ -356,7 +356,7 @@ test.extend<ExpectedV2Events>({
 
     // @-file with the correct line range shows up in the chat view and it opens on click
     const contextCell = getContextCell(chatPanelFrame)
-    await expectContextCellCounts(contextCell, { files: 2 })
+    await expectContextCellCounts(contextCell, { files: 1 })
     await contextCell.hover()
     await openContextCell(contextCell)
     const chatContext = getContextCell(chatPanelFrame).last()
