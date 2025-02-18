@@ -338,7 +338,7 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
                                     <ExternalLinkIcon size={16} strokeWidth={1.25} />
                                 </CommandLink>
 
-                                <CommandItem
+                                {IDE === CodyIDE.VSCode && (<CommandItem
                                     onSelect={() => {
                                         getVSCodeAPI().postMessage({
                                             command: 'command',
@@ -346,7 +346,7 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
                                         })
                                         close()
                                     }}
-                                >
+                                >)}
                                     <span className="tw-flex-grow">Report Issue</span>
                                 </CommandItem>
                             </CommandGroup>
