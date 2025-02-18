@@ -104,6 +104,10 @@ export default {
                     background: 'var(--vscode-statusBarItem-offlineBackground)',
                     foreground: 'var(--vscode-statusBarItem-offlineForeground)',
                 },
+                code: {
+                    background: 'var(--code-background)',
+                    foreground: 'var(--code-foreground)',
+                },
                 sourcegraph: {
                     blue: '#00CBEC',
                     purple: '#A112FF',

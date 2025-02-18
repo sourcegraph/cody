@@ -53,6 +53,7 @@ const ALLOWED_ELEMENTS = [
     'h5',
     'h6',
     'br',
+    'think',
 ]
 
 function defaultUrlProcessor(url: string): string {
