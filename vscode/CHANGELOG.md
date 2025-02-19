@@ -6,17 +6,8 @@ This is a log of all notable changes to Cody for VS Code.
 
 ## 1.70.1
 
-### Reverts
-
-  There were no reverts for this release
-
-### Uncategorized
-
-#### Others
-
+### Fix
 - [Backport M70] fix(agentic chat): terminal and openCtx are not registered as tools [#7132](https://github.com/sourcegraph/cody/pull/7132)
-- [Backport M70] Changelog for 1.70.0 [#7117](https://github.com/sourcegraph/cody/pull/7117)
-
 
 ## 1.70.0
 
