@@ -96,9 +96,6 @@ export interface RenderConfig {
     }
 }
 
-/**
- *
- */
 export interface UserProvidedRenderConfig
     extends Partial<Pick<RenderConfig, 'fontSize' | 'lineHeight' | 'pixelRatio' | 'backgroundColor'>> {}
 
