@@ -169,6 +169,8 @@ export const PromptList: FC<PromptListProps> = props => {
                 promptFilters?.promoted || promptFilters?.owner || promptFilters?.tags
 
             const isEditEnabled = clientCapabilities.edit === 'enabled'
+            // Prompts that perform edits are not usable on clients that don't support editing.
+            // To avoid cluttering the list with unusable prompts we ignore them completely.
             if (!isEditEnabled) {
                 actions = actions.filter(action =>
                     action.actionType === 'prompt' ? action.mode === 'CHAT' : action.mode === 'ask'
