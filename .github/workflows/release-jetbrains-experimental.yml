@@ -29,7 +29,7 @@ jobs:
           image: tonistiigi/binfmt:latest
           platforms: all
       - name: Gradle Wrapper Validation
-        uses: gradle/wrapper-validation-action@v3
+        uses: gradle/actions/wrapper-validation@v4
       - uses: pnpm/action-setup@fe02b34f77f8bc703788d5817da081398fad5dd2 # SECURITY: pin third-party action hashes
       - run: |
           echo "RELEASE_VERSION=$(./jetbrains/scripts/version-from-git-tag.sh)-experimental" >> $GITHUB_ENV
@@ -41,3 +41,4 @@ jobs:
           popd > /dev/null
         env:
           PUBLISH_TOKEN: ${{ secrets.JETBRAINS_MARKETPLACE_PUBLISH_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.PRIVATE_SG_ACCESS_TOKEN }}

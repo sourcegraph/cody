@@ -298,6 +298,14 @@ export class ChatBuilder {
         return getChatPanelTitle(lastHumanMessage?.text?.toString() ?? '')
     }
 
+    public setChatTitle(title: string): void {
+        const firstHumanMessage = this.messages[0]
+        if (firstHumanMessage?.speaker === 'human' && this.messages.length === 1) {
+            this.customChatTitle = title
+            this.changeNotifications.next()
+        }
+    }
+
     /**
      * Serializes to the transcript JSON format.
      */
@@ -316,7 +324,7 @@ export class ChatBuilder {
         }
         const result: SerializedChatTranscript = {
             id: this.sessionID,
-            chatTitle: undefined,
+            chatTitle: this.customChatTitle ?? undefined,
             lastInteractionTimestamp: this.sessionID,
             interactions,
         }

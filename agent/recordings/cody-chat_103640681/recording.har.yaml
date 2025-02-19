@@ -460,6 +460,218 @@ log:
         send: 0
         ssl: -1
         wait: 1562
+    - _id: 6741338783b12102515ff194583b6c5a
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 455
+        cookies: []
+        headers:
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_1858aad0e1ff07ae26d4042086acb9da455866ad617afd2cb9ab9419e1be1104
+          - name: connection
+            value: keep-alive
+          - name: content-type
+            value: application/json
+          - name: user-agent
+            value: cody-cli/6.0.0-SNAPSHOT (Node.js v20.4.0)
+          - name: x-requested-with
+            value: cody-cli 6.0.0-SNAPSHOT
+          - name: host
+            value: sourcegraph.sourcegraph.com
+        headersSize: 497
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 100
+            messages:
+              - speaker: human
+                text: >-
+                  You are Cody, an AI coding assistant from Sourcegraph. Your
+                  task is to generate a concise title (<10 words without
+                  quotation) for <codyUserInput>respond with "hello" and nothing
+                  else</codyUserInput>.
+                          RULE: Your response should only contain the concise title and nothing else.
+              - speaker: assistant
+            model: google::v1::gemini-1.5-flash
+            temperature: 0.2
+            topK: -1
+            topP: -1
+        queryString:
+          - name: client-name
+            value: jetbrains
+          - name: client-version
+            value: 6.0.0-SNAPSHOT
+        url: https://sourcegraph.sourcegraph.com/.api/completions/stream?client-name=jetbrains&client-version=6.0.0-SNAPSHOT
+      response:
+        bodySize: 162
+        content:
+          mimeType: text/event-stream
+          size: 162
+          text: >+
+            event: completion
+
+            data: {"completion":"Simple Hello World Program\n","stopReason":"STOP"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 14 Feb 2025 18:08:09 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
+              Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1390
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2025-02-14T18:08:08.574Z
+      time: 581
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 581
+    - _id: 409083f334c421e1c05d1b22bdf9ef37
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 477
+        cookies: []
+        headers:
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_1858aad0e1ff07ae26d4042086acb9da455866ad617afd2cb9ab9419e1be1104
+          - name: connection
+            value: keep-alive
+          - name: content-type
+            value: application/json
+          - name: user-agent
+            value: cody-cli/6.0.0-SNAPSHOT (Node.js v20.4.0)
+          - name: x-requested-with
+            value: cody-cli 6.0.0-SNAPSHOT
+          - name: host
+            value: sourcegraph.sourcegraph.com
+        headersSize: 497
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 100
+            messages:
+              - speaker: human
+                text: >-
+                  You are Cody, an AI coding assistant from Sourcegraph. Your
+                  task is to generate a concise title (<10 words without
+                  quotation) for <codyUserInput>implement a cow. Only print the
+                  code without any explanation.</codyUserInput>.
+                          RULE: Your response should only contain the concise title and nothing else.
+              - speaker: assistant
+            model: google::v1::gemini-1.5-flash
+            temperature: 0.2
+            topK: -1
+            topP: -1
+        queryString:
+          - name: client-name
+            value: jetbrains
+          - name: client-version
+            value: 6.0.0-SNAPSHOT
+        url: https://sourcegraph.sourcegraph.com/.api/completions/stream?client-name=jetbrains&client-version=6.0.0-SNAPSHOT
+      response:
+        bodySize: 157
+        content:
+          mimeType: text/event-stream
+          size: 157
+          text: >+
+            event: completion
+
+            data: {"completion":"Cow Class Implementation\n","stopReason":"STOP"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 14 Feb 2025 18:08:09 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
+              Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1390
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2025-02-14T18:08:08.634Z
+      time: 523
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 523
     - _id: 5d0e29776bf0857beffb22b778ce488b
       _order: 0
       cache: {}

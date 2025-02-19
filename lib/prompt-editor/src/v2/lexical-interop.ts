@@ -84,7 +84,7 @@ export function toSerializedPromptEditorValue(doc: Node): SerializedPromptEditor
             ? window.getComputedStyle(window.document.body).direction
             : null) === 'rtl'
             ? 'rtl'
-            : 'ltr'
+            : null
 
     doc.descendants(node => {
         if (node.type.name === 'mention') {
@@ -164,8 +164,8 @@ export function toSerializedPromptEditorValue(doc: Node): SerializedPromptEditor
         text: doc.textContent,
         contextItems,
         editorState: {
-            v: 'lexical-v1',
-            minReaderV: 'lexical-v1',
+            v: 'lexical-v0',
+            minReaderV: 'lexical-v0',
             lexicalEditorState: {
                 root: serializeRoot(doc),
             },
