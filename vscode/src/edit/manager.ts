@@ -6,12 +6,15 @@ import {
     ClientConfigSingleton,
     DEFAULT_EVENT_SOURCE,
     type EventSource,
+    FeatureFlag,
     PromptString,
     currentSiteVersion,
     extractContextFromTraceparent,
+    featureFlagProvider,
     firstResultFromOperation,
     modelsService,
     ps,
+    subscriptionDisposable,
     telemetryRecorder,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
@@ -63,9 +66,12 @@ export interface EditManagerOptions {
 export class EditManager implements vscode.Disposable {
     private disposables: vscode.Disposable[] = []
     private editProviders = new WeakMap<FixupTask, EditProvider>()
+
+    private isPrefetchingEnabled = false
+    private cacheManager = new EditCacheManager()
+
     private loggingFeatureFlagManagerInstance = new EditLoggingFeatureFlagManager()
     private smartApplyContextLogger = new SmartApplyContextLogger(this.loggingFeatureFlagManagerInstance)
-    private cacheManager = new EditCacheManager()
 
     constructor(public options: EditManagerOptions) {
         /**
@@ -81,7 +87,9 @@ export class EditManager implements vscode.Disposable {
         const prefetchSmartApplyCommand = vscode.commands.registerCommand(
             'cody.command.smart-apply-prefetch',
             (args: SmartApplyArguments) => {
-                this.prefetchSmartApply(args)
+                if (this.isPrefetchingEnabled) {
+                    this.prefetchSmartApply(args)
+                }
             }
         )
 
@@ -110,6 +118,16 @@ export class EditManager implements vscode.Disposable {
                 provider.abortEdit()
                 provider.startEdit()
             }
+        )
+
+        this.disposables.push(
+            subscriptionDisposable(
+                featureFlagProvider
+                    .evaluatedFeatureFlag(FeatureFlag.CodySmartApplyPrefetching)
+                    .subscribe(isPrefetchingEnabled => {
+                        this.isPrefetchingEnabled = Boolean(isPrefetchingEnabled)
+                    })
+            )
         )
 
         this.disposables.push(
