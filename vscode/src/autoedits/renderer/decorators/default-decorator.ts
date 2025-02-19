@@ -376,7 +376,7 @@ export class DefaultDecorator implements AutoEditsDecorator {
         // This should be determined by client capabilities.
         // VS Code: 'additions'
         // Client capabiliies === image: 'unified'
-        const diffMode = 'unified' // TODO: Change back to additions for prod
+        const diffMode = 'additions'
         const { dark, light, pixelRatio } = generateSuggestionAsImage({
             decorations: decorationInfo,
             lang: this.editor.document.languageId,
