@@ -147,7 +147,7 @@ const RateLimitErrorItem: React.FunctionComponent<{
                     <p>
                         {error.userMessage}
                         {canUpgrade &&
-                            ' Upgrade to Cody Pro for unlimited autocomplete suggestions, chat messages and commands.'}
+                            ' Upgrade to Cody Pro for increased autocomplete suggestions, chat messages and commands.'}
                     </p>
                 </header>
                 <div className={styles.actions}>
