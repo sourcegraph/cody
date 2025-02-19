@@ -4,6 +4,10 @@ import type { Message } from '../sourcegraph-api'
 
 const DEFAULT_PREAMBLE = ps`You are Cody, an AI coding assistant from Sourcegraph.`
 
+export function getDefaultSystemPrompt(): PromptString {
+    return DEFAULT_PREAMBLE
+}
+
 /**
  * For chat, we add an additional preamble to encourage the model to
  * produce code blocks that we can associate executable commands or content with existing file paths.

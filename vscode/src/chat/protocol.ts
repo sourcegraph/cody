@@ -73,7 +73,7 @@ export type WebviewMessage =
     | ({ command: 'submit' } & WebviewSubmitMessage)
     | { command: 'restoreHistory'; chatID: string }
     | { command: 'links'; value: string }
-    | { command: 'openURI'; uri: Uri }
+    | { command: 'openURI'; uri: Uri; range?: RangeData | undefined | null }
     | {
           // Open a file from a Sourcegraph URL
           command: 'openRemoteFile'
@@ -156,6 +156,7 @@ export type WebviewMessage =
           selectedFilters: NLSSearchDynamicFilter[]
       }
     | { command: 'action/confirmation'; id: string; response: boolean }
+    | { command: 'devicePixelRatio'; devicePixelRatio: number }
 
 export interface SmartApplyResult {
     taskId: FixupTaskID
@@ -260,6 +261,7 @@ export interface ConfigurationSubsetForWebview
     multipleWebviewsEnabled?: boolean | undefined | null
     endpointHistory?: string[] | undefined | null
     allowEndpointChange: boolean
+    experimentalPromptEditorEnabled: boolean
 }
 
 /**

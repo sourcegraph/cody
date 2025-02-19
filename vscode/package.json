@@ -3,7 +3,7 @@
   "name": "cody-ai",
   "private": true,
   "displayName": "Cody: AI Code Assistant",
-  "version": "1.68.0",
+  "version": "1.70.0",
   "publisher": "sourcegraph",
   "license": "Apache-2.0",
   "icon": "resources/sourcegraph.png",
@@ -879,31 +879,6 @@
           "command": "cody.menu.commands",
           "when": "view == cody.chat && cody.activated",
           "group": "navigation@1"
-        },
-        {
-          "command": "cody.welcome",
-          "when": "view == cody.chat",
-          "group": "7_cody@0"
-        },
-        {
-          "command": "cody.debug.export.logs",
-          "when": "view == cody.chat",
-          "group": "8_cody@1"
-        },
-        {
-          "command": "cody.debug.enable.all",
-          "when": "view == cody.chat",
-          "group": "8_cody@0"
-        },
-        {
-          "command": "cody.debug.outputChannel",
-          "when": "view == cody.chat",
-          "group": "8_cody@2"
-        },
-        {
-          "command": "cody.debug.reportIssue",
-          "when": "view == cody.chat",
-          "group": "9_cody@1"
         }
       ],
       "editor/title": [
@@ -971,6 +946,13 @@
         {
           "command": "cody.command.insertCodeToNewFile",
           "when": "webviewSection == 'codeblock-actions'"
+        }
+      ],
+      "explorer/context": [
+        {
+          "command": "cody.mention.file",
+          "when": "cody.activated && resourceSet && !explorerResourceIsFolder",
+          "group": "4_cody"
         }
       ]
     },

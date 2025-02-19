@@ -5,9 +5,11 @@ import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node'
 import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions'
 
 import {
+    type CodyIDE,
     FeatureFlag,
     type Unsubscribable,
     addAuthHeaders,
+    clientCapabilities,
     combineLatest,
     featureFlagProvider,
     resolvedConfig,
@@ -18,7 +20,6 @@ import { DiagConsoleLogger, DiagLogLevel, diag } from '@opentelemetry/api'
 import { BatchSpanProcessor } from '@opentelemetry/sdk-trace-base'
 import { externalAuthRefresh } from '@sourcegraph/cody-shared/src/configuration/auth-resolver'
 import { isEqual } from 'lodash'
-import { version } from '../../version'
 import { CodyTraceExporter } from './CodyTraceExport'
 import { ConsoleBatchSpanExporter } from './console-batch-span-exporter'
 
@@ -27,6 +28,9 @@ export interface OpenTelemetryServiceConfig {
     traceUrl: string
     authHeaders: Record<string, string>
     debugVerbose: boolean
+    ide: CodyIDE
+    /** Version of the Cody VS Code extension (e.g. v1.66.0) */
+    extensionVersion?: string
 }
 export class OpenTelemetryService {
     private tracerProvider?: NodeTracerProvider
@@ -51,7 +55,7 @@ export class OpenTelemetryService {
         this.tracerProvider = new NodeTracerProvider({
             resource: new Resource({
                 [SemanticResourceAttributes.SERVICE_NAME]: 'cody-client',
-                [SemanticResourceAttributes.SERVICE_VERSION]: version,
+                [SemanticResourceAttributes.SERVICE_VERSION]: clientCapabilities().agentExtensionVersion,
             }),
         })
         // Register once at startup
@@ -77,8 +81,9 @@ export class OpenTelemetryService {
                         traceUrl: traceUrl.toString(),
                         debugVerbose: configuration.debugVerbose,
                         authHeaders: Object.fromEntries(headers.entries()),
+                        ide: clientCapabilities().agentIDE,
+                        extensionVersion: clientCapabilities().agentExtensionVersion,
                     }
-
                     if (isEqual(this.lastConfig, newConfig)) {
                         return
                     }
