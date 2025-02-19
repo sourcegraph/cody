@@ -141,6 +141,43 @@ export class EditManager implements vscode.Disposable {
     }
 
     /**
+     * Allows you to prefetch the smart apply response in advance (e.g., when
+     * rendering a button) so that when the user eventually triggers smartApplyEdit,
+     * the response is already cached or in-flight.
+     */
+    public async prefetchSmartApply(args: SmartApplyArguments): Promise<void> {
+        const { configuration } = args
+
+        if (
+            !configuration ||
+            this.cacheManager.getSelectionPromise(configuration.id) ||
+            (await isUriIgnoredByContextFilterWithNotification(configuration.document.uri, 'edit')) ||
+            configuration.isNewFile
+        ) {
+            return
+        }
+
+        const model =
+            configuration.model || (await firstResultFromOperation(modelsService.getDefaultEditModel()))
+        if (!model) {
+            throw new Error('No default edit model found. Please set one.')
+        }
+
+        const replacementCode = PromptString.unsafe_fromLLMResponse(configuration.replacement)
+        const selection = await this.fetchSmartApplySelection(configuration, replacementCode, model)
+
+        // Once the selection is fetched, we also prefetch the LLM response.
+        await this.executeSmartApplyEdit({
+            configuration,
+            source: 'chat',
+            range: selection?.range || new vscode.Range(0, 0, 0, 0),
+            replacementCode,
+            model,
+            isPrefetch: true,
+        })
+    }
+
+    /**
      * "executeEdit" can now optionally prefetch the LLM response by calling
      * "provider.prefetchEdit" instead of "provider.startEdit." This is controlled
      * by the "prefetchOnly" parameter. If true, we kick off streaming in the background
@@ -206,7 +243,7 @@ export class EditManager implements vscode.Disposable {
 
         let task: FixupTask | null
         if (configuration.instruction && configuration.instruction.trim().length > 0) {
-            task = await this.createTaskAndMaybeRecordTelemetry({
+            task = await this.createTaskAndCheckForDuplicates({
                 document,
                 instruction: configuration.instruction,
                 userContextFiles: configuration.userContextFiles ?? [],
@@ -239,6 +276,10 @@ export class EditManager implements vscode.Disposable {
 
         if (!task) {
             return
+        }
+
+        if (!isPrefetch) {
+            this.logExectuedTelemetryEvent(task)
         }
 
         /**
@@ -301,7 +342,7 @@ export class EditManager implements vscode.Disposable {
                 if (configuration.isNewFile) {
                     // We are creating a new file, this means we are only _adding_ new code and _inserting_ it into the document.
                     // We do not need to re-prompt the LLM for this, let's just add the code directly.
-                    const task = await this.createTaskAndMaybeRecordTelemetry({
+                    const task = await this.createTaskAndCheckForDuplicates({
                         document,
                         instruction: configuration.instruction,
                         userContextFiles: [],
@@ -320,6 +361,7 @@ export class EditManager implements vscode.Disposable {
                     if (!task) {
                         return
                     }
+                    this.logExectuedTelemetryEvent(task)
                     const provider = this.getProviderForTask(task)
                     await provider.applyEdit(configuration.replacement)
                     return task
@@ -410,7 +452,7 @@ export class EditManager implements vscode.Disposable {
                         insertionRange = document.lineAt(document.lineCount - 1).range
                     }
 
-                    const task = await this.createTaskAndMaybeRecordTelemetry({
+                    const task = await this.createTaskAndCheckForDuplicates({
                         document,
                         instruction: configuration.instruction,
                         userContextFiles: [],
@@ -429,7 +471,7 @@ export class EditManager implements vscode.Disposable {
                     if (!task) {
                         return
                     }
-
+                    this.logExectuedTelemetryEvent(task)
                     const provider = this.getProviderForTask(task)
                     await provider.applyEdit('\n' + configuration.replacement)
                     return task
@@ -457,43 +499,6 @@ export class EditManager implements vscode.Disposable {
                 this.smartApplyContextLogger.logSmartApplyContextToTelemetry(contextloggerRequestId)
                 return
             })
-        })
-    }
-
-    /**
-     * Allows you to prefetch the smart apply response in advance (e.g., when
-     * rendering a button) so that when the user eventually triggers smartApplyEdit,
-     * the response is already cached or in-flight.
-     */
-    public async prefetchSmartApply(args: SmartApplyArguments): Promise<void> {
-        const { configuration } = args
-
-        if (
-            !configuration ||
-            this.cacheManager.getSelectionPromise(configuration.id) ||
-            (await isUriIgnoredByContextFilterWithNotification(configuration.document.uri, 'edit')) ||
-            configuration.isNewFile
-        ) {
-            return
-        }
-
-        const model =
-            configuration.model || (await firstResultFromOperation(modelsService.getDefaultEditModel()))
-        if (!model) {
-            throw new Error('No default edit model found. Please set one.')
-        }
-
-        const replacementCode = PromptString.unsafe_fromLLMResponse(configuration.replacement)
-        const selection = await this.fetchSmartApplySelection(configuration, replacementCode, model)
-
-        // Once the selection is fetched, we also prefetch the LLM response.
-        await this.executeSmartApplyEdit({
-            configuration,
-            source: 'chat',
-            range: selection?.range || new vscode.Range(0, 0, 0, 0),
-            replacementCode,
-            model,
-            isPrefetch: true,
         })
     }
 
@@ -556,11 +561,9 @@ export class EditManager implements vscode.Disposable {
      * Helper to create a new FixupTask, check for duplicates, record telemetry,
      * and return the resulting task or null if cancelled.
      */
-    private async createTaskAndMaybeRecordTelemetry(
+    private async createTaskAndCheckForDuplicates(
         createTaskOptions: CreateTaskOptions
     ): Promise<FixupTask | null> {
-        const { intent, telemetryMetadata, isPrefetch } = createTaskOptions
-
         const task = await this.options.controller.createTask(createTaskOptions)
         if (!task) {
             return null
@@ -583,47 +586,48 @@ export class EditManager implements vscode.Disposable {
             return null
         }
 
-        if (!isPrefetch) {
-            // Log the default edit command name for doc intent or test mode
-            const isDocCommand = intent === 'doc' ? 'doc' : undefined
-            const isUnitTestCommand = intent === 'test' ? 'test' : undefined
-            const isFixCommand = intent === 'fix' ? 'fix' : undefined
-            const eventName = isDocCommand ?? isUnitTestCommand ?? isFixCommand ?? 'edit'
-
-            const editContext = getEditLoggingContext({
-                isFeatureFlagEnabledForLogging:
-                    this.loggingFeatureFlagManagerInstance.isEditContextDataCollectionFlagEnabled(),
-                instruction: task.instruction.toString(),
-                document: task.document,
-                selectionRange: task.selectionRange,
-            })
-
-            const legacyMetadata = {
-                intent: task.intent,
-                mode: task.mode,
-                source: task.source,
-                ...telemetryMetadata,
-                editContext,
-            }
-            const { metadata, privateMetadata } = splitSafeMetadata(legacyMetadata)
-
-            telemetryRecorder.recordEvent(`cody.command.${eventName}`, 'executed', {
-                metadata: {
-                    ...metadata,
-                    recordsPrivateMetadataTranscript: editContext === undefined ? 0 : 1,
-                },
-                privateMetadata: {
-                    ...privateMetadata,
-                    model: task.model,
-                },
-                billingMetadata: {
-                    product: 'cody',
-                    category: 'core',
-                },
-            })
-        }
-
         return task
+    }
+
+    private logExectuedTelemetryEvent(task: FixupTask): void {
+        const { intent, telemetryMetadata, mode, source, document, selectionRange, model } = task
+
+        const isDocCommand = intent === 'doc' ? 'doc' : undefined
+        const isUnitTestCommand = intent === 'test' ? 'test' : undefined
+        const isFixCommand = intent === 'fix' ? 'fix' : undefined
+        const eventName = isDocCommand ?? isUnitTestCommand ?? isFixCommand ?? 'edit'
+
+        const editContext = getEditLoggingContext({
+            isFeatureFlagEnabledForLogging:
+                this.loggingFeatureFlagManagerInstance.isEditContextDataCollectionFlagEnabled(),
+            instruction: task.instruction.toString(),
+            document,
+            selectionRange,
+        })
+
+        const legacyMetadata = {
+            intent,
+            mode,
+            source,
+            ...telemetryMetadata,
+            editContext,
+        }
+        const { metadata, privateMetadata } = splitSafeMetadata(legacyMetadata)
+
+        telemetryRecorder.recordEvent(`cody.command.${eventName}`, 'executed', {
+            metadata: {
+                ...metadata,
+                recordsPrivateMetadataTranscript: editContext === undefined ? 0 : 1,
+            },
+            privateMetadata: {
+                ...privateMetadata,
+                model,
+            },
+            billingMetadata: {
+                product: 'cody',
+                category: 'core',
+            },
+        })
     }
 
     private getProviderForTask(task: FixupTask): EditProvider {
