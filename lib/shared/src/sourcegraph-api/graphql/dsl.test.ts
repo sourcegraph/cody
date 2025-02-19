@@ -88,7 +88,7 @@ export function nested<Name extends string, T extends SomeFields>(name: Name, ..
 }
 
 // An array of nested objects. For primitive arrays, use the regular type for example number[].
-export function array<Name extends string, T extends SomeFields>(name: Name, fields: T): ArraySpec<Name, T> {
+export function array<Name extends string, T extends SomeFields>(name: Name, ...fields: T): ArraySpec<Name, T> {
     return {
         kind: 'array',
         name,
@@ -178,11 +178,12 @@ function collectFormalList<F extends SomeFields>(fields: F): ArgumentsOfN<F> {
 
 // New approach: Combinators *with* types.
 const q = {
+    boolean: field<boolean>(),
     string: field<string>(),
     number: field<number>(),
 };
 
-describe('arguments', () => {
+describe('GraphQL DSL', () => {
     test('top-level arguments appear in formals', () => {
         let test = args(nested('foo',
             q.string('baz')
@@ -211,13 +212,35 @@ describe('arguments', () => {
         }
     })
 
+    test('queries can be combined', () => {
+        let repositories = args(
+            array('repositories', q.string('id'), q.string('name')),
+            formal.int('first'), formal.string('after'), formal.string('query')
+        )
+        let userInfo = nested('currentUser', q.string('id'), q.boolean('siteAdmin'))
+        let merged = both(repositories, userInfo)
+        expect(collectFormals(merged)).toEqual([
+            formal.int('first'), formal.string('after'), formal.string('query')
+        ])
+        // @ts-ignore TS6133 testing the type checker
+        let result: Realize<typeof merged.fields> = {
+            repositories: [
+                { id: 'foo', name: 'bar' },
+                { id: 'baz', name: 'quux' },
+            ],
+            currentUser: {
+                id: 'bob',
+                isAdmin: true,
+            }
+        }
+    })
+
     test('repository query', () => {
-        // Note, `as const` necessary here for arguments to be typed in order.
         let repositories = args(nested('repositories',
-            array('nodes', [
+            array('nodes',
                 q.string('id'),
                 q.string('name'),
-            ] as const),
+            ),
             nested('pageInfo',
                 args(q.string('endCursor'), formal.string('format'))
             )
