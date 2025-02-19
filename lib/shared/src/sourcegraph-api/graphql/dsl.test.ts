@@ -1,3 +1,5 @@
+import { describe, expect, test } from "vitest"
+
 // A field with a primitive type or an anonymous object type.
 export interface ValueSpec<Name extends string, T> {
     kind: 'value',
@@ -180,59 +182,71 @@ const q = {
     number: field<number>(),
 };
 
-export function testTopLevel() {
-    let test = args(nested('foo',
-        q.string('baz')
-    ), formal.int('bar'));
-    let fs: Arguments<typeof test> = collectFormals(test) // [formal.int('bar')]
-    let as: ActualTypes<Arguments<typeof test>> = [7]
-    let result: Realize<typeof test.field.fields> = {
-        'baz': 'hello'
-    };
-    console.log(fs, as, result);
-}
+describe('arguments', () => {
+    test('top-level arguments appear in formals', () => {
+        let test = args(nested('foo',
+            q.string('baz')
+        ), formal.int('bar'));
+        let fs: Arguments<typeof test> = collectFormals(test) // [formal.int('bar')]
+        expect(fs).toEqual([formal.int('bar')])
+        // @ts-ignore TS6133 testing the type checker
+        let as: ActualTypes<Arguments<typeof test>> = [7]
+        // @ts-ignore TS6133 testing the type checker
+        let result: Realize<typeof test.field.fields> = {
+            'baz': 'hello'
+        };
+    })
 
-export function testNested() {
-    let test = nested('foo',
-        nested('bar', args(q.string('baz'), formal.int('bar')))
-    )
-    let fs: Arguments<typeof test> = [formal.int('bar')]
-    let as: ActualTypes<Arguments<typeof test>> = [7]
-    let result: Realize<typeof test.fields> = {
-        'bar': { 'baz': 'hello' },
-    }
-    console.log(fs, as, result)
-}
-
-(function () {
-    // Note, `as const` necessary here for arguments to be typed in order.
-    let repositories = args(nested('repositories',
-        array('nodes', [
-            q.string('id'),
-            q.string('name'),
-        ] as const),
-        nested('pageInfo',
-            args(q.string('endCursor'), formal.string('format'))
+    test('nested arguments appear in formals', () => {
+        let test = nested('foo',
+            nested('bar', args(q.string('baz'), formal.int('bar')))
         )
-    ), formal.int('first'), formal.string('after'), formal.string('query'))
+        let fs: Arguments<typeof test> = collectFormals(test)
+        expect(fs).toEqual([formal.int('bar')])
+        // @ts-ignore TS6133 testing the type checker
+        let as: ActualTypes<Arguments<typeof test>> = [7]
+        // @ts-ignore TS6133 testing the type checker
+        let result: Realize<typeof test.fields> = {
+            'bar': {'baz': 'hello'},
+        }
+    })
 
-    type RepositoriesParams = Arguments<typeof repositories>
-    let fs: RepositoriesParams = collectFormals(repositories)
-    let as: ActualTypes<RepositoriesParams> = [7, 'foo', 'bar', 'hello']
-    console.log(fs, as)
+    test('repository query', () => {
+        // Note, `as const` necessary here for arguments to be typed in order.
+        let repositories = args(nested('repositories',
+            array('nodes', [
+                q.string('id'),
+                q.string('name'),
+            ] as const),
+            nested('pageInfo',
+                args(q.string('endCursor'), formal.string('format'))
+            )
+        ), formal.int('first'), formal.string('after'), formal.string('query'))
 
-    let repositoriesResult: Realize<typeof repositories.field.fields> = {
-        nodes: [{
-            id: 'fuhtnesuoehtnueo',
-            name: 'foo/bar',
-        }, {
+        type RepositoriesParams = Arguments<typeof repositories>
+        let fs: RepositoriesParams = collectFormals(repositories)
+        expect(fs).toEqual([
+            formal.int('first'),
+            formal.string('after'),
+            formal.string('query'),
+            formal.string('format')
+        ])
+        // @ts-ignore TS6133 testing the type checker
+        let as: ActualTypes<RepositoriesParams> = [7, 'foo', 'bar', 'hello']
+
+        let repositoriesResult: Realize<typeof repositories.field.fields> = {
+            nodes: [{
                 id: 'fuhtnesuoehtnueo',
                 name: 'foo/bar',
-        }],
-        pageInfo: {
-            endCursor: 'adam',
-        },
-    }
-    repositoriesResult.nodes[0].id = 'true'
-    repositoriesResult.pageInfo.endCursor += ', madam'
-})()
+            }, {
+                id: 'fuhtnesuoehtnueo',
+                name: 'foo/bar',
+            }],
+            pageInfo: {
+                endCursor: 'adam',
+            },
+        }
+        repositoriesResult.nodes[0].id = 'true'
+        repositoriesResult.pageInfo.endCursor += ', madam'
+    })
+})
