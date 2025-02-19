@@ -1,10 +1,3 @@
-export const CURRENT_USER_ID_QUERY = `
-query CurrentUser {
-    currentUser {
-        id
-    }
-}`
-
 export const CURRENT_USER_ROLE_QUERY = `
 query CurrentUserRole {
     currentUser {

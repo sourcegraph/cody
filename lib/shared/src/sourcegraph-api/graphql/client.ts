@@ -39,7 +39,6 @@ import {
     CURRENT_SITE_VERSION_QUERY,
     CURRENT_USER_CODY_PRO_ENABLED_QUERY,
     CURRENT_USER_CODY_SUBSCRIPTION_QUERY,
-    CURRENT_USER_ID_QUERY,
     CURRENT_USER_INFO_QUERY,
     CURRENT_USER_ROLE_QUERY,
     DELETE_ACCESS_TOKEN_MUTATION,
@@ -70,6 +69,8 @@ import {
     VIEWER_SETTINGS_QUERY,
 } from './queries'
 import { buildGraphQLUrl } from './url'
+
+import {currentUserId, Realize} from './dsl'
 
 export type BrowserOrNodeResponse = Response | NodeResponse
 
@@ -179,10 +180,6 @@ interface SiteGraphqlFieldsResponse {
 
 interface SiteHasCodyEnabledResponse {
     site: { isCodyEnabled: boolean } | null
-}
-
-interface CurrentUserIdResponse {
-    currentUser: { id: string } | null
 }
 
 interface CurrentUserRoleResponse {
@@ -873,12 +870,12 @@ export class SourcegraphGraphQLAPIClient {
     }
 
     public async getCurrentUserId(signal?: AbortSignal): Promise<string | null | Error> {
-        return this.fetchSourcegraphAPI<APIResponse<CurrentUserIdResponse>>(
-            CURRENT_USER_ID_QUERY,
+        return this.fetchSourcegraphAPI<APIResponse<Realize<typeof currentUserId.query> | null>>(
+            currentUserId.text,
             {},
             signal
         ).then(response =>
-            extractDataOrError(response, data => (data.currentUser ? data.currentUser.id : null))
+            extractDataOrError(response, data => data?.currentUser.id || null)
         )
     }
 
