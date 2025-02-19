@@ -27,8 +27,11 @@ const transformTabsToSpaces = (text: string, tabSize: number): string =>
 const countLeadingTabs = (text: string): number => (text.match(/\t/g) || []).length
 
 export function convertToSpaceIndentation(document: vscode.TextDocument, diff: VisualDiff): VisualDiff {
-    const { code } = getCodeBlock(diff, 'incoming')
-    const incomingIndentation = detectIndent(code).type
+    const codeBlock = getCodeBlock(diff, 'incoming')
+    if (!codeBlock) {
+        return diff
+    }
+    const incomingIndentation = detectIndent(codeBlock.code).type
     if (incomingIndentation === 'space') {
         // In order to reliably render spaces in VS Code decorations, we must convert them to
         // their unicode equivalent

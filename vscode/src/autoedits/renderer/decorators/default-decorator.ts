@@ -3,6 +3,7 @@ import * as vscode from 'vscode'
 import { GHOST_TEXT_COLOR } from '../../../commands/GhostHintDecorator'
 
 import { getEditorInsertSpaces, getEditorTabSize } from '@sourcegraph/cody-shared'
+import { isOnlyAddingTextForModifiedLines } from '../diff-utils'
 import { generateSuggestionAsImage } from '../image-gen'
 import type { AutoEditsDecorator, DecorationInfo, ModifiedLineInfo } from './base'
 import { UNICODE_SPACE, blockify } from './blockify'
@@ -460,16 +461,4 @@ export class DefaultDecorator implements AutoEditsDecorator {
             decorationType.dispose()
         }
     }
-}
-
-/**
- * Checks if the only changes for modified lines are additions of text.
- */
-function isOnlyAddingTextForModifiedLines(modifiedLines: ModifiedLineInfo[]): boolean {
-    for (const modifiedLine of modifiedLines) {
-        if (modifiedLine.changes.some(change => change.type === 'delete')) {
-            return false
-        }
-    }
-    return true
 }

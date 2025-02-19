@@ -34,14 +34,20 @@ function getLines(diff: VisualDiff, type: 'outgoing' | 'incoming'): VisualDiffLi
 export function getCodeBlock(
     diff: VisualDiff,
     type: 'incoming' | 'outgoing'
-): { code: string; startLine: number } {
+): { code: string; startLine: number } | null {
     if (type === 'outgoing') {
         const relevantLines = getLines(diff, 'outgoing')
+        if (relevantLines.length === 0) {
+            return null
+        }
         const code = relevantLines.map(line => ('oldText' in line ? line.oldText : line.text)).join('\n')
         return { code, startLine: relevantLines[0].originalLineNumber }
     }
 
     const relevantLines = getLines(diff, 'incoming')
+    if (relevantLines.length === 0) {
+        return null
+    }
     const code = relevantLines.map(line => ('newText' in line ? line.newText : line.text)).join('\n')
     return { code, startLine: relevantLines[0].modifiedLineNumber }
 }

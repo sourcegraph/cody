@@ -35,8 +35,12 @@ function getHighlightTokens({
         return new Map()
     }
 
-    const { code, startLine } = getCodeBlock(diff, type)
-    const { tokens } = syntaxHighlighter.codeToTokens(code, {
+    const codeBlock = getCodeBlock(diff, type)
+    if (!codeBlock) {
+        return new Map()
+    }
+
+    const { tokens } = syntaxHighlighter.codeToTokens(codeBlock.code, {
         theme: SYNTAX_HIGHLIGHTING_THEMES[theme].name,
         lang: highlightLang,
     })
@@ -44,7 +48,7 @@ function getHighlightTokens({
     const result = new Map<number, ThemedToken[]>()
     for (let i = 0; i < tokens.length; i++) {
         const lineTokens = tokens[i]
-        result.set(i + startLine, lineTokens)
+        result.set(i + codeBlock.startLine, lineTokens)
     }
 
     return result
@@ -120,5 +124,6 @@ export function syntaxHighlightDecorations(
         return line
     })
 
+    console.log('got highlighted diff', lines)
     return { type: mode, lines }
 }

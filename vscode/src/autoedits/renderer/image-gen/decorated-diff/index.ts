@@ -1,5 +1,6 @@
 import type * as vscode from 'vscode'
 import type { DecorationInfo } from '../../decorators/base'
+import { isOnlyAddingTextForModifiedLines } from '../../diff-utils'
 import { syntaxHighlightDecorations } from '../highlight/highlight-decorations'
 import { blockify } from './blockify'
 import type { VisualDiff, VisualDiffLine } from './types'
@@ -12,6 +13,7 @@ export function makeDecoratedDiff(
 ): { dark: VisualDiff; light: VisualDiff } {
     const visualDiff = makeVisualDiff(decorationInfo, mode)
     const blockifiedDiff = blockify(visualDiff, mode, document)
+    console.log('got blockified diff', blockifiedDiff)
     return {
         dark: syntaxHighlightDecorations(blockifiedDiff, lang, 'dark'),
         light: syntaxHighlightDecorations(blockifiedDiff, lang, 'light'),
@@ -81,18 +83,25 @@ export function makeVisualDiff(
         const line = relevantDiff[i]
 
         if (line.type === 'modified') {
-            // Split modified lines into two, ensuring the removed line is shown first
-            deletions.push({
-                type: 'modified-removed',
-                text: line.oldText,
-                changes: line.changes,
-                originalLineNumber: line.originalLineNumber,
-                modifiedLineNumber: line.modifiedLineNumber,
-                syntaxHighlights: {
-                    dark: [],
-                    light: [],
-                },
-            })
+            const additionsOnly = isOnlyAddingTextForModifiedLines([line])
+
+            console.log('additionsOnly', additionsOnly)
+            if (!additionsOnly) {
+                // The modified line includes a deletion, we need to ensure this is represented in the diff
+                deletions.push({
+                    type: 'modified-removed',
+                    text: line.oldText,
+                    changes: line.changes,
+                    originalLineNumber: line.originalLineNumber,
+                    modifiedLineNumber: line.modifiedLineNumber,
+                    syntaxHighlights: {
+                        dark: [],
+                        light: [],
+                    },
+                })
+            }
+
+            // We always want to show additions for modified lines
             additions.push({
                 type: 'modified-added',
                 text: line.newText,
@@ -144,5 +153,6 @@ export function makeVisualDiff(
         lines.push(...deletions, ...additions)
     }
 
+    console.log('Got diff', lines)
     return { type: mode, lines }
 }
