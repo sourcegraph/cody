@@ -83,7 +83,7 @@ describe('MarkdownFromCody', () => {
           in the same paragraph
           with a [link](./destination).
 
-          \`\`\`\`ts
+          \`\`\`ts
           const someTypeScriptCode = funcCall()
           \`\`\`
 
@@ -107,7 +107,7 @@ describe('MarkdownFromCody', () => {
 
           <b>inline html</b>
 
-          Escaped \\* markdown and escaped html code &amp;lt;\`\`\`
+          Escaped \\* markdown and escaped html code &amp;lt;\`\`\`\`
           </code></pre>"
         `)
     })
