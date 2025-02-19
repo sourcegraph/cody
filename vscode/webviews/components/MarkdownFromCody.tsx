@@ -92,14 +92,7 @@ const URL_PROCESSORS: Partial<Record<CodyIDE, UrlTransform>> = {
  * @returns The transformed string.
  */
 const childrenTransform = (children: string): string => {
-    if (children.indexOf('```markdown') === -1) {
-        return children
-    }
-    children = children.replace('```markdown', '````markdown')
-    const lastIdx = children.lastIndexOf('```')
-
-    // Replace the last three backticks with four backticks
-    return children.slice(0, lastIdx) + '````' + children.slice(lastIdx + 3)
+    return children.replace(/```markdown([\s\S]*?)```/g, '````markdown$1````')
 }
 
 export const MarkdownFromCody: FunctionComponent<{

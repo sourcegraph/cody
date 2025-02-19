@@ -34,6 +34,29 @@ const LEADING_SPACES_AND_NEW_LINES = /^\s*\n/
 const LEADING_SPACES = /^[ ]+/
 
 /**
+ * Strips the text of any unnecessary content.
+ * This includes:
+ * 1. Prompt topics, e.g. <CODE511>. These are used by the LLM to wrap the output code.
+ * 2. Markdown code blocks, e.g. ```typescript. Most LLMs are trained to produce Markdown-suitable responses.
+ */
+function stripText(text: string, task: FixupTask): string {
+    const strippedText = text
+        // Strip specific XML tags referenced in the prompt, e.g. <CODE511>
+        .replaceAll(PROMPT_TOPIC_REGEX, '')
+
+    if (task.document.languageId === 'markdown') {
+        // Return this text as is, we do not want to strip Markdown blocks as they may be valuable
+        // in Markdown files
+        return strippedText
+    }
+
+    // Strip Markdown syntax for code blocks, e.g. ```typescript.
+    return strippedText.replaceAll(MARKDOWN_CODE_BLOCK_REGEX, block =>
+        block.replace(MARKDOWN_CODE_BLOCK_START, '').replace(MARKDOWN_CODE_BLOCK_END, '')
+    )
+}
+
+/**
  * Given the LLM response for a FixupTask, transforms the response
  * to make it suitable to insert as code.
  * This is handling cases where the LLM response does not __only__ include code.
@@ -43,16 +66,7 @@ export function responseTransformer(
     task: FixupTask,
     isMessageInProgress: boolean
 ): string {
-    let strippedText = text
-        // Strip specific XML tags referenced in the prompt, e.g. <CODE511>
-        .replaceAll(PROMPT_TOPIC_REGEX, '')
-
-    // Strip Markdown syntax for code blocks, e.g. ```typescript, leaving them for markdown files
-    if (task?.document?.languageId !== 'markdown') {
-        strippedText = strippedText.replaceAll(MARKDOWN_CODE_BLOCK_REGEX, block =>
-            block.replace(MARKDOWN_CODE_BLOCK_START, '').replace(MARKDOWN_CODE_BLOCK_END, '')
-        )
-    }
+    const strippedText = stripText(text, task)
 
     // Trim leading spaces
     // - For `add` insertions, the LLM will attempt to continue the code from the position of the cursor, we handle the `insertionPoint`
