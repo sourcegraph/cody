@@ -23,9 +23,12 @@ In this environment you have access to this set of tools you can use to fetch co
     <example_response>
         <{{CONTEXT_TAG}}>shared/file1.ts</{{CONTEXT_TAG}}><{{CONTEXT_TAG}}>shared/file2.ts</{{CONTEXT_TAG}}><{{CONTEXT_TAG}}>command</{{CONTEXT_TAG}}>
     <example_response>
-2. If you can answer the <user_input> fully with the context added to <{{CONTEXT_TAG}}>, add "<{{ANSWER_TAG}}>" at the end with "answer" as the value. Change "answer" to "edit" if the request requires editing files:
+2. If you can answer the <user_input> fully with the context added to <{{CONTEXT_TAG}}>, add "<{{ANSWER_TAG}}>" at the end with "answer" as the value. Change "answer" to "edit" if the request includes editing shared files or creating new ones:
     <example_response>
-        <{{CONTEXT_TAG}}>path/to/file1.ts</{{CONTEXT_TAG}}><{{CONTEXT_TAG}}>path/to/file2.ts</{{CONTEXT_TAG}}><{{CONTEXT_TAG}}>command</{{CONTEXT_TAG}}><{{ANSWER_TAG}}>answer</{{ANSWER_TAG}}>
+        <{{CONTEXT_TAG}}>path/to/file1.ts</{{CONTEXT_TAG}}><{{CONTEXT_TAG}}>path/to/file2.ts</{{CONTEXT_TAG}}><{{CONTEXT_TAG}}>command</{{CONTEXT_TAG}}><{{ANSWER_TAG}}>answer::</{{ANSWER_TAG}}>
+    <example_response>
+    <example_response>
+        <{{CONTEXT_TAG}}>path/to/file1.ts</{{CONTEXT_TAG}}><{{CONTEXT_TAG}}>path/to/file2.ts</{{CONTEXT_TAG}}><{{CONTEXT_TAG}}>command</{{CONTEXT_TAG}}><{{ANSWER_TAG}}>edit:path/to/file1.test.ts</{{ANSWER_TAG}}>
     <example_response>
 3. If you need more information, use ONLY the appropriate <TOOL*> tag(s) in your response:
     <example_response>

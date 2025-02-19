@@ -44,7 +44,8 @@ export class DefaultPrompter {
     public async makePrompt(
         chat: ChatBuilder,
         codyApiVersion: number,
-        mixins: PromptMixin[] = []
+        mixins: PromptMixin[] = [],
+        type: 'Chat' | 'Default' = 'Chat'
     ): Promise<PromptInfo> {
         return wrapInActiveSpan('chat.prompter', async () => {
             const contextWindow = await firstResultFromOperation(ChatBuilder.contextWindowForChat(chat))
@@ -53,7 +54,7 @@ export class DefaultPrompter {
 
             // Add preamble messages
             const chatModel = await firstResultFromOperation(ChatBuilder.resolvedModelForChat(chat))
-            const preambleMessages = getSimplePreamble(chatModel, codyApiVersion, 'Chat', preInstruction)
+            const preambleMessages = getSimplePreamble(chatModel, codyApiVersion, type, preInstruction)
             if (!promptBuilder.tryAddToPrefix(preambleMessages)) {
                 throw new Error(`Preamble length exceeded context window ${contextWindow.input}`)
             }

@@ -42,10 +42,9 @@ export const remarkAttachFilePathToCodeBlocks: Plugin<[], Root> = () => {
                     'data-file-path': filePath.trim().replaceAll('%20', ' '),
                 }
 
-                if (node.meta?.startsWith('regex=')) {
+                if (node.meta?.startsWith('regex=') || node.meta?.startsWith('v')) {
                     const rawRegex = node.meta.replace('regex=', '').trim()
-                    // const encodedRegex = encodeURIComponent(rawRegex)
-                    hProperties.regex = rawRegex
+                    hProperties.regex = node.meta === 'v0' ? '.*' : rawRegex
                 }
 
                 // Update node data

@@ -1,37 +1,33 @@
-import type { Span } from '@opentelemetry/api'
 import {
     // BotResponseMultiplexer,
     type ChatModel,
     type CompletionParameters,
     type ContextItem,
-    type ContextItemOpenCtx,
     ContextItemSource,
     type Message,
     PromptString,
-    type RankedContext,
     type SerializedPromptEditorState,
     Typewriter,
     firstResultFromOperation,
-    getContextForChatMessage,
-    inputTextWithoutContextChipsFromPromptEditorState,
     isAbortErrorOrSocketHangUp,
     modelsService,
+    ps,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
+import { getDiagnosticsTextBlock, getUpdatedDiagnostics } from '../../../commands/context/diagnostic'
 import { executeEdit } from '../../../edit/execute'
 import { getEditor } from '../../../editor/active-editor'
-import { resolveContextItems } from '../../../editor/utils/editor-context'
+import type { Edit } from '../../../non-stop/line-diff'
 import { getCategorizedMentions } from '../../../prompt-builder/utils'
 import { DeepCodyAgent } from '../../agentic/DeepCody'
-// import { PlanningAgent } from '../../agentic/PlanningAgent'
 import { ProcessManager } from '../../agentic/ProcessManager'
-// import { RawTextProcessor } from '../../agentic/utils/processors'
 import { ChatBuilder } from '../ChatBuilder'
 import type { ChatControllerOptions } from '../ChatController'
-import { type ContextRetriever, toStructuredMentions } from '../ContextRetriever'
-import { type HumanInput, getPriorityContext } from '../context'
+import type { ContextRetriever } from '../ContextRetriever'
+import type { HumanInput } from '../context'
 import { DefaultPrompter, type PromptInfo } from '../prompt'
+import { computeContextAlternatives } from './ChatHandler'
 import { SearchHandler } from './SearchHandler'
 import type { AgentHandler, AgentHandlerDelegate, AgentRequest } from './interfaces'
 
@@ -42,26 +38,17 @@ export class AgenticHandler implements AgentHandler {
         protected readonly editor: ChatControllerOptions['editor'],
         protected chatClient: ChatControllerOptions['chatClient']
     ) {}
-    public async handle(
-        {
-            requestID,
-            inputText,
-            mentions,
-            editorState,
-            signal,
-            chatBuilder,
-            recorder,
-            span,
-        }: AgentRequest,
-        delegate: AgentHandlerDelegate
-    ): Promise<void> {
+
+    public async handle(req: AgentRequest, delegate: AgentHandlerDelegate): Promise<void> {
+        const { requestID, inputText, mentions, editorState, signal, chatBuilder, recorder, span } = req
+
         const stepsManager = new ProcessManager(
             steps => delegate.postStatuses(steps),
             step => delegate.postRequest(step)
         )
         // All mentions we receive are either source=initial or source=user. If the caller
         // forgot to set the source, assume it's from the user.
-        mentions = mentions.map(m => (m.source ? m : { ...m, source: ContextItemSource.User }))
+        req.mentions = mentions.map(m => (m.source ? m : { ...m, source: ContextItemSource.User }))
 
         const contextAgent = new DeepCodyAgent(chatBuilder, this.chatClient, stepsManager)
 
@@ -79,25 +66,20 @@ export class AgenticHandler implements AgentHandler {
             delegate.postDone({ abort: contextResult.abort })
             return
         }
-
         if (contextResult.error) {
             delegate.postError(contextResult.error, 'transcript')
             return
         }
+
+        signal.throwIfAborted()
 
         const { mode, query } = contextAgent.nextActionMode
         if (mode === 'search') {
             const search = new SearchHandler()
             await search.handle(
                 {
-                    requestID,
+                    ...req,
                     inputText: PromptString.unsafe_fromLLMResponse(query),
-                    mentions,
-                    editorState,
-                    signal,
-                    chatBuilder,
-                    span,
-                    recorder,
                 },
                 delegate
             )
@@ -106,21 +88,22 @@ export class AgenticHandler implements AgentHandler {
         }
 
         const corpusContext = contextResult.contextItems ?? []
-        signal.throwIfAborted()
 
         if (mode === 'edit') {
-            return this.edit(requestID, inputText, delegate, corpusContext)
+            chatBuilder.setLastMessageIntent('edit')
+            // const edit = new EditChatHandler(this.modelId, this.editor, this.chatClient, corpusContext)
+            // await edit.handle(req, delegate)
+            this.edit(inputText, delegate, corpusContext)
+            return
         }
 
         const { explicitMentions, implicitMentions } = getCategorizedMentions(corpusContext)
         const prompter = new DefaultPrompter(explicitMentions, implicitMentions, false)
-
         const { prompt, context } = await this.buildPrompt(prompter, chatBuilder, signal, 8)
-
-        recorder.recordChatQuestionExecuted(corpusContext, { addMetadata: true, current: span })
 
         signal.throwIfAborted()
 
+        recorder.recordChatQuestionExecuted(corpusContext, { addMetadata: true, current: span })
         this.streamAssistantResponse(
             requestID,
             prompt,
@@ -337,8 +320,7 @@ export class AgenticHandler implements AgentHandler {
     }
 
     protected async edit(
-        requestID: string,
-        inputTextWithoutContextChips: PromptString,
+        instruction: PromptString,
         delegate: AgentHandlerDelegate,
         context: ContextItem[] = []
     ): Promise<void> {
@@ -349,160 +331,157 @@ export class AgenticHandler implements AgentHandler {
             return
         }
 
+        const postProgressToWebview = (msgs: string[]) => {
+            const message = msgs.join('\n\n')
+            delegate.postMessageInProgress({
+                speaker: 'assistant',
+                text: PromptString.unsafe_fromLLMResponse(message),
+                model: this.modelId,
+            })
+        }
+
         const document = editor.document
         const fullRange = document.validateRange(new vscode.Range(0, 0, document.lineCount, 0))
+        let currentDiagnostics = vscode.languages.getDiagnostics()
 
-        const task = await executeEdit({
-            configuration: {
-                document,
-                range: fullRange,
-                userContextFiles: context,
-                instruction: inputTextWithoutContextChips,
-                mode: 'edit',
-                intent: 'edit',
-            },
-        })
+        let attempts = 0
+        const MAX_ATTEMPTS = 5
+        let currentInstruction = instruction
 
-        if (!task) {
-            delegate.postError(new Error('Failed to execute edit command'), 'transcript')
-            delegate.postDone()
-            return
-        }
+        const messageInProgress = []
 
-        // Initialize diffs array if we only have a replacement
-        const diffs =
-            task.diff ||
-            (task.replacement
-                ? [
-                      {
-                          type: 'insertion',
-                          text: task.replacement,
-                          range: task.originalRange,
-                      },
-                  ]
-                : [])
+        while (attempts < MAX_ATTEMPTS) {
+            attempts++
 
-        // Build response message using string concatenation for better performance
-        const message = [`Here is the response for the ${task.intent} instruction:`]
+            const task = await executeEdit({
+                configuration: {
+                    document,
+                    range: fullRange,
+                    userContextFiles: context,
+                    instruction: currentInstruction,
+                    mode: 'edit',
+                    intent: 'edit',
+                },
+            })
 
-        const lastIndex = diffs.length - 1
-        for (let i = 0; i < diffs.length; i++) {
-            const diff = diffs[i]
-            const isLast = i === lastIndex
-
-            message.push('\n```diff')
-            switch (diff.type) {
-                case 'deletion':
-                    message.push(
-                        task.document
-                            .getText(diff.range)
-                            .trimEnd()
-                            .split('\n')
-                            .map(line => `- ${line}`)
-                            .join('\n')
-                    )
-                    break
-                case 'decoratedReplacement':
-                    message.push(
-                        diff.oldText
-                            .trimEnd()
-                            .split('\n')
-                            .map(line => `- ${line}`)
-                            .join('\n'),
-                        diff.text
-                            .trimEnd()
-                            .split('\n')
-                            .map(line => `+ ${line}`)
-                            .join('\n')
-                    )
-                    break
-                case 'insertion':
-                    message.push(
-                        diff.text
-                            .trimEnd()
-                            .split('\n')
-                            .map(line => `+ ${line}`)
-                            .join('\n')
-                    )
-                    break
+            if (!task) {
+                delegate.postError(new Error('Failed to execute edit command'), 'transcript')
+                delegate.postDone()
+                return
             }
-            // Only add newline between diffs, not after the last one
-            message.push('```' + (isLast ? '' : '\n'))
+
+            const diffs =
+                task.diff ||
+                (task.replacement
+                    ? [
+                          {
+                              type: 'insertion',
+                              text: task.replacement,
+                              range: task.originalRange,
+                          },
+                      ]
+                    : [])
+
+            messageInProgress.push(this.generateDiffMessage(diffs, document))
+            postProgressToWebview(messageInProgress)
+
+            await editor.document.save()
+
+            const latestDiagnostics = vscode.languages.getDiagnostics()
+            const problems = getUpdatedDiagnostics(currentDiagnostics, latestDiagnostics)
+
+            if (!problems.length) {
+                break // Success! No more problems
+            }
+
+            if (attempts < MAX_ATTEMPTS) {
+                const problemText = getDiagnosticsTextBlock(problems)
+                const diagnosticsBlock = PromptString.unsafe_fromLLMResponse(problemText)
+                const retryMessage = `Attempt ${attempts}/${MAX_ATTEMPTS}: Found issues, trying to fix:\n${problemText}`
+                messageInProgress.push(retryMessage)
+                postProgressToWebview(messageInProgress)
+
+                // Update instruction with current problems for next attempt
+                currentInstruction = instruction.concat(
+                    ps`\nPrevious attempt resulted in these issues:\n${diagnosticsBlock}`
+                )
+                currentDiagnostics = latestDiagnostics
+            }
         }
 
-        delegate.postMessageInProgress({
-            speaker: 'assistant',
-            text: PromptString.unsafe_fromLLMResponse(message.join('\n')),
-        })
+        if (attempts === MAX_ATTEMPTS) {
+            messageInProgress.push(
+                `Reached maximum number of attempts (${MAX_ATTEMPTS}). Some issues may remain.`
+            )
+        }
+
+        postProgressToWebview(messageInProgress)
         delegate.postDone()
     }
-}
 
-export async function computeContextAlternatives(
-    contextRetriever: Pick<ContextRetriever, 'retrieveContext'>,
-    editor: ChatControllerOptions['editor'],
-    { text, mentions }: HumanInput,
-    editorState: SerializedPromptEditorState | null,
-    span: Span,
-    signal?: AbortSignal,
-    skipQueryRewrite = false
-): Promise<RankedContext[]> {
-    // Remove context chips (repo, @-mentions) from the input text for context retrieval.
-    const inputTextWithoutContextChips = editorState
-        ? PromptString.unsafe_fromUserQuery(
-              inputTextWithoutContextChipsFromPromptEditorState(editorState)
-          )
-        : text
-    const structuredMentions = toStructuredMentions(mentions)
-    const retrievedContextPromise = contextRetriever.retrieveContext(
-        structuredMentions,
-        inputTextWithoutContextChips,
-        span,
-        signal,
-        skipQueryRewrite
-    )
-    const priorityContextPromise = skipQueryRewrite
-        ? Promise.resolve([])
-        : retrievedContextPromise
-              .then(p => getPriorityContext(text, editor, p))
-              .catch(() => getPriorityContext(text, editor, []))
-    const openCtxContextPromise = getContextForChatMessage(text.toString(), signal)
-    const [priorityContext, retrievedContext, openCtxContext] = await Promise.all([
-        priorityContextPromise,
-        retrievedContextPromise.catch(e => {
-            throw new Error(`Failed to retrieve search context: ${e}`)
-        }),
-        openCtxContextPromise,
-    ])
+    // Helper method to generate diff message
+    private generateDiffMessage(diffs: Edit[], document: vscode.TextDocument): string {
+        const message = ['Here is the proposed change:\n\n```diff']
+        const documentLines = document.getText().split('\n')
+        const modifiedLines = new Map<number, Edit>()
 
-    const resolvedExplicitMentionsPromise = resolveContextItems(
-        editor,
-        [structuredMentions.symbols, structuredMentions.files, structuredMentions.openCtx].flat(),
-        text,
-        signal
-    )
+        for (const diff of diffs) {
+            for (let line = diff.range.start.line; line <= diff.range.end.line; line++) {
+                modifiedLines.set(line, diff)
+            }
+        }
 
-    return [
-        {
-            strategy: 'local+remote',
-            items: combineContext(
-                await resolvedExplicitMentionsPromise,
-                openCtxContext,
-                priorityContext,
-                retrievedContext
-            ),
-        },
-    ]
-}
+        for (let lineNumber = 0; lineNumber < documentLines.length; lineNumber++) {
+            const diff = modifiedLines.get(lineNumber)
+            if (!diff) {
+                message.push(` ${documentLines[lineNumber]}`)
+                continue
+            }
 
-// This is the manual ordering of the different retrieved and explicit context sources
-// It should be equivalent to the ordering of things in
-// ChatController:legacyComputeContext > context.ts:resolveContext
-function combineContext(
-    explicitMentions: ContextItem[],
-    openCtxContext: ContextItemOpenCtx[],
-    priorityContext: ContextItem[],
-    retrievedContext: ContextItem[]
-): ContextItem[] {
-    return [explicitMentions, openCtxContext, priorityContext, retrievedContext].flat()
+            switch (diff.type) {
+                case 'deletion':
+                    if (lineNumber === diff.range.start.line) {
+                        message.push(
+                            document
+                                .getText(diff.range)
+                                .trimEnd()
+                                .split('\n')
+                                .map(line => `- ${line}`)
+                                .join('\n')
+                        )
+                    }
+                    break
+                case 'decoratedReplacement':
+                    if (lineNumber === diff.range.start.line) {
+                        message.push(
+                            diff.oldText
+                                .trimEnd()
+                                .split('\n')
+                                .map(line => `- ${line}`)
+                                .join('\n'),
+                            diff.text
+                                .trimEnd()
+                                .split('\n')
+                                .map(line => `+ ${line}`)
+                                .join('\n')
+                        )
+                    }
+                    break
+                case 'insertion':
+                    if (lineNumber === diff.range.start.line) {
+                        message.push(
+                            diff.text
+                                .trimEnd()
+                                .split('\n')
+                                .map(line => `+ ${line}`)
+                                .join('\n')
+                        )
+                    }
+                    break
+            }
+        }
+
+        message.push('```')
+        return message.join('\n')
+    }
 }

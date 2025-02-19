@@ -341,6 +341,12 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 break
             }
             case 'openFileLink':
+                if (message.uri.scheme === 'cody') {
+                    vscode.workspace.openTextDocument({
+                        content: message.uri.path,
+                    })
+                    return
+                }
                 vscode.commands.executeCommand('vscode.open', message.uri, {
                     selection: message.range,
                     preserveFocus: true,

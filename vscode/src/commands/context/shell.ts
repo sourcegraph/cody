@@ -17,11 +17,9 @@ const execAsync = promisify(exec)
 // Pre-compute home directory path
 const HOME_DIR = os.homedir() || process.env.HOME || process.env.USERPROFILE || ''
 
-const OUTPUT_WRAPPER = `
-Terminal output from the \`{command}\` command enclosed between <OUTPUT0412> tags:
-<OUTPUT0412>
+const OUTPUT_WRAPPER = `\`\`\`sh:{command}
 {output}
-</OUTPUT0412>`
+\`\`\``
 
 export async function getContextFileFromShell(command: string): Promise<ContextItem[]> {
     return wrapInActiveSpan('commands.context.command', async () => {
@@ -36,6 +34,7 @@ export async function getContextFileFromShell(command: string): Promise<ContextI
         // Process command and workspace
         const cwd = vscode.workspace.workspaceFolders?.[0]?.uri?.fsPath
         const filteredCommand = command.replaceAll(/(\s~\/)/g, ` ${HOME_DIR}${path.sep}`)
+        const baseUri = vscode.Uri.parse('cody:' + command)
 
         // Process user config list
         const allowList = new Set(agenticShellConfig?.allow ?? [])
@@ -64,13 +63,14 @@ export async function getContextFileFromShell(command: string): Promise<ContextI
             // Create context item
             const content = OUTPUT_WRAPPER.replace('{command}', command).replace('{output}', output)
             const size = await TokenCounterUtils.countTokens(content)
+            const uri = baseUri.with({ path: Buffer.from(output).toString('base64') })
 
             return [
                 {
                     type: 'file',
                     content,
                     title: 'Terminal Output',
-                    uri: vscode.Uri.file(command),
+                    uri,
                     source: ContextItemSource.Terminal,
                     size,
                 },
@@ -85,7 +85,7 @@ export async function getContextFileFromShell(command: string): Promise<ContextI
                     type: 'file',
                     content: errorContent,
                     title: 'Terminal Output Error',
-                    uri: vscode.Uri.file(command),
+                    uri: baseUri,
                     source: ContextItemSource.Terminal,
                     size,
                 },

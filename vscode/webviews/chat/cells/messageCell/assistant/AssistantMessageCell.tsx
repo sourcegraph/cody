@@ -16,8 +16,10 @@ import {
 import { DeepCodyAgentID } from '@sourcegraph/cody-shared/src/models/client'
 import type { PromptEditorRefAPI } from '@sourcegraph/prompt-editor'
 import isEqual from 'lodash/isEqual'
+import { CopyIcon } from 'lucide-react'
 import { type FunctionComponent, type RefObject, memo, useMemo } from 'react'
 import type { ApiPostMessage, UserAccountInfo } from '../../../../Chat'
+import { Button } from '../../../../components/shadcn/ui/button'
 import {
     ChatMessageContent,
     type CodeBlockActionsProps,
@@ -69,10 +71,8 @@ export const AssistantMessageCell: FunctionComponent<{
         onSelectedFiltersUpdate,
         isLastSentInteraction: isLastInteraction,
     }) => {
-        const displayMarkdown = useMemo(
-            () => (message.text ? reformatBotMessageForChat(message.text).toString() : ''),
-            [message.text]
-        )
+        const rawText = useMemo(() => message?.text, [message?.text])
+        const displayMarkdown = rawText ? reformatBotMessageForChat(rawText).toString() : ''
 
         const chatModel = useChatModelByID(message.model, models)
         const isAborted = isAbortErrorOrSocketHangUp(message.error)
@@ -136,14 +136,30 @@ export const AssistantMessageCell: FunctionComponent<{
                     </>
                 }
                 footer={
-                    chatEnabled &&
-                    humanMessage && (
+                    isAborted ? (
                         <div className="tw-py-3 tw-flex tw-flex-col tw-gap-2">
-                            {isAborted && (
-                                <div className="tw-text-sm tw-text-muted-foreground tw-mt-4">
-                                    Output stream stopped
-                                </div>
-                            )}
+                            <div className="tw-text-sm tw-text-muted-foreground tw-mt-4">
+                                Output stream stopped
+                            </div>
+                        </div>
+                    ) : (
+                        <div
+                            className="tw-py-3 tw-flex tw-w-full tw-gap-1 tw-text-muted-foreground tw-text-sm"
+                            title={`From ${message.model}`}
+                        >
+                            <div className="tw-flex-1">{isLoading ? '' : ''}</div>
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                onClick={() => {
+                                    if (rawText) {
+                                        navigator.clipboard.writeText(rawText.toString())
+                                    }
+                                }}
+                                disabled={!rawText}
+                            >
+                                <CopyIcon size={10} />
+                            </Button>
                         </div>
                     )
                 }
