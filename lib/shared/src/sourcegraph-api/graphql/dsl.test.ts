@@ -1,5 +1,12 @@
 import { describe, expect, test } from "vitest"
 
+// TODO:
+// Support labels like foo:
+// Support literal enum values, for example the V1 in codyContextFilters(version:V1)
+// Support ...on FileChunkContext {
+// Support types like [ID!]! which getCodyContext uses
+// Consider supporting mutations
+
 // A field with a primitive type or an anonymous object type.
 export interface ValueSpec<Name extends string, T> {
     kind: 'value',
@@ -148,6 +155,13 @@ type ActualTypes<F extends Formal<any,any>[]> = {
 }
 
 function collectFormals<F extends SomeField>(field: F): Arguments<F> {
+    // We give up on TypeScript types here an assert as Arguments<F>, claiming that the
+    // recursion on the types in Arguments and on the values in collectFormals is equivalent.
+    // The reason is simply switching on field.kind === 'args', for example, ensures
+    // field: WithArguments<?,?> but without knowledge of F these are existentials.
+    // We can't extract detail from F: Extract<F, ...> would be the way to do that, but Extract is
+    // only valid in an extends clause; the extends clause must handle failure; a type predicate
+    // must be assignable to the parameter type.
     switch (field.kind) {
         case 'args':
             return [...field.formals, ...collectFormals(field.field)] as Arguments<F>
@@ -183,6 +197,76 @@ const q = {
     number: field<number>(),
 };
 
+function both<T extends SomeField, U extends SomeField>(a: T, b: U) {
+    return [a, b]
+}
+
+function serializeField<T extends SomeField>(buffer: string[], argumentNames: string[], field: SomeField, parent: SomeField | undefined): string {
+    switch (field.kind) {
+        case 'args':
+            buffer.push(field.name, '(')
+            for (const formal of field.formals) {
+                // Gensym unique argument names.
+                const argumentName = `\$${formal.name}${arguments.length}`
+                argumentNames.push(argumentName)
+                buffer.push(formal.name, ':', argumentName, ',')
+            }
+            buffer.push(')')
+            serializeField(buffer, argumentNames, field.field, field)
+            break
+        case 'object':
+        case 'array':
+            if (parent?.kind !== 'args') {
+                // We model objects and arrays as a typed name to keep the type parameters
+                // for field names and types together. GraphQL syntax puts arguments after
+                // field names, for example repository(name: $name42: String, ...), hence this
+                // quirk of checking if the parent is args which already generated the name.
+                buffer.push(field.name)
+            }
+            buffer.push('{')
+            field.fields.forEach((child: SomeField) => {
+                serializeField(buffer, argumentNames, child, field)
+                buffer.push(',')
+            })
+            buffer.push('}')
+            break
+        case 'value':
+            buffer.push(field.name)
+            break
+    }
+}
+
+type PreparedQuery<T extends SomeFields> = {
+    query: T,
+    text: string,
+    argumentNames: string[],
+}
+
+// Prepares a query by producing the textual serialization of the query.
+function prepare<T extends SomeFields>(...query: T): PreparedQuery<T> {
+    const buffer: string[] = []
+    const argumentNames: string[] = []
+    for (const field of query) {
+        serializeField(buffer, argumentNames, field, undefined)
+    }
+
+    // Wrap the query in query (...args...) { ... }
+    const preamble: string[] = []
+    preamble.push('query', '(')
+    for (const argumentName of argumentNames) {
+        preamble.push(argumentName, ',')
+    }
+    preamble.push(')', '{')
+    buffer.unshift(...preamble)
+    buffer.push('}')
+
+    return {
+        query,
+        text: buffer.join(''),
+        argumentNames,
+    }
+}
+
 describe('GraphQL DSL', () => {
     test('top-level arguments appear in formals', () => {
         let test = args(nested('foo',
@@ -190,12 +274,12 @@ describe('GraphQL DSL', () => {
         ), formal.int('bar'));
         let fs: Arguments<typeof test> = collectFormals(test) // [formal.int('bar')]
         expect(fs).toEqual([formal.int('bar')])
-        // @ts-ignore TS6133 testing the type checker
         let as: ActualTypes<Arguments<typeof test>> = [7]
-        // @ts-ignore TS6133 testing the type checker
         let result: Realize<typeof test.field.fields> = {
             'baz': 'hello'
         };
+        // suppress warning about unused results
+        expect([as, result])
     })
 
     test('nested arguments appear in formals', () => {
@@ -204,12 +288,12 @@ describe('GraphQL DSL', () => {
         )
         let fs: Arguments<typeof test> = collectFormals(test)
         expect(fs).toEqual([formal.int('bar')])
-        // @ts-ignore TS6133 testing the type checker
         let as: ActualTypes<Arguments<typeof test>> = [7]
-        // @ts-ignore TS6133 testing the type checker
         let result: Realize<typeof test.fields> = {
             'bar': {'baz': 'hello'},
         }
+        // Suppress warning about unused variables; we are testing the type checker.
+        expect([as, result])
     })
 
     test('queries can be combined', () => {
@@ -219,20 +303,21 @@ describe('GraphQL DSL', () => {
         )
         let userInfo = nested('currentUser', q.string('id'), q.boolean('siteAdmin'))
         let merged = both(repositories, userInfo)
-        expect(collectFormals(merged)).toEqual([
+        expect(collectFormalList(merged)).toEqual([
             formal.int('first'), formal.string('after'), formal.string('query')
         ])
-        // @ts-ignore TS6133 testing the type checker
-        let result: Realize<typeof merged.fields> = {
+        let result: Realize<typeof merged> = {
             repositories: [
                 { id: 'foo', name: 'bar' },
                 { id: 'baz', name: 'quux' },
             ],
             currentUser: {
                 id: 'bob',
-                isAdmin: true,
+                siteAdmin: true,
             }
         }
+        // Suppress warning about unused variables; we are testing the type checker.
+        expect(result)
     })
 
     test('repository query', () => {
@@ -254,10 +339,11 @@ describe('GraphQL DSL', () => {
             formal.string('query'),
             formal.string('format')
         ])
-        // @ts-ignore TS6133 testing the type checker
         let as: ActualTypes<RepositoriesParams> = [7, 'foo', 'bar', 'hello']
+        // Suppress warning about unused variables; we are testing the type checker.
+        expect(as)
 
-        let repositoriesResult: Realize<typeof repositories.field.fields> = {
+        let repositoriesResult: RealizeField<typeof repositories> = {
             nodes: [{
                 id: 'fuhtnesuoehtnueo',
                 name: 'foo/bar',
