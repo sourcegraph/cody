@@ -4,6 +4,51 @@ This is a log of all notable changes to Cody for VS Code.
 
 <!--- {/_ CHANGELOG_START _/} -->
 
+## 1.68.0
+
+### Features
+
+#### Auto-Edit
+
+- Use the users' font size when generating images [#7055](https://github.com/sourcegraph/cody/pull/7055)
+- Fix slightly misaligned image decorations [#7054](https://github.com/sourcegraph/cody/pull/7054)
+
+### Fix
+
+#### Release
+
+- Update the JetBrains link to release notes. [#6977](https://github.com/sourcegraph/cody/pull/6977)
+
+#### Ui
+
+- Fix bugs in the UI [#7001](https://github.com/sourcegraph/cody/pull/7001)
+
+### Chore
+
+#### Release
+
+- VSCode stable release Slack announcements to point to the correct release branches [#6995](https://github.com/sourcegraph/cody/pull/6995)
+- Bump package version and update changelog for 1.66 [#6971](https://github.com/sourcegraph/cody/pull/6971)
+
+#### Others
+
+- Remove hard-coded 'deep-cody' and replace with constant [#7019](https://github.com/sourcegraph/cody/pull/7019)
+
+### Reverts
+
+  There were no reverts for this release
+
+### Uncategorized
+
+#### Others
+
+- [Backport M68] chat ui: remove user avatars, remove speaker name from follow-up message [#7009](https://github.com/sourcegraph/cody/pull/7009)
+- [Backport M68] remove chat message feedback and "Try again with different" model/context [#7008](https://github.com/sourcegraph/cody/pull/7008)
+- [Backport M68] bug fix: Fix 500ms delay when submitting chat message [#7007](https://github.com/sourcegraph/cody/pull/7007)
+- [Backport M68] fix ~5px pixel jitter when pressing Enter in chat in VS Code [#7006](https://github.com/sourcegraph/cody/pull/7006)
+- simplify chat UI [#6992](https://github.com/sourcegraph/cody/pull/6992)
+
+
 ## 1.70.1
 
 ### Fix
