@@ -226,7 +226,6 @@ export class EditManager implements vscode.Disposable {
         /**
          * Updates the editor's selection and view for 'doc' or 'test' intents, causing the cursor to
          * move to the beginning of the selection range considered for the edit.
-         *
          */
         if (editor.active && (intent === 'doc' || intent === 'test')) {
             const newPosition = proposedRange.start
@@ -254,6 +253,7 @@ export class EditManager implements vscode.Disposable {
             await wrapInActiveSpan('edit.smart-apply', async span => {
                 span.setAttribute('sampled', true)
                 span.setAttribute('continued', true)
+
                 const { configuration, source = 'chat' } = args
                 if (!configuration) {
                     return
@@ -449,17 +449,16 @@ export class EditManager implements vscode.Disposable {
      */
     public async prefetchSmartApply(args: SmartApplyArguments): Promise<void> {
         const { configuration } = args
-        if (!configuration) {
+
+        if (
+            !configuration ||
+            this.cacheManager.getSelectionPromise(configuration.id) ||
+            (await isUriIgnoredByContextFilterWithNotification(configuration.document.uri, 'edit')) ||
+            configuration.isNewFile
+        ) {
             return
         }
 
-        if (this.cacheManager.getSelectionPromise(configuration.id)) {
-            return
-        }
-
-        if (await isUriIgnoredByContextFilterWithNotification(configuration.document.uri, 'edit')) {
-            return
-        }
         const model =
             configuration.model || (await firstResultFromOperation(modelsService.getDefaultEditModel()))
         if (!model) {
