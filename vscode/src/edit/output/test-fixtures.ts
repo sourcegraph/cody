@@ -11,7 +11,21 @@ const CLEAN_RESPONSE = `export function logDebug<T extends string>(filterLabel: 
     log<T>('error', filterLabel, text, ...args)
 }`
 
-const DEFAULT_TASK = {} as FixupTask
+const CLEAN_MARKDOWN_RESPONSE = `## Example heading
+
+Some text
+
+\`\`\`typescript
+${CLEAN_RESPONSE}
+\`\`\`
+
+Some more text
+
+\`\`\typescript
+${CLEAN_RESPONSE}
+\`\`\``
+
+const DEFAULT_TASK = { document: { languageId: 'typescript' } } as FixupTask
 
 export const RESPONSE_TEST_FIXTURES: Record<string, ResponseTestFixture> = {
     clean: {
@@ -64,5 +78,11 @@ export const RESPONSE_TEST_FIXTURES: Record<string, ResponseTestFixture> = {
         // Leading new lines are valuable information for `add`
         expected: '\n\n' + CLEAN_RESPONSE,
         task: { ...DEFAULT_TASK, intent: 'add' } as FixupTask,
+    },
+    inMarkdownFile: {
+        response: CLEAN_MARKDOWN_RESPONSE,
+        // Markdown files should not strip Markdown code blocks
+        expected: CLEAN_MARKDOWN_RESPONSE,
+        task: { ...DEFAULT_TASK, document: { languageId: 'markdown' } } as FixupTask,
     },
 }

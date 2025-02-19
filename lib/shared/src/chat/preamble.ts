@@ -18,6 +18,10 @@ For executable terminal commands: enclose each command in individual "bash" lang
 
 const CHAT_PREAMBLE = DEFAULT_PREAMBLE.concat(SMART_APPLY_PREAMBLE)
 
+export function getChatPreamble(): PromptString {
+    return CHAT_PREAMBLE
+}
+
 export function getSimplePreamble(
     model: ChatModel | EditModel | undefined,
     apiVersion: number,
