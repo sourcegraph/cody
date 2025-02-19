@@ -1,6 +1,6 @@
 import { toMatchImageSnapshot } from 'jest-image-snapshot'
 import { describe, expect, it } from 'vitest'
-import { generateSuggestionAsImage, initImageSuggestionService } from '..'
+import { type DiffMode, generateSuggestionAsImage, initImageSuggestionService } from '..'
 import { document } from '../../../../completions/test-helpers'
 import { mockLocalStorage } from '../../../../services/LocalStorageProvider'
 import type { DecorationInfo } from '../../decorators/base'
@@ -11,7 +11,7 @@ expect.extend({ toMatchImageSnapshot })
 async function generateImageForTest(
     decorations: DecorationInfo,
     lang: string,
-    mode: 'additions' | 'unified'
+    mode: DiffMode
 ): Promise<{ darkBuffer: Buffer; lightBuffer: Buffer }> {
     mockLocalStorage()
     await initImageSuggestionService()

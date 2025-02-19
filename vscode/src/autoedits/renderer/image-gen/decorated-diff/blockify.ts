@@ -7,14 +7,10 @@ import { getCodeBlock } from '../decorated-diff/utils'
 
 export const UNICODE_SPACE = '\u00A0'
 
-export function blockify(
-    diff: VisualDiff,
-    mode: 'additions' | 'unified',
-    document: vscode.TextDocument
-): VisualDiff {
+export function blockify(diff: VisualDiff, document: vscode.TextDocument): VisualDiff {
     const spaceAdjusted = convertToSpaceIndentation(document, diff)
     const leadingRemoved = removeLeadingWhitespaceBlock(spaceAdjusted)
-    const paddingAdded = padTrailingWhitespaceBlock(leadingRemoved, mode)
+    const paddingAdded = padTrailingWhitespaceBlock(leadingRemoved)
     return paddingAdded
 }
 
@@ -36,13 +32,6 @@ export function convertToSpaceIndentation(document: vscode.TextDocument, diff: V
         // In order to reliably render spaces in VS Code decorations, we must convert them to
         // their unicode equivalent
         const lines = diff.lines.map(line => {
-            if (line.type === 'modified') {
-                return {
-                    ...line,
-                    oldText: transformToUnicodeSpace(line.oldText),
-                    newText: transformToUnicodeSpace(line.newText),
-                }
-            }
             return {
                 ...line,
                 text: transformToUnicodeSpace(line.text),
@@ -56,22 +45,6 @@ export function convertToSpaceIndentation(document: vscode.TextDocument, diff: V
     // We must convert it to space indentation that matches the editor's tab size
     const tabSize = getEditorTabSize(document.uri, vscode.workspace, vscode.window)
     const lines = diff.lines.map(line => {
-        if (line.type === 'modified') {
-            return {
-                ...line,
-                oldSyntaxHighlights: shiftHighlights(
-                    line.oldSyntaxHighlights,
-                    countLeadingTabs(line.oldText) * (tabSize - 1)
-                ),
-                newSyntaxHighlights: shiftHighlights(
-                    line.newSyntaxHighlights,
-                    countLeadingTabs(line.newText) * (tabSize - 1)
-                ),
-                oldText: transformTabsToSpaces(line.oldText, tabSize),
-                newText: transformTabsToSpaces(line.newText, tabSize),
-            }
-        }
-
         const leadingTabs = countLeadingTabs(line.text)
         return {
             ...line,
@@ -90,8 +63,7 @@ function removeLeadingWhitespaceBlock(diff: VisualDiff): VisualDiff {
         if (line.type === 'modified-removed' || line.type === 'removed') {
             continue
         }
-        const text = 'newText' in line ? line.newText : line.text
-        const leadingWhitespaceMatch = text.match(/^\s*/)
+        const leadingWhitespaceMatch = line.text.match(/^\s*/)
         if (leadingWhitespaceMatch === null) {
             leastCommonWhitespacePrefix = ''
             break
@@ -109,23 +81,6 @@ function removeLeadingWhitespaceBlock(diff: VisualDiff): VisualDiff {
     }
 
     const lines = diff.lines.map(line => {
-        if (line.type === 'modified') {
-            return {
-                ...line,
-                changes: shiftChanges(line.changes, -leastCommonWhitespacePrefix.length),
-                oldHighlights: shiftHighlights(
-                    line.oldSyntaxHighlights,
-                    -leastCommonWhitespacePrefix.length
-                ),
-                newHighlights: shiftHighlights(
-                    line.newSyntaxHighlights,
-                    -leastCommonWhitespacePrefix.length
-                ),
-                oldText: line.oldText.substring(leastCommonWhitespacePrefix.length),
-                newText: line.newText.substring(leastCommonWhitespacePrefix.length),
-            }
-        }
-
         return {
             ...line,
             changes:
@@ -138,23 +93,13 @@ function removeLeadingWhitespaceBlock(diff: VisualDiff): VisualDiff {
     return { ...diff, lines }
 }
 
-// TODO: Do we need to handle unified better here? Are we not handling if the deleted line is the longest
-function padTrailingWhitespaceBlock(diff: VisualDiff, mode: 'additions' | 'unified'): VisualDiff {
+function padTrailingWhitespaceBlock(diff: VisualDiff): VisualDiff {
     let maxLineWidth = 0
     for (const line of diff.lines) {
-        const text = 'newText' in line ? line.newText : line.text
-        maxLineWidth = Math.max(maxLineWidth, text.length)
+        maxLineWidth = Math.max(maxLineWidth, line.text.length)
     }
 
     const lines = diff.lines.map(line => {
-        if (line.type === 'modified') {
-            return {
-                ...line,
-                newText: line.newText.padEnd(maxLineWidth, UNICODE_SPACE),
-                oldText: line.oldText.padEnd(maxLineWidth, UNICODE_SPACE),
-            }
-        }
-
         return {
             ...line,
             text: line.text.padEnd(maxLineWidth, UNICODE_SPACE),

@@ -372,14 +372,15 @@ export class DefaultDecorator implements AutoEditsDecorator {
         startLine: number,
         replacerCol: number
     ): void {
+        // TODO: Diff mode will likely change depending on the environment.
+        // This should be determined by client capabilities.
+        // VS Code: 'additions'
+        // Client capabiliies === image: 'unified'
+        const diffMode = 'unified' // TODO: Change back to additions for prod
         const { dark, light, pixelRatio } = generateSuggestionAsImage({
             decorations: decorationInfo,
             lang: this.editor.document.languageId,
-            // TODO: Determine correct mode based on environment
-            // VS Code: 'additions'
-            // Client capabilities === decorations: 'additions'
-            // Client capabiliies === image: 'unified'
-            mode: 'unified',
+            mode: diffMode,
             document: this.editor.document,
         })
         const startLineEndColumn = this.getEndColumn(this.editor.document.lineAt(startLine))

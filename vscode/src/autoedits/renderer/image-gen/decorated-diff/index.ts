@@ -1,4 +1,5 @@
 import type * as vscode from 'vscode'
+import type { DiffMode } from '..'
 import type { DecorationInfo } from '../../decorators/base'
 import { isOnlyAddingTextForModifiedLines } from '../../diff-utils'
 import { syntaxHighlightDecorations } from '../highlight/highlight-decorations'
@@ -8,12 +9,11 @@ import type { VisualDiff, VisualDiffLine } from './types'
 export function makeDecoratedDiff(
     decorationInfo: DecorationInfo,
     lang: string,
-    mode: 'additions' | 'unified',
+    mode: DiffMode,
     document: vscode.TextDocument
 ): { dark: VisualDiff; light: VisualDiff } {
     const visualDiff = makeVisualDiff(decorationInfo, mode)
-    const blockifiedDiff = blockify(visualDiff, mode, document)
-    console.log('got blockified diff', blockifiedDiff)
+    const blockifiedDiff = blockify(visualDiff, document)
     return {
         dark: syntaxHighlightDecorations(blockifiedDiff, lang, 'dark'),
         light: syntaxHighlightDecorations(blockifiedDiff, lang, 'light'),
@@ -24,10 +24,7 @@ export function makeDecoratedDiff(
  * Given a decoration info, this function will return a diff that is suitable for rendering.
  * It also supports transforming the diff into a unified diff.
  */
-export function makeVisualDiff(
-    decorationInfo: DecorationInfo,
-    mode: 'additions' | 'unified'
-): VisualDiff {
+export function makeVisualDiff(decorationInfo: DecorationInfo, mode: DiffMode): VisualDiff {
     const sortedDiff = [
         ...decorationInfo.addedLines,
         ...decorationInfo.modifiedLines,
@@ -51,12 +48,12 @@ export function makeVisualDiff(
             .map(line => {
                 if (line.type === 'modified') {
                     return {
-                        ...line,
-                        oldSyntaxHighlights: {
-                            dark: [],
-                            light: [],
-                        },
-                        newSyntaxHighlights: {
+                        type: 'modified-added' as const,
+                        text: line.newText,
+                        changes: line.changes,
+                        originalLineNumber: line.originalLineNumber,
+                        modifiedLineNumber: line.modifiedLineNumber,
+                        syntaxHighlights: {
                             dark: [],
                             light: [],
                         },
@@ -84,8 +81,6 @@ export function makeVisualDiff(
 
         if (line.type === 'modified') {
             const additionsOnly = isOnlyAddingTextForModifiedLines([line])
-
-            console.log('additionsOnly', additionsOnly)
             if (!additionsOnly) {
                 // The modified line includes a deletion, we need to ensure this is represented in the diff
                 deletions.push({
@@ -153,6 +148,5 @@ export function makeVisualDiff(
         lines.push(...deletions, ...additions)
     }
 
-    console.log('Got diff', lines)
     return { type: mode, lines }
 }

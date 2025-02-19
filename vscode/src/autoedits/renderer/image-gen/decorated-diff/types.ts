@@ -1,7 +1,6 @@
 import type {
     AddedLineInfo,
     LineChange,
-    ModifiedLineInfo,
     RemovedLineInfo,
     UnchangedLineInfo,
 } from '../../decorators/base'
@@ -21,10 +20,6 @@ export interface LineHighlights {
 export type VisualAddedLineInfo = AddedLineInfo & LineHighlights
 export type VisualRemovedLineInfo = RemovedLineInfo & LineHighlights
 export type VisualUnchangedLineInfo = UnchangedLineInfo & LineHighlights
-export type VisualModifiedLineInfo = ModifiedLineInfo & {
-    oldSyntaxHighlights: LineHighlights['syntaxHighlights']
-    newSyntaxHighlights: LineHighlights['syntaxHighlights']
-}
 
 interface VisualBaseModifiedLine {
     type: 'modified-added' | 'modified-removed'
@@ -44,7 +39,10 @@ export type VisualModifiedLineInfoRemoved = VisualBaseModifiedLine & {
     text: string
 }
 
-export type VisualDiffAdditions = VisualAddedLineInfo | VisualRemovedLineInfo | VisualModifiedLineInfo
+export type VisualDiffAdditions =
+    | VisualAddedLineInfo
+    | VisualRemovedLineInfo
+    | VisualModifiedLineInfoAdded
 
 export type VisualDiffUnified =
     | VisualAddedLineInfo

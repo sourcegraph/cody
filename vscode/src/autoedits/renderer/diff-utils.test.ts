@@ -1,4 +1,3 @@
-// @ts-nocheck
 import dedent from 'dedent'
 import { describe, expect, it } from 'vitest'
 

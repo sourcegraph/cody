@@ -71,6 +71,7 @@ export interface ModifiedLineInfo {
     originalLineNumber: number
     modifiedLineNumber: number
 }
+
 export interface UnchangedLineInfo {
     id: string
     type: 'unchanged'

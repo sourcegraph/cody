@@ -111,23 +111,21 @@ function computeDiffOperations(originalLines: string[], modifiedLines: string[])
 
         // Process remaining deletions (removed lines)
         for (let j = i; j < numDeletions; j++) {
-            const text = modifiedLines[originalStart + j]
             lineInfos.push({
                 id: uuid.v4(),
                 type: 'removed',
                 originalLineNumber: originalStart + j,
-                text,
+                text: originalLines[originalStart + j],
             })
         }
 
         // Process remaining insertions (added lines)
         for (let j = i; j < numInsertions; j++) {
-            const text = modifiedLines[modifiedStart + j]
             lineInfos.push({
                 id: uuid.v4(),
                 type: 'added',
                 modifiedLineNumber: modifiedStart + j,
-                text,
+                text: modifiedLines[modifiedStart + j],
             })
         }
 

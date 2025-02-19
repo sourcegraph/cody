@@ -14,10 +14,10 @@ interface GetHighlightTokensParams {
     lang: string
     theme: SYNTAX_HIGHLIGHT_THEME
     /**
-     * The actual code we care about. We need to highlight incoming and outgoing code
+     * The actual code we care about. We need to highlight incoming and original code
      * separately to ensure we get the correct highlighting for each side.
      */
-    type: 'incoming' | 'outgoing'
+    type: 'original' | 'incoming'
 }
 
 function getHighlightTokens({
@@ -93,37 +93,27 @@ export function syntaxHighlightDecorations(
         type: 'incoming',
     })
 
-    // We only care about outgoingHighlights for unified diffs
-    let outgoingHighlights: Map<number, ThemedToken[]> | undefined
+    // We only care about originalHighlights for unified diffs
+    let originalHighlights: Map<number, ThemedToken[]> | undefined
     if (diff.type === 'unified') {
-        outgoingHighlights = getHighlightTokens({
+        originalHighlights = getHighlightTokens({
             diff,
             lang,
             theme,
-            type: 'outgoing',
+            type: 'original',
         })
     }
 
     const lines = diff.lines.map(line => {
-        if (line.type === 'removed' || line.type === 'modified-removed') {
-            const lineTokens = outgoingHighlights?.get(line.originalLineNumber)
-            if (lineTokens) {
-                line.syntaxHighlights[theme] = getHighlightsForLine(lineTokens, theme)
-            }
-            return line
-        }
-
-        const lineTokens = incomingHighlights.get(line.modifiedLineNumber)
+        const lineTokens =
+            line.type === 'removed' || line.type === 'modified-removed'
+                ? originalHighlights?.get(line.originalLineNumber)
+                : incomingHighlights.get(line.modifiedLineNumber)
         if (lineTokens) {
-            if ('syntaxHighlights' in line) {
-                line.syntaxHighlights[theme] = getHighlightsForLine(lineTokens, theme)
-            } else {
-                line.newSyntaxHighlights[theme] = getHighlightsForLine(lineTokens, theme)
-            }
+            line.syntaxHighlights[theme] = getHighlightsForLine(lineTokens, theme)
         }
         return line
     })
 
-    console.log('got highlighted diff', lines)
     return { type: mode, lines }
 }

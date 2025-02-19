@@ -42,7 +42,7 @@
     "copy-win-ca-roots": "ts-node-transpile-only ./scripts/copy-win-ca-roots.ts",
     "release:dry-run": "pnpm run download-wasm && pnpm run download-fonts && CODY_RELEASE_DRY_RUN=1 ts-node ./scripts/release.ts",
     "storybook": "storybook dev -p 6007 --no-open --no-version-updates",
-    "test:e2e": "pnpm run -s build:dev:desktop && pnpm run -s test:e2e:run",
+    "test:e2e": "playwright install && tsc --build && node dist/tsc/test/e2e/install-deps.js && pnpm run -s _build:vsix_for_test && pnpm run -s build:dev:desktop && pnpm run -s test:e2e:run",
     "test:e2e:run": "playwright test",
     "test:e2e2": "pnpm -s test:e2e2:deps && pnpm -s build:root && pnpm -s build:dev:desktop && pnpm -s test:e2e2:run",
     "test:e2e2:run": "playwright test -c playwright.v2.config.ts",

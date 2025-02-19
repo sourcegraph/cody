@@ -13,34 +13,32 @@ type VisualDiffLineIncoming = Exclude<
     VisualRemovedLineInfo | VisualModifiedLineInfoRemoved
 >
 
-function getLines(diff: VisualDiff, type: 'outgoing'): VisualDiffLineOutgoing[]
+function getLines(diff: VisualDiff, type: 'original'): VisualDiffLineOutgoing[]
 function getLines(diff: VisualDiff, type: 'incoming'): VisualDiffLineIncoming[]
-function getLines(diff: VisualDiff, type: 'outgoing' | 'incoming'): VisualDiffLine[] {
-    if (type === 'outgoing') {
+function getLines(diff: VisualDiff, type: 'original' | 'incoming'): VisualDiffLine[] {
+    if (type === 'original') {
         // Only return lines that are removed, modified or unchanged.
-        return diff.lines.filter(
-            (line): line is Exclude<VisualDiffLine, VisualAddedLineInfo | VisualModifiedLineInfoAdded> =>
-                ['removed', 'modified', 'modified-removed', 'unchanged'].includes(line.type)
+        return diff.lines.filter((line): line is VisualDiffLineOutgoing =>
+            ['removed', 'modified-removed', 'unchanged'].includes(line.type)
         )
     }
 
     // Only return lines that are added, modified or unchanged.
-    return diff.lines.filter(
-        (line): line is Exclude<VisualDiffLine, VisualRemovedLineInfo | VisualModifiedLineInfoRemoved> =>
-            ['added', 'modified', 'modified-added', 'unchanged'].includes(line.type)
+    return diff.lines.filter((line): line is VisualDiffLineIncoming =>
+        ['added', 'modified-added', 'unchanged'].includes(line.type)
     )
 }
 
 export function getCodeBlock(
     diff: VisualDiff,
-    type: 'incoming' | 'outgoing'
+    type: 'original' | 'incoming'
 ): { code: string; startLine: number } | null {
-    if (type === 'outgoing') {
-        const relevantLines = getLines(diff, 'outgoing')
+    if (type === 'original') {
+        const relevantLines = getLines(diff, 'original')
         if (relevantLines.length === 0) {
             return null
         }
-        const code = relevantLines.map(line => ('oldText' in line ? line.oldText : line.text)).join('\n')
+        const code = relevantLines.map(line => line.text).join('\n')
         return { code, startLine: relevantLines[0].originalLineNumber }
     }
 
@@ -48,6 +46,6 @@ export function getCodeBlock(
     if (relevantLines.length === 0) {
         return null
     }
-    const code = relevantLines.map(line => ('newText' in line ? line.newText : line.text)).join('\n')
+    const code = relevantLines.map(line => line.text).join('\n')
     return { code, startLine: relevantLines[0].modifiedLineNumber }
 }

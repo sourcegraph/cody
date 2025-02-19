@@ -1,10 +1,12 @@
 import type { EmulatedCanvas2D } from 'canvaskit-wasm'
 import { canvasKit, fontCache } from '.'
+import type { DiffMode } from '..'
 import type { VisualDiff, VisualDiffLine } from '../decorated-diff/types'
 import { DEFAULT_HIGHLIGHT_COLORS } from '../highlight/constants'
 import type { SYNTAX_HIGHLIGHT_THEME } from '../highlight/types'
 import { type RenderConfig, type UserProvidedRenderConfig, getRenderConfig } from './render-config'
 import type { RenderContext } from './types'
+import { getRangesToHighlight } from './utils'
 
 function createCanvas(
     options: {
@@ -39,44 +41,22 @@ function drawText(
     mode: SYNTAX_HIGHLIGHT_THEME,
     config: RenderConfig
 ): number {
-    if (line.type === 'removed' || line.type === 'modified-removed') {
-        // Handle deletions first
-        const highlights = line.syntaxHighlights[mode]
-        if (highlights.length === 0) {
-            // No syntax highlighting, we probably don't support this language via Shiki
-            // Default to white or black depending on the theme
-            ctx.fillStyle = DEFAULT_HIGHLIGHT_COLORS[mode]
-            ctx.fillText(line.text, position.x, position.y + config.fontSize)
-            return ctx.measureText(line.text).width
-        }
+    const highlights = line.syntaxHighlights[mode]
 
-        let xPos = position.x
-        for (const { range, color } of highlights) {
-            const [start, end] = range
-            const content = line.text.substring(start, end)
-            ctx.fillStyle = color
-            ctx.fillText(content, xPos, position.y + config.fontSize)
-            xPos += ctx.measureText(content).width
-        }
-
-        return xPos
-    }
-
-    const lineText = 'newText' in line ? line.newText : line.text
-    const highlights =
-        'newSyntaxHighlights' in line ? line.newSyntaxHighlights[mode] : line.syntaxHighlights[mode]
+    // Handle case with no syntax highlighting
     if (highlights.length === 0) {
         // No syntax highlighting, we probably don't support this language via Shiki
         // Default to white or black depending on the theme
         ctx.fillStyle = DEFAULT_HIGHLIGHT_COLORS[mode]
-        ctx.fillText(lineText, position.x, position.y + config.fontSize)
-        return ctx.measureText(lineText).width
+        ctx.fillText(line.text, position.x, position.y + config.fontSize)
+        return ctx.measureText(line.text).width
     }
 
+    // Draw highlighted text segments
     let xPos = position.x
     for (const { range, color } of highlights) {
         const [start, end] = range
-        const content = lineText.substring(start, end)
+        const content = line.text.substring(start, end)
         ctx.fillStyle = color
         ctx.fillText(content, xPos, position.y + config.fontSize)
         xPos += ctx.measureText(content).width
@@ -89,78 +69,30 @@ function drawDiffColors(
     ctx: CanvasRenderingContext2D,
     line: VisualDiffLine,
     position: { x: number; y: number },
-    mode: 'additions' | 'unified',
+    mode: DiffMode,
     config: RenderConfig
 ): void {
     const isRemoval = line.type === 'removed' || line.type === 'modified-removed'
+    const diffColors = isRemoval ? config.diffColors.removed : config.diffColors.inserted
 
+    // For unified diffs, we want to ensure that changed lines also have a background color
     if (mode === 'unified' && line.type !== 'unchanged') {
-        // For unified diffs we ensure we highlight the entire line first
-        // This helps the user see exactly which lines are shown as added or deleted.
-        // We will apply character level highlighting on top to highlight the changes
-
-        ctx.fillStyle = isRemoval ? config.diffColors.removed.line : config.diffColors.inserted.line
-        const endOfLine = ctx.measureText('newText' in line ? line.newText : line.text).width
+        const endOfLine = ctx.measureText(line.text).width
+        ctx.fillStyle = diffColors.line
         ctx.fillRect(position.x, position.y, endOfLine, config.lineHeight)
     }
 
-    if (isRemoval) {
-        // Handle deletions first
-        ctx.fillStyle = config.diffColors.removed.text
-        const removals: [number, number][] = []
-        if (line.type === 'removed') {
-            removals.push([0, line.text.length])
-        }
-        if (line.type === 'modified-removed') {
-            const modifiedRemovals = line.changes.filter(change => change.type === 'delete')
-            removals.push(
-                ...modifiedRemovals.map(
-                    ({ originalRange }) =>
-                        [originalRange.start.character, originalRange.end.character] as [number, number]
-                )
-            )
-        }
-
-        for (const [start, end] of removals) {
-            // Calculate width of text before the highlight
-            const preHighlightWidth = ctx.measureText(line.text.slice(0, start)).width
-            // Calculate width of the highlighted section
-            const highlightWidth = ctx.measureText(line.text.slice(start, end)).width
-
-            // Draw highlight at correct position
-            ctx.fillRect(position.x + preHighlightWidth, position.y, highlightWidth, config.lineHeight)
-        }
-
+    // Get ranges to highlight based on line type
+    const ranges = getRangesToHighlight(line)
+    if (ranges.length === 0) {
         return
     }
 
-    // Now handle any additions
-    ctx.fillStyle = config.diffColors.inserted.text
-    const lineText = 'newText' in line ? line.newText : line.text
-    const additions: [number, number][] = []
-    if (line.type === 'added') {
-        additions.push([0, lineText.length])
-    }
-    if (line.type === 'modified' || line.type === 'modified-added') {
-        const modifiedAdditions = line.changes.filter(change => change.type === 'insert')
-        additions.push(
-            ...modifiedAdditions.map(
-                change =>
-                    [change.modifiedRange.start.character, change.modifiedRange.end.character] as [
-                        number,
-                        number,
-                    ]
-            )
-        )
-    }
-
-    for (const [start, end] of additions) {
-        // Calculate width of text before the highlight
-        const preHighlightWidth = ctx.measureText(lineText!.slice(0, start)).width
-        // Calculate width of the highlighted section
-        const highlightWidth = ctx.measureText(lineText!.slice(start, end)).width
-
-        // Draw highlight at correct position
+    // Draw highlights for each range
+    ctx.fillStyle = diffColors.text
+    for (const [start, end] of ranges) {
+        const preHighlightWidth = ctx.measureText(line.text.slice(0, start)).width
+        const highlightWidth = ctx.measureText(line.text.slice(start, end)).width
         ctx.fillRect(position.x + preHighlightWidth, position.y, highlightWidth, config.lineHeight)
     }
 }
@@ -168,7 +100,7 @@ function drawDiffColors(
 export function drawDecorationsToCanvas(
     diff: VisualDiff,
     theme: SYNTAX_HIGHLIGHT_THEME,
-    mode: 'additions' | 'unified',
+    mode: DiffMode,
     userConfig: UserProvidedRenderConfig
 ): EmulatedCanvas2D {
     if (!canvasKit || !fontCache) {
@@ -192,8 +124,7 @@ export function drawDecorationsToCanvas(
     let tempYPos = config.padding.y
     let requiredWidth = 0
     for (const line of diff.lines) {
-        const text = 'newText' in line ? line.newText : line.text
-        const measure = tempCtx.measureText(text)
+        const measure = tempCtx.measureText(line.text)
         requiredWidth = Math.max(requiredWidth, config.padding.x + measure.width)
         tempYPos += config.lineHeight
     }
