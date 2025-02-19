@@ -1,3 +1,4 @@
+import { type DebouncedFunc, debounce } from 'lodash'
 import { Observable } from 'observable-fns'
 import * as vscode from 'vscode'
 
@@ -43,6 +44,7 @@ const AUTOEDIT_CONTEXT_STRATEGY = 'auto-edit'
 export const AUTOEDIT_TOTAL_DEBOUNCE_INTERVAL = 75
 export const AUTOEDIT_CONTEXT_FETCHING_DEBOUNCE_INTERVAL = 25
 const RESET_SUGGESTION_ON_CURSOR_CHANGE_AFTER_INTERVAL_MS = 60 * 1000
+const ON_SELECTION_CHANGE_DEFAULT_DEBOUNCE_INTERVAL_MS = 15
 
 export interface AutoeditsResult extends vscode.InlineCompletionList {
     requestId: AutoeditRequestID
@@ -61,6 +63,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
     private readonly disposables: vscode.Disposable[] = []
     /** Keeps track of the last time the text was changed in the editor. */
     private lastTextChangeTimeStamp: number | undefined
+    private readonly onSelectionChangeDebounced: DebouncedFunc<typeof this.onSelectionChange>
 
     public readonly rendererManager: AutoEditsRendererManager
     private readonly modelAdapter: AutoeditsModelAdapter
@@ -107,10 +110,15 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                       fixupController
                   )
 
+        this.onSelectionChangeDebounced = debounce(
+            (event: vscode.TextEditorSelectionChangeEvent) => this.onSelectionChange(event),
+            ON_SELECTION_CHANGE_DEFAULT_DEBOUNCE_INTERVAL_MS
+        )
+
         this.disposables.push(
             this.contextMixer,
             this.rendererManager,
-            vscode.window.onDidChangeTextEditorSelection(this.onSelectionChange.bind(this)),
+            vscode.window.onDidChangeTextEditorSelection(this.onSelectionChangeDebounced),
             vscode.workspace.onDidChangeTextDocument(event => {
                 this.onDidChangeTextDocument(event)
             })
@@ -488,6 +496,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
     }
 
     public dispose(): void {
+        this.onSelectionChangeDebounced.cancel()
         for (const disposable of this.disposables) {
             disposable.dispose()
         }
