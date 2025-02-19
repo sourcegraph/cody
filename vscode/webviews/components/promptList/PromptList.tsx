@@ -67,8 +67,8 @@ export const PromptList: FC<PromptListProps> = props => {
         onSelect: parentOnSelect,
         promptFilters,
     } = props
-
-    const endpointURL = new URL(useConfig().authStatus.endpoint)
+    const { clientCapabilities, authStatus } = useConfig()
+    const endpointURL = new URL(authStatus.endpoint)
     const telemetryRecorder = useTelemetryRecorder()
     const [lastUsedActions = {}] = useLocalStorage<Record<string, number>>('last-used-actions-v2', {})
 
@@ -164,14 +164,25 @@ export const PromptList: FC<PromptListProps> = props => {
             if (promptFilters?.core) {
                 return actions.filter(action => action.actionType === 'prompt' && action.builtin)
             }
+
             const shouldExcludeBuiltinCommands =
                 promptFilters?.promoted || promptFilters?.owner || promptFilters?.tags
+
+            const isEditEnabled = clientCapabilities.edit === 'enabled'
+            // Prompts that perform edits are not usable on clients that don't support editing.
+            // To avoid cluttering the list with unusable prompts we ignore them completely.
+            if (!isEditEnabled) {
+                actions = actions.filter(action =>
+                    action.actionType === 'prompt' ? action.mode === 'CHAT' : action.mode === 'ask'
+                )
+            }
             if (shouldExcludeBuiltinCommands) {
                 return actions.filter(action => action.actionType === 'prompt' && !action.builtin)
             }
+
             return actions
         },
-        [promptFilters]
+        [promptFilters, clientCapabilities.edit]
     )
 
     // Don't show builtin commands to insert in the prompt editor.
@@ -239,7 +250,6 @@ export const PromptList: FC<PromptListProps> = props => {
                             )}
                         </CommandLoading>
                     )}
-
                 {actions.map(action => (
                     <ActionItem
                         key={commandRowValue(action)}
@@ -248,7 +258,6 @@ export const PromptList: FC<PromptListProps> = props => {
                         className={clsx(itemPaddingClass, styles.listItem)}
                     />
                 ))}
-
                 {showPromptLibraryUnsupportedMessage && result && !result.arePromptsSupported && (
                     <>
                         <CommandSeparator alwaysRender={true} />
