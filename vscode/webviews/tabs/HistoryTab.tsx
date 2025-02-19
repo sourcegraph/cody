@@ -209,7 +209,10 @@ export const HistoryTabWithData: React.FC<{
                     disabled={chats.length === 0}
                 />
                 <div className="tw-flex-1 tw-overflow-y-auto tw-m-2">
-                    {paginatedChats.map(({ interactions, id }) => {
+                    {paginatedChats.map(chat => {
+                        const id = chat.lastInteractionTimestamp
+                        const interactions = chat.interactions
+                        const chatTitle = chat.chatTitle
                         const lastMessage =
                             interactions[interactions.length - 1]?.humanMessage?.text?.trim()
                         return (
@@ -224,7 +227,9 @@ export const HistoryTabWithData: React.FC<{
                                         })
                                     }
                                 >
-                                    <span className="tw-truncate tw-w-full">{lastMessage}</span>
+                                    <span className="tw-truncate tw-w-full">
+                                        {chatTitle || lastMessage}
+                                    </span>
                                 </CommandItem>
                                 <Button
                                     variant="ghost"
