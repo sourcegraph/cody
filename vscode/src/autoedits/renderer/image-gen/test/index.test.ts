@@ -26,6 +26,10 @@ async function generateImageForTest(
         config: {
             fontSize: 12,
             lineHeight: 18,
+            backgroundColor: {
+                dark: '#212121',
+                light: '#f0f0f0',
+            },
         },
     })
     return {

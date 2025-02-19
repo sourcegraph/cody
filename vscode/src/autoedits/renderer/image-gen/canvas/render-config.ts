@@ -107,13 +107,19 @@ export interface RenderConfig {
      * The background colors of added characters and lines in the diff.
      */
     diffColors: DiffColors
+    /**
+     * The background color of the image.
+     * Only currently used for testing purposes.
+     * If not provided, the image will be generated with a transparent background
+     */
+    backgroundColor?: {
+        dark: string
+        light: string
+    }
 }
 
-export interface UserProvidedRenderConfig {
-    fontSize?: number
-    lineHeight?: number
-    pixelRatio?: number
-}
+export interface UserProvidedRenderConfig
+    extends Partial<Pick<RenderConfig, 'fontSize' | 'lineHeight' | 'pixelRatio' | 'backgroundColor'>> {}
 
 export function getRenderConfig(userProvidedConfig?: UserProvidedRenderConfig): RenderConfig {
     const pixelRatio = userProvidedConfig?.pixelRatio || getUserPixelRatio() || DEFAULT_PIXEL_RATIO
@@ -127,5 +133,6 @@ export function getRenderConfig(userProvidedConfig?: UserProvidedRenderConfig): 
         maxWidth: 1200,
         pixelRatio,
         diffColors: DEFAULT_DIFF_COLORS,
+        backgroundColor: userProvidedConfig?.backgroundColor,
     }
 }

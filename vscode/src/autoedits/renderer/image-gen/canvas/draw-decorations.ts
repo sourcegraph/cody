@@ -14,13 +14,14 @@ function createCanvas(
         height: number
         fontSize: number
         scale?: number
+        backgroundColor?: string
     },
     context: RenderContext
 ): {
     canvas: EmulatedCanvas2D
     ctx: CanvasRenderingContext2D
 } {
-    const { width, height, fontSize, scale } = options
+    const { width, height, fontSize, scale, backgroundColor } = options
     const canvas = context.CanvasKit.MakeCanvas(width, height)
     canvas.loadFont(context.font, { family: 'DejaVuSansMono' })
     const ctx = canvas.getContext('2d')
@@ -30,6 +31,10 @@ function createCanvas(
     ctx.font = `${fontSize}px DejaVuSansMono`
     if (scale) {
         ctx.scale(scale, scale)
+    }
+    if (backgroundColor) {
+        ctx.fillStyle = backgroundColor
+        ctx.fillRect(0, 0, width, height)
     }
     return { canvas, ctx }
 }
@@ -149,6 +154,7 @@ export function drawDecorationsToCanvas(
             // We upscale the canvas to improve resolution, this will be brought back to the intended size
             // using the `scale` CSS property when the decoration is rendered.
             scale: config.pixelRatio,
+            backgroundColor: config.backgroundColor?.[theme],
         },
         context
     )
