@@ -6,12 +6,8 @@
 import {
     type ContextItem,
     type ContextMentionProviderMetadata,
-    REMOTE_DIRECTORY_PROVIDER_URI,
-    REMOTE_FILE_PROVIDER_URI,
     type SerializedContextItem,
     contextItemMentionNodeDisplayText,
-    getMentionOperations,
-    serializeContextItem,
 } from '@sourcegraph/cody-shared'
 import { baseKeymap } from 'prosemirror-commands'
 import { history, redo, undo } from 'prosemirror-history'
@@ -40,13 +36,18 @@ import {
     hasAtMention,
     hasAtMentionChanged,
     replaceAtMention,
-    setMentionValue,
+    setAtMentionValue,
 } from './plugins/atMention'
 import { placeholderPlugin, setPlaceholder } from './plugins/placeholder'
 import { isReadOnly, readonlyPlugin, setReadOnly } from './plugins/readonly'
 
 export type MenuItem = ContextItem | ContextMentionProviderMetadata
 
+/**
+ * The prosemirror schema representing the structure of the prompt input value.
+ * In addition to supporting standard paragraph and text nodes, the schema defines
+ * 'mention nodes' which hold metadata about context items referenced by the user.
+ */
 export const schema = new Schema({
     nodes: {
         doc: {
@@ -90,6 +91,16 @@ export const schema = new Schema({
         },
     },
 })
+
+/**
+ * Creates a mention node from a context item.
+ */
+export function createMentionNode(attrs: {
+    item: SerializedContextItem
+    isFromInitialContext?: boolean
+}): Node {
+    return schema.nodes.mention.create(attrs, schema.text(contextItemMentionNodeDisplayText(attrs.item)))
+}
 
 interface ProseMirrorMachineInput {
     /**
@@ -208,6 +219,29 @@ export interface DataLoaderInput {
     parent: ActorLike<any, { type: 'mentionsMenu.results.set'; items: MenuItem[] }>
 }
 
+export interface MenuSelectionAPI {
+    /**
+     * Update the current value of the at-mention. This keeps the at-mention menu open.
+     */
+    setAtMentionValue(value: string): void
+    /**
+     * Remove the active at-mention and replace it with the provided string or node.
+     */
+    replaceAtMentionValue(value: string | Node): void
+    /**
+     * Remove the active at-mention.
+     */
+    deleteAtMention(): void
+    /**
+     * Sets the currently selected provider.
+     */
+    setProvider(item: ContextMentionProviderMetadata): void
+    /**
+     * Resets the currently selected menu item to the first one.
+     */
+    resetSelectedMenuItem(): void
+}
+
 type EditorEvents =
     // For attaching the editor to the DOM.
     | { type: 'setup'; container: HTMLElement }
@@ -218,34 +252,18 @@ type EditorEvents =
     | { type: 'focus'; moveCursorToEnd?: boolean }
     // Blur the editor.
     | { type: 'blur' }
+
+    // Used to sync state from the UI component to the state machine
     | { type: 'update.placeholder'; placeholder: string }
     | { type: 'update.disabled'; disabled: boolean }
     | { type: 'update.contextWindowSizeInTokens'; size: number | null }
 
-    // Append text to end of the input.
-    | { type: 'document.append'; text: string }
-    // Replaces the current document with the provided one.
-    | { type: 'document.set'; doc: Node }
-    // Add additionals mentions to the input. Mentions that overlap with existing mentions will be updated.
-    | {
-          type: 'document.mentions.add'
-          items: SerializedContextItem[]
-          position: 'before' | 'after'
-          separator: string
-      }
-    // Add or update additionals mentions to the input. Unlike `document.mentions.add`, this doesn't merge mentions
-    // with overlapping ranges.
-    | {
-          type: 'document.mentions.upsert'
-          items: SerializedContextItem[]
-          position: 'before' | 'after'
-          separator: string
-      }
-    // Remove the mentions from the input that do not fulfill the filter function.
-    | { type: 'document.mentions.filter'; filter: (item: SerializedContextItem) => boolean }
+    // Apply a transaction to the current document
+    | { type: 'document.update'; transaction: (editorState: EditorState) => Transaction }
     // Set the initial mentions of the input. Initial mentions are specifically marked. If the
     // input only contains initial mentions, the new ones will replace the existing ones.
     | { type: 'document.mentions.setInitial'; items: SerializedContextItem[] }
+
     // Used internally to notify the machine that an @mention has been added to the input (typically by typing '@').
     | { type: 'atMention.added' }
     // Used internall to notify the machine that an @mention has been removed.
@@ -305,6 +323,11 @@ interface PromptInputContext {
         items: MenuItem[]
         position: Position
     }
+    /**
+     * A function for handling the selection of menu items. The function is passed a minimal API to apply
+     * changes to the input.
+     */
+    handleSelectMenuItem: (item: MenuItem, api: MenuSelectionAPI) => void
 }
 
 export interface PromptInputOptions {
@@ -329,6 +352,11 @@ export interface PromptInputOptions {
      * The initial value of the input.
      */
     initialDocument?: Node
+    /**
+     * A function for handling the selection of menu items. The function is passed a minimal API to apply
+     * changes to the input.
+     */
+    handleSelectMenuItem?: (item: MenuItem, api: MenuSelectionAPI) => void
 }
 
 /**
@@ -499,6 +527,11 @@ export const promptInput = setup({
             items: [],
             position: { top: 0, left: 0, bottom: 0, right: 0 },
         },
+        handleSelectMenuItem:
+            input.handleSelectMenuItem ??
+            ((_item, api) => {
+                api.deleteAtMention()
+            }),
     }),
     type: 'parallel',
     states: {
@@ -587,59 +620,15 @@ export const promptInput = setup({
                     }),
                 },
 
-                'document.set': {
+                'document.update': {
                     actions: {
                         type: 'updateEditorState',
-                        params: ({ event, context }) =>
-                            context.editorState.tr.replaceWith(
-                                0,
-                                context.editorState.doc.content.size,
-                                event.doc
-                            ),
-                    },
-                },
-                'document.append': {
-                    actions: {
-                        type: 'updateEditorState',
-                        params: ({ context, event }) => {
-                            const tr = context.editorState.tr
-                            tr.setSelection(Selection.atEnd(tr.doc))
-                            return insertWhitespaceIfNeeded(tr).insertText(event.text)
-                        },
+                        params: ({ event, context }) => event.transaction(context.editorState),
                     },
                 },
 
-                'document.mentions.filter': {
-                    actions: {
-                        type: 'updateEditorState',
-                        params: ({ context, event }) =>
-                            filterMentions(context.editorState, event.filter),
-                    },
-                },
-                'document.mentions.add': {
-                    actions: {
-                        type: 'updateEditorState',
-                        params: ({ context, event }) =>
-                            addMentions(
-                                context.editorState,
-                                event.items,
-                                event.position,
-                                event.separator
-                            ),
-                    },
-                },
-                'document.mentions.upsert': {
-                    actions: {
-                        type: 'updateEditorState',
-                        params: ({ context, event }) =>
-                            upsertMentions(
-                                context.editorState,
-                                event.items,
-                                event.position,
-                                event.separator
-                            ),
-                    },
-                },
+                // TODO(@fkling): Find a good way to way move the change document logic out of the state machine
+                // while keeping the concept of 'can set initial mentions' in it.
                 'document.mentions.setInitial': {
                     guard: 'canSetInitialMentions',
                     actions: [
@@ -669,89 +658,41 @@ export const promptInput = setup({
                 },
 
                 // This event is raised when a mention item is supposed to be 'applied to the editor'. This can mean
-                // different things depending on the item:
-                // - If the item is a ContextItem, it will be inserted as a mention node.
-                // - If the item is a ContextMentionProviderMetadata, we'll update the mentions menu to show the provider's
-                //   items.
-                // - There are some hardcoded behaviors for specific items, e.g. large files without a range.
+                // different things depending on the item. The decision is delegated to `handleSelectMenuItem`, which
+                // receives a small API object to make changes to the input.
                 'atMention.apply': {
                     actions: enqueueActions(({ context, enqueue, event }) => {
                         const item = event.item
 
-                        // ContextMentionProviderMetadata
-                        // When selecting a provider, we'll update the mentions menu to show the provider's items.
-                        if ('id' in item) {
-                            // Remove current mentions value
-                            enqueue({
-                                type: 'updateEditorState',
-                                params: setMentionValue(context.editorState, ''),
-                            })
-                            // This is an event so that we can retrigger data fetching
-                            enqueue.raise({ type: 'mentionsMenu.provider.set', provider: item })
-                            return
-                        }
-
-                        // ContextItem
-
-                        // HACK: The OpenCtx interface do not support building multi-step selection for mentions.
-                        // For the remote file search provider, we first need the user to search for the repo from the list and then
-                        // put in the query to search for files. Below we are doing a hack to not set the repo item as a mention
-                        // but instead keep the same provider selected and put the full repo name in the query. The provider will then
-                        // return files instead of repos if the repo name is in the query.
-                        if (item.provider === 'openctx' && 'providerUri' in item) {
-                            if (
-                                (item.providerUri === REMOTE_FILE_PROVIDER_URI &&
-                                    item.mention?.data?.repoName &&
-                                    !item.mention.data.filePath) ||
-                                (item.providerUri === REMOTE_DIRECTORY_PROVIDER_URI &&
-                                    item.mention?.data?.repoName &&
-                                    !item.mention.data.directoryPath)
-                            ) {
-                                // Do not set the selected item as mention if it is repo item from the remote file search provider.
-                                // Rather keep the provider in place and update the query with repo name so that the provider can
-                                // start showing the files instead.
+                        context.handleSelectMenuItem(item, {
+                            setAtMentionValue(value) {
                                 enqueue({
                                     type: 'updateEditorState',
-                                    params: setMentionValue(
+                                    params: setAtMentionValue(context.editorState, value),
+                                })
+                            },
+                            replaceAtMentionValue(value) {
+                                enqueue({
+                                    type: 'updateEditorState',
+                                    params: replaceAtMention(
                                         context.editorState,
-                                        item.mention.data.repoName + ':'
+                                        typeof value === 'string' ? schema.text(value) : value
                                     ),
                                 })
+                            },
+                            deleteAtMention() {
+                                enqueue({
+                                    type: 'updateEditorState',
+                                    params: replaceAtMention(context.editorState, schema.text('')),
+                                })
+                            },
+                            setProvider(item) {
+                                // This is an event so that we can retrigger data fetching
+                                enqueue.raise({ type: 'mentionsMenu.provider.set', provider: item })
+                            },
+                            resetSelectedMenuItem() {
                                 enqueue({ type: 'assignMentionsMenu', params: { selectedIndex: 0 } })
-                                return
-                            }
-                        }
-
-                        // When selecting a large file without range, add the selected option as text node with : at the end.
-                        // This allows users to autocomplete the file path, and provide them with the options to add range.
-                        if (item.isTooLarge && !item.range) {
-                            enqueue({
-                                type: 'updateEditorState',
-                                params: setMentionValue(
-                                    context.editorState,
-                                    contextItemMentionNodeDisplayText(serializeContextItem(item)) + ':'
-                                ),
-                            })
-                            return
-                        }
-
-                        if (item.type === 'open-link') {
-                            // "open-link" items are links to documentation, you can not commit them as mentions.
-                            enqueue({
-                                type: 'updateEditorState',
-                                params: replaceAtMention(context.editorState, schema.text('')),
-                            })
-                            // TODO: Raise an event? Enqueue a task? to open the link.
-                            return
-                        }
-
-                        // In all other cases we'll insert the selected item as a mention node.
-                        enqueue({
-                            type: 'updateEditorState',
-                            params: replaceAtMention(
-                                context.editorState,
-                                createMentionNode({ item: serializeContextItem(item) })
-                            ),
+                            },
                         })
                     }),
                 },
@@ -923,43 +864,6 @@ export const promptInput = setup({
 })
 
 /**
- * Inserts a whitespace character at the given position if needed. If the position is not provided
- * the current selection of the transaction is used.
- * @param tr The transaction
- * @param pos The position to insert the whitespace
- * @returns The transaction
- */
-function insertWhitespaceIfNeeded(tr: Transaction, pos?: number): Transaction {
-    pos = pos ?? tr.selection.from
-    if (!/(^|\s)$/.test(tr.doc.textBetween(0, pos))) {
-        tr.insertText(' ', pos)
-    }
-    return tr
-}
-
-/**
- * Creates a transaction that filters out mentions that do not fulfill the filter function.
- * @param state The current editor state
- * @param filter The filter function
- * @returns A transaction that filters out mentions
- */
-function filterMentions(
-    state: EditorState,
-    filter: (item: SerializedContextItem) => boolean
-): Transaction {
-    const tr = state.tr
-    state.doc.descendants((node, pos) => {
-        if (node.type === schema.nodes.mention) {
-            const item = node.attrs.item as SerializedContextItem
-            if (!filter(item)) {
-                tr.delete(tr.mapping.map(pos), tr.mapping.map(pos + node.nodeSize))
-            }
-        }
-    })
-    return tr
-}
-
-/**
  * Returns all mentions in the document.
  * @param doc The document
  * @returns An array of mentions
@@ -974,155 +878,6 @@ export function getMentions(doc: Node): SerializedContextItem[] {
         return true
     })
     return mentions
-}
-
-/**
- * Creates a transaction that adds or updates mentions.
- * @param state The current editor state
- * @param items The items to add or update
- * @param position The position to add the mentions
- * @param separator The separator to use between new mentions
- * @returns A transaction that adds or updates mentions
- */
-function addMentions(
-    state: EditorState,
-    items: SerializedContextItem[],
-    position: 'before' | 'after',
-    separator: string
-): Transaction {
-    const existingMentions = getMentions(state.doc)
-    const operations = getMentionOperations(existingMentions, items)
-
-    const tr = state.tr
-
-    if (operations.modify.size + operations.delete.size > 0) {
-        state.doc.descendants((node, pos) => {
-            if (node.type === schema.nodes.mention) {
-                const item = node.attrs.item as SerializedContextItem
-                if (operations.delete.has(item)) {
-                    tr.delete(tr.mapping.map(pos), tr.mapping.map(pos + node.nodeSize))
-                } else if (operations.modify.has(item)) {
-                    const newItem = operations.modify.get(item)
-                    if (newItem) {
-                        // We use replaceWith instead of setNodeAttribute because we want to update
-                        // the text content of the mention node as well.
-                        tr.replaceWith(
-                            tr.mapping.map(pos),
-                            tr.mapping.map(pos + node.nodeSize),
-                            createMentionNode({ item: newItem })
-                        )
-                    }
-                }
-            }
-        })
-    }
-
-    if (operations.create.length > 0) {
-        const mentionNodes: Node[] = []
-        const separatorNode = state.schema.text(separator)
-        for (const item of operations.create) {
-            mentionNodes.push(createMentionNode({ item }))
-            mentionNodes.push(separatorNode)
-        }
-
-        if (position === 'before') {
-            tr.insert(Selection.atStart(tr.doc).from, mentionNodes)
-        } else {
-            insertWhitespaceIfNeeded(tr, Selection.atEnd(tr.doc).from)
-            tr.insert(Selection.atEnd(tr.doc).from, mentionNodes)
-        }
-    }
-
-    return tr
-}
-
-/**
- * Adds or updates mentions in the document. Unlike addMentions, this function does not remove any existing mentions.
- * @param state The current editor state
- * @param items The items to add or update
- * @param position The position to add the mentions
- * @param separator The separator to use between new mentions
- * @returns A transaction that adds or updates mentions
- */
-function upsertMentions(
-    state: EditorState,
-    items: SerializedContextItem[],
-    position: 'before' | 'after',
-    separator: string
-): Transaction {
-    const existingMentions = new Set(getMentions(state.doc).map(getKeyForContextItem))
-    const toUpdate = new Map<string, SerializedContextItem>()
-    for (const item of items) {
-        const key = getKeyForContextItem(item)
-        if (existingMentions.has(key)) {
-            toUpdate.set(key, item)
-        }
-    }
-    const tr = state.tr
-
-    if (toUpdate.size > 0) {
-        state.doc.descendants((node, pos) => {
-            if (node.type === schema.nodes.mention) {
-                const item = node.attrs.item as SerializedContextItem
-                const key = getKeyForContextItem(item)
-                if (toUpdate.has(key)) {
-                    const newItem = toUpdate.get(key)
-                    if (newItem) {
-                        tr.replaceWith(
-                            tr.mapping.map(pos),
-                            tr.mapping.map(pos + node.nodeSize),
-                            createMentionNode({ item: newItem })
-                        )
-                    }
-                }
-            }
-        })
-    }
-
-    return toUpdate.size !== items.length
-        ? insertMentions(
-              tr,
-              items.filter(item => !toUpdate.has(getKeyForContextItem(item))),
-              position,
-              separator
-          )
-        : tr
-}
-
-function insertMentions(
-    tr: Transaction,
-    items: SerializedContextItem[],
-    position: 'before' | 'after',
-    separator: string
-): Transaction {
-    const mentionNodes: Node[] = []
-    const separatorNode = schema.text(separator)
-    for (const item of items) {
-        mentionNodes.push(createMentionNode({ item }))
-        mentionNodes.push(separatorNode)
-    }
-
-    if (position === 'before') {
-        tr.insert(Selection.atStart(tr.doc).from, mentionNodes)
-    } else {
-        insertWhitespaceIfNeeded(tr, Selection.atEnd(tr.doc).from)
-        tr.insert(Selection.atEnd(tr.doc).from, mentionNodes)
-    }
-    return tr
-}
-
-/**
- * Computes a unique key for a context item that can be used in e.g. a Map.
- *
- * The URI is not sufficient to uniquely identify a context item because the same URI can be used
- * for different types of context items or, in case of openctx, different provider URIs.
- */
-function getKeyForContextItem(item: SerializedContextItem): string {
-    let key = `${item.uri.toString()}|${item.type}`
-    if (item.type === 'openctx') {
-        key += `|${item.providerUri}`
-    }
-    return key
 }
 
 /**
@@ -1158,14 +913,4 @@ function isEditorContentOnlyInitialContext(state: EditorState): boolean {
         return onlyInitialContext
     })
     return onlyInitialContext
-}
-
-/**
- * Creates a mention node from a context item.
- */
-function createMentionNode(attrs: {
-    item: SerializedContextItem
-    isFromInitialContext?: boolean
-}): Node {
-    return schema.nodes.mention.create(attrs, schema.text(contextItemMentionNodeDisplayText(attrs.item)))
 }
