@@ -1,5 +1,11 @@
+import fs from 'node:fs'
+import path from 'node:path'
+
+import dedent from 'dedent'
+import { Anthropic } from '@anthropic-ai/sdk'
+
 /**
- * A script to create the GitHub release changelog format from the current
+ * A script to create GitHub release notes from the current
  * CHANGELOG.md.
  *
  * Example:
@@ -14,79 +20,6 @@
  * **Full Comparison**: https://github.com/sourcegraph/cody/compare/M68...M70
  */
 
-import fs from 'node:fs'
-import path from 'node:path'
-
-import dedent from 'dedent'
-import { Anthropic } from '@anthropic-ai/sdk'
-
-
-interface Change {
-    text: string
-    link?: string
-}
-
-// Given a section in the changelog that looks like this:
-//
-// some other content...
-// ## 1.0.2
-//
-// ### Added
-//
-// ### Fixed
-//
-// - Chat: Honor the cody.codebase setting for manually setting the remote codebase context. [pulls/2415](https://github.com/sourcegraph/cody/pull/2415)
-//
-// ### Changed
-//
-// ## 1.0.1
-// some other content...
-//
-// Extract a list of changes and the previous version number
-function extractSection(
-    changelog: string,
-    version: string
-): { changes: Change[]; previousVersion: string } {
-    let previousVersion = ''
-    const lines = changelog.split('\n')
-    const changes = []
-    let found = false
-    for (const line of lines) {
-        if (found) {
-            if (line.startsWith('## ')) {
-                const versionMatches = /^## (?<dottedVersion>\d+\.\d+\.\d+)$/.exec(line)                
-                console.log(versionMatches)
-                if (!versionMatches?.groups) {
-                    throw new Error(`Malformed version line: ${line}`)
-                }
-                previousVersion = versionMatches.groups?.dottedVersion
-                break
-            }
-
-            if (line.startsWith('- ')) {
-                const change = line.slice(2)
-
-                const linkRegex = /\[(pull|pulls|issue|issues).*]\((?<link>.*)\)/
-                const firstLink = linkRegex.exec(change)
-
-                let text = change.slice(0, firstLink?.index ?? -1).trim()
-                // Remove eventual trailing dot in the text
-                if (text.endsWith('.')) {
-                    text = text.slice(0, -1)
-                }
-
-                const link = firstLink?.groups?.link ?? undefined
-
-                changes.push({ text, link })
-            }
-        } else if (line.startsWith(`## ${version}`)) {
-            found = true
-        }
-    }
-
-    return { changes, previousVersion }
-}
-
 async function main(): Promise<void> {
     let output = ''
 
@@ -94,13 +27,13 @@ async function main(): Promise<void> {
     const packageJSONBody = await fs.promises.readFile(packageJSONPath, 'utf-8')
     const packageJSON = JSON.parse(packageJSONBody)
     const currentVersion: string = packageJSON.version
-
     const changelogPath = path.join(__dirname, '../CHANGELOG.md')
     const changelogBody = await fs.promises.readFile(changelogPath, 'utf-8')
-
-    const { previousVersion } = extractSection(changelogBody, currentVersion)
-    const latestChangelog = extractLatestChangelog(changelogBody, previousVersion, currentVersion)
-    let summary = await summarizeChangelog(latestChangelog)
+    
+    console.log(`Writing release notes for ${currentVersion}...`)
+    
+    const { content, previousVersion } = extractLatestChangelog(changelogBody, currentVersion)
+    let summary = await summarizeChangelog(content)
     const minor = currentVersion.split('.').slice(1, 2).join('.')
     const previousMinor = extractPreviousMinor(minor)
 
@@ -116,30 +49,42 @@ async function main(): Promise<void> {
       **Full Comparison**: https://github.com/sourcegraph/cody/compare/M${previousMinor}...M${minor}
     `
     output += `\n${outro}\n`
-    console.log(`----------
-        ${output}
-        `)
+    console.log('\n=== Preview of Release Notes ===\n')
+    console.log(output)
+    console.log('\n==============================\n')    
+    // this is saved in the runner's local file system to be used in the release notes
     await fs.promises.writeFile(path.join(__dirname, '../GITHUB_CHANGELOG.md'), output)
 }
 
 main().catch(console.error)
 
-function extractLatestChangelog(changelog: string, previousVersion: string, currentVersion: string): string {
+// Extract a list of changes and the previous version number
+function extractLatestChangelog(changelog: string, currentVersion: string): {content: string, previousVersion: string} {
     const lines = changelog.split('\n')
     const changes = []
     let found = false
+    let previousVersion = ''
     for (const line of lines) {
         if (found) {
-            if (line.startsWith(`## ${previousVersion}`)) {
+            // If previous version header found, stop appending changelog content
+            if (line.startsWith(`## `)) {
+                const versionMatches = /^## (?<dottedVersion>\d+\.\d+\.\d+)$/.exec(line)
+                if (!versionMatches?.groups) {
+                    throw new Error(`Malformed version line: ${line}`)
+                }
+                previousVersion = versionMatches.groups?.dottedVersion
                 break
             }
             changes.push(line)
         } else if (line.startsWith(`## ${currentVersion}`)) {
-            changes.push(line)
             found = true
+            changes.push(line)
         }
     }
-    return changes.join('\n')
+    return {
+        content: changes.join('\n'),
+        previousVersion
+    }
 }
 
 function extractPreviousMinor(minor: string): string {
