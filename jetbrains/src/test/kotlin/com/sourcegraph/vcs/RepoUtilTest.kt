@@ -10,13 +10,11 @@ import git4idea.repo.GitBranchTrackInfo
 import git4idea.repo.GitRemote
 import git4idea.repo.GitRepository
 import git4idea.repo.GitRepositoryManager
-import org.junit.Test
 import org.mockito.Mockito
 import org.mockito.Mockito.`when`
 
 class RepoUtilTest : BasePlatformTestCase() {
 
-  @Test
   fun testGetRepoInfo_WithNonNullRepoRootPath() {
     val project = myFixture.project
     val file = myFixture.createFile("file.txt", "")
