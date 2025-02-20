@@ -10,8 +10,8 @@ import { DefaultContextStrategyFactory } from '../completions/context/context-st
 import { getCurrentDocContext } from '../completions/get-current-doc-context'
 import { isRunningInsideAgent } from '../jsonrpc/isRunningInsideAgent'
 import type { FixupController } from '../non-stop/FixupController'
-
 import type { CodyStatusBar } from '../services/StatusBar'
+
 import type { AutoeditsModelAdapter, AutoeditsPrompt } from './adapters/base'
 import { createAutoeditsModelAdapter } from './adapters/create-adapter'
 import {
@@ -40,10 +40,11 @@ import {
 import { shrinkPredictionUntilSuffix } from './shrink-prediction'
 import { areSameUriDocs, isPredictedTextAlreadyInSuffix } from './utils'
 
-const AUTOEDITS_CONTEXT_STRATEGY = 'auto-edit'
-export const INLINE_COMPLETION_DEFAULT_DEBOUNCE_INTERVAL_MS = 150
-const ON_SELECTION_CHANGE_DEFAULT_DEBOUNCE_INTERVAL_MS = 150
+const AUTOEDIT_CONTEXT_STRATEGY = 'auto-edit'
+export const AUTOEDIT_TOTAL_DEBOUNCE_INTERVAL = 75
+export const AUTOEDIT_CONTEXT_FETCHING_DEBOUNCE_INTERVAL = 25
 const RESET_SUGGESTION_ON_CURSOR_CHANGE_AFTER_INTERVAL_MS = 60 * 1000
+const ON_SELECTION_CHANGE_DEFAULT_DEBOUNCE_INTERVAL_MS = 15
 
 export interface AutoeditsResult extends vscode.InlineCompletionList {
     requestId: AutoeditRequestID
@@ -63,6 +64,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
     /** Keeps track of the last time the text was changed in the editor. */
     private lastTextChangeTimeStamp: number | undefined
     private readonly onSelectionChangeDebounced: DebouncedFunc<typeof this.onSelectionChange>
+
     public readonly rendererManager: AutoEditsRendererManager
     private readonly modelAdapter: AutoeditsModelAdapter
 
@@ -77,7 +79,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
     private readonly promptStrategy = new ShortTermPromptStrategy()
     public readonly filterPrediction = new FilterPredictionBasedOnRecentEdits()
     private readonly contextMixer = new ContextMixer({
-        strategyFactory: new DefaultContextStrategyFactory(Observable.of(AUTOEDITS_CONTEXT_STRATEGY)),
+        strategyFactory: new DefaultContextStrategyFactory(Observable.of(AUTOEDIT_CONTEXT_STRATEGY)),
         contextRankingStrategy: ContextRankingStrategy.TimeBased,
         dataCollectionEnabled: false,
     })
@@ -159,18 +161,20 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         let stopLoading: (() => void) | undefined
 
         try {
-            const start = getTimeNowInMillis()
+            const startedAt = getTimeNowInMillis()
             const controller = new AbortController()
             const abortSignal = controller.signal
             token?.onCancellationRequested(() => controller.abort())
 
             await new Promise(resolve =>
-                setTimeout(resolve, INLINE_COMPLETION_DEFAULT_DEBOUNCE_INTERVAL_MS)
+                setTimeout(resolve, AUTOEDIT_CONTEXT_FETCHING_DEBOUNCE_INTERVAL)
             )
+            const remainingDebounceInterval =
+                AUTOEDIT_TOTAL_DEBOUNCE_INTERVAL - AUTOEDIT_CONTEXT_FETCHING_DEBOUNCE_INTERVAL
             if (abortSignal.aborted) {
                 autoeditsOutputChannelLogger.logDebugIfVerbose(
                     'provideInlineCompletionItems',
-                    'debounce aborted before calculating getCurrentDocContext'
+                    'debounce aborted AUTOEDIT_CONTEXT_FETCHING_DEBOUNCE_INTERVAL'
                 )
                 return null
             }
@@ -197,14 +201,9 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 position,
                 tokenBudget: autoeditsProviderConfig.tokenLimit,
             })
-
-            autoeditsOutputChannelLogger.logDebugIfVerbose(
-                'provideInlineCompletionItems',
-                'Calculating context from contextMixer...'
-            )
             const { codeToRewrite } = codeToReplaceData
             const requestId = autoeditAnalyticsLogger.createRequest({
-                startedAt: performance.now(),
+                startedAt,
                 codeToReplaceData,
                 position,
                 docContext,
@@ -217,25 +216,31 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 },
             })
 
-            const { context, contextSummary } = await this.contextMixer.getContext({
-                document,
-                position,
-                docContext,
-                maxChars: 32_000,
-            })
-            autoeditAnalyticsLogger.markAsContextLoaded({
-                requestId,
-                payload: {
-                    contextSummary,
-                },
-            })
+            autoeditsOutputChannelLogger.logDebugIfVerbose(
+                'provideInlineCompletionItems',
+                'Calculating context from contextMixer...'
+            )
+            const [{ context, contextSummary }] = await Promise.all([
+                this.contextMixer.getContext({
+                    document,
+                    position,
+                    docContext,
+                    maxChars: 32_000,
+                }),
+                new Promise(resolve => setTimeout(resolve, remainingDebounceInterval)),
+            ])
+
             if (abortSignal.aborted) {
                 autoeditsOutputChannelLogger.logDebugIfVerbose(
                     'provideInlineCompletionItems',
-                    'aborted in getContext'
+                    'aborted during context fetch debounce'
                 )
                 return null
             }
+            autoeditAnalyticsLogger.markAsContextLoaded({
+                requestId,
+                payload: { contextSummary },
+            })
 
             autoeditsOutputChannelLogger.logDebugIfVerbose(
                 'provideInlineCompletionItems',
@@ -299,7 +304,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             autoeditsOutputChannelLogger.logDebug(
                 'provideInlineCompletionItems',
                 `"${requestId}" ============= Response:\n${initialPrediction}\n` +
-                    `============= Time Taken: ${getTimeNowInMillis() - start}ms`
+                    `============= Time Taken: ${getTimeNowInMillis() - startedAt}ms`
             )
 
             const prediction = shrinkPredictionUntilSuffix({
