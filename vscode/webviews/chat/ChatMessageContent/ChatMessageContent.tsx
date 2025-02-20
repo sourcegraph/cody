@@ -75,6 +75,10 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
                 // In reality, this will happen once we determine the task selection and _then_ start the task.
                 // The user does not need to be aware of this, for their purposes this is a single operation.
                 // We can re-use the `Working` state to simplify our UI logic.
+                console.log(
+                    "julia's check: chatMessageContent.tsx/ChatMessageContent; fileName",
+                    fileName
+                )
                 setSmartApplyStates(prev => ({ ...prev, [id]: CodyTaskState.Working }))
                 return smartApply.onSubmit(id, text, instruction, fileName, regex)
             },
@@ -188,17 +192,56 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
                     }
                 }
 
-                const { additions, deletions } = getLineChanges(preText)
+                // const { additions, deletions } = getLineChanges(preText)
+                // // Create outer container for all code block content
+                // const codeBlockWrapper = document.createElement('div')
+                // codeBlockWrapper.className = styles.codeBlockWrapper
 
-                if (additions > 0 || deletions > 0) {
-                    const lineChangesContainer = document.createElement('div')
-                    lineChangesContainer.className = styles.lineChangesContainer
-                    lineChangesContainer.innerHTML = `
-                        ${additions > 0 ? `<span class="${styles.additions}">+${additions}</span>` : ''}
-                        ${deletions > 0 ? `<span class="${styles.deletions}">-${deletions}</span>` : ''}
-                    `
-                    metadataContainer.append(lineChangesContainer)
-                }
+                // Create container for the compact view
+                const container = document.createElement('div')
+                container.className = styles.codeBlockContainer
+
+                // Hide the original pre element
+                // preElement.style.display = 'none'
+
+                // // Create the summary view
+                // const summary = document.createElement('div')
+                // summary.innerHTML = `
+                //             <div class="${styles.codeBlockHeader}">
+                //                 <span class="${styles.fileName}">${fileName || ''}</span>
+                //                 <div class="${styles.stats}">
+                //                     ${`<span class="${styles.additions}">+${additions}</span>`}
+                //                     ${`<span class="${styles.deletions}">-${deletions}</span>`}
+                //                 </div>
+                //                 <button class="${styles.openDiffButton}">Open Diff</button>
+                //             </div>
+                //         `
+                // // Add click handler for the Open Diff button
+                // const openDiffButton = summary.querySelector('button')
+                // openDiffButton?.addEventListener('click', () => {
+                //     window.postMessage({
+                //         type: 'openDiff',
+                //         fileName,
+                //         content: preText,
+                //     })
+                // })
+
+                // // preElement.remove()
+                // // Assemble the components
+                // container.appendChild(summary)
+                // // container.appendChild(preElement)
+                // codeBlockWrapper.appendChild(container)
+                // preElement.parentNode.insertBefore(codeBlockWrapper, preElement)
+
+                // if (additions > 0 || deletions > 0) {
+                //     const lineChangesContainer = document.createElement('div')
+                //     lineChangesContainer.className = styles.lineChangesContainer
+                //     lineChangesContainer.innerHTML = `
+                //         ${additions > 0 ? `<span class="${styles.additions}">+${additions}</span>` : ''}
+                //         ${deletions > 0 ? `<span class="${styles.deletions}">-${deletions}</span>` : ''}
+                //     `
+                //     metadataContainer.append(lineChangesContainer)
+                // }
 
                 if (fileName) {
                     const fileNameContainer = document.createElement('div')
@@ -233,10 +276,10 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
     )
 }
 
-function getLineChanges(codeText: string): { additions: number; deletions: number } {
-    // Count lines starting with + and - in the code block
-    const lines = codeText.split('\n')
-    const additions = lines.filter(line => line.startsWith('+')).length
-    const deletions = lines.filter(line => line.startsWith('-')).length
-    return { additions, deletions }
-}
+// function getLineChanges(codeText: string): { additions: number; deletions: number } {
+//     // Count lines starting with + and - in the code block
+//     const lines = codeText.split('\n')
+//     const additions = lines.filter(line => line.startsWith('+')).length
+//     const deletions = lines.filter(line => line.startsWith('-')).length
+//     return { additions, deletions }
+// }

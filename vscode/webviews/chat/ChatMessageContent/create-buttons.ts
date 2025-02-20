@@ -2,14 +2,14 @@ import type { FixupTaskID } from '../../../src/non-stop/FixupTask'
 import { CodyTaskState } from '../../../src/non-stop/state'
 import {
     CheckCodeBlockIcon,
-    CloseIcon,
+    // CloseIcon,
     CopyCodeBlockIcon,
     EllipsisIcon,
     InsertCodeBlockIcon,
     SaveCodeBlockIcon,
     SparkleIcon,
     SyncSpinIcon,
-    TickIcon,
+    // TickIcon,
 } from '../../icons/CodeBlockActionIcons'
 import { getVSCodeAPI } from '../../utils/VSCodeApi'
 import type { Config } from '../../utils/useConfig'
@@ -94,16 +94,35 @@ export function createButtonsExperimentalUI(
         return container
     }
 
+    // Add filename if available and not a command
+    if (codeBlockName && codeBlockName !== 'command') {
+        const fileNameLabel = document.createElement('div')
+        fileNameLabel.className = styles.fileNameLabel
+
+        // Add file icon
+        const iconContainer = document.createElement('div')
+        iconContainer.className = styles.iconContainer
+        iconContainer.innerHTML = '<i class="codicon codicon-file"></i>'
+        fileNameLabel.appendChild(iconContainer)
+
+        // Add filename text
+        const fileNameText = document.createElement('span')
+        fileNameText.textContent = codeBlockName
+        fileNameLabel.appendChild(fileNameText)
+
+        container.appendChild(fileNameLabel)
+    }
+
     const buttons = document.createElement('div')
     buttons.className = styles.buttons
 
     if (smartApply && smartApplyState === CodyTaskState.Applied && smartApplyId) {
-        const acceptButton = createAcceptButton(smartApplyId, smartApply)
-        const rejectButton = createRejectButton(smartApplyId, smartApply)
-        buttons.append(acceptButton, rejectButton)
+        // const acceptButton = createAcceptButton(smartApplyId, smartApply)
+        // const rejectButton = createRejectButton(smartApplyId, smartApply)
+        // buttons.append(acceptButton, rejectButton)
     } else {
-        const copyButton = createCopyButton(preText, copyButtonOnSubmit)
-        buttons.append(copyButton)
+        // const copyButton = createCopyButton(preText, copyButtonOnSubmit)
+        // buttons.append(copyButton)
 
         if (smartApply && smartApplyId) {
             // Execute button is only available in VS Code.
@@ -123,26 +142,117 @@ export function createButtonsExperimentalUI(
             smartButton.title = isExecutable
                 ? 'Execute in Terminal'
                 : 'Apply in Editor' + (regex ? ` (${regex})` : '')
-            buttons.append(smartButton)
+            // buttons.append(smartButton)
+
+            // const openDiffButton = createOpenDiffButton(
+            //     preText,
+            //     humanMessage,
+            //     smartApply,
+            //     smartApplyId,
+            //     smartApplyState,
+            //     codeBlockName,
+            //     regex
+            // )
+            // buttons.append(openDiffButton)
         }
 
-        if (config.clientCapabilities.isVSCode) {
-            // VS Code provides additional support for rendering an OS-native dropdown, that has some
-            // additional benefits. Mainly that it can "break out" of the webview.
-            // TODO: A dropdown would be useful for other clients too, we should consider building
-            // a generic web-based dropdown component that can be used by any client.
-            const actionsDropdown = createActionsDropdown(preText)
-            buttons.append(actionsDropdown)
-        } else {
+        // if (config.clientCapabilities.isVSCode) {
+        //     // VS Code provides additional support for rendering an OS-native dropdown, that has some
+        //     // additional benefits. Mainly that it can "break out" of the webview.
+        //     // TODO: A dropdown would be useful for other clients too, we should consider building
+        //     // a generic web-based dropdown component that can be used by any client.
+        //     const actionsDropdown = createActionsDropdown(preText)
+        //     buttons.append(actionsDropdown)
+        // } else {
+        if (!config.clientCapabilities.isVSCode) {
             const insertButton = createInsertButton(preText, insertButtonOnSubmit)
             const saveButton = createSaveButton(preText, insertButtonOnSubmit)
             buttons.append(insertButton, saveButton)
         }
     }
 
+    // Add line changes stats
+    // Add status text and line changes in a container
+    const leftContainer = document.createElement('div')
+    leftContainer.className = styles.leftContainer
+
+    // Add status text
+    if (smartApply && smartApplyId) {
+        const statusText = document.createElement('div')
+        statusText.className = styles.statusText
+
+        // Add status text
+        const statusSpan = document.createElement('span')
+        statusSpan.textContent =
+            smartApplyState === CodyTaskState.Applied ? 'Edited' : 'Suggested changes'
+        statusText.appendChild(statusSpan)
+
+        // Add file mention if we have a filename
+        if (codeBlockName && codeBlockName !== 'command') {
+            const fileMention = document.createElement('div')
+            fileMention.className = styles.fileMention
+
+            const fileMentionText = document.createElement('span')
+            fileMentionText.className = styles.fileMentionText
+            fileMentionText.textContent = codeBlockName
+
+            fileMention.appendChild(fileMentionText)
+            statusText.appendChild(fileMention)
+        }
+
+        leftContainer.appendChild(statusText)
+    }
+
+    // Add line changes stats
+    const { additions, deletions } = getLineChanges(preText)
+    if (additions > 0 || deletions > 0) {
+        const stats = document.createElement('div')
+        stats.className = styles.stats
+        stats.innerHTML = `
+                ${additions > 0 ? `<span class="${styles.additions}">+${additions}</span>` : ''}
+                ${deletions > 0 ? `<span class="${styles.deletions}">-${deletions}</span>` : ''}
+            `
+        leftContainer.appendChild(stats)
+    }
+
+    buttons.appendChild(leftContainer)
+
+    // Create metadata container for right-aligned items
+    const metadataContainer = document.createElement('div')
+    metadataContainer.className = styles.metadataContainer
+
+    // Add open diff button if it exists
+    if (smartApply && smartApplyId) {
+        const openDiffButton = createOpenDiffButton(
+            preText,
+            humanMessage,
+            smartApply,
+            smartApplyId,
+            smartApplyState,
+            codeBlockName,
+            regex
+        )
+        metadataContainer.append(openDiffButton)
+    }
+
+    // Add ellipsis button if in VS Code
+    if (config.clientCapabilities.isVSCode) {
+        const actionsDropdown = createActionsDropdown(preText)
+        metadataContainer.append(actionsDropdown)
+    }
+
+    buttons.append(metadataContainer)
     container.append(buttons)
 
     return container
+}
+
+// Helper function to count line changes
+function getLineChanges(codeText: string): { additions: number; deletions: number } {
+    const lines = codeText.split('\n')
+    const additions = lines.filter(line => line.startsWith('+')).length
+    const deletions = lines.filter(line => line.startsWith('-')).length
+    return { additions, deletions }
 }
 
 function createInsertButton(
@@ -229,43 +339,43 @@ function createCodeBlockActionButton(
     return button
 }
 
-function createCopyButton(
-    preText: string,
-    onCopy: CodeBlockActionsProps['copyButtonOnSubmit']
-): HTMLElement {
-    const button = document.createElement('button')
-    button.innerHTML = 'Copy'
-    button.className = styles.button
+// function createCopyButton(
+//     preText: string,
+//     onCopy: CodeBlockActionsProps['copyButtonOnSubmit']
+// ): HTMLElement {
+//     const button = document.createElement('button')
+//     button.innerHTML = 'Copy'
+//     button.className = styles.button
 
-    const iconContainer = document.createElement('div')
-    iconContainer.className = styles.iconContainer
-    iconContainer.innerHTML = CopyCodeBlockIcon
-    button.prepend(iconContainer)
+//     const iconContainer = document.createElement('div')
+//     iconContainer.className = styles.iconContainer
+//     iconContainer.innerHTML = CopyCodeBlockIcon
+//     button.prepend(iconContainer)
 
-    button.addEventListener('click', () => {
-        iconContainer.innerHTML = CheckCodeBlockIcon
-        iconContainer.className = styles.iconContainer
-        button.innerHTML = 'Copied'
-        button.className = styles.button
-        button.prepend(iconContainer)
+//     button.addEventListener('click', () => {
+//         iconContainer.innerHTML = CheckCodeBlockIcon
+//         iconContainer.className = styles.iconContainer
+//         button.innerHTML = 'Copied'
+//         button.className = styles.button
+//         button.prepend(iconContainer)
 
-        navigator.clipboard.writeText(preText).catch(error => console.error(error))
-        onCopy(preText, 'Button')
-        setTimeout(() => {
-            // Reset the icon to the original.
-            iconContainer.innerHTML = CopyCodeBlockIcon
-            iconContainer.className = styles.iconContainer
-            button.innerHTML = 'Copy'
-            button.className = styles.button
-            button.prepend(iconContainer)
-        }, 5000)
+//         navigator.clipboard.writeText(preText).catch(error => console.error(error))
+//         onCopy(preText, 'Button')
+//         setTimeout(() => {
+//             // Reset the icon to the original.
+//             iconContainer.innerHTML = CopyCodeBlockIcon
+//             iconContainer.className = styles.iconContainer
+//             button.innerHTML = 'Copy'
+//             button.className = styles.button
+//             button.prepend(iconContainer)
+//         }, 5000)
 
-        // Log for `chat assistant response code buttons` e2e test.
-        console.log('Code: Copy to Clipboard', preText)
-    })
+//         // Log for `chat assistant response code buttons` e2e test.
+//         console.log('Code: Copy to Clipboard', preText)
+//     })
 
-    return button
-}
+//     return button
+// }
 
 function createApplyButton(
     preText: string,
@@ -300,11 +410,33 @@ function createApplyButton(
             iconContainer.innerHTML = SparkleIcon
             button.prepend(iconContainer)
 
+            console.log("julia's check: create-buttons.ts;createApplyButton; fileName", fileName)
             button.addEventListener('click', () =>
                 smartApply.onSubmit(smartApplyId, preText, humanMessage?.text, fileName, regex)
             )
         }
     }
+
+    return button
+}
+
+function createOpenDiffButton(
+    preText: string,
+    humanMessage: PriorHumanMessageInfo | null,
+    smartApply: CodeBlockActionsProps['smartApply'],
+    smartApplyId: FixupTaskID,
+    smartApplyState?: CodyTaskState,
+    fileName?: string,
+    regex?: string
+): HTMLElement {
+    const button = document.createElement('button')
+    button.className = styles.button
+    button.innerHTML = 'Open Diff'
+
+    console.log("julia's check fileName", fileName)
+    button.addEventListener('click', () =>
+        smartApply.onSubmit(smartApplyId, preText, humanMessage?.text, fileName, regex)
+    )
 
     return button
 }
@@ -336,37 +468,37 @@ function createExecuteButton(command: string): HTMLElement {
     return button
 }
 
-function createAcceptButton(id: string, smartApply: CodeBlockActionsProps['smartApply']): HTMLElement {
-    const button = document.createElement('button')
-    button.className = styles.button
-    button.innerHTML = 'Accept'
+// function createAcceptButton(id: string, smartApply: CodeBlockActionsProps['smartApply']): HTMLElement {
+//     const button = document.createElement('button')
+//     button.className = styles.button
+//     button.innerHTML = 'Accept'
 
-    const iconContainer = document.createElement('div')
-    iconContainer.className = styles.iconContainer
-    iconContainer.innerHTML = TickIcon
-    button.prepend(iconContainer)
+//     const iconContainer = document.createElement('div')
+//     iconContainer.className = styles.iconContainer
+//     iconContainer.innerHTML = TickIcon
+//     button.prepend(iconContainer)
 
-    button.addEventListener('click', () => {
-        smartApply.onAccept(id)
-    })
-    return button
-}
+//     button.addEventListener('click', () => {
+//         smartApply.onAccept(id)
+//     })
+//     return button
+// }
 
-function createRejectButton(id: string, smartApply: CodeBlockActionsProps['smartApply']): HTMLElement {
-    const button = document.createElement('button')
-    button.className = styles.button
-    button.innerHTML = 'Reject'
+// function createRejectButton(id: string, smartApply: CodeBlockActionsProps['smartApply']): HTMLElement {
+//     const button = document.createElement('button')
+//     button.className = styles.button
+//     button.innerHTML = 'Reject'
 
-    const iconContainer = document.createElement('div')
-    iconContainer.className = styles.iconContainer
-    iconContainer.innerHTML = CloseIcon
-    button.prepend(iconContainer)
+//     const iconContainer = document.createElement('div')
+//     iconContainer.className = styles.iconContainer
+//     iconContainer.innerHTML = CloseIcon
+//     button.prepend(iconContainer)
 
-    button.addEventListener('click', () => {
-        smartApply.onReject(id)
-    })
-    return button
-}
+//     button.addEventListener('click', () => {
+//         smartApply.onReject(id)
+//     })
+//     return button
+// }
 
 function createActionsDropdown(preText: string): HTMLElement {
     const button = document.createElement('button')
@@ -378,6 +510,7 @@ function createActionsDropdown(preText: string): HTMLElement {
         webviewSection: 'codeblock-actions',
         preventDefaultContextMenuItems: true,
         text: preText,
+        hideCopy: true, // Hide copy from context menu
     }
 
     // Attach `data-vscode-context`, this is also provided when the commands are executed,
