@@ -387,17 +387,20 @@ export const HumanMessageEditor: FunctionComponent<{
 
     const defaultContext = useDefaultContextForChat()
     useEffect(() => {
-        let { initialContext } = defaultContext
+        // Don't show the initial codebase context if the model doesn't support streaming
+        // as including context result in longer processing time.
+        if(!currentChatModel?.tags?.includes(ModelTag.StreamDisabled)) {
+            return
+        }
+        // List of mention chips added to the first message.
         if (!isSent && isFirstMessage) {
             const editor = editorRef.current
             if (editor) {
-                // Don't show the initial codebase context if the model doesn't support streaming
-                // as including context result in longer processing time.
-                if (currentChatModel?.tags?.includes(ModelTag.StreamDisabled)) {
-                    initialContext = initialContext.filter(item => item.type !== 'tree')
-                }
+                let { initialContext } = defaultContext
                 // Remove documentation open-link items; they do not provide context.
-                const filteredItems = initialContext.filter(item => item.type !== 'open-link')
+                // Remove current selection to avoid crowding the input box. User can always add it back.
+                const removedInitialContextType = ['open-link', 'current-selection']
+                const filteredItems = initialContext.filter(item => !removedInitialContextType.includes(item.type))
                 void editor.setInitialContextMentions(filteredItems)
             }
         }
