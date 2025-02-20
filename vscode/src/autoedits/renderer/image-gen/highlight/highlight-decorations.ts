@@ -84,8 +84,6 @@ export function syntaxHighlightDecorations(
     lang: string,
     theme: SYNTAX_HIGHLIGHT_THEME
 ): VisualDiff {
-    const mode = diff.type
-
     const incomingHighlights = getHighlightTokens({
         diff,
         lang,
@@ -95,7 +93,7 @@ export function syntaxHighlightDecorations(
 
     // We only care about originalHighlights for unified diffs
     let originalHighlights: Map<number, ThemedToken[]> | undefined
-    if (diff.type === 'unified') {
+    if (diff.mode === 'unified') {
         originalHighlights = getHighlightTokens({
             diff,
             lang,
@@ -115,5 +113,5 @@ export function syntaxHighlightDecorations(
         return line
     })
 
-    return { type: mode, lines }
+    return { mode: diff.mode, lines }
 }

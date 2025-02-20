@@ -61,6 +61,6 @@ export type VisualDiffLine = VisualDiffAdditions | VisualDiffUnified
  * This is useful for rendering a unified diff
  */
 export interface VisualDiff {
-    type: 'unified' | 'additions'
+    mode: 'unified' | 'additions'
     lines: VisualDiffLine[]
 }

@@ -41,6 +41,11 @@ export function makeVisualDiff(decorationInfo: DecorationInfo, mode: DiffMode): 
     const lastRelevantLine = sortedDiff.findLastIndex(line => line.type !== 'unchanged')
     const relevantDiff = sortedDiff.slice(firstRelevantLine, lastRelevantLine + 1)
 
+    if (relevantDiff.length === 0 || relevantDiff.every(line => line.type === 'unchanged')) {
+        // No useful diff to display, do nothing.
+        return { mode, lines: [] }
+    }
+
     if (mode === 'additions') {
         // We only care about existing and new lines here.
         const lines = relevantDiff
@@ -67,7 +72,7 @@ export function makeVisualDiff(decorationInfo: DecorationInfo, mode: DiffMode): 
                     },
                 }
             })
-        return { type: mode, lines }
+        return { mode, lines }
     }
 
     // We need to transform the diff into a unified diff
@@ -148,5 +153,5 @@ export function makeVisualDiff(decorationInfo: DecorationInfo, mode: DiffMode): 
         lines.push(...deletions, ...additions)
     }
 
-    return { type: mode, lines }
+    return { mode, lines }
 }
