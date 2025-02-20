@@ -387,12 +387,11 @@ export const HumanMessageEditor: FunctionComponent<{
 
     const defaultContext = useDefaultContextForChat()
     useEffect(() => {
-        if (isSent || !isFirstMessage || !editorRef.current) {
+        if (isSent || !isFirstMessage || !editorRef?.current) {
             return
         }
 
         // List of mention chips added to the first message.
-        const { initialContext } = defaultContext
         const editor = editorRef.current
 
         // Remove documentation open-link items; they do not provide context.
@@ -404,9 +403,11 @@ export const HumanMessageEditor: FunctionComponent<{
             ...(currentChatModel?.tags?.includes(ModelTag.StreamDisabled) ? ['tree'] : []),
         ])
 
-        const filteredItems = initialContext.filter(item => !excludedTypes.has(item.type))
+        const filteredItems = defaultContext?.initialContext.filter(
+            item => !excludedTypes.has(item.type)
+        )
         void editor.setInitialContextMentions(filteredItems)
-    }, [defaultContext, isSent, isFirstMessage, currentChatModel])
+    }, [defaultContext?.initialContext, isSent, isFirstMessage, currentChatModel])
 
     const focusEditor = useCallback(() => editorRef.current?.setFocus(true), [])
 
