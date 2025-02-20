@@ -13,13 +13,16 @@ import {
     clientCapabilities,
     currentAuthStatus,
     currentResolvedConfig,
+    firstResultFromOperation,
     getAuthErrorMessage,
+    getAuthHeaders,
     getCodyAuthReferralCode,
     graphqlClient,
     isDotCom,
     isError,
     isNetworkLikeError,
     isWorkspaceInstance,
+    resolvedConfig,
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
 import { resolveAuth } from '@sourcegraph/cody-shared/src/configuration/auth-resolver'
@@ -556,4 +559,31 @@ function getEnterpriseName(email: string): string {
     const domain = email.split('@')[1]
     const name = domain.split('.')[0]
     return name.charAt(0).toUpperCase() + name.slice(1)
+}
+
+export async function requestEndpointSettingsDeliveryToSearchPlugin(): Promise<string> {
+    const searchExtension = vscode.extensions.all.find(({ packageJSON }) =>
+        ['sourcegraph.@sourcegraph/vscode', 'sourcegraph.sourcegraph'].includes(packageJSON.id)
+    )
+
+    const config = await firstResultFromOperation(resolvedConfig)
+    searchExtension?.activate().then(async () => {
+        const commandId = 'sourcegraph.setEndpointSettings'
+        const commands = searchExtension.packageJSON.contributes?.commands
+        if (Array.isArray(commands)) {
+            if (commands.find(({ command }) => command === commandId)) {
+                const authHeaders = await getAuthHeaders(
+                    config.auth,
+                    new URL(config.auth.serverEndpoint)
+                )
+
+                vscode.commands.executeCommand(commandId, {
+                    instanceUrl: config.auth.serverEndpoint,
+                    headers: authHeaders,
+                })
+            }
+        }
+    })
+
+    return config.auth.serverEndpoint
 }

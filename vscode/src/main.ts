@@ -46,7 +46,12 @@ import { isReinstalling } from '../uninstall/reinstall'
 
 import type { CommandResult } from './CommandResult'
 import { showAccountMenu } from './auth/account-menu'
-import { showSignInMenu, showSignOutMenu, tokenCallbackHandler } from './auth/auth'
+import {
+    requestEndpointSettingsDeliveryToSearchPlugin,
+    showSignInMenu,
+    showSignOutMenu,
+    tokenCallbackHandler,
+} from './auth/auth'
 import { createAutoEditsProvider } from './autoedits/create-autoedits-provider'
 import { autoeditsOutputChannelLogger } from './autoedits/output-channel-logger'
 import { registerAutoEditTestRenderCommand } from './autoedits/renderer/mock-renderer'
@@ -605,7 +610,11 @@ function registerAuthCommands(disposables: vscode.Disposable[]): void {
         vscode.commands.registerCommand('cody.auth.signin', () => showSignInMenu()),
         vscode.commands.registerCommand('cody.auth.signout', () => showSignOutMenu()),
         vscode.commands.registerCommand('cody.auth.account', () => showAccountMenu()),
-        vscode.commands.registerCommand('cody.auth.support', () => showFeedbackSupportQuickPick())
+        vscode.commands.registerCommand('cody.auth.support', () => showFeedbackSupportQuickPick()),
+        vscode.commands.registerCommand(
+            'cody.auth.requestEndpointSettings',
+            async () => await requestEndpointSettingsDeliveryToSearchPlugin()
+        )
     )
 }
 

@@ -368,6 +368,11 @@
         "enablement": "config.cody.internal.unstable"
       },
       {
+        "command": "cody.auth.requestEndpointSettings",
+        "category": "Cody",
+        "title": "Schedule export endpoint settings to Sourcegraph plugin"
+      },
+      {
         "command": "cody.settings.extension",
         "category": "Cody",
         "title": "Extension Settings",
@@ -909,13 +914,6 @@
         {
           "command": "cody.command.insertCodeToNewFile",
           "when": "webviewSection == 'codeblock-actions'"
-        }
-      ],
-      "explorer/context": [
-        {
-          "command": "cody.mention.file",
-          "when": "cody.activated && resourceSet && !explorerResourceIsFolder",
-          "group": "4_cody"
         }
       ]
     },
