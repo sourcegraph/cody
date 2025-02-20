@@ -151,8 +151,8 @@ export class EditManager implements vscode.Disposable {
         if (
             !configuration ||
             this.cacheManager.getSelectionPromise(configuration.id) ||
-            (await isUriIgnoredByContextFilterWithNotification(configuration.document.uri, 'edit')) ||
-            configuration.isNewFile
+            configuration.isNewFile ||
+            (await isUriIgnoredByContextFilterWithNotification(configuration.document.uri, 'edit'))
         ) {
             return
         }
