@@ -130,19 +130,19 @@ async function getSearchScopesFromMentions(mentions: ContextItem[]): Promise<str
             const repoName =
                 (mention as ContextItemFile).remoteRepositoryName ||
                 (await getFirstRepoNameContainingUri(mention.uri))
-
-            const workspace = vscode.workspace.getWorkspaceFolder(mention.uri)
-            if (!repoName || !workspace) {
+            if (!repoName) {
                 return
             }
 
-            const filePath = escapeRegExp(mention.uri.toString().split(`${workspace.name}/`)[1] || '')
-
-            if (!filePath || !repoName) {
+            const filePath = vscode.workspace.asRelativePath(mention.uri, false)
+            // asRelativePath returns the input as is if no workspace folder is open
+            // Since we need to get the relative path of the file relative to workspace
+            // we'll bail if that's the case.
+            if (filePath.toString() === mention.uri.toString()) {
                 return
             }
 
-            return scopes.push(`(file:^${filePath}$ repo:^${repoName}$)`)
+            return scopes.push(`(file:^${escapeRegExp(filePath)}$ repo:^${repoName}$)`)
         })
     )
 
