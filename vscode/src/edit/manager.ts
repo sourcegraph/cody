@@ -418,9 +418,8 @@ export class EditManager implements vscode.Disposable {
                 }
 
                 // We have a selection to replace, we re-prompt the LLM to generate the changes to ensure that
-                // we can reliably apply this edit.
-                // Just using the replacement code from the response is not enough, as it may contain parts that are not suitable to apply,
-                // e.g. // ...
+                // we can reliably apply this edit. Just using the replacement code from the response is not
+                // enough, as it may contain parts that are not suitable to apply,
                 const applyStartTime = Date.now()
                 const task = await this.executeSmartApplyEdit({
                     configuration,
