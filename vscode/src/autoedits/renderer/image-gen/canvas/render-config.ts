@@ -68,6 +68,28 @@ function getUserPixelRatio(): number | undefined {
     return Math.max(devicePixelRatio, 1)
 }
 
+export interface DiffColors {
+    inserted: {
+        line: string
+        text: string
+    }
+    removed: {
+        line: string
+        text: string
+    }
+}
+
+const DEFAULT_DIFF_COLORS = {
+    inserted: {
+        line: 'rgba(155, 185, 85, 0.1)',
+        text: 'rgba(155, 185, 85, 0.15)',
+    },
+    removed: {
+        line: 'rgba(255, 0, 0, 0.1)',
+        text: 'rgba(255, 0, 0, 0.15)',
+    },
+} satisfies DiffColors
+
 /**
  * Options to render the auto-edit suggestion to the canvas.
  * This should be configurable by the user and/or the client where suitable.
@@ -82,9 +104,9 @@ export interface RenderConfig {
      */
     pixelRatio: number
     /**
-     * The background color of added characters in the diff.
+     * The background colors of added characters and lines in the diff.
      */
-    diffHighlightColor: string
+    diffColors: DiffColors
     /**
      * The background color of the image.
      * Only currently used for testing purposes.
@@ -110,7 +132,7 @@ export function getRenderConfig(userProvidedConfig?: UserProvidedRenderConfig): 
         padding: { x: 6, y: 2 },
         maxWidth: 1200,
         pixelRatio,
-        diffHighlightColor: 'rgba(35, 134, 54, 0.2)',
+        diffColors: DEFAULT_DIFF_COLORS,
         backgroundColor: userProvidedConfig?.backgroundColor,
     }
 }
