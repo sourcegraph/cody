@@ -39,7 +39,7 @@ import {
 import { HumanMessageCell } from './cells/messageCell/human/HumanMessageCell'
 
 import { type Context, type Span, context, trace } from '@opentelemetry/api'
-import { DeepCodyAgentID, ToolCodyModelName } from '@sourcegraph/cody-shared/src/models/client'
+import { ToolCodyModelName } from '@sourcegraph/cody-shared/src/models/client'
 import { isCodeSearchContextItem } from '../../src/context/openctx/codeSearch'
 import { AgenticContextCell } from './cells/agenticCell/AgenticContextCell'
 import ApprovalCell from './cells/agenticCell/ApprovalCell'
@@ -568,7 +568,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                         model={assistantMessage?.model}
                         isForFirstMessage={humanMessage.index === 0}
                         isContextLoading={isContextLoading}
-                        defaultOpen={isContextLoading && humanMessage.agent === DeepCodyAgentID}
+                        defaultOpen={isContextLoading}
                         agent={humanMessage?.agent ?? undefined}
                     />
                 )}

@@ -334,6 +334,7 @@ export {
     openCtxProviderMetadata,
     FILE_CONTEXT_MENTION_PROVIDER,
     SYMBOL_CONTEXT_MENTION_PROVIDER,
+    DIAGNOSTIC_CONTEXT_MENTION_PROVIDER,
     type ContextMentionProviderID,
     type ContextMentionProviderMetadata,
 } from './mentions/api'

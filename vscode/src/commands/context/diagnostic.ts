@@ -17,10 +17,9 @@ export async function getContextFromDiagnostics(): Promise<ContextItem[]> {
     try {
         const diagnostics = vscode.languages.getDiagnostics()
 
-        // Process diagnostics in parallel for better performance
         const processedItems = await Promise.all(
             Array.from(diagnostics).map(async ([uri, fileDiagnostics]) => {
-                const cacheKey = `${uri.toString()}-${fileDiagnostics.length}`
+                const cacheKey = `${displayPath(uri)}-${fileDiagnostics.length}`
 
                 // Check cache first
                 if (diagnosticsCache.has(cacheKey)) {
@@ -40,9 +39,10 @@ export async function getContextFromDiagnostics(): Promise<ContextItem[]> {
 
                 const item = {
                     type: 'file' as const,
+                    title: errors[0]?.message,
                     content,
-                    uri,
-                    source: ContextItemSource.User,
+                    uri: uri,
+                    source: ContextItemSource.Terminal,
                     size,
                 }
 
@@ -82,9 +82,16 @@ const areDiagnosticsEquivalent = (
     { code: code2, message: message2, severity: severity2, source: source2 }: vscode.Diagnostic
 ): boolean => code1 === code2 && message1 === message2 && severity1 === severity2 && source1 === source2
 
-export function getUpdatedDiagnostics(previous: Diagnostics[], current: Diagnostics[]): Diagnostics[] {
+export function getUpdatedDiagnostics(
+    previous: Diagnostics[],
+    current: Diagnostics[],
+    doc?: vscode.Uri
+): Diagnostics[] {
     const cache = new Map(previous)
     return current.flatMap(([uri, currentDiags]) => {
+        if (doc && doc.path !== uri.path) {
+            return []
+        }
         const previousDiags = cache.get(uri) || []
         const uniqueDiags = currentDiags.filter(
             cur => !previousDiags.some(prev => areDiagnosticsEquivalent(prev, cur))
@@ -99,7 +106,7 @@ export function getDiagnosticsTextBlock(diagnostics: Diagnostics[]): string {
             const diagnosticLines = fileDiagnostics
                 .map(d => `[${d.severity}] Line ${d.range.start.line + 1}: ${d.message}`)
                 .join('\n')
-            return `\`\`\`bash:${displayPath(uri)}\n${diagnosticLines}\n\`\`\``
+            return `\`\`\`console:${displayPath(uri)}\n${diagnosticLines}\n\`\`\``
         })
         .join('\n')
 }

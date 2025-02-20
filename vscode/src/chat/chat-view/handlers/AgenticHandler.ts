@@ -11,22 +11,17 @@ import {
     firstResultFromOperation,
     isAbortErrorOrSocketHangUp,
     modelsService,
-    ps,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
-import * as vscode from 'vscode'
-import { getDiagnosticsTextBlock, getUpdatedDiagnostics } from '../../../commands/context/diagnostic'
-import { executeEdit } from '../../../edit/execute'
-import { getEditor } from '../../../editor/active-editor'
-import type { Edit } from '../../../non-stop/line-diff'
 import { getCategorizedMentions } from '../../../prompt-builder/utils'
-import { DeepCodyAgent } from '../../agentic/DeepCody'
+import { DeepCodyAgent, type OmniboxAgentResponse } from '../../agentic/DeepCody'
 import { ProcessManager } from '../../agentic/ProcessManager'
 import { ChatBuilder } from '../ChatBuilder'
 import type { ChatControllerOptions } from '../ChatController'
 import type { ContextRetriever } from '../ContextRetriever'
 import type { HumanInput } from '../context'
 import { DefaultPrompter, type PromptInfo } from '../prompt'
+import { AgenticEditHandler } from './AgenticEditHandler'
 import { computeContextAlternatives } from './ChatHandler'
 import { SearchHandler } from './SearchHandler'
 import type { AgentHandler, AgentHandlerDelegate, AgentRequest } from './interfaces'
@@ -40,7 +35,7 @@ export class AgenticHandler implements AgentHandler {
     ) {}
 
     public async handle(req: AgentRequest, delegate: AgentHandlerDelegate): Promise<void> {
-        const { requestID, inputText, mentions, editorState, signal, chatBuilder, recorder, span } = req
+        const { mentions, signal } = req
 
         const stepsManager = new ProcessManager(
             steps => delegate.postStatuses(steps),
@@ -50,70 +45,77 @@ export class AgenticHandler implements AgentHandler {
         // forgot to set the source, assume it's from the user.
         req.mentions = mentions.map(m => (m.source ? m : { ...m, source: ContextItemSource.User }))
 
-        const contextAgent = new DeepCodyAgent(chatBuilder, this.chatClient, stepsManager)
+        const reflection = await this.reflection(req, delegate, stepsManager)
+        if (reflection.abort) {
+            delegate.postDone({ abort: reflection.abort })
+            return
+        }
+        if (reflection.error) {
+            delegate.postError(reflection.error, 'transcript')
+            return
+        }
 
-        const contextResult = await this.agenticContext(
-            contextAgent,
+        signal.throwIfAborted()
+        this.processActionMode(reflection, req, delegate, stepsManager)
+    }
+
+    private async reflection(
+        req: AgentRequest,
+        delegate: AgentHandlerDelegate,
+        stepsManager: ProcessManager
+    ): Promise<OmniboxAgentResponse> {
+        const { requestID, inputText, mentions, editorState, signal, chatBuilder } = req
+        const baseContextResult = await this.computeContext(
             requestID,
             { text: inputText, mentions },
             editorState,
             chatBuilder,
             delegate,
-            signal
+            signal,
+            true
         )
-
-        if (contextResult.abort) {
-            delegate.postDone({ abort: contextResult.abort })
-            return
-        }
-        if (contextResult.error) {
-            delegate.postError(contextResult.error, 'transcript')
-            return
+        const baseContext = baseContextResult.contextItems
+        // Early return if basic conditions aren't met.
+        if (baseContextResult.error || baseContextResult.abort || !baseContext) {
+            return { ...baseContextResult }
         }
 
-        signal.throwIfAborted()
+        const agent = new DeepCodyAgent(req.chatBuilder, this.chatClient, stepsManager)
 
-        const { mode, query } = contextAgent.nextActionMode
-        if (mode === 'search') {
+        return await agent.start(requestID, signal, baseContext)
+    }
+
+    private async processActionMode(
+        agentResponse: OmniboxAgentResponse,
+        req: AgentRequest,
+        delegate: AgentHandlerDelegate,
+        stepsManager: ProcessManager
+    ): Promise<void> {
+        const { mode, query } = agentResponse.next ?? {}
+        const corpusContext = agentResponse.contextItems ?? []
+        // Search mode
+        if (mode === 'search' && query) {
             const search = new SearchHandler()
-            await search.handle(
-                {
-                    ...req,
-                    inputText: PromptString.unsafe_fromLLMResponse(query),
-                },
-                delegate
-            )
+            req.inputText = PromptString.unsafe_fromLLMResponse(query)
+            await search.handle(req, delegate)
             delegate.postDone()
             return
         }
-
-        const corpusContext = contextResult.contextItems ?? []
-
+        // Edit mode
         if (mode === 'edit') {
-            chatBuilder.setLastMessageIntent('edit')
+            req.chatBuilder.setLastMessageIntent('edit')
             // const edit = new EditChatHandler(this.modelId, this.editor, this.chatClient, corpusContext)
             // await edit.handle(req, delegate)
-            this.edit(inputText, delegate, corpusContext)
+            await new AgenticEditHandler(this.modelId).handle(req, delegate)
             return
         }
-
+        // Chat mode
+        req.signal.throwIfAborted()
+        req.recorder.recordChatQuestionExecuted(corpusContext, { addMetadata: true, current: req.span })
         const { explicitMentions, implicitMentions } = getCategorizedMentions(corpusContext)
         const prompter = new DefaultPrompter(explicitMentions, implicitMentions, false)
-        const { prompt, context } = await this.buildPrompt(prompter, chatBuilder, signal, 8)
-
-        signal.throwIfAborted()
-
-        recorder.recordChatQuestionExecuted(corpusContext, { addMetadata: true, current: span })
-        this.streamAssistantResponse(
-            requestID,
-            prompt,
-            this.modelId,
-            signal,
-            chatBuilder,
-            delegate,
-            stepsManager,
-            context?.used
-        )
+        const { prompt } = await this.buildPrompt(prompter, req.chatBuilder, req.signal, 8)
+        this.streamAssistantResponse(req, prompt, this.modelId, delegate, stepsManager)
     }
 
     /**
@@ -131,8 +133,7 @@ export class AgenticHandler implements AgentHandler {
             error: (completedResponse: string, error: Error) => void
         },
         abortSignal: AbortSignal,
-        stepsManager: ProcessManager,
-        context?: ContextItem[]
+        stepsManager: ProcessManager
     ): Promise<void> {
         let lastContent = ''
         const typewriter = new Typewriter({
@@ -188,21 +189,18 @@ export class AgenticHandler implements AgentHandler {
     }
 
     private streamAssistantResponse(
-        requestID: string,
+        req: AgentRequest,
         prompt: Message[],
         model: ChatModel,
-        abortSignal: AbortSignal,
-        chatBuilder: ChatBuilder,
         delegate: AgentHandlerDelegate,
-        stepsManager: ProcessManager,
-        context?: ContextItem[]
+        stepsManager: ProcessManager
     ): void {
-        abortSignal.throwIfAborted()
+        req.signal.throwIfAborted()
         this.sendLLMRequest(
-            requestID,
+            req.requestID,
             prompt,
             model,
-            chatBuilder,
+            req.chatBuilder,
             {
                 update: content => {
                     delegate.postMessageInProgress({
@@ -230,46 +228,13 @@ export class AgenticHandler implements AgentHandler {
                     })
                     delegate.postDone()
                     if (isAbortErrorOrSocketHangUp(error)) {
-                        abortSignal.throwIfAborted()
+                        req.signal.throwIfAborted()
                     }
                 },
             },
-            abortSignal,
-            stepsManager,
-            context
+            req.signal,
+            stepsManager
         )
-    }
-
-    private async agenticContext(
-        contextAgent: DeepCodyAgent,
-        requestID: string,
-        { text, mentions }: HumanInput,
-        editorState: SerializedPromptEditorState | null,
-        chatBuilder: ChatBuilder,
-        delegate: AgentHandlerDelegate,
-        signal: AbortSignal
-    ): Promise<{
-        contextItems?: ContextItem[]
-        error?: Error
-        abort?: boolean
-    }> {
-        const baseContextResult = await this.computeContext(
-            requestID,
-            { text, mentions },
-            editorState,
-            chatBuilder,
-            delegate,
-            signal,
-            true
-        )
-        // Early return if basic conditions aren't met.
-        if (baseContextResult.error || baseContextResult.abort) {
-            return baseContextResult
-        }
-
-        const baseContext = baseContextResult.contextItems ?? []
-        const agenticContext = await contextAgent.getContext(requestID, signal, baseContext)
-        return { contextItems: agenticContext }
     }
 
     private async buildPrompt(
@@ -317,171 +282,5 @@ export class AgenticHandler implements AgentHandler {
         } catch (e) {
             return { error: new Error(`Unexpected error computing context, no context was used: ${e}`) }
         }
-    }
-
-    protected async edit(
-        instruction: PromptString,
-        delegate: AgentHandlerDelegate,
-        context: ContextItem[] = []
-    ): Promise<void> {
-        const editor = getEditor()?.active
-        if (!editor?.document) {
-            delegate.postError(new Error('No active editor'), 'transcript')
-            delegate.postDone()
-            return
-        }
-
-        const postProgressToWebview = (msgs: string[]) => {
-            const message = msgs.join('\n\n')
-            delegate.postMessageInProgress({
-                speaker: 'assistant',
-                text: PromptString.unsafe_fromLLMResponse(message),
-                model: this.modelId,
-            })
-        }
-
-        const document = editor.document
-        const fullRange = document.validateRange(new vscode.Range(0, 0, document.lineCount, 0))
-        let currentDiagnostics = vscode.languages.getDiagnostics()
-
-        let attempts = 0
-        const MAX_ATTEMPTS = 5
-        let currentInstruction = instruction
-
-        const messageInProgress = []
-
-        while (attempts < MAX_ATTEMPTS) {
-            attempts++
-
-            const task = await executeEdit({
-                configuration: {
-                    document,
-                    range: fullRange,
-                    userContextFiles: context,
-                    instruction: currentInstruction,
-                    mode: 'edit',
-                    intent: 'edit',
-                },
-            })
-
-            if (!task) {
-                delegate.postError(new Error('Failed to execute edit command'), 'transcript')
-                delegate.postDone()
-                return
-            }
-
-            const diffs =
-                task.diff ||
-                (task.replacement
-                    ? [
-                          {
-                              type: 'insertion',
-                              text: task.replacement,
-                              range: task.originalRange,
-                          },
-                      ]
-                    : [])
-
-            messageInProgress.push(this.generateDiffMessage(diffs, document))
-            postProgressToWebview(messageInProgress)
-
-            await editor.document.save()
-
-            const latestDiagnostics = vscode.languages.getDiagnostics()
-            const problems = getUpdatedDiagnostics(currentDiagnostics, latestDiagnostics)
-
-            if (!problems.length) {
-                break // Success! No more problems
-            }
-
-            if (attempts < MAX_ATTEMPTS) {
-                const problemText = getDiagnosticsTextBlock(problems)
-                const diagnosticsBlock = PromptString.unsafe_fromLLMResponse(problemText)
-                const retryMessage = `Attempt ${attempts}/${MAX_ATTEMPTS}: Found issues, trying to fix:\n${problemText}`
-                messageInProgress.push(retryMessage)
-                postProgressToWebview(messageInProgress)
-
-                // Update instruction with current problems for next attempt
-                currentInstruction = instruction.concat(
-                    ps`\nPrevious attempt resulted in these issues:\n${diagnosticsBlock}`
-                )
-                currentDiagnostics = latestDiagnostics
-            }
-        }
-
-        if (attempts === MAX_ATTEMPTS) {
-            messageInProgress.push(
-                `Reached maximum number of attempts (${MAX_ATTEMPTS}). Some issues may remain.`
-            )
-        }
-
-        postProgressToWebview(messageInProgress)
-        delegate.postDone()
-    }
-
-    // Helper method to generate diff message
-    private generateDiffMessage(diffs: Edit[], document: vscode.TextDocument): string {
-        const message = ['Here is the proposed change:\n\n```diff']
-        const documentLines = document.getText().split('\n')
-        const modifiedLines = new Map<number, Edit>()
-
-        for (const diff of diffs) {
-            for (let line = diff.range.start.line; line <= diff.range.end.line; line++) {
-                modifiedLines.set(line, diff)
-            }
-        }
-
-        for (let lineNumber = 0; lineNumber < documentLines.length; lineNumber++) {
-            const diff = modifiedLines.get(lineNumber)
-            if (!diff) {
-                message.push(` ${documentLines[lineNumber]}`)
-                continue
-            }
-
-            switch (diff.type) {
-                case 'deletion':
-                    if (lineNumber === diff.range.start.line) {
-                        message.push(
-                            document
-                                .getText(diff.range)
-                                .trimEnd()
-                                .split('\n')
-                                .map(line => `- ${line}`)
-                                .join('\n')
-                        )
-                    }
-                    break
-                case 'decoratedReplacement':
-                    if (lineNumber === diff.range.start.line) {
-                        message.push(
-                            diff.oldText
-                                .trimEnd()
-                                .split('\n')
-                                .map(line => `- ${line}`)
-                                .join('\n'),
-                            diff.text
-                                .trimEnd()
-                                .split('\n')
-                                .map(line => `+ ${line}`)
-                                .join('\n')
-                        )
-                    }
-                    break
-                case 'insertion':
-                    if (lineNumber === diff.range.start.line) {
-                        message.push(
-                            diff.text
-                                .trimEnd()
-                                .split('\n')
-                                .map(line => `+ ${line}`)
-                                .join('\n')
-                        )
-                    }
-                    break
-            }
-        }
-
-        message.push('```')
-        return message.join('\n')
     }
 }

@@ -28,6 +28,20 @@ import { CodyToolProvider, type ToolStatusCallback } from './CodyToolProvider'
 import type { ProcessManager } from './ProcessManager'
 import { ACTIONS_TAGS, CODYAGENT_PROMPTS } from './prompts'
 
+export interface OmniboxAgentResponse {
+    next?: OmniboxNextStep
+    contextItems?: ContextItem[]
+    error?: Error
+    abort?: boolean
+}
+
+interface OmniboxNextStep {
+    mode: OmniboxModes
+    query?: string
+}
+
+export type OmniboxModes = 'edit' | 'search' | 'chat'
+
 /**
  * A DeepCodyAgent handles advanced context retrieval and analysis for chat interactions.
  * It uses a multi-step process to:
@@ -61,7 +75,7 @@ export class DeepCodyAgent {
      */
     private stats = { context: 0, loop: 0 }
 
-    public nextActionMode = { mode: 'chat', query: '' }
+    private nextStep: OmniboxNextStep = { mode: 'chat', query: undefined }
 
     constructor(
         protected readonly chatBuilder: ChatBuilder,
@@ -86,6 +100,17 @@ export class DeepCodyAgent {
             onConfirmationNeeded: async (id, step) => {
                 return this.stepsManager.addConfirmationStep(id, step)
             },
+        }
+    }
+
+    public async start(
+        requestID: string,
+        chatAbortSignal: AbortSignal,
+        context: ContextItem[]
+    ): Promise<OmniboxAgentResponse> {
+        return {
+            next: this.nextStep,
+            contextItems: await this.getContext(requestID, chatAbortSignal, context),
         }
     }
 
@@ -143,46 +168,37 @@ export class DeepCodyAgent {
         maxLoops = 2
     ): Promise<ContextItem[]> {
         this.context = context
-        return wrapInActiveSpan('DeepCody.getContext', span =>
-            this._getContext(requestID, span, chatAbortSignal, maxLoops)
-        )
-    }
-
-    private async _getContext(
-        requestID: string,
-        span: Span,
-        chatAbortSignal: AbortSignal,
-        maxLoops = 2
-    ): Promise<ContextItem[]> {
-        span.setAttribute('sampled', true)
-        const startTime = performance.now()
-        await this.reviewLoop(requestID, span, chatAbortSignal, maxLoops)
-        telemetryRecorder.recordEvent('cody.deep-cody.context', 'reviewed', {
-            privateMetadata: {
-                requestID,
-                model: DeepCodyAgent.model,
-                traceId: span.spanContext().traceId,
-                chatAgent: 'deep-cody',
-            },
-            metadata: {
-                loop: this.stats.loop, // Number of loops run.
-                fetched: this.stats.context, // Number of context fetched.
-                context: this.context.length, // Number of context used.
-                durationMs: performance.now() - startTime,
-            },
-            billingMetadata: {
-                product: 'cody',
-                category: 'billable',
-            },
-        })
-        const knownModes = ['search', 'edit']
-        if (knownModes.includes(this.nextActionMode.mode)) {
-            this.statusCallback.onStream({
-                title: `Switch to ${this.nextActionMode.mode} mode`,
-                content: 'New intent detected: ' + this.nextActionMode.mode,
+        return wrapInActiveSpan('DeepCody.getContext', async span => {
+            span.setAttribute('sampled', true)
+            const startTime = performance.now()
+            await this.reviewLoop(requestID, span, chatAbortSignal, maxLoops)
+            telemetryRecorder.recordEvent('cody.deep-cody.context', 'reviewed', {
+                privateMetadata: {
+                    requestID,
+                    model: DeepCodyAgent.model,
+                    traceId: span.spanContext().traceId,
+                    chatAgent: 'deep-cody',
+                },
+                metadata: {
+                    loop: this.stats.loop, // Number of loops run.
+                    fetched: this.stats.context, // Number of context fetched.
+                    context: this.context.length, // Number of context used.
+                    durationMs: performance.now() - startTime,
+                },
+                billingMetadata: {
+                    product: 'cody',
+                    category: 'billable',
+                },
             })
-        }
-        return this.context
+            const knownModes = ['search', 'edit']
+            if (knownModes.includes(this.nextStep.mode)) {
+                this.statusCallback.onStream({
+                    title: `Switch to ${this.nextStep.mode} mode`,
+                    content: 'New intent detected: ' + this.nextStep.mode,
+                })
+            }
+            return this.context
+        })
     }
 
     private async reviewLoop(
@@ -234,10 +250,11 @@ export class DeepCodyAgent {
 
             const nextActionRes = nextMode(res)[0] || ''
             const [mode, query] = nextActionRes.split(':')
-            if (mode) {
-                this.nextActionMode.mode = mode
-                this.nextActionMode.query = query || ''
-                if (mode === 'search') {
+            const validatedMode = mode === 'edit' ? 'edit' : mode === 'search' ? 'search' : undefined
+            if (validatedMode) {
+                this.nextStep.mode = validatedMode
+                this.nextStep.query = query
+                if (validatedMode === 'search') {
                     return []
                 }
             }

@@ -22,6 +22,7 @@ export function getAgent(id: string, modelId: string, tools: AgentTools): AgentH
     if (agentRegistry.has(id)) {
         return agentRegistry.get(id)!(id, tools)
     }
+
     // If id is not found, assume it's a base model
     return new AgenticHandler(modelId, contextRetriever, editor, chatClient)
 }
