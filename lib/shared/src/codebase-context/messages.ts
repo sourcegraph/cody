@@ -141,6 +141,7 @@ export type ContextItem =
     | ContextItemCurrentRepository
     | ContextItemCurrentDirectory
     | ContextItemCurrentOpenTabs
+    | ContextItemMode
 
 /**
  * Context items to show by default in the chat input, or as suggestions in the chat UI.
@@ -249,6 +250,15 @@ export interface ContextItemSymbol extends ContextItemCommon {
      * that we need to resolve this context item mention via remote search file
      */
     remoteRepositoryName?: string
+}
+
+/**
+ * A mode context item that indicates the current mode of operation.
+ */
+export interface ContextItemMode extends ContextItemCommon {
+    type: 'mode'
+    mode: 'edit' | 'search' | 'chat'
+    title: string
 }
 
 /** The valid kinds of a symbol. */

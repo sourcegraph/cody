@@ -1,6 +1,7 @@
 import {
     type ContextItem,
     type ContextMentionProviderMetadata,
+    EDIT_MODE_PROVIDER_URI,
     FILE_CONTEXT_MENTION_PROVIDER,
     IGNORED_FILE_WARNING_LABEL,
     LARGE_FILE_WARNING_LABEL,
@@ -9,6 +10,7 @@ import {
     REMOTE_FILE_PROVIDER_URI,
     REMOTE_REPOSITORY_PROVIDER_URI,
     RULES_PROVIDER_URI,
+    SEARCH_MODE_PROVIDER_URI,
     SYMBOL_CONTEXT_MENTION_PROVIDER,
     WEB_PROVIDER_URI,
     displayLineRange,
@@ -31,9 +33,11 @@ import {
     LibraryBigIcon,
     LinkIcon,
     ListMinusIcon,
+    SearchIcon,
     SmileIcon,
     SquareDashedMousePointerIcon,
     SquareFunctionIcon,
+    SquarePen,
 } from 'lucide-react'
 import type { FunctionComponent, ReactNode } from 'react'
 import ConfluenceLogo from '../../providerIcons/confluence.svg?react'
@@ -183,6 +187,8 @@ export const iconForProvider: Record<
     [REMOTE_DIRECTORY_PROVIDER_URI]: FolderGitIcon,
     [WEB_PROVIDER_URI]: LinkIcon,
     [RULES_PROVIDER_URI]: BookCheckIcon,
+    [EDIT_MODE_PROVIDER_URI]: SquarePen,
+    [SEARCH_MODE_PROVIDER_URI]: SearchIcon,
 }
 
 const iconForItem: Record<
@@ -200,4 +206,6 @@ const iconForItem: Record<
     file: FileIcon,
     'square-dashed-mouse-pointer': SquareDashedMousePointerIcon,
     'layout-menubar': LayoutPanelTopIcon,
+    'square-pen': SquarePen,
+    search: SearchIcon,
 }
