@@ -8,10 +8,6 @@ import {
 } from '@sourcegraph/cody-shared'
 import { outputChannelLogger } from '../output-channel-logger'
 
-import { francAll } from 'franc-min'
-
-const containsMultipleSentences = /[.!?][\s\r\n]+\w/
-
 /**
  * Rewrite the query, using the fast completions model to pull out keywords.
  *
@@ -22,20 +18,9 @@ export async function rewriteKeywordQuery(
     query: PromptString,
     signal?: AbortSignal
 ): Promise<string> {
-    // In evals, we saw that rewriting tends to make performance worse for simple queries. So we only rewrite
-    // in cases where it clearly helps: when it's likely in a non-English language, or there are multiple
-    // sentences (so we really need to distill the question).
-    const queryString = query.toString()
-    if (!containsMultipleSentences.test(queryString)) {
-        const english = francAll(queryString).find(v => v[0] === 'eng')
-        if (english && english[1] > 0.9) {
-            return queryString
-        }
-    }
-
     try {
         const rewritten = await doRewrite(completionsClient, query, signal)
-        return rewritten.length !== 0 ? rewritten.sort().join(' ') : query.toString()
+        return rewritten.length !== 0 ? rewritten : query.toString()
     } catch (err) {
         outputChannelLogger.logDebug('rewrite-keyword-query', 'failed', { verbose: err })
         // If we fail to rewrite, just return the original query.
@@ -47,7 +32,7 @@ async function doRewrite(
     completionsClient: SourcegraphCompletionsClient,
     query: PromptString,
     signal?: AbortSignal
-): Promise<string[]> {
+): Promise<string> {
     const preamble = getSimplePreamble(undefined, 0, 'Default')
     const stream = completionsClient.stream(
         {
@@ -55,7 +40,14 @@ async function doRewrite(
                 ...preamble,
                 {
                     speaker: 'human',
-                    text: ps`You are helping the user search over a codebase. List some filename fragments that would match files relevant to read to answer the user's query. Present your results in a *single* XML list in the following format: <keywords><keyword><value>a single keyword</value><variants>a space separated list of synonyms and variants of the keyword, including acronyms, abbreviations, and expansions</variants><weight>a numerical weight between 0.0 and 1.0 that indicates the importance of the keyword</weight></keyword></keywords>. Here is the user query: <userQuery>${query}</userQuery>`,
+                    text: ps`You are helping a developer answer questions about their codebase. Write a keyword search to help find the relevant files to answer the question. Examples:
+- Find a symbol by name: \`<query>SearchJob</query>\`
+- Find a symbol using keywords: \`<query>search indexing queue</query>\`
+- Find where something is implemented: \`<query>check for authentication</query>\`
+- Find string literal in code: \`<query>"result limit hit"</query>\`
+
+ ONLY return the keyword search. Question: ${query}
+`,
                 },
                 { speaker: 'assistant' },
             ],
@@ -83,22 +75,8 @@ async function doRewrite(
     }
 
     const text = streamingText.at(-1) ?? ''
-    const parser = new XMLParser()
-    const document = parser.parse(text)
-
-    const keywords: { value?: string; variants?: string; weight?: number }[] =
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-        document?.keywords?.keyword ?? []
-    const result = new Set<string>()
-    for (const { value } of keywords) {
-        if (value) {
-            for (const v of value.split(' ')) {
-                result.add(v)
-            }
-        }
-    }
-
-    return [...result]
+    const match = text.match(/<query>(.*?)<\/query>/)
+    return match?.[1] ?? query.toString()
 }
 
 /**
