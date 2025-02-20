@@ -12,8 +12,10 @@ import {
     combineLatest,
     contextFiltersProvider,
     debounceTime,
+    displayLineRange,
     displayPathBasename,
     distinctUntilChanged,
+    expandToLineRange,
     featureFlagProvider,
     fromVSCodeEvent,
     isDotCom,
@@ -144,6 +146,28 @@ function getCurrentFileOrSelection({
                         source: ContextItemSource.Initial,
                         icon: 'file',
                     })
+
+                    const range = contextFile.range ? expandToLineRange(contextFile.range) : undefined
+                    // Add the current selection item if there's a range
+                    if (range) {
+                        items.push({
+                            ...contextFile,
+                            type: 'current-selection',
+                            title: 'Current Selection',
+                            description: `${displayPathBasename(contextFile.uri)}:${displayLineRange(
+                                range
+                            )}`,
+                            range,
+                            isTooLarge:
+                                userContextSize !== undefined &&
+                                contextFile.size !== undefined &&
+                                contextFile.size > userContextSize,
+                            // NOTE: Do not set source to initial, this is used for
+                            // picking the correct prompt template for selection during prompt building.
+                            source: ContextItemSource.Selection,
+                            icon: 'list-selection',
+                        })
+                    }
                 }
                 return Observable.of(items)
             }
