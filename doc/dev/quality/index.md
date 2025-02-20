@@ -77,12 +77,6 @@ Configure the dev models to use in your VS Code user settings:
       "apiKey": "$OPENAI_API_KEY",
       "apiEndpoint": "$OPENAI_API_ENDPOINT"
     },
-    // Ollama
-    {
-      "provider": "ollama",
-      "model": "$OLLAMA_MODEL_NAME",
-      "apiEndpoint": "$OLLAMA_API_ENDPOINT"
-    }
   ]
 }
 ```
