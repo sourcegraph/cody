@@ -177,12 +177,6 @@ export class EditManager implements vscode.Disposable {
         })
     }
 
-    /**
-     * "executeEdit" can now optionally prefetch the LLM response by calling
-     * "provider.prefetchEdit" instead of "provider.startEdit." This is controlled
-     * by the "prefetchOnly" parameter. If true, we kick off streaming in the background
-     * but do not immediately apply the edit to the user's file.
-     */
     public async executeEdit(args: ExecuteEditArguments = {}): Promise<FixupTask | undefined> {
         const {
             configuration = {},
@@ -298,7 +292,7 @@ export class EditManager implements vscode.Disposable {
         const provider = this.getProviderForTask(task)
 
         if (isPrefetch) {
-            await provider.prefetchEdit()
+            provider.prefetchEdit()
         } else {
             this.options.controller.startDecorator(task)
             await provider.startEdit()

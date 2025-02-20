@@ -1,5 +1,4 @@
 import type { Context } from '@opentelemetry/api'
-import { LRUCache } from 'lru-cache'
 import type React from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
@@ -39,8 +38,6 @@ interface ChatboxProps {
     isPromptsV2Enabled?: boolean
     isWorkspacesUpgradeCtaEnabled?: boolean
 }
-
-const prefetchedEdits = new LRUCache<string, true>({ max: 100 })
 
 export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>> = ({
     messageInProgress,
@@ -138,28 +135,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
         }
 
         return {
-            onPrefetchStart: (
-                id: string,
-                text: string,
-                instruction?: PromptString,
-                fileName?: string
-            ): void => {
-                // Ensure that we prefetch once per each suggested chat edit.
-                if (prefetchedEdits.has(id)) {
-                    return
-                }
-
-                prefetchedEdits.set(id, true)
-                onSubmit({ isPrefetch: true, id, text, instruction, fileName })
-            },
-            onSubmit: (
-                id: string,
-                text: string,
-                instruction?: PromptString,
-                fileName?: string
-            ): void => {
-                onSubmit({ isPrefetch: false, id, text, instruction, fileName })
-            },
+            onSubmit,
             onAccept: (id: string) => {
                 vscodeAPI.postMessage({
                     command: 'smartApplyAccept',

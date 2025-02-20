@@ -81,10 +81,9 @@ export class EditProvider {
 
     /**
      * Attempt to start streaming in "prefetch mode." If a stream is already
-     * in progress for this task, do nothing. The user has not clicked "apply"
-     * yet, so we do NOT call controller.startTask here.
+     * in progress for this task, do nothing.
      */
-    public async prefetchEdit(): Promise<void> {
+    public prefetchEdit(): void {
         const { task } = this.config
         const session = this.config.cacheManager.getStreamSession(task.id)
         if (!session) {

@@ -74,6 +74,7 @@ export const AssistantMessageCell: FunctionComponent<{
             () => (message.text ? reformatBotMessageForChat(message.text).toString() : ''),
             [message.text]
         )
+        console.log(`\ndisplayMarkdown: ${displayMarkdown}`)
 
         const chatModel = useChatModelByID(message.model, models)
         const isAborted = isAbortErrorOrSocketHangUp(message.error)
