@@ -516,7 +516,7 @@ export class EditManager implements vscode.Disposable {
                 document: configuration.document,
                 range,
                 mode: 'edit',
-                instruction: ps`Ensuring that you do not duplicate code outside the selection, apply:\n${replacementCode}`,
+                instruction: ps`Ensuring that you do not duplicate code that is outside of the selection, apply the following change:\n${replacementCode}`,
                 model,
                 intent: 'edit',
             },
