@@ -387,23 +387,25 @@ export const HumanMessageEditor: FunctionComponent<{
 
     const defaultContext = useDefaultContextForChat()
     useEffect(() => {
-        // Don't show the initial codebase context if the model doesn't support streaming
-        // as including context result in longer processing time.
-        if(!currentChatModel?.tags?.includes(ModelTag.StreamDisabled)) {
+        if (isSent || !isFirstMessage || !editorRef.current) {
             return
         }
+
         // List of mention chips added to the first message.
-        if (!isSent && isFirstMessage) {
-            const editor = editorRef.current
-            if (editor) {
-                let { initialContext } = defaultContext
-                // Remove documentation open-link items; they do not provide context.
-                // Remove current selection to avoid crowding the input box. User can always add it back.
-                const removedInitialContextType = ['open-link', 'current-selection']
-                const filteredItems = initialContext.filter(item => !removedInitialContextType.includes(item.type))
-                void editor.setInitialContextMentions(filteredItems)
-            }
-        }
+        const { initialContext } = defaultContext
+        const editor = editorRef.current
+
+        // Remove documentation open-link items; they do not provide context.
+        // Remove current selection to avoid crowding the input box. User can always add it back.
+        // Remove tree type if streaming is not supported.
+        const excludedTypes = new Set([
+            'open-link',
+            'current-selection',
+            ...(currentChatModel?.tags?.includes(ModelTag.StreamDisabled) ? ['tree'] : []),
+        ])
+
+        const filteredItems = initialContext.filter(item => !excludedTypes.has(item.type))
+        void editor.setInitialContextMentions(filteredItems)
     }, [defaultContext, isSent, isFirstMessage, currentChatModel])
 
     const focusEditor = useCallback(() => editorRef.current?.setFocus(true), [])
