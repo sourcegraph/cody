@@ -212,3 +212,18 @@ body[data-vscode-theme-kind='vscode-light'] .content pre > code {
     color: var(--vscode-descriptionForeground);
     margin-left: auto;
 }
+
+.lineChangesContainer {
+    display: flex;
+    gap: 4px;
+    font-size: 12px;
+    font-family: monospace;
+}
+
+.additions {
+    color: #28a745;
+}
+
+.deletions {
+    color: #d73a49;
+}

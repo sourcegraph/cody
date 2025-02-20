@@ -188,6 +188,18 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
                     }
                 }
 
+                const { additions, deletions } = getLineChanges(preText)
+
+                if (additions > 0 || deletions > 0) {
+                    const lineChangesContainer = document.createElement('div')
+                    lineChangesContainer.className = styles.lineChangesContainer
+                    lineChangesContainer.innerHTML = `
+                        ${additions > 0 ? `<span class="${styles.additions}">+${additions}</span>` : ''}
+                        ${deletions > 0 ? `<span class="${styles.deletions}">-${deletions}</span>` : ''}
+                    `
+                    metadataContainer.append(lineChangesContainer)
+                }
+
                 if (fileName) {
                     const fileNameContainer = document.createElement('div')
                     fileNameContainer.className = styles.fileNameContainer
@@ -219,4 +231,12 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
             </MarkdownFromCody>
         </div>
     )
+}
+
+function getLineChanges(codeText: string): { additions: number; deletions: number } {
+    // Count lines starting with + and - in the code block
+    const lines = codeText.split('\n')
+    const additions = lines.filter(line => line.startsWith('+')).length
+    const deletions = lines.filter(line => line.startsWith('-')).length
+    return { additions, deletions }
 }
