@@ -67,7 +67,7 @@ function extractLatestChangelog(changelog: string, currentVersion: string): {con
     for (const line of lines) {
         if (found) {
             // If previous version header found, stop appending changelog content
-            if (line.startsWith(`## `)) {
+            if (line.startsWith("## ")) {
                 const versionMatches = /^## (?<dottedVersion>\d+\.\d+\.\d+)$/.exec(line)
                 if (!versionMatches?.groups) {
                     throw new Error(`Malformed version line: ${line}`)
