@@ -75,10 +75,10 @@ describe('generateSuggestionAsImage', () => {
                 'additions'
             )
             expect(lightBuffer).toMatchImageSnapshot({
-                customSnapshotIdentifier: 'unhighlighted-additions-suggestion-light',
+                customSnapshotIdentifier: 'no-highlighting-additions-suggestion-light',
             })
             expect(darkBuffer).toMatchImageSnapshot({
-                customSnapshotIdentifier: 'unhighlighted-additions-suggestion-dark',
+                customSnapshotIdentifier: 'no-highlighting-additions-suggestion-dark',
             })
         })
 
@@ -89,10 +89,10 @@ describe('generateSuggestionAsImage', () => {
                 'unified'
             )
             expect(lightBuffer).toMatchImageSnapshot({
-                customSnapshotIdentifier: 'unhighlighted-unified-suggestion-light',
+                customSnapshotIdentifier: 'no-highlighting-unified-suggestion-light',
             })
             expect(darkBuffer).toMatchImageSnapshot({
-                customSnapshotIdentifier: 'unhighlighted-unified-suggestion-dark',
+                customSnapshotIdentifier: 'no-highlighting-unified-suggestion-dark',
             })
         })
     })
