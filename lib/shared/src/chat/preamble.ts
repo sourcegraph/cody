@@ -4,6 +4,10 @@ import type { Message } from '../sourcegraph-api'
 
 const DEFAULT_PREAMBLE = ps`You are Cody, an AI coding assistant from Sourcegraph.`
 
+export function getDefaultSystemPrompt(): PromptString {
+    return DEFAULT_PREAMBLE
+}
+
 /**
  * For chat, we add an additional preamble to encourage the model to
  * produce code blocks that we can associate executable commands or content with existing file paths.
@@ -15,6 +19,10 @@ When showing code context, put code outside the replacement area in separate cod
 For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.`
 
 const CHAT_PREAMBLE = DEFAULT_PREAMBLE.concat(SMART_APPLY_PREAMBLE)
+
+export function getChatPreamble(): PromptString {
+    return CHAT_PREAMBLE
+}
 
 export function getSimplePreamble(
     model: ChatModel | EditModel | undefined,

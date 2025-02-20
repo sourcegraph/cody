@@ -3,6 +3,7 @@ import type React from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { clsx } from 'clsx'
+import { LoaderIcon, PlusIcon } from 'lucide-react'
 import type { FixupTaskID } from '../../../src/non-stop/FixupTask'
 import { CodyTaskState } from '../../../src/non-stop/state'
 import { type ClientActionListener, useClientActionListener } from '../../client/clientState'
@@ -12,7 +13,7 @@ import type { PriorHumanMessageInfo } from '../cells/messageCell/assistant/Assis
 import styles from './ChatMessageContent.module.css'
 import { GuardrailsStatusController } from './GuardRailStatusController'
 import { createButtons, createButtonsExperimentalUI } from './create-buttons'
-import { getCodeBlockId, getFileName } from './utils'
+import { extractThinkContent, getCodeBlockId, getFileName } from './utils'
 
 export interface CodeBlockActionsProps {
     copyButtonOnSubmit: (text: string, event?: 'Keydown' | 'Button') => void
@@ -212,10 +213,43 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
         smartApplyStates,
     ])
 
+    const { displayContent, thinkContent, isThinking } = useMemo(
+        () => extractThinkContent(displayMarkdown),
+        [displayMarkdown]
+    )
+
     return (
         <div ref={rootRef} data-testid="chat-message-content">
+            {thinkContent.length > 0 && (
+                <details
+                    open
+                    className="tw-container tw-mb-7 tw-border tw-border-gray-500/20 dark:tw-border-gray-600/40 tw-rounded-lg tw-overflow-hidden tw-backdrop-blur-sm hover:tw-bg-gray-200/50 dark:hover:tw-bg-gray-700/50"
+                    title="Thinking & Reasoning Space"
+                >
+                    <summary
+                        className={clsx(
+                            'tw-flex tw-items-center tw-gap-2 tw-px-3 tw-py-2 tw-bg-gray-100/50 dark:tw-bg-gray-800/80 tw-cursor-pointer tw-select-none tw-transition-colors',
+                            {
+                                'tw-animate-pulse': isThinking,
+                            }
+                        )}
+                    >
+                        {isThinking ? (
+                            <LoaderIcon size={16} className="tw-animate-spin tw-text-muted-foreground" />
+                        ) : (
+                            <PlusIcon size={16} className="tw-text-muted-foreground" />
+                        )}
+                        <span className="tw-font-medium tw-text-gray-600 dark:tw-text-gray-300">
+                            {isThinking ? 'Thinking...' : 'Thought Process'}
+                        </span>
+                    </summary>
+                    <div className="tw-px-4 tw-py-3 tw-mx-4 tw-text-sm tw-prose dark:tw-prose-invert tw-max-w-none tw-leading-relaxed tw-text-base/7 tw-text-muted-foreground">
+                        {thinkContent}
+                    </div>
+                </details>
+            )}
             <MarkdownFromCody className={clsx(styles.content, className)}>
-                {displayMarkdown}
+                {displayContent}
             </MarkdownFromCody>
         </div>
     )
