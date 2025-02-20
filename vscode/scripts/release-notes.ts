@@ -33,7 +33,7 @@ async function main(): Promise<void> {
     console.log(`Writing release notes for ${currentVersion}...`)
     
     const { content, previousVersion } = extractLatestChangelog(changelogBody, currentVersion)
-    let summary = await summarizeChangelog(content)
+    const summary = await summarizeChangelog(content)
     const minor = currentVersion.split('.').slice(1, 2).join('.')
     const previousMinor = extractPreviousMinor(minor)
 
