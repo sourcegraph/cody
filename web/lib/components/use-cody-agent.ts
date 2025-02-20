@@ -26,6 +26,7 @@ interface UseCodyWebAgentInput {
 }
 
 export interface CodyWebAgent {
+    client: AgentClient
     vscodeAPI: VSCodeWrapper
     createNewChat: () => Promise<void>
 }
@@ -41,7 +42,7 @@ export async function createCodyAgent(input: UseCodyWebAgentInput): Promise<Cody
     const activeWebviewPanelIDRef = { current: '' }
 
     try {
-        const agent = await createAgentClient({
+        const client = await createAgentClient({
             customHeaders,
             telemetryClientName,
             createAgentWorker,
@@ -52,24 +53,24 @@ export async function createCodyAgent(input: UseCodyWebAgentInput): Promise<Cody
         // Special override for chat creating for Cody Web, otherwise the create new chat doesn't work
         // TODO: Move this special logic to the Cody Web agent handle "chat/web/new"
         const createNewChat = async () => {
-            const { panelId, chatId } = await agent.rpc.sendRequest<{
+            const { panelId, chatId } = await client.rpc.sendRequest<{
                 panelId: string
                 chatId: string
             }>('chat/web/new', null)
 
             activeWebviewPanelIDRef.current = panelId
 
-            await agent.rpc.sendRequest('webview/receiveMessage', {
+            await client.rpc.sendRequest('webview/receiveMessage', {
                 id: activeWebviewPanelIDRef.current,
                 message: { chatID: chatId, command: 'restoreHistory' },
             })
         }
 
-        const vscodeAPI = createVSCodeAPI({ activeWebviewPanelIDRef, createNewChat, client: agent })
+        const vscodeAPI = createVSCodeAPI({ activeWebviewPanelIDRef, createNewChat, client: client })
         // Runtime sync side effect, ensure that later any cody UI
         // components will have access to the mocked/synthetic VSCode API
         setVSCodeWrapper(vscodeAPI)
-        return { vscodeAPI, createNewChat }
+        return { vscodeAPI, createNewChat, client }
     } catch (error) {
         console.error('Cody Web Agent creation failed', error)
         throw error

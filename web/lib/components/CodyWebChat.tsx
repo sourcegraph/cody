@@ -3,6 +3,7 @@ import {
     type FC,
     type FunctionComponent,
     useCallback,
+    useEffect,
     useLayoutEffect,
     useMemo,
     useRef,
@@ -127,6 +128,12 @@ export const CodyWebChat: FunctionComponent<CodyWebChatProps> = ({
     if (agent === null) {
         return <ChatSkeleton className={classNames(className, styles.root)} />
     }
+
+    useEffect(() => {
+        agent.client.rpc.sendNotification('workspaceFolder/didChange', {
+            uris: initialContext?.repository.name ? [`repo:${initialContext.repository.name}`] : [],
+        })
+    }, [initialContext?.repository, agent.client])
 
     return (
         <AppWrapper>
