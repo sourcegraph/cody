@@ -36,16 +36,18 @@ const INITIAL_CONTEXT: InitialContext = {
     isDirectory: true,
 }
 
+const agentPromise = createCodyAgent({
+    accessToken,
+    serverEndpoint,
+    createAgentWorker: CREATE_AGENT_WORKER,
+    telemetryClientName: 'codydemo.testing',
+})
+
 export const App: FC = () => {
     const [agent, setAgent] = useState<CodyWebAgent | null>(null)
 
     useEffect(() => {
-        createCodyAgent({
-            accessToken,
-            serverEndpoint,
-            createAgentWorker: CREATE_AGENT_WORKER,
-            telemetryClientName: 'codydemo.testing',
-        }).then(agent => {
+        agentPromise.then(agent => {
             agent?.createNewChat()
             setAgent(agent)
         }, setAgent)
