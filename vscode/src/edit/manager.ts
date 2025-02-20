@@ -334,7 +334,6 @@ export class EditManager implements vscode.Disposable {
                 const editor = await vscode.window.showTextDocument(document.uri)
 
                 if (configuration.isNewFile) {
-                    // Extracted insertion logic
                     return this.applyInsertionEdit({
                         configuration,
                         editor,
@@ -409,7 +408,6 @@ export class EditManager implements vscode.Disposable {
                 editor.revealRange(selection.range, vscode.TextEditorRevealType.InCenter)
 
                 if (selection.range.isEmpty) {
-                    // Extracted insertion logic
                     return this.applyInsertionEdit({
                         configuration,
                         editor,
