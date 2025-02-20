@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { type AuthStatus, DOTCOM_URL } from '@sourcegraph/cody-shared'
+import { InvalidAccessTokenError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
 import { newAuthStatus } from './utils'
 
 describe('validateAuthStatus', () => {
@@ -13,7 +14,7 @@ describe('validateAuthStatus', () => {
         ).toStrictEqual<AuthStatus>({
             endpoint: DOTCOM_URL.toString(),
             authenticated: false,
-            error: { type: 'invalid-access-token' },
+            error: new InvalidAccessTokenError(),
             pendingValidation: false,
         })
     })
@@ -71,7 +72,7 @@ describe('validateAuthStatus', () => {
             authenticated: false,
             endpoint: 'https://example.com',
             pendingValidation: false,
-            error: { type: 'invalid-access-token' },
+            error: new InvalidAccessTokenError(),
         })
     })
 })
