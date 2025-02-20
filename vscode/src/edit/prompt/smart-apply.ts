@@ -173,10 +173,10 @@ function getFullRangeofDocument(document: vscode.TextDocument): vscode.Range {
     return range
 }
 
-export type SmartSelectionType = 'insert' | 'selection' | 'entire-file'
+export type SmartApplySelectionType = 'insert' | 'selection' | 'entire-file'
 
-interface SmartSelection {
-    type: SmartSelectionType
+interface SmartApplySelection {
+    type: SmartApplySelectionType
     range: vscode.Range
 }
 
@@ -188,7 +188,7 @@ export async function getSmartApplySelection(
     model: EditModel,
     client: ChatClient,
     codyApiVersion: number
-): Promise<SmartSelection | null> {
+): Promise<SmartApplySelection | null> {
     let originalCode: string
     try {
         originalCode = await promptModelForOriginalCode(

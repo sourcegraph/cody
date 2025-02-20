@@ -13,7 +13,7 @@ import type * as vscode from 'vscode'
 import { gitMetadataForCurrentEditor } from '../repository/git-metadata-for-editor'
 import { GitHubDotComRepoMetadata } from '../repository/githubRepoMetadata'
 import { splitSafeMetadata } from '../services/telemetry-v2'
-import type { SmartSelectionType } from './prompt/smart-apply'
+import type { SmartApplySelectionType } from './prompt/smart-apply'
 
 const MAX_LOGGING_PAYLOAD_SIZE_BYTES = 1024 * 1024 // 1 MB
 
@@ -34,7 +34,7 @@ interface SmartApplyBaseContext extends RepoContext {
 }
 
 interface SmartApplySelectionContext extends SmartApplyBaseContext {
-    selectionType: SmartSelectionType
+    selectionType: SmartApplySelectionType
     selectionRange: [number, number]
     selectionTimeMs: number
 }
@@ -118,7 +118,7 @@ export class SmartApplyContextLogger {
 
     public addSmartApplySelectionContext(
         requestId: SmartApplyLoggingRequestId,
-        selectionType: SmartSelectionType,
+        selectionType: SmartApplySelectionType,
         selectionRange: vscode.Range,
         selectionTimeMs: number,
         document: vscode.TextDocument

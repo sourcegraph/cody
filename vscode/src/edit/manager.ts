@@ -334,31 +334,14 @@ export class EditManager implements vscode.Disposable {
                 const editor = await vscode.window.showTextDocument(document.uri)
 
                 if (configuration.isNewFile) {
-                    // We are creating a new file, this means we are only _adding_ new code and _inserting_ it into the document.
-                    // We do not need to re-prompt the LLM for this, let's just add the code directly.
-                    const task = await this.createTaskAndCheckForDuplicates({
-                        document,
-                        instruction: configuration.instruction,
-                        userContextFiles: [],
-                        selectionRange: new vscode.Range(0, 0, 0, 0),
-                        intent: 'add',
-                        mode: 'insert',
+                    // Extracted insertion logic
+                    return this.applyInsertionEdit({
+                        configuration,
+                        editor,
                         model,
-                        rules: null,
                         source,
-                        destinationFile: configuration.document.uri,
-                        insertionPoint: undefined,
-                        telemetryMetadata: {},
-                        taskId: configuration.id,
-                        isPrefetch: false,
+                        selection: null,
                     })
-                    if (!task) {
-                        return
-                    }
-                    this.logExectuedTelemetryEvent(task)
-                    const provider = this.getProviderForTask(task)
-                    await provider.applyEdit(configuration.replacement)
-                    return task
                 }
 
                 // Apply some decorations to the editor, this showcases that Cody is working on the full file range
@@ -426,49 +409,14 @@ export class EditManager implements vscode.Disposable {
                 editor.revealRange(selection.range, vscode.TextEditorRevealType.InCenter)
 
                 if (selection.range.isEmpty) {
-                    // We determined a selection, but it was empty. This means that we will be _adding_ new code
-                    // and _inserting_ it into the document. We do not need to re-prompt the LLM for this, let's just add the code directly.
-                    let insertionRange = selection.range
-                    if (
-                        selection.type === 'insert' &&
-                        document.lineAt(document.lineCount - 1).text.trim().length !== 0
-                    ) {
-                        // Inserting to the bottom of the file, but the last line is not empty
-                        // Inject an additional new line for us to use as the insertion range.
-                        await editor.edit(
-                            editBuilder => {
-                                editBuilder.insert(selection.range.start, '\n')
-                            },
-                            { undoStopAfter: false, undoStopBefore: false }
-                        )
-
-                        // Update the range to reflect the new end of document
-                        insertionRange = document.lineAt(document.lineCount - 1).range
-                    }
-
-                    const task = await this.createTaskAndCheckForDuplicates({
-                        document,
-                        instruction: configuration.instruction,
-                        userContextFiles: [],
-                        selectionRange: insertionRange,
-                        intent: 'add',
-                        mode: 'insert',
+                    // Extracted insertion logic
+                    return this.applyInsertionEdit({
+                        configuration,
+                        editor,
                         model,
-                        rules: null,
                         source,
-                        destinationFile: configuration.document.uri,
-                        insertionPoint: undefined,
-                        telemetryMetadata: {},
-                        taskId: configuration.id,
-                        isPrefetch: false,
+                        selection,
                     })
-                    if (!task) {
-                        return
-                    }
-                    this.logExectuedTelemetryEvent(task)
-                    const provider = this.getProviderForTask(task)
-                    await provider.applyEdit('\n' + configuration.replacement)
-                    return task
                 }
 
                 // We have a selection to replace, we re-prompt the LLM to generate the changes to ensure that
@@ -633,6 +581,74 @@ export class EditManager implements vscode.Disposable {
         }
 
         return provider
+    }
+
+    private async applyInsertionEdit({
+        configuration,
+        editor,
+        model,
+        source,
+        selection,
+    }: {
+        configuration: SmartApplyArguments['configuration']
+        editor: vscode.TextEditor
+        model: string
+        source: EventSource
+        selection: { range: vscode.Range; type: string } | null
+    }): Promise<FixupTask | undefined> {
+        const { id, document, replacement, instruction, isNewFile } = configuration
+
+        let insertionRange: vscode.Range
+        let finalReplacement: string
+
+        if (isNewFile) {
+            insertionRange = new vscode.Range(0, 0, 0, 0)
+            finalReplacement = replacement
+        } else {
+            // For non-new files, selection must be provided
+            insertionRange = selection!.range
+            if (
+                selection!.type === 'insert' &&
+                document.lineAt(document.lineCount - 1).text.trim().length !== 0
+            ) {
+                // Inserting to the bottom of the file, but the last line is not empty
+                // Inject an additional new line for us to use as the insertion range.
+                await editor.edit(
+                    editBuilder => {
+                        editBuilder.insert(selection!.range.start, '\n')
+                    },
+                    { undoStopAfter: false, undoStopBefore: false }
+                )
+
+                // Update the range to reflect the new end of document
+                insertionRange = document.lineAt(document.lineCount - 1).range
+            }
+            finalReplacement = '\n' + replacement
+        }
+
+        const task = await this.createTaskAndCheckForDuplicates({
+            document,
+            instruction,
+            userContextFiles: [],
+            selectionRange: insertionRange,
+            intent: 'add',
+            mode: 'insert',
+            model,
+            rules: null,
+            source,
+            destinationFile: document.uri,
+            insertionPoint: undefined,
+            telemetryMetadata: {},
+            taskId: id,
+            isPrefetch: false,
+        })
+        if (!task) {
+            return
+        }
+        this.logExectuedTelemetryEvent(task)
+        const provider = this.getProviderForTask(task)
+        await provider.applyEdit(finalReplacement)
+        return task
     }
 
     public dispose(): void {
