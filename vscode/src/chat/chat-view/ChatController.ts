@@ -702,12 +702,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     }
 
     private intentFromMentions(mentions: ContextItem[]): ChatMessage['intent'] {
-        const mode = mentions.find(mention => mention.type === 'mode')
-        if (mode) {
-            return mode.mode
-        }
-
-        return undefined
+        return mentions.find(mention => mention.type === 'mode')?.mode
     }
 
     private async sendChat(

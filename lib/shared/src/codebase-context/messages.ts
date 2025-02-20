@@ -253,7 +253,7 @@ export interface ContextItemSymbol extends ContextItemCommon {
 }
 
 /**
- * A mode context item that indicates the current mode of operation.
+ * A mode context item that indicates the intent/mode for the operation.
  */
 export interface ContextItemMode extends ContextItemCommon {
     type: 'mode'
