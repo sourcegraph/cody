@@ -4,10 +4,10 @@ on:
   workflow_dispatch:
     inputs:
       editor:
-        description: 'Select editor to create changelog for'
+        description: "Select editor to create changelog for"
         required: true
         type: choice
-        default: 'VS Code'
+        default: "VS Code"
         options:
           - VS Code
       version:
@@ -18,14 +18,14 @@ on:
         required: true
         type: string
       bump_version:
-        description: 'Optional: Bump VS Code version - If checked, the VS Code version will be bumped to the specified version from above.'
+        description: "Optional: Bump VS Code version - If checked, the VS Code version will be bumped to the specified version from above."
         required: false
         type: boolean
         default: false
       release_tag:
         description: |
           Optional: Generate changelog since a specific release. ex - vscode-v1.58
-        
+
           If no release_tag is specified, the changelog will be generated from the latest release tag.
         required: false
         type: string
@@ -47,14 +47,11 @@ jobs:
           git config --global user.name 'sourcegraph-bot'
           git config --global user.email 'bot@sourcegraph.com'
           git fetch --tags origin
-      - name: Download changelog
-        env:
-          GH_TOKEN: ${{ secrets.DEVX_SERVICE_GH_TOKEN }}
+      - name: Setup new changelog binary
         run: |
-          # Download and run changelog generator
-          tagName=$(gh release -R sourcegraph/devx-service list --exclude-drafts --exclude-pre-releases -L 1 --json tagName -q '.[] | .tagName')
-          gh release -R sourcegraph/devx-service download ${tagName} --pattern changelog
-          chmod +x changelog
+          # Make the local changelog binary executable
+          chmod +x .github/workflows/changelog
+
       - name: Generate changelog
         env:
           GH_TOKEN: ${{ secrets.DEVX_SERVICE_GH_TOKEN }}
@@ -86,7 +83,7 @@ jobs:
             CHANGELOG_PATH="vscode/CHANGELOG.md"
             PR_BRANCH="release/vscode-v%s"
           fi
-          
+
           # Get current release commit
           export RELEASE_LATEST_COMMIT=$(git rev-parse HEAD)
           echo "Latest Commit: $RELEASE_LATEST_COMMIT"
