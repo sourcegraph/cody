@@ -23,6 +23,11 @@ interface PromptBuilderContextResult {
     added: ContextItem[]
 }
 
+interface PromptCachingSetting {
+    featureFlag: boolean
+    isEnrolled?: boolean
+}
+
 const ASSISTANT_MESSAGE = { speaker: 'assistant', text: ps`Ok.` } as Message
 /**
  * PromptBuilder constructs a full prompt given a charLimit constraint.
@@ -48,17 +53,23 @@ export class PromptBuilder {
 
     private constructor(private readonly tokenCounter: TokenCounter) {}
 
-    private _isCacheEnabled: boolean | undefined
+    private readonly _isCacheEnabled: PromptCachingSetting = {
+        featureFlag: Boolean(
+            storeLastValue(
+                featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyPromptCachingOnMessages)
+            )?.value
+        ),
+        isEnrolled: false,
+    }
+
     private get isCacheEnabled(): boolean {
-        if (this._isCacheEnabled === undefined) {
-            this._isCacheEnabled = logFirstEnrollmentEvent(
+        if (!this._isCacheEnabled.isEnrolled) {
+            this._isCacheEnabled.isEnrolled = logFirstEnrollmentEvent(
                 FeatureFlag.CodyPromptCachingOnMessages,
-                !!storeLastValue(
-                    featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyPromptCachingOnMessages)
-                ).value
+                this._isCacheEnabled.featureFlag
             )
         }
-        return this._isCacheEnabled
+        return this._isCacheEnabled.featureFlag
     }
 
     public build(): Message[] {
