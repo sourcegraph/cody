@@ -281,7 +281,7 @@ class CodyAutocompleteManager {
                 completionText, items, editor, AutocompleteRendererType.INLINE)
         inlay =
             inlayModel.addInlineElement(
-                cursorOffset + inlayOffset, /* relatesToPrecedingText = */ true, renderer)
+                cursorOffset + inlayOffset, /* relatesToPrecedingText= */ true, renderer)
       }
     }
     val lines = formattedCompletionText.lines()
