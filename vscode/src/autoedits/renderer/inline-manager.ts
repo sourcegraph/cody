@@ -120,23 +120,6 @@ export class AutoEditsInlineRendererManager
             unchangedLines: withoutUsedChanges(decorationInfo.unchangedLines),
         }
 
-        // If there are still additions, we can't solely rely on the completion.
-        const remainingAdditions =
-            decorationInfoWithoutUsedChanges.addedLines.length +
-            decorationInfoWithoutUsedChanges.modifiedLines.filter(line =>
-                line.changes.some(change => change.type === 'insert')
-            ).length
-
-        // TODO: This is a hack to stop mixing completions and
-        if (remainingAdditions > 0) {
-            console.log('NO COMPLETION', decorationInfoWithoutUsedChanges, remainingAdditions)
-            return {
-                inlineCompletionItems: null,
-                updatedDecorationInfo: decorationInfo,
-                updatedPrediction: prediction,
-            }
-        }
-
         return {
             inlineCompletionItems,
             updatedDecorationInfo: decorationInfoWithoutUsedChanges,

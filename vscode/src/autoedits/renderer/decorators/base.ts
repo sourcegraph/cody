@@ -1,5 +1,10 @@
 import type * as vscode from 'vscode'
 
+export interface AutoEditInlineDecorations {
+    type: vscode.TextEditorDecorationType
+    options: vscode.DecorationOptions[]
+}
+
 /**
  * Represents a decorator that manages VS Code editor decorations for auto-edit suggestions.
  *
@@ -31,6 +36,8 @@ export interface AutoEditsDecorator extends vscode.Disposable {
      *        and how they should be decorated in the editor.
      */
     setDecorations(decorationInfo: DecorationInfo): void
+
+    setDecorationsV2(decorations: AutoEditInlineDecorations[]): void
 
     /**
      * Checks if the decorator can render decorations for the given decoration information.

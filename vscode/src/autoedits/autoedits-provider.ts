@@ -29,9 +29,7 @@ import { type CodeToReplaceData, getCodeToReplaceData } from './prompt/prompt-ut
 import { ShortTermPromptStrategy } from './prompt/short-term-diff-prompt-strategy'
 import type { DecorationInfo } from './renderer/decorators/base'
 import { DefaultDecorator } from './renderer/decorators/default-decorator'
-import { InlineDiffDecorator } from './renderer/decorators/inline-diff-decorator'
 import { getDecorationInfo } from './renderer/diff-utils'
-import { AutoEditsInlineRendererManager } from './renderer/inline-manager'
 import { AutoEditsDefaultRendererManager, type AutoEditsRendererManager } from './renderer/manager'
 import {
     extractAutoEditResponseFromCurrentDocumentCommentTemplate,
@@ -68,14 +66,6 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
     public readonly rendererManager: AutoEditsRendererManager
     private readonly modelAdapter: AutoeditsModelAdapter
 
-    /**
-     * Default: Current supported renderer
-     * Inline: Experimental renderer that uses inline decorations to show additions
-     */
-    private readonly enabledRenderer = vscode.workspace
-        .getConfiguration()
-        .get<'default' | 'inline'>('cody.experimental.autoedit.renderer', 'default')
-
     private readonly promptStrategy = new ShortTermPromptStrategy()
     public readonly filterPrediction = new FilterPredictionBasedOnRecentEdits()
     private readonly contextMixer = new ContextMixer({
@@ -98,17 +88,11 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             chatClient: chatClient,
         })
 
-        this.rendererManager =
-            this.enabledRenderer === 'inline'
-                ? new AutoEditsInlineRendererManager(
-                      editor => new InlineDiffDecorator(editor),
-                      fixupController
-                  )
-                : new AutoEditsDefaultRendererManager(
-                      (editor: vscode.TextEditor) =>
-                          new DefaultDecorator(editor, { shouldRenderImage: options.shouldRenderImage }),
-                      fixupController
-                  )
+        this.rendererManager = new AutoEditsDefaultRendererManager(
+            (editor: vscode.TextEditor) =>
+                new DefaultDecorator(editor, { shouldRenderImage: options.shouldRenderImage }),
+            fixupController
+        )
 
         this.onSelectionChangeDebounced = debounce(
             (event: vscode.TextEditorSelectionChangeEvent) => this.onSelectionChange(event),
@@ -369,18 +353,33 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 return null
             }
 
-            const { inlineCompletionItems, updatedDecorationInfo, updatedPrediction } =
-                this.rendererManager.tryMakeInlineCompletions({
-                    requestId,
-                    prediction,
-                    codeToReplaceData,
-                    document,
-                    position,
-                    docContext,
-                    decorationInfo,
-                })
+            /**
+             * Strategy: call this.rendererManager.getRenderOutput
+             * This take the decoration info, and either return:
+             * 1. Only a completion - show autocomplete
+             * 2. A mixed completion and decorations - show autocomplete and decorations
+             * 3. An image - show image
+             *
+             * Result: {
+             *
+             * }
+             */
+            const {
+                inlineCompletionItems,
+                inlineDecorationItems,
+                updatedPrediction,
+                updatedDecorationInfo,
+            } = this.rendererManager.getRenderOutput({
+                requestId,
+                prediction,
+                codeToReplaceData,
+                document,
+                position,
+                docContext,
+                decorationInfo,
+            })
 
-            if (inlineCompletionItems === null && updatedDecorationInfo === null) {
+            if (inlineCompletionItems === null && inlineDecorationItems === null) {
                 autoeditsOutputChannelLogger.logDebugIfVerbose(
                     'provideInlineCompletionItems',
                     'no suggestion to render'
@@ -423,9 +422,8 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 await this.unstable_handleDidShowCompletionItem(requestId)
             }
 
-            if (updatedDecorationInfo) {
-                console.log('RENDERING UPDATED DECORATION INFO', updatedDecorationInfo)
-                await this.rendererManager.renderInlineDecorations(updatedDecorationInfo)
+            if (inlineDecorationItems) {
+                await this.rendererManager.renderInlineDecorationsV2(inlineDecorationItems)
             }
 
             // The data structure returned to the agent's from the `autoedits/execute` calls.

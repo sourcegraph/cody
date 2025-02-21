@@ -28,10 +28,15 @@ export function getEndColumnForLine(line: vscode.TextLine, document: vscode.Text
     return spaceAdjustedEndCharacter
 }
 
-export function getDiffPosition(
+/**
+ * Given a diff, determine the optimum position to render the image in the document.
+ * Line: Should match the first relevant line of the diff.
+ * Offset: Should be the end column of the longest line in the diff. Ensures no existing code is overlapped.
+ */
+export function getDiffTargetPosition(
     diff: VisualDiff,
     document: vscode.TextDocument
-): { line: number; character: number } {
+): { line: number; offset: number } {
     const incomingLines = getLines(diff, 'incoming')
     const editorLines = incomingLines
         .filter(line => line.modifiedLineNumber <= document.lineCount)
@@ -43,5 +48,5 @@ export function getDiffPosition(
     // The image should not overlap with any code in the file, so we take the longest associated line length
     const targetRenderColumn = Math.max(...editorLines.map(line => getEndColumnForLine(line, document)))
 
-    return { line: startLine, character: targetRenderColumn }
+    return { line: startLine, offset: targetRenderColumn }
 }
