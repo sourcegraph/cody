@@ -348,6 +348,9 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 codeToReplaceData
             )
 
+            console.log('Code to rewrite:', codeToReplaceData.codeToRewrite)
+            console.log('Prediction:', prediction)
+
             if (
                 isPredictedTextAlreadyInSuffix({
                     codeToRewrite,
@@ -421,6 +424,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             }
 
             if (updatedDecorationInfo) {
+                console.log('RENDERING UPDATED DECORATION INFO', updatedDecorationInfo)
                 await this.rendererManager.renderInlineDecorations(updatedDecorationInfo)
             }
 

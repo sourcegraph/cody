@@ -42,6 +42,17 @@ export class AutoEditsInlineRendererManager
         }
     }
 
+    /**
+     * Problem: We don't want to mix completions and images
+     *          We _do_ want to mix completions and inline decorations.
+     *
+     * 1. Determine if (assuming no completion) we will render an image. So heuristic to determine complex diff.
+     * 2. Can we solve all this with just a completion?
+     *    - If we can, render the completion
+     *    - If we can't, it depends on if we're going with an image or decorations.
+     *       - Image: We need to not render any partial completion, move entirely to image rendering
+     *       - Decorations: We want partial completion and inline decorations
+     */
     tryMakeInlineCompletions({
         requestId,
         prediction,
@@ -107,6 +118,23 @@ export class AutoEditsInlineRendererManager
                 changes: withoutUsedChanges(c.changes),
             })),
             unchangedLines: withoutUsedChanges(decorationInfo.unchangedLines),
+        }
+
+        // If there are still additions, we can't solely rely on the completion.
+        const remainingAdditions =
+            decorationInfoWithoutUsedChanges.addedLines.length +
+            decorationInfoWithoutUsedChanges.modifiedLines.filter(line =>
+                line.changes.some(change => change.type === 'insert')
+            ).length
+
+        // TODO: This is a hack to stop mixing completions and
+        if (remainingAdditions > 0) {
+            console.log('NO COMPLETION', decorationInfoWithoutUsedChanges, remainingAdditions)
+            return {
+                inlineCompletionItems: null,
+                updatedDecorationInfo: decorationInfo,
+                updatedPrediction: prediction,
+            }
         }
 
         return {

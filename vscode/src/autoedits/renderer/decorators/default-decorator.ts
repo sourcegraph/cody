@@ -143,6 +143,7 @@ export class DefaultDecorator implements AutoEditsDecorator {
      * 3. Added lines: Show inline decoration with "green" marker indicating additions
      */
     public setDecorations(decorationInfo: DecorationInfo): void {
+        console.log('setting decorations 2!', decorationInfo)
         const { modifiedLines, removedLines, addedLines } = decorationInfo
 
         const removedLinesRanges = removedLines.map(line =>

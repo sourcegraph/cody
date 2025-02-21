@@ -1,5 +1,8 @@
 import * as vscode from 'vscode'
+import { generateSuggestionAsImage } from '../image-gen'
+import { getEndColumnForLine } from '../image-gen/utils'
 import type { AutoEditsDecorator, DecorationInfo } from './base'
+import { cssPropertiesToString } from './utils'
 
 export class InlineDiffDecorator implements vscode.Disposable, AutoEditsDecorator {
     private readonly addedTextDecorationType = vscode.window.createTextEditorDecorationType({})
@@ -7,13 +10,14 @@ export class InlineDiffDecorator implements vscode.Disposable, AutoEditsDecorato
 
     constructor(private readonly editor: vscode.TextEditor) {}
 
-    public setDecorations({ modifiedLines, removedLines }: DecorationInfo): void {
-        const removedOptions = removedLines.map(({ originalLineNumber, text }) => {
+    public setDecorations(decorationInfo: DecorationInfo): void {
+        console.log('setting decorations!', decorationInfo)
+        const removedOptions = decorationInfo.removedLines.map(({ originalLineNumber, text }) => {
             const range = new vscode.Range(originalLineNumber, 0, originalLineNumber, text.length)
             return this.createRemovedDecoration(range, text.length)
         })
 
-        const { added, removed } = this.createModifiedDecorationOptions(modifiedLines)
+        const { added, removed } = this.createModifiedDecorationOptions(decorationInfo)
 
         this.editor.setDecorations(this.removedTextDecorationType, [...removedOptions, ...removed])
         this.editor.setDecorations(this.addedTextDecorationType, added)
@@ -24,10 +28,98 @@ export class InlineDiffDecorator implements vscode.Disposable, AutoEditsDecorato
         return true
     }
 
+    private createModifiedDecorationOptions(decorationInfo: DecorationInfo): {
+        added: vscode.DecorationOptions[]
+        removed: vscode.DecorationOptions[]
+    } {
+        const renderImage = true
+        if (renderImage) {
+            return this.createModifiedImageDecorationOptions(decorationInfo)
+        }
+        return this.createModifiedInlineDecorationOptions(decorationInfo)
+    }
+
+    private createModifiedImageDecorationOptions(decorationInfo: DecorationInfo): {
+        added: vscode.DecorationOptions[]
+        removed: vscode.DecorationOptions[]
+    } {
+        const { document } = this.editor
+        // TODO: Diff mode will likely change depending on the environment.
+        // This should be determined by client capabilities.
+        // VS Code: 'additions'
+        // Client capabiliies === image: 'unified'
+        const diffMode = 'unified'
+        const { dark, light, pixelRatio, position } = generateSuggestionAsImage({
+            decorations: decorationInfo,
+            lang: document.languageId,
+            mode: diffMode,
+            document,
+        })
+
+        // The padding in which to offset the decoration image away from neighbouring code
+        const decorationPadding = 4
+        const startLineEndColumn = getEndColumnForLine(document.lineAt(position.line), document)
+        // The margin position where the decoration image should render.
+        // Ensuring it does not conflict with the visibility of existing code.
+        const decorationMargin = position.character - startLineEndColumn + decorationPadding
+
+        const decorationStyle = cssPropertiesToString({
+            // Absolutely position the suggested code so that the cursor does not jump there
+            position: 'absolute',
+            // Make sure the decoration is rendered on top of other decorations
+            'z-index': '9999',
+            // Scale the decoration to the correct size (upscaled to boost resolution)
+            scale: String(1 / pixelRatio),
+            'transform-origin': '0px 0px',
+            height: 'auto',
+            // The decoration will be entirely taken up by the image.
+            // Setting the line-height to 0 ensures that there is no additional padding added by the decoration area.
+            'line-height': '0',
+        })
+
+        // TODO: Implement insert marker decoration. Or make it better?
+        // this.editor.setDecorations(this.insertMarkerDecorationType, [
+        //     {
+        //         range: new vscode.Range(startLine, 0, startLine, startLineEndColumn),
+        //     },
+        // ])
+
+        return {
+            added: [
+                {
+                    range: new vscode.Range(
+                        position.line,
+                        startLineEndColumn,
+                        position.line,
+                        startLineEndColumn
+                    ),
+                    renderOptions: {
+                        before: {
+                            color: new vscode.ThemeColor('editorSuggestWidget.foreground'),
+                            backgroundColor: new vscode.ThemeColor('editorSuggestWidget.background'),
+                            border: '1px solid',
+                            borderColor: new vscode.ThemeColor('editorSuggestWidget.border'),
+                            textDecoration: `none;${decorationStyle}`,
+                            margin: `0 0 0 ${decorationMargin}ch`,
+                        },
+                        after: {
+                            contentText: '\u00A0'.repeat(3) + '\u00A0'.repeat(startLineEndColumn),
+                            margin: `0 0 0 ${decorationMargin}ch`,
+                        },
+                        // Provide different highlighting for dark/light themes
+                        dark: { before: { contentIconPath: vscode.Uri.parse(dark) } },
+                        light: { before: { contentIconPath: vscode.Uri.parse(light) } },
+                    },
+                },
+            ],
+            removed: [],
+        }
+    }
+
     /**
      * Process modified lines to create decorations for inserted and deleted text within those lines.
      */
-    private createModifiedDecorationOptions(modifiedLines: DecorationInfo['modifiedLines']): {
+    private createModifiedInlineDecorationOptions({ modifiedLines }: DecorationInfo): {
         added: vscode.DecorationOptions[]
         removed: vscode.DecorationOptions[]
     } {

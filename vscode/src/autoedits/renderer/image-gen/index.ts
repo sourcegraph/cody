@@ -5,6 +5,7 @@ import { drawDecorationsToCanvas } from './canvas/draw-decorations'
 import { type UserProvidedRenderConfig, getRenderConfig } from './canvas/render-config'
 import { makeDecoratedDiff } from './decorated-diff'
 import { initSyntaxHighlighter } from './highlight'
+import { getDiffPosition } from './utils'
 
 export async function initImageSuggestionService() {
     return Promise.all([initSyntaxHighlighter(), initCanvas()])
@@ -34,6 +35,13 @@ interface GeneratedSuggestion {
      * Has a minimum value of 1.
      */
     pixelRatio: number
+    /**
+     * The position in the editor where the image should be rendered.
+     */
+    position: {
+        line: number
+        character: number
+    }
 }
 
 export function generateSuggestionAsImage(options: SuggestionOptions): GeneratedSuggestion {
@@ -41,9 +49,13 @@ export function generateSuggestionAsImage(options: SuggestionOptions): Generated
     const diff = makeDecoratedDiff(decorations, lang, mode, document)
     const renderConfig = getRenderConfig(config)
 
+    // TODO: Smell, diff.dark because we only care about the diff
+    const position = getDiffPosition(diff.dark, document)
+
     return {
         dark: drawDecorationsToCanvas(diff.dark, 'dark', mode, renderConfig).toDataURL('image/png'),
         light: drawDecorationsToCanvas(diff.light, 'light', mode, renderConfig).toDataURL('image/png'),
         pixelRatio: renderConfig.pixelRatio,
+        position,
     }
 }
