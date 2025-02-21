@@ -283,7 +283,8 @@ function getMergeConfigurationFunction(): Parameters<typeof createController>[0]
 
 async function getViewerSettingsProviders(): Promise<OpenCtxClientConfiguration['providers']> {
     try {
-        const settings = await graphqlClient.viewerSettings()
+        // TODO: need an async context object here.
+        const settings = new Error('replace graphqlClient.viewerSettings with rendezvous with modern config')
         if (isError(settings)) {
             throw settings
         }

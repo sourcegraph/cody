@@ -66,7 +66,6 @@ import {
     REPOS_SUGGESTIONS_QUERY,
     REPO_NAME_QUERY,
     SEARCH_ATTRIBUTION_QUERY,
-    VIEWER_SETTINGS_QUERY,
 } from './queries'
 import { buildGraphQLUrl } from './url'
 
@@ -616,10 +615,6 @@ interface EvaluatedFeatureFlagsResponse {
 
 interface EvaluateFeatureFlagResponse {
     evaluateFeatureFlag: boolean
-}
-
-interface ViewerSettingsResponse {
-    viewerSettings: { final: string }
 }
 
 interface CodeSearchEnabledResponse {
@@ -1566,15 +1561,6 @@ export class SourcegraphGraphQLAPIClient {
             },
             signal
         ).then(response => extractDataOrError(response, data => data.evaluateFeatureFlag))
-    }
-
-    public async viewerSettings(signal?: AbortSignal): Promise<Record<string, any> | Error> {
-        const response = await this.fetchSourcegraphAPI<APIResponse<ViewerSettingsResponse>>(
-            VIEWER_SETTINGS_QUERY,
-            {},
-            signal
-        )
-        return extractDataOrError(response, data => JSON.parse(data.viewerSettings.final))
     }
 
     public async codeSearchEnabled(signal?: AbortSignal): Promise<boolean | Error> {

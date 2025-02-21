@@ -23,6 +23,7 @@ import {
     isWorkspaceInstance,
     resolvedConfig,
     telemetryRecorder,
+    TODOstub,
 } from '@sourcegraph/cody-shared'
 import { resolveAuth } from '@sourcegraph/cody-shared/src/configuration/auth-resolver'
 import {
@@ -484,6 +485,8 @@ export async function validateCredentials(
         auth: config.auth,
         clientState: config.clientState,
     }
+
+    await TODOstub(apiClientConfig)
 
     // Check if credentials are valid and if Cody is enabled for the credentials and endpoint.
     const client = SourcegraphGraphQLAPIClient.withStaticConfig(apiClientConfig)

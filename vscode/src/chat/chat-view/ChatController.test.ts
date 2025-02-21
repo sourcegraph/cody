@@ -58,7 +58,6 @@ describe('ChatController', () => {
     ).mockReturnValue(Observable.of({ isPublic: false, repoMetadata: undefined }))
 
     vi.spyOn(graphqlClient, 'getSiteVersion').mockResolvedValue('1.2.3')
-    vi.spyOn(graphqlClient, 'viewerSettings').mockResolvedValue({})
 
     const mockNowDate = new Date(123456)
 

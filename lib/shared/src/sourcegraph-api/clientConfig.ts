@@ -219,16 +219,16 @@ export class ClientConfigSingleton {
                 logDebug('ClientConfigSingleton', 'refreshed', JSON.stringify(clientConfig))
 
                 return Promise.all([
-                    graphqlClient.viewerSettings(signal),
+                    // TODO: did query viewerSettings here
                     graphqlClient.codeSearchEnabled(signal),
-                ]).then(([viewerSettings, codeSearchEnabled]) => {
+                ]).then(([codeSearchEnabled]) => {
                     const config: CodyClientConfig = {
                         ...clientConfig,
                         notices: [],
                         omniBoxEnabled,
                         codeSearchEnabled: isError(codeSearchEnabled) ? true : codeSearchEnabled,
                     }
-
+/* TODO viewerSettings
                     // Don't fail the whole chat because of viewer setting (used only to show banners)
                     if (!isError(viewerSettings)) {
                         // Make sure that notice object will have all important field (notices come from
@@ -242,7 +242,7 @@ export class ClientConfigSingleton {
                             })
                         )
                     }
-
+*/
                     return config
                 })
             })

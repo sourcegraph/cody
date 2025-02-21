@@ -609,13 +609,6 @@ query GetURLContentQuery($url: String!) {
 }
 `
 
-export const VIEWER_SETTINGS_QUERY = `
-query ViewerSettings {
-  viewerSettings {
-    final
-  }
-}
-`
 export const CODE_SEARCH_ENABLED_QUERY = `
 query CodeSearchEnabled {
     codeSearchEnabled: enterpriseLicenseHasFeature(feature:"code-search")
