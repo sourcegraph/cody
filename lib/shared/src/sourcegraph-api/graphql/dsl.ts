@@ -62,12 +62,28 @@ export function args<Formals extends Formal<any,any>[], Field extends SomeFieldE
     }
 }
 
+// Labels a field to rename it.
+export interface Labeled<Name extends string, F extends SomeUnlabeledField> {
+    kind: 'labeled',
+    name: Name,
+    field: F,
+}
+
+export function labeled<Name extends string, F extends SomeUnlabeledField>(name: Name, field: F): Labeled<Name,F> {
+    return {
+        kind: 'labeled',
+        name,
+        field,
+    }
+}
+
 // In general, don't use these; always use (or infer) specific types. SomeField and
 // SomeFields cut down stuttering the list of all field types. We can't use a parent type
-// and have ValueSpec extends FieldSpec, ObjectSpec extends FieldSpec because such a parent
+// and have ValueSpec extends FieldSpec, ObjectSpec extends FieldSpec, ... because such a parent
 // type is not closed: We need our handling to be exhaustive.
 type SomeFieldExceptArguments = ValueSpec<any,any> | ObjectSpec<any,any> | ArraySpec<any,any>
-type SomeField = SomeFieldExceptArguments | WithArguments<any, any>
+type SomeUnlabeledField = SomeFieldExceptArguments | WithArguments<SomeFieldExceptArguments, any>
+type SomeField = SomeUnlabeledField | Labeled<any, SomeUnlabeledField>
 type SomeFields = SomeField[]
 
 // Creates a field spec. TypeScript does not have partial application of type parameters,
@@ -123,19 +139,23 @@ export type RealizeField<F extends SomeField> =
             ? Realize<F['fields']>[]
             : F extends WithArguments<infer U,any>
                 ? RealizeField<U>
-                : F extends ValueSpec<any, infer U> ? U : never
+                : F extends Labeled<any,infer U>
+                    ? RealizeField<U>
+                    : F extends ValueSpec<any, infer U> ? U : never
 
 // Collects the types of arguments.
 export type Arguments<F extends SomeField> =
-    F extends WithArguments<infer G, infer Args>
-        ? [...Args, ...Arguments<G>]
-        : F extends ArraySpec<any, any>
+    F extends ArraySpec<any, any>
+        ? ArgumentsOfN<F['fields']>
+        : F extends ObjectSpec<any, any>
             ? ArgumentsOfN<F['fields']>
-            : F extends ObjectSpec<any, any>
-                ? ArgumentsOfN<F['fields']>
-                : F extends ValueSpec<any, any>
-                    ? []
-                    : never
+            : F extends Labeled<any, infer G>
+                ? Arguments<G>
+                : F extends WithArguments<infer G, infer Args>
+                    ? [...Args, ...Arguments<G>]
+                    : F extends ValueSpec<any, any>
+                        ? []
+                        : never
 
 export type ArgumentsOfN<T extends SomeFields> =
     T extends [infer Head, ...infer Tail]
@@ -169,6 +189,8 @@ export function collectFormals<F extends SomeField>(field: F): Arguments<F> {
             return collectFormalList(field.fields) as Arguments<F>
         case 'value':
             return [] as Arguments<F>
+        case 'labeled':
+            return collectFormals(field.field) as Arguments<F>
     }
 }
 
@@ -232,6 +254,10 @@ function serializeField<T extends SomeField>(buffer: string[], argumentNames: st
             break
         case 'value':
             buffer.push(field.name)
+            break
+        case 'labeled':
+            buffer.push(field.name, ':')
+            serializeField(buffer, argumentNames, field.field, field)
             break
         default:
             throw new Error('unreachable')

@@ -9,7 +9,7 @@ import {
     nested,
     q,
     type Realize,
-    both, collectFormalList, type RealizeField
+    both, collectFormalList, type RealizeField, labeled
 } from "./dsl";
 
 describe('GraphQL DSL', () => {
@@ -36,6 +36,21 @@ describe('GraphQL DSL', () => {
         let as: ActualTypes<Arguments<typeof test>> = [7]
         let result: Realize<typeof test.fields> = {
             'bar': {'baz': 'hello'},
+        }
+        // Suppress warning about unused variables; we are testing the type checker.
+        expect([as, result])
+    })
+
+    test('labels obliterate the intrinsic field name', () => {
+        let test = nested('foo',
+            labeled('qux', nested('bar', q.boolean('baz')))
+        )
+        let fs: Arguments<typeof test> = collectFormals(test)
+        expect(fs).toEqual([])
+        let as: ActualTypes<Arguments<typeof test>> = []
+        let result: Realize<typeof test.fields> = {
+            // Note, this field is the renamed qux and not bar.
+            'qux': {'baz': false},
         }
         // Suppress warning about unused variables; we are testing the type checker.
         expect([as, result])
