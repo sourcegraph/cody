@@ -510,7 +510,7 @@ export class FixupController
         this.decorator.didCreateTask(task)
     }
 
-    public async createTask({
+    public createTask({
         document,
         instruction,
         userContextFiles,
@@ -525,7 +525,7 @@ export class FixupController
         telemetryMetadata,
         taskId,
         isPrefetch,
-    }: CreateTaskOptions): Promise<FixupTask> {
+    }: CreateTaskOptions): FixupTask {
         const authStatus = currentAuthStatus()
         const overriddenModel = getOverriddenModelForIntent(intent, model, authStatus)
         const fixupFile = this.files.forUri(document.uri)

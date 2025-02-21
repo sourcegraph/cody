@@ -189,6 +189,7 @@ export class EditManager implements vscode.Disposable {
             telemetryMetadata,
             isPrefetch,
         } = args
+
         const clientConfig = await ClientConfigSingleton.getInstance().getConfig()
         if (!clientConfig?.customCommandsEnabled) {
             void vscode.window.showErrorMessage(
@@ -500,10 +501,8 @@ export class EditManager implements vscode.Disposable {
      * Helper to create a new FixupTask, check for duplicates, record telemetry,
      * and return the resulting task or null if cancelled.
      */
-    private async createTaskAndCheckForDuplicates(
-        createTaskOptions: CreateTaskOptions
-    ): Promise<FixupTask | null> {
-        const task = await this.options.controller.createTask(createTaskOptions)
+    private createTaskAndCheckForDuplicates(createTaskOptions: CreateTaskOptions): FixupTask | null {
+        const task = this.options.controller.createTask(createTaskOptions)
         if (!task) {
             return null
         }
