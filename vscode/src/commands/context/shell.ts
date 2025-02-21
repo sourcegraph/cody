@@ -17,11 +17,9 @@ const execAsync = promisify(exec)
 // Pre-compute home directory path
 const HOME_DIR = os.homedir() || process.env.HOME || process.env.USERPROFILE || ''
 
-const OUTPUT_WRAPPER = `
-Terminal output from the \`{command}\` command enclosed between <OUTPUT0412> tags:
-<OUTPUT0412>
+const OUTPUT_WRAPPER = `{command}\n\`\`\`console
 {output}
-</OUTPUT0412>`
+\`\`\``
 
 export async function getContextFileFromShell(command: string): Promise<ContextItem[]> {
     return wrapInActiveSpan('commands.context.command', async () => {
@@ -32,6 +30,8 @@ export async function getContextFileFromShell(command: string): Promise<ContextI
             )
             return []
         }
+
+        const baseUri = vscode.Uri.parse(command).with({ scheme: 'cody' })
 
         // Process command and workspace
         const cwd = vscode.workspace.workspaceFolders?.[0]?.uri?.fsPath
@@ -69,15 +69,17 @@ export async function getContextFileFromShell(command: string): Promise<ContextI
                 {
                     type: 'file',
                     content,
-                    title: 'Terminal Output',
-                    uri: vscode.Uri.file(command),
+                    title: command,
+                    uri: baseUri.with({
+                        query: Buffer.from(output).toString('base64'),
+                    }),
                     source: ContextItemSource.Terminal,
                     size,
                 },
             ]
         } catch (error) {
             logError('getContextFileFromShell', 'failed', { verbose: error })
-            const errorContent = `Failed to run ${command} in terminal:\n${error}`
+            const errorContent = `ERROR:\n${error}`
             const size = await TokenCounterUtils.countTokens(errorContent)
 
             return [
@@ -85,7 +87,7 @@ export async function getContextFileFromShell(command: string): Promise<ContextI
                     type: 'file',
                     content: errorContent,
                     title: 'Terminal Output Error',
-                    uri: vscode.Uri.file(command),
+                    uri: baseUri,
                     source: ContextItemSource.Terminal,
                     size,
                 },
