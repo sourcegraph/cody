@@ -25,16 +25,19 @@ import {
     getActiveTraceAndSpanId,
     getClientInfoParams,
     isAbortError,
+    isCustomAuthChallengeResponse,
     isNodeResponse,
     isRateLimitError,
     logResponseHeadersToSpan,
     recordErrorToSpan,
+    setJSONAcceptContentTypeHeaders,
     setSingleton,
     singletonNotYetSet,
     tracer,
 } from '@sourcegraph/cody-shared'
 
 import { getClientIdentificationHeaders } from '@sourcegraph/cody-shared'
+import { NeedsAuthChallengeError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
 import { autocompleteLifecycleOutputChannelLogger } from './output-channel-logger'
 
 /**
@@ -70,7 +73,7 @@ class DefaultCodeCompletionsClient implements CodeCompletionsClient {
 
                 // Force HTTP connection reuse to reduce latency.
                 // c.f. https://github.com/microsoft/vscode/issues/173861
-                headers.set('Content-Type', 'application/json; charset=utf-8')
+                setJSONAcceptContentTypeHeaders(headers)
                 addCodyClientIdentificationHeaders(headers)
 
                 if (tracingFlagEnabled) {
@@ -146,7 +149,9 @@ class DefaultCodeCompletionsClient implements CodeCompletionsClient {
                 if (!response.ok) {
                     throw recordErrorToSpan(
                         span,
-                        new NetworkError(response, await response.text(), traceId)
+                        isCustomAuthChallengeResponse(response)
+                            ? new NeedsAuthChallengeError()
+                            : new NetworkError(response, await response.text(), traceId)
                     )
                 }
 

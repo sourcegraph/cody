@@ -83,7 +83,7 @@ test
         await executeCommandInPalette(page, 'Cody: Trigger Autocomplete at Cursor')
         await expectNotificationToBeVisible(
             page,
-            'Failed to generate autocomplete: file is ignored (due to cody.contextFilters Enterprise configuration setting)'
+            "Failed to generate autocomplete: Your administrator has disabled Cody for 'github.com/sourcegraph/sourcegraph'"
         )
 
         await clearAllNotifications(page)
@@ -101,7 +101,7 @@ test
 
             await expectNotificationToBeVisible(
                 page,
-                `${title}: file is ignored (due to cody.contextFilters Enterprise configuration setting)`
+                `${title}: Your administrator has disabled Cody for 'github.com/sourcegraph/sourcegraph'`
             )
 
             await page.getByLabel(title).first().hover()

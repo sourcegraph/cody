@@ -1,15 +1,22 @@
-import type { AddedLinesDecorationInfo } from '../decorators/default-decorator'
-import { drawDecorationsToCanvas, initCanvas } from './canvas'
+import type * as vscode from 'vscode'
+import type { DecorationInfo } from '../decorators/base'
+import { initCanvas } from './canvas'
+import { drawDecorationsToCanvas } from './canvas/draw-decorations'
 import { type UserProvidedRenderConfig, getRenderConfig } from './canvas/render-config'
-import { initSyntaxHighlighter, syntaxHighlightDecorations } from './highlight'
+import { makeDecoratedDiff } from './decorated-diff'
+import { initSyntaxHighlighter } from './highlight'
 
 export async function initImageSuggestionService() {
     return Promise.all([initSyntaxHighlighter(), initCanvas()])
 }
 
+export type DiffMode = 'additions' | 'unified'
+
 interface SuggestionOptions {
-    decorations: AddedLinesDecorationInfo[]
+    decorations: DecorationInfo
     lang: string
+    mode: DiffMode
+    document: vscode.TextDocument
     /**
      * Note: This is currently only used for test stability, as the default font size / line height will
      * differ between platforms.
@@ -30,15 +37,13 @@ interface GeneratedSuggestion {
 }
 
 export function generateSuggestionAsImage(options: SuggestionOptions): GeneratedSuggestion {
-    const { decorations, lang, config } = options
+    const { decorations, lang, config, mode, document } = options
+    const diff = makeDecoratedDiff(decorations, lang, mode, document)
     const renderConfig = getRenderConfig(config)
 
-    const darkDecorations = syntaxHighlightDecorations(decorations, lang, 'dark')
-    const lightDecorations = syntaxHighlightDecorations(decorations, lang, 'light')
-
     return {
-        dark: drawDecorationsToCanvas(darkDecorations, 'dark', renderConfig).toDataURL('image/png'),
-        light: drawDecorationsToCanvas(lightDecorations, 'light', renderConfig).toDataURL('image/png'),
+        dark: drawDecorationsToCanvas(diff.dark, 'dark', mode, renderConfig).toDataURL('image/png'),
+        light: drawDecorationsToCanvas(diff.light, 'light', mode, renderConfig).toDataURL('image/png'),
         pixelRatio: renderConfig.pixelRatio,
     }
 }

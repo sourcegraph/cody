@@ -1,26 +1,29 @@
-import { type DebouncedFunc, debounce } from 'lodash'
+import { type DebouncedFunc, debounce, isError } from 'lodash'
 import * as vscode from 'vscode'
 
 import {
     ClientConfigSingleton,
     type DocumentContext,
     FeatureFlag,
+    type IsIgnored,
     RateLimitError,
     authStatus,
     contextFiltersProvider,
     featureFlagProvider,
+    isAuthError,
     isDotCom,
     subscriptionDisposable,
     telemetryRecorder,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
 
-import { type CodyIgnoreType, showCodyIgnoreNotification } from '../cody-ignore/notification'
+import { ignoreReason, showCodyIgnoreNotification } from '../cody-ignore/notification'
 import { localStorage } from '../services/LocalStorageProvider'
 import { autocompleteStageCounterLogger } from '../services/autocomplete-stage-counter-logger'
 import { recordExposedExperimentsToSpan } from '../services/open-telemetry/utils'
 import { isInTutorial } from '../tutorial/helpers'
 
+import { AuthError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
 import { AutoEditOnboarding } from '../autoedits/autoedit-onboarding'
 import { ContextRankingStrategy } from '../completions/context/completions-context-ranker'
 import type { CompletionBookkeepingEvent, CompletionItemID, CompletionLogID } from './analytics-logger'
@@ -337,8 +340,9 @@ export class InlineCompletionItemProvider
                     this.lastManualCompletionTimestamp > Date.now() - 500
             )
 
-            if (await contextFiltersProvider.isUriIgnored(document.uri)) {
-                logIgnored(document.uri, 'context-filter', isManualCompletion)
+            const isIgnored = await contextFiltersProvider.isUriIgnored(document.uri)
+            if (isIgnored) {
+                this.logIgnored(document.uri, isIgnored, isManualCompletion)
                 return null
             }
 
@@ -488,6 +492,9 @@ export class InlineCompletionItemProvider
                 if (abortController.signal.aborted || isPreloadRequest) {
                     return null
                 }
+
+                // If the getInlineCompletions completed successfully we should clear all status errors
+                this.config.statusBar.clearErrors()
 
                 if (!result) {
                     // Returning null will clear any existing suggestions, thus we need to reset the
@@ -998,6 +1005,18 @@ export class InlineCompletionItemProvider
                 },
             })
         }
+
+        if (isAuthError(error)) {
+            this.config.statusBar.addError({
+                title: error instanceof AuthError ? error.title : 'Authorization Error',
+                description: error.message,
+                errorType: 'auth',
+                removeAfterSelected: false,
+                onSelect: () => {},
+                onShow: () => {},
+            })
+        }
+
         // TODO(philipp-spiess): Bring back this code once we have fewer uncaught errors
         //
         // c.f. https://sourcegraph.slack.com/archives/C05AGQYD528/p1693471486690459
@@ -1017,6 +1036,28 @@ export class InlineCompletionItemProvider
         //        outputChannel.show()
         //    },
         // })
+    }
+
+    private lastIgnoredUriLogged: string | undefined = undefined
+    private logIgnored(uri: vscode.Uri, isIgnored: IsIgnored, isManualCompletion: boolean) {
+        // Only show a notification for actively triggered autocomplete requests.
+        if (isManualCompletion) {
+            showCodyIgnoreNotification('autocomplete', isIgnored)
+        }
+
+        if (isError(isIgnored)) {
+            this.onError(isIgnored as Error)
+        }
+
+        const strUri = uri.toString()
+        if (this.lastIgnoredUriLogged === strUri) {
+            return
+        }
+        this.lastIgnoredUriLogged = strUri
+        autocompleteOutputChannelLogger.logDebug(
+            'ignored',
+            `Cody is disabled in file ${uri.toString()} (due to ${ignoreReason(isIgnored)})`
+        )
     }
 
     private getDocContext(
@@ -1122,22 +1163,4 @@ function onlyCompletionWidgetSelectionChanged(
     }
 
     return prevSelectedCompletionInfo.text !== nextSelectedCompletionInfo.text
-}
-
-let lastIgnoredUriLogged: string | undefined = undefined
-function logIgnored(uri: vscode.Uri, reason: CodyIgnoreType, isManualCompletion: boolean) {
-    // Only show a notification for actively triggered autocomplete requests.
-    if (isManualCompletion) {
-        showCodyIgnoreNotification('autocomplete', reason)
-    }
-
-    const string = uri.toString()
-    if (lastIgnoredUriLogged === string) {
-        return
-    }
-    lastIgnoredUriLogged = string
-    autocompleteOutputChannelLogger.logDebug(
-        'ignored',
-        'Cody is disabled in file ' + uri.toString() + ' (' + reason + ')'
-    )
 }

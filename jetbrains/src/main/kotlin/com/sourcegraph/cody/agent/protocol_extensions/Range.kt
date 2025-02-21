@@ -26,6 +26,13 @@ fun Range.toSearchRange(): RangePair = RangePair(start.line.plus(1), end.line)
  *   document.
  */
 fun Range.toOffsetRange(document: Document): RangeOffset {
+  if (start.line == end.line) {
+    if (start.character > end.character) {
+      throw IllegalArgumentException(
+          "start.character (${start.character}) > end.character (${end.character})")
+    }
+  }
+
   val startOffset = if (start.isOutsideOfDocument(document)) 0 else start.toOffsetOrZero(document)
   val endOffset =
       if (end.isOutsideOfDocument(document)) document.textLength else end.toOffsetOrZero(document)

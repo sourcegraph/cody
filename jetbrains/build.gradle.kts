@@ -59,10 +59,10 @@ val skippedFailureLevels =
 plugins {
   id("java")
   id("jvm-test-suite")
-  id("org.jetbrains.kotlin.jvm") version "2.0.21"
-  id("org.jetbrains.intellij.platform") version "2.1.0"
+  id("org.jetbrains.kotlin.jvm") version "2.1.10"
+  id("org.jetbrains.intellij.platform") version "2.2.1"
   id("org.jetbrains.changelog") version "2.2.1"
-  id("com.diffplug.spotless") version "6.25.0"
+  id("com.diffplug.spotless") version "7.0.2"
 }
 
 val platformVersion: String by project
@@ -142,9 +142,9 @@ dependencies {
   implementation("org.eclipse.lsp4j:org.eclipse.lsp4j.jsonrpc:0.23.1")
   testImplementation("net.java.dev.jna:jna:5.10.0") // it is needed for integration tests
   testImplementation("org.awaitility:awaitility-kotlin:4.2.2")
-  testImplementation("org.junit.jupiter:junit-jupiter:5.11.3")
+  testImplementation("org.junit.jupiter:junit-jupiter:5.11.4")
   testImplementation("org.jetbrains.kotlin:kotlin-test-junit:2.0.21")
-  testImplementation("org.mockito:mockito-core:5.14.2")
+  testImplementation("org.mockito:mockito-core:5.13.0")
   testImplementation("org.mockito.kotlin:mockito-kotlin:5.4.0")
 }
 

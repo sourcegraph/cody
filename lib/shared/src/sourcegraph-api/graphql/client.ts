@@ -4,6 +4,7 @@ import { fetch } from '../../fetch'
 
 import type { TelemetryEventInput } from '@sourcegraph/telemetry'
 
+import type { IncomingMessage } from 'node:http'
 import escapeRegExp from 'lodash/escapeRegExp'
 import isEqual from 'lodash/isEqual'
 import omit from 'lodash/omit'
@@ -16,7 +17,7 @@ import { distinctUntilChanged, firstValueFrom } from '../../misc/observable'
 import { addTraceparent, wrapInActiveSpan } from '../../tracing'
 import { isError } from '../../utils'
 import { addCodyClientIdentificationHeaders } from '../client-name-version'
-import { isAbortError } from '../errors'
+import { NeedsAuthChallengeError, isAbortError, isNeedsAuthChallengeError } from '../errors'
 import { addAuthHeaders } from '../utils'
 import { type GraphQLResultCache, ObservableInvalidatedGraphQLResultCacheFactory } from './cache'
 import {
@@ -684,6 +685,21 @@ export type GraphQLAPIClientConfig = PickResolvedConfiguration<{
     clientState: 'anonymousUserID'
 }>
 
+export interface RefetchIntervalHint {
+    initialInterval: number
+    backoff: number
+}
+
+export const DURABLE_REFETCH_INTERVAL_HINT: RefetchIntervalHint = {
+    initialInterval: 60 * 60 * 1000, // 1 hour
+    backoff: 1.0,
+}
+
+export const TRANSIENT_REFETCH_INTERVAL_HINT: RefetchIntervalHint = {
+    initialInterval: 7 * 1000, // 7 seconds
+    backoff: 1.5,
+}
+
 const QUERY_TO_NAME_REGEXP = /^\s*(?:query|mutation)\s+(\w+)/m
 
 export class SourcegraphGraphQLAPIClient {
@@ -715,7 +731,7 @@ export class SourcegraphGraphQLAPIClient {
                 )
             ),
             {
-                maxAgeMsec: 1000 * 60 * 10, // 10 minutes,
+                maxAgeMsec: 1000 * 10, // 10 minutes,
                 initialRetryDelayMsec: 10, // Don't cache errors for long
                 backoffFactor: 1.5, // Back off exponentially
             }
@@ -1227,23 +1243,24 @@ export class SourcegraphGraphQLAPIClient {
     }
 
     public async contextFilters(): Promise<{
-        filters: ContextFilters
-        transient: boolean
+        filters: ContextFilters | Error
+        refetchIntervalHint: RefetchIntervalHint
     }> {
         // CONTEXT FILTERS are only available on Sourcegraph 5.3.3 and later.
         const minimumVersion = '5.3.3'
         const version = await this.getSiteVersion()
         if (isError(version)) {
+            const error = version
             logError(
                 'SourcegraphGraphQLAPIClient',
                 'contextFilters getSiteVersion failed',
-                version.message
+                error.message
             )
 
             // Exclude everything in case of an unexpected error.
             return {
-                filters: EXCLUDE_EVERYTHING_CONTEXT_FILTERS,
-                transient: true,
+                filters: error,
+                refetchIntervalHint: TRANSIENT_REFETCH_INTERVAL_HINT,
             }
         }
         const insiderBuild = version.length > 12 || version.includes('dev')
@@ -1251,7 +1268,7 @@ export class SourcegraphGraphQLAPIClient {
         if (!isValidVersion) {
             return {
                 filters: INCLUDE_EVERYTHING_CONTEXT_FILTERS,
-                transient: false,
+                refetchIntervalHint: DURABLE_REFETCH_INTERVAL_HINT,
             }
         }
 
@@ -1264,38 +1281,49 @@ export class SourcegraphGraphQLAPIClient {
             if (data?.site?.codyContextFilters?.raw === null) {
                 return {
                     filters: INCLUDE_EVERYTHING_CONTEXT_FILTERS,
-                    transient: false,
+                    refetchIntervalHint: DURABLE_REFETCH_INTERVAL_HINT,
                 }
             }
 
             if (data?.site?.codyContextFilters?.raw) {
                 return {
                     filters: data.site.codyContextFilters.raw,
-                    transient: false,
+                    refetchIntervalHint: DURABLE_REFETCH_INTERVAL_HINT,
                 }
             }
 
             // Exclude everything in case of an unexpected response structure.
             return {
                 filters: EXCLUDE_EVERYTHING_CONTEXT_FILTERS,
-                transient: true,
+                refetchIntervalHint: TRANSIENT_REFETCH_INTERVAL_HINT,
             }
         })
 
         if (result instanceof Error) {
+            const error = result
             // Ignore errors caused by outdated Sourcegraph API instances.
-            if (hasOutdatedAPIErrorMessages(result)) {
+            if (hasOutdatedAPIErrorMessages(error)) {
                 return {
                     filters: INCLUDE_EVERYTHING_CONTEXT_FILTERS,
-                    transient: false,
+                    refetchIntervalHint: DURABLE_REFETCH_INTERVAL_HINT,
                 }
             }
 
-            logError('SourcegraphGraphQLAPIClient', 'contextFilters', result.message)
+            if (isNeedsAuthChallengeError(error)) {
+                return {
+                    filters: error,
+                    refetchIntervalHint: {
+                        initialInterval: 3 * 1000, // 3 seconds
+                        backoff: 1,
+                    },
+                }
+            }
+
+            logError('SourcegraphGraphQLAPIClient', 'contextFilters', error.message)
             // Exclude everything in case of an unexpected error.
             return {
-                filters: EXCLUDE_EVERYTHING_CONTEXT_FILTERS,
-                transient: true,
+                filters: error,
+                refetchIntervalHint: TRANSIENT_REFETCH_INTERVAL_HINT,
             }
         }
 
@@ -1631,7 +1659,6 @@ export class SourcegraphGraphQLAPIClient {
             })())
 
         const headers = new Headers(config.configuration?.customHeaders as HeadersInit | undefined)
-        headers.set('Content-Type', 'application/json; charset=utf-8')
         if (config.clientState.anonymousUserID && !process.env.CODY_WEB_DONT_SET_SOME_HEADERS) {
             headers.set('X-Sourcegraph-Actor-Anonymous-UID', config.clientState.anonymousUserID)
         }
@@ -1640,6 +1667,7 @@ export class SourcegraphGraphQLAPIClient {
 
         addTraceparent(headers)
         addCodyClientIdentificationHeaders(headers)
+        setJSONAcceptContentTypeHeaders(headers)
 
         try {
             await addAuthHeaders(config.auth, headers, url)
@@ -1660,6 +1688,11 @@ export class SourcegraphGraphQLAPIClient {
                 .catch(catchHTTPError(url.href, timeoutSignal))
         )
     }
+}
+
+export function setJSONAcceptContentTypeHeaders(headers: Headers): void {
+    headers.set('Accept', 'application/json')
+    headers.set('Content-Type', 'application/json; charset=utf-8')
 }
 
 const DEFAULT_TIMEOUT_MSEC = 20000
@@ -1688,6 +1721,10 @@ function catchHTTPError(
     timeoutSignal: Pick<AbortSignal, 'aborted'>
 ): (error: any) => Error {
     return (error: any) => {
+        if (isNeedsAuthChallengeError(error)) {
+            return error
+        }
+
         // Throw the plain AbortError for intentional aborts so we handle them with call
         // flow, but treat timeout aborts as a network error (below) and include the
         // URL.
@@ -1710,11 +1747,46 @@ export const graphqlClient = SourcegraphGraphQLAPIClient.withGlobalConfig()
 export async function verifyResponseCode(
     response: BrowserOrNodeResponse
 ): Promise<BrowserOrNodeResponse> {
+    if (isCustomAuthChallengeResponse(response)) {
+        throw new NeedsAuthChallengeError()
+    }
+
     if (!response.ok) {
-        const body = await response.text()
+        let body: string | undefined
+        try {
+            body = await response.text()
+        } catch {}
         throw new Error(`HTTP status code ${response.status}${body ? `: ${body}` : ''}`)
     }
     return response
+}
+
+/**
+ * Some customers use an HTTP proxy in front of Sourcegraph that, when the user needs to complete an
+ * auth challenge, returns HTTP 401 with a `X-${CUSTOMER}-U2f-Challenge: true` header. Detect these
+ * kinds of error responses.
+ */
+export function isCustomAuthChallengeResponse(
+    response:
+        | Pick<BrowserOrNodeResponse, 'status' | 'headers'>
+        | Pick<IncomingMessage, 'httpVersion' | 'statusCode' | 'headers'>
+): boolean {
+    function isIncomingMessageType(
+        v: typeof response
+    ): v is Pick<IncomingMessage, 'httpVersion' | 'statusCode' | 'headers'> {
+        return 'httpVersion' in response
+    }
+    const statusCode = isIncomingMessageType(response) ? response.statusCode : response.status
+    if (statusCode === 401) {
+        const headerEntries = isIncomingMessageType(response)
+            ? Object.entries(response.headers)
+            : Array.from(response.headers.entries())
+        return headerEntries.some(
+            ([name, value]) => /^x-.*-u2f-challenge$/i.test(name) && value === 'true'
+        )
+    }
+
+    return false
 }
 
 function hasOutdatedAPIErrorMessages(error: Error): boolean {
