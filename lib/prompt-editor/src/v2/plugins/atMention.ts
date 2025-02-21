@@ -240,7 +240,7 @@ export function getAtMentionPosition(state: EditorState): number {
  * @param value The new value of the at-mention
  * @returns The start position of the at-mention
  */
-export function setMentionValue(state: EditorState, value: string): Transaction {
+export function setAtMentionValue(state: EditorState, value: string): Transaction {
     const decoration = atMentionPluginKey.getState(state)?.decoration.find()[0]
     if (!decoration) {
         throw new Error('setMentionValue called when at-mention is not active')
