@@ -5,6 +5,7 @@ import { GHOST_TEXT_COLOR } from '../../../commands/GhostHintDecorator'
 import { getEditorInsertSpaces, getEditorTabSize } from '@sourcegraph/cody-shared'
 import { isOnlyAddingTextForModifiedLines } from '../diff-utils'
 import { generateSuggestionAsImage } from '../image-gen'
+import { makeVisualDiff } from '../visual-diff'
 import type { AutoEditsDecorator, DecorationInfo, ModifiedLineInfo } from './base'
 import { UNICODE_SPACE, blockify } from './blockify'
 import { cssPropertiesToString } from './utils'
@@ -172,11 +173,7 @@ export class DefaultDecorator implements AutoEditsDecorator {
         }
 
         if (this.options.shouldRenderImage) {
-            this.renderAddedLinesImageDecorations(
-                decorationInfo,
-                addedLinesInfo.startLine,
-                addedLinesInfo.replacerCol
-            )
+            this.renderAddedLinesImageDecorations(decorationInfo)
             return
         }
 
@@ -367,29 +364,25 @@ export class DefaultDecorator implements AutoEditsDecorator {
         this.editor.setDecorations(this.addedLinesDecorationType, replacerDecorations)
     }
 
-    private renderAddedLinesImageDecorations(
-        decorationInfo: DecorationInfo,
-        startLine: number,
-        replacerCol: number
-    ): void {
+    private renderAddedLinesImageDecorations(decorationInfo: DecorationInfo): void {
         // TODO: Diff mode will likely change depending on the environment.
         // This should be determined by client capabilities.
         // VS Code: 'additions'
         // Client capabiliies === image: 'unified'
         const diffMode = 'additions'
+        const { diff, target } = makeVisualDiff(decorationInfo, diffMode, this.editor.document)
         const { dark, light, pixelRatio } = generateSuggestionAsImage({
-            decorations: decorationInfo,
+            diff,
             lang: this.editor.document.languageId,
             mode: diffMode,
-            document: this.editor.document,
         })
-        const startLineEndColumn = this.getEndColumn(this.editor.document.lineAt(startLine))
+        const startLineEndColumn = this.getEndColumn(this.editor.document.lineAt(target.line))
 
         // The padding in which to offset the decoration image away from neighbouring code
         const decorationPadding = 4
         // The margin position where the decoration image should render.
         // Ensuring it does not conflict with the visibility of existing code.
-        const decorationMargin = replacerCol - startLineEndColumn + decorationPadding
+        const decorationMargin = target.offset - startLineEndColumn + decorationPadding
         const decorationStyle = cssPropertiesToString({
             // Absolutely position the suggested code so that the cursor does not jump there
             position: 'absolute',
@@ -406,7 +399,12 @@ export class DefaultDecorator implements AutoEditsDecorator {
 
         this.editor.setDecorations(this.addedLinesDecorationType, [
             {
-                range: new vscode.Range(startLine, startLineEndColumn, startLine, startLineEndColumn),
+                range: new vscode.Range(
+                    target.line,
+                    startLineEndColumn,
+                    target.line,
+                    startLineEndColumn
+                ),
                 renderOptions: {
                     before: {
                         color: new vscode.ThemeColor('editorSuggestWidget.foreground'),
@@ -428,7 +426,7 @@ export class DefaultDecorator implements AutoEditsDecorator {
         ])
         this.editor.setDecorations(this.insertMarkerDecorationType, [
             {
-                range: new vscode.Range(startLine, 0, startLine, startLineEndColumn),
+                range: new vscode.Range(target.line, 0, target.line, startLineEndColumn),
             },
         ])
     }

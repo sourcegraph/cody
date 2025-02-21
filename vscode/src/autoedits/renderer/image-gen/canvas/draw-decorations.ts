@@ -1,6 +1,6 @@
 import type { EmulatedCanvas2D } from 'canvaskit-wasm'
 import { canvasKit, fontCache } from '.'
-import type { DiffMode } from '..'
+import type { DiffMode } from '../../visual-diff/types'
 import type { VisualDiff, VisualDiffLine } from '../decorated-diff/types'
 import { DEFAULT_HIGHLIGHT_COLORS } from '../highlight/constants'
 import type { SYNTAX_HIGHLIGHT_THEME } from '../highlight/types'
