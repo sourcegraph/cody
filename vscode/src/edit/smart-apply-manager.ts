@@ -1,0 +1,361 @@
+import { context } from '@opentelemetry/api'
+import { LRUCache } from 'lru-cache'
+import * as vscode from 'vscode'
+
+import {
+    type ChatClient,
+    type EventSource,
+    FeatureFlag,
+    PromptString,
+    currentSiteVersion,
+    extractContextFromTraceparent,
+    featureFlagProvider,
+    ps,
+    subscriptionDisposable,
+    telemetryRecorder,
+    wrapInActiveSpan,
+} from '@sourcegraph/cody-shared'
+
+import { isUriIgnoredByContextFilterWithNotification } from '../cody-ignore/context-filter'
+import type { FixupTask } from '../non-stop/FixupTask'
+
+import { SmartApplyContextLogger } from './edit-context-logging'
+import type { EditManager } from './edit-manager'
+import {
+    SMART_APPLY_FILE_DECORATION,
+    type SmartApplySelectionType,
+    getSmartApplySelection,
+} from './prompt/smart-apply'
+import type { SmartApplyArguments } from './smart-apply'
+
+type SmartApplyCacheEntry = Promise<null | {
+    task: FixupTask
+    selectionType: SmartApplySelectionType
+    contextLoggerRequestId: string
+}>
+
+export class SmartApplyManager implements vscode.Disposable {
+    private disposables: vscode.Disposable[] = []
+
+    private isPrefetchingEnabled = false
+    private smartApplyContextLogger: SmartApplyContextLogger
+
+    private cache = new LRUCache<string, SmartApplyCacheEntry>({ max: 20 })
+
+    constructor(
+        private options: {
+            editManager: EditManager
+            chatClient: ChatClient
+        }
+    ) {
+        this.smartApplyContextLogger = new SmartApplyContextLogger(
+            this.options.editManager.editLoggingFeatureFlagManager
+        )
+
+        const prefetchSmartApplyCommand = vscode.commands.registerCommand(
+            'cody.command.smart-apply-prefetch',
+            (args: SmartApplyArguments) => {
+                if (this.isPrefetchingEnabled) {
+                    this.prefetchSmartApply(args)
+                }
+            }
+        )
+
+        /**
+         * Entry point to triggering a new Edit from a _known_ result.
+         * Given a result and a given file, this will create a new LLM interaction,
+         * determine the correct selection and start a `FixupTask`.
+         */
+        const smartApplyCommand = vscode.commands.registerCommand(
+            'cody.command.smart-apply',
+            (args: SmartApplyArguments) => this.smartApplyEdit(args)
+        )
+
+        this.disposables.push(
+            subscriptionDisposable(
+                featureFlagProvider
+                    .evaluatedFeatureFlag(FeatureFlag.CodySmartApplyPrefetching)
+                    .subscribe(isPrefetchingEnabled => {
+                        this.isPrefetchingEnabled = Boolean(isPrefetchingEnabled)
+                    })
+            )
+        )
+
+        this.disposables.push(smartApplyCommand, prefetchSmartApplyCommand)
+    }
+
+    public async prefetchSmartApply(args: SmartApplyArguments): Promise<void> {
+        const { configuration } = args
+
+        if (
+            !configuration ||
+            this.cache.get(configuration.id) ||
+            configuration.isNewFile ||
+            (await isUriIgnoredByContextFilterWithNotification(configuration.document.uri, 'edit'))
+        ) {
+            return
+        }
+
+        const model = await this.options.editManager.getEditModel(configuration)
+        const taskAndSelection = await this.fetchAndCacheSmartApplyTask(configuration, model)
+
+        if (taskAndSelection) {
+            const provider = this.options.editManager.getProviderForTask(taskAndSelection.task)
+            provider.prefetchStreamingEdit()
+        }
+    }
+
+    private async fetchAndCacheSmartApplyTask(
+        configuration: SmartApplyArguments['configuration'],
+        model: string
+    ): SmartApplyCacheEntry {
+        let inFlight = this.cache.get(configuration.id)
+        if (!inFlight) {
+            inFlight = this.fetchSmartApplyTask(configuration, model)
+            this.cache.set(configuration.id, inFlight)
+        }
+
+        try {
+            return inFlight
+        } catch (error) {
+            this.cache.delete(configuration.id)
+            throw error
+        }
+    }
+
+    private async fetchSmartApplyTask(
+        configuration: SmartApplyArguments['configuration'],
+        model: string
+    ): SmartApplyCacheEntry {
+        const { id, instruction, document, replacement } = configuration
+        const versions = await currentSiteVersion()
+        if (!versions || versions instanceof Error) {
+            throw new Error('unable to determine site version')
+        }
+
+        const replacementCode = PromptString.unsafe_fromLLMResponse(replacement)
+
+        const selectionStartTime = performance.now()
+        const selection = await getSmartApplySelection({
+            id,
+            instruction,
+            replacement: replacementCode,
+            document,
+            model,
+            chatClient: this.options.chatClient,
+            codyApiVersion: versions.codyAPIVersion,
+        })
+        const selectionTimeTakenMs = performance.now() - selectionStartTime
+
+        if (!selection) {
+            telemetryRecorder.recordEvent('cody.smart-apply.selection', 'not-found', {
+                billingMetadata: { product: 'cody', category: 'billable' },
+            })
+
+            return null
+        }
+
+        telemetryRecorder.recordEvent('cody.smart-apply', 'selected', {
+            metadata: {
+                [selection.type]: 1,
+            },
+            billingMetadata: { product: 'cody', category: 'billable' },
+        })
+
+        const contextLoggerRequestId = this.smartApplyContextLogger.createSmartApplyLoggingRequest({
+            model,
+            userQuery: configuration.instruction.toString(),
+            replacementCodeBlock: replacementCode.toString(),
+            document: configuration.document,
+        })
+
+        this.smartApplyContextLogger.addSmartApplySelectionContext(
+            contextLoggerRequestId,
+            selection.type,
+            selection.range,
+            selectionTimeTakenMs,
+            configuration.document
+        )
+
+        const task = await this.options.editManager.createEditTask({
+            configuration: {
+                id: configuration.id,
+                document: configuration.document,
+                range: selection?.range || new vscode.Range(0, 0, 0, 0),
+                mode: 'edit',
+                instruction: ps`Ensuring that you do not duplicate code that is outside of the selection, apply the following change:
+${replacementCode}`,
+                model,
+                intent: 'edit',
+            },
+            source: 'chat',
+        })
+
+        if (!task) {
+            return null
+        }
+
+        return { task, selectionType: selection.type, contextLoggerRequestId }
+    }
+
+    public async smartApplyEdit(args: SmartApplyArguments): Promise<void> {
+        const {
+            configuration: { document, traceparent, isNewFile },
+            configuration,
+            source = 'chat',
+        } = args
+
+        return context.with(extractContextFromTraceparent(traceparent), async () => {
+            await wrapInActiveSpan('edit.smart-apply', async span => {
+                span.setAttribute('sampled', true)
+                span.setAttribute('continued', true)
+
+                if (await isUriIgnoredByContextFilterWithNotification(document.uri, 'edit')) {
+                    return
+                }
+
+                const model = await this.options.editManager.getEditModel(configuration)
+
+                telemetryRecorder.recordEvent('cody.command.smart-apply', 'executed', {
+                    billingMetadata: {
+                        product: 'cody',
+                        category: 'core',
+                    },
+                })
+
+                const editor = await vscode.window.showTextDocument(document.uri)
+
+                if (isNewFile) {
+                    return this.applyInsertionEdit({
+                        configuration,
+                        editor,
+                        model,
+                        source,
+                        selectionType: null,
+                        selectionRange: null,
+                    })
+                }
+
+                const documentRange = new vscode.Range(0, 0, document.lineCount, 0)
+
+                editor.setDecorations(SMART_APPLY_FILE_DECORATION, [documentRange])
+                const taskAndSelection = await this.fetchAndCacheSmartApplyTask(configuration, model)
+                editor.setDecorations(SMART_APPLY_FILE_DECORATION, [])
+
+                if (!taskAndSelection) {
+                    void vscode.window.showErrorMessage(
+                        'Unable to apply this change to the file. Please try applying this code manually'
+                    )
+                    return
+                }
+
+                const { task, selectionType, contextLoggerRequestId } = taskAndSelection
+                editor.revealRange(task.selectionRange, vscode.TextEditorRevealType.InCenter)
+
+                if (task.selectionRange.isEmpty) {
+                    return this.applyInsertionEdit({
+                        configuration,
+                        editor,
+                        model,
+                        source: source as EventSource,
+                        selectionRange: task.selectionRange,
+                        selectionType,
+                    })
+                }
+
+                const applyStartTime = performance.now()
+                await this.options.editManager.startStreamingEditTask({
+                    task,
+                    editor: { active: editor },
+                })
+                const applyTimeTakenMs = performance.now() - applyStartTime
+
+                this.smartApplyContextLogger.addApplyContext({
+                    requestId: contextLoggerRequestId,
+                    applyTimeMs: applyTimeTakenMs,
+                    applyTaskId: task.id,
+                })
+                this.smartApplyContextLogger.logSmartApplyContextToTelemetry(contextLoggerRequestId)
+
+                return
+            })
+        })
+    }
+
+    private async applyInsertionEdit({
+        configuration,
+        editor,
+        model,
+        source,
+        selectionRange,
+        selectionType,
+    }: {
+        configuration: SmartApplyArguments['configuration']
+        editor: vscode.TextEditor
+        model: string
+        source: EventSource
+        selectionRange: vscode.Range | null
+        selectionType: SmartApplySelectionType | null
+    }): Promise<void> {
+        const { id, document, replacement, instruction, isNewFile } = configuration
+
+        let insertionRange: vscode.Range
+        let finalReplacement: string
+
+        if (isNewFile) {
+            insertionRange = new vscode.Range(0, 0, 0, 0)
+            finalReplacement = replacement
+        } else {
+            // For non-new files, selection must be provided
+            insertionRange = selectionRange!
+            if (
+                selectionType === 'insert' &&
+                document.lineAt(document.lineCount - 1).text.trim().length !== 0
+            ) {
+                // Inserting to the bottom of the file, but the last line is not empty
+                // Inject an additional new line for us to use as the insertion range.
+                await editor.edit(
+                    editBuilder => {
+                        editBuilder.insert(selectionRange!.start, '\n')
+                    },
+                    { undoStopAfter: false, undoStopBefore: false }
+                )
+
+                // Update the range to reflect the new end of document
+                insertionRange = document.lineAt(document.lineCount - 1).range
+            }
+            finalReplacement = '\n' + replacement
+        }
+
+        const task = this.options.editManager.createTaskAndCheckForDuplicates({
+            taskId: id,
+            document,
+            instruction,
+            userContextFiles: [],
+            selectionRange: insertionRange,
+            intent: 'add',
+            mode: 'insert',
+            model,
+            rules: null,
+            source,
+            destinationFile: document.uri,
+            insertionPoint: undefined,
+            telemetryMetadata: {},
+        })
+
+        if (!task) {
+            return
+        }
+
+        this.options.editManager.logExecutedTaskEvent(task)
+        const provider = this.options.editManager.getProviderForTask(task)
+        await provider.applyEdit(finalReplacement)
+    }
+
+    public dispose(): void {
+        for (const disposable of this.disposables) {
+            disposable.dispose()
+        }
+        this.disposables = []
+    }
+}

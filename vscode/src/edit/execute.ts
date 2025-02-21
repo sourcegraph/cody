@@ -53,11 +53,6 @@ export interface ExecuteEditArguments {
     }
     source?: EventSource
     telemetryMetadata?: FixupTelemetryMetadata
-    /**
-     * Whether this edit is being prefetched in advance of user action.
-     * When true, indicates this is a background prefetch that should not affect the UI.
-     */
-    isPrefetch?: boolean
 }
 
 /**
