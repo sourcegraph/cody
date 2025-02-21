@@ -56,10 +56,6 @@ export interface AutoEditsRendererManager extends vscode.Disposable {
          * `null` if no inline completion items should be rendered
          */
         inlineCompletionItems: vscode.InlineCompletionItem[] | null
-        /**
-         * `null` if no inline decoration should be rendered
-         */
-        updatedDecorationInfo: DecorationInfo | null
         updatedPrediction: string
     }
 
@@ -343,10 +339,8 @@ export class AutoEditsDefaultRendererManager implements AutoEditsRendererManager
         document,
         position,
         docContext,
-        decorationInfo,
     }: TryMakeInlineCompletionsArgs): {
         inlineCompletionItems: vscode.InlineCompletionItem[] | null
-        updatedDecorationInfo: DecorationInfo | null
         updatedPrediction: string
     } {
         const updatedPrediction = adjustPredictionIfInlineCompletionPossible(
@@ -374,7 +368,6 @@ export class AutoEditsDefaultRendererManager implements AutoEditsRendererManager
             if (autocompleteInlineResponse.trimEnd().length === 0) {
                 return {
                     inlineCompletionItems: null,
-                    updatedDecorationInfo: null,
                     updatedPrediction,
                 }
             }
@@ -401,7 +394,6 @@ export class AutoEditsDefaultRendererManager implements AutoEditsRendererManager
             })
             return {
                 inlineCompletionItems: [inlineCompletionItem],
-                updatedDecorationInfo: null,
                 updatedPrediction,
             }
         }
@@ -412,7 +404,6 @@ export class AutoEditsDefaultRendererManager implements AutoEditsRendererManager
 
         return {
             inlineCompletionItems: null,
-            updatedDecorationInfo: decorationInfo,
             updatedPrediction: updatedPrediction,
         }
     }

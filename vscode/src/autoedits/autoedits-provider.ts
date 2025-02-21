@@ -366,7 +366,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 return null
             }
 
-            const { inlineCompletionItems, updatedDecorationInfo, updatedPrediction } =
+            const { inlineCompletionItems, updatedPrediction } =
                 this.rendererManager.tryMakeInlineCompletions({
                     requestId,
                     prediction,
@@ -376,18 +376,6 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                     docContext,
                     decorationInfo,
                 })
-
-            if (inlineCompletionItems === null && updatedDecorationInfo === null) {
-                autoeditsOutputChannelLogger.logDebugIfVerbose(
-                    'provideInlineCompletionItems',
-                    'no suggestion to render'
-                )
-                autoeditAnalyticsLogger.markAsDiscarded({
-                    requestId,
-                    discardReason: autoeditDiscardReason.emptyPredictionAfterInlineCompletionExtraction,
-                })
-                return null
-            }
 
             const editor = vscode.window.activeTextEditor
             if (!editor || !areSameUriDocs(document, editor.document)) {
@@ -409,7 +397,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             autoeditAnalyticsLogger.markAsPostProcessed({
                 requestId,
                 prediction: updatedPrediction,
-                decorationInfo: updatedDecorationInfo,
+                decorationInfo,
                 inlineCompletionItems,
             })
 
@@ -420,8 +408,8 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 await this.unstable_handleDidShowCompletionItem(requestId)
             }
 
-            if (updatedDecorationInfo) {
-                await this.rendererManager.renderInlineDecorations(updatedDecorationInfo)
+            if (!inlineCompletionItems) {
+                await this.rendererManager.renderInlineDecorations(decorationInfo)
             }
 
             // The data structure returned to the agent's from the `autoedits/execute` calls.

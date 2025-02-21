@@ -51,7 +51,6 @@ export class AutoEditsInlineRendererManager
         decorationInfo,
     }: TryMakeInlineCompletionsArgs): {
         inlineCompletionItems: vscode.InlineCompletionItem[] | null
-        updatedDecorationInfo: DecorationInfo | null
         updatedPrediction: string
     } {
         const { insertText, usedChangeIds } = getCompletionText({
@@ -109,9 +108,23 @@ export class AutoEditsInlineRendererManager
             unchangedLines: withoutUsedChanges(decorationInfo.unchangedLines),
         }
 
+        const remainingChanges =
+            decorationInfoWithoutUsedChanges.addedLines.length +
+            decorationInfoWithoutUsedChanges.removedLines.length +
+            decorationInfoWithoutUsedChanges.modifiedLines.filter(line =>
+                line.changes.some(change => change.type !== 'unchanged')
+            ).length
+
+        if (remainingChanges) {
+            // This suggestion cannot solely be displayed with a completion item
+            return {
+                inlineCompletionItems: null,
+                updatedPrediction: prediction,
+            }
+        }
+
         return {
             inlineCompletionItems,
-            updatedDecorationInfo: decorationInfoWithoutUsedChanges,
             updatedPrediction: prediction,
         }
     }

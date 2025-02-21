@@ -1,5 +1,10 @@
 import * as vscode from 'vscode'
+import { isOnlyAddingTextForModifiedLines } from '../diff-utils'
+import { generateSuggestionAsImage } from '../image-gen'
+import { getEndColumnForLine } from '../image-gen/utils'
+import { makeVisualDiff } from '../visual-diff'
 import type { AutoEditsDecorator, DecorationInfo } from './base'
+import { cssPropertiesToString } from './utils'
 
 export class InlineDiffDecorator implements vscode.Disposable, AutoEditsDecorator {
     private readonly addedTextDecorationType = vscode.window.createTextEditorDecorationType({})
@@ -7,13 +12,17 @@ export class InlineDiffDecorator implements vscode.Disposable, AutoEditsDecorato
 
     constructor(private readonly editor: vscode.TextEditor) {}
 
-    public setDecorations({ modifiedLines, removedLines }: DecorationInfo): void {
-        const removedOptions = removedLines.map(({ originalLineNumber, text }) => {
+    public setDecorations(decorationInfo: DecorationInfo): void {
+        const removedOptions = decorationInfo.removedLines.map(({ originalLineNumber, text }) => {
             const range = new vscode.Range(originalLineNumber, 0, originalLineNumber, text.length)
             return this.createRemovedDecoration(range, text.length)
         })
 
-        const { added, removed } = this.createModifiedDecorationOptions(modifiedLines)
+        // TODO: Render insert marker?
+        const removed = this.createModifiedRemovedDecorations(decorationInfo)
+        const added = this.shouldRenderImage(decorationInfo)
+            ? this.createModifiedImageDecorations(decorationInfo)
+            : this.createModifiedAdditionDecorations(decorationInfo)
 
         this.editor.setDecorations(this.removedTextDecorationType, [...removedOptions, ...removed])
         this.editor.setDecorations(this.addedTextDecorationType, added)
@@ -24,15 +33,98 @@ export class InlineDiffDecorator implements vscode.Disposable, AutoEditsDecorato
         return true
     }
 
-    /**
-     * Process modified lines to create decorations for inserted and deleted text within those lines.
-     */
-    private createModifiedDecorationOptions(modifiedLines: DecorationInfo['modifiedLines']): {
-        added: vscode.DecorationOptions[]
-        removed: vscode.DecorationOptions[]
-    } {
-        const added: vscode.DecorationOptions[] = []
-        const removed: vscode.DecorationOptions[] = []
+    private shouldRenderImage(decorationInfo: DecorationInfo): boolean {
+        if (decorationInfo.addedLines.length > 0) {
+            // Any additions should be represented with the image
+            return true
+        }
+
+        if (isOnlyAddingTextForModifiedLines(decorationInfo.modifiedLines)) {
+            // We only have modified lines to show, and they are very simple.
+            // We can render them as text.
+            return false
+        }
+
+        const isSingleLineDiff = decorationInfo.modifiedLines.length === 1
+        if (isSingleLineDiff) {
+            // We only have one line to show. This is likely overkill for the image
+            // decoration. Show text decorations instead.
+            return false
+        }
+
+        return true
+    }
+
+    private createModifiedImageDecorations(decorationInfo: DecorationInfo): vscode.DecorationOptions[] {
+        // TODO: Diff mode will likely change depending on the environment.
+        // This should be determined by client capabilities.
+        // VS Code: 'additions'
+        // Client capabiliies === image: 'unified'
+        const diffMode = 'additions'
+        const { diff, target } = makeVisualDiff(decorationInfo, diffMode, this.editor.document)
+        const { dark, light, pixelRatio } = generateSuggestionAsImage({
+            diff,
+            lang: this.editor.document.languageId,
+            mode: diffMode,
+        })
+        const startLineEndColumn = getEndColumnForLine(
+            this.editor.document.lineAt(target.line),
+            this.editor.document
+        )
+
+        // The padding in which to offset the decoration image away from neighbouring code
+        const decorationPadding = 4
+        // The margin position where the decoration image should render.
+        // Ensuring it does not conflict with the visibility of existing code.
+        const decorationMargin = target.offset - startLineEndColumn + decorationPadding
+        const decorationStyle = cssPropertiesToString({
+            // Absolutely position the suggested code so that the cursor does not jump there
+            position: 'absolute',
+            // Make sure the decoration is rendered on top of other decorations
+            'z-index': '9999',
+            // Scale the decoration to the correct size (upscaled to boost resolution)
+            scale: String(1 / pixelRatio),
+            'transform-origin': '0px 0px',
+            height: 'auto',
+            // The decoration will be entirely taken up by the image.
+            // Setting the line-height to 0 ensures that there is no additional padding added by the decoration area.
+            'line-height': '0',
+        })
+
+        return [
+            {
+                range: new vscode.Range(
+                    target.line,
+                    startLineEndColumn,
+                    target.line,
+                    startLineEndColumn
+                ),
+                renderOptions: {
+                    before: {
+                        color: new vscode.ThemeColor('editorSuggestWidget.foreground'),
+                        backgroundColor: new vscode.ThemeColor('editorSuggestWidget.background'),
+                        border: '1px solid',
+                        borderColor: new vscode.ThemeColor('editorSuggestWidget.border'),
+                        textDecoration: `none;${decorationStyle}`,
+                        margin: `0 0 0 ${decorationMargin}ch`,
+                    },
+                    after: {
+                        contentText: '\u00A0'.repeat(3) + '\u00A0'.repeat(startLineEndColumn),
+                        margin: `0 0 0 ${decorationMargin}ch`,
+                    },
+                    // Provide different highlighting for dark/light themes
+                    dark: { before: { contentIconPath: vscode.Uri.parse(dark) } },
+                    light: { before: { contentIconPath: vscode.Uri.parse(light) } },
+                },
+            },
+        ]
+    }
+
+    private createModifiedAdditionDecorations(
+        decorationInfo: DecorationInfo
+    ): vscode.DecorationOptions[] {
+        const { modifiedLines } = decorationInfo
+        const decorations: vscode.DecorationOptions[] = []
 
         for (const line of modifiedLines) {
             // TODO(valery): verify that we still need to merge consecutive insertions.
@@ -48,7 +140,7 @@ export class InlineDiffDecorator implements vscode.Disposable, AutoEditsDecorato
                     } else {
                         // Different position or first insertion, push previous insert group if any
                         if (currentInsertPosition) {
-                            added.push(
+                            decorations.push(
                                 this.createGhostTextDecoration(currentInsertPosition, currentInsertText)
                             )
                         }
@@ -59,31 +151,45 @@ export class InlineDiffDecorator implements vscode.Disposable, AutoEditsDecorato
                 } else {
                     // Handle the end of an insert group
                     if (currentInsertPosition) {
-                        added.push(
+                        decorations.push(
                             this.createGhostTextDecoration(currentInsertPosition, currentInsertText)
                         )
                         currentInsertPosition = null
                         currentInsertText = ''
-                    }
-
-                    // Handle deletions within modified lines
-                    if (change.type === 'delete') {
-                        removed.push(
-                            this.createRemovedDecoration(change.originalRange, change.text.length)
-                        )
                     }
                 }
             }
 
             // After processing all changes in the line, ensure the last insert group is added
             if (currentInsertPosition) {
-                added.push(this.createGhostTextDecoration(currentInsertPosition, currentInsertText))
+                decorations.push(
+                    this.createGhostTextDecoration(currentInsertPosition, currentInsertText)
+                )
                 currentInsertPosition = null
                 currentInsertText = ''
             }
         }
 
-        return { added, removed }
+        return decorations
+    }
+
+    private createModifiedRemovedDecorations(
+        decorationInfo: DecorationInfo
+    ): vscode.DecorationOptions[] {
+        const { modifiedLines } = decorationInfo
+        const decorations: vscode.DecorationOptions[] = []
+
+        for (const line of modifiedLines) {
+            for (const change of line.changes) {
+                if (change.type === 'delete') {
+                    decorations.push(
+                        this.createRemovedDecoration(change.originalRange, change.text.length)
+                    )
+                }
+            }
+        }
+
+        return decorations
     }
 
     /**
