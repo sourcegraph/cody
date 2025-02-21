@@ -130,7 +130,6 @@ interface RawClientConfiguration {
     experimentalAutoEditRendererTesting: boolean
     experimentalAutoEditConfigOverride: AutoEditsModelConfig | undefined
     experimentalAutoEditEnabled: boolean
-    experimentalCommitMessage: boolean
     experimentalNoodle: boolean
     experimentalMinionAnthropicKey: string | undefined
     experimentalNoxideEnabled: boolean

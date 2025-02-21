@@ -146,7 +146,6 @@ export function getConfiguration(
         autocompleteExperimentalGraphContext: getHiddenSetting<
             ClientConfiguration['autocompleteExperimentalGraphContext']
         >('autocomplete.experimental.graphContext', null),
-        experimentalCommitMessage: getHiddenSetting('experimental.commitMessage', true),
         experimentalNoodle: getHiddenSetting('experimental.noodle', false),
 
         experimentalTracing: getHiddenSetting('experimental.tracing', false),
