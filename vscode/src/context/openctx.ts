@@ -210,7 +210,7 @@ export function getOpenCtxProviders(
             }
             const isMcpEnabled = vscode.workspace
                 .getConfiguration()
-                .get<boolean>('openctx.providers.mcp.enable', true)
+                .get<boolean>('openctx.providers.mcp.enable', false)
 
             // if mcp is enabled, add the mcp provider to the providers
             if (isMcpEnabled) {
