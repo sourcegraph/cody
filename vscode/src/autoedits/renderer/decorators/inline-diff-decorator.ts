@@ -9,6 +9,10 @@ import { cssPropertiesToString } from './utils'
 export class InlineDiffDecorator implements vscode.Disposable, AutoEditsDecorator {
     private readonly addedTextDecorationType = vscode.window.createTextEditorDecorationType({})
     private readonly removedTextDecorationType = vscode.window.createTextEditorDecorationType({})
+    private readonly insertMarkerDecorationType = vscode.window.createTextEditorDecorationType({
+        border: '1px dashed rgba(100, 255, 100, 0.5)',
+        borderWidth: '1px 1px 0 0',
+    })
 
     constructor(private readonly editor: vscode.TextEditor) {}
 
@@ -20,16 +24,43 @@ export class InlineDiffDecorator implements vscode.Disposable, AutoEditsDecorato
 
         // TODO: Render insert marker?
         const removed = this.createModifiedRemovedDecorations(decorationInfo)
-        const added = this.shouldRenderImage(decorationInfo)
+        const { added, insertMarker } = this.shouldRenderImage(decorationInfo)
             ? this.createModifiedImageDecorations(decorationInfo)
             : this.createModifiedAdditionDecorations(decorationInfo)
 
         this.editor.setDecorations(this.removedTextDecorationType, [...removedOptions, ...removed])
         this.editor.setDecorations(this.addedTextDecorationType, added)
+        this.editor.setDecorations(this.insertMarkerDecorationType, insertMarker)
     }
 
     public canRenderDecoration(decorationInfo: DecorationInfo): boolean {
         // Inline decorator can render any decoration, so it should always return true.
+        return true
+    }
+
+    private hasSimpleModifications(modifiedLines: DecorationInfo['modifiedLines']): boolean {
+        let linesWithChanges = 0
+        for (const modifiedLine of modifiedLines) {
+            const changeCount = modifiedLine.changes.filter(
+                change => change.type === 'delete' || change.type === 'insert'
+            ).length
+
+            if (changeCount === 0) {
+                continue
+            }
+
+            if (changeCount >= 3) {
+                // Three or more changes on a single line is classified as complex
+                return false
+            }
+
+            linesWithChanges++
+            if (linesWithChanges >= 3) {
+                // Three or more lines with changes is classified as complex
+                return false
+            }
+        }
+
         return true
     }
 
@@ -45,17 +76,19 @@ export class InlineDiffDecorator implements vscode.Disposable, AutoEditsDecorato
             return false
         }
 
-        const isSingleLineDiff = decorationInfo.modifiedLines.length === 1
-        if (isSingleLineDiff) {
-            // We only have one line to show. This is likely overkill for the image
-            // decoration. Show text decorations instead.
+        if (this.hasSimpleModifications(decorationInfo.modifiedLines)) {
+            // We a mixture of additions and deletions in the modified lines, but we are
+            // classifying them as a simple diff. We can render them as text.
             return false
         }
 
         return true
     }
 
-    private createModifiedImageDecorations(decorationInfo: DecorationInfo): vscode.DecorationOptions[] {
+    private createModifiedImageDecorations(decorationInfo: DecorationInfo): {
+        added: vscode.DecorationOptions[]
+        insertMarker: vscode.DecorationOptions[]
+    } {
         // TODO: Diff mode will likely change depending on the environment.
         // This should be determined by client capabilities.
         // VS Code: 'additions'
@@ -91,38 +124,42 @@ export class InlineDiffDecorator implements vscode.Disposable, AutoEditsDecorato
             'line-height': '0',
         })
 
-        return [
-            {
-                range: new vscode.Range(
-                    target.line,
-                    startLineEndColumn,
-                    target.line,
-                    startLineEndColumn
-                ),
-                renderOptions: {
-                    before: {
-                        color: new vscode.ThemeColor('editorSuggestWidget.foreground'),
-                        backgroundColor: new vscode.ThemeColor('editorSuggestWidget.background'),
-                        border: '1px solid',
-                        borderColor: new vscode.ThemeColor('editorSuggestWidget.border'),
-                        textDecoration: `none;${decorationStyle}`,
-                        margin: `0 0 0 ${decorationMargin}ch`,
+        return {
+            added: [
+                {
+                    range: new vscode.Range(
+                        target.line,
+                        startLineEndColumn,
+                        target.line,
+                        startLineEndColumn
+                    ),
+                    renderOptions: {
+                        before: {
+                            color: new vscode.ThemeColor('editorSuggestWidget.foreground'),
+                            backgroundColor: new vscode.ThemeColor('editorSuggestWidget.background'),
+                            border: '1px solid',
+                            borderColor: new vscode.ThemeColor('editorSuggestWidget.border'),
+                            textDecoration: `none;${decorationStyle}`,
+                            margin: `0 0 0 ${decorationMargin}ch`,
+                        },
+                        after: {
+                            contentText: '\u00A0'.repeat(3) + '\u00A0'.repeat(startLineEndColumn),
+                            margin: `0 0 0 ${decorationMargin}ch`,
+                        },
+                        // Provide different highlighting for dark/light themes
+                        dark: { before: { contentIconPath: vscode.Uri.parse(dark) } },
+                        light: { before: { contentIconPath: vscode.Uri.parse(light) } },
                     },
-                    after: {
-                        contentText: '\u00A0'.repeat(3) + '\u00A0'.repeat(startLineEndColumn),
-                        margin: `0 0 0 ${decorationMargin}ch`,
-                    },
-                    // Provide different highlighting for dark/light themes
-                    dark: { before: { contentIconPath: vscode.Uri.parse(dark) } },
-                    light: { before: { contentIconPath: vscode.Uri.parse(light) } },
                 },
-            },
-        ]
+            ],
+            insertMarker: [{ range: new vscode.Range(target.line, 0, target.line, startLineEndColumn) }],
+        }
     }
 
-    private createModifiedAdditionDecorations(
-        decorationInfo: DecorationInfo
-    ): vscode.DecorationOptions[] {
+    private createModifiedAdditionDecorations(decorationInfo: DecorationInfo): {
+        added: vscode.DecorationOptions[]
+        insertMarker: vscode.DecorationOptions[]
+    } {
         const { modifiedLines } = decorationInfo
         const decorations: vscode.DecorationOptions[] = []
 
@@ -170,7 +207,11 @@ export class InlineDiffDecorator implements vscode.Disposable, AutoEditsDecorato
             }
         }
 
-        return decorations
+        return {
+            added: decorations,
+            // No need to render an insert marker, it's clear exactly where the changes are
+            insertMarker: [],
+        }
     }
 
     private createModifiedRemovedDecorations(
@@ -233,10 +274,12 @@ export class InlineDiffDecorator implements vscode.Disposable, AutoEditsDecorato
         this.clearDecorations()
         this.addedTextDecorationType.dispose()
         this.removedTextDecorationType.dispose()
+        this.insertMarkerDecorationType.dispose()
     }
 
     private clearDecorations(): void {
         this.editor.setDecorations(this.addedTextDecorationType, [])
         this.editor.setDecorations(this.removedTextDecorationType, [])
+        this.editor.setDecorations(this.insertMarkerDecorationType, [])
     }
 }
