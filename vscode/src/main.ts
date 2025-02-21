@@ -7,6 +7,7 @@ import {
     type ChatClient,
     ClientConfigSingleton,
     type ConfigurationInput,
+    type ContextItem,
     DOTCOM_URL,
     type DefaultCodyCommands,
     FeatureFlag,
@@ -77,6 +78,7 @@ import {
     executeTestCaseEditCommand,
     executeTestEditCommand,
 } from './commands/execute'
+import type { ExecuteChatArguments } from './commands/execute/ask'
 import { executeDocChatCommand } from './commands/execute/doc'
 import { executeTestChatCommand } from './commands/execute/test-chat'
 import { CodySourceControl } from './commands/scm/source-control'
@@ -86,8 +88,10 @@ import { createInlineCompletionItemProvider } from './completions/create-inline-
 import { getConfiguration } from './configuration'
 import { observeOpenCtxController } from './context/openctx'
 import { logGlobalStateEmissions } from './dev/helpers'
+import type { ExecuteEditArguments } from './edit/execute'
 import { EditManager } from './edit/manager'
 import { manageDisplayPathEnvInfoForExtension } from './editor/displayPathEnvInfo'
+import { findCodeBlockRange } from './editor/utils/codeblock'
 import { VSCodeEditor } from './editor/vscode-editor'
 import type { PlatformContext } from './extension.common'
 import { configureExternalServices } from './external-services'
@@ -292,6 +296,132 @@ const register = async (
             authProvider,
         })
     )
+
+    // Simple commands that can be invoked in-file.
+    // TODO: Remove the query after submission.
+    const codyInFile = vscode.languages.registerCompletionItemProvider(
+        '*', // Register for all file types
+        {
+            provideCompletionItems(document: vscode.TextDocument, position: vscode.Position) {
+                // Get the text from the start of the line to the current cursor position
+                const linePrefix = document.lineAt(position).text.slice(0, position.character)
+                // Only proceed if the line contains '@cody'
+                if (!linePrefix.trim().includes('@cody')) {
+                    return undefined
+                }
+
+                // Find the position of '@cody' in the line
+                const codyIndex = linePrefix.indexOf('@cody')
+                if (codyIndex === -1) {
+                    return undefined
+                }
+
+                // Extract the query text after '@cody'
+                const regex = /@cody(.*)$/
+                const match = linePrefix.match(regex)
+                const query = match?.[1]?.trim() ?? linePrefix.replace('@cody', '')
+
+                // Calculate the target line for insertion (2 lines below current position)
+                const line = position.line + 2
+                const lineText = document.lineAt(line)
+                const range = new vscode.Range(
+                    new vscode.Position(line, 0), // Start of line
+                    new vscode.Position(line, lineText.text.length - 1) // End of line
+                )
+
+                // Get the visible code block range for context
+                const visibleContentRange = findCodeBlockRange(document, document.lineAt(position).text)
+                const item = {
+                    type: 'file',
+                    range: visibleContentRange,
+                    content: document.getText(),
+                    uri: document.uri,
+                } satisfies ContextItem
+                // If there's a visible range, use only that content
+                if (visibleContentRange) {
+                    item.content = document.getText(visibleContentRange)
+                }
+
+                // Create chat completion item
+                const chat = new vscode.CompletionItem('chat')
+                chat.insertText = new vscode.SnippetString('')
+                chat.documentation = new vscode.MarkdownString(`Ask Cody about "${query}"`)
+                chat.command = {
+                    command: 'cody.action.chat',
+                    title: 'Ask Cody in chat!',
+                    arguments: [
+                        {
+                            text: PromptString.unsafe_fromUserQuery(query),
+                            source: 'editor',
+                            contextItems: [item],
+                        } satisfies ExecuteChatArguments,
+                    ],
+                }
+
+                // Create documentation completion item
+                const doc = new vscode.CompletionItem('doc')
+                doc.insertText = new vscode.SnippetString('')
+                doc.command = {
+                    command: 'cody.command.document-code',
+                    title: 'Document code',
+                    arguments: [
+                        {
+                            configuration: {
+                                intent: 'edit',
+                                document,
+                                range,
+                            },
+                        } satisfies ExecuteEditArguments,
+                    ],
+                }
+
+                // Create edit completion item
+                const edit = new vscode.CompletionItem('edit')
+                edit.insertText = new vscode.SnippetString('')
+                edit.documentation = new vscode.MarkdownString(
+                    `Ask Cody to edit this file following your instruction "${query}"`
+                )
+                edit.command = {
+                    command: 'cody.command.edit-code',
+                    arguments: [
+                        {
+                            configuration: {
+                                instruction: PromptString.unsafe_fromUserQuery(query),
+                                intent: 'edit',
+                                document,
+                                range,
+                            },
+                        } satisfies ExecuteEditArguments,
+                    ],
+                    title: 'Edit Code',
+                }
+
+                // Create search completion item
+                const search = new vscode.CompletionItem('search')
+                search.documentation = new vscode.MarkdownString('Search ' + query)
+                search.command = {
+                    command: 'sourcegraph.search',
+                    title: 'Search with Sourcegraph',
+                }
+
+                // Create help completion item
+                const help = new vscode.CompletionItem('help')
+                help.insertText = new vscode.SnippetString('')
+                const docs = new vscode.MarkdownString('See the docs.')
+                help.documentation = docs
+                docs.baseUri = vscode.Uri.parse('https://docs.sourcegraph.com/')
+                help.command = {
+                    command: 'vscode.open',
+                    title: 'Open a link',
+                }
+
+                // Return all completion items
+                return [chat, doc, edit, search, help]
+            },
+        },
+        '?' // triggered whenever a '?' is being typed
+    )
+    disposables.push(codyInFile)
 
     registerAutocomplete(platform, statusBar, disposables)
     const tutorialSetup = tryRegisterTutorial(context, disposables)
