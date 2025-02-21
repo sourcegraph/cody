@@ -24,7 +24,7 @@ interface PromptBuilderContextResult {
 }
 
 interface PromptCachingSetting {
-    featureFlag: boolean
+    featureFlag?: boolean
     isEnrolled?: boolean
 }
 
@@ -53,23 +53,23 @@ export class PromptBuilder {
 
     private constructor(private readonly tokenCounter: TokenCounter) {}
 
+    private readonly hasCacheFeatureFlag = storeLastValue(
+        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyPromptCachingOnMessages)
+    )
     private readonly _isCacheEnabled: PromptCachingSetting = {
-        featureFlag: Boolean(
-            storeLastValue(
-                featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyPromptCachingOnMessages)
-            )?.value
-        ),
+        featureFlag: false,
         isEnrolled: false,
     }
 
-    private get isCacheEnabled(): boolean {
+    public get isCacheEnabled(): boolean {
+        const isFlagEnabled = Boolean(this.hasCacheFeatureFlag?.value?.last ?? false)
         if (!this._isCacheEnabled.isEnrolled) {
             this._isCacheEnabled.isEnrolled = logFirstEnrollmentEvent(
                 FeatureFlag.CodyPromptCachingOnMessages,
-                this._isCacheEnabled.featureFlag
+                isFlagEnabled
             )
         }
-        return this._isCacheEnabled.featureFlag
+        return isFlagEnabled
     }
 
     public build(): Message[] {
