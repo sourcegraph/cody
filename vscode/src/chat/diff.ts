@@ -43,14 +43,7 @@ export function diffInChat(
         switch (diff.type) {
             case 'deletion':
                 if (lineNumber === diff.range.start.line) {
-                    message.push(
-                        document
-                            .getText(diff.range)
-                            .trimEnd()
-                            .split('\n')
-                            .map(line => `- ${line}`)
-                            .join('\n')
-                    )
+                    message.push(`- ${diff.oldText}`)
                 }
                 break
             case 'decoratedReplacement':

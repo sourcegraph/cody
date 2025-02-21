@@ -11,11 +11,12 @@ describe('diffInChat', () => {
             // Add other required TextDocument properties as needed
         }) as vscode.TextDocument
 
+    const baseContent = `line1
+line2
+line3`
+
     test('formats single line insertion correctly', () => {
-        const content = `line1
-        line2
-        line3`
-        const document = createMockDocument(content)
+        const document = createMockDocument(baseContent)
         const diffs: Edit[] = [
             {
                 type: 'insertion',
@@ -37,10 +38,7 @@ describe('diffInChat', () => {
     })
 
     test('formats single line deletion correctly', () => {
-        const originalDoc = `line1
-        line2
-        line3`
-        const document = createMockDocument(originalDoc)
+        const document = createMockDocument(baseContent)
         const diffs: Edit[] = [
             {
                 type: 'deletion',
@@ -54,9 +52,7 @@ describe('diffInChat', () => {
 
 \`\`\`diff
  line1
-- line1
 - line2
-- line3
  line3
 \`\`\``
 
