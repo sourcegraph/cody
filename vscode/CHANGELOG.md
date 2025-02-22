@@ -4,6 +4,14 @@ This is a log of all notable changes to Cody for VS Code.
 
 <!--- {/_ CHANGELOG_START _/} -->
 
+## 1.70.3
+
+### Fix
+
+#### Chat
+
+- prompt caching feature flag enrollement [#7177](https://github.com/sourcegraph/cody/pull/7177)
+
 ## 1.70.2
 
 ### Fix
