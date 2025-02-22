@@ -4,8 +4,10 @@ import {
     ContextItemSource,
     contextFiltersProvider,
     displayPath,
+    featureFlagProvider,
     ps,
 } from '@sourcegraph/cody-shared'
+import { Observable } from 'observable-fns'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { URI } from 'vscode-uri'
 import { mockLocalStorage } from '../services/LocalStorageProvider'
@@ -383,6 +385,42 @@ describe('PromptBuilder', () => {
               Hi!
               Hi!"
             `)
+        })
+    })
+})
+
+describe('PromptBuilder', () => {
+    beforeEach(() => {
+        vi.spyOn(featureFlagProvider, 'evaluatedFeatureFlag').mockReturnValue(Observable.of(false))
+    })
+    describe('isCacheEnabled', () => {
+        it('handles disabled feature flag correctly', async () => {
+            const promptBuilder = await PromptBuilder.create({
+                input: 8192,
+                output: 4096,
+            })
+
+            // First access should trigger enrollment but still return feature flag value
+            expect(promptBuilder.isCacheEnabled).toBe(false)
+
+            // Second access should use cached value
+            expect(promptBuilder.isCacheEnabled).toBe(false)
+        })
+
+        it('respects feature flag value and tracks enrollment', async () => {
+            // Mock feature flag provider
+            vi.spyOn(featureFlagProvider, 'evaluatedFeatureFlag').mockReturnValue(Observable.of(true))
+            const promptBuilder = await PromptBuilder.create({
+                input: 8192,
+                output: 4096,
+            })
+
+            // First access should trigger enrollment but still return feature flag value
+            expect(promptBuilder.isCacheEnabled).toBe(true)
+
+            // Second access should use cached value
+            expect(promptBuilder.isCacheEnabled).toBe(true)
+            vi.spyOn(featureFlagProvider, 'evaluatedFeatureFlag').mockReturnValue(Observable.of(false))
         })
     })
 })

@@ -3,6 +3,7 @@ import {
     CLIENT_CAPABILITIES_FIXTURE,
     type ContextItem,
     ContextItemSource,
+    FeatureFlag,
     type Message,
     ModelUsage,
     type ModelsData,
@@ -42,18 +43,11 @@ describe('DefaultPrompter', () => {
         })
         vi.spyOn(localStorage, 'getEnrollmentHistory').mockReturnValue(false)
         vi.spyOn(contextFiltersProvider, 'isUriIgnored').mockResolvedValue(false)
-        vi.spyOn(graphqlClient, 'fetchSourcegraphAPI').mockImplementation(async () => ({
-            data: {
-                evaluateFeatureFlag: true,
-                featureFlags: {
-                    evaluatedFeatureFlags: [
-                        { name: 'cody-intent-detection-api', value: true },
-                        { name: 'cody-unified-prompts', value: true },
-                        { name: 'cody-autocomplete-tracing', value: true },
-                    ],
-                },
-            },
-        }))
+        vi.spyOn(graphqlClient, 'getEvaluatedFeatureFlags').mockResolvedValue({
+            [FeatureFlag.CodyUnifiedPrompts]: true,
+            [FeatureFlag.CodyAutocompleteTracing]: true,
+            [FeatureFlag.CodyPromptCachingOnMessages]: false,
+        })
         mockAuthStatus(AUTH_STATUS_FIXTURE_AUTHED)
         mockClientCapabilities(CLIENT_CAPABILITIES_FIXTURE)
     })

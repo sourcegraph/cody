@@ -350,11 +350,11 @@ log:
         send: 0
         ssl: -1
         wait: 808
-    - _id: 7f72c116f78d7588d22fe948c059381b
+    - _id: 4b3a65cb083f2c0c16a80a7105baeeb3
       _order: 0
       cache: {}
       request:
-        bodySize: 1768
+        bodySize: 2126
         cookies: []
         headers:
           - name: accept-encoding
@@ -367,7 +367,7 @@ log:
           - name: content-type
             value: application/json
           - name: traceparent
-            value: 00-aeba78fadea4c98c4a53e0743172074b-b59daec458ea02cb-01
+            value: 00-f8aafe08143b0bb2b215a4bddb5936fa-b3d4dc52cfb7d927-01
           - name: user-agent
             value: customcommandsclient/v1 (Node.js v20.4.0)
           - name: x-requested-with
@@ -391,24 +391,50 @@ log:
                   structure: ```$LANGUAGE:$FILEPATH```
 
                   For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
-              - cacheEnabled: true
-                speaker: human
+              - speaker: human
                 text: >
-                  My selected code from codebase file src/animal.ts:1-6:
-
-                  ```
-
-
-                  export interface Animal {
-                      name: string
-                      makeAnimalSound(): string
-                      isMammal: boolean
+                  Codebase context from file path src/sum.ts: export function
+                  sum(a: number, b: number): number {
+                      /* CURSOR */
                   }
-
-                  ```
-
-
-                  Codebase context from file path src/animal.ts: /* SELECTION_START */
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >
+                  Codebase context from file path src/example4.ts: export
+                  function example(): string {
+                      return 'example'
+                  }
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >
+                  Codebase context from file path src/example3.ts: export
+                  function example(): string {
+                      return 'example'
+                  }
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >
+                  Codebase context from file path src/example2.ts: export
+                  function example(): string {
+                      return 'example'
+                  }
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >
+                  Codebase context from file path src/example1.ts: export
+                  function example(): string {
+                      return 'example'
+                  }
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >
+                  Codebase context from file path src/animal.ts: /*
+                  SELECTION_START */
 
                   export interface Animal {
                       name: string
@@ -417,36 +443,19 @@ log:
                   }
 
                   /* SELECTION_END */
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: |-
+                  My selected code from codebase file src/animal.ts:1-6:
+                  ```
 
-
-
-                  Codebase context from file path src/example1.ts: export function example(): string {
-                      return 'example'
+                  export interface Animal {
+                      name: string
+                      makeAnimalSound(): string
+                      isMammal: boolean
                   }
-
-
-
-                  Codebase context from file path src/example2.ts: export function example(): string {
-                      return 'example'
-                  }
-
-
-
-                  Codebase context from file path src/example3.ts: export function example(): string {
-                      return 'example'
-                  }
-
-
-
-                  Codebase context from file path src/example4.ts: export function example(): string {
-                      return 'example'
-                  }
-
-
-
-                  Codebase context from file path src/sum.ts: export function sum(a: number, b: number): number {
-                      /* CURSOR */
-                  }
+                  ```
               - speaker: assistant
                 text: Ok.
               - speaker: human
@@ -477,7 +486,7 @@ log:
           size: 116
           text: |+
             event: completion
-            data: {"deltaText":"6","stopReason":"end_turn"}
+            data: {"deltaText":"7","stopReason":"end_turn"}
 
             event: done
             data: {}
@@ -485,7 +494,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 10 Feb 2025 19:57:13 GMT
+            value: Fri, 21 Feb 2025 22:46:11 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -514,8 +523,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-02-10T19:57:11.529Z
-      time: 1766
+      startedDateTime: 2025-02-21T22:46:09.511Z
+      time: 2457
       timings:
         blocked: -1
         connect: -1
@@ -523,12 +532,12 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 1766
-    - _id: c9c5b45f95029b259a84cd726de59a01
+        wait: 2457
+    - _id: 6bf2501884491cd1c6f6f52c22eaba8f
       _order: 0
       cache: {}
       request:
-        bodySize: 2263
+        bodySize: 2243
         cookies: []
         headers:
           - name: accept-encoding
@@ -541,7 +550,7 @@ log:
           - name: content-type
             value: application/json
           - name: traceparent
-            value: 00-89c8a378d827e06424ac34ea658fe332-ae5725fefad9db64-01
+            value: 00-e921341a329062630398c1b0bc5c251a-233a1f539fd750a0-01
           - name: user-agent
             value: customcommandsclient/v1 (Node.js v20.4.0)
           - name: x-requested-with
@@ -579,8 +588,7 @@ log:
                   - Only enclose your response in <CODE5711></CODE5711> XML tags. Do use any other XML tags unless they are part of the generated code.
 
                   - Do not provide any additional commentary about the changes you made. Only respond with the generated code.
-              - cacheEnabled: true
-                speaker: human
+              - speaker: human
                 text: |-
                   My selected code from codebase file src/sum.ts:1-3:
                   ```
@@ -644,15 +652,13 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Tue, 11 Feb 2025 18:54:44 GMT
+            value: Fri, 21 Feb 2025 22:46:13 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
             value: chunked
           - name: connection
             value: keep-alive
-          - name: retry-after
-            value: "67"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -670,13 +676,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1405
+        headersSize: 1299
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-02-11T18:54:42.446Z
-      time: 1894
+      startedDateTime: 2025-02-21T22:46:12.012Z
+      time: 1310
       timings:
         blocked: -1
         connect: -1
@@ -684,12 +690,12 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 1894
-    - _id: 82aefa70a5ee53eee9a9b81eefc59c60
+        wait: 1310
+    - _id: 4a1005f2f803fcf7e22b9b3a2d322c6e
       _order: 0
       cache: {}
       request:
-        bodySize: 2381
+        bodySize: 2361
         cookies: []
         headers:
           - name: accept-encoding
@@ -702,7 +708,7 @@ log:
           - name: content-type
             value: application/json
           - name: traceparent
-            value: 00-00ff2202f4b178a0c3ada66f2d21ba34-48a16ab077ec4be1-01
+            value: 00-fb5564ef4e5d5089f74fd084794e3380-82fdc0dc975831d5-01
           - name: user-agent
             value: customcommandsclient/v1 (Node.js v20.4.0)
           - name: x-requested-with
@@ -740,8 +746,7 @@ log:
                   - Only enclose your response in <CODE5711></CODE5711> XML tags. Do use any other XML tags unless they are part of the generated code.
 
                   - Do not provide any additional commentary about the changes you made. Only respond with the generated code.
-              - cacheEnabled: true
-                speaker: human
+              - speaker: human
                 text: >
                   Codebase context from file path src/animal.ts: /*
                   SELECTION_START */
@@ -801,14 +806,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=customcommandsclient&client-version=v1
       response:
-        bodySize: 451
+        bodySize: 587
         content:
           mimeType: text/event-stream
-          size: 451
+          size: 587
           text: >+
             event: completion
 
-            data: {"deltaText":"export interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean\n    logName(): void\n}","stopReason":"stop_sequence"}
+            data: {"deltaText":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean\n    logAnimalName(): void\n}\n/* SELECTION_END */\n","stopReason":"stop_sequence"}
 
 
             event: done
@@ -818,15 +823,13 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Tue, 11 Feb 2025 18:54:46 GMT
+            value: Fri, 21 Feb 2025 22:46:15 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
             value: chunked
           - name: connection
             value: keep-alive
-          - name: retry-after
-            value: "65"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -844,13 +847,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1405
+        headersSize: 1299
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-02-11T18:54:44.359Z
-      time: 1762
+      startedDateTime: 2025-02-21T22:46:13.353Z
+      time: 2186
       timings:
         blocked: -1
         connect: -1
@@ -858,7 +861,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 1762
+        wait: 2186
     - _id: f1b1cde4cd57488b7f0137954f0302f5
       _order: 0
       cache: {}
