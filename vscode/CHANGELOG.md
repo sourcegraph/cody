@@ -4,6 +4,131 @@ This is a log of all notable changes to Cody for VS Code.
 
 <!--- {/_ CHANGELOG_START _/} -->
 
+## 1.70.2
+
+### Features
+
+#### Audo-Edit
+
+- decrease debounce interval [#7120](https://github.com/sourcegraph/cody/pull/7120)
+
+#### Auto-Edit
+
+- Support unified diff and refactor diff format [#7000](https://github.com/sourcegraph/cody/pull/7000)
+
+#### Chat
+
+- generate custom chat titles on first message automatically [#7063](https://github.com/sourcegraph/cody/pull/7063)
+
+#### Prompt-Editor
+
+- focus on file range when clicking on context item mention with ranges [#7021](https://github.com/sourcegraph/cody/pull/7021)
+
+#### Vscode
+
+- add context via file explorer [#7107](https://github.com/sourcegraph/cody/pull/7107)
+
+#### Webview
+
+- add support for <think> tags in Chat Message [#6845](https://github.com/sourcegraph/cody/pull/6845)
+
+#### Others
+
+- Add experimental & nightly release channels for vsce [#6997](https://github.com/sourcegraph/cody/pull/6997)
+
+### Fix
+
+#### Auto-Edit
+
+- Fix low resolution images on low DPI screens [#7100](https://github.com/sourcegraph/cody/pull/7100)
+
+#### Chat
+
+- prompt caching feature flag enrollement [#7177](https://github.com/sourcegraph/cody/pull/7177)
+- remove current selection from initial mention [#7161](https://github.com/sourcegraph/cody/pull/7161)
+
+#### Command
+
+- Generate commit message now uses flash-lite instead of last selected model [#7082](https://github.com/sourcegraph/cody/pull/7082)
+
+#### Editor
+
+- fix range handling for editor selection content [#7128](https://github.com/sourcegraph/cody/pull/7128)
+
+#### Jetbrains
+
+- remove duplicate sg logo svg [#7093](https://github.com/sourcegraph/cody/pull/7093)
+
+#### Keybindings
+
+- simplify chat panel toggle behavior with opt+L [#7115](https://github.com/sourcegraph/cody/pull/7115)
+
+#### Smart-Apply
+
+- stripping of markdown code blocks [#7105](https://github.com/sourcegraph/cody/pull/7105)
+
+#### Tracing
+
+- Add Client Platform and agentVersion to traces [#6889](https://github.com/sourcegraph/cody/pull/6889)
+
+#### Ui
+
+- Consolidate the extension settings with the web view settings(SRCH-1649) [#7096](https://github.com/sourcegraph/cody/pull/7096)
+- Hide unused prompts(SRCH-1648) [#7095](https://github.com/sourcegraph/cody/pull/7095)
+
+#### Vscode
+
+- Disable nightly extension in launch configurations [#7152](https://github.com/sourcegraph/cody/pull/7152)
+
+#### Others
+
+- Make it possible to dogfood new prompt editor [#7094](https://github.com/sourcegraph/cody/pull/7094)
+
+### Chore
+
+#### Auto-Edit
+
+- Set background color for test images [#7139](https://github.com/sourcegraph/cody/pull/7139)
+
+#### Ollama
+
+- remove ollama docs [#7153](https://github.com/sourcegraph/cody/pull/7153)
+
+#### Release
+
+- fix new line rendering in changelog PRs [#7149](https://github.com/sourcegraph/cody/pull/7149)
+
+#### Others
+
+- Simplify state machine implementation of prosemirror prompt input [#7154](https://github.com/sourcegraph/cody/pull/7154)
+- Add prosemirror-lexical interop test [#7111](https://github.com/sourcegraph/cody/pull/7111)
+
+### Reverts
+
+- Revert "fix(ui): Hide unused prompts(SRCH-1648)" [#-1](https://github.com/sourcegraph/cody/pull/7101)
+
+### Uncategorized
+
+#### Others
+
+- Update README.md (Fix a broken link.) [#7175](https://github.com/sourcegraph/cody/pull/7175)
+- feat(commit message): commit message out of experimental stage [#7166](https://github.com/sourcegraph/cody/pull/7166)
+- Update gradle and deps [#7163](https://github.com/sourcegraph/cody/pull/7163)
+- [JetBrains] Fix `isOutsideOfDocument` [#7162](https://github.com/sourcegraph/cody/pull/7162)
+- Handle case when VirtualFile is null [#7156](https://github.com/sourcegraph/cody/pull/7156)
+- Remove mention of unlimited LLM usage [#7151](https://github.com/sourcegraph/cody/pull/7151)
+- Changelog for 1.70.1 [#7140](https://github.com/sourcegraph/cody/pull/7140)
+- fix(agentic chat): terminal and openCtx are not registered as tools [#7130](https://github.com/sourcegraph/cody/pull/7130)
+- Fix code search downlaod [#7124](https://github.com/sourcegraph/cody/pull/7124)
+- Enable credentials synchronisation between Cody and Search extensions [#7123](https://github.com/sourcegraph/cody/pull/7123)
+- Changelog for 1.70.0 [#7116](https://github.com/sourcegraph/cody/pull/7116)
+- fix(unit test): revert prompt.test test cases [#7114](https://github.com/sourcegraph/cody/pull/7114)
+- Unclickable links no longer display in Cody WelcomeMessage [#7102](https://github.com/sourcegraph/cody/pull/7102)
+- Changelog for 1.68.0 [#7089](https://github.com/sourcegraph/cody/pull/7089)
+- Add support for external auth providers in code search [#6919](https://github.com/sourcegraph/cody/pull/6919)
+- Handle customer proxy re-auth response by retrying, not prompting user for different token [#6652](https://github.com/sourcegraph/cody/pull/6652)
+
+
 ## 1.70.1
 
 ### Fix
