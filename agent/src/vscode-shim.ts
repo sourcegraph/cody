@@ -344,7 +344,11 @@ const _workspace: typeof vscode.workspace = {
                   )
               )
     },
-    workspaceFolders,
+    get workspaceFolders() {
+        // According to the docs, workspaceFolders is `undefined` when no
+        // workspace has been opened.
+        return workspaceFolders.length === 0 ? undefined : workspaceFolders
+    },
     getWorkspaceFolder: (uri: vscode.Uri) => {
         for (const folder of workspaceFolders) {
             if (uriHasPrefix(uri, folder.uri, isWindows())) {
