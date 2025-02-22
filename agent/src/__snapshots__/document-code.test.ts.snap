@@ -7,7 +7,7 @@ export const TestLogger = {
         // Do some stuff
 
         /**
-         * Logs a message indicating that a log is being recorded.
+         * Records a log message to the console.
          */
         function recordLog() {
             console.log(/* CURSOR */ 'Recording the log')
@@ -87,8 +87,8 @@ describe('test block', () => {
     it('does something else', () => {
         // This line will error due to incorrect usage of \`performance.now\`
         /**
-         * Retrieves the current time in milliseconds since the page was loaded.
-         * This is useful for measuring the duration of an operation or event.
+         * Captures the current timestamp using \`performance.now()\`.
+         * This is useful for measuring the duration of an operation.
          */
         const startTime = performance.now(/* CURSOR */)
     })
