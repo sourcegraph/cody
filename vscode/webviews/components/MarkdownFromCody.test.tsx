@@ -44,6 +44,8 @@ const complicatedMarkdown = [
     'Escaped \\* markdown and escaped html code &amp;lt;',
 ].join('\n')
 
+const complicatedMarkdownCodeBlock = '```markdown' + complicatedMarkdown + '```'
+
 describe('MarkdownFromCody', () => {
     it('renders code blocks, with syntax highlighting', () => {
         expect(render(complicatedMarkdown)).toMatchInlineSnapshot(`
@@ -71,6 +73,43 @@ describe('MarkdownFromCody', () => {
           <p>Escaped * markdown and escaped html code &lt;</p>"
         `)
         // TODO(sqs): Not sure why the '<b>inline html</b>' B tags aren't passing through.
+    })
+    it('renders Markdown code blocks, with child code blocks preserved', () => {
+        expect(render(complicatedMarkdownCodeBlock)).toMatchInlineSnapshot(`
+          "<pre><code class="hljs language-markdown#">
+          ## This is a subheading
+
+          Some text
+          in the same paragraph
+          with a [link](./destination).
+
+          \`\`\`ts
+          const someTypeScriptCode = funcCall()
+          \`\`\`
+
+          - bullet list item 1
+          - bullet list item 2
+
+          1. item 1
+             \`\`\`ts
+             const codeInsideTheBulletPoint = "string"
+             \`\`\`
+          1. item 2
+
+          > quoted
+          > text
+
+          | col 1 | col 2 |
+          |-------|-------|
+          | A     | B     |
+
+          ![image alt text](./src.jpg)
+
+          <b>inline html</b>
+
+          Escaped \\* markdown and escaped html code &amp;lt;\`\`\`\`
+          </code></pre>"
+        `)
     })
     it('sanitizes script tags', () => {
         expect(render('<script>evil();</script>')).toBe('')
