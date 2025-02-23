@@ -298,7 +298,7 @@ export class FixupController
     /**
      * Given a task, tracks upcoming changes in the associated document.
      * If the change restores an applied task to its original state, we discard the task
-     * meaning any associated UI and behaviour is updated.
+     * meaning any associated UI and behavior is updated.
      */
     public registerDiscardOnRestoreListener(task: FixupTask): void {
         const listener: vscode.Disposable = vscode.workspace.onDidChangeTextDocument(async event => {
@@ -843,7 +843,7 @@ export class FixupController
 
         // Update the replacement to match the applied edit.
         // This is as the diff doesn't necessarily match the LLM response, as we may apply additional
-        // changes (e.g. injectiong placeholder lines)
+        // changes (e.g. injecting placeholder lines)
         // This ensures decorations are correctly computed.
         task.replacement = document.getText(task.selectionRange)
         this.decorator.didApplyTask(task)
@@ -910,16 +910,17 @@ export class FixupController
         }
 
         // Get the index of the first non-whitespace character on the line where the insertion point is.
-        const nonEmptyStartIndex = document.lineAt(
-            task.insertionPoint.line
-        ).firstNonWhitespaceCharacterIndex
+        // const nonEmptyStartIndex = document.lineAt(
+        //     task.insertionPoint.line
+        // ).firstNonWhitespaceCharacterIndex
         // Split the text into lines and prepend each line with spaces to match the indentation level
         // of the line where the insertion point is.
-        const textLines = text.split('\n').map(line => ' '.repeat(nonEmptyStartIndex) + line)
+        // const textLines = text.split('\n').map(line => ' '.repeat(nonEmptyStartIndex) + line)
         // Join the lines back into a single string with newline characters
         // Remove any leading whitespace from the first line, as we are inserting at the insertionPoint
         // Keep any trailing whitespace on the last line to preserve the original indentation.
-        const replacementText = textLines.join('\n').trimStart()
+        // const replacementText = textLines.join('\n') //.trimStart()
+        const replacementText = text
 
         // Insert the updated text at the specified insertionPoint.
         if (edit instanceof vscode.WorkspaceEdit) {
@@ -927,8 +928,18 @@ export class FixupController
             return vscode.workspace.applyEdit(edit)
         }
 
+        const startLine = task.insertionPoint.line > 0 ? task.insertionPoint.line - 1 : 0
+        const startLineText = document.lineAt(startLine).text
+
         return edit(editBuilder => {
-            editBuilder.insert(task.insertionPoint, replacementText)
+            // Replace the code block if the start line matches the start of the text
+            // this happens sometimes with python document code action where instead
+            // of adding only the docstring, the LLM returns the entire code block
+            if (startLine > 0 && startLineText && text.startsWith(startLineText)) {
+                editBuilder.replace(task.originalRange, replacementText)
+            } else {
+                editBuilder.insert(task.insertionPoint, replacementText)
+            }
         }, options)
     }
 
