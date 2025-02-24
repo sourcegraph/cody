@@ -205,11 +205,11 @@ log:
         send: 0
         ssl: -1
         wait: 1029
-    - _id: 820c56d277c7b94198495dbccdf71edd
+    - _id: 52dfd493fcdd482b0d151f69ffb7600e
       _order: 0
       cache: {}
       request:
-        bodySize: 913
+        bodySize: 943
         cookies: []
         headers:
           - name: accept-encoding
@@ -222,7 +222,7 @@ log:
           - name: content-type
             value: application/json
           - name: user-agent
-            value: cody-cli/6.0.0-SNAPSHOT (Node.js v20.4.0)
+            value: cody-cli/6.0.0-SNAPSHOT (Node.js v23.7.0)
           - name: x-requested-with
             value: cody-cli 6.0.0-SNAPSHOT
           - name: host
@@ -244,7 +244,9 @@ log:
                   structure: ```$LANGUAGE:$FILEPATH```
 
                   For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
-              - speaker: human
+              - base64Image: ""
+                content: []
+                speaker: human
                 text: |-
                   Codebase context from file animal.ts:
                   ```typescript:animal.ts
@@ -276,14 +278,14 @@ log:
             value: 6.0.0-SNAPSHOT
         url: https://sourcegraph.sourcegraph.com/.api/completions/stream?api-version=2&client-name=jetbrains&client-version=6.0.0-SNAPSHOT
       response:
-        bodySize: 458
+        bodySize: 455
         content:
           mimeType: text/event-stream
-          size: 458
+          size: 455
           text: >+
             event: completion
 
-            data: {"deltaText":"```typescript:animal.ts\nclass Cow implements StrangeAnimal {\n    makesSound(): 'coo' | 'moo' {\n        return 'moo'\n    }\n}\n```","stopReason":"end_turn"}
+            data: {"deltaText":"```typescript:cow.ts\nclass Cow implements StrangeAnimal {\n    makesSound(): 'coo' | 'moo' {\n        return 'moo'\n    }\n}\n```","stopReason":"end_turn"}
 
 
             event: done
@@ -293,7 +295,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Tue, 24 Dec 2024 01:23:12 GMT
+            value: Mon, 24 Feb 2025 11:32:43 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -317,13 +319,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1215
+        headersSize: 1390
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-12-24T01:23:11.527Z
-      time: 1087
+      startedDateTime: 2025-02-24T11:32:41.029Z
+      time: 1928
       timings:
         blocked: -1
         connect: -1
@@ -331,7 +333,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 1087
+        wait: 1928
     - _id: 4e18273d8ae5cff5662ebe8b0c813b4e
       _order: 0
       cache: {}

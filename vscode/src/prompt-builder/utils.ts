@@ -61,7 +61,7 @@ export function renderContextItem(contextItem: ContextItem): ContextMessage | nu
             }
     }
 
-    return { speaker: 'human', text: messageText, file: contextItem }
+    return { speaker: 'human', text: messageText, file: contextItem, base64Image: '', content: [] }
 }
 
 export function getContextItemTokenUsageType(item: ContextItem): ContextTokenUsageType {
