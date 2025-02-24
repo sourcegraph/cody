@@ -21,7 +21,7 @@ import {
     setDocument,
     upsertMentions,
 } from './actions'
-import type { Position } from './plugins/atMention'
+import { AT_MENTION_TRIGGER_CHARACTER, type Position, enableAtMention } from './plugins/atMention'
 import { type DataLoaderInput, type MenuItem, promptInput, schema } from './promptInput'
 
 type PromptInputLogic = typeof promptInput
@@ -73,6 +73,7 @@ interface PromptEditorOptions {
 interface PromptEditorAPI {
     setFocus(focus: boolean, options?: { moveCursorToEnd?: boolean }): void
     appendText(text: string): void
+    openAtMentionMenu(): void
     addMentions(items: ContextItem[], position?: 'before' | 'after', sep?: string): void
     upsertMentions(
         items: ContextItem[],
@@ -192,6 +193,13 @@ export const usePromptInput = (options: PromptEditorOptions): [PromptInputActor,
                 editor.send({
                     type: 'document.update',
                     transaction: state => appendToDocument(state, text),
+                })
+            },
+            openAtMentionMenu() {
+                editor.send({
+                    type: 'document.update',
+                    transaction: state =>
+                        enableAtMention(appendToDocument(state, AT_MENTION_TRIGGER_CHARACTER)),
                 })
             },
             addMentions(items: ContextItem[], position: 'before' | 'after' = 'after', seperator = ' ') {

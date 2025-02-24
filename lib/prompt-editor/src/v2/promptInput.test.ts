@@ -19,7 +19,7 @@ import {
     setDocument,
     upsertMentions,
 } from './actions'
-import { enableAtMention, hasAtMention } from './plugins/atMention'
+import { AT_MENTION_TRIGGER_CHARACTER, enableAtMention, hasAtMention } from './plugins/atMention'
 import {
     type DataLoaderInput,
     type MenuItem,
@@ -111,7 +111,7 @@ function getText(editor: PromptInputActor): string {
 function createAtMention(editor: PromptInputActor): { type: (value: string) => void } {
     editor.send({
         type: 'dispatch',
-        transaction: enableAtMention(getEditorState(editor).tr.insertText('@')),
+        transaction: enableAtMention(getEditorState(editor).tr.insertText(AT_MENTION_TRIGGER_CHARACTER)),
     })
 
     let previousState = getEditorState(editor)
