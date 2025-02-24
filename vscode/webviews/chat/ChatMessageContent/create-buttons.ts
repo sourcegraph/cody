@@ -77,6 +77,19 @@ export function createButtons(
     return container
 }
 
+function getLineChanges(text: string): { additions: number; deletions: number } {
+    const lines = text.split('\n')
+    let additions = 0
+    let deletions = 0
+
+    for (const line of lines) {
+        if (line.startsWith('+')) additions++
+        if (line.startsWith('-')) deletions++
+    }
+
+    return { additions, deletions }
+}
+
 export function createButtonsExperimentalUI(
     preText: string,
     humanMessage: PriorHumanMessageInfo | null,
@@ -88,14 +101,61 @@ export function createButtonsExperimentalUI(
     smartApplyId?: string,
     smartApplyState?: CodyTaskState
 ): HTMLElement {
-    const container = document.createElement('div')
-    container.className = styles.buttonsContainer
+    const wrapper = document.createElement('div')
+    wrapper.className = styles.wrapper
+
+    // Create button container 1 for file info and diff button
+    const buttonContainer1 = document.createElement('div')
+    buttonContainer1.className = styles.buttonsContainerTransparent
+    buttonContainer1.dataset.containerType = 'preview' // Add data attribute to identify container
+
+    // Add filename and stats on the left
+    const leftInfo = document.createElement('div')
+    leftInfo.className = styles.leftInfo
+    if (codeBlockName && codeBlockName !== 'command') {
+        const fileNameText = document.createElement('span')
+        fileNameText.textContent = codeBlockName
+        leftInfo.appendChild(fileNameText)
+    }
+
+    if (humanMessage?.intent === 'edit') {
+        const { additions, deletions } = getLineChanges(preText)
+        if (additions >= 0 || deletions >= 0) {
+            const stats = document.createElement('span')
+            stats.innerHTML = `<span class="${styles.addition}">+${additions}</span>, <span class="${styles.deletion}">-${deletions}</span>`
+            stats.className = styles.stats
+            leftInfo.appendChild(stats)
+        }
+    }
+    buttonContainer1.appendChild(leftInfo)
+
+    // Add Open Diff button on the right
+    if (codeBlockName && !codeBlockName.includes('command')) {
+        const openDiffButton = document.createElement('button')
+        openDiffButton.className = styles.button
+        openDiffButton.innerHTML = 'Open Diff'
+        buttonContainer1.appendChild(openDiffButton)
+    }
+
+    wrapper.appendChild(buttonContainer1)
+
+    // Create button container 2 for action buttons
+    const buttonContainer2 = document.createElement('div')
+    buttonContainer2.className = styles.buttonsContainerTransparent
+    buttonContainer2.dataset.containerType = 'actions' // Add data attribute to identify container
+
     if (!copyButtonOnSubmit) {
-        return container
+        wrapper.appendChild(buttonContainer2)
+        return wrapper
     }
 
     const buttons = document.createElement('div')
     buttons.className = styles.buttons
+
+    // Create metadata container for guardrails
+    const metadataContainer = document.createElement('div')
+    metadataContainer.className = styles.metadataContainer
+    buttons.appendChild(metadataContainer)
 
     if (smartApply && smartApplyState === CodyTaskState.Applied && smartApplyId) {
         const acceptButton = createAcceptButton(smartApplyId, smartApply)
@@ -137,9 +197,10 @@ export function createButtonsExperimentalUI(
         }
     }
 
-    container.append(buttons)
+    buttonContainer2.appendChild(buttons)
+    wrapper.appendChild(buttonContainer2)
 
-    return container
+    return wrapper
 }
 
 function createInsertButton(
