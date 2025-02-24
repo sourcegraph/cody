@@ -6,7 +6,7 @@ import { mockLocalStorage } from '../../../../services/LocalStorageProvider'
 import type { DecorationInfo } from '../../decorators/base'
 import { makeVisualDiff } from '../visual-diff'
 import type { DiffMode } from '../visual-diff/types'
-import { MOCK_DIFF } from './mock-diff'
+import { MIXED_ADDITIONS_AND_DELETIONS, MOCK_DIFFS } from './mock-diff'
 
 expect.extend({ toMatchImageSnapshot })
 
@@ -43,62 +43,59 @@ async function generateImageForTest(
 }
 
 describe('generateSuggestionAsImage', () => {
-    describe('addition diff', () => {
-        it('generates correct images, with correct highlighting applied, from a set of tokens', async () => {
-            const { darkBuffer, lightBuffer } = await generateImageForTest(
-                MOCK_DIFF,
-                'typescript',
-                'additions'
-            )
+    describe.each(MOCK_DIFFS)('$name diff', ({ name, diff, lang }) => {
+        it('addition diff visual output', async () => {
+            const { darkBuffer, lightBuffer } = await generateImageForTest(diff, lang, 'additions')
             expect(lightBuffer).toMatchImageSnapshot({
-                customSnapshotIdentifier: 'highlighted-additions-suggestion-light',
+                customSnapshotIdentifier: `${name}-highlighted-additions-suggestion-light`,
             })
             expect(darkBuffer).toMatchImageSnapshot({
-                customSnapshotIdentifier: 'highlighted-additions-suggestion-dark',
+                customSnapshotIdentifier: `${name}-highlighted-additions-suggestion-dark`,
             })
         })
 
-        it('generates correct images, with correct highlighting applied, from a set of tokens in a language that does not have supported highlighting', async () => {
-            const { darkBuffer, lightBuffer } = await generateImageForTest(
-                MOCK_DIFF,
-                'non-existent-language',
-                'additions'
-            )
+        it('unified diff visual output', async () => {
+            const { darkBuffer, lightBuffer } = await generateImageForTest(diff, lang, 'unified')
             expect(lightBuffer).toMatchImageSnapshot({
-                customSnapshotIdentifier: 'unhighlighted-additions-suggestion-light',
+                customSnapshotIdentifier: `${name}-highlighted-unified-suggestion-light`,
             })
             expect(darkBuffer).toMatchImageSnapshot({
-                customSnapshotIdentifier: 'unhighlighted-additions-suggestion-dark',
+                customSnapshotIdentifier: `${name}-highlighted-unified-suggestion-dark`,
             })
         })
     })
 
-    describe('unfied diff', () => {
-        it('generates correct images, with correct highlighting applied, from a set of tokens', async () => {
+    describe('no syntax highlighting', () => {
+        // We want to avoid duplicating the tests (and images) for cases with no highlighting, as it is a small
+        // change that isn't required to be tested for a bunch of different diffs.
+        // Use a single diff for this case.
+        const exampleDiff = MIXED_ADDITIONS_AND_DELETIONS.diff
+
+        it('addition diff visual output', async () => {
             const { darkBuffer, lightBuffer } = await generateImageForTest(
-                MOCK_DIFF,
-                'typescript',
-                'unified'
+                exampleDiff,
+                'non-existent-language',
+                'additions'
             )
             expect(lightBuffer).toMatchImageSnapshot({
-                customSnapshotIdentifier: 'highlighted-unified-suggestion-light',
+                customSnapshotIdentifier: 'no-highlighting-additions-suggestion-light',
             })
             expect(darkBuffer).toMatchImageSnapshot({
-                customSnapshotIdentifier: 'highlighted-unified-suggestion-dark',
+                customSnapshotIdentifier: 'no-highlighting-additions-suggestion-dark',
             })
         })
 
-        it('generates correct images, with correct highlighting applied, from a set of tokens in a language that does not have supported highlighting', async () => {
+        it('unified diff visual output', async () => {
             const { darkBuffer, lightBuffer } = await generateImageForTest(
-                MOCK_DIFF,
+                exampleDiff,
                 'non-existent-language',
                 'unified'
             )
             expect(lightBuffer).toMatchImageSnapshot({
-                customSnapshotIdentifier: 'unhighlighted-unified-suggestion-light',
+                customSnapshotIdentifier: 'no-highlighting-unified-suggestion-light',
             })
             expect(darkBuffer).toMatchImageSnapshot({
-                customSnapshotIdentifier: 'unhighlighted-unified-suggestion-dark',
+                customSnapshotIdentifier: 'no-highlighting-unified-suggestion-dark',
             })
         })
     })

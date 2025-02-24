@@ -920,7 +920,6 @@ export const DEFAULT_VSCODE_SETTINGS = {
     experimentalAutoEditConfigOverride: undefined,
     experimentalMinionAnthropicKey: undefined,
     experimentalTracing: false,
-    experimentalCommitMessage: true,
     experimentalNoodle: false,
     experimentalNoxideEnabled: true,
     codeActions: true,

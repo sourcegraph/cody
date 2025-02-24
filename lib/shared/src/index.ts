@@ -180,6 +180,7 @@ export {
     displayPathDirname,
     displayPathWithoutWorkspaceFolderPrefix,
     setDisplayPathEnvInfo,
+    fixPathSep,
     type DisplayPathEnvInfo,
 } from './editor/displayPath'
 export { forceHydration, hydrateAfterPostMessage } from './editor/hydrateAfterPostMessage'

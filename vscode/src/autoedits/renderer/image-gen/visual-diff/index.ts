@@ -40,6 +40,20 @@ export function prepareVisualDiff(decorationInfo: DecorationInfo, mode: DiffMode
     ].sort((a, b) => {
         const aLine = a.type === 'removed' ? a.originalLineNumber : a.modifiedLineNumber
         const bLine = b.type === 'removed' ? b.originalLineNumber : b.modifiedLineNumber
+
+        if (aLine === bLine) {
+            // We have a conflict, this is because the same line number has been used for both added and removed lines.
+            // To make a visually appealing diff, we need to ensure that we order these conflicts like so:
+            // removed -> added -> modified -> unchanged
+            const typeOrder = {
+                removed: 0,
+                added: 1,
+                modified: 2,
+                unchanged: 3,
+            }
+            return typeOrder[a.type] - typeOrder[b.type]
+        }
+
         return aLine - bLine
     })
 

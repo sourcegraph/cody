@@ -4,9 +4,18 @@ This is a log of all notable changes to Cody for VS Code.
 
 <!--- {/_ CHANGELOG_START _/} -->
 
+## 1.70.2
+
+### Fix
+
+#### Chat
+
+- prompt caching feature flag enrollement [#7177](https://github.com/sourcegraph/cody/pull/7177)
+
 ## 1.70.1
 
 ### Fix
+
 - [Backport M70] fix(agentic chat): terminal and openCtx are not registered as tools [#7132](https://github.com/sourcegraph/cody/pull/7132)
 
 ## 1.70.0
