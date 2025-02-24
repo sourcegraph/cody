@@ -98,7 +98,10 @@ export const MentionMenuContextItemContent: FunctionComponent<{
     const isLink = item.type === 'open-link'
 
     const iconId =
-        item.icon || (isSymbol ? (isClassSymbol ? 'symbol-structure' : 'symbol-method') : null)
+        item.icon ||
+        (isSymbol ? (isClassSymbol ? 'symbol-structure' : 'symbol-method') : null) ||
+        item.provider ||
+        item.type
     const Icon = iconId ? iconForItem[iconId] : null
     const { title, displayName } = getMentionItemTitleAndDisplayName(item)
     const description = getDescription(item, query)
@@ -199,5 +202,9 @@ const iconForItem: Record<
     'list-selection': ListMinusIcon,
     file: FileIcon,
     'square-dashed-mouse-pointer': SquareDashedMousePointerIcon,
+    repository: FolderGitIcon,
+    tree: FolderGitIcon,
+    [REMOTE_REPOSITORY_PROVIDER_URI]: FolderGitIcon,
+    [REMOTE_DIRECTORY_PROVIDER_URI]: FolderGitIcon,
     'layout-menubar': LayoutPanelTopIcon,
 }

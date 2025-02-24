@@ -116,7 +116,6 @@ export async function getChatContextItemsForMention(
     options: GetContextItemsOptions,
     _?: AbortSignal
 ): Promise<ContextItem[]> {
-    const MAX_RESULTS = 20
     const { mentionQuery, rangeFilter = true } = options
 
     switch (mentionQuery.provider) {
@@ -126,30 +125,16 @@ export async function getChatContextItemsForMention(
             // It would be nice if the VS Code symbols API supports cancellation, but it doesn't
             return getSymbolContextFiles(
                 mentionQuery.text,
-                MAX_RESULTS,
+                mentionQuery.maxResults ?? 20,
                 mentionQuery.contextRemoteRepositoriesNames
             )
+
         case FILE_CONTEXT_MENTION_PROVIDER.id: {
-            const files = mentionQuery.text
-                ? await getFileContextFiles({
-                      query: mentionQuery.text,
-                      range: mentionQuery.range,
-                      maxResults: MAX_RESULTS,
-                      repositoriesNames: mentionQuery.contextRemoteRepositoriesNames,
-                  })
-                : await getOpenTabsContextFile()
-
-            // If a range is provided, that means user is trying to mention a specific line range.
-            // We will get the content of the file for that range to display file size warning if needed.
-            if (mentionQuery.range && files.length > 0 && rangeFilter) {
-                const item = await getContextFileFromUri(
-                    files[0].uri,
-                    new vscode.Range(mentionQuery.range.start.line, 0, mentionQuery.range.end.line, 0)
-                )
-                return item ? [item] : []
-            }
-
-            return files
+            return getFileContextFilesForRange({
+                mentionQuery,
+                rangeFilter,
+                maxResults: mentionQuery.maxResults ?? 20,
+            })
         }
 
         default: {
@@ -162,11 +147,44 @@ export async function getChatContextItemsForMention(
                 { providerUri: mentionQuery.provider }
             )
 
-            return items.map((item): ContextItemOpenCtx | ContextItemRepository =>
-                contextItemMentionFromOpenCtxItem(item)
-            )
+            return items
+                .map((item): ContextItemOpenCtx | ContextItemRepository =>
+                    contextItemMentionFromOpenCtxItem(item)
+                )
+                .slice(0, mentionQuery.maxResults ?? 20)
         }
     }
+}
+
+async function getFileContextFilesForRange({
+    mentionQuery,
+    rangeFilter,
+    maxResults,
+}: {
+    mentionQuery: MentionQuery
+    rangeFilter: boolean
+    maxResults: number
+}): Promise<ContextItem[]> {
+    const files = mentionQuery.text
+        ? await getFileContextFiles({
+              query: mentionQuery.text,
+              range: mentionQuery.range,
+              maxResults,
+              repositoriesNames: mentionQuery.contextRemoteRepositoriesNames,
+          })
+        : await getOpenTabsContextFile()
+
+    // If a range is provided, that means user is trying to mention a specific line range.
+    // We will get the content of the file for that range to display file size warning if needed.
+    if (mentionQuery.range && files.length > 0 && rangeFilter) {
+        const item = await getContextFileFromUri(
+            files[0].uri,
+            new vscode.Range(mentionQuery.range.start.line, 0, mentionQuery.range.end.line, 0)
+        )
+        return item ? [item] : []
+    }
+
+    return files
 }
 
 const activeTextEditor: Observable<vscode.TextEditor | undefined> = fromVSCodeEvent(

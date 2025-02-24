@@ -6,13 +6,17 @@ import type {
 } from '@sourcegraph/cody-shared'
 import {
     ContextItemSource,
+    FILE_CONTEXT_MENTION_PROVIDER,
     REMOTE_DIRECTORY_PROVIDER_URI,
     REMOTE_FILE_PROVIDER_URI,
     REMOTE_REPOSITORY_PROVIDER_URI,
+    SYMBOL_CONTEXT_MENTION_PROVIDER,
+    combineLatest,
     memoizeLastValue,
     parseMentionQuery,
 } from '@sourcegraph/cody-shared'
 import debounce from 'lodash/debounce'
+import { type Observable, map } from 'observable-fns'
 import { useCallback, useContext, useMemo, useState } from 'react'
 import { ChatMentionContext } from '../../plugins/atMentions/useChatContextItems'
 import { useExtensionAPI } from '../../useExtensionAPI'
@@ -23,6 +27,7 @@ export interface MentionMenuParams {
     query: string | null
     interactionID?: number | null | undefined
     parentItem: ContextMentionProviderMetadata | null
+    repoName?: string | null | undefined
 }
 
 export function useMentionMenuParams(): {
@@ -152,13 +157,6 @@ export function useCallMentionMenuData({
 }: MentionMenuParams): UseObservableResult<MentionMenuData> {
     const mentionSettings = useContext(ChatMentionContext)
     const unmemoizedCall = useExtensionAPI().mentionMenuData
-    const memoizedCall = useMemo(
-        () =>
-            mentionSettings.resolutionMode === 'local'
-                ? memoizeLastValue(unmemoizedCall, ([query]) => JSON.stringify(query))
-                : unmemoizedCall,
-        [unmemoizedCall, mentionSettings]
-    )
 
     const mentionQuery: MentionQuery = useMemo(
         () => ({
@@ -169,8 +167,90 @@ export function useCallMentionMenuData({
         [query, provider, interactionID, mentionSettings]
     )
 
+    const getMentionMenuData = useCallback(
+        (queries: MentionQuery[]): Observable<MentionMenuData> =>
+            combineLatest<MentionMenuData[]>(...queries.map(query => unmemoizedCall(query))).pipe(
+                map(
+                    (results: MentionMenuData[]): MentionMenuData => ({
+                        providers: results.flatMap(r => r.providers),
+                        items: results.flatMap(r => r.items).filter(item => item !== undefined),
+                        error: results.find(r => r.error)?.error,
+                    })
+                )
+            ),
+        [unmemoizedCall]
+    )
+
+    const memoizedCall = useMemo(
+        () =>
+            mentionSettings.resolutionMode === 'local'
+                ? memoizeLastValue(getMentionMenuData, ([queries]) => JSON.stringify(queries))
+                : getMentionMenuData,
+        [getMentionMenuData, mentionSettings]
+    )
     return useObservable(
-        useMemo(() => memoizedCall(mentionQuery), [memoizedCall, mentionQuery]),
+        useMemo(() => {
+            // if provider is null and mentionQuery.range is not set then make multiple queries to fetch files and symbols
+            if (!provider && mentionQuery.provider === FILE_CONTEXT_MENTION_PROVIDER.id) {
+                const queries = [
+                    { ...mentionQuery, maxResults: 10 },
+                    { ...mentionQuery, provider: SYMBOL_CONTEXT_MENTION_PROVIDER.id, maxResults: 3 },
+                    {
+                        ...mentionQuery,
+                        provider: REMOTE_REPOSITORY_PROVIDER_URI,
+                        maxResults: 2,
+                    },
+                ]
+
+                return memoizedCall(queries).pipe(
+                    map(data => ({
+                        ...data,
+                        items: data.items
+                            ?.sort((a, b) => {
+                                if (a.type === 'file' && b.type !== 'file') return -1
+                                if (b.type === 'file' && a.type !== 'file') return 1
+
+                                if (a.type === 'repository' && b.type !== 'repository') return -1
+                                if (b.type === 'repository' && a.type !== 'repository') return 1
+
+                                if (a.type === 'symbol' && b.type !== 'symbol') return -1
+                                if (b.type === 'symbol' && a.type !== 'symbol') return 1
+
+                                return 0
+                            })
+                            .sort((a, b) => {
+                                const aName = textFromContextItem(a)
+                                const bName = textFromContextItem(b)
+                                const query = mentionQuery.text.toLowerCase()
+
+                                // Then sort by match quality
+                                // Exact match
+                                if (aName === query && bName !== query) return -1
+                                if (bName === query && aName !== query) return 1
+
+                                // Starts with
+                                if (aName.startsWith(query) && !bName.startsWith(query)) return -1
+                                if (bName.startsWith(query) && !aName.startsWith(query)) return 1
+
+                                // Contains
+                                if (aName.includes(query) && !bName.includes(query)) return -1
+                                if (bName.includes(query) && !aName.includes(query)) return 1
+
+                                return 0
+                            }),
+                    }))
+                )
+            }
+
+            return memoizedCall([mentionQuery])
+        }, [memoizedCall, mentionQuery, provider]),
         { preserveValueKey: mentionQuery.provider ?? undefined }
     )
+}
+
+const textFromContextItem = (item: ContextItem): string => {
+    if (item.type === 'file') return item.uri.path.toLowerCase()
+    if (item.type === 'symbol') return item.symbolName.toLowerCase()
+    if (item.type === 'repository') return item.title?.toLowerCase() ?? ''
+    return item.title?.toLowerCase() ?? ''
 }
