@@ -1122,8 +1122,11 @@
           "order": 99,
           "type": "string",
           "enum": ["all", "off"],
-          "enumDescriptions": ["Sends usage data and errors.", "Disables all extension telemetry."],
-          "markdownDescription": "Controls the telemetry about Cody usage and errors. See [Cody usage and privacy notice](https://about.sourcegraph.com/terms/cody-notice).",
+          "enumDescriptions": [
+            "Sends usage data and errors.",
+            "[Enterprise-only] Disables all extension telemetry."
+          ],
+          "markdownDescription": "Controls the telemetry about Cody usage and errors for users connected to Enterprise instances. This setting only takes effect for Sourcegraph Enterprise users. For users connected to sourcegraph.com, this option is always enabled. See [Cody usage and privacy notice](https://about.sourcegraph.com/terms/cody-notice).",
           "default": "all"
         },
         "cody.autocomplete.advanced.provider": {
