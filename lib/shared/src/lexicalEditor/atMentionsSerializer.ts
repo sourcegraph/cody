@@ -37,8 +37,10 @@ export function serialize(m: SerializedPromptEditorValue): string {
     const nodes: SerializedLexicalNode[] = renderChildNodes(m.editorState.lexicalEditorState.root)
     let t = ''
     for (const n of nodes) {
-        if (n.type === 'text') {
+        if (n.type === 'text' || n.type === 'tab') {
             t += (n as SerializedTextNode).text
+        } else if (n.type === 'linebreak') {
+            t += "\n"
         } else if (n.type === 'contextItemMention') {
             const contextItemMention: SerializedContextItem = (n as SerializedContextItemMentionNode)
                 .contextItem
@@ -50,8 +52,6 @@ export function serialize(m: SerializedPromptEditorValue): string {
                         JSON.stringify(n, undefined, 0)
                     )}` + AT_MENTION_SERIALIZATION_END
             }
-        } else {
-            throw Error('Unhandled node type in atMentionsSerializer.serialize: ' + n.type)
         }
     }
     return t
@@ -159,6 +159,33 @@ export function deserializeParagraph(s: string): SerializedLexicalNode[] {
                     return createContextItemMention(item, uri)
                 }
             }
+
+            // We have to recreate tab nodes, or the editor
+            // will ignore the \t characters.
+            if (part.includes('\t')) {
+                return part.split(/(\t)/).filter(Boolean).map(subPart =>
+                    subPart === '\t'
+                        ? {
+                            type: 'tab',
+                            detail: 2,
+                            format: 0,
+                            mode: 'normal',
+                            style: '',
+                            text: '\t',
+                            version: 1
+                        }
+                        : {
+                            type: 'text',
+                            text: subPart,
+                            detail: 0,
+                            format: 0,
+                            mode: 'normal',
+                            style: '',
+                            version: 1
+                        }
+                ).flat()
+            }
+
             return {
                 type: 'text',
                 text: part,
@@ -169,6 +196,7 @@ export function deserializeParagraph(s: string): SerializedLexicalNode[] {
                 version: 1,
             }
         })
+        .flat()
         .filter(node => node.text !== '')
 }
 
