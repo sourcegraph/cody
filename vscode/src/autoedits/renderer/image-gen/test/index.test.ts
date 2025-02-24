@@ -4,8 +4,8 @@ import { generateSuggestionAsImage, initImageSuggestionService } from '..'
 import { document } from '../../../../completions/test-helpers'
 import { mockLocalStorage } from '../../../../services/LocalStorageProvider'
 import type { DecorationInfo } from '../../decorators/base'
-import { makeVisualDiff } from '../../visual-diff'
-import type { DiffMode } from '../../visual-diff/types'
+import { makeVisualDiff } from '../visual-diff'
+import type { DiffMode } from '../visual-diff/types'
 import { MOCK_DIFF } from './mock-diff'
 
 expect.extend({ toMatchImageSnapshot })

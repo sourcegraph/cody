@@ -5,7 +5,7 @@ import type {
     VisualModifiedLineInfoAdded,
     VisualModifiedLineInfoRemoved,
     VisualRemovedLineInfo,
-} from '../decorated-diff/types'
+} from './types'
 
 type VisualDiffLineOutgoing = Exclude<VisualDiffLine, VisualAddedLineInfo | VisualModifiedLineInfoAdded>
 type VisualDiffLineIncoming = Exclude<

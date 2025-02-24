@@ -9,8 +9,8 @@ import { cssPropertiesToString } from './decorators/utils'
 import { isOnlyAddingTextForModifiedLines, isOnlyRemovingTextForModifiedLines } from './diff-utils'
 import { generateSuggestionAsImage } from './image-gen'
 import { getEndColumnForLine } from './image-gen/utils'
+import { makeVisualDiff } from './image-gen/visual-diff'
 import { getCompletionText } from './render-output-utils'
-import { makeVisualDiff } from './visual-diff'
 
 export interface GetRenderOutputArgs {
     requestId: AutoeditRequestID
@@ -67,6 +67,8 @@ export class AutoEditsRenderOutput {
         const completionsWithDecorations = this.getCompletionsWithPossibleDecorationsRenderOutput(args)
         if (completionsWithDecorations) {
             console.log('got compeltions and decorations')
+            console.log(completionsWithDecorations)
+            console.log('finished logged completions and decorations')
             // We can render this entirely with completions possibly with a small amount of decorations.
             return completionsWithDecorations
         }
@@ -162,6 +164,7 @@ export class AutoEditsRenderOutput {
             cursorPosition: position,
             decorationInfo,
         })
+        console.log('GOT COMPLETION TEXT', insertText)
 
         // The current line suffix should not require any char removals to render the completion.
         const isSuffixMatch = completionMatchesSuffix(insertText, docContext.currentLineSuffix)

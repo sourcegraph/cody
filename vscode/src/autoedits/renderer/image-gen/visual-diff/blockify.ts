@@ -1,9 +1,9 @@
 import { getEditorTabSize } from '@sourcegraph/cody-shared'
 import detectIndent from 'detect-indent'
 import * as vscode from 'vscode'
-import type { LineChange } from '../decorators/base'
-import { getCodeBlock } from '../image-gen/decorated-diff/utils'
+import type { LineChange } from '../../decorators/base'
 import type { LineHighlights, VisualDiff } from './types'
+import { getCodeBlock } from './utils'
 
 export const UNICODE_SPACE = '\u00A0'
 

@@ -1,9 +1,9 @@
-import type { DiffMode, VisualDiff } from '../visual-diff/types'
 import { initCanvas } from './canvas'
 import { drawDecorationsToCanvas } from './canvas/draw-decorations'
 import { type UserProvidedRenderConfig, getRenderConfig } from './canvas/render-config'
 import { makeDecoratedDiff } from './decorated-diff'
 import { initSyntaxHighlighter } from './highlight'
+import type { DiffMode, VisualDiff } from './visual-diff/types'
 
 export async function initImageSuggestionService() {
     return Promise.all([initSyntaxHighlighter(), initCanvas()])

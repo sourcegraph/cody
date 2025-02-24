@@ -1,5 +1,5 @@
 import { syntaxHighlightDecorations } from '../highlight/highlight-decorations'
-import type { VisualDiff } from './types'
+import type { VisualDiff } from '../visual-diff/types'
 
 export function makeDecoratedDiff(
     diff: VisualDiff,

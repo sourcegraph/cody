@@ -1,7 +1,7 @@
 import type * as vscode from 'vscode'
-import type { DecorationInfo } from '../decorators/base'
-import { isOnlyAddingTextForModifiedLines } from '../diff-utils'
-import { getDiffTargetPosition } from '../image-gen/utils'
+import type { DecorationInfo } from '../../decorators/base'
+import { isOnlyAddingTextForModifiedLines } from '../../diff-utils'
+import { getDiffTargetPosition } from '../utils'
 import { blockify } from './blockify'
 import type { DiffMode, VisualDiff, VisualDiffLine } from './types'
 

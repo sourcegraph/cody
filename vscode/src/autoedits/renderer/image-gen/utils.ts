@@ -1,7 +1,7 @@
 import { getEditorInsertSpaces, getEditorTabSize } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
-import type { VisualDiff } from './decorated-diff/types'
-import { getLines } from './decorated-diff/utils'
+import type { VisualDiff } from './visual-diff/types'
+import { getLines } from './visual-diff/utils'
 
 const UNICODE_SPACE = '\u00A0'
 
