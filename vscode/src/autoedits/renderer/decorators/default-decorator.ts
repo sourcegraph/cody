@@ -107,6 +107,14 @@ export class DefaultDecorator implements AutoEditsDecorator {
         ]
     }
 
+    public showDecorations(): void {
+        throw new Error('Not implemented')
+    }
+
+    public hideDecorations(): void {
+        throw new Error('Not implemented')
+    }
+
     public canRenderDecoration(decorationInfo: DecorationInfo): boolean {
         if (this.options.shouldRenderImage) {
             // Image decorations can expand beyond the editor boundaries, so we can always render them.

@@ -1,11 +1,6 @@
-import * as vscode from 'vscode'
+import type * as vscode from 'vscode'
 
-import { isFileURI } from '@sourcegraph/cody-shared'
-
-import { completionMatchesSuffix } from '../../completions/is-completion-visible'
-import { shortenPromptForOutputChannel } from '../../completions/output-channel-logger'
 import { getNewLineChar } from '../../completions/text-processing'
-import { autoeditsOutputChannelLogger } from '../output-channel-logger'
 
 import type {
     AddedLineInfo,
@@ -13,122 +8,6 @@ import type {
     ModifiedLineInfo,
     UnchangedLineInfo,
 } from './decorators/base'
-import {
-    AutoEditsDefaultRendererManager,
-    type AutoEditsRendererManager,
-    type TryMakeInlineCompletionsArgs,
-} from './manager'
-
-/**
- * For now `AutoEditsInlineRendererManager` is the same as `AutoEditsDefaultRendererManager` and the
- * only major difference is in `tryMakeInlineCompletionResponse` implementation.
- *
- * This extra manager will be removed once we won't have a need to maintain two diff renderers.
- * Currently, it is used to enable the experimental usage of the `InlineDiffDecorator`.
- */
-export class AutoEditsInlineRendererManager
-    extends AutoEditsDefaultRendererManager
-    implements AutoEditsRendererManager
-{
-    protected async onDidChangeTextEditorSelection(
-        event: vscode.TextEditorSelectionChangeEvent
-    ): Promise<void> {
-        // If the cursor moved in any file, we assume it's a user action and
-        // dismiss the active edit. This is because parts of the edit might be
-        // rendered as inline completion ghost text, which is hidden by default
-        // whenever the cursor moves.
-        if (isFileURI(event.textEditor.document.uri)) {
-            this.rejectActiveEdit()
-        }
-    }
-
-    tryMakeInlineCompletions({
-        requestId,
-        prediction,
-        document,
-        position,
-        docContext,
-        decorationInfo,
-    }: TryMakeInlineCompletionsArgs): {
-        inlineCompletionItems: vscode.InlineCompletionItem[] | null
-        updatedPrediction: string
-    } {
-        const { insertText, usedChangeIds } = getCompletionText({
-            prediction,
-            cursorPosition: position,
-            decorationInfo,
-        })
-
-        // The current line suffix should not require any char removals to render the completion.
-        const isSuffixMatch = completionMatchesSuffix(insertText, docContext.currentLineSuffix)
-
-        let inlineCompletionItems: vscode.InlineCompletionItem[] | null = null
-
-        if (isSuffixMatch) {
-            const completionText = docContext.currentLinePrefix + insertText
-
-            inlineCompletionItems = [
-                new vscode.InlineCompletionItem(
-                    completionText,
-                    new vscode.Range(
-                        document.lineAt(position).range.start,
-                        document.lineAt(position).range.end
-                    ),
-                    {
-                        title: 'Autoedit accepted',
-                        command: 'cody.supersuggest.accept',
-                        arguments: [
-                            {
-                                requestId,
-                            },
-                        ],
-                    }
-                ),
-            ]
-
-            autoeditsOutputChannelLogger.logDebugIfVerbose(
-                'tryMakeInlineCompletions',
-                'Autocomplete Inline Response: ',
-                { verbose: shortenPromptForOutputChannel(completionText, []) }
-            )
-        }
-
-        function withoutUsedChanges<T extends { id: string }>(array: T[]): T[] {
-            return array.filter(item => !usedChangeIds.has(item.id))
-        }
-
-        // Filter out changes that were used to render the inline completion.
-        const decorationInfoWithoutUsedChanges = {
-            addedLines: withoutUsedChanges(decorationInfo.addedLines),
-            removedLines: withoutUsedChanges(decorationInfo.removedLines),
-            modifiedLines: withoutUsedChanges(decorationInfo.modifiedLines).map(c => ({
-                ...c,
-                changes: withoutUsedChanges(c.changes),
-            })),
-            unchangedLines: withoutUsedChanges(decorationInfo.unchangedLines),
-        }
-
-        const remainingChanges =
-            decorationInfoWithoutUsedChanges.addedLines.length +
-            decorationInfoWithoutUsedChanges.removedLines.length +
-            decorationInfoWithoutUsedChanges.modifiedLines.filter(line =>
-                line.changes.some(change => change.type !== 'unchanged')
-            ).length
-
-        if (remainingChanges) {
-            // This suggestion cannot solely be displayed with a completion item
-            return {
-                inlineCompletionItems: null,
-                updatedPrediction: prediction,
-            }
-        }
-
-        return {
-            inlineCompletionItems,
-            updatedPrediction: prediction,
-        }
-    }
-}
 
 /**
  * Extracts text from the prediction that we can be rendered as a part of the
