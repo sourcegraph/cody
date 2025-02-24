@@ -133,6 +133,11 @@ export enum FeatureFlag {
      * Whether the user will see the CTA about upgrading to Sourcegraph Teams
      */
     SourcegraphTeamsUpgradeCTA = 'teams-upgrade-available-cta-editors',
+
+    /**
+     * Auto generate short description for chat as title.
+     */
+    ChatTitleAutoGeneration = 'chat-title-auto-generation',
 }
 
 const ONE_HOUR = 60 * 60 * 1000

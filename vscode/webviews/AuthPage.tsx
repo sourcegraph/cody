@@ -2,6 +2,8 @@ import {
     type AuthStatus,
     type CodyIDE,
     type TelemetryRecorder,
+    isAuthError,
+    isAvailabilityError,
     isDotCom,
 } from '@sourcegraph/cody-shared'
 
@@ -336,9 +338,7 @@ const ClientSignInForm: React.FC<ClientSignInFormProps> = memo(
                         setFormState(prev => ({
                             ...prev,
                             isSubmitting: false,
-                            showAuthError:
-                                !!authStatus?.authenticated ||
-                                authStatus?.error?.type === 'network-error',
+                            showAuthError: !!authStatus?.authenticated || isAuthError(authStatus?.error),
                         }))
                     }, 8000)
                 }
@@ -375,7 +375,7 @@ const ClientSignInForm: React.FC<ClientSignInFormProps> = memo(
                         serverInvalid={
                             authStatus &&
                             !authStatus.authenticated &&
-                            authStatus?.error?.type === 'network-error'
+                            isAvailabilityError(authStatus?.error)
                         }
                         className="tw-m-2"
                     >

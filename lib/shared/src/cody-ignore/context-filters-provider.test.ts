@@ -10,7 +10,9 @@ import { mockResolvedConfig } from '../configuration/resolver'
 import { DOTCOM_URL } from '../sourcegraph-api/environments'
 import {
     type ContextFilters,
+    DURABLE_REFETCH_INTERVAL_HINT,
     EXCLUDE_EVERYTHING_CONTEXT_FILTERS,
+    TRANSIENT_REFETCH_INTERVAL_HINT,
     graphqlClient,
 } from '../sourcegraph-api/graphql/client'
 import { ContextFiltersProvider, type GetRepoNamesContainingUri } from './context-filters-provider'
@@ -48,7 +50,6 @@ describe('ContextFiltersProvider', () => {
         vi.spyOn(graphqlClient, 'fetchSourcegraphAPI').mockResolvedValue(
             apiResponseForFilters(contextFilters)
         )
-        await vi.runOnlyPendingTimersAsync()
     }
 
     interface AssertFilters {
@@ -270,16 +271,15 @@ describe('ContextFiltersProvider', () => {
                 .mockResolvedValueOnce(apiResponseForFilters(mockContextFilters1))
                 .mockResolvedValueOnce(apiResponseForFilters(mockContextFilters2))
 
+            vi.setSystemTime(new Date(2024, 1, 1, 8, 0))
             await provider.isRepoNameIgnored('anything')
-
-            expect(mockedApiRequest).toBeCalledTimes(1)
             expect(await provider.isRepoNameIgnored('github.com/sourcegraph/cody')).toBe(false)
+            expect(mockedApiRequest).toBeCalledTimes(1)
 
-            await vi.runOnlyPendingTimersAsync()
-
-            expect(mockedApiRequest).toBeCalledTimes(2)
+            vi.setSystemTime(new Date(2024, 1, 1, 9, 1))
             expect(await provider.isRepoNameIgnored('github.com/sourcegraph/cody')).toBe(true)
             expect(await provider.isRepoNameIgnored('github.com/other/cody')).toBe(false)
+            expect(mockedApiRequest).toBeCalledTimes(2)
         })
     })
 
@@ -383,7 +383,6 @@ describe('ContextFiltersProvider', () => {
                 })
                 mockAuthStatus(AUTH_STATUS_FIXTURE_AUTHED_DOTCOM)
                 provider = new ContextFiltersProvider()
-                await vi.runOnlyPendingTimersAsync()
                 await provider.isRepoNameIgnored('anything')
 
                 const uri = getTestURI({ repoName: 'whatever', filePath: 'foo/bar.ts' })
@@ -392,24 +391,23 @@ describe('ContextFiltersProvider', () => {
         )
 
         it('excludes everything on unknown API errors', async () => {
-            vi.spyOn(graphqlClient, 'fetchSourcegraphAPI').mockResolvedValue(
-                new Error('API error message')
-            )
+            const error = new Error('API error message')
+            vi.spyOn(graphqlClient, 'fetchSourcegraphAPI').mockResolvedValue(error)
 
             const uri = getTestURI({ repoName: 'whatever', filePath: 'foo/bar.ts' })
-            expect(await provider.isUriIgnored(uri)).toBe('has-ignore-everything-filters')
+            expect(await provider.isUriIgnored(uri)).toBe(error)
         })
 
         it('excludes everything on invalid response structure', async () => {
             vi.spyOn(graphqlClient, 'fetchSourcegraphAPI').mockResolvedValue({
                 data: { site: { codyContextFilters: { raw: { something: true } } } },
             })
-            vi.spyOn(graphqlClient, 'fetchSourcegraphAPI').mockResolvedValue(
-                new Error('API error message')
-            )
+
+            const error = new Error('API error message')
+            vi.spyOn(graphqlClient, 'fetchSourcegraphAPI').mockResolvedValue(error)
 
             const uri = getTestURI({ repoName: 'cody', filePath: 'foo/bar.ts' })
-            expect(await provider.isUriIgnored(uri)).toBe('has-ignore-everything-filters')
+            expect(await provider.isUriIgnored(uri)).toBe(error)
         })
 
         it('includes everything on empty responses', async () => {
@@ -434,42 +432,39 @@ describe('ContextFiltersProvider', () => {
             const longDelay = 60 * 60 * 1000
             const shortDelay = 7 * 1000
 
+            vi.setSystemTime(new Date(2024, 1, 1, 8, 0))
             const apiSpy = vi.spyOn(graphqlClient, 'fetchSourcegraphAPI')
             apiSpy.mockResolvedValueOnce(apiResponseForFilters(null))
             await provider.isRepoNameIgnored('anything')
-            expect(provider.timerStateForTest).toEqual({
-                delay: longDelay,
-                lifetime: 'durable',
-            })
+            expect(provider.timerStateForTest.delay).toEqual(longDelay)
+            expect(await provider.timerStateForTest.lifetime).toEqual(DURABLE_REFETCH_INTERVAL_HINT)
 
             // Start causing errors, check we flip to a short delay regime.
+            vi.setSystemTime(new Date(2024, 1, 1, 9, 1))
             apiSpy.mockRejectedValueOnce(new Error('network error'))
-            await vi.runOnlyPendingTimersAsync()
-            expect(provider.timerStateForTest).toEqual({
-                delay: shortDelay,
-                lifetime: 'ephemeral',
-            })
+            await provider.isRepoNameIgnored('anything')
+            expect(provider.timerStateForTest.delay).toEqual(shortDelay)
+            expect(await provider.timerStateForTest.lifetime).toEqual(TRANSIENT_REFETCH_INTERVAL_HINT)
 
             // Errors continue, check we do exponential backoff.
+            vi.setSystemTime(new Date(2024, 1, 1, 9, 2))
             apiSpy.mockRejectedValueOnce(new Error('network error'))
-            await vi.runOnlyPendingTimersAsync()
+            await provider.isRepoNameIgnored('anything')
             expect(provider.timerStateForTest.delay).toBeGreaterThan(shortDelay)
 
             // Fetch successfully (a "no filters set" result). Should flip to large interval.
+            vi.setSystemTime(new Date(2024, 1, 1, 9, 3))
             apiSpy.mockResolvedValueOnce(apiResponseForFilters(null))
-            await vi.runOnlyPendingTimersAsync()
-            expect(provider.timerStateForTest).toEqual({
-                delay: longDelay,
-                lifetime: 'durable',
-            })
+            await provider.isRepoNameIgnored('anything')
+            expect(provider.timerStateForTest.delay).toEqual(longDelay)
+            expect(await provider.timerStateForTest.lifetime).toEqual(DURABLE_REFETCH_INTERVAL_HINT)
 
+            vi.setSystemTime(new Date(2024, 1, 1, 10, 4))
             // Check there's no back-off for the long interval successful results.
             apiSpy.mockResolvedValueOnce(apiResponseForFilters(null))
-            vi.advanceTimersToNextTimer()
-            expect(provider.timerStateForTest).toEqual({
-                delay: longDelay,
-                lifetime: 'durable',
-            })
+            await provider.isRepoNameIgnored('anything')
+            expect(provider.timerStateForTest.delay).toEqual(longDelay)
+            expect(await provider.timerStateForTest.lifetime).toEqual(DURABLE_REFETCH_INTERVAL_HINT)
         })
 
         it('does not block remote context/http(s) URIs', async () => {
@@ -510,6 +505,8 @@ describe('ContextFiltersProvider', () => {
 
             const onChangeCallback = vi.fn()
 
+            vi.setSystemTime(new Date(2024, 1, 1, 8, 0))
+
             const dispose = provider.onContextFiltersChanged(onChangeCallback)
             await provider.isRepoNameIgnored('anything')
 
@@ -517,19 +514,22 @@ describe('ContextFiltersProvider', () => {
             expect(onChangeCallback).toBeCalledTimes(1)
             expect(onChangeCallback).toBeCalledWith(mockContextFilters1)
 
-            await vi.runOnlyPendingTimersAsync()
+            vi.setSystemTime(new Date(2024, 1, 1, 9, 1))
+            await provider.isRepoNameIgnored('anything')
 
             // Nothing changed, so we do not expect the callback to be called.
             expect(onChangeCallback).toBeCalledTimes(1)
 
-            await vi.runOnlyPendingTimersAsync()
+            vi.setSystemTime(new Date(2024, 1, 1, 10, 2))
+            await provider.isRepoNameIgnored('anything')
 
             // The value was updated, the callback should be called for the second time.
             expect(onChangeCallback).toBeCalledTimes(2)
             expect(onChangeCallback).toBeCalledWith(mockContextFilters2)
 
+            vi.setSystemTime(new Date(2024, 1, 1, 11, 3))
+
             dispose()
-            await vi.runOnlyPendingTimersAsync()
 
             // Even though the value changed, we already unsubscribed, so the callback is not called.
             expect(onChangeCallback).toBeCalledTimes(2)

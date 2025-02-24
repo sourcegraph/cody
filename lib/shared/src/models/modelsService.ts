@@ -614,6 +614,10 @@ export class ModelsService {
         throw new Error(`${errorMessage} Available models: ${modelsList}`)
     }
 
+    public getModelsByTag(tag: ModelTag): Model[] {
+        return this.models.filter(m => m.tags.includes(tag))
+    }
+
     public isStreamDisabled(modelID: string): boolean {
         // TODO(sqs)#observe: remove synchronous access here, return an Observable<boolean> instead
         const model = this.getModelByID(modelID)

@@ -132,8 +132,6 @@ function getCurrentFileOrSelection({
 
                 const contextFile = selectionOrFileContext[0]
                 if (contextFile) {
-                    const range = contextFile.range ? expandToLineRange(contextFile.range) : undefined
-
                     // Always add the current file item
                     items.push({
                         ...contextFile,
@@ -149,11 +147,12 @@ function getCurrentFileOrSelection({
                         icon: 'file',
                     })
 
+                    const range = contextFile.range ? expandToLineRange(contextFile.range) : undefined
                     // Add the current selection item if there's a range
                     if (range) {
                         items.push({
                             ...contextFile,
-                            type: 'file',
+                            type: 'current-selection',
                             title: 'Current Selection',
                             description: `${displayPathBasename(contextFile.uri)}:${displayLineRange(
                                 range
@@ -163,7 +162,9 @@ function getCurrentFileOrSelection({
                                 userContextSize !== undefined &&
                                 contextFile.size !== undefined &&
                                 contextFile.size > userContextSize,
-                            source: ContextItemSource.Initial,
+                            // NOTE: Do not set source to initial, this is used for
+                            // picking the correct prompt template for selection during prompt building.
+                            source: ContextItemSource.Selection,
                             icon: 'list-selection',
                         })
                     }

@@ -165,7 +165,7 @@ internal class WebUIProxy(private val host: WebUIHost, private val browser: JBCe
                 suggestedName: String?,
                 callback: CefBeforeDownloadCallback?
             ) {
-              callback?.Continue(/* downloadPath = */ "", /* showDialog = */ true)
+              callback?.Continue(/* downloadPath= */ "", /* showDialog= */ true)
             }
 
             override fun onDownloadUpdated(

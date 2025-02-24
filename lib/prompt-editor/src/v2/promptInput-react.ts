@@ -13,6 +13,14 @@ import { type ActorRefFrom, fromCallback } from 'xstate'
 import type { AnyEventObject } from 'xstate'
 import { usePromptEditorConfig } from '../config'
 import { MentionView } from './MentionView'
+import {
+    addMentions,
+    appendToDocument,
+    filterMentions,
+    handleSelectMenuItem,
+    setDocument,
+    upsertMentions,
+} from './actions'
 import type { Position } from './plugins/atMention'
 import { type DataLoaderInput, type MenuItem, promptInput, schema } from './promptInput'
 
@@ -153,6 +161,7 @@ export const usePromptInput = (options: PromptEditorOptions): [PromptInputActor,
                         },
                     },
                 },
+                handleSelectMenuItem,
                 placeholder: options.placeholder,
                 initialDocument: options.initialDocument,
                 disabled: options.disabled,
@@ -171,7 +180,7 @@ export const usePromptInput = (options: PromptEditorOptions): [PromptInputActor,
                 )
             },
             setDocument(doc: Node) {
-                editor.send({ type: 'document.set', doc })
+                editor.send({ type: 'document.update', transaction: state => setDocument(state, doc) })
             },
             setInitialContextMentions(items) {
                 editor.send({
@@ -180,34 +189,38 @@ export const usePromptInput = (options: PromptEditorOptions): [PromptInputActor,
                 })
             },
             appendText(text) {
-                editor.send({ type: 'document.append', text })
-            },
-            addMentions(items: ContextItem[], position: 'before' | 'after' = 'after', sep = ' ') {
                 editor.send({
-                    type: 'document.mentions.add',
-                    items: items.map(serializeContextItem),
-                    position,
-                    separator: sep,
+                    type: 'document.update',
+                    transaction: state => appendToDocument(state, text),
+                })
+            },
+            addMentions(items: ContextItem[], position: 'before' | 'after' = 'after', seperator = ' ') {
+                editor.send({
+                    type: 'document.update',
+                    transaction: state =>
+                        addMentions(state, items.map(serializeContextItem), position, seperator),
                 })
             },
             upsertMentions(
                 items: ContextItem[],
                 position: 'before' | 'after' = 'after',
-                sep = ' ',
+                seperator = ' ',
                 focusEditor = true
             ) {
                 editor.send({
-                    type: 'document.mentions.upsert',
-                    items: items.map(serializeContextItem),
-                    position,
-                    separator: sep,
+                    type: 'document.update',
+                    transaction: state =>
+                        upsertMentions(state, items.map(serializeContextItem), position, seperator),
                 })
                 if (focusEditor) {
                     editor.send({ type: 'focus' })
                 }
             },
             filterMentions(filter: (item: SerializedContextItem) => boolean) {
-                editor.send({ type: 'document.mentions.filter', filter })
+                editor.send({
+                    type: 'document.update',
+                    transaction: state => filterMentions(state, filter),
+                })
             },
             applySuggestion(index) {
                 editor.send({ type: 'mentionsMenu.apply', index })

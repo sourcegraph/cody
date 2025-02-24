@@ -8,12 +8,39 @@ export class CompletionsResponseBuilder {
     public totalCompletion = ''
     constructor(public readonly apiVersion: number) {}
     public nextCompletion(completion: string | undefined, deltaText: string | undefined): string {
+        const thinkingText = this.getThinkingText()
         if (this.apiVersion >= 2) {
             this.totalCompletion += deltaText ?? ''
-            return this.totalCompletion
+        } else {
+            this.totalCompletion = completion ?? ''
         }
-        this.totalCompletion = completion ?? ''
-        return this.totalCompletion
+        return thinkingText + this.totalCompletion
+    }
+
+    private readonly thinkingBuffer: string[] = []
+    /**
+     * Processes and accumulates thinking steps during the completion stream.
+     * Thinking steps must start at the beginning of completion and are enclosed in <think> tags.
+     * When the completion starts streaming, the previous <think> tag is closed.
+     *
+     * @param deltaThinking - The incremental thinking text to be added
+     * @returns The formatted thinking text wrapped in XML tags
+     */
+    public nextThinking(deltaThinking?: string): string {
+        if (deltaThinking) {
+            this.thinkingBuffer.push(deltaThinking)
+        }
+        return this.getThinkingText()
+    }
+    /**
+     * Generates the formatted thinking text by combining all thinking steps.
+     * Wraps the combined thinking text in <think> tags and adds a newline if content exists.
+     *
+     * @returns Formatted thinking text with XML tags, or empty string if no thinking steps exist
+     */
+    private getThinkingText(): string {
+        const thinking = this.thinkingBuffer.join('')
+        return thinking ? `<think>${thinking}</think>\n` : ''
     }
 
     public static fromUrl(url: string): CompletionsResponseBuilder {

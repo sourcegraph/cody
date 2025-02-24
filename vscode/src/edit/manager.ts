@@ -1,4 +1,5 @@
 import { context } from '@opentelemetry/api'
+import { isError } from 'lodash'
 import * as vscode from 'vscode'
 
 import {
@@ -354,8 +355,9 @@ export class EditManager implements vscode.Disposable {
                 const replacementCode = PromptString.unsafe_fromLLMResponse(configuration.replacement)
 
                 const versions = await currentSiteVersion()
-                if (versions instanceof Error) {
-                    throw new Error('unable to determine site version')
+
+                if (isError(versions)) {
+                    throw new Error('Unable to determine site version', versions)
                 }
 
                 const contextloggerRequestId =

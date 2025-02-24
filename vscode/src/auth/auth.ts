@@ -13,17 +13,28 @@ import {
     clientCapabilities,
     currentAuthStatus,
     currentResolvedConfig,
-    getAuthErrorMessage,
+    firstResultFromOperation,
+    getAuthHeaders,
     getCodyAuthReferralCode,
     graphqlClient,
     isDotCom,
     isError,
     isNetworkLikeError,
     isWorkspaceInstance,
+    resolvedConfig,
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
 import { resolveAuth } from '@sourcegraph/cody-shared/src/configuration/auth-resolver'
-import { isExternalProviderAuthError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
+import {
+    AuthConfigError,
+    AvailabilityError,
+    EnterpriseUserDotComError,
+    InvalidAccessTokenError,
+    NeedsAuthChallengeError,
+    isExternalProviderAuthError,
+    isInvalidAccessTokenError,
+    isNeedsAuthChallengeError,
+} from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
 import { isSourcegraphToken } from '../chat/protocol'
 import { newAuthStatus } from '../chat/utils'
 import { logDebug } from '../output-channel-logger'
@@ -116,7 +127,9 @@ export async function showSignInMenu(
 
             let authStatus = await authProvider.validateAndStoreCredentials(auth, 'store-if-valid')
 
-            if (!authStatus?.authenticated) {
+            // If authentication failed because the credentials were reported as invalid (and not
+            // due to some other or some ephemeral reason), ask the user for a different token.
+            if (!authStatus?.authenticated && isInvalidAccessTokenError(authStatus.error)) {
                 const token = await showAccessTokenInputBox(selectedEndpoint)
                 if (!token) {
                     return
@@ -313,7 +326,7 @@ export async function showAuthFailureMessage(
     authStatus: UnauthenticatedAuthStatus | undefined
 ): Promise<void> {
     if (authStatus?.error) {
-        await vscode.window.showErrorMessage(getAuthErrorMessage(authStatus.error).message)
+        await vscode.window.showErrorMessage(authStatus.error.message)
     }
 }
 /**
@@ -452,10 +465,7 @@ export async function validateCredentials(
             authenticated: false,
             endpoint: config.auth.serverEndpoint,
             pendingValidation: false,
-            error: {
-                type: 'auth-config-error',
-                message: config.auth.error?.message ?? config.auth.error,
-            },
+            error: new AuthConfigError(config.auth.error?.message ?? config.auth.error),
         }
     }
 
@@ -487,25 +497,27 @@ export async function validateCredentials(
                 logDebug('auth', userInfo.message)
                 return {
                     authenticated: false,
-                    error: { type: 'external-auth-provider-error', message: userInfo.message },
+                    error: userInfo,
                     endpoint: config.auth.serverEndpoint,
                     pendingValidation: false,
                 }
             }
-            if (isNetworkLikeError(userInfo)) {
+            const needsAuthChallenge = isNeedsAuthChallengeError(userInfo)
+            if (isNetworkLikeError(userInfo) || needsAuthChallenge) {
                 logDebug(
                     'auth',
-                    `Failed to authenticate to ${config.auth.serverEndpoint} due to likely network error`,
+                    `Failed to authenticate to ${config.auth.serverEndpoint} due to likely network or endpoint availability error`,
                     userInfo.message
                 )
                 return {
                     authenticated: false,
-                    error: { type: 'network-error' },
+                    error: needsAuthChallenge ? new NeedsAuthChallengeError() : new AvailabilityError(),
                     endpoint: config.auth.serverEndpoint,
                     pendingValidation: false,
                 }
             }
         }
+
         if (!userInfo || isError(userInfo)) {
             logDebug(
                 'auth',
@@ -515,7 +527,7 @@ export async function validateCredentials(
             return {
                 authenticated: false,
                 endpoint: config.auth.serverEndpoint,
-                error: { type: 'invalid-access-token' },
+                error: new InvalidAccessTokenError(),
                 pendingValidation: false,
             }
         }
@@ -532,10 +544,9 @@ export async function validateCredentials(
                     authenticated: false,
                     endpoint: config.auth.serverEndpoint,
                     pendingValidation: false,
-                    error: {
-                        type: 'enterprise-user-logged-into-dotcom',
-                        enterprise: getEnterpriseName(userInfo.primaryEmail?.email || ''),
-                    },
+                    error: new EnterpriseUserDotComError(
+                        getEnterpriseName(userInfo.primaryEmail?.email || '')
+                    ),
                 }
             }
         }
@@ -556,4 +567,31 @@ function getEnterpriseName(email: string): string {
     const domain = email.split('@')[1]
     const name = domain.split('.')[0]
     return name.charAt(0).toUpperCase() + name.slice(1)
+}
+
+export async function requestEndpointSettingsDeliveryToSearchPlugin(): Promise<string> {
+    const searchExtension = vscode.extensions.all.find(({ packageJSON }) =>
+        ['sourcegraph.@sourcegraph/vscode', 'sourcegraph.sourcegraph'].includes(packageJSON.id)
+    )
+
+    const config = await firstResultFromOperation(resolvedConfig)
+    searchExtension?.activate().then(async () => {
+        const commandId = 'sourcegraph.setEndpointSettings'
+        const commands = searchExtension.packageJSON.contributes?.commands
+        if (Array.isArray(commands)) {
+            if (commands.find(({ command }) => command === commandId)) {
+                const authHeaders = await getAuthHeaders(
+                    config.auth,
+                    new URL(config.auth.serverEndpoint)
+                )
+
+                vscode.commands.executeCommand(commandId, {
+                    instanceUrl: config.auth.serverEndpoint,
+                    headers: authHeaders,
+                })
+            }
+        }
+    })
+
+    return config.auth.serverEndpoint
 }
