@@ -52,15 +52,6 @@ export class SmartApplyManager implements vscode.Disposable {
             this.options.editManager.editLoggingFeatureFlagManager
         )
 
-        const prefetchSmartApplyCommand = vscode.commands.registerCommand(
-            'cody.command.smart-apply-prefetch',
-            (args: SmartApplyArguments) => {
-                if (this.isPrefetchingEnabled) {
-                    this.prefetchSmartApply(args)
-                }
-            }
-        )
-
         /**
          * Entry point to triggering a new Edit from a _known_ result.
          * Given a result and a given file, this will create a new LLM interaction,
@@ -69,6 +60,30 @@ export class SmartApplyManager implements vscode.Disposable {
         const smartApplyCommand = vscode.commands.registerCommand(
             'cody.command.smart-apply',
             (args: SmartApplyArguments) => this.smartApplyEdit(args)
+        )
+
+        const smartApplyAcceptCommand = vscode.commands.registerCommand(
+            'cody.command.smart-apply.accept',
+            ({ taskId }: { taskId: string }) => {
+                vscode.commands.executeCommand('cody.fixup.codelens.accept', taskId)
+            }
+        )
+
+        const smartApplyRejectCommand = vscode.commands.registerCommand(
+            'cody.command.smart-apply.reject',
+            ({ taskId }: { taskId: string }) => {
+                this.cache.delete(taskId)
+                vscode.commands.executeCommand('cody.fixup.codelens.undo', taskId)
+            }
+        )
+
+        const prefetchSmartApplyCommand = vscode.commands.registerCommand(
+            'cody.command.smart-apply.prefetch',
+            (args: SmartApplyArguments) => {
+                if (this.isPrefetchingEnabled) {
+                    this.prefetchSmartApply(args)
+                }
+            }
         )
 
         this.disposables.push(
@@ -81,7 +96,12 @@ export class SmartApplyManager implements vscode.Disposable {
             )
         )
 
-        this.disposables.push(smartApplyCommand, prefetchSmartApplyCommand)
+        this.disposables.push(
+            smartApplyCommand,
+            smartApplyAcceptCommand,
+            smartApplyRejectCommand,
+            prefetchSmartApplyCommand
+        )
     }
 
     public async prefetchSmartApply(args: SmartApplyArguments): Promise<void> {

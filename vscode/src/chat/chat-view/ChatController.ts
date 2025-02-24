@@ -328,10 +328,14 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 TraceSender.send(message.traceSpanEncodedJson)
                 break
             case 'smartApplyAccept':
-                await vscode.commands.executeCommand('cody.fixup.codelens.accept', message.id)
+                await vscode.commands.executeCommand('cody.command.smart-apply.accept', {
+                    taskId: message.id,
+                })
                 break
             case 'smartApplyReject':
-                await vscode.commands.executeCommand('cody.fixup.codelens.undo', message.id)
+                await vscode.commands.executeCommand('cody.command.smart-apply.reject', {
+                    taskId: message.id,
+                })
                 break
             case 'openURI':
                 vscode.commands.executeCommand('vscode.open', message.uri, {
