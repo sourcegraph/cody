@@ -40,7 +40,7 @@ export function serialize(m: SerializedPromptEditorValue): string {
         if (n.type === 'text' || n.type === 'tab') {
             t += (n as SerializedTextNode).text
         } else if (n.type === 'linebreak') {
-            t += "\n"
+            t += '\n'
         } else if (n.type === 'contextItemMention') {
             const contextItemMention: SerializedContextItem = (n as SerializedContextItemMentionNode)
                 .contextItem
@@ -137,7 +137,7 @@ export function deserializeParagraph(s: string): SerializedLexicalNode[] {
         )
     )
     return parts
-        .map(part => {
+        .flatMap(part => {
             if (part.startsWith(AT_MENTION_SERIALIZED_PREFIX)) {
                 try {
                     return deserializeContextMentionItem(part)
@@ -163,27 +163,30 @@ export function deserializeParagraph(s: string): SerializedLexicalNode[] {
             // We have to recreate tab nodes, or the editor
             // will ignore the \t characters.
             if (part.includes('\t')) {
-                return part.split(/(\t)/).filter(Boolean).map(subPart =>
-                    subPart === '\t'
-                        ? {
-                            type: 'tab',
-                            detail: 2,
-                            format: 0,
-                            mode: 'normal',
-                            style: '',
-                            text: '\t',
-                            version: 1
-                        }
-                        : {
-                            type: 'text',
-                            text: subPart,
-                            detail: 0,
-                            format: 0,
-                            mode: 'normal',
-                            style: '',
-                            version: 1
-                        }
-                ).flat()
+                return part
+                    .split(/(\t)/)
+                    .filter(Boolean)
+                    .flatMap(subPart =>
+                        subPart === '\t'
+                            ? {
+                                  type: 'tab',
+                                  detail: 2,
+                                  format: 0,
+                                  mode: 'normal',
+                                  style: '',
+                                  text: '\t',
+                                  version: 1,
+                              }
+                            : {
+                                  type: 'text',
+                                  text: subPart,
+                                  detail: 0,
+                                  format: 0,
+                                  mode: 'normal',
+                                  style: '',
+                                  version: 1,
+                              }
+                    )
             }
 
             return {
@@ -196,7 +199,6 @@ export function deserializeParagraph(s: string): SerializedLexicalNode[] {
                 version: 1,
             }
         })
-        .flat()
         .filter(node => node.text !== '')
 }
 
