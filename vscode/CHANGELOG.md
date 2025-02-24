@@ -4,6 +4,25 @@ This is a log of all notable changes to Cody for VS Code.
 
 <!--- {/_ CHANGELOG_START _/} -->
 
+## 1.70.3
+
+### Refactor
+
+#### Telemetry
+
+- opt-out option [#7206](https://github.com/sourcegraph/cody/pull/7206)
+
+### Reverts
+
+  There were no reverts for this release
+
+### Uncategorized
+
+#### Others
+
+- [Backport M70] update changelog [#7184](https://github.com/sourcegraph/cody/pull/7184)
+
+
 ## 1.70.2
 
 ### Fix
