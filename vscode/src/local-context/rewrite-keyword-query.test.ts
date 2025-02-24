@@ -50,7 +50,7 @@ describe('rewrite-query', () => {
     )
 
     check(ps`scan tokens in C++`, expanded =>
-        expect(expanded).toMatchInlineSnapshot(`"token scanner C++"`)
+        expect(expanded).toMatchInlineSnapshot(`"token scan C++"`)
     )
 
     check(ps`parse file with tree-sitter`, expanded =>
@@ -75,7 +75,7 @@ describe('rewrite-query', () => {
     )
 
     check(ps`C'est ou la logique pour recloner les dépôts?`, expanded =>
-        expect(expanded).toMatchInlineSnapshot(`"clone repository logic"`)
+        expect(expanded).toMatchInlineSnapshot(`"reclone repository"`)
     )
 
     check(ps`Wie kann ich eine neue Datenbankmigration definieren?`, expanded =>
@@ -86,13 +86,13 @@ describe('rewrite-query', () => {
         ps`Explain how the context window limit is calculated. how much budget is given to @-mentions vs. search context?`,
         expanded =>
             expect(expanded).toMatchInlineSnapshot(
-                `"context window limit calculation budget @-mentions search"`
+                `"context window limit calculation @-mentions search context"`
             )
     )
 
     check(
         ps`parse file with tree-sitter. follow these rules:\n*use the Google Go style guide\n*panic if parsing fails`,
-        expanded => expect(expanded).toMatchInlineSnapshot(`"tree-sitter parse"`)
+        expanded => expect(expanded).toMatchInlineSnapshot(`"tree-sitter parsing error handling"`)
     )
 
     afterAll(async () => {

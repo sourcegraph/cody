@@ -46,7 +46,7 @@ async function doRewrite(
 - Find where something is implemented: \`<query>check for authentication</query>\`
 - Find string literal in code: \`<query>"result limit hit"</query>\`
 
- ONLY return the keyword search. Question: ${query}
+ ONLY return the keyword search. Question: <userQuery>${query}</userQuery>
 `,
                 },
                 { speaker: 'assistant' },
