@@ -78,13 +78,13 @@ export function createButtons(
 }
 
 function getLineChanges(text: string): { additions: number; deletions: number } {
-    const lines = text.split('\n')
+    const lines = text?.split('\n') ?? []
     let additions = 0
     let deletions = 0
 
     for (const line of lines) {
-        if (line.startsWith('+')) additions++
-        if (line.startsWith('-')) deletions++
+        if (line?.startsWith('+')) additions++
+        if (line?.startsWith('-')) deletions++
     }
 
     return { additions, deletions }
