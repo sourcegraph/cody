@@ -1,15 +1,11 @@
 import { clsx } from 'clsx'
 import { LRUCache } from 'lru-cache'
+import { LoaderIcon, PlusIcon } from 'lucide-react'
 import type React from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
-<<<<<<< HEAD
 import { type Guardrails, type PromptString, isError } from '@sourcegraph/cody-shared'
 
-=======
-import { clsx } from 'clsx'
-import { LoaderIcon, PlusIcon } from 'lucide-react'
->>>>>>> main
 import type { FixupTaskID } from '../../../src/non-stop/FixupTask'
 import { CodyTaskState } from '../../../src/non-stop/state'
 import { type ClientActionListener, useClientActionListener } from '../../client/clientState'
