@@ -49,9 +49,7 @@ describe('rewrite-query', () => {
         expect(expanded).toMatchInlineSnapshot(`"authentication router"`)
     )
 
-    check(ps`scan tokens in C++`, expanded =>
-        expect(expanded).toMatchInlineSnapshot(`"token scan C++"`)
-    )
+    check(ps`scan tokens in C++`, expanded => expect(expanded).toMatchInlineSnapshot(`"token scan C++"`))
 
     check(ps`parse file with tree-sitter`, expanded =>
         expect(expanded).toMatchInlineSnapshot(`"tree-sitter parse"`)
