@@ -71,6 +71,7 @@ test
         ],
     })('test enterprise customers cannot log into dotcomUrl', async ({ page, sidebar }) => {
     await sidebarSignin(page, sidebar, { skipAssertions: true })
+    await expectSignInPage(page)
     await expect(
         page
             .frameLocator('iframe')
@@ -78,8 +79,6 @@ test
             .frameLocator('iframe[title="Chat"]')
             .getByText('Based on your email address')
     ).toBeVisible()
-
-    await expectSignInPage(page)
 })
 
 const refetchInterval = 500
@@ -104,7 +103,7 @@ test
     async ({ page, sidebar, server }) => {
         await sidebarSignin(page, sidebar, { skipAssertions: true })
         await server.setUserShouldUseEnterprise(true)
-
+        await expectSignInPage(page)
         await expect(
             page
                 .frameLocator('iframe')
@@ -114,8 +113,6 @@ test
         ).toBeVisible({
             timeout: refetchInterval * 10,
         })
-
-        await expectSignInPage(page)
     }
 )
 

@@ -88,7 +88,7 @@ interface CheckVersionInput {
 export async function isValidVersion({ minimumVersion }: { minimumVersion: string }): Promise<boolean> {
     const currentVersion = await currentSiteVersion()
 
-    if (currentVersion instanceof Error) {
+    if (isError(currentVersion)) {
         return false
     }
 

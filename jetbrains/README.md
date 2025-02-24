@@ -192,23 +192,6 @@ You can configure JetBrains to set custom keymaps for Sourcegraph actions:
 2. Filter by "sourcegraph" to see actions supplied by this plugin.
 3. Now select an option to overwrite the keymap information and supply the new bindings.
 
-## Use Ollama models for Chat & Commands
-
-Experience experimental chat and command support with Ollama running locally:
-
-1. Install and run [Ollama](https://ollama.com/download).
-2. Set the [OLLAMA_HOST](https://sourcegraph.com/github.com/ollama/ollama@main/-/blob/docs/faq.md#how-do-i-configure-ollama-server) to `0.0.0.0`.
-   1. Please refer to the [official Ollama docs](https://sourcegraph.com/github.com/ollama/ollama@main/-/blob/docs/faq.md#setting-environment-variables-on-windows) for how to set environment variables on your platform.
-3. Set the [OLLAMA_ORIGINS](https://sourcegraph.com/github.com/ollama/ollama@main/-/blob/docs/faq.md#how-can-i-allow-additional-web-origins-to-access-ollama) to `*`.
-4. Install or restart your Ollama app.
-5. Select a chat model (a model that includes `instruct` or `chat`, e.g., [codegemma:instruct](https://ollama.com/library/codegemma:instruct), [llama3:instruct](https://ollama.com/library/llama3:instruct)) from the [Ollama Library](https://ollama.com/library).
-6. Pull the chat model locally (Example: `ollama pull codegemma:instruct`).
-7. Once the chat model is downloaded successfully, open Cody in your IDE.
-8. Open a new Cody chat.
-9. In the new chat window, you should see the chat model you've pulled in the dropdown list at the top.
-
-Note: You can run `ollama list` in your terminal to see what Ollama models are currently available on your machine.
-
 ## Questions & Feedback
 
 If you have any questions, feedback, or bug report, we appreciate if you [open an issue on GitHub](https://github.com/sourcegraph/cody/issues/new?labels=question).

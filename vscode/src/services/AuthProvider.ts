@@ -4,6 +4,7 @@ import {
     type ClientCapabilitiesWithLegacyFields,
     ClientConfigSingleton,
     DOTCOM_URL,
+    EMPTY,
     NEVER,
     type ResolvedConfiguration,
     type Unsubscribable,
@@ -23,8 +24,14 @@ import {
     withLatestFrom,
 } from '@sourcegraph/cody-shared'
 import { normalizeServerEndpointURL } from '@sourcegraph/cody-shared/src/configuration/auth-resolver'
+import {
+    isAvailabilityError,
+    isEnterpriseUserDotComError,
+    isInvalidAccessTokenError,
+    isNeedsAuthChallengeError,
+} from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
 import isEqual from 'lodash/isEqual'
-import { Observable, Subject } from 'observable-fns'
+import { Observable, Subject, interval } from 'observable-fns'
 import * as vscode from 'vscode'
 import { serializeConfigSnapshot } from '../../uninstall/serializeConfig'
 import { type ResolvedConfigurationCredentialsOnly, validateCredentials } from '../auth/auth'
@@ -37,7 +44,7 @@ const HAS_AUTHENTICATED_BEFORE_KEY = 'has-authenticated-before'
 
 class AuthProvider implements vscode.Disposable {
     private status = new Subject<AuthStatus>()
-    private refreshRequests = new Subject<void>()
+    private refreshRequests = new Subject<boolean>()
 
     /**
      * Credentials that were already validated with
@@ -53,20 +60,23 @@ class AuthProvider implements vscode.Disposable {
 
     private async validateAndUpdateAuthStatus(
         credentials: ResolvedConfigurationCredentialsOnly,
-        signal?: AbortSignal
+        signal?: AbortSignal,
+        resetInitialAuthStatus?: boolean
     ): Promise<void> {
-        // Immediately emit the unauthenticated status while we are authenticating.
-        // Emitting `authenticated: false` for a brief period is both true and a
-        // way to ensure that subscribers are robust to changes in
-        // authentication status.
-        this.status.next({
-            authenticated: false,
-            pendingValidation: true,
-            endpoint: credentials.auth.serverEndpoint,
-        })
+        if (resetInitialAuthStatus ?? true) {
+            // Immediately emit the unauthenticated status while we are authenticating.
+            // Emitting `authenticated: false` for a brief period is both true and a
+            // way to ensure that subscribers are robust to changes in
+            // authentication status.
+            this.status.next({
+                authenticated: false,
+                pendingValidation: true,
+                endpoint: credentials.auth.serverEndpoint,
+            })
+        }
 
         try {
-            const authStatus = await validateCredentials(credentials, signal)
+            const authStatus = await validateCredentials(credentials, signal, undefined)
             signal?.throwIfAborted()
             this.status.next(authStatus)
             await this.handleAuthTelemetry(authStatus, signal)
@@ -106,7 +116,7 @@ class AuthProvider implements vscode.Disposable {
                         // we explicitly check for this error and only update if so
                         if (
                             !nextAuthStatus.authenticated &&
-                            nextAuthStatus.error?.type === 'enterprise-user-logged-into-dotcom'
+                            isEnterpriseUserDotComError(nextAuthStatus.error)
                         ) {
                             this.status.next(nextAuthStatus)
                         }
@@ -119,20 +129,44 @@ class AuthProvider implements vscode.Disposable {
         this.subscriptions.push(
             combineLatest(
                 credentialsChangesNeedingValidation,
-                this.refreshRequests.pipe(startWith(undefined))
+                this.refreshRequests.pipe(startWith(true))
             )
                 .pipe(
-                    abortableOperation(async ([config], signal) => {
+                    abortableOperation(async ([config, resetInitialAuthStatus], signal) => {
                         if (getClientCapabilities().isCodyWeb) {
                             // Cody Web calls {@link AuthProvider.validateAndStoreCredentials}
                             // explicitly. This early exit prevents duplicate authentications during
                             // the initial load.
                             return
                         }
-                        await this.validateAndUpdateAuthStatus(config, signal)
+                        await this.validateAndUpdateAuthStatus(config, signal, resetInitialAuthStatus)
                     })
                 )
                 .subscribe({})
+        )
+
+        // Try to reauthenticate periodically when the authentication failed due to an availability
+        // error (which is ephemeral and the underlying error condition may no longer exist).
+        this.subscriptions.push(
+            authStatus
+                .pipe(
+                    switchMap(authStatus => {
+                        if (!authStatus.authenticated && isNeedsAuthChallengeError(authStatus.error)) {
+                            // This interval is short because we want to quickly authenticate after
+                            // the user successfully performs the auth challenge. If automatic auth
+                            // refresh is expanded to include other conditions (such as any network
+                            // connectivity gaps), it should probably have a longer interval, and we
+                            // need to respect
+                            // https://linear.app/sourcegraph/issue/CODY-3745/codys-background-periodic-network-access-causes-2fa.
+                            const intervalMsec = 2500
+                            return interval(intervalMsec)
+                        }
+                        return EMPTY
+                    })
+                )
+                .subscribe(() => {
+                    this.refreshRequests.next(false)
+                })
         )
 
         // Keep context updated with auth status.
@@ -189,9 +223,9 @@ class AuthProvider implements vscode.Disposable {
     /**
      * Refresh the auth status.
      */
-    public refresh(): void {
+    public refresh(resetInitialAuthStatus = true): void {
         this.lastValidatedAndStoredCredentials.next(null)
-        this.refreshRequests.next()
+        this.refreshRequests.next(resetInitialAuthStatus)
     }
 
     public signout(endpoint: string): void {
@@ -318,7 +352,7 @@ function reportAuthTelemetryEvent(authStatus: AuthStatus): void {
     let eventValue: 'disconnected' | 'connected' | 'failed'
     if (
         !authStatus.authenticated &&
-        (authStatus.error?.type === 'network-error' || authStatus.error?.type === 'invalid-access-token')
+        (isAvailabilityError(authStatus.error) || isInvalidAccessTokenError(authStatus.error))
     ) {
         eventValue = 'failed'
     } else if (authStatus.authenticated) {

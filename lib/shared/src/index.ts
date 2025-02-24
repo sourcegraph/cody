@@ -54,7 +54,7 @@ export {
 } from './models/utils'
 export { BotResponseMultiplexer } from './chat/bot-response-multiplexer'
 export { ChatClient } from './chat/chat'
-export { getSimplePreamble } from './chat/preamble'
+export { getDefaultSystemPrompt, getChatPreamble, getSimplePreamble } from './chat/preamble'
 export type {
     SerializedChatInteraction,
     SerializedChatTranscript,
@@ -248,14 +248,26 @@ export {
 } from './sourcegraph-api/environments'
 export {
     AbortError,
+    AuthConfigError,
+    AuthError,
+    AvailabilityError,
+    EnterpriseUserDotComError,
+    ExternalAuthProviderError,
+    InvalidAccessTokenError,
+    NeedsAuthChallengeError,
     NetworkError,
     RateLimitError,
     TimeoutError,
     TracedError,
     isAbortError,
     isAbortErrorOrSocketHangUp,
-    isContextWindowLimitError,
     isAuthError,
+    isAvailabilityError,
+    isContextWindowLimitError,
+    isEnterpriseUserDotComError,
+    isExternalProviderAuthError,
+    isInvalidAccessTokenError,
+    isNeedsAuthChallengeError,
     isNetworkError,
     isNetworkLikeError,
     isRateLimitError,
@@ -287,6 +299,8 @@ export {
     type NLSSearchDynamicFilter,
     type NLSSearchDynamicFilterKind,
     type GraphQLAPIClientConfig,
+    setJSONAcceptContentTypeHeaders,
+    isCustomAuthChallengeResponse,
 } from './sourcegraph-api/graphql/client'
 export type {
     CodyLLMSiteConfiguration,

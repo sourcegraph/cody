@@ -1,4 +1,5 @@
 import { context } from '@opentelemetry/api'
+import { isError } from 'lodash'
 import { LRUCache } from 'lru-cache'
 import * as vscode from 'vscode'
 
@@ -149,8 +150,8 @@ export class SmartApplyManager implements vscode.Disposable {
     ): SmartApplyCacheEntry {
         const { id, instruction, document, replacement } = configuration
         const versions = await currentSiteVersion()
-        if (!versions || versions instanceof Error) {
-            throw new Error('unable to determine site version')
+        if (isError(versions)) {
+            throw new Error('Unable to determine site version', versions)
         }
 
         const replacementCode = PromptString.unsafe_fromLLMResponse(replacement)

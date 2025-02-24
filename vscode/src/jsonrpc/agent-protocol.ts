@@ -1,7 +1,6 @@
 import type * as vscode from 'vscode'
 
 import type {
-    AuthenticationError,
     ClientCapabilities,
     CodyCommand,
     ContextFilters,
@@ -14,6 +13,7 @@ import type {
 } from '@sourcegraph/cody-shared'
 import type { TelemetryEventMarketingTrackingInput } from '@sourcegraph/telemetry'
 
+import type { AuthError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
 import type { ExtensionMessage, WebviewMessage } from '../chat/protocol'
 import type { CompletionBookkeepingEvent, CompletionItemID } from '../completions/analytics-logger'
 import type { FixupTaskID } from '../non-stop/FixupTask'
@@ -679,7 +679,7 @@ export interface ProtocolUnauthenticatedAuthStatus {
     status: 'unauthenticated'
     authenticated: boolean
     endpoint: string
-    error?: AuthenticationError | null | undefined
+    error?: AuthError | null | undefined
     pendingValidation: boolean
 }
 

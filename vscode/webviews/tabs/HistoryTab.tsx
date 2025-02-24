@@ -116,7 +116,10 @@ export const HistoryTabWithData: React.FC<
                     <h4 className="tw-font-semibold tw-text-muted-foreground tw-py-2 tw-my-4">
                         {period}
                     </h4>
-                    {chats.map(({ interactions, id }) => {
+                    {chats.map(chat => {
+                        const id = chat.lastInteractionTimestamp
+                        const interactions = chat.interactions
+                        const chatTitle = chat.chatTitle
                         const lastMessage =
                             interactions[interactions.length - 1]?.humanMessage?.text?.trim()
                         return (
@@ -131,7 +134,9 @@ export const HistoryTabWithData: React.FC<
                                         })
                                     }
                                 >
-                                    <span className="tw-truncate tw-w-full">{lastMessage}</span>
+                                    <span className="tw-truncate tw-w-full">
+                                        {chatTitle || lastMessage}
+                                    </span>
                                 </Button>
                                 <Button
                                     variant="ghost"

@@ -1,5 +1,4 @@
 import { type ContextItem, ContextItemSource, ps } from '@sourcegraph/cody-shared'
-import { DeepCodyAgentID } from '@sourcegraph/cody-shared/src/models/client'
 import { Observable } from 'observable-fns'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { URI } from 'vscode-uri'
@@ -63,11 +62,13 @@ describe('CodyToolProvider', () => {
 
     beforeEach(() => {
         vi.clearAllMocks()
-        CodyToolProvider.initialize(mockContextRetriever)
         vi.spyOn(openctxAPI, 'openctxController', 'get').mockReturnValue(Observable.of(mockController))
     })
 
-    it('should register default tools on initialization', () => {
+    it('should register default tools on initialization', async () => {
+        CodyToolProvider.initialize(mockContextRetriever)
+        await new Promise(resolve => setTimeout(resolve, 0))
+        expect(mockController.metaChanges).toHaveBeenCalled()
         const tools = CodyToolProvider.getTools()
         expect(tools.length).toBeGreaterThan(0)
         expect(tools.some(tool => tool.config.title.includes('Code Search'))).toBe(true)
@@ -75,12 +76,7 @@ describe('CodyToolProvider', () => {
     })
 
     it('should set up OpenCtx provider listener and build OpenCtx tools from provider metadata', async () => {
-        CodyToolProvider.setupOpenCtxProviderListener()
         await new Promise(resolve => setTimeout(resolve, 0))
-        expect(mockController.metaChanges).toHaveBeenCalled()
-        // Wait for the observable to emit
-        await new Promise(resolve => setTimeout(resolve, 0))
-
         const tools = CodyToolProvider.getTools()
         expect(tools.some(tool => tool.config.title === 'Test Provider')).toBeTruthy()
         expect(tools.some(tool => tool.config.title === 'Test Provider MCP')).toBeTruthy()
@@ -92,7 +88,7 @@ describe('CodyToolProvider', () => {
 
     it('should not include CLI tool if shell is disabled', () => {
         vi.spyOn(toolboxManager, 'getSettings').mockReturnValue({
-            agent: { name: DeepCodyAgentID },
+            agent: { name: 'deep-cody' },
             shell: { enabled: false },
         })
         const tools = CodyToolProvider.getTools()
@@ -101,7 +97,7 @@ describe('CodyToolProvider', () => {
 
     it('should include CLI tool if shell is enabled', () => {
         vi.spyOn(toolboxManager, 'getSettings').mockReturnValue({
-            agent: { name: DeepCodyAgentID },
+            agent: { name: 'deep-cody' },
             shell: { enabled: true },
         })
         const tools = CodyToolProvider.getTools()

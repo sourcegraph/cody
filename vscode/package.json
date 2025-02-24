@@ -3,7 +3,7 @@
   "name": "cody-ai",
   "private": true,
   "displayName": "Cody: AI Code Assistant",
-  "version": "1.70.0",
+  "version": "1.70.2",
   "publisher": "sourcegraph",
   "license": "Apache-2.0",
   "icon": "resources/sourcegraph.png",
@@ -339,7 +339,7 @@
         "group": "Commit",
         "title": "Generate Commit Message (Experimental)",
         "icon": "$(cody-logo)",
-        "when": "cody.activated && config.cody.experimental.commitMessage && config.git.enabled && !cody.isGeneratingCommit"
+        "when": "cody.activated && config.git.enabled && !cody.isGeneratingCommit"
       },
       {
         "command": "cody.command.abort-commit",
@@ -366,6 +366,11 @@
         "category": "Cody",
         "title": "Refresh Settings (Debug)",
         "enablement": "config.cody.internal.unstable"
+      },
+      {
+        "command": "cody.auth.requestEndpointSettings",
+        "category": "Cody",
+        "title": "Schedule export endpoint settings to Sourcegraph plugin"
       },
       {
         "command": "cody.settings.extension",
@@ -582,60 +587,23 @@
     "keybindings": [
       {
         "command": "cody.chat.signIn",
-        "key": "alt+/",
+        "key": "alt+l",
         "when": "!cody.activated"
       },
       {
         "command": "cody.chat.signIn",
-        "key": "alt+l",
+        "key": "alt+k",
         "when": "!cody.activated"
       },
       {
         "command": "cody.chat.toggle",
         "key": "alt+l",
-        "when": "cody.activated && editorTextFocus",
-        "args": {
-          "editorFocus": true
-        }
+        "when": "cody.activated"
       },
       {
-        "command": "cody.chat.toggle",
+        "command": "cody.mention.selection",
         "key": "alt+l",
-        "when": "cody.activated && !editorTextFocus",
-        "args": {
-          "editorFocus": false
-        }
-      },
-      {
-        "command": "cody.chat.toggle",
-        "key": "alt+/",
-        "when": "cody.activated && editorTextFocus",
-        "args": {
-          "editorFocus": true
-        }
-      },
-      {
-        "command": "cody.chat.toggle",
-        "key": "alt+/",
-        "when": "cody.activated && !editorTextFocus",
-        "args": {
-          "editorFocus": false
-        }
-      },
-      {
-        "command": "cody.mention.selection",
-        "key": "shift+alt+l",
         "when": "cody.activated && editorTextFocus && editorHasSelection"
-      },
-      {
-        "command": "cody.mention.selection",
-        "key": "shift+alt+/",
-        "when": "cody.activated && editorTextFocus && editorHasSelection"
-      },
-      {
-        "command": "cody.chat.new",
-        "key": "shift+alt+l",
-        "when": "cody.activated && !editorTextFocus"
       },
       {
         "command": "cody.chat.new",
@@ -779,7 +747,7 @@
         },
         {
           "command": "cody.command.generate-commit",
-          "when": "cody.activated && config.cody.experimental.commitMessage && config.git.enabled && !cody.isGeneratingCommit"
+          "when": "cody.activated && config.git.enabled && !cody.isGeneratingCommit"
         },
         {
           "command": "cody.command.abort-commit",
@@ -879,31 +847,6 @@
           "command": "cody.menu.commands",
           "when": "view == cody.chat && cody.activated",
           "group": "navigation@1"
-        },
-        {
-          "command": "cody.welcome",
-          "when": "view == cody.chat",
-          "group": "7_cody@0"
-        },
-        {
-          "command": "cody.debug.export.logs",
-          "when": "view == cody.chat",
-          "group": "8_cody@1"
-        },
-        {
-          "command": "cody.debug.enable.all",
-          "when": "view == cody.chat",
-          "group": "8_cody@0"
-        },
-        {
-          "command": "cody.debug.outputChannel",
-          "when": "view == cody.chat",
-          "group": "8_cody@2"
-        },
-        {
-          "command": "cody.debug.reportIssue",
-          "when": "view == cody.chat",
-          "group": "9_cody@1"
         }
       ],
       "editor/title": [
@@ -954,7 +897,7 @@
       "scm/title": [
         {
           "command": "cody.command.generate-commit",
-          "when": "cody.activated && config.cody.experimental.commitMessage && config.git.enabled && scmProvider == git && !cody.isGeneratingCommit",
+          "when": "cody.activated && config.git.enabled && scmProvider == git && !cody.isGeneratingCommit",
           "group": "navigation@1"
         },
         {
@@ -971,13 +914,6 @@
         {
           "command": "cody.command.insertCodeToNewFile",
           "when": "webviewSection == 'codeblock-actions'"
-        }
-      ],
-      "explorer/context": [
-        {
-          "command": "cody.mention.file",
-          "when": "cody.activated && resourceSet && !explorerResourceIsFolder",
-          "group": "4_cody"
         }
       ]
     },
@@ -1090,12 +1026,6 @@
           "order": 99,
           "type": "boolean",
           "markdownDescription": "Enable OpenTelemetry tracing",
-          "default": false
-        },
-        "cody.experimental.commitMessage": {
-          "order": 99,
-          "type": "boolean",
-          "markdownDescription": "Enable commit message generation",
           "default": false
         },
         "cody.experimental.minion.anthropicKey": {
