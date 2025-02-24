@@ -3,6 +3,7 @@ import {
     NoOpTelemetryRecorderProvider,
     TelemetryRecorderProvider,
     clientCapabilities,
+    isDotCom,
     resolvedConfig,
     subscriptionDisposable,
     telemetryRecorder,
@@ -35,8 +36,8 @@ export function createOrUpdateTelemetryRecorderProvider(
             const defaultNoOpProvider = new NoOpTelemetryRecorderProvider([
                 new TimestampTelemetryProcessor(),
             ])
-
-            if (configuration.telemetryLevel === 'off') {
+            // Telemetry can only be disabled for Non-Sourcegraph.com instances.
+            if (configuration.telemetryLevel === 'off' && !isDotCom(auth.serverEndpoint)) {
                 updateGlobalTelemetryInstances(defaultNoOpProvider)
                 return
             }
