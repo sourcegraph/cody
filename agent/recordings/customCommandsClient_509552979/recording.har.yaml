@@ -92,151 +92,6 @@ log:
         send: 0
         ssl: -1
         wait: 140
-    - _id: 4bfefedb3f90faa353028c264eb49431
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 1369
-        cookies: []
-        headers:
-          - name: accept-encoding
-            value: gzip;q=0
-          - name: authorization
-            value: token
-              REDACTED_fc324d3667e841181b0779375f26dedc911d26b303d23b29b1a2d7ee63dc77eb
-          - name: connection
-            value: keep-alive
-          - name: content-type
-            value: application/json
-          - name: traceparent
-            value: 00-30b84f0ffd899933d4bb803353355cf4-39ba1f290aa65d5f-01
-          - name: user-agent
-            value: customcommandsclient/v1 (Node.js v20.4.0)
-          - name: x-requested-with
-            value: customcommandsclient v1
-          - name: host
-            value: sourcegraph.com
-        headersSize: 556
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json
-          params: []
-          textJSON:
-            maxTokensToSample: 4000
-            messages:
-              - speaker: system
-                text: >-
-                  You are Cody, an AI coding assistant from Sourcegraph.If your
-                  answer contains fenced code blocks in Markdown, include the
-                  relevant full file path in the code block tag using this
-                  structure: ```$LANGUAGE:$FILEPATH```
-
-                  For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
-              - speaker: human
-                text: >
-                  Codebase context from file path src/example3.ts: export
-                  function example(): string {
-                      return 'example'
-                  }
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: >
-                  Codebase context from file path src/example2.ts: export
-                  function example(): string {
-                      return 'example'
-                  }
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: |-
-                  My selected code from codebase file src/example1.ts:1-3:
-                  ```
-                  export function example(): string {
-                      return 'example'
-                  }
-                  ```
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: >-
-                  Answer positively without apologizing. 
-
-
-                  You have access to the provided codebase context.
-
-
-                  Question: Give me the names of the files I have shared with you so far. Format the response as a bulleted list. Only include the raw filename, no extra formatting like quotes.
-            model: anthropic::2024-10-22::claude-3-5-sonnet-latest
-            temperature: 0
-            topK: -1
-            topP: -1
-        queryString:
-          - name: api-version
-            value: "2"
-          - name: client-name
-            value: customcommandsclient
-          - name: client-version
-            value: v1
-        url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=customcommandsclient&client-version=v1
-      response:
-        bodySize: 385
-        content:
-          mimeType: text/event-stream
-          size: 385
-          text: >+
-            event: completion
-
-            data: {"deltaText":"Here are all the files you've shared:\n• src/example1.ts  \n• src/example2.ts\n• src/example3.ts","stopReason":"end_turn"}
-
-
-            event: done
-
-            data: {}
-
-        cookies: []
-        headers:
-          - name: date
-            value: Fri, 27 Dec 2024 20:37:45 GMT
-          - name: content-type
-            value: text/event-stream
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: keep-alive
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1299
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-12-27T20:37:42.816Z
-      time: 2505
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 2505
     - _id: a7ca6c95372e671983c6e55fea1c3f54
       _order: 0
       cache: {}
@@ -350,11 +205,11 @@ log:
         send: 0
         ssl: -1
         wait: 808
-    - _id: 4b3a65cb083f2c0c16a80a7105baeeb3
+    - _id: 38ca4bb0834e4be8bbdaef564f9128ac
       _order: 0
       cache: {}
       request:
-        bodySize: 2126
+        bodySize: 1459
         cookies: []
         headers:
           - name: accept-encoding
@@ -367,9 +222,9 @@ log:
           - name: content-type
             value: application/json
           - name: traceparent
-            value: 00-f8aafe08143b0bb2b215a4bddb5936fa-b3d4dc52cfb7d927-01
+            value: 00-809d1aa38a8ffadd3971a2669a19e453-c6d5e482c22120ac-01
           - name: user-agent
-            value: customcommandsclient/v1 (Node.js v20.4.0)
+            value: customcommandsclient/v1 (Node.js v23.7.0)
           - name: x-requested-with
             value: customcommandsclient v1
           - name: host
@@ -391,23 +246,9 @@ log:
                   structure: ```$LANGUAGE:$FILEPATH```
 
                   For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
-              - speaker: human
-                text: >
-                  Codebase context from file path src/sum.ts: export function
-                  sum(a: number, b: number): number {
-                      /* CURSOR */
-                  }
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: >
-                  Codebase context from file path src/example4.ts: export
-                  function example(): string {
-                      return 'example'
-                  }
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
+              - base64Image: ""
+                content: []
+                speaker: human
                 text: >
                   Codebase context from file path src/example3.ts: export
                   function example(): string {
@@ -415,7 +256,9 @@ log:
                   }
               - speaker: assistant
                 text: Ok.
-              - speaker: human
+              - base64Image: ""
+                content: []
+                speaker: human
                 text: >
                   Codebase context from file path src/example2.ts: export
                   function example(): string {
@@ -423,7 +266,180 @@ log:
                   }
               - speaker: assistant
                 text: Ok.
+              - base64Image: ""
+                content: []
+                speaker: human
+                text: |-
+                  My selected code from codebase file src/example1.ts:1-3:
+                  ```
+                  export function example(): string {
+                      return 'example'
+                  }
+                  ```
+              - speaker: assistant
+                text: Ok.
               - speaker: human
+                text: >-
+                  Answer positively without apologizing. 
+
+
+                  You have access to the provided codebase context.
+
+
+                  Question: Give me the names of the files I have shared with you so far. Format the response as a bulleted list. Only include the raw filename, no extra formatting like quotes.
+            model: anthropic::2024-10-22::claude-3-5-sonnet-latest
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString:
+          - name: api-version
+            value: "2"
+          - name: client-name
+            value: customcommandsclient
+          - name: client-version
+            value: v1
+        url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=customcommandsclient&client-version=v1
+      response:
+        bodySize: 385
+        content:
+          mimeType: text/event-stream
+          size: 385
+          text: >+
+            event: completion
+
+            data: {"deltaText":"Here are all the files you've shared:\n\n• src/example1.ts\n• src/example2.ts\n• src/example3.ts","stopReason":"end_turn"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Mon, 24 Feb 2025 11:32:42 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1299
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2025-02-24T11:32:40.443Z
+      time: 1923
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 1923
+    - _id: eeb435eeab05d8eddfcdb73abd5f372a
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 2336
+        cookies: []
+        headers:
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_fc324d3667e841181b0779375f26dedc911d26b303d23b29b1a2d7ee63dc77eb
+          - name: connection
+            value: keep-alive
+          - name: content-type
+            value: application/json
+          - name: traceparent
+            value: 00-4eeafb48caa462485d64f5b26b7f65f9-60ea8233aa0821a8-01
+          - name: user-agent
+            value: customcommandsclient/v1 (Node.js v23.7.0)
+          - name: x-requested-with
+            value: customcommandsclient v1
+          - name: host
+            value: sourcegraph.com
+        headersSize: 556
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 4000
+            messages:
+              - speaker: system
+                text: >-
+                  You are Cody, an AI coding assistant from Sourcegraph.If your
+                  answer contains fenced code blocks in Markdown, include the
+                  relevant full file path in the code block tag using this
+                  structure: ```$LANGUAGE:$FILEPATH```
+
+                  For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
+              - base64Image: ""
+                content: []
+                speaker: human
+                text: >
+                  Codebase context from file path src/sum.ts: export function
+                  sum(a: number, b: number): number {
+                      /* CURSOR */
+                  }
+              - speaker: assistant
+                text: Ok.
+              - base64Image: ""
+                content: []
+                speaker: human
+                text: >
+                  Codebase context from file path src/example4.ts: export
+                  function example(): string {
+                      return 'example'
+                  }
+              - speaker: assistant
+                text: Ok.
+              - base64Image: ""
+                content: []
+                speaker: human
+                text: >
+                  Codebase context from file path src/example3.ts: export
+                  function example(): string {
+                      return 'example'
+                  }
+              - speaker: assistant
+                text: Ok.
+              - base64Image: ""
+                content: []
+                speaker: human
+                text: >
+                  Codebase context from file path src/example2.ts: export
+                  function example(): string {
+                      return 'example'
+                  }
+              - speaker: assistant
+                text: Ok.
+              - base64Image: ""
+                content: []
+                speaker: human
                 text: >
                   Codebase context from file path src/example1.ts: export
                   function example(): string {
@@ -431,7 +447,9 @@ log:
                   }
               - speaker: assistant
                 text: Ok.
-              - speaker: human
+              - base64Image: ""
+                content: []
+                speaker: human
                 text: >
                   Codebase context from file path src/animal.ts: /*
                   SELECTION_START */
@@ -445,7 +463,9 @@ log:
                   /* SELECTION_END */
               - speaker: assistant
                 text: Ok.
-              - speaker: human
+              - base64Image: ""
+                content: []
+                speaker: human
                 text: |-
                   My selected code from codebase file src/animal.ts:1-6:
                   ```
@@ -486,7 +506,7 @@ log:
           size: 116
           text: |+
             event: completion
-            data: {"deltaText":"7","stopReason":"end_turn"}
+            data: {"deltaText":"6","stopReason":"end_turn"}
 
             event: done
             data: {}
@@ -494,7 +514,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 21 Feb 2025 22:46:11 GMT
+            value: Mon, 24 Feb 2025 11:32:44 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -523,8 +543,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-02-21T22:46:09.511Z
-      time: 2457
+      startedDateTime: 2025-02-24T11:32:42.466Z
+      time: 2281
       timings:
         blocked: -1
         connect: -1
@@ -532,12 +552,12 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 2457
-    - _id: 6bf2501884491cd1c6f6f52c22eaba8f
+        wait: 2281
+    - _id: 5de02658c393f540814ed3d3a5a2dba4
       _order: 0
       cache: {}
       request:
-        bodySize: 2243
+        bodySize: 2273
         cookies: []
         headers:
           - name: accept-encoding
@@ -550,9 +570,9 @@ log:
           - name: content-type
             value: application/json
           - name: traceparent
-            value: 00-e921341a329062630398c1b0bc5c251a-233a1f539fd750a0-01
+            value: 00-53c287b3d82339767cd0e3eec1acdcca-3a6a0f5d3887ceec-01
           - name: user-agent
-            value: customcommandsclient/v1 (Node.js v20.4.0)
+            value: customcommandsclient/v1 (Node.js v23.7.0)
           - name: x-requested-with
             value: customcommandsclient v1
           - name: host
@@ -588,7 +608,9 @@ log:
                   - Only enclose your response in <CODE5711></CODE5711> XML tags. Do use any other XML tags unless they are part of the generated code.
 
                   - Do not provide any additional commentary about the changes you made. Only respond with the generated code.
-              - speaker: human
+              - base64Image: ""
+                content: []
+                speaker: human
                 text: |-
                   My selected code from codebase file src/sum.ts:1-3:
                   ```
@@ -652,7 +674,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 21 Feb 2025 22:46:13 GMT
+            value: Mon, 24 Feb 2025 11:32:46 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -681,8 +703,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-02-21T22:46:12.012Z
-      time: 1310
+      startedDateTime: 2025-02-24T11:32:44.845Z
+      time: 1602
       timings:
         blocked: -1
         connect: -1
@@ -690,12 +712,12 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 1310
-    - _id: 4a1005f2f803fcf7e22b9b3a2d322c6e
+        wait: 1602
+    - _id: 85e1294dada993dc7c5a4b6394136c60
       _order: 0
       cache: {}
       request:
-        bodySize: 2361
+        bodySize: 2391
         cookies: []
         headers:
           - name: accept-encoding
@@ -708,9 +730,9 @@ log:
           - name: content-type
             value: application/json
           - name: traceparent
-            value: 00-fb5564ef4e5d5089f74fd084794e3380-82fdc0dc975831d5-01
+            value: 00-db3d8a90bfa3950f01ee72ca66b53fb1-5c3637c158daafd1-01
           - name: user-agent
-            value: customcommandsclient/v1 (Node.js v20.4.0)
+            value: customcommandsclient/v1 (Node.js v23.7.0)
           - name: x-requested-with
             value: customcommandsclient v1
           - name: host
@@ -746,7 +768,9 @@ log:
                   - Only enclose your response in <CODE5711></CODE5711> XML tags. Do use any other XML tags unless they are part of the generated code.
 
                   - Do not provide any additional commentary about the changes you made. Only respond with the generated code.
-              - speaker: human
+              - base64Image: ""
+                content: []
+                speaker: human
                 text: >
                   Codebase context from file path src/animal.ts: /*
                   SELECTION_START */
@@ -806,10 +830,10 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=customcommandsclient&client-version=v1
       response:
-        bodySize: 587
+        bodySize: 545
         content:
           mimeType: text/event-stream
-          size: 587
+          size: 545
           text: >+
             event: completion
 
@@ -823,7 +847,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 21 Feb 2025 22:46:15 GMT
+            value: Mon, 24 Feb 2025 11:32:48 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -852,8 +876,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-02-21T22:46:13.353Z
-      time: 2186
+      startedDateTime: 2025-02-24T11:32:46.502Z
+      time: 1796
       timings:
         blocked: -1
         connect: -1
@@ -861,7 +885,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 2186
+        wait: 1796
     - _id: f1b1cde4cd57488b7f0137954f0302f5
       _order: 0
       cache: {}
