@@ -157,6 +157,7 @@ export type WebviewMessage =
           filterLabel: string
           message: string
       }
+    | { command: 'chat/upload-file'; base64: string }
     | {
           command: 'reevaluateSearchWithSelectedFilters'
           index: number

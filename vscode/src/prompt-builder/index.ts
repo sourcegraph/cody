@@ -43,7 +43,6 @@ export class PromptBuilder {
      * A list of context items that are used to build context messages.
      */
     public contextItems: ContextItem[] = []
-
     /**
      * Convenience constructor because loading the tokenizer is async due to its large size.
      */
@@ -76,7 +75,6 @@ export class PromptBuilder {
         if (this.contextItems.length > 0) {
             this.buildContextMessages()
         }
-
         return this.prefixMessages.concat([...this.reverseMessages].reverse())
     }
 
@@ -147,6 +145,7 @@ export class PromptBuilder {
             ])
             if (!withinLimit) {
                 // Throw error if the limit was exceeded and no message was added.
+
                 if (!this.reverseMessages.length) {
                     throw new Error(
                         'The chat input has exceeded the token limit. If you are copying and pasting a file into the chat, try using the @-mention feature to attach the file instead.'
@@ -158,6 +157,12 @@ export class PromptBuilder {
                 this.reverseMessages.push(assistantMsg)
             }
             this.reverseMessages.push(humanMsg)
+
+            // Immediately inject an image message if there is a base64 image on the human message.
+            if (humanMsg.base64Image) {
+                const imageMessage = this.createImageMessage(humanMsg.base64Image)
+                this.reverseMessages.push(imageMessage)
+            }
         }
         // All messages were added successfully.
         return undefined
@@ -243,4 +248,38 @@ export class PromptBuilder {
         )
         return result
     }
+
+    /**
+     * Creates a Message object for an image given its base64 string.
+     * The function calculates the MIME type using detectImageType and wraps the data in a MessagePart.
+     */
+    private createImageMessage(base64Image: string): Message {
+        const imageType = detectImageType(base64Image)
+        return {
+            speaker: 'human',
+            content: [
+                {
+                    type: 'image_url',
+                    image_url: {
+                        url: `data:${imageType};base64,${base64Image}`,
+                    },
+                },
+            ],
+        }
+    }
+}
+
+function detectImageType(base64String: string): string {
+    // Check the first few bytes of the base64 string to determine image type
+    const header = base64String.substring(0, 8)
+
+    // Common image signatures in base64
+    if (header.startsWith('/9j/')) return 'image/jpeg'
+    if (header.startsWith('iVBORw0')) return 'image/png'
+    if (header.startsWith('R0lGOD')) return 'image/gif'
+    if (header.startsWith('UklGR')) return 'image/webp'
+    if (header.startsWith('PHN2Z')) return 'image/svg+xml'
+
+    // Default to jpeg if unknown
+    return 'image/jpeg'
 }

@@ -30,6 +30,7 @@ import {
 import type { UserAccountInfo } from '../../../../../Chat'
 import { type ClientActionListener, useClientActionListener } from '../../../../../client/clientState'
 import { promptModeToIntent } from '../../../../../prompts/PromptsTab'
+import { getVSCodeAPI } from '../../../../../utils/VSCodeApi'
 import { useTelemetryRecorder } from '../../../../../utils/telemetry'
 import { useConfig } from '../../../../../utils/useConfig'
 import { useLinkOpener } from '../../../../../utils/useLinkOpener'
@@ -99,6 +100,8 @@ export const HumanMessageEditor: FunctionComponent<{
 }) => {
     const telemetryRecorder = useTelemetryRecorder()
 
+    const [imageFile, setImageFile] = useState<File | undefined>(undefined)
+
     const editorRef = useRef<PromptEditorRefAPI>(null)
     useImperativeHandle(parentEditorRef, (): PromptEditorRefAPI | null => editorRef.current)
 
@@ -123,7 +126,7 @@ export const HumanMessageEditor: FunctionComponent<{
           : 'submittable'
 
     const onSubmitClick = useCallback(
-        (intent?: ChatMessage['intent'], forceSubmit?: boolean): void => {
+        async (intent?: ChatMessage['intent'], forceSubmit?: boolean): Promise<void> => {
             if (!forceSubmit && submitState === 'emptyEditorValue') {
                 return
             }
@@ -138,8 +141,29 @@ export const HumanMessageEditor: FunctionComponent<{
             }
 
             const value = editorRef.current.getSerializedValue()
-            parentOnSubmit(intent)
+            if (imageFile) {
+                const readFileGetBase64String = (file: File): Promise<string> => {
+                    return new Promise((resolve, reject) => {
+                        const reader = new FileReader()
+                        reader.onload = () => {
+                            const base64 = reader.result
+                            if (base64 && typeof base64 === 'string') {
+                                resolve(base64.split(',')[1])
+                            } else {
+                                reject(new Error('Failed to read file'))
+                            }
+                        }
+                        reader.onerror = () => reject(new Error('Failed to read file'))
+                        reader.readAsDataURL(file)
+                    })
+                }
 
+                const base64 = await readFileGetBase64String(imageFile)
+                getVSCodeAPI().postMessage({ command: 'chat/upload-file', base64 })
+                setImageFile(undefined)
+            }
+
+            parentOnSubmit(intent)
             telemetryRecorder.recordEvent('cody.humanMessageEditor', 'submit', {
                 metadata: {
                     isFirstMessage: isFirstMessage ? 1 : 0,
@@ -154,7 +178,15 @@ export const HumanMessageEditor: FunctionComponent<{
                 },
             })
         },
-        [submitState, parentOnSubmit, onStop, telemetryRecorder.recordEvent, isFirstMessage, isSent]
+        [
+            submitState,
+            parentOnSubmit,
+            onStop,
+            telemetryRecorder.recordEvent,
+            isFirstMessage,
+            isSent,
+            imageFile,
+        ]
     )
 
     const omniBoxEnabled = useOmniBox()
@@ -387,27 +419,21 @@ export const HumanMessageEditor: FunctionComponent<{
 
     const defaultContext = useDefaultContextForChat()
     useEffect(() => {
-        if (isSent || !isFirstMessage || !editorRef?.current) {
-            return
+        let { initialContext } = defaultContext
+        if (!isSent && isFirstMessage) {
+            const editor = editorRef.current
+            if (editor) {
+                // Don't show the initial codebase context if the model doesn't support streaming
+                // as including context result in longer processing time.
+                if (currentChatModel?.tags?.includes(ModelTag.StreamDisabled)) {
+                    initialContext = initialContext.filter(item => item.type !== 'tree')
+                }
+                // Remove documentation open-link items; they do not provide context.
+                const filteredItems = initialContext.filter(item => item.type !== 'open-link')
+                void editor.setInitialContextMentions(filteredItems)
+            }
         }
-
-        // List of mention chips added to the first message.
-        const editor = editorRef.current
-
-        // Remove documentation open-link items; they do not provide context.
-        // Remove current selection to avoid crowding the input box. User can always add it back.
-        // Remove tree type if streaming is not supported.
-        const excludedTypes = new Set([
-            'open-link',
-            'current-selection',
-            ...(currentChatModel?.tags?.includes(ModelTag.StreamDisabled) ? ['tree'] : []),
-        ])
-
-        const filteredItems = defaultContext?.initialContext.filter(
-            item => !excludedTypes.has(item.type)
-        )
-        void editor.setInitialContextMentions(filteredItems)
-    }, [defaultContext?.initialContext, isSent, isFirstMessage, currentChatModel])
+    }, [defaultContext, isSent, isFirstMessage, currentChatModel])
 
     const focusEditor = useCallback(() => editorRef.current?.setFocus(true), [])
 
@@ -478,6 +504,8 @@ export const HumanMessageEditor: FunctionComponent<{
                     hidden={!focused && isSent}
                     className={styles.toolbar}
                     intent={intent}
+                    imageFile={imageFile}
+                    setImageFile={setImageFile}
                 />
             )}
         </div>

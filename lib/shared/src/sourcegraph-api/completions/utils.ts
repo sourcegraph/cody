@@ -1,6 +1,6 @@
 import { type SerializedChatMessage, contextFiltersProvider } from '../..'
 import { serverSupportsPromptCaching } from '../clientConfig'
-import type { CompletionParameters, Message, SerializedCompletionParameters } from './types'
+import type { CompletionParameters, Message, MessagePart, SerializedCompletionParameters } from './types'
 
 /**
  * Serializes the completion parameters by converting the message text to a filtered string using the provided context filters.
@@ -42,8 +42,10 @@ async function serializePrompts(
                 }
             }
             return {
-                ...m,
+                speaker: m.speaker,
                 text: text,
+                content: m.content as MessagePart[] | undefined,
+                base64Image: m.base64Image,
             }
         })
     )
