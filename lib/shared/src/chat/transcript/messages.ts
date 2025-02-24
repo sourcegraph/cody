@@ -23,8 +23,6 @@ export interface SubMessage {
 export interface ChatMessage extends Message {
     contextFiles?: ContextItem[]
 
-    base64Image?: string
-    content?: string | MessagePart[]
     contextAlternatives?: RankedContext[]
 
     error?: ChatError

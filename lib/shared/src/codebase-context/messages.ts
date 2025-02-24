@@ -1,7 +1,7 @@
 import type { URI } from 'vscode-uri'
 
 import type { RangeData } from '../common/range'
-import type { Message, MessagePart } from '../sourcegraph-api'
+import type { Message } from '../sourcegraph-api'
 import type { Range } from '../sourcegraph-api/graphql/client'
 
 export type ContextFileType = 'file' | 'symbol'
@@ -261,7 +261,7 @@ export type ContextItemWithContent = ContextItem & { content: string }
  * A system chat message that adds a context item to the conversation.
  */
 export interface ContextMessage
-    extends Required<Omit<Message, 'cacheEnabled' | 'content' | 'base64Image'>> {
+    extends Required<Omit<Message, 'cacheEnabled'>> {
     /**
      * Context messages are always "from" the human. (In the future, this could be from "system" for
      * LLMs that support that kind of message, but that `speaker` value is not currently supported
@@ -274,8 +274,6 @@ export interface ContextMessage
      */
     file: ContextItem
     cacheEnabled?: boolean | null
-    content?: MessagePart[]
-    base64Image?: string
 }
 
 export const GENERAL_HELP_LABEL = 'Search for a file to include, or type # for symbols...'
