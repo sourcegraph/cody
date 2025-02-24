@@ -26,5 +26,5 @@ export default defineProjectWithDefaults(__dirname, {
         env: {
             CODY_SHIM_TESTING: 'true',
         },
-    }
+    },
 })
