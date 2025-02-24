@@ -4,6 +4,115 @@ This is a log of all notable changes to Cody for VS Code.
 
 <!--- {/_ CHANGELOG_START _/} -->
 
+## 1.70.0
+
+### Features
+
+#### Auto-Edit
+
+- Fix slightly misaligned image decorations [#7040](https://github.com/sourcegraph/cody/pull/7040)
+- Use the users' font size when generating images [#7036](https://github.com/sourcegraph/cody/pull/7036)
+
+#### Chat
+
+- Turn prompt caching on for code context messages (CODY-4808) [#6953](https://github.com/sourcegraph/cody/pull/6953)
+
+#### Prompt-Editor
+
+- focus on file range when clicking on context item mention with ranges [#7021](https://github.com/sourcegraph/cody/pull/7021)
+
+#### Vscode
+
+- add context via file explorer [#7107](https://github.com/sourcegraph/cody/pull/7107)
+
+### Fix
+
+#### Auto-Edit
+
+- Fix low resolution images on low DPI screens [#7100](https://github.com/sourcegraph/cody/pull/7100)
+
+#### Chat
+
+- prompt caching feature flag enrollement [#7177](https://github.com/sourcegraph/cody/pull/7177)
+- At mention menu open outside the editor window [#7045](https://github.com/sourcegraph/cody/pull/7045)
+- language filters in rules not applying correctly [#7025](https://github.com/sourcegraph/cody/pull/7025)
+- expansion of current-tab generic mention when non editor tabs are opened [#6910](https://github.com/sourcegraph/cody/pull/6910)
+
+#### Command
+
+- Generate commit message now uses flash-lite instead of last selected model [#7082](https://github.com/sourcegraph/cody/pull/7082)
+
+#### Smart-Apply
+
+- stripping of markdown code blocks [#7105](https://github.com/sourcegraph/cody/pull/7105)
+
+#### Tracing
+
+- Add Client Platform and agentVersion to traces [#6889](https://github.com/sourcegraph/cody/pull/6889)
+
+#### Ui
+
+- Hide unused prompts(SRCH-1648) [#7095](https://github.com/sourcegraph/cody/pull/7095)
+- Fix bugs in the UI [#7001](https://github.com/sourcegraph/cody/pull/7001)
+- Wire StatusBar into AutoeditsProvider (CODY-4706) [#6955](https://github.com/sourcegraph/cody/pull/6955)
+
+### Chore
+
+#### Marketing
+
+- update JB plugin icon [#7085](https://github.com/sourcegraph/cody/pull/7085)
+
+#### Release
+
+- upgrade changelog generator [#7081](https://github.com/sourcegraph/cody/pull/7081)
+- Bump package version and update changelog for 1.66 [#7003](https://github.com/sourcegraph/cody/pull/7003)
+- VSCode stable release Slack announcements to point to the correct release branches [#6975](https://github.com/sourcegraph/cody/pull/6975)
+- Bump package version and update changelog for 1.66 [#6971](https://github.com/sourcegraph/cody/pull/6971)
+
+### Reverts
+
+- Revert "fix(ui): Hide unused prompts(SRCH-1648)" [#-1](https://github.com/sourcegraph/cody/pull/7101)
+
+### Uncategorized
+
+#### Others
+
+- [Backport M72] fix(agentic chat): terminal and openCtx are not registered as tools [#7133](https://github.com/sourcegraph/cody/pull/7133)
+- [Backport M72] Fix code search downlaod [#7127](https://github.com/sourcegraph/cody/pull/7127)
+- Changelog for 1.70.0 [#7116](https://github.com/sourcegraph/cody/pull/7116)
+- Fix(unit test): revert prompt.test test cases [#7114](https://github.com/sourcegraph/cody/pull/7114)
+- Chore: Add prosemirror-lexical interop test [#7111](https://github.com/sourcegraph/cody/pull/7111)
+- Fix: Make it possible to dogfood new prompt editor [#7094](https://github.com/sourcegraph/cody/pull/7094)
+- Changelog for 1.68.0 [#7089](https://github.com/sourcegraph/cody/pull/7089)
+- Update Cody Web to V0.31.0 [#7053](https://github.com/sourcegraph/cody/pull/7053)
+- Remove intent leftovers [#7051](https://github.com/sourcegraph/cody/pull/7051)
+- Chore: fix kotlin bindings [#7043](https://github.com/sourcegraph/cody/pull/7043)
+- Fix repo name being `Symbol(@@pendingOperation)` if repo is local [#7042](https://github.com/sourcegraph/cody/pull/7042)
+- Remove Intent Detection [#7039](https://github.com/sourcegraph/cody/pull/7039)
+- Update cody web to 0.30.0 [#7033](https://github.com/sourcegraph/cody/pull/7033)
+- Disable windows/macOS e2e tests on main, shard ubuntu tests [#7031](https://github.com/sourcegraph/cody/pull/7031)
+- Rrhyne/improve code border styles [#7024](https://github.com/sourcegraph/cody/pull/7024)
+- Ignore aider files [#7013](https://github.com/sourcegraph/cody/pull/7013)
+- Fix cody web sandbox cors problem [#7010](https://github.com/sourcegraph/cody/pull/7010)
+- Remove unused code [#6998](https://github.com/sourcegraph/cody/pull/6998)
+- Feat: Add experimental & nightly release channels for vsce [#6997](https://github.com/sourcegraph/cody/pull/6997)
+- Simplify models fixtures [#6996](https://github.com/sourcegraph/cody/pull/6996)
+- Fix Repo filter dropdown z-index [#6994](https://github.com/sourcegraph/cody/pull/6994)
+- Simplify chat UI [#6992](https://github.com/sourcegraph/cody/pull/6992)
+- Fix ~5px pixel jitter when pressing Enter in chat in VS Code [#6991](https://github.com/sourcegraph/cody/pull/6991)
+- Bug fix: Fix 500ms delay when submitting chat message [#6990](https://github.com/sourcegraph/cody/pull/6990)
+- Fix border on history search [#6983](https://github.com/sourcegraph/cody/pull/6983)
+- Chat ui: remove user avatars, remove speaker name from follow-up message [#6981](https://github.com/sourcegraph/cody/pull/6981)
+- Remove chat message feedback and "Try again with different" model/context [#6980](https://github.com/sourcegraph/cody/pull/6980)
+- Experimental: Re-enable tool-cody for exploration [#6979](https://github.com/sourcegraph/cody/pull/6979)
+- Fix: Fix chevron for open/closed search results [#6978](https://github.com/sourcegraph/cody/pull/6978)
+- Chore: Remove hard-coded 'deep-cody' and replace with constant [#6958](https://github.com/sourcegraph/cody/pull/6958)
+- Fix: Stop button on cody web [#6939](https://github.com/sourcegraph/cody/pull/6939)
+- Fix keyDown:paste [#6938](https://github.com/sourcegraph/cody/pull/6938)
+- Add support for external auth providers in code search [#6919](https://github.com/sourcegraph/cody/pull/6919)
+- Feat: support for dynamic mentions in @ mention menu for prompt templates [#6793](https://github.com/sourcegraph/cody/pull/6793)
+
+
 ## 1.70.2
 
 ### Fix
