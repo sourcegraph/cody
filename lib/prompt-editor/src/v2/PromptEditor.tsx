@@ -32,7 +32,6 @@ import styles from './PromptEditor.module.css'
 import { fromSerializedPromptEditorState, toSerializedPromptEditorValue } from './lexical-interop'
 import { schema } from './promptInput'
 import 'prosemirror-view/style/prosemirror.css'
-import { Observable } from 'observable-fns'
 import {
     MentionMenuContextItemContent,
     MentionMenuProviderItemContent,
@@ -131,25 +130,26 @@ export const PromptEditor: FunctionComponent<Props> = ({
                           : true
                   )
 
-            return Observable.of(filteredInitialContextItems).concat(
-                mentionMenuData({
-                    ...parseMentionQuery(query, provider ?? null),
-                    interactionID: interactionID.current,
-                    contextRemoteRepositoriesNames: mentionSettings.remoteRepositoriesNames,
-                }).map(result => [
-                    ...result.providers,
-                    ...filteredInitialContextItems,
-                    ...(result.items
-                        ?.filter(
-                            item =>
-                                !filteredInitialContextItems.some(initialItem =>
-                                    areContextItemsEqual(item, initialItem)
-                                )
-                        )
-                        .slice(0, SUGGESTION_LIST_LENGTH_LIMIT)
-                        .map(item => ({ ...item, source: ContextItemSource.User })) ?? []),
-                ])
-            )
+            // NOTE: It's important to only emit after we receive new mentions menu data.
+            // This ensures that we display the 'old' menu items until new have arrived
+            // and prevents the menu from 'flickering'.
+            return mentionMenuData({
+                ...parseMentionQuery(query, provider ?? null),
+                interactionID: interactionID.current,
+                contextRemoteRepositoriesNames: mentionSettings.remoteRepositoriesNames,
+            }).map(result => [
+                ...result.providers,
+                ...filteredInitialContextItems,
+                ...(result.items
+                    ?.filter(
+                        item =>
+                            !filteredInitialContextItems.some(initialItem =>
+                                areContextItemsEqual(item, initialItem)
+                            )
+                    )
+                    .slice(0, SUGGESTION_LIST_LENGTH_LIMIT)
+                    .map(item => ({ ...item, source: ContextItemSource.User })) ?? []),
+            ])
         },
         [mentionMenuData, mentionSettings, defaultContext]
     )
@@ -167,8 +167,7 @@ export const PromptEditor: FunctionComponent<Props> = ({
         fetchMenuData,
     })
 
-    const { show, items, selectedIndex, query, position, parent } = useMentionsMenu(input)
-    const menuPosition = useMemo(() => ({ x: position.left, y: position.bottom }), [position])
+    const { show, items, selectedIndex, query, position: menuPosition, parent } = useMentionsMenu(input)
 
     useLayoutEffect(() => {
         // We increment the interaction ID when the menu is hidden because `fetchMenuData` can be
