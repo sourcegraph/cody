@@ -24,6 +24,8 @@ export interface Message {
     // mirrors what OpenAI and Anthropic expect
     text?: PromptString
     cacheEnabled?: boolean | null
+    data?: string | null
+    mimeType?: string | null
 }
 
 export interface CompletionUsage {

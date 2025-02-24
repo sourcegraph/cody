@@ -1,5 +1,6 @@
 import {
     type ChatMessage,
+    type ContextItemMedia,
     FAST_CHAT_INPUT_TOKEN_BUDGET,
     type Model,
     ModelTag,
@@ -156,6 +157,17 @@ export const HumanMessageEditor: FunctionComponent<{
         },
         [submitState, parentOnSubmit, onStop, telemetryRecorder.recordEvent, isFirstMessage, isSent]
     )
+
+    const onMediaUpload = useCallback((mediaContextItem: ContextItemMedia) => {
+        if (!editorRef.current) {
+            throw new Error('No editorRef')
+        }
+        const editor = editorRef.current
+        // Add the media context item as a mention
+        // editor.addMentions([mediaContextItem], 'after')
+        editor.upsertMentions([mediaContextItem], 'before', ' ', false)
+        editor.setFocus(true)
+    }, [])
 
     const omniBoxEnabled = useOmniBox()
     const {
@@ -472,6 +484,7 @@ export const HumanMessageEditor: FunctionComponent<{
                     hidden={!focused && isSent}
                     className={styles.toolbar}
                     intent={intent}
+                    onMediaUpload={onMediaUpload}
                 />
             )}
         </div>

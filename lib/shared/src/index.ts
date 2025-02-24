@@ -111,6 +111,7 @@ export {
     type ContextItemCurrentRepository,
     type ContextItemCurrentDirectory,
     type ContextItemCurrentOpenTabs,
+    type ContextItemMedia,
     FILE_RANGE_TOOLTIP_LABEL,
     GENERAL_HELP_LABEL,
     IGNORED_FILE_WARNING_LABEL,

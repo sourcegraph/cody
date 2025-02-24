@@ -1,4 +1,4 @@
-import type { Action, ChatMessage, Model } from '@sourcegraph/cody-shared'
+import type { Action, ChatMessage, ContextItemMedia, Model } from '@sourcegraph/cody-shared'
 import { useExtensionAPI } from '@sourcegraph/prompt-editor'
 import clsx from 'clsx'
 import { type FunctionComponent, useCallback } from 'react'
@@ -9,6 +9,7 @@ import toolbarStyles from '../../../../../../components/shadcn/ui/toolbar.module
 import { useActionSelect } from '../../../../../../prompts/PromptsTab'
 import { useClientConfig } from '../../../../../../utils/useClientConfig'
 import { AddContextButton } from './AddContextButton'
+import { ImageUploadButton } from './MediaUploadButton'
 import { SubmitButton, type SubmitButtonState } from './SubmitButton'
 
 /**
@@ -35,6 +36,8 @@ export const Toolbar: FunctionComponent<{
     intent?: ChatMessage['intent']
 
     manuallySelectIntent: (intent: ChatMessage['intent']) => void
+
+    onMediaUpload?: (mediaContextItem: ContextItemMedia) => void
 }> = ({
     userInfo,
     isEditorFocused,
@@ -48,6 +51,7 @@ export const Toolbar: FunctionComponent<{
     models,
     intent,
     manuallySelectIntent,
+    onMediaUpload,
 }) => {
     /**
      * If the user clicks in a gap or on the toolbar outside of any of its buttons, report back to
@@ -94,6 +98,7 @@ export const Toolbar: FunctionComponent<{
                     focusEditor={focusEditor}
                     className="tw-mr-1"
                 />
+                <ImageUploadButton onMediaUpload={onMediaUpload} />
             </div>
             <div className="tw-flex-1 tw-flex tw-justify-end">
                 <SubmitButton

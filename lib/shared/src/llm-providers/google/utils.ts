@@ -1,26 +1,50 @@
-import type { GeminiChatMessage } from '.'
-import { contextFiltersProvider } from '../../cody-ignore/context-filters-provider'
-import type { Message } from '../../sourcegraph-api'
+import type {
+    Content,
+    GenerativeContentBlob,
+    InlineDataPart,
+    Part,
+    TextPart,
+} from '@google/generative-ai'
+import type { Message } from '../..'
 
 /**
- * Constructs an array of `GeminiChatMessage` objects from an array of `Message` objects.
- *
- * Each `GeminiChatMessage` object has a `role` property set to either `'user'` or `'model'` based on the `speaker` property of the
- * corresponding `Message` object, and a `parts` property containing an array with a single `{ text: string }` object, where the
- * `text` property is set to the `text` property of the corresponding `Message` object.
- *
- * The resulting array of `GeminiChatMessage` objects excludes the last `GeminiChatMessage` object if its `role` is `'model'`.
- *
- * @param messages - An array of `Message` objects to be converted to `GeminiChatMessage` objects.
- * @returns An array of `GeminiChatMessage` objects.
+ * Constructs the messages array for the Gemini API, including handling InlineDataPart for media.
  */
-export async function constructGeminiChatMessages(messages: Message[]): Promise<GeminiChatMessage[]> {
-    return (
-        await Promise.all(
-            messages.map(async msg => ({
-                role: msg.speaker === 'human' ? 'user' : 'model',
-                parts: [{ text: (await msg.text?.toFilteredString(contextFiltersProvider)) ?? '' }],
-            }))
-        )
-    ).filter((_, i, arr) => i !== arr.length - 1 || arr[i].role !== 'model')
+export async function constructGeminiChatMessages(messages: Message[]): Promise<Content[]> {
+    // Use 'any[]' temporarily for Content[]
+
+    return messages.map(message => {
+        let role: 'user' | 'model' | 'system' // Gemini API roles
+
+        switch (message.speaker) {
+            case 'human':
+                role = 'user'
+                break
+            case 'assistant':
+                role = 'model'
+                break
+            case 'system':
+                role = 'system'
+                break
+            default:
+                role = 'user'
+        }
+
+        let part: Part
+        if (message.data && message.mimeType) {
+            const inlineData: GenerativeContentBlob = {
+                mimeType: message.mimeType,
+                data: message.data,
+            }
+            part = { inlineData } satisfies InlineDataPart // Keep satisfies for now
+        } else {
+            const text = message.text?.toString() || ''
+            part = { text } satisfies TextPart // Keep satisfies for now
+        }
+
+        return {
+            role,
+            parts: [part],
+        } satisfies Content // Keep satisfies for now
+    })
 }

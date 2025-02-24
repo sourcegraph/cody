@@ -205,6 +205,7 @@ function publicContextSummary(globalPrefix: string, context: ContextItem[]) {
             ...cloneDeep(defaultByTypeCount),
             isWorkspaceRoot: undefined as number | undefined,
         },
+        media: cloneDeep(defaultByTypeCount),
         'current-selection': cloneDeep(defaultByTypeCount),
         'current-file': cloneDeep(defaultByTypeCount),
         'current-repository': cloneDeep(defaultByTypeCount),
@@ -356,6 +357,7 @@ const defaultBySourceCount: BySourceCount = {
         'current-repository': undefined,
         'current-directory': undefined,
         'current-open-tabs': undefined,
+        media: undefined,
     },
 }
 

@@ -32,6 +32,9 @@ export function renderContextItem(contextItem: ContextItem): ContextMessage | nu
 
     let messageText: PromptString
 
+    const data = contextItem.type === 'media' ? contextItem.data : undefined
+    const mimeType = contextItem.type === 'media' ? contextItem.mimeType : undefined
+
     switch (source) {
         case ContextItemSource.Selection:
             messageText = populateCurrentSelectedCodeContextTemplate(content, uri, range)
@@ -61,7 +64,7 @@ export function renderContextItem(contextItem: ContextItem): ContextMessage | nu
             }
     }
 
-    return { speaker: 'human', text: messageText, file: contextItem }
+    return { speaker: 'human', text: messageText, file: contextItem, data, mimeType }
 }
 
 export function getContextItemTokenUsageType(item: ContextItem): ContextTokenUsageType {
