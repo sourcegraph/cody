@@ -62,7 +62,7 @@ export function getCompletionText({
     const usedChangeIds = new Set<string>()
     const candidates = [...decorationInfo.modifiedLines, ...decorationInfo.addedLines]
 
-    let currentLine = cursorPosition.line + 1
+    let currentLine = cursorPosition.line
     console.log('currentLine', currentLine)
     const lines = []
 
