@@ -467,7 +467,16 @@ export class EditManager implements vscode.Disposable {
                     })
 
                     const provider = this.getProviderForTask(task)
+
+                    const applyStartTime = Date.now()
                     await provider.applyEdit('\n' + configuration.replacement)
+                    const applyTimeTakenMs = Date.now() - applyStartTime
+                    this.smartApplyContextLogger.addApplyContext(
+                        contextloggerRequestId,
+                        applyTimeTakenMs,
+                        task?.id
+                    )
+                    this.smartApplyContextLogger.logSmartApplyContextToTelemetry(contextloggerRequestId)
                     return task
                 }
 
