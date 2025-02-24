@@ -107,7 +107,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
         }: {
             id: string
             text: string
-            isPrefetch: boolean
+            isPrefetch?: boolean
             instruction?: PromptString
             fileName?: string
         }) {
