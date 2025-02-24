@@ -39,6 +39,12 @@ export class InlineDiffDecorator implements vscode.Disposable, AutoEditsDecorato
     }
 
     private hasSimpleModifications(modifiedLines: DecorationInfo['modifiedLines']): boolean {
+        if (isOnlyAddingTextForModifiedLines(modifiedLines)) {
+            // We only have modified lines to show, and they are very simple.
+            // We can render them as text.
+            return false
+        }
+
         let linesWithChanges = 0
         for (const modifiedLine of modifiedLines) {
             const changeCount = modifiedLine.changes.filter(
@@ -70,15 +76,9 @@ export class InlineDiffDecorator implements vscode.Disposable, AutoEditsDecorato
             return true
         }
 
-        if (isOnlyAddingTextForModifiedLines(decorationInfo.modifiedLines)) {
-            // We only have modified lines to show, and they are very simple.
-            // We can render them as text.
-            return false
-        }
-
         if (this.hasSimpleModifications(decorationInfo.modifiedLines)) {
             // We a mixture of additions and deletions in the modified lines, but we are
-            // classifying them as a simple diff. We can render them as text.
+            // classifying them as simple changes. We can render them as text.
             return false
         }
 
