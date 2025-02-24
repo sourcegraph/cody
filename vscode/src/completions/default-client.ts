@@ -10,7 +10,6 @@ import {
     type CompletionResponseWithMetaData,
     CompletionStopReason,
     FeatureFlag,
-    type MessagePart,
     NetworkError,
     RateLimitError,
     type SerializedCodeCompletionsParams,
@@ -114,7 +113,7 @@ class DefaultCodeCompletionsClient implements CodeCompletionsClient {
                         params.messages.map(async m => ({
                             ...m,
                             text: await m.text?.toFilteredString(contextFiltersProvider),
-                            content: m.content as MessagePart[] | undefined,
+                            content: m.content,
                             base64Image: m.base64Image,
                         }))
                     ),

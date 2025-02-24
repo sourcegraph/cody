@@ -24,7 +24,7 @@ export interface Message {
     // mirrors what OpenAI and Anthropic expect
     text?: PromptString
     cacheEnabled?: boolean | null
-    content?: string | MessagePart[]
+    content?: MessagePart[]
     base64Image?: string
 }
 

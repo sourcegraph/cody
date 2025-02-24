@@ -260,8 +260,7 @@ export type ContextItemWithContent = ContextItem & { content: string }
 /**
  * A system chat message that adds a context item to the conversation.
  */
-export interface ContextMessage
-    extends Required<Omit<Message, 'cacheEnabled'>> {
+export interface ContextMessage extends Required<Omit<Message, 'cacheEnabled'>> {
     /**
      * Context messages are always "from" the human. (In the future, this could be from "system" for
      * LLMs that support that kind of message, but that `speaker` value is not currently supported
