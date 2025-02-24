@@ -37,9 +37,17 @@ export function createOrUpdateTelemetryRecorderProvider(
                 new TimestampTelemetryProcessor(),
             ])
             // Telemetry can only be disabled for Non-Sourcegraph.com instances.
-            if (configuration.telemetryLevel === 'off' && !isDotCom(auth.serverEndpoint)) {
-                updateGlobalTelemetryInstances(defaultNoOpProvider)
-                return
+            if (configuration.telemetryLevel === 'off') {
+                if (auth.serverEndpoint && !isDotCom(auth.serverEndpoint)) {
+                    updateGlobalTelemetryInstances(defaultNoOpProvider)
+                    logDebug('TelemetryRecorderProvider', 'telemetry has been disabled.', {
+                        verbose: `telemetry is disabled for ${auth.serverEndpoint}`,
+                    })
+                    return
+                }
+                logDebug('TelemetryRecorderProvider', 'Failed to disable telemetry.', {
+                    verbose: 'telemetry cannot be disabled for sourcegraph.com',
+                })
             }
 
             const initialize = telemetryRecorderProvider === undefined
