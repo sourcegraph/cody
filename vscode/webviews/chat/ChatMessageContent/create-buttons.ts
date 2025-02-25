@@ -298,7 +298,12 @@ function createApplyButton(
             button.prepend(iconContainer)
 
             button.addEventListener('click', () =>
-                smartApply.onSubmit(smartApplyId, preText, humanMessage?.text, fileName)
+                smartApply.onSubmit({
+                    id: smartApplyId,
+                    text: preText,
+                    instruction: humanMessage?.text,
+                    fileName,
+                })
             )
 
             break
@@ -313,7 +318,12 @@ function createApplyButton(
             button.prepend(iconContainer)
 
             button.addEventListener('click', () =>
-                smartApply.onSubmit(smartApplyId, preText, humanMessage?.text, fileName)
+                smartApply.onSubmit({
+                    id: smartApplyId,
+                    text: preText,
+                    instruction: humanMessage?.text,
+                    fileName,
+                })
             )
         }
     }

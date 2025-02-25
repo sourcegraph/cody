@@ -102,12 +102,13 @@ export type WebviewMessage =
           text: string
       }
     | {
-          command: 'smartApplySubmit'
+          command: 'smartApplySubmit' | 'smartApplyPrefetch'
           id: FixupTaskID
           code: string
           instruction?: string | undefined | null
           fileName?: string | undefined | null
           traceparent?: string | undefined | null
+          isPrefetch?: boolean | undefined | null
       }
     | {
           command: 'trace-export'

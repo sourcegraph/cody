@@ -1,9 +1,11 @@
-import { type Guardrails, type PromptString, isError } from '@sourcegraph/cody-shared'
+import { clsx } from 'clsx'
+import { LRUCache } from 'lru-cache'
+import { LoaderIcon, MinusIcon, PlusIcon } from 'lucide-react'
 import type React from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
-import { clsx } from 'clsx'
-import { LoaderIcon, MinusIcon, PlusIcon } from 'lucide-react'
+import { type Guardrails, type PromptString, isError } from '@sourcegraph/cody-shared'
+
 import type { FixupTaskID } from '../../../src/non-stop/FixupTask'
 import { CodyTaskState } from '../../../src/non-stop/state'
 import { type ClientActionListener, useClientActionListener } from '../../client/clientState'
@@ -19,7 +21,13 @@ export interface CodeBlockActionsProps {
     copyButtonOnSubmit: (text: string, event?: 'Keydown' | 'Button') => void
     insertButtonOnSubmit: (text: string, newFile?: boolean) => void
     smartApply: {
-        onSubmit: (id: string, text: string, instruction?: PromptString, fileName?: string) => void
+        onSubmit: (params: {
+            id: string
+            text: string
+            isPrefetch?: boolean
+            instruction?: PromptString
+            fileName?: string
+        }) => void
         onAccept: (id: string) => void
         onReject: (id: string) => void
     }
@@ -39,6 +47,8 @@ interface ChatMessageContentProps {
     guardrails?: Guardrails
     className?: string
 }
+
+const prefetchedEdits = new LRUCache<string, true>({ max: 100 })
 
 /**
  * A component presenting the content of a chat message.
@@ -65,13 +75,13 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
 
         return {
             ...smartApply,
-            onSubmit(id, text, instruction, fileName) {
+            onSubmit(params) {
                 // We intercept the `onSubmit` to mark this task as working as early as we can.
                 // In reality, this will happen once we determine the task selection and _then_ start the task.
                 // The user does not need to be aware of this, for their purposes this is a single operation.
                 // We can re-use the `Working` state to simplify our UI logic.
-                setSmartApplyStates(prev => ({ ...prev, [id]: CodyTaskState.Working }))
-                return smartApply.onSubmit(id, text, instruction, fileName)
+                setSmartApplyStates(prev => ({ ...prev, [params.id]: CodyTaskState.Working }))
+                return smartApply.onSubmit(params)
             },
         }
     }, [smartApply])
@@ -128,6 +138,34 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
                 if (smartApplyEnabled) {
                     const smartApplyId = getCodeBlockId(preText, fileName)
                     const smartApplyState = smartApplyStates[smartApplyId]
+
+                    // Since we iterate over `<pre>` elements, we're already inside a code block.
+                    // When we start rendering text outside the code block—meaning new characters
+                    // appear after the closing backticks—we should prefetch the smart apply response.
+                    //
+                    // To avoid redundant prefetching, we track processed code blocks in `prefetchedEdits`.
+                    const areWeAlreadyOutsideTheCodeBlock = !displayMarkdown.endsWith('```')
+
+                    // Side-effect: prefetch smart apply data if possible to reduce the final latency.
+                    // TODO: use a better heuristic to determine if the code block is complete.
+                    // TODO: extract this call into a separate `useEffect` call to avoid redundant calls
+                    // which currently happen.
+                    if (
+                        (!isMessageLoading || areWeAlreadyOutsideTheCodeBlock) &&
+                        // Ensure that we prefetch once per each suggested code block.
+                        !prefetchedEdits.has(smartApplyId)
+                    ) {
+                        prefetchedEdits.set(smartApplyId, true)
+
+                        smartApply?.onSubmit({
+                            id: smartApplyId,
+                            text: preText,
+                            isPrefetch: true,
+                            instruction: humanMessage?.text,
+                            fileName: codeBlockName,
+                        })
+                    }
+
                     buttons = createButtonsExperimentalUI(
                         preText,
                         humanMessage,
