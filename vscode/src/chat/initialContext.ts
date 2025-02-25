@@ -19,8 +19,8 @@ import {
     featureFlagProvider,
     fromVSCodeEvent,
     isDotCom,
-    isWorkspaceInstance,
     isError,
+    isWorkspaceInstance,
     openctxController,
     pendingOperation,
     shareReplay,
@@ -68,7 +68,7 @@ export function observeDefaultContext({
                         ? []
                         : currentFileOrSelectionContext),
                 ]
-                
+
                 // Handle corpus context based on flag
                 // When flag is enabled, no corpus items in initialContext
                 if (noDefaultRepoChip) {
@@ -77,11 +77,15 @@ export function observeDefaultContext({
                         corpusContext,
                     }
                 }
-                
+
                 // When flag is disabled, include in initialContext
-                const initialCorpusItems = corpusContext.filter(item => item.source === ContextItemSource.Initial)
-                const remainingCorpusItems = corpusContext.filter(item => item.source !== ContextItemSource.Initial)
-                
+                const initialCorpusItems = corpusContext.filter(
+                    item => item.source === ContextItemSource.Initial
+                )
+                const remainingCorpusItems = corpusContext.filter(
+                    item => item.source !== ContextItemSource.Initial
+                )
+
                 return {
                     initialContext: [...baseInitialContext, ...initialCorpusItems],
                     corpusContext: remainingCorpusItems,
@@ -192,11 +196,11 @@ export function getCorpusContextItemsForEditorState(): Observable<
                     allowRemoteContext: clientCapabilities().isCodyWeb || !isDotCom(authStatus),
                     isDotComUser: isDotCom(authStatus),
                     isEnterpriseStarterUser: isWorkspaceInstance(authStatus),
-                    isEnterpriseUser: !isDotCom(authStatus) && !isWorkspaceInstance(authStatus)
+                    isEnterpriseUser: !isDotCom(authStatus) && !isWorkspaceInstance(authStatus),
                 }) satisfies Pick<AuthStatus, 'authenticated' | 'endpoint'> & {
-                    allowRemoteContext: boolean,
-                    isDotComUser: boolean,
-                    isEnterpriseStarterUser: boolean,
+                    allowRemoteContext: boolean
+                    isDotComUser: boolean
+                    isEnterpriseStarterUser: boolean
                     isEnterpriseUser: boolean
                 }
         ),
@@ -206,7 +210,7 @@ export function getCorpusContextItemsForEditorState(): Observable<
     return combineLatest(relevantAuthStatus, remoteReposForAllWorkspaceFolders).pipe(
         abortableOperation(async ([authStatus, remoteReposForAllWorkspaceFolders], signal) => {
             const items: ContextItem[] = []
-            
+
             // Local context is not available to enterprise users
             if (!authStatus.isEnterpriseUser) {
                 // TODO(sqs): Support multi-root. Right now, this only supports the 1st workspace root.
@@ -224,7 +228,7 @@ export function getCorpusContextItemsForEditorState(): Observable<
                         source: ContextItemSource.Initial,
                         icon: 'folder',
                     } satisfies ContextItemTree)
-            }
+                }
             }
 
             // TODO(sqs): Make this consistent between self-serve (no remote search) and enterprise (has
@@ -270,7 +274,9 @@ export function getCorpusContextItemsForEditorState(): Observable<
                             title: 'Current Remote Repository',
                             badge: 'Not yet available',
                             content: null,
-                            uri: URI.parse('https://sourcegraph.com/docs/cody/prompts-guide#indexing-your-repositories-for-context'),
+                            uri: URI.parse(
+                                'https://sourcegraph.com/docs/cody/prompts-guide#indexing-your-repositories-for-context'
+                            ),
                             name: '',
                             icon: 'folder',
                         })
