@@ -37,7 +37,7 @@ import type { Config } from 'cody-ai/webviews/utils/useConfig'
 
 import type { CodyExternalApi, InitialContext } from '../types'
 
-import type { CodyWebAgent } from './use-cody-agent'
+import { type UseCodyWebAgentInput, useCodyWebAgent } from './use-cody-agent'
 
 // Include global Cody Web styles to the styles bundle
 import '../global-styles/styles.css'
@@ -88,7 +88,7 @@ export interface CodyWebChatController {
 }
 
 export interface CodyWebChatProps {
-    agent: CodyWebAgent | Error | null
+    agentConfig: UseCodyWebAgentInput
     initialContext?: InitialContext
     className?: string
 
@@ -114,13 +114,24 @@ export interface CodyWebChatProps {
  * You can see the demo usage of this component in demo/App.tsx
  */
 export const CodyWebChat: FunctionComponent<CodyWebChatProps> = ({
-    agent,
+    agentConfig,
     initialContext,
     className,
     onExternalApiReady,
     controller,
     viewType,
 }) => {
+    const agent = useCodyWebAgent(agentConfig)
+
+    useEffect(() => {
+        if (agent && !isErrorLike(agent)) {
+            agent.client.rpc.sendNotification('workspaceFolder/didChange', {
+                uris: initialContext?.repository.name ? [`repo:${initialContext.repository.name}`] : [],
+            })
+            agent.createNewChat()
+        }
+    }, [initialContext?.repository, agent])
+
     if (isErrorLike(agent)) {
         return <p>Cody Web client agent error: {agent.message}</p>
     }
@@ -128,12 +139,6 @@ export const CodyWebChat: FunctionComponent<CodyWebChatProps> = ({
     if (agent === null) {
         return <ChatSkeleton className={classNames(className, styles.root)} />
     }
-
-    useEffect(() => {
-        agent.client.rpc.sendNotification('workspaceFolder/didChange', {
-            uris: initialContext?.repository.name ? [`repo:${initialContext.repository.name}`] : [],
-        })
-    }, [initialContext?.repository, agent.client])
 
     return (
         <AppWrapper>

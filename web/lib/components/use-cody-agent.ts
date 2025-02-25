@@ -1,7 +1,7 @@
 import { forceHydration, hydrateAfterPostMessage } from '@sourcegraph/cody-shared'
 import type { ExtensionMessage } from 'cody-ai/src/chat/protocol'
 import { type VSCodeWrapper, setVSCodeWrapper } from 'cody-ai/webviews/utils/VSCodeApi'
-import type { MutableRefObject } from 'react'
+import { type MutableRefObject, useEffect, useState } from 'react'
 import { URI } from 'vscode-uri'
 import { type AgentClient, createAgentClient } from '../agent/agent.client'
 
@@ -16,14 +16,7 @@ import { type AgentClient, createAgentClient } from '../agent/agent.client'
  */
 const GLOBAL_MESSAGE_TYPES: Array<ExtensionMessage['type']> = ['rpc/response']
 
-interface UseCodyWebAgentInput {
-    serverEndpoint: string
-    accessToken: string | null
-    createAgentWorker: () => Worker
-    telemetryClientName?: string
-    customHeaders?: Record<string, string>
-    repository?: string
-}
+const GLOBAL_AGENT_SHUTDOWN_TIMER = 10 * 60 * 1000 // 10 minutes
 
 export interface CodyWebAgent {
     client: AgentClient
@@ -31,12 +24,69 @@ export interface CodyWebAgent {
     createNewChat: () => Promise<void>
 }
 
+let globalAgentRefCounter = 0
+let globalAgentShutdownTimer: number | undefined
+let globalAgent: Promise<CodyWebAgent> | undefined
+
+export interface UseCodyWebAgentInput {
+    serverEndpoint: string
+    accessToken: string | null
+    telemetryClientName?: string
+    customHeaders?: Record<string, string>
+    createAgentWorker: () => Worker
+}
+
+// Cody agent is instantiated the first time a cody web component is initialized.
+// To preserve resources we are automatically shutting down the agent when it hasn't
+// been referenced for GLOBAL_AGENT_SHUTDOWN_TIMER.
+
+function retainGlobalAgent(): void {
+    window.clearTimeout(globalAgentShutdownTimer)
+    globalAgentRefCounter += 1
+}
+
+function releaseGlobalAgent() {
+    if (globalAgentRefCounter > 0) {
+        globalAgentRefCounter -= 1
+    }
+
+    if (globalAgentRefCounter === 0) {
+        globalAgentShutdownTimer = window.setTimeout(() => {
+            if (globalAgentRefCounter === 0) {
+                globalAgent?.then(agent => agent.client.dispose())
+                globalAgent = undefined
+            }
+        }, GLOBAL_AGENT_SHUTDOWN_TIMER)
+    }
+}
+
+/**
+ * Creates or reuses a cody agent instance. To improve performance we share a single cody agent
+ * instance across multiple invocations of cody web.
+ */
+export function useCodyWebAgent(input: UseCodyWebAgentInput): CodyWebAgent | Error | null {
+    const [agent, setAgent] = useState<CodyWebAgent | Error | null>(null)
+
+    // Create global agent here so that we
+    if (!globalAgent) {
+        globalAgent = createCodyAgent(input)
+    }
+
+    useEffect(() => {
+        globalAgent?.then(setAgent, setAgent)
+        retainGlobalAgent()
+        return releaseGlobalAgent
+    }, [])
+
+    return agent
+}
+
 /**
  * Creates Cody Web Agent instance.
  * Uses cody web-worker agent under the hood with json rpc as a connection between
  * main and web-worker threads, see agent.client.ts for more details
  */
-export async function createCodyAgent(input: UseCodyWebAgentInput): Promise<CodyWebAgent> {
+async function createCodyAgent(input: UseCodyWebAgentInput): Promise<CodyWebAgent> {
     const { serverEndpoint, accessToken, telemetryClientName, customHeaders, createAgentWorker } = input
 
     const activeWebviewPanelIDRef = { current: '' }
@@ -45,9 +95,9 @@ export async function createCodyAgent(input: UseCodyWebAgentInput): Promise<Cody
         const client = await createAgentClient({
             customHeaders,
             telemetryClientName,
-            createAgentWorker,
             serverEndpoint: serverEndpoint,
             accessToken: accessToken ?? '',
+            createAgentWorker,
         })
 
         // Special override for chat creating for Cody Web, otherwise the create new chat doesn't work
