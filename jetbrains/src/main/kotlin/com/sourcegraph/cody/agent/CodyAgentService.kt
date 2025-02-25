@@ -183,10 +183,10 @@ class CodyAgentService(private val project: Project) : Disposable {
         callback: Consumer<CodyAgent>
     ) {
       if (CodyApplicationSettings.instance.isCodyEnabled) {
+        if (project.isDisposed) return
+        val instance = getInstance(project)
         ApplicationManager.getApplication().executeOnPooledThread {
           try {
-            if (project.isDisposed) return@executeOnPooledThread
-            val instance = getInstance(project)
             val isReadyButNotFunctional = instance.codyAgent.getNow(null)?.isConnected() == false
             val agent =
                 if (isReadyButNotFunctional && restartIfNeeded) instance.restartAgent(project)
@@ -196,7 +196,7 @@ class CodyAgentService(private val project: Project) : Disposable {
           } catch (e: Exception) {
             logger.warn("Failed to execute call to agent", e)
             if (restartIfNeeded && e !is ProcessCanceledException) {
-              getInstance(project).restartAgent(project)
+              instance.restartAgent(project)
             }
             throw e
           }
