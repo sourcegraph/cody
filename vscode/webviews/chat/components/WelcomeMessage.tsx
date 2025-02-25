@@ -4,6 +4,7 @@ import { PromptList } from '../../components/promptList/PromptList'
 import { useActionSelect } from '../../prompts/PromptsTab'
 import type { View } from '../../tabs'
 import { PromptMigrationWidget } from './../../components/promptsMigration/PromptsMigration'
+import { LastConversation } from './LastConversation'
 
 const localStorageKey = 'chat.welcome-message-dismissed'
 
@@ -30,6 +31,7 @@ export const WelcomeMessage: FunctionComponent<WelcomeMessageProps> = ({
                 <PromptMigrationWidget dismissible={true} className="tw-w-full" />
             )}
             <div className="tw-flex tw-flex-col tw-gap-4 tw-w-full">
+                <LastConversation setView={setView} IDE={IDE} />
                 <PromptList
                     showSearch={false}
                     showFirstNItems={4}
