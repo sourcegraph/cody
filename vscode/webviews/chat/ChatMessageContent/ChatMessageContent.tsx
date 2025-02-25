@@ -236,7 +236,9 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
                         </span>
                     </summary>
                     <div className="tw-px-4 tw-py-3 tw-mx-4 tw-text-sm tw-prose dark:tw-prose-invert tw-max-w-none tw-leading-relaxed tw-text-base/7">
-                        {thinkContent}
+                        <MarkdownFromCody className={clsx(styles.content, className)}>
+                            {thinkContent}
+                        </MarkdownFromCody>
                     </div>
                 </details>
             )}
