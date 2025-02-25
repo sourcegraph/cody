@@ -128,15 +128,6 @@ export function createButtonsExperimentalUI(
         }
     }
     buttonContainer1.appendChild(leftInfo)
-
-    // Add Open Diff button on the right
-    if (codeBlockName && !codeBlockName.includes('command')) {
-        const openDiffButton = document.createElement('button')
-        openDiffButton.className = styles.button
-        openDiffButton.innerHTML = 'Open Diff'
-        buttonContainer1.appendChild(openDiffButton)
-    }
-
     wrapper.appendChild(buttonContainer1)
 
     // Create button container 2 for action buttons
