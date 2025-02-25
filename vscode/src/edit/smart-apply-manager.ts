@@ -66,6 +66,7 @@ export class SmartApplyManager implements vscode.Disposable {
         const smartApplyAcceptCommand = vscode.commands.registerCommand(
             'cody.command.smart-apply.accept',
             ({ taskId }: { taskId: string }) => {
+                this.cache.delete(taskId)
                 vscode.commands.executeCommand('cody.fixup.codelens.accept', taskId)
             }
         )
