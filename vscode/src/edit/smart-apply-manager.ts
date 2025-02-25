@@ -66,7 +66,6 @@ export class SmartApplyManager implements vscode.Disposable {
         const smartApplyAcceptCommand = vscode.commands.registerCommand(
             'cody.command.smart-apply.accept',
             ({ taskId }: { taskId: string }) => {
-                this.cache.delete(taskId)
                 vscode.commands.executeCommand('cody.fixup.codelens.accept', taskId)
             }
         )
@@ -74,7 +73,6 @@ export class SmartApplyManager implements vscode.Disposable {
         const smartApplyRejectCommand = vscode.commands.registerCommand(
             'cody.command.smart-apply.reject',
             ({ taskId }: { taskId: string }) => {
-                this.cache.delete(taskId)
                 vscode.commands.executeCommand('cody.fixup.codelens.undo', taskId)
             }
         )
@@ -119,7 +117,11 @@ export class SmartApplyManager implements vscode.Disposable {
         }
 
         const model = await this.options.editManager.getEditModel(configuration)
-        const taskAndSelection = await this.fetchAndCacheSmartApplyTask(configuration, model)
+        const taskAndSelection = await this.getSmartApplyTask({
+            configuration,
+            model,
+            shouldUpdateCache: true,
+        })
 
         if (taskAndSelection) {
             const provider = this.options.editManager.getProviderForTask(taskAndSelection.task)
@@ -127,14 +129,30 @@ export class SmartApplyManager implements vscode.Disposable {
         }
     }
 
-    private async fetchAndCacheSmartApplyTask(
-        configuration: SmartApplyArguments['configuration'],
+    /**
+     * Returns a cached smart apply task if it exists, otherwise fetches a new one and caches it.
+     */
+    private async getSmartApplyTask({
+        configuration,
+        model,
+        shouldUpdateCache,
+    }: {
+        configuration: SmartApplyArguments['configuration']
         model: string
-    ): SmartApplyCacheEntry {
+        shouldUpdateCache: boolean
+    }): SmartApplyCacheEntry {
         let inFlight = this.cache.get(configuration.id)
-        if (!inFlight) {
+
+        if (inFlight) {
+            // Delete the cached task right after using the potentially cached value to avoid
+            // reusing it more than once.
+            this.cache.delete(configuration.id)
+        } else {
             inFlight = this.fetchSmartApplyTask(configuration, model)
-            this.cache.set(configuration.id, inFlight)
+
+            if (shouldUpdateCache) {
+                this.cache.set(configuration.id, inFlight)
+            }
         }
 
         try {
@@ -261,7 +279,11 @@ ${replacementCode}`,
                 const documentRange = new vscode.Range(0, 0, document.lineCount, 0)
 
                 editor.setDecorations(SMART_APPLY_FILE_DECORATION, [documentRange])
-                const taskAndSelection = await this.fetchAndCacheSmartApplyTask(configuration, model)
+                const taskAndSelection = await this.getSmartApplyTask({
+                    configuration,
+                    model,
+                    shouldUpdateCache: false,
+                })
                 editor.setDecorations(SMART_APPLY_FILE_DECORATION, [])
 
                 if (!taskAndSelection) {

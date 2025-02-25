@@ -107,6 +107,10 @@ export class EditProvider {
         const taskId = this.config.task.id
         const session = this.cache.get(taskId)
 
+        // Delete the cached session right after using the potentially cached value to avoid
+        // reusing it more than once.
+        this.cache.delete(taskId)
+
         // If no streaming session or there was an error, start from scratch
         if (!session) {
             await this.performStreamingEdit({ taskId, initialState: 'streaming' })
