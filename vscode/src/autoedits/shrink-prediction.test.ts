@@ -139,7 +139,7 @@ describe('shrinkPredictionUntilSuffix', () => {
         const codeToReplaceData = getCodeToReplaceForShrinkPrediction`test code█`
         const prediction = dedent`
             test code changed
-            more lines
+            more lines\n
         `
 
         const result = shrinkPredictionUntilSuffix({ prediction, codeToReplaceData })
@@ -165,7 +165,7 @@ describe('shrinkPredictionUntilSuffix', () => {
 
         // The predicted line "console.log("barbaz")" is not an exact match, so no overlap is removed.
         const prediction = dedent`console.log("foo changed")
-            console.log("barbaz")
+            console.log("barbaz")\n
         `
 
         const result = shrinkPredictionUntilSuffix({ prediction, codeToReplaceData })
