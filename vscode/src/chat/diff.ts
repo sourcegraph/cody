@@ -47,19 +47,35 @@ export function diffInChat(
                 }
                 break
             case 'decoratedReplacement':
+                if (lineNumber + 1 < endLine) {
+                    const nextDiff = modifiedLines.get(lineNumber + 1)
+                    const nextText =
+                        nextDiff?.type === 'insertion'
+                            ? JSON.stringify(String(nextDiff.text.slice(0, -2)))
+                            : null
+                    const currText = JSON.stringify(String(diff.oldText.slice(0, -1)))
+                    if (normalizeText(nextText) === normalizeText(currText)) {
+                        lineNumber++
+                        break
+                    }
+                }
                 if (lineNumber === diff.range.start.line) {
                     message.push(
                         diff.oldText
                             .trimEnd()
                             .split('\n')
                             .map(line => `- ${line}`)
-                            .join('\n'),
-                        diff.text
-                            .trimEnd()
-                            .split('\n')
-                            .map(line => `+ ${line}`)
                             .join('\n')
                     )
+                    if (diff.text !== '\n') {
+                        message.push(
+                            diff.text
+                                .trimEnd()
+                                .split('\n')
+                                .map(line => `+ ${line}`)
+                                .join('\n')
+                        )
+                    }
                 }
                 break
             case 'insertion':
@@ -78,4 +94,27 @@ export function diffInChat(
 
     message.push('```')
     return message.join('\n')
+}
+
+function normalizeText(str: string | null): string | null {
+    if (str === null) return null
+    return (
+        str
+            .replace(/^['"`]|['"`]$/g, '')
+            // Normalize Unicode representations first
+            .normalize('NFKC')
+            // Quotes
+            .replace(/[\u2018\u2019]/g, "'") // Single curly quotes to straight
+            .replace(/[\u201C\u201D]/g, '"') // Double curly quotes to straight
+            // Spaces
+            .replace(/\u00A0/g, ' ') // Non-breaking space to space
+            .replace(/[\u2000-\u200A]/g, ' ') // Various Unicode spaces to regular space
+            .replace(/\u200B/g, '') // Remove zero-width spaces
+            // Dashes
+            .replace(/[\u2013\u2014]/g, '-') // En and em dashes to hyphen
+            .replace(/\u2212/g, '-') // Minus sign to hyphen
+            // Other
+            .replace(/\u2026/g, '...') // Ellipsis character to three dots
+            .replace(/\r\n/g, '\n')
+    ) // Normalize line endings
 }
