@@ -223,24 +223,24 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
                 >
                     <summary
                         className={clsx(
-                            'tw-flex tw-items-center tw-gap-2 tw-px-3 tw-py-2 tw-bg-gray-100/50 dark:tw-bg-gray-800/80 tw-cursor-pointer tw-select-none tw-transition-colors',
+                            'tw-flex tw-items-center tw-gap-2 tw-px-3 tw-py-2 tw-bg-transparent dark:tw-bg-transparent tw-cursor-pointer tw-select-none tw-transition-colors',
                             {
                                 'tw-animate-pulse': isThinking,
                             }
                         )}
                     >
                         {isThinking ? (
-                            <LoaderIcon size={16} className="tw-animate-spin tw-text-muted-foreground" />
+                            <LoaderIcon size={16} className="tw-animate-spin tw-text-foreground/80" />
                         ) : (
                             <>
                                 {isOpen ? (
-                                    <MinusIcon size={16} className="tw-text-muted-foreground" />
+                                    <MinusIcon size={16} className="tw-text-foreground/80" />
                                 ) : (
-                                    <PlusIcon size={16} className="tw-text-muted-foreground" />
+                                    <PlusIcon size={16} className="tw-text-foreground/80" />
                                 )}
                             </>
                         )}
-                        <span className="tw-font-medium tw-text-gray-600 dark:tw-text-gray-300">
+                        <span className="tw-font-semibold tw-text-foreground/80">
                             {isThinking ? 'Thinking...' : 'Thought Process'}
                         </span>
                     </summary>
