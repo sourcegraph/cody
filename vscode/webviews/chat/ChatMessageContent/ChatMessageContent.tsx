@@ -3,7 +3,7 @@ import type React from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { clsx } from 'clsx'
-import { LoaderIcon, PlusIcon } from 'lucide-react'
+import { LoaderIcon, PlusIcon, MinusIcon } from 'lucide-react'
 import type { FixupTaskID } from '../../../src/non-stop/FixupTask'
 import { CodyTaskState } from '../../../src/non-stop/state'
 import { type ClientActionListener, useClientActionListener } from '../../client/clientState'
@@ -210,11 +210,14 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
         [displayMarkdown]
     )
 
+    const [isOpen, setIsOpen] = useState(true)
+
     return (
         <div ref={rootRef} data-testid="chat-message-content">
             {thinkContent.length > 0 && (
                 <details
-                    open
+                    open={isOpen}
+                    onToggle={e => setIsOpen((e.target as HTMLDetailsElement).open)}
                     className="tw-container tw-mb-7 tw-border tw-border-gray-500/20 dark:tw-border-gray-600/40 tw-rounded-lg tw-overflow-hidden tw-backdrop-blur-sm"
                     title="Thinking & Reasoning Space"
                 >
@@ -229,7 +232,13 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
                         {isThinking ? (
                             <LoaderIcon size={16} className="tw-animate-spin tw-text-muted-foreground" />
                         ) : (
-                            <PlusIcon size={16} className="tw-text-muted-foreground" />
+                            <>
+                                {isOpen ? (
+                                    <MinusIcon size={16} className="tw-text-muted-foreground" />
+                                ) : (
+                                    <PlusIcon size={16} className="tw-text-muted-foreground" />
+                                )}
+                            </>
                         )}
                         <span className="tw-font-medium tw-text-gray-600 dark:tw-text-gray-300">
                             {isThinking ? 'Thinking...' : 'Thought Process'}
