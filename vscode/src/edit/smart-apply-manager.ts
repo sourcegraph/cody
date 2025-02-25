@@ -32,7 +32,6 @@ import type { SmartApplyArguments } from './smart-apply'
 type SmartApplyCacheEntry = Promise<null | {
     task: FixupTask
     selectionType: SmartApplySelectionType
-    contextLoggerRequestId: string
 }>
 
 export class SmartApplyManager implements vscode.Disposable {
@@ -202,21 +201,6 @@ export class SmartApplyManager implements vscode.Disposable {
             billingMetadata: { product: 'cody', category: 'billable' },
         })
 
-        const contextLoggerRequestId = this.smartApplyContextLogger.createSmartApplyLoggingRequest({
-            model,
-            userQuery: configuration.instruction.toString(),
-            replacementCodeBlock: replacementCode.toString(),
-            document: configuration.document,
-        })
-
-        this.smartApplyContextLogger.addSmartApplySelectionContext(
-            contextLoggerRequestId,
-            selection.type,
-            selection.range,
-            selectionTimeTakenMs,
-            configuration.document
-        )
-
         const task = await this.options.editManager.createEditTask({
             configuration: {
                 id: configuration.id,
@@ -235,7 +219,18 @@ ${replacementCode}`,
             return null
         }
 
-        return { task, selectionType: selection.type, contextLoggerRequestId }
+        this.smartApplyContextLogger.recordSmartApplyBaseContext({
+            taskId: task.id,
+            model,
+            userQuery: configuration.instruction.toString(),
+            replacementCodeBlock: replacementCode.toString(),
+            document: configuration.document,
+            selectionType: selection.type,
+            selectionRange: selection.range,
+            selectionTimeMs: selectionTimeTakenMs,
+        })
+
+        return { task, selectionType: selection.type }
     }
 
     public async smartApplyEdit(args: SmartApplyArguments): Promise<void> {
@@ -293,7 +288,7 @@ ${replacementCode}`,
                     return
                 }
 
-                const { task, selectionType, contextLoggerRequestId } = taskAndSelection
+                const { task, selectionType } = taskAndSelection
                 editor.revealRange(task.selectionRange, vscode.TextEditorRevealType.InCenter)
 
                 if (task.selectionRange.isEmpty) {
@@ -307,23 +302,34 @@ ${replacementCode}`,
                     })
                 }
 
-                const applyStartTime = performance.now()
-                await this.options.editManager.startStreamingEditTask({
-                    task,
-                    editor: { active: editor },
-                })
-                const applyTimeTakenMs = performance.now() - applyStartTime
-
-                this.smartApplyContextLogger.addApplyContext({
-                    requestId: contextLoggerRequestId,
-                    applyTimeMs: applyTimeTakenMs,
-                    applyTaskId: task.id,
-                })
-                this.smartApplyContextLogger.logSmartApplyContextToTelemetry(contextLoggerRequestId)
-
-                return
+                await this.measureAndLogEditOperation(task.id, () =>
+                    this.options.editManager.startStreamingEditTask({
+                        task,
+                        editor: { active: editor },
+                    })
+                )
             })
         })
+    }
+
+    /**
+     * Measures the execution time of an edit operation and logs the results.
+     */
+    private async measureAndLogEditOperation<T>(
+        taskId: string,
+        operation: () => Promise<T>
+    ): Promise<T> {
+        const applyStartTime = performance.now()
+        const result = await operation()
+        const applyTimeTakenMs = performance.now() - applyStartTime
+
+        this.smartApplyContextLogger.addApplyContext({
+            taskId,
+            applyTimeMs: applyTimeTakenMs,
+        })
+        this.smartApplyContextLogger.logSmartApplyContextToTelemetry(taskId)
+
+        return result
     }
 
     private async applyInsertionEdit({
@@ -393,7 +399,7 @@ ${replacementCode}`,
 
         this.options.editManager.logExecutedTaskEvent(task)
         const provider = this.options.editManager.getProviderForTask(task)
-        await provider.applyEdit(finalReplacement)
+        await this.measureAndLogEditOperation(task.id, () => provider.applyEdit(finalReplacement))
     }
 
     public dispose(): void {

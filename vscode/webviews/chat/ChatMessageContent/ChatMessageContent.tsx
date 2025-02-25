@@ -253,7 +253,7 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
             {thinkContent.length > 0 && (
                 <details
                     open
-                    className="tw-container tw-mb-7 tw-border tw-border-gray-500/20 dark:tw-border-gray-600/40 tw-rounded-lg tw-overflow-hidden tw-backdrop-blur-sm hover:tw-bg-gray-200/50 dark:hover:tw-bg-gray-700/50"
+                    className="tw-container tw-mb-7 tw-border tw-border-gray-500/20 dark:tw-border-gray-600/40 tw-rounded-lg tw-overflow-hidden tw-backdrop-blur-sm"
                     title="Thinking & Reasoning Space"
                 >
                     <summary
@@ -273,8 +273,10 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
                             {isThinking ? 'Thinking...' : 'Thought Process'}
                         </span>
                     </summary>
-                    <div className="tw-px-4 tw-py-3 tw-mx-4 tw-text-sm tw-prose dark:tw-prose-invert tw-max-w-none tw-leading-relaxed tw-text-base/7 tw-text-muted-foreground">
-                        {thinkContent}
+                    <div className="tw-px-4 tw-py-3 tw-mx-4 tw-text-sm tw-prose dark:tw-prose-invert tw-max-w-none tw-leading-relaxed tw-text-base/7">
+                        <MarkdownFromCody className={clsx(styles.content, className)}>
+                            {thinkContent}
+                        </MarkdownFromCody>
                     </div>
                 </details>
             )}
