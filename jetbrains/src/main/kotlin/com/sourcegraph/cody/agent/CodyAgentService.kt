@@ -65,27 +65,22 @@ class CodyAgentService(private val project: Project) : Disposable {
       // Proxy settings have changed
       previousProxyHost = currentProxyHost
       previousProxyPort = currentProxyPort
-      reloadAgent()
+      restartAgent()
     }
-  }
-
-  private fun reloadAgent() {
-    restartAgent(project)
   }
 
   private fun onStartup(action: (CodyAgent) -> Unit) {
     synchronized(startupActions) { startupActions.add(action) }
   }
 
-  fun startAgent(project: Project, secondsTimeout: Long = 45): CompletableFuture<CodyAgent> {
+  fun startAgent(secondsTimeout: Long = 45): CompletableFuture<CodyAgent> {
     // Normally we do not need to specify endpoint or token used for starting an agent.
     // Agent will automatically pick up the last used one or the default.
     // Custom endpoint and token are used in tests.
-    return startAgent(project, endpoint = null, token = null, secondsTimeout)
+    return startAgent(endpoint = null, token = null, secondsTimeout)
   }
 
   fun startAgent(
-      project: Project,
       endpoint: SourcegraphServerPath?,
       token: String?,
       secondsTimeout: Long = 45
@@ -133,31 +128,31 @@ class CodyAgentService(private val project: Project) : Disposable {
     return codyAgent
   }
 
-  fun stopAgent(project: Project?): CompletableFuture<Void>? {
+  fun stopAgent(): CompletableFuture<Void>? {
     try {
       val shutdownFuture = codyAgent.getNow(null)?.shutdown()
       return (shutdownFuture ?: CompletableFuture.completedFuture(null)).thenCompose {
-        project?.let { WebUIService.getInstance(it).reset() }
+        WebUIService.getInstance(project).reset()
       }
     } catch (e: Exception) {
       logger.warn("Failed to stop Cody agent gracefully", e)
       return CompletableFuture.failedFuture(e)
     } finally {
       codyAgent = CompletableFuture()
-      project?.let { CodyStatusService.resetApplication(it) }
+      CodyStatusService.resetApplication(project)
     }
   }
 
-  fun restartAgent(project: Project, secondsTimeout: Long = 90): CompletableFuture<CodyAgent> {
+  fun restartAgent(secondsTimeout: Long = 90): CompletableFuture<CodyAgent> {
     synchronized(this) {
-      stopAgent(project)
-      return startAgent(project, secondsTimeout)
+      stopAgent()
+      return startAgent(secondsTimeout)
     }
   }
 
   override fun dispose() {
     timer.cancel()
-    stopAgent(null)
+    stopAgent()
   }
 
   companion object {
@@ -189,14 +184,14 @@ class CodyAgentService(private val project: Project) : Disposable {
           try {
             val isReadyButNotFunctional = instance.codyAgent.getNow(null)?.isConnected() == false
             val agent =
-                if (isReadyButNotFunctional && restartIfNeeded) instance.restartAgent(project)
+                if (isReadyButNotFunctional && restartIfNeeded) instance.restartAgent()
                 else instance.codyAgent
             callback.accept(agent.get())
             setAgentError(project, null)
           } catch (e: Exception) {
             logger.warn("Failed to execute call to agent", e)
             if (restartIfNeeded && e !is ProcessCanceledException) {
-              instance.restartAgent(project)
+              instance.restartAgent()
             }
             throw e
           }

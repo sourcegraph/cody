@@ -22,9 +22,9 @@ class CodySettingChangeListener(project: Project) : ChangeListener(project) {
 
             if (context.oldCodyEnabled != context.newCodyEnabled) {
               if (context.newCodyEnabled) {
-                CodyAgentService.getInstance(project).startAgent(project)
+                CodyAgentService.getInstance(project).startAgent()
               } else {
-                CodyAgentService.getInstance(project).stopAgent(project)
+                CodyAgentService.getInstance(project).stopAgent()
               }
             }
 
@@ -73,7 +73,7 @@ class CodySettingChangeListener(project: Project) : ChangeListener(project) {
 
             if (context.oldShouldAcceptNonTrustedCertificatesAutomatically !=
                 context.newShouldAcceptNonTrustedCertificatesAutomatically)
-                CodyAgentService.getInstance(project).restartAgent(project)
+                CodyAgentService.getInstance(project).restartAgent()
           }
         })
   }
