@@ -82,6 +82,9 @@ export class AutoEditsDefaultRendererManager extends AutoEditsRenderOutput imple
         }
     }
 
+    /**
+     * TODO: Test and update this with default manager implementation
+     */
     protected async onDidChangeTextEditorSelection(
         event: vscode.TextEditorSelectionChangeEvent
     ): Promise<void> {

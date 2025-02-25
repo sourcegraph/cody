@@ -234,11 +234,13 @@ export class AutoEditsRenderOutput {
 
     private shouldRenderImage(decorationInfo: DecorationInfo): boolean {
         if (decorationInfo.addedLines.length > 0) {
+            console.log('we have added lines')
             // Any additions should be represented with the image
             return true
         }
 
         if (isOnlyAddingTextForModifiedLines(decorationInfo.modifiedLines)) {
+            console.log('we only adding text, so do not render image')
             // We only have modified lines to show but they are just insertions.
             // We can render them as text.
             return false
@@ -246,15 +248,17 @@ export class AutoEditsRenderOutput {
 
         let linesWithChanges = 0
         for (const modifiedLine of decorationInfo.modifiedLines) {
-            const changeCount = modifiedLine.changes.filter(
+            const changes = modifiedLine.changes.filter(
                 change => change.type === 'delete' || change.type === 'insert'
-            ).length
+            )
+            const changeCount = changes.length
 
             if (changeCount === 0) {
                 continue
             }
 
-            if (changeCount >= 3) {
+            if (changeCount >= 5) {
+                console.log('3 or more changes overall', changeCount, changes)
                 // Three or more changes on a single line is classified as complex
                 // An image is best to represent this.
                 return true
@@ -262,12 +266,14 @@ export class AutoEditsRenderOutput {
 
             linesWithChanges++
             if (linesWithChanges >= 3) {
+                console.log('3 or more line changes overall', changeCount)
                 // Three or more lines with changes is classified as complex
                 // An image is best to represent this.
                 return true
             }
         }
 
+        console.log('do not render the iamge')
         return false
     }
 
