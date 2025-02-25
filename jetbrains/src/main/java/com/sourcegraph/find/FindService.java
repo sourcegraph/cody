@@ -46,7 +46,7 @@ public class FindService implements Disposable {
   }
 
   public void refreshConfiguration() {
-    if (popup.isVisible()) {
+    if (popup != null && popup.isVisible()) {
       JavaToJSBridge javaToJSBridge = mainPanel.getJavaToJSBridge();
       if (javaToJSBridge != null) {
         mainPanel
