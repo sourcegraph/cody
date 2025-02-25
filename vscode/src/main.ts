@@ -86,7 +86,8 @@ import { createInlineCompletionItemProvider } from './completions/create-inline-
 import { getConfiguration } from './configuration'
 import { observeOpenCtxController } from './context/openctx'
 import { logGlobalStateEmissions } from './dev/helpers'
-import { EditManager } from './edit/manager'
+import { EditManager } from './edit/edit-manager'
+import { SmartApplyManager } from './edit/smart-apply-manager'
 import { manageDisplayPathEnvInfoForExtension } from './editor/displayPathEnvInfo'
 import { VSCodeEditor } from './editor/vscode-editor'
 import type { PlatformContext } from './extension.common'
@@ -270,17 +271,12 @@ const register = async (
     )
     const fixupController = new FixupController(platform.extensionClient)
     const ghostHintDecorator = new GhostHintDecorator({ fixupController })
-    const editManager = new EditManager({
-        controller: fixupController,
-        chat: chatClient,
-        editor,
-        ghostHintDecorator,
-        extensionClient: platform.extensionClient,
-    })
+    const editManager = new EditManager({ chatClient, editor, fixupController })
+    const smartApplyManager = new SmartApplyManager({ editManager, chatClient })
 
     CodyToolProvider.initialize(contextRetriever)
 
-    disposables.push(chatsController, ghostHintDecorator, editManager)
+    disposables.push(chatsController, ghostHintDecorator, editManager, smartApplyManager)
 
     const statusBar = CodyStatusBar.init()
     disposables.push(statusBar)

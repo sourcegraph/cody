@@ -138,11 +138,15 @@ export class SmartApplyContextLogger {
         })
     }
 
-    public addApplyContext(
-        requestId: SmartApplyLoggingRequestId,
-        applyTimeMs: number,
+    public addApplyContext({
+        requestId,
+        applyTimeMs,
+        applyTaskId,
+    }: {
+        requestId: SmartApplyLoggingRequestId
+        applyTimeMs: number
         applyTaskId: string | undefined
-    ): void {
+    }): void {
         const request = this.getRequest(requestId)
         if (!request) {
             return

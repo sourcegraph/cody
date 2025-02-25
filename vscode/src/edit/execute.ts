@@ -53,16 +53,16 @@ export interface ExecuteEditArguments {
     }
     source?: EventSource
     telemetryMetadata?: FixupTelemetryMetadata
-    /**
-     * Whether this edit is being prefetched in advance of user action.
-     * When true, indicates this is a background prefetch that should not affect the UI.
-     */
-    isPrefetch?: boolean
 }
+
+/**
+ * Used by the agent API.
+ */
+export type ExecuteEditResult = FixupTask | undefined
 
 /**
  * Wrapper around the `edit-code` command that can be used anywhere but with better type-safety.
  */
-export const executeEdit = async (args: ExecuteEditArguments): Promise<FixupTask | undefined> => {
-    return vscode.commands.executeCommand<FixupTask | undefined>('cody.command.edit-code', args)
+export const executeEdit = async (args: ExecuteEditArguments): Promise<ExecuteEditResult> => {
+    return vscode.commands.executeCommand<ExecuteEditResult>('cody.command.edit-code', args)
 }

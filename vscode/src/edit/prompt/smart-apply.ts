@@ -180,15 +180,23 @@ interface SmartApplySelection {
     range: vscode.Range
 }
 
-export async function getSmartApplySelection(
-    id: FixupTaskID,
-    instruction: PromptString,
-    replacement: PromptString,
-    document: vscode.TextDocument,
-    model: EditModel,
-    client: ChatClient,
+export async function getSmartApplySelection({
+    id,
+    instruction,
+    replacement,
+    document,
+    model,
+    chatClient,
+    codyApiVersion,
+}: {
+    id: FixupTaskID
+    instruction: PromptString
+    replacement: PromptString
+    document: vscode.TextDocument
+    model: EditModel
+    chatClient: ChatClient
     codyApiVersion: number
-): Promise<SmartApplySelection | null> {
+}): Promise<SmartApplySelection | null> {
     let originalCode: string
     try {
         originalCode = await promptModelForOriginalCode(
@@ -196,7 +204,7 @@ export async function getSmartApplySelection(
             replacement,
             document,
             model,
-            client,
+            chatClient,
             codyApiVersion
         )
     } catch (error: unknown) {
