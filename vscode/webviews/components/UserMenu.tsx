@@ -101,7 +101,12 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
     const onOpenChange = useCallback(
         (open: boolean): void => {
             if (open) {
-                telemetryRecorder.recordEvent('cody.userMenu', 'open', {})
+                telemetryRecorder.recordEvent('cody.userMenu', 'open', {
+                    billingMetadata: {
+                        product: 'cody',
+                        category: 'billable',
+                    },
+                })
             }
         },
         [telemetryRecorder.recordEvent]
@@ -498,7 +503,12 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
                                             telemetryRecorder.recordEvent(
                                                 'cody.userMenu.upgradeToProLink',
                                                 'open',
-                                                {}
+                                                {
+                                                    billingMetadata: {
+                                                        product: 'cody',
+                                                        category: 'billable',
+                                                    },
+                                                }
                                             )
                                             close()
                                         }}
