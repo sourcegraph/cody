@@ -3,7 +3,7 @@ import type React from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { clsx } from 'clsx'
-import { LoaderIcon, PlusIcon, MinusIcon } from 'lucide-react'
+import { LoaderIcon, MinusIcon, PlusIcon } from 'lucide-react'
 import type { FixupTaskID } from '../../../src/non-stop/FixupTask'
 import { CodyTaskState } from '../../../src/non-stop/state'
 import { type ClientActionListener, useClientActionListener } from '../../client/clientState'
@@ -218,7 +218,7 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
                 <details
                     open={isOpen}
                     onToggle={e => setIsOpen((e.target as HTMLDetailsElement).open)}
-                    className="tw-container tw-mb-7 tw-border tw-border-gray-500/20 dark:tw-border-gray-600/40 tw-rounded-lg tw-overflow-hidden tw-backdrop-blur-sm"
+                    className="tw-container tw-mb-4 tw-border tw-border-gray-500/20 dark:tw-border-gray-600/40 tw-rounded-lg tw-overflow-hidden tw-backdrop-blur-sm"
                     title="Thinking & Reasoning Space"
                 >
                     <summary
