@@ -68,6 +68,7 @@ export async function createAgentClient({
     const serverInfo: ServerInfo = await rpc.sendRequest('initialize', {
         name: process.env.CODY_WEB_DEMO_STANDALONE_MODE === 'true' ? 'standalone-web' : 'web',
         version: '0.0.1',
+        // This is not used in cody web. Instead we trigger `workspaceFolder/didChange` to notify the agent about the current workspace.
         workspaceRootUri: '',
         capabilities: {
             edit: 'none',
