@@ -9,7 +9,6 @@ export {
 } from './components/CodyWebChat'
 export { CodyPromptTemplate, type CodyPromptTemplateProps } from './components/CodyPromptTemplate'
 export { ChatSkeleton } from './components/skeleton/ChatSkeleton'
-export { createCodyAgent, type CodyWebAgent } from './components/use-cody-agent'
 
 export type { Repository, InitialContext, CodyExternalApi, PromptEditorRefAPI } from './types'
 

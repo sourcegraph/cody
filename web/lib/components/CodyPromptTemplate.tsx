@@ -36,7 +36,7 @@ import { useClientActionDispatcher } from 'cody-ai/webviews/client/clientState'
 import { ComposedWrappers, type Wrapper } from 'cody-ai/webviews/utils/composeWrappers'
 import { createWebviewTelemetryRecorder } from 'cody-ai/webviews/utils/telemetry'
 
-import type { CodyWebAgent } from './use-cody-agent'
+import { type UseCodyWebAgentInput, useCodyWebAgent } from './use-cody-agent'
 
 // Include global Cody Web styles to the styles bundle
 import '../global-styles/styles.css'
@@ -52,7 +52,7 @@ setDisplayPathEnvInfo({
 })
 
 export interface CodyPromptTemplateProps {
-    agent: CodyWebAgent | Error | null
+    agentConfig: UseCodyWebAgentInput
     className?: string
 
     initialEditorState?: SerializedPromptEditorState | undefined
@@ -72,13 +72,15 @@ export interface CodyPromptTemplateProps {
  * to run this with @ mentions in the prompt template editor.
  */
 export const CodyPromptTemplate: FunctionComponent<CodyPromptTemplateProps> = ({
-    agent,
+    agentConfig,
     className,
     disabled,
     initialEditorState,
     placeholder,
     onEditorApiReady,
 }) => {
+    const agent = useCodyWebAgent(agentConfig)
+
     if (isErrorLike(agent)) {
         return <p>Cody Web client agent error: {agent.message}</p>
     }

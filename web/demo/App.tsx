@@ -1,9 +1,8 @@
-import { type FC, useEffect, useState } from 'react'
-import { type CodyWebAgent, CodyWebChat, type InitialContext, createCodyAgent } from '../lib'
+import type { FC } from 'react'
+import { CodyWebChat, type InitialContext } from '../lib'
 
 // @ts-ignore
 import AgentWorker from '../lib/agent/agent.worker.ts?worker'
-
 const CREATE_AGENT_WORKER = (): Worker => new AgentWorker() as Worker
 
 // Include highlights styles for demo purpose, clients like
@@ -36,26 +35,17 @@ const INITIAL_CONTEXT: InitialContext = {
     isDirectory: true,
 }
 
-const agentPromise = createCodyAgent({
+const agentConfig = {
     accessToken,
     serverEndpoint,
-    createAgentWorker: CREATE_AGENT_WORKER,
     telemetryClientName: 'codydemo.testing',
-})
+    createAgentWorker: CREATE_AGENT_WORKER,
+}
 
 export const App: FC = () => {
-    const [agent, setAgent] = useState<CodyWebAgent | null>(null)
-
-    useEffect(() => {
-        agentPromise.then(agent => {
-            agent?.createNewChat()
-            setAgent(agent)
-        }, setAgent)
-    }, [])
-
     return (
         <div className={styles.root}>
-            <CodyWebChat agent={agent} initialContext={INITIAL_CONTEXT} viewType="sidebar" />
+            <CodyWebChat agentConfig={agentConfig} initialContext={INITIAL_CONTEXT} viewType="sidebar" />
         </div>
     )
 }
