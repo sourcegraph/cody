@@ -14,7 +14,7 @@ import {
 import { URI } from 'vscode-uri'
 
 export function renderContextItem(contextItem: ContextItem): ContextMessage | null {
-    const { source, range } = contextItem
+    const { source, range, type } = contextItem
     const { content, repoName, title } = PromptString.fromContextItem(contextItem)
 
     // If true, this context item appears in the chat input as a context chip.
@@ -28,12 +28,15 @@ export function renderContextItem(contextItem: ContextItem): ContextMessage | nu
         return null
     }
 
+    const data = type === 'media' ? contextItem.data : undefined
+    const mimeType = type === 'media' ? contextItem.mimeType : undefined
+    if (data && mimeType) {
+        return { speaker: 'human', text: ps`Here is the image file.`, file: contextItem, data, mimeType }
+    }
+
     const uri = getContextItemLocalUri(contextItem)
 
     let messageText: PromptString
-
-    const data = contextItem.type === 'media' ? contextItem.data : undefined
-    const mimeType = contextItem.type === 'media' ? contextItem.mimeType : undefined
 
     switch (source) {
         case ContextItemSource.Selection:

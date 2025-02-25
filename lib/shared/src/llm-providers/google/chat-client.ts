@@ -39,23 +39,23 @@ export async function googleChatClient({
     const log = logger?.startCompletion(params, completionsEndpoint)
 
     try {
+        signal?.throwIfAborted()
         const genAI = new GoogleGenerativeAI(config.key)
         const model = genAI.getGenerativeModel({ model: config.model })
 
         // Construct the messages array for the API
         const messages = await constructGeminiChatMessages(params.messages) // Ensure this line is present and used
-        const lastMessage = messages.pop()?.parts[0].text
+        const lastMessage = messages.pop()
         if (!lastMessage) {
             return
         }
 
-        const history = messages.map(m => ({ role: m.role, parts: m.parts }))
-        const chat = model.startChat({
-            history,
-        })
+        const history = messages.filter(m => m.parts.length).map(m => ({ role: m.role, parts: m.parts }))
+        const chat = model.startChat({ history })
 
-        const result = await chat.sendMessageStream([lastMessage])
+        const result = await chat.sendMessageStream(lastMessage.parts)
         for await (const chunk of result.stream) {
+            signal?.throwIfAborted()
             const chunkText = chunk.text()
             completionResponse.completion += chunkText
             cb.onChange(completionResponse.completion)

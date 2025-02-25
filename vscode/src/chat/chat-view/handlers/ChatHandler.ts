@@ -319,7 +319,12 @@ export async function computeContextAlternatives(
 
     const resolvedExplicitMentionsPromise = resolveContextItems(
         editor,
-        [structuredMentions.symbols, structuredMentions.files, structuredMentions.openCtx].flat(),
+        [
+            structuredMentions.symbols,
+            structuredMentions.files,
+            structuredMentions.openCtx,
+            structuredMentions.mediaFiles,
+        ].flat(),
         text,
         signal
     )

@@ -74,9 +74,17 @@ export class PromptBuilder {
      * assistant messages come first because the transcript is in reversed order.
      */
     private buildContextMessages(): void {
+        const mediaItems = this.contextItems.filter(i => i.type === 'media')
+        for (const media of mediaItems) {
+            const contextMessage = renderContextItem(media)
+            const messagePair = contextMessage && [ASSISTANT_MESSAGE, contextMessage]
+            messagePair && this.reverseMessages.push(...messagePair)
+        }
+        // Resolve non-media context items with cache enabled
+        const nonMediaItems = this.contextItems.filter(i => i.type !== 'media')
         if (this.isCacheEnabled) {
             const messages = []
-            for (const item of this.contextItems) {
+            for (const item of nonMediaItems) {
                 const contextMessage = renderContextItem(item)
                 if (contextMessage) {
                     messages.push(contextMessage)
@@ -96,7 +104,7 @@ export class PromptBuilder {
             messagePair && this.reverseMessages.push(...messagePair)
             return
         }
-        for (const item of this.contextItems) {
+        for (const item of nonMediaItems) {
             // Create context messages for each context item, where
             // assistant messages come first because the transcript is in reversed order.
             const contextMessage = renderContextItem(item)

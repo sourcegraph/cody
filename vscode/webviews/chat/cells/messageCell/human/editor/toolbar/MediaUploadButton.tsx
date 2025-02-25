@@ -6,10 +6,14 @@ import { URI } from 'vscode-uri'
 import { Button } from '../../../../../../components/shadcn/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '../../../../../../components/shadcn/ui/tooltip'
 
+// Define allowed MIME types
+const ALLOWED_MIME_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'image/heic', 'image/heif']
+
 export const ImageUploadButton: React.FC<{
-    onMediaUpload?: (mediaContextItem: ContextItemMedia) => void
+    onMediaUpload: (mediaContextItem: ContextItemMedia) => void
 }> = ({ onMediaUpload }) => {
     const [uploadedImage, setUploadedImage] = useState<string | null>(null)
+    const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
     const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -20,10 +24,24 @@ export const ImageUploadButton: React.FC<{
                 return
             }
 
+            // Validate file type
+            if (!ALLOWED_MIME_TYPES.includes(file.type)) {
+                setErrorMessage(
+                    `Unsupported file type ${file.type}. Please upload one of the following: PNG, JPEG, WEBP, HEIC, or HEIF.`
+                )
+                // Reset the file input
+                if (fileInputRef.current) {
+                    fileInputRef.current.value = ''
+                }
+                return
+            }
+
+            // Clear any previous error
+            setErrorMessage(null)
+
             const reader = new FileReader()
             reader.onloadend = () => {
                 const base64String = reader.result as string
-                setUploadedImage(base64String) // Store the image data for the tooltip
 
                 // Create a media context item
                 const mediaItem = createMediaContextItem({
@@ -34,7 +52,8 @@ export const ImageUploadButton: React.FC<{
                     description: `Uploaded image: ${file.name}`,
                 })
 
-                onMediaUpload?.(mediaItem)
+                onMediaUpload(mediaItem)
+                setUploadedImage(base64String) // Store the image data for the tooltip
             }
             reader.readAsDataURL(file)
         },
@@ -43,6 +62,7 @@ export const ImageUploadButton: React.FC<{
 
     const handleClearImage = () => {
         setUploadedImage(null)
+        setErrorMessage(null)
         // setMediaContextItem(null)
     }
     const handleButtonClick = () => {
@@ -83,13 +103,15 @@ export const ImageUploadButton: React.FC<{
                             />
                         </Button>
                     </div>
+                ) : errorMessage ? (
+                    <div className="tw-text-red-500">{errorMessage}</div>
                 ) : (
-                    'Upload an image'
+                    'Upload an image (PNG, JPEG, WEBP, HEIC, HEIF)'
                 )}
             </TooltipContent>
             <input
                 type="file"
-                accept="image/*"
+                accept="image/png,image/jpeg,image/webp,image/heic,image/heif"
                 ref={fileInputRef}
                 style={{ display: 'none' }}
                 onChange={handleFileChange}
