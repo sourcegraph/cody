@@ -235,9 +235,9 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
                             {isThinking ? 'Thinking...' : 'Thought Process'}
                         </span>
                     </summary>
-                    <pre className="tw-px-4 tw-py-3 tw-mx-4 tw-text-sm tw-prose dark:tw-prose-invert tw-max-w-none tw-leading-relaxed tw-text-base/7">
+                    <div className="tw-px-4 tw-py-3 tw-mx-4 tw-text-sm tw-prose dark:tw-prose-invert tw-max-w-none tw-leading-relaxed tw-text-base/7">
                         {thinkContent}
-                    </pre>
+                    </div>
                 </details>
             )}
             <MarkdownFromCody className={clsx(styles.content, className)}>
