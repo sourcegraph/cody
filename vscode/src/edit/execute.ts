@@ -56,8 +56,13 @@ export interface ExecuteEditArguments {
 }
 
 /**
+ * Used by the agent API.
+ */
+export type ExecuteEditResult = FixupTask | undefined
+
+/**
  * Wrapper around the `edit-code` command that can be used anywhere but with better type-safety.
  */
-export const executeEdit = async (args: ExecuteEditArguments): Promise<FixupTask | undefined> => {
-    return vscode.commands.executeCommand<FixupTask | undefined>('cody.command.edit-code', args)
+export const executeEdit = async (args: ExecuteEditArguments): Promise<ExecuteEditResult> => {
+    return vscode.commands.executeCommand<ExecuteEditResult>('cody.command.edit-code', args)
 }

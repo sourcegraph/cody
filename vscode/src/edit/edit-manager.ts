@@ -20,7 +20,7 @@ import { ACTIVE_TASK_STATES } from '../non-stop/codelenses/constants'
 import { splitSafeMetadata } from '../services/telemetry-v2'
 
 import { EditLoggingFeatureFlagManager, getEditLoggingContext } from './edit-context-logging'
-import type { ExecuteEditArguments } from './execute'
+import type { ExecuteEditArguments, ExecuteEditResult } from './execute'
 import { EditProvider } from './provider'
 import { getEditIntent } from './utils/edit-intent'
 import { getEditMode } from './utils/edit-mode'
@@ -203,7 +203,7 @@ export class EditManager implements vscode.Disposable {
         )
     }
 
-    public async executeEdit(args: ExecuteEditArguments = {}): Promise<void> {
+    public async executeEdit(args: ExecuteEditArguments = {}): Promise<ExecuteEditResult> {
         const {
             configuration = {},
             /**
@@ -222,10 +222,11 @@ export class EditManager implements vscode.Disposable {
         })
 
         if (!task) {
-            return
+            return undefined
         }
 
         await this.startStreamingEditTask({ task })
+        return task
     }
 
     public logExecutedTaskEvent(task: FixupTask): void {
