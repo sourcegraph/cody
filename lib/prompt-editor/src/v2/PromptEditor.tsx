@@ -81,6 +81,11 @@ interface PromptEditorRefAPI {
     filterMentions(filter: (item: SerializedContextItem) => boolean): Promise<void>
     setInitialContextMentions(items: ContextItem[]): Promise<void>
     setEditorState(state: SerializedPromptEditorState): void
+
+    /**
+     * Triggers opening the at-mention menu at the end of the current input value.
+     */
+    openAtMentionMenu(): Promise<void>
 }
 
 const SUGGESTION_LIST_LENGTH_LIMIT = 20
@@ -213,6 +218,10 @@ export const PromptEditor: FunctionComponent<Props> = ({
             },
             async setInitialContextMentions(items: ContextItem[]): Promise<void> {
                 api.setInitialContextMentions(items)
+            },
+            async openAtMentionMenu() {
+                api.openAtMentionMenu()
+                api.setFocus(true)
             },
         }),
         [api]
