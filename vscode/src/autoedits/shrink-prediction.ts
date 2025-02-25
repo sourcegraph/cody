@@ -62,5 +62,6 @@ export function shrinkPredictionUntilSuffix({
         predictionLines.splice(-overlap, overlap)
     }
 
-    return predictionLines.join(newLineChar) + newLineChar
+    const trailingNewLine = codeToRewrite.endsWith(newLineChar) ? newLineChar : ''
+    return predictionLines.join(newLineChar) + trailingNewLine
 }
