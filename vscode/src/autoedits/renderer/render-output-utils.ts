@@ -63,23 +63,26 @@ export function getCompletionText({
     const candidates = [...decorationInfo.modifiedLines, ...decorationInfo.addedLines]
 
     let currentLine = cursorPosition.line
-    console.log('currentLine', currentLine)
+    const currentUnchangedLine = decorationInfo.unchangedLines.find(
+        c => c.originalLineNumber === currentLine
+    )
     const lines = []
 
     // We cannot render disjoint new line with the inline completion item ghost text because
     // the replacement range is limited to the current line, so we check consecutive lines for
     // available insertions starting from the current cursor position line.
     while (true) {
-        console.log('GOT LINES:', lines)
         let candidateText: string | undefined = undefined
         let candidate: AddedLineInfo | ModifiedLineInfo | UnchangedLineInfo | undefined =
-            candidates.find(c => c.modifiedLineNumber === currentLine)
-        console.log('got candiate', candidate)
+            candidates.find(
+                c =>
+                    (c.type === 'modified' ? c.originalLineNumber : c.modifiedLineNumber) === currentLine
+            )
 
         // In cases when the current line is unchanged but there are added lines right after it
         // we can keep all the text from the current line.
         if (!candidate && currentLine === cursorPosition.line) {
-            candidate = decorationInfo.unchangedLines.find(c => c.originalLineNumber === currentLine)
+            candidate = currentUnchangedLine
         }
 
         // If no changes are found on the current candidate line, it means we reached the end of inserted
@@ -108,29 +111,29 @@ export function getCompletionText({
             //
             // To do that we extract all the inserted text after the cursor position.
             if (candidate.type === 'modified') {
-                console.log('setting cnadidate text hula!')
-                const sortedChanges = candidate.changes
+                candidateText = candidate.changes
                     .filter(
                         lineChange => lineChange.originalRange.end.character >= cursorPosition.character
                     )
                     .sort((a, b) => a.originalRange.start.compareTo(b.originalRange.start))
-                console.log('got sorted changes', sortedChanges)
-                candidateText = sortedChanges.reduce((lineChangeText, lineChange) => {
-                    // If a line change starts before the cursor position, cut if off from this point.
-                    const textAfterCursor = lineChange.text.slice(
-                        Math.max(cursorPosition.character - lineChange.originalRange.start.character, 0)
-                    )
+                    .reduce((lineChangeText, lineChange) => {
+                        // If a line change starts before the cursor position, cut if off from this point.
+                        const textAfterCursor = lineChange.text.slice(
+                            Math.max(
+                                cursorPosition.character - lineChange.originalRange.start.character,
+                                0
+                            )
+                        )
 
-                    if (textAfterCursor.length && lineChange.type === 'insert') {
-                        // Collect this line change IDs rendered as a part of the inline completion item
-                        // so that we don't decorate it with line decorations later.
-                        usedChangeIds.add(lineChange.id)
-                    }
+                        if (textAfterCursor.length && lineChange.type === 'insert') {
+                            // Collect this line change IDs rendered as a part of the inline completion item
+                            // so that we don't decorate it with line decorations later.
+                            usedChangeIds.add(lineChange.id)
+                        }
 
-                    lineChangeText += textAfterCursor
-                    return lineChangeText
-                }, '')
-                console.log('got candidate text', candidateText)
+                        lineChangeText += textAfterCursor
+                        return lineChangeText
+                    }, '')
             }
         }
 
@@ -149,20 +152,23 @@ export function getCompletionText({
                 usedChangeIds.add(change.id)
             }
 
-            console.log('zula', candidate.newText)
             candidateText = candidate.newText
         }
 
         // If one of the candidate passed one of the conditions above, the `candidateText` variable is not
         // `undefined` anymore and we can check the next line.
         if (candidateText !== undefined) {
-            console.log('pushign cnadiate text', candidateText)
             lines.push(candidateText)
             currentLine++
             continue
         }
 
         break
+    }
+
+    // If the only line to render is the current unchanged line, we don't need to render anything.
+    if (lines.length === 1 && lines[0] === currentUnchangedLine?.text.slice(cursorPosition.character)) {
+        lines.pop()
     }
 
     return {

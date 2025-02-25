@@ -4,6 +4,19 @@ This is a log of all notable changes to Cody for VS Code.
 
 <!--- {/_ CHANGELOG_START _/} -->
 
+## 1.70.3
+
+### Refactor
+
+#### Telemetry
+
+- opt-out option [#7206](https://github.com/sourcegraph/cody/pull/7206)
+
+### Features
+
+#### Webview
+- Add support for <think> tags in Chat Message [#6845](https://github.com/sourcegraph/cody/pull/6845)
+
 ## 1.70.2
 
 ### Fix

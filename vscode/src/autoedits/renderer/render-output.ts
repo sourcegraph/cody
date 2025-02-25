@@ -164,7 +164,10 @@ export class AutoEditsRenderOutput {
             cursorPosition: position,
             decorationInfo,
         })
-        console.log('GOT COMPLETION TEXT', insertText)
+
+        if (insertText.length === 0) {
+            return null
+        }
 
         // The current line suffix should not require any char removals to render the completion.
         const isSuffixMatch = completionMatchesSuffix(insertText, docContext.currentLineSuffix)
