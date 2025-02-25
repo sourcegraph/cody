@@ -247,13 +247,7 @@ class CodyAutocompleteManager {
 
     val project = editor.project
     val defaultItem = items.firstOrNull() ?: return
-    val range: TextRange =
-        try {
-          getTextRange(editor.document, defaultItem.range)
-        } catch (ex: IllegalArgumentException) {
-          logger.error("Invalid text range", ex)
-          return
-        }
+    val range = getTextRange(editor.document, defaultItem.range) ?: return
 
     val originalText = editor.document.getText(range)
 
