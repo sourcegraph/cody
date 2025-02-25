@@ -8,7 +8,7 @@ This is a log of all notable changes to Cody for VS Code.
 
 ### Fix
 
-- Remove reasoning models from Inline Edit model selector that could cause edits to fail.
+- Remove reasoning models from Inline Edit model selector that could cause edits to fail. [#7238](https://github.com/sourcegraph/cody/pull/7238)
 
 ## 1.70.3
 
