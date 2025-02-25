@@ -178,7 +178,6 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
                     }
                 }
 
-                // Get the parent and buttons
                 const parent = preElement.parentNode
                 if (!parent) return
 

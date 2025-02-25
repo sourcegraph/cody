@@ -104,10 +104,10 @@ export function createButtonsExperimentalUI(
     const wrapper = document.createElement('div')
     wrapper.className = styles.wrapper
 
-    // Create button container 1 for file info and diff button
+    // Create button container 1 for file info
     const buttonContainer1 = document.createElement('div')
     buttonContainer1.className = styles.buttonsContainerTransparent
-    buttonContainer1.dataset.containerType = 'preview' // Add data attribute to identify container
+    buttonContainer1.dataset.containerType = 'preview'
 
     // Add filename and stats on the left
     const leftInfo = document.createElement('div')
@@ -133,7 +133,7 @@ export function createButtonsExperimentalUI(
     // Create button container 2 for action buttons
     const buttonContainer2 = document.createElement('div')
     buttonContainer2.className = styles.buttonsContainerTransparent
-    buttonContainer2.dataset.containerType = 'actions' // Add data attribute to identify container
+    buttonContainer2.dataset.containerType = 'actions'
 
     if (!copyButtonOnSubmit) {
         wrapper.appendChild(buttonContainer2)
