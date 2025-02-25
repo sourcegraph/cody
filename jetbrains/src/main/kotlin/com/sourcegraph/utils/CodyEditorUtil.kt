@@ -58,13 +58,8 @@ object CodyEditorUtil {
 
   @JvmStatic
   fun getTextRange(document: Document, range: Range): TextRange? {
-    try {
-      val (start, end) = range.toOffsetRange(document)
-      return TextRange.create(start, end)
-    } catch (ex: IllegalArgumentException) {
-      logger.warn("Invalid text range", ex)
-      return null
-    }
+    val (start, end) = range.toOffsetRange(document) ?: return null
+    return TextRange.create(start, end)
   }
 
   @JvmStatic
