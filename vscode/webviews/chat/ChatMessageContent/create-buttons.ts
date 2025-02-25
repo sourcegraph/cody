@@ -6,7 +6,6 @@ import {
     CopyCodeBlockIcon,
     EllipsisIcon,
     InsertCodeBlockIcon,
-    RefreshIcon,
     SaveCodeBlockIcon,
     SparkleIcon,
     SyncSpinIcon,
@@ -86,7 +85,8 @@ export function createButtonsExperimentalUI(
     insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit'],
     smartApply?: CodeBlockActionsProps['smartApply'],
     smartApplyId?: string,
-    smartApplyState?: CodyTaskState
+    smartApplyState?: CodyTaskState,
+    regex?: string
 ): HTMLElement {
     const container = document.createElement('div')
     container.className = styles.buttonsContainer
@@ -117,9 +117,12 @@ export function createButtonsExperimentalUI(
                           smartApply,
                           smartApplyId,
                           smartApplyState,
-                          codeBlockName
+                          codeBlockName,
+                          regex
                       )
-            smartButton.title = isExecutable ? 'Execute in Terminal' : 'Apply in Editor'
+            smartButton.title = isExecutable
+                ? 'Execute in Terminal'
+                : 'Apply in Editor' + (regex ? ` (${regex})` : '')
             buttons.append(smartButton)
         }
 
@@ -270,7 +273,8 @@ function createApplyButton(
     smartApply: CodeBlockActionsProps['smartApply'],
     smartApplyId: FixupTaskID,
     smartApplyState?: CodyTaskState,
-    fileName?: string
+    fileName?: string,
+    regex?: string
 ): HTMLElement {
     const button = document.createElement('button')
     button.className = styles.button
@@ -287,22 +291,6 @@ function createApplyButton(
 
             break
         }
-        case 'Applied':
-        case 'Finished': {
-            button.innerHTML = 'Reapply'
-
-            // Add Refresh Icon
-            const iconContainer = document.createElement('div')
-            iconContainer.className = styles.iconContainer
-            iconContainer.innerHTML = RefreshIcon
-            button.prepend(iconContainer)
-
-            button.addEventListener('click', () =>
-                smartApply.onSubmit(smartApplyId, preText, humanMessage?.text, fileName)
-            )
-
-            break
-        }
         default: {
             button.innerHTML = 'Apply'
 
@@ -313,7 +301,7 @@ function createApplyButton(
             button.prepend(iconContainer)
 
             button.addEventListener('click', () =>
-                smartApply.onSubmit(smartApplyId, preText, humanMessage?.text, fileName)
+                smartApply.onSubmit(smartApplyId, preText, humanMessage?.text, fileName, regex)
             )
         }
     }

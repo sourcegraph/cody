@@ -4,6 +4,7 @@ import {
     type ContextItemOpenCtx,
     type ContextItemRepository,
     type ContextMentionProviderID,
+    DIAGNOSTIC_CONTEXT_MENTION_PROVIDER,
     FILE_CONTEXT_MENTION_PROVIDER,
     type MentionMenuData,
     type MentionQuery,
@@ -28,6 +29,7 @@ import { LRUCache } from 'lru-cache'
 import { Observable, map } from 'observable-fns'
 import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
+import { getContextFromDiagnostics } from '../../commands/context/diagnostic'
 import { getContextFileFromUri } from '../../commands/context/file-path'
 import {
     getFileContextFiles,
@@ -151,7 +153,8 @@ export async function getChatContextItemsForMention(
 
             return files
         }
-
+        case DIAGNOSTIC_CONTEXT_MENTION_PROVIDER.id:
+            return getContextFromDiagnostics()
         default: {
             const items = await currentOpenCtxController().mentions(
                 {

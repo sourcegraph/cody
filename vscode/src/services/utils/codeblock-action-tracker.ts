@@ -187,7 +187,8 @@ export async function handleSmartApply(
     authStatus: AuthStatus,
     instruction?: string | null,
     fileUri?: string | null,
-    traceparent?: string | undefined | null
+    traceparent?: string | undefined | null,
+    regex?: string | null
 ): Promise<void> {
     const activeEditor = getEditor()?.active
     const workspaceUri = vscode.workspace.workspaceFolders?.[0].uri
@@ -203,6 +204,23 @@ export async function handleSmartApply(
     const document = uri ? await vscode.workspace.openTextDocument(uri) : activeEditor?.document
     if (!document) {
         throw new Error('No editor found to insert text')
+    }
+
+    if (regex) {
+        const regexMatch = new RegExp(regex, 's')
+        const currentCode = document.getText()
+        const replacement = currentCode.replace(regexMatch, code)
+        if (currentCode !== replacement) {
+            const range = new vscode.Range(
+                document.positionAt(0),
+                document.positionAt(currentCode.length)
+            )
+
+            vscode.commands.executeCommand('cody.command.manual-edit', {
+                configuration: { document, range, replacement },
+            })
+        }
+        return
     }
 
     const visibleEditor = vscode.window.visibleTextEditors.find(

@@ -23,6 +23,7 @@ import type { ContextRetriever } from '../chat-view/ContextRetriever'
 import * as initialContext from '../initialContext'
 import { CodyToolProvider } from './CodyToolProvider'
 import { DeepCodyAgent } from './DeepCody'
+import { ProcessManager } from './ProcessManager'
 
 describe('DeepCody', () => {
     const codyProAuthStatus: AuthenticatedAuthStatus = {
@@ -132,12 +133,8 @@ describe('DeepCody', () => {
     })
 
     it('initializes correctly when invoked', async () => {
-        const agent = new DeepCodyAgent(
-            mockChatBuilder,
-            mockChatClient,
-            mockStatusCallback,
-            mockRequestCallback
-        )
+        const stepsManager = new ProcessManager(mockStatusCallback, mockRequestCallback)
+        const agent = new DeepCodyAgent(mockChatBuilder, mockChatClient, stepsManager)
 
         expect(agent).toBeDefined()
     })
@@ -166,12 +163,8 @@ describe('DeepCody', () => {
             ])
         )
 
-        const agent = new DeepCodyAgent(
-            mockChatBuilder,
-            mockChatClient,
-            mockStatusCallback,
-            mockRequestCallback
-        )
+        const stepsManager = new ProcessManager(mockStatusCallback, mockRequestCallback)
+        const agent = new DeepCodyAgent(mockChatBuilder, mockChatClient, stepsManager)
 
         const result = await agent.getContext(
             'deep-cody-test-interaction-id',
@@ -212,12 +205,8 @@ describe('DeepCody', () => {
             ])
         )
 
-        const agent = new DeepCodyAgent(
-            mockChatBuilder,
-            mockChatClient,
-            mockStatusCallback,
-            mockRequestCallback
-        )
+        const stepsManager = new ProcessManager(mockStatusCallback, mockRequestCallback)
+        const agent = new DeepCodyAgent(mockChatBuilder, mockChatClient, stepsManager)
 
         const result = await agent.getContext(
             'deep-cody-test-interaction-id',
@@ -267,13 +256,9 @@ describe('DeepCody', () => {
 
         mockChatClient.chat = vi.fn().mockReturnValue(mockStreamResponse)
 
+        const stepsManager = new ProcessManager(mockStatusCallback, mockRequestCallback)
         // Create agent and run context retrieval
-        const agent = new DeepCodyAgent(
-            mockChatBuilder,
-            mockChatClient,
-            mockStatusCallback,
-            mockRequestCallback
-        )
+        const agent = new DeepCodyAgent(mockChatBuilder, mockChatClient, stepsManager)
         const result = await agent.getContext(
             'deep-cody-test-validation-id',
             new AbortController().signal,

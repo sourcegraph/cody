@@ -1,7 +1,6 @@
 import {
     type ContextItem,
     FeatureFlag,
-    type ProcessingStep,
     type SerializedPromptEditorState,
     featureFlagProvider,
     storeLastValue,
@@ -9,6 +8,7 @@ import {
 } from '@sourcegraph/cody-shared'
 import { DeepCodyAgent } from '../../agentic/DeepCody'
 import { DeepCodyRateLimiter } from '../../agentic/DeepCodyRateLimiter'
+import { ProcessManager } from '../../agentic/ProcessManager'
 import type { ChatBuilder } from '../ChatBuilder'
 import type { HumanInput } from '../context'
 import { ChatHandler } from './ChatHandler'
@@ -81,12 +81,11 @@ export class DeepCodyHandler extends ChatHandler implements AgentHandler {
         }
 
         const baseContext = baseContextResult.contextItems ?? []
-        const agent = new DeepCodyAgent(
-            chatBuilder,
-            this.chatClient,
-            (steps: ProcessingStep[]) => delegate.postStatuses(steps),
-            (step: ProcessingStep) => delegate.postRequest(step)
+        const stepsManager = new ProcessManager(
+            steps => delegate.postStatuses(steps),
+            step => delegate.postRequest(step)
         )
+        const agent = new DeepCodyAgent(chatBuilder, this.chatClient, stepsManager)
 
         return { contextItems: await agent.getContext(requestID, signal, baseContext) }
     }

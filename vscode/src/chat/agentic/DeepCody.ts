@@ -6,7 +6,6 @@ import {
     type ContextItem,
     ContextItemSource,
     type Message,
-    type ProcessingStep,
     type PromptMixin,
     PromptString,
     clientCapabilities,
@@ -18,16 +17,30 @@ import {
     telemetryRecorder,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
-import { DeepCodyAgentID } from '@sourcegraph/cody-shared/src/models/client'
 import { getContextFromRelativePath } from '../../commands/context/file-path'
 import { forkSignal } from '../../completions/utils'
+import { getEditor } from '../../editor/active-editor'
 import { getCategorizedMentions, isUserAddedItem } from '../../prompt-builder/utils'
 import type { ChatBuilder } from '../chat-view/ChatBuilder'
 import { DefaultPrompter } from '../chat-view/prompt'
 import type { CodyTool } from './CodyTool'
 import { CodyToolProvider, type ToolStatusCallback } from './CodyToolProvider'
-import { ProcessManager } from './ProcessManager'
+import type { ProcessManager } from './ProcessManager'
 import { ACTIONS_TAGS, CODYAGENT_PROMPTS } from './prompts'
+
+export interface OmniboxAgentResponse {
+    next?: OmniboxNextStep
+    contextItems?: ContextItem[]
+    error?: Error
+    abort?: boolean
+}
+
+interface OmniboxNextStep {
+    mode: OmniboxModes
+    query?: string
+}
+
+export type OmniboxModes = 'edit' | 'search' | 'chat'
 
 /**
  * A DeepCodyAgent handles advanced context retrieval and analysis for chat interactions.
@@ -52,8 +65,7 @@ export class DeepCodyAgent {
     protected readonly multiplexer = new BotResponseMultiplexer()
     protected readonly promptMixins: PromptMixin[] = []
     protected readonly tools: CodyTool[]
-    protected statusCallback: ToolStatusCallback
-    private stepsManager: ProcessManager
+    public statusCallback: ToolStatusCallback
 
     protected context: ContextItem[] = []
     /**
@@ -63,21 +75,17 @@ export class DeepCodyAgent {
      */
     private stats = { context: 0, loop: 0 }
 
+    private nextStep: OmniboxNextStep = { mode: 'chat', query: undefined }
+
     constructor(
         protected readonly chatBuilder: ChatBuilder,
         protected readonly chatClient: Pick<ChatClient, 'chat'>,
-        statusUpdateCallback: (steps: ProcessingStep[]) => void,
-        postRequest: (step: ProcessingStep) => Promise<boolean>
+        public stepsManager: ProcessManager
     ) {
         // Initialize tools, handlers and mixins in constructor
         this.tools = CodyToolProvider.getTools()
         this.initializeMultiplexer(this.tools)
         this.buildPrompt(this.tools)
-
-        this.stepsManager = new ProcessManager(
-            steps => statusUpdateCallback(steps),
-            step => postRequest(step)
-        )
 
         this.statusCallback = {
             onUpdate: (id, content) => {
@@ -92,6 +100,17 @@ export class DeepCodyAgent {
             onConfirmationNeeded: async (id, step) => {
                 return this.stepsManager.addConfirmationStep(id, step)
             },
+        }
+    }
+
+    public async start(
+        requestID: string,
+        chatAbortSignal: AbortSignal,
+        context: ContextItem[]
+    ): Promise<OmniboxAgentResponse> {
+        return {
+            next: this.nextStep,
+            contextItems: await this.getContext(requestID, chatAbortSignal, context),
         }
     }
 
@@ -115,12 +134,15 @@ export class DeepCodyAgent {
      */
     protected buildPrompt(tools: CodyTool[]): void {
         const toolInstructions = tools.map(t => t.getInstruction())
+        const currentDoc = getEditor()?.active?.document
+        const currentFile = currentDoc ? PromptString.fromDisplayPath(currentDoc.uri) : ps`none`
         const prompt = CODYAGENT_PROMPTS.review
             .replace('{{CODY_TOOLS_PLACEHOLDER}}', RawTextProcessor.join(toolInstructions, ps`\n- `))
             .replace(
                 '{{CODY_IDE}}',
                 getClientPromptString(clientCapabilities().agentIDE || CodyIDE.VSCode)
             )
+            .replace('{{CODY_CURRENT_FILE}}', currentFile)
         // logDebug('Deep Cody', 'buildPrompt', { verbose: prompt })
         this.promptMixins.push(newPromptMixin(prompt))
     }
@@ -146,39 +168,37 @@ export class DeepCodyAgent {
         maxLoops = 2
     ): Promise<ContextItem[]> {
         this.context = context
-        return wrapInActiveSpan('DeepCody.getContext', span =>
-            this._getContext(requestID, span, chatAbortSignal, maxLoops)
-        )
-    }
-
-    private async _getContext(
-        requestID: string,
-        span: Span,
-        chatAbortSignal: AbortSignal,
-        maxLoops = 2
-    ): Promise<ContextItem[]> {
-        span.setAttribute('sampled', true)
-        const startTime = performance.now()
-        await this.reviewLoop(requestID, span, chatAbortSignal, maxLoops)
-        telemetryRecorder.recordEvent('cody.deep-cody.context', 'reviewed', {
-            privateMetadata: {
-                requestID,
-                model: DeepCodyAgent.model,
-                traceId: span.spanContext().traceId,
-                chatAgent: DeepCodyAgentID,
-            },
-            metadata: {
-                loop: this.stats.loop, // Number of loops run.
-                fetched: this.stats.context, // Number of context fetched.
-                context: this.context.length, // Number of context used.
-                durationMs: performance.now() - startTime,
-            },
-            billingMetadata: {
-                product: 'cody',
-                category: 'billable',
-            },
+        return wrapInActiveSpan('DeepCody.getContext', async span => {
+            span.setAttribute('sampled', true)
+            const startTime = performance.now()
+            await this.reviewLoop(requestID, span, chatAbortSignal, maxLoops)
+            telemetryRecorder.recordEvent('cody.deep-cody.context', 'reviewed', {
+                privateMetadata: {
+                    requestID,
+                    model: DeepCodyAgent.model,
+                    traceId: span.spanContext().traceId,
+                    chatAgent: 'deep-cody',
+                },
+                metadata: {
+                    loop: this.stats.loop, // Number of loops run.
+                    fetched: this.stats.context, // Number of context fetched.
+                    context: this.context.length, // Number of context used.
+                    durationMs: performance.now() - startTime,
+                },
+                billingMetadata: {
+                    product: 'cody',
+                    category: 'billable',
+                },
+            })
+            const knownModes = ['search', 'edit']
+            if (knownModes.includes(this.nextStep.mode)) {
+                this.statusCallback.onStream({
+                    title: `Switch to ${this.nextStep.mode} mode`,
+                    content: 'New intent detected: ' + this.nextStep.mode,
+                })
+            }
+            return this.context
         })
-        return this.context
     }
 
     private async reviewLoop(
@@ -226,6 +246,17 @@ export class DeepCodyAgent {
             // If the response is empty or only contains the answer token, it's ready to answer.
             if (!res || isReadyToAnswer(res)) {
                 return []
+            }
+
+            const nextActionRes = nextMode(res)[0] || ''
+            const [mode, query] = nextActionRes.split(':')
+            const validatedMode = mode === 'edit' ? 'edit' : mode === 'search' ? 'search' : undefined
+            if (validatedMode) {
+                this.nextStep.mode = validatedMode
+                this.nextStep.query = query
+                if (validatedMode === 'search') {
+                    return []
+                }
             }
 
             const step = this.stepsManager.addStep({ title: 'Retrieving context' })
@@ -387,5 +418,6 @@ export class RawTextProcessor {
 
 const answerTag = ACTIONS_TAGS.ANSWER.toString()
 const contextTag = ACTIONS_TAGS.CONTEXT.toString()
-const isReadyToAnswer = (text: string) => text === `<${answerTag}>`
+const isReadyToAnswer = (text: string) => text === `<${answerTag}>answer</${answerTag}>`
+const nextMode = (text: string) => RawTextProcessor.extract(text, 'next_step')
 const toPlural = (num: number, text: string) => `${num} ${text}${num > 1 ? 's' : ''}`

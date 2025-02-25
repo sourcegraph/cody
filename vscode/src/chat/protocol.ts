@@ -108,6 +108,7 @@ export type WebviewMessage =
           instruction?: string | undefined | null
           fileName?: string | undefined | null
           traceparent?: string | undefined | null
+          regex?: string | undefined | null
       }
     | {
           command: 'trace-export'
