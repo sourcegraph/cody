@@ -71,27 +71,14 @@ export class EditHandler implements AgentHandler {
         }
 
         const { diff, replacement, document, originalRange } = result.task
-
-        const message = ['Here is the proposed change:\n']
-
-        const diffs =
-            diff ||
-            (replacement
-                ? [
-                      {
-                          type: 'insertion',
-                          text: replacement,
-                          range: originalRange,
-                      },
-                  ]
-                : [])
-
-        message.push(diffInChat(diffs, document, { showFullFile: false }))
+        const diffs = diff ?? [{ type: 'insertion', text: replacement ?? '', range: originalRange }]
+        const message = diffInChat(diffs, document, { showFullFile: false })
 
         delegate.postMessageInProgress({
             speaker: 'assistant',
-            text: PromptString.unsafe_fromLLMResponse(message.join('\n\n')),
+            text: PromptString.unsafe_fromLLMResponse(message),
         })
+
         delegate.postDone()
     }
 }
