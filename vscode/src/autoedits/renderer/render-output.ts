@@ -159,11 +159,14 @@ export class AutoEditsRenderOutput {
         updatedDecorationInfo: DecorationInfo
         updatedPrediction: string
     } | null {
+        console.log('init decorationInfo', decorationInfo)
         const { insertText, usedChangeIds } = getCompletionText({
             prediction,
             cursorPosition: position,
             decorationInfo,
         })
+
+        console.log('got insert text', insertText)
 
         if (insertText.length === 0) {
             return null
@@ -216,6 +219,7 @@ export class AutoEditsRenderOutput {
             })),
             unchangedLines: withoutUsedChanges(decorationInfo.unchangedLines),
         }
+        console.log('without unused changes', decorationInfoWithoutUsedChanges)
 
         const remainingChanges =
             decorationInfoWithoutUsedChanges.addedLines.length +
@@ -286,7 +290,10 @@ export class AutoEditsRenderOutput {
         // This is a simple heuristic to decide if we should mix completions and decorations.
         // Essentially, we will only render like this if the completion is entirely for the inserted text
         // and the decorations are entirely for the removed changes.
-        return isOnlyRemovingTextForModifiedLines(remainingDecorationInfo.modifiedLines)
+        return (
+            remainingDecorationInfo.addedLines.length === 0 &&
+            isOnlyRemovingTextForModifiedLines(remainingDecorationInfo.modifiedLines)
+        )
     }
 
     private getInlineDecorations(
@@ -316,6 +323,7 @@ export class AutoEditsRenderOutput {
         // Client capabiliies === image: 'unified'
         const diffMode = 'additions'
         const { diff, target } = makeVisualDiff(decorationInfo, diffMode, document)
+        console.log('got visual diff and target', diff, target)
         const { dark, light, pixelRatio } = generateSuggestionAsImage({
             diff,
             lang: document.languageId,

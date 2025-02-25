@@ -39,7 +39,7 @@ export function getDiffTargetPosition(
 ): { line: number; offset: number } {
     const incomingLines = getLines(diff, 'incoming')
     const editorLines = incomingLines
-        .filter(line => line.modifiedLineNumber <= document.lineCount)
+        .filter(line => line.modifiedLineNumber < document.lineCount)
         .map(line => document.lineAt(line.modifiedLineNumber))
 
     // We will render the image alongside the first line of the diff
