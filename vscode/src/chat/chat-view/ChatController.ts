@@ -666,12 +666,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     `traceId: ${span.spanContext().traceId}`
                 )
 
-                if (inputText.match(/^\/reset$/)) {
-                    span.addEvent('clearAndRestartSession')
-                    span.end()
-                    return this.clearAndRestartSession()
-                }
-
                 // Set selected agent to deep-cody for Deep Cody model.
                 const model = await wrapInActiveSpan('chat.resolveModel', () =>
                     firstResultFromOperation(ChatBuilder.resolvedModelForChat(this.chatBuilder))
