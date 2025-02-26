@@ -23,7 +23,7 @@ export async function executeExplainOutput(
         const source = 'terminal'
         telemetryRecorder.recordEvent('cody.command.terminal', 'executed', {
             metadata: {
-                useCodebaseContex: 0,
+                useCodebaseContext: 0,
             },
             interactionID: requestID,
             privateMetadata: {
