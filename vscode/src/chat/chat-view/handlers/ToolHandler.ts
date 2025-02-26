@@ -1,8 +1,7 @@
 import { spawn } from 'node:child_process'
 import type { SpawnOptions } from 'node:child_process'
-import type Anthropic from '@anthropic-ai/sdk'
-import type { ContentBlock, MessageParam, Tool, ToolResultBlockParam } from '@anthropic-ai/sdk/resources'
-import { ProcessType, PromptString } from '@sourcegraph/cody-shared'
+import type { MessageParam, Tool, ToolResultBlockParam } from '@anthropic-ai/sdk/resources'
+import { type ChatClient, ProcessType, PromptString } from '@sourcegraph/cody-shared'
 import type { SubMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import * as vscode from 'vscode'
 import type { AgentHandler, AgentHandlerDelegate, AgentRequest } from './interfaces'
@@ -95,7 +94,7 @@ const allTools: CodyTool[] = [
 ]
 
 export class ExperimentalToolHandler implements AgentHandler {
-    constructor(private anthropicAPI: Anthropic) {}
+    constructor(private chatClient: Pick<ChatClient, 'chat'>) {}
 
     public async handle({ inputText }: AgentRequest, delegate: AgentHandlerDelegate): Promise<void> {
         const maxTurns = 10
@@ -108,33 +107,96 @@ export class ExperimentalToolHandler implements AgentHandler {
         ]
         const subViewTranscript: SubMessage[] = []
         let messageInProgress: SubMessage | undefined
-        while (true) {
-            const toolCalls: ToolCall[] = []
-            await new Promise<void>((resolve, reject) => {
-                this.anthropicAPI.messages
-                    .stream(
-                        {
-                            tools: allTools.map(tool => tool.spec),
-                            max_tokens: 8192,
-                            model: 'claude-3-5-sonnet-20241022',
-                            messages: subTranscript,
-                        },
-                        {
-                            headers: {
-                                'anthropic-dangerous-direct-browser-access': 'true',
-                            },
+
+        // Track active content blocks by ID
+        const activeContentBlocks = new Map<string, { type: string; name?: string; text?: string }>()
+        const toolCalls: ToolCall[] = []
+
+        // Define the event processing function
+        const processEvent = (data: any) => {
+            switch (data.type) {
+                case 'content_block_start':
+                    if (data.content_block) {
+                        const block = data.content_block
+                        activeContentBlocks.set(block.id, {
+                            type: block.type,
+                            name: block.name,
+                            text: '',
+                        })
+
+                        if (block.type === 'tool_use') {
+                            toolCalls.push({
+                                id: block.id,
+                                name: block.name,
+                                input: block.input,
+                            })
+
+                            subViewTranscript.push({
+                                step: {
+                                    id: block.name,
+                                    content: `Invoking tool ${block.name}(${JSON.stringify(
+                                        block.input
+                                    )})`,
+                                    state: 'pending',
+                                    type: ProcessType.Tool,
+                                },
+                            })
+                            messageInProgress = undefined
                         }
-                    )
-                    .on('text', (_textDelta, textSnapshot) => {
+                    }
+                    break
+                // Handle content block updates (text deltas)
+                case 'content_block_delta':
+                    if (data.delta?.text) {
+                        const block = activeContentBlocks.get(data.id)
+                        if (block) {
+                            block.text = (block.text || '') + data.delta.text
+                            messageInProgress = {
+                                text: PromptString.unsafe_fromLLMResponse(block.text),
+                            }
+                            delegate.experimentalPostMessageInProgress([
+                                ...subViewTranscript,
+                                messageInProgress,
+                            ])
+                        }
+                    }
+                    break
+                // Handle content block stop events
+                case 'content_block_stop':
+                    if (data.content_block) {
+                        const blockId = data.content_block.id
+                        const block = activeContentBlocks.get(blockId)
+
+                        if (block && block.type === 'text' && block.text) {
+                            // Finalize text block by adding it to transcript
+                            subViewTranscript.push({
+                                text: PromptString.unsafe_fromLLMResponse(block.text),
+                            })
+
+                            // Clear messageInProgress after adding to transcript
+                            return undefined
+                        }
+
+                        // Remove from active blocks
+                        activeContentBlocks.delete(blockId)
+                    }
+                    break
+                // Handle text event (backward compatibility)
+                case 'text':
+                    if (data.textSnapshot) {
                         messageInProgress = {
-                            text: PromptString.unsafe_fromLLMResponse(textSnapshot),
+                            text: PromptString.unsafe_fromLLMResponse(data.textSnapshot),
                         }
                         delegate.experimentalPostMessageInProgress([
                             ...subViewTranscript,
                             messageInProgress,
                         ])
-                    })
-                    .on('contentBlock', (contentBlock: ContentBlock) => {
+                    }
+                    break
+                // Handle contentBlock event (backward compatibility)
+                case 'contentBlock':
+                    if (data.contentBlock) {
+                        const contentBlock = data.contentBlock
                         switch (contentBlock.type) {
                             case 'tool_use':
                                 toolCalls.push({
@@ -142,53 +204,97 @@ export class ExperimentalToolHandler implements AgentHandler {
                                     name: contentBlock.name,
                                     input: contentBlock.input,
                                 })
-                                subViewTranscript.push(
-                                    messageInProgress || {
-                                        step: {
-                                            id: contentBlock.name,
-                                            content: `Invoking tool ${
-                                                contentBlock.name
-                                            }(${JSON.stringify(contentBlock.input)})`,
-                                            state: 'pending',
-                                            type: ProcessType.Tool,
-                                        },
-                                    }
-                                )
-                                messageInProgress = undefined
-                                break
+                                subViewTranscript.push({
+                                    step: {
+                                        id: contentBlock.name,
+                                        content: `Invoking tool ${contentBlock.name}(${JSON.stringify(
+                                            contentBlock.input
+                                        )})`,
+                                        state: 'pending',
+                                        type: ProcessType.Tool,
+                                    },
+                                })
+                                return undefined // Clear messageInProgress
+
                             case 'text':
                                 subViewTranscript.push({
                                     text: PromptString.unsafe_fromLLMResponse(contentBlock.text),
                                 })
-                                messageInProgress = undefined
-                                break
+                                return undefined // Clear messageInProgress
                         }
-                    })
-                    .on('end', () => {
-                        resolve()
-                    })
-                    .on('abort', error => {
-                        reject(`${error}`)
-                    })
-                    .on('error', error => {
-                        reject(`${error}`)
-                    })
-                    .on('finalMessage', ({ role, content }: MessageParam) => {
+                    }
+                    break
+            }
+        }
+
+        while (true) {
+            toolCalls.length = 0 // Clear the array for each iteration
+
+            try {
+                const requestID = crypto.randomUUID()
+                const abortController = new AbortController()
+
+                const message = [
+                    {
+                        speaker: 'human' as const,
+                        messages: subTranscript,
+                        stream: true,
+                        model: 'anthropic::2023-06-01::claude-3.5-sonnet',
+                        max_tokens: 8192,
+                        tools: allTools.map(tool => tool.spec),
+                    },
+                ]
+
+                const generator = await this.chatClient.chat(
+                    message,
+                    {
+                        model: 'anthropic::2023-06-01::claude-3.5-sonnet',
+                        maxTokensToSample: 8192,
+                    },
+                    abortController.signal,
+                    requestID
+                )
+
+                // Iterate through the async generator
+                for await (const data of generator) {
+                    if (typeof data === 'string') {
+                        try {
+                            const parsedData = JSON.parse(data)
+                            processEvent(parsedData)
+                        } catch (e) {
+                            console.error('Failed to parse event data:', e)
+                        }
+                    } else {
+                        processEvent(data)
+                    }
+                }
+
+                // When the generator completes, add the final message to transcript
+                const finalMessage = await generator.next()
+                if (!finalMessage.done && finalMessage.value) {
+                    if (finalMessage.value.type === 'change') {
                         subTranscript.push({
-                            role,
-                            content,
+                            role: 'assistant',
+                            content: finalMessage.value.text,
                         })
-                    })
-            })
+                    } else if (finalMessage.value.type === 'error') {
+                        throw new Error(finalMessage.value.error.message)
+                    }
+                }
+            } catch (error) {
+                console.error('Error in chat handling:', error)
+            }
+
             if (toolCalls.length === 0) {
                 break
             }
+
+            // Process tool calls as before
             const toolResults: ToolResultBlockParam[] = []
             for (const toolCall of toolCalls) {
                 const tool = allTools.find(tool => tool.spec.name === toolCall.name)
-                if (!tool) {
-                    continue
-                }
+                if (!tool) continue
+
                 const output = await tool.invoke(toolCall.input)
                 toolResults.push({
                     type: 'tool_result',
@@ -196,16 +302,19 @@ export class ExperimentalToolHandler implements AgentHandler {
                     content: output,
                 })
             }
+
             subTranscript.push({
                 role: 'user',
                 content: toolResults,
             })
+
             turns++
             if (turns > maxTurns) {
                 console.error('Max turns reached')
                 break
             }
         }
+
         delegate.postDone()
     }
 }

@@ -26,6 +26,36 @@ export interface Message {
     cacheEnabled?: boolean | null
 }
 
+// Anthropic API reference: https://docs.anthropic.com/en/api/messages#body-tools
+// Anthropic examples: https://docs.anthropic.com/en/docs/build-with-claude/tool-use/overview#specifying-tools
+export interface ToolSpec {
+    /**
+     * Name of the tool.
+     *
+     * This is how the tool will be called by the model and in tool_use blocks.
+     */
+    name: string
+    /**
+     * JSON schema for this tool's input.
+     *
+     * This defines the shape of the input that your tool accepts and that the model will produce.
+     */
+    input_schema: any
+    /**
+     * Description of what this tool does.
+     *
+     * Tool descriptions should be as detailed as possible. The more information that the model
+     * has about what the tool is and how to use it, the better it will perform. You can use
+     * natural language descriptions to reinforce important aspects of the tool input JSON schema.
+     */
+    description?: string
+    /**
+     * Available options: custom
+     */
+    type?: 'custom' | null
+
+    // TODO[jlxu]: Support cache_control in the future
+}
 export interface CompletionUsage {
     completion_tokens: number | null
     prompt_tokens: number | null
@@ -48,6 +78,7 @@ export interface CompletionParameters {
     fast?: boolean
     messages: Message[]
     maxTokensToSample: number
+    tools?: ToolSpec[]
     temperature?: number
     stopSequences?: string[]
     topK?: number
