@@ -51,6 +51,10 @@ import org.cef.network.CefRequest
 import org.cef.network.CefResponse
 import org.cef.network.CefURLRequest
 import org.cef.security.CefSSLInfo
+import java.awt.KeyEventDispatcher
+import java.awt.KeyboardFocusManager
+import java.awt.event.KeyEvent
+import org.cef.handler.CefKeyboardHandler.CefKeyEvent
 
 private const val COMMAND_PREFIX = "command:"
 
@@ -104,9 +108,86 @@ internal class WebUIProxy(private val host: WebUIHost, private val browser: JBCe
             }
           },
           browser.cefBrowser)
+
+        browser.jbCefClient.addKeyboardHandler(CustomKeyEventHandler(), browser.cefBrowser)
+
+        setupShiftEnterHandler(browser.cefBrowser)
+
+//        browser.component?.addKeyListener(
+//            object : java.awt.event.KeyListener {
+//                override fun keyTyped(e: java.awt.event.KeyEvent) {}
+//                override fun keyPressed(e: java.awt.event.KeyEvent) {
+//                    if (e.keyCode == java.awt.event.KeyEvent.VK_BACK_SPACE) {
+//                        val test = 5;
+//                    }
+//                }
+//                override fun keyReleased(e: java.awt.event.KeyEvent) {}
+//            }
+//        )
+
+//        browser.component?.addKeyListener(object : KeyAdapter() {
+//            override fun keyPressed(e: KeyEvent) {
+//                if (e.getKeyCode() === KeyEvent.VK_BACK_SPACE) {
+//                    e.consume()
+//                    browser.cefBrowser.executeJavaScript(
+//                        "document.dispatchEvent(new KeyboardEvent('keydown', {key: 'Backspace'}));",
+//                        browser.cefBrowser.url,
+//                        0
+//                    )
+//                }
+//            }
+//        })
     }
 
-    fun create(host: WebUIHost): WebUIProxy {
+      fun setupShiftEnterHandler(cefBrowser: CefBrowser) {
+          KeyboardFocusManager.getCurrentKeyboardFocusManager()
+              .addKeyEventDispatcher(object : KeyEventDispatcher {
+                  override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+                      if (event.keyCode == KeyEvent.VK_ENTER &&
+                          event.isShiftDown &&
+                          event.id == KeyEvent.KEY_PRESSED) {
+
+                          println("Shift+Enter pressed!")
+                          // Add your custom handling logic here
+
+                          return true
+                      }
+                      return false
+                  }
+              })
+      }
+
+      fun sendShiftEnterShortcut(cefBrowser: CefBrowser) {
+
+          // Create key down events
+//          val shiftDownEvent = CefKeyEvent()
+//          shiftDownEvent.type = CefKeyEvent.EventType.KEYEVENT_RAWKEYDOWN
+//          shiftDownEvent.modifiers = CefKeyEvent.SHIFT_DOWN
+//          shiftDownEvent.keyCode = KeyEvent.VK_SHIFT
+//
+//          val enterDownEvent = CefKeyEvent()
+//          enterDownEvent.type = CefKeyEvent.EventType.KEYEVENT_RAWKEYDOWN
+//          enterDownEvent.modifiers = CefKeyEvent.SHIFT_DOWN
+//          enterDownEvent.keyCode = KeyEvent.VK_ENTER
+//
+//          // Create key up events
+//          val enterUpEvent = CefKeyEvent()
+//          enterUpEvent.type = CefKeyEvent.EventType.KEYEVENT_KEYUP
+//          enterUpEvent.modifiers = CefKeyEvent.SHIFT_DOWN
+//          enterUpEvent.keyCode = KeyEvent.VK_ENTER
+//
+//          val shiftUpEvent = CefKeyEvent()
+//          shiftUpEvent.type = CefKeyEvent.EventType.KEYEVENT_KEYUP
+//          shiftUpEvent.keyCode = KeyEvent.VK_SHIFT
+//
+//          // Send events in sequence
+//          cefBrowser.sendKeyEvent(shiftDownEvent)
+//          cefBrowser.sendKeyEvent(enterDownEvent)
+//          cefBrowser.sendKeyEvent(enterUpEvent)
+//          cefBrowser.sendKeyEvent(shiftUpEvent)
+      }
+
+      fun create(host: WebUIHost): WebUIProxy {
       val browser =
           JBCefBrowserBuilder()
               .apply {
