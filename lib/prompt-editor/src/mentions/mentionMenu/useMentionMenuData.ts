@@ -225,16 +225,32 @@ export function useCallMentionMenuData({
 
                                 // Then sort by match quality
                                 // Exact match
-                                if (aName === query && bName !== query) return -1
-                                if (bName === query && aName !== query) return 1
-
-                                // Starts with
-                                if (aName.startsWith(query) && !bName.startsWith(query)) return -1
-                                if (bName.startsWith(query) && !aName.startsWith(query)) return 1
-
-                                // Contains
                                 if (aName.includes(query) && !bName.includes(query)) return -1
                                 if (bName.includes(query) && !aName.includes(query)) return 1
+
+                                // Starts with
+                                if (
+                                    aName.some(name => name.startsWith(query)) &&
+                                    !bName.some(name => name.startsWith(query))
+                                )
+                                    return -1
+                                if (
+                                    bName.some(name => name.startsWith(query)) &&
+                                    !aName.some(name => name.startsWith(query))
+                                )
+                                    return 1
+
+                                // Contains
+                                if (
+                                    aName.some(name => name.includes(query)) &&
+                                    !bName.some(name => name.includes(query))
+                                )
+                                    return -1
+                                if (
+                                    bName.some(name => name.includes(query)) &&
+                                    !aName.some(name => name.includes(query))
+                                )
+                                    return 1
 
                                 return 0
                             }),
@@ -248,9 +264,15 @@ export function useCallMentionMenuData({
     )
 }
 
-const textFromContextItem = (item: ContextItem): string => {
-    if (item.type === 'file') return item.uri.path.toLowerCase()
-    if (item.type === 'symbol') return item.symbolName.toLowerCase()
-    if (item.type === 'repository') return item.title?.toLowerCase() ?? ''
-    return item.title?.toLowerCase() ?? ''
+const textFromContextItem = (item: ContextItem): string[] => {
+    if (item.type === 'file') return [item.uri.path.toLowerCase()]
+    if (item.type === 'symbol') return [item.symbolName.toLowerCase()]
+    if (item.type === 'repository')
+        return [
+            item.title?.toLowerCase() ?? '',
+            ...(item.title?.toLowerCase().split('/') ?? []),
+            item.repoName.toLowerCase(),
+        ]
+
+    return [item.title?.toLowerCase() ?? '']
 }
