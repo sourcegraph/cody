@@ -19,13 +19,11 @@ import com.intellij.psi.PsiFile
 import com.intellij.util.concurrency.annotations.RequiresEdt
 import com.sourcegraph.cody.agent.CodyAgentService
 import com.sourcegraph.cody.agent.intellij_extensions.codyRange
-import com.sourcegraph.cody.agent.protocol_extensions.Position
 import com.sourcegraph.cody.agent.protocol_extensions.ProtocolTextDocumentExt
 import com.sourcegraph.cody.agent.protocol_generated.CodeActions_ProvideParams
 import com.sourcegraph.cody.agent.protocol_generated.Diagnostics_PublishParams
 import com.sourcegraph.cody.agent.protocol_generated.ProtocolDiagnostic
 import com.sourcegraph.cody.agent.protocol_generated.ProtocolLocation
-import com.sourcegraph.cody.agent.protocol_generated.Range
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ExecutionException
@@ -60,7 +58,8 @@ class CodyFixHighlightPass(val file: PsiFile, val editor: Editor) :
                 val uri = ProtocolTextDocumentExt.uriFor(file.virtualFile)
                 val range =
                     document.codyRange(highlight.startOffset, highlight.endOffset)
-                        ?: Range(Position(0, 0), Position(0, 0))
+                        ?: return@map CompletableFuture.completedFuture(
+                            emptyList<CodeActionQuickFix>())
                 val diagnostic =
                     ProtocolDiagnostic(
                         message = highlight.description,
