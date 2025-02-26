@@ -1,5 +1,6 @@
 package com.sourcegraph.cody.agent.intellij_extensions
 
+import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.editor.Document
 import com.sourcegraph.cody.agent.protocol_extensions.Position
 import com.sourcegraph.cody.agent.protocol_generated.Position
@@ -12,13 +13,14 @@ fun Document.codyPosition(offset: Int): Position {
   return Position(line, character)
 }
 
-fun Document.codyRange(startOffset: Int, endOffset: Int): Range {
+fun Document.codyRange(startOffset: Int, endOffset: Int): Range? {
   if (startOffset < 0 ||
       startOffset > this.textLength ||
       endOffset > this.textLength ||
       startOffset > endOffset) {
-    throw IllegalArgumentException(
-        "codyRange error - startOffset: $startOffset, endOffset: $endOffset, textLength: ${this.textLength}")
+      val logger = Logger.getInstance(Document::class.java)
+      logger.warn("codyRange error - startOffset: $startOffset, endOffset: $endOffset, textLength: ${this.textLength}")
+      return null
   }
 
   val startLine = this.getLineNumber(startOffset)
