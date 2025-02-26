@@ -39,7 +39,8 @@ export const LastConversation: FunctionComponent<LastConversationProps> = ({ set
         return null
     }
 
-    const lastMessage = lastChat.interactions[lastChat.interactions.length - 1]?.humanMessage?.text?.trim() || ''
+    const lastMessage =
+        lastChat.interactions[lastChat.interactions.length - 1]?.humanMessage?.text?.trim() || ''
     const displayText = lastChat.chatTitle?.trim() || lastMessage
     const truncatedText = displayText.length > 50 ? displayText.slice(0, 47) + '...' : displayText
     const timePeriod = getRelativeChatPeriod(new Date(lastChat.lastInteractionTimestamp))
