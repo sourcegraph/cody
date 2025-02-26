@@ -4,6 +4,40 @@ This is a log of all notable changes to Cody for VS Code.
 
 <!--- {/_ CHANGELOG_START _/} -->
 
+## Unreleased
+
+### Fix
+
+- Remove reasoning models from Inline Edit model selector that could cause edits to fail. [#7238](https://github.com/sourcegraph/cody/pull/7238)
+
+## 1.70.3
+
+### Refactor
+
+#### Telemetry
+
+- opt-out option [#7206](https://github.com/sourcegraph/cody/pull/7206)
+
+### Features
+
+#### Webview
+
+- Add support for <think> tags in Chat Message [#6845](https://github.com/sourcegraph/cody/pull/6845)
+
+## 1.70.2
+
+### Fix
+
+#### Chat
+
+- prompt caching feature flag enrollement [#7177](https://github.com/sourcegraph/cody/pull/7177)
+
+## 1.70.1
+
+### Fix
+
+- [Backport M70] fix(agentic chat): terminal and openCtx are not registered as tools [#7132](https://github.com/sourcegraph/cody/pull/7132)
+
 ## 1.70.0
 
 ### Features
