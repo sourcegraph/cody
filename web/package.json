@@ -1,6 +1,6 @@
 {
   "name": "@sourcegraph/cody-web",
-  "version": "0.32.0",
+  "version": "0.32.1",
   "description": "Cody standalone web app",
   "license": "Apache-2.0",
   "repository": {
