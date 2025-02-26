@@ -5,7 +5,7 @@ import type {
     VisualModifiedLineInfoAdded,
     VisualModifiedLineInfoRemoved,
     VisualRemovedLineInfo,
-} from '../decorated-diff/types'
+} from './types'
 
 type VisualDiffLineOutgoing = Exclude<VisualDiffLine, VisualAddedLineInfo | VisualModifiedLineInfoAdded>
 type VisualDiffLineIncoming = Exclude<
@@ -13,9 +13,9 @@ type VisualDiffLineIncoming = Exclude<
     VisualRemovedLineInfo | VisualModifiedLineInfoRemoved
 >
 
-function getLines(diff: VisualDiff, type: 'original'): VisualDiffLineOutgoing[]
-function getLines(diff: VisualDiff, type: 'incoming'): VisualDiffLineIncoming[]
-function getLines(diff: VisualDiff, type: 'original' | 'incoming'): VisualDiffLine[] {
+export function getLines(diff: VisualDiff, type: 'original'): VisualDiffLineOutgoing[]
+export function getLines(diff: VisualDiff, type: 'incoming'): VisualDiffLineIncoming[]
+export function getLines(diff: VisualDiff, type: 'original' | 'incoming'): VisualDiffLine[] {
     if (type === 'original') {
         // Only return lines that are removed, modified or unchanged.
         return diff.lines.filter((line): line is VisualDiffLineOutgoing =>
