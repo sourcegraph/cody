@@ -23,7 +23,7 @@ export async function executeExplainOutput(
         const source = 'terminal'
         telemetryRecorder.recordEvent('cody.command.terminal', 'executed', {
             metadata: {
-                useCodebaseContex: 0,
+                useCodebaseContext: 0,
             },
             interactionID: requestID,
             privateMetadata: {
@@ -46,7 +46,7 @@ export async function executeExplainOutput(
 
         let prompt = template.replaceAll('{{PROCESS}}', promptArgs.name).replaceAll('{{OUTPUT}}', output)
         const options = promptArgs.creationOptions
-        if (options) {
+        if (options && options.toString() !== '{}') {
             span.addEvent('hasCreationOptions')
             prompt = prompt.concat(ps`\nProcess options: ${options}`)
         }
