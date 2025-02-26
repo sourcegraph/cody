@@ -416,7 +416,7 @@ private class ExtensionRequestHandler(
     logger.warn("Browser render process terminated: ${status?.name}")
     ProjectManager.getInstance().openProjects.forEach { project ->
       TelemetryV2.sendTelemetryEvent(project, "cody.webview.request", "renderProcessTerminated")
-      CodyAgentService.getInstance(project).restartAgent(project)
+      CodyAgentService.getInstance(project).restartAgent()
     }
   }
 }

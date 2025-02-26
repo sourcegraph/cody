@@ -87,7 +87,7 @@ open class CodyIntegrationTextFixture : BasePlatformTestCase(), LensListener {
       }
       recordingsFuture.get(ASYNC_WAIT_TIMEOUT_SECONDS, TimeUnit.SECONDS)
       CodyAgentService.getInstance(project)
-          .stopAgent(project)
+          .stopAgent()
           ?.get(ASYNC_WAIT_TIMEOUT_SECONDS, TimeUnit.SECONDS)
       CodyAgentService.getInstance(project).dispose()
     } finally {
@@ -107,7 +107,7 @@ open class CodyIntegrationTextFixture : BasePlatformTestCase(), LensListener {
     assertNotNull(
         "Unable to start agent in a timely fashion!",
         CodyAgentService.getInstance(project)
-            .startAgent(project, endpoint, token)
+            .startAgent(endpoint, token)
             .completeOnTimeout(null, ASYNC_WAIT_TIMEOUT_SECONDS, TimeUnit.SECONDS)
             .get())
   }
