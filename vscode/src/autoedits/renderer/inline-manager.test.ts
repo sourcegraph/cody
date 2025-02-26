@@ -1,3 +1,4 @@
+import dedent from 'dedent'
 import { describe, expect, it } from 'vitest'
 
 import { getCompletionText } from './inline-manager'
@@ -97,5 +98,32 @@ describe('getCompletionText', () => {
 
         const completionText = getCompletionTextFromStrings(currentFileText, predictedFileText)
         expect(completionText).toBe('\n  const a = 1;\n\n  const b = 2;')
+    })
+
+    it('uses correct line numbers for `insertText` extraction', () => {
+        const currentFileText = dedent`
+            function addCoupleToGroups(personOne: Person, personTwo: Person, groups: Group[]): Group[] {
+                console.log('Adding couple to groups', personOne, personTwo)
+                for (const group █of groups) {
+                    group.members.push(personOne, personTwo)
+                }
+                return groups
+            }
+        `
+
+        // Because the console.log statement is deleted, `getCompletionText` will start the insert text
+        // extraction from the current line. This test ensures that it uses the original line number,
+        // which is not affected by the deletion.
+        const predictedFileText = dedent`
+            function addCoupleToGroups(personOne: Person, personTwo: Person, groups: Group[]): Group[] {
+                for (const group of groups) {
+                    group.members.push(coupleA, coupleB)
+                    console.log('Added couple to group', group.name)
+                }
+                return groups
+            }
+        `
+        const completionText = getCompletionTextFromStrings(currentFileText, predictedFileText)
+        expect(completionText).toBe('')
     })
 })

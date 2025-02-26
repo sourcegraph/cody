@@ -153,7 +153,6 @@ function copyExtensionRelativeResources(extensionPath: string, extensionClient: 
 }
 
 async function initializeVscodeExtension(
-    workspaceRoot: vscode.Uri,
     extensionActivate: ExtensionActivate,
     extensionClient: ExtensionClient,
     globalState: AgentGlobalState,
@@ -161,11 +160,15 @@ async function initializeVscodeExtension(
 ): Promise<void> {
     const paths = codyPaths()
     const extensionPath = paths.config
+    const extensionUri = vscode.Uri.file(extensionPath)
     copyExtensionRelativeResources(extensionPath, extensionClient)
 
     const context: vscode.ExtensionContext = {
         asAbsolutePath(relativePath) {
-            return path.resolve(workspaceRoot.fsPath, relativePath)
+            // From the docs (https://code.visualstudio.com/api/references/vscode-api):
+            // > Note that an absolute uri can be constructed via Uri.joinPath and extensionUri,
+            // > e.g. vscode.Uri.joinPath(context.extensionUri, relativePath);
+            return vscode.Uri.joinPath(extensionUri, relativePath).toString()
         },
         environmentVariableCollection: {} as any,
         extension: {} as any,
@@ -174,7 +177,7 @@ async function initializeVscodeExtension(
         // to resolve paths to icon in the UI. They need to have compatible
         // types but don't have to point to a meaningful path/URI.
         extensionPath,
-        extensionUri: vscode.Uri.file(paths.config),
+        extensionUri,
         globalState,
         logUri: vscode.Uri.file(paths.log),
         logPath: paths.log,
@@ -394,14 +397,15 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 }
             }
 
-            this.workspace.workspaceRootUri = clientInfo.workspaceRootUri
-                ? vscode.Uri.parse(clientInfo.workspaceRootUri)
-                : vscode.Uri.from({
-                      scheme: 'file',
-                      path: clientInfo.workspaceRootPath ?? undefined,
-                  })
-
             vscode_shim.setWorkspaceDocuments(this.workspace)
+            if (clientInfo.workspaceRootUri) {
+                vscode_shim.setLastOpenedWorkspaceFolder(vscode.Uri.parse(clientInfo.workspaceRootUri))
+            } else if (clientInfo.workspaceRootPath) {
+                vscode_shim.setLastOpenedWorkspaceFolder(
+                    vscode.Uri.from({ scheme: 'file', path: clientInfo.workspaceRootPath })
+                )
+            }
+
             if (clientInfo.capabilities?.codeActions === 'enabled') {
                 vscode_shim.onDidRegisterNewCodeActionProvider(codeActionProvider => {
                     this.codeAction.addProvider(codeActionProvider, undefined)
@@ -446,7 +450,6 @@ export class Agent extends MessageHandler implements ExtensionClient {
                           })
 
                 await initializeVscodeExtension(
-                    this.workspace.workspaceRootUri,
                     params.extensionActivate,
                     this,
                     this.globalState,
@@ -510,7 +513,9 @@ export class Agent extends MessageHandler implements ExtensionClient {
         })
 
         this.registerNotification('workspaceFolder/didChange', async ({ uris }) => {
-            const oldWorkspaceFolders = vscode_shim.workspaceFolders
+            // We need to make a copy of the current workspaceFolders array because
+            // setWorkspaceFolders mutates workspaceFolders.
+            const oldWorkspaceFolders = vscode_shim.workspaceFolders.slice()
             const newWorkspaceFolders = vscode_shim.setWorkspaceFolders(
                 uris.map(uri => vscode.Uri.parse(uri))
             )

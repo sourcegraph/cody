@@ -247,28 +247,22 @@ export const HumanMessageEditor: FunctionComponent<{
     )
 
     const onMentionClick = useCallback((): void => {
-        if (!editorRef.current) {
-            throw new Error('No editorRef')
+        if (editorRef.current) {
+            editorRef.current.openAtMentionMenu()
+            const value = editorRef.current.getSerializedValue()
+            telemetryRecorder.recordEvent('cody.humanMessageEditor.toolbar.mention', 'click', {
+                metadata: {
+                    isFirstMessage: isFirstMessage ? 1 : 0,
+                    isEdit: isSent ? 1 : 0,
+                    messageLength: value.text.length,
+                    contextItems: value.contextItems.length,
+                },
+                billingMetadata: {
+                    product: 'cody',
+                    category: 'billable',
+                },
+            })
         }
-        if (editorRef.current.getSerializedValue().text.trim().endsWith('@')) {
-            editorRef.current.setFocus(true, { moveCursorToEnd: true })
-        } else {
-            editorRef.current.appendText('@')
-        }
-
-        const value = editorRef.current.getSerializedValue()
-        telemetryRecorder.recordEvent('cody.humanMessageEditor.toolbar.mention', 'click', {
-            metadata: {
-                isFirstMessage: isFirstMessage ? 1 : 0,
-                isEdit: isSent ? 1 : 0,
-                messageLength: value.text.length,
-                contextItems: value.contextItems.length,
-            },
-            billingMetadata: {
-                product: 'cody',
-                category: 'billable',
-            },
-        })
     }, [telemetryRecorder.recordEvent, isFirstMessage, isSent])
 
     const extensionAPI = useExtensionAPI()

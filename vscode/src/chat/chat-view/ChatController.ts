@@ -316,24 +316,30 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             case 'copy':
                 await handleCopiedCode(message.text, message.eventType === 'Button')
                 break
+            case 'smartApplyPrefetch':
             case 'smartApplySubmit':
-                await handleSmartApply(
-                    message.id,
-                    message.code,
-                    currentAuthStatus(),
-                    message.instruction,
-                    message.fileName,
-                    message.traceparent
-                )
+                await handleSmartApply({
+                    id: message.id,
+                    code: message.code,
+                    authStatus: currentAuthStatus(),
+                    instruction: message.instruction || '',
+                    fileUri: message.fileName,
+                    traceparent: message.traceparent || undefined,
+                    isPrefetch: message.command === 'smartApplyPrefetch',
+                })
                 break
             case 'trace-export':
                 TraceSender.send(message.traceSpanEncodedJson)
                 break
             case 'smartApplyAccept':
-                await vscode.commands.executeCommand('cody.fixup.codelens.accept', message.id)
+                await vscode.commands.executeCommand('cody.command.smart-apply.accept', {
+                    taskId: message.id,
+                })
                 break
             case 'smartApplyReject':
-                await vscode.commands.executeCommand('cody.fixup.codelens.undo', message.id)
+                await vscode.commands.executeCommand('cody.command.smart-apply.reject', {
+                    taskId: message.id,
+                })
                 break
             case 'openURI':
                 vscode.commands.executeCommand('vscode.open', message.uri, {

@@ -1,7 +1,8 @@
-import { offset, shift, size, useFloating } from '@floating-ui/react'
+import { autoPlacement, autoUpdate, offset, shift, size, useFloating } from '@floating-ui/react'
 import clsx from 'clsx'
 import { type MouseEventHandler, useCallback, useEffect, useLayoutEffect, useRef } from 'react'
 import styles from './MentionsMenu.module.css'
+import type { Position } from './plugins/atMention'
 
 interface MentionsMenuProps<T> {
     /**
@@ -15,7 +16,7 @@ interface MentionsMenuProps<T> {
     /**
      * The reference position for the menu, in screen coordinates.
      */
-    menuPosition: { x: number; y: number }
+    menuPosition: Position
     /**
      * A render prop for the header of the menu (if any). The header is shown
      * above the items.
@@ -47,10 +48,14 @@ export const MentionsMenu = <T,>({
 }: MentionsMenuProps<T>) => {
     const container = useRef<HTMLDivElement | null>(null)
 
-    const { refs, floatingStyles } = useFloating({
+    const { refs, floatingStyles, update } = useFloating({
         open: true,
         placement: 'bottom-start',
+        whileElementsMounted: autoUpdate,
         middleware: [
+            autoPlacement({
+                allowedPlacements: ['bottom-start', 'top-start'],
+            }),
             shift({
                 padding: 8,
             }),
@@ -73,17 +78,22 @@ export const MentionsMenu = <T,>({
             getBoundingClientRect() {
                 return {
                     width: 0,
-                    height: 0,
-                    y: menuPosition.y,
-                    x: menuPosition.x,
-                    top: menuPosition.y,
-                    bottom: menuPosition.y,
-                    left: menuPosition.x,
-                    right: menuPosition.x,
+                    height: menuPosition.bottom - menuPosition.top,
+                    y: menuPosition.top,
+                    x: menuPosition.left,
+                    top: menuPosition.top,
+                    bottom: menuPosition.bottom,
+                    left: menuPosition.left,
+                    right: menuPosition.right,
                 }
             },
         })
     }, [menuPosition, refs])
+
+    // biome-ignore lint/correctness/useExhaustiveDependencies(items): we want to update the position of the menu as new items become available
+    useLayoutEffect(() => {
+        update()
+    }, [items, update])
 
     // biome-ignore lint/correctness/useExhaustiveDependencies(selectedIndex): we want to scroll the selected item into view but only when selectedIndex changes
     useEffect(() => {
@@ -152,4 +162,4 @@ const menuClass =
     'tw-overflow-hidden tw-overflow-y-auto tw-rounded-md tw-bg-popover tw-text-popover-foreground'
 
 const itemClass =
-    'w-relative tw-cursor-pointer tw-select-none tw-items-center tw-py-3 tw-px-2 tw-text-md tw-outline-none aria-selected:tw-bg-accent aria-selected:tw-text-accent-foreground hover:tw-bg-accent hover:tw-text-accent-foreground data-[disabled=true]:tw-pointer-events-none data-[disabled=true]:tw-opacity-50 !tw-p-3 !tw-text-md !tw-leading-[1.2] !tw-h-[30px] !tw-rounded-none'
+    'w-relative tw-cursor-pointer tw-select-none tw-items-center tw-py-3 tw-px-2 tw-text-md tw-outline-none aria-selected:tw-bg-accent aria-selected:tw-text-accent-foreground hover:tw-bg-accent hover:tw-text-accent-foreground data-[disabled=true]:tw-pointer-events-none data-[disabled=true]:tw-opacity-50 !tw-p-3 !tw-text-md !tw-leading-[1.2] !tw-min-h-[30px] !tw-rounded-none'

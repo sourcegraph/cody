@@ -63,6 +63,7 @@ export { serializeChatMessage } from './chat/transcript'
 export {
     errorToChatError,
     DEFAULT_EVENT_SOURCE,
+    EventSourceTelemetryMetadataMapping,
 } from './chat/transcript/messages'
 export type {
     AccountKeyedChatHistory,
@@ -180,6 +181,7 @@ export {
     displayPathDirname,
     displayPathWithoutWorkspaceFolderPrefix,
     setDisplayPathEnvInfo,
+    fixPathSep,
     type DisplayPathEnvInfo,
 } from './editor/displayPath'
 export { forceHydration, hydrateAfterPostMessage } from './editor/hydrateAfterPostMessage'

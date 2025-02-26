@@ -74,6 +74,7 @@ object CodyEditorUtil {
 
   @JvmStatic
   fun getSelectedEditors(project: Project): Array<out Editor> {
+    if (project.isDisposed) return emptyArray()
     return FileEditorManager.getInstance(project).selectedTextEditorWithRemotes
   }
 

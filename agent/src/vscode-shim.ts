@@ -1,7 +1,16 @@
 import { execSync } from 'node:child_process'
 import path from 'node:path'
 
-import { extensionForLanguage, logDebug, logError, setClientNameVersion } from '@sourcegraph/cody-shared'
+import {
+    extensionForLanguage,
+    fixPathSep,
+    isWindows,
+    logDebug,
+    logError,
+    pathFunctionsForURI,
+    setClientNameVersion,
+    uriHasPrefix,
+} from '@sourcegraph/cody-shared'
 import * as uuid from 'uuid'
 import type * as vscode from 'vscode'
 
@@ -170,26 +179,16 @@ export const onDidRenameFiles = new EventEmitter<vscode.FileRenameEvent>()
 export const onDidSaveTextDocument = new EventEmitter<vscode.TextDocument>()
 
 export interface WorkspaceDocuments {
-    workspaceRootUri?: vscode.Uri
     openTextDocument: (uri: vscode.Uri) => Promise<vscode.TextDocument>
     newTextEditorFromStringUri: (uri: string) => Promise<vscode.TextEditor>
 }
 let workspaceDocuments: WorkspaceDocuments | undefined
 export function setWorkspaceDocuments(newWorkspaceDocuments: WorkspaceDocuments): void {
     workspaceDocuments = newWorkspaceDocuments
-    if (newWorkspaceDocuments.workspaceRootUri) {
-        if (
-            !workspaceFolders
-                .map(wf => wf.uri.toString())
-                .includes(newWorkspaceDocuments.workspaceRootUri.toString())
-        ) {
-            setLastOpenedWorkspaceFolder(newWorkspaceDocuments.workspaceRootUri)
-        }
-    }
 }
 
 // Add/move the last opened workspace folder to the front of the workspace folders list.
-function setLastOpenedWorkspaceFolder(uri: vscode.Uri): void {
+export function setLastOpenedWorkspaceFolder(uri: vscode.Uri): void {
     const currentWorkspaceFolders = workspaceFolders.map(wf => wf.uri)
     if (currentWorkspaceFolders[0]?.toString() !== uri.toString()) {
         setWorkspaceFolders([uri, ...currentWorkspaceFolders])
@@ -345,19 +344,18 @@ const _workspace: typeof vscode.workspace = {
                   )
               )
     },
-    workspaceFolders,
-    getWorkspaceFolder: () => {
-        // TODO: support multiple workspace roots
-        if (workspaceDocuments?.workspaceRootUri === undefined) {
-            throw new Error(
-                'workspaceDocuments is undefined. To fix this problem, make sure that the agent has been initialized.'
-            )
+    get workspaceFolders() {
+        // According to the docs, workspaceFolders is `undefined` when no
+        // workspace has been opened.
+        return workspaceFolders.length === 0 ? undefined : workspaceFolders
+    },
+    getWorkspaceFolder: (uri: vscode.Uri) => {
+        for (const folder of workspaceFolders) {
+            if (uriHasPrefix(uri, folder.uri, isWindows())) {
+                return folder
+            }
         }
-        return {
-            uri: workspaceDocuments.workspaceRootUri,
-            index: 0,
-            name: workspaceDocuments.workspaceRootUri?.path,
-        }
+        return undefined
     },
     // TODO: used by `WorkspaceRepoMapper` and will be used by `git.onDidOpenRepository`
     // https://github.com/sourcegraph/cody/issues/4136
@@ -370,7 +368,10 @@ const _workspace: typeof vscode.workspace = {
     onDidRenameFiles: onDidRenameFiles.event, // TODO: used by persistence tracker
     onDidDeleteFiles: onDidDeleteFiles.event, // TODO: used by persistence tracker
     registerTextDocumentContentProvider: () => emptyDisposable, // TODO: used by fixup controller
-    asRelativePath: (pathOrUri: string | vscode.Uri): string => {
+    asRelativePath: (
+        pathOrUri: string | vscode.Uri,
+        includeWorkspaceFolder: boolean = workspaceFolders.length > 1
+    ): string => {
         const uri: vscode.Uri | undefined =
             typeof pathOrUri === 'string'
                 ? Uri.file(pathOrUri)
@@ -382,14 +383,37 @@ const _workspace: typeof vscode.workspace = {
             return `${pathOrUri}`
         }
 
-        const relativePath = workspaceDocuments?.workspaceRootUri?.fsPath
-            ? path.relative(workspaceDocuments?.workspaceRootUri?.path ?? '', uri.path)
-            : uri.path
+        let relativePath: string | undefined = undefined
+
+        // Mimic the behavior of vscode.workspace.asRelativePath.
+        for (const folder of workspaceFolders) {
+            if (uriHasPrefix(uri, folder.uri, isWindows())) {
+                const pathFunctions = pathFunctionsForURI(folder.uri)
+                const workspacePrefix = folder.uri.path.endsWith('/')
+                    ? folder.uri.path.slice(0, -1)
+                    : folder.uri.path
+                const workspaceDisplayPrefix = includeWorkspaceFolder
+                    ? pathFunctions.basename(folder.uri.path) + pathFunctions.separator
+                    : ''
+                relativePath = fixPathSep(
+                    workspaceDisplayPrefix + uri.path.slice(workspacePrefix.length + 1),
+                    isWindows(),
+                    uri.scheme
+                )
+            }
+        }
+
+        if (!relativePath) {
+            // Return the input when the file is not part of a workspace or the workspace is empty
+            relativePath = pathOrUri.toString()
+        }
+
         if (isTesting) {
             // We insert relative paths in a lot of places like prompts that influence HTTP requests.
             // When testing, we try to normalize the file paths across Windows/Linux/macOS.
             return relativePath.replaceAll('\\', '/')
         }
+
         return relativePath
     },
     // TODO: used for Cody Context Filters, WorkspaceRepoMapper and custom commands
