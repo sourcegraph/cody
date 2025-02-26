@@ -57,7 +57,8 @@ class CodyFixHighlightPass(val file: PsiFile, val editor: Editor) :
                 }
 
                 val uri = ProtocolTextDocumentExt.uriFor(file.virtualFile)
-                val range = document.codyRange(highlight.startOffset, highlight.endOffset)
+                val range =
+                    document.codyRange(highlight.startOffset, highlight.endOffset)
                         ?: Range(Position(0, 0), Position(0, 0))
                 val diagnostic =
                     ProtocolDiagnostic(
