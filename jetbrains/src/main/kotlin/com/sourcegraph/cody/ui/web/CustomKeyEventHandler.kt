@@ -43,9 +43,10 @@ class CustomKeyEventHandler : CefKeyboardHandler {
 //                    )
 
                     browser?.executeJavaScript("""
-                    const el = document.activeElement;
-                    el.dispatchEvent(new KeyboardEvent('keydown', {key: 'Delete', code: 'Delete'}));
-                    el.dispatchEvent(new KeyboardEvent('keyup', {key: 'Delete', code: 'Delete'}));
+
+                      document.activeElement.dispatchEvent(new KeyboardEvent('keydown', {key: 'Delete', code: 'Delete', bubbles: true}));
+                      document.activeElement.dispatchEvent(new KeyboardEvent('keypress', {key: 'Delete', code: 'Delete', bubbles: true}));
+                      document.activeElement.dispatchEvent(new KeyboardEvent('keyup', {key: 'Delete', code: 'Delete', bubbles: true}));
                     """,
                         browser.url, 0)
 
