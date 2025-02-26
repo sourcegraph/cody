@@ -46,6 +46,11 @@ export interface MentionQuery {
      * user has on their instance. (Cody Web use case)
      */
     contextRemoteRepositoriesNames?: string[]
+
+    /**
+     * The maximum number of results to get for.
+     */
+    maxResults?: number
 }
 
 /**
