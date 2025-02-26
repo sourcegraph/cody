@@ -35,9 +35,7 @@ describe('ClientConfigSingleton', () => {
         const authStatusSubject = new Subject<AuthStatus>()
         mockAuthStatus(authStatusSubject)
         const getSiteVersionMock = vi.spyOn(graphqlClient, 'getSiteVersion').mockResolvedValue('5.5.0')
-        const codeSearchEnabledMock = vi
-            .spyOn(graphqlClient, 'codeSearchEnabled')
-            .mockResolvedValue(true)
+        // TODO: mock codeSearchEnabled: true
         const fetchHTTPMock = vi
             .spyOn(graphqlClient, 'fetchHTTP')
             .mockResolvedValue(CLIENT_CONFIG_FIXTURE)
@@ -53,13 +51,11 @@ describe('ClientConfigSingleton', () => {
         authStatusSubject.next(AUTH_STATUS_FIXTURE_AUTHED)
         await vi.advanceTimersByTimeAsync(0)
         expect(getSiteVersionMock).toHaveBeenCalledTimes(1)
-        expect(codeSearchEnabledMock).toHaveBeenCalledTimes(1)
         expect(fetchHTTPMock).toHaveBeenCalledTimes(1)
         expect(await clientConfigSingleton.getConfig()).toEqual(CLIENT_CONFIG_FIXTURE)
         expect(getSiteVersionMock).toHaveBeenCalledTimes(1)
         expect(fetchHTTPMock).toHaveBeenCalledTimes(1)
         getSiteVersionMock.mockClear()
-        codeSearchEnabledMock.mockClear()
         fetchHTTPMock.mockClear()
     })
 
@@ -68,9 +64,7 @@ describe('ClientConfigSingleton', () => {
         const authStatusSubject = new Subject<AuthStatus>()
         mockAuthStatus(authStatusSubject)
         const getSiteVersionMock = vi.spyOn(graphqlClient, 'getSiteVersion').mockResolvedValue('5.5.0')
-        const codeSearchEnabledMock = vi
-            .spyOn(graphqlClient, 'codeSearchEnabled')
-            .mockResolvedValue(true)
+        // TODO: mock codeSearchEnabled: true
         const fetchHTTPMock = vi
             .spyOn(graphqlClient, 'fetchHTTP')
             .mockResolvedValue(CLIENT_CONFIG_FIXTURE)
@@ -85,10 +79,8 @@ describe('ClientConfigSingleton', () => {
         authStatusSubject.next(AUTH_STATUS_FIXTURE_AUTHED)
         await vi.advanceTimersByTimeAsync(0)
         expect(getSiteVersionMock).toHaveBeenCalledTimes(1)
-        expect(codeSearchEnabledMock).toHaveBeenCalledTimes(1)
         expect(fetchHTTPMock).toHaveBeenCalledTimes(1)
         getSiteVersionMock.mockClear()
-        codeSearchEnabledMock.mockClear()
         fetchHTTPMock.mockClear()
 
         // Set a different response for the next refetch.
@@ -124,9 +116,7 @@ describe('ClientConfigSingleton', () => {
             .spyOn(graphqlClient, 'getSiteVersion')
             .mockImplementation(() => new Promise<string>(resolve => setTimeout(resolve, 100, '5.5.0')))
 
-        const codeSearchEnabledMock = vi
-            .spyOn(graphqlClient, 'codeSearchEnabled')
-            .mockResolvedValue(true)
+        // TODO: mock codeSearchEnabled: true
         const fetchHTTPMock = vi
             .spyOn(graphqlClient, 'fetchHTTP')
             .mockResolvedValue(CLIENT_CONFIG_FIXTURE)
@@ -177,7 +167,6 @@ describe('ClientConfigSingleton', () => {
         expect(getSiteVersionMock).toHaveBeenCalledTimes(1)
         expect(fetchHTTPMock).toHaveBeenCalledTimes(1)
         getSiteVersionMock.mockClear()
-        codeSearchEnabledMock.mockClear()
         fetchHTTPMock.mockClear()
     })
 
@@ -188,9 +177,7 @@ describe('ClientConfigSingleton', () => {
         const getSiteVersionMock = vi
             .spyOn(graphqlClient, 'getSiteVersion')
             .mockImplementation(() => new Promise<string>(resolve => setTimeout(resolve, 100, '5.5.0')))
-        const codeSearchEnabledMock = vi
-            .spyOn(graphqlClient, 'codeSearchEnabled')
-            .mockResolvedValue(true)
+        // TODO: mock codeSearchEnabled: true
         const fetchHTTPMock = vi
             .spyOn(graphqlClient, 'fetchHTTP')
             .mockResolvedValue(CLIENT_CONFIG_FIXTURE)
@@ -207,7 +194,6 @@ describe('ClientConfigSingleton', () => {
         expect(getSiteVersionMock).toHaveBeenCalledTimes(1)
         expect(fetchHTTPMock).toHaveBeenCalledTimes(1)
         getSiteVersionMock.mockClear()
-        codeSearchEnabledMock.mockClear()
         fetchHTTPMock.mockClear()
 
         // The non-stale cached value is reused.
@@ -226,16 +212,13 @@ describe('ClientConfigSingleton', () => {
         })
         await vi.advanceTimersByTimeAsync(ClientConfigSingleton.REFETCH_INTERVAL + 1)
         expect(getSiteVersionMock).toHaveBeenCalledTimes(1)
-        expect(codeSearchEnabledMock).toHaveBeenCalledTimes(0)
         expect(fetchHTTPMock).toHaveBeenCalledTimes(1)
         getSiteVersionMock.mockClear()
-        codeSearchEnabledMock.mockClear()
         fetchHTTPMock.mockClear()
 
         // A stale cached value will still be returned.
         expect(await clientConfigSingleton.getConfig()).toEqual(CLIENT_CONFIG_FIXTURE)
         expect(getSiteVersionMock).toHaveBeenCalledTimes(0)
-        expect(codeSearchEnabledMock).toHaveBeenCalledTimes(0)
         expect(fetchHTTPMock).toHaveBeenCalledTimes(0)
 
         // When the refetch is done, the new data is used and is available without a refetch.
@@ -244,7 +227,6 @@ describe('ClientConfigSingleton', () => {
         expect(getSiteVersionMock).toHaveBeenCalledTimes(0)
         expect(fetchHTTPMock).toHaveBeenCalledTimes(0)
         getSiteVersionMock.mockClear()
-        codeSearchEnabledMock.mockClear()
         fetchHTTPMock.mockClear()
     })
 
@@ -255,9 +237,7 @@ describe('ClientConfigSingleton', () => {
         const getSiteVersionMock = vi
             .spyOn(graphqlClient, 'getSiteVersion')
             .mockImplementation(() => new Promise<string>(resolve => setTimeout(resolve, 100, '5.5.0')))
-        const codeSearchEnabledMock = vi
-            .spyOn(graphqlClient, 'codeSearchEnabled')
-            .mockResolvedValue(true)
+        // TOOD: mock codeSearchEnabled: true
         const fetchHTTPMock = vi
             .spyOn(graphqlClient, 'fetchHTTP')
             .mockResolvedValue(CLIENT_CONFIG_FIXTURE)
@@ -272,10 +252,8 @@ describe('ClientConfigSingleton', () => {
         authStatusSubject.next(AUTH_STATUS_FIXTURE_AUTHED)
         await vi.advanceTimersByTimeAsync(100)
         expect(getSiteVersionMock).toHaveBeenCalledTimes(1)
-        expect(codeSearchEnabledMock).toHaveBeenCalledTimes(1)
         expect(fetchHTTPMock).toHaveBeenCalledTimes(1)
         getSiteVersionMock.mockClear()
-        codeSearchEnabledMock.mockClear()
         fetchHTTPMock.mockClear()
 
         // Change the auth status.
@@ -300,7 +278,6 @@ describe('ClientConfigSingleton', () => {
         expect(getSiteVersionMock).toHaveBeenCalledTimes(1)
         expect(fetchHTTPMock).toHaveBeenCalledTimes(1)
         getSiteVersionMock.mockClear()
-        codeSearchEnabledMock.mockClear()
         fetchHTTPMock.mockClear()
     })
 })

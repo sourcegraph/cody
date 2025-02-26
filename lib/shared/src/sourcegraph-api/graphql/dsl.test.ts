@@ -5,11 +5,12 @@ import {
     args,
     array,
     collectFormals,
+    constant,
     formal,
     nested,
     q,
     type Realize,
-    both, collectFormalList, type RealizeField, labeled
+    both, collectFormalList, type RealizeField, labeled, prepare
 } from "./dsl";
 
 describe('GraphQL DSL', () => {
@@ -54,6 +55,53 @@ describe('GraphQL DSL', () => {
         }
         // Suppress warning about unused variables; we are testing the type checker.
         expect([as, result])
+    })
+
+    test('constants can be mixed with variable arguments and primitive fields', () => {
+        let test = args(q.boolean('foo'), constant('bar', 7), formal.string('baz'), constant('qux', false), formal.int('quux'))
+        let fs: Arguments<typeof test> = collectFormals(test)
+        expect(fs.length).toEqual(2)
+        let as: ActualTypes<Arguments<typeof test>> = ['hello, world', 42]
+        let result: Realize<typeof test[]> = {
+            'foo': true,
+        }
+        // Suppress warning about unused variables; we are testing the type checker.
+        expect([as, result])
+        expect(prepare(test).text).toEqual('query($baz0:String,$quux1:Int!,){foo(bar:7,baz:$baz0,qux:false,quux:$quux1,)}')
+    })
+
+    test('constants can be mixed with variable arguments and nested fields', () => {
+        let test = args(nested('foo', q.boolean('foobar')), constant('bar', 7), formal.string('baz'), constant('qux', false), formal.int('quux'))
+        let fs: Arguments<typeof test> = collectFormals(test)
+        expect(fs.length).toEqual(2)
+        let as: ActualTypes<Arguments<typeof test>> = ['hello, world', 42]
+        let result: Realize<typeof test[]> = {
+            'foo': { 'foobar': true },
+        }
+        // Suppress warning about unused variables; we are testing the type checker.
+        expect([as, result])
+        expect(prepare(test).text).toEqual('query($baz0:String,$quux1:Int!,){foo(bar:7,baz:$baz0,qux:false,quux:$quux1,){foobar,}}')
+    })
+
+    test('arguments can be nested', () => {
+        let test = args(
+            array('foo', args(q.string('bar'), constant('b', false), formal.string('a'))),
+            formal.int('a'), formal.int('b')
+        )
+        let fs: Arguments<typeof test> = collectFormals(test)
+        expect(fs.length).toEqual(3)
+        let as: ActualTypes<Arguments<typeof test>> = [7, 42, 'baz']
+        let result: Realize<typeof test[]> = {
+            foo: [{bar: 'hello'}, {bar: 'world'}],
+        }
+        // Suppress warning about unused variables; we are testing the type checker.
+        expect([as, result])
+        expect(prepare(test).text).toEqual('query($a0:Int!,$b1:Int!,$a2:String,){foo(a:$a0,b:$b1,){bar(b:false,a:$a2,),}}')
+    })
+
+    test('string constants are quoted', () => {
+        let test = args(q.string('foo'), constant('bar', 'hello, "world!"'))
+        expect(prepare(test).text).toEqual('query(){foo(bar:"hello, \\\"world!\\\"",)}')
     })
 
     test('queries can be combined', () => {

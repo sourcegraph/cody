@@ -609,12 +609,6 @@ query GetURLContentQuery($url: String!) {
 }
 `
 
-export const CODE_SEARCH_ENABLED_QUERY = `
-query CodeSearchEnabled {
-    codeSearchEnabled: enterpriseLicenseHasFeature(feature:"code-search")
-}
-`
-
 export const HIGHLIGHTED_FILE_QUERY = `
    query HighlightedFile(
         $repoName: String!

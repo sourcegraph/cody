@@ -4,6 +4,7 @@ import {GraphQLAPIClientConfig} from "../sourcegraph-api/graphql/client";
 import {logDebug} from '../logger'
 
 const queryPieces = {
+    codeSearchEnabled: gql.labeled('codeSearchEnabled', gql.args(gql.q.boolean('enterpriseLicenseHasFeature'), gql.constant('feature', 'code-search'))),
     // TODO: For fields added in such-and-such a version, let's add a combinator for filtering by version.
     viewerSettings: gql.nested('viewerSettings', gql.q.string('final')),
 }
@@ -21,7 +22,7 @@ class ConfigFetcher {
     async fetch(abortSignal: AbortSignal, apiClientConfig: GraphQLAPIClientConfig): Promise<void> {
         try {
             const client = SourcegraphGraphQLAPIClient.withStaticConfig(apiClientConfig)
-            const configQuery = gql.prepare(queryPieces.viewerSettings)
+            const configQuery = gql.prepare(queryPieces.codeSearchEnabled, queryPieces.viewerSettings)
             logDebug('XXXDPC', configQuery.text)
             const config1 = await client.fetchSourcegraphAPI<gql.Realize<typeof configQuery.query>>(configQuery.text, {}, abortSignal)
             if (config1 instanceof Error) {

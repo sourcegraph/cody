@@ -24,8 +24,24 @@ export interface ArraySpec<Name extends string, T extends SomeFields> {
     fields: T,
 }
 
+// A literal value. These are supplied as arguments.
+interface Constant<Name extends string, T> {
+    kind: 'constant',
+    name: Name,
+    value: T,
+}
+
+export function constant<Name extends string, T>(name: Name, value: T): Constant<Name,T> {
+    return {
+        kind: 'constant',
+        name,
+        value,
+    }
+}
+
 // The formal parameters of a GraphQL field.
 interface Formal<Name extends string, T> {
+    kind: 'formal',
     name: Name,
     gqlType: 'Int!' | 'String'
 }
@@ -33,32 +49,36 @@ interface Formal<Name extends string, T> {
 export const formal = {
     int<Name extends string>(name: Name): Formal<Name,number> {
         return {
+            kind: 'formal',
             name,
             gqlType: 'Int!'
         }
     },
     string<Name extends string>(name: Name): Formal<Name,string> {
         return {
+            kind: 'formal',
             name,
             gqlType: 'String'
         }
     }
 }
 
-export interface WithArguments<F extends SomeFieldExceptArguments, T extends Formal<any,any>[]> {
+type SomeArg = Constant<any,any> | Formal<any,any>
+
+export interface WithArguments<F extends SomeFieldExceptArguments, T extends SomeArg[]> {
     kind: 'args',
     name: F['name'],
     field: F,
-    formals: T
+    args: T
 }
 
-export function args<Formals extends Formal<any,any>[], Field extends SomeFieldExceptArguments>(field: Field, ...formals: Formals): WithArguments<Field, Formals> {
+export function args<Formals extends (Constant<any,any> | Formal<any,any>)[], Field extends SomeFieldExceptArguments>(field: Field, ...argz: Formals): WithArguments<Field, Formals> {
     return {
         kind: 'args',
         // Forward the wrapped field's name.
         name: field.name,
         field,
-        formals,
+        args: argz,
     }
 }
 
@@ -168,9 +188,13 @@ export type ArgumentsOfN<T extends SomeFields> =
             : never
         : []
 
-export type ActualTypes<F extends Formal<any,any>[]> = {
-    [K in keyof F]: F[K] extends Formal<any, infer ArgT> ? ArgT : never
-}
+export type ActualTypes<T extends SomeArg[]> =
+    T extends [infer Head, ...infer Tail]
+        ? Head extends SomeArg ? Tail extends SomeArg[] ? [...ActualTypesOfArg<Head>, ...ActualTypes<Tail>] : never : never
+        : []
+
+export type ActualTypesOfArg<T extends SomeArg> =
+    T extends Formal<any, infer ArgT> ? [ArgT] : []
 
 // Visible for testing.
 export function collectFormals<F extends SomeField>(field: F): Arguments<F> {
@@ -183,7 +207,7 @@ export function collectFormals<F extends SomeField>(field: F): Arguments<F> {
     // must be assignable to the parameter type.
     switch (field.kind) {
         case 'args':
-            return [...field.formals, ...collectFormals(field.field)] as Arguments<F>
+            return [...field.args.filter((arg: SomeArg) => arg.kind === 'formal'), ...collectFormals(field.field)] as Arguments<F>
         case 'object':
         case 'array':
             return collectFormalList(field.fields) as Arguments<F>
@@ -223,18 +247,30 @@ export function both<T extends SomeField, U extends SomeField>(a: T, b: U) {
     return [a, b]
 }
 
-function serializeField<T extends SomeField>(buffer: string[], argumentNames: string[], field: SomeField, parent: SomeField | undefined): void {
+function serializeField<T extends SomeField>(buffer: string[], formals: Formal<any,any>[], field: SomeField, parent: SomeField | undefined): void {
     switch (field.kind) {
         case 'args':
             buffer.push(field.name, '(')
-            for (const formal of field.formals) {
-                // Gensym unique argument names.
-                const argumentName = `\$${formal.name}${arguments.length}`
-                argumentNames.push(argumentName)
-                buffer.push(formal.name, ':', argumentName, ',')
+            for (const arg of field.args) {
+                buffer.push(arg.name, ':')
+                switch (arg.kind) {
+                    case 'formal':
+                        // Gensym unique argument names.
+                        const renaming = `\$${arg.name}${formals.length}`
+                        formals.push({
+                            ...arg,
+                            name: renaming,
+                        })
+                        buffer.push(renaming)
+                        break
+                    case 'constant':
+                        buffer.push(JSON.stringify(arg.value))
+                        break
+                }
+                buffer.push(',')
             }
             buffer.push(')')
-            serializeField(buffer, argumentNames, field.field, field)
+            serializeField(buffer, formals, field.field, field)
             break
         case 'object':
         case 'array':
@@ -247,17 +283,22 @@ function serializeField<T extends SomeField>(buffer: string[], argumentNames: st
             }
             buffer.push('{')
             field.fields.forEach((child: SomeField) => {
-                serializeField(buffer, argumentNames, child, field)
+                serializeField(buffer, formals, child, field)
                 buffer.push(',')
             })
             buffer.push('}')
             break
         case 'value':
-            buffer.push(field.name)
+            if (parent?.kind !== 'args') {
+                buffer.push(field.name)
+            }
             break
         case 'labeled':
+            if (parent?.kind === 'args') {
+                throw new Error('do not use args(labeled(...), ...) but instead use labeled(..., args(...))')
+            }
             buffer.push(field.name, ':')
-            serializeField(buffer, argumentNames, field.field, field)
+            serializeField(buffer, formals, field.field, field)
             break
         default:
             throw new Error('unreachable')
@@ -267,22 +308,22 @@ function serializeField<T extends SomeField>(buffer: string[], argumentNames: st
 export type PreparedQuery<T extends SomeFields> = {
     query: T,
     text: string,
-    argumentNames: string[],
+    formals: Formal<any,any>[],
 }
 
 // Prepares a query by producing the textual serialization of the query.
 export function prepare<T extends SomeFields>(...query: T): PreparedQuery<T> {
     const buffer: string[] = []
-    const argumentNames: string[] = []
+    const formals: Formal<any,any>[] = []
     for (const field of query) {
-        serializeField(buffer, argumentNames, field, undefined)
+        serializeField(buffer, formals, field, undefined)
     }
 
     // Wrap the query in query (...args...) { ... }
     const preamble: string[] = []
     preamble.push('query', '(')
-    for (const argumentName of argumentNames) {
-        preamble.push(argumentName, ',')
+    for (const formal of formals) {
+        preamble.push(formal.name, ':', formal.gqlType, ',')
     }
     preamble.push(')', '{')
     buffer.unshift(...preamble)
@@ -291,7 +332,7 @@ export function prepare<T extends SomeFields>(...query: T): PreparedQuery<T> {
     return {
         query,
         text: buffer.join(''),
-        argumentNames,
+        formals,
     }
 }
 
