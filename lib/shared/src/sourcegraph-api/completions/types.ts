@@ -24,7 +24,13 @@ export interface Message {
     // mirrors what OpenAI and Anthropic expect
     text?: PromptString
     cacheEnabled?: boolean | null
+    content?: MessagePart[]
+    base64Image?: string
 }
+
+export type MessagePart =
+    | { type: 'text'; text: string } // a normal text message
+    | { type: 'image_url'; image_url: { url: string } } // image message, per https://platform.openai.com/docs/guides/vision
 
 export interface CompletionUsage {
     completion_tokens: number | null

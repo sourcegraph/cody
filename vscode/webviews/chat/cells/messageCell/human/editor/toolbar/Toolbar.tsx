@@ -1,7 +1,8 @@
 import type { Action, ChatMessage, Model } from '@sourcegraph/cody-shared'
-import { useExtensionAPI } from '@sourcegraph/prompt-editor'
+import type { ResolvedConfiguration } from '@sourcegraph/cody-shared'
+import { useExtensionAPI, useObservable } from '@sourcegraph/prompt-editor'
 import clsx from 'clsx'
-import { type FunctionComponent, useCallback } from 'react'
+import { type FunctionComponent, useCallback, useMemo } from 'react'
 import type { UserAccountInfo } from '../../../../../../Chat'
 import { ModelSelectField } from '../../../../../../components/modelSelectField/ModelSelectField'
 import { PromptSelectField } from '../../../../../../components/promptSelectField/PromptSelectField'
@@ -10,10 +11,15 @@ import { useActionSelect } from '../../../../../../prompts/PromptsTab'
 import { useClientConfig } from '../../../../../../utils/useClientConfig'
 import { AddContextButton } from './AddContextButton'
 import { SubmitButton, type SubmitButtonState } from './SubmitButton'
-
+import { UploadImageButton } from './UploadImageButton'
 /**
  * The toolbar for the human message editor.
  */
+function useResolvedConfig(): ResolvedConfiguration | undefined {
+    const resolvedConfig = useExtensionAPI().resolvedConfig
+    return useObservable(useMemo(() => resolvedConfig(), [resolvedConfig])).value
+}
+
 export const Toolbar: FunctionComponent<{
     models: Model[]
     userInfo: UserAccountInfo
@@ -35,6 +41,9 @@ export const Toolbar: FunctionComponent<{
     intent?: ChatMessage['intent']
 
     manuallySelectIntent: (intent: ChatMessage['intent']) => void
+
+    imageFile?: File
+    setImageFile: (file: File | undefined) => void
 }> = ({
     userInfo,
     isEditorFocused,
@@ -48,6 +57,8 @@ export const Toolbar: FunctionComponent<{
     models,
     intent,
     manuallySelectIntent,
+    imageFile,
+    setImageFile,
 }) => {
     /**
      * If the user clicks in a gap or on the toolbar outside of any of its buttons, report back to
@@ -64,6 +75,8 @@ export const Toolbar: FunctionComponent<{
         },
         [onGapClick]
     )
+    const resolvedConfig = useResolvedConfig()
+    const imageUploadEnabled = resolvedConfig?.configuration.experimentalImageUpload
 
     return (
         // biome-ignore lint/a11y/useKeyWithClickEvents: only relevant to click areas
@@ -88,6 +101,14 @@ export const Toolbar: FunctionComponent<{
                     />
                 )}
                 <PromptSelectFieldToolbarItem focusEditor={focusEditor} className="tw-ml-1 tw-mr-1" />
+                {imageUploadEnabled && (
+                    <UploadImageButton
+                        className="tw-opacity-60"
+                        imageFile={imageFile}
+                        onClick={setImageFile}
+                        submitting={submitState === 'waitingResponseComplete'}
+                    />
+                )}
                 <ModelSelectFieldToolbarItem
                     models={models}
                     userInfo={userInfo}
