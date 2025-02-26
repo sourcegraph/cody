@@ -4,6 +4,82 @@ This is a log of all notable changes to Cody for VS Code.
 
 <!--- {/_ CHANGELOG_START _/} -->
 
+## 1.72.0
+
+### Features
+
+#### Prompt-Editor
+
+- focus on file range when clicking on context item mention with ranges [#7021](https://github.com/sourcegraph/cody/pull/7021)
+
+#### Vscode
+
+- add context via file explorer [#7107](https://github.com/sourcegraph/cody/pull/7107)
+
+#### Webview
+
+- add support for <think> tags in Chat Message [#7209](https://github.com/sourcegraph/cody/pull/7209)
+
+### Fix
+
+#### Auto-Edit
+
+- Fix low resolution images on low DPI screens [#7100](https://github.com/sourcegraph/cody/pull/7100)
+
+#### Chat
+
+- prompt caching feature flag enrollement [#7177](https://github.com/sourcegraph/cody/pull/7177)
+
+#### Command
+
+- Generate commit message now uses flash-lite instead of last selected model [#7082](https://github.com/sourcegraph/cody/pull/7082)
+
+#### Smart-Apply
+
+- add insert events in the smart apply logging payload [#7198](https://github.com/sourcegraph/cody/pull/7198)
+- stripping of markdown code blocks [#7105](https://github.com/sourcegraph/cody/pull/7105)
+
+#### Tracing
+
+- Add Client Platform and agentVersion to traces [#6889](https://github.com/sourcegraph/cody/pull/6889)
+
+#### Ui
+
+- Hide unused prompts(SRCH-1648) [#7095](https://github.com/sourcegraph/cody/pull/7095)
+
+### Chore
+
+#### Release
+
+- improve release note generation [#7253](https://github.com/sourcegraph/cody/pull/7253)
+
+### Refactor
+
+#### Telemetry
+
+- opt-out option [#7207](https://github.com/sourcegraph/cody/pull/7207)
+
+### Reverts
+
+- Revert "fix(ui): Hide unused prompts(SRCH-1648)" [#-1](https://github.com/sourcegraph/cody/pull/7101)
+
+### Uncategorized
+
+#### Others
+
+- [Backport M72] feat(commit generation): prioritize Gemini Flash models [#7255](https://github.com/sourcegraph/cody/pull/7255)
+- [Backport M72] fix(Inline Edit): removes reasoning models from selector [#7239](https://github.com/sourcegraph/cody/pull/7239)
+- [Backport M72] fix(agentic chat): terminal and openCtx are not registered as tools [#7133](https://github.com/sourcegraph/cody/pull/7133)
+- [Backport M72] Fix code search downlaod [#7127](https://github.com/sourcegraph/cody/pull/7127)
+- Changelog for 1.70.0 [#7116](https://github.com/sourcegraph/cody/pull/7116)
+- Fix(unit test): revert prompt.test test cases [#7114](https://github.com/sourcegraph/cody/pull/7114)
+- Chore: Add prosemirror-lexical interop test [#7111](https://github.com/sourcegraph/cody/pull/7111)
+- Fix: Make it possible to dogfood new prompt editor [#7094](https://github.com/sourcegraph/cody/pull/7094)
+- Changelog for 1.68.0 [#7089](https://github.com/sourcegraph/cody/pull/7089)
+- Feat: Add experimental & nightly release channels for vsce [#6997](https://github.com/sourcegraph/cody/pull/6997)
+- Add support for external auth providers in code search [#6919](https://github.com/sourcegraph/cody/pull/6919)
+
+
 ## Unreleased
 
 ### Fix
