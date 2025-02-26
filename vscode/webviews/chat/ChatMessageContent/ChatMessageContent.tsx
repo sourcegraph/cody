@@ -15,7 +15,7 @@ import type { PriorHumanMessageInfo } from '../cells/messageCell/assistant/Assis
 import styles from './ChatMessageContent.module.css'
 import { GuardrailsStatusController } from './GuardRailStatusController'
 import { createButtons, createButtonsExperimentalUI } from './create-buttons'
-import { extractThinkContent, getCodeBlockId, getFileName } from './utils'
+import { extractThinkContent, getCodeBlockId } from './utils'
 
 export interface CodeBlockActionsProps {
     copyButtonOnSubmit: (text: string, event?: 'Keydown' | 'Button') => void
@@ -185,11 +185,8 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
                     )
                 }
 
-                const metadataContainer = document.createElement('div')
-                metadataContainer.classList.add(styles.metadataContainer)
-                buttons.append(metadataContainer)
-
-                if (guardrails) {
+                const metadataContainer = buttons.querySelector(`.${styles.metadataContainer}`)
+                if (metadataContainer && guardrails) {
                     const container = document.createElement('div')
                     container.classList.add(styles.attributionContainer)
                     metadataContainer.append(container)
@@ -219,16 +216,23 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
                     }
                 }
 
-                if (fileName) {
-                    const fileNameContainer = document.createElement('div')
-                    fileNameContainer.className = styles.fileNameContainer
-                    fileNameContainer.textContent = getFileName(fileName)
-                    fileNameContainer.title = fileName
-                    metadataContainer.append(fileNameContainer)
-                }
+                const parent = preElement.parentNode
+                if (!parent) return
 
-                // Insert the buttons after the pre using insertBefore() because there is no insertAfter()
-                preElement.parentNode.insertBefore(buttons, preElement.nextSibling)
+                // Get the preview container and actions container
+                const previewContainer = buttons.querySelector(`[data-container-type="preview"]`)
+                const actionsContainer = buttons.querySelector(`[data-container-type="actions"]`)
+                if (!previewContainer || !actionsContainer) return
+
+                // First add the preview container
+                parent.insertBefore(previewContainer, preElement)
+
+                // Then move the code block after preview container
+                parent.removeChild(preElement)
+                parent.insertBefore(preElement, null)
+
+                // Finally add the actions container after the code block
+                parent.appendChild(actionsContainer)
             }
         }
     }, [
