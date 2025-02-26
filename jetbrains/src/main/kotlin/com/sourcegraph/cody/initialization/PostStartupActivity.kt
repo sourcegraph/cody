@@ -30,7 +30,6 @@ class PostStartupActivity : ProjectActivity {
   override suspend fun execute(project: Project) {
     VerifyJavaBootRuntimeVersion().runActivity(project)
     SettingsMigration().runActivity(project)
-    CodyAuthNotificationActivity().runActivity(project)
     CodyWindowAdapter.addWindowFocusListener(project)
     ApplicationManager.getApplication().executeOnPooledThread {
       // Scheduling because this task takes ~2s to run
@@ -38,7 +37,10 @@ class PostStartupActivity : ProjectActivity {
     }
     // For integration tests we do not want to start agent immediately as we would like to first
     // do some setup.
-    if (ConfigUtil.isCodyEnabled() && !ConfigUtil.isIntegrationTestModeEnabled()) {
+    if (!ConfigUtil.isIntegrationTestModeEnabled()) {
+      if (ConfigUtil.isCodyEnabled()) {
+        CodyAuthNotificationActivity().runActivity(project)
+      }
       CodyAgentService.getInstance(project).startAgent()
     }
 
