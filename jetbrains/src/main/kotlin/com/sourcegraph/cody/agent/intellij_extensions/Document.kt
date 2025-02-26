@@ -18,9 +18,10 @@ fun Document.codyRange(startOffset: Int, endOffset: Int): Range? {
       startOffset > this.textLength ||
       endOffset > this.textLength ||
       startOffset > endOffset) {
-      val logger = Logger.getInstance(Document::class.java)
-      logger.warn("codyRange error - startOffset: $startOffset, endOffset: $endOffset, textLength: ${this.textLength}")
-      return null
+    val logger = Logger.getInstance(Document::class.java)
+    logger.warn(
+        "codyRange error - startOffset: $startOffset, endOffset: $endOffset, textLength: ${this.textLength}")
+    return null
   }
 
   val startLine = this.getLineNumber(startOffset)
