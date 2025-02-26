@@ -13,11 +13,7 @@ import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.EditorKind
 import com.intellij.openapi.editor.ex.EditorEx
 import com.intellij.openapi.editor.impl.ImaginaryEditor
-import com.intellij.openapi.fileEditor.FileDocumentManager
-import com.intellij.openapi.fileEditor.FileEditor
-import com.intellij.openapi.fileEditor.FileEditorManager
-import com.intellij.openapi.fileEditor.OpenFileDescriptor
-import com.intellij.openapi.fileEditor.TextEditor
+import com.intellij.openapi.fileEditor.*
 import com.intellij.openapi.fileTypes.FileTypeRegistry
 import com.intellij.openapi.fileTypes.PlainTextLanguage
 import com.intellij.openapi.project.Project
@@ -61,8 +57,8 @@ object CodyEditorUtil {
   @JvmStatic val KEY_EDITOR_WANTS_AUTOCOMPLETE = Key.create<Boolean>("cody.editorWantsAutocomplete")
 
   @JvmStatic
-  fun getTextRange(document: Document, range: Range): TextRange {
-    val (start, end) = range.toOffsetRange(document)
+  fun getTextRange(document: Document, range: Range): TextRange? {
+    val (start, end) = range.toOffsetRange(document) ?: return null
     return TextRange.create(start, end)
   }
 

@@ -66,7 +66,8 @@ class CodyInlineCompletionProvider : InlineCompletionProvider {
           .firstNotNullOfOrNull {
             WriteCommandAction.runWriteCommandAction<InlineCompletionGrayTextElement?>(
                 editor.project) {
-                  val range = getTextRange(editor.document, it.range)
+                  val range =
+                      getTextRange(editor.document, it.range) ?: return@runWriteCommandAction null
                   val originalText = editor.document.getText(range)
 
                   val formattedCompletionText: String =
