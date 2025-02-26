@@ -29,10 +29,20 @@ This is a log of all notable changes to Cody for VS Code.
 #### Chat
 
 - prompt caching feature flag enrollement [#7177](https://github.com/sourcegraph/cody/pull/7177)
+- [Backport M72] fix(agentic chat): terminal and openCtx are not registered as tools [#7133](https://github.com/sourcegraph/cody/pull/7133)
+- Fix(unit test): revert prompt.test test cases [#7114](https://github.com/sourcegraph/cody/pull/7114)
+- Fix: Make it possible to dogfood new prompt editor [#7094](https://github.com/sourcegraph/cody/pull/7094)
+- Add support for external auth providers in code search [#6919](https://github.com/sourcegraph/cody/pull/6919)
+- [Backport M72] Fix code search downlaod [#7127](https://github.com/sourcegraph/cody/pull/7127)
+
+### Inline-edit
+
+- [Backport M72] fix(Inline Edit): removes reasoning models from selector [#7239](https://github.com/sourcegraph/cody/pull/7239)
 
 #### Command
 
 - Generate commit message now uses flash-lite instead of last selected model [#7082](https://github.com/sourcegraph/cody/pull/7082)
+- [Backport M72] feat(commit generation): prioritize Gemini Flash models [#7255](https://github.com/sourcegraph/cody/pull/7255)
 
 #### Smart-Apply
 
@@ -49,9 +59,12 @@ This is a log of all notable changes to Cody for VS Code.
 
 ### Chore
 
+- Chore: Add prosemirror-lexical interop test [#7111](https://github.com/sourcegraph/cody/pull/7111)
+
 #### Release
 
 - improve release note generation [#7253](https://github.com/sourcegraph/cody/pull/7253)
+- Feat: Add experimental & nightly release channels for vsce [#6997](https://github.com/sourcegraph/cody/pull/6997)
 
 ### Refactor
 
@@ -62,23 +75,6 @@ This is a log of all notable changes to Cody for VS Code.
 ### Reverts
 
 - Revert "fix(ui): Hide unused prompts(SRCH-1648)" [#-1](https://github.com/sourcegraph/cody/pull/7101)
-
-### Uncategorized
-
-#### Others
-
-- [Backport M72] feat(commit generation): prioritize Gemini Flash models [#7255](https://github.com/sourcegraph/cody/pull/7255)
-- [Backport M72] fix(Inline Edit): removes reasoning models from selector [#7239](https://github.com/sourcegraph/cody/pull/7239)
-- [Backport M72] fix(agentic chat): terminal and openCtx are not registered as tools [#7133](https://github.com/sourcegraph/cody/pull/7133)
-- [Backport M72] Fix code search downlaod [#7127](https://github.com/sourcegraph/cody/pull/7127)
-- Changelog for 1.70.0 [#7116](https://github.com/sourcegraph/cody/pull/7116)
-- Fix(unit test): revert prompt.test test cases [#7114](https://github.com/sourcegraph/cody/pull/7114)
-- Chore: Add prosemirror-lexical interop test [#7111](https://github.com/sourcegraph/cody/pull/7111)
-- Fix: Make it possible to dogfood new prompt editor [#7094](https://github.com/sourcegraph/cody/pull/7094)
-- Changelog for 1.68.0 [#7089](https://github.com/sourcegraph/cody/pull/7089)
-- Feat: Add experimental & nightly release channels for vsce [#6997](https://github.com/sourcegraph/cody/pull/6997)
-- Add support for external auth providers in code search [#6919](https://github.com/sourcegraph/cody/pull/6919)
-
 
 ## Unreleased
 
