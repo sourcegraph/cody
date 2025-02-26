@@ -39,7 +39,7 @@ export class CodySourceControl implements vscode.Disposable {
                     .getModels(ModelUsage.Chat)
                     .pipe(skipPendingOperation())
                     .subscribe(models => {
-                        const preferredModel = models.find(p => p.id.includes('gemini-2.0-flash-lite'))
+                        const preferredModel = models.find(p => p.id.endsWith('gemini-2.0-flash'))
                         this.model = preferredModel ?? models.at(0)
                     })
             )
