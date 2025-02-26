@@ -21,6 +21,8 @@
   "typescript.tsdk": "node_modules/typescript/lib",
   "task.allowAutomaticTasks": "on",
   "biome.enabled": true,
+  "openctx.providers.mcp.enable": true,
+  "openctx.providers.mcp.uri": "file:///Users/arafatkhan/Desktop/servers/src/everything/dist/index.js",
   "editor.codeActionsOnSave": {
     "source.organizeImports": "never",
     "source.organizeImports.biome": "explicit"
