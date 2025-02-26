@@ -1,8 +1,8 @@
 ---
-title: Unsafe JavaScript Methods
-description: Unsafe JavaScript methods are functions or techniques in JavaScript that can introduce security vulnerabilities, such as cross-site scripting (XSS) or code injection, if not handled properly.
+title: Unsafe TypeScript Methods
+description: Unsafe TypeScript methods are functions or techniques in TypeScript that can introduce security vulnerabilities, such as cross-site scripting (XSS) or code injection, if not handled properly.
 tags: ["security", "xss"]
-lang: ["javascript", "typescript"]
+lang: typescript
 ---
 
 When reviewing code, identify the following issues:
@@ -12,7 +12,7 @@ When reviewing code, identify the following issues:
 
 Example:
 ```typescript
-// JS/TS: Unsafe DOM manipulation
+// TS: Unsafe DOM manipulation
 function showUserProfile(profile: any) {
     const profileDiv = document.getElementById('profile');
     profileDiv.innerHTML = `<h2>${profile.name}</h2><p>${profile.bio}</p>`;

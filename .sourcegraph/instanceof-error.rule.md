@@ -29,15 +29,3 @@ try {
     }
 }
 ```
-
-It is acceptable to skip this rule if the error being caught is already known to be an instance of a specific error type:
-
-```typescript
-function safeFunction() {
-    try {
-        throw new Error("This is a known error");
-    } catch (err) {
-        console.error(err.message);
-    }
-}
-```

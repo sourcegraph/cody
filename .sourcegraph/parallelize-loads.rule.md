@@ -1,7 +1,7 @@
 ---
 title: Parallelize ops in SvelteKit load functions
 description: Don't wait serially for each Promise to resolve in a SvelteKit load()
-tags: ["security", "api"]
+tags: ["security", "api", "svelte"]
 lang: typescript
 ---
 
