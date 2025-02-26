@@ -1,8 +1,8 @@
 import fs from 'node:fs'
 import path from 'node:path'
 
-import dedent from 'dedent'
 import { Anthropic } from '@anthropic-ai/sdk'
+import dedent from 'dedent'
 
 /**
  * A script to create GitHub release notes from the current
@@ -29,9 +29,9 @@ async function main(): Promise<void> {
     const currentVersion: string = packageJSON.version
     const changelogPath = path.join(__dirname, '../CHANGELOG.md')
     const changelogBody = await fs.promises.readFile(changelogPath, 'utf-8')
-    
+
     console.log(`Writing release notes for ${currentVersion}...`)
-    
+
     const { content, previousVersion } = extractLatestChangelog(changelogBody, currentVersion)
     const summary = await summarizeChangelog(content)
     const minor = currentVersion.split('.').slice(1, 2).join('.')
@@ -40,7 +40,7 @@ async function main(): Promise<void> {
     const intro = dedent`
     ✨ For the full technical changelog, see [What’s new in v${currentVersion}](https://github.com/sourcegraph/cody/blob/main/vscode/CHANGELOG.md) since v${previousVersion} ✨
 
-    ${summary instanceof Error ? "" : `${summary}`}
+    ${summary instanceof Error ? '' : `${summary}`}
     `
 
     output += `${intro}\n\n`
@@ -51,7 +51,7 @@ async function main(): Promise<void> {
     output += `\n${outro}\n`
     console.log('\n=== Preview of Release Notes ===\n')
     console.log(output)
-    console.log('\n==============================\n')    
+    console.log('\n==============================\n')
     // this is saved in the runner's local file system to be used in the release notes
     await fs.promises.writeFile(path.join(__dirname, '../GITHUB_CHANGELOG.md'), output)
 }
@@ -59,7 +59,10 @@ async function main(): Promise<void> {
 main().catch(console.error)
 
 // Extract a list of changes and the previous version number
-function extractLatestChangelog(changelog: string, currentVersion: string): {content: string, previousVersion: string} {
+function extractLatestChangelog(
+    changelog: string,
+    currentVersion: string
+): { content: string; previousVersion: string } {
     const lines = changelog.split('\n')
     const changes = []
     let found = false
@@ -67,7 +70,7 @@ function extractLatestChangelog(changelog: string, currentVersion: string): {con
     for (const line of lines) {
         if (found) {
             // If previous version header found, stop appending changelog content
-            if (line.startsWith("## ")) {
+            if (line.startsWith('## ')) {
                 const versionMatches = /^## (?<dottedVersion>\d+\.\d+\.\d+)$/.exec(line)
                 if (!versionMatches?.groups) {
                     throw new Error(`Malformed version line: ${line}`)
@@ -83,7 +86,7 @@ function extractLatestChangelog(changelog: string, currentVersion: string): {con
     }
     return {
         content: changes.join('\n'),
-        previousVersion
+        previousVersion,
     }
 }
 
@@ -92,7 +95,6 @@ function extractPreviousMinor(minor: string): string {
 }
 
 async function summarizeChangelog(changelog: string): Promise<string | Error> {
-    
     const anthropic = new Anthropic({
         apiKey: process.env.ANTHROPIC_API_KEY,
     })
@@ -140,23 +142,25 @@ async function summarizeChangelog(changelog: string): Promise<string | Error> {
         const response = await anthropic.messages.create({
             model: 'claude-3-5-sonnet-20241022',
             temperature: 0,
-            messages: [{
-                role: 'user',
-                content: prompt
-            }],
+            messages: [
+                {
+                    role: 'user',
+                    content: prompt,
+                },
+            ],
             max_tokens: 5000,
         })
         const message = response.content[0]
-        const text = (message as Anthropic.TextBlock).text;
+        const text = (message as Anthropic.TextBlock).text
         // Extract content between release notes tags
         const releaseNotesMatch = text.match(/<release_notes>([\s\S]*)<\/release_notes>/)
         if (releaseNotesMatch) {
             return releaseNotesMatch[1].trim()
         }
     } catch (error) {
-        console.log("Error summarizing changelog:", error)
+        console.log('Error summarizing changelog:', error)
         return new Error(`No release notes found in the response: ${error}`)
     }
 
-    return new Error("Error summarizing changelog")
+    return new Error('Error summarizing changelog')
 }
