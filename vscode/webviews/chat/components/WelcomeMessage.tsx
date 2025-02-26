@@ -27,11 +27,10 @@ export const WelcomeMessage: FunctionComponent<WelcomeMessageProps> = ({
 
     return (
         <div className="tw-flex-1 tw-flex tw-flex-col tw-items-start tw-w-full tw-px-8 tw-gap-6 tw-transition-all tw-relative">
-            {isPromptsV2Enabled && IDE !== CodyIDE.Web && (
-                <PromptMigrationWidget dismissible={true} className="tw-w-full" />
-            )}
             <div className="tw-flex tw-flex-col tw-gap-4 tw-w-full">
-                <LastConversation setView={setView} IDE={IDE} />
+                {isPromptsV2Enabled && IDE !== CodyIDE.Web && (
+                    <PromptMigrationWidget dismissible={true} className="tw-w-full" />
+                )}
                 <PromptList
                     showSearch={false}
                     showFirstNItems={4}
@@ -43,6 +42,9 @@ export const WelcomeMessage: FunctionComponent<WelcomeMessageProps> = ({
                     telemetryLocation="WelcomeAreaPrompts"
                     onSelect={item => runAction(item, setView)}
                 />
+            </div>
+            <div className="tw-mt-auto tw-w-full">
+                <LastConversation setView={setView} IDE={IDE} />
             </div>
         </div>
     )
