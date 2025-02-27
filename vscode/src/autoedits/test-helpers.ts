@@ -94,7 +94,8 @@ export async function autoeditResultFor(
         init: vi.fn(),
     } as any as CodyStatusBar
     const provider =
-        existingProvider ?? new AutoeditsProvider(chatClient, fixupController, mockStatusBar, 'default')
+        existingProvider ??
+        new AutoeditsProvider(chatClient, fixupController, mockStatusBar, { shouldRenderInline: false })
 
     let result: AutoeditsResult | null = null
 

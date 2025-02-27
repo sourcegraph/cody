@@ -93,7 +93,6 @@ export function createAutoEditsProvider({
             const provider = new AutoeditsProvider(chatClient, fixupController, statusBar, {
                 shouldRenderInline: autoeditInlineRenderingEnabled,
             })
-
             return [
                 vscode.commands.registerCommand('cody.command.autoedit-manual-trigger', async () => {
                     await vscode.commands.executeCommand('editor.action.inlineSuggest.hide')

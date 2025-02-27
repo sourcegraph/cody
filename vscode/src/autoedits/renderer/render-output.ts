@@ -90,7 +90,7 @@ export type AutoEditRenderOutput =
  * 1. As a completion (adding text only)
  * 2. As a mix of completion and decorations (adding/removing text in a simple diff)
  * 3. As decorations (adding/removing text in a simple diff where completions are not possible or desirable)
- * 3. As an image (adding/removing text in a complex diff where decorations are not desirable)
+ * 4. As an image (adding/removing text in a complex diff where decorations are not desirable)
  */
 export class AutoEditsRenderOutput {
     protected getCompletionsWithPossibleDecorationsRenderOutput(

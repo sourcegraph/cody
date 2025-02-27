@@ -287,7 +287,6 @@ export class AutoEditsDefaultRendererManager
         await this.handleDidHideSuggestion(decorator)
         autoeditAnalyticsLogger.markAsAccepted(activeRequest.requestId)
 
-        console.log('ACCEPTING PREDICTION', activeRequest.prediction)
         // We rely on the native VS Code functionality for accepting inline completions items.
         // There's no need to manually edit the document.
         if (hasInlineDecorationOnly) {
@@ -312,7 +311,6 @@ export class AutoEditsDefaultRendererManager
         decorations?: AutoEditDecorations
     ): Promise<void> {
         if (!this.decorator) {
-            console.log('NO DECORATOR!!')
             // No decorator to render the decorations
             return
         }
@@ -328,7 +326,6 @@ export class AutoEditsDefaultRendererManager
         position,
         docContext,
     }: GetRenderOutputArgs): AutoEditRenderOutput {
-        console.log('IN OLD RENDER OUTPUT???')
         const updatedPrediction = adjustPredictionIfInlineCompletionPossible(
             prediction,
             codeToReplaceData.codeToRewritePrefix,

@@ -17,7 +17,6 @@ export class AutoEditsInlineRendererManager
     implements AutoEditsRendererManager
 {
     public getRenderOutput(args: GetRenderOutputArgs): AutoEditRenderOutput {
-        console.log('in new render output!')
         const completionsWithDecorations = this.getCompletionsWithPossibleDecorationsRenderOutput(args)
         if (completionsWithDecorations) {
             return completionsWithDecorations
