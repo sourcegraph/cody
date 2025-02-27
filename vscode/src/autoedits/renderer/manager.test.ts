@@ -11,8 +11,9 @@ import { getDecorationInfoFromPrediction } from '../autoedits-provider'
 import { getCodeToReplaceForRenderer } from '../prompt/test-helper'
 import { AutoEditsDefaultRendererManager } from '../renderer/manager'
 
+import { DefaultDecorator } from './decorators/default-decorator'
 import type { TryMakeInlineCompletionsArgs } from './manager'
-import type { CompletionRenderOutput } from './render-output'
+import type { AutoEditRenderOutput, CompletionRenderOutput } from './render-output'
 
 describe('AutoEditsDefaultRendererManager', () => {
     const getAutoeditRendererManagerArgs = (
@@ -45,7 +46,10 @@ describe('AutoEditsDefaultRendererManager', () => {
         const fixupController = new FixupController(extensionClient)
 
         beforeEach(() => {
-            manager = new AutoEditsDefaultRendererManager(fixupController)
+            manager = new AutoEditsDefaultRendererManager(
+                (editor: vscode.TextEditor) => new DefaultDecorator(editor),
+                fixupController
+            )
         })
 
         const assertInlineCompletionItems = (
@@ -71,7 +75,7 @@ describe('AutoEditsDefaultRendererManager', () => {
                 function greet() { console.log("Hello") }
             `
             const args = getAutoeditRendererManagerArgs(documentText, prediction)
-            const result = manager.getRenderOutput(args) as CompletionRenderOutput
+            const result = manager.getRenderOutput(args) as AutoEditRenderOutput
             expect(result).toBeDefined()
             assertInlineCompletionItems(
                 result.completions,

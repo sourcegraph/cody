@@ -21,7 +21,6 @@ import type { FixupController } from '../non-stop/FixupController'
 import type { CodyStatusBar } from '../services/StatusBar'
 import { AutoeditsProvider } from './autoedits-provider'
 import { autoeditsOutputChannelLogger } from './output-channel-logger'
-import { initImageSuggestionService } from './renderer/image-gen'
 
 const AUTOEDITS_NON_ELIGIBILITY_MESSAGES = {
     ONLY_VSCODE_SUPPORT: 'Auto-edit is currently only supported in VS Code.',
@@ -51,7 +50,7 @@ interface AutoeditsItemProviderArgs {
     authStatus: AuthStatus
     chatClient: ChatClient
     autoeditFeatureFlagEnabled: boolean
-    autoeditImageRenderingEnabled: boolean
+    autoeditInlineRenderingEnabled: boolean
     fixupController: FixupController
     statusBar: CodyStatusBar
 }
@@ -61,7 +60,7 @@ export function createAutoEditsProvider({
     authStatus,
     chatClient,
     autoeditFeatureFlagEnabled,
-    autoeditImageRenderingEnabled,
+    autoeditInlineRenderingEnabled,
     fixupController,
     statusBar,
 }: AutoeditsItemProviderArgs): Observable<void> {
@@ -91,15 +90,9 @@ export function createAutoEditsProvider({
                 return []
             }
 
-            if (autoeditImageRenderingEnabled) {
-                // Initialise the canvas renderer for image generation.
-                // TODO: Consider moving this if we decide to enable this by default.
-                initImageSuggestionService()
-            }
+            const decorator = autoeditInlineRenderingEnabled ? 'inline' : 'default'
+            const provider = new AutoeditsProvider(chatClient, fixupController, statusBar, decorator)
 
-            const provider = new AutoeditsProvider(chatClient, fixupController, statusBar, {
-                shouldRenderImage: autoeditImageRenderingEnabled,
-            })
             return [
                 vscode.commands.registerCommand('cody.command.autoedit-manual-trigger', async () => {
                     await vscode.commands.executeCommand('editor.action.inlineSuggest.hide')

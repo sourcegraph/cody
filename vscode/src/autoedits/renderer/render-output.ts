@@ -1,4 +1,4 @@
-import type { DocumentContext } from '@sourcegraph/cody-shared'
+import type { CodeToReplaceData, DocumentContext } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import { completionMatchesSuffix } from '../../completions/is-completion-visible'
 import { shortenPromptForOutputChannel } from '../../completions/output-channel-logger'
@@ -19,38 +19,68 @@ export interface GetRenderOutputArgs {
     position: vscode.Position
     docContext: DocumentContext
     decorationInfo: DecorationInfo
+    codeToReplaceData: CodeToReplaceData
 }
 
-// TODO: Are these properties needed anymore?
-interface BaseRenderOutput {
+interface NoCompletionRenderOutput {
+    // Used when it is not deemed possible to render anything.
+    type: 'none'
+}
+
+/**
+ * Legacy completion output that is required for the deprecated default decoator.
+ * See vscode/src/autoedits/renderer/decorators/default-decorator.ts
+ */
+export interface LegacyCompletionRenderOutput {
+    type: 'legacy-completion'
+    completions: vscode.InlineCompletionItem[]
+    // TODO: Was this just null to signal that it was not possible to render a completion?
+    // Did this have any other effects, e.g. telemetry
+    updatedDecorationInfo: null
     updatedPrediction: string
-    updatedDecorationInfo: DecorationInfo
 }
 
-export interface CompletionRenderOutput extends BaseRenderOutput {
+interface CompletionRenderOutput {
     type: 'completion'
     completions: vscode.InlineCompletionItem[]
+    updatedDecorationInfo: DecorationInfo
+    updatedPrediction: string
 }
 
-export interface CompletionWithDecorationsRenderOutput extends BaseRenderOutput {
+interface CompletionWithDecorationsRenderOutput {
     type: 'completion-with-decorations'
     completions: vscode.InlineCompletionItem[]
     decorations: AutoEditDecorations
+    updatedDecorationInfo: DecorationInfo
+    updatedPrediction: string
 }
 
-export interface DecorationsRenderOutput extends BaseRenderOutput {
+/**
+ * Legacy decorations output that is required for the deprecated default decoator.
+ * See vscode/src/autoedits/renderer/decorators/default-decorator.ts.
+ */
+export interface LegacyDecorationsRenderOutput {
+    // Only the type, the logic to compute the decorations lives in the default decorator
+    // instead of `getRenderOutput`.
+    type: 'legacy-decorations'
+}
+
+interface DecorationsRenderOutput {
     type: 'decorations'
     decorations: AutoEditDecorations
 }
 
-export interface ImageRenderOutput extends BaseRenderOutput {
+interface ImageRenderOutput {
     type: 'image'
     decorations: AutoEditDecorations
 }
 
 export type AutoEditRenderOutput =
+    | NoCompletionRenderOutput
+    | LegacyCompletionRenderOutput
     | CompletionRenderOutput
     | CompletionWithDecorationsRenderOutput
+    | LegacyDecorationsRenderOutput
     | DecorationsRenderOutput
     | ImageRenderOutput
 
@@ -58,49 +88,12 @@ export type AutoEditRenderOutput =
  * Manages the rendering of an auto-edit suggestion in the editor.
  * This can either be:
  * 1. As a completion (adding text only)
- * 2. As a mix of completion and decorations (adding and removing text in a simple diff)
- * 3. As an image (adding and removing text in a complex diff)
+ * 2. As a mix of completion and decorations (adding/removing text in a simple diff)
+ * 3. As decorations (adding/removing text in a simple diff where completions are not possible or desirable)
+ * 3. As an image (adding/removing text in a complex diff where decorations are not desirable)
  */
 export class AutoEditsRenderOutput {
-    public getRenderOutput(args: GetRenderOutputArgs): AutoEditRenderOutput {
-        const completionsWithDecorations = this.getCompletionsWithPossibleDecorationsRenderOutput(args)
-        if (completionsWithDecorations) {
-            return completionsWithDecorations
-        }
-
-        if (this.shouldRenderDecorations(args.decorationInfo)) {
-            return {
-                type: 'decorations',
-                decorations: {
-                    ...this.getInlineDecorations(args.decorationInfo),
-                    // No need to show insertion marker when only using inline decorations
-                    insertMarkerDecorations: [],
-                },
-                updatedDecorationInfo: args.decorationInfo,
-                updatedPrediction: args.prediction,
-            }
-        }
-
-        // We have determined that the diff requires rendering as an image for the optimal user experience.
-        // Additions are entirely represented with the image, and deletions are shown as decorations.
-        const { deletionDecorations } = this.getInlineDecorations(args.decorationInfo)
-        const { insertionDecorations, insertMarkerDecorations } = this.createModifiedImageDecorations(
-            args.document,
-            args.decorationInfo
-        )
-        return {
-            type: 'image',
-            decorations: {
-                insertionDecorations,
-                insertMarkerDecorations,
-                deletionDecorations,
-            },
-            updatedDecorationInfo: args.decorationInfo,
-            updatedPrediction: args.prediction,
-        }
-    }
-
-    private getCompletionsWithPossibleDecorationsRenderOutput(
+    protected getCompletionsWithPossibleDecorationsRenderOutput(
         args: GetRenderOutputArgs
     ): CompletionRenderOutput | CompletionWithDecorationsRenderOutput | null {
         const completions = this.tryMakeInlineCompletions(args)
@@ -145,7 +138,7 @@ export class AutoEditsRenderOutput {
         return null
     }
 
-    public tryMakeInlineCompletions({
+    private tryMakeInlineCompletions({
         requestId,
         position,
         docContext,
@@ -231,7 +224,7 @@ export class AutoEditsRenderOutput {
         }
     }
 
-    private shouldRenderDecorations(decorationInfo: DecorationInfo): boolean {
+    protected shouldRenderDecorations(decorationInfo: DecorationInfo): boolean {
         if (decorationInfo.addedLines.length > 0) {
             // It is difficult to show added lines with decorations, as we cannot inject new lines.
             return false
@@ -295,7 +288,7 @@ export class AutoEditsRenderOutput {
         return false
     }
 
-    private getInlineDecorations(
+    protected getInlineDecorations(
         decorationInfo: DecorationInfo
     ): Omit<AutoEditDecorations, 'insertMarkerDecorations'> {
         const fullLineDeletionDecorations = decorationInfo.removedLines.map(
@@ -312,7 +305,7 @@ export class AutoEditsRenderOutput {
         }
     }
 
-    private createModifiedImageDecorations(
+    protected createModifiedImageDecorations(
         document: vscode.TextDocument,
         decorationInfo: DecorationInfo
     ): Omit<AutoEditDecorations, 'deletionDecorations'> {
