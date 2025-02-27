@@ -120,7 +120,7 @@ class CodyAgentService(private val project: Project) : Disposable {
         }
         setAgentError(project, msg)
         codyAgent.completeExceptionally(CodyAgentException(msg, e))
-      } catch (e: Exception) {
+      } catch (e: Throwable) {
         val msg = CodyBundle.getString("error.cody-starting.message")
         setAgentError(project, msg)
         logger.error(msg, e)
@@ -136,7 +136,7 @@ class CodyAgentService(private val project: Project) : Disposable {
       return (shutdownFuture ?: CompletableFuture.completedFuture(null)).thenCompose {
         WebUIService.getInstance(project).reset()
       }
-    } catch (e: Exception) {
+    } catch (e: Throwable) {
       logger.warn("Failed to stop Cody agent gracefully", e)
       return CompletableFuture.failedFuture(e)
     } finally {
@@ -190,7 +190,7 @@ class CodyAgentService(private val project: Project) : Disposable {
                 else instance.codyAgent
             callback.accept(agent.get())
             setAgentError(project, null)
-          } catch (e: Exception) {
+          } catch (e: Throwable) {
             logger.warn("Failed to execute call to agent", e)
             if (restartIfNeeded && e !is ProcessCanceledException) {
               instance.restartAgent()
@@ -213,7 +213,7 @@ class CodyAgentService(private val project: Project) : Disposable {
     fun isConnected(project: Project): Boolean {
       return try {
         getInstance(project).codyAgent.getNow(null)?.isConnected() == true
-      } catch (e: Exception) {
+      } catch (e: Throwable) {
         false
       }
     }

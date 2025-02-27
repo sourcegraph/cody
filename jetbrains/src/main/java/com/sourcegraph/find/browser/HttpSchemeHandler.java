@@ -32,7 +32,7 @@ public class HttpSchemeHandler extends CefResourceHandlerAdapter {
     String path;
     try {
       path = new URL(url).getPath();
-    } catch (Exception ignored) {
+    } catch (Throwable ignored) {
       logger.error("Failed to parse request url: " + url);
       return false;
     }

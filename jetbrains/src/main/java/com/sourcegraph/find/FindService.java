@@ -115,7 +115,7 @@ public class FindService implements Disposable {
                 () -> {
                   try {
                     mainPanel.getPreviewPanel().getPreviewContent().openInEditorOrBrowser();
-                  } catch (Exception e) {
+                  } catch (Throwable e) {
                     logger.warn("Error opening file in editor", e);
                   }
                 });
@@ -209,7 +209,7 @@ public class FindService implements Disposable {
                   ActionManager.getInstance(),
                   0));
         }
-      } catch (Exception ignored) {
+      } catch (Throwable ignored) {
       }
     }
   }

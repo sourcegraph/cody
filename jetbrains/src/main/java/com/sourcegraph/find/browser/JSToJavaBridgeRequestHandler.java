@@ -130,7 +130,7 @@ public class JSToJavaBridgeRequestHandler {
           arguments = request.getAsJsonObject("arguments");
           try {
             previewContent = PreviewContent.fromJson(project, arguments);
-          } catch (Exception e) {
+          } catch (Throwable e) {
             return createErrorResponse(
                 "Parsing error while opening link: "
                     + e.getClass().getName()
@@ -145,7 +145,7 @@ public class JSToJavaBridgeRequestHandler {
                   () -> {
                     try {
                       previewContent.openInEditorOrBrowser();
-                    } catch (Exception e) {
+                    } catch (Throwable e) {
                       Logger logger = Logger.getInstance(JSToJavaBridgeRequestHandler.class);
                       logger.warn("Error while opening link.", e);
                     }
@@ -168,7 +168,7 @@ public class JSToJavaBridgeRequestHandler {
         default:
           return createErrorResponse("Unknown action: '" + action + "'.", "No stack trace");
       }
-    } catch (Exception e) {
+    } catch (Throwable e) {
       return createErrorResponse(
           action + ": " + e.getClass().getName() + ": " + e.getMessage(),
           convertStackTraceToString(e));
@@ -180,7 +180,7 @@ public class JSToJavaBridgeRequestHandler {
     return project;
   }
 
-  public JBCefJSQuery.Response handleInvalidRequest(@NotNull Exception e) {
+  public JBCefJSQuery.Response handleInvalidRequest(@NotNull Throwable e) {
     return createErrorResponse(
         "Invalid JSON passed to bridge. The error is: " + e.getClass() + ": " + e.getMessage(),
         convertStackTraceToString(e));
@@ -198,7 +198,7 @@ public class JSToJavaBridgeRequestHandler {
   }
 
   @NotNull
-  private String convertStackTraceToString(@NotNull Exception e) {
+  private String convertStackTraceToString(@NotNull Throwable e) {
     StringWriter sw = new StringWriter();
     PrintWriter pw = new PrintWriter(sw);
     e.printStackTrace(pw);
