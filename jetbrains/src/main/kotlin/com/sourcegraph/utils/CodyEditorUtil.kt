@@ -79,11 +79,6 @@ object CodyEditorUtil {
   }
 
   @JvmStatic
-  fun getFirstSelectedEditor(project: Project): Editor? {
-    return getSelectedEditors(project).firstOrNull()
-  }
-
-  @JvmStatic
   fun getEditorForDocument(document: Document): Editor? {
     return getAllOpenEditors().find { it.document == document }
   }
