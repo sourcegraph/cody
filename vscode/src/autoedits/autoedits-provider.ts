@@ -28,8 +28,12 @@ import { autoeditsOutputChannelLogger } from './output-channel-logger'
 import { type CodeToReplaceData, getCodeToReplaceData } from './prompt/prompt-utils'
 import { ShortTermPromptStrategy } from './prompt/short-term-diff-prompt-strategy'
 import type { DecorationInfo } from './renderer/decorators/base'
+import { DefaultDecorator } from './renderer/decorators/default-decorator'
+import { InlineDiffDecorator } from './renderer/decorators/inline-diff-decorator'
 import { getDecorationInfo } from './renderer/diff-utils'
-import { AutoEditsDefaultRendererManager } from './renderer/manager'
+import { initImageSuggestionService } from './renderer/image-gen'
+import { AutoEditsInlineRendererManager } from './renderer/inline-manager'
+import { AutoEditsDefaultRendererManager, type AutoEditsRendererManager } from './renderer/manager'
 import {
     extractAutoEditResponseFromCurrentDocumentCommentTemplate,
     shrinkReplacerTextToCodeToReplaceRange,
@@ -62,7 +66,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
     private lastTextChangeTimeStamp: number | undefined
     private readonly onSelectionChangeDebounced: DebouncedFunc<typeof this.onSelectionChange>
 
-    public readonly rendererManager: AutoEditsDefaultRendererManager
+    public readonly rendererManager: AutoEditsRendererManager
     private readonly modelAdapter: AutoeditsModelAdapter
 
     private readonly promptStrategy = new ShortTermPromptStrategy()
@@ -78,8 +82,11 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         chatClient: ChatClient,
         fixupController: FixupController,
         statusBar: CodyStatusBar,
-        options: { shouldRenderImage: boolean }
+        decorator: 'default' | 'inline'
     ) {
+        // Initialise the canvas renderer for image generation.
+        initImageSuggestionService()
+
         autoeditsOutputChannelLogger.logDebug('Constructor', 'Constructing AutoEditsProvider')
         this.modelAdapter = createAutoeditsModelAdapter({
             providerName: autoeditsProviderConfig.provider,
@@ -87,7 +94,17 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             chatClient: chatClient,
         })
 
-        this.rendererManager = new AutoEditsDefaultRendererManager(fixupController)
+        console.log('GOT DECORATOR', decorator)
+        this.rendererManager =
+            decorator === 'default'
+                ? new AutoEditsDefaultRendererManager(
+                      editor => new DefaultDecorator(editor),
+                      fixupController
+                  )
+                : new AutoEditsInlineRendererManager(
+                      editor => new InlineDiffDecorator(editor),
+                      fixupController
+                  )
 
         this.onSelectionChangeDebounced = debounce(
             (event: vscode.TextEditorSelectionChangeEvent) => this.onSelectionChange(event),
@@ -345,7 +362,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 return null
             }
 
-            console.log('getting output')
+            console.log('rendererManager class:', this.rendererManager.constructor.name)
             const renderOutput = this.rendererManager.getRenderOutput({
                 requestId,
                 prediction,
@@ -353,8 +370,21 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 position,
                 docContext,
                 decorationInfo,
+                codeToReplaceData,
             })
             console.log('got render output', renderOutput)
+
+            if (renderOutput.type === 'none') {
+                autoeditsOutputChannelLogger.logDebugIfVerbose(
+                    'provideInlineCompletionItems',
+                    'no suggestion to render'
+                )
+                autoeditAnalyticsLogger.markAsDiscarded({
+                    requestId,
+                    discardReason: autoeditDiscardReason.emptyPredictionAfterInlineCompletionExtraction,
+                })
+                return null
+            }
 
             const editor = vscode.window.activeTextEditor
             if (!editor || !areSameUriDocs(document, editor.document)) {
@@ -375,8 +405,12 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             // We need to ensure all the relevant metadata can be retrieved from `requestId` only.
             autoeditAnalyticsLogger.markAsPostProcessed({
                 requestId,
-                prediction: renderOutput.updatedPrediction,
-                decorationInfo,
+                prediction:
+                    'updatedPrediction' in renderOutput ? renderOutput.updatedPrediction : prediction,
+                decorationInfo:
+                    'updatedDecorationInfo' in renderOutput
+                        ? renderOutput.updatedDecorationInfo
+                        : decorationInfo,
                 inlineCompletionItems: 'completions' in renderOutput ? renderOutput.completions : null,
             })
 
@@ -388,7 +422,11 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             }
 
             if ('decorations' in renderOutput) {
-                await this.rendererManager.renderInlineDecorations(editor, renderOutput.decorations)
+                console.log('rendering decorations')
+                await this.rendererManager.renderInlineDecorations(
+                    renderOutput.decorations,
+                    decorationInfo
+                )
             }
 
             // The data structure returned to the agent's from the `autoedits/execute` calls.

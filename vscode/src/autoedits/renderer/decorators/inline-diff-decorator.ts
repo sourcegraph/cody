@@ -9,16 +9,13 @@ export class InlineDiffDecorator implements vscode.Disposable, AutoEditsDecorato
         borderWidth: '1px 1px 0 0',
     })
 
-    public showDecorations(editor: vscode.TextEditor, decorations: AutoEditDecorations): void {
-        editor.setDecorations(this.addedTextDecorationType, decorations.insertionDecorations)
-        editor.setDecorations(this.removedTextDecorationType, decorations.deletionDecorations)
-        editor.setDecorations(this.insertMarkerDecorationType, decorations.insertMarkerDecorations)
-    }
+    constructor(private readonly editor: vscode.TextEditor) {}
 
-    public hideDecorations(editor: vscode.TextEditor): void {
-        editor.setDecorations(this.addedTextDecorationType, [])
-        editor.setDecorations(this.removedTextDecorationType, [])
-        editor.setDecorations(this.insertMarkerDecorationType, [])
+    setDecorations(decorations: AutoEditDecorations): void {
+        console.log('calling set decorations!!')
+        this.editor.setDecorations(this.addedTextDecorationType, decorations.insertionDecorations)
+        this.editor.setDecorations(this.removedTextDecorationType, decorations.deletionDecorations)
+        this.editor.setDecorations(this.insertMarkerDecorationType, decorations.insertMarkerDecorations)
     }
 
     public dispose(): void {
