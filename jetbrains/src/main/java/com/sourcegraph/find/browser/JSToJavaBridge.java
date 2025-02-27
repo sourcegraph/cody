@@ -23,7 +23,7 @@ public class JSToJavaBridge implements Disposable {
           try {
             JsonObject requestAsJson = JsonParser.parseString(requestAsString).getAsJsonObject();
             return requestHandler.handle(requestAsJson);
-          } catch (Exception e) {
+          } catch (Throwable e) {
             return requestHandler.handleInvalidRequest(e);
           }
         });

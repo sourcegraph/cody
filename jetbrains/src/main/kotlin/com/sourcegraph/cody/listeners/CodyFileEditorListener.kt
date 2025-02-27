@@ -27,7 +27,7 @@ class CodyFileEditorListener : FileEditorManagerListener {
       withAgent(source.project) { agent: CodyAgent ->
         agent.server.textDocument_didOpen(protocolTextFile)
       }
-    } catch (x: Exception) {
+    } catch (x: Throwable) {
       logger.warn("Error in fileOpened method for file: ${file.path}", x)
     }
   }
@@ -39,7 +39,7 @@ class CodyFileEditorListener : FileEditorManagerListener {
       withAgent(source.project) { agent: CodyAgent ->
         agent.server.textDocument_didClose(protocolTextFile)
       }
-    } catch (x: Exception) {
+    } catch (x: Throwable) {
       logger.warn("Error in fileClosed method for file: ${file.path}", x)
     }
   }
@@ -59,7 +59,7 @@ class CodyFileEditorListener : FileEditorManagerListener {
             try {
               val textDocument = ProtocolTextDocumentExt.fromVirtualEditorFile(editor, file)
               codyAgent.server.textDocument_didOpen(textDocument)
-            } catch (x: Exception) {
+            } catch (x: Throwable) {
               logger.warn("Error calling textDocument/didOpen for file: ${file.path}", x)
             }
           }
@@ -71,7 +71,7 @@ class CodyFileEditorListener : FileEditorManagerListener {
           try {
             val textDocument = ProtocolTextDocumentExt.fromVirtualEditorFile(editor, file!!)
             codyAgent.server.textDocument_didFocus(TextDocument_DidFocusParams(textDocument.uri))
-          } catch (x: Exception) {
+          } catch (x: Throwable) {
             logger.warn("Error calling textDocument/didFocus on ${file?.path}", x)
           }
         }

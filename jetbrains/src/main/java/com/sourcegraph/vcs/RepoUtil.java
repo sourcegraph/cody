@@ -53,7 +53,7 @@ public class RepoUtil {
       if (remoteBranchName == null) {
         remoteBranchName = codyProjectSettings.getDefaultBranchName();
       }
-    } catch (Exception err) {
+    } catch (Throwable err) {
       String message;
       if (err.getClass().getName().contains("PerforceAuthenticationException")) {
         message = "Perforce authentication error: " + err.getMessage();

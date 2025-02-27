@@ -35,7 +35,7 @@ class CodyErrorSubmitter : ErrorReportSubmitter() {
                 additionalInfo = additionalInfo)
         BrowserUtil.browse(url)
       }
-    } catch (e: Exception) {
+    } catch (e: Throwable) {
       consumer.consume(SubmittedReportInfo(SubmissionStatus.FAILED))
       return false
     }

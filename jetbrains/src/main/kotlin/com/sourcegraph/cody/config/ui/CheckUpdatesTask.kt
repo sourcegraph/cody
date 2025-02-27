@@ -44,7 +44,7 @@ class CheckUpdatesTask(project: Project) :
         val getAllEnabledMethod = pluginUpdates.javaClass.getMethod("getAllEnabled")
         val allEnabled = getAllEnabledMethod.invoke(pluginUpdates)
         return allEnabled?.let { it as (Collection<PluginDownloader>) } ?: emptyList()
-      } catch (e: Exception) {
+      } catch (e: Throwable) {
         when (e) {
           is IllegalAccessException,
           is NoSuchMethodException,

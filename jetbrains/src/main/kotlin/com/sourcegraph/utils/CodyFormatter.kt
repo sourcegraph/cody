@@ -53,7 +53,7 @@ class CodyFormatter {
             } else psiFile.text
         return formattedText.substring(
             range.startOffset, range.endOffset + formattedText.length - document.textLength)
-      } catch (e: Exception) {
+      } catch (e: Throwable) {
         logger.error("Failed to format code snippet", e)
         return completionText
       }

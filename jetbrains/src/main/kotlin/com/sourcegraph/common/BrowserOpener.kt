@@ -28,7 +28,7 @@ object BrowserOpener {
   fun openInBrowser(project: Project?, uri: URI) {
     try {
       BrowserUtil.browse(uri)
-    } catch (e: Exception) {
+    } catch (e: Throwable) {
       try {
         Desktop.getDesktop().browse(uri)
       } catch (e2: IOException) {

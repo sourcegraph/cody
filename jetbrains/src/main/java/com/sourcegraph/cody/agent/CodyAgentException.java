@@ -5,7 +5,7 @@ public class CodyAgentException extends Exception {
     super(message);
   }
 
-  public CodyAgentException(String message, Exception e) {
+  public CodyAgentException(String message, Throwable e) {
     super(message, e);
   }
 

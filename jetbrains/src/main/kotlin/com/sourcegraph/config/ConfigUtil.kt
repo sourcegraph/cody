@@ -177,7 +177,7 @@ object ConfigUtil {
       config
           .root()
           .render(ConfigRenderOptions.defaults().setComments(false).setOriginComments(false))
-    } catch (e: Exception) {
+    } catch (e: Throwable) {
       logger.info("No user defined settings file found. Proceeding with empty custom config")
       ""
     }

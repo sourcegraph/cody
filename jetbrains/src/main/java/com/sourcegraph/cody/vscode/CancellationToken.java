@@ -23,7 +23,7 @@ public class CancellationToken {
         (isCancelled) -> {
           try {
             callback.accept(isCancelled);
-          } catch (Exception ignored) {
+          } catch (Throwable ignored) {
             // Do nothing about exceptions in cancellation callbacks
           }
         });

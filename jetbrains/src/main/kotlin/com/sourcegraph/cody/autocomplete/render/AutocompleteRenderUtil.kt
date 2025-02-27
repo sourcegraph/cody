@@ -13,7 +13,7 @@ object AutocompleteRenderUtil {
       try {
         editor.colorsScheme.getAttributes(
             DefaultLanguageHighlighterColors.INLAY_TEXT_WITHOUT_BACKGROUND)
-      } catch (ignored: Exception) {
+      } catch (ignored: Throwable) {
         editor.colorsScheme.getAttributes(DefaultLanguageHighlighterColors.INLINE_PARAMETER_HINT)
       }
 

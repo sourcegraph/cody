@@ -110,7 +110,7 @@ class CodyFixHighlightPass(val file: PsiFile, val editor: Editor) :
 
                   return@map result
                 }
-              } catch (e: Exception) {
+              } catch (e: Throwable) {
                 val responseErrorException =
                     (e as? ExecutionException)?.cause as? ResponseErrorException
                 if (responseErrorException != null) {

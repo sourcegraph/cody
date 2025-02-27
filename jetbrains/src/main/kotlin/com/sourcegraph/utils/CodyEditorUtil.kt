@@ -186,7 +186,7 @@ object CodyEditorUtil {
           }
       runInEdtAndGet { descriptor.navigate(/* requestFocus= */ preserveFocus != true) }
       return true
-    } catch (e: Exception) {
+    } catch (e: Throwable) {
       logger.error("Cannot switch view to file ${vf.path}", e)
       return false
     }

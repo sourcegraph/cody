@@ -213,7 +213,7 @@ fun download(url: String, output: File) {
     } else {
       error("Failed to download ${url}. Response code: $responseCode")
     }
-  } catch (e: Exception) {
+  } catch (e: Throwable) {
     e.printStackTrace()
     error("Failed to download ${url}")
   } finally {

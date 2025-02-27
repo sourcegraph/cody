@@ -320,7 +320,7 @@ class CodyAutocompleteManager {
               .andShowCloseShortcut()
       try {
         gotit.show(editor.contentComponent) { _, _ -> inlay.bounds!!.location }
-      } catch (e: Exception) {
+      } catch (e: Throwable) {
         logger.info("Failed to display gotit tooltip", e)
       }
     }
@@ -355,7 +355,7 @@ class CodyAutocompleteManager {
           }
           location
         }
-      } catch (e: Exception) {
+      } catch (e: Throwable) {
         logger.info("Failed to display gotit tooltip", e)
       }
     }

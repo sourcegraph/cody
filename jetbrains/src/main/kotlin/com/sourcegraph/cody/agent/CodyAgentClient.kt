@@ -70,7 +70,7 @@ class CodyAgentClient(private val project: Project, private val webview: NativeW
     ApplicationManager.getApplication().invokeLater {
       try {
         result.complete(callback.invoke())
-      } catch (e: Exception) {
+      } catch (e: Throwable) {
         result.completeExceptionally(e)
       }
     }

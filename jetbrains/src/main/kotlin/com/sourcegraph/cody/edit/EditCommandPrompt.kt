@@ -282,7 +282,7 @@ class EditCommandPrompt(
       connection?.disconnect()
       connection = null
       popup?.cancel()
-    } catch (x: Exception) {
+    } catch (x: Throwable) {
       logger.warn("Error cancelling edit command prompt", x)
     } finally {
       dispose()
