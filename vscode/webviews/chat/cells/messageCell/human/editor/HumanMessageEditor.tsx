@@ -423,7 +423,6 @@ export const HumanMessageEditor: FunctionComponent<{
         [linkOpener]
     )
 
-    // TODO: Finish implementing "current repo not indexed" handling for v2 editor
     const Editor = experimentalPromptEditorEnabled ? PromptEditorV2 : PromptEditor
 
     return (
