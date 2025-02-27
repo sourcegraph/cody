@@ -16,16 +16,16 @@ function registerAgent(id: string, ctr: (id: string, tools: AgentTools) => Agent
     agentRegistry.set(id, ctr)
 }
 
-export function getAgent(id: string, modelId: string, tools: AgentTools): AgentHandler {
+export function getAgent(id: string, tools: AgentTools): AgentHandler {
     const { contextRetriever, editor, chatClient } = tools
     if (id === DeepCodyAgentID) {
-        return new DeepCodyHandler(modelId, contextRetriever, editor, chatClient)
+        return new DeepCodyHandler(contextRetriever, editor, chatClient)
     }
     if (agentRegistry.has(id)) {
         return agentRegistry.get(id)!(id, tools)
     }
     // If id is not found, assume it's a base model
-    return new ChatHandler(modelId, contextRetriever, editor, chatClient)
+    return new ChatHandler(contextRetriever, editor, chatClient)
 }
 
 registerAgent('search', (_id: string, _tools: AgentTools) => new SearchHandler())
@@ -39,6 +39,6 @@ registerAgent(
     (_id: string, { contextRetriever, editor }: AgentTools) =>
         new EditHandler('insert', contextRetriever, editor)
 )
-registerAgent(ToolCodyModelRef, (_id: string, { contextRetriever, chatClient, editor }: AgentTools) => {
-    return new ExperimentalToolHandler(chatClient, contextRetriever, editor)
+registerAgent(ToolCodyModelRef, (_id: string, { contextRetriever, editor, chatClient }: AgentTools) => {
+    return new ExperimentalToolHandler(contextRetriever, editor, chatClient)
 })

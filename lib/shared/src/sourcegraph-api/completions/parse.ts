@@ -34,6 +34,7 @@ export interface CompletionData {
     completion?: string
     deltaText?: string
     delta_thinking?: string
+    delta_tool_calls?: string[]
     stopReason?: string
 }
 

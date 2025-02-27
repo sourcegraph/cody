@@ -30,8 +30,8 @@ import { DefaultPrompter, type PromptInfo } from '../prompt'
 import type { AgentHandler, AgentHandlerDelegate, AgentRequest } from './interfaces'
 
 export class ChatHandler implements AgentHandler {
+    private modelId: string | undefined
     constructor(
-        protected modelId: string,
         protected contextRetriever: Pick<ContextRetriever, 'retrieveContext' | 'computeDidYouMean'>,
         protected readonly editor: ChatControllerOptions['editor'],
         protected chatClient: ChatControllerOptions['chatClient']
@@ -47,9 +47,11 @@ export class ChatHandler implements AgentHandler {
             chatBuilder,
             recorder,
             span,
+            model,
         }: AgentRequest,
         delegate: AgentHandlerDelegate
     ): Promise<void> {
+        this.modelId = model
         // All mentions we receive are either source=initial or source=user. If the caller
         // forgot to set the source, assume it's from the user.
         mentions = mentions.map(m => (m.source ? m : { ...m, source: ContextItemSource.User }))
@@ -104,12 +106,12 @@ export class ChatHandler implements AgentHandler {
         // Send context to webview for display before sending the request.
         delegateWithDidYouMean.postMessageInProgress({
             speaker: 'assistant',
-            model: this.modelId,
+            model,
         })
         this.streamAssistantResponse(
             requestID,
             prompt,
-            this.modelId,
+            model,
             signal,
             chatBuilder,
             delegateWithDidYouMean
@@ -185,7 +187,7 @@ export class ChatHandler implements AgentHandler {
         }
     }
 
-    private streamAssistantResponse(
+    protected streamAssistantResponse(
         requestID: string,
         prompt: Message[],
         model: ChatModel,
@@ -234,7 +236,7 @@ export class ChatHandler implements AgentHandler {
         )
     }
 
-    private async buildPrompt(
+    public async buildPrompt(
         prompter: DefaultPrompter,
         chatBuilder: ChatBuilder,
         abortSignal: AbortSignal,

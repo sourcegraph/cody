@@ -56,6 +56,28 @@ export interface ToolSpec {
 
     // TODO[jlxu]: Support cache_control in the future
 }
+
+export interface FunctionToolSpec {
+    type: 'function'
+    function: {
+        name: string
+        description?: string
+        parameters: {
+            type: string
+            properties: Record<string, any>
+            required?: string[]
+        }
+    }
+}
+
+export interface DeltaToolCall {
+    id: string
+    type: 'function'
+    function: {
+        name: string
+        arguments: string
+    }
+}
 export interface CompletionUsage {
     completion_tokens: number | null
     prompt_tokens: number | null
@@ -72,13 +94,17 @@ export interface CompletionResponse {
     completion: string
     thinking?: string
     stopReason?: string
+    deltaText?: string
+    delta_tool_calls?: DeltaToolCall[]
+    model?: string
+    usage?: CompletionUsage
 }
 
 export interface CompletionParameters {
     fast?: boolean
     messages: Message[]
     maxTokensToSample: number
-    tools?: ToolSpec[]
+    tools?: (ToolSpec | FunctionToolSpec)[]
     temperature?: number
     stopSequences?: string[]
     topK?: number
