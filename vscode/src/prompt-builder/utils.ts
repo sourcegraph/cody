@@ -36,6 +36,7 @@ export function renderContextItem(contextItem: ContextItem): ContextMessage | nu
         parts.push({
             type: 'image_url',
             image_url: { url: data.replace(/data:[^;]+;base64,/, '') },
+            mimeType,
         } satisfies MessagePart)
         return { speaker: 'human', text: ps`Here is the image file.`, file: contextItem, content: parts }
     }

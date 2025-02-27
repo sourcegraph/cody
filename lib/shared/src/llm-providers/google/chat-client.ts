@@ -1,6 +1,11 @@
 import { GoogleGenerativeAI } from '@google/generative-ai'
 import type { ChatNetworkClientParams } from '..'
-import { type CompletionResponse, CompletionStopReason, getCompletionsModelConfig } from '../..'
+import {
+    type CompletionResponse,
+    CompletionStopReason,
+    getCompletionsModelConfig,
+    logDebug,
+} from '../..'
 import { constructGeminiChatMessages } from './utils'
 
 /**
@@ -45,6 +50,7 @@ export async function googleChatClient({
 
         // Construct the messages array for the API
         const messages = await constructGeminiChatMessages(params.messages) // Ensure this line is present and used
+        logDebug('Google Chat', 'messages', { verbose: messages })
         const lastMessage = messages.pop()
         if (!lastMessage) {
             return

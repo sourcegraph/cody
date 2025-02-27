@@ -14,7 +14,7 @@ export const ImageUploadButton: React.FC<{
     model: Model
 }> = ({ onMediaUpload, model }) => {
     // Only works with BYOK and Vision models
-    if (!model.tags.includes(ModelTag.BYOK) && !model.tags.includes(ModelTag.Vision)) {
+    if (!model?.tags?.includes(ModelTag.BYOK) && !model?.tags?.includes(ModelTag.Vision)) {
         return null
     }
     const [uploadedImage, setUploadedImage] = useState<string | null>(null)

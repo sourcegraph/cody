@@ -30,10 +30,13 @@ export async function constructGeminiChatMessages(messages: Message[]): Promise<
                 if (part.type === 'text' && part.text?.length) {
                     parts.push({ text: part.text })
                 }
-                if (part.type === 'media' && part.mimeType && part.data) {
-                    const data = part.data.replace(/data:[^;]+;base64,/, '')
+                if (part.type === 'image_url' && part.image_url?.url) {
+                    let data = part.image_url?.url
+                    if (data.startsWith('data:')) {
+                        data = part.image_url?.url
+                    }
                     parts.push({
-                        inlineData: { mimeType: part.mimeType, data },
+                        inlineData: { mimeType: 'image/png', data },
                     } satisfies InlineDataPart)
                 }
                 // TODO (bee) add support for function calls
