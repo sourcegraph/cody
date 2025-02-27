@@ -158,9 +158,10 @@ class FireworksProvider extends Provider {
                 })
             }
         }
-
+        const headers = this.getCustomHeaders(authStatus.isFireworksTracingEnabled)
+        headers['X-Sourcegraph-Interaction-ID'] = options.completionLogId
         return this.client.complete(requestParams, abortController, {
-            customHeaders: this.getCustomHeaders(authStatus.isFireworksTracingEnabled),
+            customHeaders: headers,
         })
     }
 
