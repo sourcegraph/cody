@@ -4,7 +4,7 @@ import { LoaderIcon, MinusIcon, PlusIcon } from 'lucide-react'
 import type React from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
-import { type Guardrails, type PromptString, isError } from '@sourcegraph/cody-shared'
+import type { Guardrails, PromptString } from '@sourcegraph/cody-shared'
 
 import type { FixupTaskID } from '../../../src/non-stop/FixupTask'
 import { CodyTaskState } from '../../../src/non-stop/state'
@@ -13,7 +13,6 @@ import { MarkdownFromCody } from '../../components/MarkdownFromCody'
 import { useConfig } from '../../utils/useConfig'
 import type { PriorHumanMessageInfo } from '../cells/messageCell/assistant/AssistantMessageCell'
 import styles from './ChatMessageContent.module.css'
-import { GuardrailsStatusController } from './GuardRailStatusController'
 import { createButtons, createButtonsExperimentalUI } from './create-buttons'
 import { extractThinkContent, getCodeBlockId } from './utils'
 
@@ -175,7 +174,9 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
                         config.config.hasEditCapability ? insertButtonOnSubmit : undefined,
                         smartApplyInterceptor,
                         smartApplyId,
-                        smartApplyState
+                        smartApplyState,
+                        guardrails,
+                        isMessageLoading
                     )
                 } else {
                     buttons = createButtons(
@@ -183,37 +184,6 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
                         copyButtonOnSubmit,
                         config.config.hasEditCapability ? insertButtonOnSubmit : undefined
                     )
-                }
-
-                const metadataContainer = buttons.querySelector(`.${styles.metadataContainer}`)
-                if (metadataContainer && guardrails) {
-                    const container = document.createElement('div')
-                    container.classList.add(styles.attributionContainer)
-                    metadataContainer.append(container)
-
-                    if (!isMessageLoading) {
-                        const g = new GuardrailsStatusController(container)
-                        g.setPending()
-
-                        guardrails
-                            .searchAttribution(preText)
-                            .then(attribution => {
-                                if (isError(attribution)) {
-                                    g.setUnavailable(attribution)
-                                } else if (attribution.repositories.length === 0) {
-                                    g.setSuccess()
-                                } else {
-                                    g.setFailure(
-                                        attribution.repositories.map(r => r.name),
-                                        attribution.limitHit
-                                    )
-                                }
-                            })
-                            .catch(error => {
-                                g.setUnavailable(error)
-                                return
-                            })
-                    }
                 }
 
                 const parent = preElement.parentNode
@@ -224,15 +194,15 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
                 const actionsContainer = buttons.querySelector(`[data-container-type="actions"]`)
                 if (!previewContainer || !actionsContainer) return
 
-                // First add the preview container
+                // Insert the preview container right before this code block
                 parent.insertBefore(previewContainer, preElement)
 
-                // Then move the code block after preview container
-                parent.removeChild(preElement)
-                parent.insertBefore(preElement, null)
-
-                // Finally add the actions container after the code block
-                parent.appendChild(actionsContainer)
+                // Add the actions container right after this code block
+                if (preElement.nextSibling) {
+                    parent.insertBefore(actionsContainer, preElement.nextSibling)
+                } else {
+                    parent.appendChild(actionsContainer)
+                }
             }
         }
     }, [
