@@ -202,8 +202,13 @@ export async function handleSmartApply({
     const workspaceUri = vscode.workspace.workspaceFolders?.[0].uri
     const uri = await resolveRelativeOrAbsoluteUri(workspaceUri, fileUri, activeEditor?.document?.uri)
 
+    // TODO: move this logic to the smart apply manager
     const isNewFile = uri && !(await doesFileExist(uri))
     if (isNewFile) {
+        if (isPrefetch) {
+            return
+        }
+
         const workspaceEditor = new vscode.WorkspaceEdit()
         workspaceEditor.createFile(uri, { ignoreIfExists: false })
         await vscode.workspace.applyEdit(workspaceEditor)
