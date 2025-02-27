@@ -356,6 +356,7 @@ const defaultBySourceCount: BySourceCount = {
         'current-repository': undefined,
         'current-directory': undefined,
         'current-open-tabs': undefined,
+        mode: undefined,
     },
 }
 

@@ -548,9 +548,11 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
     private async getConfigForWebview(): Promise<ConfigurationSubsetForWebview & LocalEnv> {
         const { configuration, auth } = await currentResolvedConfig()
-        const experimentalPromptEditorEnabled = await firstValueFrom(
-            featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyExperimentalPromptEditor)
-        )
+        const experimentalPromptEditorEnabled =
+            true ||
+            (await firstValueFrom(
+                featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyExperimentalPromptEditor)
+            ))
         const sidebarViewOnly = this.extensionClient.capabilities?.webviewNativeConfig?.view === 'single'
         const isEditorViewType = this.webviewPanelOrView?.viewType === 'cody.editorPanel'
         const webviewType = isEditorViewType && !sidebarViewOnly ? 'editor' : 'sidebar'
@@ -685,7 +687,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 this.chatBuilder.addHumanMessage({
                     text: inputText,
                     editorState,
-                    intent: manuallySelectedIntent,
+                    intent: this.intentFromMentions(mentions) ?? manuallySelectedIntent,
                     agent: selectedAgent,
                 })
                 this.setCustomChatTitle(requestID, inputText, signal, model)
@@ -709,6 +711,15 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 )
             })
         })
+    }
+
+    private intentFromMentions(mentions: ContextItem[]): ChatMessage['intent'] {
+        const mention = mentions.findLast(mention => mention.type === 'mode')
+        if (mention) {
+            return mention.mode as ChatMessage['intent']
+        }
+
+        return undefined
     }
 
     private async sendChat(
@@ -755,12 +766,13 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         recorder.recordChatQuestionSubmitted(mentions)
 
         signal.throwIfAborted()
-        this.chatBuilder.setLastMessageIntent(manuallySelectedIntent)
+        const intent = this.intentFromMentions(mentions) ?? manuallySelectedIntent
+        this.chatBuilder.setLastMessageIntent(intent)
 
         this.postEmptyMessageInProgress(model)
 
-        const agentName = ['search', 'edit', 'insert'].includes(manuallySelectedIntent ?? '')
-            ? (manuallySelectedIntent as string)
+        const agentName = ['search', 'edit', 'insert'].includes(intent ?? '')
+            ? (intent as string)
             : chatAgent ?? 'chat'
         const agent = getAgent(agentName, model, {
             contextRetriever: this.contextRetriever,
@@ -769,7 +781,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         })
 
         recorder.setIntentInfo({
-            userSpecifiedIntent: manuallySelectedIntent ?? 'chat',
+            userSpecifiedIntent: intent ?? 'chat',
         })
 
         this.postEmptyMessageInProgress(model)

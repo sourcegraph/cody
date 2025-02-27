@@ -215,6 +215,7 @@ const prosemirrorActor = fromCallback<ProseMirrorMachineEvent, ProseMirrorMachin
 
 export interface DataLoaderInput {
     query: string
+    triggerChar: string
     context?: ContextMentionProviderMetadata
     parent: ActorLike<any, { type: 'mentionsMenu.results.set'; items: MenuItem[] }>
 }
@@ -269,7 +270,7 @@ type EditorEvents =
     // Used internall to notify the machine that an @mention has been removed.
     | { type: 'atMention.removed' }
     // Used internall to notify the machine that the value of an @mention has changed.
-    | { type: 'atMention.updated'; query: string }
+    | { type: 'atMention.updated'; query: string; triggerChar: string }
     // (Potentially) replace the current @mention with the provided context item. Not every item with cause
     // the @mention to be replaced, some might cause other changes to the machine's state.
     | { type: 'atMention.apply'; item: ContextItem | ContextMentionProviderMetadata }
@@ -319,6 +320,7 @@ interface PromptInputContext {
     mentionsMenu: {
         parent?: ContextMentionProviderMetadata
         query: string
+        triggerChar: string
         selectedIndex: number
         items: MenuItem[]
         position: Position
@@ -428,7 +430,11 @@ export const promptInput = setup({
                 // Notify the machine of any changes to the at-mention value
                 const mentionValue = getAtMentionValue(nextState)
                 if (mentionValue !== undefined && mentionValue !== getAtMentionValue(prevState)) {
-                    enqueue.raise({ type: 'atMention.updated', query: mentionValue.slice(1) })
+                    enqueue.raise({
+                        type: 'atMention.updated',
+                        query: mentionValue.slice(1),
+                        triggerChar: mentionValue[0],
+                    })
                 }
 
                 // Notify the machine of any changes to the at-mention state
@@ -478,6 +484,7 @@ export const promptInput = setup({
             input: ({ context, self }) => ({
                 context: context.mentionsMenu.parent,
                 query: context.mentionsMenu.query,
+                triggerChar: context.mentionsMenu.triggerChar,
                 parent: self,
             }),
         }),
@@ -523,6 +530,7 @@ export const promptInput = setup({
         }),
         mentionsMenu: {
             query: '',
+            triggerChar: '',
             selectedIndex: 0,
             items: [],
             position: { top: 0, left: 0, bottom: 0, right: 0 },
@@ -746,6 +754,7 @@ export const promptInput = setup({
                                 type: 'assignMentionsMenu',
                                 params: ({ event }) => ({
                                     query: event.query,
+                                    triggerChar: event.triggerChar,
                                 }),
                             },
                             reenter: true,
@@ -790,6 +799,7 @@ export const promptInput = setup({
                             type: 'assignMentionsMenu',
                             params: ({ event }) => ({
                                 query: event.query,
+                                triggerChar: event.triggerChar,
                             }),
                         },
                     ],

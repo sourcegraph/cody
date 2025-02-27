@@ -1,8 +1,8 @@
 import type { RangeData } from '../common/range'
+import { GLOBAL_SEARCH_WITHOUT_PROVIDER } from '../context/openctx/api'
 import {
     type ContextMentionProviderID,
     type ContextMentionProviderMetadata,
-    FILE_CONTEXT_MENTION_PROVIDER,
     SYMBOL_CONTEXT_MENTION_PROVIDER,
 } from './api'
 
@@ -28,6 +28,11 @@ export interface MentionQuery {
      * The user's text input, to be interpreted as a fuzzy-matched query.
      */
     text: string
+
+    /**
+     * The character that triggered the mention (e.g. '@' or '#').
+     */
+    triggerChar?: string
 
     /**
      * The line range in the query, if any.
@@ -75,8 +80,9 @@ export function parseMentionQuery(
     }
 
     const { textWithoutRange, maybeHasRangeSuffix, range } = extractRangeFromFileMention(query)
+
     return {
-        provider: FILE_CONTEXT_MENTION_PROVIDER.id,
+        provider: GLOBAL_SEARCH_WITHOUT_PROVIDER,
         text: textWithoutRange,
         maybeHasRangeSuffix,
         range,

@@ -4,7 +4,8 @@ import { type EditorState, Plugin, PluginKey, TextSelection, type Transaction } 
 import { Decoration, DecorationSet } from 'prosemirror-view'
 import styles from './atMention.module.css'
 
-export const AT_MENTION_TRIGGER_CHARACTER = '@'
+export const AT_MENTION_TRIGGER_CHARACTERS = ['@', '/'] as const
+export type AtMentionTriggerChar = (typeof AT_MENTION_TRIGGER_CHARACTERS)[number]
 
 export interface Position {
     top: number
@@ -26,11 +27,52 @@ const emptyState: AtMentionPluginState = {
 
 const atMentionPluginKey = new PluginKey<AtMentionPluginState>('suggestions')
 
+const PUNCTUATION = ',\\+\\*\\$\\|#{}\\(\\)\\^\\[\\]!\'"<>;'
+
+const TRIGGERS = AT_MENTION_TRIGGER_CHARACTERS.map(char => `\\${char}`).join('')
+
+const MAX_LENGTH = 250
+
+const RANGE_REGEXP = '(?::\\d+(?:-\\d*)?)?'
+
+function generateAtMentionsRegExp(params: {
+    includeWhitespace: boolean
+}): RegExp {
+    const { includeWhitespace } = params
+    /** Chars we expect to see in a mention. */
+    const validChars = '[^' + PUNCTUATION + (includeWhitespace ? '' : '\\s') + ']'
+
+    return new RegExp(
+        '(?<maybeLeadingWhitespace>^|\\s|\\()(?<replaceableString>' +
+            '[' +
+            TRIGGERS +
+            ']' +
+            '(?<matchingString>#?(?:' +
+            validChars +
+            '){0,' +
+            MAX_LENGTH +
+            '}' +
+            RANGE_REGEXP +
+            ')' +
+            ')$'
+    )
+}
+
 /**
- * Creates a new at-mention plugin. The plugin tracks the presence of '@...' slices in the editor.
- * When an '@' character is typed, the plugin will activate and track the filter text.
+ * Used to scan for mentions in the quick pick menu.
+ */
+export const AT_MENTIONS_REGEXP_NO_SPACES = generateAtMentionsRegExp({ includeWhitespace: false })
+
+/**
+ * Used to scan for mentions in the Lexical input.
+ */
+export const AT_MENTIONS_REGEXP_ALLOW_SPACES = generateAtMentionsRegExp({ includeWhitespace: true })
+
+/**
+ * Creates a new at-mention plugin. The plugin tracks the presence of '@...' or '/...' slices in the editor.
+ * When an '@' or '/' character is typed, the plugin will activate and track the filter text.
  *
- * Note that this behavior has to be triggered explicitly, i.e. not every '@' character that happens
+ * Note that this behavior has to be triggered explicitly, i.e. not every '@' or '/' character that happens
  * to be present in the value is an at-mention.
  *
  * @return An array of ProseMirror plugins
@@ -126,15 +168,16 @@ export function createAtMentionPlugin(): Plugin[] {
     return [
         plugin,
         inputRules({
-            rules: [
-                new InputRule(
-                    // Trigger on @, at beginning or after space
-                    new RegExp(`(^|\\s)${AT_MENTION_TRIGGER_CHARACTER}$`),
-                    (state, match, start, end) => {
-                        return enableAtMention(state.tr.insertText(match[0], start, end))
-                    }
-                ),
-            ],
+            rules: AT_MENTION_TRIGGER_CHARACTERS.map(
+                char =>
+                    new InputRule(
+                        // Trigger on @ or /, at beginning or after space
+                        new RegExp(`(^|\\s)\\${char}$`),
+                        (state, match, start, end) => {
+                            return enableAtMention(state.tr.insertText(match[0], start, end))
+                        }
+                    )
+            ),
         }),
     ]
 }
@@ -176,7 +219,7 @@ export function hasAtMention(state: EditorState): boolean {
 }
 
 /**
- * Returns the value of the current at-mention, including the leading '@' character.
+ * Returns the value of the current at-mention, including the leading trigger character (@ or /).
  * If no at-mention is active, returns undefined.
  *
  * @param state The current editor state
@@ -236,7 +279,7 @@ export function getAtMentionPosition(state: EditorState): number {
 }
 
 /**
- * Sets the text value of the current at-mention. Leading '@' character is trimmed if present.
+ * Sets the text value of the current at-mention. Leading trigger character is trimmed if present.
  * @param state The current editor state
  * @param value The new value of the at-mention
  * @returns The start position of the at-mention
@@ -250,7 +293,8 @@ export function setAtMentionValue(state: EditorState, value: string): Transactio
         // Special case that requires a deletion operation
         return state.tr.delete(decoration.from + 1, decoration.to)
     }
-    if (value.startsWith(AT_MENTION_TRIGGER_CHARACTER)) {
+    // Check if value starts with any of the trigger characters
+    if (AT_MENTION_TRIGGER_CHARACTERS.some(char => value.startsWith(char))) {
         value = value.slice(1)
     }
     return state.tr.replaceWith(decoration.from + 1, decoration.to, state.schema.text(value))
@@ -266,5 +310,12 @@ function getDecoration(state: EditorState): Decoration | undefined {
  * This is currently the case when the at-mention ends with three or more spaces.
  */
 function shouldRemoveAtMention(mentionValue: string): boolean {
+    // Check if the mention value has the proper format using our regex
+    const match = mentionValue.match(AT_MENTIONS_REGEXP_ALLOW_SPACES)
+    if (!match) {
+        return true // Remove if it doesn't match our expected format
+    }
+
+    // Or if it ends with three or more spaces (original behavior)
     return /\s{3,}$/.test(mentionValue)
 }

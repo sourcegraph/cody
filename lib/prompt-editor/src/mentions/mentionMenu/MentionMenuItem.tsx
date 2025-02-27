@@ -31,6 +31,9 @@ import {
     LibraryBigIcon,
     LinkIcon,
     ListMinusIcon,
+    MessageSquareIcon,
+    PencilIcon,
+    SearchIcon,
     SmileIcon,
     SquareDashedMousePointerIcon,
     SquareFunctionIcon,
@@ -183,6 +186,9 @@ export const iconForProvider: Record<
     [REMOTE_DIRECTORY_PROVIDER_URI]: FolderGitIcon,
     [WEB_PROVIDER_URI]: LinkIcon,
     [RULES_PROVIDER_URI]: BookCheckIcon,
+    search: SearchIcon,
+    edit: PencilIcon,
+    chat: MessageSquareIcon,
 }
 
 const iconForItem: Record<
@@ -200,4 +206,7 @@ const iconForItem: Record<
     file: FileIcon,
     'square-dashed-mouse-pointer': SquareDashedMousePointerIcon,
     'layout-menubar': LayoutPanelTopIcon,
+    chat: MessageSquareIcon,
+    search: SearchIcon,
+    edit: PencilIcon,
 }

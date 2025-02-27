@@ -21,7 +21,7 @@ import {
     setDocument,
     upsertMentions,
 } from './actions'
-import { AT_MENTION_TRIGGER_CHARACTER, type Position, enableAtMention } from './plugins/atMention'
+import { AT_MENTION_TRIGGER_CHARACTERS, type Position, enableAtMention } from './plugins/atMention'
 import { type DataLoaderInput, type MenuItem, promptInput, schema } from './promptInput'
 
 type PromptInputLogic = typeof promptInput
@@ -65,9 +65,11 @@ interface PromptEditorOptions {
      * populate the mentions menu. The function is passed the current query (@mention) and the currently
      * selected provider (if any).
      */
-    fetchMenuData: (args: { query: string; provider?: ContextMentionProviderMetadata }) => Observable<
-        MenuItem[]
-    >
+    fetchMenuData: (args: {
+        query: string
+        triggerChar: string
+        provider?: ContextMentionProviderMetadata
+    }) => Observable<MenuItem[]>
 }
 
 interface PromptEditorAPI {
@@ -103,7 +105,11 @@ export const usePromptInput = (options: PromptEditorOptions): [PromptInputActor,
         () =>
             fromCallback<AnyEventObject, DataLoaderInput>(({ input }) => {
                 const subscription = options
-                    .fetchMenuData({ query: input.query, provider: input.context })
+                    .fetchMenuData({
+                        query: input.query,
+                        triggerChar: input.triggerChar,
+                        provider: input.context,
+                    })
                     .subscribe(next => {
                         input.parent.send({ type: 'mentionsMenu.results.set', items: next })
                     })
@@ -199,7 +205,7 @@ export const usePromptInput = (options: PromptEditorOptions): [PromptInputActor,
                 editor.send({
                     type: 'document.update',
                     transaction: state =>
-                        enableAtMention(appendToDocument(state, AT_MENTION_TRIGGER_CHARACTER)),
+                        enableAtMention(appendToDocument(state, AT_MENTION_TRIGGER_CHARACTERS[0])),
                 })
             },
             addMentions(items: ContextItem[], position: 'before' | 'after' = 'after', seperator = ' ') {
@@ -285,6 +291,10 @@ interface MentionsMenuData {
      * The currently selected provider, if any.
      */
     parent: ContextMentionProviderMetadata | null
+    /**
+     * The character that triggers the mentions menu.
+     */
+    triggerChar: string
 }
 
 /**
@@ -302,5 +312,6 @@ export function useMentionsMenu(input: PromptInputActor): MentionsMenuData {
         selectedIndex: mentionsMenu.selectedIndex,
         query: mentionsMenu.query,
         position: mentionsMenu.position,
+        triggerChar: mentionsMenu.triggerChar,
     }
 }

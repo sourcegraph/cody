@@ -1,6 +1,7 @@
 import type { Mention } from '@openctx/client'
 import {
     type ContextItem,
+    type ContextItemMode,
     type ContextItemOpenCtx,
     type ContextItemRepository,
     type ContextMentionProviderID,
@@ -24,6 +25,7 @@ import {
     switchMapReplayOperation,
     telemetryEvents,
 } from '@sourcegraph/cody-shared'
+import { GLOBAL_SEARCH_WITHOUT_PROVIDER } from '@sourcegraph/cody-shared/src/context/openctx/api'
 import { LRUCache } from 'lru-cache'
 import { Observable, map } from 'observable-fns'
 import * as vscode from 'vscode'
@@ -76,11 +78,15 @@ export function getMentionMenuData(options: {
 
         const queryLower = options.query.text.toLowerCase()
 
-        const providers = (
-            options.query.provider === null
-                ? mentionProvidersMetadata({ disableProviders: options.disableProviders })
-                : Observable.of([])
-        ).pipe(map(providers => providers.filter(p => p.title.toLowerCase().includes(queryLower))))
+        const providers =
+            options.query.triggerChar === '/'
+                ? Observable.of([])
+                : (options.query.provider === null
+                      ? mentionProvidersMetadata({ disableProviders: options.disableProviders })
+                      : Observable.of([])
+                  ).pipe(
+                      map(providers => providers.filter(p => p.title.toLowerCase().includes(queryLower)))
+                  )
 
         const results = combineLatest(providers, items).map(([providers, items]) => ({
             providers,
@@ -119,9 +125,24 @@ export async function getChatContextItemsForMention(
     const MAX_RESULTS = 20
     const { mentionQuery, rangeFilter = true } = options
 
+    if (mentionQuery.triggerChar === '/') {
+        return getModeMentionItems(mentionQuery.text)
+    }
+
     switch (mentionQuery.provider) {
         case null:
-            return getOpenTabsContextFile()
+            return [
+                ...(await getModeMentionItems(mentionQuery.text)),
+                ...(await getOpenTabsContextFile()),
+            ]
+        case GLOBAL_SEARCH_WITHOUT_PROVIDER:
+            if (mentionQuery.text.startsWith('/') || mentionQuery.text.startsWith('@')) {
+                return getModeMentionItems(mentionQuery.text.slice(1))
+            }
+            return [
+                ...(await getModeMentionItems(mentionQuery.text)),
+                ...(await getFileContextItems(mentionQuery, MAX_RESULTS, rangeFilter)),
+            ]
         case SYMBOL_CONTEXT_MENTION_PROVIDER.id:
             // It would be nice if the VS Code symbols API supports cancellation, but it doesn't
             return getSymbolContextFiles(
@@ -130,26 +151,7 @@ export async function getChatContextItemsForMention(
                 mentionQuery.contextRemoteRepositoriesNames
             )
         case FILE_CONTEXT_MENTION_PROVIDER.id: {
-            const files = mentionQuery.text
-                ? await getFileContextFiles({
-                      query: mentionQuery.text,
-                      range: mentionQuery.range,
-                      maxResults: MAX_RESULTS,
-                      repositoriesNames: mentionQuery.contextRemoteRepositoriesNames,
-                  })
-                : await getOpenTabsContextFile()
-
-            // If a range is provided, that means user is trying to mention a specific line range.
-            // We will get the content of the file for that range to display file size warning if needed.
-            if (mentionQuery.range && files.length > 0 && rangeFilter) {
-                const item = await getContextFileFromUri(
-                    files[0].uri,
-                    new vscode.Range(mentionQuery.range.start.line, 0, mentionQuery.range.end.line, 0)
-                )
-                return item ? [item] : []
-            }
-
-            return files
+            return getFileContextItems(mentionQuery, MAX_RESULTS, rangeFilter)
         }
 
         default: {
@@ -243,4 +245,66 @@ export function contextItemMentionFromOpenCtxItem(
                   description: item.description,
               },
           } satisfies ContextItemOpenCtx)
+}
+
+const modeMentionItems = [
+    {
+        type: 'mode',
+        mode: 'chat',
+        title: 'Chat',
+        description: 'Chat with Cody',
+        uri: URI.parse('cody://mode/chat'),
+        icon: 'chat',
+    },
+    {
+        type: 'mode',
+        mode: 'search',
+        title: 'Search',
+        description: 'Search the codebase',
+        uri: URI.parse('cody://mode/search'),
+        icon: 'search',
+    },
+    {
+        type: 'mode',
+        mode: 'edit',
+        title: 'Edit',
+        description: 'Edit the codebase',
+        uri: URI.parse('cody://mode/edit'),
+        icon: 'edit',
+    },
+] satisfies ContextItemMode[]
+
+const getModeMentionItems = async (query: string) => {
+    if (!query) {
+        return modeMentionItems
+    }
+
+    return modeMentionItems.filter(item => item.title.toLowerCase().startsWith(query.toLowerCase()))
+}
+
+const getFileContextItems = async (
+    mentionQuery: MentionQuery,
+    maxResults: number,
+    rangeFilter: boolean
+) => {
+    const files = mentionQuery.text
+        ? await getFileContextFiles({
+              query: mentionQuery.text,
+              range: mentionQuery.range,
+              maxResults,
+              repositoriesNames: mentionQuery.contextRemoteRepositoriesNames,
+          })
+        : await getOpenTabsContextFile()
+
+    // If a range is provided, that means user is trying to mention a specific line range.
+    // We will get the content of the file for that range to display file size warning if needed.
+    if (mentionQuery.range && files.length > 0 && rangeFilter) {
+        const item = await getContextFileFromUri(
+            files[0].uri,
+            new vscode.Range(mentionQuery.range.start.line, 0, mentionQuery.range.end.line, 0)
+        )
+        return item ? [item] : []
+    }
+
+    return files
 }

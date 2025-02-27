@@ -122,39 +122,55 @@ export const PromptEditor: FunctionComponent<Props> = ({
     const mentionSettings = useContext(ChatMentionContext)
 
     const fetchMenuData = useCallback(
-        ({ query, provider }: { query: string; provider?: ContextMentionProviderMetadata }) => {
+        ({
+            query,
+            triggerChar,
+            provider,
+        }: { query: string; triggerChar: string; provider?: ContextMentionProviderMetadata }) => {
             const initialContext = [...defaultContext.initialContext, ...defaultContext.corpusContext]
             const queryLower = query.toLowerCase().trim()
-            const filteredInitialContextItems = provider
-                ? []
-                : initialContext.filter(item =>
-                      queryLower
-                          ? item.title?.toLowerCase().includes(queryLower) ||
-                            item.uri.toString().toLowerCase().includes(queryLower) ||
-                            item.description?.toString().toLowerCase().includes(queryLower)
-                          : true
-                  )
+            const filteredInitialContextItems =
+                provider || triggerChar === '/'
+                    ? []
+                    : initialContext.filter(item =>
+                          queryLower
+                              ? item.title?.toLowerCase().startsWith(queryLower) ||
+                                item.uri.toString().toLowerCase().startsWith(queryLower) ||
+                                item.description?.toString().toLowerCase().startsWith(queryLower)
+                              : true
+                      )
 
             // NOTE: It's important to only emit after we receive new mentions menu data.
             // This ensures that we display the 'old' menu items until new have arrived
             // and prevents the menu from 'flickering'.
             return mentionMenuData({
                 ...parseMentionQuery(query, provider ?? null),
+                triggerChar,
                 interactionID: interactionID.current,
                 contextRemoteRepositoriesNames: mentionSettings.remoteRepositoriesNames,
-            }).map(result => [
-                ...result.providers,
-                ...filteredInitialContextItems,
-                ...(result.items
-                    ?.filter(
-                        item =>
-                            !filteredInitialContextItems.some(initialItem =>
-                                areContextItemsEqual(item, initialItem)
-                            )
-                    )
-                    .slice(0, SUGGESTION_LIST_LENGTH_LIMIT)
-                    .map(item => ({ ...item, source: ContextItemSource.User })) ?? []),
-            ])
+            }).map(result => {
+                const items = [
+                    ...result.providers,
+                    ...filteredInitialContextItems,
+                    ...(result.items
+                        ?.filter(
+                            item =>
+                                !filteredInitialContextItems.some(initialItem =>
+                                    areContextItemsEqual(item, initialItem)
+                                )
+                        )
+                        .slice(0, SUGGESTION_LIST_LENGTH_LIMIT)
+                        .map(item => ({ ...item, source: ContextItemSource.User })) ?? []),
+                ]
+
+                return query
+                    ? items.sort((a, b) => {
+                          if ('type' in a && a.type === 'mode') return -1
+                          if ('type' in b && b.type === 'mode') return 1
+                          return 0
+                      })
+                    : items
+            })
         },
         [mentionMenuData, mentionSettings, defaultContext]
     )
