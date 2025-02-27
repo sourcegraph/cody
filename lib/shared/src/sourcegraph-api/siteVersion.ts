@@ -113,7 +113,7 @@ export function checkVersion({
     return (insider && isInsiderBuild) || semver.gte(currentVersion, minimumVersion)
 }
 
-type CodyApiVersion = 0 | 1 | 2 | 8
+export type CodyApiVersion = 0 | 1 | 2 | 8
 
 /** @internal Exported for testing only. */
 export function inferCodyApiVersion(version: string, isDotCom: boolean): CodyApiVersion {

@@ -197,7 +197,8 @@ export class ExperimentalToolHandler extends ChatHandler implements AgentHandler
                         tools: allTools.map(tool => tool.spec),
                     },
                     signal,
-                    requestID
+                    requestID,
+                    8
                 )
                 let lastContent = ''
                 let messageInProgress: SubMessage | undefined
