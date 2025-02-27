@@ -1,13 +1,19 @@
 import { type ContextItemMedia, type Model, ModelTag } from '@sourcegraph/cody-shared'
 import { ImageIcon, XIcon } from 'lucide-react'
 import type React from 'react'
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { URI } from 'vscode-uri'
 import { Button } from '../../../../../../components/shadcn/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '../../../../../../components/shadcn/ui/tooltip'
 
 // Define allowed MIME types
 const ALLOWED_MIME_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'image/heic', 'image/heif']
+
+interface UploadedImageInfo {
+    id: string
+    data: string
+    filename: string
+}
 
 export const ImageUploadButton: React.FC<{
     onMediaUpload: (mediaContextItem: ContextItemMedia) => void
@@ -17,111 +23,324 @@ export const ImageUploadButton: React.FC<{
     if (!model?.tags?.includes(ModelTag.BYOK) && !model?.tags?.includes(ModelTag.Vision)) {
         return null
     }
-    const [uploadedImage, setUploadedImage] = useState<string | null>(null)
+    const [uploadedImages, setUploadedImages] = useState<UploadedImageInfo[]>([])
+    const [currentPreviewIndex, setCurrentPreviewIndex] = useState<number>(0)
     const [errorMessage, setErrorMessage] = useState<string | null>(null)
+    const [isDragging, setIsDragging] = useState<boolean>(false)
 
     const fileInputRef = useRef<HTMLInputElement>(null)
+    const uploadedIdsRef = useRef<Set<string>>(new Set())
+    const buttonRef = useRef<HTMLButtonElement>(null)
+    const dropZoneRef = useRef<HTMLDivElement>(null)
+
+    // Create a ref to track the original onMediaUpload function
+    const onMediaUploadRef = useRef(onMediaUpload)
+
+    // Update the ref when the function changes
+    useEffect(() => {
+        onMediaUploadRef.current = onMediaUpload
+    }, [onMediaUpload])
+
+    // Effect to clear preview when submission occurs
+    useEffect(() => {
+        // If images were uploaded but now they're gone, a submission likely occurred
+        if (uploadedImages.length === 0 && uploadedIdsRef.current.size > 0) {
+            uploadedIdsRef.current.clear()
+        }
+    }, [uploadedImages])
+
+    // Process a file and create a media context item
+    const processImageFile = useCallback((file: File) => {
+        // Validate file type
+        if (!ALLOWED_MIME_TYPES.includes(file.type)) {
+            setErrorMessage(
+                `Unsupported file type ${file.type}. Please upload one of the following: PNG, JPEG, WEBP, HEIC, or HEIF.`
+            )
+            return
+        }
+
+        // Clear any previous error
+        setErrorMessage(null)
+
+        // Generate a filename with timestamp if file has no name
+        const filename = file.name || `image-${Date.now()}.png`
+        const imageId = `img-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
+
+        // Process the file
+        const reader = new FileReader()
+        reader.onloadend = () => {
+            const base64String = reader.result as string
+
+            // Create a media context item
+            const mediaItem = createMediaContextItem({
+                uri: URI.file(filename),
+                mimeType: file.type,
+                filename,
+                data: base64String,
+                description: `Image: ${filename}`,
+            })
+
+            // Add to current list of uploaded images
+            setUploadedImages(prev => {
+                const newImages = [...prev, { id: imageId, data: base64String, filename }]
+                setCurrentPreviewIndex(newImages.length - 1)
+                return newImages
+            })
+
+            // Track the image ID
+            uploadedIdsRef.current.add(imageId)
+
+            // Send to parent component
+            onMediaUploadRef.current(mediaItem)
+        }
+        reader.readAsDataURL(file)
+    }, [])
+
+    // Setup global paste event handler for images
+    useEffect(() => {
+        const handlePaste = (event: ClipboardEvent) => {
+            const items = event.clipboardData?.items
+            if (!items) return
+
+            for (const item of Array.from(items)) {
+                // Check if item is an image
+                if (item.type.startsWith('image/')) {
+                    const file = item.getAsFile()
+                    if (file) {
+                        processImageFile(file)
+                        break // Only process the first image on paste
+                    }
+                }
+            }
+        }
+
+        // Add global paste event listener
+        document.addEventListener('paste', handlePaste)
+
+        return () => {
+            document.removeEventListener('paste', handlePaste)
+        }
+    }, [processImageFile])
+
+    // Setup drag and drop handlers
+    useEffect(() => {
+        const dropZone = dropZoneRef.current
+        if (!dropZone) return
+
+        const handleDragOver = (event: DragEvent) => {
+            event.preventDefault()
+            event.stopPropagation()
+            setIsDragging(true)
+        }
+
+        const handleDragLeave = (event: DragEvent) => {
+            event.preventDefault()
+            event.stopPropagation()
+            setIsDragging(false)
+        }
+
+        const handleDrop = (event: DragEvent) => {
+            event.preventDefault()
+            event.stopPropagation()
+            setIsDragging(false)
+
+            if (event.dataTransfer?.items) {
+                // Use DataTransferItemList interface
+                for (const item of Array.from(event.dataTransfer.items)) {
+                    if (item.kind === 'file' && item.type.startsWith('image/')) {
+                        const file = item.getAsFile()
+                        if (file) {
+                            processImageFile(file)
+                        }
+                    }
+                }
+            } else if (event.dataTransfer?.files) {
+                // Use DataTransfer interface
+                for (const file of Array.from(event.dataTransfer.files)) {
+                    if (file.type.startsWith('image/')) {
+                        processImageFile(file)
+                    }
+                }
+            }
+        }
+
+        // Add event listeners to the document
+        document.addEventListener('dragover', handleDragOver)
+        document.addEventListener('dragleave', handleDragLeave)
+        document.addEventListener('drop', handleDrop)
+
+        return () => {
+            document.removeEventListener('dragover', handleDragOver)
+            document.removeEventListener('dragleave', handleDragLeave)
+            document.removeEventListener('drop', handleDrop)
+        }
+    }, [processImageFile])
 
     const handleFileChange = useCallback(
         (event: React.ChangeEvent<HTMLInputElement>) => {
-            const file = event.target.files?.[0]
-            if (!file) {
+            const files = event.target.files
+            if (!files || files.length === 0) {
                 return
             }
 
-            // Validate file type
-            if (!ALLOWED_MIME_TYPES.includes(file.type)) {
-                setErrorMessage(
-                    `Unsupported file type ${file.type}. Please upload one of the following: PNG, JPEG, WEBP, HEIC, or HEIF.`
-                )
-                // Reset the file input
-                if (fileInputRef.current) {
-                    fileInputRef.current.value = ''
+            // Process all selected files
+            for (const file of Array.from(files)) {
+                if (file.type.startsWith('image/')) {
+                    processImageFile(file)
                 }
-                return
             }
 
-            // Clear any previous error
-            setErrorMessage(null)
-
-            const reader = new FileReader()
-            reader.onloadend = () => {
-                const base64String = reader.result as string
-
-                // Create a media context item
-                const mediaItem = createMediaContextItem({
-                    uri: URI.file(file.name),
-                    mimeType: file.type,
-                    filename: file.name,
-                    data: base64String,
-                    description: `Uploaded image: ${file.name}`,
-                })
-
-                onMediaUpload(mediaItem)
-                setUploadedImage(base64String) // Store the image data for the tooltip
+            // Reset the file input to allow selecting the same file again
+            if (fileInputRef.current) {
+                fileInputRef.current.value = ''
             }
-            reader.readAsDataURL(file)
         },
-        [onMediaUpload]
+        [processImageFile]
+    )
+    const handleClearImage = useCallback(
+        (index?: number) => {
+            if (index !== undefined) {
+                // Remove specific image
+                setUploadedImages(prev => {
+                    const newImages = [...prev]
+                    newImages.splice(index, 1)
+
+                    // Adjust current preview index if needed
+                    if (currentPreviewIndex >= newImages.length && newImages.length > 0) {
+                        setCurrentPreviewIndex(newImages.length - 1)
+                    } else if (newImages.length === 0) {
+                        setCurrentPreviewIndex(0)
+                    }
+
+                    return newImages
+                })
+            } else {
+                // Clear all images
+                setUploadedImages([])
+                setCurrentPreviewIndex(0)
+            }
+
+            setErrorMessage(null)
+            if (fileInputRef.current) {
+                fileInputRef.current.value = ''
+            }
+        },
+        [currentPreviewIndex]
     )
 
-    const handleClearImage = () => {
-        setUploadedImage(null)
-        setErrorMessage(null)
-        // setMediaContextItem(null)
-    }
-    const handleButtonClick = () => {
+    const handleButtonClick = useCallback(() => {
         fileInputRef.current?.click()
-    }
+    }, [])
+
+    // Compute current preview image
+    const currentImage = uploadedImages.length > 0 ? uploadedImages[currentPreviewIndex] : null
+
     return (
-        <Tooltip delayDuration={0}>
-            <TooltipTrigger asChild>
-                <Button
-                    variant="ghost"
-                    size={uploadedImage ? 'sm' : 'icon'}
-                    aria-label="Upload an image"
+        <>
+            {/* Invisible drop zone overlay when dragging */}
+            {isDragging && (
+                <div
+                    className="tw-fixed tw-inset-0 tw-z-50 tw-bg-primary/20 tw-flex tw-items-center tw-justify-center"
+                    style={{ pointerEvents: 'none' }}
                 >
-                    <ImageIcon
-                        onClick={handleButtonClick}
-                        className="tw-w-8 tw-h-8"
-                        strokeWidth={1.25}
-                    />
-                </Button>
-            </TooltipTrigger>
-            <TooltipContent side="bottom">
-                {uploadedImage ? (
-                    <div className="tw-relative">
-                        <img
-                            src={uploadedImage}
-                            alt="Uploaded Preview"
-                            className="tw-max-w-xs tw-h-auto"
-                        />
-                        <Button
-                            onClick={handleClearImage}
-                            className="tw-absolute -tw-top-2 -tw-right-2 tw-bg-red-500 tw-text-white tw-rounded-full tw-p-0.5 focus:tw-outline-none focus:tw-ring-2 focus:tw-ring-red-500"
-                            aria-label="Remove Image"
-                        >
-                            <XIcon
-                                strokeWidth={1.25}
-                                className="tw-h-8 tw-w-8"
-                                onClick={() => handleClearImage()}
-                            />
-                        </Button>
+                    <div className="tw-bg-white tw-rounded-lg tw-p-8 tw-shadow-lg tw-text-center">
+                        <p className="tw-text-lg tw-font-medium">Drop images here</p>
                     </div>
-                ) : errorMessage ? (
-                    <div className="tw-text-red-500">{errorMessage}</div>
-                ) : (
-                    'Upload an image (PNG, JPEG, WEBP, HEIC, HEIF)'
-                )}
-            </TooltipContent>
-            <input
-                type="file"
-                accept="image/png,image/jpeg,image/webp,image/heic,image/heif"
-                ref={fileInputRef}
-                style={{ display: 'none' }}
-                onChange={handleFileChange}
-            />
-        </Tooltip>
+                </div>
+            )}
+
+            <div ref={dropZoneRef}>
+                <Tooltip delayDuration={0}>
+                    <TooltipTrigger asChild>
+                        <Button
+                            variant="ghost"
+                            size={uploadedImages.length > 0 ? 'sm' : 'icon'}
+                            aria-label="Upload images (drag, select, or paste with Cmd+V)"
+                            ref={buttonRef}
+                            className={uploadedImages.length > 0 ? 'tw-relative' : ''}
+                        >
+                            <ImageIcon
+                                onClick={handleButtonClick}
+                                className="tw-w-8 tw-h-8"
+                                strokeWidth={1.25}
+                            />
+                            {uploadedImages.length > 1 && (
+                                <span className="tw-absolute -tw-top-2 -tw-right-2 tw-bg-primary tw-text-white tw-rounded-full tw-w-5 tw-h-5 tw-flex tw-items-center tw-justify-center tw-text-xs">
+                                    {uploadedImages.length}
+                                </span>
+                            )}
+                        </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom">
+                        {currentImage ? (
+                            <div className="tw-relative tw-max-w-xs">
+                                <img
+                                    src={currentImage.data}
+                                    alt={`Uploaded Preview: ${currentImage.filename}`}
+                                    className="tw-max-w-xs tw-h-auto"
+                                />
+                                <Button
+                                    onClick={() => handleClearImage(currentPreviewIndex)}
+                                    className="tw-absolute -tw-top-2 -tw-right-2 tw-bg-red-500 tw-text-white tw-rounded-full tw-p-0.5 focus:tw-outline-none focus:tw-ring-2 focus:tw-ring-red-500"
+                                    aria-label="Remove Image"
+                                >
+                                    <XIcon strokeWidth={1.25} className="tw-h-8 tw-w-8" />
+                                </Button>
+
+                                {/* Image navigation if multiple images */}
+                                {uploadedImages.length > 1 && (
+                                    <div className="tw-absolute -tw-bottom-8 tw-left-0 tw-right-0 tw-flex tw-justify-center tw-items-center tw-gap-2">
+                                        {uploadedImages.map((_, idx) => (
+                                            <button
+                                                key={`${
+                                                    // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
+                                                    idx
+                                                }-preview`}
+                                                onClick={() => setCurrentPreviewIndex(idx)}
+                                                className={`tw-w-2 tw-h-2 tw-rounded-full ${
+                                                    idx === currentPreviewIndex
+                                                        ? 'tw-bg-primary'
+                                                        : 'tw-bg-gray-300'
+                                                }`}
+                                                type="button"
+                                                aria-label={`View image ${idx + 1}`}
+                                            />
+                                        ))}
+                                        {uploadedImages.length > 1 && (
+                                            <Button
+                                                onClick={() => handleClearImage()}
+                                                className="tw-text-xs tw-ml-2 tw-text-red-500"
+                                                variant="link"
+                                                size="sm"
+                                            >
+                                                Clear all
+                                            </Button>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                        ) : errorMessage ? (
+                            <div className="tw-text-red-500">{errorMessage}</div>
+                        ) : (
+                            <div className="tw-text-center">
+                                <div>Upload images (PNG, JPEG, WEBP, HEIC, HEIF)</div>
+                                <div className="tw-text-sm tw-opacity-75 tw-mt-1">
+                                    Drag & drop, paste Cmd+V, or click to select
+                                </div>
+                            </div>
+                        )}
+                    </TooltipContent>
+                    <input
+                        type="file"
+                        accept="image/png,image/jpeg,image/webp,image/heic,image/heif"
+                        ref={fileInputRef}
+                        style={{ display: 'none' }}
+                        onChange={handleFileChange}
+                        multiple
+                    />
+                </Tooltip>
+            </div>
+        </>
     )
 }
 
