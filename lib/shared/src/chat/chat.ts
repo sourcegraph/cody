@@ -8,7 +8,7 @@ import type {
     CompletionGeneratorValue,
     CompletionParameters,
 } from '../sourcegraph-api/completions/types'
-import { currentSiteVersion } from '../sourcegraph-api/siteVersion'
+import { type CodyApiVersion, currentSiteVersion } from '../sourcegraph-api/siteVersion'
 
 type ChatParameters = Omit<CompletionParameters, 'messages'>
 
@@ -25,7 +25,8 @@ export class ChatClient {
         messages: Message[],
         params: Partial<ChatParameters> & Pick<ChatParameters, 'maxTokensToSample'>,
         abortSignal?: AbortSignal,
-        interactionId?: string
+        interactionId?: string,
+        apiVersion?: CodyApiVersion
     ): Promise<AsyncGenerator<CompletionGeneratorValue>> {
         // Replace internal models used for wrapper models with the actual model ID.
         if (params.model?.includes('deep-cody')) {
@@ -88,7 +89,7 @@ export class ChatClient {
         return this.completions.stream(
             completionParams,
             {
-                apiVersion: useApiV1 ? versions.codyAPIVersion : 0,
+                apiVersion: apiVersion ?? (useApiV1 ? versions.codyAPIVersion : 0),
                 interactionId: interactionId,
                 customHeaders,
             },
