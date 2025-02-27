@@ -20,6 +20,7 @@ import {
     fromVSCodeEvent,
     isDotCom,
     isError,
+    isWorkspaceInstance,
     openctxController,
     pendingOperation,
     shareReplay,
@@ -60,26 +61,34 @@ export function observeDefaultContext({
                 if (corpusContext === pendingOperation) {
                     return pendingOperation
                 }
+
+                const baseInitialContext = [
+                    ...(openctxContext === pendingOperation ? [] : openctxContext),
+                    ...(currentFileOrSelectionContext === pendingOperation
+                        ? []
+                        : currentFileOrSelectionContext),
+                ]
+
+                // Handle corpus context based on flag
+                // When flag is enabled, no corpus items in initialContext
                 if (noDefaultRepoChip) {
                     return {
-                        initialContext: [
-                            ...(openctxContext === pendingOperation ? [] : openctxContext),
-                            ...(currentFileOrSelectionContext === pendingOperation
-                                ? []
-                                : currentFileOrSelectionContext),
-                        ],
+                        initialContext: baseInitialContext,
                         corpusContext,
                     }
                 }
+
+                // When flag is disabled, include in initialContext
+                const initialCorpusItems = corpusContext.filter(
+                    item => item.source === ContextItemSource.Initial
+                )
+                const remainingCorpusItems = corpusContext.filter(
+                    item => item.source !== ContextItemSource.Initial
+                )
+
                 return {
-                    initialContext: [
-                        ...(openctxContext === pendingOperation ? [] : openctxContext),
-                        ...(currentFileOrSelectionContext === pendingOperation
-                            ? []
-                            : currentFileOrSelectionContext),
-                        ...corpusContext,
-                    ],
-                    corpusContext: [],
+                    initialContext: [...baseInitialContext, ...initialCorpusItems],
+                    corpusContext: remainingCorpusItems,
                 }
             }
         )
@@ -185,8 +194,14 @@ export function getCorpusContextItemsForEditorState(): Observable<
                     authenticated: authStatus.authenticated,
                     endpoint: authStatus.endpoint,
                     allowRemoteContext: clientCapabilities().isCodyWeb || !isDotCom(authStatus),
+                    isDotComUser: isDotCom(authStatus),
+                    isEnterpriseStarterUser: isWorkspaceInstance(authStatus),
+                    isEnterpriseUser: !isDotCom(authStatus) && !isWorkspaceInstance(authStatus),
                 }) satisfies Pick<AuthStatus, 'authenticated' | 'endpoint'> & {
                     allowRemoteContext: boolean
+                    isDotComUser: boolean
+                    isEnterpriseStarterUser: boolean
+                    isEnterpriseUser: boolean
                 }
         ),
         distinctUntilChanged()
@@ -195,6 +210,26 @@ export function getCorpusContextItemsForEditorState(): Observable<
     return combineLatest(relevantAuthStatus, remoteReposForAllWorkspaceFolders).pipe(
         abortableOperation(async ([authStatus, remoteReposForAllWorkspaceFolders], signal) => {
             const items: ContextItem[] = []
+
+            // Local context is not available to enterprise users
+            if (!authStatus.isEnterpriseUser) {
+                // TODO(sqs): Support multi-root. Right now, this only supports the 1st workspace root.
+                const workspaceFolder = vscode.workspace.workspaceFolders?.at(0)
+
+                if (workspaceFolder) {
+                    items.push({
+                        type: 'tree',
+                        uri: workspaceFolder.uri,
+                        title: 'Current Repository',
+                        name: workspaceFolder.name,
+                        description: workspaceFolder.name,
+                        isWorkspaceRoot: true,
+                        content: null,
+                        source: ContextItemSource.Initial,
+                        icon: 'folder',
+                    } satisfies ContextItemTree)
+                }
+            }
 
             // TODO(sqs): Make this consistent between self-serve (no remote search) and enterprise (has
             // remote search). There should be a single internal thing in Cody that lets you monitor the
@@ -225,43 +260,29 @@ export function getCorpusContextItemsForEditorState(): Observable<
                                 authStatus
                             )
                         ),
-                        title: 'Current Repository',
+                        title: 'Current Remote Repository',
                         description: repo.name,
-                        source: ContextItemSource.Initial,
+                        source: items.length > 0 ? ContextItemSource.Unified : ContextItemSource.Initial,
                         icon: 'git-folder',
                     })
                 }
-                if (remoteReposForAllWorkspaceFolders.length === 0) {
+                // CTA to index repositories should only show for Enterprise customers, see CODY-5017 & CODY-4676
+                if (authStatus.isEnterpriseUser && remoteReposForAllWorkspaceFolders.length === 0) {
                     if (!clientCapabilities().isCodyWeb) {
                         items.push({
                             type: 'open-link',
-                            title: 'Current Repository',
+                            title: 'Current Remote Repository',
                             badge: 'Not yet available',
                             content: null,
-                            uri: URI.parse('https://sourcegraph.com/docs/admin/code_hosts'),
+                            uri: URI.parse(
+                                'https://sourcegraph.com/docs/cody/prompts-guide#indexing-your-repositories-for-context'
+                            ),
                             name: '',
                             icon: 'folder',
                         })
                     }
                 }
-            } else {
-                // TODO(sqs): Support multi-root. Right now, this only supports the 1st workspace root.
-                const workspaceFolder = vscode.workspace.workspaceFolders?.at(0)
-                if (workspaceFolder) {
-                    items.push({
-                        type: 'tree',
-                        uri: workspaceFolder.uri,
-                        title: 'Current Repository',
-                        name: workspaceFolder.name,
-                        description: workspaceFolder.name,
-                        isWorkspaceRoot: true,
-                        content: null,
-                        source: ContextItemSource.Initial,
-                        icon: 'folder',
-                    } satisfies ContextItemTree)
-                }
             }
-
             return items
         })
     )

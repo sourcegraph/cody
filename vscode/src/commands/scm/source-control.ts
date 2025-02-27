@@ -6,6 +6,7 @@ import {
     type Message,
     type Model,
     type ModelContextWindow,
+    ModelTag,
     ModelUsage,
     Typewriter,
     getSimplePreamble,
@@ -36,11 +37,18 @@ export class CodySourceControl implements vscode.Disposable {
             vscode.commands.registerCommand('cody.command.abort-commit', () => this.statusUpdate()),
             subscriptionDisposable(
                 modelsService
-                    .getModels(ModelUsage.Chat)
+                    .getModels(ModelUsage.Edit)
                     .pipe(skipPendingOperation())
                     .subscribe(models => {
-                        const preferredModel = models.find(p => p.id.includes('gemini-2.0-flash-lite'))
-                        this.model = preferredModel ?? models.at(0)
+                        // Removes experimental and preview models
+                        const filtered = models.filter(
+                            m =>
+                                !m.tags.includes(ModelTag.Experimental) &&
+                                !m.tags.includes(ModelTag.Internal)
+                        )
+                        const flashLite = filtered.find(m => m.id.endsWith('gemini-2.0-flash-lite'))
+                        const flash = filtered.find(m => m.id.endsWith('gemini-2.0-flash'))
+                        this.model = flashLite ?? flash ?? filtered.at(0)
                     })
             )
         )
