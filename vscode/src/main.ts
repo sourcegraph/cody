@@ -729,7 +729,7 @@ function registerAutoEdits(
                 featureFlagProvider.evaluatedFeatureFlag(
                     FeatureFlag.CodyAutoEditExperimentEnabledFeatureFlag
                 ),
-                featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyAutoEditImageRendering)
+                featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyAutoEditInlineRendering)
             )
                 .pipe(
                     distinctUntilChanged((a, b) => {
@@ -744,14 +744,14 @@ function registerAutoEdits(
                             config,
                             authStatus,
                             autoeditFeatureFlagEnabled,
-                            autoeditImageRenderingEnabled,
+                            autoeditInlineRenderingEnabled,
                         ]) => {
                             return createAutoEditsProvider({
                                 config,
                                 authStatus,
                                 chatClient,
-                                autoeditFeatureFlagEnabled,
-                                autoeditImageRenderingEnabled,
+                                autoeditFeatureFlagEnabled: true,
+                                autoeditInlineRenderingEnabled: true,
                                 fixupController,
                                 statusBar,
                             })

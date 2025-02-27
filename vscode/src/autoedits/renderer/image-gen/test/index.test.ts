@@ -1,9 +1,11 @@
 import { toMatchImageSnapshot } from 'jest-image-snapshot'
 import { describe, expect, it } from 'vitest'
-import { type DiffMode, generateSuggestionAsImage, initImageSuggestionService } from '..'
+import { generateSuggestionAsImage, initImageSuggestionService } from '..'
 import { document } from '../../../../completions/test-helpers'
 import { mockLocalStorage } from '../../../../services/LocalStorageProvider'
 import type { DecorationInfo } from '../../decorators/base'
+import { makeVisualDiff } from '../visual-diff'
+import type { DiffMode } from '../visual-diff/types'
 import { MIXED_ADDITIONS_AND_DELETIONS, MOCK_DIFFS } from './mock-diff'
 
 expect.extend({ toMatchImageSnapshot })
@@ -17,11 +19,12 @@ async function generateImageForTest(
     await initImageSuggestionService()
 
     const doc = document('')
+    const { diff } = makeVisualDiff(decorations, mode, doc)
     const { light, dark } = generateSuggestionAsImage({
-        decorations,
+        diff,
         lang,
         mode,
-        document: doc, // The default render config changes depending on the platform, so we need to set it manually for tests.
+        // The default render config changes depending on the platform, so we need to set it manually for tests.
         // We're using the same defaults as VS Code on MacOS here.
         config: {
             fontSize: 12,

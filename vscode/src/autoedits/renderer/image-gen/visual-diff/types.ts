@@ -53,6 +53,8 @@ export type VisualDiffUnified =
 
 export type VisualDiffLine = VisualDiffAdditions | VisualDiffUnified
 
+export type DiffMode = 'additions' | 'unified'
+
 /**
  * VisualDiff is an abstraction over DecoratedDiff that is suitable for rendering.
  * It is an ordered list of relevant lines that we can simply iterate over and render.
@@ -61,6 +63,6 @@ export type VisualDiffLine = VisualDiffAdditions | VisualDiffUnified
  * This is useful for rendering a unified diff
  */
 export interface VisualDiff {
-    mode: 'unified' | 'additions'
+    mode: DiffMode
     lines: VisualDiffLine[]
 }
