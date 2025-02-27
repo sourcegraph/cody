@@ -5,7 +5,6 @@ import com.intellij.ide.scratch.ScratchRootType
 import com.intellij.injected.editor.EditorWindow
 import com.intellij.lang.Language
 import com.intellij.lang.LanguageUtil
-import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.editor.Document
@@ -81,12 +80,6 @@ object CodyEditorUtil {
   @JvmStatic
   fun getEditorForDocument(document: Document): Editor? {
     return getAllOpenEditors().find { it.document == document }
-  }
-
-  @JvmStatic
-  fun getLanguageForFocusedEditor(e: AnActionEvent): Language? {
-    val project = e.project ?: return null
-    return getSelectedEditors(project).firstOrNull()?.let { getLanguage(it) }
   }
 
   @JvmStatic
