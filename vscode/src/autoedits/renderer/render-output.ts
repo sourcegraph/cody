@@ -63,45 +63,37 @@ export type AutoEditRenderOutput =
  */
 export class AutoEditsRenderOutput {
     public getRenderOutput(args: GetRenderOutputArgs): AutoEditRenderOutput {
-        console.log('goingg now')
         const completionsWithDecorations = this.getCompletionsWithPossibleDecorationsRenderOutput(args)
         if (completionsWithDecorations) {
-            console.log('got compeltions and decorations')
-            console.log(completionsWithDecorations)
-            console.log('finished logged completions and decorations')
-            // We can render this entirely with completions possibly with a small amount of decorations.
             return completionsWithDecorations
         }
 
-        console.log('hmmm')
-
-        if (this.shouldRenderImage(args.decorationInfo)) {
-            console.log('rendering image')
-            // We have determined that the diff requires rendering as an image for the optimal user experience.
-            // Additions are entirely represented with the image, and deletions are shown as decorations.
-            const { deletionDecorations } = this.getInlineDecorations(args.decorationInfo)
-            const { insertionDecorations, insertMarkerDecorations } =
-                this.createModifiedImageDecorations(args.document, args.decorationInfo)
+        if (this.shouldRenderDecorations(args.decorationInfo)) {
             return {
-                type: 'image',
+                type: 'decorations',
                 decorations: {
-                    insertionDecorations,
-                    insertMarkerDecorations,
-                    deletionDecorations,
+                    ...this.getInlineDecorations(args.decorationInfo),
+                    // No need to show insertion marker when only using inline decorations
+                    insertMarkerDecorations: [],
                 },
                 updatedDecorationInfo: args.decorationInfo,
                 updatedPrediction: args.prediction,
             }
         }
 
-        console.log('text decorations!')
-        // We can render this diff with just text decorations
+        // We have determined that the diff requires rendering as an image for the optimal user experience.
+        // Additions are entirely represented with the image, and deletions are shown as decorations.
+        const { deletionDecorations } = this.getInlineDecorations(args.decorationInfo)
+        const { insertionDecorations, insertMarkerDecorations } = this.createModifiedImageDecorations(
+            args.document,
+            args.decorationInfo
+        )
         return {
-            type: 'decorations',
+            type: 'image',
             decorations: {
-                ...this.getInlineDecorations(args.decorationInfo),
-                // No need to show insertion marker when only using inline decorations
-                insertMarkerDecorations: [],
+                insertionDecorations,
+                insertMarkerDecorations,
+                deletionDecorations,
             },
             updatedDecorationInfo: args.decorationInfo,
             updatedPrediction: args.prediction,
@@ -118,7 +110,7 @@ export class AutoEditsRenderOutput {
         }
 
         if (completions.type === 'full') {
-            // We can render the entire suggestion as a completion
+            // We can render the entire suggestion as a completion.
             return {
                 type: 'completion',
                 completions: completions.inlineCompletionItems,
@@ -127,23 +119,30 @@ export class AutoEditsRenderOutput {
             }
         }
 
-        if (!this.shouldRenderCompletionWithDecorations(completions.updatedDecorationInfo)) {
-            // We can render a completion with decorations, but we have decided that it will be
-            // too difficult to read.
-            return null
+        // We have a partial completion, so we _can_ technically render this by including decorations.
+        // We should only do this if we determine that the diff is simple enough to be readable.
+        // This follows the same logic that we use to determine if we are rendering an image or decorations,
+        // except we also unsure that we only have removed text for modified lines. This is because it can can create
+        // a confusing UX when rendering a mix of completion insertion text and decoration insertion text.
+        const renderWithDecorations =
+            isOnlyRemovingTextForModifiedLines(completions.updatedDecorationInfo.modifiedLines) &&
+            this.shouldRenderDecorations(completions.updatedDecorationInfo)
+
+        if (renderWithDecorations) {
+            return {
+                type: 'completion-with-decorations',
+                completions: completions.inlineCompletionItems,
+                decorations: {
+                    ...this.getInlineDecorations(completions.updatedDecorationInfo),
+                    // No need to show insertion marker when only using inline decorations
+                    insertMarkerDecorations: [],
+                },
+                updatedPrediction: completions.updatedPrediction,
+                updatedDecorationInfo: completions.updatedDecorationInfo,
+            }
         }
 
-        return {
-            type: 'completion-with-decorations',
-            completions: completions.inlineCompletionItems,
-            decorations: {
-                ...this.getInlineDecorations(completions.updatedDecorationInfo),
-                // No need to show insertion marker when only using inline decorations
-                insertMarkerDecorations: [],
-            },
-            updatedPrediction: completions.updatedPrediction,
-            updatedDecorationInfo: completions.updatedDecorationInfo,
-        }
+        return null
     }
 
     public tryMakeInlineCompletions({
@@ -159,14 +158,11 @@ export class AutoEditsRenderOutput {
         updatedDecorationInfo: DecorationInfo
         updatedPrediction: string
     } | null {
-        console.log('init decorationInfo', decorationInfo)
         const { insertText, usedChangeIds } = getCompletionText({
             prediction,
             cursorPosition: position,
             decorationInfo,
         })
-
-        console.log('got insert text', insertText)
 
         if (insertText.length === 0) {
             return null
@@ -219,7 +215,6 @@ export class AutoEditsRenderOutput {
             })),
             unchangedLines: withoutUsedChanges(decorationInfo.unchangedLines),
         }
-        console.log('without unused changes', decorationInfoWithoutUsedChanges)
 
         const remainingChanges =
             decorationInfoWithoutUsedChanges.addedLines.length +
@@ -236,64 +231,68 @@ export class AutoEditsRenderOutput {
         }
     }
 
-    private shouldRenderImage(decorationInfo: DecorationInfo): boolean {
+    private shouldRenderDecorations(decorationInfo: DecorationInfo): boolean {
         if (decorationInfo.addedLines.length > 0) {
-            console.log('we have added lines')
-            // Any additions should be represented with the image
-            return true
+            // It is difficult to show added lines with decorations, as we cannot inject new lines.
+            return false
         }
 
-        if (isOnlyAddingTextForModifiedLines(decorationInfo.modifiedLines)) {
-            console.log('we only adding text, so do not render image')
-            // We only have modified lines to show but they are just insertions.
-            // We can render them as text.
+        // Removed lines are simple to show with decorations, so we only now care about the modified lines.
+        // We should only render decorations if the remaining diff is simple.
+        const includesComplexModifiedLines = this.hasComplexModifiedLines(decorationInfo.modifiedLines)
+        return !includesComplexModifiedLines
+    }
+
+    private hasComplexModifiedLines(modifiedLines: DecorationInfo['modifiedLines']): boolean {
+        if (
+            isOnlyAddingTextForModifiedLines(modifiedLines) ||
+            isOnlyRemovingTextForModifiedLines(modifiedLines)
+        ) {
+            // Pure deletions or pure insertions.
+            // Classify as simple
             return false
         }
 
         let linesWithChanges = 0
-        for (const modifiedLine of decorationInfo.modifiedLines) {
+        for (const modifiedLine of modifiedLines) {
+            let alternatingChanges = 0
+            for (let i = 0; i < modifiedLine.changes.length; i++) {
+                const change = modifiedLine.changes[i]
+                const nextChange = modifiedLine.changes[i + 1]
+                if (
+                    nextChange &&
+                    nextChange.type !== 'unchanged' &&
+                    change.type !== 'unchanged' &&
+                    change.type !== nextChange.type
+                ) {
+                    // Two consecutive changes of different types.
+                    alternatingChanges++
+                }
+            }
+
+            if (alternatingChanges > 2) {
+                // Three or more alternating changes on this line.
+                // Classify as complex
+                return true
+            }
+
             const changes = modifiedLine.changes.filter(
                 change => change.type === 'delete' || change.type === 'insert'
             )
             const changeCount = changes.length
-
             if (changeCount === 0) {
                 continue
             }
 
-            if (changeCount >= 5) {
-                console.log('3 or more changes overall', changeCount, changes)
-                // Three or more changes on a single line is classified as complex
-                // An image is best to represent this.
-                return true
-            }
-
             linesWithChanges++
-            if (linesWithChanges >= 3) {
-                console.log('3 or more line changes overall', changeCount)
-                // Three or more lines with changes is classified as complex
-                // An image is best to represent this.
+            if (linesWithChanges > 3) {
+                // Four or more modified lines in this diff.
+                // Classify as complex
                 return true
             }
         }
 
-        console.log('do not render the iamge')
         return false
-    }
-
-    /**
-     * If the entire suggestion can only be partially rendered with a completion, we support
-     * mixing this completion with decorations.
-     * We only do this for a simple diff as otherwise the diff can quickly become difficult to read.
-     */
-    private shouldRenderCompletionWithDecorations(remainingDecorationInfo: DecorationInfo): boolean {
-        // This is a simple heuristic to decide if we should mix completions and decorations.
-        // Essentially, we will only render like this if the completion is entirely for the inserted text
-        // and the decorations are entirely for the removed changes.
-        return (
-            remainingDecorationInfo.addedLines.length === 0 &&
-            isOnlyRemovingTextForModifiedLines(remainingDecorationInfo.modifiedLines)
-        )
     }
 
     private getInlineDecorations(
