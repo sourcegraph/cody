@@ -117,15 +117,15 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
                 // This allows us to intelligently apply code to the suitable file.
                 const codeElement = preElement.querySelectorAll('code')?.[0]
                 const fileName = codeElement?.getAttribute('data-file-path') || undefined
+                const toolName = codeElement?.getAttribute('tool-name') || undefined
                 // Check if the code element has either 'language-bash' or 'language-shell' class
-                const isShellCommand =
-                    codeElement?.classList.contains('language-bash') ||
-                    codeElement?.classList.contains('language-shell')
+                const isShellCommand = codeElement?.classList.contains('language-bash')
                 const codeBlockName = isShellCommand ? 'command' : fileName
 
                 let buttons: HTMLElement
 
-                if (smartApplyEnabled) {
+                // Smart apply is available only for code blocks with a file name.
+                if (smartApplyEnabled && fileName && !toolName) {
                     const smartApplyId = getCodeBlockId(preText, fileName)
                     const smartApplyState = smartApplyStates[smartApplyId]
                     buttons = createButtonsExperimentalUI(
@@ -151,7 +151,7 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
                 metadataContainer.classList.add(styles.metadataContainer)
                 buttons.append(metadataContainer)
 
-                if (guardrails) {
+                if (guardrails && !toolName) {
                     const container = document.createElement('div')
                     container.classList.add(styles.attributionContainer)
                     metadataContainer.append(container)
@@ -181,16 +181,21 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
                     }
                 }
 
-                if (fileName) {
+                const containerTitle = toolName ? toolName + '...' : fileName
+                if (containerTitle) {
                     const fileNameContainer = document.createElement('div')
                     fileNameContainer.className = styles.fileNameContainer
-                    fileNameContainer.textContent = getFileName(fileName)
-                    fileNameContainer.title = fileName
+                    fileNameContainer.textContent = getFileName(containerTitle)
+                    fileNameContainer.title = containerTitle
                     metadataContainer.append(fileNameContainer)
                 }
 
-                // Insert the buttons after the pre using insertBefore() because there is no insertAfter()
-                preElement.parentNode.insertBefore(buttons, preElement.nextSibling)
+                // Insert the buttons before or after the pre element based on isTool
+                if (toolName) {
+                    preElement.parentNode.insertBefore(buttons, preElement)
+                } else {
+                    preElement.parentNode.insertBefore(buttons, preElement.nextSibling)
+                }
             }
         }
     }, [

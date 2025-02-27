@@ -1,6 +1,8 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { DeepCodyAgentID, ToolCodyModelRef } from '@sourcegraph/cody-shared/src/models/client'
 import { getConfiguration } from '../../../configuration'
+import { AgenticGeminiHandler } from './AgenticGeminiHandler'
+import { AgenticHandler } from './AgenticHandler'
 import { ChatHandler } from './ChatHandler'
 import { DeepCodyHandler } from './DeepCodyHandler'
 import { EditHandler } from './EditHandler'
@@ -19,6 +21,12 @@ function registerAgent(id: string, ctr: (id: string, tools: AgentTools) => Agent
 }
 
 export function getAgent(id: string, modelId: string, tools: AgentTools): AgentHandler {
+    // NOTE: WIP
+    const agenticChat = getAgentPrototype(modelId, tools)
+    if (agenticChat) {
+        return agenticChat
+    }
+
     const { contextRetriever, editor, chatClient } = tools
     if (id === DeepCodyAgentID) {
         return new DeepCodyHandler(modelId, contextRetriever, editor, chatClient)
@@ -48,3 +56,19 @@ registerAgent(ToolCodyModelRef, (_id: string) => {
     })
     return new ExperimentalToolHandler(anthropicAPI)
 })
+
+// NOTE: WIP - prototypes
+function getAgentPrototype(modelId: string, tools: AgentTools): AgentHandler | undefined {
+    const { contextRetriever, editor, chatClient } = tools
+    const config = getConfiguration()
+    const minion = config?.experimentalMinionAnthropicKey
+    const anthropic = config?.devModels?.find(m => m.provider.includes('anthropic'))?.apiKey ?? minion
+    const gemini = config?.devModels?.find(m => m.provider.includes('google'))?.apiKey
+    if (modelId.includes('sonnet') && anthropic) {
+        return new AgenticHandler(modelId, contextRetriever, editor, chatClient, anthropic)
+    }
+    if (modelId.includes('gemini') && gemini) {
+        return new AgenticGeminiHandler(modelId, contextRetriever, editor, chatClient, gemini)
+    }
+    return undefined
+}

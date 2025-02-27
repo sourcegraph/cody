@@ -5,6 +5,7 @@ import { visit } from 'unist-util-visit'
 interface CodeNodeData {
     hProperties?: {
         'data-file-path'?: string
+        'tool-name'?: string
     }
 }
 
@@ -18,11 +19,11 @@ const LANG_FILE_PATH_REGEX = /^(\w+):(.+)$/
  * read later in the code.
  *
  * Example:
- * ```typescript:path/to/file.ts
+ * ```typescript:path/to/file.ts tool=Editing File id=toolu_01TVURXpozwi1pRQd68VNK9G
  * console.log()
  * ```
  * becomes ->
- * <code data-file-path="path/to/file.ts">
+ * <code data-file-path="path/to/file.ts" tool-name="Editing File">
  * console.log()
  * </code>
  */
@@ -36,6 +37,9 @@ export const remarkAttachFilePathToCodeBlocks: Plugin<[], Root> = () => {
                 // Update the node's lang to remove the file path
                 node.lang = language
 
+                // tool name is optional and could include spaces
+                const toolName = node.meta?.match(/tool=(.*)? id=/)
+
                 // Update node data
                 node.data = {
                     ...node.data,
@@ -43,6 +47,7 @@ export const remarkAttachFilePathToCodeBlocks: Plugin<[], Root> = () => {
                         ...(node.data as CodeNodeData)?.hProperties,
                         // We sanitize spaces in markdown path files using `PromptString` class, now we can convert them back
                         'data-file-path': filePath.trim().replaceAll('%20', ' '),
+                        'tool-name': toolName?.[1],
                     },
                 }
             }

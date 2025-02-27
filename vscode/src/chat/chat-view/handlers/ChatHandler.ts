@@ -7,6 +7,7 @@ import {
     type ContextItemOpenCtx,
     ContextItemSource,
     type Message,
+    type ProcessingStep,
     PromptString,
     type RankedContext,
     type SerializedPromptEditorState,
@@ -22,6 +23,7 @@ import {
 import { isError } from 'lodash'
 import { resolveContextItems } from '../../../editor/utils/editor-context'
 import { getCategorizedMentions } from '../../../prompt-builder/utils'
+import { DeepCodyAgent } from '../../agentic/DeepCody'
 import { ChatBuilder } from '../ChatBuilder'
 import type { ChatControllerOptions } from '../ChatController'
 import { type ContextRetriever, toStructuredMentions } from '../ContextRetriever'
@@ -278,6 +280,52 @@ export class ChatHandler implements AgentHandler {
             })
         } catch (e) {
             return { error: new Error(`Unexpected error computing context, no context was used: ${e}`) }
+        }
+    }
+
+    // TODO: Maybe we should replace computerContext with computeAgenticContext?
+    public async computeAgenticContext(
+        requestID: string,
+        { text, mentions }: HumanInput,
+        editorState: SerializedPromptEditorState | null,
+        chatBuilder: ChatBuilder,
+        delegate: AgentHandlerDelegate,
+        signal: AbortSignal
+    ): Promise<{
+        contextItems?: ContextItem[]
+        error?: Error
+        abort?: boolean
+    }> {
+        // Get base context from parent class only if there is mentions.
+        const baseContextResult = mentions.length
+            ? await this.computeContext(
+                  requestID,
+                  { text, mentions },
+                  editorState,
+                  chatBuilder,
+                  delegate,
+                  signal,
+                  true
+              )
+            : {}
+        if (baseContextResult.error || baseContextResult.abort) {
+            return baseContextResult
+        }
+        const baseContext = baseContextResult.contextItems ?? []
+        const agent = new DeepCodyAgent(
+            chatBuilder,
+            this.chatClient,
+            (steps: ProcessingStep[]) => delegate.postStatuses(steps),
+            (step: ProcessingStep) => delegate.postRequest(step)
+        )
+        try {
+            const enhancedContext = await agent.getContext(requestID, signal, baseContext)
+            return { contextItems: enhancedContext }
+        } catch (error) {
+            return {
+                contextItems: baseContext,
+                error: error instanceof Error ? error : new Error(String(error)),
+            }
         }
     }
 }

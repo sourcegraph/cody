@@ -66,6 +66,7 @@ import {
     CODY_FEEDBACK_URL,
     CODY_OLLAMA_DOCS_URL,
 } from './chat/protocol'
+import { initializeEditSourceControl } from './chat/tools/edit'
 import { CodeActionProvider } from './code-actions/CodeActionProvider'
 import { commandControllerInit, executeCodyCommand } from './commands/CommandsController'
 import { GhostHintDecorator } from './commands/GhostHintDecorator'
@@ -295,7 +296,7 @@ const register = async (
 
     registerAutocomplete(platform, statusBar, disposables)
     const tutorialSetup = tryRegisterTutorial(context, disposables)
-
+    initializeEditSourceControl(context)
     await registerCodyCommands(statusBar, chatClient, fixupController, disposables)
     registerAuthCommands(disposables)
     registerChatCommands(disposables)
