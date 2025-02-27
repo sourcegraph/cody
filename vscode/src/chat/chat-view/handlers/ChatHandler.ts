@@ -174,8 +174,7 @@ export class ChatHandler implements AgentHandler {
                         break
                     }
                     case 'error': {
-                        typewriter.close()
-                        typewriter.stop(message.error)
+                        throw message.error
                     }
                 }
             }

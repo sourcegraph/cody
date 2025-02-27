@@ -47,8 +47,6 @@ export async function getAuthHeaders(auth: AuthCredentials, url: URL): Promise<R
         }
     }
 
-    console.error('Cannot add headers: neither token nor headers found')
-
     return {}
 }
 
