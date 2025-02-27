@@ -35,7 +35,6 @@ export type MessagePart =
     | { type: 'text'; text: string }
     | { type: 'image_url'; image_url: { url: string } }
     | { type: 'media'; data: string; mimeType?: string; name: string }
-    | { type: 'tool'; id: string; name: string; args: object }
 
 export interface CompletionUsage {
     completion_tokens: number | null

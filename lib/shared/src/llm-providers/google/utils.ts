@@ -1,4 +1,4 @@
-import type { Content, FunctionCallPart, InlineDataPart, Part } from '@google/generative-ai'
+import type { Content, InlineDataPart, Part } from '@google/generative-ai'
 import type { Message } from '../..'
 
 /**
@@ -29,16 +29,19 @@ export async function constructGeminiChatMessages(messages: Message[]): Promise<
             for (const part of message.content) {
                 if (part.type === 'text' && part.text?.length) {
                     parts.push({ text: part.text })
-                } else if (part.type === 'media' && part.mimeType && part.data) {
+                }
+                if (part.type === 'media' && part.mimeType && part.data) {
                     const data = part.data.replace(/data:[^;]+;base64,/, '')
                     parts.push({
                         inlineData: { mimeType: part.mimeType, data },
                     } satisfies InlineDataPart)
-                } else if (part.type === 'tool') {
-                    parts.push({
-                        functionCall: { name: part.name, args: part.args },
-                    } satisfies FunctionCallPart)
                 }
+                // TODO (bee) add support for function calls
+                // if (part.type === 'tool') {
+                //     parts.push({
+                //         functionCall: { name: part.name, args: part.args },
+                //     } satisfies FunctionCallPart)
+                // }
             }
         }
 
