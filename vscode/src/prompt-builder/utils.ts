@@ -3,6 +3,7 @@ import {
     ContextItemSource,
     type ContextMessage,
     type ContextTokenUsageType,
+    type MessagePart,
     PromptString,
     displayPath,
     populateCodeContextTemplate,
@@ -27,11 +28,16 @@ export function renderContextItem(contextItem: ContextItem): ContextMessage | nu
     if (content === undefined || (!isRequestedInChatInput && content.trim().length === 0)) {
         return null
     }
-
+    const parts: MessagePart[] = []
     const data = type === 'media' ? contextItem.data : undefined
     const mimeType = type === 'media' ? contextItem.mimeType : undefined
-    if (data && mimeType) {
-        return { speaker: 'human', text: ps`Here is the image file.`, file: contextItem, data, mimeType }
+    const fileName = type === 'media' ? contextItem.filename : undefined
+    if (data && mimeType && fileName) {
+        parts.push({
+            type: 'image_url',
+            image_url: { url: data.replace(/data:[^;]+;base64,/, '') },
+        } satisfies MessagePart)
+        return { speaker: 'human', text: ps`Here is the image file.`, file: contextItem, content: parts }
     }
 
     const uri = getContextItemLocalUri(contextItem)
@@ -67,7 +73,7 @@ export function renderContextItem(contextItem: ContextItem): ContextMessage | nu
             }
     }
 
-    return { speaker: 'human', text: messageText, file: contextItem, data, mimeType }
+    return { speaker: 'human', text: messageText, file: contextItem, content: parts }
 }
 
 export function getContextItemTokenUsageType(item: ContextItem): ContextTokenUsageType {

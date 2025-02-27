@@ -24,9 +24,18 @@ export interface Message {
     // mirrors what OpenAI and Anthropic expect
     text?: PromptString
     cacheEnabled?: boolean | null
-    data?: string | null
-    mimeType?: string | null
+    content?: MessagePart[] | undefined | null
 }
+
+// content: string | Array<TextPart | ImagePart | FilePart>
+export type MessagePart =
+    /**
+     * Text message content
+     */
+    | { type: 'text'; text: string }
+    | { type: 'image_url'; image_url: { url: string } }
+    | { type: 'media'; data: string; mimeType?: string; name: string }
+    | { type: 'tool'; id: string; name: string; args: object }
 
 export interface CompletionUsage {
     completion_tokens: number | null

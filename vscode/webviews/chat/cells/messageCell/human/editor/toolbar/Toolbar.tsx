@@ -98,7 +98,9 @@ export const Toolbar: FunctionComponent<{
                     focusEditor={focusEditor}
                     className="tw-mr-1"
                 />
-                <ImageUploadButton onMediaUpload={onMediaUpload} />
+                {onMediaUpload && models && (
+                    <ImageUploadButton onMediaUpload={onMediaUpload} model={models?.[0]} />
+                )}
             </div>
             <div className="tw-flex-1 tw-flex tw-justify-end">
                 <SubmitButton

@@ -77,8 +77,12 @@ export class PromptBuilder {
         const mediaItems = this.contextItems.filter(i => i.type === 'media')
         for (const media of mediaItems) {
             const contextMessage = renderContextItem(media)
-            const messagePair = contextMessage && [ASSISTANT_MESSAGE, contextMessage]
-            messagePair && this.reverseMessages.push(...messagePair)
+            if (contextMessage?.content?.length) {
+                if (!this.reverseMessages[0]?.content?.length) {
+                    this.reverseMessages[0].content = []
+                }
+                this.reverseMessages[0].content.push(...contextMessage.content)
+            }
         }
         // Resolve non-media context items with cache enabled
         const nonMediaItems = this.contextItems.filter(i => i.type !== 'media')

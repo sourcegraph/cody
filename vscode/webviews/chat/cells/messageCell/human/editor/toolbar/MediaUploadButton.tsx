@@ -1,4 +1,4 @@
-import type { ContextItemMedia } from '@sourcegraph/cody-shared'
+import { type ContextItemMedia, type Model, ModelTag } from '@sourcegraph/cody-shared'
 import { ImageIcon, XIcon } from 'lucide-react'
 import type React from 'react'
 import { useCallback, useRef, useState } from 'react'
@@ -11,7 +11,12 @@ const ALLOWED_MIME_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'image/heic
 
 export const ImageUploadButton: React.FC<{
     onMediaUpload: (mediaContextItem: ContextItemMedia) => void
-}> = ({ onMediaUpload }) => {
+    model: Model
+}> = ({ onMediaUpload, model }) => {
+    // Only works with BYOK and Vision models
+    if (!model.tags.includes(ModelTag.BYOK) && !model.tags.includes(ModelTag.Vision)) {
+        return null
+    }
     const [uploadedImage, setUploadedImage] = useState<string | null>(null)
     const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
