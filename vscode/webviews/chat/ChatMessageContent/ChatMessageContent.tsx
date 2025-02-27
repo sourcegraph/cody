@@ -150,6 +150,7 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
                     // TODO: extract this call into a separate `useEffect` call to avoid redundant calls
                     // which currently happen.
                     if (
+                        codeBlockName !== 'command' &&
                         (!isMessageLoading || areWeAlreadyOutsideTheCodeBlock) &&
                         // Ensure that we prefetch once per each suggested code block.
                         !prefetchedEdits.has(smartApplyId)
