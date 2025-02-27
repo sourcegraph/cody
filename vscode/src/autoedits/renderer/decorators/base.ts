@@ -46,12 +46,12 @@ export interface AutoEditsDecorator extends vscode.Disposable {
      *        and how they should be decorated in the editor.
      */
     setDecorations(
-        decorations: AutoEditDecorations,
         /**
          * @deprecated Decorations are pre-computed by the manager in `getRenderOutput`.
          * Use `decorations` instead.
          */
-        decorationInfo: DecorationInfo
+        decorationInfo: DecorationInfo,
+        decorations?: AutoEditDecorations
     ): void
 }
 

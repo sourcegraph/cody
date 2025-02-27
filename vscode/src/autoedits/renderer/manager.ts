@@ -54,8 +54,11 @@ export interface AutoEditsRendererManager extends vscode.Disposable {
      * Renders the prediction as inline decorations.
      */
     renderInlineDecorations(
-        decorations: AutoEditDecorations,
-        decorationInfo: DecorationInfo
+        /**
+         * @deprecated Use `decorations` instead.
+         */
+        decorationInfo: DecorationInfo,
+        decorations?: AutoEditDecorations
     ): Promise<void>
 
     /**
@@ -305,18 +308,15 @@ export class AutoEditsDefaultRendererManager
     }
 
     public async renderInlineDecorations(
-        decorations: AutoEditDecorations,
-        /**
-         * @deprecated Use `decorations` instead.
-         */
-        decorationInfo: DecorationInfo
+        decorationInfo: DecorationInfo,
+        decorations?: AutoEditDecorations
     ): Promise<void> {
         if (!this.decorator) {
             console.log('NO DECORATOR!!')
             // No decorator to render the decorations
             return
         }
-        this.decorator.setDecorations(decorations, decorationInfo)
+        this.decorator.setDecorations(decorationInfo, decorations)
         await vscode.commands.executeCommand('setContext', 'cody.supersuggest.active', true)
     }
 

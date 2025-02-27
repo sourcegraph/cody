@@ -90,8 +90,9 @@ export function createAutoEditsProvider({
                 return []
             }
 
-            const decorator = autoeditInlineRenderingEnabled ? 'inline' : 'default'
-            const provider = new AutoeditsProvider(chatClient, fixupController, statusBar, decorator)
+            const provider = new AutoeditsProvider(chatClient, fixupController, statusBar, {
+                shouldRenderInline: autoeditInlineRenderingEnabled,
+            })
 
             return [
                 vscode.commands.registerCommand('cody.command.autoedit-manual-trigger', async () => {

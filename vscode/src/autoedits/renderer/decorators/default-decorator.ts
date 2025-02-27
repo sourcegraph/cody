@@ -6,7 +6,7 @@ import { isOnlyAddingTextForModifiedLines } from '../diff-utils'
 import { generateSuggestionAsImage } from '../image-gen'
 import { getEndColumnForLine } from '../image-gen/utils'
 import { makeVisualDiff } from '../image-gen/visual-diff'
-import type { AutoEditDecorations, AutoEditsDecorator, DecorationInfo, ModifiedLineInfo } from './base'
+import type { AutoEditsDecorator, DecorationInfo, ModifiedLineInfo } from './base'
 import { cssPropertiesToString } from './utils'
 
 export interface DiffedTextDecorationRange {
@@ -108,7 +108,8 @@ export class DefaultDecorator implements AutoEditsDecorator {
      * 2. Removed lines: Show inline decoration with "red" marker indicating deletions
      * 3. Added lines: Show inline decoration with "green" marker indicating additions
      */
-    public setDecorations(_decorations: AutoEditDecorations, decorationInfo: DecorationInfo): void {
+    public setDecorations(decorationInfo: DecorationInfo): void {
+        console.log('called set decorations in default decorator')
         const { modifiedLines, removedLines, addedLines } = decorationInfo
 
         const removedLinesRanges = removedLines.map(line =>
@@ -117,8 +118,10 @@ export class DefaultDecorator implements AutoEditsDecorator {
         this.editor.setDecorations(this.removedTextDecorationType, removedLinesRanges)
 
         if (addedLines.length > 0 || !isOnlyAddingTextForModifiedLines(modifiedLines)) {
+            console.log('rendering diff decorations')
             this.renderDiffDecorations(decorationInfo)
         } else {
+            console.log('rendering inline ghiost text')
             this.renderInlineGhostTextDecorations(modifiedLines)
         }
     }
@@ -136,7 +139,6 @@ export class DefaultDecorator implements AutoEditsDecorator {
         if (!addedLinesInfo) {
             return
         }
-
         this.renderAddedLinesImageDecorations(decorationInfo)
     }
 

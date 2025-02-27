@@ -82,7 +82,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         chatClient: ChatClient,
         fixupController: FixupController,
         statusBar: CodyStatusBar,
-        decorator: 'default' | 'inline'
+        options: { shouldRenderInline: boolean }
     ) {
         // Initialise the canvas renderer for image generation.
         initImageSuggestionService()
@@ -94,17 +94,15 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             chatClient: chatClient,
         })
 
-        console.log('GOT DECORATOR', decorator)
-        this.rendererManager =
-            decorator === 'default'
-                ? new AutoEditsDefaultRendererManager(
-                      editor => new DefaultDecorator(editor),
-                      fixupController
-                  )
-                : new AutoEditsInlineRendererManager(
-                      editor => new InlineDiffDecorator(editor),
-                      fixupController
-                  )
+        this.rendererManager = options.shouldRenderInline
+            ? new AutoEditsInlineRendererManager(
+                  editor => new InlineDiffDecorator(editor),
+                  fixupController
+              )
+            : new AutoEditsDefaultRendererManager(
+                  editor => new DefaultDecorator(editor),
+                  fixupController
+              )
 
         this.onSelectionChangeDebounced = debounce(
             (event: vscode.TextEditorSelectionChangeEvent) => this.onSelectionChange(event),
@@ -362,7 +360,6 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 return null
             }
 
-            console.log('rendererManager class:', this.rendererManager.constructor.name)
             const renderOutput = this.rendererManager.getRenderOutput({
                 requestId,
                 prediction,
@@ -372,8 +369,8 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 decorationInfo,
                 codeToReplaceData,
             })
-            console.log('got render output', renderOutput)
 
+            // TODO: Provide renderOutput.node for non legacy method
             if (renderOutput.type === 'none') {
                 autoeditsOutputChannelLogger.logDebugIfVerbose(
                     'provideInlineCompletionItems',
@@ -422,11 +419,12 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             }
 
             if ('decorations' in renderOutput) {
-                console.log('rendering decorations')
                 await this.rendererManager.renderInlineDecorations(
-                    renderOutput.decorations,
-                    decorationInfo
+                    decorationInfo,
+                    renderOutput.decorations
                 )
+            } else if (renderOutput.type === 'legacy-decorations') {
+                await this.rendererManager.renderInlineDecorations(decorationInfo)
             }
 
             // The data structure returned to the agent's from the `autoedits/execute` calls.

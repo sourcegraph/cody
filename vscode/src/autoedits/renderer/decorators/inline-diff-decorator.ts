@@ -1,5 +1,5 @@
 import * as vscode from 'vscode'
-import type { AutoEditDecorations, AutoEditsDecorator } from './base'
+import type { AutoEditDecorations, AutoEditsDecorator, DecorationInfo } from './base'
 
 export class InlineDiffDecorator implements vscode.Disposable, AutoEditsDecorator {
     private readonly addedTextDecorationType = vscode.window.createTextEditorDecorationType({})
@@ -11,8 +11,10 @@ export class InlineDiffDecorator implements vscode.Disposable, AutoEditsDecorato
 
     constructor(private readonly editor: vscode.TextEditor) {}
 
-    setDecorations(decorations: AutoEditDecorations): void {
-        console.log('calling set decorations!!')
+    setDecorations(_decorationInfo: DecorationInfo, decorations?: AutoEditDecorations): void {
+        if (!decorations) {
+            throw new Error('InlineDiffDecorator relies on pre-computed decorations')
+        }
         this.editor.setDecorations(this.addedTextDecorationType, decorations.insertionDecorations)
         this.editor.setDecorations(this.removedTextDecorationType, decorations.deletionDecorations)
         this.editor.setDecorations(this.insertMarkerDecorationType, decorations.insertMarkerDecorations)
