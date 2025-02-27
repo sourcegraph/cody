@@ -19,6 +19,6 @@ describe('explainCommand', () => {
             range: new vscode.Range(1, 2, 3, 4),
         })
         const prefix = isWindows() ? '\\' : ''
-        expect(result?.text?.toString()).toMatch(`Explain what @${prefix}foo.go`)
+        expect(result?.text?.toString()).toMatch(`Explain what @${prefix}foo.go @${prefix}bar.go`)
     })
 })
