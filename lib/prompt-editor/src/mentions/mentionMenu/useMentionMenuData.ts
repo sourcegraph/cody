@@ -1,19 +1,24 @@
 import type {
     ContextItem,
+    ContextItemMode,
     ContextMentionProviderMetadata,
     MentionMenuData,
     MentionQuery,
+    SerializedContextItem,
 } from '@sourcegraph/cody-shared'
 import {
     ContextItemSource,
+    EDIT_MODE_PROVIDER_URI,
     REMOTE_DIRECTORY_PROVIDER_URI,
     REMOTE_FILE_PROVIDER_URI,
     REMOTE_REPOSITORY_PROVIDER_URI,
+    SEARCH_MODE_PROVIDER_URI,
     memoizeLastValue,
     parseMentionQuery,
 } from '@sourcegraph/cody-shared'
 import debounce from 'lodash/debounce'
 import { useCallback, useContext, useMemo, useState } from 'react'
+import { URI } from 'vscode-uri'
 import { ChatMentionContext } from '../../plugins/atMentions/useChatContextItems'
 import { useExtensionAPI } from '../../useExtensionAPI'
 import { useDefaultContextForChat } from '../../useInitialContext'
@@ -85,9 +90,40 @@ interface MentionMenuContextValue {
     setEditorQuery: (query: string) => void
 }
 
+const getModeContextItems = (mentions: SerializedContextItem[]): ContextItemMode[] => {
+    if (
+        mentions.find(item => item.type === 'mode' && (item.mode === 'edit' || item.mode === 'search'))
+    ) {
+        return []
+    }
+
+    return [
+        {
+            type: 'mode',
+            mode: 'edit',
+            title: 'Edit',
+            description: 'Edit the current file',
+            icon: 'square-pen',
+            uri: URI.parse(EDIT_MODE_PROVIDER_URI),
+        },
+        {
+            type: 'mode',
+            mode: 'search',
+            title: 'Search',
+            description: 'Search the codebase',
+            icon: 'search',
+            uri: URI.parse(SEARCH_MODE_PROVIDER_URI),
+        },
+    ]
+}
+
 export function useMentionMenuData(
     params: MentionMenuParams,
-    { remainingTokenBudget, limit }: { remainingTokenBudget: number; limit: number }
+    {
+        remainingTokenBudget,
+        limit,
+        mentions = [],
+    }: { remainingTokenBudget: number; limit: number; mentions?: SerializedContextItem[] }
 ): MentionMenuData {
     const { value, error } = useCallMentionMenuData(params)
     const queryLower = params.query?.toLowerCase()?.trim() ?? null
@@ -96,7 +132,11 @@ export function useMentionMenuData(
 
     // Initial context items aren't filtered when we receive them, so we need to filter them here.
     const defaultContext = useDefaultContextForChat()
-    const initialContext = [...defaultContext.initialContext, ...defaultContext.corpusContext]
+    const initialContext = [
+        ...defaultContext.initialContext,
+        ...defaultContext.corpusContext,
+        ...getModeContextItems(mentions),
+    ]
     const filteredInitialContextItems = isInProvider
         ? []
         : initialContext.filter(item =>

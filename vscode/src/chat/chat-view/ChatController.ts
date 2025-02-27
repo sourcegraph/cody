@@ -705,6 +705,10 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         })
     }
 
+    private intentFromMentions(mentions: ContextItem[]): ChatMessage['intent'] {
+        return mentions.find(mention => mention.type === 'mode')?.mode
+    }
+
     private async sendChat(
         {
             requestID,
@@ -749,13 +753,12 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         recorder.recordChatQuestionSubmitted(mentions)
 
         signal.throwIfAborted()
-        this.chatBuilder.setLastMessageIntent(manuallySelectedIntent)
+        const intent = this.intentFromMentions(mentions) ?? manuallySelectedIntent ?? 'chat'
+        this.chatBuilder.setLastMessageIntent(intent)
 
         this.postEmptyMessageInProgress(model)
 
-        const agentName = ['search', 'edit', 'insert'].includes(manuallySelectedIntent ?? '')
-            ? (manuallySelectedIntent as string)
-            : chatAgent ?? 'chat'
+        const agentName = ['search', 'edit', 'insert'].includes(intent) ? intent : chatAgent ?? 'chat'
         const agent = getAgent(agentName, model, {
             contextRetriever: this.contextRetriever,
             editor: this.editor,
@@ -763,7 +766,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         })
 
         recorder.setIntentInfo({
-            userSpecifiedIntent: manuallySelectedIntent ?? 'chat',
+            userSpecifiedIntent: intent,
         })
 
         this.postEmptyMessageInProgress(model)

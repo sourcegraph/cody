@@ -218,6 +218,7 @@ export const MentionsPlugin: FunctionComponent<{
                 const data = useMentionMenuData(params, {
                     remainingTokenBudget,
                     limit: SUGGESTION_LIST_LENGTH_LIMIT,
+                    mentions: toSerializedPromptEditorValue(editor)?.contextItems,
                 })
 
                 const { selectOptionAndCleanUp } = itemProps
