@@ -50,7 +50,7 @@ async function unitTestCommand(
             if (sharedContext.length > 0) {
                 prompt = prompt.replaceAll(
                     'the shared code',
-                    selectedCodePromptWithExtraFiles(sharedContext[0], sharedContext.slice(1))
+                    selectedCodePromptWithExtraFiles(sharedContext[0], [])
                 )
             }
 
