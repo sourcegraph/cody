@@ -1,5 +1,5 @@
 import type { ContextItem } from '../../codebase-context/messages'
-import type { Message } from '../../sourcegraph-api'
+import type { Message, MessagePart } from '../../sourcegraph-api'
 
 import type { SerializedChatTranscript } from '.'
 import type { PromptString } from '../../prompt/prompt-string'
@@ -141,6 +141,8 @@ export interface SerializedChatMessage {
     agent?: string | undefined | null
     processes?: ProcessingStep[] | undefined | null
     subMessages?: SubMessage[]
+    content?: MessagePart[]
+    base64Image?: string
 }
 
 export interface ChatError {

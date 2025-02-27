@@ -42,8 +42,10 @@ async function serializePrompts(
                 }
             }
             return {
-                ...m,
+                speaker: m.speaker,
                 text: text,
+                content: m.content,
+                base64Image: m.base64Image,
             }
         })
     )

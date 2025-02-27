@@ -113,6 +113,8 @@ class DefaultCodeCompletionsClient implements CodeCompletionsClient {
                         params.messages.map(async m => ({
                             ...m,
                             text: await m.text?.toFilteredString(contextFiltersProvider),
+                            content: m.content,
+                            base64Image: m.base64Image,
                         }))
                     ),
                 }
