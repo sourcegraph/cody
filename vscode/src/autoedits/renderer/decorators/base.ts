@@ -1,5 +1,20 @@
 import type * as vscode from 'vscode'
 
+export interface AutoEditDecorations {
+    /**
+     * Decorations to represent text to be inserted
+     */
+    insertionDecorations: vscode.DecorationOptions[]
+    /**
+     * Decorations to represent text to be deleted
+     */
+    deletionDecorations: vscode.DecorationOptions[]
+    /**
+     * Decorations to represent the start point for the overall change.
+     */
+    insertMarkerDecorations: vscode.DecorationOptions[]
+}
+
 /**
  * Represents a decorator that manages VS Code editor decorations for auto-edit suggestions.
  *
@@ -30,17 +45,14 @@ export interface AutoEditsDecorator extends vscode.Disposable {
      * @param decorationInfo Contains the line-by-line information about text changes
      *        and how they should be decorated in the editor.
      */
-    setDecorations(decorationInfo: DecorationInfo): void
-
-    /**
-     * Checks if the decorator can render decorations for the given decoration information.
-     *
-     * This method verifies if the current editor state allows for the decorations to be
-     * rendered properly. Some conditions that might prevent rendering include:
-     * - Insufficient lines in the editor
-     * @returns true if decorations can be rendered, false otherwise
-     */
-    canRenderDecoration(decorationInfo: DecorationInfo): boolean
+    setDecorations(
+        /**
+         * @deprecated Decorations are pre-computed by the manager in `getRenderOutput`.
+         * Use `decorations` instead.
+         */
+        decorationInfo: DecorationInfo,
+        decorations?: AutoEditDecorations
+    ): void
 }
 
 /**

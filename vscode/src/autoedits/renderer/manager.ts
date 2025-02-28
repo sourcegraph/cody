@@ -13,7 +13,6 @@ import {
     autoeditDiscardReason,
 } from '../analytics-logger'
 import { autoeditsProviderConfig } from '../autoedits-config'
-import { autoeditsOutputChannelLogger } from '../output-channel-logger'
 import type { CodeToReplaceData } from '../prompt/prompt-utils'
 import {
     adjustPredictionIfInlineCompletionPossible,
@@ -23,7 +22,13 @@ import {
 
 import type { FixupController } from '../../non-stop/FixupController'
 import { CodyTaskState } from '../../non-stop/state'
-import type { AutoEditsDecorator, DecorationInfo } from './decorators/base'
+import { autoeditsOutputChannelLogger } from '../output-channel-logger'
+import type { AutoEditDecorations, AutoEditsDecorator, DecorationInfo } from './decorators/base'
+import {
+    type AutoEditRenderOutput,
+    AutoEditsRenderOutput,
+    type GetRenderOutputArgs,
+} from './render-output'
 
 export interface TryMakeInlineCompletionsArgs {
     requestId: AutoeditRequestID
@@ -41,34 +46,20 @@ export interface TryMakeInlineCompletionsArgs {
  * if the inline renderer implementation won't see dogfood blockers.
  */
 export interface AutoEditsRendererManager extends vscode.Disposable {
-    /**
-     * Tries to extract inline completions from the prediction data and returns them if they are available.
-     */
-    tryMakeInlineCompletions({
-        prediction,
-        codeToReplaceData,
-        document,
-        position,
-        docContext,
-        decorationInfo,
-    }: TryMakeInlineCompletionsArgs): {
-        /**
-         * `null` if no inline completion items should be rendered
-         */
-        inlineCompletionItems: vscode.InlineCompletionItem[] | null
-        /**
-         * `null` if no inline decoration should be rendered
-         */
-        updatedDecorationInfo: DecorationInfo | null
-        updatedPrediction: string
-    }
+    getRenderOutput(args: GetRenderOutputArgs): AutoEditRenderOutput
 
     handleDidShowSuggestion(requestId: AutoeditRequestID): Promise<void>
 
     /**
      * Renders the prediction as inline decorations.
      */
-    renderInlineDecorations(decorationInfo: DecorationInfo): Promise<void>
+    renderInlineDecorations(
+        /**
+         * @deprecated Use `decorations` instead.
+         */
+        decorationInfo: DecorationInfo,
+        decorations?: AutoEditDecorations
+    ): Promise<void>
 
     /**
      * Determines if we have a rendered autoedit suggested.
@@ -83,11 +74,15 @@ export interface AutoEditsRendererManager extends vscode.Disposable {
 
 export const AUTOEDIT_VISIBLE_DELAY_MS = 750
 
-export class AutoEditsDefaultRendererManager implements AutoEditsRendererManager {
+export class AutoEditsDefaultRendererManager
+    extends AutoEditsRenderOutput
+    implements AutoEditsRendererManager
+{
     // Keeps track of the current active edit (there can only be one active edit at a time)
     protected activeRequestId: AutoeditRequestID | null = null
     protected disposables: vscode.Disposable[] = []
     protected decorator: AutoEditsDecorator | null = null
+
     /**
      * The amount of time before we consider a suggestion to be "visible" to the user.
      */
@@ -97,6 +92,7 @@ export class AutoEditsDefaultRendererManager implements AutoEditsRendererManager
         protected createDecorator: (editor: vscode.TextEditor) => AutoEditsDecorator,
         protected fixupController: FixupController
     ) {
+        super()
         this.disposables.push(
             vscode.commands.registerCommand('cody.supersuggest.accept', () => this.acceptActiveEdit()),
             vscode.commands.registerCommand('cody.supersuggest.dismiss', () => this.rejectActiveEdit()),
@@ -190,21 +186,6 @@ export class AutoEditsDefaultRendererManager implements AutoEditsRendererManager
         }
 
         this.decorator = this.createDecorator(vscode.window.activeTextEditor!)
-        if (
-            'decorationInfo' in request &&
-            request.decorationInfo &&
-            !this.decorator.canRenderDecoration(request.decorationInfo)
-        ) {
-            // If the decorator cannot render the decoration properly, dispose of it and return early.
-            this.decorator.dispose()
-            this.decorator = null
-            autoeditAnalyticsLogger.markAsDiscarded({
-                requestId,
-                discardReason: autoeditDiscardReason.notEnoughLinesEditor,
-            })
-            return
-        }
-
         this.activeRequestId = requestId
         autoeditAnalyticsLogger.markAsSuggested(requestId)
 
@@ -316,39 +297,35 @@ export class AutoEditsDefaultRendererManager implements AutoEditsRendererManager
     }
 
     protected async rejectActiveEdit(): Promise<void> {
-        const { activeRequest, decorator } = this
-
-        if (decorator) {
-            await this.handleDidHideSuggestion(decorator)
+        if (this.decorator) {
+            await this.handleDidHideSuggestion(this.decorator)
         }
 
-        if (activeRequest) {
-            autoeditAnalyticsLogger.markAsRejected(activeRequest.requestId)
+        if (this.activeRequest) {
+            autoeditAnalyticsLogger.markAsRejected(this.activeRequest.requestId)
         }
     }
 
-    public async renderInlineDecorations(decorationInfo: DecorationInfo): Promise<void> {
+    public async renderInlineDecorations(
+        decorationInfo: DecorationInfo,
+        decorations?: AutoEditDecorations
+    ): Promise<void> {
         if (!this.decorator) {
             // No decorator to render the decorations
             return
         }
-        this.decorator.setDecorations(decorationInfo)
+        this.decorator.setDecorations(decorationInfo, decorations)
         await vscode.commands.executeCommand('setContext', 'cody.supersuggest.active', true)
     }
 
-    tryMakeInlineCompletions({
+    public getRenderOutput({
         requestId,
         prediction,
         codeToReplaceData,
         document,
         position,
         docContext,
-        decorationInfo,
-    }: TryMakeInlineCompletionsArgs): {
-        inlineCompletionItems: vscode.InlineCompletionItem[] | null
-        updatedDecorationInfo: DecorationInfo | null
-        updatedPrediction: string
-    } {
+    }: GetRenderOutputArgs): AutoEditRenderOutput {
         const updatedPrediction = adjustPredictionIfInlineCompletionPossible(
             prediction,
             codeToReplaceData.codeToRewritePrefix,
@@ -372,11 +349,10 @@ export class AutoEditsDefaultRendererManager implements AutoEditsRendererManager
             )
 
             if (autocompleteInlineResponse.trimEnd().length === 0) {
-                return {
-                    inlineCompletionItems: null,
-                    updatedDecorationInfo: null,
-                    updatedPrediction,
-                }
+                // TODO: Is this correct? We handle this by not suggesting anything to the user
+                // and logging "emptyPredictionAfterInlineCompletionExtraction".
+                // Should we not attempt to render this with decorations?
+                return { type: 'none' }
             }
 
             const insertText = docContext.currentLinePrefix + autocompleteInlineResponse
@@ -400,7 +376,8 @@ export class AutoEditsDefaultRendererManager implements AutoEditsRendererManager
                 verbose: insertText,
             })
             return {
-                inlineCompletionItems: [inlineCompletionItem],
+                type: 'legacy-completion',
+                completions: [inlineCompletionItem],
                 updatedDecorationInfo: null,
                 updatedPrediction,
             }
@@ -410,11 +387,7 @@ export class AutoEditsDefaultRendererManager implements AutoEditsRendererManager
             'Rendering a diff view for auto-edit.'
         )
 
-        return {
-            inlineCompletionItems: null,
-            updatedDecorationInfo: decorationInfo,
-            updatedPrediction: updatedPrediction,
-        }
+        return { type: 'legacy-decorations' }
     }
 
     private hasConflictingDecorations(document: vscode.TextDocument, range: vscode.Range): boolean {
