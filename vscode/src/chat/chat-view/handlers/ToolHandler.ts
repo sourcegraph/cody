@@ -219,17 +219,24 @@ export class ExperimentalToolHandler implements AgentHandler {
         switch (message.type) {
             case 'change':
                 if (message.text) {
+                    // Process any tool calls in the text if needed
+                    this.processToolCalls(message.text, toolCalls, subViewTranscript)
+
+                    // Now remove any tool call blocks from the message text
+                    const cleanedText = message.text.replace(/<tool_call>[\s\S]*?<\/tool_call>/g, '')
+
+                    // Clean up any resulting artifacts (multiple spaces, etc.)
+                    message.text = cleanedText.replace(/\s+/g, ' ').trim()
+
                     messageInProgress = {
                         text: PromptString.unsafe_fromLLMResponse(message.text),
                     }
                     delegate.experimentalPostMessageInProgress([...subViewTranscript, messageInProgress])
-
-                    // Process any tool calls in the text if needed
-                    this.processToolCalls(message.text, toolCalls, subViewTranscript)
                 }
                 break
 
             case 'complete':
+                this.processToolCalls(message.text, toolCalls, subViewTranscript)
                 // Add the final message to transcript if needed
                 if (lastContent) {
                     subTranscript.push({
@@ -241,77 +248,6 @@ export class ExperimentalToolHandler implements AgentHandler {
 
             case 'error':
                 throw new Error(message.error.message)
-
-            // Handle content block messages for backward compatibility
-            case 'contentBlock':
-                if (message.contentBlock) {
-                    const contentBlock = message.contentBlock
-                    switch (contentBlock.type) {
-                        case 'tool_use':
-                            toolCalls.push({
-                                id: contentBlock.id,
-                                name: contentBlock.name,
-                                input: contentBlock.input,
-                            })
-                            subViewTranscript.push({
-                                step: {
-                                    id: contentBlock.name,
-                                    content: `Invoking tool ${contentBlock.name}(${JSON.stringify(
-                                        contentBlock.input
-                                    )})`,
-                                    state: 'pending',
-                                    type: ProcessType.Tool,
-                                },
-                            })
-                            break
-
-                        case 'text':
-                            subViewTranscript.push({
-                                text: PromptString.unsafe_fromLLMResponse(contentBlock.text),
-                            })
-                            break
-                    }
-                }
-                break
-
-            // Handle Anthropic-specific message types
-            case 'content_block_start':
-                if (message.content_block) {
-                    const block = message.content_block
-                    if (block.type === 'tool_use') {
-                        toolCalls.push({
-                            id: block.id,
-                            name: block.name,
-                            input: block.input,
-                        })
-                        subViewTranscript.push({
-                            step: {
-                                id: block.name,
-                                content: `Invoking tool ${block.name}(${JSON.stringify(block.input)})`,
-                                state: 'pending',
-                                type: ProcessType.Tool,
-                            },
-                        })
-                    }
-                }
-                break
-
-            case 'content_block_delta':
-                if (message.delta?.text && message.id) {
-                    messageInProgress = {
-                        text: PromptString.unsafe_fromLLMResponse(message.delta.text),
-                    }
-                    delegate.experimentalPostMessageInProgress([...subViewTranscript, messageInProgress])
-                }
-                break
-
-            case 'content_block_stop':
-                if (message.content_block?.type === 'text' && message.content_block?.text) {
-                    subViewTranscript.push({
-                        text: PromptString.unsafe_fromLLMResponse(message.content_block.text),
-                    })
-                }
-                break
 
             // For any other message types, log them but don't process
             default:
@@ -325,34 +261,47 @@ export class ExperimentalToolHandler implements AgentHandler {
         text: string,
         toolCalls: ToolCall[],
         subViewTranscript: SubMessage[]
-    ): void {
+    ): { processedAny: boolean; processedToolTexts: string[] } {
         // Look for tool_call format in the text: <tool_call>{ ... }</tool_call>
         const toolCallRegex = /<tool_call>([\s\S]*?)<\/tool_call>/g
         let match = toolCallRegex.exec(text)
+        const processedToolTexts: string[] = []
+        let processedAny = false
 
         while (match !== null) {
             try {
+                const fullMatchedText = match[0]
                 const toolCallContent = match[1].trim()
                 const toolCallData = JSON.parse(toolCallContent)
 
                 if (toolCallData.name && toolCallData.input) {
-                    const id = crypto.randomUUID()
-                    toolCalls.push({
-                        id,
-                        name: toolCallData.name,
-                        input: toolCallData.input,
-                    })
+                    // Check if this tool is already in subViewTranscript
+                    const toolExists = subViewTranscript.some(
+                        item => item.step?.id === toolCallData.name
+                    )
 
-                    subViewTranscript.push({
-                        step: {
-                            id: toolCallData.name,
-                            content: `Invoking tool ${toolCallData.name}(${JSON.stringify(
-                                toolCallData.input
-                            )})`,
-                            state: 'pending',
-                            type: ProcessType.Tool,
-                        },
-                    })
+                    // Only add if this tool doesn't already exist
+                    if (!toolExists) {
+                        const id = crypto.randomUUID()
+                        toolCalls.push({
+                            id,
+                            name: toolCallData.name,
+                            input: toolCallData.input,
+                        })
+
+                        subViewTranscript.push({
+                            step: {
+                                id: toolCallData.name,
+                                content: `Invoking tool ${toolCallData.name}(${JSON.stringify(
+                                    toolCallData.input
+                                )})`,
+                                state: 'pending',
+                                type: ProcessType.Tool,
+                            },
+                        })
+                        processedAny = true
+                        processedToolTexts.push(fullMatchedText)
+                    }
                 }
             } catch (e) {
                 // Skip invalid tool call formats
@@ -360,6 +309,7 @@ export class ExperimentalToolHandler implements AgentHandler {
             }
             match = toolCallRegex.exec(text)
         }
+        return { processedAny, processedToolTexts }
     }
     public async handle(
         {
