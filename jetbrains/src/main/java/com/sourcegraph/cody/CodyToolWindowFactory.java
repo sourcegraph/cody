@@ -1,7 +1,6 @@
 package com.sourcegraph.cody;
 
 import com.intellij.openapi.actionSystem.DefaultActionGroup;
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.DumbAware;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.wm.ToolWindow;
@@ -23,11 +22,9 @@ public class CodyToolWindowFactory implements ToolWindowFactory, DumbAware {
         project,
         toolWindowContent -> {
           Content content =
-              // ContentFactory.SERVICE.getInstance() has been deprecated in recent versions
-              ApplicationManager.getApplication()
-                  .getService(ContentFactory.class)
+              ContentFactory.getInstance()
                   .createContent(toolWindowContent.getAllContentPanel(), "", false);
-          content.setPreferredFocusableComponent(null);
+          content.setPreferredFocusableComponent(toolWindowContent.getAllContentPanel());
           toolWindow.getContentManager().addContent(content);
           DefaultActionGroup customCodySettings = new DefaultActionGroup();
           customCodySettings.add(new OpenCodySettingsEditorAction());
