@@ -164,7 +164,7 @@ export const HumanMessageEditor: FunctionComponent<{
         }
         const editor = editorRef.current
         // Add the media context item as a mention at the start of the editor.
-        editor.upsertMentions([mediaContextItem], 'before', ' ', false)
+        editor.upsertMentions([mediaContextItem], 'after')
         editor.setFocus(true)
     }, [])
 
