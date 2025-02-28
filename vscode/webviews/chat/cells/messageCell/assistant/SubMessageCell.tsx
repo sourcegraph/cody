@@ -2,7 +2,6 @@ import type { SubMessage } from '@sourcegraph/cody-shared/src/chat/transcript/me
 import { WrenchIcon } from 'lucide-react'
 import type { FunctionComponent } from 'react'
 import { ChatMessageContent } from '../../../ChatMessageContent/ChatMessageContent'
-import styles from './SubMessageCell.module.css'
 
 export const SubMessageCell: FunctionComponent<{
     piece: SubMessage
@@ -18,11 +17,11 @@ export const SubMessageCell: FunctionComponent<{
             )}
 
             {piece.step && (
-                <div className={`${styles.stepContainer} tw-flex tw-items-center tw-gap-2 tw-w-fit`}>
-                    <div className="tw-self-start tw-mt-1">
+                <div className="tw-flex tw-items-center tw-p-4 tw-gap-2 tw-w-full tw-my-2 tw-text-muted-foreground tw-rounded-sm">
+                    <div className="tw-self-start tw-mt-1 tw-flex-shrink-0">
                         <WrenchIcon className="tw-w-8 tw-h-8" />
                     </div>
-                    <div>{piece.step.content}</div>
+                    <div className="tw-flex-1 tw-pretty">{piece.step.content}</div>
                 </div>
             )}
         </>
