@@ -129,15 +129,18 @@ private constructor(
         val server = launcher.remoteProxy
         val listeningToJsonRpc = launcher.startListening()
         try {
+          val workspaceRootPath = ConfigUtil.getWorkspaceRootPath(project)
+          val workspaceRootUri =
+              ProtocolTextDocumentExt.normalizeFileUri(workspaceRootPath.toUri().toString())
+                  ?: throw CodyAgentException("Unsupported workspace location: $workspaceRootPath")
+
           return server
               .initialize(
                   ClientInfo(
                       name = "JetBrains",
                       version = ConfigUtil.getPluginVersion(),
                       ideVersion = ApplicationInfo.getInstance().build.toString(),
-                      workspaceRootUri =
-                          ProtocolTextDocumentExt.normalizeUriOrPath(
-                              ConfigUtil.getWorkspaceRootPath(project).toUri().toString()),
+                      workspaceRootUri = workspaceRootUri,
                       extensionConfiguration =
                           ConfigUtil.getAgentConfiguration(project, endpoint, token),
                       capabilities =
