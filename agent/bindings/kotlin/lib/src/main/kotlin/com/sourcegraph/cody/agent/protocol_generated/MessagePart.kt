@@ -14,7 +14,7 @@ sealed class MessagePart {
       JsonDeserializer { element: JsonElement, _: Type, context: JsonDeserializationContext ->
         when (element.getAsJsonObject().get("type").getAsString()) {
           "text" -> context.deserialize<TextMessagePart>(element, TextMessagePart::class.java)
-          "image_url" -> context.deserialize<Image-urlMessagePart>(element, Image-urlMessagePart::class.java)
+          "image_url" -> context.deserialize<ImageUrlMessagePart>(element, ImageUrlMessagePart::class.java)
           else -> throw Exception("Unknown discriminator ${element}")
         }
       }
@@ -31,14 +31,14 @@ data class TextMessagePart(
   }
 }
 
-data class Image-urlMessagePart(
+data class ImageUrlMessagePart(
   val type: TypeEnum, // Oneof: image_url
-  val imageUrl: Image_urlParams,
+  val image_url: Image_urlParams,
   val mimeType: String? = null,
 ) : MessagePart() {
 
   enum class TypeEnum {
-    @SerializedName("image_url") Image-url,
+    @SerializedName("image_url") ImageUrl,
   }
 }
 

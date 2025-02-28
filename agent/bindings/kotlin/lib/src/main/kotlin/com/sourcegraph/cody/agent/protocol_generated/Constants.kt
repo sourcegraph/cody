@@ -54,7 +54,7 @@ object Constants {
   const val history = "history"
   const val human = "human"
   const val ignore = "ignore"
-  const val image-url = "image_url"
+  const val imageUrl = "image_url"
   const val indentation = "indentation"
   const val info = "info"
   const val information = "information"
