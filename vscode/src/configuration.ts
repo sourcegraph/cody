@@ -147,7 +147,7 @@ export function getConfiguration(
             ClientConfiguration['autocompleteExperimentalGraphContext']
         >('autocomplete.experimental.graphContext', null),
         experimentalNoodle: getHiddenSetting('experimental.noodle', false),
-
+        experimentalImageUpload: getHiddenSetting('experimental.imageUpload', false),
         experimentalTracing: getHiddenSetting('experimental.tracing', false),
 
         experimentalSupercompletions: getHiddenSetting('experimental.supercompletions', false),
