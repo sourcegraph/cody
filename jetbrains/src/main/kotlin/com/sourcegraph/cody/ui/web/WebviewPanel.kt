@@ -3,6 +3,7 @@ package com.sourcegraph.cody.ui.web
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.application.runWriteAction
 import com.intellij.openapi.fileEditor.FileEditorManager
+import com.intellij.openapi.fileEditor.impl.EditorHistoryManager.IncludeInEditorHistoryFile
 import com.intellij.openapi.project.Project
 import com.intellij.testFramework.LightVirtualFile
 import com.sourcegraph.cody.agent.protocol.WebviewCreateWebviewPanelParams
@@ -14,7 +15,7 @@ import java.util.concurrent.CompletableFuture
 // - Closes Webview panels. Used when Agent stops.
 internal class WebviewPanelManager(private val project: Project) {
   fun createPanel(proxy: WebUIProxy, params: WebviewCreateWebviewPanelParams): WebviewViewDelegate {
-    val file = LightVirtualFile("Cody")
+    val file = object : LightVirtualFile("Cody"), IncludeInEditorHistoryFile {}
     file.fileType = WebPanelFileType.INSTANCE
     file.putUserData(WebPanelTabTitleProvider.WEB_PANEL_TITLE_KEY, params.title)
     file.putUserData(WebPanelEditor.WEB_UI_PROXY_KEY, proxy)
