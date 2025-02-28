@@ -30,6 +30,7 @@ import {
 import {
     type Position,
     createAtMentionPlugin,
+    deleteAtMention,
     disableAtMention,
     getAtMentionPosition,
     getAtMentionValue,
@@ -226,8 +227,10 @@ export interface MenuSelectionAPI {
     setAtMentionValue(value: string): void
     /**
      * Remove the active at-mention and replace it with the provided string or node.
+     * If passed a string it has to be non-empty. If you want to remove the at-mention
+     * use {@link deleteAtMention} instead.
      */
-    replaceAtMentionValue(value: string | Node): void
+    replaceAtMention(value: string | Node): void
     /**
      * Remove the active at-mention.
      */
@@ -671,7 +674,7 @@ export const promptInput = setup({
                                     params: setAtMentionValue(context.editorState, value),
                                 })
                             },
-                            replaceAtMentionValue(value) {
+                            replaceAtMention(value) {
                                 enqueue({
                                     type: 'updateEditorState',
                                     params: replaceAtMention(
@@ -683,7 +686,7 @@ export const promptInput = setup({
                             deleteAtMention() {
                                 enqueue({
                                     type: 'updateEditorState',
-                                    params: replaceAtMention(context.editorState, schema.text('')),
+                                    params: deleteAtMention(context.editorState),
                                 })
                             },
                             setProvider(item) {
