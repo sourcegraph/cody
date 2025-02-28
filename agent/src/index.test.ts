@@ -540,7 +540,7 @@ describe('Agent', () => {
 
             // Assert that the server is not using IDs between `chat/new` and
             // `chat/explain`. In VS Code, we try to reuse empty webview panels,
-            // which is undesireable for agent clients.
+            // which is undesirable for agent clients.
             expect(id).not.toStrictEqual(freshChatID)
 
             const lastMessage = await client.firstNonEmptyTranscript(id)

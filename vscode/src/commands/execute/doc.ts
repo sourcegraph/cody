@@ -152,7 +152,7 @@ async function docChatCommand(
 
     prompt = prompt.replaceAll(
         'the selected code',
-        selectedCodePromptWithExtraFiles(contextItems[0], contextItems.slice(1))
+        selectedCodePromptWithExtraFiles(contextItems[0], [])
     )
 
     return {
