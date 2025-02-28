@@ -92,7 +92,7 @@ public abstract class SearchActionBase extends DumbAwareEDTAction {
                 event
                     .getPresentation()
                     .setEnabled(selectedText != null && selectedText.length() > 0);
-              } catch (Exception exception) {
+              } catch (Throwable exception) {
                 Logger logger = Logger.getLogger(SearchActionBase.class.getName());
                 logger.log(Level.WARNING, "Problem while getting selected text", exception);
                 event.getPresentation().setEnabled(false);

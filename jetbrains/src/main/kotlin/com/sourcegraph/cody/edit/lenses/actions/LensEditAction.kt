@@ -57,7 +57,7 @@ abstract class LensEditAction(val editAction: (Project, AnActionEvent, Editor, S
               }
 
       editAction(project, e, editor, taskId)
-    } catch (ex: Exception) {
+    } catch (ex: Throwable) {
       // Don't show error lens here; it's sort of pointless.
       logger.warn("Error accepting edit accept task: $ex")
     }

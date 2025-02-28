@@ -14,7 +14,7 @@ object ThreadingUtil {
     app.invokeLater {
       try {
         future.complete(task())
-      } catch (exception: Exception) {
+      } catch (exception: Throwable) {
         future.completeExceptionally(exception)
       }
     }

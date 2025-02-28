@@ -81,7 +81,7 @@ public class OpenRevisionAction extends DumbAwareEDTAction {
               String remoteUrl;
               try {
                 remoteUrl = RepoUtil.getRemoteRepoUrl(project, context.getRepoRoot());
-              } catch (Exception e) {
+              } catch (Throwable e) {
                 throw new RuntimeException(e);
               }
 

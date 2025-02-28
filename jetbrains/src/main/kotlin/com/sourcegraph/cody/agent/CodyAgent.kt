@@ -173,11 +173,11 @@ private constructor(
                 server.initialized(null)
                 CodyAgent(client, server, launcher, conn, listeningToJsonRpc)
               }
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
           logger.warn("Failed to send 'initialize' JSON-RPC request Cody agent", e)
           throw e
         }
-      } catch (e: Exception) {
+      } catch (e: Throwable) {
         logger.warn("Unable to start Cody agent", e)
         throw e
       }
@@ -404,7 +404,7 @@ private constructor(
         } else {
           throw CodyAgentException("Failed to make Node process executable " + binary.absolutePath)
         }
-      } catch (e: Exception) {
+      } catch (e: Throwable) {
         logger.warn(e)
         logger.info("Failed to create a copy of the Node binary, proceeding with $binarySource")
         Files.deleteIfExists(binaryTarget)

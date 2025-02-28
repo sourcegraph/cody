@@ -32,7 +32,7 @@ public class FooterPanel extends JBPanel<FooterPanel> {
           if (previewContent != null) {
             try {
               previewContent.openInEditorOrBrowser();
-            } catch (Exception e) {
+            } catch (Throwable e) {
               Logger logger = Logger.getInstance(FooterPanel.class);
               logger.warn(
                   "Error while opening preview content externally: "

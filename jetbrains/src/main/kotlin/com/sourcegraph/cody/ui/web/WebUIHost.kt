@@ -120,7 +120,7 @@ internal class WebUIHostImpl(
               val decoded = URLDecoder.decode(encoded, "UTF-8")
               try {
                 Gson().fromJson(decoded, JsonArray::class.java).toList()
-              } catch (e: Exception) {
+              } catch (e: Throwable) {
                 null
               }
             } ?: emptyList()
