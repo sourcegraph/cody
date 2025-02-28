@@ -39,12 +39,6 @@ export async function constructGeminiChatMessages(messages: Message[]): Promise<
                         inlineData: { mimeType: 'image/png', data },
                     } satisfies InlineDataPart)
                 }
-                // TODO (bee) add support for function calls
-                // if (part.type === 'tool') {
-                //     parts.push({
-                //         functionCall: { name: part.name, args: part.args },
-                //     } satisfies FunctionCallPart)
-                // }
             }
         }
 

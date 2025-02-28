@@ -1,10 +1,12 @@
 import { type ContextItemMedia, type Model, ModelTag } from '@sourcegraph/cody-shared'
+import clsx from 'clsx'
 import { ImageIcon, XIcon } from 'lucide-react'
 import type React from 'react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { URI } from 'vscode-uri'
 import { Button } from '../../../../../../components/shadcn/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '../../../../../../components/shadcn/ui/tooltip'
+import type { SubmitButtonState } from './SubmitButton'
 
 // Define allowed MIME types
 const ALLOWED_MIME_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'image/heic', 'image/heif']
@@ -15,10 +17,11 @@ interface UploadedImageInfo {
     filename: string
 }
 
-export const ImageUploadButton: React.FC<{
+export const MediaUploadButton: React.FC<{
     onMediaUpload: (mediaContextItem: ContextItemMedia) => void
     model: Model
-}> = ({ onMediaUpload, model }) => {
+    submitState?: SubmitButtonState
+}> = ({ onMediaUpload, model, submitState }) => {
     // Only works with BYOK and Vision models
     if (!model?.tags?.includes(ModelTag.BYOK) && !model?.tags?.includes(ModelTag.Vision)) {
         return null
@@ -32,6 +35,7 @@ export const ImageUploadButton: React.FC<{
     const uploadedIdsRef = useRef<Set<string>>(new Set())
     const buttonRef = useRef<HTMLButtonElement>(null)
     const dropZoneRef = useRef<HTMLDivElement>(null)
+    const submitBtnState = useRef<SubmitButtonState | undefined>(submitState)
 
     // Create a ref to track the original onMediaUpload function
     const onMediaUploadRef = useRef(onMediaUpload)
@@ -40,6 +44,21 @@ export const ImageUploadButton: React.FC<{
     useEffect(() => {
         onMediaUploadRef.current = onMediaUpload
     }, [onMediaUpload])
+
+    // Effect to detect chat session changes (model changes indicate new chat) and clear state
+    useEffect(() => {
+        // If model ID changed, we're in a new chat session
+        if (submitBtnState.current !== submitState) {
+            // Reset all image-related state
+            setUploadedImages([])
+            setCurrentPreviewIndex(0)
+            setErrorMessage(null)
+            uploadedIdsRef.current.clear()
+
+            // Update the previous model ref
+            submitBtnState.current = submitState
+        }
+    }, [submitState])
 
     // Effect to clear preview when submission occurs
     useEffect(() => {
@@ -164,15 +183,15 @@ export const ImageUploadButton: React.FC<{
             }
         }
 
-        // Add event listeners to the document
-        document.addEventListener('dragover', handleDragOver)
-        document.addEventListener('dragleave', handleDragLeave)
-        document.addEventListener('drop', handleDrop)
+        // Add event listeners to the dropZone element instead of document
+        dropZone.addEventListener('dragover', handleDragOver)
+        dropZone.addEventListener('dragleave', handleDragLeave)
+        dropZone.addEventListener('drop', handleDrop)
 
         return () => {
-            document.removeEventListener('dragover', handleDragOver)
-            document.removeEventListener('dragleave', handleDragLeave)
-            document.removeEventListener('drop', handleDrop)
+            dropZone.removeEventListener('dragover', handleDragOver)
+            dropZone.removeEventListener('dragleave', handleDragLeave)
+            dropZone.removeEventListener('drop', handleDrop)
         }
     }, [processImageFile])
 
@@ -197,6 +216,19 @@ export const ImageUploadButton: React.FC<{
         },
         [processImageFile]
     )
+    const resetImageState = useCallback(() => {
+        // Clear all images
+        setUploadedImages([])
+        setCurrentPreviewIndex(0)
+        setErrorMessage(null)
+        uploadedIdsRef.current.clear()
+
+        // Reset the file input
+        if (fileInputRef.current) {
+            fileInputRef.current.value = ''
+        }
+    }, [])
+
     const handleClearImage = useCallback(
         (index?: number) => {
             if (index !== undefined) {
@@ -216,8 +248,7 @@ export const ImageUploadButton: React.FC<{
                 })
             } else {
                 // Clear all images
-                setUploadedImages([])
-                setCurrentPreviewIndex(0)
+                resetImageState()
             }
 
             setErrorMessage(null)
@@ -225,7 +256,7 @@ export const ImageUploadButton: React.FC<{
                 fileInputRef.current.value = ''
             }
         },
-        [currentPreviewIndex]
+        [currentPreviewIndex, resetImageState]
     )
 
     const handleButtonClick = useCallback(() => {
@@ -237,33 +268,46 @@ export const ImageUploadButton: React.FC<{
 
     return (
         <>
-            {/* Invisible drop zone overlay when dragging */}
+            {/* Visible drop zone overlay when dragging */}
             {isDragging && (
                 <div
                     className="tw-fixed tw-inset-0 tw-z-50 tw-bg-primary/20 tw-flex tw-items-center tw-justify-center"
                     style={{ pointerEvents: 'none' }}
                 >
-                    <div className="tw-bg-white tw-rounded-lg tw-p-8 tw-shadow-lg tw-text-center">
-                        <p className="tw-text-lg tw-font-medium">Drop images here</p>
+                    <div className="tw-bg-white tw-rounded-lg tw-p-8 tw-shadow-lg tw-text-center tw-animate-pulse">
+                        <p className="tw-text-lg tw-font-medium tw-text-primary">Drop images here</p>
+                        <p className="tw-text-sm tw-mt-2">You can upload multiple files at once</p>
+                        <div className="tw-flex tw-items-center tw-justify-center tw-gap-2 tw-mt-3">
+                            <ImageIcon className="tw-w-6 tw-h-6 tw-text-primary" />
+                            <ImageIcon className="tw-w-6 tw-h-6 tw-text-primary" />
+                            <ImageIcon className="tw-w-6 tw-h-6 tw-text-primary" />
+                        </div>
                     </div>
                 </div>
             )}
 
-            <div ref={dropZoneRef}>
+            <div
+                ref={dropZoneRef}
+                className={clsx(
+                    'tw-relative',
+                    isDragging && 'tw-ring-2 tw-ring-primary tw-rounded-lg tw-p-1'
+                )}
+            >
                 <Tooltip delayDuration={0}>
                     <TooltipTrigger asChild>
                         <Button
-                            variant="ghost"
+                            variant={uploadedImages.length > 0 ? 'ghost' : 'outline'}
                             size={uploadedImages.length > 0 ? 'sm' : 'icon'}
                             aria-label="Upload images (drag, select, or paste with Cmd+V)"
                             ref={buttonRef}
-                            className={uploadedImages.length > 0 ? 'tw-relative' : ''}
+                            className={clsx(
+                                'tw-relative',
+                                !uploadedImages.length &&
+                                    'tw-border-dashed hover:tw-border-primary hover:tw-bg-primary/5'
+                            )}
+                            onClick={handleButtonClick}
                         >
-                            <ImageIcon
-                                onClick={handleButtonClick}
-                                className="tw-w-8 tw-h-8"
-                                strokeWidth={1.25}
-                            />
+                            <ImageIcon className="tw-w-8 tw-h-8" strokeWidth={1.25} />
                             {uploadedImages.length > 1 && (
                                 <span className="tw-absolute -tw-top-2 -tw-right-2 tw-bg-primary tw-text-white tw-rounded-full tw-w-5 tw-h-5 tw-flex tw-items-center tw-justify-center tw-text-xs">
                                     {uploadedImages.length}
@@ -327,6 +371,9 @@ export const ImageUploadButton: React.FC<{
                                 <div className="tw-text-sm tw-opacity-75 tw-mt-1">
                                     Drag & drop, paste Cmd+V, or click to select
                                 </div>
+                                <div className="tw-text-sm tw-font-medium tw-text-primary tw-mt-2">
+                                    Multiple images supported!
+                                </div>
                             </div>
                         )}
                     </TooltipContent>
@@ -359,7 +406,6 @@ function createMediaContextItem(params: {
         filename: params.filename,
         data: params.data,
         description: params.description,
-        content: params.data,
         size: params.data.length,
     }
 }

@@ -163,8 +163,7 @@ export const HumanMessageEditor: FunctionComponent<{
             throw new Error('No editorRef')
         }
         const editor = editorRef.current
-        // Add the media context item as a mention
-        // editor.addMentions([mediaContextItem], 'after')
+        // Add the media context item as a mention at the start of the editor.
         editor.upsertMentions([mediaContextItem], 'before', ' ', false)
         editor.setFocus(true)
     }, [])

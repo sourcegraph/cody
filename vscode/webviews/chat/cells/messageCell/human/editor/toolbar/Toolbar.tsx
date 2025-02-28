@@ -9,7 +9,7 @@ import toolbarStyles from '../../../../../../components/shadcn/ui/toolbar.module
 import { useActionSelect } from '../../../../../../prompts/PromptsTab'
 import { useClientConfig } from '../../../../../../utils/useClientConfig'
 import { AddContextButton } from './AddContextButton'
-import { ImageUploadButton } from './MediaUploadButton'
+import { MediaUploadButton } from './MediaUploadButton'
 import { SubmitButton, type SubmitButtonState } from './SubmitButton'
 
 /**
@@ -91,6 +91,13 @@ export const Toolbar: FunctionComponent<{
                         className={`tw-opacity-60 focus-visible:tw-opacity-100 hover:tw-opacity-100 tw-mr-2 tw-gap-0.5 ${toolbarStyles.button} ${toolbarStyles.buttonSmallIcon}`}
                     />
                 )}
+                {onMediaUpload && models?.[0] && (
+                    <MediaUploadButton
+                        onMediaUpload={onMediaUpload}
+                        model={models?.[0]}
+                        submitState={submitState}
+                    />
+                )}
                 <PromptSelectFieldToolbarItem focusEditor={focusEditor} className="tw-ml-1 tw-mr-1" />
                 <ModelSelectFieldToolbarItem
                     models={models}
@@ -98,9 +105,6 @@ export const Toolbar: FunctionComponent<{
                     focusEditor={focusEditor}
                     className="tw-mr-1"
                 />
-                {onMediaUpload && models && (
-                    <ImageUploadButton onMediaUpload={onMediaUpload} model={models?.[0]} />
-                )}
             </div>
             <div className="tw-flex-1 tw-flex tw-justify-end">
                 <SubmitButton
