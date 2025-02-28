@@ -39,8 +39,7 @@ export function renderContextItem(contextItem: ContextItem): ContextMessage | nu
             content: [
                 {
                     type: 'image_url',
-                    image_url: { url: data.replace(/data:[^;]+;base64,/, '') },
-                    mimeType,
+                    image_url: { url: data },
                 } satisfies MessagePart,
             ],
         }

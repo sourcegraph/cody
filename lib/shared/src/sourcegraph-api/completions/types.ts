@@ -29,10 +29,10 @@ export interface Message {
 
 // content: string | Array<TextPart | ImagePart | FilePart>
 export type MessagePart =
-    /**
-     * Text message content
-     */
-    { type: 'text'; text: string } | { type: 'image_url'; image_url: { url: string }; mimeType?: string }
+    | { type: 'text'; text: string } // natively supported by LLM
+    | { type: 'context_file'; uri: string; content?: string } // Cody extension
+    | { type: 'context_repo'; repoId: string } // Cody extension
+    | { type: 'image_url'; image_url: { url: string } } // natively supported by LLM
 
 export interface CompletionUsage {
     completion_tokens: number | null

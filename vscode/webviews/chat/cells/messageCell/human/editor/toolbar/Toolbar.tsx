@@ -77,7 +77,8 @@ export const Toolbar: FunctionComponent<{
 
     const isImageUploadEnabled = useMemo(() => {
         const model = models?.[0]
-        return model?.tags?.includes(ModelTag.BYOK) && model?.tags?.includes(ModelTag.Vision)
+        const ok = model?.tags?.includes(ModelTag.EarlyAccess) || model?.tags?.includes(ModelTag.BYOK)
+        return model?.tags?.includes(ModelTag.Vision) && ok
     }, [models?.[0]])
 
     return (

@@ -1,5 +1,6 @@
 import type { Content, InlineDataPart, Part } from '@google/generative-ai'
 import type { Message } from '../..'
+import { getMessageImageUrl } from '../completions-converter'
 
 /**
  * Constructs the messages array for the Gemini API, including handling InlineDataPart for media.
@@ -30,13 +31,10 @@ export async function constructGeminiChatMessages(messages: Message[]): Promise<
                 if (part.type === 'text' && part.text?.length) {
                     parts.push({ text: part.text })
                 }
-                if (part.type === 'image_url' && part.image_url?.url) {
-                    let data = part.image_url?.url
-                    if (data.startsWith('data:')) {
-                        data = part.image_url?.url
-                    }
+                const { data, mimeType } = getMessageImageUrl(part)
+                if (data && mimeType) {
                     parts.push({
-                        inlineData: { mimeType: part.mimeType ?? 'image/png', data },
+                        inlineData: { mimeType, data: data.replace(/data:[^;]+;base64,/, '') },
                     } satisfies InlineDataPart)
                 }
             }

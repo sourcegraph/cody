@@ -231,6 +231,14 @@ export function syncModels({
                                                     )
                                                 }
 
+                                                // Enterprise instances with early access flag enabled
+                                                if (!isDotComUser && hasEarlyAccess) {
+                                                    data.primaryModels = data.primaryModels.map(m => ({
+                                                        ...m,
+                                                        tags: [...m.tags, ModelTag.EarlyAccess],
+                                                    }))
+                                                }
+
                                                 const clientModels = []
 
                                                 // Handle agentic chat features

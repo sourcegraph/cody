@@ -25,6 +25,8 @@ object Constants {
   const val `class` = "class"
   const val `client-managed` = "client-managed"
   const val confirmation = "confirmation"
+  const val contextFile = "context_file"
+  const val contextRepo = "context_repo"
   const val `create-file` = "create-file"
   const val `current-directory` = "current-directory"
   const val `current-file` = "current-file"
