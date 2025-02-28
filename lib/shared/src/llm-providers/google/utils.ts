@@ -36,7 +36,7 @@ export async function constructGeminiChatMessages(messages: Message[]): Promise<
                         data = part.image_url?.url
                     }
                     parts.push({
-                        inlineData: { mimeType: 'image/png', data },
+                        inlineData: { mimeType: part.mimeType ?? 'image/png', data },
                     } satisfies InlineDataPart)
                 }
             }

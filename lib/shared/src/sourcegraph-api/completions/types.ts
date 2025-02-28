@@ -32,9 +32,7 @@ export type MessagePart =
     /**
      * Text message content
      */
-    | { type: 'text'; text: string }
-    | { type: 'image_url'; image_url: { url: string }; mimeType?: string }
-    | { type: 'media'; data: string; mimeType?: string; name: string }
+    { type: 'text'; text: string } | { type: 'image_url'; image_url: { url: string }; mimeType?: string }
 
 export interface CompletionUsage {
     completion_tokens: number | null

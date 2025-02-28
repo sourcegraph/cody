@@ -28,17 +28,22 @@ export function renderContextItem(contextItem: ContextItem): ContextMessage | nu
     if (content === undefined || (!isRequestedInChatInput && content.trim().length === 0)) {
         return null
     }
-    const parts: MessagePart[] = []
     const data = type === 'media' ? contextItem.data : undefined
     const mimeType = type === 'media' ? contextItem.mimeType : undefined
     const fileName = type === 'media' ? contextItem.filename : undefined
     if (data && mimeType && fileName) {
-        parts.push({
-            type: 'image_url',
-            image_url: { url: data.replace(/data:[^;]+;base64,/, '') },
-            mimeType,
-        } satisfies MessagePart)
-        return { speaker: 'human', text: ps`Here is the image file.`, file: contextItem, content: parts }
+        return {
+            speaker: 'human',
+            text: ps``,
+            file: contextItem,
+            content: [
+                {
+                    type: 'image_url',
+                    image_url: { url: data.replace(/data:[^;]+;base64,/, '') },
+                    mimeType,
+                } satisfies MessagePart,
+            ],
+        }
     }
 
     const uri = getContextItemLocalUri(contextItem)
@@ -74,7 +79,7 @@ export function renderContextItem(contextItem: ContextItem): ContextMessage | nu
             }
     }
 
-    return { speaker: 'human', text: messageText, file: contextItem, content: parts }
+    return { speaker: 'human', text: messageText, file: contextItem }
 }
 
 export function getContextItemTokenUsageType(item: ContextItem): ContextTokenUsageType {
