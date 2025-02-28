@@ -3,6 +3,7 @@ import {
     ContextItemSource,
     type ContextMessage,
     type ContextTokenUsageType,
+    type MessagePart,
     PromptString,
     displayPath,
     populateCodeContextTemplate,
@@ -14,7 +15,7 @@ import {
 import { URI } from 'vscode-uri'
 
 export function renderContextItem(contextItem: ContextItem): ContextMessage | null {
-    const { source, range } = contextItem
+    const { source, range, type } = contextItem
     const { content, repoName, title } = PromptString.fromContextItem(contextItem)
 
     // If true, this context item appears in the chat input as a context chip.
@@ -26,6 +27,22 @@ export function renderContextItem(contextItem: ContextItem): ContextMessage | nu
     // empty files so that they can target URIs for smart apply.
     if (content === undefined || (!isRequestedInChatInput && content.trim().length === 0)) {
         return null
+    }
+    const data = type === 'media' ? contextItem.data : undefined
+    const mimeType = type === 'media' ? contextItem.mimeType : undefined
+    const fileName = type === 'media' ? contextItem.filename : undefined
+    if (data && mimeType && fileName) {
+        return {
+            speaker: 'human',
+            text: ps``,
+            file: contextItem,
+            content: [
+                {
+                    type: 'image_url',
+                    image_url: { url: data },
+                } satisfies MessagePart,
+            ],
+        }
     }
 
     const uri = getContextItemLocalUri(contextItem)

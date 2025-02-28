@@ -9,6 +9,7 @@ import type {
     ContextItemCurrentRepository,
     ContextItemCurrentSelection,
     ContextItemFile,
+    ContextItemMedia,
     ContextItemOpenCtx,
     ContextItemOpenLink,
     ContextItemRepository,
@@ -49,6 +50,7 @@ export type SerializedContextItem = {
     | Omit<ContextItemCurrentRepository, 'uri' | 'content' | 'source'>
     | Omit<ContextItemCurrentDirectory, 'uri' | 'content' | 'source'>
     | Omit<ContextItemCurrentOpenTabs, 'uri' | 'content' | 'source'>
+    | Omit<ContextItemMedia, 'uri' | 'content' | 'source'>
 )
 
 export type SerializedTemplateInput = {
@@ -318,6 +320,9 @@ export function contextItemMentionNodeDisplayText(contextItem: SerializedContext
 
         case 'openctx':
             return contextItem.title
+
+        case 'media':
+            return contextItem.filename
 
         case 'current-selection':
             return 'current selection'

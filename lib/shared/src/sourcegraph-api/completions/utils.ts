@@ -34,6 +34,7 @@ async function serializePrompts(
                     speaker: m.speaker,
                     content: [
                         {
+                            ...m,
                             type: 'text',
                             text: text ?? '',
                             cache_control: { type: 'ephemeral' },

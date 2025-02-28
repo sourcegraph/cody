@@ -2,6 +2,7 @@ import type { URI } from 'vscode-uri'
 
 import type { RangeData } from '../common/range'
 import type { Message } from '../sourcegraph-api'
+import type { MessagePart } from '../sourcegraph-api/completions/types'
 import type { Range } from '../sourcegraph-api/graphql/client'
 
 export type ContextFileType = 'file' | 'symbol'
@@ -141,6 +142,7 @@ export type ContextItem =
     | ContextItemCurrentRepository
     | ContextItemCurrentDirectory
     | ContextItemCurrentOpenTabs
+    | ContextItemMedia
 
 /**
  * Context items to show by default in the chat input, or as suggestions in the chat UI.
@@ -217,6 +219,15 @@ export interface ContextItemCurrentDirectory extends ContextItemCommon {
 export interface ContextItemCurrentOpenTabs extends ContextItemCommon {
     type: 'current-open-tabs'
 }
+
+export interface ContextItemMedia extends ContextItemCommon {
+    type: 'media'
+    mimeType: string
+    filename: string
+    data: string // Base64 encoded file content
+    content?: string
+}
+
 /**
  * A file (or a subset of a file given by a range) that is included as context in a chat message.
  */
@@ -260,7 +271,7 @@ export type ContextItemWithContent = ContextItem & { content: string }
 /**
  * A system chat message that adds a context item to the conversation.
  */
-export interface ContextMessage extends Required<Omit<Message, 'cacheEnabled'>> {
+export interface ContextMessage extends Required<Omit<Message, 'cacheEnabled' | 'content'>> {
     /**
      * Context messages are always "from" the human. (In the future, this could be from "system" for
      * LLMs that support that kind of message, but that `speaker` value is not currently supported
@@ -272,7 +283,8 @@ export interface ContextMessage extends Required<Omit<Message, 'cacheEnabled'>> 
      * The context item that this message introduces into the conversation.
      */
     file: ContextItem
-    cacheEnabled?: boolean | null
+
+    content?: MessagePart[] | undefined | null
 }
 
 export const GENERAL_HELP_LABEL = 'Search for a file to include, or type # for symbols...'

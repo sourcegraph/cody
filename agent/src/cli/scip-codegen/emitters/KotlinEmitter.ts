@@ -268,8 +268,15 @@ class KotlinFormatter extends Formatter {
         const escaped = name.replace('.*', 'Wildcard').replace(':', '_').replace('/', '_')
         const isKeyword = this.options.reserved.has(escaped)
         const needsBacktick = isKeyword || !/^[a-zA-Z0-9_]+$/.test(escaped)
+
+        // Convert snake_case to camelCase
+        let fieldName = escaped
+        if (fieldName.includes('_')) {
+            fieldName = fieldName.replace(/_([a-zA-Z0-9])/g, (_, char) => char.toUpperCase())
+        }
+
         // Replace all non-alphanumeric characters with underscores
-        const fieldName = this.escape(escaped, '-')
+        fieldName = this.escape(fieldName, '-')
         return needsBacktick ? `\`${fieldName}\`` : fieldName
     }
 
