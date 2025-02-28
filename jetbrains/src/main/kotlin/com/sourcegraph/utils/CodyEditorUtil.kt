@@ -130,6 +130,7 @@ object CodyEditorUtil {
   @JvmStatic
   fun getLanguage(editor: Editor): Language? {
     val project = editor.project ?: return null
+
     return CodyLanguageUtil.getLanguage(project, editor.document)
   }
 
