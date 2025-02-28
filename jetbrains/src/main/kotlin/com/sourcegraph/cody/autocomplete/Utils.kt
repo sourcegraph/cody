@@ -55,10 +55,14 @@ object Utils {
     val virtualFile =
         FileDocumentManager.getInstance().getFile(editor.document)
             ?: return CompletableFuture.completedFuture(null)
+    val fileUri =
+        ProtocolTextDocumentExt.fileUriFor(virtualFile)
+            ?: return CompletableFuture.completedFuture(null)
+
     val params =
         if (lookupString.isNullOrEmpty())
             AutocompleteParams(
-                uri = ProtocolTextDocumentExt.uriFor(virtualFile),
+                uri = fileUri,
                 position = Position(position.line, position.character),
                 triggerKind =
                     if (triggerKind == InlineCompletionTriggerKind.INVOKE)
@@ -66,7 +70,7 @@ object Utils {
                     else AutocompleteParams.TriggerKindEnum.Automatic)
         else
             AutocompleteParams(
-                uri = ProtocolTextDocumentExt.uriFor(virtualFile),
+                uri = fileUri,
                 position = Position(position.line, position.character),
                 triggerKind = AutocompleteParams.TriggerKindEnum.Automatic,
                 selectedCompletionInfo =

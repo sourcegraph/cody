@@ -4,6 +4,7 @@ import com.intellij.openapi.application.WriteAction
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.fileEditor.FileEditorProvider
 import com.intellij.openapi.fileEditor.impl.text.TextEditorProvider
+import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import com.sourcegraph.cody.agent.protocol_extensions.ProtocolTextDocumentExt
@@ -11,11 +12,18 @@ import com.sourcegraph.cody.agent.protocol_generated.Position
 import com.sourcegraph.cody.agent.protocol_generated.ProtocolTextDocument
 import com.sourcegraph.cody.agent.protocol_generated.Range
 import com.sourcegraph.cody.listeners.EditorChangesBus
+import java.io.File
 
 class ProtocolTextDocumentTest : BasePlatformTestCase() {
-  private val content = "Start line 1\nline 2\nline 3\nline 4\nline 5 End"
-  private val filename = "test.txt"
-  private val file: VirtualFile by lazy { myFixture.createFile(filename, content) }
+  private val defaultContent = "Start line 1\nline 2\nline 3\nline 4\nline 5 End"
+  private val file: VirtualFile by lazy { createCodyTempFile() }
+
+  private fun createCodyTempFile(content: String = defaultContent): VirtualFile {
+    val tempFile = File.createTempFile("cody-test", ".txt")
+    tempFile.writeText(content)
+    tempFile.deleteOnExit()
+    return VfsUtil.findFileByIoFile(tempFile, false)!!
+  }
 
   private fun fromOffset(document: Document, offset: Int): Position {
     val line = document.getLineNumber(offset)
@@ -36,8 +44,9 @@ class ProtocolTextDocumentTest : BasePlatformTestCase() {
 
   fun test_emptySelection() {
     val protocolTextFile = ProtocolTextDocumentExt.fromVirtualEditorFile(myFixture.editor, file)
-    assertEquals("file:///src/test.txt", protocolTextFile.uri)
-    assertEquals(content, protocolTextFile.content)
+    assert(protocolTextFile!!.uri.startsWith("file://"))
+    assert(protocolTextFile.uri.contains("/cody-test"))
+    assertEquals(defaultContent, protocolTextFile.content)
     assertEquals(Range(Position(0, 0), Position(0, 0)), protocolTextFile.selection)
   }
 
@@ -59,7 +68,7 @@ class ProtocolTextDocumentTest : BasePlatformTestCase() {
   }
 
   fun test_selectEntireFile() {
-    myFixture.editor.testing_selectSubstring(content)
+    myFixture.editor.testing_selectSubstring(defaultContent)
     val range = ProtocolTextDocumentExt.fromEditor(myFixture.editor)!!.selection!!
     assertEquals(
         myFixture.editor.selectionModel.selectedText, myFixture.editor.testing_substring(range))
@@ -76,11 +85,11 @@ class ProtocolTextDocumentTest : BasePlatformTestCase() {
   }
 
   fun test_emptyFile() {
-    val emptyFile = myFixture.createFile("empty.txt", "")
+    val emptyFile = createCodyTempFile(content = "")
     myFixture.openFileInEditor(emptyFile)
     assertEquals(
         Range(Position(0, 0), Position(0, 0)),
-        ProtocolTextDocumentExt.fromVirtualEditorFile(myFixture.editor, emptyFile).selection)
+        ProtocolTextDocumentExt.fromVirtualEditorFile(myFixture.editor, emptyFile)?.selection)
   }
 
   fun test_selectionListener() {
@@ -105,9 +114,10 @@ class ProtocolTextDocumentTest : BasePlatformTestCase() {
     var lastTextDocument: ProtocolTextDocument? = null
     EditorChangesBus.addListener { _, textDocument -> lastTextDocument = textDocument }
 
-    myFixture.openFileInEditor(myFixture.createFile("newFile.txt", ""))
+    myFixture.openFileInEditor(createCodyTempFile())
 
-    assertEquals("file:///src/newFile.txt", lastTextDocument!!.uri)
+    assert(lastTextDocument!!.uri.startsWith("file://"))
+    assert(lastTextDocument!!.uri.contains("/cody-test"))
   }
 
   fun test_documentListener_appendAndPrepend() {
@@ -241,55 +251,65 @@ class ProtocolTextDocumentTest : BasePlatformTestCase() {
             "file:///home/person/documents" to "file:///home/person/documents")
 
     for ((input, expected) in testCases) {
-      assertEquals(expected, ProtocolTextDocumentExt.normalizeUriOrPath(input))
+      assertEquals(expected, ProtocolTextDocumentExt.normalizeFileUri(input))
     }
   }
 
   fun test_wsl_path_with_backslashes() {
     val input = "\\\\wsl$\\Ubuntu\\home\\person"
     val expected = "//wsl.localhost/Ubuntu/home/person"
-    assertEquals(expected, ProtocolTextDocumentExt.normalizeUriOrPath(input))
+    assertEquals(expected, ProtocolTextDocumentExt.normalizeFileUri(input))
   }
 
   fun test_wsl_path_with_forward_slashes() {
     val input = "//wsl$/Ubuntu/home/person"
     val expected = "//wsl.localhost/Ubuntu/home/person"
-    assertEquals(expected, ProtocolTextDocumentExt.normalizeUriOrPath(input))
+    assertEquals(expected, ProtocolTextDocumentExt.normalizeFileUri(input))
   }
 
   fun testWindowsPathLowerCase() {
     val input = "c:/home/person"
     val expected = "c:/home/person"
-    assertEquals(expected, ProtocolTextDocumentExt.normalizeUriOrPath(input))
+    assertEquals(expected, ProtocolTextDocumentExt.normalizeFileUri(input))
   }
 
   fun testWindowsPathUpperCase() {
     val input = "D:/home/person"
     val expected = "d:/home/person"
-    assertEquals(expected, ProtocolTextDocumentExt.normalizeUriOrPath(input))
+    assertEquals(expected, ProtocolTextDocumentExt.normalizeFileUri(input))
   }
 
   fun testWslPathWithFileScheme() {
     val input = "file://\\\\wsl$\\Ubuntu\\home\\person"
     val expected = "file:////wsl.localhost/Ubuntu/home/person"
-    assertEquals(expected, ProtocolTextDocumentExt.normalizeUriOrPath(input))
+    assertEquals(expected, ProtocolTextDocumentExt.normalizeFileUri(input))
   }
 
   fun testWindowsPathWithFileScheme() {
     val input = "file://c:/home/person"
     val expected = "file:///c:/home/person"
-    assertEquals(expected, ProtocolTextDocumentExt.normalizeUriOrPath(input))
+    assertEquals(expected, ProtocolTextDocumentExt.normalizeFileUri(input))
   }
 
   fun testLinuxPath() {
     val input = "/home/person/documents"
     val expected = "/home/person/documents"
-    assertEquals(expected, ProtocolTextDocumentExt.normalizeUriOrPath(input))
+    assertEquals(expected, ProtocolTextDocumentExt.normalizeFileUri(input))
   }
 
   fun testLinuxPathWithFileScheme() {
     val input = "file:///home/person/documents"
     val expected = "file:///home/person/documents"
-    assertEquals(expected, ProtocolTextDocumentExt.normalizeUriOrPath(input))
+    assertEquals(expected, ProtocolTextDocumentExt.normalizeFileUri(input))
+  }
+
+  fun test_unsupportedNonFileScheme() {
+    val input = "jar://temp/home/person"
+    assertEquals(null, ProtocolTextDocumentExt.normalizeFileUri(input))
+  }
+
+  fun test_conversionFromUnsupportedTempVirtualFile() {
+    val vf = myFixture.createFile("virtualTempFile.txt", defaultContent)
+    assertEquals(null, ProtocolTextDocumentExt.fileUriFor(vf))
   }
 }

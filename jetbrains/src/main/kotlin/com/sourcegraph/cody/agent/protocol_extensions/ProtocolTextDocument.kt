@@ -2,6 +2,7 @@ package com.sourcegraph.cody.agent.protocol_extensions
 
 import com.intellij.codeInsight.codeVision.ui.popup.layouter.bottom
 import com.intellij.codeInsight.codeVision.ui.popup.layouter.right
+import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.event.CaretEvent
 import com.intellij.openapi.editor.event.DocumentEvent
@@ -15,14 +16,16 @@ import com.sourcegraph.cody.agent.protocol_generated.ProtocolTextDocument
 import com.sourcegraph.cody.agent.protocol_generated.ProtocolTextDocumentContentChangeEvent
 import com.sourcegraph.cody.agent.protocol_generated.Range
 import com.sourcegraph.cody.agent.protocol_generated.TestingParams
+import com.sourcegraph.cody.listeners.CodyFileEditorListener
 import com.sourcegraph.config.ConfigUtil
 import java.awt.Point
-import java.nio.file.FileSystems
 import java.util.Locale
 import kotlin.math.max
 import kotlin.math.min
 
 object ProtocolTextDocumentExt {
+  private val logger = Logger.getInstance(CodyFileEditorListener::class.java)
+
   private fun getTestingParams(
       uri: String,
       content: String? = null,
@@ -74,7 +77,7 @@ object ProtocolTextDocumentExt {
     val file = FileDocumentManager.getInstance().getFile(editor.document) ?: return null
     val start = editor.document.codyPosition(caret.offset)
     val selection = Range(start, start)
-    val uri = uriFor(file)
+    val uri = fileUriFor(file) ?: return null
     return ProtocolTextDocument(
         uri = uri,
         selection = selection,
@@ -84,7 +87,7 @@ object ProtocolTextDocumentExt {
   @RequiresEdt
   fun fromEditorWithRangeSelection(editor: Editor, event: SelectionEvent): ProtocolTextDocument? {
     val file = FileDocumentManager.getInstance().getFile(editor.document) ?: return null
-    val uri = uriFor(file)
+    val uri = fileUriFor(file) ?: return null
     val selection = editor.document.codyRange(event.newRange.startOffset, event.newRange.endOffset)
     return ProtocolTextDocument(
         uri = uri,
@@ -103,7 +106,7 @@ object ProtocolTextDocumentExt {
   @RequiresEdt
   fun fromEditorForDocumentEvent(editor: Editor, event: DocumentEvent): ProtocolTextDocument? {
     val file = FileDocumentManager.getInstance().getFile(event.document) ?: return null
-    val uri = uriFor(file)
+    val uri = fileUriFor(file) ?: return null
     val selection = event.document.codyRange(editor.caretModel.offset, editor.caretModel.offset)
 
     val content =
@@ -151,9 +154,9 @@ object ProtocolTextDocumentExt {
   fun fromVirtualEditorFile(
       editor: Editor,
       file: VirtualFile,
-  ): ProtocolTextDocument {
+  ): ProtocolTextDocument? {
     val content = FileDocumentManager.getInstance().getDocument(file)?.text
-    val uri = uriFor(file)
+    val uri = fileUriFor(file) ?: return null
     val selection = getSelection(editor)
     return ProtocolTextDocument(
         uri = uri,
@@ -163,27 +166,33 @@ object ProtocolTextDocumentExt {
         testing = getTestingParams(uri = uri, content = content, selection = selection))
   }
 
-  fun fromVirtualFile(file: VirtualFile): ProtocolTextDocument {
+  fun fromVirtualFile(file: VirtualFile): ProtocolTextDocument? {
     val content = FileDocumentManager.getInstance().getDocument(file)?.text
-    val uri = uriFor(file)
+    val uri = fileUriFor(file) ?: return null
     return ProtocolTextDocument(
         uri = uri, content = content, testing = getTestingParams(uri = uri, content = content))
   }
 
-  fun uriFor(file: VirtualFile): String {
-    val uriString = FileSystems.getDefault().getPath(file.path).toUri().toString()
-    return normalizeUriOrPath(uriString)
+  fun fileUriFor(file: VirtualFile): String? {
+    return normalizeFileUri(file.url)
   }
 
-  fun normalizeUriOrPath(uriString: String): String {
-    val hasScheme = uriString.startsWith("file://")
-    val path = (if (hasScheme) uriString.removePrefix("file://") else uriString).replace("\\", "/")
+  fun normalizeFileUri(uriString: String): String? {
+    val hasFileScheme = uriString.startsWith("file://")
+
+    if (uriString.contains("://") && !hasFileScheme) {
+      logger.warn("Unsupported URI scheme, skipping file processing: $uriString")
+      return null
+    }
+
+    val path =
+        (if (hasFileScheme) uriString.removePrefix("file://") else uriString).replace("\\", "/")
 
     // Normalize WSL paths
     val wslPrefix = "//wsl$"
     if (path.startsWith(wslPrefix)) {
       val newPath = "//wsl.localhost${path.removePrefix(wslPrefix)}"
-      return if (hasScheme) "file://$newPath" else newPath
+      return if (hasFileScheme) "file://$newPath" else newPath
     }
 
     // Normalize drive letters for Windows
@@ -194,7 +203,7 @@ object ProtocolTextDocumentExt {
           "${driveLetter}:/"
         }
 
-    if (!hasScheme) return normalizedPath
+    if (!hasFileScheme) return normalizedPath
     if (path.matches(Regex("^/[^/].*"))) {
       return "file://$normalizedPath"
     }
