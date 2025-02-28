@@ -1,7 +1,13 @@
-import type { Action, ChatMessage, ContextItemMedia, Model } from '@sourcegraph/cody-shared'
+import {
+    type Action,
+    type ChatMessage,
+    type ContextItemMedia,
+    type Model,
+    ModelTag,
+} from '@sourcegraph/cody-shared'
 import { useExtensionAPI } from '@sourcegraph/prompt-editor'
 import clsx from 'clsx'
-import { type FunctionComponent, useCallback } from 'react'
+import { type FunctionComponent, useCallback, useMemo } from 'react'
 import type { UserAccountInfo } from '../../../../../../Chat'
 import { ModelSelectField } from '../../../../../../components/modelSelectField/ModelSelectField'
 import { PromptSelectField } from '../../../../../../components/promptSelectField/PromptSelectField'
@@ -69,6 +75,11 @@ export const Toolbar: FunctionComponent<{
         [onGapClick]
     )
 
+    const isImageUploadEnabled = useMemo(() => {
+        const model = models?.[0]
+        return model?.tags?.includes(ModelTag.BYOK) && model?.tags?.includes(ModelTag.Vision)
+    }, [models?.[0]])
+
     return (
         // biome-ignore lint/a11y/useKeyWithClickEvents: only relevant to click areas
         <menu
@@ -91,11 +102,12 @@ export const Toolbar: FunctionComponent<{
                         className={`tw-opacity-60 focus-visible:tw-opacity-100 hover:tw-opacity-100 tw-mr-2 tw-gap-0.5 ${toolbarStyles.button} ${toolbarStyles.buttonSmallIcon}`}
                     />
                 )}
-                {onMediaUpload && models?.[0] && (
+                {onMediaUpload && isImageUploadEnabled && (
                     <MediaUploadButton
                         onMediaUpload={onMediaUpload}
                         model={models?.[0]}
                         submitState={submitState}
+                        className={`tw-opacity-60 focus-visible:tw-opacity-100 hover:tw-opacity-100 tw-mr-2 tw-gap-0.5 ${toolbarStyles.button} ${toolbarStyles.buttonSmallIcon}`}
                     />
                 )}
                 <PromptSelectFieldToolbarItem focusEditor={focusEditor} className="tw-ml-1 tw-mr-1" />

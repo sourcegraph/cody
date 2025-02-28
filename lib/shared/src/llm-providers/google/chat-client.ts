@@ -1,11 +1,6 @@
 import { GoogleGenerativeAI } from '@google/generative-ai'
 import type { ChatNetworkClientParams } from '..'
-import {
-    type CompletionResponse,
-    CompletionStopReason,
-    getCompletionsModelConfig,
-    logDebug,
-} from '../..'
+import { type CompletionResponse, CompletionStopReason, getCompletionsModelConfig } from '../..'
 import { constructGeminiChatMessages } from './utils'
 
 /**
@@ -42,15 +37,13 @@ export async function googleChatClient({
         stopReason: CompletionStopReason.RequestFinished,
     }
     const log = logger?.startCompletion(params, completionsEndpoint)
-
     try {
         signal?.throwIfAborted()
         const genAI = new GoogleGenerativeAI(config.key)
         const model = genAI.getGenerativeModel({ model: config.model })
 
         // Construct the messages array for the API
-        const messages = await constructGeminiChatMessages(params.messages) // Ensure this line is present and used
-        logDebug('Google Chat', 'messages', { verbose: messages })
+        const messages = await constructGeminiChatMessages(params.messages)
         const lastMessage = messages.pop()
         if (!lastMessage) {
             return
@@ -58,18 +51,29 @@ export async function googleChatClient({
 
         const history = messages.filter(m => m.parts.length).map(m => ({ role: m.role, parts: m.parts }))
         const chat = model.startChat({ history })
-
         const result = await chat.sendMessageStream(lastMessage.parts)
         for await (const chunk of result.stream) {
-            signal?.throwIfAborted()
-            const chunkText = chunk.text()
+            if (signal?.aborted) {
+                completionResponse.stopReason = CompletionStopReason.RequestAborted
+                signal.throwIfAborted()
+            }
+
+            const chunkText = chunk?.text()
             completionResponse.completion += chunkText
             cb.onChange(completionResponse.completion)
+
+            if (chunk?.candidates?.[0]?.finishReason) {
+                completionResponse.stopReason = chunk.candidates[0].finishReason
+                break
+            }
         }
     } catch (error) {
-        log?.onError(`Response parsing error: ${error}`)
-        cb.onError(new Error(`Response parsing error: ${error}`))
+        cb.onError(
+            error instanceof Error ? error : new Error(`googleChatClient stream failed: ${error}`),
+            500
+        )
+    } finally {
+        cb.onComplete()
+        log?.onComplete(completionResponse)
     }
-
-    log?.onComplete(completionResponse)
 }

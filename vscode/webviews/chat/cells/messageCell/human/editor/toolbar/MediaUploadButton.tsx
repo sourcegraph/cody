@@ -1,6 +1,5 @@
-import { type ContextItemMedia, type Model, ModelTag } from '@sourcegraph/cody-shared'
-import clsx from 'clsx'
-import { ImageIcon, XIcon } from 'lucide-react'
+import type { ContextItemMedia, Model } from '@sourcegraph/cody-shared'
+import { ImageIcon } from 'lucide-react'
 import type React from 'react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { URI } from 'vscode-uri'
@@ -21,21 +20,17 @@ export const MediaUploadButton: React.FC<{
     onMediaUpload: (mediaContextItem: ContextItemMedia) => void
     model: Model
     submitState?: SubmitButtonState
-}> = ({ onMediaUpload, model, submitState }) => {
-    // Only works with BYOK and Vision models
-    if (!model?.tags?.includes(ModelTag.BYOK) && !model?.tags?.includes(ModelTag.Vision)) {
-        return null
-    }
+    className?: string
+}> = ({ onMediaUpload, model, submitState, className }) => {
     const [uploadedImages, setUploadedImages] = useState<UploadedImageInfo[]>([])
-    const [currentPreviewIndex, setCurrentPreviewIndex] = useState<number>(0)
     const [errorMessage, setErrorMessage] = useState<string | null>(null)
     const [isDragging, setIsDragging] = useState<boolean>(false)
+    const submitBtnState = useRef<SubmitButtonState | undefined>(submitState)
 
     const fileInputRef = useRef<HTMLInputElement>(null)
     const uploadedIdsRef = useRef<Set<string>>(new Set())
     const buttonRef = useRef<HTMLButtonElement>(null)
     const dropZoneRef = useRef<HTMLDivElement>(null)
-    const submitBtnState = useRef<SubmitButtonState | undefined>(submitState)
 
     // Create a ref to track the original onMediaUpload function
     const onMediaUploadRef = useRef(onMediaUpload)
@@ -47,11 +42,10 @@ export const MediaUploadButton: React.FC<{
 
     // Effect to detect chat session changes (model changes indicate new chat) and clear state
     useEffect(() => {
-        // If model ID changed, we're in a new chat session
+        // If submitBtnState has changed, clear the state
         if (submitBtnState.current !== submitState) {
             // Reset all image-related state
             setUploadedImages([])
-            setCurrentPreviewIndex(0)
             setErrorMessage(null)
             uploadedIdsRef.current.clear()
 
@@ -102,7 +96,6 @@ export const MediaUploadButton: React.FC<{
             // Add to current list of uploaded images
             setUploadedImages(prev => {
                 const newImages = [...prev, { id: imageId, data: base64String, filename }]
-                setCurrentPreviewIndex(newImages.length - 1)
                 return newImages
             })
 
@@ -183,15 +176,15 @@ export const MediaUploadButton: React.FC<{
             }
         }
 
-        // Add event listeners to the dropZone element instead of document
-        dropZone.addEventListener('dragover', handleDragOver)
-        dropZone.addEventListener('dragleave', handleDragLeave)
-        dropZone.addEventListener('drop', handleDrop)
+        // Add event listeners to the document
+        document.addEventListener('dragover', handleDragOver)
+        document.addEventListener('dragleave', handleDragLeave)
+        document.addEventListener('drop', handleDrop)
 
         return () => {
-            dropZone.removeEventListener('dragover', handleDragOver)
-            dropZone.removeEventListener('dragleave', handleDragLeave)
-            dropZone.removeEventListener('drop', handleDrop)
+            document.removeEventListener('dragover', handleDragOver)
+            document.removeEventListener('dragleave', handleDragLeave)
+            document.removeEventListener('drop', handleDrop)
         }
     }, [processImageFile])
 
@@ -216,154 +209,43 @@ export const MediaUploadButton: React.FC<{
         },
         [processImageFile]
     )
-    const resetImageState = useCallback(() => {
-        // Clear all images
-        setUploadedImages([])
-        setCurrentPreviewIndex(0)
-        setErrorMessage(null)
-        uploadedIdsRef.current.clear()
-
-        // Reset the file input
-        if (fileInputRef.current) {
-            fileInputRef.current.value = ''
-        }
-    }, [])
-
-    const handleClearImage = useCallback(
-        (index?: number) => {
-            if (index !== undefined) {
-                // Remove specific image
-                setUploadedImages(prev => {
-                    const newImages = [...prev]
-                    newImages.splice(index, 1)
-
-                    // Adjust current preview index if needed
-                    if (currentPreviewIndex >= newImages.length && newImages.length > 0) {
-                        setCurrentPreviewIndex(newImages.length - 1)
-                    } else if (newImages.length === 0) {
-                        setCurrentPreviewIndex(0)
-                    }
-
-                    return newImages
-                })
-            } else {
-                // Clear all images
-                resetImageState()
-            }
-
-            setErrorMessage(null)
-            if (fileInputRef.current) {
-                fileInputRef.current.value = ''
-            }
-        },
-        [currentPreviewIndex, resetImageState]
-    )
 
     const handleButtonClick = useCallback(() => {
         fileInputRef.current?.click()
     }, [])
 
-    // Compute current preview image
-    const currentImage = uploadedImages.length > 0 ? uploadedImages[currentPreviewIndex] : null
-
     return (
-        <>
-            {/* Visible drop zone overlay when dragging */}
+        <div className="tw-inline-flex">
+            {/* Invisible drop zone overlay when dragging */}
             {isDragging && (
                 <div
                     className="tw-fixed tw-inset-0 tw-z-50 tw-bg-primary/20 tw-flex tw-items-center tw-justify-center"
                     style={{ pointerEvents: 'none' }}
                 >
-                    <div className="tw-bg-white tw-rounded-lg tw-p-8 tw-shadow-lg tw-text-center tw-animate-pulse">
-                        <p className="tw-text-lg tw-font-medium tw-text-primary">Drop images here</p>
-                        <p className="tw-text-sm tw-mt-2">You can upload multiple files at once</p>
-                        <div className="tw-flex tw-items-center tw-justify-center tw-gap-2 tw-mt-3">
-                            <ImageIcon className="tw-w-6 tw-h-6 tw-text-primary" />
-                            <ImageIcon className="tw-w-6 tw-h-6 tw-text-primary" />
-                            <ImageIcon className="tw-w-6 tw-h-6 tw-text-primary" />
-                        </div>
+                    <div className="tw-bg-white tw-rounded-lg tw-p-8 tw-shadow-lg tw-text-center">
+                        <p className="tw-text-lg tw-font-medium">Drop images here</p>
                     </div>
                 </div>
             )}
-
-            <div
-                ref={dropZoneRef}
-                className={clsx(
-                    'tw-relative',
-                    isDragging && 'tw-ring-2 tw-ring-primary tw-rounded-lg tw-p-1'
-                )}
-            >
+            <div ref={dropZoneRef} className="tw-inline-flex">
                 <Tooltip delayDuration={0}>
                     <TooltipTrigger asChild>
                         <Button
-                            variant={uploadedImages.length > 0 ? 'ghost' : 'outline'}
-                            size={uploadedImages.length > 0 ? 'sm' : 'icon'}
+                            variant="ghost"
+                            size="none"
                             aria-label="Upload images (drag, select, or paste with Cmd+V)"
                             ref={buttonRef}
-                            className={clsx(
-                                'tw-relative',
-                                !uploadedImages.length &&
-                                    'tw-border-dashed hover:tw-border-primary hover:tw-bg-primary/5'
-                            )}
-                            onClick={handleButtonClick}
+                            className={className}
                         >
-                            <ImageIcon className="tw-w-8 tw-h-8" strokeWidth={1.25} />
-                            {uploadedImages.length > 1 && (
-                                <span className="tw-absolute -tw-top-2 -tw-right-2 tw-bg-primary tw-text-white tw-rounded-full tw-w-5 tw-h-5 tw-flex tw-items-center tw-justify-center tw-text-xs">
-                                    {uploadedImages.length}
-                                </span>
-                            )}
+                            <ImageIcon
+                                onClick={handleButtonClick}
+                                className="tw-w-8 tw-h-8"
+                                strokeWidth={1.25}
+                            />
                         </Button>
                     </TooltipTrigger>
                     <TooltipContent side="bottom">
-                        {currentImage ? (
-                            <div className="tw-relative tw-max-w-xs">
-                                <img
-                                    src={currentImage.data}
-                                    alt={`Uploaded Preview: ${currentImage.filename}`}
-                                    className="tw-max-w-xs tw-h-auto"
-                                />
-                                <Button
-                                    onClick={() => handleClearImage(currentPreviewIndex)}
-                                    className="tw-absolute -tw-top-2 -tw-right-2 tw-bg-red-500 tw-text-white tw-rounded-full tw-p-0.5 focus:tw-outline-none focus:tw-ring-2 focus:tw-ring-red-500"
-                                    aria-label="Remove Image"
-                                >
-                                    <XIcon strokeWidth={1.25} className="tw-h-8 tw-w-8" />
-                                </Button>
-
-                                {/* Image navigation if multiple images */}
-                                {uploadedImages.length > 1 && (
-                                    <div className="tw-absolute -tw-bottom-8 tw-left-0 tw-right-0 tw-flex tw-justify-center tw-items-center tw-gap-2">
-                                        {uploadedImages.map((_, idx) => (
-                                            <button
-                                                key={`${
-                                                    // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
-                                                    idx
-                                                }-preview`}
-                                                onClick={() => setCurrentPreviewIndex(idx)}
-                                                className={`tw-w-2 tw-h-2 tw-rounded-full ${
-                                                    idx === currentPreviewIndex
-                                                        ? 'tw-bg-primary'
-                                                        : 'tw-bg-gray-300'
-                                                }`}
-                                                type="button"
-                                                aria-label={`View image ${idx + 1}`}
-                                            />
-                                        ))}
-                                        {uploadedImages.length > 1 && (
-                                            <Button
-                                                onClick={() => handleClearImage()}
-                                                className="tw-text-xs tw-ml-2 tw-text-red-500"
-                                                variant="link"
-                                                size="sm"
-                                            >
-                                                Clear all
-                                            </Button>
-                                        )}
-                                    </div>
-                                )}
-                            </div>
-                        ) : errorMessage ? (
+                        {errorMessage ? (
                             <div className="tw-text-red-500">{errorMessage}</div>
                         ) : (
                             <div className="tw-text-center">
@@ -387,7 +269,7 @@ export const MediaUploadButton: React.FC<{
                     />
                 </Tooltip>
             </div>
-        </>
+        </div>
     )
 }
 
@@ -406,6 +288,7 @@ function createMediaContextItem(params: {
         filename: params.filename,
         data: params.data,
         description: params.description,
+        content: params.data,
         size: params.data.length,
     }
 }
