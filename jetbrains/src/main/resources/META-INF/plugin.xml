@@ -26,6 +26,8 @@
         <applicationService
                 serviceImplementation="com.sourcegraph.config.CodyApplicationService"/>
 
+        <fileIconProvider implementation="com.sourcegraph.cody.chat.ChatIconProvider"/>
+
         <projectConfigurable
                 parentId="tools"
                 instance="com.sourcegraph.cody.config.ui.SourcegraphConfigurable"
