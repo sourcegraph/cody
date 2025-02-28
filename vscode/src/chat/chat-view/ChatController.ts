@@ -1130,7 +1130,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         }
     }
 
-    private async handleAbort(): Promise<void> {
+    private handleAbort(): void {
         this.cancelSubmitOrEditOperation()
         // Notify the webview there is no message in progress.
         this.postViewTranscript()
