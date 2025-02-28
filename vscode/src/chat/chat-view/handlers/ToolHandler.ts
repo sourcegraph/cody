@@ -1,14 +1,22 @@
 import { spawn } from 'node:child_process'
 import type { SpawnOptions } from 'node:child_process'
-import type Anthropic from '@anthropic-ai/sdk'
-import type { ContentBlock, MessageParam, Tool, ToolResultBlockParam } from '@anthropic-ai/sdk/resources'
-import { ProcessType, PromptString } from '@sourcegraph/cody-shared'
+import type { MessageParam, Tool, ToolResultBlockParam } from '@anthropic-ai/sdk/resources'
+import {
+    type FunctionToolSpec,
+    PromptString,
+    Typewriter,
+    firstResultFromOperation,
+} from '@sourcegraph/cody-shared'
 import type { SubMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import * as vscode from 'vscode'
+import { getCategorizedMentions } from '../../../prompt-builder/utils'
+import { ChatBuilder } from '../ChatBuilder'
+import { DefaultPrompter } from '../prompt'
+import { ChatHandler } from './ChatHandler'
 import type { AgentHandler, AgentHandlerDelegate, AgentRequest } from './interfaces'
 
 interface CodyTool {
-    spec: Tool
+    spec: Tool | FunctionToolSpec
     invoke: (input: any) => Promise<string>
 }
 
@@ -21,17 +29,20 @@ interface ToolCall {
 const allTools: CodyTool[] = [
     {
         spec: {
-            name: 'get_file',
-            description: 'Get the file contents.',
-            input_schema: {
-                type: 'object',
-                properties: {
-                    path: {
-                        type: 'string',
-                        description: 'The path to the file.',
+            type: 'function',
+            function: {
+                name: 'get_file',
+                description: 'Get the file contents.',
+                parameters: {
+                    type: 'object',
+                    properties: {
+                        path: {
+                            type: 'string',
+                            description: 'The path to the file.',
+                        },
                     },
+                    required: ['path'],
                 },
-                required: ['path'],
             },
         },
         invoke: async (input: { path: string }) => {
@@ -56,18 +67,21 @@ const allTools: CodyTool[] = [
     },
     {
         spec: {
-            name: 'run_terminal_command',
-            description: 'Run an arbitrary terminal command at the root of the users project. ',
-            input_schema: {
-                type: 'object',
-                properties: {
-                    command: {
-                        type: 'string',
-                        description:
-                            'The command to run in the root of the users project. Must be shell escaped.',
+            type: 'function',
+            function: {
+                name: 'run_terminal_command',
+                description: 'Run an arbitrary terminal command at the root of the users project.',
+                parameters: {
+                    type: 'object',
+                    properties: {
+                        command: {
+                            type: 'string',
+                            description:
+                                'The command to run in the root of the users project. Must be shell escaped.',
+                        },
                     },
+                    required: ['command'],
                 },
-                required: ['command'],
             },
         },
         invoke: async (input: { command: string }) => {
@@ -94,116 +108,186 @@ const allTools: CodyTool[] = [
     },
 ]
 
-export class ExperimentalToolHandler implements AgentHandler {
-    constructor(private anthropicAPI: Anthropic) {}
-
-    public async handle({ inputText }: AgentRequest, delegate: AgentHandlerDelegate): Promise<void> {
+export class ExperimentalToolHandler extends ChatHandler implements AgentHandler {
+    public async handle(
+        {
+            // requestID,
+            inputText,
+            mentions,
+            editorState,
+            signal,
+            chatBuilder,
+            // recorder,
+            // span,
+        }: AgentRequest,
+        delegate: AgentHandlerDelegate
+    ): Promise<void> {
         const maxTurns = 10
         let turns = 0
+        const content = inputText.toString().trim()
+        if (!content) {
+            throw new Error('Input text cannot be empty')
+        }
         const subTranscript: Array<MessageParam> = [
             {
                 role: 'user',
-                content: inputText.toString(),
+                content,
             },
         ]
         const subViewTranscript: SubMessage[] = []
-        let messageInProgress: SubMessage | undefined
+        const toolCalls: ToolCall[] = []
+
+        // Track active content blocks by ID
+        // const activeContentBlocks = new Map<
+        //     string,
+        //     { type: string; name?: string; text?: string }
+        // >();
+        // let messageInProgress: SubMessage | undefined;
+
         while (true) {
-            const toolCalls: ToolCall[] = []
-            await new Promise<void>((resolve, reject) => {
-                this.anthropicAPI.messages
-                    .stream(
-                        {
-                            tools: allTools.map(tool => tool.spec),
-                            max_tokens: 8192,
-                            model: 'claude-3-5-sonnet-20241022',
-                            messages: subTranscript,
-                        },
-                        {
-                            headers: {
-                                'anthropic-dangerous-direct-browser-access': 'true',
-                            },
-                        }
-                    )
-                    .on('text', (_textDelta, textSnapshot) => {
+            toolCalls.length = 0 // Clear the array for each iteration
+            try {
+                const requestID = crypto.randomUUID()
+
+                console.log(
+                    'Debug - subTranscript before message creation:',
+                    JSON.stringify(subTranscript)
+                )
+                // Validate subTranscript before creating message
+                if (!subTranscript.length) {
+                    console.error('Debug - subTranscript is empty')
+                    throw new Error('subTranscript cannot be empty')
+                }
+
+                for (const msg of subTranscript) {
+                    if (!msg.content || (typeof msg.content === 'string' && !msg.content.trim())) {
+                        console.error('Debug - Found empty message in subTranscript:', msg)
+                        throw new Error('Found empty message in subTranscript')
+                    }
+                }
+
+                const contextResult = await this.computeContext(
+                    requestID,
+                    { text: inputText, mentions },
+                    editorState,
+                    chatBuilder,
+                    delegate,
+                    signal
+                )
+
+                if (contextResult.error) {
+                    delegate.postError(contextResult.error, 'transcript')
+                    signal.throwIfAborted()
+                }
+
+                const corpusContext = contextResult.contextItems ?? []
+                const { explicitMentions, implicitMentions } = getCategorizedMentions(corpusContext)
+                const prompter = new DefaultPrompter(explicitMentions, implicitMentions, false)
+                const { prompt } = await this.buildPrompt(prompter, chatBuilder, signal, 8)
+
+                const contextWindow = await firstResultFromOperation(
+                    ChatBuilder.contextWindowForChat(chatBuilder)
+                )
+
+                const stream = await this.chatClient.chat(
+                    prompt,
+                    {
+                        model: 'anthropic::2023-06-01::claude-3.5-sonnet',
+                        maxTokensToSample: contextWindow.output,
+                        tools: allTools.map(tool => tool.spec),
+                    },
+                    signal,
+                    requestID,
+                    8
+                )
+                let lastContent = ''
+                let messageInProgress: SubMessage | undefined
+                const typewriter = new Typewriter({
+                    update: content => {
+                        lastContent = content
                         messageInProgress = {
-                            text: PromptString.unsafe_fromLLMResponse(textSnapshot),
+                            text: PromptString.unsafe_fromLLMResponse(lastContent),
                         }
                         delegate.experimentalPostMessageInProgress([
                             ...subViewTranscript,
                             messageInProgress,
                         ])
-                    })
-                    .on('contentBlock', (contentBlock: ContentBlock) => {
-                        switch (contentBlock.type) {
-                            case 'tool_use':
-                                toolCalls.push({
-                                    id: contentBlock.id,
-                                    name: contentBlock.name,
-                                    input: contentBlock.input,
-                                })
-                                subViewTranscript.push(
-                                    messageInProgress || {
-                                        step: {
-                                            id: contentBlock.name,
-                                            content: `Invoking tool ${
-                                                contentBlock.name
-                                            }(${JSON.stringify(contentBlock.input)})`,
-                                            state: 'pending',
-                                            type: ProcessType.Tool,
-                                        },
-                                    }
-                                )
-                                messageInProgress = undefined
-                                break
-                            case 'text':
-                                subViewTranscript.push({
-                                    text: PromptString.unsafe_fromLLMResponse(contentBlock.text),
-                                })
-                                messageInProgress = undefined
-                                break
+                    },
+                    close: () => {
+                        if (subViewTranscript && messageInProgress) {
+                            delegate.experimentalPostMessageInProgress([
+                                ...subViewTranscript,
+                                messageInProgress,
+                            ])
                         }
-                    })
-                    .on('end', () => {
-                        resolve()
-                    })
-                    .on('abort', error => {
-                        reject(`${error}`)
-                    })
-                    .on('error', error => {
-                        reject(`${error}`)
-                    })
-                    .on('finalMessage', ({ role, content }: MessageParam) => {
-                        subTranscript.push({
-                            role,
-                            content,
-                        })
-                    })
-            })
-            if (toolCalls.length === 0) {
-                break
-            }
-            const toolResults: ToolResultBlockParam[] = []
-            for (const toolCall of toolCalls) {
-                const tool = allTools.find(tool => tool.spec.name === toolCall.name)
-                if (!tool) {
-                    continue
-                }
-                const output = await tool.invoke(toolCall.input)
-                toolResults.push({
-                    type: 'tool_result',
-                    tool_use_id: toolCall.id,
-                    content: output,
+                    },
+                    error: error => {
+                        delegate.postError(error, 'transcript')
+                    },
                 })
-            }
-            subTranscript.push({
-                role: 'user',
-                content: toolResults,
-            })
-            turns++
-            if (turns > maxTurns) {
-                console.error('Max turns reached')
-                break
+
+                console.log('Debug - stream created successfully')
+                for await (const message of stream) {
+                    switch (message.type) {
+                        case 'change': {
+                            typewriter.update(message.text)
+                            break
+                        }
+                        case 'complete': {
+                            typewriter.close()
+                            typewriter.stop()
+                            break
+                        }
+                        case 'error': {
+                            typewriter.close()
+                            typewriter.stop(message.error)
+                        }
+                    }
+                }
+
+                if (toolCalls.length === 0) {
+                    break
+                }
+
+                // Process tool calls as before
+                const toolResults: ToolResultBlockParam[] = []
+                for (const toolCall of toolCalls) {
+                    console.log('Debug - Processing tool call:', toolCall)
+                    const tool = allTools.find(tool => tool.spec)
+                    if (!tool) {
+                        console.error('Debug - Tool not found:', toolCall.name)
+                        continue
+                    }
+
+                    try {
+                        const output = await tool.invoke(toolCall.input)
+                        console.log('Debug - Tool output:', output)
+                        if (!output?.trim()) {
+                            console.warn('Debug - Empty tool output for:', toolCall.name)
+                            continue
+                        }
+                        toolResults.push({
+                            type: 'tool_result',
+                            tool_use_id: toolCall.id,
+                            content: output,
+                        })
+                    } catch (error) {
+                        console.error('Debug - Error invoking tool:', toolCall.name, error)
+                    }
+                }
+
+                subTranscript.push({
+                    role: 'user',
+                    content: toolResults,
+                })
+
+                turns++
+                if (turns > maxTurns) {
+                    console.error('Max turns reached')
+                    break
+                }
+            } catch (e) {
+                new Error(`Unexpected error computing context, no context was used: ${e}`)
             }
         }
         delegate.postDone()

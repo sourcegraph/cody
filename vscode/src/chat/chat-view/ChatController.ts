@@ -757,7 +757,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         const agentName = ['search', 'edit', 'insert'].includes(manuallySelectedIntent ?? '')
             ? (manuallySelectedIntent as string)
             : chatAgent ?? 'chat'
-        const agent = getAgent(agentName, model, {
+        const agent = getAgent(agentName, {
             contextRetriever: this.contextRetriever,
             editor: this.editor,
             chatClient: this.chatClient,
@@ -780,6 +780,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     chatBuilder: this.chatBuilder,
                     span,
                     recorder,
+                    model,
                 },
                 {
                     postError: (error: Error, type?: MessageErrorType): void => {

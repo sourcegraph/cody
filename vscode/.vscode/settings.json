@@ -1,0 +1,6 @@
+{
+  "cody.internal.unstable": true,
+  "cody.commandCodeLenses": true,
+  "cody.debug.verbose": true,
+  "cody.experimental.minion.anthropicKey": ""
+}
