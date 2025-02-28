@@ -1,5 +1,5 @@
-import { spawn } from 'node:child_process'
-import type { SpawnOptions } from 'node:child_process'
+// import { spawn } from 'node:child_process'
+// import type { SpawnOptions } from 'node:child_process'
 import type { MessageParam, Tool, ToolResultBlockParam } from '@anthropic-ai/sdk/resources'
 import {
     type ChatClient,
@@ -15,8 +15,10 @@ import {
 } from '@sourcegraph/cody-shared'
 import type { SubMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { isError } from 'lodash'
-import * as vscode from 'vscode'
+import type { z } from 'zod'
+import zodToJsonSchema from 'zod-to-json-schema'
 import { getCategorizedMentions } from '../../../prompt-builder/utils'
+import { type AgentTool, AgentToolGroup } from '../../tools/AgentToolGroup'
 import { ChatBuilder } from '../ChatBuilder'
 import type { ChatControllerOptions } from '../ChatController'
 import type { ContextRetriever } from '../ContextRetriever'
@@ -36,83 +38,19 @@ interface ToolCall {
     input: any
 }
 
-const allTools: CodyTool[] = [
-    {
-        spec: {
-            name: 'get_file',
-            description: 'Get the file contents.',
-            input_schema: {
-                type: 'object',
-                properties: {
-                    path: {
-                        type: 'string',
-                        description: 'The path to the file.',
-                    },
-                },
-                required: ['path'],
-            },
-        },
-        invoke: async (input: { path: string }) => {
-            // check if input is of type string
-            if (typeof input.path !== 'string') {
-                throw new Error(`get_file argument must be a string, value was ${JSON.stringify(input)}`)
-            }
-            const { path: relativeFilePath } = input
-            try {
-                const workspaceFolder = vscode.workspace.workspaceFolders?.[0]
-                if (!workspaceFolder) {
-                    throw new Error('No workspace folder found')
-                }
-                const uri = vscode.Uri.joinPath(workspaceFolder.uri, relativeFilePath)
+// Function to convert Zod schema to Anthropic-compatible InputSchema
+export function zodToAnthropicSchema(schema: z.ZodObject<any>): Tool.InputSchema {
+    return zodToJsonSchema(schema) as Tool.InputSchema
+}
 
-                const content = await vscode.workspace.fs.readFile(uri)
-                return Buffer.from(content).toString('utf-8')
-            } catch (error) {
-                throw new Error(`Failed to read file ${input.path}: ${error}`)
-            }
-        },
-    },
-    {
-        spec: {
-            name: 'run_terminal_command',
-            description: 'Run an arbitrary terminal command at the root of the users project. ',
-            input_schema: {
-                type: 'object',
-                properties: {
-                    command: {
-                        type: 'string',
-                        description:
-                            'The command to run in the root of the users project. Must be shell escaped.',
-                    },
-                },
-                required: ['command'],
-            },
-        },
-        invoke: async (input: { command: string }) => {
-            if (typeof input.command !== 'string') {
-                throw new Error(
-                    `run_terminal_command argument must be a string, value was ${JSON.stringify(input)}`
-                )
-            }
+// Helper for tracking processed tool calls
+const processedToolNames = new Set<string>()
 
-            const workspaceFolder = vscode.workspace.workspaceFolders?.[0]
-            if (!workspaceFolder) {
-                throw new Error('No workspace folder found')
-            }
-
-            try {
-                const commandResult = await runShellCommand(input.command, {
-                    cwd: workspaceFolder.uri.path,
-                })
-                return commandResult.stdout
-            } catch (error) {
-                throw new Error(`Failed to run terminal command: ${input.command}: ${error}`)
-            }
-        },
-    },
-]
+// We'll keep this empty and populate it in handle() method
+let allTools: CodyTool[] = []
 
 export class ExperimentalToolHandler implements AgentHandler {
+    private tools: AgentTool[] = []
     constructor(
         private chatClient: Pick<ChatClient, 'chat'>,
         protected contextRetriever: Pick<ContextRetriever, 'retrieveContext' | 'computeDidYouMean'>,
@@ -249,6 +187,15 @@ export class ExperimentalToolHandler implements AgentHandler {
             case 'error':
                 throw new Error(message.error.message)
 
+            case 'content_block_delta':
+                if (message.delta?.text && message.id) {
+                    messageInProgress = {
+                        text: PromptString.unsafe_fromLLMResponse(message.delta.text),
+                    }
+                    delegate.experimentalPostMessageInProgress([...subViewTranscript, messageInProgress])
+                }
+                break
+
             // For any other message types, log them but don't process
             default:
                 console.log('Unhandled message type:', message.type)
@@ -261,27 +208,19 @@ export class ExperimentalToolHandler implements AgentHandler {
         text: string,
         toolCalls: ToolCall[],
         subViewTranscript: SubMessage[]
-    ): { processedAny: boolean; processedToolTexts: string[] } {
+    ): void {
         // Look for tool_call format in the text: <tool_call>{ ... }</tool_call>
         const toolCallRegex = /<tool_call>([\s\S]*?)<\/tool_call>/g
         let match = toolCallRegex.exec(text)
-        const processedToolTexts: string[] = []
-        let processedAny = false
 
         while (match !== null) {
             try {
-                const fullMatchedText = match[0]
                 const toolCallContent = match[1].trim()
                 const toolCallData = JSON.parse(toolCallContent)
 
                 if (toolCallData.name && toolCallData.input) {
-                    // Check if this tool is already in subViewTranscript
-                    const toolExists = subViewTranscript.some(
-                        item => item.step?.id === toolCallData.name
-                    )
-
-                    // Only add if this tool doesn't already exist
-                    if (!toolExists) {
+                    // Check if this tool is already in subViewTranscript or processed
+                    if (!processedToolNames.has(toolCallData.name)) {
                         const id = crypto.randomUUID()
                         toolCalls.push({
                             id,
@@ -299,8 +238,9 @@ export class ExperimentalToolHandler implements AgentHandler {
                                 type: ProcessType.Tool,
                             },
                         })
-                        processedAny = true
-                        processedToolTexts.push(fullMatchedText)
+
+                        // Mark this tool as processed
+                        processedToolNames.add(toolCallData.name)
                     }
                 }
             } catch (e) {
@@ -309,21 +249,35 @@ export class ExperimentalToolHandler implements AgentHandler {
             }
             match = toolCallRegex.exec(text)
         }
-        return { processedAny, processedToolTexts }
     }
     public async handle(
         {
-            // requestID,
+            requestID,
             inputText,
             mentions,
             editorState,
             signal,
             chatBuilder,
-            // recorder,
-            // span,
+            recorder,
+            span,
         }: AgentRequest,
         delegate: AgentHandlerDelegate
     ): Promise<void> {
+        // Reset the processed tools for this new session
+        processedToolNames.clear()
+
+        // Load tools from AgentToolGroup, the same way AgenticHandler does
+        this.tools = await AgentToolGroup.getToolsByVersion(this.contextRetriever, span)
+
+        // Convert AgentTools to CodyTools (compatible with our existing XML approach)
+        allTools = this.tools.map(agentTool => ({
+            spec: agentTool.spec,
+            invoke: agentTool.invoke,
+        }))
+
+        // Log available tools
+        console.log(`Loaded ${allTools.length} tools:`, allTools.map(t => t.spec.name).join(', '))
+
         const maxTurns = 10
         let turns = 0
         const content = inputText.toString().trim()
@@ -350,37 +304,6 @@ export class ExperimentalToolHandler implements AgentHandler {
             toolCalls.length = 0 // Clear the array for each iteration
             try {
                 const requestID = crypto.randomUUID()
-
-                console.log(
-                    'Debug - subTranscript before message creation:',
-                    JSON.stringify(subTranscript)
-                )
-                // Validate subTranscript before creating message
-                if (!subTranscript.length) {
-                    console.error('Debug - subTranscript is empty')
-                    throw new Error('subTranscript cannot be empty')
-                }
-
-                for (const msg of subTranscript) {
-                    if (!msg.content || (typeof msg.content === 'string' && !msg.content.trim())) {
-                        console.error('Debug - Found empty message in subTranscript:', msg)
-                        throw new Error('Found empty message in subTranscript')
-                    }
-                }
-
-                console.log('Debug - subTranscript validation passed:', JSON.stringify(subTranscript))
-                const message = [
-                    {
-                        speaker: 'human' as const,
-                        messages: subTranscript,
-                        stream: true,
-                        model: 'anthropic::2023-06-01::claude-3.5-sonnet',
-                        max_tokens: 8192,
-                        tools: allTools.map(tool => tool.spec),
-                    },
-                ]
-                console.log('Debug - message being sent:', JSON.stringify(message))
-
                 const contextResult = await this.computeContext(
                     requestID,
                     { text: inputText, mentions },
@@ -515,112 +438,4 @@ export class ExperimentalToolHandler implements AgentHandler {
         }
         delegate.postDone()
     }
-}
-
-interface CommandOptions {
-    cwd?: string
-    env?: Record<string, string>
-}
-
-interface CommandResult {
-    stdout: string
-    stderr: string
-    code: number | null
-    signal: NodeJS.Signals | null
-}
-
-class CommandError extends Error {
-    constructor(
-        message: string,
-        public readonly result: CommandResult
-    ) {
-        super(message)
-        this.name = 'CommandError'
-    }
-}
-
-async function runShellCommand(command: string, options: CommandOptions = {}): Promise<CommandResult> {
-    const { cwd = process.cwd(), env = process.env } = options
-
-    const timeout = 10_000
-    const maxBuffer = 1024 * 1024 * 10
-    const encoding = 'utf8'
-    const spawnOptions: SpawnOptions = {
-        shell: true,
-        cwd,
-        env,
-        windowsHide: true,
-    }
-
-    return new Promise((resolve, reject) => {
-        const process = spawn(command, [], spawnOptions)
-
-        let stdout = ''
-        let stderr = ''
-        let killed = false
-        const timeoutId = setTimeout(() => {
-            killed = true
-            process.kill()
-            reject(new Error(`Command timed out after ${timeout}ms`))
-        }, timeout)
-
-        let stdoutLength = 0
-        let stderrLength = 0
-
-        if (process.stdout) {
-            process.stdout.on('data', (data: Buffer) => {
-                const chunk = data.toString(encoding)
-                stdoutLength += chunk.length
-                if (stdoutLength > maxBuffer) {
-                    killed = true
-                    process.kill()
-                    reject(new Error('stdout maxBuffer exceeded'))
-                    return
-                }
-                stdout += chunk
-            })
-        }
-
-        if (process.stderr) {
-            process.stderr.on('data', (data: Buffer) => {
-                const chunk = data.toString(encoding)
-                stderrLength += chunk.length
-                if (stderrLength > maxBuffer) {
-                    killed = true
-                    process.kill()
-                    reject(new Error('stderr maxBuffer exceeded'))
-                    return
-                }
-                stderr += chunk
-            })
-        }
-
-        process.on('error', (error: Error) => {
-            if (timeoutId) clearTimeout(timeoutId)
-            reject(new Error(`Failed to start process: ${error.message}`))
-        })
-
-        process.on('close', (code: number | null, signal: NodeJS.Signals | null) => {
-            if (timeoutId) clearTimeout(timeoutId)
-            if (killed) return
-
-            const result: CommandResult = {
-                stdout,
-                stderr,
-                code,
-                signal,
-            }
-
-            if (code === 0) {
-                resolve(result)
-            } else {
-                reject(
-                    new CommandError(
-                        `Command failed with exit code ${code}${stderr ? ': ' + stderr : ''}`,
-                        result
-                    )
-                )
-            }
-        })
-    })
 }
